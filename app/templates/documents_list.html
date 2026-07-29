@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titre %}Manifeste des annales — MAHAY{% endblock %}
+{% block contenu %}
+<h2>Manifeste des annales</h2>
+
+{% if request.query_params.get("envoye") %}
+<div class="info">Document envoye — il sera visible ici une fois valide par un moderateur.</div>
+{% endif %}
+
+<form class="filtres" method="get" action="/documents">
+  <div>
+    <label for="filiere_id">Filiere</label>
+    <select id="filiere_id" name="filiere_id" onchange="this.form.submit()">
+      <option value="">Toutes les filieres</option>
+      {% for filiere in filieres %}
+      <option value="{{ filiere.id }}" {% if filiere_id == filiere.id %}selected{% endif %}>{{ filiere.nom }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="matiere">Matiere</label>
+    <input type="text" id="matiere" name="matiere" value="{{ matiere }}" placeholder="ex: Droit civil">
+  </div>
+  <div>
+    <button class="bouton bouton-secondaire" type="submit">Filtrer</button>
+  </div>
+</form>
+
+<table class="table-manifeste">
+  <thead>
+    <tr>
+      <th>Reference</th><th>Titre</th><th>Matiere</th><th>Type</th><th>Annee</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for doc in documents %}
+    <tr>
+      <td class="ref">{{ doc.reference }}</td>
+      <td>{{ doc.titre }}</td>
+      <td>{{ doc.matiere }}</td>
+      <td>{{ doc.type_document.value }}</td>
+      <td>{{ doc.annee }}</td>
+      <td>
+        <a href="/documents/{{ doc.id }}/telecharger">Telecharger</a>
+        {% if utilisateur %} · <a href="/documents/{{ doc.id }}/quiz">Quiz IA</a>{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Aucun document ne correspond a ce filtre pour le moment.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

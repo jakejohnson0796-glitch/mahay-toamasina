@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titre %}MAHAY — Le port du savoir de Toamasina{% endblock %}
+{% block contenu %}
+
+<section class="hero">
+  <p class="eyebrow">Registre des annales — Universite de Toamasina</p>
+  <h1>Chaque examen passe,<br><em>catalogue</em> comme au port.</h1>
+  <p class="sous-titre">
+    Annales, corriges et fiches de revision partages par filiere — DEGMIA,
+    Sciences et Technologies, Lettres, Medecine. Gratuit pour les etudiants,
+    finance par les sponsors et repetiteurs qui veulent etre vus ici.
+  </p>
+  <div class="cta-groupe">
+    <a class="bouton bouton-primaire" href="/documents">Consulter le manifeste</a>
+    <a class="bouton bouton-secondaire" href="/documents/upload">Deposer un document</a>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat">
+    <span class="stat-nombre">{{ nb_documents }}</span>
+    <span class="stat-label">documents valides</span>
+  </div>
+  <div class="stat">
+    <span class="stat-nombre">{{ facultes|length }}</span>
+    <span class="stat-label">facultes couvertes</span>
+  </div>
+</section>
+
+<section class="derniers">
+  <h2>Dernieres entrees au registre</h2>
+  <table class="table-manifeste">
+    <thead>
+      <tr><th>Reference</th><th>Titre</th><th>Matiere</th><th>Annee</th></tr>
+    </thead>
+    <tbody>
+      {% for doc in derniers_documents %}
+      <tr>
+        <td class="ref">{{ doc.reference }}</td>
+        <td>{{ doc.titre }}</td>
+        <td>{{ doc.matiere }}</td>
+        <td>{{ doc.annee }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">Le registre est encore vide — soyez les premiers a deposer un document.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

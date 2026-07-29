@@ -1,0 +1,8 @@
+.env
+mahay.db
+uploads/*
+!uploads/.gitkeep
+__pycache__/
+*.pyc
+venv/
+.venv/

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block titre %}MAHAY — Toamasina{% endblock %}</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0E2A32">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="entete">
+  <a class="logo" href="/">MAHAY <span class="logo-lieu">Toamasina</span></a>
+  <nav>
+    <a href="/documents">Manifeste des annales</a>
+    <a href="/cercles">Cercles d'etude</a>
+    <a href="/sponsoring">Espace sponsors</a>
+    {% if request.session.get("user_id") %}
+      <a href="/documents/upload">Deposer un document</a>
+      <a href="/deconnexion">Deconnexion</a>
+    {% else %}
+      <a href="/connexion">Connexion</a>
+      <a href="/inscription">Inscription</a>
+    {% endif %}
+  </nav>
+</header>
+
+<main>
+  {% block contenu %}{% endblock %}
+</main>
+
+<footer class="pied">
+  <p>MAHAY — un hub de revision imagine pour les etudiants de l'Universite de Toamasina.</p>
+</footer>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>

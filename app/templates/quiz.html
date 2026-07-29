@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block titre %}Quiz — {{ document.titre }}{% endblock %}
+{% block contenu %}
+<p class="eyebrow">Quiz genere par IA pour</p>
+<h2>{{ document.titre }}</h2>
+
+{% for item in quiz %}
+<div class="carte-formulaire carte-quiz">
+  <p class="question-quiz"><strong>{{ loop.index }}. {{ item.question }}</strong></p>
+
+  {% if item.choix and item.choix|length > 1 %}
+  <ol type="A" class="choix-quiz">
+    {% for choix in item.choix %}
+    <li>{{ choix }}</li>
+    {% endfor %}
+  </ol>
+
+  <details class="explication-quiz">
+    <summary>Voir la bonne reponse</summary>
+    {% if item.index_bonne_reponse is not none and item.index_bonne_reponse < item.choix|length %}
+    <p><strong>Reponse : {{ item.choix[item.index_bonne_reponse] }}</strong></p>
+    {% endif %}
+    {% if item.explication %}<p>{{ item.explication }}</p>{% endif %}
+  </details>
+  {% else %}
+  {# Cas d'erreur (extraction/API) : ai_quiz.py renvoie un seul "choix" explicatif. #}
+  <p>{{ item.choix[0] if item.choix else "" }}</p>
+  {% endif %}
+</div>
+{% endfor %}
+
+<a href="/documents">&larr; Retour au manifeste</a>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}Moderation — MAHAY{% endblock %}
+{% block contenu %}
+<h2>Documents en attente</h2>
+<table class="table-manifeste">
+  <thead>
+    <tr><th>Reference</th><th>Titre</th><th>Matiere</th><th>Annee</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for doc in documents %}
+    <tr>
+      <td class="ref">{{ doc.reference }}</td>
+      <td>{{ doc.titre }}</td>
+      <td>{{ doc.matiere }}</td>
+      <td>{{ doc.annee }}</td>
+      <td>
+        <form method="post" action="/moderation/{{ doc.id }}/approuver" style="display:inline">
+          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Approuver</button>
+        </form>
+        <form method="post" action="/moderation/{{ doc.id }}/rejeter" style="display:inline">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejeter</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Rien en attente pour le moment.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block titre %}{{ cercle.nom }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/cercles">&larr; Cercles d'etude</a></p>
+<h2>{{ cercle.nom }}</h2>
+{% if cercle.description %}<p>{{ cercle.description }}</p>{% endif %}
+
+{% if not membre %}
+<div class="carte-formulaire">
+  <p>Vous n'etes pas encore membre de ce cercle.</p>
+  <form method="post" action="/cercles/{{ cercle.id }}/rejoindre">
+    <button class="bouton bouton-primaire bouton-form" type="submit">Rejoindre pour discuter</button>
+  </form>
+</div>
+{% else %}
+<div id="fenetre-chat" class="fenetre-chat">
+  {% for m in messages %}
+  <div class="message {{ 'message-moi' if m.est_moi else '' }}">
+    <span class="message-auteur">{{ m.auteur }}</span>
+    <span class="message-contenu">{{ m.contenu }}</span>
+  </div>
+  {% else %}
+  <p class="stat-label">Aucun message pour l'instant — lancez la discussion.</p>
+  {% endfor %}
+</div>
+
+<form id="form-chat" class="form-chat">
+  <input type="text" id="champ-message" placeholder="Ecrire un message..." autocomplete="off" maxlength="2000">
+  <button class="bouton bouton-primaire" type="submit">Envoyer</button>
+</form>
+
+<script>
+(function () {
+  const idUtilisateur = {{ utilisateur.id }};
+  const fenetreChat = document.getElementById("fenetre-chat");
+  const formulaire = document.getElementById("form-chat");
+  const champMessage = document.getElementById("champ-message");
+
+  const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const ws = new WebSocket(protocole + "//" + window.location.host + "/cercles/{{ cercle.id }}/ws");
+
+  function ajouterMessage(donnees) {
+    const bulle = document.createElement("div");
+    bulle.className = "message" + (donnees.auteur_id === idUtilisateur ? " message-moi" : "");
+
+    const auteur = document.createElement("span");
+    auteur.className = "message-auteur";
+    auteur.textContent = donnees.auteur;
+
+    const contenu = document.createElement("span");
+    contenu.className = "message-contenu";
+    contenu.textContent = donnees.contenu;
+
+    bulle.appendChild(auteur);
+    bulle.appendChild(contenu);
+    fenetreChat.appendChild(bulle);
+    fenetreChat.scrollTop = fenetreChat.scrollHeight;
+  }
+
+  ws.addEventListener("message", function (evenement) {
+    ajouterMessage(JSON.parse(evenement.data));
+  });
+
+  ws.addEventListener("close", function (evenement) {
+    if (evenement.code === 4401 || evenement.code === 4403) {
+      champMessage.placeholder = "Connexion refusee — reconnectez-vous.";
+      champMessage.disabled = true;
+    }
+  });
+
+  formulaire.addEventListener("submit", function (evenement) {
+    evenement.preventDefault();
+    const contenu = champMessage.value.trim();
+    if (!contenu || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ contenu: contenu }));
+    champMessage.value = "";
+  });
+
+  fenetreChat.scrollTop = fenetreChat.scrollHeight;
+})();
+</script>
+{% endif %}
+{% endblock %}

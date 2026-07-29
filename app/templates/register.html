@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titre %}Inscription — MAHAY{% endblock %}
+{% block contenu %}
+<h2>Inscription</h2>
+<div class="carte-formulaire">
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  <form method="post" action="/inscription">
+    <label for="nom">Nom complet</label>
+    <input type="text" id="nom" name="nom" required>
+
+    <label for="telephone">Numero de telephone</label>
+    <input type="text" id="telephone" name="telephone" required placeholder="034xxxxxxx">
+
+    <label for="mot_de_passe">Mot de passe</label>
+    <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+
+    <label for="role">Vous etes</label>
+    <select id="role" name="role">
+      <option value="etudiant" selected>Etudiant(e)</option>
+      <option value="sponsor">Repetiteur / sponsor</option>
+    </select>
+
+    <label for="filiere_id">Filiere (facultatif)</label>
+    <select id="filiere_id" name="filiere_id">
+      <option value="">— aucune —</option>
+      {% for filiere in filieres %}
+      <option value="{{ filiere.id }}">{{ filiere.nom }}</option>
+      {% endfor %}
+    </select>
+
+    <button class="bouton bouton-primaire bouton-form" type="submit">Creer mon compte</button>
+  </form>
+</div>
+<p>Deja inscrit(e) ? <a href="/connexion">Connectez-vous</a>.</p>
+{% endblock %}

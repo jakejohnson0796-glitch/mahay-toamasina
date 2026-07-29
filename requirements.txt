@@ -1,0 +1,18 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+sqlmodel==0.0.19
+passlib==1.7.4
+bcrypt==4.0.1
+python-multipart==0.0.9
+jinja2==3.1.4
+itsdangerous==2.2.0
+
+# --- Ajoute pour Supabase / IA / cercles d'etude ---
+python-dotenv==1.0.1
+psycopg2-binary==2.9.9      # driver Postgres, necessaire si DATABASE_URL pointe vers Supabase
+supabase==2.9.1             # client Supabase (DB alternative + Storage)
+groq==1.6.0                  # generation de quiz par IA (API gratuite, console.groq.com)
+pdfplumber==0.11.4           # extraction de texte des PDF (pour le quiz IA)
+pytesseract==0.3.13          # OCR optionnel (scans/images) - necessite le binaire Tesseract
+pdf2image==1.17.0            # OCR optionnel sur PDF scannes - necessite poppler-utils
+Pillow==10.4.0

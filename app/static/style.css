@@ -1,0 +1,315 @@
+/*
+  Identite visuelle de MAHAY Toamasina.
+
+  Parti pris : Toamasina est le grand port de Madagascar. Plutot que
+  d'habiller ce hub d'annales comme une appli de revision generique
+  (fond creme, gros serif), on file la metaphore du "manifeste de
+  cargo" : chaque document a une reference facon conteneur, un statut
+  tamponne, et les listes se lisent comme un registre du port.
+*/
+
+:root {
+  --bg: #0E2A32;
+  --bg-panel: #163943;
+  --bg-panel-2: #1D4650;
+  --text: #F2ECDD;
+  --text-muted: #A9C0BD;
+  --accent: #E8935A;
+  --accent-soft: rgba(232, 147, 90, 0.15);
+  --accent-2: #6FA98C;
+  --danger: #C1502E;
+  --border: rgba(242, 236, 221, 0.14);
+  --rayon: 6px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  line-height: 1.55;
+}
+
+h1, h2, h3 { font-family: 'Fraunces', serif; font-weight: 600; margin: 0 0 0.5em; }
+h1 { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; }
+h1 em { color: var(--accent); font-style: normal; }
+h2 { font-size: 1.4rem; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+p { color: var(--text-muted); }
+
+/* ---------- Structure generale ---------- */
+
+.entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+.logo-lieu { color: var(--accent); font-weight: 400; }
+
+.entete nav { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.92rem; }
+.entete nav a { color: var(--text-muted); }
+.entete nav a:hover { color: var(--text); text-decoration: none; }
+
+main { max-width: 960px; margin: 0 auto; padding: 2rem; }
+
+.pied {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+}
+
+/* ---------- Hero ---------- */
+
+.eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  color: var(--accent-2);
+  margin-bottom: 0.75rem;
+}
+
+.hero { padding: 2rem 0 3rem; border-bottom: 1px dashed var(--border); }
+.sous-titre { max-width: 46em; }
+
+.cta-groupe { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; }
+
+.bouton {
+  display: inline-block;
+  padding: 0.75rem 1.4rem;
+  border-radius: var(--rayon);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.bouton-primaire { background: var(--accent); color: #1A1206; }
+.bouton-primaire:hover { background: #f0a874; text-decoration: none; }
+.bouton-secondaire { border: 1px solid var(--border); color: var(--text); }
+.bouton-secondaire:hover { border-color: var(--accent); text-decoration: none; }
+
+/* ---------- Stats ---------- */
+
+.stats { display: flex; gap: 3rem; padding: 2rem 0; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; }
+.stat-nombre { font-family: 'Fraunces', serif; font-size: 2.2rem; color: var(--accent); }
+.stat-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ---------- Table "manifeste" ---------- */
+
+.table-manifeste {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.92rem;
+}
+.table-manifeste th {
+  text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0.5rem;
+}
+.table-manifeste td {
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.table-manifeste tr:hover td { background: var(--bg-panel); }
+.ref, .reference {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--accent-2);
+  letter-spacing: 0.03em;
+}
+
+/* Tampon de statut, façon cachet portuaire */
+.tampon {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  transform: rotate(-2deg);
+}
+.tampon-approuve { color: var(--accent-2); }
+.tampon-attente { color: var(--accent); }
+.tampon-rejete { color: var(--danger); }
+
+/* ---------- Formulaires ---------- */
+
+.carte-formulaire {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  padding: 2rem;
+  max-width: 32em;
+}
+
+label { display: block; font-size: 0.85rem; color: var(--text-muted); margin: 1rem 0 0.35rem; }
+label:first-child { margin-top: 0; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+}
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.filtres { display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; margin-bottom: 1.5rem; }
+.filtres > div { flex: 1; min-width: 10em; }
+
+.bouton-form {
+  margin-top: 1.5rem;
+  border: none;
+  cursor: pointer;
+}
+
+.erreur {
+  background: rgba(193, 80, 46, 0.15);
+  border: 1px solid var(--danger);
+  color: var(--text);
+  padding: 0.75rem 1rem;
+  border-radius: var(--rayon);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.info {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  padding: 0.75rem 1rem;
+  border-radius: var(--rayon);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* ---------- Cartes sponsoring ---------- */
+
+.offre {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  padding: 2rem;
+  max-width: 32em;
+}
+.prix { font-family: 'Fraunces', serif; font-size: 2.5rem; color: var(--accent); }
+.prix span { font-family: 'Inter', sans-serif; font-size: 1rem; color: var(--text-muted); }
+
+.fournisseurs { display: flex; gap: 0.75rem; margin: 1rem 0; flex-wrap: wrap; }
+.fournisseurs label {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+}
+.fournisseurs input { width: auto; }
+
+/* ---------- Cercles d'etude / chat ---------- */
+
+.liste-cercles { display: flex; flex-direction: column; gap: 1rem; }
+.carte-cercle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  padding: 1.25rem 1.5rem;
+  flex-wrap: wrap;
+}
+.carte-cercle p { margin: 0.35rem 0; }
+
+.fenetre-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  height: 60vh;
+  min-height: 20em;
+  overflow-y: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.message {
+  align-self: flex-start;
+  max-width: 75%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel-2);
+  border-radius: var(--rayon);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.92rem;
+}
+.message-moi {
+  align-self: flex-end;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+.message-auteur {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-2);
+  margin-bottom: 0.2rem;
+}
+.message-contenu { color: var(--text); word-break: break-word; }
+
+.form-chat { display: flex; gap: 0.75rem; }
+.form-chat input { flex: 1; }
+
+/* ---------- Quiz IA ---------- */
+
+.carte-quiz { max-width: 40em; margin-bottom: 1.25rem; }
+.question-quiz { color: var(--text); }
+.choix-quiz { padding-left: 1.4rem; color: var(--text-muted); }
+.choix-quiz li { margin-bottom: 0.3rem; }
+.explication-quiz { margin-top: 0.75rem; font-size: 0.9rem; }
+.explication-quiz summary { cursor: pointer; color: var(--accent); }
+.explication-quiz p { margin: 0.5rem 0 0; }
+
+@media (max-width: 640px) {
+  .entete { padding: 1rem; }
+  main { padding: 1.25rem; }
+}

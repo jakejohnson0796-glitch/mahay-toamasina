@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titre %}Connexion — MAHAY{% endblock %}
+{% block contenu %}
+<h2>Connexion</h2>
+<div class="carte-formulaire">
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  <form method="post" action="/connexion">
+    <label for="telephone">Numero de telephone</label>
+    <input type="text" id="telephone" name="telephone" required>
+
+    <label for="mot_de_passe">Mot de passe</label>
+    <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+
+    <button class="bouton bouton-primaire bouton-form" type="submit">Se connecter</button>
+  </form>
+</div>
+<p>Pas encore de compte ? <a href="/inscription">Inscrivez-vous</a>.</p>
+{% endblock %}

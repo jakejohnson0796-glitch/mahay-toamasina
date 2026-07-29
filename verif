@@ -1,0 +1,36 @@
+"""
+Script de diagnostic : a lancer depuis E:\\New app\\mahay_build (venv active)
+avec : python verifier_env.py
+"""
+from pathlib import Path
+import os
+
+from dotenv import load_dotenv, find_dotenv
+
+print("=" * 60)
+print("Dossier courant (cwd)       :", Path.cwd())
+
+chemin_trouve = find_dotenv(usecwd=True)
+print("Fichier .env trouve par dotenv :", chemin_trouve or "AUCUN !")
+
+if chemin_trouve:
+    taille = Path(chemin_trouve).stat().st_size
+    print("Taille du fichier trouve    :", taille, "octets")
+    # Lit les premiers octets en brut pour detecter un probleme d'encodage
+    with open(chemin_trouve, "rb") as f:
+        debut = f.read(20)
+    print("Premiers octets (hex)       :", debut.hex())
+    if debut.startswith(b"\xff\xfe") or debut.startswith(b"\xfe\xff"):
+        print("  -> ATTENTION : ce fichier est en UTF-16, pas en UTF-8 !")
+        print("  -> C'est tres probablement la cause du probleme.")
+    elif debut.startswith(b"\xef\xbb\xbf"):
+        print("  -> Le fichier a un BOM UTF-8 (souvent OK, mais a noter).")
+
+resultat = load_dotenv(chemin_trouve or ".env", verbose=True, override=True)
+print("load_dotenv() a reussi      :", resultat)
+
+print("-" * 60)
+print("DATABASE_URL lu par Python  :", repr(os.getenv("DATABASE_URL")))
+print("SUPABASE_URL lu par Python  :", repr(os.getenv("SUPABASE_URL")))
+print("GROQ_API_KEY lu par Python  :", repr(os.getenv("GROQ_API_KEY")))
+print("=" * 60)

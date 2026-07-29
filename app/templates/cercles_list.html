@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titre %}Cercles d'etude — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow">S'entraider entre etudiants</p>
+<h2>Cercles d'etude</h2>
+<p>
+  Des salons de discussion pour reviser a plusieurs — par filiere ou en
+  groupe libre. Les messages restent entre les membres du cercle.
+</p>
+
+{% if utilisateur %}
+<div class="carte-formulaire" style="margin-bottom:2rem;">
+  <h3 style="margin-top:0;">Creer un cercle</h3>
+  <form method="post" action="/cercles/creer">
+    <label for="nom">Nom du cercle</label>
+    <input type="text" id="nom" name="nom" required placeholder="ex: Revision Droit civil S3">
+
+    <label for="description">Description (facultatif)</label>
+    <input type="text" id="description" name="description" placeholder="ex: Prep du partiel de janvier">
+
+    <label for="filiere_id">Filiere (facultatif)</label>
+    <select id="filiere_id" name="filiere_id">
+      <option value="">— aucune / groupe libre —</option>
+      {% for filiere in filieres %}
+      <option value="{{ filiere.id }}">{{ filiere.nom }}</option>
+      {% endfor %}
+    </select>
+
+    <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cercle</button>
+  </form>
+</div>
+{% else %}
+<div class="info">
+  <a href="/connexion">Connectez-vous</a> pour creer ou rejoindre un cercle.
+</div>
+{% endif %}
+
+<div class="liste-cercles">
+  {% for info in cercles_avec_info %}
+  <div class="carte-cercle">
+    <div>
+      <strong>{{ info.cercle.nom }}</strong>
+      <p>{{ info.cercle.description or "Pas de description." }}</p>
+      <span class="stat-label">{{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</span>
+    </div>
+    <div>
+      {% if info.est_membre %}
+      <a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat</a>
+      {% elif utilisateur %}
+      <form method="post" action="/cercles/{{ info.cercle.id }}/rejoindre">
+        <button class="bouton bouton-primaire" type="submit">Rejoindre</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <p>Aucun cercle pour le moment — soyez les premiers a en creer un.</p>
+  {% endfor %}
+</div>
+{% endblock %}

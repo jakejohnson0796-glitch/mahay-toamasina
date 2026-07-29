@@ -1,0 +1,10 @@
+{
+  "name": "MAHAY Toamasina",
+  "short_name": "MAHAY",
+  "description": "Hub de revision pour les etudiants de l'Universite de Toamasina",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0E2A32",
+  "theme_color": "#0E2A32",
+  "icons": []
+}
