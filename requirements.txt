@@ -16,3 +16,4 @@ pdfplumber==0.11.4           # extraction de texte des PDF (pour le quiz IA)
 pytesseract==0.3.13          # OCR optionnel (scans/images) - necessite le binaire Tesseract
 pdf2image==1.17.0            # OCR optionnel sur PDF scannes - necessite poppler-utils
 Pillow==10.4.0
+alembic==1.13.2

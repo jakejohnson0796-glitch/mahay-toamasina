@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titre %}Abonnements etudiants — Admin MAHAY{% endblock %}
+{% block contenu %}
+<h2>Abonnements etudiants</h2>
+
+<p class="filtres">
+  <a href="/admin/abonnements">En attente</a> ·
+  <a href="/admin/abonnements?statut=actif">Actifs</a> ·
+  <a href="/admin/abonnements?statut=expire">Expires</a> ·
+  <a href="/admin/abonnements?statut=refuse">Refuses</a> ·
+  <a href="/admin/abonnements?statut=essai">Essais</a>
+</p>
+
+<table class="table-manifeste">
+  <thead>
+    <tr><th>Etudiant</th><th>Telephone</th><th>Statut</th><th>Paiement</th><th>Preuve</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for abonnement, etudiant in lignes %}
+    <tr>
+      <td>{{ etudiant.nom }}</td>
+      <td>{{ etudiant.telephone }}</td>
+      <td>
+        {% if abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}<span class="tampon tampon-attente">En attente</span>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}<span class="tampon tampon-approuve">Actif</span>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.ESSAI %}<span class="tampon tampon-approuve">Essai</span>
+        {% else %}<span class="tampon tampon-rejete">{{ abonnement.statut.value }}</span>{% endif %}
+      </td>
+      <td>
+        {% if abonnement.fournisseur_paiement %}{{ abonnement.fournisseur_paiement }}{% endif %}
+        {% if abonnement.reference_paiement %}<br><small>{{ abonnement.reference_paiement }}</small>{% endif %}
+      </td>
+      <td>
+        {% if abonnement.preuve_paiement_chemin %}
+        <a href="/admin/abonnements/{{ abonnement.id }}/preuve" target="_blank">Voir</a>
+        {% else %}—{% endif %}
+      </td>
+      <td>
+        <form method="post" action="/admin/abonnements/{{ abonnement.id }}/valider" style="display:inline">
+          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Valider (+30j)</button>
+        </form>
+        <form method="post" action="/admin/abonnements/{{ abonnement.id }}/prolonger" style="display:inline">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Prolonger 30j</button>
+        </form>
+        <form method="post" action="/admin/abonnements/{{ abonnement.id }}/refuser" style="display:inline">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Refuser</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Rien ici pour le moment.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

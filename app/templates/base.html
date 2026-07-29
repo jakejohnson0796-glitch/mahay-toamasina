@@ -19,6 +19,7 @@
     <a href="/cercles">Cercles d'etude</a>
     <a href="/sponsoring">Espace sponsors</a>
     {% if request.session.get("user_id") %}
+      <a href="/abonnement">Mon abonnement</a>
       <a href="/documents/upload">Deposer un document</a>
       <a href="/deconnexion">Deconnexion</a>
     {% else %}
