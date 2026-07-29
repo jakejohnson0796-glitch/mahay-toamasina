@@ -1,0 +1,28 @@
+# Fichier de config Render — https://render.com/docs/blueprint-spec
+# Place ce fichier a la racine du projet (a cote du Dockerfile).
+# Sur render.com, choisis "New > Blueprint" et pointe vers ton repo Git
+# pour que Render lise ce fichier automatiquement.
+
+services:
+  - type: web
+    name: mahay-toamasina
+    runtime: docker
+    plan: free
+    region: frankfurt  # region la plus proche de Madagascar disponible sur Render
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false        # a remplir manuellement dans le dashboard Render (valeur secrete)
+      - key: SESSION_SECRET_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: documents
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
