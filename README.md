@@ -125,9 +125,9 @@ diffuser les messages (Supabase Realtime en écoutant les insertions sur
 2. **Icônes PWA** : `app/static/manifest.json` a un tableau `icons` vide
    — ajouter un PNG 192×192 et 512×512 pour que l'installation sur
    Android affiche une vraie icône.
-3. **Limiter le quiz IA aux abonnés** : une fois le paiement réel branché,
-   conditionner `/documents/{id}/quiz` à un abonnement sponsor actif
-   (argument de vente mentionné dans la feuille de route initiale).
+3. ~~Limiter le quiz IA aux abonnés~~ **Fait** : `/documents/{id}/quiz` et
+   les cercles d'étude nécessitent maintenant un essai gratuit actif ou
+   un abonnement étudiant valide (`app/dependencies.py`, `app/subscription.py`).
 4. **Modération des cercles/messages** : pour l'instant, tout étudiant
    connecté peut créer un cercle et y écrire sans limite de débit — un
    garde-fou anti-spam plus poussé (limite de messages/minute, signalement)

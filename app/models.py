@@ -37,6 +37,19 @@ class StatutAbonnement(str, Enum):
     EXPIRE = "expire"
 
 
+class StatutAbonnementEtudiant(str, Enum):
+    """Cycle de vie de l'abonnement Premium d'un etudiant. Distinct de
+    StatutAbonnement (qui concerne le sponsoring des repetiteurs/commerces,
+    un autre cote du marche avec une autre logique d'activation) : ici
+    l'activation passe TOUJOURS par une validation manuelle d'un admin sur
+    preuve de paiement, jamais automatique."""
+    ESSAI = "essai"                 # essai gratuit de 14 jours, actif automatiquement a l'inscription
+    EN_ATTENTE = "en_attente"       # demande soumise (avec ou sans preuve), en attente de validation admin
+    ACTIF = "actif"                 # valide par un admin, Premium accessible
+    EXPIRE = "expire"               # essai ou abonnement paye arrive a echeance sans renouvellement
+    REFUSE = "refuse"               # demande rejetee par un admin (ex: preuve de paiement invalide)
+
+
 class Faculte(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str = Field(index=True, unique=True)
@@ -121,3 +134,37 @@ class MessageCercle(SQLModel, table=True):
     auteur_id: int = Field(foreign_key="utilisateur.id")
     contenu: str
     date_envoi: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AbonnementEtudiant(SQLModel, table=True):
+    """Acces Premium d'un etudiant : demarre automatiquement en essai
+    gratuit de 14 jours a l'inscription, puis (optionnellement) en
+    abonnement paye de 10 000 Ar/mois valide manuellement par un admin sur
+    preuve de paiement hors-ligne (Mobile Money / virement).
+
+    Un seul enregistrement par etudiant : on ne cree pas une ligne par
+    cycle de paiement, on prolonge celui-ci (date_fin += 30 jours a chaque
+    validation admin) — plus simple a interroger pour "l'etudiant a-t-il
+    acces au Premium en ce moment", et l'historique des demandes reste de
+    toute facon dans le fichier de preuve + les dates deja enregistrees.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", unique=True)
+    statut: StatutAbonnementEtudiant = Field(default=StatutAbonnementEtudiant.ESSAI)
+
+    # --- Essai gratuit ---
+    date_debut_essai: datetime = Field(default_factory=datetime.utcnow)
+    date_fin_essai: datetime
+
+    # --- Abonnement paye (rempli seulement une fois une demande soumise) ---
+    date_fin_abonnement: Optional[datetime] = None
+    preuve_paiement_chemin: Optional[str] = None
+    fournisseur_paiement: Optional[str] = None  # "mvola" / "orange_money" / "airtel_money" / "virement"
+    reference_paiement: Optional[str] = None
+
+    # --- Tracabilite de la derniere action admin ---
+    valide_par_admin_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_derniere_action_admin: Optional[datetime] = None
+    motif_refus: Optional[str] = None
+
+    date_maj: datetime = Field(default_factory=datetime.utcnow)

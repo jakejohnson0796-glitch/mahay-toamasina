@@ -11,6 +11,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..models import Utilisateur, RoleUtilisateur, Filiere
 from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
+from .. import subscription
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -53,6 +54,9 @@ def inscription(
     session.add(utilisateur)
     session.commit()
     session.refresh(utilisateur)
+
+    if utilisateur.role == RoleUtilisateur.ETUDIANT:
+        subscription.creer_essai_gratuit(session, utilisateur)
 
     request.session["user_id"] = utilisateur.id
     return RedirectResponse("/", status_code=303)

@@ -8,6 +8,8 @@ Sinon, fallback sur SQLite local, exactement comme avant. SQLModel/SQLAlchemy
 abstraient le moteur, donc aucun autre fichier n'a besoin de savoir lequel
 des deux est utilise.
 """
+from pathlib import Path
+
 from sqlmodel import SQLModel, Session, create_engine
 
 from .config import parametres
@@ -21,11 +23,23 @@ connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite")
 
 engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
 
+RACINE_PROJET = Path(__file__).resolve().parent.parent
 
-def creer_tables() -> None:
-    """Cree les tables si elles n'existent pas encore. Appele au demarrage.
-    Fonctionne identiquement sur SQLite et sur Postgres/Supabase."""
-    SQLModel.metadata.create_all(engine)
+
+def executer_migrations() -> None:
+    """Applique les migrations Alembic jusqu'a la derniere version.
+    Remplace l'ancien creer_tables()/create_all() : contrairement a
+    create_all(), ceci met aussi a jour les tables DEJA existantes
+    (nouvelles colonnes, nouvelles contraintes...), ce qui est necessaire
+    maintenant que le schema continue d'evoluer apres la mise en prod.
+    Appele au demarrage de l'app, comme le faisait creer_tables() avant —
+    donc aucun geste manuel supplementaire requis sur Render."""
+    from alembic import command
+    from alembic.config import Config
+
+    config_alembic = Config(str(RACINE_PROJET / "alembic.ini"))
+    config_alembic.set_main_option("script_location", str(RACINE_PROJET / "alembic"))
+    command.upgrade(config_alembic, "head")
 
 
 def get_session():

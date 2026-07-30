@@ -16,6 +16,7 @@ from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif
+from ..dependencies import acces_premium_ou_redirection
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -120,12 +121,12 @@ def telecharger_document(document_id: int, session: Session = Depends(get_sessio
 @router.get("/documents/{document_id}/quiz")
 def quiz_document(request: Request, document_id: int, session: Session = Depends(get_session)):
     """Quiz genere par une vraie IA (API Groq, gratuite) a partir du texte
-    extrait du document. Fonctionnalite premium en devenir : voir le TODO
-    dans le README sur la limitation aux sponsors/abonnes actifs une fois
-    que sponsoring_router.py gere de vrais paiements confirmes."""
+    extrait du document. Fonctionnalite Premium : necessite un essai
+    gratuit actif ou un abonnement etudiant valide."""
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
 
     document = session.get(Document, document_id)
     if not document:

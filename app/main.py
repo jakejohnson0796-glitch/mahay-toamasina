@@ -13,9 +13,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session, select
 
 from .config import parametres
-from .database import creer_tables, engine, get_session
+from .database import executer_migrations, engine, get_session
 from .models import Faculte, Document, StatutDocument
-from .routers import auth_router, documents_router, sponsoring_router, cercles_router
+from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router
 from .seed_data import peupler_donnees_initiales
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -34,6 +34,7 @@ app.include_router(auth_router.router)
 app.include_router(documents_router.router)
 app.include_router(sponsoring_router.router)
 app.include_router(cercles_router.router)
+app.include_router(abonnement_router.router)
 
 
 @app.on_event("startup")
@@ -55,10 +56,10 @@ def au_demarrage() -> None:
     else:
         print(f"[DEBUG DATABASE] Connexion Postgres/Supabase visee : {url_affichee}")
 
-    # --- Connexion + creation des tables, avec erreur explicite si echec ---
+    # --- Connexion + migrations Alembic, avec erreur explicite si echec ---
     try:
-        creer_tables()
-        print("[DEBUG DATABASE] creer_tables() a reussi — connexion OK.")
+        executer_migrations()
+        print("[DEBUG DATABASE] Migrations Alembic appliquees — connexion OK.")
     except Exception as erreur:
         print("=" * 70)
         print("[ERREUR DATABASE] Impossible de se connecter / creer les tables.")

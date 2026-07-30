@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titre %}Mon abonnement — MAHAY{% endblock %}
+{% block contenu %}
+<h2>Mon abonnement</h2>
+
+{% if request.query_params.get("demande_envoyee") %}
+<div class="info">Demande envoyee — un administrateur va verifier votre paiement sous peu.</div>
+{% endif %}
+{% if request.query_params.get("premium_requis") %}
+<div class="erreur">Cette fonctionnalite est reservee aux abonnes Premium. Souscrivez ou verifiez votre abonnement ci-dessous pour y acceder.</div>
+{% endif %}
+
+{% if abonnement %}
+  {% if abonnement.statut == StatutAbonnementEtudiant.ESSAI %}
+    <p><span class="tampon tampon-approuve">Essai gratuit</span></p>
+    {% if acces_premium %}
+    <p>Il vous reste <strong>{{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }}</strong> d'essai gratuit avec acces complet aux fonctionnalites Premium.</p>
+    {% else %}
+    <p>Votre essai gratuit est termine. Souscrivez ci-dessous pour continuer a profiter du Premium.</p>
+    {% endif %}
+  {% elif abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}
+    <p><span class="tampon tampon-attente">En attente de validation</span></p>
+    <p>Votre demande a ete recue et sera verifiee par un administrateur.
+      {% if acces_premium %}En attendant, votre essai gratuit reste actif ({{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }} restant{{ 's' if jours_restants > 1 else '' }}).{% endif %}</p>
+  {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}
+    <p><span class="tampon tampon-approuve">Actif</span></p>
+    <p>Votre abonnement Premium est actif pour encore <strong>{{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }}</strong>.</p>
+  {% elif abonnement.statut == StatutAbonnementEtudiant.EXPIRE %}
+    <p><span class="tampon tampon-rejete">Expire</span></p>
+    <p>Votre acces Premium a expire. Souscrivez ci-dessous pour le reactiver.</p>
+  {% elif abonnement.statut == StatutAbonnementEtudiant.REFUSE %}
+    <p><span class="tampon tampon-rejete">Demande refusee</span></p>
+    {% if abonnement.motif_refus %}<p>Motif indique par l'administrateur : {{ abonnement.motif_refus }}</p>{% endif %}
+    <p>Vous pouvez soumettre une nouvelle demande ci-dessous.</p>
+  {% endif %}
+{% endif %}
+
+{% if not abonnement or abonnement.statut != StatutAbonnementEtudiant.EN_ATTENTE %}
+<div class="offre">
+  <p class="prix">{{ prix }} <span>Ar / mois</span></p>
+  <form method="post" action="/abonnement/demande" enctype="multipart/form-data">
+    <p>Choisissez votre moyen de paiement :</p>
+    <div class="fournisseurs">
+      <label><input type="radio" name="fournisseur_paiement" value="mvola" required> MVola</label>
+      <label><input type="radio" name="fournisseur_paiement" value="orange_money"> Orange Money</label>
+      <label><input type="radio" name="fournisseur_paiement" value="airtel_money"> Airtel Money</label>
+      <label><input type="radio" name="fournisseur_paiement" value="virement"> Virement bancaire</label>
+    </div>
+
+    <label for="reference_paiement">Reference de la transaction (optionnel)</label>
+    <input type="text" id="reference_paiement" name="reference_paiement" placeholder="ex: numero de reference Mobile Money">
+
+    <label for="preuve">Preuve de paiement — capture d'ecran ou photo (optionnel)</label>
+    <input type="file" id="preuve" name="preuve" accept="image/*,.pdf">
+
+    <button class="bouton bouton-primaire bouton-form" type="submit">Envoyer ma demande</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

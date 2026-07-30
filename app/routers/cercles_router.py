@@ -21,6 +21,8 @@ from ..database import get_session, engine
 from ..models import CercleEtude, MembreCercle, MessageCercle, Filiere, Utilisateur
 from ..auth import utilisateur_courant
 from ..ws_manager import gestionnaire
+from ..dependencies import acces_premium_ou_redirection
+from .. import subscription
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -74,8 +76,9 @@ def creer_cercle(
     session: Session = Depends(get_session),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
 
     cercle = CercleEtude(
         nom=nom,
@@ -97,8 +100,9 @@ def creer_cercle(
 @router.post("/cercles/{cercle_id}/rejoindre")
 def rejoindre_cercle(request: Request, cercle_id: int, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
 
     if not session.get(CercleEtude, cercle_id):
         return RedirectResponse("/cercles", status_code=303)
@@ -113,8 +117,9 @@ def rejoindre_cercle(request: Request, cercle_id: int, session: Session = Depend
 @router.get("/cercles/{cercle_id}")
 def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle:
@@ -166,6 +171,18 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
         if not utilisateur or not session.get(CercleEtude, cercle_id) or not _est_membre(session, cercle_id, user_id):
             await websocket.close(code=4403)
             return
+
+        abonnement = subscription.obtenir_abonnement(session, user_id)
+        if abonnement:
+            abonnement = subscription.synchroniser_expiration(session, abonnement)
+        if not subscription.acces_premium_valide(abonnement):
+            # 4402, en echo au code HTTP 402 Payment Required : pas de
+            # redirection possible en WebSocket, donc on ferme simplement
+            # la connexion. La page /cercles/{id} (HTTP) bloque deja
+            # l'affichage du salon avant meme d'essayer d'ouvrir ce socket.
+            await websocket.close(code=4402)
+            return
+
         nom_auteur = utilisateur.nom
 
     await gestionnaire.connecter(cercle_id, websocket)
