@@ -93,6 +93,19 @@ class Document(SQLModel, table=True):
     date_upload: datetime = Field(default_factory=datetime.utcnow)
 
 
+class ConsultationDocument(SQLModel, table=True):
+    """Trace qu'un etudiant a consulte/telecharge un document, pour
+    alimenter le 'derniers documents consultes' du tableau de bord.
+    Un enregistrement par consultation (pas de deduplication en base) :
+    c'est au moment de la lecture qu'on ne garde que la plus recente par
+    document. Uniquement enregistre pour les telechargements connectes
+    (le telechargement reste possible sans compte, comme avant)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    document_id: int = Field(foreign_key="document.id")
+    date_consultation: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Abonnement(SQLModel, table=True):
     """Abonnement sponsor/repetiteur — c'est ce cote du marche qui paie,
     pas l'etudiant (voir la note sur le modele economique dans le README)."""

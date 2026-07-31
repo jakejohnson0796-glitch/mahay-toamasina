@@ -11,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from ..database import get_session
-from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur
+from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
@@ -105,13 +105,18 @@ def upload_document(
 
 
 @router.get("/documents/{document_id}/telecharger")
-def telecharger_document(document_id: int, session: Session = Depends(get_session)):
+def telecharger_document(request: Request, document_id: int, session: Session = Depends(get_session)):
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
     document.nb_telechargements += 1
     session.add(document)
     session.commit()
+
+    utilisateur = utilisateur_courant(request, session)
+    if utilisateur:
+        session.add(ConsultationDocument(utilisateur_id=utilisateur.id, document_id=document.id))
+        session.commit()
 
     if stockage_distant_actif():
         return RedirectResponse(obtenir_url_telechargement(document.chemin_fichier))
