@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titre %}Mon tableau de bord — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow">Bienvenue, {{ utilisateur.nom }}</p>
+<h2>Mon tableau de bord</h2>
+
+<div class="liste-cercles" style="margin-bottom:2rem;">
+  <div class="carte-cercle">
+    <div class="stat">
+      <span class="stat-nombre">{{ jours_restants }}</span>
+      <span class="stat-label">
+        {% if abonnement and abonnement.statut == "actif" %}jour{{ "s" if jours_restants > 1 else "" }} d'abonnement restant{{ "s" if jours_restants > 1 else "" }}
+        {% else %}jour{{ "s" if jours_restants > 1 else "" }} d'essai restant{{ "s" if jours_restants > 1 else "" }}{% endif %}
+      </span>
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/abonnement">Gerer mon abonnement</a></div>
+  </div>
+</div>
+
+{% if not acces_premium %}
+<div class="erreur">
+  Votre acces Premium n'est plus actif. <a href="/abonnement">Souscrivez ou renouvelez</a> pour retrouver le quiz IA et les cercles d'etude.
+</div>
+{% endif %}
+
+<div class="liste-cercles" style="margin-bottom:2rem;">
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_cercles_rejoints }}</span><span class="stat-label">Cercles rejoints</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_documents_consultes }}</span><span class="stat-label">Documents consultes</span></div></div>
+</div>
+
+<h3>Mes cercles d'etude</h3>
+<div class="liste-cercles" style="margin-bottom:2rem;">
+  {% for info in cercles %}
+  <div class="carte-cercle">
+    <div>
+      <strong>{{ info.cercle.nom }}</strong>
+      <p>{{ info.cercle.description or "Pas de description." }}</p>
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat</a></div>
+  </div>
+  {% else %}
+  <p>Vous n'avez rejoint aucun cercle pour le moment. <a href="/cercles">Voir les cercles disponibles</a>.</p>
+  {% endfor %}
+</div>
+
+<h3>Documents consultes recemment</h3>
+<table class="table-manifeste">
+  <thead><tr><th>Titre</th><th>Matiere</th><th>Type</th><th></th></tr></thead>
+  <tbody>
+    {% for info in documents_recents %}
+    <tr>
+      <td>{{ info.document.titre }}</td>
+      <td>{{ info.document.matiere }}</td>
+      <td>{{ info.document.type_document.value }}</td>
+      <td><a href="/documents/{{ info.document.id }}/telecharger">Retelecharger</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Aucun document consulte pour le moment. <a href="/documents">Parcourir les annales</a>.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p style="margin-top:1.5rem;color:var(--text-muted);font-size:0.9rem;">
+  Les statistiques du Quiz IA (progression, scores, historique) arriveront avec la prochaine mise a jour.
+</p>
+{% endblock %}
