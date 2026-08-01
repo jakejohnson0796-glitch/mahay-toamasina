@@ -93,6 +93,26 @@ class Document(SQLModel, table=True):
     date_upload: datetime = Field(default_factory=datetime.utcnow)
 
 
+class TentativeQuiz(SQLModel, table=True):
+    """Un quiz genere pour un etudiant : le meme enregistrement sert
+    d'abord de 'quiz en cours' (questions generees, pas encore repondu),
+    puis devient un resultat d'historique une fois soumis. Les questions
+    et les reponses sont stockees en JSON (texte) plutot qu'en tables
+    normalisees : structure qui ne varie jamais independamment de la
+    tentative, pas besoin de la requeter en dehors de cette tentative."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    matiere: str
+    niveau: str
+    difficulte: str
+    nb_questions: int
+    questions_json: str  # [{question, choix[], index_bonne_reponse, explication}, ...]
+    reponses_json: Optional[str] = None  # [index_choisi_ou_null, ...], rempli a la soumission
+    score: Optional[int] = None  # nombre de bonnes reponses, rempli a la soumission
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_soumission: Optional[datetime] = None
+
+
 class ConsultationDocument(SQLModel, table=True):
     """Trace qu'un etudiant a consulte/telecharge un document, pour
     alimenter le 'derniers documents consultes' du tableau de bord.
