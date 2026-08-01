@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titre %}Quiz — {{ tentative.matiere }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow">{{ tentative.matiere }} — {{ tentative.niveau }} — {{ tentative.difficulte }}</p>
+<h2>Repondez aux {{ questions|length }} questions</h2>
+
+<form method="post" action="/quiz/{{ tentative.id }}/soumettre">
+  {% for item in questions %}
+  {% set q_index = loop.index0 %}
+  <div class="carte-formulaire carte-quiz">
+    <p class="question-quiz"><strong>{{ loop.index }}. {{ item.question }}</strong></p>
+    {% if item.choix and item.choix|length > 1 %}
+    <div class="choix-quiz">
+      {% for choix in item.choix %}
+      <label style="display:block;font-weight:normal;">
+        <input type="radio" name="question_{{ q_index }}" value="{{ loop.index0 }}" {{ "required" if loop.first }}>
+        {{ choix }}
+      </label>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p>{{ item.choix[0] if item.choix else "" }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <button class="bouton bouton-primaire bouton-form" type="submit">Valider mes reponses</button>
+</form>
+{% endblock %}
