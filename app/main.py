@@ -59,7 +59,7 @@ def _masquer_mot_de_passe(url: str) -> str:
 
 
 @app.on_event("startup")
-def au_demarrage() -> None:
+async def au_demarrage() -> None:
     # --- DEBUG : affiche clairement quelle base de donnees est utilisee ---
     url_affichee = _masquer_mot_de_passe(parametres.database_url)
 
@@ -83,9 +83,12 @@ def au_demarrage() -> None:
         print("=" * 70)
         raise  # on relance l'erreur pour que uvicorn plante au lieu de demarrer silencieusement en mode degrade
 
+    print("[DEBUG DATABASE] Verification des donnees initiales...")
     with Session(engine) as session:
         peupler_donnees_initiales(session)
+    print("[DEBUG DATABASE] Donnees initiales OK.")
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
+    print("[DEBUG DATABASE] Demarrage termine.")
 
 
 @app.get("/")
