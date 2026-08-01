@@ -44,12 +44,26 @@ OUTIL_QUIZ = {
             "properties": {
                 "questions": {
                     "type": "array",
+                    "description": (
+                        "Liste des questions du quiz. Genere EXACTEMENT le "
+                        "nombre de questions demande dans la consigne — "
+                        "aucune limite de taille n'est imposee sur cette "
+                        "liste elle-meme (la contrainte 3-5 plus bas ne "
+                        "concerne QUE le nombre de choix de reponse a "
+                        "l'INTERIEUR de chaque question, pas le nombre de "
+                        "questions)."
+                    ),
                     "items": {
                         "type": "object",
                         "properties": {
                             "question": {"type": "string"},
                             "choix": {
                                 "type": "array",
+                                "description": (
+                                    "Options de reponse pour CETTE question "
+                                    "uniquement (4 recommande). Sans lien "
+                                    "avec le nombre total de questions du quiz."
+                                ),
                                 "items": {"type": "string"},
                                 "minItems": 3,
                                 "maxItems": 5,
@@ -84,6 +98,33 @@ def _quiz_erreur(message: str, detail: str) -> List[Dict]:
     }]
 
 
+def _generer_completion_avec_reessai(client: Groq, messages_par_essai: List[str], max_completion_tokens: int):
+    """Appelle Groq avec le tool-calling force, et reessaie UNE fois avec
+    une consigne renforcee si le modele n'appelle pas l'outil du premier
+    coup (deja observe : un modele peut, a tort, croire qu'une contrainte
+    imbriquee du schema — ex. 3 a 5 choix par question — s'applique au
+    nombre de questions demande, et refuser d'appeler l'outil en
+    expliquant pourquoi en texte libre au lieu de generer le quiz)."""
+    derniere_erreur = None
+    for contenu in messages_par_essai:
+        try:
+            completion = client.chat.completions.create(
+                model=parametres.groq_model,
+                max_completion_tokens=max_completion_tokens,
+                tools=[OUTIL_QUIZ],
+                tool_choice={"type": "function", "function": {"name": "soumettre_quiz"}},
+                messages=[{"role": "user", "content": contenu}],
+            )
+        except Exception as erreur:
+            derniere_erreur = erreur
+            continue
+
+        if completion.choices[0].message.tool_calls:
+            return completion, None
+
+    return None, derniere_erreur
+
+
 def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> List[Dict]:
     """
     Envoie le texte du document a Groq et recupere un quiz a choix
@@ -108,27 +149,31 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
     # support de cours.
     texte_tronque = texte_document[:12000]
 
-    try:
-        completion = client.chat.completions.create(
-            model=parametres.groq_model,
-            max_completion_tokens=2048,
-            tools=[OUTIL_QUIZ],
-            tool_choice={"type": "function", "function": {"name": "soumettre_quiz"}},
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"Voici le contenu d'un support de cours universitaire "
-                    f"(Universite de Toamasina). Genere exactement {nb_questions} "
-                    f"questions de revision a choix multiples en francais : varie "
-                    f"les niveaux (comprehension, application, pas seulement de la "
-                    f"restitution litterale du texte), 4 choix plausibles par "
-                    f"question, une seule bonne reponse, et une explication courte. "
-                    f"Utilise l'outil fourni pour repondre.\n\n---\n{texte_tronque}\n---"
-                ),
-            }],
-        )
-    except Exception as erreur:
-        return _quiz_erreur("La generation du quiz a echoue.", f"Erreur API : {erreur}")
+    consigne_base = (
+        f"Voici le contenu d'un support de cours universitaire "
+        f"(Universite de Toamasina). Genere exactement {nb_questions} "
+        f"questions de revision a choix multiples en francais : varie "
+        f"les niveaux (comprehension, application, pas seulement de la "
+        f"restitution litterale du texte), 4 choix plausibles par "
+        f"question, une seule bonne reponse, et une explication courte. "
+        f"Utilise l'outil fourni pour repondre.\n\n---\n{texte_tronque}\n---"
+    )
+    consigne_renforcee = (
+        f"{consigne_base}\n\nRappel important : le nombre de questions a "
+        f"generer est EXACTEMENT {nb_questions} — la contrainte de 3 a 5 "
+        f"elements dans le schema de l'outil concerne uniquement le "
+        f"nombre de choix de reponse A L'INTERIEUR de chaque question, "
+        f"pas le nombre de questions. Appelle l'outil 'soumettre_quiz' "
+        f"directement, sans poser de question de clarification."
+    )
+
+    completion, erreur = _generer_completion_avec_reessai(
+        client, [consigne_base, consigne_renforcee], max_completion_tokens=2048
+    )
+
+    if completion is None:
+        detail = f"Erreur API : {erreur}" if erreur else "Le modele n'a pas repondu au format attendu apres deux tentatives — reessayez dans un instant."
+        return _quiz_erreur("La generation du quiz a echoue.", detail)
 
     return _extraire_questions(completion)
 
@@ -145,28 +190,33 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
     except RuntimeError as erreur:
         return _quiz_erreur("Generation de quiz IA non configuree.", str(erreur))
 
-    try:
-        completion = client.chat.completions.create(
-            model=parametres.groq_model,
-            max_completion_tokens=2048,
-            tools=[OUTIL_QUIZ],
-            tool_choice={"type": "function", "function": {"name": "soumettre_quiz"}},
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"Tu es un professeur a l'Universite de Toamasina (Madagascar). "
-                    f"Genere exactement {nb_questions} questions de revision a choix "
-                    f"multiples en francais sur la matiere '{matiere}', pour un niveau "
-                    f"{niveau}, avec une difficulte {difficulte}. Varie les niveaux "
-                    f"cognitifs (comprehension, application, pas seulement de la "
-                    f"restitution), 4 choix plausibles par question, une seule bonne "
-                    f"reponse, et une explication courte pour chaque. Utilise l'outil "
-                    f"fourni pour repondre."
-                ),
-            }],
-        )
-    except Exception as erreur:
-        return _quiz_erreur("La generation du quiz a echoue.", f"Erreur API : {erreur}")
+    consigne_base = (
+        f"Tu es un professeur a l'Universite de Toamasina (Madagascar). "
+        f"Genere exactement {nb_questions} questions de revision a choix "
+        f"multiples en francais sur la matiere '{matiere}', pour un niveau "
+        f"{niveau}, avec une difficulte {difficulte}. Varie les niveaux "
+        f"cognitifs (comprehension, application, pas seulement de la "
+        f"restitution), 4 choix plausibles par question, une seule bonne "
+        f"reponse, et une explication courte pour chaque. Utilise l'outil "
+        f"fourni pour repondre."
+    )
+    consigne_renforcee = (
+        f"{consigne_base}\n\nRappel important : le nombre de questions a "
+        f"generer est EXACTEMENT {nb_questions}, sans exception — la "
+        f"contrainte de 3 a 5 elements dans le schema de l'outil concerne "
+        f"uniquement le nombre de choix de reponse A L'INTERIEUR de chaque "
+        f"question, pas le nombre de questions. Appelle l'outil "
+        f"'soumettre_quiz' directement, sans poser de question de "
+        f"clarification."
+    )
+
+    completion, erreur = _generer_completion_avec_reessai(
+        client, [consigne_base, consigne_renforcee], max_completion_tokens=2048
+    )
+
+    if completion is None:
+        detail = f"Erreur API : {erreur}" if erreur else "Le modele n'a pas repondu au format attendu apres deux tentatives — reessayez dans un instant."
+        return _quiz_erreur("La generation du quiz a echoue.", detail)
 
     return _extraire_questions(completion)
 

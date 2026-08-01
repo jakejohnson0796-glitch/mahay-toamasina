@@ -5,6 +5,7 @@ Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
 """
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
@@ -39,16 +40,28 @@ app.include_router(dashboard_router.router)
 app.include_router(quiz_router.router)
 
 
+def _masquer_mot_de_passe(url: str) -> str:
+    """Renvoie l'URL de connexion avec le mot de passe remplace par ****,
+    pour affichage dans les logs. Utilise urllib.parse (plutot qu'un
+    decoupage manuel sur '@'/':') car un mot de passe peut lui-meme
+    contenir '@', ':' ou d'autres caracteres speciaux — un decoupage
+    naif peut alors soit laisser une partie du mot de passe en clair,
+    soit tronquer le nom d'utilisateur/le schema par erreur."""
+    morceaux = urlsplit(url)
+    if not morceaux.password:
+        return url
+
+    identifiants = f"{morceaux.username}:****" if morceaux.username else "****"
+    hote = f"{morceaux.hostname}:{morceaux.port}" if morceaux.port else (morceaux.hostname or "")
+    netloc_masque = f"{identifiants}@{hote}" if hote else identifiants
+
+    return urlunsplit((morceaux.scheme, netloc_masque, morceaux.path, morceaux.query, morceaux.fragment))
+
+
 @app.on_event("startup")
 def au_demarrage() -> None:
     # --- DEBUG : affiche clairement quelle base de donnees est utilisee ---
-    url_affichee = parametres.database_url
-    if "@" in url_affichee:
-        # masque le mot de passe dans les logs, garde le reste visible
-        avant_arobase, apres_arobase = url_affichee.split("@", 1)
-        if ":" in avant_arobase:
-            avant_arobase = avant_arobase.rsplit(":", 1)[0] + ":****"
-        url_affichee = avant_arobase + "@" + apres_arobase
+    url_affichee = _masquer_mot_de_passe(parametres.database_url)
 
     if url_affichee.startswith("sqlite"):
         print(f"[DEBUG DATABASE] SQLite local utilise : {url_affichee}")
