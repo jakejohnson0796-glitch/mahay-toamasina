@@ -258,6 +258,37 @@ input:focus, select:focus, textarea:focus {
 }
 .carte-cercle p { margin: 0.35rem 0; }
 
+.panneau-presence {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.badge-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+.badge-presence::before {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: #3fb950;
+  display: inline-block;
+}
+.badge-presence-moi {
+  border-color: var(--accent);
+  color: var(--accent-2);
+}
+
 .fenetre-chat {
   display: flex;
   flex-direction: column;

@@ -185,7 +185,8 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
 
         nom_auteur = utilisateur.nom
 
-    await gestionnaire.connecter(cercle_id, websocket)
+    await gestionnaire.connecter(cercle_id, websocket, user_id, nom_auteur)
+    await gestionnaire.diffuser_presence(cercle_id)
     try:
         while True:
             donnees_recues = await websocket.receive_json()
@@ -199,9 +200,11 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 session.commit()
 
             await gestionnaire.diffuser(cercle_id, {
+                "type": "message",
                 "auteur": nom_auteur,
                 "auteur_id": user_id,
                 "contenu": contenu,
             })
     except WebSocketDisconnect:
         gestionnaire.deconnecter(cercle_id, websocket)
+        await gestionnaire.diffuser_presence(cercle_id)

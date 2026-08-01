@@ -13,6 +13,11 @@
   </form>
 </div>
 {% else %}
+<div id="panneau-presence" class="panneau-presence">
+  <span class="stat-label">En ligne maintenant :</span>
+  <span id="liste-presence">—</span>
+</div>
+
 <div id="fenetre-chat" class="fenetre-chat">
   {% for m in messages %}
   <div class="message {{ 'message-moi' if m.est_moi else '' }}">
@@ -33,6 +38,7 @@
 (function () {
   const idUtilisateur = {{ utilisateur.id }};
   const fenetreChat = document.getElementById("fenetre-chat");
+  const listePresence = document.getElementById("liste-presence");
   const formulaire = document.getElementById("form-chat");
   const champMessage = document.getElementById("champ-message");
 
@@ -57,8 +63,27 @@
     fenetreChat.scrollTop = fenetreChat.scrollHeight;
   }
 
+  function mettreAJourPresence(utilisateurs) {
+    if (!utilisateurs || utilisateurs.length === 0) {
+      listePresence.textContent = "personne d'autre pour l'instant";
+      return;
+    }
+    listePresence.innerHTML = "";
+    utilisateurs.forEach(function (u, index) {
+      const badge = document.createElement("span");
+      badge.className = "badge-presence" + (u.utilisateur_id === idUtilisateur ? " badge-presence-moi" : "");
+      badge.textContent = (u.utilisateur_id === idUtilisateur ? "Vous" : u.nom);
+      listePresence.appendChild(badge);
+    });
+  }
+
   ws.addEventListener("message", function (evenement) {
-    ajouterMessage(JSON.parse(evenement.data));
+    const donnees = JSON.parse(evenement.data);
+    if (donnees.type === "presence") {
+      mettreAJourPresence(donnees.utilisateurs);
+    } else {
+      ajouterMessage(donnees);
+    }
   });
 
   ws.addEventListener("close", function (evenement) {
@@ -66,6 +91,7 @@
       champMessage.placeholder = "Connexion refusee — reconnectez-vous.";
       champMessage.disabled = true;
     }
+    listePresence.textContent = "deconnecte";
   });
 
   formulaire.addEventListener("submit", function (evenement) {
