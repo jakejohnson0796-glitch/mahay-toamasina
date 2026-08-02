@@ -16,7 +16,9 @@ opaque (chemin local relatif, OU cle d'objet dans le bucket Supabase) qui
 ne doit passer que par les fonctions de ce module.
 """
 import contextlib
+import re
 import tempfile
+import unicodedata
 from pathlib import Path
 from typing import Iterator
 
@@ -46,8 +48,24 @@ def _obtenir_client_supabase():
     return _client_supabase
 
 
+def _nettoyer_nom_fichier(nom_fichier: str) -> str:
+    """Rend un nom de fichier sur (accents translitteres, tout le reste
+    remplace par '_') pour servir de cle d'objet Supabase Storage — qui
+    rejette purement et simplement une cle contenant un caractere comme
+    'è' (erreur reelle constatee : 'Invalid key: ..._algèbre...pdf').
+    Le disque local est plus tolerant, mais autant appliquer la meme
+    regle des deux cotes pour un comportement identique partout."""
+    # Decompose les caracteres accentues (é -> e + accent) puis ne garde
+    # que la partie ASCII, ce qui a pour effet de retirer les accents
+    # tout en gardant la lettre de base.
+    nom_sans_accents = unicodedata.normalize("NFKD", nom_fichier).encode("ascii", "ignore").decode("ascii")
+    # Tout ce qui n'est pas alphanumerique/point/tiret/underscore devient
+    # un underscore (espaces, parentheses, caracteres exotiques...).
+    return re.sub(r"[^A-Za-z0-9._-]", "_", nom_sans_accents)
+
+
 def _nom_objet_sur(reference: str, nom_fichier_original: str) -> str:
-    nom_nettoye = nom_fichier_original.replace(" ", "_")
+    nom_nettoye = _nettoyer_nom_fichier(nom_fichier_original)
     return f"{reference}_{nom_nettoye}"
 
 
