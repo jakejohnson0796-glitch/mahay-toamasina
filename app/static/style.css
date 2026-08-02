@@ -326,8 +326,62 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 0.2rem;
 }
 .message-contenu { color: var(--text); word-break: break-word; }
+.message-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+.lien-action {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.lien-action:hover { color: var(--accent-2); }
 
-.form-chat { display: flex; gap: 0.75rem; }
+.conteneur-emoji-picker { position: relative; }
+.bouton-emoji-toggle {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.bouton-emoji-toggle:hover { border-color: var(--accent); }
+.panneau-emojis {
+  position: absolute;
+  bottom: 3rem;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  width: 16rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  padding: 0.6rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.bouton-emoji {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.bouton-emoji:hover { border-color: var(--accent); }
+
+.form-chat { display: flex; gap: 0.75rem; align-items: center; }
 .form-chat input { flex: 1; }
 
 /* ---------- Quiz IA ---------- */

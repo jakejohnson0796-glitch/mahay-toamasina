@@ -79,6 +79,10 @@ def connexion(
         return templates.TemplateResponse(
             request, "login.html", {"erreur": "Numero ou mot de passe incorrect."}
         )
+    if utilisateur.banni:
+        return templates.TemplateResponse(
+            request, "login.html", {"erreur": "Ce compte a ete suspendu. Contactez un administrateur."}
+        )
 
     request.session["user_id"] = utilisateur.id
     return RedirectResponse("/", status_code=303)

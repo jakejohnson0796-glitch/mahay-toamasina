@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titre %}Administration — MAHAY{% endblock %}
+{% block contenu %}
+<h2>Administration</h2>
+
+<div class="liste-cercles" style="margin-bottom:2rem;">
+  <div class="carte-cercle">
+    <div>
+      <strong>Abonnements etudiants</strong>
+      <p>Valider les paiements, gerer les demandes en attente.</p>
+      {% if nb_abonnements_en_attente %}<span class="tampon tampon-attente">{{ nb_abonnements_en_attente }} en attente</span>{% endif %}
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/abonnements">Ouvrir</a></div>
+  </div>
+
+  <div class="carte-cercle">
+    <div>
+      <strong>Moderation du salon</strong>
+      <p>Traiter les messages signales par les etudiants.</p>
+      {% if nb_signalements_en_attente %}<span class="tampon tampon-attente">{{ nb_signalements_en_attente }} en attente</span>{% endif %}
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/moderation-salon">Ouvrir</a></div>
+  </div>
+
+  <div class="carte-cercle">
+    <div>
+      <strong>Documents</strong>
+      <p>Approuver ou rejeter les documents deposes.</p>
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/moderation">Ouvrir</a></div>
+  </div>
+
+  <div class="carte-cercle">
+    <div>
+      <strong>Utilisateurs</strong>
+      <p>Rechercher un compte, bannir/debannir.</p>
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/utilisateurs">Ouvrir</a></div>
+  </div>
+
+  <div class="carte-cercle">
+    <div>
+      <strong>Statistiques</strong>
+      <p>Vue d'ensemble de la plateforme.</p>
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/stats">Ouvrir</a></div>
+  </div>
+</div>
+{% endblock %}

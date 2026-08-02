@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}Statistiques — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
+<h2>Statistiques</h2>
+
+<div class="liste-cercles" style="margin-bottom:1.5rem;">
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_etudiants }}</span><span class="stat-label">Etudiants inscrits</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_essai_actif }}</span><span class="stat-label">En essai gratuit</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_abonnes_actifs }}</span><span class="stat-label">Abonnes actifs</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_demandes_en_attente }}</span><span class="stat-label">Demandes en attente</span></div></div>
+</div>
+
+<div class="liste-cercles" style="margin-bottom:1.5rem;">
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_documents_approuves }}</span><span class="stat-label">Documents approuves</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_documents_en_attente }}</span><span class="stat-label">Documents en attente</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_quiz_realises }}</span><span class="stat-label">Quiz realises</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_cercles }}</span><span class="stat-label">Cercles d'etude</span></div></div>
+</div>
+
+<div class="liste-cercles" style="margin-bottom:1.5rem;">
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_signalements_en_attente }}</span><span class="stat-label">Signalements en attente</span></div></div>
+</div>
+
+{% if top_matieres %}
+<h3>Matieres les plus demandees en Quiz IA</h3>
+<table class="table-manifeste">
+  <thead><tr><th>Matiere</th><th>Nombre de quiz</th></tr></thead>
+  <tbody>
+    {% for matiere, nb in top_matieres %}
+    <tr><td>{{ matiere }}</td><td>{{ nb }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}
