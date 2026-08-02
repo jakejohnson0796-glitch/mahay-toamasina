@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titre %}Utilisateurs — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
+<h2>Utilisateurs</h2>
+
+<form method="get" action="/admin/utilisateurs" class="carte-formulaire" style="display:flex;gap:0.75rem;align-items:end;margin-bottom:1.5rem;">
+  <div style="flex:1;">
+    <label for="q">Rechercher (nom ou telephone)</label>
+    <input type="text" id="q" name="q" value="{{ recherche }}">
+  </div>
+  <button class="bouton bouton-primaire" type="submit">Rechercher</button>
+</form>
+
+<table class="table-manifeste">
+  <thead><tr><th>Nom</th><th>Telephone</th><th>Role</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+    {% for u in utilisateurs %}
+    <tr>
+      <td>{{ u.nom }}</td>
+      <td>{{ u.telephone }}</td>
+      <td>{{ u.role.value }}</td>
+      <td>
+        {% if u.banni %}<span class="tampon tampon-rejete">Banni</span>
+        {% else %}<span class="tampon tampon-approuve">Actif</span>{% endif %}
+      </td>
+      <td>
+        {% if u.id != utilisateur.id %}
+        {% if u.banni %}
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/debannir" style="display:inline">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Debannir</button>
+        </form>
+        {% else %}
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/bannir" style="display:inline">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Bannir</button>
+        </form>
+        {% endif %}
+        {% else %}
+        <span class="stat-label">(vous)</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Aucun utilisateur trouve.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

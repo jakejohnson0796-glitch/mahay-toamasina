@@ -75,6 +75,7 @@ class Utilisateur(SQLModel, table=True):
     role: RoleUtilisateur = Field(default=RoleUtilisateur.ETUDIANT)
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
+    banni: bool = Field(default=False)
 
 
 class Document(SQLModel, table=True):
@@ -167,6 +168,24 @@ class MessageCercle(SQLModel, table=True):
     auteur_id: int = Field(foreign_key="utilisateur.id")
     contenu: str
     date_envoi: datetime = Field(default_factory=datetime.utcnow)
+    # Partage de fichier (PDF) : optionnel, un message peut etre texte
+    # seul, fichier seul, ou les deux.
+    piece_jointe_chemin: Optional[str] = None
+    piece_jointe_nom: Optional[str] = None
+    # Suppression douce (moderation) : le message reste en base pour
+    # l'historique/audit, mais n'est plus affiche ni diffuse en clair.
+    supprime: bool = Field(default=False)
+
+
+class SignalementMessage(SQLModel, table=True):
+    """Signalement d'un message par un membre du cercle, a traiter par un
+    admin (voir/supprimer le message, ou rejeter le signalement)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    message_id: int = Field(foreign_key="messagecercle.id")
+    signale_par_id: int = Field(foreign_key="utilisateur.id")
+    motif: Optional[str] = None
+    date_signalement: datetime = Field(default_factory=datetime.utcnow)
+    traite: bool = Field(default=False)
 
 
 class AbonnementEtudiant(SQLModel, table=True):

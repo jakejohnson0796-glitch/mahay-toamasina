@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titre %}Moderation du salon — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
+<h2>Moderation du salon</h2>
+
+<table class="table-manifeste">
+  <thead><tr><th>Cercle</th><th>Message</th><th>Signale par</th><th>Motif</th><th></th></tr></thead>
+  <tbody>
+    {% for s in signalements %}
+    <tr>
+      <td><a href="/cercles/{{ s.cercle.id }}">{{ s.cercle.nom }}</a></td>
+      <td>{{ s.message.piece_jointe_nom if s.message.piece_jointe_chemin else s.message.contenu }}</td>
+      <td>{{ s.signale_par.nom }}</td>
+      <td>{{ s.signalement.motif or "—" }}</td>
+      <td>
+        {% if s.message_deja_supprime %}
+        <span class="tampon tampon-rejete">Deja supprime</span>
+        <form method="post" action="/admin/moderation-salon/{{ s.signalement.id }}/rejeter" style="display:inline">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Marquer traite</button>
+        </form>
+        {% else %}
+        <form method="post" action="/admin/moderation-salon/{{ s.signalement.id }}/supprimer-message" style="display:inline">
+          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Supprimer le message</button>
+        </form>
+        <form method="post" action="/admin/moderation-salon/{{ s.signalement.id }}/rejeter" style="display:inline">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejeter le signalement</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Aucun signalement en attente.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

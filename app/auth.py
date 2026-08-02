@@ -28,8 +28,16 @@ def verifier_mot_de_passe(mot_de_passe: str, hash_stocke: str) -> bool:
 def utilisateur_courant(request: Request, session: Session = Depends(get_session)) -> Optional[Utilisateur]:
     """Renvoie l'utilisateur connecte via la session, ou None si personne
     n'est connecte. Chaque route decide elle-meme quoi faire de ce None
-    (rediriger vers /connexion, ou juste afficher moins d'options)."""
+    (rediriger vers /connexion, ou juste afficher moins d'options).
+
+    Un utilisateur banni est traite comme non connecte PARTOUT dans
+    l'application : c'est le point d'application unique du bannissement,
+    donc bannir quelqu'un le deconnecte effectivement de tout (Premium,
+    cercles, upload...) sans avoir a modifier chaque route une par une."""
     user_id = request.session.get("user_id")
     if not user_id:
         return None
-    return session.get(Utilisateur, user_id)
+    utilisateur = session.get(Utilisateur, user_id)
+    if utilisateur and utilisateur.banni:
+        return None
+    return utilisateur

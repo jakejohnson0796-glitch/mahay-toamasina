@@ -16,13 +16,39 @@
 <div id="panneau-presence" class="panneau-presence">
   <span class="stat-label">En ligne maintenant :</span>
   <span id="liste-presence">—</span>
+  <span style="margin-left:auto;"><a href="/cercles/{{ cercle.id }}/recherche">Rechercher dans l'historique</a></span>
 </div>
+
+{% if request.query_params.get("erreur") == "pdf_uniquement" %}
+<div class="erreur">Seuls les fichiers PDF peuvent etre partages dans le salon.</div>
+{% endif %}
+{% if request.query_params.get("signale") %}
+<div class="info">Message signale — un administrateur va le verifier.</div>
+{% endif %}
 
 <div id="fenetre-chat" class="fenetre-chat">
   {% for m in messages %}
-  <div class="message {{ 'message-moi' if m.est_moi else '' }}">
+  <div class="message {{ 'message-moi' if m.est_moi else '' }}" data-message-id="{{ m.id }}">
     <span class="message-auteur">{{ m.auteur }}</span>
+    {% if m.piece_jointe_chemin %}
+    <span class="message-contenu">
+      📎 <a href="/cercles/{{ cercle.id }}/messages/{{ m.id }}/piece-jointe" target="_blank">{{ m.piece_jointe_nom }}</a>
+    </span>
+    {% else %}
     <span class="message-contenu">{{ m.contenu }}</span>
+    {% endif %}
+    <span class="message-actions">
+      {% if not m.est_moi %}
+      <form method="post" action="/cercles/{{ cercle.id }}/messages/{{ m.id }}/signaler" style="display:inline">
+        <button type="submit" class="lien-action" title="Signaler ce message">Signaler</button>
+      </form>
+      {% endif %}
+      {% if peut_moderer %}
+      <form method="post" action="/cercles/{{ cercle.id }}/messages/{{ m.id }}/supprimer" style="display:inline">
+        <button type="submit" class="lien-action" title="Supprimer ce message">Supprimer</button>
+      </form>
+      {% endif %}
+    </span>
   </div>
   {% else %}
   <p class="stat-label">Aucun message pour l'instant — lancez la discussion.</p>
@@ -30,37 +56,91 @@
 </div>
 
 <form id="form-chat" class="form-chat">
+  <div class="conteneur-emoji-picker">
+    <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" title="Emojis">😊</button>
+    <div id="panneau-emojis" class="panneau-emojis" hidden>
+      {% for e in ["😀","😂","🙂","😅","😭","🤔","😴","😎","👍","👏","🙏","🙌","💪","✌️","❤️","🔥","🎉","✅","❌","💡","📚","✏️","📖","🎓","⏰","☕","🧠","😢"] %}
+      <button type="button" class="bouton-emoji" data-emoji="{{ e }}">{{ e }}</button>
+      {% endfor %}
+    </div>
+  </div>
   <input type="text" id="champ-message" placeholder="Ecrire un message..." autocomplete="off" maxlength="2000">
   <button class="bouton bouton-primaire" type="submit">Envoyer</button>
+</form>
+
+<form id="form-fichier" method="post" action="/cercles/{{ cercle.id }}/message-fichier" enctype="multipart/form-data" style="margin-top:0.5rem;">
+  <label for="fichier-pdf" style="font-size:0.85rem;">Partager un PDF :</label>
+  <input type="file" id="fichier-pdf" name="fichier" accept="application/pdf">
+  <button class="bouton bouton-secondaire" type="submit" style="padding:0.3rem 0.8rem;font-size:0.85rem;">Envoyer le fichier</button>
 </form>
 
 <script>
 (function () {
   const idUtilisateur = {{ utilisateur.id }};
+  const peutModerer = {{ "true" if peut_moderer else "false" }};
+  const cercleId = {{ cercle.id }};
   const fenetreChat = document.getElementById("fenetre-chat");
   const listePresence = document.getElementById("liste-presence");
   const formulaire = document.getElementById("form-chat");
   const champMessage = document.getElementById("champ-message");
 
   const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const ws = new WebSocket(protocole + "//" + window.location.host + "/cercles/{{ cercle.id }}/ws");
+  const ws = new WebSocket(protocole + "//" + window.location.host + "/cercles/" + cercleId + "/ws");
+
+  function creerBoutonAction(texte, action) {
+    const form = document.createElement("form");
+    form.method = "post";
+    form.action = action;
+    form.style.display = "inline";
+    const bouton = document.createElement("button");
+    bouton.type = "submit";
+    bouton.className = "lien-action";
+    bouton.textContent = texte;
+    form.appendChild(bouton);
+    return form;
+  }
 
   function ajouterMessage(donnees) {
     const bulle = document.createElement("div");
     bulle.className = "message" + (donnees.auteur_id === idUtilisateur ? " message-moi" : "");
+    bulle.dataset.messageId = donnees.id;
 
     const auteur = document.createElement("span");
     auteur.className = "message-auteur";
     auteur.textContent = donnees.auteur;
+    bulle.appendChild(auteur);
 
     const contenu = document.createElement("span");
     contenu.className = "message-contenu";
-    contenu.textContent = donnees.contenu;
-
-    bulle.appendChild(auteur);
+    if (donnees.piece_jointe_url) {
+      const lien = document.createElement("a");
+      lien.href = donnees.piece_jointe_url;
+      lien.target = "_blank";
+      lien.textContent = donnees.piece_jointe_nom;
+      contenu.textContent = "📎 ";
+      contenu.appendChild(lien);
+    } else {
+      contenu.textContent = donnees.contenu;
+    }
     bulle.appendChild(contenu);
+
+    const actions = document.createElement("span");
+    actions.className = "message-actions";
+    if (donnees.auteur_id !== idUtilisateur) {
+      actions.appendChild(creerBoutonAction("Signaler", "/cercles/" + cercleId + "/messages/" + donnees.id + "/signaler"));
+    }
+    if (peutModerer) {
+      actions.appendChild(creerBoutonAction("Supprimer", "/cercles/" + cercleId + "/messages/" + donnees.id + "/supprimer"));
+    }
+    bulle.appendChild(actions);
+
     fenetreChat.appendChild(bulle);
     fenetreChat.scrollTop = fenetreChat.scrollHeight;
+  }
+
+  function retirerMessage(id) {
+    const bulle = fenetreChat.querySelector('[data-message-id="' + id + '"]');
+    if (bulle) bulle.remove();
   }
 
   function mettreAJourPresence(utilisateurs) {
@@ -69,7 +149,7 @@
       return;
     }
     listePresence.innerHTML = "";
-    utilisateurs.forEach(function (u, index) {
+    utilisateurs.forEach(function (u) {
       const badge = document.createElement("span");
       badge.className = "badge-presence" + (u.utilisateur_id === idUtilisateur ? " badge-presence-moi" : "");
       badge.textContent = (u.utilisateur_id === idUtilisateur ? "Vous" : u.nom);
@@ -81,6 +161,8 @@
     const donnees = JSON.parse(evenement.data);
     if (donnees.type === "presence") {
       mettreAJourPresence(donnees.utilisateurs);
+    } else if (donnees.type === "suppression") {
+      retirerMessage(donnees.id);
     } else {
       ajouterMessage(donnees);
     }
@@ -100,6 +182,28 @@
     if (!contenu || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ contenu: contenu }));
     champMessage.value = "";
+  });
+
+  const boutonEmojiToggle = document.getElementById("bouton-emoji-toggle");
+  const panneauEmojis = document.getElementById("panneau-emojis");
+
+  document.querySelectorAll(".bouton-emoji").forEach(function (bouton) {
+    bouton.addEventListener("click", function () {
+      champMessage.value += bouton.dataset.emoji;
+      champMessage.focus();
+      panneauEmojis.hidden = true;
+    });
+  });
+
+  boutonEmojiToggle.addEventListener("click", function (evenement) {
+    evenement.stopPropagation();
+    panneauEmojis.hidden = !panneauEmojis.hidden;
+  });
+
+  document.addEventListener("click", function (evenement) {
+    if (!panneauEmojis.hidden && !panneauEmojis.contains(evenement.target) && evenement.target !== boutonEmojiToggle) {
+      panneauEmojis.hidden = true;
+    }
   });
 
   fenetreChat.scrollTop = fenetreChat.scrollHeight;

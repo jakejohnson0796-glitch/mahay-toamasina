@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}Recherche — {{ cercle.nom }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; {{ cercle.nom }}</a></p>
+<h2>Rechercher dans l'historique</h2>
+
+<form method="get" action="/cercles/{{ cercle.id }}/recherche" class="carte-formulaire" style="display:flex;gap:0.75rem;align-items:end;">
+  <div style="flex:1;">
+    <label for="q">Terme a rechercher</label>
+    <input type="text" id="q" name="q" value="{{ terme }}" placeholder="ex: examen, revision..." autofocus>
+  </div>
+  <button class="bouton bouton-primaire" type="submit">Rechercher</button>
+</form>
+
+{% if terme %}
+<p class="stat-label">{{ resultats|length }} resultat{{ "s" if resultats|length != 1 else "" }} pour « {{ terme }} »</p>
+
+<div class="fenetre-chat" style="max-height:none;">
+  {% for r in resultats %}
+  <div class="message">
+    <span class="message-auteur">{{ r.auteur }}</span>
+    <span class="message-contenu">{{ r.contenu }}</span>
+    <span class="stat-label" style="display:block;font-size:0.75rem;">{{ r.date_envoi.strftime("%d/%m/%Y %H:%M") }}</span>
+  </div>
+  {% else %}
+  <p class="stat-label">Aucun message ne correspond a cette recherche.</p>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
