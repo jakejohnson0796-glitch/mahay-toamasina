@@ -59,9 +59,15 @@
   <div class="conteneur-emoji-picker">
     <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" title="Emojis">😊</button>
     <div id="panneau-emojis" class="panneau-emojis" hidden>
-      {% for e in ["😀","😂","🙂","😅","😭","🤔","😴","😎","👍","👏","🙏","🙌","💪","✌️","❤️","🔥","🎉","✅","❌","💡","📚","✏️","📖","🎓","⏰","☕","🧠","😢"] %}
-      <button type="button" class="bouton-emoji" data-emoji="{{ e }}">{{ e }}</button>
-      {% endfor %}
+      <div class="entete-panneau-emojis">
+        <span class="stat-label">Emojis</span>
+        <button type="button" id="bouton-emoji-fermer" class="bouton-emoji-fermer">✕ Fermer</button>
+      </div>
+      <div class="grille-emojis">
+        {% for e in ["😀","😂","🙂","😅","😭","🤔","😴","😎","👍","👏","🙏","🙌","💪","✌️","❤️","🔥","🎉","✅","❌","💡","📚","✏️","📖","🎓","⏰","☕","🧠","😢"] %}
+        <button type="button" class="bouton-emoji" data-emoji="{{ e }}">{{ e }}</button>
+        {% endfor %}
+      </div>
     </div>
   </div>
   <input type="text" id="champ-message" placeholder="Ecrire un message..." autocomplete="off" maxlength="2000">
@@ -186,6 +192,7 @@
 
   const boutonEmojiToggle = document.getElementById("bouton-emoji-toggle");
   const panneauEmojis = document.getElementById("panneau-emojis");
+  const boutonEmojiFermer = document.getElementById("bouton-emoji-fermer");
 
   document.querySelectorAll(".bouton-emoji").forEach(function (bouton) {
     bouton.addEventListener("click", function () {
@@ -193,6 +200,11 @@
       champMessage.focus();
       panneauEmojis.hidden = true;
     });
+  });
+
+  boutonEmojiFermer.addEventListener("click", function (evenement) {
+    evenement.stopPropagation();
+    panneauEmojis.hidden = true;
   });
 
   boutonEmojiToggle.addEventListener("click", function (evenement) {
