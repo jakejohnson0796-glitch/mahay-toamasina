@@ -359,17 +359,36 @@ input:focus, select:focus, textarea:focus {
   bottom: 3rem;
   left: 0;
   z-index: 10;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
   width: 16rem;
-  max-height: 12rem;
-  overflow-y: auto;
+  max-width: calc(100vw - 2rem);
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--rayon);
   padding: 0.6rem;
   box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.entete-panneau-emojis {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.bouton-emoji-fermer {
+  background: none;
+  border: none;
+  color: var(--accent-2);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+.grille-emojis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-height: 12rem;
+  overflow-y: auto;
 }
 .bouton-emoji {
   background: var(--bg-panel-2);
