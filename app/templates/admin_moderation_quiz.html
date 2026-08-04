@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titre %}Moderation Quiz IA — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
+<h2>Moderation Quiz IA</h2>
+<p>Questions signalees par des etudiants comme fausses ou incoherentes.</p>
+
+<table class="table-manifeste">
+  <thead><tr><th>Matiere</th><th>Question</th><th>Bonne reponse (IA)</th><th>Explication (IA)</th><th>Signale par</th><th>Motif</th><th></th></tr></thead>
+  <tbody>
+    {% for s in signalements %}
+    <tr>
+      <td>{{ s.tentative.matiere }}<br><span class="stat-label">{{ s.tentative.niveau }} — {{ s.tentative.difficulte }}</span></td>
+      {% if s.question %}
+      <td>{{ s.question.question }}</td>
+      <td>{{ s.question.choix[s.question.index_bonne_reponse] if s.question.choix and s.question.index_bonne_reponse < s.question.choix|length else "—" }}</td>
+      <td>{{ s.question.explication or "—" }}</td>
+      {% else %}
+      <td colspan="3">Question introuvable (tentative modifiee ou supprimee).</td>
+      {% endif %}
+      <td>{{ s.signale_par.nom }}</td>
+      <td>{{ s.signalement.motif or "—" }}</td>
+      <td>
+        <form method="post" action="/admin/moderation-quiz/{{ s.signalement.id }}/traiter" style="display:inline">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Marquer traite</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">Aucune question signalee en attente.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

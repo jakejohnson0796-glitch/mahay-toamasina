@@ -6,16 +6,37 @@ quiz et calculer les statistiques.
 """
 import json
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from sqlmodel import Session, select
 
-from .models import TentativeQuiz, Utilisateur
+from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz
 from . import ai_quiz
 
 NIVEAUX = ["L1", "L2", "L3", "M1", "M2"]
 DIFFICULTES = ["Facile", "Moyen", "Difficile"]
 NB_QUESTIONS_POSSIBLES = [5, 10, 15, 20]
+
+
+ESSAIS_MAX_GENERATION = 2
+
+
+def _generer_quiz_confiant(matiere: str, niveau: str, difficulte: str, nb_questions: int) -> List[Dict]:
+    """Genere un quiz et le fait verifier par l'IA (voir
+    ai_quiz.verifier_et_corriger_questions). Si Groq n'est pas confiant
+    sur la totalite des questions, on retente une generation COMPLETE
+    depuis zero plutot que de livrer un quiz sur lequel l'IA elle-meme a
+    des doutes — jusqu'a ESSAIS_MAX_GENERATION tentatives, pour ne
+    jamais bloquer indefiniment l'etudiant. Si aucun essai n'aboutit a
+    une confiance totale, on livre quand meme le dernier resultat verifie
+    (un quiz relu vaut mieux qu'un quiz jamais livre)."""
+    questions_verifiees: List[Dict] = []
+    for _ in range(ESSAIS_MAX_GENERATION):
+        questions_generees = ai_quiz.generer_quiz_par_theme(matiere, niveau, difficulte, nb_questions)
+        questions_verifiees, confiant = ai_quiz.verifier_et_corriger_questions(questions_generees, matiere, niveau)
+        if confiant:
+            break
+    return questions_verifiees
 
 
 def creer_tentative(
@@ -26,20 +47,21 @@ def creer_tentative(
     difficulte: str,
     nb_questions: int,
 ) -> TentativeQuiz:
-    """Genere les questions via l'IA et cree la tentative (pas encore
-    repondue). Meme en cas d'echec de generation, on cree quand meme la
-    tentative avec le message d'erreur comme unique 'question' — ca reste
-    coherent avec le comportement existant de generer_quiz_depuis_texte,
+    """Genere les questions via l'IA, les fait relire et auto-evaluer par
+    un second appel IA (voir _generer_quiz_confiant), puis cree la
+    tentative (pas encore repondue). Meme en cas d'echec de generation,
+    on cree quand meme la tentative avec le message d'erreur comme
+    unique 'question' — ca reste coherent avec le comportement existant,
     et evite un ecran d'erreur brut."""
-    questions = ai_quiz.generer_quiz_par_theme(matiere, niveau, difficulte, nb_questions)
+    questions_verifiees = _generer_quiz_confiant(matiere, niveau, difficulte, nb_questions)
 
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
         matiere=matiere,
         niveau=niveau,
         difficulte=difficulte,
-        nb_questions=len(questions),
-        questions_json=json.dumps(questions, ensure_ascii=False),
+        nb_questions=len(questions_verifiees),
+        questions_json=json.dumps(questions_verifiees, ensure_ascii=False),
     )
     session.add(tentative)
     session.commit()
@@ -104,3 +126,29 @@ def statistiques(tentatives_terminees: List[TentativeQuiz]) -> dict:
     meilleure_matiere = max(moyennes_matieres, key=moyennes_matieres.get) if moyennes_matieres else None
 
     return {"nb_quiz": nb_quiz, "score_moyen_pourcent": score_moyen, "meilleure_matiere": meilleure_matiere}
+
+
+def signaler_question(
+    session: Session, tentative_id: int, index_question: int, signale_par_id: int, motif: Optional[str] = None
+) -> None:
+    """Enregistre le signalement d'une question par un etudiant. Evite
+    les doublons : un signalement non-traite deja existant de ce meme
+    etudiant sur cette meme question n'est pas duplique."""
+    deja_signale = session.exec(
+        select(SignalementQuestionQuiz).where(
+            SignalementQuestionQuiz.tentative_id == tentative_id,
+            SignalementQuestionQuiz.index_question == index_question,
+            SignalementQuestionQuiz.signale_par_id == signale_par_id,
+            SignalementQuestionQuiz.traite == False,  # noqa: E712
+        )
+    ).first()
+    if deja_signale:
+        return
+
+    session.add(SignalementQuestionQuiz(
+        tentative_id=tentative_id,
+        index_question=index_question,
+        signale_par_id=signale_par_id,
+        motif=motif,
+    ))
+    session.commit()

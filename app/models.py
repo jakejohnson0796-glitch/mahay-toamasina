@@ -114,6 +114,20 @@ class TentativeQuiz(SQLModel, table=True):
     date_soumission: Optional[datetime] = None
 
 
+class SignalementQuestionQuiz(SQLModel, table=True):
+    """Signalement par un etudiant d'une question/reponse generee par
+    l'IA qui lui semble fausse ou incoherente. Traite manuellement par
+    un admin (pas de correction automatique — l'IA peut se tromper a
+    nouveau en 'corrigeant', mieux vaut un humain qui tranche)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    tentative_id: int = Field(foreign_key="tentativequiz.id")
+    index_question: int  # position (0-based) dans questions_json de la tentative
+    signale_par_id: int = Field(foreign_key="utilisateur.id")
+    motif: Optional[str] = None
+    date_signalement: datetime = Field(default_factory=datetime.utcnow)
+    traite: bool = Field(default=False)
+
+
 class ConsultationDocument(SQLModel, table=True):
     """Trace qu'un etudiant a consulte/telecharge un document, pour
     alimenter le 'derniers documents consultes' du tableau de bord.

@@ -24,6 +24,15 @@
 
   <div class="carte-cercle">
     <div>
+      <strong>Moderation Quiz IA</strong>
+      <p>Traiter les questions signalees comme fausses ou incoherentes.</p>
+      {% if nb_signalements_quiz_en_attente %}<span class="tampon tampon-attente">{{ nb_signalements_quiz_en_attente }} en attente</span>{% endif %}
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/moderation-quiz">Ouvrir</a></div>
+  </div>
+
+  <div class="carte-cercle">
+    <div>
       <strong>Documents</strong>
       <p>Approuver ou rejeter les documents deposes.</p>
     </div>
