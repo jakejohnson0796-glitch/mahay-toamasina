@@ -180,3 +180,24 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
             "reponses": quiz_module.reponses(tentative),
         },
     )
+
+
+@router.post("/quiz/{tentative_id}/questions/{index_question}/signaler")
+def signaler_question_quiz(
+    request: Request,
+    tentative_id: int,
+    index_question: int,
+    motif: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    tentative = _tentative_du_proprietaire(session, tentative_id, utilisateur.id)
+    if not tentative or tentative.date_soumission is None:
+        return RedirectResponse("/quiz", status_code=303)
+
+    quiz_module.signaler_question(session, tentative_id, index_question, utilisateur.id, motif)
+
+    return RedirectResponse(f"/quiz/{tentative_id}/resultat?signale=1", status_code=303)

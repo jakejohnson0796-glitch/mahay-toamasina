@@ -4,6 +4,10 @@
 <p class="eyebrow">{{ tentative.matiere }} — {{ tentative.niveau }} — {{ tentative.difficulte }}</p>
 <h2>Resultat</h2>
 
+{% if request.query_params.get("signale") %}
+<div class="info">Question signalee — merci, un administrateur va la verifier.</div>
+{% endif %}
+
 <div class="liste-cercles" style="margin-bottom:2rem;">
   <div class="carte-cercle">
     <div class="stat">
@@ -35,6 +39,10 @@
   {% else %}
   <p>{{ item.choix[0] if item.choix else "" }}</p>
   {% endif %}
+
+  <form method="post" action="/quiz/{{ tentative.id }}/questions/{{ q_index }}/signaler" style="margin-top:0.5rem;">
+    <button type="submit" class="lien-action">Signaler cette question (reponse ou explication fausse)</button>
+  </form>
 </div>
 {% endfor %}
 

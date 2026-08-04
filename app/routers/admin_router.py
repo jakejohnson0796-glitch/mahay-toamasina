@@ -5,6 +5,7 @@ utilisateurs (bannissement). Distinct de abonnement_router.py qui gere
 deja /admin/abonnements (validation des paiements) — on ne duplique pas
 cette partie, juste on y renvoie depuis la page d'accueil admin.
 """
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form
@@ -17,6 +18,7 @@ from ..auth import utilisateur_courant
 from ..models import (
     Utilisateur, RoleUtilisateur, CercleEtude, MessageCercle, SignalementMessage,
     Document, StatutDocument, TentativeQuiz, AbonnementEtudiant, StatutAbonnementEtudiant,
+    SignalementQuestionQuiz,
 )
 
 router = APIRouter()
@@ -39,6 +41,9 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
     nb_signalements_en_attente = len(
         session.exec(select(SignalementMessage).where(SignalementMessage.traite == False)).all()  # noqa: E712
     )
+    nb_signalements_quiz_en_attente = len(
+        session.exec(select(SignalementQuestionQuiz).where(SignalementQuestionQuiz.traite == False)).all()  # noqa: E712
+    )
     nb_abonnements_en_attente = len(
         session.exec(
             select(AbonnementEtudiant).where(AbonnementEtudiant.statut == StatutAbonnementEtudiant.EN_ATTENTE)
@@ -51,6 +56,7 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
         {
             "utilisateur": admin,
             "nb_signalements_en_attente": nb_signalements_en_attente,
+            "nb_signalements_quiz_en_attente": nb_signalements_quiz_en_attente,
             "nb_abonnements_en_attente": nb_abonnements_en_attente,
         },
     )
@@ -87,6 +93,9 @@ def page_stats(request: Request, session: Session = Depends(get_session)):
     nb_signalements_en_attente = session.exec(
         select(func.count()).select_from(SignalementMessage).where(SignalementMessage.traite == False)  # noqa: E712
     ).one()
+    nb_signalements_quiz_en_attente = session.exec(
+        select(func.count()).select_from(SignalementQuestionQuiz).where(SignalementQuestionQuiz.traite == False)  # noqa: E712
+    ).one()
 
     # Matieres les plus demandees en quiz (top 5), calcule en Python sur un
     # petit GROUP BY — volume attendu trop faible pour justifier plus.
@@ -108,6 +117,7 @@ def page_stats(request: Request, session: Session = Depends(get_session)):
             "nb_quiz_realises": nb_quiz_realises,
             "nb_cercles": nb_cercles,
             "nb_signalements_en_attente": nb_signalements_en_attente,
+            "nb_signalements_quiz_en_attente": nb_signalements_quiz_en_attente,
             "top_matieres": lignes_matieres[:5],
         },
     )
@@ -178,6 +188,55 @@ def moderer_rejeter_signalement(request: Request, signalement_id: int, session: 
         session.commit()
 
     return RedirectResponse("/admin/moderation-salon", status_code=303)
+
+
+@router.get("/admin/moderation-quiz")
+def page_moderation_quiz(request: Request, session: Session = Depends(get_session)):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    lignes = session.exec(
+        select(SignalementQuestionQuiz, TentativeQuiz, Utilisateur)
+        .where(SignalementQuestionQuiz.traite == False)  # noqa: E712
+        .where(SignalementQuestionQuiz.tentative_id == TentativeQuiz.id)
+        .where(SignalementQuestionQuiz.signale_par_id == Utilisateur.id)
+        .order_by(SignalementQuestionQuiz.date_signalement.desc())
+    ).all()
+
+    signalements = []
+    for s, tentative, signale_par in lignes:
+        try:
+            question = json.loads(tentative.questions_json)[s.index_question]
+        except (json.JSONDecodeError, IndexError, KeyError):
+            question = None
+        signalements.append({
+            "signalement": s,
+            "tentative": tentative,
+            "signale_par": signale_par,
+            "question": question,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "admin_moderation_quiz.html",
+        {"utilisateur": admin, "signalements": signalements},
+    )
+
+
+@router.post("/admin/moderation-quiz/{signalement_id}/traiter")
+def moderer_traiter_signalement_quiz(request: Request, signalement_id: int, session: Session = Depends(get_session)):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    signalement = session.get(SignalementQuestionQuiz, signalement_id)
+    if signalement:
+        signalement.traite = True
+        session.add(signalement)
+        session.commit()
+
+    return RedirectResponse("/admin/moderation-quiz", status_code=303)
 
 
 @router.get("/admin/utilisateurs")

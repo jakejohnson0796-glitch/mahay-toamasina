@@ -87,6 +87,55 @@ OUTIL_QUIZ = {
 }
 
 
+OUTIL_VERIFICATION = {
+    "type": "function",
+    "function": {
+        "name": "soumettre_verification",
+        "description": "Renvoie la liste des questions apres relecture et correction des erreurs eventuelles.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "questions": {
+                    "type": "array",
+                    "description": (
+                        "Les questions relues, dans le MEME ORDRE et en "
+                        "MEME NOMBRE que dans le quiz fourni — corrige "
+                        "uniquement le contenu des questions qui ont "
+                        "reellement une erreur."
+                    ),
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "question": {"type": "string"},
+                            "choix": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 5},
+                            "index_bonne_reponse": {
+                                "type": "integer",
+                                "description": "Index (base 0) du choix correct dans le tableau 'choix'.",
+                            },
+                            "explication": {"type": "string"},
+                            "confiant": {
+                                "type": "boolean",
+                                "description": (
+                                    "true UNIQUEMENT si, apres relecture, tu es "
+                                    "reellement sur a 100% que la question est claire, "
+                                    "que index_bonne_reponse pointe vers la seule bonne "
+                                    "reponse possible, et que l'explication est exacte. "
+                                    "false si tu as le moindre doute — dans ce cas, "
+                                    "corrige la question du mieux possible mais indique "
+                                    "quand meme false plutot que de deviner."
+                                ),
+                            },
+                        },
+                        "required": ["question", "choix", "index_bonne_reponse", "explication", "confiant"],
+                    },
+                }
+            },
+            "required": ["questions"],
+        },
+    },
+}
+
+
 def _quiz_erreur(message: str, detail: str) -> List[Dict]:
     """Renvoie un item de quiz explicite plutot que de faire planter la
     page /documents/{id}/quiz si l'extraction ou l'API a echoue."""
@@ -299,3 +348,90 @@ def _extraire_questions(completion) -> List[Dict]:
         "La generation a echoue.",
         "Aucune reponse structuree n'a ete recue de l'API — reessayez dans un instant.",
     )
+
+
+def verifier_et_corriger_questions(questions: List[Dict], matiere: str, niveau: str):
+    """Deuxieme passage IA (relecture) : renvoie (questions, toutes_confiantes).
+
+    Renvoie les memes questions avec les erreurs evidentes corrigees
+    (bonne reponse qui ne correspond pas a la question, explication
+    incoherente, choix en double...), et un booleen indiquant si Groq
+    s'est declare CONFIANT sur la totalite des questions (champ
+    'confiant' du schema OUTIL_VERIFICATION) — c'est ce booleen que
+    l'appelant utilise pour decider de livrer le quiz tel quel ou de
+    retenter une generation complete (voir quiz.creer_tentative).
+
+    Volontairement 'best-effort' cote robustesse technique : si cet appel
+    echoue pour n'importe quelle raison (API indisponible, format
+    inattendu, nombre de questions different de l'original), on renvoie
+    les questions d'origine avec confiant=False plutot que de faire
+    planter la generation — un etudiant ne doit jamais se retrouver
+    bloque parce que l'etape de verification a echoue techniquement."""
+    if not questions or _quiz_est_un_message_erreur(questions):
+        return questions, False
+
+    try:
+        client = _obtenir_client()
+    except RuntimeError:
+        return questions, False
+
+    try:
+        completion = client.chat.completions.create(
+            model=parametres.groq_model,
+            max_completion_tokens=2048,
+            tools=[OUTIL_VERIFICATION],
+            tool_choice={"type": "function", "function": {"name": "soumettre_verification"}},
+            messages=[{
+                "role": "user",
+                "content": (
+                    f"Voici un quiz genere sur la matiere '{matiere}' (niveau "
+                    f"{niveau}), au format JSON. Relis chaque question tres "
+                    f"attentivement, comme un professeur qui corrige un examen : "
+                    f"verifie que index_bonne_reponse pointe EXACTEMENT vers la "
+                    f"seule bonne reponse possible, que les choix sont distincts "
+                    f"et plausibles, et que l'explication est exacte. Corrige "
+                    f"toute erreur trouvee. Pour CHAQUE question, indique "
+                    f"honnetement 'confiant': true seulement si tu es reellement "
+                    f"sur du resultat apres cette relecture — 'confiant': false "
+                    f"s'il subsiste un doute, meme apres correction. Ne mets pas "
+                    f"true par defaut. Renvoie EXACTEMENT {len(questions)} "
+                    f"questions, dans le meme ordre. Utilise l'outil fourni.\n\n"
+                    f"{json.dumps(questions, ensure_ascii=False)}"
+                ),
+            }],
+        )
+    except Exception:
+        return questions, False
+
+    if not completion.choices[0].message.tool_calls:
+        return questions, False
+
+    try:
+        arguments = json.loads(completion.choices[0].message.tool_calls[0].function.arguments)
+        questions_corrigees = arguments.get("questions")
+    except (json.JSONDecodeError, AttributeError):
+        return questions, False
+
+    # Garde-fou : si le modele n'a pas renvoye le meme nombre de
+    # questions (oubli, dedoublonnage errone...), on ignore ce resultat
+    # plutot que de risquer un quiz incomplet ou incoherent.
+    if not questions_corrigees or len(questions_corrigees) != len(questions):
+        return questions, False
+
+    toutes_confiantes = all(q.get("confiant") is True for q in questions_corrigees)
+    # Le champ 'confiant' est un detail interne de verification, inutile
+    # (et un peu bizarre) a garder dans les questions finalement stockees
+    # et affichees a l'etudiant.
+    questions_nettoyees = [
+        {k: v for k, v in q.items() if k != "confiant"} for q in questions_corrigees
+    ]
+
+    return questions_nettoyees, toutes_confiantes
+
+
+def _quiz_est_un_message_erreur(questions: List[Dict]) -> bool:
+    """Detecte le cas particulier ou 'questions' est en fait le message
+    d'erreur renvoye par _quiz_erreur() (une seule 'question' qui contient
+    en realite un message d'echec) — inutile d'envoyer ca a la
+    verification, qui echouerait de toute facon."""
+    return len(questions) == 1 and questions[0].get("index_bonne_reponse") == 0 and not questions[0].get("explication")
