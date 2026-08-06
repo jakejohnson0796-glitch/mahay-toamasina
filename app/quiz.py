@@ -152,3 +152,35 @@ def signaler_question(
         motif=motif,
     ))
     session.commit()
+
+
+SECONDES_PAR_QUESTION_EXAMEN = 90
+NB_QUESTIONS_EXAMEN = 10
+
+
+def creer_tentative_examen(session: Session, utilisateur: Utilisateur, matiere: str, niveau: str, difficulte: str) -> TentativeQuiz:
+    """Cree une tentative en 'mode examen' : memes garanties de qualite
+    que creer_tentative() (verification IA, regeneration si pas confiant),
+    mais marquee avec un chronometre. La matiere/niveau/difficulte sont
+    deja tires au sort par l'appelant (voir quiz_router.py) — cette
+    fonction se contente de creer le quiz et d'activer le mode examen."""
+    tentative = creer_tentative(session, utilisateur, matiere, niveau, difficulte, NB_QUESTIONS_EXAMEN)
+    tentative.mode_examen = True
+    tentative.duree_secondes = NB_QUESTIONS_EXAMEN * SECONDES_PAR_QUESTION_EXAMEN
+    session.add(tentative)
+    session.commit()
+    session.refresh(tentative)
+    return tentative
+
+
+def secondes_restantes_examen(tentative: TentativeQuiz) -> int:
+    """Temps restant (en secondes, jamais negatif) avant la fin du
+    chronometre d'un quiz en mode examen. Calcule cote serveur (pas
+    seulement cote client) pour eviter qu'un etudiant ne triche en
+    modifiant l'horloge de son navigateur — le compte a rebours affiche
+    est indicatif, mais rien n'empeche de soumettre apres l'expiration
+    cote serveur si on voulait un jour l'imposer strictement."""
+    if not tentative.mode_examen or not tentative.duree_secondes:
+        return 0
+    ecoule = (datetime.utcnow() - tentative.date_creation).total_seconds()
+    return max(0, int(tentative.duree_secondes - ecoule))

@@ -4,7 +4,14 @@
 <p class="eyebrow">{{ tentative.matiere }} — {{ tentative.niveau }} — {{ tentative.difficulte }}</p>
 <h2>Repondez aux {{ questions|length }} questions</h2>
 
-<form method="post" action="/quiz/{{ tentative.id }}/soumettre">
+{% if tentative.mode_examen %}
+<div class="carte-formulaire" style="text-align:center;margin-bottom:1rem;">
+  <span class="stat-label">Temps restant</span>
+  <p id="chronometre" class="stat-nombre" style="margin:0;">--:--</p>
+</div>
+{% endif %}
+
+<form id="form-quiz" method="post" action="/quiz/{{ tentative.id }}/soumettre">
   {% for item in questions %}
   {% set q_index = loop.index0 %}
   <div class="carte-formulaire carte-quiz">
@@ -26,4 +33,40 @@
 
   <button class="bouton bouton-primaire bouton-form" type="submit">Valider mes reponses</button>
 </form>
+
+{% if tentative.mode_examen %}
+<script>
+(function () {
+  let secondesRestantes = {{ secondes_restantes }};
+  const affichage = document.getElementById("chronometre");
+  const formulaire = document.getElementById("form-quiz");
+
+  function formater(secondes) {
+    const m = Math.floor(secondes / 60);
+    const s = secondes % 60;
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  affichage.textContent = formater(secondesRestantes);
+
+  const intervalle = setInterval(function () {
+    secondesRestantes -= 1;
+    if (secondesRestantes <= 0) {
+      clearInterval(intervalle);
+      affichage.textContent = "00:00";
+      // Desactive la validation HTML5 (radios "required") pour ne pas
+      // bloquer la soumission automatique si l'etudiant n'a pas fini —
+      // en mode examen, le temps ecoule doit soumettre ce qui est
+      // rempli, pas empecher l'envoi.
+      formulaire.querySelectorAll("[required]").forEach(function (champ) {
+        champ.removeAttribute("required");
+      });
+      formulaire.submit();
+      return;
+    }
+    affichage.textContent = formater(secondesRestantes);
+  }, 1000);
+})();
+</script>
+{% endif %}
 {% endblock %}

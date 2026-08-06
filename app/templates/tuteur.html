@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titre %}Tuteur IA — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow">Muscler l'intellect</p>
+<h2>Tuteur IA</h2>
+<p>Posez une question sur n'importe quel sujet de vos cours — l'IA vous repond avec une explication, un exemple, un exercice et sa correction.</p>
+
+{% if request.query_params.get("erreur") == "question_requise" %}
+<div class="erreur">Ecrivez une question avant d'envoyer.</div>
+{% endif %}
+
+<div class="carte-formulaire carte-quiz">
+  <form method="post" action="/tuteur/demander">
+    <label for="question">Votre question</label>
+    <textarea id="question" name="question" rows="3" placeholder="ex: Explique-moi la comptabilite analytique." required></textarea>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Demander au tuteur</button>
+  </form>
+</div>
+
+{% if historique %}
+<h3>Vos dernieres questions</h3>
+<table class="table-manifeste">
+  <thead><tr><th>Question</th><th>Date</th><th></th></tr></thead>
+  <tbody>
+    {% for s in historique %}
+    <tr>
+      <td>{{ s.question }}</td>
+      <td>{{ s.date_creation.strftime("%d/%m/%Y %H:%M") }}</td>
+      <td><a href="/tuteur/{{ s.id }}">Revoir</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}
