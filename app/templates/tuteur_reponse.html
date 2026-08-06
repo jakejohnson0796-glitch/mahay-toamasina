@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titre %}Tuteur IA — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/tuteur">&larr; Tuteur IA</a></p>
+<h2>{{ session_tuteur.question }}</h2>
+
+<div class="carte-formulaire carte-quiz">
+  <p class="stat-label">Explication</p>
+  <p>{{ session_tuteur.explication }}</p>
+</div>
+
+{% if session_tuteur.exemple %}
+<div class="carte-formulaire carte-quiz">
+  <p class="stat-label">Exemple</p>
+  <p>{{ session_tuteur.exemple }}</p>
+</div>
+{% endif %}
+
+{% if session_tuteur.exercice %}
+<div class="carte-formulaire carte-quiz">
+  <p class="stat-label">Exercice</p>
+  <p>{{ session_tuteur.exercice }}</p>
+</div>
+{% endif %}
+
+{% if session_tuteur.correction %}
+<details class="carte-formulaire carte-quiz">
+  <summary class="stat-label" style="cursor:pointer;">Voir la correction</summary>
+  <p style="margin-top:0.5rem;">{{ session_tuteur.correction }}</p>
+</details>
+{% endif %}
+
+<p style="margin-top:1.5rem;"><a class="bouton bouton-primaire" href="/tuteur">Poser une autre question</a></p>
+{% endblock %}

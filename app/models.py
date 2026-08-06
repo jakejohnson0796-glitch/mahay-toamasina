@@ -112,6 +112,11 @@ class TentativeQuiz(SQLModel, table=True):
     score: Optional[int] = None  # nombre de bonnes reponses, rempli a la soumission
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_soumission: Optional[datetime] = None
+    # --- Mode examen : matiere/niveau/difficulte tires au sort par le
+    # serveur (pas choisis par l'etudiant) et chronometre affiche cote
+    # client, qui soumet automatiquement le quiz a l'expiration. ---
+    mode_examen: bool = Field(default=False)
+    duree_secondes: Optional[int] = None
 
 
 class SignalementQuestionQuiz(SQLModel, table=True):
@@ -234,3 +239,18 @@ class AbonnementEtudiant(SQLModel, table=True):
     motif_refus: Optional[str] = None
 
     date_maj: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SessionTuteur(SQLModel, table=True):
+    """Un echange avec le tuteur IA : l'etudiant pose une question libre,
+    l'IA repond en 4 parties structurees (explication, exemple, exercice,
+    correction). Un enregistrement par question posee — sert aussi
+    d'historique consultable plus tard."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    question: str
+    explication: str
+    exemple: str
+    exercice: str
+    correction: str
+    date_creation: datetime = Field(default_factory=datetime.utcnow)

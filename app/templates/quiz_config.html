@@ -46,5 +46,12 @@
   </form>
 </div>
 
-<p><a href="/quiz/historique">Voir mon historique et mes statistiques</a> · <a href="/quiz/reflexion">Theme de reflexion du jour</a></p>
+<div class="carte-formulaire carte-quiz">
+  <p><strong>Mode examen</strong> — matiere, niveau et difficulte tires au sort, 10 questions, 15 minutes chronometrees, correction uniquement a la fin.</p>
+  <form method="post" action="/quiz/examen/generer">
+    <button class="bouton bouton-secondaire bouton-form" type="submit">Lancer un examen blanc</button>
+  </form>
+</div>
+
+<p><a href="/quiz/historique">Voir mon historique et mes statistiques</a> · <a href="/quiz/reflexion">Theme de reflexion du jour</a> · <a href="/tuteur">Poser une question au tuteur IA</a></p>
 {% endblock %}

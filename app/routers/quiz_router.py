@@ -1,3 +1,4 @@
+import random
 from typing import List, Optional
 
 from fastapi import APIRouter, Request, Depends, Form
@@ -130,8 +131,32 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
     return templates.TemplateResponse(
         request,
         "quiz_passer.html",
-        {"utilisateur": utilisateur, "tentative": tentative, "questions": quiz_module.questions(tentative)},
+        {
+            "utilisateur": utilisateur,
+            "tentative": tentative,
+            "questions": quiz_module.questions(tentative),
+            "secondes_restantes": quiz_module.secondes_restantes_examen(tentative),
+        },
     )
+
+
+@router.post("/quiz/examen/generer")
+def generer_examen(request: Request, session: Session = Depends(get_session)):
+    """Mode examen : matiere/niveau/difficulte tires au sort par le
+    serveur (pas de formulaire a remplir), nombre de questions et duree
+    fixes. Meme pipeline de generation/verification que le quiz normal."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    matieres = _matieres_disponibles(session)
+    matiere = random.choice(matieres) if matieres else "Culture generale"
+    niveau = random.choice(quiz_module.NIVEAUX)
+    difficulte = random.choice(quiz_module.DIFFICULTES)
+
+    tentative = quiz_module.creer_tentative_examen(session, utilisateur, matiere, niveau, difficulte)
+    return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
 @router.post("/quiz/{tentative_id}/soumettre")

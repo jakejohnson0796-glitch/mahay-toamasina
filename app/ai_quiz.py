@@ -435,3 +435,91 @@ def _quiz_est_un_message_erreur(questions: List[Dict]) -> bool:
     en realite un message d'echec) — inutile d'envoyer ca a la
     verification, qui echouerait de toute facon."""
     return len(questions) == 1 and questions[0].get("index_bonne_reponse") == 0 and not questions[0].get("explication")
+
+
+OUTIL_TUTEUR = {
+    "type": "function",
+    "function": {
+        "name": "repondre_tuteur",
+        "description": "Repond a la question d'un etudiant en 4 parties structurees.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "explication": {
+                    "type": "string",
+                    "description": "Explication claire et pedagogique du concept demande, adaptee a un etudiant universitaire malgache. Plusieurs phrases, structuree.",
+                },
+                "exemple": {
+                    "type": "string",
+                    "description": "Un exemple concret qui illustre le concept explique.",
+                },
+                "exercice": {
+                    "type": "string",
+                    "description": "Un petit exercice d'application sur ce meme concept, que l'etudiant peut essayer de resoudre lui-meme.",
+                },
+                "correction": {
+                    "type": "string",
+                    "description": "La solution detaillee de l'exercice propose ci-dessus, avec le raisonnement.",
+                },
+            },
+            "required": ["explication", "exemple", "exercice", "correction"],
+        },
+    },
+}
+
+
+def generer_reponse_tuteur(question: str) -> Dict[str, str]:
+    """Genere une reponse structuree du tuteur IA (explication + exemple
+    + exercice + correction) a une question libre posee par l'etudiant.
+    En cas d'echec (API indisponible, format inattendu...), renvoie un
+    dict avec un message d'erreur dans chaque champ plutot que de lever
+    une exception — le gabarit HTML peut afficher ce dict tel quel sans
+    logique conditionnelle supplementaire."""
+    question = (question or "").strip()
+    if not question:
+        return _reponse_tuteur_erreur("Merci de poser une question.")
+
+    try:
+        client = _obtenir_client()
+    except RuntimeError as erreur:
+        return _reponse_tuteur_erreur(f"Tuteur IA non configure : {erreur}")
+
+    try:
+        completion = client.chat.completions.create(
+            model=parametres.groq_model,
+            max_completion_tokens=2048,
+            tools=[OUTIL_TUTEUR],
+            tool_choice={"type": "function", "function": {"name": "repondre_tuteur"}},
+            messages=[{
+                "role": "user",
+                "content": (
+                    f"Tu es un tuteur pour des etudiants de l'Universite de "
+                    f"Toamasina (Madagascar). Un etudiant te pose la question "
+                    f"suivante : « {question} ». Reponds en 4 parties bien "
+                    f"distinctes en francais, pedagogique et concret, adapte a "
+                    f"un niveau universitaire. Utilise l'outil fourni pour "
+                    f"structurer ta reponse."
+                ),
+            }],
+        )
+    except Exception as erreur:
+        return _reponse_tuteur_erreur(f"La generation a echoue : {erreur}")
+
+    if not completion.choices[0].message.tool_calls:
+        return _reponse_tuteur_erreur("Aucune reponse structuree recue — reessayez dans un instant.")
+
+    try:
+        arguments = json.loads(completion.choices[0].message.tool_calls[0].function.arguments)
+    except (json.JSONDecodeError, AttributeError):
+        return _reponse_tuteur_erreur("Reponse recue dans un format inattendu — reessayez.")
+
+    return {
+        "explication": arguments.get("explication") or "—",
+        "exemple": arguments.get("exemple") or "—",
+        "exercice": arguments.get("exercice") or "—",
+        "correction": arguments.get("correction") or "—",
+    }
+
+
+def _reponse_tuteur_erreur(message: str) -> Dict[str, str]:
+    return {"explication": message, "exemple": "", "exercice": "", "correction": ""}
