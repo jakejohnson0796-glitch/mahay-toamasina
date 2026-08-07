@@ -22,13 +22,22 @@
 {% if request.query_params.get("erreur") == "pdf_uniquement" %}
 <div class="erreur">Seuls les fichiers PDF peuvent etre partages dans le salon.</div>
 {% endif %}
+{% if request.query_params.get("erreur") == "suppression_refusee" %}
+<div class="erreur">Vous ne pouvez supprimer que vos propres messages.</div>
+{% endif %}
+{% if request.query_params.get("erreur") == "signalement_refuse" %}
+<div class="erreur">Vous ne pouvez pas signaler votre propre message.</div>
+{% endif %}
+{% if request.query_params.get("erreur") == "motif_requis" %}
+<div class="erreur">Merci de choisir (ou preciser) un motif avant d'envoyer le signalement.</div>
+{% endif %}
 {% if request.query_params.get("signale") %}
 <div class="info">Message signale — un administrateur va le verifier.</div>
 {% endif %}
 
 <div id="fenetre-chat" class="fenetre-chat">
   {% for m in messages %}
-  <div class="message {{ 'message-moi' if m.est_moi else '' }}" data-message-id="{{ m.id }}">
+  <div class="message {{ 'message-moi' if m.est_moi else '' }}" data-message-id="{{ m.id }}" data-auteur-id="{{ m.auteur_id }}">
     <span class="message-auteur">{{ m.auteur }}</span>
     {% if m.piece_jointe_chemin %}
     <span class="message-contenu">
@@ -37,18 +46,7 @@
     {% else %}
     <span class="message-contenu">{{ m.contenu }}</span>
     {% endif %}
-    <span class="message-actions">
-      {% if not m.est_moi %}
-      <form method="post" action="/cercles/{{ cercle.id }}/messages/{{ m.id }}/signaler" style="display:inline">
-        <button type="submit" class="lien-action" title="Signaler ce message">Signaler</button>
-      </form>
-      {% endif %}
-      {% if peut_moderer %}
-      <form method="post" action="/cercles/{{ cercle.id }}/messages/{{ m.id }}/supprimer" style="display:inline">
-        <button type="submit" class="lien-action" title="Supprimer ce message">Supprimer</button>
-      </form>
-      {% endif %}
-    </span>
+    <span class="message-actions"></span>
   </div>
   {% else %}
   <p class="stat-label">Aucun message pour l'instant — lancez la discussion.</p>
@@ -83,7 +81,6 @@
 <script>
 (function () {
   const idUtilisateur = {{ utilisateur.id }};
-  const peutModerer = {{ "true" if peut_moderer else "false" }};
   const cercleId = {{ cercle.id }};
   const fenetreChat = document.getElementById("fenetre-chat");
   const listePresence = document.getElementById("liste-presence");
@@ -93,23 +90,141 @@
   const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
   const ws = new WebSocket(protocole + "//" + window.location.host + "/cercles/" + cercleId + "/ws");
 
-  function creerBoutonAction(texte, action) {
+  const MOTIFS_SIGNALEMENT = [
+    "Spam",
+    "Harcèlement ou insultes",
+    "Contenu inapproprié",
+    "Désinformation",
+    "Autre",
+  ];
+
+  // Un message ne peut etre supprime que par son propre auteur : ce
+  // choix cote interface est purement cosmetique (afficher/masquer le
+  // bouton), la regle reelle est appliquee et revalidee cote serveur
+  // dans supprimer_message() (app/routers/cercles_router.py), qui
+  // refuse toute suppression si auteur_id != utilisateur courant.
+  function creerActionSuppression(messageId) {
     const form = document.createElement("form");
     form.method = "post";
-    form.action = action;
+    form.action = "/cercles/" + cercleId + "/messages/" + messageId + "/supprimer";
     form.style.display = "inline";
     const bouton = document.createElement("button");
     bouton.type = "submit";
     bouton.className = "lien-action";
-    bouton.textContent = texte;
+    bouton.title = "Supprimer ce message";
+    bouton.textContent = "Supprimer";
     form.appendChild(bouton);
     return form;
   }
+
+  // Signalement : un motif est obligatoire avant tout envoi. La liste
+  // deroulante impose un choix (aucune option vide selectionnable), et
+  // "Autre" ouvre un champ de saisie libre qui devient lui-meme requis.
+  // Cote serveur, signaler_message() revalide independamment que le
+  // motif final n'est jamais vide, et refuse le signalement de son
+  // propre message meme si ce bouton n'est jamais affiche pour ca.
+  function creerActionSignalement(messageId) {
+    const conteneur = document.createElement("span");
+    conteneur.className = "conteneur-signalement";
+
+    const boutonOuvrir = document.createElement("button");
+    boutonOuvrir.type = "button";
+    boutonOuvrir.className = "lien-action";
+    boutonOuvrir.title = "Signaler ce message";
+    boutonOuvrir.textContent = "Signaler";
+
+    const form = document.createElement("form");
+    form.method = "post";
+    form.action = "/cercles/" + cercleId + "/messages/" + messageId + "/signaler";
+    form.className = "form-signalement";
+    form.hidden = true;
+
+    const select = document.createElement("select");
+    select.name = "motif";
+    select.required = true;
+    select.className = "select-motif";
+    const optionVide = document.createElement("option");
+    optionVide.value = "";
+    optionVide.textContent = "Choisir un motif…";
+    optionVide.disabled = true;
+    optionVide.selected = true;
+    select.appendChild(optionVide);
+    MOTIFS_SIGNALEMENT.forEach(function (motif) {
+      const option = document.createElement("option");
+      option.value = motif;
+      option.textContent = motif === "Autre" ? "Autre (préciser)" : motif;
+      select.appendChild(option);
+    });
+
+    const champAutre = document.createElement("input");
+    champAutre.type = "text";
+    champAutre.name = "motif_autre";
+    champAutre.placeholder = "Préciser le motif";
+    champAutre.className = "champ-motif-autre";
+    champAutre.hidden = true;
+    champAutre.maxLength = 200;
+
+    select.addEventListener("change", function () {
+      const estAutre = select.value === "Autre";
+      champAutre.hidden = !estAutre;
+      champAutre.required = estAutre;
+      champAutre.disabled = !estAutre;
+      if (estAutre) champAutre.focus();
+    });
+
+    const boutonEnvoyer = document.createElement("button");
+    boutonEnvoyer.type = "submit";
+    boutonEnvoyer.className = "lien-action";
+    boutonEnvoyer.textContent = "Envoyer";
+
+    const boutonAnnuler = document.createElement("button");
+    boutonAnnuler.type = "button";
+    boutonAnnuler.className = "lien-action";
+    boutonAnnuler.textContent = "Annuler";
+    boutonAnnuler.addEventListener("click", function () {
+      form.hidden = true;
+      boutonOuvrir.hidden = false;
+      form.reset();
+      champAutre.hidden = true;
+      champAutre.required = false;
+    });
+
+    boutonOuvrir.addEventListener("click", function () {
+      boutonOuvrir.hidden = true;
+      form.hidden = false;
+      select.focus();
+    });
+
+    form.appendChild(select);
+    form.appendChild(champAutre);
+    form.appendChild(boutonEnvoyer);
+    form.appendChild(boutonAnnuler);
+
+    conteneur.appendChild(boutonOuvrir);
+    conteneur.appendChild(form);
+    return conteneur;
+  }
+
+  function decorerActions(bulle) {
+    const actions = bulle.querySelector(".message-actions");
+    if (!actions || actions.dataset.decore) return;
+    actions.dataset.decore = "1";
+    const messageId = bulle.dataset.messageId;
+    const auteurId = Number(bulle.dataset.auteurId);
+    if (auteurId === idUtilisateur) {
+      actions.appendChild(creerActionSuppression(messageId));
+    } else {
+      actions.appendChild(creerActionSignalement(messageId));
+    }
+  }
+
+  document.querySelectorAll("#fenetre-chat .message").forEach(decorerActions);
 
   function ajouterMessage(donnees) {
     const bulle = document.createElement("div");
     bulle.className = "message" + (donnees.auteur_id === idUtilisateur ? " message-moi" : "");
     bulle.dataset.messageId = donnees.id;
+    bulle.dataset.auteurId = donnees.auteur_id;
 
     const auteur = document.createElement("span");
     auteur.className = "message-auteur";
@@ -132,13 +247,8 @@
 
     const actions = document.createElement("span");
     actions.className = "message-actions";
-    if (donnees.auteur_id !== idUtilisateur) {
-      actions.appendChild(creerBoutonAction("Signaler", "/cercles/" + cercleId + "/messages/" + donnees.id + "/signaler"));
-    }
-    if (peutModerer) {
-      actions.appendChild(creerBoutonAction("Supprimer", "/cercles/" + cercleId + "/messages/" + donnees.id + "/supprimer"));
-    }
     bulle.appendChild(actions);
+    decorerActions(bulle);
 
     fenetreChat.appendChild(bulle);
     fenetreChat.scrollTop = fenetreChat.scrollHeight;

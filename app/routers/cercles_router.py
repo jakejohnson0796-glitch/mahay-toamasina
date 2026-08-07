@@ -19,7 +19,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, or_
 
 from ..database import get_session, engine
-from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Utilisateur, RoleUtilisateur
+from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Utilisateur
 from ..auth import utilisateur_courant
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
@@ -32,6 +32,16 @@ templates = Jinja2Templates(directory="app/templates")
 LONGUEUR_MAX_MESSAGE = 2000
 TAILLE_MAX_PIECE_JOINTE = 10 * 1024 * 1024  # 10 Mo
 
+# Motifs de signalement proposes cote interface (voir gabarit cercle_chat.html).
+# La valeur "Autre" declenche un champ de saisie libre — voir signaler_message().
+MOTIFS_SIGNALEMENT_AUTORISES = {
+    "Spam",
+    "Harcèlement ou insultes",
+    "Contenu inapproprié",
+    "Désinformation",
+    "Autre",
+}
+
 
 def _est_membre(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
     return session.exec(
@@ -40,14 +50,6 @@ def _est_membre(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
             MembreCercle.utilisateur_id == utilisateur_id,
         )
     ).first() is not None
-
-
-def _peut_moderer(cercle: CercleEtude, utilisateur: Optional[Utilisateur]) -> bool:
-    """Le createur du cercle et les admins peuvent supprimer un message.
-    Volontairement restreint (pas 'tout membre') pour eviter les abus."""
-    if not utilisateur:
-        return False
-    return utilisateur.id == cercle.createur_id or utilisateur.role == RoleUtilisateur.ADMIN
 
 
 @router.get("/cercles")
@@ -137,7 +139,6 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
         return RedirectResponse("/cercles", status_code=303)
 
     membre = _est_membre(session, cercle_id, utilisateur.id)
-    peut_moderer = _peut_moderer(cercle, utilisateur)
 
     messages = []
     if membre:
@@ -169,7 +170,6 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "messages": messages,
             "utilisateur": utilisateur,
-            "peut_moderer": peut_moderer,
         },
     )
 
@@ -241,6 +241,14 @@ def telecharger_piece_jointe(request: Request, cercle_id: int, message_id: int, 
 
 @router.post("/cercles/{cercle_id}/messages/{message_id}/supprimer")
 async def supprimer_message(request: Request, cercle_id: int, message_id: int, session: Session = Depends(get_session)):
+    """Suppression d'un message par son propre auteur uniquement.
+
+    Regle stricte et non contournable : un utilisateur ne peut jamais
+    supprimer un message envoye par quelqu'un d'autre, meme s'il est
+    createur du cercle. La moderation par un administrateur passe par un
+    circuit distinct et explicitement protege : voir
+    /admin/moderation-salon (app/routers/admin_router.py), qui agit sur
+    signalement et verifie le role admin separement."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -250,8 +258,10 @@ async def supprimer_message(request: Request, cercle_id: int, message_id: int, s
     if not cercle or not message or message.cercle_id != cercle_id:
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
-    if not _peut_moderer(cercle, utilisateur):
-        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+    if message.auteur_id != utilisateur.id:
+        # Tentative de suppression du message d'un autre utilisateur :
+        # refusee sans exception, y compris pour le createur du cercle.
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=suppression_refusee", status_code=303)
 
     message.supprime = True
     session.add(message)
@@ -267,9 +277,17 @@ def signaler_message(
     request: Request,
     cercle_id: int,
     message_id: int,
-    motif: Optional[str] = Form(None),
+    motif: str = Form(...),
+    motif_autre: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
+    """Signalement d'un message par un membre du cercle.
+
+    Deux regles imperatives, verifiees cote serveur (l'interface les
+    applique deja, mais ne suffit pas seule a les garantir) :
+    - un utilisateur ne peut pas signaler son propre message ;
+    - un motif non vide est obligatoire (choisi dans la liste, ou saisi
+      librement si "Autre" est selectionne)."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -277,6 +295,24 @@ def signaler_message(
     message = session.get(MessageCercle, message_id)
     if not message or message.cercle_id != cercle_id or not _est_membre(session, cercle_id, utilisateur.id):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    if message.auteur_id == utilisateur.id:
+        # On ne peut pas signaler son propre message, meme via un POST
+        # direct qui contournerait l'interface (qui masque deja le bouton).
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=signalement_refuse", status_code=303)
+
+    motif_choisi = (motif or "").strip()
+    if motif_choisi not in MOTIFS_SIGNALEMENT_AUTORISES:
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=motif_requis", status_code=303)
+
+    motif_final = motif_choisi
+    if motif_choisi == "Autre":
+        motif_final = (motif_autre or "").strip()
+
+    if not motif_final:
+        # Motif obligatoire : vide (y compris "Autre" laisse sans
+        # precision) est rejete, on ne cree aucun signalement muet.
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=motif_requis", status_code=303)
 
     # Evite les doublons : un signalement non-traite deja existant de ce
     # meme utilisateur sur ce meme message n'est pas duplique.
@@ -288,7 +324,7 @@ def signaler_message(
         )
     ).first()
     if not deja_signale:
-        session.add(SignalementMessage(message_id=message_id, signale_par_id=utilisateur.id, motif=motif))
+        session.add(SignalementMessage(message_id=message_id, signale_par_id=utilisateur.id, motif=motif_final))
         session.commit()
 
     return RedirectResponse(f"/cercles/{cercle_id}?signale=1", status_code=303)

@@ -342,6 +342,39 @@ input:focus, select:focus, textarea:focus {
 }
 .lien-action:hover { color: var(--accent-2); }
 
+.conteneur-signalement {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.form-signalement {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+/* L'attribut HTML "hidden" doit rester prioritaire sur le display:flex
+   ci-dessus, sinon le formulaire reste visible en permanence au lieu de
+   n'apparaitre qu'au clic sur "Signaler". */
+.form-signalement:not([hidden]) { display: flex; }
+.select-motif,
+.champ-motif-autre {
+  font-size: 0.68rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-panel);
+  color: var(--text);
+  max-width: 9rem;
+}
+.champ-motif-autre { min-width: 8rem; max-width: 12rem; }
+.form-signalement .lien-action { white-space: nowrap; }
+
 .conteneur-emoji-picker { position: relative; }
 .bouton-emoji-toggle {
   background: var(--bg-panel-2);
