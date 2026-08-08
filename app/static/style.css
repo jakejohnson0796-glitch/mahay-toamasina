@@ -67,6 +67,28 @@ p { color: var(--text-muted); }
 .entete nav a { color: var(--text-muted); }
 .entete nav a:hover { color: var(--text); text-decoration: none; }
 
+.bouton-menu-mobile {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 2.6rem;
+  height: 2.6rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+}
+.bouton-menu-mobile span {
+  display: block;
+  height: 2px;
+  width: 1.3rem;
+  background: var(--text);
+  border-radius: 2px;
+}
+
 main { max-width: 960px; margin: 0 auto; padding: 2rem; }
 
 .pied {
@@ -449,4 +471,24 @@ input:focus, select:focus, textarea:focus {
 @media (max-width: 640px) {
   .entete { padding: 1rem; }
   main { padding: 1.25rem; }
+}
+
+@media (max-width: 768px) {
+  /* Au-dela de ~5-6 liens (menu connecte), le wrap en ligne devient
+     illisible sur mobile — on bascule sur un menu deroulant classique,
+     ferme par defaut, ouvert au clic sur le bouton hamburger. */
+  .bouton-menu-mobile { display: flex; }
+  .entete nav {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0;
+    padding-top: 0.75rem;
+  }
+  .entete nav.nav-ouverte { display: flex; }
+  .entete nav a {
+    padding: 0.75rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+  }
 }

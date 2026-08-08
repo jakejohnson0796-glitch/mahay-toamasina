@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block titre %}MAHAY — Toamasina{% endblock %}</title>
 <link rel="manifest" href="/static/manifest.json">
+<link rel="icon" href="/static/favicon.ico">
+<link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
 <meta name="theme-color" content="#0E2A32">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +16,10 @@
 <body>
 <header class="entete">
   <a class="logo" href="/">MAHAY <span class="logo-lieu">Toamasina</span></a>
-  <nav>
+  <button type="button" class="bouton-menu-mobile" id="bouton-menu-mobile" aria-expanded="false" aria-controls="nav-principale" aria-label="Ouvrir le menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="nav-principale">
     <a href="/documents">Manifeste des annales</a>
     <a href="/cercles">Cercles d'etude</a>
     <a href="/sponsoring">Espace sponsors</a>
@@ -34,6 +39,24 @@
     {% endif %}
   </nav>
 </header>
+<script>
+(function () {
+  const bouton = document.getElementById("bouton-menu-mobile");
+  const nav = document.getElementById("nav-principale");
+  bouton.addEventListener("click", function () {
+    const ouvert = nav.classList.toggle("nav-ouverte");
+    bouton.setAttribute("aria-expanded", ouvert ? "true" : "false");
+  });
+  // Referme le menu automatiquement apres avoir choisi un lien, pour ne
+  // pas laisser le menu ouvert par-dessus la page suivante.
+  nav.querySelectorAll("a").forEach(function (lien) {
+    lien.addEventListener("click", function () {
+      nav.classList.remove("nav-ouverte");
+      bouton.setAttribute("aria-expanded", "false");
+    });
+  });
+})();
+</script>
 
 <main>
   {% block contenu %}{% endblock %}
