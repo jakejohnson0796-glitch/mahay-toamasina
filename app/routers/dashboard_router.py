@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 
 from ..database import get_session
+from ..templating import templates
+from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from .. import dashboard as dashboard_module
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/dashboard")

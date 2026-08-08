@@ -28,10 +28,12 @@
         {% if u.id != utilisateur.id %}
         {% if u.banni %}
         <form method="post" action="/admin/utilisateurs/{{ u.id }}/debannir" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Debannir</button>
         </form>
         {% else %}
         <form method="post" action="/admin/utilisateurs/{{ u.id }}/bannir" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Bannir</button>
         </form>
         {% endif %}

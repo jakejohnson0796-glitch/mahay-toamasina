@@ -5,6 +5,7 @@
 <div class="carte-formulaire">
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   <form method="post" action="/inscription">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="nom">Nom complet</label>
     <input type="text" id="nom" name="nom" required>
 

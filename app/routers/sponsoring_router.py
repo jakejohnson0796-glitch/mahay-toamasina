@@ -8,15 +8,15 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 
 from ..database import get_session
+from ..templating import templates
+from ..csrf import verifier_csrf
 from ..models import Abonnement, StatutAbonnement
 from ..auth import utilisateur_courant
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 # A ajuster apres des tests reels de "combien un repetiteur/sponsor est
 # pret a payer par mois pour toucher les etudiants de l'universite".
@@ -40,6 +40,7 @@ def souscrire(
     request: Request,
     fournisseur_paiement: str = Form(...),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:

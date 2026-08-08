@@ -12,6 +12,7 @@
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 style="margin-top:0;">Creer un cercle</h3>
   <form method="post" action="/cercles/creer">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="nom">Nom du cercle</label>
     <input type="text" id="nom" name="nom" required placeholder="ex: Revision Droit civil S3">
 
@@ -48,6 +49,7 @@
       <a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat</a>
       {% elif utilisateur %}
       <form method="post" action="/cercles/{{ info.cercle.id }}/rejoindre">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         <button class="bouton bouton-primaire" type="submit">Rejoindre</button>
       </form>
       {% endif %}

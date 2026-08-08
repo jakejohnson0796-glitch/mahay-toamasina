@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from ..database import get_session
+from ..templating import templates
+from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_premium_ou_redirection
 from ..models import SessionTuteur
 from .. import ai_quiz
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 NB_HISTORIQUE_AFFICHE = 10
 
@@ -37,7 +37,7 @@ def page_tuteur(request: Request, session: Session = Depends(get_session)):
 
 
 @router.post("/tuteur/demander")
-def demander_tuteur(request: Request, question: str = Form(...), session: Session = Depends(get_session)):
+def demander_tuteur(request: Request, question: str = Form(...), session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:

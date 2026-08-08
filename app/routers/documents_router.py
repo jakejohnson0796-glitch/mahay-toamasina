@@ -7,19 +7,19 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from ..database import get_session
+from ..templating import templates
+from ..csrf import verifier_csrf
 from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
-from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif
+from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide
 from ..dependencies import acces_premium_ou_redirection
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
@@ -77,6 +77,7 @@ def upload_document(
     filiere_id: int = Form(...),
     fichier: UploadFile = File(...),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
@@ -85,8 +86,18 @@ def upload_document(
     filiere = session.get(Filiere, filiere_id)
     reference = generer_reference(filiere, annee, session)
     # sauvegarder_fichier() choisit local ou Supabase Storage selon la
-    # config (.env) — voir app/storage.py.
-    chemin_stocke = sauvegarder_fichier(fichier, reference)
+    # config (.env) — voir app/storage.py. Elle rejette aussi les types de
+    # fichier non autorises et les fichiers trop volumineux (voir
+    # FichierInvalide) : on rattrape l'erreur ici pour la montrer a
+    # l'utilisateur plutot que de planter avec une 500.
+    try:
+        chemin_stocke = sauvegarder_fichier(fichier, reference)
+    except FichierInvalide as erreur:
+        filieres = session.exec(select(Filiere)).all()
+        return templates.TemplateResponse(
+            "document_upload.html",
+            {"request": request, "filieres": filieres, "erreur": str(erreur)},
+        )
 
     document = Document(
         reference=reference,
@@ -156,7 +167,7 @@ def panneau_moderation(request: Request, session: Session = Depends(get_session)
 
 
 @router.post("/moderation/{document_id}/approuver")
-def approuver_document(request: Request, document_id: int, session: Session = Depends(get_session)):
+def approuver_document(request: Request, document_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return RedirectResponse("/", status_code=303)
@@ -169,7 +180,7 @@ def approuver_document(request: Request, document_id: int, session: Session = De
 
 
 @router.post("/moderation/{document_id}/rejeter")
-def rejeter_document(request: Request, document_id: int, session: Session = Depends(get_session)):
+def rejeter_document(request: Request, document_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return RedirectResponse("/", status_code=303)

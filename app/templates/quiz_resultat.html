@@ -41,6 +41,7 @@
   {% endif %}
 
   <form method="post" action="/quiz/{{ tentative.id }}/questions/{{ q_index }}/signaler" style="margin-top:0.5rem;">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <button type="submit" class="lien-action">Signaler cette question (reponse ou explication fausse)</button>
   </form>
 </div>

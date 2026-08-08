@@ -12,6 +12,7 @@
 {% endif %}
 
 <form id="form-quiz" method="post" action="/quiz/{{ tentative.id }}/soumettre">
+  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
   {% for item in questions %}
   {% set q_index = loop.index0 %}
   <div class="carte-formulaire carte-quiz">
