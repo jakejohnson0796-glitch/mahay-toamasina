@@ -17,6 +17,7 @@
   <p class="prix">{{ prix }} <span>Ar / mois</span></p>
   {% if utilisateur %}
   <form method="post" action="/sponsoring/souscrire">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <p>Choisissez votre moyen de paiement :</p>
     <div class="fournisseurs">
       <label><input type="radio" name="fournisseur_paiement" value="mvola" required> MVola</label>

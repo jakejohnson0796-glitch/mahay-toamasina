@@ -5,6 +5,7 @@
 <div class="carte-formulaire">
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   <form method="post" action="/connexion">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="telephone">Numero de telephone</label>
     <input type="text" id="telephone" name="telephone" required>
 

@@ -10,10 +10,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func
 
 from ..database import get_session
+from ..templating import templates
+from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..models import (
     Utilisateur, RoleUtilisateur, CercleEtude, MessageCercle, SignalementMessage,
@@ -22,7 +23,6 @@ from ..models import (
 )
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
@@ -157,7 +157,7 @@ def page_moderation_salon(request: Request, session: Session = Depends(get_sessi
 
 
 @router.post("/admin/moderation-salon/{signalement_id}/supprimer-message")
-def moderer_supprimer_message(request: Request, signalement_id: int, session: Session = Depends(get_session)):
+def moderer_supprimer_message(request: Request, signalement_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
@@ -176,7 +176,7 @@ def moderer_supprimer_message(request: Request, signalement_id: int, session: Se
 
 
 @router.post("/admin/moderation-salon/{signalement_id}/rejeter")
-def moderer_rejeter_signalement(request: Request, signalement_id: int, session: Session = Depends(get_session)):
+def moderer_rejeter_signalement(request: Request, signalement_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
@@ -225,7 +225,7 @@ def page_moderation_quiz(request: Request, session: Session = Depends(get_sessio
 
 
 @router.post("/admin/moderation-quiz/{signalement_id}/traiter")
-def moderer_traiter_signalement_quiz(request: Request, signalement_id: int, session: Session = Depends(get_session)):
+def moderer_traiter_signalement_quiz(request: Request, signalement_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
@@ -259,7 +259,7 @@ def page_utilisateurs(request: Request, q: Optional[str] = None, session: Sessio
 
 
 @router.post("/admin/utilisateurs/{utilisateur_id}/bannir")
-def bannir_utilisateur(request: Request, utilisateur_id: int, session: Session = Depends(get_session)):
+def bannir_utilisateur(request: Request, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
@@ -276,7 +276,7 @@ def bannir_utilisateur(request: Request, utilisateur_id: int, session: Session =
 
 
 @router.post("/admin/utilisateurs/{utilisateur_id}/debannir")
-def debannir_utilisateur(request: Request, utilisateur_id: int, session: Session = Depends(get_session)):
+def debannir_utilisateur(request: Request, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)

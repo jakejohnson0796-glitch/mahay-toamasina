@@ -22,6 +22,7 @@
       <td>{{ s.signalement.motif or "—" }}</td>
       <td>
         <form method="post" action="/admin/moderation-quiz/{{ s.signalement.id }}/traiter" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Marquer traite</button>
         </form>
       </td>

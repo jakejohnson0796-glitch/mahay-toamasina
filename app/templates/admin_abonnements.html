@@ -37,12 +37,15 @@
       </td>
       <td>
         <form method="post" action="/admin/abonnements/{{ abonnement.id }}/valider" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Valider (+30j)</button>
         </form>
         <form method="post" action="/admin/abonnements/{{ abonnement.id }}/prolonger" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Prolonger 30j</button>
         </form>
         <form method="post" action="/admin/abonnements/{{ abonnement.id }}/refuser" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Refuser</button>
         </form>
       </td>

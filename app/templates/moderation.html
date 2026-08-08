@@ -15,9 +15,11 @@
       <td>{{ doc.annee }}</td>
       <td>
         <form method="post" action="/moderation/{{ doc.id }}/approuver" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Approuver</button>
         </form>
         <form method="post" action="/moderation/{{ doc.id }}/rejeter" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejeter</button>
         </form>
       </td>

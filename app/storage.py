@@ -28,6 +28,22 @@ from .config import parametres
 
 DOSSIER_UPLOADS_LOCAL = Path(__file__).resolve().parent.parent / "uploads"
 
+# Types de documents academiques attendus par l'appli (annales, corriges,
+# fiches, cours — eventuellement scannes en image pour l'OCR, voir
+# pytesseract/pdf2image dans requirements.txt). Tout le reste (executables,
+# scripts, archives, HTML/SVG...) est refuse : accepter n'importe quel
+# type de fichier permettrait de stocker et redistribuer publiquement du
+# contenu dangereux via /documents/{id}/telecharger.
+EXTENSIONS_AUTORISEES = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png"}
+TAILLE_MAX_DOCUMENT = 20 * 1024 * 1024  # 20 Mo
+
+
+class FichierInvalide(ValueError):
+    """Leve par sauvegarder_fichier() si le fichier depose ne respecte
+    pas les regles ci-dessus (type ou taille). Le message est destine a
+    etre affiche tel quel a l'utilisateur."""
+
+
 _client_supabase = None
 
 
@@ -65,15 +81,35 @@ def _nettoyer_nom_fichier(nom_fichier: str) -> str:
 
 
 def _nom_objet_sur(reference: str, nom_fichier_original: str) -> str:
-    nom_nettoye = _nettoyer_nom_fichier(nom_fichier_original)
+    # Path(...).name ecarte tout composant de dossier eventuellement
+    # present dans le nom fourni par le client (ex: "../../etc/passwd")
+    # avant meme le nettoyage caractere-par-caractere ci-dessous — double
+    # protection contre toute tentative de traversee de repertoire.
+    nom_de_base = Path(nom_fichier_original).name
+    nom_nettoye = _nettoyer_nom_fichier(nom_de_base)
     return f"{reference}_{nom_nettoye}"
 
 
 def sauvegarder_fichier(fichier: UploadFile, reference: str) -> str:
     """Enregistre le fichier uploade (local ou Supabase) et renvoie la
-    valeur a stocker dans Document.chemin_fichier."""
+    valeur a stocker dans Document.chemin_fichier.
+
+    Leve FichierInvalide si le type ou la taille du fichier ne respecte
+    pas les regles (voir EXTENSIONS_AUTORISEES / TAILLE_MAX_DOCUMENT) —
+    a capturer par l'appelant pour afficher un message clair."""
+    nom_original = fichier.filename or "document"
+    extension = Path(nom_original).suffix.lower()
+    if extension not in EXTENSIONS_AUTORISEES:
+        extensions_lisibles = ", ".join(sorted(EXTENSIONS_AUTORISEES))
+        raise FichierInvalide(f"Type de fichier non accepte. Formats autorises : {extensions_lisibles}.")
+
     contenu = fichier.file.read()
-    nom_objet = _nom_objet_sur(reference, fichier.filename or "document")
+    if len(contenu) > TAILLE_MAX_DOCUMENT:
+        raise FichierInvalide(f"Fichier trop volumineux (max {TAILLE_MAX_DOCUMENT // (1024 * 1024)} Mo).")
+    if len(contenu) == 0:
+        raise FichierInvalide("Le fichier semble vide.")
+
+    nom_objet = _nom_objet_sur(reference, nom_original)
 
     if stockage_distant_actif():
         client = _obtenir_client_supabase()

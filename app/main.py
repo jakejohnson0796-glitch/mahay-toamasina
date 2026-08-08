@@ -9,7 +9,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from .templating import templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session, select
 
@@ -17,19 +17,45 @@ from .config import parametres
 from .database import executer_migrations, engine, get_session
 from .models import Faculte, Document, StatutDocument
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, tuteur_router
+from .security_headers import EnTetesSecuriteMiddleware
 from .seed_data import peupler_donnees_initiales
 
 BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="MAHAY Toamasina")
 
+# --- Garde-fou : refuse de demarrer en production avec la cle de demo ---
+# Un secret par defaut connu de tous (present dans .env.example, donc
+# visible sur GitHub) permettrait a n'importe qui de forger un cookie de
+# session valide pour n'importe quel compte, y compris admin, s'il etait
+# oublie tel quel sur un vrai deploiement. On echoue bruyamment plutot
+# que de demarrer silencieusement dans un etat dangereux.
+if parametres.environnement == "production" and parametres.session_secret_key == "a-changer-en-production":
+    raise RuntimeError(
+        "SESSION_SECRET_KEY est encore la valeur de demo alors que "
+        "ENVIRONNEMENT=production. Genere une vraie valeur (python -c "
+        "\"import secrets; print(secrets.token_hex(32))\") et definis-la "
+        "dans les variables d'environnement de l'hebergeur avant de redeployer."
+    )
+
 # Cle de session : lue depuis SESSION_SECRET_KEY (.env) si presente, sinon
 # retombe sur la valeur de demo. A REMPLACER avant toute mise en ligne
 # reelle (voir .env.example).
-app.add_middleware(SessionMiddleware, secret_key=parametres.session_secret_key)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=parametres.session_secret_key,
+    # https_only : le navigateur refuse d'envoyer le cookie en clair (HTTP).
+    # Desactive seulement en developpement local (ou HTTPS n'est pas
+    # configure) ; errone en production sinon toute la protection tombe.
+    https_only=parametres.environnement == "production",
+    same_site="lax",
+    # Session expiree apres 14 jours d'inactivite : limite la fenetre de
+    # danger si un cookie est vole (poste partage, appareil perdu...).
+    max_age=14 * 24 * 60 * 60,
+)
+app.add_middleware(EnTetesSecuriteMiddleware, https_actif=parametres.environnement == "production")
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 app.include_router(auth_router.router)
 app.include_router(documents_router.router)

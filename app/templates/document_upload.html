@@ -4,7 +4,9 @@
 <h2>Deposer un document</h2>
 <p>Votre document sera visible publiquement seulement apres validation par un moderateur.</p>
 <div class="carte-formulaire">
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   <form method="post" action="/documents/upload" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="titre">Titre</label>
     <input type="text" id="titre" name="titre" required placeholder="ex: Partiel de Droit civil - S3">
 
@@ -29,8 +31,8 @@
       {% endfor %}
     </select>
 
-    <label for="fichier">Fichier (PDF, image...)</label>
-    <input type="file" id="fichier" name="fichier" required>
+    <label for="fichier">Fichier (PDF, Word, PowerPoint ou image scannee)</label>
+    <input type="file" id="fichier" name="fichier" required accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Envoyer</button>
   </form>

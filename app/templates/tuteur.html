@@ -11,6 +11,7 @@
 
 <div class="carte-formulaire carte-quiz">
   <form method="post" action="/tuteur/demander">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="question">Votre question</label>
     <textarea id="question" name="question" rows="3" placeholder="ex: Explique-moi la comptabilite analytique." required></textarea>
     <button class="bouton bouton-primaire bouton-form" type="submit">Demander au tuteur</button>

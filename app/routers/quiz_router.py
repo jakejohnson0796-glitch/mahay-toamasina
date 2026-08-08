@@ -3,10 +3,11 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from ..database import get_session
+from ..templating import templates
+from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_premium_ou_redirection
 from ..models import Document, StatutDocument, TentativeQuiz
@@ -14,7 +15,6 @@ from .. import quiz as quiz_module
 from .. import ai_quiz
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _matieres_disponibles(session: Session) -> List[str]:
@@ -53,6 +53,7 @@ def generer_quiz(
     difficulte: str = Form(...),
     nb_questions: int = Form(10),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
@@ -141,7 +142,7 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
 
 
 @router.post("/quiz/examen/generer")
-def generer_examen(request: Request, session: Session = Depends(get_session)):
+def generer_examen(request: Request, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     """Mode examen : matiere/niveau/difficulte tires au sort par le
     serveur (pas de formulaire a remplir), nombre de questions et duree
     fixes. Meme pipeline de generation/verification que le quiz normal."""
@@ -160,7 +161,7 @@ def generer_examen(request: Request, session: Session = Depends(get_session)):
 
 
 @router.post("/quiz/{tentative_id}/soumettre")
-async def soumettre_quiz(request: Request, tentative_id: int, session: Session = Depends(get_session)):
+async def soumettre_quiz(request: Request, tentative_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
@@ -214,6 +215,7 @@ def signaler_question_quiz(
     index_question: int,
     motif: Optional[str] = Form(None),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:

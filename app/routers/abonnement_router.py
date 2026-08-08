@@ -8,17 +8,17 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from ..database import get_session
+from ..templating import templates
+from ..csrf import verifier_csrf
 from ..models import RoleUtilisateur, StatutAbonnementEtudiant, AbonnementEtudiant, Utilisateur
 from ..auth import utilisateur_courant
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif
 from .. import subscription
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 # ---------------------------------------------------------------------
@@ -56,6 +56,7 @@ def soumettre_demande(
     reference_paiement: Optional[str] = Form(None),
     preuve: Optional[UploadFile] = File(None),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
@@ -128,7 +129,7 @@ def admin_liste_abonnements(
 
 
 @router.post("/admin/abonnements/{abonnement_id}/valider")
-def admin_valider(request: Request, abonnement_id: int, session: Session = Depends(get_session)):
+def admin_valider(request: Request, abonnement_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
@@ -145,6 +146,7 @@ def admin_refuser(
     abonnement_id: int,
     motif: Optional[str] = Form(None),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     admin = _admin_requis(request, session)
     if not admin:
@@ -162,6 +164,7 @@ def admin_prolonger(
     abonnement_id: int,
     jours: int = Form(subscription.DUREE_PROLONGATION_JOURS),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     admin = _admin_requis(request, session)
     if not admin:

@@ -15,19 +15,19 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse, FileResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, or_
 
 from ..database import get_session, engine
+from ..templating import templates
+from ..csrf import verifier_csrf
 from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Utilisateur
 from ..auth import utilisateur_courant
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
-from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif
+from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
 from .. import subscription
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 LONGUEUR_MAX_MESSAGE = 2000
 TAILLE_MAX_PIECE_JOINTE = 10 * 1024 * 1024  # 10 Mo
@@ -87,6 +87,7 @@ def creer_cercle(
     description: Optional[str] = Form(None),
     filiere_id: Optional[int] = Form(None),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
@@ -111,7 +112,7 @@ def creer_cercle(
 
 
 @router.post("/cercles/{cercle_id}/rejoindre")
-def rejoindre_cercle(request: Request, cercle_id: int, session: Session = Depends(get_session)):
+def rejoindre_cercle(request: Request, cercle_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
@@ -180,6 +181,7 @@ async def envoyer_fichier(
     cercle_id: int,
     fichier: UploadFile = File(...),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     """Partage d'un PDF dans le salon. Passe par une route HTTP classique
     (pas le WebSocket) car un upload de fichier binaire ne s'y prete pas
@@ -197,8 +199,24 @@ async def envoyer_fichier(
     if not fichier.filename or not fichier.filename.lower().endswith(".pdf"):
         return RedirectResponse(f"/cercles/{cercle_id}?erreur=pdf_uniquement", status_code=303)
 
+    # Verifie la taille avant meme d'appeler sauvegarder_fichier() : cette
+    # constante existait deja mais n'etait jusqu'ici jamais appliquee nulle
+    # part, ce qui laissait n'importe quelle taille de PDF passer. seek/tell
+    # mesure sans consommer le flux (on revient au debut juste apres).
+    fichier.file.seek(0, 2)  # 2 = SEEK_END
+    taille = fichier.file.tell()
+    fichier.file.seek(0)
+    if taille > TAILLE_MAX_PIECE_JOINTE:
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=fichier_trop_volumineux", status_code=303)
+
     reference = f"cercle_{cercle_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
-    chemin_stocke = sauvegarder_fichier(fichier, reference)
+    # sauvegarder_fichier() revalide aussi independamment le type/la taille
+    # (voir app/storage.py) — double protection si jamais cette route
+    # evoluait un jour pour accepter d'autres extensions que .pdf.
+    try:
+        chemin_stocke = sauvegarder_fichier(fichier, reference)
+    except FichierInvalide:
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=pdf_uniquement", status_code=303)
 
     message = MessageCercle(
         cercle_id=cercle_id,
@@ -240,7 +258,7 @@ def telecharger_piece_jointe(request: Request, cercle_id: int, message_id: int, 
 
 
 @router.post("/cercles/{cercle_id}/messages/{message_id}/supprimer")
-async def supprimer_message(request: Request, cercle_id: int, message_id: int, session: Session = Depends(get_session)):
+async def supprimer_message(request: Request, cercle_id: int, message_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     """Suppression d'un message par son propre auteur uniquement.
 
     Regle stricte et non contournable : un utilisateur ne peut jamais
@@ -280,6 +298,7 @@ def signaler_message(
     motif: str = Form(...),
     motif_autre: Optional[str] = Form(None),
     session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
 ):
     """Signalement d'un message par un membre du cercle.
 

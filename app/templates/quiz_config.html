@@ -11,6 +11,7 @@
 
 <div class="carte-formulaire carte-quiz">
   <form method="post" action="/quiz/generer">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="matiere">Matiere</label>
     <select id="matiere" name="matiere">
       <option value="">— choisir dans la liste —</option>
@@ -49,6 +50,7 @@
 <div class="carte-formulaire carte-quiz">
   <p><strong>Mode examen</strong> — matiere, niveau et difficulte tires au sort, 10 questions, 15 minutes chronometrees, correction uniquement a la fin.</p>
   <form method="post" action="/quiz/examen/generer">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <button class="bouton bouton-secondaire bouton-form" type="submit">Lancer un examen blanc</button>
   </form>
 </div>

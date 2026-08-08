@@ -17,13 +17,16 @@
         {% if s.message_deja_supprime %}
         <span class="tampon tampon-rejete">Deja supprime</span>
         <form method="post" action="/admin/moderation-salon/{{ s.signalement.id }}/rejeter" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Marquer traite</button>
         </form>
         {% else %}
         <form method="post" action="/admin/moderation-salon/{{ s.signalement.id }}/supprimer-message" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Supprimer le message</button>
         </form>
         <form method="post" action="/admin/moderation-salon/{{ s.signalement.id }}/rejeter" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejeter le signalement</button>
         </form>
         {% endif %}
