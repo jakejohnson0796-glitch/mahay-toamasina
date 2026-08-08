@@ -179,6 +179,29 @@ class MembreCercle(SQLModel, table=True):
     date_adhesion: datetime = Field(default_factory=datetime.utcnow)
 
 
+class StatutDemandeAdhesion(str, Enum):
+    EN_ATTENTE = "en_attente"
+    ACCEPTEE = "acceptee"
+    REJETEE = "rejetee"
+
+
+class DemandeAdhesionCercle(SQLModel, table=True):
+    """Demande d'un utilisateur pour rejoindre un cercle. Doit etre
+    examinee (accepter/refuser) par le createur du cercle ou un admin
+    avant que l'utilisateur devienne reellement membre (voir
+    app/routers/cercles_router.py). Une seule demande EN_ATTENTE par
+    (cercle_id, utilisateur_id) — voir la migration pour la contrainte
+    d'unicite partielle cote base, doublee d'une verification
+    applicative pour rester compatible SQLite."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    cercle_id: int = Field(foreign_key="cercleetude.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    statut: StatutDemandeAdhesion = Field(default=StatutDemandeAdhesion.EN_ATTENTE)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_traitement: Optional[datetime] = None
+    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+
+
 class MessageCercle(SQLModel, table=True):
     """Un message envoye dans un cercle d'etude (historique persistant,
     relu a chaque ouverture du salon en plus du flux temps reel)."""

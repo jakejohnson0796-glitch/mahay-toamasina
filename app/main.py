@@ -19,6 +19,7 @@ from .models import Faculte, Document, StatutDocument
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, tuteur_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .seed_data import peupler_donnees_initiales
+from .admin_init import assurer_compte_admin
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -114,6 +115,7 @@ async def au_demarrage() -> None:
     print("[DEBUG DATABASE] Verification des donnees initiales...")
     with Session(engine) as session:
         peupler_donnees_initiales(session)
+        assurer_compte_admin(session)
     print("[DEBUG DATABASE] Donnees initiales OK.")
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
     print("[DEBUG DATABASE] Demarrage termine.")

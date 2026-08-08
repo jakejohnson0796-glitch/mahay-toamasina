@@ -20,7 +20,7 @@ from sqlmodel import Session, select, or_
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Utilisateur
+from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion
 from ..auth import utilisateur_courant
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
@@ -52,6 +52,31 @@ def _est_membre(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
     ).first() is not None
 
 
+def _est_admin(utilisateur: Optional[Utilisateur]) -> bool:
+    return bool(utilisateur and utilisateur.role == RoleUtilisateur.ADMIN)
+
+
+def _peut_gerer_cercle(cercle: CercleEtude, utilisateur: Optional[Utilisateur]) -> bool:
+    """Createur du cercle (uniquement le sien) ou admin (n'importe
+    lequel) — utilise pour : voir les membres, voir/traiter les
+    demandes, retirer un membre, supprimer le cercle, ajouter un membre
+    directement par numero. Reverifie a CHAQUE appel de route, jamais
+    fait confiance a ce que l'interface affiche ou masque."""
+    if not utilisateur:
+        return False
+    return utilisateur.id == cercle.createur_id or _est_admin(utilisateur)
+
+
+def _demande_en_attente(session: Session, cercle_id: int, utilisateur_id: int) -> Optional[DemandeAdhesionCercle]:
+    return session.exec(
+        select(DemandeAdhesionCercle).where(
+            DemandeAdhesionCercle.cercle_id == cercle_id,
+            DemandeAdhesionCercle.utilisateur_id == utilisateur_id,
+            DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE,
+        )
+    ).first()
+
+
 @router.get("/cercles")
 def liste_cercles(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
@@ -63,10 +88,16 @@ def liste_cercles(request: Request, session: Session = Depends(get_session)):
         nb_membres = len(
             session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle.id)).all()
         )
+        est_membre = _est_membre(session, cercle.id, utilisateur.id) if utilisateur else False
+        en_attente = bool(
+            utilisateur and not est_membre and _demande_en_attente(session, cercle.id, utilisateur.id)
+        )
         cercles_avec_info.append({
             "cercle": cercle,
             "nb_membres": nb_membres,
-            "est_membre": _est_membre(session, cercle.id, utilisateur.id) if utilisateur else False,
+            "est_membre": est_membre,
+            "en_attente": en_attente,
+            "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
         })
 
     return templates.TemplateResponse(
@@ -111,21 +142,276 @@ def creer_cercle(
     return RedirectResponse(f"/cercles/{cercle.id}", status_code=303)
 
 
-@router.post("/cercles/{cercle_id}/rejoindre")
-def rejoindre_cercle(request: Request, cercle_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+@router.post("/cercles/{cercle_id}/demander")
+def demander_adhesion(request: Request, cercle_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    """Cree une demande d'adhesion EN_ATTENTE (remplace l'ancienne
+    adhesion immediate). L'utilisateur ne devient PAS membre ici — il
+    faut que le createur du cercle ou un admin l'accepte (voir
+    accepter_demande ci-dessous)."""
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
-    if not session.get(CercleEtude, cercle_id):
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle:
         return RedirectResponse("/cercles", status_code=303)
 
-    if not _est_membre(session, cercle_id, utilisateur.id):
-        session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=utilisateur.id))
+    if _est_membre(session, cercle_id, utilisateur.id):
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    # Empeche le doublon cote applicatif (verification rapide, UX claire) ;
+    # l'index unique partiel en base (migration c4e91a2f7b6d) est le vrai
+    # garde-fou en cas de requetes concurrentes.
+    if not _demande_en_attente(session, cercle_id, utilisateur.id):
+        session.add(DemandeAdhesionCercle(cercle_id=cercle_id, utilisateur_id=utilisateur.id))
         session.commit()
 
-    return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+    return RedirectResponse("/cercles", status_code=303)
+
+
+@router.get("/cercles/{cercle_id}/membres")
+def voir_membres(request: Request, cercle_id: int, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle:
+        return RedirectResponse("/cercles", status_code=303)
+
+    # Seuls les membres du cercle (+ createur/admin, qui sont de toute
+    # facon membres ou geres a part) peuvent voir la liste — un visiteur
+    # externe non-membre n'a pas a voir qui est dans le cercle.
+    if not _est_membre(session, cercle_id, utilisateur.id) and not _peut_gerer_cercle(cercle, utilisateur):
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    lignes = session.exec(
+        select(MembreCercle, Utilisateur)
+        .where(MembreCercle.cercle_id == cercle_id)
+        .where(MembreCercle.utilisateur_id == Utilisateur.id)
+        .order_by(MembreCercle.date_adhesion)
+    ).all()
+    membres = [{"membre": m, "utilisateur": u} for m, u in lignes]
+
+    return templates.TemplateResponse(
+        request,
+        "cercle_membres.html",
+        {
+            "utilisateur": utilisateur,
+            "cercle": cercle,
+            "membres": membres,
+            "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
+        },
+    )
+
+
+@router.post("/cercles/{cercle_id}/membres/ajouter")
+def ajouter_membre_par_telephone(
+    request: Request,
+    cercle_id: int,
+    telephone: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Ajout direct d'un membre par numero de telephone, sans passer par
+    le workflow de demande — reserve au createur du cercle (le sien
+    uniquement) ou a un admin. L'utilisateur cible doit deja avoir un
+    compte MAHAY (on ne cree pas de compte a sa place)."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle:
+        return RedirectResponse("/cercles", status_code=303)
+
+    if not _peut_gerer_cercle(cercle, utilisateur):
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    cible = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone.strip())).first()
+    if not cible:
+        return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
+
+    if not _est_membre(session, cercle_id, cible.id):
+        session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=cible.id))
+        session.commit()
+
+    return RedirectResponse(f"/cercles/{cercle_id}/membres?ajoute=1", status_code=303)
+
+
+@router.get("/cercles/{cercle_id}/demandes")
+def voir_demandes(request: Request, cercle_id: int, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle:
+        return RedirectResponse("/cercles", status_code=303)
+
+    if not _peut_gerer_cercle(cercle, utilisateur):
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    lignes = session.exec(
+        select(DemandeAdhesionCercle, Utilisateur)
+        .where(DemandeAdhesionCercle.cercle_id == cercle_id)
+        .where(DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE)
+        .where(DemandeAdhesionCercle.utilisateur_id == Utilisateur.id)
+        .order_by(DemandeAdhesionCercle.date_creation)
+    ).all()
+    demandes = [{"demande": d, "utilisateur": u} for d, u in lignes]
+
+    return templates.TemplateResponse(
+        request,
+        "cercle_demandes.html",
+        {"utilisateur": utilisateur, "cercle": cercle, "demandes": demandes},
+    )
+
+
+@router.post("/cercles/{cercle_id}/demandes/{demande_id}/accepter")
+def accepter_demande(request: Request, cercle_id: int, demande_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    demande = session.get(DemandeAdhesionCercle, demande_id)
+    if not cercle or not demande or demande.cercle_id != cercle_id:
+        return RedirectResponse("/cercles", status_code=303)
+
+    if not _peut_gerer_cercle(cercle, utilisateur):
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    # Une demande deja traitee (acceptee/rejetee) ne peut pas etre
+    # retraitee — evite les doubles clics / actions concurrentes qui
+    # ajouteraient deux fois le membre ou ecraseraient une decision.
+    if demande.statut == StatutDemandeAdhesion.EN_ATTENTE:
+        demande.statut = StatutDemandeAdhesion.ACCEPTEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = utilisateur.id
+        session.add(demande)
+        if not _est_membre(session, cercle_id, demande.utilisateur_id):
+            session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=demande.utilisateur_id))
+        session.commit()
+
+    return RedirectResponse(f"/cercles/{cercle_id}/demandes", status_code=303)
+
+
+@router.post("/cercles/{cercle_id}/demandes/{demande_id}/refuser")
+def refuser_demande(request: Request, cercle_id: int, demande_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    demande = session.get(DemandeAdhesionCercle, demande_id)
+    if not cercle or not demande or demande.cercle_id != cercle_id:
+        return RedirectResponse("/cercles", status_code=303)
+
+    if not _peut_gerer_cercle(cercle, utilisateur):
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    if demande.statut == StatutDemandeAdhesion.EN_ATTENTE:
+        demande.statut = StatutDemandeAdhesion.REJETEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = utilisateur.id
+        session.add(demande)
+        session.commit()
+
+    return RedirectResponse(f"/cercles/{cercle_id}/demandes", status_code=303)
+
+
+@router.post("/cercles/{cercle_id}/quitter")
+def quitter_cercle(request: Request, cercle_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle:
+        return RedirectResponse("/cercles", status_code=303)
+
+    # Le createur ne peut pas "quitter" comme un membre normal : il doit
+    # soit supprimer le cercle, soit (fonctionnalite future) transferer
+    # la propriete. Sans ca, un cercle se retrouverait sans proprietaire.
+    if utilisateur.id == cercle.createur_id:
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=createur_ne_peut_quitter", status_code=303)
+
+    membre = session.exec(
+        select(MembreCercle).where(
+            MembreCercle.cercle_id == cercle_id,
+            MembreCercle.utilisateur_id == utilisateur.id,
+        )
+    ).first()
+    if membre:
+        session.delete(membre)
+        session.commit()
+
+    return RedirectResponse("/cercles", status_code=303)
+
+
+@router.post("/cercles/{cercle_id}/membres/{utilisateur_id}/retirer")
+def retirer_membre(request: Request, cercle_id: int, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle:
+        return RedirectResponse("/cercles", status_code=303)
+
+    if not _peut_gerer_cercle(cercle, utilisateur):
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    # Le createur ne se retire pas lui-meme via cette route (il devrait
+    # supprimer le cercle a la place) — evite un cercle sans proprietaire.
+    if utilisateur_id == cercle.createur_id:
+        return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=impossible_retirer_createur", status_code=303)
+
+    membre = session.exec(
+        select(MembreCercle).where(
+            MembreCercle.cercle_id == cercle_id,
+            MembreCercle.utilisateur_id == utilisateur_id,
+        )
+    ).first()
+    if membre:
+        session.delete(membre)
+        session.commit()
+
+    return RedirectResponse(f"/cercles/{cercle_id}/membres", status_code=303)
+
+
+@router.post("/cercles/{cercle_id}/supprimer")
+def supprimer_cercle(request: Request, cercle_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle:
+        return RedirectResponse("/cercles", status_code=303)
+
+    if not _peut_gerer_cercle(cercle, utilisateur):
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    # Nettoyage complet : membres, demandes, messages (+ signalements
+    # associes) et enfin le cercle lui-meme — evite de laisser des lignes
+    # orphelines en base qui referenceraient un cercle_id inexistant.
+    for membre in session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)).all():
+        session.delete(membre)
+    for demande in session.exec(select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.cercle_id == cercle_id)).all():
+        session.delete(demande)
+    messages = session.exec(select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)).all()
+    for message in messages:
+        for signalement in session.exec(select(SignalementMessage).where(SignalementMessage.message_id == message.id)).all():
+            session.delete(signalement)
+        session.delete(message)
+    session.delete(cercle)
+    session.commit()
+
+    return RedirectResponse("/cercles?supprime=1", status_code=303)
 
 
 @router.get("/cercles/{cercle_id}")
@@ -140,6 +426,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
         return RedirectResponse("/cercles", status_code=303)
 
     membre = _est_membre(session, cercle_id, utilisateur.id)
+    en_attente = bool(not membre and _demande_en_attente(session, cercle_id, utilisateur.id))
 
     messages = []
     if membre:
@@ -169,6 +456,8 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
         {
             "cercle": cercle,
             "membre": membre,
+            "en_attente": en_attente,
+            "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "utilisateur": utilisateur,
         },
