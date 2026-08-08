@@ -7,13 +7,39 @@
 
 {% if not membre %}
 <div class="carte-formulaire">
+  {% if en_attente %}
+  <p>Votre demande d'adhesion est en attente de validation.</p>
+  {% else %}
   <p>Vous n'etes pas encore membre de ce cercle.</p>
-  <form method="post" action="/cercles/{{ cercle.id }}/rejoindre">
+  <form method="post" action="/cercles/{{ cercle.id }}/demander">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button class="bouton bouton-primaire bouton-form" type="submit">Rejoindre pour discuter</button>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Demander à rejoindre</button>
   </form>
+  {% endif %}
 </div>
 {% else %}
+<div class="barre-actions-cercle" style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+  <a href="/cercles/{{ cercle.id }}/membres">Voir les membres</a>
+  {% if peut_gerer %}
+  <a href="/cercles/{{ cercle.id }}/demandes">Demandes d'adhésion</a>
+  {% endif %}
+  {% if utilisateur.id != cercle.createur_id %}
+  <form method="post" action="/cercles/{{ cercle.id }}/quitter" style="display:inline">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button type="submit" class="lien-action">Quitter le cercle</button>
+  </form>
+  {% endif %}
+  {% if peut_gerer %}
+  <form method="post" action="/cercles/{{ cercle.id }}/supprimer" style="display:inline" onsubmit="return confirm('Supprimer definitivement ce cercle et tous ses messages ?');">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button type="submit" class="lien-action">Supprimer le cercle</button>
+  </form>
+  {% endif %}
+</div>
+{% if request.query_params.get("erreur") == "createur_ne_peut_quitter" %}
+<div class="erreur">Vous etes le createur : supprimez le cercle plutot que de le quitter.</div>
+{% endif %}
+
 <div id="panneau-presence" class="panneau-presence">
   <span class="stat-label">En ligne maintenant :</span>
   <span id="liste-presence">—</span>

@@ -48,6 +48,15 @@ class Parametres:
     # (deja fait dans render.yaml).
     environnement: str = field(default_factory=lambda: os.getenv("ENVIRONNEMENT", "developpement"))
 
+    # --- Compte admin auto-initialise (voir app/admin_init.py) ---
+    # ADMIN_PHONE absent => aucune initialisation automatique (comportement
+    # inchange pour qui n'utilise pas cette fonctionnalite). ADMIN_PHONE
+    # present => ce compte est garanti admin a chaque demarrage. Le mot de
+    # passe (ADMIN_INITIAL_PASSWORD) n'est utilise QUE si ce compte n'existe
+    # pas encore ; il n'est jamais lu ni modifie pour un compte existant.
+    admin_phone: str = field(default_factory=lambda: os.getenv("ADMIN_PHONE", ""))
+    admin_mot_de_passe_initial: str = field(default_factory=lambda: os.getenv("ADMIN_INITIAL_PASSWORD", ""))
+
     # --- Generation de quiz par IA (API Groq — gratuite) ---
     # Cle gratuite sur https://console.groq.com (aucune carte bancaire requise).
     groq_api_key: str = field(default_factory=lambda: os.getenv("GROQ_API_KEY", ""))

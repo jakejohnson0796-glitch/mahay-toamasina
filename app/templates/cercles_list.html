@@ -36,6 +36,10 @@
 </div>
 {% endif %}
 
+{% if request.query_params.get("supprime") %}
+<div class="info">Cercle supprime.</div>
+{% endif %}
+
 <div class="liste-cercles">
   {% for info in cercles_avec_info %}
   <div class="carte-cercle">
@@ -47,10 +51,12 @@
     <div>
       {% if info.est_membre %}
       <a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat</a>
+      {% elif info.en_attente %}
+      <span class="bouton bouton-secondaire" style="opacity:0.7;cursor:default;">Demande en attente</span>
       {% elif utilisateur %}
-      <form method="post" action="/cercles/{{ info.cercle.id }}/rejoindre">
+      <form method="post" action="/cercles/{{ info.cercle.id }}/demander">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-        <button class="bouton bouton-primaire" type="submit">Rejoindre</button>
+        <button class="bouton bouton-primaire" type="submit">Demander à rejoindre</button>
       </form>
       {% endif %}
     </div>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}Demandes d'adhésion — {{ cercle.nom }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; {{ cercle.nom }}</a></p>
+<h2>Demandes d'adhésion ({{ demandes|length }})</h2>
+
+<table class="table-manifeste">
+  <thead><tr><th>Nom</th><th>Date de la demande</th><th></th></tr></thead>
+  <tbody>
+    {% for info in demandes %}
+    <tr>
+      <td>{{ info.utilisateur.nom }}</td>
+      <td>{{ info.demande.date_creation.strftime("%d/%m/%Y") }}</td>
+      <td>
+        <form method="post" action="/cercles/{{ cercle.id }}/demandes/{{ info.demande.id }}/accepter" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="bouton bouton-primaire" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Accepter</button>
+        </form>
+        <form method="post" action="/cercles/{{ cercle.id }}/demandes/{{ info.demande.id }}/refuser" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="bouton bouton-secondaire" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Refuser</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">Aucune demande en attente.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

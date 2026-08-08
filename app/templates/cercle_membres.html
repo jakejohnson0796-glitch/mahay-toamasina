@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titre %}Membres — {{ cercle.nom }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; {{ cercle.nom }}</a></p>
+<h2>Membres de {{ cercle.nom }}</h2>
+
+{% if request.query_params.get("erreur") == "utilisateur_introuvable" %}
+<div class="erreur">Aucun compte MAHAY avec ce numero. La personne doit d'abord s'inscrire.</div>
+{% endif %}
+{% if request.query_params.get("erreur") == "impossible_retirer_createur" %}
+<div class="erreur">Impossible de retirer le createur du cercle.</div>
+{% endif %}
+{% if request.query_params.get("ajoute") %}
+<div class="info">Membre ajoute.</div>
+{% endif %}
+
+{% if peut_gerer %}
+<div class="carte-formulaire" style="margin-bottom:2rem;">
+  <h3 style="margin-top:0;">Ajouter un membre par numero</h3>
+  <p class="stat-label">La personne doit deja avoir un compte MAHAY.</p>
+  <form method="post" action="/cercles/{{ cercle.id }}/membres/ajouter">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="telephone">Numero de telephone</label>
+    <input type="text" id="telephone" name="telephone" required>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Ajouter</button>
+  </form>
+</div>
+{% endif %}
+
+<table class="table-manifeste">
+  <thead><tr><th>Nom</th><th>Membre depuis</th><th></th></tr></thead>
+  <tbody>
+    {% for info in membres %}
+    <tr>
+      <td>
+        {{ info.utilisateur.nom }}
+        {% if info.utilisateur.id == cercle.createur_id %}<span class="stat-label">(createur)</span>{% endif %}
+      </td>
+      <td>{{ info.membre.date_adhesion.strftime("%d/%m/%Y") }}</td>
+      <td>
+        {% if peut_gerer and info.utilisateur.id != cercle.createur_id %}
+        <form method="post" action="/cercles/{{ cercle.id }}/membres/{{ info.utilisateur.id }}/retirer" style="display:inline" onsubmit="return confirm('Retirer ce membre du cercle ?');">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="lien-action">Retirer</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">Aucun membre pour l'instant.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
