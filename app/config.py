@@ -57,6 +57,17 @@ class Parametres:
     admin_phone: str = field(default_factory=lambda: os.getenv("ADMIN_PHONE", ""))
     admin_mot_de_passe_initial: str = field(default_factory=lambda: os.getenv("ADMIN_INITIAL_PASSWORD", ""))
 
+    # --- LiveKit (audio/video/partage d'ecran de la classe virtuelle) ---
+    # LiveKit Cloud : URL du projet (wss://...livekit.cloud), cle et
+    # secret API generes dans le dashboard LiveKit. Le secret ne sert
+    # QUE cote serveur (signature des jetons — voir app/livekit_tokens.py) :
+    # il ne doit jamais etre envoye au navigateur. Si l'une des trois
+    # valeurs manque, la classe virtuelle affiche une erreur claire au
+    # lieu de planter au demarrage du site (ce module est optionnel).
+    livekit_url: str = field(default_factory=lambda: os.getenv("LIVEKIT_URL", ""))
+    livekit_api_key: str = field(default_factory=lambda: os.getenv("LIVEKIT_API_KEY", ""))
+    livekit_api_secret: str = field(default_factory=lambda: os.getenv("LIVEKIT_API_SECRET", ""))
+
     # --- Generation de quiz par IA (API Groq — gratuite) ---
     # Cle gratuite sur https://console.groq.com (aucune carte bancaire requise).
     groq_api_key: str = field(default_factory=lambda: os.getenv("GROQ_API_KEY", ""))
