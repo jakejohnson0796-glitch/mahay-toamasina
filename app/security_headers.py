@@ -27,11 +27,21 @@ from starlette.responses import Response
 #   base.html.
 _CSP = (
     "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline'; "
+    # cdn.jsdelivr.net : uniquement pour charger le SDK LiveKit (salle
+    # virtuelle) — voir classe_salle.html. Sans cette autorisation
+    # explicite, le navigateur bloque silencieusement le <script src=...>
+    # externe (aucune erreur visible sauf dans la console developpeur),
+    # et toute la page semble "ne rien faire" au clic puisque le script
+    # n'a jamais fini de s'executer.
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "
     "img-src 'self' data:; "
-    "connect-src 'self' ws: wss:; "
+    "connect-src 'self' ws: wss: https:; "
+    # worker-src : le SDK LiveKit cree des Web Workers internes (blob:)
+    # pour le traitement audio/video sans bloquer l'interface.
+    "worker-src 'self' blob:; "
+    "media-src 'self' blob:; "
     "frame-ancestors 'none'; "
     "base-uri 'self'; "
     "form-action 'self';"

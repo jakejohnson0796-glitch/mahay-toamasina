@@ -4,16 +4,247 @@
 <p class="eyebrow">{{ cours.nom }}</p>
 <h2>{{ seance.titre }} <span class="tampon tampon-approuve">LIVE</span></h2>
 
-<div class="carte-formulaire">
-  <p>
-    Vous avez rejoint la seance. L'audio, la video, le partage d'ecran et
-    le tableau blanc collaboratif sont en cours d'integration (LiveKit) —
-    cet ecran est la prochaine etape.
-  </p>
-  <p class="stat-label">Salle : {{ seance.nom_salle_livekit }}</p>
-  <form method="post" action="/classe/seances/{{ seance.id }}/quitter">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button class="bouton bouton-primaire bouton-form" type="submit" style="background:#C24E4E;border-color:#C24E4E;">Quitter la salle</button>
-  </form>
+{% if erreur_livekit %}
+<div class="erreur">{{ erreur_livekit }}</div>
+<form method="post" action="/classe/seances/{{ seance.id }}/quitter">
+  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+  <button class="bouton bouton-secondaire bouton-form" type="submit">Retour au cours</button>
+</form>
+{% else %}
+
+<div id="salle-virtuelle" data-url="{{ url_livekit }}" data-jeton="{{ jeton_livekit }}" data-peut-partager-ecran="{{ 'true' if peut_gerer else 'false' }}">
+  <div id="statut-connexion" class="stat-label">Connexion a la salle…</div>
+
+  <div id="grille-video" class="grille-video"></div>
+
+  <div class="barre-controles-salle">
+    <button type="button" id="btn-micro" class="bouton-controle" aria-pressed="false" title="Activer/couper le micro">🎤</button>
+    <button type="button" id="btn-camera" class="bouton-controle" aria-pressed="false" title="Activer/couper la camera">📷</button>
+    {% if peut_gerer %}
+    <button type="button" id="btn-partage-ecran" class="bouton-controle" aria-pressed="false" title="Partager l'ecran">🖥️</button>
+    {% endif %}
+    <button type="button" id="btn-lever-main" class="bouton-controle" title="Lever la main">✋</button>
+    <span id="compteur-participants" class="stat-label" style="margin-left:auto;align-self:center;">1 participant</span>
+    <form method="post" action="/classe/seances/{{ seance.id }}/quitter" id="form-quitter">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button type="submit" id="btn-quitter" class="bouton-controle bouton-quitter" title="Quitter la salle">Quitter</button>
+    </form>
+  </div>
+
+  <div id="notifications-salle" aria-live="polite"></div>
+
+  <div class="panneau-chat-salle">
+    <div id="messages-chat-salle" class="messages-chat-salle"></div>
+    <form id="form-chat-salle">
+      <input type="text" id="champ-chat-salle" placeholder="Message a tous..." autocomplete="off" maxlength="500">
+      <button type="submit" class="bouton bouton-secondaire" style="padding:0.5rem 1rem;">Envoyer</button>
+    </form>
+  </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+<script>
+(function () {
+  const conteneur = document.getElementById("salle-virtuelle");
+  const url = conteneur.dataset.url;
+  const jeton = conteneur.dataset.jeton;
+  const peutPartagerEcran = conteneur.dataset.peutPartagerEcran === "true";
+  const nomUtilisateur = {{ utilisateur.nom | tojson }};
+
+  const statutEl = document.getElementById("statut-connexion");
+  const grilleVideo = document.getElementById("grille-video");
+  const compteurEl = document.getElementById("compteur-participants");
+  const notifsEl = document.getElementById("notifications-salle");
+  const messagesEl = document.getElementById("messages-chat-salle");
+
+  const { Room, RoomEvent, Track } = LivekitClient;
+  const room = new Room({ adaptiveStream: true, dynacast: true });
+
+  function majCompteur() {
+    const n = room.numParticipants || (room.remoteParticipants.size + 1);
+    compteurEl.textContent = n + " participant" + (n > 1 ? "s" : "");
+  }
+
+  function creerTuile(identifiantParticipant, nom) {
+    let tuile = document.getElementById("tuile-" + identifiantParticipant);
+    if (!tuile) {
+      tuile = document.createElement("div");
+      tuile.className = "tuile-video";
+      tuile.id = "tuile-" + identifiantParticipant;
+      const etiquette = document.createElement("span");
+      etiquette.className = "tuile-video-nom";
+      etiquette.textContent = nom;
+      tuile.appendChild(etiquette);
+      grilleVideo.appendChild(tuile);
+    }
+    return tuile;
+  }
+
+  function retirerTuileSiVide(identifiantParticipant) {
+    const tuile = document.getElementById("tuile-" + identifiantParticipant);
+    if (tuile && !tuile.querySelector("video") && !tuile.querySelector("audio")) {
+      tuile.remove();
+    }
+  }
+
+  function ajouterMessageChat(nom, texte, estMoi) {
+    const ligne = document.createElement("div");
+    ligne.className = "message-chat-salle" + (estMoi ? " message-chat-salle-moi" : "");
+    const auteur = document.createElement("span");
+    auteur.className = "message-auteur";
+    auteur.textContent = nom;
+    const contenu = document.createElement("span");
+    contenu.textContent = texte;
+    ligne.appendChild(auteur);
+    ligne.appendChild(contenu);
+    messagesEl.appendChild(ligne);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function notifier(texte) {
+    const n = document.createElement("div");
+    n.className = "notification-salle";
+    n.textContent = texte;
+    notifsEl.appendChild(n);
+    setTimeout(function () { n.remove(); }, 5000);
+  }
+
+  // --- Reception des flux video/audio des autres participants ---
+  room.on(RoomEvent.TrackSubscribed, function (track, publication, participant) {
+    const tuile = creerTuile(participant.identity, participant.name || "Participant");
+    const element = track.attach();
+    if (track.kind === Track.Kind.Video) {
+      element.classList.add("tuile-video-flux");
+    }
+    tuile.appendChild(element);
+    majCompteur();
+  });
+  room.on(RoomEvent.TrackUnsubscribed, function (track, publication, participant) {
+    track.detach().forEach(function (el) { el.remove(); });
+    retirerTuileSiVide(participant.identity);
+  });
+
+  room.on(RoomEvent.ParticipantConnected, function (participant) {
+    notifier(participant.name + " a rejoint la salle.");
+    majCompteur();
+  });
+  room.on(RoomEvent.ParticipantDisconnected, function (participant) {
+    const tuile = document.getElementById("tuile-" + participant.identity);
+    if (tuile) tuile.remove();
+    notifier(participant.name + " a quitte la salle.");
+    majCompteur();
+  });
+
+  room.on(RoomEvent.Disconnected, function () {
+    statutEl.textContent = "Deconnecte de la salle.";
+  });
+  room.on(RoomEvent.Reconnecting, function () {
+    statutEl.textContent = "Reconnexion en cours...";
+  });
+  room.on(RoomEvent.Reconnected, function () {
+    statutEl.textContent = "Connecte.";
+  });
+
+  // --- Canal de donnees : chat + "lever la main" (pas de WebSocket
+  // separe, on reutilise le canal deja ouvert par LiveKit) ---
+  room.on(RoomEvent.DataReceived, function (payload, participant) {
+    try {
+      const donnees = JSON.parse(new TextDecoder().decode(payload));
+      if (donnees.type === "chat") {
+        ajouterMessageChat(donnees.nom, donnees.texte, false);
+      } else if (donnees.type === "main_levee") {
+        notifier(donnees.nom + " leve la main.");
+      }
+    } catch (e) { /* message non reconnu, on ignore */ }
+  });
+
+  function envoyerDonnee(objet) {
+    const payload = new TextEncoder().encode(JSON.stringify(objet));
+    room.localParticipant.publishData(payload, { reliable: true });
+  }
+
+  // --- Connexion ---
+  room.connect(url, jeton).then(function () {
+    statutEl.textContent = "Connecte.";
+    majCompteur();
+  }).catch(function (erreur) {
+    statutEl.textContent = "Impossible de se connecter a la salle (" + erreur.message + ").";
+  });
+
+  // --- Controles ---
+  let microActif = false;
+  let cameraActive = false;
+  let partageActif = false;
+
+  document.getElementById("btn-micro").addEventListener("click", function () {
+    microActif = !microActif;
+    room.localParticipant.setMicrophoneEnabled(microActif);
+    this.setAttribute("aria-pressed", String(microActif));
+    this.classList.toggle("bouton-controle-actif", microActif);
+  });
+
+  document.getElementById("btn-camera").addEventListener("click", function () {
+    cameraActive = !cameraActive;
+    room.localParticipant.setCameraEnabled(cameraActive).then(function () {
+      if (cameraActive) {
+        const pub = room.localParticipant.videoTrackPublications;
+        pub.forEach(function (p) {
+          if (p.track) {
+            const tuile = creerTuile(room.localParticipant.identity, nomUtilisateur + " (vous)");
+            const el = p.track.attach();
+            el.classList.add("tuile-video-flux");
+            el.muted = true;  // evite l'echo de son propre micro
+            tuile.appendChild(el);
+          }
+        });
+      } else {
+        retirerTuileSiVide(room.localParticipant.identity);
+      }
+    });
+    this.setAttribute("aria-pressed", String(cameraActive));
+    this.classList.toggle("bouton-controle-actif", cameraActive);
+  });
+
+  {% if peut_gerer %}
+  document.getElementById("btn-partage-ecran").addEventListener("click", function () {
+    partageActif = !partageActif;
+    room.localParticipant.setScreenShareEnabled(partageActif).catch(function (erreur) {
+      // L'utilisateur peut annuler la demande de partage (boite de dialogue
+      // du navigateur) — on remet juste le bouton dans son etat precedent.
+      partageActif = !partageActif;
+      notifier("Partage d'ecran annule.");
+    });
+    this.setAttribute("aria-pressed", String(partageActif));
+    this.classList.toggle("bouton-controle-actif", partageActif);
+  });
+  {% endif %}
+
+  document.getElementById("btn-lever-main").addEventListener("click", function () {
+    envoyerDonnee({ type: "main_levee", nom: nomUtilisateur });
+    notifier("Vous avez leve la main.");
+  });
+
+  document.getElementById("form-chat-salle").addEventListener("submit", function (evenement) {
+    evenement.preventDefault();
+    const champ = document.getElementById("champ-chat-salle");
+    const texte = champ.value.trim();
+    if (!texte) return;
+    envoyerDonnee({ type: "chat", nom: nomUtilisateur, texte: texte });
+    ajouterMessageChat(nomUtilisateur, texte, true);
+    champ.value = "";
+  });
+
+  // Deconnexion propre de LiveKit avant de quitter la page (bouton
+  // "Quitter" ou fermeture d'onglet) — sinon la salle croit que la
+  // personne est encore connectee jusqu'au timeout reseau.
+  document.getElementById("form-quitter").addEventListener("submit", function () {
+    room.disconnect();
+  });
+  window.addEventListener("beforeunload", function () {
+    room.disconnect();
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}
+

@@ -492,3 +492,84 @@ input:focus, select:focus, textarea:focus {
     border-bottom: 1px solid var(--border);
   }
 }
+
+/* --- Salle virtuelle (classe_salle.html) --- */
+.grille-video {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+  min-height: 160px;
+}
+.tuile-video {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tuile-video-flux { width: 100%; height: 100%; object-fit: cover; }
+.tuile-video-nom {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  font-size: 0.7rem;
+  background: rgba(14, 42, 50, 0.75);
+  color: var(--text);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  z-index: 1;
+}
+.barre-controles-salle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.bouton-controle {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-panel-2);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.bouton-controle-actif { background: var(--accent); border-color: var(--accent); }
+.bouton-quitter {
+  width: auto;
+  border-radius: 6px;
+  padding: 0 1rem;
+  background: #C24E4E;
+  border-color: #C24E4E;
+  color: #fff;
+  font-size: 0.85rem;
+}
+#notifications-salle { display: flex; flex-direction: column; gap: 0.4rem; margin: 0.75rem 0; }
+.notification-salle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-panel-2);
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+}
+.panneau-chat-salle {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  padding: 0.75rem;
+}
+.messages-chat-salle { max-height: 220px; overflow-y: auto; margin-bottom: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.message-chat-salle { font-size: 0.85rem; }
+.message-chat-salle .message-auteur { color: var(--accent-2); font-weight: 600; margin-right: 0.4rem; }
+.message-chat-salle-moi .message-auteur { color: var(--accent); }
+#form-chat-salle { display: flex; gap: 0.5rem; }
+#form-chat-salle input { flex: 1; }

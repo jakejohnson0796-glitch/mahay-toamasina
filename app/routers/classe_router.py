@@ -24,6 +24,8 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur
 from ..auth import utilisateur_courant
+from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure
+from ..config import parametres
 
 router = APIRouter()
 
@@ -349,10 +351,45 @@ def salle_virtuelle(request: Request, seance_id: int, session: Session = Depends
     if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
+    if seance.statut != StatutSeance.EN_COURS:
+        return RedirectResponse(f"/classe/{cours.id}?erreur=seance_non_demarree", status_code=303)
+
+    if not livekit_configure():
+        return templates.TemplateResponse(
+            request,
+            "classe_salle.html",
+            {
+                "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer,
+                "erreur_livekit": "La classe virtuelle audio/video n'est pas encore configuree sur ce serveur (variables LIVEKIT_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET manquantes).",
+                "jeton_livekit": None, "url_livekit": None,
+            },
+        )
+
+    try:
+        jeton_livekit = generer_jeton_salle(
+            nom_salle=seance.nom_salle_livekit,
+            utilisateur_id=utilisateur.id,
+            nom_affiche=utilisateur.nom,
+            peut_publier=True,
+            peut_partager_ecran=peut_gerer,
+        )
+    except LiveKitNonConfigure as erreur:
+        return templates.TemplateResponse(
+            request,
+            "classe_salle.html",
+            {
+                "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer,
+                "erreur_livekit": str(erreur), "jeton_livekit": None, "url_livekit": None,
+            },
+        )
+
     return templates.TemplateResponse(
         request,
         "classe_salle.html",
-        {"utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer},
+        {
+            "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer,
+            "erreur_livekit": None, "jeton_livekit": jeton_livekit, "url_livekit": parametres.livekit_url,
+        },
     )
 
 
