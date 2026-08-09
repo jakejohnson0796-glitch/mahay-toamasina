@@ -116,6 +116,26 @@ main { max-width: 960px; margin: 0 auto; padding: 2rem; }
 
 .cta-groupe { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; }
 
+/* Reinitialisation globale des <button> : sans ca, un navigateur applique
+   un fond gris clair par defaut (contrairement a un <div>/<span>, qui
+   sont transparents par defaut) meme quand aucune regle CSS ne definit
+   explicitement de fond. C'etait exactement la cause du bug de contraste
+   sur .bouton-secondaire ci-dessous (fond gris natif + texte clair =
+   illisible) — ce reset empeche n'importe quel FUTUR bouton de retomber
+   dans le meme piege, sans avoir a se souvenir de fixer background+color
+   ensemble a chaque fois. */
+button {
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .bouton {
   display: inline-block;
   padding: 0.75rem 1.4rem;
@@ -125,8 +145,10 @@ main { max-width: 960px; margin: 0 auto; padding: 2rem; }
 }
 .bouton-primaire { background: var(--accent); color: #1A1206; }
 .bouton-primaire:hover { background: #f0a874; text-decoration: none; }
-.bouton-secondaire { border: 1px solid var(--border); color: var(--text); }
+.bouton-primaire:disabled, .bouton-primaire:disabled:hover { background: var(--accent); opacity: 0.5; }
+.bouton-secondaire { background: var(--bg-panel-2); border: 1px solid var(--border); color: var(--text); }
 .bouton-secondaire:hover { border-color: var(--accent); text-decoration: none; }
+.bouton-secondaire:disabled, .bouton-secondaire:disabled:hover { border-color: var(--border); }
 
 /* ---------- Stats ---------- */
 
