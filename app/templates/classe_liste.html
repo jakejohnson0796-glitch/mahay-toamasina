@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titre %}Classe virtuelle — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow">Cours en ligne</p>
+<h2>Classe virtuelle</h2>
+
+{% if est_professeur %}
+<div class="carte-formulaire" style="margin-bottom:2rem;">
+  <h3 style="margin-top:0;">Creer un cours</h3>
+  <form method="post" action="/classe/creer">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="nom">Nom du cours</label>
+    <input type="text" id="nom" name="nom" required>
+    <label for="matiere">Matiere</label>
+    <input type="text" id="matiere" name="matiere" required>
+    <label for="niveau">Niveau</label>
+    <input type="text" id="niveau" name="niveau" required placeholder="ex: L2, L3...">
+    <label for="description">Description (optionnel)</label>
+    <textarea id="description" name="description" rows="2"></textarea>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cours</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="liste-cercles">
+  {% for cours in cours_visibles %}
+  <div class="carte-cercle">
+    <div>
+      <strong>{{ cours.nom }}</strong>
+      <p>{{ cours.matiere }} — {{ cours.niveau }}</p>
+      {% if cours.description %}<p class="stat-label">{{ cours.description }}</p>{% endif %}
+    </div>
+    <div>
+      <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Ouvrir</a>
+    </div>
+  </div>
+  {% else %}
+  <p>
+    {% if est_professeur %}Vous n'avez pas encore cree de cours.
+    {% else %}Vous n'etes inscrit a aucun cours pour l'instant — votre professeur doit vous y ajouter.{% endif %}
+  </p>
+  {% endfor %}
+</div>
+{% endblock %}

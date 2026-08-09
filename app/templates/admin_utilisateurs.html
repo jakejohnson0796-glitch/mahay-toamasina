@@ -26,6 +26,17 @@
       </td>
       <td>
         {% if u.id != utilisateur.id %}
+        {% if u.role.value == "etudiant" %}
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Promouvoir professeur</button>
+        </form>
+        {% elif u.role.value == "professeur" %}
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Retirer le statut professeur</button>
+        </form>
+        {% endif %}
         {% if u.banni %}
         <form method="post" action="/admin/utilisateurs/{{ u.id }}/debannir" style="display:inline">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">

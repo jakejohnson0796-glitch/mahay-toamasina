@@ -15,6 +15,7 @@ from sqlmodel import SQLModel, Field, Relationship
 class RoleUtilisateur(str, Enum):
     ETUDIANT = "etudiant"
     SPONSOR = "sponsor"      # repetiteur, petit commerce, service pour etudiants
+    PROFESSEUR = "professeur"  # anime des cours dans le module Classe virtuelle
     ADMIN = "admin"
 
 
@@ -277,3 +278,72 @@ class SessionTuteur(SQLModel, table=True):
     exercice: str
     correction: str
     date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ============================================================
+# Classe virtuelle — voir app/routers/classe_router.py
+# ============================================================
+# Modelise volontairement sur le meme schema que les cercles d'etude
+# (createur/proprietaire + inscription + messages) plutot que d'inventer
+# un systeme parallele : Cours ~ CercleEtude, InscriptionCours ~
+# MembreCercle, Seance ajoute juste la notion de creneau/salle vivante.
+
+class StatutSeance(str, Enum):
+    PLANIFIEE = "planifiee"
+    EN_COURS = "en_cours"
+    TERMINEE = "terminee"
+
+
+class Cours(SQLModel, table=True):
+    """Un cours anime par un professeur (role PROFESSEUR uniquement —
+    voir _est_professeur_du_cours dans classe_router.py). Contient
+    plusieurs Seance. Les etudiants y participent via InscriptionCours."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nom: str
+    matiere: str
+    niveau: str
+    description: Optional[str] = None
+    professeur_id: int = Field(foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+
+class InscriptionCours(SQLModel, table=True):
+    """Un etudiant inscrit a un cours (ajoute directement par le
+    professeur, meme logique que l'ajout de membre par telephone dans
+    les cercles — pas de workflow de demande ici, cf. cahier des charges
+    'inviter ou ajouter des etudiants')."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    cours_id: int = Field(foreign_key="cours.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    date_inscription: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Seance(SQLModel, table=True):
+    """Une seance planifiee d'un cours. Le nom_salle_livekit est genere
+    a la creation (unique, stable) — c'est lui qui identifie la salle
+    LiveKit ; la salle elle-meme n'existe reellement cote LiveKit que le
+    temps ou des participants y sont connectes (LiveKit gere ca tout
+    seul, rien a provisionner a l'avance cote MAHAY)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    cours_id: int = Field(foreign_key="cours.id")
+    titre: str
+    description: Optional[str] = None
+    statut: StatutSeance = Field(default=StatutSeance.PLANIFIEE)
+    nom_salle_livekit: str = Field(unique=True)
+    date_debut_reelle: Optional[datetime] = None
+    date_fin_reelle: Optional[datetime] = None
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PresenceSeance(SQLModel, table=True):
+    """Une ligne par (seance, utilisateur) ayant rejoint la salle au
+    moins une fois. heure_sortie reste vide tant que l'utilisateur est
+    connecte ; mise a jour a chaque 'quitter' (et re-ouverte si la
+    personne revient et repart plusieurs fois — on garde la derniere
+    sortie, la duree_estimee_secondes cumule au fil des allers-retours)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    heure_entree: datetime = Field(default_factory=datetime.utcnow)
+    heure_sortie: Optional[datetime] = None
+    duree_estimee_secondes: int = Field(default=0)

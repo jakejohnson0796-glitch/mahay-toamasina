@@ -288,3 +288,36 @@ def debannir_utilisateur(request: Request, utilisateur_id: int, session: Session
         session.commit()
 
     return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
+@router.post("/admin/utilisateurs/{utilisateur_id}/promouvoir-professeur")
+def promouvoir_professeur(request: Request, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    """PROFESSEUR n'est jamais auto-attribuable a l'inscription (comme
+    ADMIN) : seul un admin peut accorder ce role, ici. Evite qu'un
+    utilisateur se declare professeur pour ouvrir des cours en son nom."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if cible and cible.role == RoleUtilisateur.ETUDIANT:
+        cible.role = RoleUtilisateur.PROFESSEUR
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
+@router.post("/admin/utilisateurs/{utilisateur_id}/retrograder-etudiant")
+def retrograder_etudiant(request: Request, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if cible and cible.role == RoleUtilisateur.PROFESSEUR:
+        cible.role = RoleUtilisateur.ETUDIANT
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
