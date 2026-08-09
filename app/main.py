@@ -16,7 +16,7 @@ from sqlmodel import Session, select
 from .config import parametres
 from .database import executer_migrations, engine, get_session
 from .models import Faculte, Document, StatutDocument
-from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, tuteur_router
+from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, tuteur_router, classe_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .seed_data import peupler_donnees_initiales
 from .admin_init import assurer_compte_admin
@@ -67,6 +67,7 @@ app.include_router(dashboard_router.router)
 app.include_router(quiz_router.router)
 app.include_router(admin_router.router)
 app.include_router(tuteur_router.router)
+app.include_router(classe_router.router)
 
 
 def _masquer_mot_de_passe(url: str) -> str:

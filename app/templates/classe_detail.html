@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block titre %}{{ cours.nom }} — Classe virtuelle — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/classe">&larr; Classe virtuelle</a></p>
+<h2>{{ cours.nom }}</h2>
+<p class="stat-label">{{ cours.matiere }} — {{ cours.niveau }} — Professeur : {{ professeur.nom }} — {{ nb_etudiants }} etudiant{{ "s" if nb_etudiants != 1 else "" }}</p>
+{% if cours.description %}<p>{{ cours.description }}</p>{% endif %}
+
+{% if request.query_params.get("erreur") == "seance_non_demarree" %}
+<div class="erreur">Cette seance n'est pas encore en cours.</div>
+{% endif %}
+
+{% if peut_gerer %}
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+  <a href="/classe/{{ cours.id }}/etudiants">Voir les etudiants</a>
+</div>
+
+<div class="carte-formulaire" style="margin-bottom:2rem;">
+  <h3 style="margin-top:0;">Nouvelle seance</h3>
+  <form method="post" action="/classe/{{ cours.id }}/seances/creer">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="titre">Titre</label>
+    <input type="text" id="titre" name="titre" required placeholder="ex: Introduction">
+    <label for="description">Description (optionnel)</label>
+    <textarea id="description" name="description" rows="2"></textarea>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Creer la seance</button>
+  </form>
+</div>
+{% endif %}
+
+<h3>Seances</h3>
+<table class="table-manifeste">
+  <thead><tr><th>Titre</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+    {% for seance in seances %}
+    <tr>
+      <td>{{ seance.titre }}</td>
+      <td>
+        {% if seance.statut.value == "planifiee" %}<span class="tampon tampon-attente">Planifiee</span>
+        {% elif seance.statut.value == "en_cours" %}<span class="tampon tampon-approuve">LIVE</span>
+        {% else %}<span class="tampon tampon-rejete">Terminee</span>{% endif %}
+      </td>
+      <td>
+        {% if seance.statut.value == "planifiee" and peut_gerer %}
+        <form method="post" action="/classe/seances/{{ seance.id }}/demarrer" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Demarrer</button>
+        </form>
+        {% elif seance.statut.value == "en_cours" %}
+        <form method="post" action="/classe/seances/{{ seance.id }}/rejoindre" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejoindre</button>
+        </form>
+        {% if peut_gerer %}
+        <form method="post" action="/classe/seances/{{ seance.id }}/terminer" style="display:inline" onsubmit="return confirm('Terminer cette seance pour tout le monde ?');">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Terminer</button>
+        </form>
+        {% endif %}
+        {% endif %}
+        {% if peut_gerer %}
+        <a href="/classe/seances/{{ seance.id }}/presences" class="lien-action" style="margin-left:0.5rem;">Presences</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">Aucune seance pour l'instant.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

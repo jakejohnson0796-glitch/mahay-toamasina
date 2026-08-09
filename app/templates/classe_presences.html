@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titre %}Presences — {{ seance.titre }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/classe/{{ cours.id }}">&larr; {{ cours.nom }}</a></p>
+<h2>Presences — {{ seance.titre }}</h2>
+
+<table class="table-manifeste">
+  <thead><tr><th>Etudiant</th><th>Entree</th><th>Sortie</th><th>Duree estimee</th></tr></thead>
+  <tbody>
+    {% for info in presences %}
+    <tr>
+      <td>{{ info.utilisateur.nom }}</td>
+      <td>{{ info.presence.heure_entree.strftime("%H:%M:%S") }}</td>
+      <td>{{ info.presence.heure_sortie.strftime("%H:%M:%S") if info.presence.heure_sortie else "en cours" }}</td>
+      <td>{{ (info.presence.duree_estimee_secondes // 60) }} min</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Personne n'a encore rejoint cette seance.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

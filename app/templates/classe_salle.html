@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titre %}Salle — {{ seance.titre }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow">{{ cours.nom }}</p>
+<h2>{{ seance.titre }} <span class="tampon tampon-approuve">LIVE</span></h2>
+
+<div class="carte-formulaire">
+  <p>
+    Vous avez rejoint la seance. L'audio, la video, le partage d'ecran et
+    le tableau blanc collaboratif sont en cours d'integration (LiveKit) —
+    cet ecran est la prochaine etape.
+  </p>
+  <p class="stat-label">Salle : {{ seance.nom_salle_livekit }}</p>
+  <form method="post" action="/classe/seances/{{ seance.id }}/quitter">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button class="bouton bouton-primaire bouton-form" type="submit" style="background:#C24E4E;border-color:#C24E4E;">Quitter la salle</button>
+  </form>
+</div>
+{% endblock %}

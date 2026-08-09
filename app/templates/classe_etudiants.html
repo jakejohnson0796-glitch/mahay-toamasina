@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titre %}Etudiants — {{ cours.nom }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/classe/{{ cours.id }}">&larr; {{ cours.nom }}</a></p>
+<h2>Etudiants inscrits</h2>
+
+{% if request.query_params.get("erreur") == "utilisateur_introuvable" %}
+<div class="erreur">Aucun compte MAHAY avec ce numero.</div>
+{% endif %}
+{% if request.query_params.get("ajoute") %}
+<div class="info">Etudiant ajoute.</div>
+{% endif %}
+
+<div class="carte-formulaire" style="margin-bottom:2rem;">
+  <h3 style="margin-top:0;">Ajouter un etudiant par numero</h3>
+  <form method="post" action="/classe/{{ cours.id }}/etudiants/ajouter">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="telephone">Numero de telephone</label>
+    <input type="text" id="telephone" name="telephone" required>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Ajouter</button>
+  </form>
+</div>
+
+<table class="table-manifeste">
+  <thead><tr><th>Nom</th><th>Inscrit depuis</th><th></th></tr></thead>
+  <tbody>
+    {% for info in inscriptions %}
+    <tr>
+      <td>{{ info.utilisateur.nom }}</td>
+      <td>{{ info.inscription.date_inscription.strftime("%d/%m/%Y") }}</td>
+      <td>
+        <form method="post" action="/classe/{{ cours.id }}/etudiants/{{ info.utilisateur.id }}/retirer" style="display:inline" onsubmit="return confirm('Retirer cet etudiant du cours ?');">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="lien-action">Retirer</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">Aucun etudiant inscrit pour l'instant.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
