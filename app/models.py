@@ -347,3 +347,46 @@ class PresenceSeance(SQLModel, table=True):
     heure_entree: datetime = Field(default_factory=datetime.utcnow)
     heure_sortie: Optional[datetime] = None
     duree_estimee_secondes: int = Field(default=0)
+
+
+# ============================================================
+# Tableau blanc collaboratif — voir app/routers/classe_router.py
+# ============================================================
+
+class TypeEvenementTableau(str, Enum):
+    TRAIT = "trait"              # dessin libre (liste de points)
+    FORME = "forme"               # rectangle/cercle/ligne
+    TEXTE = "texte"
+    SUPPRESSION = "suppression"   # annule un element precis (undo/effacement cible)
+    EFFACER_TOUT = "effacer_tout"
+
+
+class EvenementTableauBlanc(SQLModel, table=True):
+    """Journal append-only de tout ce qui se passe sur le tableau blanc
+    d'une seance. Ne JAMAIS modifier/supprimer une ligne existante — un
+    'undo' ajoute une nouvelle ligne de type SUPPRESSION qui reference
+    l'element vise, un 'redo' ajoute une nouvelle ligne qui recree
+    l'element original (meme element_id). Cette approche (plutot que
+    modifier en place) permet de reconstituer l'etat exact du tableau a
+    tout moment en rejouant le journal dans l'ordre — necessaire pour
+    qu'un etudiant qui rejoint en retard voie le tableau tel qu'il est
+    actuellement (voir _reconstituer_etat_tableau dans classe_router.py)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    type_evenement: TypeEvenementTableau
+    element_id: str  # identifiant genere cote client (un dessin = un id stable)
+    donnees: str = "{}"  # JSON serialise : points/couleur/epaisseur/texte/coords selon le type
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AutorisationEcritureTableau(SQLModel, table=True):
+    """Un etudiant explicitement autorise par le professeur (ou un admin)
+    a dessiner sur le tableau de CETTE seance precise, en plus du
+    prof/admin qui peuvent toujours ecrire. La ligne est supprimee quand
+    l'autorisation est revoquee — sa seule presence fait foi, pas de
+    champ 'actif' a verifier en plus."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)

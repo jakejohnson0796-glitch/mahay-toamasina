@@ -24,6 +24,7 @@
     <button type="button" id="btn-partage-ecran" class="bouton-controle" aria-pressed="false" title="Partager l'ecran">🖥️</button>
     {% endif %}
     <button type="button" id="btn-lever-main" class="bouton-controle" title="Lever la main">✋</button>
+    <a href="/classe/seances/{{ seance.id }}/tableau" class="bouton-controle" title="Tableau blanc" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">🖍️</a>
     <span id="compteur-participants" class="stat-label" style="margin-left:auto;align-self:center;">1 participant</span>
     <form method="post" action="/classe/seances/{{ seance.id }}/quitter" id="form-quitter">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
