@@ -12,20 +12,22 @@ LiveKit (jeton, connexion WebRTC, tableau blanc) n'est pas branchee —
 prochaine etape explicitement separee de celle-ci.
 """
 import secrets
+import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
-from ..database import get_session
+from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur
+from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau
 from ..auth import utilisateur_courant
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure
 from ..config import parametres
+from ..ws_manager import gestionnaire
 
 router = APIRouter()
 
@@ -60,6 +62,50 @@ def _generer_nom_salle(cours_id: int) -> str:
     # cote serveur, un nom de salle non predictible evite les tentatives
     # de connexion directe au hasard).
     return f"mahay-cours{cours_id}-{secrets.token_hex(6)}"
+
+
+def _peut_ecrire_tableau(session: Session, seance_id: int, cours: Cours, utilisateur: Utilisateur) -> bool:
+    """Le prof proprietaire du cours (ou un admin) peut toujours ecrire.
+    Un etudiant ne peut ecrire QUE s'il a ete explicitement autorise pour
+    CETTE seance precise (voir AutorisationEcritureTableau) — verifie a
+    chaque evenement recu sur le WebSocket, jamais fait confiance a
+    l'etat affiche cote client (qui pourrait etre bidouille)."""
+    if _peut_gerer_cours(cours, utilisateur):
+        return True
+    return session.exec(
+        select(AutorisationEcritureTableau).where(
+            AutorisationEcritureTableau.seance_id == seance_id,
+            AutorisationEcritureTableau.utilisateur_id == utilisateur.id,
+        )
+    ).first() is not None
+
+
+def _reconstituer_etat_tableau(session: Session, seance_id: int) -> list:
+    """Rejoue le journal d'evenements dans l'ordre pour reconstituer
+    l'etat VISIBLE actuel du tableau (necessaire pour qu'un etudiant qui
+    rejoint en retard voie le tableau tel qu'il est, pas juste les
+    evenements a partir de sa connexion). Voir EvenementTableauBlanc
+    pour l'explication complete de cette approche append-only."""
+    evenements = session.exec(
+        select(EvenementTableauBlanc)
+        .where(EvenementTableauBlanc.seance_id == seance_id)
+        .order_by(EvenementTableauBlanc.date_creation)
+    ).all()
+
+    etat: dict = {}
+    for e in evenements:
+        if e.type_evenement == TypeEvenementTableau.EFFACER_TOUT:
+            etat = {}
+        elif e.type_evenement == TypeEvenementTableau.SUPPRESSION:
+            etat.pop(e.element_id, None)
+        else:
+            etat[e.element_id] = {
+                "type": e.type_evenement.value,
+                "element_id": e.element_id,
+                "utilisateur_id": e.utilisateur_id,
+                "donnees": json.loads(e.donnees),
+            }
+    return list(etat.values())
 
 
 @router.get("/classe")
@@ -446,3 +492,234 @@ def voir_presences(request: Request, seance_id: int, session: Session = Depends(
         "classe_presences.html",
         {"utilisateur": utilisateur, "cours": cours, "seance": seance, "presences": presences},
     )
+
+
+@router.get("/classe/seances/{seance_id}/tableau")
+def page_tableau(request: Request, seance_id: int, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    seance = session.get(Seance, seance_id)
+    if not seance:
+        return RedirectResponse("/classe", status_code=303)
+    cours = session.get(Cours, seance.cours_id)
+    if not cours:
+        return RedirectResponse("/classe", status_code=303)
+
+    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
+        return RedirectResponse(f"/classe/{cours.id}", status_code=303)
+
+    etat_initial = _reconstituer_etat_tableau(session, seance_id)
+
+    autorises = []
+    if peut_gerer:
+        lignes = session.exec(
+            select(AutorisationEcritureTableau, Utilisateur)
+            .where(AutorisationEcritureTableau.seance_id == seance_id)
+            .where(AutorisationEcritureTableau.utilisateur_id == Utilisateur.id)
+        ).all()
+        autorises = [{"utilisateur_id": u.id, "nom": u.nom} for _, u in lignes]
+
+        # Liste des inscrits pour le menu "autoriser quelqu'un" — exclut
+        # ceux deja autorises pour ne pas les proposer deux fois.
+        deja_autorises_ids = {a["utilisateur_id"] for a in autorises}
+        lignes_inscrits = session.exec(
+            select(InscriptionCours, Utilisateur)
+            .where(InscriptionCours.cours_id == cours.id)
+            .where(InscriptionCours.utilisateur_id == Utilisateur.id)
+        ).all()
+        inscrits_non_autorises = [
+            {"utilisateur_id": u.id, "nom": u.nom} for _, u in lignes_inscrits if u.id not in deja_autorises_ids
+        ]
+    else:
+        inscrits_non_autorises = []
+
+    peut_ecrire = _peut_ecrire_tableau(session, seance_id, cours, utilisateur)
+
+    return templates.TemplateResponse(
+        request,
+        "classe_tableau.html",
+        {
+            "utilisateur": utilisateur, "cours": cours, "seance": seance,
+            "peut_gerer": peut_gerer, "peut_ecrire": peut_ecrire,
+            "etat_initial_json": json.dumps(etat_initial),
+            "autorises": autorises, "inscrits_non_autorises": inscrits_non_autorises,
+        },
+    )
+
+
+@router.post("/classe/seances/{seance_id}/tableau/autoriser/{utilisateur_id}")
+async def autoriser_ecriture_tableau(request: Request, seance_id: int, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    seance = session.get(Seance, seance_id)
+    if not seance:
+        return RedirectResponse("/classe", status_code=303)
+    cours = session.get(Cours, seance.cours_id)
+    if not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse(f"/classe/{seance.cours_id if cours else ''}", status_code=303)
+
+    if not _est_inscrit(session, cours.id, utilisateur_id):
+        return RedirectResponse(f"/classe/seances/{seance_id}/tableau", status_code=303)
+
+    deja = session.exec(
+        select(AutorisationEcritureTableau).where(
+            AutorisationEcritureTableau.seance_id == seance_id,
+            AutorisationEcritureTableau.utilisateur_id == utilisateur_id,
+        )
+    ).first()
+    if not deja:
+        session.add(AutorisationEcritureTableau(seance_id=seance_id, utilisateur_id=utilisateur_id))
+        session.commit()
+
+    # Informe en temps reel le concerne (et tout le monde, pour mettre a
+    # jour l'affichage "qui peut ecrire" cote prof) sans qu'il ait besoin
+    # de recharger la page.
+    await gestionnaire.diffuser(f"tableau-{seance_id}", {"type": "permission", "utilisateur_id": utilisateur_id, "autorise": True})
+
+    return RedirectResponse(f"/classe/seances/{seance_id}/tableau", status_code=303)
+
+
+@router.post("/classe/seances/{seance_id}/tableau/revoquer/{utilisateur_id}")
+async def revoquer_ecriture_tableau(request: Request, seance_id: int, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    seance = session.get(Seance, seance_id)
+    if not seance:
+        return RedirectResponse("/classe", status_code=303)
+    cours = session.get(Cours, seance.cours_id)
+    if not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse(f"/classe/{seance.cours_id if cours else ''}", status_code=303)
+
+    autorisation = session.exec(
+        select(AutorisationEcritureTableau).where(
+            AutorisationEcritureTableau.seance_id == seance_id,
+            AutorisationEcritureTableau.utilisateur_id == utilisateur_id,
+        )
+    ).first()
+    if autorisation:
+        session.delete(autorisation)
+        session.commit()
+
+    await gestionnaire.diffuser(f"tableau-{seance_id}", {"type": "permission", "utilisateur_id": utilisateur_id, "autorise": False})
+
+    return RedirectResponse(f"/classe/seances/{seance_id}/tableau", status_code=303)
+
+
+@router.websocket("/classe/seances/{seance_id}/tableau/ws")
+async def tableau_ws(websocket: WebSocket, seance_id: int):
+    """Synchronisation temps reel du tableau blanc. Reutilise le meme
+    gestionnaire de connexions que le chat des cercles (app/ws_manager.py),
+    avec une cle de salle distincte ("tableau-{id}") pour ne jamais se
+    melanger avec les salons de cercles d'etude qui partagent le meme
+    objet gestionnaire.
+
+    Chaque evenement recu est REVALIDE cote serveur avant d'etre persiste
+    et diffuse (type reconnu, permission d'ecriture a l'instant present —
+    pas seulement a la connexion, puisqu'elle peut etre revoquee en
+    cours de route) : un client qui bidouillerait son JS ne peut pas
+    dessiner sans autorisation reelle, seulement casser sa propre
+    experience locale."""
+    with Session(engine) as session:
+        user_id = websocket.session.get("user_id")
+        if not user_id:
+            await websocket.close(code=4401)
+            return
+
+        utilisateur = session.get(Utilisateur, user_id)
+        if not utilisateur:
+            await websocket.close(code=4401)
+            return
+
+        seance = session.get(Seance, seance_id)
+        if not seance:
+            await websocket.close(code=4404)
+            return
+        cours = session.get(Cours, seance.cours_id)
+        if not cours:
+            await websocket.close(code=4404)
+            return
+
+        peut_gerer = _peut_gerer_cours(cours, utilisateur)
+        if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
+            await websocket.close(code=4403)
+            return
+
+        cle_salle = f"tableau-{seance_id}"
+        await gestionnaire.connecter(cle_salle, websocket, utilisateur.id, utilisateur.nom)
+
+        try:
+            while True:
+                brut = await websocket.receive_json()
+                type_evt = brut.get("type")
+
+                if type_evt not in ("trait", "forme", "texte", "suppression", "effacer_tout"):
+                    continue  # type inconnu, ignore silencieusement
+
+                # Revalidation de permission a CHAQUE evenement (pas
+                # seulement a la connexion) : une autorisation revoquee
+                # entre-temps doit bloquer immediatement, pas seulement
+                # apres une reconnexion.
+                with Session(engine) as session_fraiche:
+                    if not _peut_ecrire_tableau(session_fraiche, seance_id, cours, utilisateur):
+                        continue
+
+                    if type_evt == "effacer_tout" and not peut_gerer:
+                        # Effacer TOUT le tableau reste reserve au
+                        # prof/admin, meme pour un etudiant autorise a
+                        # dessiner — un etudiant autorise peut ajouter et
+                        # annuler SES PROPRES traits, pas rayer le travail
+                        # de tout le monde.
+                        continue
+
+                    element_id = str(brut.get("element_id", ""))[:100]
+                    if not element_id:
+                        continue
+
+                    if type_evt == "suppression":
+                        # Un etudiant ne peut supprimer QUE ses propres
+                        # elements ; le prof/admin peut supprimer
+                        # n'importe lequel (moderation).
+                        if not peut_gerer:
+                            evenement_original = session_fraiche.exec(
+                                select(EvenementTableauBlanc)
+                                .where(EvenementTableauBlanc.seance_id == seance_id)
+                                .where(EvenementTableauBlanc.element_id == element_id)
+                                .where(EvenementTableauBlanc.type_evenement != TypeEvenementTableau.SUPPRESSION)
+                                .order_by(EvenementTableauBlanc.date_creation.desc())
+                            ).first()
+                            if not evenement_original or evenement_original.utilisateur_id != utilisateur.id:
+                                continue
+
+                    donnees = brut.get("donnees", {})
+                    try:
+                        donnees_json = json.dumps(donnees)[:20000]  # borne la taille d'un evenement
+                    except (TypeError, ValueError):
+                        continue
+
+                    evenement = EvenementTableauBlanc(
+                        seance_id=seance_id,
+                        utilisateur_id=utilisateur.id,
+                        type_evenement=TypeEvenementTableau(type_evt),
+                        element_id=element_id,
+                        donnees=donnees_json,
+                    )
+                    session_fraiche.add(evenement)
+                    session_fraiche.commit()
+
+                await gestionnaire.diffuser(cle_salle, {
+                    "type": type_evt,
+                    "element_id": element_id,
+                    "utilisateur_id": utilisateur.id,
+                    "donnees": donnees,
+                })
+        except WebSocketDisconnect:
+            pass
+        finally:
+            gestionnaire.deconnecter(cle_salle, websocket)

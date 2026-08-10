@@ -595,3 +595,46 @@ input:focus, select:focus, textarea:focus {
 .message-chat-salle-moi .message-auteur { color: var(--accent); }
 #form-chat-salle { display: flex; gap: 0.5rem; }
 #form-chat-salle input { flex: 1; }
+
+/* --- Tableau blanc (classe_tableau.html) --- */
+.barre-outils-tableau {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+.barre-outils-tableau input[type="color"] {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.barre-outils-tableau input[type="range"] { width: 100px; }
+.canvas-tableau {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  cursor: crosshair;
+  touch-action: none;
+}
+.badge-autorisation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  background: var(--accent-soft);
+  color: var(--text);
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  margin: 0.2rem;
+}
