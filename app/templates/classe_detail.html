@@ -28,6 +28,44 @@
 </div>
 {% endif %}
 
+{% if peut_gerer %}
+<div class="carte-formulaire" style="margin-bottom:2rem;">
+  <h3 style="margin-top:0;">Nouveau devoir</h3>
+  <form method="post" action="/classe/{{ cours.id }}/devoirs/creer">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="titre_devoir">Titre</label>
+    <input type="text" id="titre_devoir" name="titre" required placeholder="ex: Exercice chapitre 3">
+    <label for="description_devoir">Description (optionnel)</label>
+    <textarea id="description_devoir" name="description" rows="2"></textarea>
+    <label for="date_limite">Date limite (optionnel)</label>
+    <input type="datetime-local" id="date_limite" name="date_limite">
+    <button class="bouton bouton-primaire bouton-form" type="submit">Creer le devoir</button>
+  </form>
+</div>
+{% endif %}
+
+<h3>Devoirs</h3>
+<table class="table-manifeste">
+  <thead><tr><th>Titre</th><th>Date limite</th><th></th></tr></thead>
+  <tbody>
+    {% for devoir in devoirs %}
+    <tr>
+      <td>{{ devoir.titre }}</td>
+      <td>{{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "—" }}</td>
+      <td>
+        <a href="/classe/devoirs/{{ devoir.id }}" class="lien-action">
+          {% if peut_gerer %}Voir les rendus
+          {% elif devoir.id in mes_rendus_ids %}Rendu envoye
+          {% else %}Rendre le devoir{% endif %}
+        </a>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">Aucun devoir pour l'instant.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
 <h3>Seances</h3>
 <table class="table-manifeste">
   <thead><tr><th>Titre</th><th>Statut</th><th></th></tr></thead>

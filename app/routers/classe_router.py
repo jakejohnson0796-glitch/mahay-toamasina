@@ -14,20 +14,22 @@ prochaine etape explicitement separee de celle-ci.
 import secrets
 import json
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi.responses import RedirectResponse, FileResponse
 from sqlmodel import Session, select
 
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau
+from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir
 from ..auth import utilisateur_courant
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure
 from ..config import parametres
 from ..ws_manager import gestionnaire
+from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
 
 router = APIRouter()
 
@@ -180,6 +182,19 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
         select(Seance).where(Seance.cours_id == cours_id).order_by(Seance.date_creation)
     ).all()
     nb_etudiants = len(session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all())
+    devoirs = session.exec(
+        select(Devoir).where(Devoir.cours_id == cours_id).order_by(Devoir.date_creation.desc())
+    ).all()
+
+    mes_rendus_ids = set()
+    if not peut_gerer and devoirs:
+        mes_rendus = session.exec(
+            select(RenduDevoir.devoir_id).where(
+                RenduDevoir.utilisateur_id == utilisateur.id,
+                RenduDevoir.devoir_id.in_([d.id for d in devoirs]),
+            )
+        ).all()
+        mes_rendus_ids = set(mes_rendus)
 
     return templates.TemplateResponse(
         request,
@@ -191,6 +206,8 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
             "seances": seances,
             "nb_etudiants": nb_etudiants,
             "peut_gerer": peut_gerer,
+            "devoirs": devoirs,
+            "mes_rendus_ids": mes_rendus_ids,
         },
     )
 
@@ -723,3 +740,208 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
             pass
         finally:
             gestionnaire.deconnecter(cle_salle, websocket)
+
+
+# ============================================================
+# Devoirs & rendus
+# ============================================================
+
+@router.post("/classe/{cours_id}/devoirs/creer")
+def creer_devoir(
+    request: Request,
+    cours_id: int,
+    titre: str = Form(...),
+    description: Optional[str] = Form(None),
+    date_limite: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cours = session.get(Cours, cours_id)
+    if not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse(f"/classe/{cours_id}", status_code=303)
+
+    date_limite_parsee = None
+    if date_limite:
+        try:
+            date_limite_parsee = datetime.fromisoformat(date_limite)
+        except ValueError:
+            date_limite_parsee = None
+
+    devoir = Devoir(cours_id=cours_id, titre=titre, description=description or None, date_limite=date_limite_parsee)
+    session.add(devoir)
+    session.commit()
+
+    return RedirectResponse(f"/classe/{cours_id}", status_code=303)
+
+
+@router.get("/classe/devoirs/{devoir_id}")
+def detail_devoir(request: Request, devoir_id: int, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    devoir = session.get(Devoir, devoir_id)
+    if not devoir:
+        return RedirectResponse("/classe", status_code=303)
+    cours = session.get(Cours, devoir.cours_id)
+    if not cours:
+        return RedirectResponse("/classe", status_code=303)
+
+    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
+        return RedirectResponse(f"/classe/{cours.id}", status_code=303)
+
+    delai_depasse = bool(devoir.date_limite and datetime.utcnow() > devoir.date_limite)
+
+    mon_rendu = None
+    if not peut_gerer:
+        mon_rendu = session.exec(
+            select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id, RenduDevoir.utilisateur_id == utilisateur.id)
+        ).first()
+
+    rendus = []
+    if peut_gerer:
+        lignes = session.exec(
+            select(RenduDevoir, Utilisateur)
+            .where(RenduDevoir.devoir_id == devoir_id)
+            .where(RenduDevoir.utilisateur_id == Utilisateur.id)
+            .order_by(RenduDevoir.date_rendu.desc())
+        ).all()
+        rendus = [{"rendu": r, "utilisateur": u} for r, u in lignes]
+
+    return templates.TemplateResponse(
+        request,
+        "classe_devoir.html",
+        {
+            "utilisateur": utilisateur, "cours": cours, "devoir": devoir, "peut_gerer": peut_gerer,
+            "delai_depasse": delai_depasse, "mon_rendu": mon_rendu, "rendus": rendus,
+        },
+    )
+
+
+@router.post("/classe/devoirs/{devoir_id}/rendre")
+def rendre_devoir(
+    request: Request,
+    devoir_id: int,
+    commentaire: Optional[str] = Form(None),
+    fichier: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    devoir = session.get(Devoir, devoir_id)
+    if not devoir:
+        return RedirectResponse("/classe", status_code=303)
+    cours = session.get(Cours, devoir.cours_id)
+    if not cours:
+        return RedirectResponse("/classe", status_code=303)
+
+    # Rendre un devoir est reserve aux etudiants inscrits — un
+    # professeur/admin gere le devoir, il ne "rend" pas de copie.
+    if not _est_inscrit(session, cours.id, utilisateur.id):
+        return RedirectResponse(f"/classe/{cours.id}", status_code=303)
+
+    if devoir.date_limite and datetime.utcnow() > devoir.date_limite:
+        return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=delai_depasse", status_code=303)
+
+    reference = f"devoir{devoir_id}_etu{utilisateur.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
+    try:
+        chemin_stocke = sauvegarder_fichier(fichier, reference)
+    except FichierInvalide as erreur:
+        return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=fichier_invalide", status_code=303)
+
+    # Un seul rendu "vivant" par etudiant : un nouveau depot ecrase le
+    # precedent (mais garde le meme enregistrement, donc perd la note
+    # deja donnee si l'etudiant re-rend apres correction — comportement
+    # voulu : la nouvelle copie doit etre re-corrigee, pas heriter d'une
+    # note qui ne correspond plus au contenu rendu).
+    rendu_existant = session.exec(
+        select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id, RenduDevoir.utilisateur_id == utilisateur.id)
+    ).first()
+    if rendu_existant:
+        rendu_existant.chemin_fichier = chemin_stocke
+        rendu_existant.nom_fichier_original = fichier.filename or "rendu"
+        rendu_existant.commentaire = commentaire or None
+        rendu_existant.date_rendu = datetime.utcnow()
+        rendu_existant.note = None
+        rendu_existant.appreciation_prof = None
+        rendu_existant.date_correction = None
+        session.add(rendu_existant)
+    else:
+        session.add(RenduDevoir(
+            devoir_id=devoir_id, utilisateur_id=utilisateur.id, chemin_fichier=chemin_stocke,
+            nom_fichier_original=fichier.filename or "rendu", commentaire=commentaire or None,
+        ))
+    session.commit()
+
+    return RedirectResponse(f"/classe/devoirs/{devoir_id}?rendu=1", status_code=303)
+
+
+@router.get("/classe/devoirs/rendus/{rendu_id}/telecharger")
+def telecharger_rendu(request: Request, rendu_id: int, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    rendu = session.get(RenduDevoir, rendu_id)
+    if not rendu:
+        return RedirectResponse("/classe", status_code=303)
+    devoir = session.get(Devoir, rendu.devoir_id)
+    cours = session.get(Cours, devoir.cours_id) if devoir else None
+    if not devoir or not cours:
+        return RedirectResponse("/classe", status_code=303)
+
+    # Le prof/admin du cours peut telecharger n'importe quel rendu ;
+    # l'etudiant peut seulement telecharger LE SIEN (jamais celui d'un
+    # camarade, meme en devinant l'id).
+    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    if not peut_gerer and rendu.utilisateur_id != utilisateur.id:
+        return RedirectResponse(f"/classe/{cours.id}", status_code=303)
+
+    if stockage_distant_actif():
+        return RedirectResponse(obtenir_url_telechargement(rendu.chemin_fichier))
+    return FileResponse(rendu.chemin_fichier, filename=rendu.nom_fichier_original)
+
+
+@router.post("/classe/devoirs/rendus/{rendu_id}/noter")
+def noter_rendu(
+    request: Request,
+    rendu_id: int,
+    note: Optional[str] = Form(None),
+    appreciation_prof: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    rendu = session.get(RenduDevoir, rendu_id)
+    if not rendu:
+        return RedirectResponse("/classe", status_code=303)
+    devoir = session.get(Devoir, rendu.devoir_id)
+    cours = session.get(Cours, devoir.cours_id) if devoir else None
+    if not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse(f"/classe/{cours.id if cours else ''}", status_code=303)
+
+    note_validee = None
+    if note:
+        try:
+            note_validee = max(0.0, min(20.0, float(note)))
+        except ValueError:
+            note_validee = None
+
+    rendu.note = note_validee
+    rendu.appreciation_prof = appreciation_prof or None
+    rendu.date_correction = datetime.utcnow()
+    session.add(rendu)
+    session.commit()
+
+    return RedirectResponse(f"/classe/devoirs/{devoir.id}", status_code=303)
