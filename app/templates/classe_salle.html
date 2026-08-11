@@ -58,8 +58,18 @@
   const notifsEl = document.getElementById("notifications-salle");
   const messagesEl = document.getElementById("messages-chat-salle");
 
-  const { Room, RoomEvent, Track } = LivekitClient;
-  const room = new Room({ adaptiveStream: true, dynacast: true });
+  const { Room, RoomEvent, Track, VideoPresets } = LivekitClient;
+const room = new Room({
+  adaptiveStream: true,
+  dynacast: true,
+  videoCaptureDefaults: {
+    resolution: VideoPresets.h240.resolution,
+  },
+  publishDefaults: {
+    videoEncoding: VideoPresets.h240.encoding,
+    simulcast: false,
+  },
+});
 
   function majCompteur() {
     const n = room.numParticipants || (room.remoteParticipants.size + 1);
