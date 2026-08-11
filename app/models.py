@@ -390,3 +390,36 @@ class AutorisationEcritureTableau(SQLModel, table=True):
     seance_id: int = Field(foreign_key="seance.id")
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ============================================================
+# Devoirs & rendus — voir app/routers/classe_router.py
+# ============================================================
+
+class Devoir(SQLModel, table=True):
+    """Un devoir/exercice attache a un Cours (pas a une Seance precise :
+    un devoir peut couvrir plusieurs seances). date_limite optionnelle —
+    si absente, aucune deadline n'est appliquee."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    cours_id: int = Field(foreign_key="cours.id")
+    titre: str
+    description: Optional[str] = None
+    date_limite: Optional[datetime] = None
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+
+class RenduDevoir(SQLModel, table=True):
+    """Le rendu d'un etudiant pour un devoir. Un etudiant peut re-rendre
+    (ecrase le rendu precedent — voir rendre_devoir()) tant que la date
+    limite n'est pas depassee. note/appreciation restent vides tant que
+    le professeur n'a pas corrige."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    devoir_id: int = Field(foreign_key="devoir.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    chemin_fichier: str
+    nom_fichier_original: str
+    commentaire: Optional[str] = None
+    date_rendu: datetime = Field(default_factory=datetime.utcnow)
+    note: Optional[float] = None
+    appreciation_prof: Optional[str] = None
+    date_correction: Optional[datetime] = None

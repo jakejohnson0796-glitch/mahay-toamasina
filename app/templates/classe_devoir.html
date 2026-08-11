@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block titre %}{{ devoir.titre }} — {{ cours.nom }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/classe/{{ cours.id }}">&larr; {{ cours.nom }}</a></p>
+<h2>{{ devoir.titre }}</h2>
+{% if devoir.description %}<p>{{ devoir.description }}</p>{% endif %}
+<p class="stat-label">
+  Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }}
+  {% if delai_depasse %}<span class="tampon tampon-rejete">Delai depasse</span>{% endif %}
+</p>
+
+{% if request.query_params.get("erreur") == "delai_depasse" %}
+<div class="erreur">La date limite de ce devoir est depassee, votre rendu n'a pas ete enregistre.</div>
+{% endif %}
+{% if request.query_params.get("erreur") == "fichier_invalide" %}
+<div class="erreur">Fichier non accepte (type ou taille invalide).</div>
+{% endif %}
+{% if request.query_params.get("rendu") %}
+<div class="info">Votre rendu a bien ete enregistre.</div>
+{% endif %}
+
+{% if not peut_gerer %}
+<div class="carte-formulaire">
+  <h3 style="margin-top:0;">{{ "Remplacer mon rendu" if mon_rendu else "Rendre le devoir" }}</h3>
+  {% if mon_rendu %}
+  <p class="stat-label">
+    Deja rendu le {{ mon_rendu.date_rendu.strftime("%d/%m/%Y %H:%M") }} — {{ mon_rendu.nom_fichier_original }}
+    {% if mon_rendu.note is not none %}<br>Note : <strong>{{ mon_rendu.note }}/20</strong>{% endif %}
+  </p>
+  {% if mon_rendu.appreciation_prof %}<p class="stat-label">Appreciation : {{ mon_rendu.appreciation_prof }}</p>{% endif %}
+  <p><a href="/classe/devoirs/rendus/{{ mon_rendu.id }}/telecharger">Telecharger mon rendu</a></p>
+  {% endif %}
+
+  {% if not delai_depasse %}
+  <form method="post" action="/classe/devoirs/{{ devoir.id }}/rendre" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="fichier">Fichier (PDF, Word, PowerPoint ou image)</label>
+    <input type="file" id="fichier" name="fichier" required accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
+    <label for="commentaire">Commentaire (optionnel)</label>
+    <textarea id="commentaire" name="commentaire" rows="2"></textarea>
+    <button class="bouton bouton-primaire bouton-form" type="submit">{{ "Remplacer" if mon_rendu else "Envoyer" }}</button>
+  </form>
+  {% endif %}
+</div>
+{% else %}
+<h3>Rendus ({{ rendus|length }})</h3>
+<table class="table-manifeste">
+  <thead><tr><th>Etudiant</th><th>Date</th><th>Note</th><th></th></tr></thead>
+  <tbody>
+    {% for info in rendus %}
+    <tr>
+      <td>{{ info.utilisateur.nom }}</td>
+      <td>{{ info.rendu.date_rendu.strftime("%d/%m/%Y %H:%M") }}</td>
+      <td>{{ info.rendu.note if info.rendu.note is not none else "—" }}/20</td>
+      <td>
+        <a href="/classe/devoirs/rendus/{{ info.rendu.id }}/telecharger" class="lien-action">Telecharger</a>
+        <button type="button" class="lien-action" onclick="document.getElementById('form-noter-{{ info.rendu.id }}').hidden = !document.getElementById('form-noter-{{ info.rendu.id }}').hidden;" style="margin-left:0.5rem;">Noter</button>
+        <form method="post" action="/classe/devoirs/rendus/{{ info.rendu.id }}/noter" id="form-noter-{{ info.rendu.id }}" hidden style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="number" name="note" min="0" max="20" step="0.5" value="{{ info.rendu.note if info.rendu.note is not none else '' }}" style="width:5rem;" placeholder="/20">
+          <input type="text" name="appreciation_prof" value="{{ info.rendu.appreciation_prof or '' }}" placeholder="Appreciation" style="flex:1;">
+          <button type="submit" class="bouton bouton-secondaire" style="padding:0.3rem 0.7rem;font-size:0.8rem;">Valider</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Aucun rendu pour l'instant.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}
