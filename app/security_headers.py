@@ -72,10 +72,11 @@ class EnTetesSecuriteMiddleware(BaseHTTPMiddleware):
         # contenir des donnees sensibles dans l'URL).
         reponse.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
-        # Desactive des API navigateur sensibles qu'aucune page du site
-        # n'utilise (camera, micro, geolocalisation) : meme si un script
-        # malveillant s'executait, il ne pourrait pas y acceder.
-        reponse.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+       # Autorise micro/camera/geolocalisation uniquement pour l'origine du
+       # site elle-meme ("self") — la classe virtuelle (LiveKit) a besoin du
+       # micro/camera. Aucun domaine tiers ni iframe etranger ne peut y
+       # acceder, meme si un script malveillant s'executait.
+        reponse.headers["Permissions-Policy"] = "geolocation=(self), microphone=(self), camera=(self)"
 
         reponse.headers["Content-Security-Policy"] = _CSP
 
