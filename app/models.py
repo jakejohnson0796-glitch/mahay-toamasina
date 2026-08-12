@@ -1,5 +1,5 @@
 """
-Modeles de donnees de MAHAY Toamasina.
+Modeles de donnees de GASY MAHAY.
 
 SQLModel = SQLAlchemy + Pydantic en un seul objet : chaque classe ci-dessous
 est a la fois une table SQLite ET un schema de validation. C'est ce qui
