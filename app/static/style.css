@@ -100,6 +100,46 @@ main { max-width: 960px; margin: 0 auto; padding: 2rem; }
   margin-top: 3rem;
 }
 
+.pied-contact {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.pied-contact-etiquette {
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+  color: var(--accent-2);
+}
+
+.pied-contact-lien {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: var(--bg-panel);
+  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+.pied-contact-lien:hover {
+  text-decoration: none;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+.pied-contact-icone { font-size: 1rem; }
+
+.pied-contact-whatsapp:hover { border-color: var(--accent-2); }
+
 /* ---------- Hero ---------- */
 
 .eyebrow {
