@@ -43,7 +43,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.17.0/dist/livekit-client.umd.min.js"></script>
 <script>
 (function () {
   const conteneur = document.getElementById("salle-virtuelle");
@@ -63,10 +63,10 @@ const room = new Room({
   adaptiveStream: true,
   dynacast: true,
   videoCaptureDefaults: {
-    resolution: VideoPresets.h240.resolution,
+    resolution: VideoPresets.h216.resolution,
   },
   publishDefaults: {
-    videoEncoding: VideoPresets.h240.encoding,
+    videoEncoding: VideoPresets.h216.encoding,
     simulcast: false,
   },
 });
