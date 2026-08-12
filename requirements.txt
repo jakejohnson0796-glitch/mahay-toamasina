@@ -18,3 +18,5 @@ pdf2image==1.17.0            # OCR optionnel sur PDF scannes - necessite poppler
 Pillow==10.4.0
 alembic==1.13.2
 livekit-api==1.2.0           # generation des jetons audio/video/partage d'ecran (classe virtuelle)
+pyotp==2.9.0                  # double authentification TOTP (gratuite, calculee localement)
+qrcode==7.4.2                 # QR code d'activation 2FA (aucun service externe)

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titre %}Activer la double authentification — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/securite">&larr; Securite du compte</a></p>
+<h2>Activer la double authentification</h2>
+<div class="carte-formulaire">
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  <p>1. Ouvrez Google Authenticator, Microsoft Authenticator ou une application equivalente sur votre telephone.</p>
+  <p>2. Scannez ce QR code :</p>
+  <img src="{{ qr_data_uri }}" alt="QR code d'activation" style="background:#fff;padding:0.5rem;border-radius:8px;">
+  <p class="stat-label">Impossible de scanner ? Entrez cette cle manuellement : <code>{{ secret }}</code></p>
+  <p>3. Entrez le code a 6 chiffres affiche par l'application pour confirmer :</p>
+  <form method="post" action="/securite/2fa/confirmer">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="code">Code</label>
+    <input type="text" id="code" name="code" required autocomplete="one-time-code" autofocus>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Confirmer et activer</button>
+  </form>
+</div>
+{% endblock %}
