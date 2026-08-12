@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titre %}Securite du compte — MAHAY{% endblock %}
+{% block contenu %}
+<h2>Securite du compte</h2>
+
+{% if request.query_params.get("desactive") %}
+<div class="info">Double authentification desactivee.</div>
+{% endif %}
+{% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+
+<div class="carte-formulaire">
+  <h3 style="margin-top:0;">Double authentification (2FA)</h3>
+  {% if utilisateur.totp_active %}
+  <p><span class="tampon tampon-approuve">Activee</span></p>
+  <p class="stat-label">Codes de secours restants : {{ nb_codes_restants }}</p>
+
+  <form method="post" action="/securite/2fa/regenerer-codes-secours" style="margin-top:1rem;">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button class="bouton bouton-secondaire bouton-form" type="submit">Regenerer mes codes de secours</button>
+  </form>
+
+  <form method="post" action="/securite/2fa/desactiver" style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1.5rem;">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="mot_de_passe_desactiver">Mot de passe (pour confirmer la desactivation)</label>
+    <input type="password" id="mot_de_passe_desactiver" name="mot_de_passe" required>
+    <button class="bouton bouton-secondaire bouton-form" type="submit" style="border-color:#C24E4E;color:#C24E4E;">Desactiver la 2FA</button>
+  </form>
+  {% else %}
+  <p><span class="tampon tampon-rejete">Desactivee</span></p>
+  <p>Ajoutez une couche de securite supplementaire : en plus de votre mot de passe, un code genere par une application comme Google Authenticator sera demande a chaque connexion.</p>
+  <form method="post" action="/securite/2fa/demarrer">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button class="bouton bouton-primaire bouton-form" type="submit">Activer la double authentification</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

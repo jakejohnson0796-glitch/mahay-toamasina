@@ -78,6 +78,30 @@ class Utilisateur(SQLModel, table=True):
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     banni: bool = Field(default=False)
 
+    # --- Double authentification (TOTP, gratuite — aucun SMS/service
+    # tiers, calculee localement par une app comme Google Authenticator).
+    # Voir app/routers/auth_router.py. totp_secret reste vide tant que la
+    # 2FA n'est pas activee ; totp_active=True seulement apres que
+    # l'utilisateur a confirme un code valide (evite un verrouillage si
+    # le QR code a ete mal scanne)."""
+    totp_secret: Optional[str] = None
+    totp_active: bool = Field(default=False)
+
+
+class CodeSecours2FA(SQLModel, table=True):
+    """Codes de secours a usage unique, generes a l'activation de la 2FA,
+    pour se reconnecter si l'utilisateur perd l'acces a son application
+    d'authentification (telephone perdu/casse/reinstalle). Chaque code
+    est hache (jamais stocke en clair, meme si techniquement a usage
+    unique) et marque utilise des qu'il sert, plutot que supprime — garde
+    une trace de quand chaque code a ete consomme."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    code_hash: str
+    utilise: bool = Field(default=False)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_utilisation: Optional[datetime] = None
+
 
 class Document(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
