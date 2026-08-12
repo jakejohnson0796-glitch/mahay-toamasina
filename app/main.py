@@ -1,5 +1,5 @@
 """
-Point d'entree de MAHAY Toamasina.
+Point d'entree de GASY MAHAY.
 
 Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
@@ -23,7 +23,7 @@ from .admin_init import assurer_compte_admin
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="MAHAY Toamasina")
+app = FastAPI(title="GASY MAHAY")
 
 # --- Garde-fou : refuse de demarrer en production avec la cle de demo ---
 # Un secret par defaut connu de tous (present dans .env.example, donc
