@@ -1,4 +1,4 @@
-# MAHAY Toamasina — hub de révision pour l'Université de Toamasina
+# GASY MAHAY — hub de révision pour l'Université de Toamasina
 
 Prototype fonctionnel (V2) : les étudiants déposent et téléchargent
 gratuitement des annales/fiches/cours par filière, s'entraident dans des
