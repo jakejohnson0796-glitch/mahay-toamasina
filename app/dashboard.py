@@ -15,14 +15,23 @@ NB_DOCUMENTS_RECENTS = 5
 
 def cercles_rejoints(session: Session, utilisateur_id: int) -> List[dict]:
     """Cercles dont l'etudiant est membre, les plus recemment rejoints
-    d'abord."""
+    d'abord, avec le nombre reel de membres de chaque cercle."""
     resultats = session.exec(
         select(MembreCercle, CercleEtude)
         .join(CercleEtude, MembreCercle.cercle_id == CercleEtude.id)
         .where(MembreCercle.utilisateur_id == utilisateur_id)
         .order_by(MembreCercle.date_adhesion.desc())
     ).all()
-    return [{"cercle": cercle, "date_adhesion": membre.date_adhesion} for membre, cercle in resultats]
+
+    infos = []
+    for membre, cercle in resultats:
+        nb_membres = len(
+            session.exec(
+                select(MembreCercle).where(MembreCercle.cercle_id == cercle.id)
+            ).all()
+        )
+        infos.append({"cercle": cercle, "date_adhesion": membre.date_adhesion, "nb_membres": nb_membres})
+    return infos
 
 
 def documents_consultes_recemment(session: Session, utilisateur_id: int) -> List[dict]:

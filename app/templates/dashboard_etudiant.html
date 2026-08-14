@@ -1,21 +1,12 @@
 {% extends "base.html" %}
 {% block titre %}Mon tableau de bord — MAHAY{% endblock %}
 {% block contenu %}
-<p class="eyebrow">Bienvenue, {{ utilisateur.nom }}</p>
-<h2>Mon tableau de bord</h2>
 
-<div class="liste-cercles" style="margin-bottom:2rem;">
-  <div class="carte-cercle">
-    <div class="stat">
-      <span class="stat-nombre">{{ jours_restants }}</span>
-      <span class="stat-label">
-        {% if abonnement and abonnement.statut == "actif" %}jour{{ "s" if jours_restants > 1 else "" }} d'abonnement restant{{ "s" if jours_restants > 1 else "" }}
-        {% else %}jour{{ "s" if jours_restants > 1 else "" }} d'essai restant{{ "s" if jours_restants > 1 else "" }}{% endif %}
-      </span>
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/abonnement">Gerer mon abonnement</a></div>
-  </div>
-</div>
+<section class="tb-hero">
+  <p class="eyebrow">Bienvenue, {{ utilisateur.nom }}</p>
+  <h1 class="tb-titre">Bonjour {{ utilisateur.nom.split(" ")[0] }} <span class="tb-emoji" aria-hidden="true">👋</span></h1>
+  <p class="tb-sous-titre">Content de te revoir. Voici où tu en es sur MAHAY.</p>
+</section>
 
 {% if not acces_premium %}
 <div class="erreur">
@@ -23,44 +14,113 @@
 </div>
 {% endif %}
 
-<div class="liste-cercles" style="margin-bottom:2rem;">
-  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_cercles_rejoints }}</span><span class="stat-label">Cercles rejoints</span></div></div>
-  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_documents_consultes }}</span><span class="stat-label">Documents consultes</span></div></div>
-</div>
+<div class="tb-grille">
 
-<h3>Mes cercles d'etude</h3>
-<div class="liste-cercles" style="margin-bottom:2rem;">
-  {% for info in cercles %}
-  <div class="carte-cercle">
-    <div>
-      <strong>{{ info.cercle.nom }}</strong>
-      <p>{{ info.cercle.description or "Pas de description." }}</p>
+  <div class="tb-carte-premium tb-span-8">
+    <div class="tb-premium-etiquette">
+      <span aria-hidden="true">✦</span> MAHAY PREMIUM
+      {% if abonnement %}
+        <span class="tampon tampon-{{ 'approuve' if abonnement.statut.value == 'actif' else ('rejete' if abonnement.statut.value in ['expire', 'refuse'] else 'attente') }}">
+          {{ { 'essai': 'Essai', 'actif': 'Actif', 'en_attente': 'En attente', 'expire': 'Expire', 'refuse': 'Refuse' }[abonnement.statut.value] }}
+        </span>
+      {% endif %}
     </div>
-    <div><a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat</a></div>
+    <p class="tb-premium-texte">
+      {% if abonnement and abonnement.statut.value == 'actif' %}
+        Votre abonnement est actif pour encore <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.
+      {% elif abonnement and abonnement.statut.value == 'essai' %}
+        Votre essai gratuit expire dans <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.
+      {% elif abonnement and abonnement.statut.value == 'en_attente' %}
+        Votre demande d'abonnement est en cours de validation par un administrateur.
+      {% else %}
+        Votre acces Premium n'est plus actif — l'IA et les cercles d'etude sont en pause.
+      {% endif %}
+    </p>
+    <a class="bouton bouton-primaire" href="/abonnement">Gerer mon abonnement →</a>
   </div>
-  {% else %}
-  <p>Vous n'avez rejoint aucun cercle pour le moment. <a href="/cercles">Voir les cercles disponibles</a>.</p>
-  {% endfor %}
-</div>
 
-<h3>Documents consultes recemment</h3>
-<table class="table-manifeste">
-  <thead><tr><th>Titre</th><th>Matiere</th><th>Type</th><th></th></tr></thead>
-  <tbody>
-    {% for info in documents_recents %}
-    <tr>
-      <td>{{ info.document.titre }}</td>
-      <td>{{ info.document.matiere }}</td>
-      <td>{{ info.document.type_document.value }}</td>
-      <td><a href="/documents/{{ info.document.id }}/telecharger">Retelecharger</a></td>
-    </tr>
+  <div class="tb-carte-stat tb-span-4">
+    <span class="tb-stat-icone" aria-hidden="true">👥</span>
+    <span class="tb-stat-nombre">{{ nb_cercles_rejoints }}</span>
+    <span class="tb-stat-label">Cercle{{ "s" if nb_cercles_rejoints != 1 else "" }} rejoint{{ "s" if nb_cercles_rejoints != 1 else "" }}</span>
+  </div>
+
+  <div class="tb-carte-stat tb-span-4">
+    <span class="tb-stat-icone" aria-hidden="true">📚</span>
+    <span class="tb-stat-nombre">{{ nb_documents_consultes }}</span>
+    <span class="tb-stat-label">Document{{ "s" if nb_documents_consultes != 1 else "" }} consulte{{ "s" if nb_documents_consultes != 1 else "" }}</span>
+  </div>
+
+  <div class="tb-carte-stat tb-span-4">
+    <span class="tb-stat-icone" aria-hidden="true">⏱</span>
+    <span class="tb-stat-nombre">{{ jours_restants }}</span>
+    <span class="tb-stat-label">Jour{{ "s" if jours_restants > 1 else "" }} restant{{ "s" if jours_restants > 1 else "" }}</span>
+  </div>
+
+  <div class="tb-span-12">
+    <div class="tb-section-entete">
+      <h2 class="tb-titre-section">Mes cercles d'etude</h2>
+      <a href="/cercles" class="tb-voir-tout">Voir tout →</a>
+    </div>
+
+    {% if cercles %}
+    <div class="tb-grille-cercles">
+      {% for info in cercles %}
+      <div class="tb-carte-cercle-moderne">
+        <span class="tb-cercle-avatar" aria-hidden="true">{{ info.cercle.nom[:2]|upper }}</span>
+        <strong class="tb-cercle-nom">{{ info.cercle.nom }}</strong>
+        <p class="tb-cercle-description">{{ info.cercle.description or "Groupe d'etude" }}</p>
+        <span class="badge-presence"><span aria-hidden="true"></span> {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</span>
+        <a class="bouton bouton-secondaire tb-cercle-lien" href="/cercles/{{ info.cercle.id }}">Ouvrir le cercle →</a>
+      </div>
+      {% endfor %}
+      <a href="/cercles" class="tb-carte-rejoindre">
+        <span class="tb-rejoindre-icone" aria-hidden="true">+</span>
+        <span>Rejoindre un cercle</span>
+      </a>
+    </div>
     {% else %}
-    <tr><td colspan="4">Aucun document consulte pour le moment. <a href="/documents">Parcourir les annales</a>.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+    <div class="tb-etat-vide">
+      <span class="tb-etat-vide-icone" aria-hidden="true">👥</span>
+      <p><strong>Tu n'as encore rejoint aucun cercle d'etude.</strong></p>
+      <p class="tb-etat-vide-texte">Revise a plusieurs, par filiere ou en groupe libre.</p>
+      <a class="bouton bouton-primaire" href="/cercles">Decouvrir les cercles →</a>
+    </div>
+    {% endif %}
+  </div>
 
-<p style="margin-top:1.5rem;color:var(--text-muted);font-size:0.9rem;">
-  Les statistiques du Quiz IA (progression, scores, historique) arriveront avec la prochaine mise a jour.
-</p>
+  <div class="tb-span-12">
+    <div class="tb-section-entete">
+      <h2 class="tb-titre-section">Documents consultes recemment</h2>
+      <a href="/documents" class="tb-voir-tout">Voir tout →</a>
+    </div>
+
+    {% if documents_recents %}
+    <div class="tb-liste-documents">
+      {% for info in documents_recents %}
+      <div class="tb-ligne-document">
+        <span class="tb-document-icone" aria-hidden="true">📘</span>
+        <div class="tb-document-infos">
+          <strong>{{ info.document.titre }}</strong>
+          <span class="tb-document-meta">{{ info.document.matiere }} · {{ info.document.type_document.value }}</span>
+        </div>
+        <a class="lien-action" href="/documents/{{ info.document.id }}/telecharger">Retelecharger</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="tb-etat-vide">
+      <span class="tb-etat-vide-icone" aria-hidden="true">📚</span>
+      <p><strong>Tu n'as encore consulte aucun document.</strong></p>
+      <p class="tb-etat-vide-texte">Decouvre les annales et fiches disponibles pour ta filiere.</p>
+      <a class="bouton bouton-primaire" href="/documents">Explorer les documents →</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <p class="tb-note-quiz">
+    Les statistiques du Quiz IA (progression, scores, historique) arriveront avec la prochaine mise a jour.
+  </p>
+
+</div>
 {% endblock %}

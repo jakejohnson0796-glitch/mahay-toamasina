@@ -863,3 +863,235 @@ input:focus, select:focus, textarea:focus {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Tableau de bord etudiant (dashboard_etudiant.html)
+   Classes prefixees "tb-" : dediees a cette page, pour ne jamais
+   affecter .stat / .carte-cercle / .table-manifeste, partagees par
+   21 autres templates (documents, cercles, admin, classe...).
+   ============================================================ */
+
+.tb-hero { padding: 1.5rem 0 2rem; }
+.tb-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+.tb-emoji { display: inline-block; animation: tb-salut 2.2s ease-in-out 0.6s 1; }
+@keyframes tb-salut {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-8deg); }
+  45% { transform: rotate(14deg); }
+  60% { transform: rotate(-4deg); }
+}
+.tb-sous-titre { color: var(--text-secondary); font-size: 1rem; max-width: 34em; }
+
+.tb-hero > * { animation: mahay-apparition 0.5s var(--ease-fluide) both; }
+.tb-hero > *:nth-child(2) { animation-delay: 0.05s; }
+.tb-hero > *:nth-child(3) { animation-delay: 0.1s; }
+
+.tb-grille {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.25rem;
+  max-width: 1200px;
+}
+.tb-span-12 { grid-column: span 12; }
+.tb-span-8 { grid-column: span 8; }
+.tb-span-4 { grid-column: span 4; }
+
+.tb-grille > * {
+  animation: mahay-apparition 0.5s var(--ease-fluide) both;
+}
+.tb-grille > *:nth-child(1) { animation-delay: 0.05s; }
+.tb-grille > *:nth-child(2) { animation-delay: 0.1s; }
+.tb-grille > *:nth-child(3) { animation-delay: 0.14s; }
+.tb-grille > *:nth-child(4) { animation-delay: 0.18s; }
+.tb-grille > *:nth-child(5) { animation-delay: 0.22s; }
+.tb-grille > *:nth-child(6) { animation-delay: 0.26s; }
+
+/* --- Bloc Premium --- */
+.tb-carte-premium {
+  background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-start;
+  box-shadow: var(--shadow-sm);
+}
+.tb-premium-etiquette {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
+}
+.tb-premium-texte { color: var(--text-primary); font-size: 0.98rem; margin: 0; }
+
+/* --- Cartes stats --- */
+.tb-carte-stat {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
+}
+.tb-carte-stat:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+.tb-stat-icone { font-size: 1.3rem; margin-bottom: 0.2rem; }
+.tb-stat-nombre { font-family: 'Fraunces', serif; font-size: 2.1rem; color: var(--color-primary); line-height: 1; }
+.tb-stat-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* --- En-tetes de section --- */
+.tb-section-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.9rem;
+}
+.tb-titre-section { font-size: 1.15rem; margin: 0; }
+.tb-voir-tout { font-size: 0.85rem; color: var(--text-secondary); transition: color 0.15s var(--ease-fluide); }
+.tb-voir-tout:hover { color: var(--color-primary); text-decoration: none; }
+
+/* --- Cercles d'etude --- */
+.tb-grille-cercles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.tb-carte-cercle-moderne {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
+}
+.tb-carte-cercle-moderne:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+.tb-cercle-avatar {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.tb-cercle-nom { font-size: 1.02rem; }
+.tb-cercle-description {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  min-height: 1.2em;
+}
+.tb-cercle-lien { margin-top: 0.4rem; align-self: stretch; text-align: center; }
+
+.tb-carte-rejoindre {
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 10rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  transition: border-color 0.18s var(--ease-fluide), color 0.18s var(--ease-fluide), transform 0.18s var(--ease-fluide);
+}
+.tb-carte-rejoindre:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  text-decoration: none;
+  transform: translateY(-3px);
+}
+.tb-rejoindre-icone {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+/* --- Documents recents --- */
+.tb-liste-documents {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.tb-ligne-document {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1.25rem;
+  background: var(--surface-2);
+  transition: background 0.15s var(--ease-fluide);
+}
+.tb-ligne-document:not(:last-child) { border-bottom: 1px solid var(--border-default); }
+.tb-ligne-document:hover { background: var(--surface-3); }
+.tb-document-icone { font-size: 1.2rem; }
+.tb-document-infos { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
+.tb-document-infos strong { font-size: 0.94rem; }
+.tb-document-meta { font-size: 0.78rem; color: var(--text-secondary); }
+
+/* --- Etats vides guides --- */
+.tb-etat-vide {
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tb-etat-vide-icone { font-size: 2rem; margin-bottom: 0.3rem; }
+.tb-etat-vide p { margin: 0; }
+.tb-etat-vide-texte { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.6rem !important; }
+.tb-etat-vide .bouton { margin-top: 0.5rem; }
+
+.tb-note-quiz {
+  grid-column: span 12;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .tb-span-8, .tb-span-4 { grid-column: span 12; }
+}
+@media (max-width: 640px) {
+  .tb-grille { gap: 1rem; }
+  .tb-carte-premium { padding: 1.25rem 1.4rem; }
+}
