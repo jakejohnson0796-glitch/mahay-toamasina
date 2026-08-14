@@ -32,6 +32,13 @@ router = APIRouter()
 LONGUEUR_MAX_MESSAGE = 2000
 TAILLE_MAX_PIECE_JOINTE = 10 * 1024 * 1024  # 10 Mo
 
+# Un meme numero de telephone (= un meme compte utilisateur, le telephone
+# etant l'identifiant unique de connexion) ne peut creer plus de ce nombre
+# de Cercles d'etude. Verifie a chaque creation directement depuis la
+# base de donnees (COUNT reel), jamais via un compteur mis en cache qui
+# pourrait diverger de l'etat reel (voir creer_cercle ci-dessous).
+MAX_CERCLES_PAR_UTILISATEUR = 3
+
 # Motifs de signalement proposes cote interface (voir gabarit cercle_chat.html).
 # La valeur "Autre" declenche un champ de saisie libre — voir signaler_message().
 MOTIFS_SIGNALEMENT_AUTORISES = {
@@ -75,6 +82,30 @@ def _demande_en_attente(session: Session, cercle_id: int, utilisateur_id: int) -
             DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE,
         )
     ).first()
+
+
+def _assurer_membres_admins(session: Session, cercle_id: int) -> None:
+    """Garantit que TOUS les administrateurs globaux ont une entree
+    MembreCercle reelle pour ce cercle (pas juste un bypass de
+    permission) : c'est ce qui leur permet par exemple de voir/participer
+    au chat, dont l'acces est conditionne a `membre` dans salon_cercle().
+    Hierarchie voulue : ADMIN_GLOBAL > OWNER, donc l'admin doit avoir
+    acces a n'importe quel cercle sans avoir a demander a le rejoindre.
+
+    Idempotent : n'insere que les admins qui n'ont pas deja de ligne
+    (pas de doublon), qu'ils viennent d'etre crees ou que ce cercle
+    existait deja avant l'introduction de cette regle."""
+    deja_membres_ids = {
+        m.utilisateur_id
+        for m in session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)).all()
+    }
+    admins = session.exec(select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)).all()
+    a_ajouter = [a for a in admins if a.id not in deja_membres_ids]
+    if not a_ajouter:
+        return
+    for admin in a_ajouter:
+        session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=admin.id))
+    session.commit()
 
 
 @router.get("/cercles")
@@ -125,6 +156,42 @@ def creer_cercle(
     if redirection:
         return redirection
 
+    # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
+    # numero de telephone. On verrouille la ligne utilisateur
+    # (SELECT ... FOR UPDATE) avant de compter, pour que deux creations
+    # simultanees du meme compte ne puissent pas toutes les deux lire
+    # "2 cercles existants" et passer ensemble sous la limite — la
+    # deuxieme requete attend que la premiere ait commite avant de
+    # recompter. Le COUNT porte directement sur CercleEtude (source de
+    # verite = la base), jamais sur un compteur cache qui pourrait
+    # diverger si un cercle est supprime ailleurs.
+    session.exec(
+        select(Utilisateur).where(Utilisateur.id == utilisateur.id).with_for_update()
+    ).first()
+    nb_cercles_existants = len(
+        session.exec(select(CercleEtude).where(CercleEtude.createur_id == utilisateur.id)).all()
+    )
+    if nb_cercles_existants >= MAX_CERCLES_PAR_UTILISATEUR:
+        filieres = session.exec(select(Filiere)).all()
+        cercles = session.exec(select(CercleEtude).order_by(CercleEtude.date_creation.desc())).all()
+        cercles_avec_info = []
+        for c in cercles:
+            nb_membres = len(session.exec(select(MembreCercle).where(MembreCercle.cercle_id == c.id)).all())
+            cercles_avec_info.append({
+                "cercle": c, "nb_membres": nb_membres,
+                "est_membre": _est_membre(session, c.id, utilisateur.id),
+                "en_attente": False,
+                "peut_gerer": _peut_gerer_cercle(c, utilisateur),
+            })
+        return templates.TemplateResponse(
+            request,
+            "cercles_list.html",
+            {
+                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "utilisateur": utilisateur,
+                "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
+            },
+        )
+
     cercle = CercleEtude(
         nom=nom,
         description=description or None,
@@ -138,6 +205,11 @@ def creer_cercle(
     # Le createur rejoint automatiquement son propre cercle.
     session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=utilisateur.id))
     session.commit()
+
+    # Hierarchie ADMIN_GLOBAL > OWNER : tout administrateur global doit
+    # avoir acces automatique a ce nouvel espace, sans avoir a demander a
+    # le rejoindre (voir _assurer_membres_admins).
+    _assurer_membres_admins(session, cercle.id)
 
     return RedirectResponse(f"/cercles/{cercle.id}", status_code=303)
 
@@ -180,6 +252,9 @@ def voir_membres(request: Request, cercle_id: int, session: Session = Depends(ge
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle:
         return RedirectResponse("/cercles", status_code=303)
+
+    if _est_admin(utilisateur):
+        _assurer_membres_admins(session, cercle_id)
 
     # Seuls les membres du cercle (+ createur/admin, qui sont de toute
     # facon membres ou geres a part) peuvent voir la liste — un visiteur
@@ -370,6 +445,14 @@ def retirer_membre(request: Request, cercle_id: int, utilisateur_id: int, sessio
     if utilisateur_id == cercle.createur_id:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=impossible_retirer_createur", status_code=303)
 
+    # Hierarchie ADMIN_GLOBAL > OWNER : meme le createur/proprietaire du
+    # cercle ne peut jamais retirer un administrateur global de son
+    # espace. Un compte admin ne se gere qu'au niveau plateforme (voir
+    # admin_router.py), jamais depuis un cercle particulier.
+    cible = session.get(Utilisateur, utilisateur_id)
+    if cible and cible.role == RoleUtilisateur.ADMIN:
+        return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=impossible_retirer_admin", status_code=303)
+
     membre = session.exec(
         select(MembreCercle).where(
             MembreCercle.cercle_id == cercle_id,
@@ -424,6 +507,12 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle:
         return RedirectResponse("/cercles", status_code=303)
+
+    # Filet de securite pour les cercles crees AVANT cette regle (ou si un
+    # nouvel admin a ete cree apres coup) : garantit que l'admin courant a
+    # bien une adhesion reelle avant qu'on calcule `membre` juste apres.
+    if _est_admin(utilisateur):
+        _assurer_membres_admins(session, cercle_id)
 
     membre = _est_membre(session, cercle_id, utilisateur.id)
     en_attente = bool(not membre and _demande_en_attente(session, cercle_id, utilisateur.id))
@@ -680,7 +769,12 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
 
     with Session(engine) as session:
         utilisateur = session.get(Utilisateur, user_id)
-        if not utilisateur or not session.get(CercleEtude, cercle_id) or not _est_membre(session, cercle_id, user_id):
+        if not utilisateur or not session.get(CercleEtude, cercle_id):
+            await websocket.close(code=4403)
+            return
+        if utilisateur.role == RoleUtilisateur.ADMIN:
+            _assurer_membres_admins(session, cercle_id)
+        if not _est_membre(session, cercle_id, user_id):
             await websocket.close(code=4403)
             return
 

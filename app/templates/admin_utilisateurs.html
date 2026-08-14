@@ -48,6 +48,7 @@
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Bannir</button>
         </form>
         {% endif %}
+        <a href="/admin/utilisateurs/{{ u.id }}/supprimer" class="bouton bouton-secondaire" style="padding:0.4rem 0.8rem;font-size:0.85rem;text-decoration:none;display:inline-block;">Supprimer</a>
         {% else %}
         <span class="stat-label">(vous)</span>
         {% endif %}

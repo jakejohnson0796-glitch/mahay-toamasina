@@ -10,6 +10,9 @@
 {% if request.query_params.get("erreur") == "impossible_retirer_createur" %}
 <div class="erreur">Impossible de retirer le createur du cercle.</div>
 {% endif %}
+{% if request.query_params.get("erreur") == "impossible_retirer_admin" %}
+<div class="erreur">Impossible de retirer un administrateur de la plateforme.</div>
+{% endif %}
 {% if request.query_params.get("ajoute") %}
 <div class="info">Membre ajoute.</div>
 {% endif %}

@@ -1,0 +1,374 @@
+<p class="eyebrow" style="display:flex;align-items:center;gap:0.75rem;">
+  <span>Tableau blanc — {{ seance.titre }}</span>
+  <button type="button" id="btn-fermer-tableau-panneau" class="bouton bouton-secondaire" style="padding:0.2rem 0.6rem;font-size:0.8rem;margin-left:auto;">Fermer le tableau</button>
+</p>
+
+<div id="tableau-blanc" data-seance-id="{{ seance.id }}" data-peut-gerer="{{ 'true' if peut_gerer else 'false' }}" data-peut-ecrire="{{ 'true' if peut_ecrire else 'false' }}">
+
+  <div class="barre-outils-tableau">
+    <button type="button" class="bouton-controle bouton-controle-actif" data-outil="stylo" title="Stylo">✏️</button>
+    <button type="button" class="bouton-controle" data-outil="gomme" title="Gomme">🧹</button>
+    <button type="button" class="bouton-controle" data-outil="rectangle" title="Rectangle">▭</button>
+    <button type="button" class="bouton-controle" data-outil="cercle" title="Cercle">◯</button>
+    <button type="button" class="bouton-controle" data-outil="ligne" title="Ligne">╱</button>
+    <button type="button" class="bouton-controle" data-outil="texte" title="Texte">🔤</button>
+
+    <input type="color" id="couleur-tableau" value="#F2ECDD" title="Couleur">
+    <input type="range" id="epaisseur-tableau" min="1" max="20" value="3" title="Epaisseur">
+
+    <button type="button" id="btn-annuler-tableau" class="bouton-controle" title="Annuler">↶</button>
+    <button type="button" id="btn-retablir-tableau" class="bouton-controle" title="Retablir">↷</button>
+    {% if peut_gerer %}
+    <button type="button" id="btn-effacer-tout-tableau" class="bouton-controle" title="Tout effacer">🗑️</button>
+    {% endif %}
+    <button type="button" id="btn-telecharger-tableau" class="bouton-controle" title="Telecharger">⬇️</button>
+
+    <span id="statut-ecriture-tableau" class="stat-label" style="margin-left:auto;"></span>
+  </div>
+
+  <canvas id="canvas-tableau" class="canvas-tableau"></canvas>
+
+  {% if peut_gerer %}
+  <div class="carte-formulaire" style="margin-top:1.5rem;">
+    <h3 style="margin-top:0;">Droit d'ecriture</h3>
+    <p class="stat-label">Vous (professeur) pouvez toujours ecrire. Autorisez temporairement un etudiant :</p>
+    <div id="liste-autorisations-tableau">
+      {% for a in autorises %}
+      <span class="badge-autorisation" data-utilisateur-id="{{ a.utilisateur_id }}">
+        {{ a.nom }}
+        <form method="post" action="/classe/seances/{{ seance.id }}/tableau/revoquer/{{ a.utilisateur_id }}" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="lien-action">retirer</button>
+        </form>
+      </span>
+      {% endfor %}
+    </div>
+    {% if inscrits_non_autorises %}
+    <div style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+      {% for i in inscrits_non_autorises %}
+      <form method="post" action="/classe/seances/{{ seance.id }}/tableau/autoriser/{{ i.utilisateur_id }}" style="display:inline">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <button type="submit" class="bouton bouton-secondaire" style="padding:0.3rem 0.7rem;font-size:0.8rem;">+ {{ i.nom }}</button>
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  // NOTE ARCHITECTURE : ce fragment est injecte par fetch() dans le DOM de
+  // classe_salle.html (voir #panneau-tableau la-bas), PAS charge via une
+  // navigation de page. Il ne touche jamais a la Room LiveKit, aux
+  // MediaStreamTrack ni au RTCPeerConnection de la salle : c'est un
+  // composant totalement independant qui ne fait que dessiner sur un
+  // <canvas> et parler a son propre WebSocket "tableau-{seance}". Ouvrir
+  // ou fermer ce panneau = juste afficher/masquer une <div>, jamais un
+  // demontage/remontage de page qui declencherait le "beforeunload" de la
+  // salle (et donc room.disconnect()).
+  const conteneur = document.getElementById("tableau-blanc");
+  const seanceId = conteneur.dataset.seanceId;
+  const peutGerer = conteneur.dataset.peutGerer === "true";
+  let peutEcrire = conteneur.dataset.peutEcrire === "true";
+  const idUtilisateur = {{ utilisateur.id }};
+
+  const canvas = document.getElementById("canvas-tableau");
+  const ctx = canvas.getContext("2d");
+  const statutEcritureEl = document.getElementById("statut-ecriture-tableau");
+  const couleurEl = document.getElementById("couleur-tableau");
+  const epaisseurEl = document.getElementById("epaisseur-tableau");
+
+  function majStatutEcriture() {
+    statutEcritureEl.textContent = peutEcrire ? "Vous pouvez dessiner." : "Lecture seule.";
+  }
+  majStatutEcriture();
+
+  function redimensionnerCanvas() {
+    const largeur = canvas.parentElement.clientWidth;
+    if (!largeur) return;
+    canvas.width = largeur;
+    canvas.height = Math.round(largeur * 0.56);
+    redessinerTout();
+  }
+
+  // --- Etat : Map element_id -> definition. Source unique de verite pour
+  // le rendu (voir _reconstituer_etat_tableau cote serveur, meme logique
+  // reproduite ici cote client). ---
+  const elements = new Map();
+  {{ etat_initial_json | safe }}.forEach(function (e) { elements.set(e.element_id, e); });
+
+  function dessinerElement(e) {
+    const d = e.donnees;
+    ctx.strokeStyle = d.couleur || "#F2ECDD";
+    ctx.fillStyle = d.couleur || "#F2ECDD";
+    ctx.lineWidth = d.epaisseur || 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (e.type === "trait") {
+      if (!d.points || d.points.length < 2) return;
+      ctx.beginPath();
+      ctx.moveTo(d.points[0][0], d.points[0][1]);
+      for (let i = 1; i < d.points.length; i++) ctx.lineTo(d.points[i][0], d.points[i][1]);
+      ctx.stroke();
+    } else if (e.type === "forme") {
+      ctx.beginPath();
+      if (d.forme === "rectangle") {
+        ctx.strokeRect(Math.min(d.x1, d.x2), Math.min(d.y1, d.y2), Math.abs(d.x2 - d.x1), Math.abs(d.y2 - d.y1));
+      } else if (d.forme === "cercle") {
+        const rayon = Math.hypot(d.x2 - d.x1, d.y2 - d.y1);
+        ctx.arc(d.x1, d.y1, rayon, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (d.forme === "ligne") {
+        ctx.moveTo(d.x1, d.y1);
+        ctx.lineTo(d.x2, d.y2);
+        ctx.stroke();
+      }
+    } else if (e.type === "texte") {
+      ctx.font = (d.taille || 18) + "px 'Inter', sans-serif";
+      ctx.fillText(d.texte || "", d.x, d.y);
+    }
+  }
+
+  function redessinerTout() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    elements.forEach(dessinerElement);
+  }
+
+  window.addEventListener("resize", redimensionnerCanvas);
+  redimensionnerCanvas();
+
+  // --- Connexion WebSocket dediee au tableau (cle de salle distincte
+  // "tableau-{id}", totalement separee de la Room LiveKit gerer par
+  // classe_salle.html) ---
+  const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const ws = new WebSocket(protocole + "//" + window.location.host + "/classe/seances/" + seanceId + "/tableau/ws");
+
+  ws.addEventListener("message", function (evenement) {
+    const donnees = JSON.parse(evenement.data);
+    if (donnees.type === "permission") {
+      if (donnees.utilisateur_id === idUtilisateur) {
+        peutEcrire = donnees.autorise;
+        majStatutEcriture();
+        majEtatOutils();
+      }
+      if (peutGerer) {
+        majAffichageAutorisations(donnees);
+      }
+      return;
+    }
+    if (donnees.type === "effacer_tout") {
+      elements.clear();
+    } else if (donnees.type === "suppression") {
+      elements.delete(donnees.element_id);
+    } else {
+      elements.set(donnees.element_id, donnees);
+    }
+    redessinerTout();
+  });
+
+  function majAffichageAutorisations(donnees) {
+    // Rafraichissement simple : on ne recharge que le panneau (fetch du
+    // fragment), jamais toute la page — ca resterait sans effet sur la
+    // Room LiveKit de toute facon, mais autant rester coherent avec
+    // l'esprit "panneau independant".
+    const listeEl = document.getElementById("liste-autorisations-tableau");
+    if (listeEl && window.rechargerPanneauTableau) {
+      window.rechargerPanneauTableau();
+    }
+  }
+
+  function envoyer(objet) {
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(objet));
+  }
+
+  // --- Outils ---
+  let outilActif = "stylo";
+  document.querySelectorAll("[data-outil]").forEach(function (bouton) {
+    bouton.addEventListener("click", function () {
+      document.querySelectorAll("[data-outil]").forEach(function (b) { b.classList.remove("bouton-controle-actif"); });
+      bouton.classList.add("bouton-controle-actif");
+      outilActif = bouton.dataset.outil;
+    });
+  });
+
+  function majEtatOutils() {
+    document.querySelectorAll("[data-outil], #btn-annuler-tableau, #btn-retablir-tableau, #btn-effacer-tout-tableau").forEach(function (b) {
+      b.disabled = !peutEcrire;
+    });
+  }
+  majEtatOutils();
+
+  // --- Historique local (pour Annuler/Retablir de SES PROPRES elements) ---
+  const mesElements = [];
+  const pileRetablir = [];
+
+  function nouvelId() {
+    return "el-" + idUtilisateur + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function creerElement(type, donnees) {
+    const elementId = nouvelId();
+    const e = { type: type, element_id: elementId, utilisateur_id: idUtilisateur, donnees: donnees };
+    elements.set(elementId, e);
+    mesElements.push(e);
+    pileRetablir.length = 0;
+    redessinerTout();
+    envoyer({ type: type, element_id: elementId, donnees: donnees });
+  }
+
+  document.getElementById("btn-annuler-tableau").addEventListener("click", function () {
+    const dernier = mesElements.pop();
+    if (!dernier) return;
+    pileRetablir.push(dernier);
+    elements.delete(dernier.element_id);
+    redessinerTout();
+    envoyer({ type: "suppression", element_id: dernier.element_id, donnees: {} });
+  });
+
+  document.getElementById("btn-retablir-tableau").addEventListener("click", function () {
+    const e = pileRetablir.pop();
+    if (!e) return;
+    mesElements.push(e);
+    elements.set(e.element_id, e);
+    redessinerTout();
+    envoyer({ type: e.type, element_id: e.element_id, donnees: e.donnees });
+  });
+
+  {% if peut_gerer %}
+  document.getElementById("btn-effacer-tout-tableau").addEventListener("click", function () {
+    if (!confirm("Effacer tout le tableau pour tout le monde ?")) return;
+    elements.clear();
+    mesElements.length = 0;
+    pileRetablir.length = 0;
+    redessinerTout();
+    envoyer({ type: "effacer_tout", element_id: "tout", donnees: {} });
+  });
+  {% endif %}
+
+  document.getElementById("btn-telecharger-tableau").addEventListener("click", function () {
+    const lien = document.createElement("a");
+    lien.download = "tableau-{{ seance.id }}.png";
+    lien.href = canvas.toDataURL("image/png");
+    lien.click();
+  });
+
+  // --- Interaction souris/tactile ---
+  let enTrain = false;
+  let pointsCourants = [];
+  let debutForme = null;
+
+  function positionCanvas(evenement) {
+    const rect = canvas.getBoundingClientRect();
+    const point = evenement.touches ? evenement.touches[0] : evenement;
+    return [Math.round(point.clientX - rect.left), Math.round(point.clientY - rect.top)];
+  }
+
+  function demarrer(evenement) {
+    if (!peutEcrire) return;
+    evenement.preventDefault();
+    const [x, y] = positionCanvas(evenement);
+
+    if (outilActif === "texte") {
+      const texte = prompt("Texte :");
+      if (texte) {
+        creerElement("texte", { x: x, y: y, texte: texte, couleur: couleurEl.value, taille: 14 + Number(epaisseurEl.value) });
+      }
+      return;
+    }
+
+    enTrain = true;
+    if (outilActif === "stylo" || outilActif === "gomme") {
+      pointsCourants = [[x, y]];
+    } else {
+      debutForme = [x, y];
+    }
+  }
+
+  function deplacer(evenement) {
+    if (!enTrain || !peutEcrire) return;
+    evenement.preventDefault();
+    const [x, y] = positionCanvas(evenement);
+
+    if (outilActif === "stylo" || outilActif === "gomme") {
+      pointsCourants.push([x, y]);
+      ctx.strokeStyle = outilActif === "gomme" ? "#0E2A32" : couleurEl.value;
+      ctx.lineWidth = outilActif === "gomme" ? 20 : Number(epaisseurEl.value);
+      ctx.lineCap = "round";
+      const n = pointsCourants.length;
+      if (n >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(pointsCourants[n - 2][0], pointsCourants[n - 2][1]);
+        ctx.lineTo(pointsCourants[n - 1][0], pointsCourants[n - 1][1]);
+        ctx.stroke();
+      }
+    } else {
+      redessinerTout();
+      ctx.strokeStyle = couleurEl.value;
+      ctx.lineWidth = Number(epaisseurEl.value);
+      ctx.beginPath();
+      if (outilActif === "rectangle") {
+        ctx.strokeRect(Math.min(debutForme[0], x), Math.min(debutForme[1], y), Math.abs(x - debutForme[0]), Math.abs(y - debutForme[1]));
+      } else if (outilActif === "cercle") {
+        ctx.arc(debutForme[0], debutForme[1], Math.hypot(x - debutForme[0], y - debutForme[1]), 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (outilActif === "ligne") {
+        ctx.moveTo(debutForme[0], debutForme[1]);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function terminer(evenement) {
+    if (!enTrain || !peutEcrire) return;
+    enTrain = false;
+    const [x, y] = positionCanvas(evenement.changedTouches ? { touches: evenement.changedTouches } : evenement);
+
+    if (outilActif === "stylo" || outilActif === "gomme") {
+      if (pointsCourants.length >= 2) {
+        creerElement("trait", {
+          points: pointsCourants,
+          couleur: outilActif === "gomme" ? "#0E2A32" : couleurEl.value,
+          epaisseur: outilActif === "gomme" ? 20 : Number(epaisseurEl.value),
+        });
+      }
+    } else if (debutForme) {
+      creerElement("forme", {
+        forme: outilActif, x1: debutForme[0], y1: debutForme[1], x2: x, y2: y,
+        couleur: couleurEl.value, epaisseur: Number(epaisseurEl.value),
+      });
+    }
+    debutForme = null;
+  }
+
+  canvas.addEventListener("mousedown", demarrer);
+  canvas.addEventListener("mousemove", deplacer);
+  window.addEventListener("mouseup", terminer);
+  canvas.addEventListener("touchstart", demarrer, { passive: false });
+  canvas.addEventListener("touchmove", deplacer, { passive: false });
+  canvas.addEventListener("touchend", terminer);
+
+  document.getElementById("btn-fermer-tableau-panneau").addEventListener("click", function () {
+    // Ferme uniquement le panneau (voir classe_salle.html) : ne touche
+    // jamais a room / RTCPeerConnection / MediaStreamTrack. Si ce fragment
+    // est ouvert en page autonome (fallback /tableau direct, sans JS de
+    // classe_salle.html), il n'y a pas de panneau a fermer : on revient
+    // simplement a la salle.
+    if (window.fermerPanneauTableau) {
+      window.fermerPanneauTableau();
+    } else {
+      window.location.href = "/classe/seances/{{ seance.id }}/salle";
+    }
+  });
+
+  // Fermeture propre du WebSocket du tableau quand on quitte vraiment la
+  // salle (mais PAS quand on masque juste le panneau — voir
+  // classe_salle.html qui utilise display:none, pas de suppression du DOM).
+  window.addEventListener("beforeunload", function () {
+    ws.close();
+  });
+})();
+</script>

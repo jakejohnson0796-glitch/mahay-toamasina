@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block titre %}Supprimer {{ cible.nom }} — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin/utilisateurs">&larr; Utilisateurs</a></p>
+<h2>Supprimer definitivement {{ cible.nom }}</h2>
+
+<div class="erreur" style="margin-bottom:1.5rem;">
+  <strong>Action irreversible.</strong> Le compte, ses messages postes chez
+  les autres, ses inscriptions, presences, tentatives de quiz et rendus de
+  devoirs seront effaces pour de bon. Choisissez ci-dessous quoi faire de
+  chaque espace qu'il/elle possede avant de confirmer.
+</div>
+
+<form method="post" action="/admin/utilisateurs/{{ cible.id }}/supprimer">
+  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+  {% if cercles_info %}
+  <div class="carte-formulaire" style="margin-bottom:1.5rem;">
+    <h3 style="margin-top:0;">Cercles d'etude crees ({{ cercles_info|length }})</h3>
+    {% for info in cercles_info %}
+    <div style="padding:0.75rem 0;border-top:1px solid var(--bordure, #333);">
+      <strong>{{ info.cercle.nom }}</strong>
+      <span class="stat-label">— {{ info.nb_membres }} membre(s), {{ info.nb_messages }} message(s)</span>
+      <div style="margin-top:0.4rem;display:flex;gap:1.25rem;flex-wrap:wrap;align-items:center;">
+        <label style="display:flex;gap:0.4rem;align-items:center;font-weight:normal;">
+          <input type="radio" name="cercle_{{ info.cercle.id }}" value="supprimer" checked>
+          Supprimer ce cercle et tout son contenu
+        </label>
+        <label style="display:flex;gap:0.4rem;align-items:center;font-weight:normal;">
+          <input type="radio" name="cercle_{{ info.cercle.id }}" id="reattrib-cercle-{{ info.cercle.id }}">
+          Reattribuer a :
+          <select onchange="document.getElementById('reattrib-cercle-{{ info.cercle.id }}').value = 'reattribuer:' + this.value; document.getElementById('reattrib-cercle-{{ info.cercle.id }}').checked = true;">
+            <option value="">— choisir —</option>
+            {% for compte in comptes_possibles %}
+            <option value="{{ compte.id }}">{{ compte.nom }} ({{ compte.role.value }})</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if cours_info %}
+  <div class="carte-formulaire" style="margin-bottom:1.5rem;">
+    <h3 style="margin-top:0;">Cours animes ({{ cours_info|length }})</h3>
+    {% for info in cours_info %}
+    <div style="padding:0.75rem 0;border-top:1px solid var(--bordure, #333);">
+      <strong>{{ info.cours.nom }}</strong>
+      <span class="stat-label">— {{ info.nb_inscrits }} inscrit(s), {{ info.nb_seances }} seance(s)</span>
+      <div style="margin-top:0.4rem;display:flex;gap:1.25rem;flex-wrap:wrap;align-items:center;">
+        <label style="display:flex;gap:0.4rem;align-items:center;font-weight:normal;">
+          <input type="radio" name="cours_{{ info.cours.id }}" value="supprimer" checked>
+          Supprimer ce cours et tout son contenu
+        </label>
+        <label style="display:flex;gap:0.4rem;align-items:center;font-weight:normal;">
+          <input type="radio" name="cours_{{ info.cours.id }}" id="reattrib-cours-{{ info.cours.id }}">
+          Reattribuer a :
+          <select onchange="document.getElementById('reattrib-cours-{{ info.cours.id }}').value = 'reattribuer:' + this.value; document.getElementById('reattrib-cours-{{ info.cours.id }}').checked = true;">
+            <option value="">— choisir —</option>
+            {% for compte in comptes_possibles %}
+            <option value="{{ compte.id }}">{{ compte.nom }} ({{ compte.role.value }})</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not cercles_info and not cours_info %}
+  <p class="stat-label">Ce compte ne possede aucun cercle ni cours.</p>
+  {% endif %}
+
+  <p class="stat-label">
+    Les documents deposes par ce compte seront conserves (reattribues a
+    vous-meme) ; supprimez-en un precis depuis <a href="/moderation">Moderation</a> si besoin.
+  </p>
+
+  <label style="display:flex;gap:0.5rem;align-items:center;font-weight:normal;margin:1rem 0;">
+    <input type="checkbox" required>
+    Je comprends que cette suppression est irreversible.
+  </label>
+
+  <button class="bouton bouton-primaire" type="submit" onclick="return confirm('Confirmer la suppression definitive de {{ cible.nom }} ?');">
+    Supprimer definitivement
+  </button>
+</form>
+{% endblock %}
