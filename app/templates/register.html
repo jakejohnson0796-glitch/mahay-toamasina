@@ -25,7 +25,10 @@
     <input type="hidden" id="telephone" name="telephone">
 
     <label for="mot_de_passe">Mot de passe</label>
-    <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+    <div class="champ-mot-de-passe">
+      <input type="password" id="mot_de_passe" name="mot_de_passe" required autocomplete="new-password">
+      <button type="button" class="bouton-toggle-mdp" data-cible="mot_de_passe" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button>
+    </div>
 
     <label for="role">Vous etes</label>
     <select id="role" name="role">
@@ -81,6 +84,21 @@
     // stocke en base — revalidee et re-normalisee cote serveur de toute
     // facon (voir app/telephone.py).
     champCache.value = "0" + chiffres;
+  });
+})();
+
+(function () {
+  // Bascule afficher/masquer pour chaque champ mot de passe de la page.
+  document.querySelectorAll(".bouton-toggle-mdp").forEach(function (bouton) {
+    const champ = document.getElementById(bouton.dataset.cible);
+    if (!champ) return;
+    bouton.addEventListener("click", function () {
+      const visible = champ.type === "text";
+      champ.type = visible ? "password" : "text";
+      bouton.textContent = visible ? "👁" : "🙈";
+      bouton.setAttribute("aria-pressed", String(!visible));
+      bouton.setAttribute("aria-label", visible ? "Afficher le mot de passe" : "Masquer le mot de passe");
+    });
   });
 })();
 </script>
