@@ -114,6 +114,17 @@ def liste_cercles(request: Request, session: Session = Depends(get_session)):
     cercles = session.exec(select(CercleEtude).order_by(CercleEtude.date_creation.desc())).all()
     filieres = session.exec(select(Filiere)).all()
 
+    # Meme filet de securite que salon_cercle()/voir_membres() : sans cet
+    # appel, un admin qui n'a pas encore ouvert individuellement un cercle
+    # (ou qui vient d'etre promu admin) n'a pas encore de ligne MembreCercle
+    # reelle pour ce cercle, et cette liste globale l'affichait alors a tort
+    # comme non-membre — d'ou les boutons "Demander a rejoindre" / "Demande
+    # en attente" vus par un Admin. On le fait ici, une fois par cercle,
+    # avant de calculer est_membre/en_attente ci-dessous.
+    if _est_admin(utilisateur):
+        for cercle in cercles:
+            _assurer_membres_admins(session, cercle.id)
+
     cercles_avec_info = []
     for cercle in cercles:
         nb_membres = len(
@@ -228,6 +239,16 @@ def demander_adhesion(request: Request, cercle_id: int, session: Session = Depen
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle:
         return RedirectResponse("/cercles", status_code=303)
+
+    # Defense en profondeur : meme si l'interface ne devrait jamais
+    # proposer ce bouton a un Admin (voir liste_cercles/salon_cercle qui
+    # l'assurent deja membre en amont), un appel direct sur cette route
+    # (POST forge, ancienne page en cache, etc.) ne doit jamais faire
+    # passer un Admin par le circuit de demande — il est rendu membre
+    # immediatement, sans creation de DemandeAdhesionCercle.
+    if _est_admin(utilisateur):
+        _assurer_membres_admins(session, cercle_id)
+        return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     if _est_membre(session, cercle_id, utilisateur.id):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
@@ -571,7 +592,12 @@ async def envoyer_fichier(
         return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle or not _est_membre(session, cercle_id, utilisateur.id):
+    if not cercle:
+        return RedirectResponse("/cercles", status_code=303)
+
+    if _est_admin(utilisateur):
+        _assurer_membres_admins(session, cercle_id)
+    if not _est_membre(session, cercle_id, utilisateur.id):
         return RedirectResponse("/cercles", status_code=303)
 
     if not fichier.filename or not fichier.filename.lower().endswith(".pdf"):
@@ -623,7 +649,11 @@ async def envoyer_fichier(
 @router.get("/cercles/{cercle_id}/messages/{message_id}/piece-jointe")
 def telecharger_piece_jointe(request: Request, cercle_id: int, message_id: int, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or not _est_membre(session, cercle_id, utilisateur.id):
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if _est_admin(utilisateur):
+        _assurer_membres_admins(session, cercle_id)
+    if not _est_membre(session, cercle_id, utilisateur.id):
         return RedirectResponse("/connexion", status_code=303)
 
     message = session.get(MessageCercle, message_id)
@@ -735,7 +765,11 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
         return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle or not _est_membre(session, cercle_id, utilisateur.id):
+    if not cercle:
+        return RedirectResponse("/cercles", status_code=303)
+    if _est_admin(utilisateur):
+        _assurer_membres_admins(session, cercle_id)
+    if not _est_membre(session, cercle_id, utilisateur.id):
         return RedirectResponse("/cercles", status_code=303)
 
     resultats = []
