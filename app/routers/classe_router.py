@@ -511,22 +511,28 @@ def voir_presences(request: Request, seance_id: int, session: Session = Depends(
     )
 
 
-@router.get("/classe/seances/{seance_id}/tableau")
-def page_tableau(request: Request, seance_id: int, session: Session = Depends(get_session)):
+def _donnees_tableau(session: Session, seance_id: int, request: Request):
+    """Logique commune aux deux routes de rendu du tableau blanc (page
+    autonome /tableau et fragment AJAX /tableau/fragment) : verifie les
+    droits d'acces et prepare le contexte de template. Factorisee ici pour
+    que les deux routes restent strictement identiques en termes de
+    permissions — seul le template de sortie differe (page complete vs
+    fragment injectable). Retourne soit une RedirectResponse (acces
+    refuse), soit (contexte, seance, cours)."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
+        return RedirectResponse("/connexion", status_code=303), None, None
 
     seance = session.get(Seance, seance_id)
     if not seance:
-        return RedirectResponse("/classe", status_code=303)
+        return RedirectResponse("/classe", status_code=303), None, None
     cours = session.get(Cours, seance.cours_id)
     if not cours:
-        return RedirectResponse("/classe", status_code=303)
+        return RedirectResponse("/classe", status_code=303), None, None
 
     peut_gerer = _peut_gerer_cours(cours, utilisateur)
     if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
-        return RedirectResponse(f"/classe/{cours.id}", status_code=303)
+        return RedirectResponse(f"/classe/{cours.id}", status_code=303), None, None
 
     etat_initial = _reconstituer_etat_tableau(session, seance_id)
 
@@ -555,16 +561,34 @@ def page_tableau(request: Request, seance_id: int, session: Session = Depends(ge
 
     peut_ecrire = _peut_ecrire_tableau(session, seance_id, cours, utilisateur)
 
-    return templates.TemplateResponse(
-        request,
-        "classe_tableau.html",
-        {
-            "utilisateur": utilisateur, "cours": cours, "seance": seance,
-            "peut_gerer": peut_gerer, "peut_ecrire": peut_ecrire,
-            "etat_initial_json": json.dumps(etat_initial),
-            "autorises": autorises, "inscrits_non_autorises": inscrits_non_autorises,
-        },
-    )
+    contexte = {
+        "utilisateur": utilisateur, "cours": cours, "seance": seance,
+        "peut_gerer": peut_gerer, "peut_ecrire": peut_ecrire,
+        "etat_initial_json": json.dumps(etat_initial),
+        "autorises": autorises, "inscrits_non_autorises": inscrits_non_autorises,
+    }
+    return contexte, seance, cours
+
+
+@router.get("/classe/seances/{seance_id}/tableau")
+def page_tableau(request: Request, seance_id: int, session: Session = Depends(get_session)):
+    resultat, seance, cours = _donnees_tableau(session, seance_id, request)
+    if seance is None:
+        return resultat  # RedirectResponse (acces refuse / non connecte)
+    return templates.TemplateResponse(request, "classe_tableau.html", resultat)
+
+
+@router.get("/classe/seances/{seance_id}/tableau/fragment")
+def fragment_tableau(request: Request, seance_id: int, session: Session = Depends(get_session)):
+    """Meme contenu que page_tableau(), mais rendu SANS le template de
+    base (pas de <html>/<head>/nav) : c'est ce fragment que
+    classe_salle.html charge via fetch() et injecte dans son panneau
+    tableau blanc, pour eviter toute navigation de page qui detruirait la
+    Room LiveKit (voir commentaire dans classe_salle.html)."""
+    resultat, seance, cours = _donnees_tableau(session, seance_id, request)
+    if seance is None:
+        return resultat  # RedirectResponse (acces refuse / non connecte)
+    return templates.TemplateResponse(request, "classe_tableau_fragment.html", resultat)
 
 
 @router.post("/classe/seances/{seance_id}/tableau/autoriser/{utilisateur_id}")

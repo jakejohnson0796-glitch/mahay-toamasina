@@ -24,13 +24,23 @@
     <button type="button" id="btn-partage-ecran" class="bouton-controle" aria-pressed="false" title="Partager l'ecran">🖥️</button>
     {% endif %}
     <button type="button" id="btn-lever-main" class="bouton-controle" title="Lever la main">✋</button>
-    <a href="/classe/seances/{{ seance.id }}/tableau" class="bouton-controle" title="Tableau blanc" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">🖍️</a>
+    <button type="button" id="btn-tableau" class="bouton-controle" aria-pressed="false" title="Tableau blanc">🖍️</button>
     <span id="compteur-participants" class="stat-label" style="margin-left:auto;align-self:center;">1 participant</span>
     <form method="post" action="/classe/seances/{{ seance.id }}/quitter" id="form-quitter">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
       <button type="submit" id="btn-quitter" class="bouton-controle bouton-quitter" title="Quitter la salle">Quitter</button>
     </form>
   </div>
+
+  <!-- Panneau tableau blanc : composant totalement independant de la
+       Room LiveKit ci-dessus. Masque par defaut (hidden), son contenu est
+       charge une seule fois via fetch() sur /tableau/fragment et injecte
+       ici — jamais via une navigation de page, precisement pour ne
+       jamais declencher le "beforeunload" qui coupait auparavant la
+       camera/le micro/le partage d'ecran. Ouvrir/fermer ce panneau ne
+       fait qu'afficher/masquer une <div> : la Room, les
+       RTCPeerConnection et les MediaStreamTrack ne sont jamais touches. -->
+  <div id="panneau-tableau" class="carte-formulaire" hidden style="margin-top:1rem;"></div>
 
   <div id="notifications-salle" aria-live="polite"></div>
 
@@ -229,6 +239,66 @@ const room = new Room({
     this.classList.toggle("bouton-controle-actif", partageActif);
   });
   {% endif %}
+
+  // --- Tableau blanc : panneau independant, jamais de navigation ---
+  // Cause racine du bug historique : le bouton tableau blanc etait un
+  // <a href="/classe/seances/{id}/tableau"> qui faisait NAVIGUER le
+  // navigateur vers une AUTRE page HTML. Cette navigation declenchait le
+  // "beforeunload" ci-dessous (room.disconnect()) et detruisait la Room
+  // LiveKit -> camera, micro et partage d'ecran coupes immediatement.
+  // Le tableau blanc lui-meme n'y etait pour rien : c'est le simple fait
+  // de changer de document qui tuait la connexion WebRTC. Correction :
+  // le tableau blanc est maintenant charge en AJAX (fragment HTML, sans
+  // <html>/<head>) et affiche/masque dans un panneau de CETTE page, donc
+  // "room" n'est jamais recree ni deconnecte.
+  const panneauTableau = document.getElementById("panneau-tableau");
+  const btnTableau = document.getElementById("btn-tableau");
+  let tableauCharge = false;
+  let tableauOuvert = false;
+
+  function ouvrirPanneauTableau() {
+    tableauOuvert = true;
+    panneauTableau.hidden = false;
+    btnTableau.setAttribute("aria-pressed", "true");
+    btnTableau.classList.add("bouton-controle-actif");
+    if (!tableauCharge) {
+      fetch("/classe/seances/{{ seance.id }}/tableau/fragment", { credentials: "same-origin" })
+        .then(function (reponse) {
+          if (!reponse.ok) throw new Error("HTTP " + reponse.status);
+          return reponse.text();
+        })
+        .then(function (html) {
+          panneauTableau.innerHTML = html;
+          tableauCharge = true;
+          // Les <script> injectes via innerHTML ne s'executent pas
+          // automatiquement (comportement standard du DOM) : on les
+          // recree explicitement pour que le JS du tableau blanc tourne.
+          panneauTableau.querySelectorAll("script").forEach(function (ancien) {
+            const nouveau = document.createElement("script");
+            nouveau.textContent = ancien.textContent;
+            ancien.replaceWith(nouveau);
+          });
+        })
+        .catch(function () {
+          panneauTableau.innerHTML = '<p class="erreur">Impossible de charger le tableau blanc pour le moment.</p>';
+        });
+    }
+  }
+
+  window.fermerPanneauTableau = function () {
+    tableauOuvert = false;
+    panneauTableau.hidden = true;
+    btnTableau.setAttribute("aria-pressed", "false");
+    btnTableau.classList.remove("bouton-controle-actif");
+  };
+
+  btnTableau.addEventListener("click", function () {
+    if (tableauOuvert) {
+      window.fermerPanneauTableau();
+    } else {
+      ouvrirPanneauTableau();
+    }
+  });
 
   document.getElementById("btn-lever-main").addEventListener("click", function () {
     envoyerDonnee({ type: "main_levee", nom: nomUtilisateur });

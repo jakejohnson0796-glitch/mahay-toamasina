@@ -15,6 +15,7 @@ from ..models import Utilisateur, RoleUtilisateur, Filiere, CodeSecours2FA
 from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
 from ..rate_limit import limite_depassee
 from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_code_totp, generer_codes_secours, hacher_code_secours, verifier_code_secours
+from ..telephone import normaliser_telephone, TelephoneInvalide
 from .. import subscription
 
 
@@ -67,7 +68,23 @@ def inscription(
     if role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.SPONSOR):
         role = RoleUtilisateur.ETUDIANT
 
-    deja_inscrit = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone)).first()
+    # SECURITE : le backend est la source de verite pour la validation du
+    # numero, jamais le frontend seul — un numero avec des lettres, un
+    # mauvais indicatif ou une mauvaise longueur est rejete ici meme si le
+    # JS du formulaire a ete contourne. La normalisation (+261.../261.../0...
+    # -> forme canonique locale "0XXXXXXXXX") empeche aussi qu'une meme
+    # personne cree plusieurs comptes avec des variantes du meme numero.
+    try:
+        telephone_normalise = normaliser_telephone(telephone)
+    except TelephoneInvalide as erreur:
+        filieres = session.exec(select(Filiere)).all()
+        return templates.TemplateResponse(
+            request,
+            "register.html",
+            {"filieres": filieres, "erreur": str(erreur)},
+        )
+
+    deja_inscrit = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)).first()
     if deja_inscrit:
         filieres = session.exec(select(Filiere)).all()
         return templates.TemplateResponse(
@@ -78,7 +95,7 @@ def inscription(
 
     utilisateur = Utilisateur(
         nom=nom,
-        telephone=telephone,
+        telephone=telephone_normalise,
         mot_de_passe_hash=hacher_mot_de_passe(mot_de_passe),
         role=role,
         filiere_id=filiere_id,
@@ -122,7 +139,20 @@ def connexion(
             request, "login.html", {"erreur": "Trop de tentatives. Reessayez dans une minute."}
         )
 
-    utilisateur = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone)).first()
+    # On accepte en connexion les memes variantes qu'a l'inscription
+    # (+261..., 261..., 0...) en les ramenant a la meme forme canonique
+    # que celle stockee en base — sinon un compte cree via "+261 34..."
+    # ne pourrait jamais se reconnecter avec cette meme ecriture. Un
+    # format non reconnu n'est PAS traite comme une erreur de validation
+    # ici (pas de message distinct) : on le laisse simplement echouer au
+    # lookup, pour ne pas donner d'indice supplementaire a un attaquant
+    # et garder le meme message d'erreur generique.
+    try:
+        telephone_normalise = normaliser_telephone(telephone)
+    except TelephoneInvalide:
+        telephone_normalise = telephone
+
+    utilisateur = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)).first()
     if not utilisateur or not verifier_mot_de_passe(mot_de_passe, utilisateur.mot_de_passe_hash):
         return templates.TemplateResponse(
             request, "login.html", {"erreur": "Numero ou mot de passe incorrect."}

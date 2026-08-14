@@ -134,6 +134,33 @@ def obtenir_url_telechargement(reference_fichier: str) -> str:
     return reference_fichier  # chemin local : FileResponse s'en charge directement
 
 
+def supprimer_fichier(reference_fichier: str) -> None:
+    """Supprime le fichier physique (disque local) ou l'objet distant
+    (Supabase Storage) correspondant a Document.chemin_fichier.
+
+    A appeler AVANT (ou juste apres, peu importe l'ordre exact tant que
+    les deux sont faits dans la meme operation logique) la suppression
+    de l'enregistrement Document en base, pour ne jamais laisser un
+    fichier orphelin occuper du stockage indefiniment. Silencieuse si le
+    fichier n'existe deja plus (ex: deuxieme tentative de suppression,
+    ou fichier deja efface manuellement) : on ne veut pas qu'une
+    suppression admin echoue juste parce que le fichier physique a deja
+    disparu."""
+    if stockage_distant_actif():
+        client = _obtenir_client_supabase()
+        try:
+            client.storage.from_(parametres.supabase_bucket).remove([reference_fichier])
+        except Exception:
+            # Best-effort : si l'objet n'existe deja plus cote Supabase,
+            # on ne bloque pas la suppression de l'enregistrement en base.
+            pass
+        return
+
+    chemin_local = Path(reference_fichier)
+    if chemin_local.exists():
+        chemin_local.unlink()
+
+
 @contextlib.contextmanager
 def ouvrir_fichier_local(reference_fichier: str) -> Iterator[Path]:
     """Fournit un chemin de fichier local utilisable (pour l'extraction de

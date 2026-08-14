@@ -10,7 +10,19 @@
     <input type="text" id="nom" name="nom" required>
 
     <label for="telephone">Numero de telephone</label>
-    <input type="text" id="telephone" name="telephone" required placeholder="034xxxxxxx">
+    <div class="champ-telephone" style="display:flex;align-items:center;gap:0.5rem;">
+      <span class="stat-label" aria-hidden="true">+261</span>
+      <input type="tel" id="telephone_local" inputmode="numeric" autocomplete="tel-national"
+             placeholder="34 12 345 67" maxlength="12" required
+             pattern="[0-9 ]*" title="9 chiffres, sans lettre ni symbole">
+    </div>
+    <!-- Champ reellement envoye au backend : combine +261 + les 9 chiffres
+         saisis en un numero au format local ("034XXXXXXX"), meme format
+         que celui deja utilise dans la base existante. La validation
+         definitive et la normalisation restent faites cote SERVEUR
+         (voir app/telephone.py) : ce JS n'est qu'un confort de saisie,
+         jamais la source de verite. -->
+    <input type="hidden" id="telephone" name="telephone">
 
     <label for="mot_de_passe">Mot de passe</label>
     <input type="password" id="mot_de_passe" name="mot_de_passe" required>
@@ -33,4 +45,43 @@
   </form>
 </div>
 <p>Deja inscrit(e) ? <a href="/connexion">Connectez-vous</a>.</p>
+
+<script>
+(function () {
+  // Confort de saisie uniquement — la validation qui compte est cote
+  // serveur (app/telephone.py). Objectif ici : empecher visuellement les
+  // lettres/symboles des la frappe et formater "+261 XX XX XXX XX".
+  const champLocal = document.getElementById("telephone_local");
+  const champCache = document.getElementById("telephone");
+  const formulaire = champLocal.closest("form");
+
+  function formaterAffichage(chiffres) {
+    // chiffres : chaine de 0 a 9 chiffres -> "XX XX XXX XX"
+    const groupes = [chiffres.slice(0, 2), chiffres.slice(2, 4), chiffres.slice(4, 7), chiffres.slice(7, 9)];
+    return groupes.filter(Boolean).join(" ");
+  }
+
+  champLocal.addEventListener("input", function () {
+    // Rejette immediatement tout ce qui n'est pas un chiffre (lettres,
+    // symboles) — jamais accepte a l'affichage, meme temporairement.
+    const chiffres = champLocal.value.replace(/\D/g, "").slice(0, 9);
+    champLocal.value = formaterAffichage(chiffres);
+  });
+
+  formulaire.addEventListener("submit", function (evenement) {
+    const chiffres = champLocal.value.replace(/\D/g, "");
+    if (chiffres.length !== 9) {
+      evenement.preventDefault();
+      champLocal.setCustomValidity("Entrez exactement 9 chiffres apres +261.");
+      champLocal.reportValidity();
+      return;
+    }
+    champLocal.setCustomValidity("");
+    // Forme locale canonique "0XXXXXXXXX", coherente avec le format deja
+    // stocke en base — revalidee et re-normalisee cote serveur de toute
+    // facon (voir app/telephone.py).
+    champCache.value = "0" + chiffres;
+  });
+})();
+</script>
 {% endblock %}

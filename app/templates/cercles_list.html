@@ -11,6 +11,7 @@
 {% if utilisateur %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 style="margin-top:0;">Creer un cercle</h3>
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   <form method="post" action="/cercles/creer">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="nom">Nom du cercle</label>

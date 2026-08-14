@@ -16,7 +16,7 @@ from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilis
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
-from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide
+from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
 from ..dependencies import acces_premium_ou_redirection
 
 router = APIRouter()
@@ -163,7 +163,15 @@ def panneau_moderation(request: Request, session: Session = Depends(get_session)
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return RedirectResponse("/", status_code=303)
     en_attente = session.exec(select(Document).where(Document.statut == StatutDocument.EN_ATTENTE)).all()
-    return templates.TemplateResponse("moderation.html", {"request": request, "documents": en_attente})
+    # Documents deja publics : l'admin doit aussi pouvoir en supprimer un
+    # apres coup (contenu signale/problematique decouvert apres
+    # approbation), pas seulement filtrer ceux encore en attente.
+    approuves = session.exec(
+        select(Document).where(Document.statut == StatutDocument.APPROUVE).order_by(Document.date_upload.desc())
+    ).all()
+    return templates.TemplateResponse(
+        "moderation.html", {"request": request, "documents": en_attente, "documents_approuves": approuves}
+    )
 
 
 @router.post("/moderation/{document_id}/approuver")
@@ -190,3 +198,40 @@ def rejeter_document(request: Request, document_id: int, session: Session = Depe
         session.add(document)
         session.commit()
     return RedirectResponse("/moderation", status_code=303)
+
+
+@router.post("/moderation/{document_id}/supprimer")
+def supprimer_document(request: Request, document_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    """Suppression DEFINITIVE d'un document par un administrateur (retrait
+    de contenu problematique/signale, pas un simple rejet de moderation).
+    Reservee a l'admin — un utilisateur normal, meme uploader du document,
+    ne peut jamais appeler cette route (verifie ici, pas seulement masque
+    cote frontend).
+
+    Nettoyage complet, dans cet ordre :
+      1. lignes ConsultationDocument qui referencent ce document (evite
+         une cle etrangere orpheline vers un Document supprime) ;
+      2. fichier physique/objet distant (voir storage.supprimer_fichier) ;
+      3. l'enregistrement Document lui-meme.
+    Le fichier n'est jamais laisse orphelin sur le disque/bucket alors
+    que son enregistrement en base a disparu, et inversement."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document:
+        return RedirectResponse("/moderation", status_code=303)
+
+    for consultation in session.exec(
+        select(ConsultationDocument).where(ConsultationDocument.document_id == document_id)
+    ).all():
+        session.delete(consultation)
+    session.commit()
+
+    supprimer_fichier(document.chemin_fichier)
+
+    session.delete(document)
+    session.commit()
+
+    return RedirectResponse("/moderation?supprime=1", status_code=303)
