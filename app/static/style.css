@@ -20,6 +20,38 @@
   --danger: #C1502E;
   --border: rgba(242, 236, 221, 0.14);
   --rayon: 6px;
+
+  /* Alias semantiques (§3 du brief refonte UI/UX) : pointent vers les
+     memes valeurs que les tokens ci-dessus, pour ne rien renommer et ne
+     rien casser ailleurs dans le CSS. A utiliser pour tout nouveau
+     composant plutot que d'introduire encore d'autres valeurs brutes. */
+  --color-primary: var(--accent);
+  --color-primary-hover: #f0a874;
+  --color-primary-soft: var(--accent-soft);
+  --color-accent: var(--accent-2);
+  --color-success: var(--accent-2);
+  --color-warning: var(--accent);
+  --color-danger: var(--danger);
+
+  --surface-1: var(--bg);
+  --surface-2: var(--bg-panel);
+  --surface-3: var(--bg-panel-2);
+
+  --text-primary: var(--text);
+  --text-secondary: var(--text-muted);
+
+  --border-subtle: var(--border);
+  --border-default: var(--border);
+
+  --radius-sm: 4px;
+  --radius-md: var(--rayon);
+  --radius-lg: 10px;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
+
+  --ease-fluide: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * { box-sizing: border-box; }
@@ -595,3 +627,239 @@ input:focus, select:focus, textarea:focus {
 .message-chat-salle-moi .message-auteur { color: var(--accent); }
 #form-chat-salle { display: flex; gap: 0.5rem; }
 #form-chat-salle input { flex: 1; }
+
+/* --- Tableau blanc (classe_tableau.html) --- */
+.barre-outils-tableau {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+.barre-outils-tableau input[type="color"] {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.barre-outils-tableau input[type="range"] { width: 100px; }
+.canvas-tableau {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  cursor: crosshair;
+  touch-action: none;
+}
+.badge-autorisation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  background: var(--accent-soft);
+  color: var(--text);
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  margin: 0.2rem;
+}
+
+/* --- Mega Menu (components/mega_menu.html) --- */
+.mega-item { position: relative; }
+.mega-trigger {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 0.4rem 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.mega-trigger:hover, .mega-trigger[aria-expanded="true"] { color: var(--text); }
+.mega-trigger::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  opacity: 0.6;
+  transition: transform 0.15s ease;
+}
+.mega-trigger[aria-expanded="true"]::after { transform: rotate(180deg); }
+
+.badge-menu {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.badge-premium { background: var(--accent-soft); color: var(--accent); }
+
+.mega-panel {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  left: 0;
+  min-width: 320px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  padding: 1.25rem;
+  display: none;
+  gap: 2rem;
+  z-index: 40;
+}
+/* L'attribut HTML "hidden" doit rester prioritaire sur le display:flex
+   ci-dessous, sinon les panneaux restent visibles en permanence — meme
+   piege deja rencontre sur le formulaire de signalement des cercles. */
+.mega-panel:not([hidden]) { display: flex; }
+.mega-colonne { display: flex; flex-direction: column; gap: 0.15rem; min-width: 240px; }
+.mega-colonne h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-2);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.mega-colonne a {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+}
+.mega-colonne a:hover { background: var(--bg-panel-2); }
+.mega-colonne a strong { font-size: 0.92rem; display: flex; align-items: center; gap: 0.4rem; }
+.mega-colonne a span:not(.badge-menu) { font-size: 0.78rem; color: var(--text-muted); }
+
+.mega-lien-simple {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  padding: 0.4rem 0;
+}
+.mega-lien-simple:hover { color: var(--text); text-decoration: none; }
+
+@media (max-width: 768px) {
+  /* Sur mobile, chaque panneau devient un accordeon en ligne plutot
+     qu'un panneau flottant : plus simple a manipuler au doigt, et evite
+     tout debordement horizontal impossible a eviter avec un panneau
+     multi-colonnes large sur un petit ecran. */
+  .mega-panel {
+    position: static;
+    box-shadow: none;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-width: 0;
+  }
+  .mega-colonne { min-width: 0; }
+}
+
+/* --- Footer contact (base.html) --- */
+.pied-contact {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+.pied-contact-etiquette { color: var(--text-secondary); }
+.pied-contact-lien {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-primary);
+  transition: color 0.15s var(--ease-fluide);
+}
+.pied-contact-lien:hover { color: var(--color-primary); text-decoration: none; }
+.pied-contact-whatsapp { color: var(--color-success); }
+.pied-contact-icone { font-size: 1rem; }
+
+/* --- Petites classes utilitaires (remplacent des style="" inline) --- */
+.titre-carte { margin-top: 0; }
+.carte-cercle-colonne { flex-direction: column; align-items: flex-start; }
+.liste-filieres { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+.carte-formulaire-espacee { margin-top: 2rem; }
+
+/* --- Header compact au scroll (§8 du brief) --- */
+.entete {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--surface-1);
+  transition: padding 0.2s var(--ease-fluide), box-shadow 0.2s var(--ease-fluide);
+}
+.entete-compacte {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Micro-interactions boutons / cartes (§6 du brief) --- */
+.bouton { transition: transform 0.15s var(--ease-fluide), background 0.15s var(--ease-fluide), border-color 0.15s var(--ease-fluide); }
+.bouton:hover { transform: translateY(-1px); }
+.bouton:active { transform: translateY(0) scale(0.98); }
+
+.carte-cercle, .carte-formulaire, .offre {
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
+}
+
+/* --- Ouverture animee du mega-panel (§5-7 du brief) ---
+   La transition se fait sur opacity/transform (couteux zero en perf).
+   Le hidden HTML controle toujours la disparition reelle (accessibilite
+   clavier/lecteur d'ecran) ; ces regles n'ajoutent qu'un effet visuel
+   par-dessus, sans changer la logique JS existante. */
+.mega-panel {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.16s var(--ease-fluide), transform 0.16s var(--ease-fluide);
+}
+.mega-panel:not([hidden]) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Apparition douce du hero (§5.1 du brief) --- */
+.hero > * {
+  animation: mahay-apparition 0.5s var(--ease-fluide) both;
+}
+.hero > *:nth-child(1) { animation-delay: 0s; }
+.hero > *:nth-child(2) { animation-delay: 0.06s; }
+.hero > *:nth-child(3) { animation-delay: 0.12s; }
+.hero > *:nth-child(4) { animation-delay: 0.18s; }
+
+@keyframes mahay-apparition {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Respect des preferences d'accessibilite (§17 du brief) ---
+   Doit rester en toute fin de fichier pour prevaloir sur les regles
+   d'animation/transition ci-dessus. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block titre %}GASY MAHAY{% endblock %}</title>
+<title>{% block titre %}MAHAY — Toamasina{% endblock %}</title>
 <link rel="manifest" href="/static/manifest.json">
 <link rel="icon" href="/static/favicon.ico">
 <link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
@@ -15,22 +15,15 @@
 </head>
 <body>
 <header class="entete">
-  <a class="logo" href="/">GASY <span class="logo-lieu">MAHAY</span></a>
+  <a class="logo" href="/">MAHAY <span class="logo-lieu">Toamasina</span></a>
   <button type="button" class="bouton-menu-mobile" id="bouton-menu-mobile" aria-expanded="false" aria-controls="nav-principale" aria-label="Ouvrir le menu">
     <span></span><span></span><span></span>
   </button>
-  <nav id="nav-principale">
-    <a href="/documents">Manifeste des annales</a>
-    <a href="/cercles">Cercles d'etude</a>
-    <a href="/sponsoring">Espace sponsors</a>
+  <nav id="nav-principale" aria-label="Navigation principale">
+    {% include "components/mega_menu.html" %}
     {% if request.session.get("user_id") %}
       <a href="/dashboard">Tableau de bord</a>
-      <a href="/classe">Classe virtuelle</a>
-      <a href="/quiz">Quiz IA</a>
-      <a href="/tuteur">Tuteur IA</a>
-      <a href="/abonnement">Mon abonnement</a>
       <a href="/securite">Securite</a>
-      <a href="/documents/upload">Deposer un document</a>
       {% if utilisateur and utilisateur.role == "admin" %}
       <a href="/admin">Administration</a>
       {% endif %}
@@ -41,24 +34,6 @@
     {% endif %}
   </nav>
 </header>
-<script>
-(function () {
-  const bouton = document.getElementById("bouton-menu-mobile");
-  const nav = document.getElementById("nav-principale");
-  bouton.addEventListener("click", function () {
-    const ouvert = nav.classList.toggle("nav-ouverte");
-    bouton.setAttribute("aria-expanded", ouvert ? "true" : "false");
-  });
-  // Referme le menu automatiquement apres avoir choisi un lien, pour ne
-  // pas laisser le menu ouvert par-dessus la page suivante.
-  nav.querySelectorAll("a").forEach(function (lien) {
-    lien.addEventListener("click", function () {
-      nav.classList.remove("nav-ouverte");
-      bouton.setAttribute("aria-expanded", "false");
-    });
-  });
-})();
-</script>
 
 <main>
   {% block contenu %}{% endblock %}
@@ -74,9 +49,10 @@
       <span class="pied-contact-icone">💬</span> WhatsApp
     </a>
   </div>
-  <p>GASY MAHAY — un hub de revision imaginer pour les etudiants de l'Universite de Madagascar.</p>
+  <p>MAHAY — un hub de revision imagine pour les etudiants de l'Universite de Toamasina.</p>
 </footer>
 
+<script src="/static/js/navigation.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/sw.js').catch(() => {});

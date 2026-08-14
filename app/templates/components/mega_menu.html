@@ -1,0 +1,62 @@
+{# Mega Menu — inclus depuis base.html a l'interieur de <nav id="nav-principale">.
+   Liens en dur (pas de url_for) : coherent avec le reste du projet, qui
+   n'utilise nulle part ce mecanisme actuellement. #}
+
+<div class="mega-item">
+  <button type="button" class="mega-trigger" aria-expanded="false" aria-controls="panel-apprendre">Apprendre</button>
+  <div class="mega-panel" id="panel-apprendre" hidden>
+    <div class="mega-colonne">
+      <h4>Apprendre</h4>
+      <a href="/documents"><strong>Manifeste des annales</strong><span>Sujets d'examens, corriges, fiches de revision.</span></a>
+      <a href="/documents/upload"><strong>Deposer un document</strong><span>Partagez une annale ou une fiche avec la communaute.</span></a>
+    </div>
+  </div>
+</div>
+
+<div class="mega-item">
+  <button type="button" class="mega-trigger" aria-expanded="false" aria-controls="panel-ia">IA <span class="badge-menu badge-premium">Premium</span></button>
+  <div class="mega-panel" id="panel-ia" hidden>
+    <div class="mega-colonne">
+      <h4>IA pour etudiants</h4>
+      <a href="/quiz"><strong>Quiz IA</strong><span>Generez un quiz sur mesure a partir d'une matiere.</span></a>
+      <a href="/quiz/historique"><strong>Historique des quiz</strong><span>Retrouvez vos quiz precedents et vos scores.</span></a>
+      <a href="/tuteur"><strong>Tuteur IA</strong><span>Posez une question, obtenez explication et exercice.</span></a>
+    </div>
+  </div>
+</div>
+
+<div class="mega-item">
+  <button type="button" class="mega-trigger" aria-expanded="false" aria-controls="panel-collaborer">Collaborer</button>
+  <div class="mega-panel" id="panel-collaborer" hidden>
+    <div class="mega-colonne">
+      <h4>Collaborer</h4>
+      <a href="/cercles"><strong>Cercles d'etude <span class="badge-menu badge-premium">Premium</span></strong><span>Reviser a plusieurs, par filiere ou en groupe libre.</span></a>
+      <a href="/classe"><strong>Classe virtuelle</strong><span>Cours en ligne : audio, video, tableau blanc, devoirs.</span></a>
+    </div>
+  </div>
+</div>
+
+<div class="mega-item">
+  <button type="button" class="mega-trigger" aria-expanded="false" aria-controls="panel-premium">Premium</button>
+  <div class="mega-panel" id="panel-premium" hidden>
+    <div class="mega-colonne">
+      <h4>Mahay Premium</h4>
+      <a href="/abonnement"><strong>Mon abonnement</strong><span>Debloquez l'IA, les cercles d'etude et plus.</span></a>
+      <a href="/sponsoring"><strong>Espace sponsors</strong><span>Repetiteurs, services etudiants : faites-vous connaitre.</span></a>
+    </div>
+  </div>
+</div>
+
+<div class="mega-item">
+  <button type="button" class="mega-trigger" aria-expanded="false" aria-controls="panel-universites">Universites</button>
+  <div class="mega-panel" id="panel-universites" hidden>
+    <div class="mega-colonne">
+      <h4>Ecosysteme universitaire</h4>
+      <a href="/universites"><strong>Universite de Toamasina</strong><span>Facultes et filieres couvertes par MAHAY.</span></a>
+      <a href="/contact"><strong>Devenir partenaire</strong><span>Etablissements, facultes, filieres.</span></a>
+    </div>
+  </div>
+</div>
+
+<a href="/a-propos" class="mega-lien-simple">A propos</a>
+<a href="/contact" class="mega-lien-simple">Contact</a>

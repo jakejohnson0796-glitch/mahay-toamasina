@@ -1,5 +1,5 @@
 """
-Point d'entree de GASY MAHAY.
+Point d'entree de MAHAY Toamasina.
 
 Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
@@ -23,7 +23,7 @@ from .admin_init import assurer_compte_admin
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="GASY MAHAY")
+app = FastAPI(title="MAHAY Toamasina")
 
 # --- Garde-fou : refuse de demarrer en production avec la cle de demo ---
 # Un secret par defaut connu de tous (present dans .env.example, donc
@@ -141,3 +141,21 @@ def accueil(request: Request, session: Session = Depends(get_session)):
             "derniers_documents": derniers_documents,
         },
     )
+
+
+@app.get("/a-propos")
+def a_propos(request: Request):
+    return templates.TemplateResponse(request, "a_propos.html", {})
+
+
+@app.get("/universites")
+def universites(request: Request, session: Session = Depends(get_session)):
+    # Donnees reelles deja en base (voir seed_data.py) — aucune universite,
+    # faculte ou filiere n'est inventee pour cette page.
+    facultes = session.exec(select(Faculte)).all()
+    return templates.TemplateResponse(request, "universites.html", {"facultes": facultes})
+
+
+@app.get("/contact")
+def contact(request: Request):
+    return templates.TemplateResponse(request, "contact.html", {})

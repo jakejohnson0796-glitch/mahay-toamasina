@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titre %}Universites — MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow">Ecosysteme universitaire</p>
+<h2>Universite de Toamasina</h2>
+<p>
+  MAHAY est aujourd'hui organise autour des facultes et filieres de
+  l'Universite de Toamasina. Chaque document, cercle d'etude et quiz peut
+  etre rattache a une filiere precise pour rester pertinent.
+</p>
+
+<div class="liste-cercles">
+  {% for faculte in facultes %}
+  <div class="carte-cercle carte-cercle-colonne">
+    <strong>{{ faculte.nom }}</strong>
+    {% if faculte.filieres %}
+    <ul class="liste-filieres">
+      {% for filiere in faculte.filieres %}
+      <li>{{ filiere.nom }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="stat-label">Filieres a venir.</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <p>Aucune faculte enregistree pour l'instant.</p>
+  {% endfor %}
+</div>
+
+<div class="carte-formulaire carte-formulaire-espacee">
+  <h3 class="titre-carte">Vous representez un etablissement ou une filiere ?</h3>
+  <p>
+    Si vous souhaitez que votre etablissement, faculte ou filiere rejoigne
+    MAHAY, ou proposer un partenariat, contactez-nous.
+  </p>
+  <a href="/contact" class="bouton bouton-primaire bouton-form">Devenir partenaire</a>
+</div>
+{% endblock %}
