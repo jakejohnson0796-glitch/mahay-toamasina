@@ -1,0 +1,400 @@
+From efdba02538783863273d439779a73c938c9e450b Mon Sep 17 00:00:00 2001
+From: Assistant Mahay <dev@mahay.local>
+Date: Fri, 14 Aug 2026 03:05:05 +0000
+Subject: [PATCH] Correctifs : tableau blanc/WebRTC, validation telephone +261,
+ hierarchie admin>owner, suppression en cascade des comptes
+
+- classe_router/classe_salle/classe_tableau(_fragment) : le tableau blanc
+  est charge en AJAX (fragment) et affiche dans un panneau, plus jamais
+  via une navigation de page qui coupait la Room LiveKit (camera/micro/
+  partage d'ecran) au clic sur le tableau blanc.
+
+- app/telephone.py + auth_router : validation stricte et normalisation du
+  numero malgache (+261/261/0, 9 ou 10 chiffres, prefixes operateur
+  valides), appliquee a l'inscription ET a la connexion, front + back.
+
+- cercles_router : limite de 3 cercles/utilisateur avec verrou anti-
+  concurrence (SELECT FOR UPDATE) ; tout administrateur global devient
+  automatiquement membre reel de chaque cercle (present + a la creation,
+  sans doublon) ; un createur/owner ne peut plus retirer un administrateur
+  de son cercle.
+
+- documents_router/storage : suppression definitive d'un document par un
+  admin (DB + fichier physique/Supabase), disponible aussi sur les
+  documents deja approuves.
+
+- admin_router : suppression de compte en cascade complete et reelle.
+  Page de confirmation listant les Cercles/Cours possedes par la cible,
+  avec choix individuel reattribuer (a un autre compte) ou supprimer
+  (avec tout leur contenu). Tout le contenu personnel de la cible dans
+  les espaces des AUTRES est nettoye sans jamais toucher aux autres
+  utilisateurs (messages retires, adhesions retirees, references
+  historiques d'autrui anonymisees plutot que cassees). Documents
+  deposes reattribues a l'admin plutot que supprimes.
+
+Teste en local (TestClient + SQLite ephemere) : inscription/validation
+telephone, limite de cercles, protection admin contre le retrait,
+suppression en cascade complete avec reattribution verifiee ligne par
+ligne (cercle supprime, cercle reattribue + contenu d'autrui intact,
+cours + seances + devoirs + rendus supprimes, espace d'un tiers non
+touche sauf trace de la cible retiree).
+---
+ app/routers/admin_router.py                   | 322 ++++++++++++++-
+ app/routers/auth_router.py                    |  36 +-
+ app/routers/cercles_router.py                 |  96 ++++-
+ app/routers/classe_router.py                  |  56 ++-
+ app/routers/documents_router.py               |  49 ++-
+ app/storage.py                                |  27 ++
+ app/telephone.py                              |  99 +++++
+ .../admin_supprimer_utilisateur.html          |  91 +++++
+ app/templates/admin_utilisateurs.html         |   1 +
+ app/templates/cercle_membres.html             |   3 +
+ app/templates/cercles_list.html               |   1 +
+ app/templates/classe_salle.html               |  72 +++-
+ app/templates/classe_tableau.html             | 339 +---------------
+ app/templates/classe_tableau_fragment.html    | 374 ++++++++++++++++++
+ app/templates/moderation.html                 |  29 ++
+ app/templates/register.html                   |  53 ++-
+ 16 files changed, 1283 insertions(+), 365 deletions(-)
+ create mode 100644 app/telephone.py
+ create mode 100644 app/templates/admin_supprimer_utilisateur.html
+ create mode 100644 app/templates/classe_tableau_fragment.html
+
+diff --git a/app/routers/admin_router.py b/app/routers/admin_router.py
+index 814503b..7c5e8a0 100644
+--- a/app/routers/admin_router.py
++++ b/app/routers/admin_router.py
+@@ -17,10 +17,14 @@ from ..templating import templates
+ from ..csrf import verifier_csrf
+ from ..auth import utilisateur_courant
+ from ..models import (
+-    Utilisateur, RoleUtilisateur, CercleEtude, MessageCercle, SignalementMessage,
+-    Document, StatutDocument, TentativeQuiz, AbonnementEtudiant, StatutAbonnementEtudiant,
+-    SignalementQuestionQuiz,
++    Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, MessageCercle, SignalementMessage,
++    DemandeAdhesionCercle, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
++    StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
++    ConsultationDocument, Abonnement, Cours, InscriptionCours, Seance, PresenceSeance,
++    EvenementTableauBlanc, AutorisationEcritureTableau, Devoir, RenduDevoir,
+ )
++from ..storage import supprimer_fichier
++import secrets
+ 
+ router = APIRouter()
+ 
+@@ -321,3 +325,315 @@ def retrograder_etudiant(request: Request, utilisateur_id: int, session: Session
+         session.commit()
+ 
+     return RedirectResponse("/admin/utilisateurs", status_code=303)
++
++
++@router.get("/admin/utilisateurs/{utilisateur_id}/supprimer")
++def page_confirmation_suppression(request: Request, utilisateur_id: int, session: Session = Depends(get_session)):
++    """Page de confirmation avant suppression definitive. Liste les
++    espaces POSSEDES par la cible (Cercles crees, Cours animes) pour que
++    l'admin choisisse, POUR CHACUN, individuellement :
++      - les reattribuer a un autre compte (le cercle/cours et tout son
++        contenu — membres, messages, seances, devoirs — survit intact,
++        seul le proprietaire change) ;
++      - ou les supprimer definitivement avec tout leur contenu.
++    Rien n'est modifie a cette etape (GET, pure lecture)."""
++    admin = _admin_requis(request, session)
++    if not admin:
++        return RedirectResponse("/", status_code=303)
++
++    cible = session.get(Utilisateur, utilisateur_id)
++    if not cible or cible.id == admin.id:
++        return RedirectResponse("/admin/utilisateurs", status_code=303)
++
++    cercles_possedes = session.exec(select(CercleEtude).where(CercleEtude.createur_id == utilisateur_id)).all()
++    cercles_info = []
++    for c in cercles_possedes:
++        nb_membres = len(session.exec(select(MembreCercle).where(MembreCercle.cercle_id == c.id)).all())
++        nb_messages = len(session.exec(select(MessageCercle).where(MessageCercle.cercle_id == c.id)).all())
++        cercles_info.append({"cercle": c, "nb_membres": nb_membres, "nb_messages": nb_messages})
++
++    cours_possedes = session.exec(select(Cours).where(Cours.professeur_id == utilisateur_id)).all()
++    cours_info = []
++    for c in cours_possedes:
++        nb_inscrits = len(session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == c.id)).all())
++        nb_seances = len(session.exec(select(Seance).where(Seance.cours_id == c.id)).all())
++        cours_info.append({"cours": c, "nb_inscrits": nb_inscrits, "nb_seances": nb_seances})
++
++    # Cibles de reattribution possibles : tout compte autre que la cible
++    # elle-meme. Un cercle/cours peut techniquement etre reattribue a
++    # n'importe qui (etudiant compris, comme une creation normale) —
++    # seul le cas des Cours garde du sens surtout avec un PROFESSEUR/ADMIN,
++    # mais on ne bloque pas plus que la creation normale ne le ferait deja.
++    comptes_possibles = session.exec(
++        select(Utilisateur).where(Utilisateur.id != utilisateur_id).order_by(Utilisateur.nom)
++    ).all()
++
++    return templates.TemplateResponse(
++        request,
++        "admin_supprimer_utilisateur.html",
++        {
++            "utilisateur": admin, "cible": cible,
++            "cercles_info": cercles_info, "cours_info": cours_info,
++            "comptes_possibles": comptes_possibles,
++        },
++    )
++
++
++def _cascade_supprimer_cercle(session: Session, cercle_id: int) -> None:
++    """Supprime definitivement un CercleEtude et tout son contenu propre
++    (ordre = enfants avant parent, pour ne jamais laisser de cle
++    etrangere orpheline)."""
++    ids_messages = [
++        m.id for m in session.exec(select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)).all()
++    ]
++    if ids_messages:
++        for signalement in session.exec(
++            select(SignalementMessage).where(SignalementMessage.message_id.in_(ids_messages))
++        ).all():
++            session.delete(signalement)
++    for message in session.exec(select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)).all():
++        if message.piece_jointe_chemin:
++            supprimer_fichier(message.piece_jointe_chemin)
++        session.delete(message)
++    for demande in session.exec(
++        select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.cercle_id == cercle_id)
++    ).all():
++        session.delete(demande)
++    for membre in session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)).all():
++        session.delete(membre)
++    cercle = session.get(CercleEtude, cercle_id)
++    if cercle:
++        session.delete(cercle)
++
++
++def _cascade_supprimer_cours(session: Session, cours_id: int) -> None:
++    """Supprime definitivement un Cours et tout son contenu propre
++    (seances + tableau blanc + presences, devoirs + rendus, inscriptions)."""
++    for seance in session.exec(select(Seance).where(Seance.cours_id == cours_id)).all():
++        for evenement in session.exec(
++            select(EvenementTableauBlanc).where(EvenementTableauBlanc.seance_id == seance.id)
++        ).all():
++            session.delete(evenement)
++        for autorisation in session.exec(
++            select(AutorisationEcritureTableau).where(AutorisationEcritureTableau.seance_id == seance.id)
++        ).all():
++            session.delete(autorisation)
++        for presence in session.exec(
++            select(PresenceSeance).where(PresenceSeance.seance_id == seance.id)
++        ).all():
++            session.delete(presence)
++        session.delete(seance)
++
++    for devoir in session.exec(select(Devoir).where(Devoir.cours_id == cours_id)).all():
++        for rendu in session.exec(select(RenduDevoir).where(RenduDevoir.devoir_id == devoir.id)).all():
++            if rendu.chemin_fichier:
++                supprimer_fichier(rendu.chemin_fichier)
++            session.delete(rendu)
++        session.delete(devoir)
++
++    for inscription in session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all():
++        session.delete(inscription)
++
++    cours = session.get(Cours, cours_id)
++    if cours:
++        session.delete(cours)
++
++
++@router.post("/admin/utilisateurs/{utilisateur_id}/supprimer")
++async def supprimer_utilisateur(
++    request: Request,
++    utilisateur_id: int,
++    session: Session = Depends(get_session),
++    _csrf: None = Depends(verifier_csrf),
++):
++    """Suppression DEFINITIVE et EN CASCADE d'un compte.
++
++    Les espaces qu'il POSSEDE (Cercles crees, Cours animes) sont traites
++    selon le choix fait sur la page de confirmation, recu ici via les
++    champs de formulaire "cercle_{id}" et "cours_{id}" :
++      - valeur "supprimer"          -> l'espace et tout son contenu propre
++                                        sont effaces (voir les fonctions
++                                        _cascade_supprimer_* ci-dessus) ;
++      - valeur "reattribuer:<id>"   -> l'espace change juste de
++                                        proprietaire (createur_id /
++                                        professeur_id), rien d'autre n'est
++                                        touche ; le nouveau proprietaire est
++                                        ajoute comme membre s'il ne l'etait
++                                        pas deja (cas des Cercles).
++    Tout ce qui appartient PERSONNELLEMENT a la cible (et n'est possede
++    par personne d'autre) est ensuite supprime pour de vrai : tentatives
++    de quiz, sessions avec le tuteur IA, consultations de documents,
++    codes de secours 2FA, adhesions/inscriptions dans les espaces des
++    AUTRES, presences en classe, traces sur le tableau blanc, devoirs
++    rendus (fichier compris), messages postes dans les cercles des
++    autres, abonnement sponsor/etudiant.
++
++    Ce que l'on NE cascade PAS jusqu'a la suppression, par choix
++    deliberé pour ne pas casser l'historique d'AUTRES utilisateurs :
++      - Document.uploader_id -> reattribue a l'admin qui supprime (le
++        document reste consultable ; supprimer un document precis reste
++        possible individuellement via /moderation) ;
++      - AbonnementEtudiant.valide_par_admin_id et
++        DemandeAdhesionCercle.traite_par_id (appartiennent a un AUTRE
++        utilisateur) -> mis a None, la decision/l'historique reste mais
++        sans plus referencer un compte supprime.
++
++    Enfin la ligne Utilisateur elle-meme est supprimee — plus aucune
++    reference vers utilisateur_id ne doit subsister a ce stade, sans
++    quoi la suppression echouera sur une contrainte de cle etrangere
++    (ce qui, dans ce cas, est volontairement une garde-fou : mieux vaut
++    une erreur explicite qu'une ligne orpheline silencieuse)."""
++    admin = _admin_requis(request, session)
++    if not admin:
++        return RedirectResponse("/", status_code=303)
++
++    cible = session.get(Utilisateur, utilisateur_id)
++    if not cible or cible.id == admin.id:
++        return RedirectResponse("/admin/utilisateurs", status_code=303)
++
++    formulaire = await request.form()
++    donnees = formulaire
++
++    # --- 1. Cercles possedes : reattribution ou suppression, au choix ---
++    for cercle in session.exec(select(CercleEtude).where(CercleEtude.createur_id == utilisateur_id)).all():
++        choix = donnees.get(f"cercle_{cercle.id}", "supprimer")
++        if choix.startswith("reattribuer:"):
++            nouveau_proprietaire_id = int(choix.split(":", 1)[1])
++            cercle.createur_id = nouveau_proprietaire_id
++            session.add(cercle)
++            deja_membre = session.exec(
++                select(MembreCercle).where(
++                    MembreCercle.cercle_id == cercle.id,
++                    MembreCercle.utilisateur_id == nouveau_proprietaire_id,
++                )
++            ).first()
++            if not deja_membre:
++                session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=nouveau_proprietaire_id))
++        else:
++            _cascade_supprimer_cercle(session, cercle.id)
++    session.commit()
++
++    # --- 2. Cours possedes : reattribution ou suppression, au choix ---
++    for cours in session.exec(select(Cours).where(Cours.professeur_id == utilisateur_id)).all():
++        choix = donnees.get(f"cours_{cours.id}", "supprimer")
++        if choix.startswith("reattribuer:"):
++            cours.professeur_id = int(choix.split(":", 1)[1])
++            session.add(cours)
++        else:
++            _cascade_supprimer_cours(session, cours.id)
++    session.commit()
++
++    # --- 3. Contenu personnel de la cible dans les espaces des AUTRES ---
++    for membre in session.exec(select(MembreCercle).where(MembreCercle.utilisateur_id == utilisateur_id)).all():
++        session.delete(membre)
++    for demande in session.exec(
++        select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(demande)
++    # Demandes traitees PAR la cible dans un cercle qu'elle ne possede
++    # pas forcement : on garde la demande (historique du cercle), on
++    # retire juste la reference au compte supprime.
++    for demande_traitee in session.exec(
++        select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.traite_par_id == utilisateur_id)
++    ).all():
++        demande_traitee.traite_par_id = None
++        session.add(demande_traitee)
++
++    ids_messages_restants = [
++        m.id for m in session.exec(select(MessageCercle).where(MessageCercle.auteur_id == utilisateur_id)).all()
++    ]
++    if ids_messages_restants:
++        for signalement in session.exec(
++            select(SignalementMessage).where(SignalementMessage.message_id.in_(ids_messages_restants))
++        ).all():
++            session.delete(signalement)
++    for message in session.exec(select(MessageCercle).where(MessageCercle.auteur_id == utilisateur_id)).all():
++        if message.piece_jointe_chemin:
++            supprimer_fichier(message.piece_jointe_chemin)
++        session.delete(message)
++    for signalement_envoye in session.exec(
++        select(SignalementMessage).where(SignalementMessage.signale_par_id == utilisateur_id)
++    ).all():
++        session.delete(signalement_envoye)
++
++    for inscription in session.exec(
++        select(InscriptionCours).where(InscriptionCours.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(inscription)
++    for presence in session.exec(
++        select(PresenceSeance).where(PresenceSeance.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(presence)
++    for evenement in session.exec(
++        select(EvenementTableauBlanc).where(EvenementTableauBlanc.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(evenement)
++    for autorisation in session.exec(
++        select(AutorisationEcritureTableau).where(AutorisationEcritureTableau.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(autorisation)
++    for rendu in session.exec(select(RenduDevoir).where(RenduDevoir.utilisateur_id == utilisateur_id)).all():
++        if rendu.chemin_fichier:
++            supprimer_fichier(rendu.chemin_fichier)
++        session.delete(rendu)
++
++    ids_tentatives = [
++        t.id for t in session.exec(select(TentativeQuiz).where(TentativeQuiz.utilisateur_id == utilisateur_id)).all()
++    ]
++    if ids_tentatives:
++        for signalement_quiz in session.exec(
++            select(SignalementQuestionQuiz).where(SignalementQuestionQuiz.tentative_id.in_(ids_tentatives))
++        ).all():
++            session.delete(signalement_quiz)
++    for tentative in session.exec(select(TentativeQuiz).where(TentativeQuiz.utilisateur_id == utilisateur_id)).all():
++        session.delete(tentative)
++    for signalement_quiz_envoye in session.exec(
++        select(SignalementQuestionQuiz).where(SignalementQuestionQuiz.signale_par_id == utilisateur_id)
++    ).all():
++        session.delete(signalement_quiz_envoye)
++
++    for session_tuteur in session.exec(
++        select(SessionTuteur).where(SessionTuteur.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(session_tuteur)
++    for consultation in session.exec(
++        select(ConsultationDocument).where(ConsultationDocument.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(consultation)
++    for abonnement_sponsor in session.exec(
++        select(Abonnement).where(Abonnement.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(abonnement_sponsor)
++    for abonnement_etudiant in session.exec(
++        select(AbonnementEtudiant).where(AbonnementEtudiant.utilisateur_id == utilisateur_id)
++    ).all():
++        session.delete(abonnement_etudiant)
++    # Un admin AUTRE que la cible a pu valider l'abonnement de tiers ;
++    # si c'est la cible elle-meme qui a valide des abonnements d'AUTRES
++    # etudiants, on garde ces enregistrements (utiles a l'historique) et
++    # on retire juste la reference au compte supprime.
++    for abonnement_valide_par_cible in session.exec(
++        select(AbonnementEtudiant).where(AbonnementEtudiant.valide_par_admin_id == utilisateur_id)
++    ).all():
++        abonnement_valide_par_cible.valide_par_admin_id = None
++        session.add(abonnement_valide_par_cible)
++
++    for code in session.exec(select(CodeSecours2FA).where(CodeSecours2FA.utilisateur_id == utilisateur_id)).all():
++        session.delete(code)
++
++    # Documents deposes par la cible : on ne les supprime pas (ce sont
++    # des ressources utiles a d'autres etudiants) — reattribues a
++    # l'admin qui effectue la suppression, comme un cercle/cours
++    # "reattribuer" par defaut. Utiliser /moderation pour en supprimer
++    # un precis si besoin.
++    for document in session.exec(select(Document).where(Document.uploader_id == utilisateur_id)).all():
++        document.uploader_id = admin.id
++        session.add(document)
++
++    session.commit()
++
++    # --- 4. La ligne Utilisateur elle-meme, en tout dernier ---
++    session.delete(cible)
++    session.commit()
++
++    return RedirectResponse("/admin/utilisateurs?supprime=1", status_code=303)
