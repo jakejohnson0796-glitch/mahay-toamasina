@@ -852,6 +852,323 @@ input:focus, select:focus, textarea:focus {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ============================================================
+   Tableau de bord etudiant (dashboard_etudiant.html)
+   Classes prefixees "tb-" : dediees a cette page, pour ne jamais
+   affecter .stat / .carte-cercle / .table-manifeste, partagees par
+   les 21 autres templates (documents, cercles, admin, classe...).
+   Structure inspiree d'une maquette de reference fournie par Jake :
+   sidebar + hero + carte principale + stats + activite/cercles.
+   ============================================================ */
+
+/* Le dashboard a besoin de toute la largeur pour la sidebar — on
+   deroge au conteneur centre-etroit utilise par le reste du site
+   (voir le bloc "main_classe" optionnel dans base.html). */
+main.main-tb {
+  max-width: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tb-mise-en-page {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  align-items: start;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* --- Sidebar --- */
+.tb-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-default);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+.tb-sidebar-nav { display: flex; flex-direction: column; gap: 0.15rem; }
+.tb-sidebar-groupe {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin: 1.1rem 0.6rem 0.3rem;
+}
+.tb-sidebar-lien {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  transition: background 0.15s var(--ease-fluide), color 0.15s var(--ease-fluide);
+}
+.tb-sidebar-lien:hover { background: var(--surface-2); text-decoration: none; }
+.tb-sidebar-lien-actif { background: var(--color-primary-soft); color: var(--color-primary); font-weight: 600; }
+.tb-sidebar-lien-actif:hover { background: var(--color-primary-soft); }
+.tb-icone { font-size: 1rem; width: 1.2rem; text-align: center; opacity: 0.85; }
+.tb-sidebar-badge {
+  margin-left: auto;
+  background: var(--color-primary);
+  color: var(--bg);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+}
+
+.tb-sidebar-premium {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  color: var(--text-primary);
+  transition: border-color 0.15s var(--ease-fluide), transform 0.15s var(--ease-fluide);
+}
+.tb-sidebar-premium:hover { border-color: var(--color-primary); text-decoration: none; transform: translateY(-2px); }
+.tb-sidebar-premium span { font-size: 0.78rem; color: var(--text-secondary); }
+.tb-premium-etoile { color: var(--color-primary); }
+
+/* --- Contenu principal --- */
+.tb-contenu { padding: 2rem 2.5rem 3rem; min-width: 0; }
+
+.tb-hero { padding-bottom: 1.75rem; }
+.tb-hero > * { animation: mahay-apparition 0.5s var(--ease-fluide) both; }
+.tb-hero-texte > *:nth-child(2) { animation-delay: 0.05s; }
+.tb-hero-texte > *:nth-child(3) { animation-delay: 0.1s; }
+.tb-titre { margin-bottom: 0.3rem; }
+.tb-sous-titre { color: var(--text-secondary); font-size: 1rem; margin: 0; }
+
+.tb-ligne-principale {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  animation: mahay-apparition 0.5s var(--ease-fluide) both;
+  animation-delay: 0.08s;
+}
+
+.tb-etiquette-carte {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-success);
+  margin: 0 0 0.9rem;
+}
+.tb-etiquette-premium { color: var(--color-primary); display: flex; align-items: center; gap: 0.4rem; }
+
+.tb-carte-reprendre, .tb-carte-premium {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+.tb-carte-reprendre { display: flex; flex-direction: column; justify-content: space-between; gap: 1.1rem; }
+.tb-reprendre-corps { display: flex; gap: 1.1rem; align-items: flex-start; }
+.tb-reprendre-icone {
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-radius: var(--radius-md);
+  font-size: 1.2rem;
+}
+.tb-reprendre-titre { margin: 0 0 0.2rem; font-size: 1.2rem; }
+.tb-reprendre-meta { color: var(--text-secondary); font-size: 0.88rem; margin: 0 0 0.4rem; }
+.tb-reprendre-delai { color: var(--text-secondary); font-size: 0.8rem; margin: 0; }
+.tb-carte-reprendre-vide { align-items: flex-start; gap: 0.5rem; }
+.tb-carte-reprendre-vide .bouton { margin-top: 0.5rem; }
+
+.tb-carte-premium { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; justify-content: center; }
+.tb-premium-texte { margin: 0; font-size: 0.95rem; }
+
+/* --- Stats --- */
+.tb-grille-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+.tb-carte-stat {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide);
+  animation: mahay-apparition 0.5s var(--ease-fluide) both;
+}
+.tb-grille-stats .tb-carte-stat:nth-child(1) { animation-delay: 0.1s; }
+.tb-grille-stats .tb-carte-stat:nth-child(2) { animation-delay: 0.14s; }
+.tb-grille-stats .tb-carte-stat:nth-child(3) { animation-delay: 0.18s; }
+.tb-grille-stats .tb-carte-stat:nth-child(4) { animation-delay: 0.22s; }
+.tb-carte-stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.tb-stat-vert { border-left-color: var(--color-success); }
+.tb-stat-orange { border-left-color: var(--color-primary); }
+.tb-stat-bleu { border-left-color: #4C8DFF; }
+.tb-stat-violet { border-left-color: #9B7CF2; }
+.tb-stat-icone { font-size: 1.1rem; opacity: 0.85; margin-bottom: 0.1rem; }
+.tb-stat-nombre { font-family: 'Fraunces', serif; font-size: 1.9rem; line-height: 1; }
+.tb-stat-label { font-size: 0.78rem; color: var(--text-secondary); }
+
+/* --- Panneaux (activite / cercles) --- */
+.tb-ligne-basse {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.tb-panneau {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.4rem 1.5rem;
+  animation: mahay-apparition 0.5s var(--ease-fluide) both;
+  animation-delay: 0.26s;
+}
+.tb-panneau-entete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+.tb-titre-section { font-size: 1.05rem; margin: 0; }
+.tb-voir-tout { font-size: 0.84rem; color: var(--text-secondary); transition: color 0.15s var(--ease-fluide); }
+.tb-voir-tout:hover { color: var(--color-primary); text-decoration: none; }
+
+/* --- Activite recente --- */
+.tb-liste-activite { display: flex; flex-direction: column; gap: 0.15rem; }
+.tb-ligne-activite {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.65rem 0.4rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s var(--ease-fluide);
+}
+.tb-ligne-activite:hover { background: var(--surface-3); }
+.tb-activite-icone {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+}
+.tb-activite-document { background: var(--color-primary-soft); color: var(--color-success); }
+.tb-activite-quiz { background: rgba(155, 124, 242, 0.16); color: #9B7CF2; }
+.tb-activite-infos { display: flex; flex-direction: column; gap: 0.05rem; flex: 1; min-width: 0; }
+.tb-activite-infos strong { font-size: 0.88rem; }
+.tb-activite-detail { font-size: 0.76rem; color: var(--text-secondary); }
+.tb-activite-delai { font-size: 0.76rem; color: var(--text-secondary); white-space: nowrap; }
+
+/* --- Cercles d'etude --- */
+.tb-grille-cercles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.9rem;
+}
+.tb-carte-cercle-moderne {
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
+}
+.tb-carte-cercle-moderne:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--color-primary); }
+.tb-cercle-avatar {
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.tb-cercle-nom { font-size: 0.95rem; }
+.tb-cercle-description { color: var(--text-secondary); font-size: 0.8rem; margin: 0; min-height: 1.1em; }
+.tb-cercle-lien { margin-top: 0.3rem; align-self: stretch; text-align: center; font-size: 0.85rem; }
+
+.tb-carte-rejoindre {
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 9rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  transition: border-color 0.18s var(--ease-fluide), color 0.18s var(--ease-fluide), transform 0.18s var(--ease-fluide);
+}
+.tb-carte-rejoindre:hover { border-color: var(--color-primary); color: var(--color-primary); text-decoration: none; transform: translateY(-3px); }
+.tb-rejoindre-icone {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+/* --- Etats vides --- */
+.tb-etat-vide { padding: 1.5rem 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+.tb-etat-vide p { margin: 0; }
+.tb-etat-vide-texte { color: var(--text-secondary); font-size: 0.85rem; }
+
+.tb-note-quiz { color: var(--text-secondary); font-size: 0.82rem; margin-top: 1.25rem; }
+
+/* --- Responsive : sidebar en drawer sous 1024px, empilement sous 768px --- */
+@media (max-width: 1024px) {
+  .tb-mise-en-page { grid-template-columns: 1fr; }
+  .tb-sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid var(--border-default);
+    overflow-x: auto;
+  }
+  .tb-sidebar-nav { flex-direction: row; flex-wrap: wrap; }
+  .tb-sidebar-groupe { display: none; }
+  .tb-sidebar-premium { display: none; }
+  .tb-ligne-principale { grid-template-columns: 1fr; }
+  .tb-ligne-basse { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .tb-contenu { padding: 1.5rem 1.1rem 2rem; }
+  .tb-grille-stats { grid-template-columns: repeat(2, 1fr); }
+  .tb-reprendre-corps { flex-direction: column; }
+}
+
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles
    d'animation/transition ci-dessus. */
@@ -862,236 +1179,4 @@ input:focus, select:focus, textarea:focus {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ============================================================
-   Tableau de bord etudiant (dashboard_etudiant.html)
-   Classes prefixees "tb-" : dediees a cette page, pour ne jamais
-   affecter .stat / .carte-cercle / .table-manifeste, partagees par
-   21 autres templates (documents, cercles, admin, classe...).
-   ============================================================ */
-
-.tb-hero { padding: 1.5rem 0 2rem; }
-.tb-titre {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.4rem;
-}
-.tb-emoji { display: inline-block; animation: tb-salut 2.2s ease-in-out 0.6s 1; }
-@keyframes tb-salut {
-  0%, 100% { transform: rotate(0deg); }
-  15% { transform: rotate(14deg); }
-  30% { transform: rotate(-8deg); }
-  45% { transform: rotate(14deg); }
-  60% { transform: rotate(-4deg); }
-}
-.tb-sous-titre { color: var(--text-secondary); font-size: 1rem; max-width: 34em; }
-
-.tb-hero > * { animation: mahay-apparition 0.5s var(--ease-fluide) both; }
-.tb-hero > *:nth-child(2) { animation-delay: 0.05s; }
-.tb-hero > *:nth-child(3) { animation-delay: 0.1s; }
-
-.tb-grille {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 1.25rem;
-  max-width: 1200px;
-}
-.tb-span-12 { grid-column: span 12; }
-.tb-span-8 { grid-column: span 8; }
-.tb-span-4 { grid-column: span 4; }
-
-.tb-grille > * {
-  animation: mahay-apparition 0.5s var(--ease-fluide) both;
-}
-.tb-grille > *:nth-child(1) { animation-delay: 0.05s; }
-.tb-grille > *:nth-child(2) { animation-delay: 0.1s; }
-.tb-grille > *:nth-child(3) { animation-delay: 0.14s; }
-.tb-grille > *:nth-child(4) { animation-delay: 0.18s; }
-.tb-grille > *:nth-child(5) { animation-delay: 0.22s; }
-.tb-grille > *:nth-child(6) { animation-delay: 0.26s; }
-
-/* --- Bloc Premium --- */
-.tb-carte-premium {
-  background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  padding: 1.75rem 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  align-items: flex-start;
-  box-shadow: var(--shadow-sm);
-}
-.tb-premium-etiquette {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-primary);
-}
-.tb-premium-texte { color: var(--text-primary); font-size: 0.98rem; margin: 0; }
-
-/* --- Cartes stats --- */
-.tb-carte-stat {
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
-}
-.tb-carte-stat:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
-}
-.tb-stat-icone { font-size: 1.3rem; margin-bottom: 0.2rem; }
-.tb-stat-nombre { font-family: 'Fraunces', serif; font-size: 2.1rem; color: var(--color-primary); line-height: 1; }
-.tb-stat-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
-
-/* --- En-tetes de section --- */
-.tb-section-entete {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 0.9rem;
-}
-.tb-titre-section { font-size: 1.15rem; margin: 0; }
-.tb-voir-tout { font-size: 0.85rem; color: var(--text-secondary); transition: color 0.15s var(--ease-fluide); }
-.tb-voir-tout:hover { color: var(--color-primary); text-decoration: none; }
-
-/* --- Cercles d'etude --- */
-.tb-grille-cercles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
-}
-.tb-carte-cercle-moderne {
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  padding: 1.4rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
-}
-.tb-carte-cercle-moderne:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
-}
-.tb-cercle-avatar {
-  width: 2.6rem;
-  height: 2.6rem;
-  border-radius: 50%;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 0.2rem;
-}
-.tb-cercle-nom { font-size: 1.02rem; }
-.tb-cercle-description {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin: 0;
-  min-height: 1.2em;
-}
-.tb-cercle-lien { margin-top: 0.4rem; align-self: stretch; text-align: center; }
-
-.tb-carte-rejoindre {
-  border: 1px dashed var(--border-default);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 10rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  transition: border-color 0.18s var(--ease-fluide), color 0.18s var(--ease-fluide), transform 0.18s var(--ease-fluide);
-}
-.tb-carte-rejoindre:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  text-decoration: none;
-  transform: translateY(-3px);
-}
-.tb-rejoindre-icone {
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 50%;
-  border: 1px solid currentColor;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-}
-
-/* --- Documents recents --- */
-.tb-liste-documents {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.tb-ligne-document {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.9rem 1.25rem;
-  background: var(--surface-2);
-  transition: background 0.15s var(--ease-fluide);
-}
-.tb-ligne-document:not(:last-child) { border-bottom: 1px solid var(--border-default); }
-.tb-ligne-document:hover { background: var(--surface-3); }
-.tb-document-icone { font-size: 1.2rem; }
-.tb-document-infos { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
-.tb-document-infos strong { font-size: 0.94rem; }
-.tb-document-meta { font-size: 0.78rem; color: var(--text-secondary); }
-
-/* --- Etats vides guides --- */
-.tb-etat-vide {
-  border: 1px dashed var(--border-default);
-  border-radius: var(--radius-lg);
-  padding: 2.5rem 1.5rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-}
-.tb-etat-vide-icone { font-size: 2rem; margin-bottom: 0.3rem; }
-.tb-etat-vide p { margin: 0; }
-.tb-etat-vide-texte { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.6rem !important; }
-.tb-etat-vide .bouton { margin-top: 0.5rem; }
-
-.tb-note-quiz {
-  grid-column: span 12;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-}
-
-@media (max-width: 900px) {
-  .tb-span-8, .tb-span-4 { grid-column: span 12; }
-}
-@media (max-width: 640px) {
-  .tb-grille { gap: 1rem; }
-  .tb-carte-premium { padding: 1.25rem 1.4rem; }
 }

@@ -1,126 +1,190 @@
 {% extends "base.html" %}
 {% block titre %}Mon tableau de bord — MAHAY{% endblock %}
+{% block main_classe %}main-tb{% endblock %}
 {% block contenu %}
+<div class="tb-mise-en-page">
 
-<section class="tb-hero">
-  <p class="eyebrow">Bienvenue, {{ utilisateur.nom }}</p>
-  <h1 class="tb-titre">Bonjour {{ utilisateur.nom.split(" ")[0] }} <span class="tb-emoji" aria-hidden="true">👋</span></h1>
-  <p class="tb-sous-titre">Content de te revoir. Voici où tu en es sur MAHAY.</p>
-</section>
-
-{% if not acces_premium %}
-<div class="erreur">
-  Votre acces Premium n'est plus actif. <a href="/abonnement">Souscrivez ou renouvelez</a> pour retrouver le quiz IA et les cercles d'etude.
-</div>
-{% endif %}
-
-<div class="tb-grille">
-
-  <div class="tb-carte-premium tb-span-8">
-    <div class="tb-premium-etiquette">
-      <span aria-hidden="true">✦</span> MAHAY PREMIUM
-      {% if abonnement %}
-        <span class="tampon tampon-{{ 'approuve' if abonnement.statut.value == 'actif' else ('rejete' if abonnement.statut.value in ['expire', 'refuse'] else 'attente') }}">
-          {{ { 'essai': 'Essai', 'actif': 'Actif', 'en_attente': 'En attente', 'expire': 'Expire', 'refuse': 'Refuse' }[abonnement.statut.value] }}
-        </span>
-      {% endif %}
-    </div>
-    <p class="tb-premium-texte">
-      {% if abonnement and abonnement.statut.value == 'actif' %}
-        Votre abonnement est actif pour encore <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.
-      {% elif abonnement and abonnement.statut.value == 'essai' %}
-        Votre essai gratuit expire dans <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.
-      {% elif abonnement and abonnement.statut.value == 'en_attente' %}
-        Votre demande d'abonnement est en cours de validation par un administrateur.
-      {% else %}
-        Votre acces Premium n'est plus actif — l'IA et les cercles d'etude sont en pause.
-      {% endif %}
-    </p>
-    <a class="bouton bouton-primaire" href="/abonnement">Gerer mon abonnement →</a>
-  </div>
-
-  <div class="tb-carte-stat tb-span-4">
-    <span class="tb-stat-icone" aria-hidden="true">👥</span>
-    <span class="tb-stat-nombre">{{ nb_cercles_rejoints }}</span>
-    <span class="tb-stat-label">Cercle{{ "s" if nb_cercles_rejoints != 1 else "" }} rejoint{{ "s" if nb_cercles_rejoints != 1 else "" }}</span>
-  </div>
-
-  <div class="tb-carte-stat tb-span-4">
-    <span class="tb-stat-icone" aria-hidden="true">📚</span>
-    <span class="tb-stat-nombre">{{ nb_documents_consultes }}</span>
-    <span class="tb-stat-label">Document{{ "s" if nb_documents_consultes != 1 else "" }} consulte{{ "s" if nb_documents_consultes != 1 else "" }}</span>
-  </div>
-
-  <div class="tb-carte-stat tb-span-4">
-    <span class="tb-stat-icone" aria-hidden="true">⏱</span>
-    <span class="tb-stat-nombre">{{ jours_restants }}</span>
-    <span class="tb-stat-label">Jour{{ "s" if jours_restants > 1 else "" }} restant{{ "s" if jours_restants > 1 else "" }}</span>
-  </div>
-
-  <div class="tb-span-12">
-    <div class="tb-section-entete">
-      <h2 class="tb-titre-section">Mes cercles d'etude</h2>
-      <a href="/cercles" class="tb-voir-tout">Voir tout →</a>
-    </div>
-
-    {% if cercles %}
-    <div class="tb-grille-cercles">
-      {% for info in cercles %}
-      <div class="tb-carte-cercle-moderne">
-        <span class="tb-cercle-avatar" aria-hidden="true">{{ info.cercle.nom[:2]|upper }}</span>
-        <strong class="tb-cercle-nom">{{ info.cercle.nom }}</strong>
-        <p class="tb-cercle-description">{{ info.cercle.description or "Groupe d'etude" }}</p>
-        <span class="badge-presence"><span aria-hidden="true"></span> {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</span>
-        <a class="bouton bouton-secondaire tb-cercle-lien" href="/cercles/{{ info.cercle.id }}">Ouvrir le cercle →</a>
-      </div>
-      {% endfor %}
-      <a href="/cercles" class="tb-carte-rejoindre">
-        <span class="tb-rejoindre-icone" aria-hidden="true">+</span>
-        <span>Rejoindre un cercle</span>
+  <aside class="tb-sidebar">
+    <nav class="tb-sidebar-nav" aria-label="Navigation du tableau de bord">
+      <a href="/dashboard" class="tb-sidebar-lien tb-sidebar-lien-actif" aria-current="page">
+        <span class="tb-icone" aria-hidden="true">⌂</span> Tableau de bord
       </a>
-    </div>
-    {% else %}
-    <div class="tb-etat-vide">
-      <span class="tb-etat-vide-icone" aria-hidden="true">👥</span>
-      <p><strong>Tu n'as encore rejoint aucun cercle d'etude.</strong></p>
-      <p class="tb-etat-vide-texte">Revise a plusieurs, par filiere ou en groupe libre.</p>
-      <a class="bouton bouton-primaire" href="/cercles">Decouvrir les cercles →</a>
-    </div>
-    {% endif %}
-  </div>
 
-  <div class="tb-span-12">
-    <div class="tb-section-entete">
-      <h2 class="tb-titre-section">Documents consultes recemment</h2>
-      <a href="/documents" class="tb-voir-tout">Voir tout →</a>
-    </div>
+      <p class="tb-sidebar-groupe">Apprendre</p>
+      <a href="/documents" class="tb-sidebar-lien"><span class="tb-icone" aria-hidden="true">▤</span> Documents</a>
+      <a href="/quiz" class="tb-sidebar-lien"><span class="tb-icone" aria-hidden="true">✎</span> Quiz IA</a>
+      <a href="/tuteur" class="tb-sidebar-lien"><span class="tb-icone" aria-hidden="true">◈</span> Tuteur IA</a>
 
-    {% if documents_recents %}
-    <div class="tb-liste-documents">
-      {% for info in documents_recents %}
-      <div class="tb-ligne-document">
-        <span class="tb-document-icone" aria-hidden="true">📘</span>
-        <div class="tb-document-infos">
-          <strong>{{ info.document.titre }}</strong>
-          <span class="tb-document-meta">{{ info.document.matiere }} · {{ info.document.type_document.value }}</span>
-        </div>
-        <a class="lien-action" href="/documents/{{ info.document.id }}/telecharger">Retelecharger</a>
+      <p class="tb-sidebar-groupe">Collaborer</p>
+      <a href="/cercles" class="tb-sidebar-lien">
+        <span class="tb-icone" aria-hidden="true">⚇</span> Mes cercles
+        {% if nb_cercles_rejoints %}<span class="tb-sidebar-badge">{{ nb_cercles_rejoints }}</span>{% endif %}
+      </a>
+      <a href="/classe" class="tb-sidebar-lien"><span class="tb-icone" aria-hidden="true">▣</span> Classe virtuelle</a>
+
+      <p class="tb-sidebar-groupe">Compte</p>
+      <a href="/securite" class="tb-sidebar-lien"><span class="tb-icone" aria-hidden="true">⚿</span> Securite</a>
+      {% if utilisateur and utilisateur.role.value == "admin" %}
+      <a href="/admin" class="tb-sidebar-lien"><span class="tb-icone" aria-hidden="true">⚙</span> Administration</a>
+      {% endif %}
+    </nav>
+
+    <a href="/abonnement" class="tb-sidebar-premium">
+      <span class="tb-premium-etoile" aria-hidden="true">✦</span>
+      <strong>MAHAY Premium</strong>
+      <span>
+        {% if abonnement and abonnement.statut.value == "actif" %}
+          Actif — {{ jours_restants }} j restant{{ "s" if jours_restants > 1 else "" }}
+        {% else %}
+          Essai — {{ jours_restants }} j restant{{ "s" if jours_restants > 1 else "" }}
+        {% endif %}
+      </span>
+    </a>
+  </aside>
+
+  <div class="tb-contenu">
+
+    <section class="tb-hero">
+      <div class="tb-hero-texte">
+        <p class="eyebrow">Bonjour, {{ utilisateur.nom.split(" ")[0] }} <span aria-hidden="true">👋</span></p>
+        <h1 class="tb-titre">Pret a continuer ton apprentissage ?</h1>
+        <p class="tb-sous-titre">Chaque session te rapproche de ton objectif.</p>
       </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="tb-etat-vide">
-      <span class="tb-etat-vide-icone" aria-hidden="true">📚</span>
-      <p><strong>Tu n'as encore consulte aucun document.</strong></p>
-      <p class="tb-etat-vide-texte">Decouvre les annales et fiches disponibles pour ta filiere.</p>
-      <a class="bouton bouton-primaire" href="/documents">Explorer les documents →</a>
+    </section>
+
+    {% if not acces_premium %}
+    <div class="erreur">
+      Votre acces Premium n'est plus actif. <a href="/abonnement">Souscrivez ou renouvelez</a> pour retrouver le quiz IA et les cercles d'etude.
     </div>
     {% endif %}
+
+    <div class="tb-ligne-principale">
+      {% if dernier_document %}
+      <div class="tb-carte-reprendre">
+        <p class="tb-etiquette-carte">Reprendre</p>
+        <div class="tb-reprendre-corps">
+          <span class="tb-reprendre-icone" aria-hidden="true">▤</span>
+          <div class="tb-reprendre-infos">
+            <h2 class="tb-reprendre-titre">{{ dernier_document.document.titre }}</h2>
+            <p class="tb-reprendre-meta">{{ dernier_document.document.matiere }} · {{ dernier_document.document.type_document.value }}</p>
+            <p class="tb-reprendre-delai"><span aria-hidden="true">◷</span> Derniere consultation : {{ dernier_document_delai }}</p>
+          </div>
+        </div>
+        <a class="bouton bouton-primaire" href="/documents/{{ dernier_document.document.id }}/telecharger">Retelecharger →</a>
+      </div>
+      {% else %}
+      <div class="tb-carte-reprendre tb-carte-reprendre-vide">
+        <p class="tb-etiquette-carte">Commencer</p>
+        <h2 class="tb-reprendre-titre">Commence ton premier apprentissage</h2>
+        <p class="tb-reprendre-meta">Explore les annales, fiches et cours disponibles pour ta filiere.</p>
+        <a class="bouton bouton-primaire" href="/documents">Explorer les documents →</a>
+      </div>
+      {% endif %}
+
+      <div class="tb-carte-premium">
+        <p class="tb-etiquette-carte tb-etiquette-premium"><span aria-hidden="true">✦</span> MAHAY Premium</p>
+        <p class="tb-premium-texte">
+          {% if abonnement and abonnement.statut.value == "actif" %}
+            Votre abonnement est actif pour encore <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.
+          {% elif abonnement and abonnement.statut.value == "essai" %}
+            Votre essai gratuit expire dans <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.
+          {% elif abonnement and abonnement.statut.value == "en_attente" %}
+            Votre demande est en cours de validation par un administrateur.
+          {% else %}
+            Votre acces Premium n'est plus actif.
+          {% endif %}
+        </p>
+        <a class="bouton bouton-secondaire" href="/abonnement">Gerer mon abonnement →</a>
+      </div>
+    </div>
+
+    <div class="tb-grille-stats">
+      <div class="tb-carte-stat tb-stat-vert">
+        <span class="tb-stat-icone" aria-hidden="true">▤</span>
+        <span class="tb-stat-nombre">{{ nb_documents_consultes }}</span>
+        <span class="tb-stat-label">Document{{ "s" if nb_documents_consultes != 1 else "" }} consulte{{ "s" if nb_documents_consultes != 1 else "" }}</span>
+      </div>
+      <div class="tb-carte-stat tb-stat-orange">
+        <span class="tb-stat-icone" aria-hidden="true">✎</span>
+        <span class="tb-stat-nombre">{{ nb_quiz_completes }}</span>
+        <span class="tb-stat-label">Quiz complete{{ "s" if nb_quiz_completes != 1 else "" }}</span>
+      </div>
+      <div class="tb-carte-stat tb-stat-bleu">
+        <span class="tb-stat-icone" aria-hidden="true">⚇</span>
+        <span class="tb-stat-nombre">{{ nb_cercles_rejoints }}</span>
+        <span class="tb-stat-label">Cercle{{ "s" if nb_cercles_rejoints != 1 else "" }} rejoint{{ "s" if nb_cercles_rejoints != 1 else "" }}</span>
+      </div>
+      <div class="tb-carte-stat tb-stat-violet">
+        <span class="tb-stat-icone" aria-hidden="true">◷</span>
+        <span class="tb-stat-nombre">{{ jours_restants }}</span>
+        <span class="tb-stat-label">Jour{{ "s" if jours_restants > 1 else "" }} restant{{ "s" if jours_restants > 1 else "" }}</span>
+      </div>
+    </div>
+
+    <div class="tb-ligne-basse">
+
+      <div class="tb-panneau">
+        <div class="tb-panneau-entete">
+          <h2 class="tb-titre-section">Activite recente</h2>
+        </div>
+        {% if activite_recente %}
+        <div class="tb-liste-activite">
+          {% for evt in activite_recente %}
+          <div class="tb-ligne-activite">
+            <span class="tb-activite-icone tb-activite-{{ evt.type }}" aria-hidden="true">{{ "▤" if evt.type == "document" else "✎" }}</span>
+            <div class="tb-activite-infos">
+              <strong>{{ evt.titre }}</strong>
+              <span class="tb-activite-detail">{{ evt.detail }}</span>
+            </div>
+            <span class="tb-activite-delai">{{ evt.delai }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="tb-etat-vide">
+          <p><strong>Aucune activite recente.</strong></p>
+          <p class="tb-etat-vide-texte">Commence a explorer MAHAY.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="tb-panneau">
+        <div class="tb-panneau-entete">
+          <h2 class="tb-titre-section">Mes cercles d'etude</h2>
+          <a href="/cercles" class="tb-voir-tout">Voir tout →</a>
+        </div>
+
+        {% if cercles %}
+        <div class="tb-grille-cercles">
+          {% for info in cercles %}
+          <div class="tb-carte-cercle-moderne">
+            <span class="tb-cercle-avatar" aria-hidden="true">{{ info.cercle.nom[:2]|upper }}</span>
+            <strong class="tb-cercle-nom">{{ info.cercle.nom }}</strong>
+            <p class="tb-cercle-description">{{ info.cercle.description or "Groupe d'etude" }}</p>
+            <span class="badge-presence"><span aria-hidden="true"></span> {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</span>
+            <a class="bouton bouton-secondaire tb-cercle-lien" href="/cercles/{{ info.cercle.id }}">Ouvrir le cercle →</a>
+          </div>
+          {% endfor %}
+          <a href="/cercles" class="tb-carte-rejoindre">
+            <span class="tb-rejoindre-icone" aria-hidden="true">+</span>
+            <span>Rejoindre un cercle</span>
+          </a>
+        </div>
+        {% else %}
+        <div class="tb-etat-vide">
+          <p><strong>Tu n'as encore rejoint aucun cercle d'etude.</strong></p>
+          <p class="tb-etat-vide-texte">Revise a plusieurs, par filiere ou en groupe libre.</p>
+          <a class="bouton bouton-primaire" href="/cercles">Decouvrir les cercles →</a>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <p class="tb-note-quiz">
+      La progression detaillee par matiere arrivera avec une prochaine mise a jour.
+    </p>
+
   </div>
-
-  <p class="tb-note-quiz">
-    Les statistiques du Quiz IA (progression, scores, historique) arriveront avec la prochaine mise a jour.
-  </p>
-
 </div>
 {% endblock %}
