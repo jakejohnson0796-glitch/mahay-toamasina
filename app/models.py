@@ -51,10 +51,46 @@ class StatutAbonnementEtudiant(str, Enum):
     REFUSE = "refuse"               # demande rejetee par un admin (ex: preuve de paiement invalide)
 
 
+class Universite(SQLModel, table=True):
+    """Niveau le plus haut du referentiel academique national (§2-3 du
+    brief refonte academique). Une seule ligne existe au depart :
+    'Universite de Toamasina', vers laquelle toutes les Faculte
+    actuelles sont rattachees par la migration — aucune donnee
+    existante n'est perdue ou renumerotee."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nom: str = Field(index=True, unique=True)
+    ville: Optional[str] = None
+    code: Optional[str] = Field(default=None, unique=True)
+    est_active: bool = Field(default=True)
+
+    facultes: list["Faculte"] = Relationship(back_populates="universite")
+
+
+class Mention(SQLModel, table=True):
+    """Regroupement de filieres (ex: 'Sciences de Gestion' regroupe
+    Finance et Comptabilite, GRH...). Optionnel sur Filiere (nullable) :
+    les filieres existantes ne sont PAS auto-affectees a une mention
+    par la migration (cela demanderait de deviner un classement —
+    laisse a une revision manuelle via l'admin, voir §44 du brief :
+    'la normalisation doit etre faite avec prudence')."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nom: str = Field(index=True, unique=True)
+    est_active: bool = Field(default=True)
+
+    filieres: list["Filiere"] = Relationship(back_populates="mention")
+
+
 class Faculte(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str = Field(index=True, unique=True)
+    # Nullable au niveau du modele Python pour ne jamais bloquer un code
+    # qui construirait un Faculte sans le renseigner explicitement, mais
+    # la migration la remplit pour toutes les lignes existantes puis
+    # pose une contrainte NOT NULL en base (voir la migration :
+    # aucune Faculte ne doit rester sans universite).
+    universite_id: Optional[int] = Field(default=None, foreign_key="universite.id")
 
+    universite: Optional[Universite] = Relationship(back_populates="facultes")
     filieres: list["Filiere"] = Relationship(back_populates="faculte")
 
 
@@ -62,8 +98,26 @@ class Filiere(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str
     faculte_id: int = Field(foreign_key="faculte.id")
+    # Nullable expres : voir la docstring de Mention ci-dessus.
+    mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
 
     faculte: Optional[Faculte] = Relationship(back_populates="filieres")
+    mention: Optional[Mention] = Relationship(back_populates="filieres")
+
+
+class ProgrammeUniversitaire(SQLModel, table=True):
+    """Table de liaison (§4 et §7 du brief) : indique qu'une filiere
+    globale est proposee dans une universite donnee, pour une annee
+    academique donnee. Permet a terme qu'une meme filiere (meme
+    filiere_id) soit proposee par plusieurs universites, sans dupliquer
+    la filiere elle-meme. La migration seede une ligne par filiere
+    existante -> Universite de Toamasina (fait deja vrai, aucune
+    invention de donnees)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    universite_id: int = Field(foreign_key="universite.id")
+    filiere_id: int = Field(foreign_key="filiere.id")
+    annee_academique: Optional[str] = None  # ex: "2026-2027" ; laisse vide = "en cours, sans date de fin connue"
+    est_active: bool = Field(default=True)
 
 
 class Utilisateur(SQLModel, table=True):
@@ -75,6 +129,20 @@ class Utilisateur(SQLModel, table=True):
     mot_de_passe_hash: str
     role: RoleUtilisateur = Field(default=RoleUtilisateur.ETUDIANT)
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    # Ajoutes pour le referentiel academique national (§15 du brief) :
+    # nullable, les comptes existants n'en ont pas et continuent de
+    # fonctionner normalement (aucune fonctionnalite actuelle n'exige
+    # ces deux champs). universite_id derive normalement de filiere_id
+    # via ProgrammeUniversitaire, mais on le stocke explicitement : un
+    # etudiant choisit d'abord SON universite, ce qui restreint ensuite
+    # la liste de filieres proposees a l'inscription.
+    universite_id: Optional[int] = Field(default=None, foreign_key="universite.id")
+    niveau: Optional[str] = None  # voir app/referentiel.py (NIVEAUX)
+    # Horodatage de la derniere modification du niveau (§14 de la mise
+    # a jour) : permet au backend de faire respecter le delai minimum
+    # de 14 jours entre deux changements. None = jamais modifie (donc
+    # aucune restriction au premier changement).
+    niveau_modifie_le: Optional[datetime] = None
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     banni: bool = Field(default=False)
 
@@ -184,13 +252,38 @@ class Abonnement(SQLModel, table=True):
     date_fin: Optional[datetime] = None
 
 
+class StatutCercle(str, Enum):
+    ACTIF = "actif"
+    ARCHIVE = "archive"
+
+
+class RoleMembreCercle(str, Enum):
+    CREATEUR = "createur"
+    MEMBRE = "membre"
+
+
 class CercleEtude(SQLModel, table=True):
-    """Un salon de discussion que les etudiants creent pour reviser
-    ensemble : par filiere (ex: "Droit civil S3") ou en groupe libre."""
+    """Un salon de discussion national : les etudiants de TOUTES les
+    universites partageant la meme (mention, filiere, niveau) se
+    retrouvent dans le meme cercle (mise a jour du brief : "L'universite
+    n'est pas une frontiere", §2 et §17). Un cercle peut aussi rester un
+    simple groupe libre transversal (mention_id/filiere_id/niveau tous
+    None), comme avant cette evolution."""
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str
     description: Optional[str] = None
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    # Denormalise a dessein (deductible via filiere.mention_id) : le
+    # brief definit explicitement l'identite d'un cercle comme le
+    # triplet (mention_id, filiere_id, niveau) — §27 : "Ne pas utiliser
+    # university_id pour determiner l'identite du cercle", la mention
+    # fait partie de cette identite au meme titre que la filiere.
+    # Nullable : les cercles groupe-libre ou dont la filiere n'a pas
+    # encore de mention assignee (voir Filiere.mention_id, laisse NULL
+    # tant que non verifie manuellement) restent valides sans mention.
+    mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
+    niveau: Optional[str] = None
+    statut: StatutCercle = Field(default=StatutCercle.ACTIF)
     createur_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
@@ -201,6 +294,12 @@ class MembreCercle(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     cercle_id: int = Field(foreign_key="cercleetude.id")
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    # Le createur du cercle a toujours role=CREATEUR (voir §23 du brief) ;
+    # backfille par la migration a partir de CercleEtude.createur_id
+    # pour toutes les lignes existantes, donc jamais NULL en pratique
+    # malgre le defaut MEMBRE ici (defaut de securite si jamais une
+    # ligne etait creee sans passer par le flux normal).
+    role: RoleMembreCercle = Field(default=RoleMembreCercle.MEMBRE)
     date_adhesion: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -236,7 +335,67 @@ class DemandeAdhesionCercle(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     cercle_id: int = Field(foreign_key="cercleetude.id")
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    # Nullable en base (les demandes existantes n'en ont pas), mais le
+    # prochain formulaire de demande d'adhesion devra l'exiger cote
+    # route pour les nouvelles demandes (§21 du brief : "Pourquoi
+    # souhaitez-vous rejoindre ce cercle ?" obligatoire) — pas encore
+    # branche a ce stade (modeles/migration seulement).
+    raison: Optional[str] = None
     statut: StatutDemandeAdhesion = Field(default=StatutDemandeAdhesion.EN_ATTENTE)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_traitement: Optional[datetime] = None
+    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+
+
+class StatutDemandeCreationCercle(str, Enum):
+    EN_ATTENTE = "en_attente"
+    APPROUVEE = "approuvee"
+    REJETEE = "rejetee"
+
+
+class DemandeCreationCercle(SQLModel, table=True):
+    """Demande de creation d'un cercle NATIONAL (§20-24 de la mise a
+    jour) : la creation n'est plus directe, elle passe par une
+    validation admin. Non encore branchee a ce stade (schema seulement)
+    — la creation directe actuelle (cercles_router.creer_cercle)
+    continue de fonctionner sans changement tant que ce nouveau flux
+    n'est pas active."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
+    filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    niveau: Optional[str] = None
+    nom: str
+    description: Optional[str] = None
+    raison: str
+    statut: StatutDemandeCreationCercle = Field(default=StatutDemandeCreationCercle.EN_ATTENTE)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_traitement: Optional[datetime] = None
+    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    # Rempli seulement quand la demande est approuvee (le cercle est
+    # alors reellement cree) — permet de retrouver le cercle issu de
+    # cette demande depuis l'historique admin.
+    cercle_cree_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
+
+
+class StatutDemandeChangementFiliere(str, Enum):
+    EN_ATTENTE = "en_attente"
+    APPROUVEE = "approuvee"
+    REJETEE = "rejetee"
+
+
+class DemandeChangementFiliere(SQLModel, table=True):
+    """Prepare le changement de filiere (§17 du brief) : schema pret,
+    non branche a l'UI pour cette premiere version (non bloquant pour
+    le reste). Un etudiant ne peut pas modifier filiere_id directement
+    depuis son profil (§16) — ce sera, plus tard, le seul chemin pour
+    en changer, apres validation admin."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    ancienne_filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    nouvelle_filiere_id: int = Field(foreign_key="filiere.id")
+    motif: str
+    statut: StatutDemandeChangementFiliere = Field(default=StatutDemandeChangementFiliere.EN_ATTENTE)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_traitement: Optional[datetime] = None
     traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")

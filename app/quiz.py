@@ -13,7 +13,7 @@ from sqlmodel import Session, select
 from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz
 from . import ai_quiz
 
-NIVEAUX = ["L1", "L2", "L3", "M1", "M2"]
+from .referentiel import NIVEAUX  # centralise (voir app/referentiel.py) ; reexporte ici pour ne rien casser dans quiz_router.py qui importe quiz_module.NIVEAUX
 DIFFICULTES = ["Facile", "Moyen", "Difficile"]
 NB_QUESTIONS_POSSIBLES = [5, 10, 15, 20]
 
