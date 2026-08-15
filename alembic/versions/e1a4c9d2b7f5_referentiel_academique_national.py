@@ -94,6 +94,22 @@ def upgrade() -> None:
         batch_op.add_column(sa.Column('niveau', sqlmodel.sql.sqltypes.AutoString(), nullable=True))
         batch_op.add_column(sa.Column('statut', sqlmodel.sql.sqltypes.AutoString(), nullable=False, server_default='ACTIF'))
 
+    # Index unique PARTIEL : un seul cercle ACTIF par (mention_id,
+    # filiere_id, niveau) — mais UNIQUEMENT quand les 3 sont renseignes.
+    # Les cercles "libres" (l'un des 3 = NULL) restent illimites, comme
+    # avant cette evolution (voir §17-19 de la mise a jour "cercles
+    # nationaux" + decision prise avec Jake : ne pas forcer une
+    # migration retroactive des cercles existants). Meme remarque que
+    # c4e91a2f7b6d sur le nom du membre Enum en MAJUSCULES en base.
+    op.create_index(
+        'ix_cercle_national_unique_actif',
+        'cercleetude',
+        ['mention_id', 'filiere_id', 'niveau'],
+        unique=True,
+        postgresql_where=sa.text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NOT NULL AND niveau IS NOT NULL"),
+        sqlite_where=sa.text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NOT NULL AND niveau IS NOT NULL"),
+    )
+
     # --- MembreCercle : role (NOT NULL, defaut MEMBRE puis backfill CREATEUR) ---
     with op.batch_alter_table('membrecercle') as batch_op:
         batch_op.add_column(sa.Column('role', sqlmodel.sql.sqltypes.AutoString(), nullable=False, server_default='MEMBRE'))
@@ -206,6 +222,7 @@ def downgrade() -> None:
         batch_op.drop_column('raison')
     with op.batch_alter_table('membrecercle') as batch_op:
         batch_op.drop_column('role')
+    op.drop_index('ix_cercle_national_unique_actif', table_name='cercleetude')
     with op.batch_alter_table('cercleetude') as batch_op:
         batch_op.drop_column('statut')
         batch_op.drop_column('niveau')

@@ -10,6 +10,7 @@ from enum import Enum
 from typing import Optional
 
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import Index, text
 
 
 class RoleUtilisateur(str, Enum):
@@ -286,6 +287,22 @@ class CercleEtude(SQLModel, table=True):
     statut: StatutCercle = Field(default=StatutCercle.ACTIF)
     createur_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+    # Reflete exactement l'index cree par la migration e1a4c9d2b7f5
+    # (ix_cercle_national_unique_actif) : declare ici aussi pour que
+    # SQLModel.metadata.create_all() (utilise par les tests et par tout
+    # outil d'introspection future) reste coherent avec le vrai schema
+    # de production, plutot que de ne connaitre l'index que via la
+    # migration.
+    __table_args__ = (
+        Index(
+            "ix_cercle_national_unique_actif",
+            "mention_id", "filiere_id", "niveau",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NOT NULL AND niveau IS NOT NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NOT NULL AND niveau IS NOT NULL"),
+        ),
+    )
 
 
 class MembreCercle(SQLModel, table=True):

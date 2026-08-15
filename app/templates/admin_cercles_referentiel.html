@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titre %}Cercles — Referentiel academique — Admin MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin/referentiel">&larr; Referentiel academique</a></p>
+<h2>Cercles existants</h2>
+
+{% if request.query_params.get("erreur") == "doublon" %}
+<div class="erreur">
+  Un cercle actif existe deja pour cette combinaison mention + filiere + niveau
+  (<a href="/cercles/{{ request.query_params.get('cercle_existant') }}">le voir</a>).
+  Choisis une autre combinaison, ou archive l'autre cercle d'abord.
+</div>
+{% endif %}
+{% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
+{% if request.query_params.get("ok") %}<p><strong>Cercle mis a jour.</strong></p>{% endif %}
+
+<p>Assigner mention + niveau a chaque cercle existant. Un cercle sans les deux reste un cercle "libre" (comme aujourd'hui) et n'est pas concerne par la regle "un seul cercle national actif par mention+filiere+niveau".</p>
+
+<table class="table-manifeste">
+  <thead><tr><th>Cercle</th><th>Filiere actuelle</th><th>Mention</th><th>Niveau</th><th></th></tr></thead>
+  <tbody>
+    {% for c in cercles %}
+    <tr>
+      <td>{{ c.nom }}</td>
+      <td>
+        {% set filiere_actuelle = filieres | selectattr("id", "equalto", c.filiere_id) | first %}
+        {{ filiere_actuelle.nom if filiere_actuelle else "— groupe libre —" }}
+      </td>
+      <td colspan="3">
+        <form method="post" action="/admin/referentiel/cercles/{{ c.id }}/assigner" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <select name="mention_id">
+            <option value="">— aucune mention —</option>
+            {% for m in mentions %}
+            <option value="{{ m.id }}" {{ "selected" if m.id == c.mention_id else "" }}>{{ m.nom }}</option>
+            {% endfor %}
+          </select>
+          <select name="niveau">
+            <option value="">— aucun niveau —</option>
+            {% for n in niveaux %}
+            <option value="{{ n }}" {{ "selected" if n == c.niveau else "" }}>{{ n }}</option>
+            {% endfor %}
+          </select>
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit">Enregistrer</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Aucun cercle pour l'instant.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

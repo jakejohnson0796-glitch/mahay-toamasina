@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block titre %}Referentiel academique — Admin MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
+<h2>Referentiel academique</h2>
+
+{% if request.query_params.get("erreur") == "nom_requis" %}<div class="erreur">Le nom de la mention est requis.</div>{% endif %}
+{% if request.query_params.get("erreur") == "mention_existe_deja" %}<div class="erreur">Cette mention existe deja.</div>{% endif %}
+{% if request.query_params.get("ok") %}<p><strong>Enregistre.</strong></p>{% endif %}
+
+<h3>Universites</h3>
+<table class="table-manifeste">
+  <thead><tr><th>Nom</th><th>Ville</th><th>Code</th></tr></thead>
+  <tbody>
+    {% for u in universites %}
+    <tr><td>{{ u.nom }}</td><td>{{ u.ville or "—" }}</td><td>{{ u.code or "—" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3>Mentions</h3>
+<form method="post" action="/admin/referentiel/mentions/creer" class="carte-formulaire">
+  <label for="nom">Nouvelle mention</label>
+  <input type="text" id="nom" name="nom" placeholder="ex: Sciences de Gestion" required>
+  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+  <button class="bouton bouton-primaire bouton-form" type="submit">Creer</button>
+</form>
+
+<table class="table-manifeste">
+  <thead><tr><th>Mention</th></tr></thead>
+  <tbody>
+    {% for m in mentions %}
+    <tr><td>{{ m.nom }}</td></tr>
+    {% else %}
+    <tr><td>Aucune mention creee pour l'instant.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3>Filieres <span class="tampon tampon-attente">{{ nb_filieres_sans_mention }} sans mention</span></h3>
+<p>Assigner une mention a chaque filiere existante. Rien n'est devine automatiquement — a toi de choisir.</p>
+
+<table class="table-manifeste">
+  <thead><tr><th>Filiere</th><th>Faculte</th><th>Mention actuelle</th><th>Assigner</th></tr></thead>
+  <tbody>
+    {% for f in filieres %}
+    <tr>
+      <td>{{ f.nom }}</td>
+      <td>{{ facultes[f.faculte_id].nom if f.faculte_id in facultes else "—" }}</td>
+      <td>
+        {% set mention_actuelle = mentions | selectattr("id", "equalto", f.mention_id) | first %}
+        {{ mention_actuelle.nom if mention_actuelle else "— aucune —" }}
+      </td>
+      <td>
+        <form method="post" action="/admin/referentiel/filieres/{{ f.id }}/assigner-mention" style="display:flex; gap:0.5rem; align-items:center;">
+          <select name="mention_id">
+            <option value="">— aucune —</option>
+            {% for m in mentions %}
+            <option value="{{ m.id }}" {{ "selected" if m.id == f.mention_id else "" }}>{{ m.nom }}</option>
+            {% endfor %}
+          </select>
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit">Enregistrer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p><a href="/admin/referentiel/cercles">Assigner mention/niveau aux cercles existants &rarr;</a></p>
+{% endblock %}
