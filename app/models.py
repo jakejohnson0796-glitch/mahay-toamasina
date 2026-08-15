@@ -5,7 +5,7 @@ SQLModel = SQLAlchemy + Pydantic en un seul objet : chaque classe ci-dessous
 est a la fois une table SQLite ET un schema de validation. C'est ce qui
 permet de rester 100% Python sans dupliquer les definitions.
 """
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Optional
 
@@ -202,6 +202,21 @@ class MembreCercle(SQLModel, table=True):
     cercle_id: int = Field(foreign_key="cercleetude.id")
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
     date_adhesion: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ThemeDuJour(SQLModel, table=True):
+    """Correspond exactement au schema cree par la migration
+    6ce046f6408e ('theme du jour unique avec cercle dedie') : cette
+    table existait deja en base sans modele ORM associe dans le code
+    (le reste de la fonctionnalite n'avait jamais ete commite). Un
+    theme par date_jour (unique), avec un lien optionnel vers un cercle
+    dedie a la discussion de ce theme ce jour-la."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    date_jour: date = Field(index=True, unique=True)
+    theme: str
+    amorce: str
+    cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
 class StatutDemandeAdhesion(str, Enum):

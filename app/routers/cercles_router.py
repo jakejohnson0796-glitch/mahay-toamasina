@@ -20,7 +20,7 @@ from sqlmodel import Session, select, or_
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion
+from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion, ThemeDuJour
 from ..auth import utilisateur_courant
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
@@ -514,6 +514,12 @@ def supprimer_cercle(request: Request, cercle_id: int, session: Session = Depend
         for signalement in session.exec(select(SignalementMessage).where(SignalementMessage.message_id == message.id)).all():
             session.delete(signalement)
         session.delete(message)
+    # cercle_id est nullable sur ThemeDuJour (un theme du jour peut exister
+    # sans cercle dedie) : on detache plutot que supprimer, pour garder
+    # l'historique des themes passes meme si leur cercle est efface.
+    for theme_jour in session.exec(select(ThemeDuJour).where(ThemeDuJour.cercle_id == cercle_id)).all():
+        theme_jour.cercle_id = None
+        session.add(theme_jour)
     session.delete(cercle)
     session.commit()
 
