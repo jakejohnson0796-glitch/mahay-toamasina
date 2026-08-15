@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block titre %}Theme de reflexion — MAHAY{% endblock %}
 {% block contenu %}
-<p class="eyebrow">Muscler l'intellect</p>
-<h2>Theme de reflexion</h2>
+<p class="eyebrow">Muscler l'intellect · Theme du jour</p>
+<h2>{{ theme.date_affichee }}</h2>
 
 <div class="carte-formulaire carte-quiz">
   <p class="question-quiz"><strong>{{ theme.theme }}</strong></p>
   {% if theme.amorce %}<p>{{ theme.amorce }}</p>{% endif %}
 </div>
 
-<p>Debattez-en dans un <a href="/cercles">cercle d'etude</a>, ou generez-en un nouveau :</p>
+<p>Debattez-en dans un <a href="/cercles">cercle d'etude</a>. Ce theme reste le meme pour tout le monde aujourd'hui et changera automatiquement demain.</p>
 
 <form method="get" action="/quiz/reflexion" class="carte-formulaire">
   <label for="matiere">Orienter vers une matiere (optionnel)</label>
@@ -19,7 +19,7 @@
     <option value="{{ m }}" {{ "selected" if m == matiere_selectionnee else "" }}>{{ m }}</option>
     {% endfor %}
   </select>
-  <button class="bouton bouton-secondaire bouton-form" type="submit">Nouveau theme</button>
+  <button class="bouton bouton-secondaire bouton-form" type="submit">Filtrer par matiere</button>
 </form>
 
 <p><a href="/quiz">&larr; Retour au Quiz IA</a></p>

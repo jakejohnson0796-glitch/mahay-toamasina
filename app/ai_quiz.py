@@ -270,67 +270,6 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
     return _extraire_questions(completion)
 
 
-def generer_theme_reflexion(matiere: Optional[str] = None) -> Dict[str, str]:
-    """
-    Genere un theme de reflexion ouvert (pas de QCM) a debattre, pour muscler
-    l'esprit critique — dans l'esprit d'une question du jour. Renvoie un
-    dict {"theme": ..., "amorce": ...} : le sujet et 2-3 phrases pour
-    lancer la reflexion (pas une reponse toute faite, sinon ca tue le
-    debat)."""
-    try:
-        client = _obtenir_client()
-    except RuntimeError as erreur:
-        return {"theme": "Generation indisponible.", "amorce": str(erreur)}
-
-    contexte_matiere = f" en lien avec '{matiere}'" if matiere else ""
-    outil_reflexion = {
-        "type": "function",
-        "function": {
-            "name": "proposer_theme",
-            "description": "Propose un theme de reflexion ouvert a debattre.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "theme": {"type": "string", "description": "La question ou affirmation a debattre, formulee de facon engageante."},
-                    "amorce": {"type": "string", "description": "2 a 3 phrases qui posent les enjeux ou tensions du sujet, sans donner de reponse toute faite."},
-                },
-                "required": ["theme", "amorce"],
-            },
-        },
-    }
-
-    try:
-        completion = client.chat.completions.create(
-            model=parametres.groq_model,
-            max_completion_tokens=512,
-            tools=[outil_reflexion],
-            tool_choice={"type": "function", "function": {"name": "proposer_theme"}},
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"Propose un theme de reflexion ouvert{contexte_matiere}, destine "
-                    f"a des etudiants malgaches, pour muscler leur esprit critique et "
-                    f"les faire debattre entre eux (dans un cercle d'etude par "
-                    f"exemple). Ni trivial ni trop academique : un sujet qui suscite "
-                    f"de vrais points de vue differents. Utilise l'outil fourni."
-                ),
-            }],
-        )
-    except Exception as erreur:
-        return {"theme": "La generation a echoue.", "amorce": f"Erreur API : {erreur}"}
-
-    message = completion.choices[0].message
-    if message.tool_calls:
-        try:
-            arguments = json.loads(message.tool_calls[0].function.arguments)
-            if arguments.get("theme"):
-                return {"theme": arguments["theme"], "amorce": arguments.get("amorce", "")}
-        except (json.JSONDecodeError, AttributeError):
-            pass
-
-    return {"theme": "La generation a echoue.", "amorce": "Reessayez dans un instant."}
-
-
 def _extraire_questions(completion) -> List[Dict]:
     """Factorise l'extraction du tool-call, partagee par les deux modes de
     generation de quiz (par document et par theme)."""

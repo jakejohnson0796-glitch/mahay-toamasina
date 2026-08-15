@@ -26,6 +26,7 @@ from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
 from .. import subscription
+from .. import theme_service
 
 router = APIRouter()
 
@@ -149,6 +150,7 @@ def liste_cercles(request: Request, session: Session = Depends(get_session)):
             "cercles_avec_info": cercles_avec_info,
             "filieres": filieres,
             "utilisateur": utilisateur,
+            "theme_du_jour": theme_service.get_theme_du_jour(),
         },
     )
 

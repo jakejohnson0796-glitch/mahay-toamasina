@@ -12,7 +12,7 @@ from ..auth import utilisateur_courant
 from ..dependencies import acces_premium_ou_redirection
 from ..models import Document, StatutDocument, TentativeQuiz
 from .. import quiz as quiz_module
-from .. import ai_quiz
+from .. import theme_service
 
 router = APIRouter()
 
@@ -94,7 +94,7 @@ def page_reflexion(request: Request, matiere: Optional[str] = None, session: Ses
     if redirection:
         return redirection
 
-    theme = ai_quiz.generer_theme_reflexion(matiere or None)
+    theme = theme_service.get_theme_du_jour(matiere=matiere or None)
 
     return templates.TemplateResponse(
         request,

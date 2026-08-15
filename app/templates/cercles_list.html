@@ -8,6 +8,13 @@
   groupe libre. Les messages restent entre les membres du cercle.
 </p>
 
+<div class="theme-jour">
+  <p class="theme-jour-etiquette">Theme du jour · {{ theme_du_jour.date_affichee }}</p>
+  <p class="theme-jour-question"><strong>{{ theme_du_jour.theme }}</strong></p>
+  {% if theme_du_jour.amorce %}<p class="theme-jour-amorce">{{ theme_du_jour.amorce }}</p>{% endif %}
+  <p class="theme-jour-note">Meme theme pour tout le monde aujourd'hui — debattez-en dans vos cercles.</p>
+</div>
+
 {% if utilisateur %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 style="margin-top:0;">Creer un cercle</h3>

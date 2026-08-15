@@ -1169,6 +1169,27 @@ main.main-tb {
   .tb-reprendre-corps { flex-direction: column; }
 }
 
+/* --- Theme du jour (cercles_list.html) --- */
+.theme-jour {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.75rem;
+}
+.theme-jour-etiquette {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-primary);
+  margin: 0 0 0.6rem;
+}
+.theme-jour-question { margin: 0 0 0.5rem; font-size: 1.02rem; }
+.theme-jour-amorce { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 0.5rem; }
+.theme-jour-note { color: var(--text-secondary); font-size: 0.78rem; margin: 0; }
+
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles
    d'animation/transition ci-dessus. */
