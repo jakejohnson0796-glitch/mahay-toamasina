@@ -8,6 +8,7 @@ Distinct de admin_router.py (deja tres charge) pour garder ce nouveau
 perimetre lisible independamment.
 """
 from typing import Optional
+from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
@@ -17,8 +18,9 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, CercleEtude
+from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle
 from ..referentiel import NIVEAUX
+from .cercles_router import _assurer_membres_admins
 
 router = APIRouter()
 
@@ -196,3 +198,122 @@ def assigner_cercle(
     session.add(cercle)
     session.commit()
     return RedirectResponse("/admin/referentiel/cercles?ok=cercle_mis_a_jour", status_code=303)
+
+
+@router.get("/admin/referentiel/demandes-creation")
+def page_demandes_creation(request: Request, session: Session = Depends(get_session)):
+    """Liste les demandes de creation de cercle national (§20-27 du
+    brief "cercles nationaux"), en attente d'abord."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    demandes = session.exec(
+        select(DemandeCreationCercle).order_by(
+            DemandeCreationCercle.statut, DemandeCreationCercle.date_creation.desc()
+        )
+    ).all()
+
+    utilisateurs = {u.id: u for u in session.exec(select(Utilisateur)).all()}
+    filieres = {f.id: f for f in session.exec(select(Filiere)).all()}
+    mentions = {m.id: m for m in session.exec(select(Mention)).all()}
+
+    return templates.TemplateResponse(
+        request,
+        "admin_demandes_creation_cercle.html",
+        {
+            "utilisateur": admin,
+            "demandes": demandes,
+            "utilisateurs": utilisateurs,
+            "filieres": filieres,
+            "mentions": mentions,
+        },
+    )
+
+
+@router.post("/admin/referentiel/demandes-creation/{demande_id}/approuver")
+def approuver_demande_creation(
+    request: Request,
+    demande_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    demande = session.get(DemandeCreationCercle, demande_id)
+    if not demande or demande.statut != StatutDemandeCreationCercle.EN_ATTENTE:
+        return RedirectResponse("/admin/referentiel/demandes-creation", status_code=303)
+
+    # Re-verification du doublon AU MOMENT DE L'APPROBATION (meme
+    # principe que pour les demandes d'adhesion, §32 du brief) : une
+    # autre demande equivalente a pu etre approuvee entre-temps, ou un
+    # cercle cree par un autre chemin.
+    doublon = session.exec(
+        select(CercleEtude).where(
+            CercleEtude.mention_id == demande.mention_id,
+            CercleEtude.filiere_id == demande.filiere_id,
+            CercleEtude.niveau == demande.niveau,
+            CercleEtude.statut == StatutCercle.ACTIF,
+        )
+    ).first()
+    if doublon:
+        demande.statut = StatutDemandeCreationCercle.REJETEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = admin.id
+        demande.cercle_cree_id = doublon.id
+        session.add(demande)
+        session.commit()
+        return RedirectResponse(
+            f"/admin/referentiel/demandes-creation?erreur=doublon_survenu_entre_temps&cercle_existant={doublon.id}",
+            status_code=303,
+        )
+
+    cercle = CercleEtude(
+        nom=demande.nom,
+        description=demande.description,
+        mention_id=demande.mention_id,
+        filiere_id=demande.filiere_id,
+        niveau=demande.niveau,
+        statut=StatutCercle.ACTIF,
+        createur_id=demande.utilisateur_id,
+    )
+    session.add(cercle)
+    session.commit()
+    session.refresh(cercle)
+
+    session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=demande.utilisateur_id, role=RoleMembreCercle.CREATEUR))
+    session.commit()
+    _assurer_membres_admins(session, cercle.id)
+
+    demande.statut = StatutDemandeCreationCercle.APPROUVEE
+    demande.date_traitement = datetime.utcnow()
+    demande.traite_par_id = admin.id
+    demande.cercle_cree_id = cercle.id
+    session.add(demande)
+    session.commit()
+
+    return RedirectResponse("/admin/referentiel/demandes-creation?ok=approuvee", status_code=303)
+
+
+@router.post("/admin/referentiel/demandes-creation/{demande_id}/rejeter")
+def rejeter_demande_creation(
+    request: Request,
+    demande_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    demande = session.get(DemandeCreationCercle, demande_id)
+    if demande and demande.statut == StatutDemandeCreationCercle.EN_ATTENTE:
+        demande.statut = StatutDemandeCreationCercle.REJETEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = admin.id
+        session.add(demande)
+        session.commit()
+
+    return RedirectResponse("/admin/referentiel/demandes-creation?ok=rejetee", status_code=303)

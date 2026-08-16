@@ -20,7 +20,7 @@ from sqlmodel import Session, select, or_
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion, ThemeDuJour
+from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle, StatutDemandeCreationCercle, StatutCercle, ThemeDuJour
 from ..auth import utilisateur_courant
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
@@ -28,6 +28,7 @@ from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_
 from .. import subscription
 from .. import theme_service
 from .. import referentiel_academique
+from ..referentiel import NIVEAUX
 
 router = APIRouter()
 
@@ -150,6 +151,7 @@ def liste_cercles(request: Request, session: Session = Depends(get_session)):
         {
             "cercles_avec_info": cercles_avec_info,
             "filieres": filieres,
+            "niveaux": NIVEAUX,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
         },
@@ -162,9 +164,23 @@ def creer_cercle(
     nom: str = Form(...),
     description: Optional[str] = Form(None),
     filiere_id: Optional[int] = Form(None),
+    niveau: Optional[str] = Form(None),
+    raison: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
+    """Deux comportements distincts, selon ce qui est rempli :
+
+    1) filiere_id ET niveau fournis -> c'est une demande de CERCLE
+       NATIONAL (§20-27 du brief "cercles nationaux"). Pas de creation
+       immediate : une DemandeCreationCercle EN_ATTENTE est creee,
+       soumise a validation admin (voir approuver_demande_creation
+       plus bas). La raison devient obligatoire dans ce cas.
+
+    2) Sinon (filiere_id seul, ou aucun des deux = "groupe libre") ->
+       comportement INCHANGE d'avant cette evolution : creation
+       immediate, comme tous les cercles crees jusqu'ici. Rien ne
+       casse pour l'usage existant."""
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
@@ -201,11 +217,75 @@ def creer_cercle(
             request,
             "cercles_list.html",
             {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "utilisateur": utilisateur,
+                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "utilisateur": utilisateur,
                 "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
             },
         )
 
+    niveau_nettoye = (niveau or "").strip() or None
+
+    # --- Cas 1 : demande de cercle NATIONAL (filiere + niveau) ---
+    if filiere_id and niveau_nettoye:
+        if niveau_nettoye not in NIVEAUX:
+            return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
+
+        filiere = session.get(Filiere, filiere_id)
+        if not filiere:
+            return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+
+        if not filiere.mention_id:
+            # §10 du brief : la coherence mention/filiere doit etre
+            # verifiee avant tout. Une filiere sans mention assignee ne
+            # peut pas encore porter de cercle national (voir
+            # /admin/referentiel pour l'assigner).
+            return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+
+        raison_nettoyee = (raison or "").strip()
+        if not raison_nettoyee:
+            return RedirectResponse("/cercles?erreur=raison_requise", status_code=303)
+
+        # §48 : si le cercle national existe deja, ne pas proposer de
+        # doublon — rediriger vers l'existant.
+        cercle_existant = session.exec(
+            select(CercleEtude).where(
+                CercleEtude.mention_id == filiere.mention_id,
+                CercleEtude.filiere_id == filiere_id,
+                CercleEtude.niveau == niveau_nettoye,
+                CercleEtude.statut == StatutCercle.ACTIF,
+            )
+        ).first()
+        if cercle_existant:
+            return RedirectResponse(f"/cercles/{cercle_existant.id}?erreur=cercle_existe_deja", status_code=303)
+
+        # Evite d'empiler plusieurs demandes EN_ATTENTE identiques (pas
+        # une contrainte base de donnees ici — juste une verification
+        # applicative, le vrai garde-fou contre les cercles en double
+        # reste l'index unique sur CercleEtude, verifie a nouveau au
+        # moment de l'approbation).
+        demande_existante = session.exec(
+            select(DemandeCreationCercle).where(
+                DemandeCreationCercle.mention_id == filiere.mention_id,
+                DemandeCreationCercle.filiere_id == filiere_id,
+                DemandeCreationCercle.niveau == niveau_nettoye,
+                DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
+            )
+        ).first()
+        if demande_existante:
+            return RedirectResponse("/cercles?erreur=demande_deja_en_attente", status_code=303)
+
+        session.add(DemandeCreationCercle(
+            utilisateur_id=utilisateur.id,
+            mention_id=filiere.mention_id,
+            filiere_id=filiere_id,
+            niveau=niveau_nettoye,
+            nom=nom,
+            description=description or None,
+            raison=raison_nettoyee,
+        ))
+        session.commit()
+        return RedirectResponse("/cercles?ok=demande_creation_envoyee", status_code=303)
+
+    # --- Cas 2 : cercle "libre" (filiere seule ou aucune) — comportement inchange ---
     cercle = CercleEtude(
         nom=nom,
         description=description or None,

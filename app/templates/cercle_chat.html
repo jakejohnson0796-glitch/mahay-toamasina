@@ -48,6 +48,9 @@
 {% if request.query_params.get("erreur") == "createur_ne_peut_quitter" %}
 <div class="erreur">Vous etes le createur : supprimez le cercle plutot que de le quitter.</div>
 {% endif %}
+{% if request.query_params.get("erreur") == "cercle_existe_deja" %}
+<div class="erreur">Un cercle national existait deja pour cette mention, filiere et niveau — vous voila directement dessus.</div>
+{% endif %}
 
 <div id="panneau-presence" class="panneau-presence">
   <span class="stat-label">En ligne maintenant :</span>

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block titre %}Demandes de creation de cercles — Admin MAHAY{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin/referentiel">&larr; Referentiel academique</a></p>
+<h2>Demandes de creation de cercle national</h2>
+
+{% if request.query_params.get("ok") == "approuvee" %}<p><strong>Demande approuvee, cercle cree.</strong></p>{% endif %}
+{% if request.query_params.get("ok") == "rejetee" %}<p><strong>Demande rejetee.</strong></p>{% endif %}
+{% if request.query_params.get("erreur") == "doublon_survenu_entre_temps" %}
+<div class="erreur">
+  Un cercle equivalent a ete cree entre-temps par une autre demande — celle-ci a ete automatiquement rejetee
+  (<a href="/cercles/{{ request.query_params.get('cercle_existant') }}">voir le cercle existant</a>).
+</div>
+{% endif %}
+
+<table class="table-manifeste">
+  <thead>
+    <tr>
+      <th>Demandeur</th>
+      <th>Mention / Filiere / Niveau</th>
+      <th>Nom propose</th>
+      <th>Raison</th>
+      <th>Statut</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in demandes %}
+    <tr>
+      <td>{{ utilisateurs[d.utilisateur_id].nom if d.utilisateur_id in utilisateurs else "—" }}</td>
+      <td>
+        {{ mentions[d.mention_id].nom if d.mention_id in mentions else "—" }} /
+        {{ filieres[d.filiere_id].nom if d.filiere_id in filieres else "—" }} /
+        {{ d.niveau or "—" }}
+      </td>
+      <td>{{ d.nom }}{% if d.description %}<br><span class="stat-label">{{ d.description }}</span>{% endif %}</td>
+      <td>{{ d.raison }}</td>
+      <td>
+        <span class="tampon tampon-{{ 'approuve' if d.statut.value == 'approuvee' else ('rejete' if d.statut.value == 'rejetee' else 'attente') }}">
+          {{ { 'en_attente': 'En attente', 'approuvee': 'Approuvee', 'rejetee': 'Rejetee' }[d.statut.value] }}
+        </span>
+      </td>
+      <td>
+        {% if d.statut.value == "en_attente" %}
+        <form method="post" action="/admin/referentiel/demandes-creation/{{ d.id }}/approuver" style="display:inline;">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-primaire" type="submit">Approuver</button>
+        </form>
+        <form method="post" action="/admin/referentiel/demandes-creation/{{ d.id }}/rejeter" style="display:inline;">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit">Refuser</button>
+        </form>
+        {% elif d.cercle_cree_id %}
+        <a href="/cercles/{{ d.cercle_cree_id }}">Voir le cercle</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Aucune demande pour l'instant.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

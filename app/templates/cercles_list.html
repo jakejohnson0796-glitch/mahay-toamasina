@@ -17,8 +17,14 @@
 
 {% if utilisateur %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
-  <h3 style="margin-top:0;">Creer un cercle</h3>
+  <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
+  {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
+
   <form method="post" action="/cercles/creer">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="nom">Nom du cercle</label>
@@ -34,6 +40,17 @@
       <option value="{{ filiere.id }}">{{ filiere.nom }}</option>
       {% endfor %}
     </select>
+
+    <label for="niveau">Niveau (facultatif — si rempli avec une filiere, ce sera un cercle NATIONAL soumis a validation)</label>
+    <select id="niveau" name="niveau">
+      <option value="">— aucun —</option>
+      {% for n in niveaux %}
+      <option value="{{ n }}">{{ n }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="raison">Raison (obligatoire uniquement pour un cercle national)</label>
+    <textarea id="raison" name="raison" rows="2" placeholder="ex: Plusieurs etudiants de cette filiere et ce niveau, dans differentes universites, souhaitent un espace commun pour partager cours et revisions."></textarea>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cercle</button>
   </form>
