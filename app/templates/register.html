@@ -36,6 +36,14 @@
       <option value="sponsor">Repetiteur / sponsor</option>
     </select>
 
+    <label for="universite_id">Universite (facultatif)</label>
+    <select id="universite_id" name="universite_id">
+      <option value="">— aucune —</option>
+      {% for u in universites %}
+      <option value="{{ u.id }}">{{ u.nom }}</option>
+      {% endfor %}
+    </select>
+
     <label for="filiere_id">Filiere (facultatif)</label>
     <select id="filiere_id" name="filiere_id">
       <option value="">— aucune —</option>
@@ -43,6 +51,7 @@
       <option value="{{ filiere.id }}">{{ filiere.nom }}</option>
       {% endfor %}
     </select>
+    <p class="stat-label">Le catalogue des filieres par universite est en cours de completion — la liste ci-dessus couvre pour l'instant surtout Toamasina.</p>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Creer mon compte</button>
   </form>

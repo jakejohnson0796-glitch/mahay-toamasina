@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Optional
 
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Index, text
+from sqlalchemy import Index, text, UniqueConstraint
 
 
 class RoleUtilisateur(str, Enum):
@@ -83,7 +83,11 @@ class Mention(SQLModel, table=True):
 
 class Faculte(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    nom: str = Field(index=True, unique=True)
+    # "unique=True" retire ici (deplace vers une contrainte composite
+    # (universite_id, nom) — voir __table_args__ ci-dessous et la
+    # migration f2b8e6a1c9d3) : un meme intitule de faculte ("Faculte
+    # des Sciences") existe legitimement dans plusieurs universites.
+    nom: str = Field(index=True)
     # Nullable au niveau du modele Python pour ne jamais bloquer un code
     # qui construirait un Faculte sans le renseigner explicitement, mais
     # la migration la remplit pour toutes les lignes existantes puis
@@ -93,6 +97,10 @@ class Faculte(SQLModel, table=True):
 
     universite: Optional[Universite] = Relationship(back_populates="facultes")
     filieres: list["Filiere"] = Relationship(back_populates="faculte")
+
+    __table_args__ = (
+        UniqueConstraint("universite_id", "nom", name="uq_faculte_universite_nom"),
+    )
 
 
 class Filiere(SQLModel, table=True):

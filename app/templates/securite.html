@@ -16,6 +16,23 @@
 
 <div class="carte-formulaire">
   <h3 class="titre-carte">Mon parcours academique</h3>
+  <p class="stat-label">Universite</p>
+  <p><strong>{{ universite.nom if universite else "Non renseignee" }}</strong></p>
+
+  {% if not universite %}
+  <form method="post" action="/securite/universite" style="margin-bottom:1rem;">
+    <label for="universite_id">Choisir mon universite</label>
+    <select id="universite_id" name="universite_id" required>
+      <option value="">— choisir —</option>
+      {% for u in universites %}
+      <option value="{{ u.id }}">{{ u.nom }}</option>
+      {% endfor %}
+    </select>
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button class="bouton bouton-secondaire bouton-form" type="submit">Enregistrer</button>
+  </form>
+  {% endif %}
+
   <p class="stat-label">Filiere</p>
   <p><strong>{{ filiere.nom if filiere else "Non renseignee" }}</strong></p>
   <p class="stat-label">Niveau</p>

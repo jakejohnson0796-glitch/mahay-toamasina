@@ -11,7 +11,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, CodeSecours2FA
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Universite, CodeSecours2FA
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
@@ -30,8 +30,9 @@ router = APIRouter()
 @router.get("/inscription")
 def formulaire_inscription(request: Request, session: Session = Depends(get_session)):
     filieres = session.exec(select(Filiere)).all()
+    universites = session.exec(select(Universite).where(Universite.est_active == True)).all()  # noqa: E712
     return templates.TemplateResponse(
-        request, "register.html", {"filieres": filieres, "erreur": None}
+        request, "register.html", {"filieres": filieres, "universites": universites, "erreur": None}
     )
 
 
@@ -43,6 +44,7 @@ def inscription(
     mot_de_passe: str = Form(...),
     role: RoleUtilisateur = Form(RoleUtilisateur.ETUDIANT),
     filiere_id: Optional[int] = Form(None),
+    universite_id: Optional[int] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -56,7 +58,7 @@ def inscription(
         return templates.TemplateResponse(
             request,
             "register.html",
-            {"filieres": filieres, "erreur": "Trop de tentatives d'inscription depuis cette adresse. Reessayez plus tard."},
+            {"filieres": filieres, "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(), "erreur": "Trop de tentatives d'inscription depuis cette adresse. Reessayez plus tard."},
         )
 
     # SECURITE : le formulaire public (register.html) ne propose que
@@ -83,7 +85,7 @@ def inscription(
         return templates.TemplateResponse(
             request,
             "register.html",
-            {"filieres": filieres, "erreur": str(erreur)},
+            {"filieres": filieres, "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(), "erreur": str(erreur)},
         )
 
     deja_inscrit = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)).first()
@@ -92,7 +94,7 @@ def inscription(
         return templates.TemplateResponse(
             request,
             "register.html",
-            {"filieres": filieres, "erreur": "Ce numero est deja enregistre."},
+            {"filieres": filieres, "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(), "erreur": "Ce numero est deja enregistre."},
         )
 
     utilisateur = Utilisateur(
@@ -101,6 +103,7 @@ def inscription(
         mot_de_passe_hash=hacher_mot_de_passe(mot_de_passe),
         role=role,
         filiere_id=filiere_id,
+        universite_id=universite_id,
     )
     session.add(utilisateur)
     session.commit()
@@ -265,6 +268,7 @@ def page_securite(request: Request, session: Session = Depends(get_session)):
         ).all())
 
     filiere = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
+    universite = session.get(Universite, utilisateur.universite_id) if utilisateur.universite_id else None
 
     return templates.TemplateResponse(
         request, "securite.html",
@@ -272,11 +276,41 @@ def page_securite(request: Request, session: Session = Depends(get_session)):
             "utilisateur": utilisateur,
             "nb_codes_restants": nb_codes_restants,
             "filiere": filiere,
+            "universite": universite,
+            "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
             "niveaux": NIVEAUX,
             "peut_modifier_niveau": referentiel_academique.peut_modifier_niveau_maintenant(utilisateur),
             "jours_avant_changement_niveau": referentiel_academique.jours_avant_prochain_changement_niveau(utilisateur),
         },
     )
+
+
+@router.post("/securite/universite")
+def modifier_universite(
+    request: Request,
+    universite_id: int = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Definit l'universite d'un profil qui n'en a pas encore (comptes
+    crees avant l'ajout de ce champ, voir migration f2b8e6a1c9d3, ou
+    inscrits sans que l'inscription ne le demandait encore). Une fois
+    definie, ce formulaire disparait du profil (voir securite.html) —
+    changer d'universite ensuite n'est pas encore prevu, contacter un
+    admin le cas echeant."""
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    universite = session.get(Universite, universite_id)
+    if not universite:
+        return RedirectResponse("/securite?erreur=universite_invalide", status_code=303)
+
+    utilisateur.universite_id = universite.id
+    session.add(utilisateur)
+    session.commit()
+
+    return RedirectResponse("/securite?ok=universite_modifiee", status_code=303)
 
 
 @router.post("/securite/niveau")

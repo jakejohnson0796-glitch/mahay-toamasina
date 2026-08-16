@@ -98,10 +98,10 @@ class TestMigrationReferentielAcademique(unittest.TestCase):
         return sqlite3.connect(self.chemin_db)
 
     def test_migration_s_applique_sans_erreur_sur_donnees_reelles(self):
-        _executer_alembic("upgrade", "head", self.chemin_db)  # ne doit pas lever
+        _executer_alembic("upgrade", "e1a4c9d2b7f5", self.chemin_db)  # ne doit pas lever
 
     def test_universite_toamasina_creee_et_facultes_rattachees(self):
-        _executer_alembic("upgrade", "head", self.chemin_db)
+        _executer_alembic("upgrade", "e1a4c9d2b7f5", self.chemin_db)
         conn = self._connexion()
         cur = conn.cursor()
         cur.execute("SELECT id, nom FROM universite")
@@ -114,7 +114,7 @@ class TestMigrationReferentielAcademique(unittest.TestCase):
         conn.close()
 
     def test_programme_universitaire_backfille_pour_chaque_filiere(self):
-        _executer_alembic("upgrade", "head", self.chemin_db)
+        _executer_alembic("upgrade", "e1a4c9d2b7f5", self.chemin_db)
         conn = self._connexion()
         cur = conn.cursor()
         cur.execute("SELECT universite_id, filiere_id FROM programmeuniversitaire WHERE filiere_id = ?", (self.filiere_id,))
@@ -123,7 +123,7 @@ class TestMigrationReferentielAcademique(unittest.TestCase):
         conn.close()
 
     def test_role_membre_cercle_backfille_correctement(self):
-        _executer_alembic("upgrade", "head", self.chemin_db)
+        _executer_alembic("upgrade", "e1a4c9d2b7f5", self.chemin_db)
         conn = self._connexion()
         cur = conn.cursor()
         cur.execute("SELECT utilisateur_id, role FROM membrecercle WHERE cercle_id = ?", (self.cercle_id,))
@@ -144,7 +144,7 @@ class TestMigrationReferentielAcademique(unittest.TestCase):
         test_filiere_gestion_recoit_la_mention_demandee_par_jake
         ci-dessous, qui verifie ce mapping precis plutot que son
         absence."""
-        _executer_alembic("upgrade", "head", self.chemin_db)
+        _executer_alembic("upgrade", "e1a4c9d2b7f5", self.chemin_db)
         conn = self._connexion()
         cur = conn.cursor()
         cur.execute("SELECT universite_id, niveau FROM utilisateur WHERE id = ?", (self.jake_id,))
@@ -154,7 +154,7 @@ class TestMigrationReferentielAcademique(unittest.TestCase):
         conn.close()
 
     def test_filiere_gestion_recoit_la_mention_demandee_par_jake(self):
-        _executer_alembic("upgrade", "head", self.chemin_db)
+        _executer_alembic("upgrade", "e1a4c9d2b7f5", self.chemin_db)
         conn = self._connexion()
         cur = conn.cursor()
         cur.execute(
@@ -165,7 +165,7 @@ class TestMigrationReferentielAcademique(unittest.TestCase):
         conn.close()
 
     def test_cercle_existant_devient_actif_par_defaut(self):
-        _executer_alembic("upgrade", "head", self.chemin_db)
+        _executer_alembic("upgrade", "e1a4c9d2b7f5", self.chemin_db)
         conn = self._connexion()
         cur = conn.cursor()
         cur.execute("SELECT statut, niveau FROM cercleetude WHERE id = ?", (self.cercle_id,))
@@ -175,7 +175,7 @@ class TestMigrationReferentielAcademique(unittest.TestCase):
         conn.close()
 
     def test_downgrade_restaure_exactement_l_etat_d_origine(self):
-        _executer_alembic("upgrade", "head", self.chemin_db)
+        _executer_alembic("upgrade", "e1a4c9d2b7f5", self.chemin_db)
         _executer_alembic("downgrade", "6a1c8e4b7f30", self.chemin_db)
         conn = self._connexion()
         cur = conn.cursor()
