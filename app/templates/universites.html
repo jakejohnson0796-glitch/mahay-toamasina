@@ -1,30 +1,50 @@
 {% extends "base.html" %}
 {% block titre %}Universites — MAHAY{% endblock %}
 {% block contenu %}
-<p class="eyebrow">Ecosysteme universitaire</p>
-<h2>Universite de Toamasina</h2>
+<p class="eyebrow">Ecosysteme universitaire national</p>
+<h2>Universites</h2>
 <p>
-  MAHAY est aujourd'hui organise autour des facultes et filieres de
-  l'Universite de Toamasina. Chaque document, cercle d'etude et quiz peut
-  etre rattache a une filiere precise pour rester pertinent.
+  MAHAY couvre progressivement les universites publiques de Madagascar.
+  Chaque document, cercle d'etude et quiz peut etre rattache a une
+  filiere precise, partagee entre les universites qui la proposent.
 </p>
 
-<div class="liste-cercles">
-  {% for faculte in facultes %}
-  <div class="carte-cercle carte-cercle-colonne">
-    <strong>{{ faculte.nom }}</strong>
-    {% if faculte.filieres %}
-    <ul class="liste-filieres">
-      {% for filiere in faculte.filieres %}
-      <li>{{ filiere.nom }}</li>
+<div class="uni-grille">
+  {% for info in universites_info %}
+  <div class="uni-carte">
+    <div class="uni-entete">
+      <h3 class="uni-nom">{{ info.universite.nom }}</h3>
+      {% if info.universite.ville %}<span class="uni-ville">{{ info.universite.ville }}</span>{% endif %}
+    </div>
+
+    {% if info.facultes %}
+    <div class="uni-facultes">
+      {% for entree in info.facultes %}
+      <details class="uni-faculte">
+        <summary>{{ entree.faculte.nom }}</summary>
+        {% if entree.filieres %}
+        <ul class="liste-filieres">
+          {% for filiere in entree.filieres %}
+          <li>
+            {{ filiere.nom }}
+            {% if filiere.mention_id and filiere.mention_id in mentions_par_id %}
+            <span class="uni-mention">{{ mentions_par_id[filiere.mention_id].nom }}</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="stat-label">Filieres en cours de completion.</p>
+        {% endif %}
+      </details>
       {% endfor %}
-    </ul>
+    </div>
     {% else %}
-    <p class="stat-label">Filieres a venir.</p>
+    <p class="uni-a-venir">Etablissements et formations en cours de completion pour cette universite.</p>
     {% endif %}
   </div>
   {% else %}
-  <p>Aucune faculte enregistree pour l'instant.</p>
+  <p>Aucune universite enregistree pour l'instant.</p>
   {% endfor %}
 </div>
 

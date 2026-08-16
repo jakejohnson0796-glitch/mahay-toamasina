@@ -15,7 +15,7 @@ from sqlmodel import Session, select
 
 from .config import parametres
 from .database import executer_migrations, engine, get_session
-from .models import Faculte, Document, StatutDocument
+from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .seed_data import peupler_donnees_initiales
@@ -151,10 +151,44 @@ def a_propos(request: Request):
 
 @app.get("/universites")
 def universites(request: Request, session: Session = Depends(get_session)):
-    # Donnees reelles deja en base (voir seed_data.py) — aucune universite,
-    # faculte ou filiere n'est inventee pour cette page.
-    facultes = session.exec(select(Faculte)).all()
-    return templates.TemplateResponse(request, "universites.html", {"facultes": facultes})
+    # Donnees reelles deja en base — aucune universite, faculte ou
+    # filiere n'est inventee pour cette page. Reflete le referentiel
+    # academique national (Universite -> Faculte -> Filiere -> Mention),
+    # pas seulement Toamasina.
+    toutes_universites = session.exec(select(Universite).where(Universite.est_active == True)).all()  # noqa: E712
+    toutes_facultes = session.exec(select(Faculte)).all()
+    toutes_filieres = session.exec(select(Filiere)).all()
+    mentions_par_id = {m.id: m for m in session.exec(select(Mention)).all()}
+
+    facultes_par_universite: dict[int, list] = {}
+    for faculte in toutes_facultes:
+        facultes_par_universite.setdefault(faculte.universite_id, []).append(faculte)
+
+    filieres_par_faculte: dict[int, list] = {}
+    for filiere in toutes_filieres:
+        filieres_par_faculte.setdefault(filiere.faculte_id, []).append(filiere)
+
+    universites_info = []
+    for u in toutes_universites:
+        facultes = facultes_par_universite.get(u.id, [])
+        nb_filieres = sum(len(filieres_par_faculte.get(f.id, [])) for f in facultes)
+        universites_info.append({
+            "universite": u,
+            "facultes": [
+                {"faculte": f, "filieres": filieres_par_faculte.get(f.id, [])}
+                for f in facultes
+            ],
+            "nb_filieres": nb_filieres,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "universites.html",
+        {
+            "universites_info": universites_info,
+            "mentions_par_id": mentions_par_id,
+        },
+    )
 
 
 @app.get("/contact")

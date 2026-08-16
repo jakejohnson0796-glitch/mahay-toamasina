@@ -1190,6 +1190,61 @@ main.main-tb {
 .theme-jour-amorce { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 0.5rem; }
 .theme-jour-note { color: var(--text-secondary); font-size: 0.78rem; margin: 0; }
 
+/* --- Page /universites --- */
+.uni-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.1rem;
+  margin: 1.5rem 0;
+}
+.uni-carte {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.3rem 1.4rem;
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
+}
+.uni-carte:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--color-primary); }
+.uni-entete { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.uni-nom { margin: 0; font-size: 1.08rem; }
+.uni-ville { font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.uni-a-venir { color: var(--text-secondary); font-size: 0.88rem; margin: 0; }
+
+.uni-facultes { display: flex; flex-direction: column; gap: 0.4rem; }
+.uni-faculte {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 0.1rem 0.9rem;
+}
+.uni-faculte summary {
+  cursor: pointer;
+  padding: 0.65rem 0;
+  font-size: 0.9rem;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.uni-faculte summary::-webkit-details-marker { display: none; }
+.uni-faculte summary::after {
+  content: "+";
+  color: var(--color-primary);
+  font-size: 1.1rem;
+  transition: transform 0.15s var(--ease-fluide);
+}
+.uni-faculte[open] summary::after { transform: rotate(45deg); }
+.uni-faculte .liste-filieres { margin: 0 0 0.75rem; padding-left: 1.1rem; }
+.uni-mention {
+  margin-left: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+@media (max-width: 640px) {
+  .uni-grille { grid-template-columns: 1fr; }
+}
+
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles
    d'animation/transition ci-dessus. */

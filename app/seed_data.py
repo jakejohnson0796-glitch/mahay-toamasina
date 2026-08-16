@@ -5,7 +5,7 @@ si des filieres manquent ou ont change de nom.
 """
 from sqlmodel import Session, select
 
-from .models import Faculte, Filiere
+from .models import Faculte, Filiere, Universite
 
 STRUCTURE_UNIVERSITE = {
     "Droit, Economie, Gestion, Mathematiques et Informatique (DEGMIA)": [
@@ -32,13 +32,33 @@ STRUCTURE_UNIVERSITE = {
 
 
 def peupler_donnees_initiales(session: Session) -> None:
-    """Insere les facultes/filieres si la base est vide. Ne fait rien sinon
-    (idempotent : peut etre appele a chaque demarrage sans risque)."""
-    if session.exec(select(Faculte)).first():
+    """Insere les facultes/filieres de Toamasina si elles n'existent pas
+    deja. Idempotent : peut etre appele a chaque demarrage sans risque.
+
+    IMPORTANT : la garde ci-dessous verifie specifiquement les facultes
+    de Toamasina (pas "une Faculte existe-t-elle, n'importe laquelle"),
+    car la migration f2b8e6a1c9d3 cree desormais aussi des Faculte pour
+    les 5 autres universites — un simple "if Faculte existe" se
+    declencherait a tort sur une base neuve et sauterait completement
+    le seed de Toamasina."""
+    universite_toamasina = session.exec(
+        select(Universite).where(Universite.nom == "Universite de Toamasina")
+    ).first()
+    if not universite_toamasina:
+        # Ne devrait jamais arriver en pratique (la migration
+        # e1a4c9d2b7f5 la cree toujours), mais si ce module est un jour
+        # appele avant que les migrations aient tourne, on ne veut pas
+        # planter avec une IntegrityError obscure sur universite_id.
+        return
+
+    deja_seede = session.exec(
+        select(Faculte).where(Faculte.universite_id == universite_toamasina.id)
+    ).first()
+    if deja_seede:
         return
 
     for nom_faculte, filieres in STRUCTURE_UNIVERSITE.items():
-        faculte = Faculte(nom=nom_faculte)
+        faculte = Faculte(nom=nom_faculte, universite_id=universite_toamasina.id)
         session.add(faculte)
         session.commit()
         session.refresh(faculte)
