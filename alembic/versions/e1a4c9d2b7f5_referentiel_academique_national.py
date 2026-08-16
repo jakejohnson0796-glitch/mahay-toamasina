@@ -13,6 +13,15 @@ rattachees a une premiere "Universite de Toamasina" creee ici — fait
 deja vrai (ces filieres sont deja celles de cette universite), aucune
 invention de donnees.
 
+Exception assumee : le mapping filiere -> mention (partie 3bis du
+backfill ci-dessous) EST rempli directement dans cette migration, mais
+uniquement parce que Jake l'a explicitement demande ("fait ça toi
+meme") apres avoir eu le choix de le faire lui-meme via /admin/referentiel.
+Ce n'est donc pas un algorithme qui devine une correspondance ambigue
+(ce que §44 du brief interdit) : c'est un jugement academique assume,
+documente ligne par ligne, et entierement corrigible ensuite depuis
+l'ecran admin sans autre migration.
+
 Les enums (str, Enum) du projet stockent le NOM du membre Python en
 MAJUSCULES en base (ex: "ACTIF", pas "actif") — voir la migration
 c4e91a2f7b6d pour la meme remarque deja documentee. Le SQL de backfill
@@ -193,6 +202,41 @@ def upgrade() -> None:
                 "INSERT INTO programmeuniversitaire (universite_id, filiere_id, est_active) "
                 "VALUES (:uid, :fid, TRUE)"
             ).bindparams(uid=universite_toamasina_id, fid=filiere_id)
+        )
+
+    # 3bis) Mentions + assignation filiere->mention, FAITE A LA DEMANDE
+    #    EXPLICITE DE JAKE (contrairement au reste de cette migration,
+    #    qui evite deliberement de deviner — voir §44 du brief). Jake a
+    #    delegue ce choix : ce n'est pas un algorithme qui devine, mais
+    #    un jugement academique assume, arbitrairement modifiable ensuite
+    #    via /admin/referentiel (aucune de ces valeurs n'est figee).
+    #    Mapping filiere (nom exact du seed) -> mention :
+    mapping_filiere_vers_mention = {
+        "Droit": "Droit",
+        "Economie": "Sciences Economiques",
+        "Gestion": "Sciences de Gestion",
+        "Mathematiques et Informatique": "Mathematiques et Informatique",
+        "Physique": "Physique",
+        "Chimie": "Chimie",
+        "Sciences de la Vie et de la Terre": "Sciences de la Vie et de la Terre",
+        "Lettres francaises": "Etudes Francaises",
+        "Anglais": "Etudes Anglophones",
+        "Histoire-Geographie": "Histoire-Geographie",
+        "Philosophie": "Philosophie",
+        "Medecine generale": "Medecine",
+    }
+    noms_mentions = sorted(set(mapping_filiere_vers_mention.values()))
+    id_mention_par_nom = {}
+    for nom_mention in noms_mentions:
+        connexion.execute(sa.text("INSERT INTO mention (nom, est_active) VALUES (:nom, TRUE)").bindparams(nom=nom_mention))
+        id_mention_par_nom[nom_mention] = connexion.execute(
+            sa.text("SELECT id FROM mention WHERE nom = :nom").bindparams(nom=nom_mention)
+        ).scalar()
+
+    for nom_filiere, nom_mention in mapping_filiere_vers_mention.items():
+        connexion.execute(
+            sa.text("UPDATE filiere SET mention_id = :mid WHERE nom = :nom")
+            .bindparams(mid=id_mention_par_nom[nom_mention], nom=nom_filiere)
         )
 
     # 4) role sur MembreCercle : le createur du cercle (CercleEtude.createur_id)

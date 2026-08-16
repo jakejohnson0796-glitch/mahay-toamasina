@@ -132,20 +132,36 @@ class TestMigrationReferentielAcademique(unittest.TestCase):
         self.assertEqual(roles[self.autre_id], "MEMBRE")
         conn.close()
 
-    def test_rien_n_est_invente_pour_mention_universite_niveau(self):
-        """Regle explicite du brief (§44) : ne jamais deviner un
-        classement. mention_id, universite_id (utilisateur) et niveau
-        doivent rester NULL apres la migration — a completer plus tard
-        via l'admin, jamais auto-devine."""
+    def test_universite_et_niveau_utilisateur_restent_non_devines(self):
+        """Regle du brief (§44) : ne jamais deviner un classement
+        ambigu. universite_id (utilisateur) et niveau restent NULL
+        apres la migration.
+
+        Exception assumee et documentee : mention_id sur Filiere EST
+        rempli par cette migration, mais uniquement parce que Jake l'a
+        explicitement demande ("fait ça toi meme") apres avoir eu le
+        choix de le faire lui-meme via /admin/referentiel — voir
+        test_filiere_gestion_recoit_la_mention_demandee_par_jake
+        ci-dessous, qui verifie ce mapping precis plutot que son
+        absence."""
         _executer_alembic("upgrade", "head", self.chemin_db)
         conn = self._connexion()
         cur = conn.cursor()
-        cur.execute("SELECT mention_id FROM filiere WHERE id = ?", (self.filiere_id,))
-        self.assertIsNone(cur.fetchone()[0])
         cur.execute("SELECT universite_id, niveau FROM utilisateur WHERE id = ?", (self.jake_id,))
         universite_id, niveau = cur.fetchone()
         self.assertIsNone(universite_id)
         self.assertIsNone(niveau)
+        conn.close()
+
+    def test_filiere_gestion_recoit_la_mention_demandee_par_jake(self):
+        _executer_alembic("upgrade", "head", self.chemin_db)
+        conn = self._connexion()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT m.nom FROM filiere f JOIN mention m ON f.mention_id = m.id WHERE f.id = ?",
+            (self.filiere_id,),
+        )
+        self.assertEqual(cur.fetchone()[0], "Sciences de Gestion")
         conn.close()
 
     def test_cercle_existant_devient_actif_par_defaut(self):
