@@ -35,6 +35,7 @@ def liste_documents(
     request: Request,
     filiere_id: Optional[int] = None,
     matiere: Optional[str] = None,
+    type_document: Optional[TypeDocument] = None,
     session: Session = Depends(get_session),
 ):
     filiere_id = int(filiere_id) if filiere_id else None
@@ -43,6 +44,8 @@ def liste_documents(
         requete = requete.where(Document.filiere_id == filiere_id)
     if matiere:
         requete = requete.where(Document.matiere.contains(matiere))
+    if type_document:
+        requete = requete.where(Document.type_document == type_document)
     documents = session.exec(requete.order_by(Document.date_upload.desc())).all()
     filieres = session.exec(select(Filiere)).all()
 
@@ -54,6 +57,8 @@ def liste_documents(
             "filieres": filieres,
             "filiere_id": filiere_id,
             "matiere": matiere or "",
+            "type_document": type_document.value if type_document else "",
+            "types_document": list(TypeDocument),
             "utilisateur": utilisateur_courant(request, session),
         },
     )
