@@ -9,9 +9,18 @@
 <div class="carte-formulaire">
   {% if en_attente %}
   <p>Votre demande d'adhesion est en attente de validation.</p>
+  {% elif not profil_compatible %}
+  <p>Ce cercle national correspond a une autre mention, filiere ou niveau que le votre — vous ne pouvez pas le rejoindre. <a href="/securite">Verifier mon profil academique</a>.</p>
   {% else %}
   <p>Vous n'etes pas encore membre de ce cercle.</p>
+  {% if request.query_params.get("erreur") == "raison_requise" %}
+  <div class="erreur">Merci d'expliquer pourquoi vous souhaitez rejoindre ce cercle.</div>
+  {% elif request.query_params.get("erreur") == "profil_incompatible" %}
+  <div class="erreur">Ce cercle correspond a une autre mention, filiere ou niveau que le votre.</div>
+  {% endif %}
   <form method="post" action="/cercles/{{ cercle.id }}/demander">
+    <label for="raison">Pourquoi souhaitez-vous rejoindre ce cercle ?</label>
+    <textarea id="raison" name="raison" rows="3" required placeholder="ex: Je suis en Finance et Comptabilite L3 et je cherche a echanger sur les revisions."></textarea>
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <button class="bouton bouton-primaire bouton-form" type="submit">Demander à rejoindre</button>
   </form>

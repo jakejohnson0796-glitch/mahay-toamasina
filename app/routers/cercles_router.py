@@ -27,6 +27,7 @@ from ..dependencies import acces_premium_ou_redirection
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
 from .. import subscription
 from .. import theme_service
+from .. import referentiel_academique
 
 router = APIRouter()
 
@@ -228,11 +229,22 @@ def creer_cercle(
 
 
 @router.post("/cercles/{cercle_id}/demander")
-def demander_adhesion(request: Request, cercle_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+def demander_adhesion(
+    request: Request,
+    cercle_id: int,
+    raison: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
     """Cree une demande d'adhesion EN_ATTENTE (remplace l'ancienne
     adhesion immediate). L'utilisateur ne devient PAS membre ici — il
     faut que le createur du cercle ou un admin l'accepte (voir
-    accepter_demande ci-dessous)."""
+    accepter_demande ci-dessous).
+
+    raison est desormais obligatoire (§29 du brief "cercles nationaux") :
+    les demandes creees AVANT ce changement peuvent avoir raison=None
+    (colonne nullable, voir migration e1a4c9d2b7f5) — on ne les modifie
+    pas retroactivement, seules les nouvelles demandes l'exigent."""
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
@@ -241,6 +253,10 @@ def demander_adhesion(request: Request, cercle_id: int, session: Session = Depen
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle:
         return RedirectResponse("/cercles", status_code=303)
+
+    raison_nettoyee = raison.strip()
+    if not raison_nettoyee:
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=raison_requise", status_code=303)
 
     # Defense en profondeur : meme si l'interface ne devrait jamais
     # proposer ce bouton a un Admin (voir liste_cercles/salon_cercle qui
@@ -255,11 +271,18 @@ def demander_adhesion(request: Request, cercle_id: int, session: Session = Depen
     if _est_membre(session, cercle_id, utilisateur.id):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
+    # §31 du brief "cercles nationaux" : un cercle national (mention +
+    # filiere + niveau tous renseignes) n'accepte que les etudiants dont
+    # le profil correspond exactement. Les cercles "libres" (au moins un
+    # des 3 manquant) ne sont pas concernes — comportement inchange.
+    if not referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session):
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=profil_incompatible", status_code=303)
+
     # Empeche le doublon cote applicatif (verification rapide, UX claire) ;
     # l'index unique partiel en base (migration c4e91a2f7b6d) est le vrai
     # garde-fou en cas de requetes concurrentes.
     if not _demande_en_attente(session, cercle_id, utilisateur.id):
-        session.add(DemandeAdhesionCercle(cercle_id=cercle_id, utilisateur_id=utilisateur.id))
+        session.add(DemandeAdhesionCercle(cercle_id=cercle_id, utilisateur_id=utilisateur.id, raison=raison_nettoyee))
         session.commit()
 
     return RedirectResponse("/cercles", status_code=303)
@@ -386,6 +409,20 @@ def accepter_demande(request: Request, cercle_id: int, demande_id: int, session:
     # retraitee — evite les doubles clics / actions concurrentes qui
     # ajouteraient deux fois le membre ou ecraseraient une decision.
     if demande.statut == StatutDemandeAdhesion.EN_ATTENTE:
+        demandeur = session.get(Utilisateur, demande.utilisateur_id)
+        # §32 du brief : le niveau (ou la filiere) du demandeur a pu
+        # changer entre la demande et son traitement — la verification
+        # doit etre refaite ICI, pas seulement au moment de la demande.
+        # Si ca ne correspond plus, on refuse au lieu d'accepter
+        # silencieusement dans le mauvais cercle.
+        if demandeur and not referentiel_academique.profil_correspond_au_cercle(demandeur, cercle, session):
+            demande.statut = StatutDemandeAdhesion.REJETEE
+            demande.date_traitement = datetime.utcnow()
+            demande.traite_par_id = utilisateur.id
+            session.add(demande)
+            session.commit()
+            return RedirectResponse(f"/cercles/{cercle_id}/demandes?erreur=profil_change", status_code=303)
+
         demande.statut = StatutDemandeAdhesion.ACCEPTEE
         demande.date_traitement = datetime.utcnow()
         demande.traite_par_id = utilisateur.id
@@ -575,6 +612,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "cercle": cercle,
             "membre": membre,
             "en_attente": en_attente,
+            "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "utilisateur": utilisateur,

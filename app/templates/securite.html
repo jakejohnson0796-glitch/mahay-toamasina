@@ -8,8 +8,40 @@
 {% endif %}
 {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
 
+{% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
+{% if request.query_params.get("erreur") == "niveau_cooldown" %}
+<div class="erreur">Vous avez recemment modifie votre niveau. Vous pourrez le modifier a nouveau dans {{ jours_avant_changement_niveau }} jour{{ "s" if jours_avant_changement_niveau > 1 else "" }}.</div>
+{% endif %}
+{% if request.query_params.get("ok") == "niveau_modifie" %}<div class="info">Niveau mis a jour.</div>{% endif %}
+
 <div class="carte-formulaire">
-  <h3 style="margin-top:0;">Double authentification (2FA)</h3>
+  <h3 class="titre-carte">Mon parcours academique</h3>
+  <p class="stat-label">Filiere</p>
+  <p><strong>{{ filiere.nom if filiere else "Non renseignee" }}</strong></p>
+  <p class="stat-label">Niveau</p>
+  <p><strong>{{ utilisateur.niveau or "Non renseigne" }}</strong></p>
+
+  {% if peut_modifier_niveau %}
+  <form method="post" action="/securite/niveau" style="margin-top:1rem;">
+    <label for="niveau">Modifier mon niveau</label>
+    <select id="niveau" name="niveau" required>
+      <option value="">— choisir —</option>
+      {% for n in niveaux %}
+      <option value="{{ n }}" {{ "selected" if n == utilisateur.niveau else "" }}>{{ n }}</option>
+      {% endfor %}
+    </select>
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button class="bouton bouton-secondaire bouton-form" type="submit">Enregistrer</button>
+  </form>
+  {% else %}
+  <p class="stat-label">Vous avez recemment modifie votre niveau. Prochain changement possible dans {{ jours_avant_changement_niveau }} jour{{ "s" if jours_avant_changement_niveau > 1 else "" }}.</p>
+  {% endif %}
+
+  <p class="stat-label" style="margin-top:1rem;">La filiere ne peut pas etre modifiee directement ici.</p>
+</div>
+
+<div class="carte-formulaire">
+  <h3 class="titre-carte">Double authentification (2FA)</h3>
   {% if utilisateur.totp_active %}
   <p><span class="tampon tampon-approuve">Activee</span></p>
   <p class="stat-label">Codes de secours restants : {{ nb_codes_restants }}</p>

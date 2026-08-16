@@ -12,6 +12,8 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import Utilisateur, RoleUtilisateur, Filiere, CodeSecours2FA
+from .. import referentiel_academique
+from ..referentiel import NIVEAUX
 from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
 from ..rate_limit import limite_depassee
 from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_code_totp, generer_codes_secours, hacher_code_secours, verifier_code_secours
@@ -262,10 +264,49 @@ def page_securite(request: Request, session: Session = Depends(get_session)):
             )
         ).all())
 
+    filiere = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
+
     return templates.TemplateResponse(
         request, "securite.html",
-        {"utilisateur": utilisateur, "nb_codes_restants": nb_codes_restants},
+        {
+            "utilisateur": utilisateur,
+            "nb_codes_restants": nb_codes_restants,
+            "filiere": filiere,
+            "niveaux": NIVEAUX,
+            "peut_modifier_niveau": referentiel_academique.peut_modifier_niveau_maintenant(utilisateur),
+            "jours_avant_changement_niveau": referentiel_academique.jours_avant_prochain_changement_niveau(utilisateur),
+        },
     )
+
+
+@router.post("/securite/niveau")
+def modifier_niveau(
+    request: Request,
+    niveau: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """§14 et §16 du brief "cercles nationaux" : le niveau est
+    modifiable librement par l'etudiant (contrairement a filiere_id,
+    jamais expose en modification directe dans ce formulaire — voir
+    §11), mais au maximum une fois tous les 14 jours, verifie ici cote
+    backend (jamais uniquement cote frontend)."""
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    if niveau not in NIVEAUX:
+        return RedirectResponse("/securite?erreur=niveau_invalide", status_code=303)
+
+    if not referentiel_academique.peut_modifier_niveau_maintenant(utilisateur):
+        return RedirectResponse("/securite?erreur=niveau_cooldown", status_code=303)
+
+    utilisateur.niveau = niveau
+    utilisateur.niveau_modifie_le = datetime.utcnow()
+    session.add(utilisateur)
+    session.commit()
+
+    return RedirectResponse("/securite?ok=niveau_modifie", status_code=303)
 
 
 @router.post("/securite/2fa/demarrer")
