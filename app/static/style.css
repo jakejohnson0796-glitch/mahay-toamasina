@@ -1321,6 +1321,127 @@ main.main-tb {
   .doc-grille { grid-template-columns: 1fr; }
 }
 
+/* --- Pages /quiz --- */
+.quiz-grille {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.1rem;
+  margin: 1.5rem 0;
+}
+.quiz-carte-generer, .quiz-carte-examen { margin-bottom: 0; }
+.quiz-carte-examen { position: relative; overflow: hidden; }
+.quiz-badge-examen {
+  position: absolute;
+  top: 1.1rem;
+  right: 1.2rem;
+  font-size: 1.3rem;
+  color: var(--color-primary);
+  opacity: 0.6;
+}
+.quiz-liens-bas { color: var(--text-secondary); font-size: 0.9rem; }
+
+/* --- Stats historique --- */
+.quiz-stats-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 2rem;
+}
+.quiz-carte-stat {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide);
+}
+.quiz-carte-stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.quiz-stat-orange { border-left-color: var(--color-primary); }
+.quiz-stat-vert { border-left-color: var(--color-success); }
+.quiz-stat-bleu { border-left-color: #4C8DFF; }
+.quiz-stat-icone { font-size: 1.1rem; opacity: 0.85; margin-bottom: 0.1rem; }
+.quiz-stat-nombre { font-family: 'Fraunces', serif; font-size: 1.9rem; line-height: 1; }
+.quiz-stat-nombre-texte { font-size: 1.15rem; }
+.quiz-stat-label { font-size: 0.78rem; color: var(--text-secondary); }
+
+.quiz-etat-vide {
+  text-align: center;
+  padding: 3rem 1rem;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+.quiz-etat-vide > span { font-size: 1.8rem; opacity: 0.7; }
+
+/* --- Score (resultat) --- */
+.quiz-score-carte {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 1.5rem;
+}
+.quiz-score-nombre { font-family: 'Fraunces', serif; font-size: 2.2rem; color: var(--color-primary); line-height: 1; }
+.quiz-score-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* --- Questions corrigees --- */
+.quiz-question-corrigee { border-left: 3px solid var(--border-default); }
+.quiz-question-correcte { border-left-color: var(--color-success); }
+.quiz-question-incorrecte { border-left-color: var(--danger); }
+.quiz-choix-correct { color: var(--color-success); font-weight: 700; }
+.quiz-choix-donne-incorrect { text-decoration: line-through; color: var(--danger); }
+.quiz-form-signaler { margin-top: 0.6rem; }
+
+/* --- Choix cliquables (passer un quiz) --- */
+.quiz-choix-cliquables { display: flex; flex-direction: column; gap: 0.5rem; }
+.quiz-choix-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-weight: normal;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease-fluide), background 0.15s var(--ease-fluide);
+}
+.quiz-choix-option:hover { border-color: var(--color-primary); background: var(--surface-3); }
+.quiz-choix-option:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.quiz-choix-option input { accent-color: var(--color-primary); }
+
+/* --- Chronometre (mode examen) --- */
+.quiz-chrono-carte {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+  position: sticky;
+  top: 0.75rem;
+  z-index: 10;
+}
+.quiz-chrono-label { font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.quiz-chrono-nombre { font-family: 'IBM Plex Mono', monospace; font-size: 1.8rem; margin: 0.15rem 0 0; color: var(--color-primary); transition: color 0.3s var(--ease-fluide); }
+.quiz-chrono-urgent { color: var(--danger); animation: quiz-pulse 1s ease-in-out infinite; }
+@keyframes quiz-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (max-width: 720px) {
+  .quiz-grille { grid-template-columns: 1fr; }
+}
+
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles
    d'animation/transition ci-dessus. */

@@ -9,51 +9,60 @@
 <div class="erreur">Choisissez une matiere dans la liste, ou tapez-en une dans le champ libre.</div>
 {% endif %}
 
-<div class="carte-formulaire carte-quiz">
-  <form method="post" action="/quiz/generer">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="matiere">Matiere</label>
-    <select id="matiere" name="matiere">
-      <option value="">— choisir dans la liste —</option>
-      {% for m in matieres %}
-      <option value="{{ m }}">{{ m }}</option>
-      {% endfor %}
-    </select>
-    <label for="matiere_libre">Ou tapez une autre matiere</label>
-    <input type="text" id="matiere_libre" name="matiere_libre" placeholder="ex: Droit des obligations">
+<div class="quiz-grille">
+  <div class="carte-formulaire carte-quiz quiz-carte-generer">
+    <h3 class="titre-carte">Generer un quiz</h3>
+    <form method="post" action="/quiz/generer">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="matiere">Matiere</label>
+      <select id="matiere" name="matiere">
+        <option value="">— choisir dans la liste —</option>
+        {% for m in matieres %}
+        <option value="{{ m }}">{{ m }}</option>
+        {% endfor %}
+      </select>
+      <label for="matiere_libre">Ou tapez une autre matiere</label>
+      <input type="text" id="matiere_libre" name="matiere_libre" placeholder="ex: Droit des obligations">
 
-    <label for="niveau">Niveau</label>
-    <select id="niveau" name="niveau" required>
-      {% for n in niveaux %}
-      <option value="{{ n }}">{{ n }}</option>
-      {% endfor %}
-    </select>
+      <label for="niveau">Niveau</label>
+      <select id="niveau" name="niveau" required>
+        {% for n in niveaux %}
+        <option value="{{ n }}">{{ n }}</option>
+        {% endfor %}
+      </select>
 
-    <label for="difficulte">Difficulte</label>
-    <select id="difficulte" name="difficulte" required>
-      {% for d in difficultes %}
-      <option value="{{ d }}">{{ d }}</option>
-      {% endfor %}
-    </select>
+      <label for="difficulte">Difficulte</label>
+      <select id="difficulte" name="difficulte" required>
+        {% for d in difficultes %}
+        <option value="{{ d }}">{{ d }}</option>
+        {% endfor %}
+      </select>
 
-    <label for="nb_questions">Nombre de questions</label>
-    <select id="nb_questions" name="nb_questions">
-      {% for n in nb_questions_possibles %}
-      <option value="{{ n }}" {{ "selected" if n == 10 else "" }}>{{ n }}</option>
-      {% endfor %}
-    </select>
+      <label for="nb_questions">Nombre de questions</label>
+      <select id="nb_questions" name="nb_questions">
+        {% for n in nb_questions_possibles %}
+        <option value="{{ n }}" {{ "selected" if n == 10 else "" }}>{{ n }}</option>
+        {% endfor %}
+      </select>
 
-    <button class="bouton bouton-primaire bouton-form" type="submit">Generer le quiz</button>
-  </form>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Generer le quiz</button>
+    </form>
+  </div>
+
+  <div class="carte-formulaire carte-quiz quiz-carte-examen">
+    <span class="quiz-badge-examen" aria-hidden="true">◷</span>
+    <h3 class="titre-carte">Mode examen</h3>
+    <p class="stat-label">Matiere, niveau et difficulte tires au sort. 10 questions, 15 minutes chronometrees, correction uniquement a la fin.</p>
+    <form method="post" action="/quiz/examen/generer">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-secondaire bouton-form" type="submit">Lancer un examen blanc</button>
+    </form>
+  </div>
 </div>
 
-<div class="carte-formulaire carte-quiz">
-  <p><strong>Mode examen</strong> — matiere, niveau et difficulte tires au sort, 10 questions, 15 minutes chronometrees, correction uniquement a la fin.</p>
-  <form method="post" action="/quiz/examen/generer">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button class="bouton bouton-secondaire bouton-form" type="submit">Lancer un examen blanc</button>
-  </form>
-</div>
-
-<p><a href="/quiz/historique">Voir mon historique et mes statistiques</a> · <a href="/quiz/reflexion">Theme de reflexion du jour</a> · <a href="/tuteur">Poser une question au tuteur IA</a></p>
+<p class="quiz-liens-bas">
+  <a href="/quiz/historique">Voir mon historique et mes statistiques</a> ·
+  <a href="/quiz/reflexion">Theme de reflexion du jour</a> ·
+  <a href="/tuteur">Poser une question au tuteur IA</a>
+</p>
 {% endblock %}

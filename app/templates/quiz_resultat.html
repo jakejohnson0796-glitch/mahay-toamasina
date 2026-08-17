@@ -8,26 +8,22 @@
 <div class="info">Question signalee — merci, un administrateur va la verifier.</div>
 {% endif %}
 
-<div class="liste-cercles" style="margin-bottom:2rem;">
-  <div class="carte-cercle">
-    <div class="stat">
-      <span class="stat-nombre">{{ tentative.score }}/{{ tentative.nb_questions }}</span>
-      <span class="stat-label">Bonnes reponses</span>
-    </div>
-  </div>
+<div class="quiz-score-carte">
+  <span class="quiz-score-nombre">{{ tentative.score }}/{{ tentative.nb_questions }}</span>
+  <span class="quiz-score-label">Bonnes reponses</span>
 </div>
 
 {% for item in questions %}
 {% set q_index = loop.index0 %}
 {% set reponse_donnee = reponses[q_index] if reponses and q_index < reponses|length else none %}
 {% set correcte = reponse_donnee == item.index_bonne_reponse %}
-<div class="carte-formulaire carte-quiz">
+<div class="carte-formulaire carte-quiz quiz-question-corrigee {{ 'quiz-question-correcte' if correcte else 'quiz-question-incorrecte' }}">
   <p class="question-quiz"><strong>{{ loop.index }}. {{ item.question }}</strong></p>
 
   {% if item.choix and item.choix|length > 1 %}
   <ol type="A" class="choix-quiz">
     {% for choix in item.choix %}
-    <li style="{% if loop.index0 == item.index_bonne_reponse %}color:var(--accent);font-weight:bold;{% elif loop.index0 == reponse_donnee %}text-decoration:line-through;{% endif %}">
+    <li class="{% if loop.index0 == item.index_bonne_reponse %}quiz-choix-correct{% elif loop.index0 == reponse_donnee %}quiz-choix-donne-incorrect{% endif %}">
       {{ choix }}
       {% if loop.index0 == item.index_bonne_reponse %} — bonne reponse{% endif %}
       {% if loop.index0 == reponse_donnee and not correcte %} — votre reponse{% endif %}
@@ -40,12 +36,12 @@
   <p>{{ item.choix[0] if item.choix else "" }}</p>
   {% endif %}
 
-  <form method="post" action="/quiz/{{ tentative.id }}/questions/{{ q_index }}/signaler" style="margin-top:0.5rem;">
+  <form method="post" action="/quiz/{{ tentative.id }}/questions/{{ q_index }}/signaler" class="quiz-form-signaler">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <button type="submit" class="lien-action">Signaler cette question (reponse ou explication fausse)</button>
   </form>
 </div>
 {% endfor %}
 
-<p><a class="bouton bouton-primaire" href="/quiz">Refaire un quiz</a> <a href="/quiz/historique">Voir mon historique</a></p>
+<p class="quiz-liens-bas"><a class="bouton bouton-primaire" href="/quiz">Refaire un quiz</a> <a href="/quiz/historique">Voir mon historique</a></p>
 {% endblock %}

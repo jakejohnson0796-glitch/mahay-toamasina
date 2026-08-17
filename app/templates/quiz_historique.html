@@ -1,16 +1,30 @@
 {% extends "base.html" %}
 {% block titre %}Historique Quiz IA — MAHAY{% endblock %}
 {% block contenu %}
+<p class="eyebrow">Quiz IA</p>
 <h2>Mon historique de quiz</h2>
 
-<div class="liste-cercles" style="margin-bottom:2rem;">
-  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ stats.nb_quiz }}</span><span class="stat-label">Quiz realises</span></div></div>
-  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ stats.score_moyen_pourcent }}%</span><span class="stat-label">Score moyen</span></div></div>
+<div class="quiz-stats-grille">
+  <div class="quiz-carte-stat quiz-stat-orange">
+    <span class="quiz-stat-icone" aria-hidden="true">✎</span>
+    <span class="quiz-stat-nombre">{{ stats.nb_quiz }}</span>
+    <span class="quiz-stat-label">Quiz realises</span>
+  </div>
+  <div class="quiz-carte-stat quiz-stat-vert">
+    <span class="quiz-stat-icone" aria-hidden="true">◈</span>
+    <span class="quiz-stat-nombre">{{ stats.score_moyen_pourcent }}%</span>
+    <span class="quiz-stat-label">Score moyen</span>
+  </div>
   {% if stats.meilleure_matiere %}
-  <div class="carte-cercle"><div class="stat"><span class="stat-nombre" style="font-size:1.4rem;">{{ stats.meilleure_matiere }}</span><span class="stat-label">Meilleure matiere</span></div></div>
+  <div class="quiz-carte-stat quiz-stat-bleu">
+    <span class="quiz-stat-icone" aria-hidden="true">★</span>
+    <span class="quiz-stat-nombre quiz-stat-nombre-texte">{{ stats.meilleure_matiere }}</span>
+    <span class="quiz-stat-label">Meilleure matiere</span>
+  </div>
   {% endif %}
 </div>
 
+{% if tentatives %}
 <table class="table-manifeste">
   <thead><tr><th>Matiere</th><th>Niveau</th><th>Difficulte</th><th>Score</th><th>Date</th><th></th></tr></thead>
   <tbody>
@@ -19,13 +33,20 @@
       <td>{{ t.matiere }}</td>
       <td>{{ t.niveau }}</td>
       <td>{{ t.difficulte }}</td>
-      <td>{{ t.score }}/{{ t.nb_questions }}</td>
+      <td>
+        <span class="tampon {{ 'tampon-approuve' if (t.score / t.nb_questions) >= 0.5 else 'tampon-rejete' }}">{{ t.score }}/{{ t.nb_questions }}</span>
+      </td>
       <td>{{ t.date_soumission.strftime("%d/%m/%Y") }}</td>
       <td><a href="/quiz/{{ t.id }}/resultat">Revoir</a></td>
     </tr>
-    {% else %}
-    <tr><td colspan="6">Aucun quiz termine pour le moment. <a href="/quiz">Lancez-en un</a>.</td></tr>
     {% endfor %}
   </tbody>
 </table>
+{% else %}
+<div class="quiz-etat-vide">
+  <span aria-hidden="true">✎</span>
+  <p><strong>Aucun quiz termine pour le moment.</strong></p>
+  <a class="bouton bouton-primaire" href="/quiz">Lancer un quiz &rarr;</a>
+</div>
+{% endif %}
 {% endblock %}
