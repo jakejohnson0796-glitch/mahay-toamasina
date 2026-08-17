@@ -21,6 +21,14 @@
   --border: rgba(242, 236, 221, 0.14);
   --rayon: 6px;
 
+  /* --- "Le Phare" : nouveaux tokens bruts, voir le brief de refonte
+     identite visuelle. --lumiere corrige une collision identifiee dans
+     l'audit (--color-warning pointait vers --accent, donc "attention"
+     et "action principale" etaient visuellement identiques). --- */
+  --lumiere: #FBD9A0;        /* lueur du phare / etoiles / statut "en attente" */
+  --accent-reseau: #3E7A78;  /* fond "reseau" du dashboard (section 10.B) */
+  --nuit: #0A1B24;           /* canvas nocturne — hero et panneaux pleine largeur uniquement, jamais fond global */
+
   /* Alias semantiques (§3 du brief refonte UI/UX) : pointent vers les
      memes valeurs que les tokens ci-dessus, pour ne rien renommer et ne
      rien casser ailleurs dans le CSS. A utiliser pour tout nouveau
@@ -30,8 +38,9 @@
   --color-primary-soft: var(--accent-soft);
   --color-accent: var(--accent-2);
   --color-success: var(--accent-2);
-  --color-warning: var(--accent);
+  --color-warning: var(--lumiere);
   --color-danger: var(--danger);
+  --color-info: #5B93A6;
 
   --surface-1: var(--bg);
   --surface-2: var(--bg-panel);
