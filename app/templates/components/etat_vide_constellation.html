@@ -1,0 +1,40 @@
+{#
+Etat vide "constellation" "Le Phare" (section 7 du brief). Distinct de
+.tb-etat-vide (dashboard) et .doc-etat-vide (documents), qui restent
+inchanges — ce composant est reserve aux emplacements qui l'adoptent
+explicitement (etape 4 du brief), pas une modification retroactive
+des etats vides deja en place.
+
+Usage :
+    {% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
+    {{ etat_vide_constellation(
+        titre="Aucun cercle pour l'instant",
+        texte="Rejoins ou cree un cercle pour commencer.",
+        lien_cta="/cercles",
+        texte_cta="Decouvrir les cercles",
+    ) }}
+
+lien_cta/texte_cta optionnels : sans eux, seuls le pictogramme, le
+titre et le texte s'affichent (pas de bouton).
+#}
+{% macro etat_vide_constellation(titre, texte, lien_cta=none, texte_cta=none) %}
+<div class="etat-vide-constellation">
+  <svg class="evc-svg" viewBox="0 0 140 100" width="140" height="100" aria-hidden="true">
+    <g stroke="#F2ECDD" fill="none">
+      <line x1="70" y1="50" x2="20" y2="20" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.2"/>
+      <line x1="70" y1="50" x2="120" y2="25" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.2"/>
+      <line x1="70" y1="50" x2="25" y2="80" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.2"/>
+      <line x1="70" y1="50" x2="115" y2="78" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.2"/>
+      <circle cx="20" cy="20" r="9" stroke-width="1" stroke-dasharray="2,2" opacity="0.25"/>
+      <circle cx="120" cy="25" r="9" stroke-width="1" stroke-dasharray="2,2" opacity="0.25"/>
+      <circle cx="25" cy="80" r="9" stroke-width="1" stroke-dasharray="2,2" opacity="0.25"/>
+      <circle cx="115" cy="78" r="9" stroke-width="1" stroke-dasharray="2,2" opacity="0.25"/>
+    </g>
+    <circle cx="70" cy="50" r="10" fill="#FBD9A0" opacity="0.18"/>
+    <circle cx="70" cy="50" r="4" fill="#FBD9A0"/>
+  </svg>
+  <p class="evc-titre"><strong>{{ titre }}</strong></p>
+  <p class="evc-texte">{{ texte }}</p>
+  {% if lien_cta %}<a class="bouton bouton-primaire evc-cta" href="{{ lien_cta }}">{{ texte_cta }}</a>{% endif %}
+</div>
+{% endmacro %}

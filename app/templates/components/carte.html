@@ -1,0 +1,31 @@
+{#
+Carte generique "Le Phare", reutilisable par les prochaines etapes
+(constellation cercles, dashboard reseau, etc.) sans dupliquer le
+style deja etabli par .tb-carte-stat / .doc-carte / .uni-carte, qui
+restent inchanges et specifiques a leurs pages.
+
+Utilise le pattern Jinja {% call %} pour envelopper un contenu libre :
+
+    {% from "components/carte.html" import carte %}
+    {% call carte(titre="Mon titre", icone_nom="documents") %}
+      <p>Contenu libre ici.</p>
+    {% endcall %}
+
+titre et icone_nom sont tous deux optionnels ; sans eux, seule
+l'enveloppe (fond, bordure, hover) est appliquee au contenu.
+#}
+{% from "components/icone.html" import icone %}
+
+{% macro carte(titre=none, icone_nom=none, classe_extra="") %}
+<div class="carte-phare {{ classe_extra }}">
+  {% if titre or icone_nom %}
+  <div class="carte-phare-entete">
+    {% if icone_nom %}<span class="carte-phare-icone">{{ icone(icone_nom, taille=22) }}</span>{% endif %}
+    {% if titre %}<h3 class="carte-phare-titre">{{ titre }}</h3>{% endif %}
+  </div>
+  {% endif %}
+  <div class="carte-phare-corps">
+    {{ caller() }}
+  </div>
+</div>
+{% endmacro %}

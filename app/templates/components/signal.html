@@ -1,0 +1,19 @@
+{#
+Signal de statut "Le Phare" (section 8 du brief). Reprend le vocabulaire
+deja utilise par les StatutDemande* du projet (approuve/attente/rejete),
+pour rester coherent avec .tampon-approuve/.tampon-attente/.tampon-rejete
+deja existants ailleurs — ce composant est un signal visuel complementaire
+(point colore + halo), pas un remplacement du badge texte.
+
+Usage : from "components/signal.html" import signal, puis appeler
+signal("approuve") -- point plein vert, halo statique
+signal("attente")  -- point orange + anneau qui pulse
+signal("rejete")   -- contour rouge, pas de remplissage
+
+En prefers-reduced-motion: reduce, l'anneau de "attente" reste visible
+mais statique (pas de keyframe) — voir la regle CSS correspondante dans
+style.css, section "Le Phare — signal de statut".
+#}
+{% macro signal(statut) %}
+<span class="signal signal-{{ statut }}" aria-hidden="true">{% if statut == "attente" %}<span class="signal-anneau"></span>{% endif %}</span>
+{% endmacro %}

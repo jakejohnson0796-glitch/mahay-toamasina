@@ -1451,6 +1451,72 @@ main.main-tb {
   .quiz-grille { grid-template-columns: 1fr; }
 }
 
+/* ============================================================
+   "Le Phare" — composants Jinja partages (etape 2/10)
+   Voir app/templates/components/*.html pour les macros
+   correspondantes. Aucune classe existante modifiee.
+   ============================================================ */
+
+/* --- Signal de statut (components/signal.html) --- */
+.signal {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+.signal-approuve {
+  background: var(--accent-2);
+  box-shadow: 0 0 8px 2px rgba(111, 169, 140, 0.5);
+}
+.signal-attente { background: var(--lumiere); }
+.signal-rejete {
+  background: transparent;
+  border: 1.5px solid var(--danger);
+}
+.signal-anneau {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--lumiere);
+  opacity: 0.6;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .signal-anneau { animation: signal-pulse 1.8s ease-out infinite; }
+}
+@keyframes signal-pulse {
+  0% { transform: scale(0.7); opacity: 0.7; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* --- Etat vide constellation (components/etat_vide_constellation.html) --- */
+.etat-vide-constellation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1.5rem;
+}
+.evc-svg { margin-bottom: 0.5rem; }
+.evc-titre { margin: 0; }
+.evc-texte { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 0.5rem; max-width: 32em; }
+.evc-cta { margin-top: 0.25rem; }
+
+/* --- Carte generique (components/carte.html) --- */
+.carte-phare {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.2rem 1.35rem;
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
+}
+.carte-phare:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--color-primary); }
+.carte-phare-entete { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+.carte-phare-icone { display: inline-flex; opacity: 0.9; }
+.carte-phare-titre { margin: 0; font-size: 1rem; }
+
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles
    d'animation/transition ci-dessus. */
