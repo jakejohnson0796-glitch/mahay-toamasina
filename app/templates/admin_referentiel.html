@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Referentiel academique — Admin MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
@@ -37,7 +38,7 @@
   </tbody>
 </table>
 
-<h3>Filieres <span class="tampon tampon-attente">{{ nb_filieres_sans_mention }} sans mention</span></h3>
+<h3>Filieres {{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_filieres_sans_mention }} sans mention</span></h3>
 <p>Assigner une mention a chaque filiere existante. Rien n'est devine automatiquement — a toi de choisir.</p>
 
 <table class="table-manifeste">

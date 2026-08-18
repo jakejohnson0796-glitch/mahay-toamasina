@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}{{ cours.nom }} — Classe virtuelle — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow"><a href="/classe">&larr; Classe virtuelle</a></p>
@@ -74,9 +75,9 @@
     <tr>
       <td>{{ seance.titre }}</td>
       <td>
-        {% if seance.statut.value == "planifiee" %}<span class="tampon tampon-attente">Planifiee</span>
-        {% elif seance.statut.value == "en_cours" %}<span class="tampon tampon-approuve">LIVE</span>
-        {% else %}<span class="tampon tampon-rejete">Terminee</span>{% endif %}
+        {% if seance.statut.value == "planifiee" %}{{ signal("attente") }}<span class="tampon tampon-attente">Planifiee</span>
+        {% elif seance.statut.value == "en_cours" %}{{ signal("approuve") }}<span class="tampon tampon-approuve">LIVE</span>
+        {% else %}{{ signal("rejete") }}<span class="tampon tampon-rejete">Terminee</span>{% endif %}
       </td>
       <td>
         {% if seance.statut.value == "planifiee" and peut_gerer %}

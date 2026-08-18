@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Salle — {{ seance.titre }} — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">{{ cours.nom }}</p>
-<h2>{{ seance.titre }} <span class="tampon tampon-approuve">LIVE</span></h2>
+<h2>{{ seance.titre }} {{ signal("approuve") }}<span class="tampon tampon-approuve">LIVE</span></h2>
 
 {% if erreur_livekit %}
 <div class="erreur">{{ erreur_livekit }}</div>

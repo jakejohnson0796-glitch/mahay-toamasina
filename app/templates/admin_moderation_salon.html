@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Moderation du salon — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
@@ -15,7 +16,7 @@
       <td>{{ s.signalement.motif or "—" }}</td>
       <td>
         {% if s.message_deja_supprime %}
-        <span class="tampon tampon-rejete">Deja supprime</span>
+        {{ signal("rejete") }}<span class="tampon tampon-rejete">Deja supprime</span>
         <form method="post" action="/admin/moderation-salon/{{ s.signalement.id }}/rejeter" style="display:inline">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Marquer traite</button>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Utilisateurs — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
@@ -21,8 +22,8 @@
       <td>{{ u.telephone }}</td>
       <td>{{ u.role.value }}</td>
       <td>
-        {% if u.banni %}<span class="tampon tampon-rejete">Banni</span>
-        {% else %}<span class="tampon tampon-approuve">Actif</span>{% endif %}
+        {% if u.banni %}{{ signal("rejete") }}<span class="tampon tampon-rejete">Banni</span>
+        {% else %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Actif</span>{% endif %}
       </td>
       <td>
         {% if u.id != utilisateur.id %}

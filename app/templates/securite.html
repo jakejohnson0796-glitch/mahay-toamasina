@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Securite du compte — MAHAY{% endblock %}
 {% block contenu %}
 <h2>Securite du compte</h2>
@@ -60,7 +61,7 @@
 <div class="carte-formulaire">
   <h3 class="titre-carte">Double authentification (2FA)</h3>
   {% if utilisateur.totp_active %}
-  <p><span class="tampon tampon-approuve">Activee</span></p>
+  <p>{{ signal("approuve") }}<span class="tampon tampon-approuve">Activee</span></p>
   <p class="stat-label">Codes de secours restants : {{ nb_codes_restants }}</p>
 
   <form method="post" action="/securite/2fa/regenerer-codes-secours" style="margin-top:1rem;">
@@ -75,7 +76,7 @@
     <button class="bouton bouton-secondaire bouton-form" type="submit" style="border-color:#C24E4E;color:#C24E4E;">Desactiver la 2FA</button>
   </form>
   {% else %}
-  <p><span class="tampon tampon-rejete">Desactivee</span></p>
+  <p>{{ signal("rejete") }}<span class="tampon tampon-rejete">Desactivee</span></p>
   <p>Ajoutez une couche de securite supplementaire : en plus de votre mot de passe, un code genere par une application comme Google Authenticator sera demande a chaque connexion.</p>
   <form method="post" action="/securite/2fa/demarrer">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">

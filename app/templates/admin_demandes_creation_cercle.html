@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Demandes de creation de cercles — Admin MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow"><a href="/admin/referentiel">&larr; Referentiel academique</a></p>
@@ -36,7 +37,8 @@
       <td>{{ d.nom }}{% if d.description %}<br><span class="stat-label">{{ d.description }}</span>{% endif %}</td>
       <td>{{ d.raison }}</td>
       <td>
-        <span class="tampon tampon-{{ 'approuve' if d.statut.value == 'approuvee' else ('rejete' if d.statut.value == 'rejetee' else 'attente') }}">
+        {% set statut_signal = 'approuve' if d.statut.value == 'approuvee' else ('rejete' if d.statut.value == 'rejetee' else 'attente') %}
+        {{ signal(statut_signal) }}<span class="tampon tampon-{{ statut_signal }}">
           {{ { 'en_attente': 'En attente', 'approuvee': 'Approuvee', 'rejetee': 'Rejetee' }[d.statut.value] }}
         </span>
       </td>

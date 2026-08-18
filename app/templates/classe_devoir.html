@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}{{ devoir.titre }} — {{ cours.nom }} — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow"><a href="/classe/{{ cours.id }}">&larr; {{ cours.nom }}</a></p>
@@ -6,7 +7,7 @@
 {% if devoir.description %}<p>{{ devoir.description }}</p>{% endif %}
 <p class="stat-label">
   Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }}
-  {% if delai_depasse %}<span class="tampon tampon-rejete">Delai depasse</span>{% endif %}
+  {% if delai_depasse %}{{ signal("rejete") }}<span class="tampon tampon-rejete">Delai depasse</span>{% endif %}
 </p>
 
 {% if request.query_params.get("erreur") == "delai_depasse" %}

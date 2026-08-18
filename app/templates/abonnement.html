@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Mon abonnement — MAHAY{% endblock %}
 {% block contenu %}
 <h2>Mon abonnement</h2>
@@ -12,24 +13,24 @@
 
 {% if abonnement %}
   {% if abonnement.statut == StatutAbonnementEtudiant.ESSAI %}
-    <p><span class="tampon tampon-approuve">Essai gratuit</span></p>
+    <p>{{ signal("approuve") }}<span class="tampon tampon-approuve">Essai gratuit</span></p>
     {% if acces_premium %}
     <p>Il vous reste <strong>{{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }}</strong> d'essai gratuit avec acces complet aux fonctionnalites Premium.</p>
     {% else %}
     <p>Votre essai gratuit est termine. Souscrivez ci-dessous pour continuer a profiter du Premium.</p>
     {% endif %}
   {% elif abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}
-    <p><span class="tampon tampon-attente">En attente de validation</span></p>
+    <p>{{ signal("attente") }}<span class="tampon tampon-attente">En attente de validation</span></p>
     <p>Votre demande a ete recue et sera verifiee par un administrateur.
       {% if acces_premium %}En attendant, votre essai gratuit reste actif ({{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }} restant{{ 's' if jours_restants > 1 else '' }}).{% endif %}</p>
   {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}
-    <p><span class="tampon tampon-approuve">Actif</span></p>
+    <p>{{ signal("approuve") }}<span class="tampon tampon-approuve">Actif</span></p>
     <p>Votre abonnement Premium est actif pour encore <strong>{{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }}</strong>.</p>
   {% elif abonnement.statut == StatutAbonnementEtudiant.EXPIRE %}
-    <p><span class="tampon tampon-rejete">Expire</span></p>
+    <p>{{ signal("rejete") }}<span class="tampon tampon-rejete">Expire</span></p>
     <p>Votre acces Premium a expire. Souscrivez ci-dessous pour le reactiver.</p>
   {% elif abonnement.statut == StatutAbonnementEtudiant.REFUSE %}
-    <p><span class="tampon tampon-rejete">Demande refusee</span></p>
+    <p>{{ signal("rejete") }}<span class="tampon tampon-rejete">Demande refusee</span></p>
     {% if abonnement.motif_refus %}<p>Motif indique par l'administrateur : {{ abonnement.motif_refus }}</p>{% endif %}
     <p>Vous pouvez soumettre une nouvelle demande ci-dessous.</p>
   {% endif %}

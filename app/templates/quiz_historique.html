@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Historique Quiz IA — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">Quiz IA</p>
@@ -35,7 +36,7 @@
       <td>{{ t.niveau }}</td>
       <td>{{ t.difficulte }}</td>
       <td>
-        <span class="tampon {{ 'tampon-approuve' if (t.score / t.nb_questions) >= 0.5 else 'tampon-rejete' }}">{{ t.score }}/{{ t.nb_questions }}</span>
+        <span class="tampon {{ 'tampon-approuve' if (t.score / t.nb_questions) >= 0.5 else 'tampon-rejete' }}">{{ signal("approuve" if (t.score / t.nb_questions) >= 0.5 else "rejete") }}{{ t.score }}/{{ t.nb_questions }}</span>
       </td>
       <td>{{ t.date_soumission.strftime("%d/%m/%Y") }}</td>
       <td><a href="/quiz/{{ t.id }}/resultat">Revoir</a></td>

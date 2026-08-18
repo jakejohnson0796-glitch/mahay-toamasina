@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Resultat — {{ tentative.matiere }} — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">{{ tentative.matiere }} — {{ tentative.niveau }} — {{ tentative.difficulte }}</p>
@@ -30,7 +31,7 @@
     </li>
     {% endfor %}
   </ol>
-  <p class="tampon {{ 'tampon-approuve' if correcte else 'tampon-rejete' }}">{{ "Correct" if correcte else ("Pas de reponse" if reponse_donnee is none else "Incorrect") }}</p>
+  <p class="tampon {{ 'tampon-approuve' if correcte else 'tampon-rejete' }}">{{ signal("approuve" if correcte else "rejete") }}{{ "Correct" if correcte else ("Pas de reponse" if reponse_donnee is none else "Incorrect") }}</p>
   {% if item.explication %}<p>{{ item.explication }}</p>{% endif %}
   {% else %}
   <p>{{ item.choix[0] if item.choix else "" }}</p>

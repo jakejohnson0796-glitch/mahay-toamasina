@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/signal.html" import signal %}
 {% block titre %}Abonnements etudiants — Admin MAHAY{% endblock %}
 {% block contenu %}
 <h2>Abonnements etudiants</h2>
@@ -21,10 +22,10 @@
       <td>{{ etudiant.nom }}</td>
       <td>{{ etudiant.telephone }}</td>
       <td>
-        {% if abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}<span class="tampon tampon-attente">En attente</span>
-        {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}<span class="tampon tampon-approuve">Actif</span>
-        {% elif abonnement.statut == StatutAbonnementEtudiant.ESSAI %}<span class="tampon tampon-approuve">Essai</span>
-        {% else %}<span class="tampon tampon-rejete">{{ abonnement.statut.value }}</span>{% endif %}
+        {% if abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}{{ signal("attente") }}<span class="tampon tampon-attente">En attente</span>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Actif</span>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.ESSAI %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Essai</span>
+        {% else %}{{ signal("rejete") }}<span class="tampon tampon-rejete">{{ abonnement.statut.value }}</span>{% endif %}
       </td>
       <td>
         {% if abonnement.fournisseur_paiement %}{{ abonnement.fournisseur_paiement }}{% endif %}
