@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
+{% from "components/constellation.html" import constellation_avatar %}
 {% block titre %}Cercles d'etude — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">S'entraider entre etudiants</p>
@@ -69,10 +70,13 @@
 <div class="liste-cercles">
   {% for info in cercles_avec_info %}
   <div class="carte-cercle">
-    <div>
-      <strong>{{ info.cercle.nom }}</strong>
-      <p>{{ info.cercle.description or "Pas de description." }}</p>
-      <span class="stat-label">{{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</span>
+    <div class="cc-corps">
+      <span class="cc-constellation-avatar" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <div>
+        <strong>{{ info.cercle.nom }}</strong>
+        <p>{{ info.cercle.description or "Pas de description." }}</p>
+        <span class="stat-label">{{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</span>
+      </div>
     </div>
     <div>
       {% if info.est_membre %}

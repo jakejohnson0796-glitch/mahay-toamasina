@@ -1,0 +1,60 @@
+{#
+Motif "constellation" par cercle d'etude (section 6 du brief refonte
+"Le Phare"). Remplace l'avatar textuel (initiales) par un petit SVG :
+une etoile par membre (6 maximum, le reste compte mais non dessine),
+reliees par de fines lignes aux voisines immediates (pas de maillage
+complet).
+
+Adaptation necessaire par rapport au brief : la section 2 du brief
+interdit toute modification de app/dashboard.py (et des routers), or
+c'est ce module qui agregerait les identifiants reels des membres.
+Le contexte template n'expose aujourd'hui que l'id du cercle et le
+nombre de membres (nb_membres), jamais la liste des membres. Les
+positions sont donc derivees d'un hash stable de (cercle_id, index
+du point) plutot que d'un hash par membre reel : meme cercle -> meme
+dessin a chaque rendu, mais le point "principal" (le plus grand,
+couleur --lumiere) represente le cercle lui-meme, pas necessairement
+son createur, faute de cette donnee ici. Si la liste des membres
+devient disponible cote template dans une future evolution de
+dashboard.py, remplacer range(n) ci-dessous par une iteration sur les
+membres reels (hash de membre.id) sans changer le reste du composant.
+
+Hash : generateur congruentiel lineaire (constantes Turbo Pascal,
+9301/49297/233280), suffisant pour une repartition visuelle stable —
+pas un besoin cryptographique. Aucune dependance externe.
+
+Couleur des liens : alternee selon cercle_id % 3 parmi les 3 couleurs
+de filiere du brief (--accent / --accent-2 / --color-info), stable
+par cercle, pas aleatoire.
+
+Usage :
+    {% from "components/constellation.html" import constellation_avatar %}
+    {{ constellation_avatar(info.cercle.id, info.nb_membres, taille=37) }}
+#}
+{% macro constellation_avatar(cercle_id, nb_membres, taille=40) %}
+{%- set n = [[nb_membres, 6] | min, 1] | max -%}
+{%- set couleurs = ["#E8935A", "#6FA98C", "#5B93A6"] -%}
+{%- set couleur_lien = couleurs[cercle_id % 3] -%}
+<svg class="constellation-avatar" viewBox="0 0 40 40" width="{{ taille }}" height="{{ taille }}" aria-hidden="true">
+  <g>
+  {%- for i in range(n) %}
+    {%- set gx = ((cercle_id * 9301 + i * 49297 + 11) % 233280) -%}
+    {%- set gy = ((cercle_id * 49297 + i * 9301 + 7919) % 233280) -%}
+    {%- set px = 6 + (gx % 28) -%}
+    {%- set py = 6 + (gy % 28) -%}
+    {%- if i > 0 -%}
+      {%- set gx0 = ((cercle_id * 9301 + (i - 1) * 49297 + 11) % 233280) -%}
+      {%- set gy0 = ((cercle_id * 49297 + (i - 1) * 9301 + 7919) % 233280) -%}
+      {%- set px0 = 6 + (gx0 % 28) -%}
+      {%- set py0 = 6 + (gy0 % 28) -%}
+    <line x1="{{ px0 }}" y1="{{ py0 }}" x2="{{ px }}" y2="{{ py }}" stroke="{{ couleur_lien }}" stroke-width="0.55" opacity="0.52"/>
+    {%- endif %}
+    {%- if i == 0 -%}
+    <circle cx="{{ px }}" cy="{{ py }}" r="3.2" fill="#FBD9A0"/>
+    {%- else -%}
+    <circle cx="{{ px }}" cy="{{ py }}" r="{{ 1.8 + (i % 3) * 0.2 }}" fill="#F2ECDD"/>
+    {%- endif %}
+  {%- endfor %}
+  </g>
+</svg>
+{% endmacro %}

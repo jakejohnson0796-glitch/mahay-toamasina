@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
 {% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
+{% from "components/constellation.html" import constellation_avatar %}
 {% block titre %}Mon tableau de bord — MAHAY{% endblock %}
 {% block main_classe %}main-tb{% endblock %}
 {% block contenu %}
@@ -160,7 +161,7 @@
         <div class="tb-grille-cercles">
           {% for info in cercles %}
           <div class="tb-carte-cercle-moderne">
-            <span class="tb-cercle-avatar" aria-hidden="true">{{ info.cercle.nom[:2]|upper }}</span>
+            <span class="tb-cercle-avatar" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=26) }}</span>
             <strong class="tb-cercle-nom">{{ info.cercle.nom }}</strong>
             <p class="tb-cercle-description">{{ info.cercle.description or "Groupe d'etude" }}</p>
             <span class="badge-presence"><span aria-hidden="true"></span> {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</span>

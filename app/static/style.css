@@ -1541,6 +1541,41 @@ main.main-tb {
   vertical-align: -0.15em;
 }
 
+/* --------------------------------------------------------------
+   "Le Phare" — motif constellation par cercle (etape 6/10)
+   Voir app/templates/components/constellation.html pour le SVG
+   genere (positions derivees d'un hash stable de l'id du cercle,
+   cf. commentaire du composant pour l'ecart assume par rapport au
+   brief : pas d'id de membre reel disponible cote template sans
+   toucher a app/dashboard.py, ce qui est interdit par le brief). */
+.constellation-avatar { display: block; }
+
+/* Dashboard etudiant : le SVG remplace les initiales dans le meme
+   conteneur circulaire .tb-cercle-avatar, dont le fond/la taille
+   restent inchanges. */
+.tb-cercle-avatar { overflow: hidden; }
+
+/* Page /cercles : pas de conteneur avatar existant avant cette
+   etape, on l'ajoute a cote du bloc texte sans toucher au layout
+   .carte-cercle (toujours 2 enfants directs en space-between). */
+.cc-corps {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+.cc-constellation-avatar {
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles
    d'animation/transition ci-dessus. */
