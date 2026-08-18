@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
+{% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
 {% block titre %}Mon tableau de bord — MAHAY{% endblock %}
 {% block main_classe %}main-tb{% endblock %}
 {% block contenu %}
@@ -142,10 +143,10 @@
           {% endfor %}
         </div>
         {% else %}
-        <div class="tb-etat-vide">
-          <p><strong>Aucune activite recente.</strong></p>
-          <p class="tb-etat-vide-texte">Commence a explorer MAHAY.</p>
-        </div>
+        {{ etat_vide_constellation(
+          titre="Aucune activite recente",
+          texte="Commence a explorer MAHAY.",
+        ) }}
         {% endif %}
       </div>
 
@@ -172,11 +173,12 @@
           </a>
         </div>
         {% else %}
-        <div class="tb-etat-vide">
-          <p><strong>Tu n'as encore rejoint aucun cercle d'etude.</strong></p>
-          <p class="tb-etat-vide-texte">Revise a plusieurs, par filiere ou en groupe libre.</p>
-          <a class="bouton bouton-primaire" href="/cercles">Decouvrir les cercles →</a>
-        </div>
+        {{ etat_vide_constellation(
+          titre="Tu n'as encore rejoint aucun cercle d'etude",
+          texte="Revise a plusieurs, par filiere ou en groupe libre.",
+          lien_cta="/cercles",
+          texte_cta="Decouvrir les cercles",
+        ) }}
         {% endif %}
       </div>
 

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
 {% block titre %}Cercles d'etude — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">S'entraider entre etudiants</p>
@@ -84,7 +85,10 @@
     </div>
   </div>
   {% else %}
-  <p>Aucun cercle pour le moment — soyez les premiers a en creer un.</p>
+  {{ etat_vide_constellation(
+    titre="Aucun cercle pour le moment",
+    texte="Soyez les premiers a en creer un et invitez d'autres etudiants a vous rejoindre.",
+  ) }}
   {% endfor %}
 </div>
 {% endblock %}

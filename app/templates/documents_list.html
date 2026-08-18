@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
+{% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
 {% block titre %}Documents — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">Bibliotheque</p>
@@ -58,10 +59,9 @@
   {% endfor %}
 </div>
 {% else %}
-<div class="doc-etat-vide">
-  <span>{{ icone("documents", 28) }}</span>
-  <p><strong>Aucun document ne correspond a ce filtre.</strong></p>
-  <p class="stat-label">Essayez une autre filiere, matiere ou type.</p>
-</div>
+{{ etat_vide_constellation(
+  titre="Aucun document ne correspond a ce filtre",
+  texte="Essayez une autre filiere, matiere ou type.",
+) }}
 {% endif %}
 {% endblock %}
