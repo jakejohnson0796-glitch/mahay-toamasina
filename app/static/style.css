@@ -1576,6 +1576,44 @@ main.main-tb {
   justify-content: center;
 }
 
+/* --- Hero "Le Phare" (etape 7/10, section 9 du brief) : fond nuit +
+   ciel etoile en arriere-plan. Etend .hero existant (padding/border
+   deja definis plus haut), ne duplique aucune regle. --- */
+.hero-phare {
+  position: relative;
+  overflow: hidden;
+  background: var(--nuit);
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  border-radius: var(--radius-lg);
+  border-bottom: none;
+}
+.hero-ciel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  /* Cancelled explicitement : .hero > * applique mahay-apparition a
+     tous les enfants directs, mais le ciel est un decor statique, pas
+     un element de contenu qui doit apparaitre progressivement. */
+  animation: none;
+}
+.hero-phare > *:not(.hero-ciel) {
+  position: relative;
+  z-index: 1;
+}
+
+.stats-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+@media (max-width: 640px) {
+  .stats-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles
    d'animation/transition ci-dessus. */

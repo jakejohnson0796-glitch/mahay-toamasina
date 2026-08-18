@@ -15,7 +15,7 @@ from sqlmodel import Session, select
 
 from .config import parametres
 from .database import executer_migrations, engine, get_session
-from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument
+from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .seed_data import peupler_donnees_initiales
@@ -133,6 +133,12 @@ def accueil(request: Request, session: Session = Depends(get_session)):
         documents_approuves, key=lambda d: d.date_upload, reverse=True
     )[:5]
 
+    # Section 9 du brief "Le Phare" : hero a 4 stats (documents,
+    # universites, cercles actifs, quiz completes) au lieu de 2.
+    nb_universites = len(session.exec(select(Universite).where(Universite.est_active == True)).all())  # noqa: E712
+    nb_cercles_actifs = len(session.exec(select(CercleEtude).where(CercleEtude.statut == StatutCercle.ACTIF)).all())
+    nb_quiz_completes = len(session.exec(select(TentativeQuiz).where(TentativeQuiz.date_soumission.is_not(None))).all())
+
     return templates.TemplateResponse(
         request,
         "index.html",
@@ -140,6 +146,9 @@ def accueil(request: Request, session: Session = Depends(get_session)):
             "facultes": facultes,
             "nb_documents": len(documents_approuves),
             "derniers_documents": derniers_documents,
+            "nb_universites": nb_universites,
+            "nb_cercles_actifs": nb_cercles_actifs,
+            "nb_quiz_completes": nb_quiz_completes,
         },
     )
 
