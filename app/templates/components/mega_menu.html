@@ -1,6 +1,7 @@
 {# Mega Menu — inclus depuis base.html a l'interieur de <nav id="nav-principale">.
    Liens en dur (pas de url_for) : coherent avec le reste du projet, qui
    n'utilise nulle part ce mecanisme actuellement. #}
+{% from "components/icone.html" import icone %}
 
 <div class="mega-item">
   <button type="button" class="mega-trigger" aria-expanded="false" aria-controls="panel-apprendre">Apprendre</button>
@@ -48,7 +49,9 @@
 </div>
 
 <div class="mega-item">
-  <button type="button" class="mega-trigger" aria-expanded="false" aria-controls="panel-universites">Universites</button>
+  <button type="button" class="mega-trigger" aria-expanded="false" aria-controls="panel-universites">
+    <span class="icone-inline">{{ icone("universites", 16) }}</span> Universites
+  </button>
   <div class="mega-panel" id="panel-universites" hidden>
     <div class="mega-colonne">
       <h4>Ecosysteme universitaire</h4>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icone.html" import icone %}
 {% block titre %}Quiz IA — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">Muscler l'intellect</p>
@@ -50,7 +51,7 @@
   </div>
 
   <div class="carte-formulaire carte-quiz quiz-carte-examen">
-    <span class="quiz-badge-examen" aria-hidden="true">◷</span>
+    <span class="quiz-badge-examen">{{ icone("jours_restants", 22) }}</span>
     <h3 class="titre-carte">Mode examen</h3>
     <p class="stat-label">Matiere, niveau et difficulte tires au sort. 10 questions, 15 minutes chronometrees, correction uniquement a la fin.</p>
     <form method="post" action="/quiz/examen/generer">

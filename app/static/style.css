@@ -1517,6 +1517,30 @@ main.main-tb {
 .carte-phare-icone { display: inline-flex; opacity: 0.9; }
 .carte-phare-titre { margin: 0; font-size: 1rem; }
 
+/* --------------------------------------------------------------
+   "Le Phare" — iconographie (etape 3/10)
+   Les spans qui contenaient un glyphe Unicode (font-size, color)
+   contiennent maintenant un <svg> genere par components/icone.html.
+   Les regles de font-size/color existantes sur ces spans deviennent
+   inertes pour le SVG (couleurs fixees dans le SVG lui-meme, cf.
+   §5 du brief) mais restent inoffensives : pas de suppression pour
+   ne pas toucher a des styles qui pourraient encore servir ailleurs. */
+.tb-icone, .tb-premium-etoile, .tb-etiquette-premium,
+.quiz-badge-examen, .quiz-etat-vide > span, .doc-etat-vide > span {
+  display: inline-flex;
+  align-items: center;
+}
+.tb-reprendre-icone svg, .tb-activite-icone svg, .doc-icone svg {
+  display: block;
+}
+/* Icone suivie de texte dans une meme ligne (ex : mega-menu, delai
+   "derniere consultation") : alignement optique sur la ligne de base. */
+.icone-inline {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -0.15em;
+}
+
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles
    d'animation/transition ci-dessus. */

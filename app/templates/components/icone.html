@@ -16,6 +16,12 @@ Les 5 suivantes (quiz, classe, admin, premium, jours_restants) sont
 dessinees ici pour la premiere fois, en suivant la meme regle et les
 concepts suggeres dans le brief — a ajuster si le rendu ne convient
 pas une fois visualise.
+
+Etape 3 (iconographie) — 2 icones supplementaires, hors liste initiale
+du brief : le grep sur documents_list.html a fait apparaitre deux
+glyphes non recenses en section 5 (✓ pour "corrige", ◫ pour "cours").
+Dessinees ici en suivant la meme regle pour eviter un systeme a moitie
+converti sur la meme carte document.
 #}
 {% macro icone(nom, taille=20) %}
 {%- if nom == "dashboard" -%}
@@ -113,6 +119,23 @@ pas une fois visualise.
     <path d="M24,4 A16,16 0 1 0 24,36 A11,11 0 1 1 24,4 Z" stroke-linejoin="round"/>
     <circle cx="12" cy="10" r="0.9" fill="#F2ECDD" stroke="none" opacity="0.5"/>
     <circle cx="7" cy="19" r="0.7" fill="#F2ECDD" stroke="none" opacity="0.4"/>
+  </g>
+</svg>
+{%- elif nom == "corrige" -%}
+{#- Correction : coche simple, point d'accent sur la pointe. -#}
+<svg viewBox="0 0 40 40" width="{{ taille }}" height="{{ taille }}" aria-hidden="true">
+  <g stroke="#F2ECDD" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7,21 L16,30 L34,10" stroke-width="1.6"/>
+    <circle cx="16" cy="30" r="1.8" fill="#FBD9A0" stroke="none"/>
+  </g>
+</svg>
+{%- elif nom == "cours" -%}
+{#- Cours : livre ouvert, coherent avec l'icone documents/classe. -#}
+<svg viewBox="0 0 40 40" width="{{ taille }}" height="{{ taille }}" aria-hidden="true">
+  <g stroke="#F2ECDD" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20,10 C16,7 9,6 4,7 L4,30 C9,29 16,30 20,33 C24,30 31,29 36,30 L36,7 C31,6 24,7 20,10 Z"/>
+    <path d="M20,10 L20,33" opacity="0.6"/>
+    <circle cx="20" cy="10" r="1.6" fill="#FBD9A0" stroke="none"/>
   </g>
 </svg>
 {%- endif -%}

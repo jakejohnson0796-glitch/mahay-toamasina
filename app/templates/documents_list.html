@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icone.html" import icone %}
 {% block titre %}Documents — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">Bibliotheque</p>
@@ -41,8 +42,8 @@
   {% for doc in documents %}
   <div class="doc-carte">
     <div class="doc-carte-entete">
-      <span class="doc-icone doc-icone-{{ doc.type_document.value }}" aria-hidden="true">
-        {{ { "annale": "◈", "corrige": "✓", "fiche": "▤", "cours": "◫" }[doc.type_document.value] }}
+      <span class="doc-icone doc-icone-{{ doc.type_document.value }}">
+        {{ { "annale": icone("tuteur", 18), "corrige": icone("corrige", 18), "fiche": icone("documents", 18), "cours": icone("cours", 18) }[doc.type_document.value] }}
       </span>
       <span class="doc-type-label">{{ { "annale": "Annale", "corrige": "Corrige", "fiche": "Fiche", "cours": "Cours" }[doc.type_document.value] }}</span>
     </div>
@@ -58,7 +59,7 @@
 </div>
 {% else %}
 <div class="doc-etat-vide">
-  <span aria-hidden="true">▤</span>
+  <span>{{ icone("documents", 28) }}</span>
   <p><strong>Aucun document ne correspond a ce filtre.</strong></p>
   <p class="stat-label">Essayez une autre filiere, matiere ou type.</p>
 </div>

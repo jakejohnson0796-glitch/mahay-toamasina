@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icone.html" import icone %}
 {% block titre %}Historique Quiz IA — MAHAY{% endblock %}
 {% block contenu %}
 <p class="eyebrow">Quiz IA</p>
@@ -6,18 +7,18 @@
 
 <div class="quiz-stats-grille">
   <div class="quiz-carte-stat quiz-stat-orange">
-    <span class="quiz-stat-icone" aria-hidden="true">✎</span>
+    <span class="quiz-stat-icone">{{ icone("quiz", 18) }}</span>
     <span class="quiz-stat-nombre">{{ stats.nb_quiz }}</span>
     <span class="quiz-stat-label">Quiz realises</span>
   </div>
   <div class="quiz-carte-stat quiz-stat-vert">
-    <span class="quiz-stat-icone" aria-hidden="true">◈</span>
+    <span class="quiz-stat-icone">{{ icone("tuteur", 18) }}</span>
     <span class="quiz-stat-nombre">{{ stats.score_moyen_pourcent }}%</span>
     <span class="quiz-stat-label">Score moyen</span>
   </div>
   {% if stats.meilleure_matiere %}
   <div class="quiz-carte-stat quiz-stat-bleu">
-    <span class="quiz-stat-icone" aria-hidden="true">★</span>
+    <span class="quiz-stat-icone">{{ icone("premium", 18) }}</span>
     <span class="quiz-stat-nombre quiz-stat-nombre-texte">{{ stats.meilleure_matiere }}</span>
     <span class="quiz-stat-label">Meilleure matiere</span>
   </div>
@@ -44,7 +45,7 @@
 </table>
 {% else %}
 <div class="quiz-etat-vide">
-  <span aria-hidden="true">✎</span>
+  <span>{{ icone("quiz", 28) }}</span>
   <p><strong>Aucun quiz termine pour le moment.</strong></p>
   <a class="bouton bouton-primaire" href="/quiz">Lancer un quiz &rarr;</a>
 </div>
