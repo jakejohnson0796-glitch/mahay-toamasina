@@ -885,6 +885,29 @@ main.main-tb {
   align-items: start;
   max-width: 1400px;
   margin: 0 auto;
+  position: relative;
+}
+/* --- Fond "reseau" (etape 8/10, section 10.B) : quelques glows tres
+   discrets, var(--accent-reseau), opacity 0.04, statique, aucun JS. --- */
+.tb-mise-en-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image:
+    radial-gradient(circle at 8% 12%, var(--accent-reseau) 0%, transparent 42%),
+    radial-gradient(circle at 85% 20%, var(--accent-reseau) 0%, transparent 38%),
+    radial-gradient(circle at 30% 65%, var(--accent-reseau) 0%, transparent 48%),
+    radial-gradient(circle at 75% 78%, var(--accent-reseau) 0%, transparent 38%);
+}
+/* z-index seul suffit ici (pas de position:relative) : ce sont des
+   items de grille CSS, le z-index s'applique deja sans repositionner —
+   important pour .tb-sidebar qui a deja position:sticky, a ne pas
+   ecraser. */
+.tb-sidebar, .tb-contenu {
+  z-index: 1;
 }
 
 /* --- Sidebar --- */
@@ -1612,6 +1635,23 @@ main.main-tb {
 }
 @media (max-width: 640px) {
   .stats-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* --- Fond "anneaux" (etape 8/10, section 10.C) : 2-3 cercles
+   concentriques tres discrets, coin superieur droit, pages cercles
+   uniquement (cercles_list.html, cercle_chat.html). position:fixed
+   evite d'avoir a toucher le positionnement de <main> (partage par
+   tout le site) : le viewport sert directement de repere, aucun
+   ancetre n'a besoin de position:relative. --- */
+.fond-anneaux {
+  position: fixed;
+  top: -40px;
+  right: -20px;
+  width: 240px;
+  height: 240px;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
