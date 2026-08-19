@@ -29,7 +29,7 @@ def generer_qrcode_data_uri(secret: str, telephone: str) -> str:
     disque) et le renvoie sous forme de data URI directement utilisable
     dans un <img src="...">."""
     totp = pyotp.TOTP(secret)
-    uri = totp.provisioning_uri(name=telephone, issuer_name="MAHAY Toamasina")
+    uri = totp.provisioning_uri(name=telephone, issuer_name="Gasy Mahay Toamasina")
     image = qrcode.make(uri)
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block titre %}Membres — {{ cercle.nom }} — MAHAY{% endblock %}
+{% block titre %}Membres — {{ cercle.nom }} — Gasy Mahay{% endblock %}
 {% block contenu %}
 <p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; {{ cercle.nom }}</a></p>
 <h2>Membres de {{ cercle.nom }}</h2>
 
 {% if request.query_params.get("erreur") == "utilisateur_introuvable" %}
-<div class="erreur">Aucun compte MAHAY avec ce numero. La personne doit d'abord s'inscrire.</div>
+<div class="erreur">Aucun compte Gasy Mahay avec ce numero. La personne doit d'abord s'inscrire.</div>
 {% endif %}
 {% if request.query_params.get("erreur") == "impossible_retirer_createur" %}
 <div class="erreur">Impossible de retirer le createur du cercle.</div>
@@ -20,7 +20,7 @@
 {% if peut_gerer %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 style="margin-top:0;">Ajouter un membre par numero</h3>
-  <p class="stat-label">La personne doit deja avoir un compte MAHAY.</p>
+  <p class="stat-label">La personne doit deja avoir un compte Gasy Mahay.</p>
   <form method="post" action="/cercles/{{ cercle.id }}/membres/ajouter">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="telephone">Numero de telephone</label>

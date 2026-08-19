@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block titre %}Etudiants — {{ cours.nom }} — MAHAY{% endblock %}
+{% block titre %}Etudiants — {{ cours.nom }} — Gasy Mahay{% endblock %}
 {% block contenu %}
 <p class="eyebrow"><a href="/classe/{{ cours.id }}">&larr; {{ cours.nom }}</a></p>
 <h2>Etudiants inscrits</h2>
 
 {% if request.query_params.get("erreur") == "utilisateur_introuvable" %}
-<div class="erreur">Aucun compte MAHAY avec ce numero.</div>
+<div class="erreur">Aucun compte Gasy Mahay avec ce numero.</div>
 {% endif %}
 {% if request.query_params.get("ajoute") %}
 <div class="info">Etudiant ajoute.</div>

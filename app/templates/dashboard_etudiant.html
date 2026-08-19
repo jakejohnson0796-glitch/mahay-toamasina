@@ -2,7 +2,7 @@
 {% from "components/icone.html" import icone %}
 {% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
 {% from "components/constellation.html" import constellation_avatar %}
-{% block titre %}Mon tableau de bord — MAHAY{% endblock %}
+{% block titre %}Mon tableau de bord — Gasy Mahay{% endblock %}
 {% block main_classe %}main-tb{% endblock %}
 {% block contenu %}
 <div class="tb-mise-en-page">
@@ -34,7 +34,7 @@
 
     <a href="/abonnement" class="tb-sidebar-premium">
       <span class="tb-premium-etoile">{{ icone("premium", 16) }}</span>
-      <strong>MAHAY Premium</strong>
+      <strong>Gasy Mahay Premium</strong>
       <span>
         {% if abonnement and abonnement.statut.value == "actif" %}
           Actif — {{ jours_restants }} j restant{{ "s" if jours_restants > 1 else "" }}
@@ -85,7 +85,7 @@
       {% endif %}
 
       <div class="tb-carte-premium">
-        <p class="tb-etiquette-carte tb-etiquette-premium">{{ icone("premium", 15) }} MAHAY Premium</p>
+        <p class="tb-etiquette-carte tb-etiquette-premium">{{ icone("premium", 15) }} Gasy Mahay Premium</p>
         <p class="tb-premium-texte">
           {% if abonnement and abonnement.statut.value == "actif" %}
             Votre abonnement est actif pour encore <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.
@@ -146,7 +146,7 @@
         {% else %}
         {{ etat_vide_constellation(
           titre="Aucune activite recente",
-          texte="Commence a explorer MAHAY.",
+          texte="Commence a explorer Gasy Mahay.",
         ) }}
         {% endif %}
       </div>

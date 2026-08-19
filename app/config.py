@@ -1,5 +1,5 @@
 """
-Configuration centralisee de GASY MAHAY.
+Configuration centralisee de Gasy Mahay.
 
 Tout ce qui differe entre "je developpe en local" et "c'est deploye en
 vrai" passe par des variables d'environnement, lues ici une seule fois
