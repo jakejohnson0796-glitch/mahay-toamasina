@@ -29,6 +29,19 @@
   --accent-reseau: #3E7A78;  /* fond "reseau" du dashboard (section 10.B) */
   --nuit: #0A1B24;           /* canvas nocturne — hero et panneaux pleine largeur uniquement, jamais fond global */
 
+  /* --- Etape 9/10 (passe accessibilite) : variante plus claire de
+     --danger, reservee a l'anneau vide de .signal-rejete. Mesure au
+     controle de contraste : l'anneau (bordure seule, sans fill) est un
+     composant d'interface (WCAG 1.4.11, seuil 3:1) et --danger brut
+     n'atteint que 2.62:1 sur --bg-panel et 2.18:1 sur --bg-panel-2, les
+     fonds reels de .offre/.carte-formulaire ou le signal "rejete"
+     apparait (abonnement.html, securite.html, quiz_resultat.html).
+     --danger lui-meme reste inchange partout ailleurs (texte
+     .tampon-rejete, bordure .erreur, etc. — aucun de ces usages n'est
+     un nouveau composant introduit par "Le Phare", donc hors perimetre
+     de cette passe). --- */
+  --danger-signal: #D77356;  /* 3.8:1 sur --bg-panel, 3.2:1 sur --bg-panel-2, 4.6:1 sur --bg */
+
   /* Alias semantiques (§3 du brief refonte UI/UX) : pointent vers les
      memes valeurs que les tokens ci-dessus, pour ne rien renommer et ne
      rien casser ailleurs dans le CSS. A utiliser pour tout nouveau
@@ -40,7 +53,7 @@
   --color-success: var(--accent-2);
   --color-warning: var(--lumiere);
   --color-danger: var(--danger);
-  --color-info: #5B93A6;
+  --color-info: #5B93A6;     /* attention si utilise comme texte plus tard : 4.4:1 sur --bg, 3.6:1 sur --bg-panel (< 4.5:1 requis) — aujourd'hui uniquement decoratif (lien de constellation, aria-hidden), donc conforme */
 
   --surface-1: var(--bg);
   --surface-2: var(--bg-panel);
@@ -1496,7 +1509,7 @@ main.main-tb {
 .signal-attente { background: var(--lumiere); }
 .signal-rejete {
   background: transparent;
-  border: 1.5px solid var(--danger);
+  border: 1.5px solid var(--danger-signal);
 }
 .signal-anneau {
   position: absolute;
@@ -1652,6 +1665,32 @@ main.main-tb {
   opacity: 0.06;
   pointer-events: none;
   z-index: 0;
+}
+
+/* --------------------------------------------------------------
+   "Le Phare" — focus visible (etape 9/10, passe accessibilite)
+   Avant cette etape, seuls input/select/textarea (ligne ~271) avaient
+   un anneau de focus explicite : les liens et boutons retombaient sur
+   l'anneau par defaut du navigateur (rendu et contraste incoherents
+   d'un navigateur a l'autre). --lumiere est choisie ici car elle passe
+   3:1 sur tous les fonds de PAGE reels verifies au controle de
+   contraste (--bg 11.1:1, --bg-panel 9.1:1, --bg-panel-2 7.6:1, --nuit
+   13:1). outline-offset:2px est deliberement positif (jamais 0/negatif)
+   : l'anneau se dessine donc toujours contre le fond de la page autour
+   de l'element, jamais contre le fond propre de l'element — important
+   pour .bouton-primaire, dont le fond --accent ne laisserait que
+   1.77:1 avec --lumiere si l'anneau le touchait directement. Aucun
+   container du site n'utilise --accent comme fond (verifie), donc ce
+   cas ne se presente pas. :focus-visible (pas :focus) pour n'afficher
+   l'anneau qu'au clavier, pas au clic souris ; se degrade sans risque
+   sur les tres vieux navigateurs (anneau par defaut du navigateur
+   conserve). */
+a:focus-visible,
+button:focus-visible,
+.bouton:focus-visible {
+  outline: 2px solid var(--lumiere);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
