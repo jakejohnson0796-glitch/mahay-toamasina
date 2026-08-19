@@ -20,7 +20,7 @@ from ..models import (
     Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, MessageCercle, SignalementMessage,
     DemandeAdhesionCercle, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
-    ConsultationDocument, Abonnement, Cours, InscriptionCours, Seance, PresenceSeance,
+    ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
     EvenementTableauBlanc, AutorisationEcritureTableau, Devoir, RenduDevoir,
 )
 from ..storage import supprimer_fichier
@@ -53,6 +53,11 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             select(AbonnementEtudiant).where(AbonnementEtudiant.statut == StatutAbonnementEtudiant.EN_ATTENTE)
         ).all()
     )
+    nb_sponsors_en_attente = len(
+        session.exec(
+            select(Abonnement).where(Abonnement.statut == StatutAbonnement.EN_ATTENTE_PAIEMENT)
+        ).all()
+    )
 
     return templates.TemplateResponse(
         request,
@@ -62,6 +67,7 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             "nb_signalements_en_attente": nb_signalements_en_attente,
             "nb_signalements_quiz_en_attente": nb_signalements_quiz_en_attente,
             "nb_abonnements_en_attente": nb_abonnements_en_attente,
+            "nb_sponsors_en_attente": nb_sponsors_en_attente,
         },
     )
 

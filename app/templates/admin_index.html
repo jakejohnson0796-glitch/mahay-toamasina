@@ -16,6 +16,15 @@
 
   <div class="carte-cercle">
     <div>
+      <strong>Sponsors</strong>
+      <p>Traiter les demandes de contact, fixer le prix negocie et activer le partenariat.</p>
+      {% if nb_sponsors_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_sponsors_en_attente }} en attente</span>{% endif %}
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/sponsors">Ouvrir</a></div>
+  </div>
+
+  <div class="carte-cercle">
+    <div>
       <strong>Moderation du salon</strong>
       <p>Traiter les messages signales par les etudiants.</p>
       {% if nb_signalements_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_signalements_en_attente }} en attente</span>{% endif %}

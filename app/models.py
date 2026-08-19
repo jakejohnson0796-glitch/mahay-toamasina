@@ -249,12 +249,22 @@ class ConsultationDocument(SQLModel, table=True):
 
 
 class Abonnement(SQLModel, table=True):
-    """Abonnement sponsor/repetiteur — c'est ce cote du marche qui paie,
-    pas l'etudiant (voir la note sur le modele economique dans le README)."""
+    """Demande de partenariat sponsor/repetiteur — c'est ce cote du marche
+    qui paie, pas l'etudiant (voir la note sur le modele economique dans
+    le README).
+
+    Pas de prix fixe affiche publiquement : chaque sponsor est different
+    (repetiteur individuel, petit commerce, service...), donc le prix est
+    negocie directement avec lui APRES ce premier contact, pas impose a
+    l'avance sur le site. prix_ariary reste donc vide tant que ce prix
+    n'a pas ete convenu ; c'est un admin qui le renseigne manuellement
+    (avec le moyen de paiement retenu) au moment de faire passer la
+    demande en ACTIF, une fois l'accord trouve hors-ligne."""
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
-    prix_ariary: int
-    fournisseur_paiement: Optional[str] = None  # "mvola" / "orange_money" / "airtel_money"
+    message: Optional[str] = None  # contexte donne par le sponsor a l'envoi de sa demande (activite, besoin...)
+    prix_ariary: Optional[int] = None  # rempli par l'admin une fois le prix negocie hors-ligne
+    fournisseur_paiement: Optional[str] = None  # "mvola" / "orange_money" / "airtel_money" — decide avec le prix
     reference_paiement: Optional[str] = None
     statut: StatutAbonnement = Field(default=StatutAbonnement.EN_ATTENTE_PAIEMENT)
     date_debut: Optional[datetime] = None
@@ -457,7 +467,7 @@ class SignalementMessage(SQLModel, table=True):
 class AbonnementEtudiant(SQLModel, table=True):
     """Acces Premium d'un etudiant : demarre automatiquement en essai
     gratuit de 14 jours a l'inscription, puis (optionnellement) en
-    abonnement paye de 10 000 Ar/mois valide manuellement par un admin sur
+    abonnement paye de 5 000 Ar/mois valide manuellement par un admin sur
     preuve de paiement hors-ligne (Mobile Money / virement).
 
     Un seul enregistrement par etudiant : on ne cree pas une ligne par

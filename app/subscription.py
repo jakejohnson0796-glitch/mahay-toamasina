@@ -1,6 +1,6 @@
 """
 Logique metier de l'acces Premium etudiant : essai gratuit de 14 jours,
-puis abonnement paye de 10 000 Ar/mois valide manuellement par un admin.
+puis abonnement paye de 5 000 Ar/mois valide manuellement par un admin.
 
 Centralise ici (plutot que disperse dans les routers) pour respecter le
 principe de responsabilite unique : les routers orchestrent la requete
@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 from .models import AbonnementEtudiant, StatutAbonnementEtudiant, Utilisateur
 
 DUREE_ESSAI_JOURS = 14
-PRIX_ABONNEMENT_ETUDIANT_ARIARY = 10_000
+PRIX_ABONNEMENT_ETUDIANT_ARIARY = 5_000
 DUREE_PROLONGATION_JOURS = 30
 
 

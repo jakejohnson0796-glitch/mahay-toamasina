@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "components/signal.html" import signal %}
+{% block titre %}Sponsors — Admin MAHAY{% endblock %}
+{% block contenu %}
+<h2>Demandes de contact sponsor</h2>
+<p>Le prix n'est jamais choisi par le sponsor : c'est vous qui le renseignez ici, une fois negocie hors-ligne avec lui.</p>
+
+<p class="filtres">
+  <a href="/admin/sponsors">En attente</a> ·
+  <a href="/admin/sponsors?statut=actif">Actifs</a> ·
+  <a href="/admin/sponsors?statut=expire">Clotures / expires</a>
+</p>
+
+<table class="table-manifeste">
+  <thead>
+    <tr><th>Sponsor</th><th>Telephone</th><th>Message</th><th>Statut</th><th>Prix / paiement</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for abonnement, sponsor in lignes %}
+    <tr>
+      <td>{{ sponsor.nom }}</td>
+      <td>{{ sponsor.telephone }}</td>
+      <td>{{ abonnement.message or "—" }}</td>
+      <td>
+        {% if abonnement.statut == StatutAbonnement.EN_ATTENTE_PAIEMENT %}{{ signal("attente") }}<span class="tampon tampon-attente">En attente</span>
+        {% elif abonnement.statut == StatutAbonnement.ACTIF %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Actif</span>
+        {% else %}{{ signal("rejete") }}<span class="tampon tampon-rejete">Cloture</span>{% endif %}
+      </td>
+      <td>
+        {% if abonnement.prix_ariary %}{{ abonnement.prix_ariary }} Ar{% endif %}
+        {% if abonnement.fournisseur_paiement %}<br><small>{{ abonnement.fournisseur_paiement }}</small>{% endif %}
+        {% if abonnement.date_fin %}<br><small>jusqu'au {{ abonnement.date_fin.strftime("%d/%m/%Y") }}</small>{% endif %}
+        {% if not abonnement.prix_ariary and not abonnement.fournisseur_paiement %}—{% endif %}
+      </td>
+      <td>
+        {% if abonnement.statut == StatutAbonnement.EN_ATTENTE_PAIEMENT %}
+        <form method="post" action="/admin/sponsors/{{ abonnement.id }}/valider" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="number" name="prix_ariary" placeholder="Prix Ar/mois" required min="0" style="width:8rem;">
+          <select name="fournisseur_paiement" required>
+            <option value="" disabled selected>Paiement</option>
+            <option value="mvola">MVola</option>
+            <option value="orange_money">Orange Money</option>
+            <option value="airtel_money">Airtel Money</option>
+            <option value="virement">Virement</option>
+            <option value="especes">Especes</option>
+          </select>
+          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Activer</button>
+        </form>
+        <form method="post" action="/admin/sponsors/{{ abonnement.id }}/refuser" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Cloturer</button>
+        </form>
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Rien ici pour le moment.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

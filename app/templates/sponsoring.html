@@ -4,30 +4,30 @@
 <h2>Espace sponsors &amp; repetiteurs</h2>
 <p>
   Touchez directement les etudiants de l'Universite de Toamasina. Votre
-  abonnement finance le manifeste gratuit pour les etudiants, et vous donne
+  partenariat finance le manifeste gratuit pour les etudiants, et vous donne
   une visibilite privilegiee (badge verifie, mise en avant dans les
   resultats de recherche).
 </p>
+<p>
+  Il n'y a pas de tarif fixe affiche ici : chaque sponsor est different
+  (repetiteur individuel, petit commerce, service...), le prix se discute
+  directement avec nous une fois votre demande recue.
+</p>
 
 {% if request.query_params.get("demande_envoyee") %}
-<div class="info">Demande enregistree — vous recevrez une confirmation une fois le paiement valide.</div>
+<div class="info">Demande envoyee — nous vous recontactons prochainement pour discuter du partenariat.</div>
 {% endif %}
 
 <div class="offre">
-  <p class="prix">{{ prix }} <span>Ar / mois</span></p>
   {% if utilisateur %}
-  <form method="post" action="/sponsoring/souscrire">
+  <form method="post" action="/sponsoring/contact">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <p>Choisissez votre moyen de paiement :</p>
-    <div class="fournisseurs">
-      <label><input type="radio" name="fournisseur_paiement" value="mvola" required> MVola</label>
-      <label><input type="radio" name="fournisseur_paiement" value="orange_money"> Orange Money</label>
-      <label><input type="radio" name="fournisseur_paiement" value="airtel_money"> Airtel Money</label>
-    </div>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Souscrire</button>
+    <label for="message">Parlez-nous de votre activite et de ce que vous recherchez (facultatif) :</label>
+    <textarea id="message" name="message" rows="4" maxlength="2000"></textarea>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Envoyer ma demande de contact</button>
   </form>
   {% else %}
-  <p><a href="/connexion">Connectez-vous</a> pour souscrire.</p>
+  <p><a href="/connexion">Connectez-vous</a> pour envoyer votre demande.</p>
   {% endif %}
 </div>
 {% endblock %}
