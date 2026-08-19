@@ -38,6 +38,19 @@
   {% endfor %}
 </div>
 
+{#
+Etape 10/10 (passe performance) — constat, pas de correctif ici : cette
+boucle rend un <svg> icone.html complet (~320-470 octets) par document,
+et /documents/router.py ne pagine ni ne limite la requete (select(...).all(),
+tout document approuve, sans LIMIT). A ~25 documents affiches, le seul
+poids des icones depasse deja le budget cible de 10 Ko/page fixe section
+11. Corrige separement de cette session : soit paginer la route (hors
+perimetre — section 2 interdit de toucher app/routers/), soit remplacer
+l'icone inline par une reference <use href="#icone-..."/> vers un sprite
+<symbol> defini une fois dans base.html (~60-70 octets par usage au lieu
+de ~320-470, sans changer le rendu visuel) — a traiter dans une prochaine
+session dediee, avec sa propre verification desktop+mobile.
+#}
 {% if documents %}
 <div class="doc-grille">
   {% for doc in documents %}

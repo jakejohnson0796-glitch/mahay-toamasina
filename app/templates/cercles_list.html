@@ -72,6 +72,18 @@
 <div class="info">Cercle supprime.</div>
 {% endif %}
 
+{#
+Etape 10/10 (passe performance) — meme constat que documents_list.html :
+constellation_avatar() genere jusqu'a ~915 octets par cercle (6 points),
+et cercles_router.py:liste_cercles() charge tous les cercles nationaux
+sans LIMIT. 10 cercles ~= 8.9 Ko rien qu'en avatars ; au-dela d'une
+quinzaine, le budget de 10 Ko/page (section 11) est deja depasse. Avec
+l'ouverture recente aux cercles nationaux, ce seuil est realiste a court
+terme, pas hypothetique. Meme piste de correctif que documents_list.html
+(sprite SVG <symbol>/<use>) a evaluer dans une prochaine session — la
+generation des positions elle-meme (components/constellation.html) n'a
+pas besoin de changer, seul le format de sortie serait concerne.
+#}
 <div class="liste-cercles">
   {% for info in cercles_avec_info %}
   <div class="carte-cercle">
