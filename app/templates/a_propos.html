@@ -1,46 +1,280 @@
 {% extends "base.html" %}
+{% from "components/icone.html" import icone %}
 {% block titre %}A propos — Gasy Mahay{% endblock %}
 {% block contenu %}
-<p class="eyebrow">Notre mission</p>
-<h2>A propos de Gasy Mahay</h2>
 
-<p>
-  Gasy Mahay est un hub de revision pense pour et avec les etudiants de
-  l'Universite de Toamasina. L'objectif est simple : reunir au meme
-  endroit ce qui, jusqu'ici, se transmettait de facon eparpillee entre
-  camarades — les annales d'examens, les fiches de revision, les groupes
-  de travail — et y ajouter des outils modernes (IA, classe virtuelle)
-  pour que reviser prenne moins de temps et donne de meilleurs resultats.
-</p>
+<!-- 1. Hero -->
+<section class="hero hero-phare">
+  <p class="eyebrow">A propos de Gasy Mahay</p>
+  <h1>L'academie <em>malgache</em>, reunie au meme endroit.</h1>
+  <p class="sous-titre">
+    Gasy Mahay est une plateforme academique malgache : documents, cercles
+    d'etude, tuteur IA et classe virtuelle pour les etudiants des
+    universites publiques de Madagascar, pensee et construite depuis
+    Toamasina.
+  </p>
+  <div class="cta-groupe">
+    <a class="bouton bouton-primaire" href="/inscription">Rejoindre Gasy Mahay</a>
+    <a class="bouton bouton-secondaire" href="/universites">Decouvrir les universites</a>
+  </div>
 
-<h3>Pourquoi Gasy Mahay</h3>
-<p>
-  Trouver le bon sujet d'examen de l'annee precedente, un corrige fiable,
-  ou simplement un groupe motive pour reviser ensemble prend souvent plus
-  de temps qu'il ne le devrait. Gasy Mahay rassemble ces ressources, les rend
-  cherchables par filiere et par matiere, et ajoute un tuteur IA et un
-  generateur de quiz pour s'entrainer activement plutot que de relire
-  passivement des documents.
-</p>
+  <svg class="hero-ciel" viewBox="0 0 800 200" preserveAspectRatio="none" aria-hidden="true">
+    <circle cx="506.0" cy="19.1" r="1.0" fill="#F2ECDD" opacity="0.37"/>
+    <circle cx="579.7" cy="126.7" r="1.6" fill="#F2ECDD" opacity="0.33"/>
+    <circle cx="340.7" cy="19.9" r="0.9" fill="#F2ECDD" opacity="0.45"/>
+    <circle cx="40.2" cy="47.8" r="1.3" fill="#F2ECDD" opacity="0.46"/>
+    <circle cx="187.5" cy="112.2" r="1.5" fill="#F2ECDD" opacity="0.3"/>
+    <circle cx="632.4" cy="130.2" r="1.0" fill="#F2ECDD" opacity="0.35"/>
+    <circle cx="747.5" cy="70.5" r="0.8" fill="#F2ECDD" opacity="0.33"/>
+    <circle cx="664.1" cy="114.6" r="1.5" fill="#F2ECDD" opacity="0.52"/>
+    <circle cx="427.5" cy="175.6" r="1.1" fill="#F2ECDD" opacity="0.47"/>
+    <polygon points="0,0 380,95 300,145" fill="#E8935A" opacity="0.12"/>
+  </svg>
+</section>
 
-<h3>Ce que propose Gasy Mahay aujourd'hui</h3>
-<ul>
-  <li>Un manifeste d'annales et de documents pedagogiques, classes par filiere</li>
-  <li>Des cercles d'etude pour reviser a plusieurs, par groupe ou par filiere</li>
-  <li>Un tuteur IA et des quiz generes automatiquement pour s'entrainer</li>
-  <li>Une classe virtuelle (audio, video, tableau blanc collaboratif) pour les cours en ligne</li>
-  <li>Un espace pour les sponsors locaux (repetiteurs, services etudiants) de se faire connaitre</li>
-</ul>
+<!-- 2. Presentation -->
+<section class="ap-section">
+  <h2>Qu'est-ce que Gasy Mahay ?</h2>
+  <p>
+    Gasy Mahay est un hub academique concu pour et avec des etudiants
+    malgaches. L'idee de depart est simple : ce qui circulait jusque-la de
+    facon eparpillee entre camarades — annales d'examens, fiches de
+    revision, groupes de travail — merite un espace commun, cherchable et
+    a jour, plutot que de se perdre dans des groupes de discussion
+    disperses. Gasy Mahay y ajoute des outils modernes (tuteur IA, quiz
+    generes automatiquement, classe virtuelle) pour que reviser prenne
+    moins de temps et donne de meilleurs resultats.
+  </p>
+  <p>
+    Le projet est ne a l'Universite de Toamasina et reste, pour l'instant,
+    construit en priorite pour cette communaute — avant d'etendre
+    progressivement son catalogue academique aux autres universites
+    publiques du pays.
+  </p>
+</section>
 
-<h3>Notre approche</h3>
-<p>
-  Gasy Mahay reste volontairement centre sur l'Universite de Toamasina plutot
-  que de viser large trop vite : mieux servir une communaute precise
-  avant d'envisager d'en couvrir d'autres. L'acces de base (manifeste des
-  annales) reste gratuit ; les fonctionnalites qui demandent le plus de
-  ressources (IA, cercles d'etude) sont proposees via un abonnement
-  accessible, pense pour un budget etudiant local.
-</p>
+<!-- 3. Le probleme -->
+<section class="ap-section">
+  <h2>Le probleme</h2>
+  <div class="ap-grille-3">
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("documents") }}</span>
+        <h3 class="carte-phare-titre">Ressources dispersees</h3>
+      </div>
+      <p>Les annales, corriges et fiches de revision circulent au coup par
+      coup, sans catalogue commun ni garantie de fiabilite.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("cercles") }}</span>
+        <h3 class="carte-phare-titre">Collaboration difficile</h3>
+      </div>
+      <p>Trouver un groupe motive pour reviser une meme matiere, dans sa
+      filiere et son niveau, prend souvent plus de temps que reviser
+      lui-meme.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("universites") }}</span>
+        <h3 class="carte-phare-titre">Peu de centralisation</h3>
+      </div>
+      <p>Chaque filiere, chaque promotion reinvente ses propres circuits
+      d'entraide, sans espace commun qui survit d'une annee sur l'autre.</p>
+    </div>
+  </div>
+</section>
 
-<p><a href="/contact" class="bouton bouton-secondaire">Nous contacter</a></p>
+<!-- 4. Mission -->
+<section class="ap-section">
+  <p class="eyebrow">Notre mission</p>
+  <h2>Donner aux etudiants malgaches un espace commun pour apprendre et s'entraider</h2>
+  <p>
+    Rassembler documents, entraide entre pairs et outils d'IA au meme
+    endroit, pour que chaque etudiant puisse reviser efficacement quelle
+    que soit sa filiere — en gardant un socle gratuit accessible a tous.
+  </p>
+</section>
+
+<!-- 5. Vision -->
+<section class="ap-section">
+  <p class="eyebrow">Notre vision</p>
+  <h2>Depasser Toamasina, a l'echelle de Madagascar</h2>
+  <p>
+    Gasy Mahay est pense pour ne pas rester une plateforme locale : la
+    structure academique (universite, mention, filiere, niveau) est deja
+    concue pour accueillir progressivement les etudiants d'autres
+    universites publiques malgaches, a mesure que leur catalogue de
+    formations est verifie et ajoute.
+  </p>
+</section>
+
+<!-- 6. Valeurs -->
+<section class="ap-section">
+  <h2>Nos valeurs</h2>
+  <div class="ap-grille-3">
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("documents") }}</span>
+        <h3 class="carte-phare-titre">Accessibilite</h3>
+      </div>
+      <p>Le catalogue d'annales et de documents reste consultable
+      gratuitement ; les fonctionnalites avancees sont proposees a un prix
+      pense pour un budget etudiant local.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("cercles") }}</span>
+        <h3 class="carte-phare-titre">Collaboration</h3>
+      </div>
+      <p>Les cercles d'etude organisent l'entraide par filiere et par
+      niveau, plutot que de laisser chacun reviser seul de son cote.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("tuteur") }}</span>
+        <h3 class="carte-phare-titre">Innovation utile</h3>
+      </div>
+      <p>Le tuteur IA et les quiz generes servent l'entrainement actif —
+      pas la technologie pour elle-meme.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("universites") }}</span>
+        <h3 class="carte-phare-titre">Ambition nationale</h3>
+      </div>
+      <p>Une architecture academique pensee des le depart pour accueillir
+      d'autres universites malgaches, sans tout reconstruire.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("securite") }}</span>
+        <h3 class="carte-phare-titre">Serieux</h3>
+      </div>
+      <p>Double authentification, moderation des cercles et des documents :
+      la fiabilite de la plateforme prime sur la vitesse.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("classe") }}</span>
+        <h3 class="carte-phare-titre">Apprentissage actif</h3>
+      </div>
+      <p>Quiz, classe virtuelle et tableau blanc collaboratif : s'entrainer
+      plutot que relire passivement des documents.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Ecosysteme -->
+<section class="ap-section">
+  <h2>L'ecosysteme Gasy Mahay</h2>
+  <div class="ap-grille-3">
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("documents") }}</span>
+        <h3 class="carte-phare-titre">Documents</h3>
+      </div>
+      <p>Un manifeste d'annales et de documents pedagogiques, classes par
+      filiere et par matiere.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("cercles") }}</span>
+        <h3 class="carte-phare-titre">Cercles d'etude</h3>
+      </div>
+      <p>Des groupes de revision par filiere ou par affinite, avec
+      messagerie et partage de fichiers.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("tuteur") }}</span>
+        <h3 class="carte-phare-titre">Tuteur IA</h3>
+      </div>
+      <p>Un assistant pour poser des questions de cours et obtenir des
+      explications ciblees.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("quiz") }}</span>
+        <h3 class="carte-phare-titre">Quiz IA</h3>
+      </div>
+      <p>Des quiz generes automatiquement pour s'entrainer activement sur
+      une matiere.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("classe") }}</span>
+        <h3 class="carte-phare-titre">Classe virtuelle</h3>
+      </div>
+      <p>Audio, video et tableau blanc collaboratif pour suivre ou animer
+      un cours en ligne.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("universites") }}</span>
+        <h3 class="carte-phare-titre">Universites</h3>
+      </div>
+      <p>Un catalogue de facultes, mentions et filieres, aujourd'hui
+      centre sur Toamasina et en cours d'extension.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Comment ca fonctionne -->
+<section class="ap-section">
+  <h2>Comment ca fonctionne</h2>
+  <div class="ap-grille-3">
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("dashboard") }}</span>
+        <h3 class="carte-phare-titre">1. Creer son compte</h3>
+      </div>
+      <p>Nom, numero de telephone et mot de passe suffisent pour
+      s'inscrire.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("universites") }}</span>
+        <h3 class="carte-phare-titre">2. Renseigner son universite et sa filiere</h3>
+      </div>
+      <p>Facultatif a l'inscription, modifiable ensuite depuis l'espace
+      securite du compte.</p>
+    </div>
+    <div class="carte-phare">
+      <div class="carte-phare-entete">
+        <span class="carte-phare-icone">{{ icone("cercles") }}</span>
+        <h3 class="carte-phare-titre">3. Rejoindre un cercle</h3>
+      </div>
+      <p>Rejoindre un cercle existant ou en creer un pour sa filiere ou son
+      groupe de revision.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Vision nationale -->
+<section class="ap-section ap-section-nuit">
+  <h2>Toamasina &rarr; Madagascar</h2>
+  <p>
+    Gasy Mahay est aujourd'hui utilisable par
+    <strong>{{ nb_universites }} universite{{ "s" if nb_universites > 1 else "" }}</strong>
+    publique{{ "s" if nb_universites > 1 else "" }} malgache{{ "s" if nb_universites > 1 else "" }}.
+    L'objectif est d'ajouter, au fur et a mesure que leurs catalogues de
+    formations sont verifies aupres de sources officielles, les autres
+    universites publiques du pays — sans jamais presenter comme
+    disponible une universite dont les donnees n'ont pas encore ete
+    confirmees.
+  </p>
+</section>
+
+<!-- 10. CTA final -->
+<section class="ap-section ap-cta-finale">
+  <h2>Envie de rejoindre Gasy Mahay ?</h2>
+  <div class="cta-groupe">
+    <a class="bouton bouton-primaire" href="/inscription">Creer un compte</a>
+    <a class="bouton bouton-secondaire" href="/universites">Voir les universites</a>
+    <a class="bouton bouton-secondaire" href="/cercles">Decouvrir les cercles</a>
+    <a class="bouton bouton-secondaire" href="/contact">Nous contacter</a>
+  </div>
+</section>
+
 {% endblock %}

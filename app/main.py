@@ -154,8 +154,9 @@ def accueil(request: Request, session: Session = Depends(get_session)):
 
 
 @app.get("/a-propos")
-def a_propos(request: Request):
-    return templates.TemplateResponse(request, "a_propos.html", {})
+def a_propos(request: Request, session: Session = Depends(get_session)):
+    nb_universites = len(session.exec(select(Universite).where(Universite.est_active == True)).all())  # noqa: E712
+    return templates.TemplateResponse(request, "a_propos.html", {"nb_universites": nb_universites})
 
 
 @app.get("/universites")
