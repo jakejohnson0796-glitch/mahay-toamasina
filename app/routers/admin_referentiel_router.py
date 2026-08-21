@@ -20,6 +20,7 @@ from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle
 from ..referentiel import NIVEAUX
+from ..cercles_referentiel import assurer_cercles_pour_filiere
 from .cercles_router import _assurer_membres_admins
 
 router = APIRouter()
@@ -113,6 +114,15 @@ def assigner_mention_filiere(
 
     session.add(filiere)
     session.commit()
+    session.refresh(filiere)
+
+    # Des que la mention est connue, la filiere peut recevoir ses 8
+    # cercles nationaux (un par niveau) sans attendre qu'un etudiant en
+    # demande un explicitement — voir cercles_referentiel.py. Aucun
+    # effet si mention_id vient d'etre efface (filiere.mention_id est
+    # alors None, assurer_cercles_pour_filiere ne fait rien).
+    assurer_cercles_pour_filiere(session, filiere, admin)
+
     return RedirectResponse("/admin/referentiel?ok=filiere_mise_a_jour", status_code=303)
 
 
