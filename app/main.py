@@ -16,10 +16,12 @@ from sqlmodel import Session, select
 from .config import parametres
 from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
-from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router
+from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .seed_data import peupler_donnees_initiales
+from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
+from .cercles_referentiel import assurer_cercles_referentiel
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -69,6 +71,8 @@ app.include_router(admin_router.router)
 app.include_router(admin_referentiel_router.router)
 app.include_router(tuteur_router.router)
 app.include_router(classe_router.router)
+app.include_router(faq_router.router)
+app.include_router(feedback_router.router)
 
 
 def _masquer_mot_de_passe(url: str) -> str:
@@ -117,7 +121,13 @@ async def au_demarrage() -> None:
     print("[DEBUG DATABASE] Verification des donnees initiales...")
     with Session(engine) as session:
         peupler_donnees_initiales(session)
+        peupler_faq_initiale(session)
         assurer_compte_admin(session)
+        # Apres assurer_compte_admin : un cercle genere automatiquement a
+        # besoin d'un createur_id valide (voir cercles_referentiel.py).
+        nb_cercles_crees = assurer_cercles_referentiel(session)
+        if nb_cercles_crees:
+            print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
     print("[DEBUG DATABASE] Donnees initiales OK.")
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
     print("[DEBUG DATABASE] Demarrage termine.")
