@@ -13,14 +13,19 @@ requetes HTTP classiques qu'aux connexions WebSocket.
 from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
 from sqlmodel import Session, select, or_
 
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle, StatutDemandeCreationCercle, StatutCercle, ThemeDuJour
+from ..models import (
+    CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Utilisateur,
+    RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
+    StatutDemandeCreationCercle, StatutCercle, ThemeDuJour,
+    MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
+)
 from ..auth import utilisateur_courant
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
@@ -108,6 +113,59 @@ def _assurer_membres_admins(session: Session, cercle_id: int) -> None:
         return
     for admin in a_ajouter:
         session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=admin.id))
+    session.commit()
+
+
+def _reactions_du_message(session: Session, message_id: int, utilisateur_id: int) -> list[dict]:
+    """Compte les reactions d'un message, groupees par type (§4 du brief :
+    "👍 5   ❤️ 3   😂 1"), en indiquant si l'utilisateur courant en fait
+    partie (utilise cote frontend pour surligner sa propre reaction)."""
+    lignes = session.exec(select(MessageReaction).where(MessageReaction.message_id == message_id)).all()
+    comptes: dict[str, dict] = {}
+    for r in lignes:
+        entree = comptes.setdefault(r.type_reaction.value, {"type_reaction": r.type_reaction.value, "total": 0, "mienne": False})
+        entree["total"] += 1
+        if r.utilisateur_id == utilisateur_id:
+            entree["mienne"] = True
+    # Ordre stable = ordre des TypeReaction (pas d'ordre d'insertion en base).
+    return [comptes[t.value] for t in TypeReaction if t.value in comptes]
+
+
+def _nombre_reponses(session: Session, message_id: int) -> int:
+    """Nombre de reponses directes a un message (§6 : "💬 6 reponses").
+    Ne compte pas recursivement les reponses-a-des-reponses : un thread
+    reste a un seul niveau de profondeur, comme le reste de l'UX cible
+    (Messenger/WhatsApp ne font pas non plus de threads imbriques)."""
+    return len(session.exec(
+        select(MessageCercle.id).where(
+            MessageCercle.parent_message_id == message_id,
+            MessageCercle.supprime == False,  # noqa: E712
+        )
+    ).all())
+
+
+def _creer_notification(
+    session: Session,
+    destinataire_id: int,
+    type_notification: TypeNotification,
+    contenu: str,
+    acteur_id: Optional[int] = None,
+    cercle_id: Optional[int] = None,
+    message_id: Optional[int] = None,
+) -> None:
+    """Cree une notification, sauf si l'acteur et le destinataire sont la
+    meme personne (§11 du brief : "eviter les notifications inutiles" —
+    personne n'a besoin d'etre notifie de sa propre action)."""
+    if acteur_id is not None and acteur_id == destinataire_id:
+        return
+    session.add(Notification(
+        destinataire_id=destinataire_id,
+        type_notification=type_notification,
+        contenu=contenu,
+        acteur_id=acteur_id,
+        cercle_id=cercle_id,
+        message_id=message_id,
+    ))
     session.commit()
 
 
@@ -664,14 +722,25 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
     en_attente = bool(not membre and _demande_en_attente(session, cercle_id, utilisateur.id))
 
     messages = []
+    message_epingle = None
     if membre:
         lignes = session.exec(
             select(MessageCercle, Utilisateur)
             .where(MessageCercle.cercle_id == cercle_id)
             .where(MessageCercle.auteur_id == Utilisateur.id)
             .where(MessageCercle.supprime == False)  # noqa: E712 — comparaison SQLModel/SQLAlchemy, pas Python
+            # Seul le fil principal est charge ici : les reponses
+            # (parent_message_id renseigne) sont chargees a la demande par
+            # /cercles/{id}/messages/{id}/thread quand l'utilisateur ouvre
+            # le panneau (§28 : chargement progressif des threads).
+            .where(MessageCercle.parent_message_id == None)  # noqa: E711
             .order_by(MessageCercle.date_envoi)
         ).all()
+        auteurs_epinglage_ids = {m.epingle_par_id for m, _ in lignes if m.epingle_par_id}
+        noms_epingleurs = {
+            u2.id: u2.nom
+            for u2 in session.exec(select(Utilisateur).where(Utilisateur.id.in_(auteurs_epinglage_ids))).all()
+        } if auteurs_epinglage_ids else {}
         messages = [
             {
                 "id": m.id,
@@ -681,9 +750,21 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "piece_jointe_chemin": m.piece_jointe_chemin,
                 "piece_jointe_nom": m.piece_jointe_nom,
                 "est_moi": u.id == utilisateur.id,
+                "date_envoi": m.date_envoi,
+                "modifie": m.date_modification is not None,
+                "epingle": m.epingle,
+                "reponses": _nombre_reponses(session, m.id),
+                "reactions": _reactions_du_message(session, m.id, utilisateur.id),
             }
             for m, u in lignes
         ]
+        ligne_epinglee = next((m for m, _ in lignes if m.epingle), None)
+        if ligne_epinglee:
+            message_epingle = {
+                "id": ligne_epinglee.id,
+                "contenu": ligne_epinglee.contenu,
+                "epingle_par": noms_epingleurs.get(ligne_epinglee.epingle_par_id),
+            }
 
     return templates.TemplateResponse(
         request,
@@ -695,6 +776,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
+            "message_epingle": message_epingle,
             "utilisateur": utilisateur,
         },
     )
@@ -883,6 +965,232 @@ def signaler_message(
     return RedirectResponse(f"/cercles/{cercle_id}?signale=1", status_code=303)
 
 
+@router.post("/cercles/{cercle_id}/messages/{message_id}/reaction")
+async def reagir_message(
+    request: Request,
+    cercle_id: int,
+    message_id: int,
+    type_reaction: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Ajoute/retire/change la reaction de l'utilisateur courant sur un
+    message (§4 du brief). Comportement "WhatsApp-style" : un utilisateur
+    n'a jamais plus d'UNE reaction active a la fois sur un meme message.
+    - meme emoji que la reaction actuelle -> on la retire ;
+    - emoji different -> on remplace l'ancienne par la nouvelle ;
+    - pas de reaction actuelle -> on l'ajoute.
+    Repond en JSON (pas de redirection) : appele en AJAX depuis le chat
+    pour eviter un rechargement complet de la page a chaque clic (§28).
+    """
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecte.")
+
+    try:
+        type_valide = TypeReaction(type_reaction)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Type de reaction invalide.")
+
+    message = session.get(MessageCercle, message_id)
+    if not message or message.cercle_id != cercle_id or message.supprime:
+        raise HTTPException(status_code=404, detail="Message introuvable.")
+    if not _est_membre(session, cercle_id, utilisateur.id):
+        raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
+
+    reaction_existante = session.exec(
+        select(MessageReaction).where(
+            MessageReaction.message_id == message_id,
+            MessageReaction.utilisateur_id == utilisateur.id,
+        )
+    ).first()
+
+    if reaction_existante and reaction_existante.type_reaction == type_valide:
+        session.delete(reaction_existante)
+        session.commit()
+    else:
+        if reaction_existante:
+            session.delete(reaction_existante)
+            session.commit()
+        session.add(MessageReaction(message_id=message_id, utilisateur_id=utilisateur.id, type_reaction=type_valide))
+        session.commit()
+        if message.auteur_id != utilisateur.id:
+            _creer_notification(
+                session,
+                destinataire_id=message.auteur_id,
+                type_notification=TypeNotification.REACTION,
+                contenu=f"{utilisateur.nom} a reagi {type_valide.value} a votre message",
+                acteur_id=utilisateur.id,
+                cercle_id=cercle_id,
+                message_id=message_id,
+            )
+
+    reactions = _reactions_du_message(session, message_id, utilisateur.id)
+    await gestionnaire.diffuser(cercle_id, {"type": "reaction", "message_id": message_id, "reactions": reactions})
+    return {"reactions": reactions}
+
+
+@router.post("/cercles/{cercle_id}/messages/{message_id}/modifier")
+async def modifier_message(
+    request: Request,
+    cercle_id: int,
+    message_id: int,
+    contenu: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Modification du contenu d'un message par son auteur uniquement
+    (§9 du brief). Meme regle stricte que la suppression : personne
+    d'autre, y compris le createur du cercle ou un admin, ne peut
+    modifier le message de quelqu'un d'autre — seule la suppression via
+    signalement/moderation admin existe pour le contenu d'autrui."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecte.")
+
+    message = session.get(MessageCercle, message_id)
+    if not message or message.cercle_id != cercle_id or message.supprime:
+        raise HTTPException(status_code=404, detail="Message introuvable.")
+    if message.auteur_id != utilisateur.id:
+        raise HTTPException(status_code=403, detail="Vous ne pouvez modifier que vos propres messages.")
+
+    contenu_nettoye = contenu.strip()[:LONGUEUR_MAX_MESSAGE]
+    if not contenu_nettoye:
+        raise HTTPException(status_code=400, detail="Le message ne peut pas etre vide.")
+
+    message.contenu = contenu_nettoye
+    message.date_modification = datetime.utcnow()
+    session.add(message)
+    session.commit()
+
+    await gestionnaire.diffuser(cercle_id, {
+        "type": "message_modifie",
+        "id": message.id,
+        "contenu": contenu_nettoye,
+    })
+    return {"id": message.id, "contenu": contenu_nettoye}
+
+
+@router.post("/cercles/{cercle_id}/messages/{message_id}/epingler")
+async def epingler_message(
+    request: Request,
+    cercle_id: int,
+    message_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Epingle un message (§10). Reserve aux personnes qui peuvent gerer
+    le cercle (createur ou admin — meme regle que _peut_gerer_cercle,
+    utilisee partout ailleurs pour les actions de moderation du cercle).
+    Un seul message epingle a la fois : en epingler un nouveau desepingle
+    automatiquement l'ancien."""
+    utilisateur = utilisateur_courant(request, session)
+    cercle = session.get(CercleEtude, cercle_id)
+    if not utilisateur or not cercle:
+        raise HTTPException(status_code=404, detail="Cercle introuvable.")
+    if not _peut_gerer_cercle(cercle, utilisateur):
+        raise HTTPException(status_code=403, detail="Action reservee au createur du cercle ou a un administrateur.")
+
+    message = session.get(MessageCercle, message_id)
+    if not message or message.cercle_id != cercle_id or message.supprime:
+        raise HTTPException(status_code=404, detail="Message introuvable.")
+
+    anciens_epingles = session.exec(
+        select(MessageCercle).where(MessageCercle.cercle_id == cercle_id, MessageCercle.epingle == True)  # noqa: E712
+    ).all()
+    for ancien in anciens_epingles:
+        ancien.epingle = False
+        ancien.epingle_par_id = None
+        ancien.date_epinglage = None
+        session.add(ancien)
+
+    message.epingle = True
+    message.epingle_par_id = utilisateur.id
+    message.date_epinglage = datetime.utcnow()
+    session.add(message)
+    session.commit()
+
+    await gestionnaire.diffuser(cercle_id, {
+        "type": "epinglage",
+        "id": message.id,
+        "contenu": message.contenu,
+        "epingle_par": utilisateur.nom,
+    })
+    return {"id": message.id, "epingle": True}
+
+
+@router.post("/cercles/{cercle_id}/messages/{message_id}/desepingler")
+async def desepingler_message(
+    request: Request,
+    cercle_id: int,
+    message_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    cercle = session.get(CercleEtude, cercle_id)
+    if not utilisateur or not cercle:
+        raise HTTPException(status_code=404, detail="Cercle introuvable.")
+    if not _peut_gerer_cercle(cercle, utilisateur):
+        raise HTTPException(status_code=403, detail="Action reservee au createur du cercle ou a un administrateur.")
+
+    message = session.get(MessageCercle, message_id)
+    if not message or message.cercle_id != cercle_id:
+        raise HTTPException(status_code=404, detail="Message introuvable.")
+
+    message.epingle = False
+    message.epingle_par_id = None
+    message.date_epinglage = None
+    session.add(message)
+    session.commit()
+
+    await gestionnaire.diffuser(cercle_id, {"type": "desepinglage", "id": message.id})
+    return {"id": message.id, "epingle": False}
+
+
+@router.get("/cercles/{cercle_id}/messages/{message_id}/thread")
+def voir_thread(request: Request, cercle_id: int, message_id: int, session: Session = Depends(get_session)):
+    """Renvoie le message parent et toutes ses reponses (§6 du brief),
+    charge a la demande quand l'utilisateur ouvre le panneau de fil de
+    discussion plutot qu'a l'ouverture du salon (§28 : chargement
+    progressif des threads)."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecte.")
+    if not _est_membre(session, cercle_id, utilisateur.id):
+        raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
+
+    parent = session.get(MessageCercle, message_id)
+    if not parent or parent.cercle_id != cercle_id:
+        raise HTTPException(status_code=404, detail="Message introuvable.")
+
+    def _serialiser(m: MessageCercle, u: Utilisateur) -> dict:
+        return {
+            "id": m.id,
+            "auteur": u.nom,
+            "auteur_id": u.id,
+            "contenu": m.contenu,
+            "date_envoi": m.date_envoi.isoformat(),
+            "modifie": m.date_modification is not None,
+            "est_moi": u.id == utilisateur.id,
+            "reactions": _reactions_du_message(session, m.id, utilisateur.id),
+        }
+
+    auteur_parent = session.get(Utilisateur, parent.auteur_id)
+    lignes_reponses = session.exec(
+        select(MessageCercle, Utilisateur)
+        .where(MessageCercle.parent_message_id == message_id)
+        .where(MessageCercle.auteur_id == Utilisateur.id)
+        .where(MessageCercle.supprime == False)  # noqa: E712
+        .order_by(MessageCercle.date_envoi)
+    ).all()
+
+    return {
+        "parent": _serialiser(parent, auteur_parent) if auteur_parent else None,
+        "reponses": [_serialiser(m, u) for m, u in lignes_reponses],
+    }
+
+
 @router.get("/cercles/{cercle_id}/recherche")
 def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
@@ -959,12 +1267,75 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
             contenu = (donnees_recues.get("contenu") or "").strip()[:LONGUEUR_MAX_MESSAGE]
             if not contenu:
                 continue
+            # parent_message_id : presence d'une reponse (§5). mentions :
+            # liste d'IDs choisis explicitement par l'autocompletion cote
+            # client (§7) — on ne re-parse jamais le texte pour deviner
+            # qui est mentionne, ce qui serait fragile (accents, noms
+            # composes, homonymes) et non fiable pour declencher une
+            # notification.
+            parent_message_id = donnees_recues.get("parent_message_id")
+            mentions_demandees = donnees_recues.get("mentions") or []
 
             with Session(engine) as session:
-                message = MessageCercle(cercle_id=cercle_id, auteur_id=user_id, contenu=contenu)
+                parent = None
+                if parent_message_id is not None:
+                    parent = session.get(MessageCercle, parent_message_id)
+                    # Reponse invalide (parent inexistant/supprime/autre
+                    # cercle, ou reponse-a-une-reponse) : on degrade
+                    # silencieusement en message normal plutot que de
+                    # rejeter tout l'envoi pour une incoherence mineure.
+                    if not parent or parent.cercle_id != cercle_id or parent.supprime or parent.parent_message_id is not None:
+                        parent_message_id = None
+                        parent = None
+
+                message = MessageCercle(
+                    cercle_id=cercle_id,
+                    auteur_id=user_id,
+                    contenu=contenu,
+                    parent_message_id=parent_message_id,
+                )
                 session.add(message)
                 session.commit()
                 session.refresh(message)
+
+                # Mentions : ne garder que des IDs reellement membres de ce
+                # cercle (jamais confiance au client), sans doublon, sans
+                # se mentionner soi-meme.
+                ids_membres_valides = {
+                    m.utilisateur_id
+                    for m in session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)).all()
+                }
+                mentions_valides = {
+                    int(uid) for uid in mentions_demandees
+                    if isinstance(uid, (int, str)) and str(uid).isdigit() and int(uid) in ids_membres_valides and int(uid) != user_id
+                }
+                for uid_mentionne in mentions_valides:
+                    session.add(MessageMention(message_id=message.id, utilisateur_mentionne_id=uid_mentionne))
+                session.commit()
+                if mentions_valides:
+                    cercle_actuel = session.get(CercleEtude, cercle_id)
+                    nom_cercle = cercle_actuel.nom if cercle_actuel else "un cercle"
+                    for uid_mentionne in mentions_valides:
+                        _creer_notification(
+                            session,
+                            destinataire_id=uid_mentionne,
+                            type_notification=TypeNotification.MENTION,
+                            contenu=f"{nom_auteur} vous a mentionne dans {nom_cercle}",
+                            acteur_id=user_id,
+                            cercle_id=cercle_id,
+                            message_id=message.id,
+                        )
+
+                if parent is not None and parent.auteur_id != user_id:
+                    _creer_notification(
+                        session,
+                        destinataire_id=parent.auteur_id,
+                        type_notification=TypeNotification.REPONSE_MESSAGE,
+                        contenu=f"{nom_auteur} a repondu a votre message",
+                        acteur_id=user_id,
+                        cercle_id=cercle_id,
+                        message_id=message.id,
+                    )
 
             await gestionnaire.diffuser(cercle_id, {
                 "type": "message",
@@ -972,6 +1343,8 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 "auteur": nom_auteur,
                 "auteur_id": user_id,
                 "contenu": contenu,
+                "parent_message_id": parent_message_id,
+                "mentions": list(mentions_valides),
             })
     except WebSocketDisconnect:
         gestionnaire.deconnecter(cercle_id, websocket)
