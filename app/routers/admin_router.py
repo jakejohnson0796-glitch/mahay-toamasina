@@ -22,6 +22,7 @@ from ..models import (
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
     EvenementTableauBlanc, AutorisationEcritureTableau, Devoir, RenduDevoir,
+    Feedback, ReponseFeedback, StatutFeedback,
 )
 from ..storage import supprimer_fichier
 import secrets
@@ -58,6 +59,16 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             select(Abonnement).where(Abonnement.statut == StatutAbonnement.EN_ATTENTE_PAIEMENT)
         ).all()
     )
+    # Feedbacks sans reponse : on exclut ceux deja masques (une reponse
+    # n'y a plus vraiment sa place une fois l'avis retire de la vue
+    # publique), meme logique que le calcul fait dans feedback_router.py.
+    ids_feedback_avec_reponse = {
+        r.feedback_id for r in session.exec(select(ReponseFeedback)).all()
+    }
+    nb_feedbacks_sans_reponse = len([
+        f for f in session.exec(select(Feedback)).all()
+        if f.id not in ids_feedback_avec_reponse and f.statut != StatutFeedback.MASQUE
+    ])
 
     return templates.TemplateResponse(
         request,
@@ -68,6 +79,7 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             "nb_signalements_quiz_en_attente": nb_signalements_quiz_en_attente,
             "nb_abonnements_en_attente": nb_abonnements_en_attente,
             "nb_sponsors_en_attente": nb_sponsors_en_attente,
+            "nb_feedbacks_sans_reponse": nb_feedbacks_sans_reponse,
         },
     )
 

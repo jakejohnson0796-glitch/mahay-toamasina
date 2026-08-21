@@ -1748,3 +1748,84 @@ button:focus-visible,
   .ap-section { padding: 2rem 0; }
   .ap-section-nuit { padding: 1.75rem 1.25rem; }
 }
+
+/* ============================================================
+   FAQ & Feedback utilisateurs — mission "FAQ + Feedback + Avis"
+   Reutilise les tokens/composants existants (--rayon, --border,
+   .carte-formulaire, .tampon, .signal...), pas de nouveau systeme
+   visuel parallele.
+   ============================================================ */
+
+.faq-liste { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+
+.faq-item {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  overflow: hidden;
+}
+.faq-question { margin: 0; }
+.faq-question-bouton {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+}
+.faq-question-bouton:hover { background: var(--bg-panel-2); }
+.faq-chevron { transition: transform 0.15s var(--ease-fluide, ease); color: var(--text-muted); }
+.faq-question-bouton[aria-expanded="true"] .faq-chevron { transform: rotate(180deg); }
+.faq-reponse { padding: 0 1.25rem 1.1rem; color: var(--text-muted); }
+.faq-reponse p { margin: 0; }
+
+.faq-cta-feedback { margin-top: 2rem; text-align: center; }
+
+.faq-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.faq-checkbox-label input[type="checkbox"] { width: auto; }
+
+/* ---------- Etoiles (lecture + saisie) ---------- */
+
+.etoiles { display: inline-flex; gap: 0.15rem; }
+.etoile-pleine path { fill: var(--lumiere); stroke: none; }
+.etoile-vide path { fill: none; stroke: var(--text-muted); stroke-width: 1.2; }
+
+.etoiles-saisie { margin: 0.5rem 0 1rem; }
+.etoiles-boutons { display: flex; gap: 0.25rem; }
+.etoile-bouton {
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  cursor: pointer;
+  border-radius: var(--rayon);
+}
+.etoile-bouton path { fill: none; stroke: var(--text-muted); stroke-width: 1.2; transition: fill 0.1s, stroke 0.1s; }
+.etoile-bouton:hover path,
+.etoile-bouton:focus-visible path,
+.etoile-bouton-active path { fill: var(--lumiere); stroke: none; }
+.etoile-bouton:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.etoiles-libelle { margin: 0.35rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
+
+#compteur-commentaire { margin-top: 0.35rem; }
+.compteur-limite { color: var(--accent); }
+
+/* Boutons tactiles suffisamment grands sur mobile (Partie 15 du brief) */
+@media (max-width: 640px) {
+  .etoile-bouton svg { width: 38px; height: 38px; }
+  .faq-question-bouton { padding: 1.1rem 1rem; }
+}

@@ -1,0 +1,41 @@
+{#
+Etoiles de notation (1-5), coherentes avec le style "Le Phare" : le
+remplissage utilise --lumiere (meme teinte que le halo "attente" du
+composant signal.html), pas un jaune generique hors palette.
+
+Deux usages :
+  {% from "components/etoiles.html" import etoiles_lecture, etoiles_saisie %}
+
+  etoiles_lecture(note) : affichage statique en lecture seule (avis
+  publics, tableau admin). `note` est un entier 1-5.
+
+  etoiles_saisie(nom_champ="note", valeur=0) : 5 boutons interactifs
+  pour le formulaire de feedback, pilotes par static/js/feedback.js
+  (voir ce fichier). Le champ cache `nom_champ` porte la valeur reelle
+  envoyee au serveur ; les boutons ne sont que l'interface visuelle.
+#}
+{% macro etoiles_lecture(note, taille=18) %}
+<span class="etoiles etoiles-lecture" role="img" aria-label="{{ note }} etoiles sur 5">
+  {% for i in range(1, 6) %}
+  <svg viewBox="0 0 20 20" width="{{ taille }}" height="{{ taille }}" aria-hidden="true" class="{{ 'etoile-pleine' if i <= note else 'etoile-vide' }}">
+    <path d="M10 1.5 L12.35 6.9 L18.2 7.55 L13.8 11.5 L15.05 17.3 L10 14.3 L4.95 17.3 L6.2 11.5 L1.8 7.55 L7.65 6.9 Z" />
+  </svg>
+  {% endfor %}
+</span>
+{% endmacro %}
+
+{% macro etoiles_saisie(nom_champ="note", valeur=0) %}
+<div class="etoiles-saisie" data-etoiles-saisie data-nom-champ="{{ nom_champ }}">
+  <input type="hidden" name="{{ nom_champ }}" value="{{ valeur }}" data-etoiles-valeur required>
+  <div class="etoiles-boutons" role="radiogroup" aria-label="Note de 1 a 5 etoiles">
+    {% for i in range(1, 6) %}
+    <button type="button" class="etoile-bouton" data-etoile-valeur="{{ i }}" role="radio" aria-checked="false" aria-label="{{ i }} etoile{{ 's' if i > 1 else '' }}">
+      <svg viewBox="0 0 20 20" width="32" height="32" aria-hidden="true">
+        <path d="M10 1.5 L12.35 6.9 L18.2 7.55 L13.8 11.5 L15.05 17.3 L10 14.3 L4.95 17.3 L6.2 11.5 L1.8 7.55 L7.65 6.9 Z" />
+      </svg>
+    </button>
+    {% endfor %}
+  </div>
+  <p class="etoiles-libelle" data-etoiles-libelle aria-live="polite">Choisissez une note</p>
+</div>
+{% endmacro %}

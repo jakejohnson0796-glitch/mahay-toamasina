@@ -72,5 +72,22 @@
     </div>
     <div><a class="bouton bouton-secondaire" href="/admin/stats">Ouvrir</a></div>
   </div>
+
+  <div class="carte-cercle">
+    <div>
+      <strong>FAQ</strong>
+      <p>Creer, modifier, activer/desactiver les questions frequentes.</p>
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/faq">Ouvrir</a></div>
+  </div>
+
+  <div class="carte-cercle">
+    <div>
+      <strong>Feedbacks utilisateurs</strong>
+      <p>Consulter les avis, repondre, moderer.</p>
+      {% if nb_feedbacks_sans_reponse %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_feedbacks_sans_reponse }} sans reponse</span>{% endif %}
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/feedback">Ouvrir</a></div>
+  </div>
 </div>
 {% endblock %}

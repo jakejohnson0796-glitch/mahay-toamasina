@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
+{% from "components/etoiles.html" import etoiles_lecture %}
+{% block titre %}Mes avis — Gasy Mahay{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/feedback">&larr; Feedback</a></p>
+<h2>Mes avis</h2>
+
+{% if mes_avis_affiches %}
+<div class="faq-liste">
+  {% for item in mes_avis_affiches %}
+  <div class="carte-formulaire" style="margin-bottom:1.25rem;">
+    {{ etoiles_lecture(item.feedback.note) }}
+    <p class="stat-label">{{ item.feedback.date_creation.strftime("%d/%m/%Y") }} · {{ item.feedback.categorie.value }}</p>
+    <p>{{ item.feedback.commentaire }}</p>
+
+    {% if item.reponse %}
+    <div class="carte-formulaire" style="background:var(--bg-panel-2);margin-top:0.75rem;padding:1rem;">
+      <p class="stat-label"><strong>Reponse de l'equipe Mahay</strong> · {{ item.reponse.date_creation.strftime("%d/%m/%Y") }}</p>
+      <p>{{ item.reponse.reponse }}</p>
+    </div>
+    {% else %}
+    <p class="stat-label">En attente de reponse de l'equipe Mahay.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+{{ etat_vide_constellation(
+  titre="Vous n'avez pas encore laisse d'avis",
+  texte="Partagez votre experience pour nous aider a ameliorer Mahay.",
+  lien_cta="/feedback",
+  texte_cta="Donner mon avis",
+) }}
+{% endif %}
+{% endblock %}

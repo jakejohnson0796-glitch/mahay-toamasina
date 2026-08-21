@@ -537,6 +537,7 @@ class TypeNotification(str, Enum):
     REPONSE_THREAD = "reponse_thread"
     REACTION = "reaction"
     MENTION = "mention"
+    REPONSE_FEEDBACK = "reponse_feedback"
 
 
 class Notification(SQLModel, table=True):
@@ -753,3 +754,94 @@ class RenduDevoir(SQLModel, table=True):
     note: Optional[float] = None
     appreciation_prof: Optional[str] = None
     date_correction: Optional[datetime] = None
+
+
+# ============================================================
+# FAQ & Feedback utilisateurs — voir app/routers/faq_router.py
+# et app/routers/feedback_router.py
+# ============================================================
+
+class CategorieFAQ(str, Enum):
+    """Categories fixes pour la V1 (pas de table dediee : le brief
+    n'exige pas de gestion dynamique des categories, et une table
+    supplementaire pour ~9 valeurs stables serait une complexite non
+    justifiee). Facile a etendre en enum si un besoin de gestion
+    dynamique apparait plus tard."""
+    GENERAL = "general"
+    COMPTE = "compte"
+    COURS = "cours"
+    QUIZ = "quiz"
+    CERCLES = "cercles"
+    IA = "ia"
+    PROFIL = "profil"
+    SECURITE = "securite"
+    FEEDBACK = "feedback"
+
+
+class FAQ(SQLModel, table=True):
+    """Une question/reponse de la FAQ publique. Suppression logique via
+    est_active (meme pattern que Universite.est_active/Mention.est_active) :
+    une question retiree reste en base pour l'historique et peut etre
+    reactivee, plutot qu'un DELETE physique qui perd l'information."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    question: str
+    reponse: str
+    categorie: CategorieFAQ = Field(default=CategorieFAQ.GENERAL, index=True)
+    est_active: bool = Field(default=True, index=True)
+    ordre_affichage: int = Field(default=0)
+    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+
+class CategorieFeedback(str, Enum):
+    GENERAL = "general"
+    COURS = "cours"
+    QUIZ = "quiz"
+    CERCLES = "cercles"
+    IA = "ia"
+    INTERFACE = "interface"
+    BUG = "bug"
+    SUGGESTION = "suggestion"
+    AUTRE = "autre"
+
+
+class StatutFeedback(str, Enum):
+    NOUVEAU = "nouveau"
+    EN_COURS = "en_cours"
+    REPONDU = "repondu"
+    RESOLU = "resolu"
+    MASQUE = "masque"
+
+
+class Feedback(SQLModel, table=True):
+    """Avis d'un utilisateur sur Mahay (note 1-5 + commentaire). est_public
+    est un choix explicite de l'utilisateur a la soumission (Partie 14 du
+    brief : valeur par defaut respectueuse de la confidentialite -> False),
+    distinct de statut=MASQUE qui est une decision de moderation admin."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    note: int  # 1 a 5, valide en route (voir feedback_router.py)
+    commentaire: str
+    categorie: CategorieFeedback = Field(default=CategorieFeedback.GENERAL)
+    statut: StatutFeedback = Field(default=StatutFeedback.NOUVEAU, index=True)
+    est_public: bool = Field(default=False)
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        Index("ix_feedback_note", "note"),
+    )
+
+
+class ReponseFeedback(SQLModel, table=True):
+    """Reponse de l'equipe Mahay a un Feedback. Relation 1-1 (feedback_id
+    unique) : un admin peut modifier sa reponse (Partie 6 du brief), pas en
+    ajouter une deuxieme en parallele — plus simple a afficher et suffisant
+    pour ce besoin."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    feedback_id: int = Field(foreign_key="feedback.id", unique=True, index=True)
+    admin_id: int = Field(foreign_key="utilisateur.id")
+    reponse: str
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)

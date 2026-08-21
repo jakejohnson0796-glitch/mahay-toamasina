@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% from "components/signal.html" import signal %}
+{% from "components/etoiles.html" import etoiles_lecture %}
+{% block titre %}Feedbacks utilisateurs — Gasy Mahay{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
+<h2>Feedbacks utilisateurs</h2>
+
+{% if request.query_params.get("repondu") %}<div class="info">Reponse enregistree.</div>{% endif %}
+{% if request.query_params.get("statut_modifie") %}<div class="info">Statut mis a jour.</div>{% endif %}
+{% if request.query_params.get("masque") %}<div class="info">Avis masque de la vue publique.</div>{% endif %}
+{% if request.query_params.get("erreur") == "reponse_vide" %}<div class="erreur">La reponse ne peut pas etre vide.</div>{% endif %}
+
+<div class="liste-cercles" style="margin-bottom:1.5rem;">
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ total_feedbacks }}</span><span class="stat-label">Feedbacks</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ note_moyenne }} / 5</span><span class="stat-label">Note moyenne</span></div></div>
+  <div class="carte-cercle"><div class="stat"><span class="stat-nombre">{{ nb_sans_reponse }}</span><span class="stat-label">Sans reponse</span></div></div>
+</div>
+
+<div class="carte-formulaire" style="margin-bottom:1.5rem;max-width:none;">
+  <h3 class="titre-carte">Repartition des notes</h3>
+  {% for n in range(5, 0, -1) %}
+  <p class="stat-label">{% for _ in range(n) %}&#9733;{% endfor %}{% for _ in range(5 - n) %}&#9734;{% endfor %} — {{ repartition.get(n, 0) }}</p>
+  {% endfor %}
+</div>
+
+<form class="filtres" method="get" action="/admin/feedback">
+  <div>
+    <label for="q">Rechercher</label>
+    <input type="text" id="q" name="q" value="{{ q }}">
+  </div>
+  <div>
+    <label for="note">Note</label>
+    <select id="note" name="note">
+      <option value="">Toutes</option>
+      {% for n in range(5, 0, -1) %}
+      <option value="{{ n }}" {% if note_filtre == n %}selected{% endif %}>{{ n }} etoile{{ 's' if n > 1 else '' }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="categorie">Categorie</label>
+    <select id="categorie" name="categorie">
+      <option value="">Toutes</option>
+      {% for cat in categories %}
+      <option value="{{ cat.value }}" {% if categorie_filtre == cat.value %}selected{% endif %}>{{ cat.value }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="statut">Statut</label>
+    <select id="statut" name="statut">
+      <option value="">Tous</option>
+      {% for s in statuts %}
+      <option value="{{ s.value }}" {% if statut_filtre == s.value %}selected{% endif %}>{{ s.value }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <button class="bouton bouton-secondaire" type="submit">Filtrer</button>
+  </div>
+</form>
+
+{% for item in feedbacks_affiches %}
+<div class="carte-formulaire" style="margin-bottom:1.25rem;max-width:none;">
+  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+    <div>
+      {{ etoiles_lecture(item.feedback.note) }}
+      <p><strong>{{ item.auteur.nom if item.auteur else "Utilisateur supprime" }}</strong> · <span class="stat-label">{{ item.feedback.date_creation.strftime("%d/%m/%Y") }} · {{ item.feedback.categorie.value }}</span></p>
+    </div>
+    <div>
+      {% if item.feedback.statut.value == "nouveau" %}{{ signal("attente") }}<span class="tampon tampon-attente">Nouveau</span>
+      {% elif item.feedback.statut.value == "en_cours" %}{{ signal("attente") }}<span class="tampon tampon-attente">En cours</span>
+      {% elif item.feedback.statut.value == "repondu" %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Repondu</span>
+      {% elif item.feedback.statut.value == "resolu" %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Resolu</span>
+      {% else %}{{ signal("rejete") }}<span class="tampon tampon-rejete">Masque</span>{% endif %}
+    </div>
+  </div>
+
+  <p>{{ item.feedback.commentaire }}</p>
+
+  {% if item.reponse %}
+  <div class="carte-formulaire" style="background:var(--bg-panel-2);padding:1rem;margin-bottom:0.75rem;">
+    <p class="stat-label"><strong>Votre reponse</strong> · {{ item.reponse.date_creation.strftime("%d/%m/%Y") }}</p>
+    <p>{{ item.reponse.reponse }}</p>
+  </div>
+  {% endif %}
+
+  <details>
+    <summary class="stat-label" style="cursor:pointer;">{{ "Modifier la reponse" if item.reponse else "Repondre" }}</summary>
+    <form method="post" action="/admin/feedback/{{ item.feedback.id }}/repondre" style="margin-top:0.75rem;">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <textarea name="reponse" rows="3" required>{{ item.reponse.reponse if item.reponse else "" }}</textarea>
+      <button class="bouton bouton-primaire" type="submit" style="margin-top:0.5rem;padding:0.4rem 0.8rem;font-size:0.85rem;">Enregistrer la reponse</button>
+    </form>
+  </details>
+
+  <div style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <form method="post" action="/admin/feedback/{{ item.feedback.id }}/statut" style="display:inline-flex;gap:0.5rem;align-items:center;">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <select name="statut" onchange="this.form.submit()">
+        {% for s in statuts %}
+        <option value="{{ s.value }}" {% if s.value == item.feedback.statut.value %}selected{% endif %}>{{ s.value }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% if item.feedback.statut.value != "masque" %}
+    <form method="post" action="/admin/feedback/{{ item.feedback.id }}/masquer" onsubmit="return confirm('Masquer cet avis de la vue publique ?');">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Masquer</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<p>Aucun feedback ne correspond a ce filtre.</p>
+{% endfor %}
+{% endblock %}

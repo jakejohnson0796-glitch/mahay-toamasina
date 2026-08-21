@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "components/signal.html" import signal %}
+{% block titre %}Gestion de la FAQ — Gasy Mahay{% endblock %}
+{% block contenu %}
+<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
+<h2>Gestion de la FAQ</h2>
+
+{% if request.query_params.get("cree") %}<div class="info">Question ajoutee.</div>{% endif %}
+{% if request.query_params.get("modifie") %}<div class="info">Question modifiee.</div>{% endif %}
+{% if request.query_params.get("supprime") %}<div class="info">Question desactivee.</div>{% endif %}
+{% if request.query_params.get("erreur") == "champs_requis" %}<div class="erreur">La question et la reponse sont obligatoires.</div>{% endif %}
+
+<div class="carte-formulaire" style="margin-bottom:2rem;">
+  <h3 class="titre-carte">Ajouter une question</h3>
+  <form method="post" action="/admin/faq">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="question">Question</label>
+    <input type="text" id="question" name="question" required>
+
+    <label for="reponse">Reponse</label>
+    <textarea id="reponse" name="reponse" rows="4" required></textarea>
+
+    <label for="categorie">Categorie</label>
+    <select id="categorie" name="categorie">
+      {% for cat in categories %}
+      <option value="{{ cat.value }}">{{ cat.value }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="ordre_affichage">Ordre d'affichage</label>
+    <input type="number" id="ordre_affichage" name="ordre_affichage" value="0">
+
+    <button class="bouton bouton-primaire bouton-form" type="submit">Ajouter</button>
+  </form>
+</div>
+
+<form class="filtres" method="get" action="/admin/faq">
+  <div>
+    <label for="q">Rechercher</label>
+    <input type="text" id="q" name="q" value="{{ q }}">
+  </div>
+  <div>
+    <label for="categorie_f">Categorie</label>
+    <select id="categorie_f" name="categorie">
+      <option value="">Toutes</option>
+      {% for cat in categories %}
+      <option value="{{ cat.value }}" {% if categorie_filtre == cat.value %}selected{% endif %}>{{ cat.value }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="statut_f">Statut</label>
+    <select id="statut_f" name="statut">
+      <option value="">Toutes</option>
+      <option value="actives" {% if statut_filtre == "actives" %}selected{% endif %}>Actives</option>
+      <option value="inactives" {% if statut_filtre == "inactives" %}selected{% endif %}>Inactives</option>
+    </select>
+  </div>
+  <div>
+    <button class="bouton bouton-secondaire" type="submit">Filtrer</button>
+  </div>
+</form>
+
+<table class="table-manifeste">
+  <thead><tr><th>Question</th><th>Categorie</th><th>Ordre</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+    {% for item in questions %}
+    <tr>
+      <td>{{ item.question }}</td>
+      <td>{{ item.categorie.value }}</td>
+      <td>{{ item.ordre_affichage }}</td>
+      <td>
+        {% if item.est_active %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Active</span>
+        {% else %}{{ signal("rejete") }}<span class="tampon tampon-rejete">Inactive</span>{% endif %}
+      </td>
+      <td>
+        <details>
+          <summary class="stat-label" style="cursor:pointer;">Modifier</summary>
+          <form method="post" action="/admin/faq/{{ item.id }}/modifier" style="margin-top:0.75rem;min-width:20em;">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <label>Question</label>
+            <input type="text" name="question" value="{{ item.question }}" required>
+            <label>Reponse</label>
+            <textarea name="reponse" rows="3" required>{{ item.reponse }}</textarea>
+            <label>Categorie</label>
+            <select name="categorie">
+              {% for cat in categories %}
+              <option value="{{ cat.value }}" {% if cat.value == item.categorie.value %}selected{% endif %}>{{ cat.value }}</option>
+              {% endfor %}
+            </select>
+            <label>Ordre</label>
+            <input type="number" name="ordre_affichage" value="{{ item.ordre_affichage }}">
+            <button class="bouton bouton-primaire" type="submit" style="margin-top:0.75rem;padding:0.4rem 0.8rem;font-size:0.85rem;">Enregistrer</button>
+          </form>
+        </details>
+        <form method="post" action="/admin/faq/{{ item.id }}/basculer-actif" style="display:inline;margin-top:0.5rem;">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">
+            {{ "Desactiver" if item.est_active else "Activer" }}
+          </button>
+        </form>
+        {% if item.est_active %}
+        <form method="post" action="/admin/faq/{{ item.id }}/supprimer" style="display:inline;" onsubmit="return confirm('Confirmer la suppression de cette question ?');">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Supprimer</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Aucune question trouvee.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

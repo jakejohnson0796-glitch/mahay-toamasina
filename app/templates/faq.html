@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
+{% block titre %}Questions frequentes — Gasy Mahay{% endblock %}
+{% block contenu %}
+<p class="eyebrow">Assistance</p>
+<h2>Questions frequentes</h2>
+<p>Trouvez rapidement les reponses a vos questions sur Mahay.</p>
+
+<form class="filtres" method="get" action="/faq">
+  <div>
+    <label for="q">Rechercher une question</label>
+    <input type="text" id="q" name="q" value="{{ q }}" placeholder="ex: comment creer un compte">
+  </div>
+  <div>
+    <label for="categorie">Categorie</label>
+    <select id="categorie" name="categorie" onchange="this.form.submit()">
+      <option value="">Toutes les categories</option>
+      {% for cat in categories %}
+      <option value="{{ cat.value }}" {% if categorie_filtre == cat.value %}selected{% endif %}>
+        {{ { "general": "General", "compte": "Compte et inscription", "cours": "Cours et documents",
+             "quiz": "Quiz", "cercles": "Cercles d'etude", "ia": "IA / Assistant",
+             "profil": "Profil utilisateur", "securite": "Securite et confidentialite",
+             "feedback": "Feedback et assistance" }[cat.value] }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <button class="bouton bouton-secondaire" type="submit">Filtrer</button>
+  </div>
+</form>
+
+{% if questions %}
+<div class="faq-liste">
+  {% for item in questions %}
+  <div class="faq-item">
+    <h3 class="faq-question">
+      <button type="button" class="faq-question-bouton" aria-expanded="false" aria-controls="faq-reponse-{{ item.id }}" id="faq-bouton-{{ item.id }}">
+        <span>{{ item.question }}</span>
+        <span class="faq-chevron" aria-hidden="true">&darr;</span>
+      </button>
+    </h3>
+    <div class="faq-reponse" id="faq-reponse-{{ item.id }}" role="region" aria-labelledby="faq-bouton-{{ item.id }}" hidden>
+      <p>{{ item.reponse }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% elif q or categorie_filtre %}
+{{ etat_vide_constellation(
+  titre="Aucun resultat pour cette recherche",
+  texte="Essayez un autre mot-cle ou choisissez une autre categorie.",
+  lien_cta="/faq",
+  texte_cta="Voir toute la FAQ",
+) }}
+{% else %}
+{{ etat_vide_constellation(
+  titre="La FAQ n'est pas encore disponible",
+  texte="Revenez un peu plus tard, ou contactez-nous directement.",
+  lien_cta="/contact",
+  texte_cta="Nous contacter",
+) }}
+{% endif %}
+
+<div class="carte-formulaire faq-cta-feedback">
+  <h3 class="titre-carte">Vous n'avez pas trouve votre reponse ?</h3>
+  <p class="stat-label">Donnez-nous votre avis ou contactez-nous directement.</p>
+  <a href="/feedback" class="bouton bouton-primaire bouton-form">Donner mon avis</a>
+</div>
+
+<script src="/static/js/faq.js" defer></script>
+{% endblock %}

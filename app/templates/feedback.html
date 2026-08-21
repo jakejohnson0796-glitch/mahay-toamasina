@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
+{% from "components/etoiles.html" import etoiles_lecture, etoiles_saisie %}
+{% block titre %}Votre avis — Gasy Mahay{% endblock %}
+{% block contenu %}
+<p class="eyebrow">Feedback</p>
+<h2>Votre avis compte</h2>
+
+{% if request.query_params.get("envoye") %}
+<div class="info">Merci pour votre feedback ! Votre avis nous aide a ameliorer Mahay.</div>
+{% endif %}
+{% if request.query_params.get("erreur") == "note_invalide" %}<div class="erreur">La note doit etre comprise entre 1 et 5 etoiles.</div>{% endif %}
+{% if request.query_params.get("erreur") == "commentaire_requis" %}<div class="erreur">Merci de laisser un commentaire.</div>{% endif %}
+{% if request.query_params.get("erreur") == "commentaire_trop_long" %}<div class="erreur">Votre commentaire est trop long ({{ longueur_max }} caracteres maximum).</div>{% endif %}
+{% if request.query_params.get("erreur") == "trop_de_tentatives" %}<div class="erreur">Trop d'avis envoyes recemment — reessayez un peu plus tard.</div>{% endif %}
+
+{% if utilisateur %}
+<div class="carte-formulaire">
+  <h3 class="titre-carte">Partagez votre experience</h3>
+
+  <form id="formulaire-feedback" method="post" action="/feedback">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+    <label>Votre note</label>
+    {{ etoiles_saisie(nom_champ="note", valeur=0) }}
+
+    <label for="categorie">Categorie (facultatif)</label>
+    <select id="categorie" name="categorie">
+      {% for cat in categories %}
+      <option value="{{ cat.value }}">
+        {{ { "general": "Experience generale", "cours": "Cours", "quiz": "Quiz",
+             "cercles": "Cercles d'etude", "ia": "IA", "interface": "Interface",
+             "bug": "Bug / probleme technique", "suggestion": "Suggestion", "autre": "Autre" }[cat.value] }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <label for="commentaire">Commentaire</label>
+    <textarea id="commentaire" name="commentaire" rows="5" maxlength="{{ longueur_max }}" placeholder="Partagez votre experience avec Mahay..." required></textarea>
+    <p class="stat-label" id="compteur-commentaire" style="text-align:right;">0 / {{ longueur_max }}</p>
+
+    <label class="faq-checkbox-label">
+      <input type="checkbox" id="est_public" name="est_public" value="1">
+      Afficher mon avis publiquement (seul votre prenom sera visible)
+    </label>
+
+    <button class="bouton bouton-primaire bouton-form" type="submit" data-bouton-envoi>Envoyer mon avis</button>
+  </form>
+</div>
+
+{% if mon_feedback_recent %}
+<div class="carte-formulaire" style="margin-top:1.5rem;">
+  <h3 class="titre-carte">Votre dernier avis</h3>
+  {{ etoiles_lecture(mon_feedback_recent.note) }}
+  <p>{{ mon_feedback_recent.commentaire }}</p>
+  <p class="stat-label">
+    {% if mon_feedback_recent.statut.value == "repondu" or mon_feedback_recent.statut.value == "resolu" %}
+    L'equipe Mahay a repondu — <a href="/feedback/mes-avis">voir la reponse</a>
+    {% else %}
+    En attente de reponse de l'equipe Mahay.
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+{% else %}
+<div class="info">
+  <a href="/connexion">Connectez-vous</a> pour laisser un avis sur Mahay.
+</div>
+{% endif %}
+
+<h2 style="margin-top:3rem;">Ce que pensent nos utilisateurs</h2>
+
+{% if avis_affiches %}
+<div class="faq-liste">
+  {% for item in avis_affiches %}
+  <div class="carte-formulaire" style="margin-bottom:1.25rem;">
+    {{ etoiles_lecture(item.feedback.note) }}
+    <p><strong>{{ item.prenom }}</strong> · <span class="stat-label">{{ item.feedback.date_creation.strftime("%d/%m/%Y") }}</span></p>
+    <p>{{ item.feedback.commentaire }}</p>
+    {% if item.reponse %}
+    <div class="carte-formulaire" style="background:var(--bg-panel-2);margin-top:0.75rem;padding:1rem;">
+      <p class="stat-label"><strong>Reponse de l'equipe Mahay</strong> · {{ item.reponse.date_creation.strftime("%d/%m/%Y") }}</p>
+      <p>{{ item.reponse.reponse }}</p>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+{{ etat_vide_constellation(
+  titre="Pas encore d'avis publics",
+  texte="Soyez le premier a partager votre experience avec Mahay.",
+) }}
+{% endif %}
+
+<script src="/static/js/feedback.js" defer></script>
+{% endblock %}
