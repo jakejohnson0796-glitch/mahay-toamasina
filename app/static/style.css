@@ -534,6 +534,228 @@ input:focus, select:focus, textarea:focus {
 .form-chat { display: flex; gap: 0.75rem; align-items: center; }
 .form-chat input { flex: 1; }
 
+/* ---------- Messagerie enrichie (reactions, reponses, thread, mentions) ---------- */
+
+.message-epingle-banniere {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--rayon);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+.message-epingle-banniere .stat-label { color: var(--accent); margin: 0; }
+.message-epingle-banniere .message-epingle-contenu { flex: 1; color: var(--text); }
+.message-epingle-banniere button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.message-epingle-banniere button:hover { color: var(--text); }
+
+.message-reponse-citation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  border-left: 2px solid var(--accent-2);
+  padding: 0.25rem 0.6rem;
+  margin-bottom: 0.35rem;
+  background: rgba(242, 236, 221, 0.05);
+  border-radius: 0 4px 4px 0;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.message-reponse-citation .message-auteur { margin: 0; }
+.message-reponse-citation .message-citation-texte {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 22rem;
+}
+
+.message-modifie-etiquette {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-left: 0.35rem;
+}
+
+.message-epingle { border: 1px solid var(--lumiere); }
+
+.mention-dans-texte { color: var(--accent-2); font-weight: 600; }
+
+.reactions-du-message {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+.puce-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  color: var(--text);
+}
+.puce-reaction:hover { border-color: var(--accent); }
+.puce-reaction-mienne { border-color: var(--accent); background: var(--accent-soft); }
+
+.conteneur-reaction-picker { position: relative; display: inline-block; }
+.bouton-reagir {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.bouton-reagir:hover { color: var(--accent-2); }
+.panneau-reaction-rapide {
+  position: absolute;
+  bottom: 1.6rem;
+  left: 0;
+  z-index: 12;
+  display: flex;
+  gap: 0.2rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.4rem;
+  box-shadow: var(--shadow-md);
+}
+.panneau-reaction-rapide button {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.1rem 0.2rem;
+  border-radius: 50%;
+}
+.panneau-reaction-rapide button:hover { background: var(--bg-panel-2); }
+
+.bouton-thread-ouvrir {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--accent-2);
+  cursor: pointer;
+  text-align: left;
+  margin-top: 0.3rem;
+}
+.bouton-thread-ouvrir:hover { text-decoration: underline; }
+
+/* Disposition principale : conversation + panneau de fil de discussion
+   cote a cote sur desktop (§24 du brief), le panneau prenant sa place
+   dans le flux normal (pas de position:fixed) pour rester simple et
+   robuste sur toutes les tailles d'ecran. */
+.disposition-chat {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.colonne-conversation { flex: 1; min-width: 0; }
+.panneau-thread {
+  width: 22rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  height: 60vh;
+  min-height: 20em;
+}
+.panneau-thread[hidden] { display: none; }
+.entete-panneau-thread {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.entete-panneau-thread h3 { margin: 0; font-size: 0.95rem; font-family: 'Inter', sans-serif; font-weight: 600; }
+.bouton-fermer-thread {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.bouton-fermer-thread:hover { color: var(--text); }
+.corps-panneau-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.thread-message-parent {
+  background: var(--bg-panel-2);
+  border-radius: var(--rayon);
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 0.5rem;
+}
+.thread-compteur { font-size: 0.75rem; color: var(--text-muted); margin: 0 0 0.5rem; }
+.form-reponse-thread { display: flex; gap: 0.5rem; padding: 0.75rem; border-top: 1px solid var(--border); }
+.form-reponse-thread input { flex: 1; }
+
+.conteneur-mentions-suggestions { position: relative; flex: 1; }
+.liste-suggestions-mentions {
+  position: absolute;
+  bottom: 2.6rem;
+  left: 0;
+  z-index: 12;
+  width: 100%;
+  max-height: 10rem;
+  overflow-y: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rayon);
+  box-shadow: var(--shadow-md);
+}
+.liste-suggestions-mentions button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.liste-suggestions-mentions button:hover,
+.liste-suggestions-mentions button.suggestion-active { background: var(--bg-panel-2); }
+
+/* Panneau de fil de discussion en plein ecran sur mobile (§24) plutot
+   qu'accole a la conversation, faute de place. */
+@media (max-width: 800px) {
+  .disposition-chat { flex-direction: column; }
+  .panneau-thread {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+  }
+}
+
 /* ---------- Quiz IA ---------- */
 
 .carte-quiz { max-width: 40em; margin-bottom: 1.25rem; }

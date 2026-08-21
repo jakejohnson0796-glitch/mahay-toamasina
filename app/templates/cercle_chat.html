@@ -82,63 +82,100 @@
 <div class="info">Message signale — un administrateur va le verifier.</div>
 {% endif %}
 
-<div id="fenetre-chat" class="fenetre-chat">
-  {% for m in messages %}
-  <div class="message {{ 'message-moi' if m.est_moi else '' }}" data-message-id="{{ m.id }}" data-auteur-id="{{ m.auteur_id }}">
-    <span class="message-auteur">{{ m.auteur }}</span>
-    {% if m.piece_jointe_chemin %}
-    <span class="message-contenu">
-      📎 <a href="/cercles/{{ cercle.id }}/messages/{{ m.id }}/piece-jointe" target="_blank">{{ m.piece_jointe_nom }}</a>
-    </span>
-    {% else %}
-    <span class="message-contenu">{{ m.contenu }}</span>
-    {% endif %}
-    <span class="message-actions"></span>
-  </div>
-  {% else %}
-  <p class="stat-label">Aucun message pour l'instant — lancez la discussion.</p>
-  {% endfor %}
+<div id="banniere-epinglee" class="message-epingle-banniere" {% if not message_epingle %}hidden{% endif %}>
+  <span class="stat-label">📌 Épinglé</span>
+  <span id="banniere-epinglee-contenu" class="message-epingle-contenu">{{ message_epingle.contenu if message_epingle else "" }}</span>
+  {% if peut_gerer %}
+  <button type="button" id="banniere-epinglee-fermer" title="Désépingler">✕</button>
+  {% endif %}
 </div>
 
-<form id="form-chat" class="form-chat">
-  <div class="conteneur-emoji-picker">
-    <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" title="Emojis">😊</button>
-    <div id="panneau-emojis" class="panneau-emojis" hidden>
-      <div class="entete-panneau-emojis">
-        <span class="stat-label">Emojis</span>
-        <button type="button" id="bouton-emoji-fermer" class="bouton-emoji-fermer">✕ Fermer</button>
-      </div>
-      <div class="grille-emojis">
-        {% for e in ["😀","😂","🙂","😅","😭","🤔","😴","😎","👍","👏","🙏","🙌","💪","✌️","❤️","🔥","🎉","✅","❌","💡","📚","✏️","📖","🎓","⏰","☕","🧠","😢"] %}
-        <button type="button" class="bouton-emoji" data-emoji="{{ e }}">{{ e }}</button>
-        {% endfor %}
-      </div>
+<div class="disposition-chat">
+  <div class="colonne-conversation">
+    <div id="fenetre-chat" class="fenetre-chat">
+      {% for m in messages %}
+      {% include "_message_cercle.html" %}
+      {% else %}
+      <p class="stat-label" id="etat-vide-chat">Aucun message pour le moment. Soyez le premier à écrire !</p>
+      {% endfor %}
     </div>
-  </div>
-  <input type="text" id="champ-message" placeholder="Ecrire un message..." autocomplete="off" maxlength="2000">
-  <button class="bouton bouton-primaire" type="submit">Envoyer</button>
-</form>
 
-<form id="form-fichier" method="post" action="/cercles/{{ cercle.id }}/message-fichier" enctype="multipart/form-data" style="margin-top:0.5rem;">
-  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-  <label for="fichier-pdf" style="font-size:0.85rem;">Partager un PDF :</label>
-  <input type="file" id="fichier-pdf" name="fichier" accept="application/pdf">
-  <button class="bouton bouton-secondaire" type="submit" style="padding:0.3rem 0.8rem;font-size:0.85rem;">Envoyer le fichier</button>
-</form>
+    <form id="form-chat" class="form-chat">
+      <div class="conteneur-emoji-picker">
+        <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" title="Emojis">😊</button>
+        <div id="panneau-emojis" class="panneau-emojis" hidden>
+          <div class="entete-panneau-emojis">
+            <span class="stat-label">Emojis</span>
+            <button type="button" id="bouton-emoji-fermer" class="bouton-emoji-fermer">✕ Fermer</button>
+          </div>
+          <div class="grille-emojis">
+            {% for e in ["😀","😂","🙂","😅","😭","🤔","😴","😎","👍","👏","🙏","🙌","💪","✌️","❤️","🔥","🎉","✅","❌","💡","📚","✏️","📖","🎓","⏰","☕","🧠","😢"] %}
+            <button type="button" class="bouton-emoji" data-emoji="{{ e }}">{{ e }}</button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="conteneur-mentions-suggestions">
+        <input type="text" id="champ-message" placeholder="Ecrire un message... (@ pour mentionner)" autocomplete="off" maxlength="2000">
+        <div id="suggestions-mentions-principal" class="liste-suggestions-mentions" hidden></div>
+      </div>
+      <button class="bouton bouton-primaire" type="submit">Envoyer</button>
+    </form>
+
+    <form id="form-fichier" method="post" action="/cercles/{{ cercle.id }}/message-fichier" enctype="multipart/form-data" style="margin-top:0.5rem;">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="fichier-pdf" style="font-size:0.85rem;">Partager un PDF :</label>
+      <input type="file" id="fichier-pdf" name="fichier" accept="application/pdf">
+      <button class="bouton bouton-secondaire" type="submit" style="padding:0.3rem 0.8rem;font-size:0.85rem;">Envoyer le fichier</button>
+    </form>
+  </div>
+
+  <div id="panneau-thread" class="panneau-thread" hidden>
+    <div class="entete-panneau-thread">
+      <h3>Fil de discussion</h3>
+      <button type="button" id="bouton-fermer-thread" class="bouton-fermer-thread" title="Fermer">✕</button>
+    </div>
+    <div id="corps-panneau-thread" class="corps-panneau-thread">
+      <p class="stat-label">Chargement…</p>
+    </div>
+    <form id="form-reponse-thread" class="form-reponse-thread">
+      <div class="conteneur-mentions-suggestions">
+        <input type="text" id="champ-reponse-thread" placeholder="Répondre dans le fil…" autocomplete="off" maxlength="2000">
+        <div id="suggestions-mentions-thread" class="liste-suggestions-mentions" hidden></div>
+      </div>
+      <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.9rem;">➤</button>
+    </form>
+  </div>
+</div>
 
 <script>
 (function () {
   const idUtilisateur = {{ utilisateur.id }};
   const cercleId = {{ cercle.id }};
+  const peutGerer = {{ "true" if peut_gerer else "false" }};
+  const membresPourMentions = {{ membres_pour_mentions | tojson }};
   // Jeton CSRF (voir app/csrf.py) : les formulaires "Supprimer"/"Signaler"
-  // sont construits dynamiquement en JS (pas dans le HTML du template),
-  // donc le champ cache habituel ne peut pas etre insere cote serveur —
-  // on l'ajoute nous-memes a chaque formulaire cree ci-dessous.
+  // et les appels fetch() sont construits dynamiquement en JS (pas dans
+  // le HTML du template), donc le champ cache habituel ne peut pas etre
+  // insere cote serveur — on l'ajoute nous-memes a chaque appel ci-dessous.
   const jetonCsrf = "{{ jeton_csrf(request) }}";
   const fenetreChat = document.getElementById("fenetre-chat");
   const listePresence = document.getElementById("liste-presence");
   const formulaire = document.getElementById("form-chat");
   const champMessage = document.getElementById("champ-message");
+  const banniereEpinglee = document.getElementById("banniere-epinglee");
+  const banniereEpingleeContenu = document.getElementById("banniere-epinglee-contenu");
+  const banniereEpingleeFermer = document.getElementById("banniere-epinglee-fermer");
+  const panneauThread = document.getElementById("panneau-thread");
+  const corpsPanneauThread = document.getElementById("corps-panneau-thread");
+  const boutonFermerThread = document.getElementById("bouton-fermer-thread");
+  const formReponseThread = document.getElementById("form-reponse-thread");
+  const champReponseThread = document.getElementById("champ-reponse-thread");
+
+  const EMOJI_REACTION = { pouce: "👍", coeur: "❤️", rire: "😂", etonne: "😮", triste: "😢", colere: "😡", fete: "🎉" };
+  const ORDRE_REACTIONS = ["pouce", "coeur", "rire", "etonne", "triste", "colere", "fete"];
+
+  let threadOuvertPourId = null;
 
   const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
   const ws = new WebSocket(protocole + "//" + window.location.host + "/cercles/" + cercleId + "/ws");
@@ -151,36 +188,42 @@
     "Autre",
   ];
 
-  // Un message ne peut etre supprime que par son propre auteur : ce
-  // choix cote interface est purement cosmetique (afficher/masquer le
-  // bouton), la regle reelle est appliquee et revalidee cote serveur
-  // dans supprimer_message() (app/routers/cercles_router.py), qui
-  // refuse toute suppression si auteur_id != utilisateur courant.
+  async function appelPost(url, champs) {
+    const donnees = new FormData();
+    donnees.append("_csrf", jetonCsrf);
+    Object.keys(champs || {}).forEach(function (cle) { donnees.append(cle, champs[cle]); });
+    const reponse = await fetch(url, { method: "POST", body: donnees });
+    if (!reponse.ok) {
+      const detail = await reponse.json().catch(function () { return {}; });
+      throw new Error(detail.detail || ("Erreur " + reponse.status));
+    }
+    return reponse.json();
+  }
+
+  // ---------- Suppression / Signalement (inchange) ----------
+
   function creerActionSuppression(messageId) {
-    const form = document.createElement("form");
-    form.method = "post";
-    form.action = "/cercles/" + cercleId + "/messages/" + messageId + "/supprimer";
-    form.style.display = "inline";
-    const champCsrf = document.createElement("input");
-    champCsrf.type = "hidden";
-    champCsrf.name = "_csrf";
-    champCsrf.value = jetonCsrf;
-    form.appendChild(champCsrf);
     const bouton = document.createElement("button");
-    bouton.type = "submit";
+    bouton.type = "button";
     bouton.className = "lien-action";
     bouton.title = "Supprimer ce message";
     bouton.textContent = "Supprimer";
-    form.appendChild(bouton);
-    return form;
+    bouton.addEventListener("click", function () {
+      if (!confirm("Supprimer ce message ?")) return;
+      const form = document.createElement("form");
+      form.method = "post";
+      form.action = "/cercles/" + cercleId + "/messages/" + messageId + "/supprimer";
+      const champCsrf = document.createElement("input");
+      champCsrf.type = "hidden";
+      champCsrf.name = "_csrf";
+      champCsrf.value = jetonCsrf;
+      form.appendChild(champCsrf);
+      document.body.appendChild(form);
+      form.submit();
+    });
+    return bouton;
   }
 
-  // Signalement : un motif est obligatoire avant tout envoi. La liste
-  // deroulante impose un choix (aucune option vide selectionnable), et
-  // "Autre" ouvre un champ de saisie libre qui devient lui-meme requis.
-  // Cote serveur, signaler_message() revalide independamment que le
-  // motif final n'est jamais vide, et refuse le signalement de son
-  // propre message meme si ce bouton n'est jamais affiche pour ca.
   function creerActionSignalement(messageId) {
     const conteneur = document.createElement("span");
     conteneur.className = "conteneur-signalement";
@@ -269,26 +312,397 @@
     return conteneur;
   }
 
+  // ---------- Reactions ----------
+
+  function rendreReactions(bulle, reactions) {
+    let conteneur = bulle.querySelector(".reactions-du-message");
+    if (!conteneur) {
+      conteneur = document.createElement("div");
+      conteneur.className = "reactions-du-message";
+      bulle.appendChild(conteneur);
+    }
+    conteneur.innerHTML = "";
+    (reactions || []).forEach(function (r) {
+      const puce = document.createElement("button");
+      puce.type = "button";
+      puce.className = "puce-reaction" + (r.mienne ? " puce-reaction-mienne" : "");
+      puce.textContent = (EMOJI_REACTION[r.type_reaction] || r.type_reaction) + " " + r.total;
+      puce.addEventListener("click", function () { envoyerReaction(bulle.dataset.messageId, r.type_reaction); });
+      conteneur.appendChild(puce);
+    });
+  }
+
+  async function envoyerReaction(messageId, typeReaction) {
+    try {
+      const resultat = await appelPost("/cercles/" + cercleId + "/messages/" + messageId + "/reaction", { type_reaction: typeReaction });
+      const bulle = fenetreChat.querySelector('[data-message-id="' + messageId + '"]');
+      if (bulle) rendreReactions(bulle, resultat.reactions);
+    } catch (erreur) {
+      alert(erreur.message);
+    }
+  }
+
+  function creerBoutonReagir(messageId) {
+    const conteneur = document.createElement("span");
+    conteneur.className = "conteneur-reaction-picker";
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = "bouton-reagir";
+    bouton.textContent = "😊 Réagir";
+    const panneau = document.createElement("div");
+    panneau.className = "panneau-reaction-rapide";
+    panneau.hidden = true;
+    ORDRE_REACTIONS.forEach(function (type) {
+      const boutonEmoji = document.createElement("button");
+      boutonEmoji.type = "button";
+      boutonEmoji.textContent = EMOJI_REACTION[type];
+      boutonEmoji.title = type;
+      boutonEmoji.addEventListener("click", function () {
+        envoyerReaction(messageId, type);
+        panneau.hidden = true;
+      });
+      panneau.appendChild(boutonEmoji);
+    });
+    bouton.addEventListener("click", function (evenement) {
+      evenement.stopPropagation();
+      document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { if (p !== panneau) p.hidden = true; });
+      panneau.hidden = !panneau.hidden;
+    });
+    conteneur.appendChild(bouton);
+    conteneur.appendChild(panneau);
+    return conteneur;
+  }
+
+  document.addEventListener("click", function () {
+    document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { p.hidden = true; });
+  });
+
+  // ---------- Edition ----------
+
+  function activerEditionMessage(bulle) {
+    const spanContenu = bulle.querySelector(".message-contenu");
+    if (!spanContenu || bulle.dataset.piecejointe === "1") return;
+    const messageId = bulle.dataset.messageId;
+    const texteActuel = spanContenu.textContent;
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = texteActuel;
+    input.maxLength = 2000;
+    input.style.width = "100%";
+    spanContenu.replaceWith(input);
+    input.focus();
+
+    async function valider() {
+      const nouveauTexte = input.value.trim();
+      if (!nouveauTexte || nouveauTexte === texteActuel) { annuler(); return; }
+      try {
+        await appelPost("/cercles/" + cercleId + "/messages/" + messageId + "/modifier", { contenu: nouveauTexte });
+        // La reponse WS "message_modifie" (recue par tout le monde, y
+        // compris nous) se charge de re-afficher le contenu a jour.
+      } catch (erreur) {
+        alert(erreur.message);
+        annuler();
+      }
+    }
+    function annuler() {
+      const span = document.createElement("span");
+      span.className = "message-contenu";
+      span.textContent = texteActuel;
+      input.replaceWith(span);
+    }
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); valider(); }
+      if (e.key === "Escape") { e.preventDefault(); annuler(); }
+    });
+    input.addEventListener("blur", valider);
+  }
+
+  function appliquerMessageModifie(donnees) {
+    const bulle = fenetreChat.querySelector('[data-message-id="' + donnees.id + '"]');
+    if (!bulle) return;
+    const span = bulle.querySelector("input") || bulle.querySelector(".message-contenu");
+    const nouveauSpan = document.createElement("span");
+    nouveauSpan.className = "message-contenu";
+    nouveauSpan.textContent = donnees.contenu;
+    span.replaceWith(nouveauSpan);
+    if (!bulle.querySelector(".message-modifie-etiquette")) {
+      const etiquette = document.createElement("span");
+      etiquette.className = "message-modifie-etiquette";
+      etiquette.textContent = "(modifié)";
+      nouveauSpan.after(etiquette);
+    }
+  }
+
+  // ---------- Epinglage ----------
+
+  async function epinglerMessage(messageId, contenu) {
+    try {
+      await appelPost("/cercles/" + cercleId + "/messages/" + messageId + "/epingler", {});
+    } catch (erreur) {
+      alert(erreur.message);
+    }
+  }
+  async function desepinglerMessage(messageId) {
+    try {
+      await appelPost("/cercles/" + cercleId + "/messages/" + messageId + "/desepingler", {});
+    } catch (erreur) {
+      alert(erreur.message);
+    }
+  }
+
+  function appliquerEpinglage(donnees) {
+    fenetreChat.querySelectorAll(".message-epingle").forEach(function (b) { b.classList.remove("message-epingle"); });
+    const bulle = fenetreChat.querySelector('[data-message-id="' + donnees.id + '"]');
+    if (bulle) bulle.classList.add("message-epingle");
+    banniereEpingleeContenu.textContent = donnees.contenu;
+    banniereEpinglee.hidden = false;
+    banniereEpinglee.dataset.messageId = donnees.id;
+  }
+  function appliquerDesepinglage(donnees) {
+    const bulle = fenetreChat.querySelector('[data-message-id="' + donnees.id + '"]');
+    if (bulle) bulle.classList.remove("message-epingle");
+    if (banniereEpinglee.dataset.messageId === String(donnees.id)) {
+      banniereEpinglee.hidden = true;
+    }
+  }
+  if (banniereEpingleeFermer) {
+    banniereEpingleeFermer.addEventListener("click", function () {
+      if (banniereEpinglee.dataset.messageId) desepinglerMessage(banniereEpinglee.dataset.messageId);
+    });
+  }
+
+  // ---------- Thread / reponses ----------
+
+  function formaterHeure(iso) {
+    try { return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); }
+    catch (e) { return ""; }
+  }
+
+  function creerBulleThread(m) {
+    const bulle = document.createElement("div");
+    bulle.className = "message" + (m.est_moi ? " message-moi" : "");
+    const auteur = document.createElement("span");
+    auteur.className = "message-auteur";
+    auteur.textContent = m.auteur + (m.date_envoi ? " · " + formaterHeure(m.date_envoi) : "");
+    bulle.appendChild(auteur);
+    const contenu = document.createElement("span");
+    contenu.className = "message-contenu";
+    contenu.textContent = m.contenu;
+    bulle.appendChild(contenu);
+    if (m.modifie) {
+      const etiquette = document.createElement("span");
+      etiquette.className = "message-modifie-etiquette";
+      etiquette.textContent = "(modifié)";
+      bulle.appendChild(etiquette);
+    }
+    const reactions = document.createElement("div");
+    reactions.className = "reactions-du-message";
+    bulle.appendChild(reactions);
+    return bulle;
+  }
+
+  async function ouvrirThread(messageId) {
+    threadOuvertPourId = messageId;
+    panneauThread.hidden = false;
+    corpsPanneauThread.innerHTML = '<p class="stat-label">Chargement…</p>';
+    try {
+      const reponse = await fetch("/cercles/" + cercleId + "/messages/" + messageId + "/thread");
+      if (!reponse.ok) throw new Error("Impossible de charger le fil.");
+      const corps = await reponse.json();
+      corpsPanneauThread.innerHTML = "";
+      if (corps.parent) {
+        const parentBulle = document.createElement("div");
+        parentBulle.className = "thread-message-parent";
+        const auteur = document.createElement("span");
+        auteur.className = "message-auteur";
+        auteur.textContent = corps.parent.auteur;
+        parentBulle.appendChild(auteur);
+        const contenu = document.createElement("span");
+        contenu.className = "message-contenu";
+        contenu.style.display = "block";
+        contenu.textContent = corps.parent.contenu;
+        parentBulle.appendChild(contenu);
+        corpsPanneauThread.appendChild(parentBulle);
+      }
+      const compteur = document.createElement("p");
+      compteur.className = "thread-compteur";
+      compteur.textContent = corps.reponses.length === 0 ? "Aucune réponse pour le moment." : corps.reponses.length + " réponse(s)";
+      corpsPanneauThread.appendChild(compteur);
+      corps.reponses.forEach(function (m) { corpsPanneauThread.appendChild(creerBulleThread(m)); });
+    } catch (erreur) {
+      corpsPanneauThread.innerHTML = '<p class="erreur">' + erreur.message + "</p>";
+    }
+  }
+
+  boutonFermerThread.addEventListener("click", function () {
+    panneauThread.hidden = true;
+    threadOuvertPourId = null;
+  });
+
+  function creerBoutonRepondre(messageId) {
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = "bouton-reagir";
+    bouton.textContent = "↩ Répondre";
+    bouton.addEventListener("click", function () { ouvrirThread(messageId); });
+    return bouton;
+  }
+
+  function creerLienNombreReponses(messageId, nombre) {
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = "bouton-thread-ouvrir";
+    bouton.textContent = "💬 " + nombre + " réponse" + (nombre > 1 ? "s" : "");
+    bouton.addEventListener("click", function () { ouvrirThread(messageId); });
+    return bouton;
+  }
+
+  // ---------- Decoration complete d'une bulle de message ----------
+
   function decorerActions(bulle) {
     const actions = bulle.querySelector(".message-actions");
     if (!actions || actions.dataset.decore) return;
     actions.dataset.decore = "1";
     const messageId = bulle.dataset.messageId;
     const auteurId = Number(bulle.dataset.auteurId);
+    const estFichier = bulle.dataset.piecejointe === "1";
+
+    actions.appendChild(creerBoutonReagir(messageId));
+    actions.appendChild(creerBoutonRepondre(messageId));
+
     if (auteurId === idUtilisateur) {
+      if (!estFichier) {
+        const boutonModifier = document.createElement("button");
+        boutonModifier.type = "button";
+        boutonModifier.className = "bouton-reagir";
+        boutonModifier.textContent = "✎ Modifier";
+        boutonModifier.addEventListener("click", function () { activerEditionMessage(bulle); });
+        actions.appendChild(boutonModifier);
+      }
       actions.appendChild(creerActionSuppression(messageId));
     } else {
       actions.appendChild(creerActionSignalement(messageId));
     }
+
+    if (peutGerer) {
+      const boutonEpingler = document.createElement("button");
+      boutonEpingler.type = "button";
+      boutonEpingler.className = "bouton-reagir";
+      boutonEpingler.textContent = bulle.classList.contains("message-epingle") ? "📌 Désépingler" : "📌 Épingler";
+      boutonEpingler.addEventListener("click", function () {
+        if (bulle.classList.contains("message-epingle")) desepinglerMessage(messageId);
+        else epinglerMessage(messageId);
+      });
+      actions.appendChild(boutonEpingler);
+    }
   }
 
-  document.querySelectorAll("#fenetre-chat .message").forEach(decorerActions);
+  document.querySelectorAll("#fenetre-chat .message").forEach(function (bulle) {
+    decorerActions(bulle);
+    bulle.querySelectorAll(".puce-reaction").forEach(function (puce) {
+      puce.addEventListener("click", function () { envoyerReaction(bulle.dataset.messageId, puce.dataset.typeReaction); });
+    });
+    const reponses = Number(bulle.dataset.reponses || 0);
+    if (reponses > 0 && !bulle.querySelector(".bouton-thread-ouvrir")) {
+      bulle.appendChild(creerLienNombreReponses(bulle.dataset.messageId, reponses));
+    } else if (reponses > 0) {
+      bulle.querySelector(".bouton-thread-ouvrir").addEventListener("click", function () { ouvrirThread(bulle.dataset.messageId); });
+    }
+  });
+
+  // ---------- Autocompletion @mentions ----------
+
+  function attacherAutocompletionMentions(champ, panneauSuggestions, mentionsMap) {
+    function positionCurseurMotArobase() {
+      const valeur = champ.value;
+      const curseur = champ.selectionStart;
+      const avant = valeur.slice(0, curseur);
+      const indexArobase = avant.lastIndexOf("@");
+      if (indexArobase === -1) return null;
+      const entreDeuxPoints = avant.slice(indexArobase + 1);
+      if (/\s/.test(entreDeuxPoints)) return null;
+      return { debut: indexArobase, requete: entreDeuxPoints };
+    }
+
+    champ.addEventListener("input", function () {
+      const position = positionCurseurMotArobase();
+      if (!position) { panneauSuggestions.hidden = true; return; }
+      const requete = position.requete.toLowerCase();
+      const correspondances = membresPourMentions.filter(function (m) {
+        return m.nom.toLowerCase().indexOf(requete) === 0;
+      }).slice(0, 6);
+      if (correspondances.length === 0) { panneauSuggestions.hidden = true; return; }
+      panneauSuggestions.innerHTML = "";
+      correspondances.forEach(function (m) {
+        const boutonSuggestion = document.createElement("button");
+        boutonSuggestion.type = "button";
+        boutonSuggestion.textContent = m.nom;
+        boutonSuggestion.addEventListener("click", function () {
+          const tag = "@" + m.nom + " ";
+          champ.value = champ.value.slice(0, position.debut) + tag + champ.value.slice(champ.selectionStart);
+          mentionsMap[tag.trim()] = m.id;
+          panneauSuggestions.hidden = true;
+          champ.focus();
+        });
+        panneauSuggestions.appendChild(boutonSuggestion);
+      });
+      panneauSuggestions.hidden = false;
+    });
+
+    champ.addEventListener("blur", function () {
+      setTimeout(function () { panneauSuggestions.hidden = true; }, 150);
+    });
+  }
+
+  const mentionsPrincipal = {};
+  const mentionsThread = {};
+  attacherAutocompletionMentions(champMessage, document.getElementById("suggestions-mentions-principal"), mentionsPrincipal);
+  attacherAutocompletionMentions(champReponseThread, document.getElementById("suggestions-mentions-thread"), mentionsThread);
+
+  function extraireMentionsPresentes(texte, mentionsMap) {
+    return Object.keys(mentionsMap)
+      .filter(function (tag) { return texte.indexOf(tag) !== -1; })
+      .map(function (tag) { return mentionsMap[tag]; });
+  }
+
+  // ---------- Rendu des nouveaux messages (websocket) ----------
 
   function ajouterMessage(donnees) {
+    // Une reponse (parent_message_id present) vit uniquement dans le
+    // panneau de fil de discussion, pas dans le flux principal — si ce
+    // fil est ouvert au moment de l'envoi, on le recharge pour la faire
+    // apparaitre immediatement.
+    if (donnees.parent_message_id) {
+      if (String(threadOuvertPourId) === String(donnees.parent_message_id)) {
+        ouvrirThread(donnees.parent_message_id);
+      }
+      const bulleParent = fenetreChat.querySelector('[data-message-id="' + donnees.parent_message_id + '"]');
+      if (bulleParent) {
+        const nombreActuel = Number(bulleParent.dataset.reponses || 0) + 1;
+        bulleParent.dataset.reponses = nombreActuel;
+        let lien = bulleParent.querySelector(".bouton-thread-ouvrir");
+        if (!lien) {
+          lien = creerLienNombreReponses(donnees.parent_message_id, nombreActuel);
+          bulleParent.appendChild(lien);
+        } else {
+          lien.textContent = "💬 " + nombreActuel + " réponse" + (nombreActuel > 1 ? "s" : "");
+        }
+      }
+      const document_vide = document.getElementById("etat-vide-chat");
+      if (document_vide) document_vide.remove();
+      return;
+    }
+
+    const videActuel = document.getElementById("etat-vide-chat");
+    if (videActuel) videActuel.remove();
+
     const bulle = document.createElement("div");
     bulle.className = "message" + (donnees.auteur_id === idUtilisateur ? " message-moi" : "");
     bulle.dataset.messageId = donnees.id;
     bulle.dataset.auteurId = donnees.auteur_id;
+    bulle.dataset.reponses = "0";
+    if (donnees.piece_jointe_url) bulle.dataset.piecejointe = "1";
 
     const auteur = document.createElement("span");
     auteur.className = "message-auteur";
@@ -308,6 +722,10 @@
       contenu.textContent = donnees.contenu;
     }
     bulle.appendChild(contenu);
+
+    const reactionsDiv = document.createElement("div");
+    reactionsDiv.className = "reactions-du-message";
+    bulle.appendChild(reactionsDiv);
 
     const actions = document.createElement("span");
     actions.className = "message-actions";
@@ -343,6 +761,15 @@
       mettreAJourPresence(donnees.utilisateurs);
     } else if (donnees.type === "suppression") {
       retirerMessage(donnees.id);
+    } else if (donnees.type === "reaction") {
+      const bulle = fenetreChat.querySelector('[data-message-id="' + donnees.message_id + '"]');
+      if (bulle) rendreReactions(bulle, donnees.reactions);
+    } else if (donnees.type === "message_modifie") {
+      appliquerMessageModifie(donnees);
+    } else if (donnees.type === "epinglage") {
+      appliquerEpinglage(donnees);
+    } else if (donnees.type === "desepinglage") {
+      appliquerDesepinglage(donnees);
     } else {
       ajouterMessage(donnees);
     }
@@ -360,8 +787,20 @@
     evenement.preventDefault();
     const contenu = champMessage.value.trim();
     if (!contenu || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({ contenu: contenu }));
+    ws.send(JSON.stringify({ contenu: contenu, mentions: extraireMentionsPresentes(contenu, mentionsPrincipal) }));
     champMessage.value = "";
+  });
+
+  formReponseThread.addEventListener("submit", function (evenement) {
+    evenement.preventDefault();
+    const contenu = champReponseThread.value.trim();
+    if (!contenu || !threadOuvertPourId || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({
+      contenu: contenu,
+      parent_message_id: Number(threadOuvertPourId),
+      mentions: extraireMentionsPresentes(contenu, mentionsThread),
+    }));
+    champReponseThread.value = "";
   });
 
   const boutonEmojiToggle = document.getElementById("bouton-emoji-toggle");

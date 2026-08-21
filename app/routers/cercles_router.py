@@ -723,7 +723,17 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
 
     messages = []
     message_epingle = None
+    membres_pour_mentions = []
     if membre:
+        membres_pour_mentions = [
+            {"id": u2.id, "nom": u2.nom}
+            for u2 in session.exec(
+                select(Utilisateur)
+                .join(MembreCercle, MembreCercle.utilisateur_id == Utilisateur.id)
+                .where(MembreCercle.cercle_id == cercle_id)
+                .where(Utilisateur.id != utilisateur.id)
+            ).all()
+        ]
         lignes = session.exec(
             select(MessageCercle, Utilisateur)
             .where(MessageCercle.cercle_id == cercle_id)
@@ -777,6 +787,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
+            "membres_pour_mentions": membres_pour_mentions,
             "utilisateur": utilisateur,
         },
     )
