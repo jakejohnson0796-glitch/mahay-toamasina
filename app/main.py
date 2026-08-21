@@ -20,7 +20,6 @@ from .routers import auth_router, documents_router, sponsoring_router, cercles_r
 from .security_headers import EnTetesSecuriteMiddleware
 from .seed_data import peupler_donnees_initiales
 from .admin_init import assurer_compte_admin
-from .cercles_referentiel import assurer_cercles_referentiel
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -119,11 +118,6 @@ async def au_demarrage() -> None:
     with Session(engine) as session:
         peupler_donnees_initiales(session)
         assurer_compte_admin(session)
-        # Apres assurer_compte_admin : un cercle genere automatiquement a
-        # besoin d'un createur_id valide (voir cercles_referentiel.py).
-        nb_cercles_crees = assurer_cercles_referentiel(session)
-        if nb_cercles_crees:
-            print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
     print("[DEBUG DATABASE] Donnees initiales OK.")
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
     print("[DEBUG DATABASE] Demarrage termine.")
