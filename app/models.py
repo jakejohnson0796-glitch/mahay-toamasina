@@ -452,6 +452,22 @@ class MessageCercle(SQLModel, table=True):
     # l'historique/audit, mais n'est plus affiche ni diffuse en clair.
     supprime: bool = Field(default=False)
 
+    # --- Messagerie enrichie (reponses/thread, edition, epinglage) ---
+    # NULL = message normal poste dans le fil principal. Renseigne = ce
+    # message est une reponse au message parent (§5 du brief messagerie),
+    # ce qui permet de regrouper toutes les reponses d'un meme parent en
+    # thread (§6) sans table de jonction separee.
+    parent_message_id: Optional[int] = Field(default=None, foreign_key="messagecercle.id")
+    # None = jamais modifie (n'affiche pas "modifie" cote UI). Rempli a
+    # chaque edition par l'auteur (§9 du brief).
+    date_modification: Optional[datetime] = None
+    # Un seul message epingle par cercle a la fois en pratique (impose
+    # cote service, pas en base, pour rester tolerant si jamais deux
+    # moderateurs epinglent au meme moment) — voir §10 du brief.
+    epingle: bool = Field(default=False)
+    epingle_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_epinglage: Optional[datetime] = None
+
 
 class SignalementMessage(SQLModel, table=True):
     """Signalement d'un message par un membre du cercle, a traiter par un
@@ -462,6 +478,87 @@ class SignalementMessage(SQLModel, table=True):
     motif: Optional[str] = None
     date_signalement: datetime = Field(default_factory=datetime.utcnow)
     traite: bool = Field(default=False)
+
+
+class TypeReaction(str, Enum):
+    """Les 7 reactions initiales du brief (§4). La valeur stockee est le
+    nom du sentiment plutot que l'emoji lui-meme, pour rester lisible en
+    base et laisser le rendu de l'emoji au frontend (evite aussi tout
+    souci d'encodage Unicode, deja identifie comme fragile sur certains
+    Android courants a Madagascar — cf. audit "Le Phare")."""
+    POUCE = "pouce"          # 👍
+    COEUR = "coeur"          # ❤️
+    RIRE = "rire"            # 😂
+    ETONNE = "etonne"        # 😮
+    TRISTE = "triste"        # 😢
+    COLERE = "colere"        # 😡
+    FETE = "fete"            # 🎉
+
+
+class MessageReaction(SQLModel, table=True):
+    """Reaction emoji d'un utilisateur sur un message. Table relationnelle
+    dediee (pas un JSON sur MessageCercle, cf. §4 du brief) : necessaire
+    pour compter par type, savoir qui a reagi, et empecher le doublon
+    exact via une contrainte d'unicite au niveau base plutot qu'une
+    simple verification applicative (plus sur en cas d'appels
+    concurrents)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    message_id: int = Field(foreign_key="messagecercle.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    type_reaction: TypeReaction
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("message_id", "utilisateur_id", "type_reaction", name="uq_reaction_message_utilisateur_type"),
+    )
+
+
+class MessageMention(SQLModel, table=True):
+    """Une mention @Membre dans un message, extraite et stockee a l'envoi
+    plutot que reparsee a chaque affichage : permet une notification
+    fiable (§7 du brief) et une future page "mes mentions" sans dependre
+    du rendu du texte."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    message_id: int = Field(foreign_key="messagecercle.id")
+    utilisateur_mentionne_id: int = Field(foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("message_id", "utilisateur_mentionne_id", name="uq_mention_message_utilisateur"),
+    )
+
+
+class TypeNotification(str, Enum):
+    """Types geres par la premiere version du systeme de notification
+    (§11 du brief). Volontairement limite aux evenements de la
+    messagerie pour cette session — FAQ/Feedback reutiliseront ce meme
+    modele avec de nouveaux types plutot qu'un systeme parallele."""
+    REPONSE_MESSAGE = "reponse_message"
+    REPONSE_THREAD = "reponse_thread"
+    REACTION = "reaction"
+    MENTION = "mention"
+
+
+class Notification(SQLModel, table=True):
+    """Notification generique adressee a un utilisateur. Un seul modele
+    pour tous les types (§25 : "reutiliser le systeme existant s'il
+    existe" — comme aucun n'existait, celui-ci est concu des le depart
+    pour etre reutilise par les futurs chantiers FAQ/Feedback plutot que
+    duplique). cercle_id/message_id/acteur_id sont tous nullables car un
+    type de notification futur (ex: reponse admin a un avis) n'aura pas
+    de cercle/message associe."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    destinataire_id: int = Field(foreign_key="utilisateur.id", index=True)
+    type_notification: TypeNotification
+    # Genere au moment de la creation (pas recalcule a l'affichage) pour
+    # rester correct meme si l'acteur ou le message change/est supprime
+    # ensuite. Ex: "Thomas a repondu a votre message".
+    contenu: str
+    acteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
+    message_id: Optional[int] = Field(default=None, foreign_key="messagecercle.id")
+    lu: bool = Field(default=False)
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 
 class AbonnementEtudiant(SQLModel, table=True):
