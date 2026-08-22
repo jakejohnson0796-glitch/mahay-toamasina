@@ -67,10 +67,14 @@ def liste_documents(
 
 @router.get("/documents/upload")
 def formulaire_upload(request: Request, session: Session = Depends(get_session)):
-    if not utilisateur_courant(request, session):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
     filieres = session.exec(select(Filiere)).all()
-    return templates.TemplateResponse("document_upload.html", {"request": request, "filieres": filieres})
+    return templates.TemplateResponse(
+        "document_upload.html",
+        {"request": request, "filieres": filieres, "utilisateur": utilisateur},
+    )
 
 
 @router.post("/documents/upload")

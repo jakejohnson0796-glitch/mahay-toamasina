@@ -22,6 +22,15 @@ du brief : le grep sur documents_list.html a fait apparaitre deux
 glyphes non recenses en section 5 (✓ pour "corrige", ◫ pour "cours").
 Dessinees ici en suivant la meme regle pour eviter un systeme a moitie
 converti sur la meme carte document.
+
+Etape 1 (sidebar globale, refonte theme clair) — 4 icones de plus :
+sponsoring, aide, a-propos, contact. La sidebar generalisee (section 7
+du brief refonte) liste des pages qui n'avaient pas encore d'icone.
+Note : le trait #F2ECDD / point #FBD9A0 reste correct sur le fond navy
+de la sidebar (--sidebar-bg), mais deviendra illisible si ces icones
+sont un jour utilisees sur un fond clair (--content-bg/--content-surface)
+-- a revoir (currentColor ?) le jour ou ce besoin se presente, etape 2
+ou plus tard.
 #}
 {% macro icone(nom, taille=20) %}
 {%- if nom == "dashboard" -%}
@@ -136,6 +145,45 @@ converti sur la meme carte document.
     <path d="M20,10 C16,7 9,6 4,7 L4,30 C9,29 16,30 20,33 C24,30 31,29 36,30 L36,7 C31,6 24,7 20,10 Z"/>
     <path d="M20,10 L20,33" opacity="0.6"/>
     <circle cx="20" cy="10" r="1.6" fill="#FBD9A0" stroke="none"/>
+  </g>
+</svg>
+{%- elif nom == "sponsoring" -%}
+{#- Etape 1 (sidebar globale) : deux anneaux qui se recoupent (partenariat),
+   point d'accent a l'intersection -- meme grammaire que les icones du brief. -#}
+<svg viewBox="0 0 40 40" width="{{ taille }}" height="{{ taille }}" aria-hidden="true">
+  <g stroke="#F2ECDD" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="15" cy="20" r="11"/>
+    <circle cx="25" cy="20" r="11"/>
+    <circle cx="20" cy="20" r="1.8" fill="#FBD9A0" stroke="none"/>
+  </g>
+</svg>
+{%- elif nom == "aide" -%}
+{#- Etape 1 (sidebar globale) : point d'interrogation dessine au trait,
+   le point final reprend le point d'accent dore habituel. -#}
+<svg viewBox="0 0 40 40" width="{{ taille }}" height="{{ taille }}" aria-hidden="true">
+  <g stroke="#F2ECDD" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="20" cy="20" r="17"/>
+    <path d="M14,15 C14,10 26,10 26,16 C26,20 20,20 20,25" stroke-width="1.6"/>
+    <circle cx="20" cy="30" r="1.8" fill="#FBD9A0" stroke="none"/>
+  </g>
+</svg>
+{%- elif nom == "a-propos" -%}
+{#- Etape 1 (sidebar globale) : lettre "i" d'information, point d'accent
+   dore en guise de point du i (meme convention que les autres icones). -#}
+<svg viewBox="0 0 40 40" width="{{ taille }}" height="{{ taille }}" aria-hidden="true">
+  <g stroke="#F2ECDD" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="20" cy="20" r="17"/>
+    <path d="M20,19 L20,29" stroke-width="1.6"/>
+    <circle cx="20" cy="12" r="1.8" fill="#FBD9A0" stroke="none"/>
+  </g>
+</svg>
+{%- elif nom == "contact" -%}
+{#- Etape 1 (sidebar globale) : enveloppe simple, point d'accent sur le rabat. -#}
+<svg viewBox="0 0 40 40" width="{{ taille }}" height="{{ taille }}" aria-hidden="true">
+  <g stroke="#F2ECDD" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="9" width="34" height="24" rx="2"/>
+    <path d="M4,10 L20,23 L36,10"/>
+    <circle cx="20" cy="23" r="1.8" fill="#FBD9A0" stroke="none"/>
   </g>
 </svg>
 {%- endif -%}

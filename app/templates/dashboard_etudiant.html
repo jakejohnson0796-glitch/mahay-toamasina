@@ -7,46 +7,6 @@
 {% block contenu %}
 {% if request.query_params.get("ok") == "profil_academique_actualise" %}<div class="info">Profil academique mis a jour.</div>{% endif %}
 {% if request.query_params.get("ok") == "demande_filiere_envoyee" %}<div class="info">Demande de changement de parcours envoyee — un administrateur doit la valider.</div>{% endif %}
-<div class="tb-mise-en-page">
-
-  <aside class="tb-sidebar">
-    <nav class="tb-sidebar-nav" aria-label="Navigation du tableau de bord">
-      <a href="/dashboard" class="tb-sidebar-lien tb-sidebar-lien-actif" aria-current="page">
-        <span class="tb-icone">{{ icone("dashboard", 17) }}</span> Tableau de bord
-      </a>
-
-      <p class="tb-sidebar-groupe">Apprendre</p>
-      <a href="/documents" class="tb-sidebar-lien"><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
-      <a href="/quiz" class="tb-sidebar-lien"><span class="tb-icone">{{ icone("quiz", 17) }}</span> Quiz IA</a>
-      <a href="/tuteur" class="tb-sidebar-lien"><span class="tb-icone">{{ icone("tuteur", 17) }}</span> Tuteur IA</a>
-
-      <p class="tb-sidebar-groupe">Collaborer</p>
-      <a href="/cercles" class="tb-sidebar-lien">
-        <span class="tb-icone">{{ icone("cercles", 17) }}</span> Mes cercles
-        {% if nb_cercles_rejoints %}<span class="tb-sidebar-badge">{{ nb_cercles_rejoints }}</span>{% endif %}
-      </a>
-      <a href="/classe" class="tb-sidebar-lien"><span class="tb-icone">{{ icone("classe", 17) }}</span> Classe virtuelle</a>
-
-      <p class="tb-sidebar-groupe">Compte</p>
-      <a href="/securite" class="tb-sidebar-lien"><span class="tb-icone">{{ icone("securite", 17) }}</span> Securite</a>
-      {% if utilisateur and utilisateur.role.value == "admin" %}
-      <a href="/admin" class="tb-sidebar-lien"><span class="tb-icone">{{ icone("admin", 17) }}</span> Administration</a>
-      {% endif %}
-    </nav>
-
-    <a href="/abonnement" class="tb-sidebar-premium">
-      <span class="tb-premium-etoile">{{ icone("premium", 16) }}</span>
-      <strong>Gasy Mahay Premium</strong>
-      <span>
-        {% if abonnement and abonnement.statut.value == "actif" %}
-          Actif — {{ jours_restants }} j restant{{ "s" if jours_restants > 1 else "" }}
-        {% else %}
-          Essai — {{ jours_restants }} j restant{{ "s" if jours_restants > 1 else "" }}
-        {% endif %}
-      </span>
-    </a>
-  </aside>
-
   <div class="tb-contenu">
 
     <section class="tb-hero">
@@ -192,5 +152,4 @@
     </p>
 
   </div>
-</div>
 {% endblock %}

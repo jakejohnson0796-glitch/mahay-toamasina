@@ -14,51 +14,150 @@
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<header class="entete">
-  <a class="logo" href="/">Gasy Mahay <span class="logo-lieu">Toamasina</span></a>
-  <button type="button" class="bouton-menu-mobile" id="bouton-menu-mobile" aria-expanded="false" aria-controls="nav-principale" aria-label="Ouvrir le menu">
+{% from "components/icone.html" import icone %}
+{#
+  Etape 1 (sidebar globale) du brief de refonte visuelle : remplace
+  l'ancien header horizontal + mega-menu (components/mega_menu.html,
+  desormais inutilise) par .tb-sidebar generalisee a tout le site.
+
+  Deux etats, pas invente : juste la consequence directe de
+  "n'afficher que les liens reellement accessibles selon les
+  permissions" (§7 du brief) --
+    - connecte (request.session "user_id") : les 14 liens listes au §7,
+      groupes comme dans l'ancienne sidebar du dashboard (Apprendre/
+      Collaborer/Compte), + 2 groupes supplementaires pour Abonnement/
+      Sponsoring et les pages publiques desormais dans la sidebar
+      (Universites, Aide & Avis, A propos, Contact) ;
+    - non connecte : uniquement les pages publiques + Connexion/
+      Inscription -- avant cette etape, le mega-menu montrait deja les
+      liens Cercles/Classe/etc a un visiteur non connecte, ce qui les
+      renvoyait juste vers /connexion au clic. Le nouveau comportement
+      est plus correct (n'affiche que ce qui est reellement accessible)
+      mais c'est un changement de comportement volontaire, a valider.
+
+  Pourquoi request.session.get("user_id") et pas simplement la
+  variable "utilisateur" pour cette branche : "utilisateur" n'est pas
+  garanti par TOUTES les routes (ex. avant cette etape, register.html/
+  login.html/a_propos.html/contact.html ne le passaient pas au
+  template -- corrige pour index/a-propos/universites/contact/
+  documents-upload au fil de cette etape, mais §26 du brief demande de
+  rester frontend autant que possible plutot que de patcher toutes les
+  routes une a une). request.session, lui, est toujours disponible
+  (fourni par Starlette, pas par chaque route), donc la sidebar affiche
+  toujours le bon etat connecte/non-connecte. Les fragments qui ont
+  vraiment besoin de l'objet Utilisateur (initiale, prenom, role admin)
+  restent proteges par "utilisateur is defined and utilisateur", pour
+  degrader proprement (sans erreur Jinja2) sur une page qui ne le
+  passerait pas encore.
+
+  "Aide & Avis" pointe vers /faq : la fusion FAQ+Avis (etape 13 du
+  brief) n'existe pas encore, /faq est la seule route reelle
+  aujourd'hui. A repointer si l'etape 13 cree une route dediee.
+
+  Badge sur "Mes cercles" : nb_cercles_rejoints n'est fourni que par
+  /dashboard (app/dashboard.py) -- sur les autres pages la variable
+  est simplement absente (Jinja2 Undefined = falsy, pas d'erreur, pas
+  de config StrictUndefined dans templating.py), donc le badge ne
+  s'affiche que la ou la donnee existe reellement. Rien d'invente.
+#}
+<div class="app-mise-en-page">
+
+  <button type="button" class="sidebar-bouton-mobile" id="bouton-menu-mobile" aria-expanded="false" aria-controls="nav-principale" aria-label="Ouvrir le menu">
     <span></span><span></span><span></span>
   </button>
-  <nav id="nav-principale" aria-label="Navigation principale">
-    {% include "components/mega_menu.html" %}
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <aside class="tb-sidebar" id="nav-principale" aria-label="Navigation principale">
+    <div class="tb-sidebar-marque">
+      <a href="/" style="text-decoration:none;">
+        <span class="tb-sidebar-logo">Gasy Mahay</span>
+        <span class="tb-sidebar-lieu">Toamasina</span>
+      </a>
+    </div>
+
     {% if request.session.get("user_id") %}
-      <a href="/dashboard">Tableau de bord</a>
-      <a href="/securite">Securite</a>
-      {% if utilisateur and utilisateur.role == "admin" %}
-      <a href="/admin">Administration</a>
+    <nav class="tb-sidebar-nav" aria-label="Navigation principale">
+      <a href="/dashboard" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
+        <span class="tb-icone">{{ icone("dashboard", 17) }}</span> Tableau de bord
+      </a>
+
+      <p class="tb-sidebar-groupe">Apprendre</p>
+      <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
+      <a href="/quiz" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Quiz IA</a>
+      <a href="/tuteur" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/tuteur') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/tuteur') else '' }}><span class="tb-icone">{{ icone("tuteur", 17) }}</span> Tuteur IA</a>
+
+      <p class="tb-sidebar-groupe">Collaborer</p>
+      <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
+        <span class="tb-icone">{{ icone("cercles", 17) }}</span> Mes cercles
+        {% if nb_cercles_rejoints %}<span class="tb-sidebar-badge">{{ nb_cercles_rejoints }}</span>{% endif %}
+      </a>
+      <a href="/classe" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}><span class="tb-icone">{{ icone("classe", 17) }}</span> Classe virtuelle</a>
+
+      <p class="tb-sidebar-groupe">Compte</p>
+      <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Securite</a>
+      {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
+      <a href="/admin" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin') else '' }}><span class="tb-icone">{{ icone("admin", 17) }}</span> Administration</a>
       {% endif %}
-      <a href="/deconnexion">Deconnexion</a>
+
+      <p class="tb-sidebar-groupe">Premium</p>
+      <a href="/abonnement" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/abonnement') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/abonnement') else '' }}><span class="tb-icone">{{ icone("premium", 17) }}</span> Abonnement</a>
+      <a href="/sponsoring" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/sponsoring') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/sponsoring') else '' }}><span class="tb-icone">{{ icone("sponsoring", 17) }}</span> Sponsoring</a>
+
+      <p class="tb-sidebar-groupe">Ressources</p>
+      <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
+      <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
+      <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
+      <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> Contact</a>
+    </nav>
+
+    <div class="tb-sidebar-compte">
+      {% if utilisateur is defined and utilisateur %}
+      <span class="tb-sidebar-avatar" aria-hidden="true">{{ utilisateur.nom[0]|upper }}</span>
+      <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
+      {% endif %}
+      <a href="/deconnexion" class="tb-sidebar-lien" style="margin-left:auto; padding:0.3rem 0.4rem;" aria-label="Deconnexion" title="Deconnexion">{{ icone("securite", 15) }}</a>
+    </div>
     {% else %}
-      <a href="/connexion">Connexion</a>
-      <a href="/inscription">Inscription</a>
+    <nav class="tb-sidebar-nav" aria-label="Navigation principale">
+      <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
+      <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
+      <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
+      <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> Contact</a>
+
+      <p class="tb-sidebar-groupe">Compte</p>
+      <a href="/connexion" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/connexion' else '' }}" {{ 'aria-current="page"' if request.url.path == '/connexion' else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Connexion</a>
+      <a href="/inscription" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/inscription' else '' }}" {{ 'aria-current="page"' if request.url.path == '/inscription' else '' }}><span class="tb-icone">{{ icone("premium", 17) }}</span> Inscription</a>
+    </nav>
     {% endif %}
-  </nav>
-</header>
+  </aside>
 
-{% if profil_academique_a_actualiser(request) %}
-<div class="info" style="border-radius:0; margin-bottom:0; text-align:center;">
-  Votre profil academique doit etre actualise pour utiliser correctement les cercles d'etudes.
-  <a href="/profil/academique">Actualiser maintenant</a>
-</div>
-{% endif %}
+  <div class="app-page">
+    {% if profil_academique_a_actualiser(request) %}
+    <div class="info" style="border-radius:0; margin-bottom:0; text-align:center;">
+      Votre profil academique doit etre actualise pour utiliser correctement les cercles d'etudes.
+      <a href="/profil/academique">Actualiser maintenant</a>
+    </div>
+    {% endif %}
 
-<main class="{% block main_classe %}{% endblock %}">
-  {% block contenu %}{% endblock %}
-</main>
+    <main class="{% block main_classe %}{% endblock %}">
+      {% block contenu %}{% endblock %}
+    </main>
 
-<footer class="pied">
-  <div class="pied-contact">
-    <span class="pied-contact-etiquette">Un mot a nous dire ?</span>
-    <a class="pied-contact-lien" href="tel:+261343779552">
-      <span class="pied-contact-icone">☎</span> +261 34 37 795 52
-    </a>
-    <a class="pied-contact-lien pied-contact-whatsapp" href="https://wa.me/261337581732" target="_blank" rel="noopener">
-      <span class="pied-contact-icone">💬</span> WhatsApp
-    </a>
+    <footer class="pied">
+      <div class="pied-contact">
+        <span class="pied-contact-etiquette">Un mot a nous dire ?</span>
+        <a class="pied-contact-lien" href="tel:+261343779552">
+          <span class="pied-contact-icone">☎</span> +261 34 37 795 52
+        </a>
+        <a class="pied-contact-lien pied-contact-whatsapp" href="https://wa.me/261337581732" target="_blank" rel="noopener">
+          <span class="pied-contact-icone">💬</span> WhatsApp
+        </a>
+      </div>
+      <p>Gasy Mahay — un hub de revision imagine pour les etudiants de l'Universite de Toamasina.</p>
+      <p class="pied-liens"><a href="/faq">FAQ</a> · <a href="/feedback">Donner mon avis</a></p>
+    </footer>
   </div>
-  <p>Gasy Mahay — un hub de revision imagine pour les etudiants de l'Universite de Toamasina.</p>
-  <p class="pied-liens"><a href="/faq">FAQ</a> · <a href="/feedback">Donner mon avis</a></p>
-</footer>
+</div>
 
 <script src="/static/js/navigation.js" defer></script>
 <script>

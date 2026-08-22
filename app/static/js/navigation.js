@@ -1,97 +1,70 @@
-// Navigation principale : mega-menu (desktop) + accordeon (mobile) +
-// menu mobile complet. Deplace hors de base.html pour garder les
-// templates legers (voir §19 du brief refonte UI/UX).
+// Etape 1 (sidebar globale) du brief de refonte visuelle : remplace la
+// logique de l'ancien mega-menu (accordeon desktop/mobile, disparu avec
+// components/mega_menu.html) par l'ouverture/fermeture du drawer mobile
+// de la nouvelle sidebar globale (.tb-sidebar, incluse par base.html).
 (function () {
   const bouton = document.getElementById("bouton-menu-mobile");
-  const nav = document.getElementById("nav-principale");
-  if (!bouton || !nav) return;
+  const sidebar = document.getElementById("nav-principale");
+  const overlay = document.getElementById("sidebar-overlay");
+  if (!bouton || !sidebar || !overlay) return;
 
-  const declencheurs = Array.from(nav.querySelectorAll(".mega-trigger"));
-
-  function estMobile() {
-    return window.matchMedia("(max-width: 768px)").matches;
+  function ouvrir() {
+    sidebar.classList.add("tb-sidebar-ouverte");
+    overlay.classList.add("sidebar-overlay-visible");
+    bouton.setAttribute("aria-expanded", "true");
+    // Le premier lien recoit le focus : au clavier/lecteur d'ecran, on
+    // atterrit directement dans le menu qui vient de s'ouvrir plutot que
+    // de laisser le focus sur un bouton desormais hors du flux visuel
+    // (piege deja evite ailleurs dans ce fichier pour le fil de discussion).
+    const premierLien = sidebar.querySelector("a");
+    if (premierLien) premierLien.focus();
   }
 
-  function fermerPanneau(declencheur) {
-    declencheur.setAttribute("aria-expanded", "false");
-    const panneau = document.getElementById(declencheur.getAttribute("aria-controls"));
-    if (panneau) panneau.hidden = true;
+  function fermer(rendreFocusAuBouton) {
+    sidebar.classList.remove("tb-sidebar-ouverte");
+    overlay.classList.remove("sidebar-overlay-visible");
+    bouton.setAttribute("aria-expanded", "false");
+    if (rendreFocusAuBouton) bouton.focus();
   }
 
-  function fermerTousLesPanneaux(sauf) {
-    declencheurs.forEach(function (d) {
-      if (d !== sauf) fermerPanneau(d);
-    });
+  function estOuvert() {
+    return sidebar.classList.contains("tb-sidebar-ouverte");
   }
-
-  function ouvrirPanneau(declencheur) {
-    declencheur.setAttribute("aria-expanded", "true");
-    const panneau = document.getElementById(declencheur.getAttribute("aria-controls"));
-    if (panneau) panneau.hidden = false;
-  }
-
-  declencheurs.forEach(function (declencheur) {
-    // Desktop : clic ouvre/ferme ce panneau et ferme les autres (un seul
-    // ouvert a la fois). Mobile : fonctionne comme un accordeon simple,
-    // plusieurs sections peuvent rester ouvertes en meme temps — plus
-    // naturel au doigt qu'un menu qui se referme sans cesse.
-    declencheur.addEventListener("click", function () {
-      const dejaOuvert = declencheur.getAttribute("aria-expanded") === "true";
-      if (!estMobile()) fermerTousLesPanneaux(declencheur);
-      if (dejaOuvert) {
-        fermerPanneau(declencheur);
-      } else {
-        ouvrirPanneau(declencheur);
-      }
-    });
-  });
-
-  // Echap referme tout et rend le focus au bouton concerne, plutot que
-  // de le perdre quelque part dans la page.
-  document.addEventListener("keydown", function (evenement) {
-    if (evenement.key === "Escape") {
-      const ouvert = declencheurs.find(function (d) { return d.getAttribute("aria-expanded") === "true"; });
-      fermerTousLesPanneaux(null);
-      if (ouvert) ouvert.focus();
-    }
-  });
-
-  // Clic en dehors de la nav referme les panneaux ouverts (comportement
-  // desktop habituel d'un mega menu).
-  document.addEventListener("click", function (evenement) {
-    if (!nav.contains(evenement.target)) fermerTousLesPanneaux(null);
-  });
 
   bouton.addEventListener("click", function () {
-    const ouvert = nav.classList.toggle("nav-ouverte");
-    bouton.setAttribute("aria-expanded", ouvert ? "true" : "false");
-    if (!ouvert) fermerTousLesPanneaux(null);
+    if (estOuvert()) {
+      fermer(false);
+    } else {
+      ouvrir();
+    }
   });
 
-  // Les vrais liens (pas les boutons declencheurs) referment le menu
-  // mobile complet apres selection, pour ne pas le laisser ouvert
-  // par-dessus la page suivante.
-  nav.querySelectorAll("a").forEach(function (lien) {
+  overlay.addEventListener("click", function () {
+    fermer(false);
+  });
+
+  // Echap referme le drawer et rend le focus au bouton hamburger, pour ne
+  // pas perdre le focus clavier quelque part dans une sidebar masquee.
+  document.addEventListener("keydown", function (evenement) {
+    if (evenement.key === "Escape" && estOuvert()) {
+      fermer(true);
+    }
+  });
+
+  // Un clic sur un vrai lien (pas un simple survol) referme le drawer,
+  // pour ne pas le laisser ouvert par-dessus la page suivante.
+  sidebar.querySelectorAll("a").forEach(function (lien) {
     lien.addEventListener("click", function () {
-      nav.classList.remove("nav-ouverte");
-      bouton.setAttribute("aria-expanded", "false");
-      fermerTousLesPanneaux(null);
+      if (estOuvert()) fermer(false);
     });
   });
 
-  // Header compact au scroll : impression plus "produit SaaS", sans
-  // rien casser du comportement existant (§8 du brief).
-  const entete = document.querySelector(".entete");
-  if (entete) {
-    let dernierEtat = false;
-    function surScroll() {
-      const compact = window.scrollY > 24;
-      if (compact !== dernierEtat) {
-        entete.classList.toggle("entete-compacte", compact);
-        dernierEtat = compact;
-      }
+  // Si la fenetre repasse au-dessus du seuil mobile (rotation tablette,
+  // redimensionnement), on referme proprement plutot que de laisser un
+  // etat "ouvert" incoherent une fois le drawer redevenu une sidebar fixe.
+  window.addEventListener("resize", function () {
+    if (window.matchMedia("(min-width: 769px)").matches && estOuvert()) {
+      fermer(false);
     }
-    window.addEventListener("scroll", surScroll, { passive: true });
-    surScroll();
-  }
+  });
 })();

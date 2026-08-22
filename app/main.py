@@ -22,6 +22,7 @@ from .seed_data import peupler_donnees_initiales
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
+from .auth import utilisateur_courant
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -160,6 +161,7 @@ def accueil(request: Request, session: Session = Depends(get_session)):
             "nb_universites": nb_universites,
             "nb_cercles_actifs": nb_cercles_actifs,
             "nb_quiz_completes": nb_quiz_completes,
+            "utilisateur": utilisateur_courant(request, session),
         },
     )
 
@@ -167,7 +169,10 @@ def accueil(request: Request, session: Session = Depends(get_session)):
 @app.get("/a-propos")
 def a_propos(request: Request, session: Session = Depends(get_session)):
     nb_universites = len(session.exec(select(Universite).where(Universite.est_active == True)).all())  # noqa: E712
-    return templates.TemplateResponse(request, "a_propos.html", {"nb_universites": nb_universites})
+    return templates.TemplateResponse(
+        request, "a_propos.html",
+        {"nb_universites": nb_universites, "utilisateur": utilisateur_courant(request, session)},
+    )
 
 
 @app.get("/universites")
@@ -208,10 +213,11 @@ def universites(request: Request, session: Session = Depends(get_session)):
         {
             "universites_info": universites_info,
             "mentions_par_id": mentions_par_id,
+            "utilisateur": utilisateur_courant(request, session),
         },
     )
 
 
 @app.get("/contact")
-def contact(request: Request):
-    return templates.TemplateResponse(request, "contact.html", {})
+def contact(request: Request, session: Session = Depends(get_session)):
+    return templates.TemplateResponse(request, "contact.html", {"utilisateur": utilisateur_courant(request, session)})

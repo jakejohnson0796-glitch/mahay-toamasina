@@ -131,6 +131,15 @@
                   requise ;
      - actif   -> meme logique que hover ; un ton encore plus fonce sera
                   arbitre composant par composant si besoin a l'etape 2. */
+
+  /* --- Etape 1 (sidebar globale) : tokens de texte propres a la sidebar,
+     annonces comme "a ajouter ici" dans les problemes detectes de
+     l'etape 0. Valeurs mesurees sur la maquette de reference. --- */
+  --sidebar-text: #FFFFFF;         /* logo, lien actif, initiale avatar : 16.29:1 sur --sidebar-bg */
+  --sidebar-text-muted: #C4CDE5;   /* liens inactifs : 10.25:1 sur --sidebar-bg */
+  --sidebar-text-subtle: #8C9BC2;  /* libelles de groupe, sous-texte logo : 5.88:1 sur --sidebar-bg */
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.06);  /* survol lien inactif, discret */
+  --sidebar-border: rgba(255, 255, 255, 0.08);    /* separateurs internes a la sidebar */
 }
 
 * { box-sizing: border-box; }
@@ -155,50 +164,13 @@ p { color: var(--text-muted); }
 
 /* ---------- Structure generale ---------- */
 
-.entete {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding: 1.25rem 2rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.logo {
-  font-family: 'Fraunces', serif;
-  font-weight: 700;
-  font-size: 1.3rem;
-  letter-spacing: 0.02em;
-  color: var(--text);
-}
-.logo-lieu { color: var(--accent); font-weight: 400; }
-
-.entete nav { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.92rem; }
-.entete nav a { color: var(--text-muted); }
-.entete nav a:hover { color: var(--text); text-decoration: none; }
-
-.bouton-menu-mobile {
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  width: 2.6rem;
-  height: 2.6rem;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 0;
-}
-.bouton-menu-mobile span {
-  display: block;
-  height: 2px;
-  width: 1.3rem;
-  background: var(--text);
-  border-radius: 2px;
-}
+/* --- Etape 1 (sidebar globale) : .entete (header horizontal) et son
+   bouton-menu-mobile sont retires -- la navigation vit desormais dans
+   .tb-sidebar generalisee (voir plus bas), incluse par base.html pour
+   tout le site. Verifie avant suppression : aucun autre template ne
+   reutilise ces classes (cercle_chat.html a des classes proches mais
+   distinctes : .entete-panneau-emojis, .message-entete). Nouveau bouton
+   mobile + styles : voir bloc ".sidebar-bouton-mobile" plus bas. --- */
 
 main { max-width: 960px; margin: 0 auto; padding: 2rem; }
 
@@ -966,28 +938,7 @@ input:focus, select:focus, textarea:focus {
 .explication-quiz p { margin: 0.5rem 0 0; }
 
 @media (max-width: 640px) {
-  .entete { padding: 1rem; }
   main { padding: 1.25rem; }
-}
-
-@media (max-width: 768px) {
-  /* Au-dela de ~5-6 liens (menu connecte), le wrap en ligne devient
-     illisible sur mobile — on bascule sur un menu deroulant classique,
-     ferme par defaut, ouvert au clic sur le bouton hamburger. */
-  .bouton-menu-mobile { display: flex; }
-  .entete nav {
-    display: none;
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    gap: 0;
-    padding-top: 0.75rem;
-  }
-  .entete nav.nav-ouverte { display: flex; }
-  .entete nav a {
-    padding: 0.75rem 0.25rem;
-    border-bottom: 1px solid var(--border);
-  }
 }
 
 /* --- Salle virtuelle (classe_salle.html) --- */
@@ -1114,33 +1065,10 @@ input:focus, select:focus, textarea:focus {
   margin: 0.2rem;
 }
 
-/* --- Mega Menu (components/mega_menu.html) --- */
-.mega-item { position: relative; }
-.mega-trigger {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 0.92rem;
-  padding: 0.4rem 0;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.mega-trigger:hover, .mega-trigger[aria-expanded="true"] { color: var(--text); }
-.mega-trigger::after {
-  content: "";
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 5px solid currentColor;
-  opacity: 0.6;
-  transition: transform 0.15s ease;
-}
-.mega-trigger[aria-expanded="true"]::after { transform: rotate(180deg); }
-
+/* --- Badges (reutilisables ailleurs, ex. etape 2 : .badge) : conserves
+   bien que .mega-item/.mega-trigger/.mega-panel/.mega-colonne/.mega-lien-simple
+   ci-dessus (specifiques a components/mega_menu.html, desormais retire du
+   flux par l'etape 1 -- sidebar globale) aient ete retires. --- */
 .badge-menu {
   font-size: 0.62rem;
   text-transform: uppercase;
@@ -1150,70 +1078,6 @@ input:focus, select:focus, textarea:focus {
   font-weight: 600;
 }
 .badge-premium { background: var(--accent-soft); color: var(--accent); }
-
-.mega-panel {
-  position: absolute;
-  top: calc(100% + 0.75rem);
-  left: 0;
-  min-width: 320px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  padding: 1.25rem;
-  display: none;
-  gap: 2rem;
-  z-index: 40;
-}
-/* L'attribut HTML "hidden" doit rester prioritaire sur le display:flex
-   ci-dessous, sinon les panneaux restent visibles en permanence — meme
-   piege deja rencontre sur le formulaire de signalement des cercles. */
-.mega-panel:not([hidden]) { display: flex; }
-.mega-colonne { display: flex; flex-direction: column; gap: 0.15rem; min-width: 240px; }
-.mega-colonne h4 {
-  margin: 0 0 0.5rem;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--accent-2);
-  font-family: 'IBM Plex Mono', monospace;
-}
-.mega-colonne a {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.55rem 0.6rem;
-  border-radius: 6px;
-  color: var(--text);
-  text-decoration: none;
-}
-.mega-colonne a:hover { background: var(--bg-panel-2); }
-.mega-colonne a strong { font-size: 0.92rem; display: flex; align-items: center; gap: 0.4rem; }
-.mega-colonne a span:not(.badge-menu) { font-size: 0.78rem; color: var(--text-muted); }
-
-.mega-lien-simple {
-  color: var(--text-muted);
-  font-size: 0.92rem;
-  padding: 0.4rem 0;
-}
-.mega-lien-simple:hover { color: var(--text); text-decoration: none; }
-
-@media (max-width: 768px) {
-  /* Sur mobile, chaque panneau devient un accordeon en ligne plutot
-     qu'un panneau flottant : plus simple a manipuler au doigt, et evite
-     tout debordement horizontal impossible a eviter avec un panneau
-     multi-colonnes large sur un petit ecran. */
-  .mega-panel {
-    position: static;
-    box-shadow: none;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-    min-width: 0;
-  }
-  .mega-colonne { min-width: 0; }
-}
 
 /* --- Footer contact (base.html) --- */
 .pied-contact {
@@ -1243,20 +1107,6 @@ input:focus, select:focus, textarea:focus {
 .liste-filieres { margin: 0.5rem 0 0; padding-left: 1.2rem; }
 .carte-formulaire-espacee { margin-top: 2rem; }
 
-/* --- Header compact au scroll (§8 du brief) --- */
-.entete {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: var(--surface-1);
-  transition: padding 0.2s var(--ease-fluide), box-shadow 0.2s var(--ease-fluide);
-}
-.entete-compacte {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
-  box-shadow: var(--shadow-sm);
-}
-
 /* --- Micro-interactions boutons / cartes (§6 du brief) --- */
 .bouton { transition: transform 0.15s var(--ease-fluide), background 0.15s var(--ease-fluide), border-color 0.15s var(--ease-fluide); }
 .bouton:hover { transform: translateY(-1px); }
@@ -1264,21 +1114,6 @@ input:focus, select:focus, textarea:focus {
 
 .carte-cercle, .carte-formulaire, .offre {
   transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
-}
-
-/* --- Ouverture animee du mega-panel (§5-7 du brief) ---
-   La transition se fait sur opacity/transform (couteux zero en perf).
-   Le hidden HTML controle toujours la disparition reelle (accessibilite
-   clavier/lecteur d'ecran) ; ces regles n'ajoutent qu'un effet visuel
-   par-dessus, sans changer la logique JS existante. */
-.mega-panel {
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: opacity 0.16s var(--ease-fluide), transform 0.16s var(--ease-fluide);
-}
-.mega-panel:not([hidden]) {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 /* --- Apparition douce du hero (§5.1 du brief) --- */
@@ -1296,23 +1131,54 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ============================================================
-   Tableau de bord etudiant (dashboard_etudiant.html)
-   Classes prefixees "tb-" : dediees a cette page, pour ne jamais
-   affecter .stat / .carte-cercle / .table-manifeste, partagees par
-   les 21 autres templates (documents, cercles, admin, classe...).
-   Structure inspiree d'une maquette de reference fournie par Jake :
-   sidebar + hero + carte principale + stats + activite/cercles.
+   Etape 1 (sidebar globale) : .tb-sidebar generalisee.
+   Avant cette etape, ces classes "tb-" etaient dediees au seul
+   dashboard_etudiant.html (voir git blame). Le brief de refonte
+   demande de deplacer ce composant dans base.html pour en faire la
+   navigation de tout le site -- on continue donc a l'appeler "tb-"
+   (aucune page ne l'utilisait encore hors dashboard, donc aucun
+   risque de collision a generaliser le nom), plutot que d'inventer un
+   second systeme de classes en parallele (etape 30/rule "eviter la
+   duplication de composants"). Repeinte ici aux couleurs du theme
+   clair (--sidebar-*), mesurees sur la maquette de reference.
+   .tb-contenu reste, lui, specifique au dashboard (etape 3).
    ============================================================ */
 
-/* Le dashboard a besoin de toute la largeur pour la sidebar — on
-   deroge au conteneur centre-etroit utilise par le reste du site
-   (voir le bloc "main_classe" optionnel dans base.html). */
+/* --- Conteneur global sidebar + page, inclus par base.html pour tout
+   le site (connecte ou non). Remplace le header horizontal + mega-menu. --- */
+.app-mise-en-page {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  align-items: start;
+  min-height: 100vh;
+}
+.app-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+}
+.app-page > main { flex: 1; }
+
+/* Le dashboard garde besoin de toute la largeur de sa colonne (grille
+   de stats, etc.) — on deroge au conteneur centre-etroit utilise par
+   le reste du site (voir le bloc "main_classe" optionnel dans
+   base.html). Cette regle ne fait plus "de la place pour la sidebar"
+   (la sidebar est maintenant hors de <main>, geree par .app-mise-en-page
+   ci-dessus) : elle sert seulement a laisser .tb-contenu utiliser toute
+   la largeur de la colonne de contenu. */
 main.main-tb {
   max-width: none;
   padding: 0;
   margin: 0;
 }
 
+/* --- .tb-mise-en-page (grille 2 colonnes + glow reseau) : n'est plus
+   utilisee depuis cette etape (dashboard_etudiant.html ne redeclare
+   plus sa propre sidebar, cf §6 du brief). Conservee volontairement
+   plutot que supprimee -- l'etape 3 (refonte du dashboard) decidera
+   si le glow "reseau" doit revenir, scope au hero uniquement, ou
+   disparaitre. --- */
 .tb-mise-en-page {
   display: grid;
   grid-template-columns: 248px 1fr;
@@ -1321,8 +1187,6 @@ main.main-tb {
   margin: 0 auto;
   position: relative;
 }
-/* --- Fond "reseau" (etape 8/10, section 10.B) : quelques glows tres
-   discrets, var(--accent-reseau), opacity 0.04, statique, aucun JS. --- */
 .tb-mise-en-page::before {
   content: "";
   position: absolute;
@@ -1336,13 +1200,6 @@ main.main-tb {
     radial-gradient(circle at 30% 65%, var(--accent-reseau) 0%, transparent 48%),
     radial-gradient(circle at 75% 78%, var(--accent-reseau) 0%, transparent 38%);
 }
-/* z-index seul suffit ici (pas de position:relative) : ce sont des
-   items de grille CSS, le z-index s'applique deja sans repositionner —
-   important pour .tb-sidebar qui a deja position:sticky, a ne pas
-   ecraser. */
-.tb-sidebar, .tb-contenu {
-  z-index: 1;
-}
 
 /* --- Sidebar --- */
 .tb-sidebar {
@@ -1351,20 +1208,24 @@ main.main-tb {
   align-self: start;
   height: 100vh;
   overflow-y: auto;
-  border-right: 1px solid var(--border-default);
-  padding: 1.5rem 1rem;
+  background: var(--sidebar-bg);
+  padding: 1.25rem 0.75rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  z-index: 20;
 }
-.tb-sidebar-nav { display: flex; flex-direction: column; gap: 0.15rem; }
+.tb-sidebar-marque { padding: 0 0.6rem; margin-bottom: 0.25rem; }
+.tb-sidebar-logo { display: block; font-size: 0.95rem; font-weight: 500; color: var(--sidebar-text); }
+.tb-sidebar-lieu { display: block; font-size: 0.7rem; color: var(--sidebar-text-subtle); }
+
+.tb-sidebar-nav { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; overflow-y: auto; }
 .tb-sidebar-groupe {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-secondary);
-  margin: 1.1rem 0.6rem 0.3rem;
+  color: var(--sidebar-text-subtle);
+  margin: 1rem 0.6rem 0.3rem;
 }
 .tb-sidebar-lien {
   display: flex;
@@ -1372,18 +1233,18 @@ main.main-tb {
   gap: 0.65rem;
   padding: 0.55rem 0.6rem;
   border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-size: 0.92rem;
+  color: var(--sidebar-text-muted);
+  font-size: 0.88rem;
   transition: background 0.15s var(--ease-fluide), color 0.15s var(--ease-fluide);
 }
-.tb-sidebar-lien:hover { background: var(--surface-2); text-decoration: none; }
-.tb-sidebar-lien-actif { background: var(--color-primary-soft); color: var(--color-primary); font-weight: 600; }
-.tb-sidebar-lien-actif:hover { background: var(--color-primary-soft); }
-.tb-icone { font-size: 1rem; width: 1.2rem; text-align: center; opacity: 0.85; }
+.tb-sidebar-lien:hover { background: var(--sidebar-hover-bg); color: var(--sidebar-text); text-decoration: none; }
+.tb-sidebar-lien-actif { background: var(--primary); color: var(--sidebar-text); font-weight: 600; }
+.tb-sidebar-lien-actif:hover { background: var(--primary); color: var(--sidebar-text); }
+.tb-icone { font-size: 1rem; width: 1.2rem; text-align: center; opacity: 0.9; }
 .tb-sidebar-badge {
   margin-left: auto;
-  background: var(--color-primary);
-  color: var(--bg);
+  background: var(--star);
+  color: #4A3300;
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.05rem 0.4rem;
@@ -1394,19 +1255,71 @@ main.main-tb {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--sidebar-border);
   border-radius: var(--radius-lg);
-  padding: 1rem;
-  color: var(--text-primary);
+  padding: 0.9rem;
+  color: var(--sidebar-text);
   transition: border-color 0.15s var(--ease-fluide), transform 0.15s var(--ease-fluide);
 }
-.tb-sidebar-premium:hover { border-color: var(--color-primary); text-decoration: none; transform: translateY(-2px); }
-.tb-sidebar-premium span { font-size: 0.78rem; color: var(--text-secondary); }
-.tb-premium-etoile { color: var(--color-primary); }
+.tb-sidebar-premium:hover { border-color: var(--star); text-decoration: none; transform: translateY(-2px); }
+.tb-sidebar-premium span { font-size: 0.78rem; color: var(--sidebar-text-muted); }
+.tb-premium-etoile { color: var(--star); }
 
-/* --- Contenu principal --- */
-.tb-contenu { padding: 2rem 2.5rem 3rem; min-width: 0; }
+.tb-sidebar-compte {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-top: 1px solid var(--sidebar-border);
+  padding-top: 0.9rem;
+}
+.tb-sidebar-avatar {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--sidebar-text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tb-sidebar-compte-nom { font-size: 0.8rem; color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- Bouton menu mobile (drawer) + overlay : remplace l'ancien
+   .bouton-menu-mobile lie au header horizontal disparu. --- */
+.sidebar-bouton-mobile {
+  display: none;
+  position: fixed;
+  top: 0.85rem;
+  left: 0.85rem;
+  z-index: 45;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 2.6rem;
+  height: 2.6rem;
+  background: var(--sidebar-bg);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+}
+.sidebar-bouton-mobile span { display: block; height: 2px; width: 1.2rem; background: var(--sidebar-text); border-radius: 2px; }
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 31, 66, 0.45);
+  z-index: 19;
+}
+
+/* --- Contenu principal (dashboard, etape 3) --- */
+.tb-contenu { padding: 2rem 2.5rem 3rem; min-width: 0; max-width: 1400px; margin: 0 auto; }
 
 .tb-hero { padding-bottom: 1.75rem; }
 .tb-hero > * { animation: mahay-apparition 0.5s var(--ease-fluide) both; }
@@ -1611,21 +1524,29 @@ main.main-tb {
 
 .tb-note-quiz { color: var(--text-secondary); font-size: 0.82rem; margin-top: 1.25rem; }
 
-/* --- Responsive : sidebar en drawer sous 1024px, empilement sous 768px --- */
+/* --- Responsive : sidebar globale en drawer sous 768px --- */
 @media (max-width: 1024px) {
-  .tb-mise-en-page { grid-template-columns: 1fr; }
+  .tb-sidebar { padding: 1.1rem 0.6rem; }
+}
+@media (max-width: 768px) {
+  .app-mise-en-page { grid-template-columns: 1fr; }
+  .sidebar-bouton-mobile { display: flex; }
   .tb-sidebar {
-    position: static;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    border-right: none;
-    border-bottom: 1px solid var(--border-default);
-    overflow-x: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    max-width: 82vw;
+    transform: translateX(-100%);
+    transition: transform 0.2s var(--ease-fluide);
+    box-shadow: var(--shadow-lg);
+    z-index: 46;
   }
-  .tb-sidebar-nav { flex-direction: row; flex-wrap: wrap; }
-  .tb-sidebar-groupe { display: none; }
-  .tb-sidebar-premium { display: none; }
+  .tb-sidebar.tb-sidebar-ouverte { transform: translateX(0); }
+  .sidebar-overlay.sidebar-overlay-visible { display: block; }
+  /* Espace pour ne pas laisser le contenu sous le bouton hamburger fixe. */
+  .app-page { padding-top: 3.6rem; }
   .tb-ligne-principale { grid-template-columns: 1fr; }
   .tb-ligne-basse { grid-template-columns: 1fr; }
 }
