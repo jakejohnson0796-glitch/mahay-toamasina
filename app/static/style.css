@@ -537,7 +537,6 @@ input:focus, select:focus, textarea:focus {
 /* ---------- Messagerie enrichie (reactions, reponses, thread, mentions) ---------- */
 
 .message-epingle-banniere {
-  display: flex;
   align-items: center;
   gap: 0.6rem;
   background: var(--accent-soft);
@@ -547,6 +546,8 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 0.75rem;
   font-size: 0.85rem;
 }
+.message-epingle-banniere[hidden] { display: none; }
+.message-epingle-banniere:not([hidden]) { display: flex; }
 .message-epingle-banniere .stat-label { color: var(--accent); margin: 0; }
 .message-epingle-banniere .message-epingle-contenu { flex: 1; color: var(--text); }
 .message-epingle-banniere button {
@@ -627,7 +628,6 @@ input:focus, select:focus, textarea:focus {
   bottom: 1.6rem;
   left: 0;
   z-index: 12;
-  display: flex;
   gap: 0.2rem;
   background: var(--bg-panel);
   border: 1px solid var(--border);
@@ -635,6 +635,8 @@ input:focus, select:focus, textarea:focus {
   padding: 0.3rem 0.4rem;
   box-shadow: var(--shadow-md);
 }
+.panneau-reaction-rapide[hidden] { display: none; }
+.panneau-reaction-rapide:not([hidden]) { display: flex; }
 .panneau-reaction-rapide button {
   background: none;
   border: none;
