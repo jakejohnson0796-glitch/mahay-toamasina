@@ -200,40 +200,25 @@
     return reponse.json();
   }
 
-  // ---------- Suppression / Signalement (inchange) ----------
+  // ---------- Suppression / Signalement ----------
 
-  function creerActionSuppression(messageId) {
-    const bouton = document.createElement("button");
-    bouton.type = "button";
-    bouton.className = "lien-action";
-    bouton.title = "Supprimer ce message";
-    bouton.textContent = "Supprimer";
-    bouton.addEventListener("click", function () {
-      if (!confirm("Supprimer ce message ?")) return;
-      const form = document.createElement("form");
-      form.method = "post";
-      form.action = "/cercles/" + cercleId + "/messages/" + messageId + "/supprimer";
-      const champCsrf = document.createElement("input");
-      champCsrf.type = "hidden";
-      champCsrf.name = "_csrf";
-      champCsrf.value = jetonCsrf;
-      form.appendChild(champCsrf);
-      document.body.appendChild(form);
-      form.submit();
-    });
-    return bouton;
+  function supprimerMessage(messageId) {
+    if (!confirm("Supprimer ce message ?")) return;
+    const form = document.createElement("form");
+    form.method = "post";
+    form.action = "/cercles/" + cercleId + "/messages/" + messageId + "/supprimer";
+    const champCsrf = document.createElement("input");
+    champCsrf.type = "hidden";
+    champCsrf.name = "_csrf";
+    champCsrf.value = jetonCsrf;
+    form.appendChild(champCsrf);
+    document.body.appendChild(form);
+    form.submit();
   }
 
-  function creerActionSignalement(messageId) {
-    const conteneur = document.createElement("span");
-    conteneur.className = "conteneur-signalement";
-
-    const boutonOuvrir = document.createElement("button");
-    boutonOuvrir.type = "button";
-    boutonOuvrir.className = "lien-action";
-    boutonOuvrir.title = "Signaler ce message";
-    boutonOuvrir.textContent = "Signaler";
-
+  // Construit uniquement le formulaire (pas de bouton "Signaler" visible :
+  // c'est desormais l'entree "Signaler" du menu ⋯ qui le revele).
+  function creerFormulaireSignalement(messageId) {
     const form = document.createElement("form");
     form.method = "post";
     form.action = "/cercles/" + cercleId + "/messages/" + messageId + "/signaler";
@@ -290,26 +275,16 @@
     boutonAnnuler.textContent = "Annuler";
     boutonAnnuler.addEventListener("click", function () {
       form.hidden = true;
-      boutonOuvrir.hidden = false;
       form.reset();
       champAutre.hidden = true;
       champAutre.required = false;
-    });
-
-    boutonOuvrir.addEventListener("click", function () {
-      boutonOuvrir.hidden = true;
-      form.hidden = false;
-      select.focus();
     });
 
     form.appendChild(select);
     form.appendChild(champAutre);
     form.appendChild(boutonEnvoyer);
     form.appendChild(boutonAnnuler);
-
-    conteneur.appendChild(boutonOuvrir);
-    conteneur.appendChild(form);
-    return conteneur;
+    return form;
   }
 
   // ---------- Reactions ----------
@@ -342,39 +317,9 @@
     }
   }
 
-  function creerBoutonReagir(messageId) {
-    const conteneur = document.createElement("span");
-    conteneur.className = "conteneur-reaction-picker";
-    const bouton = document.createElement("button");
-    bouton.type = "button";
-    bouton.className = "bouton-reagir";
-    bouton.textContent = "😊 Réagir";
-    const panneau = document.createElement("div");
-    panneau.className = "panneau-reaction-rapide";
-    panneau.hidden = true;
-    ORDRE_REACTIONS.forEach(function (type) {
-      const boutonEmoji = document.createElement("button");
-      boutonEmoji.type = "button";
-      boutonEmoji.textContent = EMOJI_REACTION[type];
-      boutonEmoji.title = type;
-      boutonEmoji.addEventListener("click", function () {
-        envoyerReaction(messageId, type);
-        panneau.hidden = true;
-      });
-      panneau.appendChild(boutonEmoji);
-    });
-    bouton.addEventListener("click", function (evenement) {
-      evenement.stopPropagation();
-      document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { if (p !== panneau) p.hidden = true; });
-      panneau.hidden = !panneau.hidden;
-    });
-    conteneur.appendChild(bouton);
-    conteneur.appendChild(panneau);
-    return conteneur;
-  }
-
   document.addEventListener("click", function () {
     document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { p.hidden = true; });
+    document.querySelectorAll(".menu-actions-liste").forEach(function (m) { m.hidden = true; });
   });
 
   // ---------- Edition ----------
@@ -557,15 +502,6 @@
     threadOuvertPourId = null;
   });
 
-  function creerBoutonRepondre(messageId) {
-    const bouton = document.createElement("button");
-    bouton.type = "button";
-    bouton.className = "bouton-reagir";
-    bouton.textContent = "↩ Répondre";
-    bouton.addEventListener("click", function () { ouvrirThread(messageId); });
-    return bouton;
-  }
-
   function creerLienNombreReponses(messageId, nombre) {
     const bouton = document.createElement("button");
     bouton.type = "button";
@@ -575,7 +511,9 @@
     return bouton;
   }
 
-  // ---------- Decoration complete d'une bulle de message ----------
+  // ---------- Menu d'actions (⋯) : regroupe Reagir/Repondre/Signaler/
+  // Modifier/Supprimer/Epingler derriere un seul bouton discret plutot
+  // que de les afficher tous en permanence sous chaque message. ----------
 
   function decorerActions(bulle) {
     const actions = bulle.querySelector(".message-actions");
@@ -584,35 +522,99 @@
     const messageId = bulle.dataset.messageId;
     const auteurId = Number(bulle.dataset.auteurId);
     const estFichier = bulle.dataset.piecejointe === "1";
+    const corps = bulle.querySelector(".message-corps");
 
-    actions.appendChild(creerBoutonReagir(messageId));
-    actions.appendChild(creerBoutonRepondre(messageId));
+    const conteneurMenu = document.createElement("div");
+    conteneurMenu.className = "conteneur-menu-actions";
+
+    const boutonMenu = document.createElement("button");
+    boutonMenu.type = "button";
+    boutonMenu.className = "bouton-menu-actions";
+    boutonMenu.setAttribute("aria-label", "Actions du message");
+    boutonMenu.textContent = "⋯";
+
+    const menu = document.createElement("div");
+    menu.className = "menu-actions-liste";
+    menu.hidden = true;
+
+    function ajouterItem(texte, gestionnaire) {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "menu-actions-item";
+      item.textContent = texte;
+      item.addEventListener("click", function (evenement) {
+        evenement.stopPropagation();
+        menu.hidden = true;
+        gestionnaire();
+      });
+      menu.appendChild(item);
+      return item;
+    }
+
+    // Panneau de reactions rapides : reste independant du menu (il doit
+    // pouvoir rester ouvert alors que le menu ⋯, lui, se referme des
+    // qu'on clique sur "Reagir").
+    const panneauReaction = document.createElement("div");
+    panneauReaction.className = "panneau-reaction-rapide";
+    panneauReaction.hidden = true;
+    ORDRE_REACTIONS.forEach(function (type) {
+      const boutonEmoji = document.createElement("button");
+      boutonEmoji.type = "button";
+      boutonEmoji.textContent = EMOJI_REACTION[type];
+      boutonEmoji.title = type;
+      boutonEmoji.addEventListener("click", function () {
+        envoyerReaction(messageId, type);
+        panneauReaction.hidden = true;
+      });
+      panneauReaction.appendChild(boutonEmoji);
+    });
+    corps.appendChild(panneauReaction);
+
+    ajouterItem("😊 Réagir", function () {
+      document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { if (p !== panneauReaction) p.hidden = true; });
+      panneauReaction.hidden = false;
+    });
+
+    ajouterItem("↩ Répondre", function () { ouvrirThread(messageId); });
 
     if (auteurId === idUtilisateur) {
       if (!estFichier) {
-        const boutonModifier = document.createElement("button");
-        boutonModifier.type = "button";
-        boutonModifier.className = "bouton-reagir";
-        boutonModifier.textContent = "✎ Modifier";
-        boutonModifier.addEventListener("click", function () { activerEditionMessage(bulle); });
-        actions.appendChild(boutonModifier);
+        ajouterItem("✎ Modifier", function () { activerEditionMessage(bulle); });
       }
-      actions.appendChild(creerActionSuppression(messageId));
+      ajouterItem("🗑 Supprimer", function () { supprimerMessage(messageId); });
     } else {
-      actions.appendChild(creerActionSignalement(messageId));
+      const formSignalement = creerFormulaireSignalement(messageId);
+      corps.appendChild(formSignalement);
+      ajouterItem("🚩 Signaler", function () {
+        formSignalement.hidden = false;
+        formSignalement.querySelector("select").focus();
+      });
     }
 
+    let itemEpingler = null;
     if (peutGerer) {
-      const boutonEpingler = document.createElement("button");
-      boutonEpingler.type = "button";
-      boutonEpingler.className = "bouton-reagir";
-      boutonEpingler.textContent = bulle.classList.contains("message-epingle") ? "📌 Désépingler" : "📌 Épingler";
-      boutonEpingler.addEventListener("click", function () {
-        if (bulle.classList.contains("message-epingle")) desepinglerMessage(messageId);
-        else epinglerMessage(messageId);
-      });
-      actions.appendChild(boutonEpingler);
+      itemEpingler = ajouterItem(
+        bulle.classList.contains("message-epingle") ? "📌 Désépingler" : "📌 Épingler",
+        function () {
+          if (bulle.classList.contains("message-epingle")) desepinglerMessage(messageId);
+          else epinglerMessage(messageId);
+        }
+      );
     }
+
+    boutonMenu.addEventListener("click", function (evenement) {
+      evenement.stopPropagation();
+      if (itemEpingler) {
+        itemEpingler.textContent = bulle.classList.contains("message-epingle") ? "📌 Désépingler" : "📌 Épingler";
+      }
+      document.querySelectorAll(".menu-actions-liste").forEach(function (m) { if (m !== menu) m.hidden = true; });
+      document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { p.hidden = true; });
+      menu.hidden = !menu.hidden;
+    });
+
+    conteneurMenu.appendChild(boutonMenu);
+    conteneurMenu.appendChild(menu);
+    actions.appendChild(conteneurMenu);
   }
 
   document.querySelectorAll("#fenetre-chat .message").forEach(function (bulle) {
