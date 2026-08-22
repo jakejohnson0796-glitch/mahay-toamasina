@@ -33,6 +33,7 @@ from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_
 from .. import subscription
 from .. import theme_service
 from .. import referentiel_academique
+from ..web_utils import entier_ou_none
 from ..referentiel import NIVEAUX
 
 router = APIRouter()
@@ -173,7 +174,7 @@ def _creer_notification(
 def liste_cercles(
     request: Request,
     q: Optional[str] = None,
-    filiere_id: Optional[int] = None,
+    filiere_id: Optional[str] = None,
     niveau: Optional[str] = None,
     disponibles: Optional[str] = None,
     session: Session = Depends(get_session),
@@ -181,6 +182,7 @@ def liste_cercles(
     utilisateur = utilisateur_courant(request, session)
 
     q_nettoye = (q or "").strip()
+    filiere_id_nettoye = entier_ou_none(filiere_id)
     niveau_nettoye = niveau if niveau in NIVEAUX else None
     afficher_disponibles_seulement = disponibles == "1"
 
@@ -189,8 +191,8 @@ def liste_cercles(
         # ilike : recherche insensible a la casse, meme choix que
         # rechercher_messages() plus bas dans ce fichier.
         requete = requete.where(CercleEtude.nom.ilike(f"%{q_nettoye}%"))
-    if filiere_id:
-        requete = requete.where(CercleEtude.filiere_id == filiere_id)
+    if filiere_id_nettoye:
+        requete = requete.where(CercleEtude.filiere_id == filiere_id_nettoye)
     if niveau_nettoye:
         requete = requete.where(CercleEtude.niveau == niveau_nettoye)
     if afficher_disponibles_seulement:
@@ -241,7 +243,7 @@ def liste_cercles(
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
             "recherche_q": q_nettoye,
-            "recherche_filiere_id": filiere_id,
+            "recherche_filiere_id": filiere_id_nettoye,
             "recherche_niveau": niveau_nettoye,
             "recherche_disponibles": afficher_disponibles_seulement,
         },
@@ -253,7 +255,7 @@ def creer_cercle(
     request: Request,
     nom: str = Form(...),
     description: Optional[str] = Form(None),
-    filiere_id: Optional[int] = Form(None),
+    filiere_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
     raison: Optional[str] = Form(None),
     session: Session = Depends(get_session),
@@ -275,6 +277,8 @@ def creer_cercle(
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
+
+    filiere_id_nettoye = entier_ou_none(filiere_id)
 
     # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
     # numero de telephone. On verrouille la ligne utilisateur
@@ -315,11 +319,11 @@ def creer_cercle(
     niveau_nettoye = (niveau or "").strip() or None
 
     # --- Cas 1 : demande de cercle NATIONAL (filiere + niveau) ---
-    if filiere_id and niveau_nettoye:
+    if filiere_id_nettoye and niveau_nettoye:
         if niveau_nettoye not in NIVEAUX:
             return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
 
-        filiere = session.get(Filiere, filiere_id)
+        filiere = session.get(Filiere, filiere_id_nettoye)
         if not filiere:
             return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
 
@@ -339,7 +343,7 @@ def creer_cercle(
         cercle_existant = session.exec(
             select(CercleEtude).where(
                 CercleEtude.mention_id == filiere.mention_id,
-                CercleEtude.filiere_id == filiere_id,
+                CercleEtude.filiere_id == filiere_id_nettoye,
                 CercleEtude.niveau == niveau_nettoye,
                 CercleEtude.statut == StatutCercle.ACTIF,
             )
@@ -355,7 +359,7 @@ def creer_cercle(
         demande_existante = session.exec(
             select(DemandeCreationCercle).where(
                 DemandeCreationCercle.mention_id == filiere.mention_id,
-                DemandeCreationCercle.filiere_id == filiere_id,
+                DemandeCreationCercle.filiere_id == filiere_id_nettoye,
                 DemandeCreationCercle.niveau == niveau_nettoye,
                 DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
             )
@@ -366,7 +370,7 @@ def creer_cercle(
         session.add(DemandeCreationCercle(
             utilisateur_id=utilisateur.id,
             mention_id=filiere.mention_id,
-            filiere_id=filiere_id,
+            filiere_id=filiere_id_nettoye,
             niveau=niveau_nettoye,
             nom=nom,
             description=description or None,
@@ -379,7 +383,7 @@ def creer_cercle(
     cercle = CercleEtude(
         nom=nom,
         description=description or None,
-        filiere_id=filiere_id,
+        filiere_id=filiere_id_nettoye,
         createur_id=utilisateur.id,
     )
     session.add(cercle)

@@ -21,6 +21,7 @@ from ..auth import utilisateur_courant
 from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle
 from ..referentiel import NIVEAUX
 from ..cercles_referentiel import assurer_cercles_pour_filiere
+from ..web_utils import entier_ou_none
 from .cercles_router import _assurer_membres_admins
 
 router = APIRouter()
@@ -88,7 +89,7 @@ def creer_mention(
 def assigner_mention_filiere(
     request: Request,
     filiere_id: int,
-    mention_id: Optional[int] = Form(None),
+    mention_id: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -104,8 +105,9 @@ def assigner_mention_filiere(
     if not filiere:
         return RedirectResponse("/admin/referentiel?erreur=filiere_introuvable", status_code=303)
 
-    if mention_id:
-        mention = session.get(Mention, mention_id)
+    mention_id_nettoye = entier_ou_none(mention_id)
+    if mention_id_nettoye:
+        mention = session.get(Mention, mention_id_nettoye)
         if not mention:
             return RedirectResponse("/admin/referentiel?erreur=mention_introuvable", status_code=303)
         filiere.mention_id = mention.id
@@ -158,7 +160,7 @@ def page_cercles_a_completer(request: Request, session: Session = Depends(get_se
 def assigner_cercle(
     request: Request,
     cercle_id: int,
-    mention_id: Optional[int] = Form(None),
+    mention_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -175,8 +177,9 @@ def assigner_cercle(
     if niveau_nettoye and niveau_nettoye not in NIVEAUX:
         return RedirectResponse("/admin/referentiel/cercles?erreur=niveau_invalide", status_code=303)
 
-    if mention_id:
-        mention = session.get(Mention, mention_id)
+    mention_id_nettoye = entier_ou_none(mention_id)
+    if mention_id_nettoye:
+        mention = session.get(Mention, mention_id_nettoye)
         if not mention:
             return RedirectResponse("/admin/referentiel/cercles?erreur=mention_introuvable", status_code=303)
         cercle.mention_id = mention.id

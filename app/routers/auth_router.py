@@ -18,6 +18,7 @@ from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
 from ..rate_limit import limite_depassee
 from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_code_totp, generer_codes_secours, hacher_code_secours, verifier_code_secours
 from ..telephone import normaliser_telephone, TelephoneInvalide
+from ..web_utils import entier_ou_none
 from .. import subscription
 
 
@@ -43,11 +44,14 @@ def inscription(
     telephone: str = Form(...),
     mot_de_passe: str = Form(...),
     role: RoleUtilisateur = Form(RoleUtilisateur.ETUDIANT),
-    filiere_id: Optional[int] = Form(None),
-    universite_id: Optional[int] = Form(None),
+    filiere_id: Optional[str] = Form(None),
+    universite_id: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
+    filiere_id_nettoye = entier_ou_none(filiere_id)
+    universite_id_nettoye = entier_ou_none(universite_id)
+
     # Anti-spam : limite la creation automatisee de comptes en masse
     # (chaque etudiant inscrit declenche un essai gratuit — voir
     # subscription.creer_essai_gratuit plus bas, donc un spam
@@ -102,8 +106,8 @@ def inscription(
         telephone=telephone_normalise,
         mot_de_passe_hash=hacher_mot_de_passe(mot_de_passe),
         role=role,
-        filiere_id=filiere_id,
-        universite_id=universite_id,
+        filiere_id=filiere_id_nettoye,
+        universite_id=universite_id_nettoye,
     )
     session.add(utilisateur)
     session.commit()

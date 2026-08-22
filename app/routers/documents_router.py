@@ -18,6 +18,7 @@ from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
 from ..dependencies import acces_premium_ou_redirection
+from ..web_utils import entier_ou_none
 
 router = APIRouter()
 
@@ -33,12 +34,12 @@ def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
 @router.get("/documents")
 def liste_documents(
     request: Request,
-    filiere_id: Optional[int] = None,
+    filiere_id: Optional[str] = None,
     matiere: Optional[str] = None,
     type_document: Optional[TypeDocument] = None,
     session: Session = Depends(get_session),
 ):
-    filiere_id = int(filiere_id) if filiere_id else None
+    filiere_id = entier_ou_none(filiere_id)
     requete = select(Document).where(Document.statut == StatutDocument.APPROUVE)
     if filiere_id:
         requete = requete.where(Document.filiere_id == filiere_id)
