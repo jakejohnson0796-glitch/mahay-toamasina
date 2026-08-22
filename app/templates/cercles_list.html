@@ -24,6 +24,48 @@
 
 {% if utilisateur %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
+  <h3 class="titre-carte">Rechercher un cercle</h3>
+  <form class="filtres" method="get" action="/cercles">
+    <div>
+      <label for="q">Nom du cercle</label>
+      <input type="text" id="q" name="q" value="{{ recherche_q }}" placeholder="ex: Info Generale">
+    </div>
+    <div>
+      <label for="recherche_filiere_id">Filiere</label>
+      <select id="recherche_filiere_id" name="filiere_id">
+        <option value="">— toutes —</option>
+        {% for filiere in filieres %}
+        <option value="{{ filiere.id }}" {% if recherche_filiere_id == filiere.id %}selected{% endif %}>{{ filiere.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="recherche_niveau">Niveau</label>
+      <select id="recherche_niveau" name="niveau">
+        <option value="">— tous —</option>
+        {% for n in niveaux %}
+        <option value="{{ n }}" {% if recherche_niveau == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="disponibles" style="display:flex;align-items:center;gap:0.4rem;margin-top:1.6rem;">
+        <input type="checkbox" id="disponibles" name="disponibles" value="1" style="width:auto;" {% if recherche_disponibles %}checked{% endif %}>
+        Disponibles pour moi
+      </label>
+    </div>
+    <div>
+      <button class="bouton bouton-secondaire" type="submit">Rechercher</button>
+    </div>
+  </form>
+  {% if recherche_q or recherche_filiere_id or recherche_niveau or recherche_disponibles %}
+  <p style="margin-top:1rem;"><a href="/cercles">Reinitialiser la recherche</a></p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if utilisateur %}
+<div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
@@ -106,10 +148,17 @@ pas besoin de changer, seul le format de sortie serait concerne.
     </div>
   </div>
   {% else %}
+  {% if recherche_q or recherche_filiere_id or recherche_niveau or recherche_disponibles %}
+  {{ etat_vide_constellation(
+    titre="Aucun resultat",
+    texte="Aucun cercle ne correspond a cette recherche — essayez d'autres criteres, ou reinitialisez.",
+  ) }}
+  {% else %}
   {{ etat_vide_constellation(
     titre="Aucun cercle pour le moment",
     texte="Soyez les premiers a en creer un et invitez d'autres etudiants a vous rejoindre.",
   ) }}
+  {% endif %}
   {% endfor %}
 </div>
 {% endblock %}

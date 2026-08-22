@@ -16,7 +16,7 @@ Regles implementees (voir le brief "cercles nationaux") :
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlmodel import Session
+from sqlmodel import Session, and_, or_
 
 from .models import CercleEtude, Filiere, Utilisateur
 
@@ -80,4 +80,43 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
         filiere_utilisateur.mention_id == cercle.mention_id
         and utilisateur.filiere_id == cercle.filiere_id
         and utilisateur.niveau == cercle.niveau
+    )
+
+
+def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: Session):
+    """Condition SQLAlchemy (a passer a .where()) qui identifie les
+    cercles 'disponibles' pour cet utilisateur, au meme sens que
+    profil_correspond_au_cercle ci-dessus : les cercles libres, plus —
+    si son profil filiere+niveau est complet — le seul cercle national
+    qui lui correspond exactement.
+
+    Construite cote SQL (plutot qu'evaluee ligne par ligne en Python
+    apres avoir tout charge) pour rester efficace meme avec un grand
+    nombre de cercles en base (voir cercles_referentiel.py, qui peut en
+    generer plusieurs centaines — un par filiere x niveau).
+
+    Utilisateur non connecte, ou profil filiere/niveau incomplet : seuls
+    les cercles libres sont consideres disponibles (il ne peut, de toute
+    facon, rejoindre aucun cercle national tant que son profil n'est pas
+    complet — voir la meme regle dans profil_correspond_au_cercle)."""
+    cercle_libre = or_(
+        CercleEtude.mention_id.is_(None),
+        CercleEtude.filiere_id.is_(None),
+        CercleEtude.niveau.is_(None),
+    )
+
+    if utilisateur is None or not utilisateur.filiere_id or not utilisateur.niveau:
+        return cercle_libre
+
+    filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id)
+    if not filiere_utilisateur:
+        return cercle_libre
+
+    return or_(
+        cercle_libre,
+        and_(
+            CercleEtude.mention_id == filiere_utilisateur.mention_id,
+            CercleEtude.filiere_id == utilisateur.filiere_id,
+            CercleEtude.niveau == utilisateur.niveau,
+        ),
     )

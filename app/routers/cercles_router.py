@@ -170,9 +170,37 @@ def _creer_notification(
 
 
 @router.get("/cercles")
-def liste_cercles(request: Request, session: Session = Depends(get_session)):
+def liste_cercles(
+    request: Request,
+    q: Optional[str] = None,
+    filiere_id: Optional[int] = None,
+    niveau: Optional[str] = None,
+    disponibles: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
     utilisateur = utilisateur_courant(request, session)
-    cercles = session.exec(select(CercleEtude).order_by(CercleEtude.date_creation.desc())).all()
+
+    q_nettoye = (q or "").strip()
+    niveau_nettoye = niveau if niveau in NIVEAUX else None
+    afficher_disponibles_seulement = disponibles == "1"
+
+    requete = select(CercleEtude).order_by(CercleEtude.date_creation.desc())
+    if q_nettoye:
+        # ilike : recherche insensible a la casse, meme choix que
+        # rechercher_messages() plus bas dans ce fichier.
+        requete = requete.where(CercleEtude.nom.ilike(f"%{q_nettoye}%"))
+    if filiere_id:
+        requete = requete.where(CercleEtude.filiere_id == filiere_id)
+    if niveau_nettoye:
+        requete = requete.where(CercleEtude.niveau == niveau_nettoye)
+    if afficher_disponibles_seulement:
+        # Construit cote SQL (voir referentiel_academique.py) plutot que
+        # filtre ligne par ligne en Python : reste efficace meme avec
+        # les centaines de cercles que cercles_referentiel.py peut
+        # generer (un par filiere x niveau).
+        requete = requete.where(referentiel_academique.condition_cercles_disponibles(utilisateur, session))
+
+    cercles = session.exec(requete).all()
     filieres = session.exec(select(Filiere)).all()
 
     # Meme filet de securite que salon_cercle()/voir_membres() : sans cet
@@ -212,6 +240,10 @@ def liste_cercles(request: Request, session: Session = Depends(get_session)):
             "niveaux": NIVEAUX,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
+            "recherche_q": q_nettoye,
+            "recherche_filiere_id": filiere_id,
+            "recherche_niveau": niveau_nettoye,
+            "recherche_disponibles": afficher_disponibles_seulement,
         },
     )
 

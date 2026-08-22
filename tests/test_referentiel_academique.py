@@ -9,7 +9,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from sqlalchemy import event
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import Universite, Faculte, Mention, Filiere, CercleEtude, Utilisateur, RoleUtilisateur
 from app.referentiel_academique import (
@@ -18,6 +18,7 @@ from app.referentiel_academique import (
     jours_avant_prochain_changement_niveau,
     prochain_changement_niveau_autorise_le,
     profil_correspond_au_cercle,
+    condition_cercles_disponibles,
 )
 
 
@@ -147,6 +148,95 @@ class TestCorrespondanceCercle(unittest.TestCase):
             )
             u = Utilisateur(nom="X", telephone="0340000006", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
+
+
+class TestConditionCerclesDisponibles(unittest.TestCase):
+    """condition_cercles_disponibles() doit filtrer exactement les memes
+    cercles que profil_correspond_au_cercle() accepterait un par un —
+    seule la mecanique differe (condition SQL plutot que boucle Python)."""
+
+    def setUp(self):
+        self.engine = _nouvel_engine_sqlite()
+        with Session(self.engine) as session:
+            universite = Universite(nom="Universite de Toamasina")
+            session.add(universite); session.commit(); session.refresh(universite)
+            faculte = Faculte(nom="DEGMIA", universite_id=universite.id)
+            session.add(faculte); session.commit(); session.refresh(faculte)
+            mention = Mention(nom="Sciences de Gestion")
+            session.add(mention); session.commit(); session.refresh(mention)
+            self.mention_id = mention.id
+            filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
+            session.add(filiere); session.commit(); session.refresh(filiere)
+            self.filiere_id = filiere.id
+
+            autre_mention = Mention(nom="Droit")
+            session.add(autre_mention); session.commit(); session.refresh(autre_mention)
+            autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=autre_mention.id)
+            session.add(autre_filiere); session.commit(); session.refresh(autre_filiere)
+            self.autre_filiere_id = autre_filiere.id
+
+            createur = Utilisateur(nom="Createur", telephone="0340000010", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
+            session.add(createur); session.commit(); session.refresh(createur)
+            self.createur_id = createur.id
+
+            # Le paysage complet : un cercle libre, le cercle national qui
+            # correspond a l'etudiant de test, et deux qui ne correspondent
+            # pas (mauvais niveau, mauvaise filiere).
+            session.add(CercleEtude(nom="Groupe libre", createur_id=self.createur_id))
+            session.add(CercleEtude(
+                nom="Finance L3", createur_id=self.createur_id,
+                mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L3",
+            ))
+            session.add(CercleEtude(
+                nom="Finance L2", createur_id=self.createur_id,
+                mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L2",
+            ))
+            session.add(CercleEtude(
+                nom="Droit L3", createur_id=self.createur_id,
+                mention_id=autre_mention.id, filiere_id=self.autre_filiere_id, niveau="L3",
+            ))
+            session.commit()
+
+    def _noms_disponibles(self, utilisateur) -> set:
+        with Session(self.engine) as session:
+            resultats = session.exec(
+                select(CercleEtude).where(condition_cercles_disponibles(utilisateur, session))
+            ).all()
+            return {c.nom for c in resultats}
+
+    def test_etudiant_avec_profil_complet_voit_le_libre_et_son_cercle_national(self):
+        u = Utilisateur(nom="X", telephone="0340000011", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                         filiere_id=self.filiere_id, niveau="L3")
+        self.assertEqual(self._noms_disponibles(u), {"Groupe libre", "Finance L3"})
+
+    def test_etudiant_ne_voit_pas_le_meme_cercle_national_a_un_autre_niveau(self):
+        u = Utilisateur(nom="X", telephone="0340000012", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                         filiere_id=self.filiere_id, niveau="L2")
+        self.assertEqual(self._noms_disponibles(u), {"Groupe libre", "Finance L2"})
+
+    def test_etudiant_ne_voit_pas_les_cercles_dune_autre_filiere(self):
+        u = Utilisateur(nom="X", telephone="0340000013", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                         filiere_id=self.filiere_id, niveau="L3")
+        self.assertNotIn("Droit L3", self._noms_disponibles(u))
+
+    def test_utilisateur_sans_profil_ne_voit_que_les_cercles_libres(self):
+        u = Utilisateur(nom="X", telephone="0340000014", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
+        self.assertEqual(self._noms_disponibles(u), {"Groupe libre"})
+
+    def test_utilisateur_none_ne_voit_que_les_cercles_libres(self):
+        self.assertEqual(self._noms_disponibles(None), {"Groupe libre"})
+
+    def test_coherent_avec_profil_correspond_au_cercle_pour_chaque_cercle(self):
+        """Verification croisee : pour un etudiant donne, l'ensemble
+        renvoye par la condition SQL doit etre EXACTEMENT celui obtenu
+        en filtrant chaque cercle un par un avec profil_correspond_au_cercle
+        (plus l'appartenance a un cercle libre, deja couverte par les deux)."""
+        u = Utilisateur(nom="X", telephone="0340000015", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                         filiere_id=self.filiere_id, niveau="L3")
+        with Session(self.engine) as session:
+            tous = session.exec(select(CercleEtude)).all()
+            attendu = {c.nom for c in tous if profil_correspond_au_cercle(u, c, session)}
+        self.assertEqual(self._noms_disponibles(u), attendu)
 
 
 if __name__ == "__main__":
