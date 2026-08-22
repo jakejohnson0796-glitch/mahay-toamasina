@@ -74,6 +74,63 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
 
   --ease-fluide: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* --- Etape 0 (refonte "theme clair") : tokens du nouveau design system,
+     voir le brief de refonte visuelle complete. Objectif : sidebar bleu
+     marine + contenu clair + accent indigo, valeurs mesurees directement
+     sur les deux maquettes de reference (dont mahay_cercles_liste_nouvelle_charte).
+     Ces tokens cohabitent avec les tokens sombres ci-dessus tant que la
+     migration page par page (etapes 1 a 14) n'est pas terminee : aucune
+     valeur existante n'est modifiee ici, donc les pages pas encore
+     migrees restent inchangees a l'oeil. --- */
+  --sidebar-bg: #0B1F42;
+  --content-bg: #F9F9FC;
+  --content-surface: #FFFFFF;
+  --content-border: #E5E7EB;
+  --content-text: #111827;
+  --content-text-muted: #6B7280;  /* 4.60:1 sur --content-bg, 4.83:1 sur --content-surface (AA texte normal) */
+  --content-link: #4980E5;        /* couleur mesuree sur la maquette (liens/secondaire). 3.82:1 sur --content-surface :
+                                      insuffisant pour du texte de lien courant (AA texte = 4.5:1). Correct pour un
+                                      usage UI/grand texte (seuil 3:1 : bouton, icone, bordure). A trancher a la
+                                      passe accessibilite finale si un lien texte pur en a besoin (souligne+gras,
+                                      ou variante plus foncee dediee). */
+  --primary: #4F3AE8;
+  --primary-hover: #3019D6;       /* -10% de luminosite HSL sur --primary : 9.39:1 sur --content-surface, 8.94:1 sur --content-bg */
+  --star: #FCBB32;                /* etoiles/elements dores de la maquette claire. 1.71:1 sur --content-surface :
+                                      usage decoratif uniquement (icones, remplissages SVG), jamais comme texte --
+                                      meme reserve que --lumiere plus haut dans ce fichier. */
+
+  /* Variantes claires des tokens semantiques, pour un usage EN TEXTE sur
+     fond clair (--content-bg / --content-surface). Les tokens --color-*
+     sombres ci-dessus ne sont pas modifies : ils restent corrects pour
+     les pages pas encore migrees vers le theme clair -- les composants
+     generiques (etape 2) choisiront la bonne variante selon le fond sur
+     lequel ils sont rendus. Chaque variante reprend la teinte de son
+     equivalent sombre (coherence de marque), simplement assombrie
+     jusqu'a l'AA. --color-warning-clair part de --lumiere (et non
+     --accent) pour eviter de reproduire la collision visuelle
+     warning/danger deja identifiee et corrigee plus haut dans ce
+     fichier. */
+  --color-success-clair: #487961;  /* base var(--accent-2) assombrie : 4.78:1 sur --content-bg, 5.02:1 sur --content-surface */
+  --color-warning-clair: #9B6307;  /* base var(--lumiere) assombrie : 4.78:1 sur --content-bg, 5.02:1 sur --content-surface */
+  --color-danger-clair: #BD4E2D;   /* base var(--danger) assombrie : 4.66:1 sur --content-bg, 4.89:1 sur --content-surface */
+  --color-info-clair: #487686;     /* base var(--color-info) assombrie : 4.75:1 sur --content-bg, 4.99:1 sur --content-surface */
+
+  /* Etats hover/focus/disabled/actif : verifies, aucun nouveau token
+     necessaire au-dela de ce qui precede.
+     - hover   -> --primary-hover ci-dessus pour les boutons/liens primaires ;
+     - focus   -> reutiliser var(--primary) comme anneau de focus-visible
+                  (6.44:1 sur --content-bg, tres au-dessus du seuil 3:1
+                  exige pour un indicateur non textuel), meme pattern que
+                  a:focus-visible plus bas dans ce fichier (outline 2px) ;
+     - disabled -> reutiliser var(--content-text-muted) + opacity 0.5,
+                  pattern deja utilise sur .bouton-primaire:disabled ;
+     - ombres/rayons -> --shadow-sm/md/lg et --radius-sm/md/lg definis
+                  plus haut sont neutres (rgba noir) et se reutilisent
+                  tels quels sur fond clair, aucune nouvelle variante
+                  requise ;
+     - actif   -> meme logique que hover ; un ton encore plus fonce sera
+                  arbitre composant par composant si besoin a l'etape 2. */
 }
 
 * { box-sizing: border-box; }
