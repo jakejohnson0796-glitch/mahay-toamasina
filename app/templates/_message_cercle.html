@@ -3,24 +3,30 @@
      data-auteur-id="{{ m.auteur_id }}"
      data-reponses="{{ m.reponses }}"
      {% if m.piece_jointe_chemin %}data-piecejointe="1"{% endif %}>
-  <span class="message-auteur">{{ m.auteur }}</span>
-  {% if m.piece_jointe_chemin %}
-  <span class="message-contenu">
-    📎 <a href="/cercles/{{ cercle.id }}/messages/{{ m.id }}/piece-jointe" target="_blank">{{ m.piece_jointe_nom }}</a>
-  </span>
-  {% else %}
-  <span class="message-contenu">{{ m.contenu }}</span>
-  {% endif %}
-  {% if m.modifie %}<span class="message-modifie-etiquette">(modifié)</span>{% endif %}
-  <div class="reactions-du-message">
-    {% for r in m.reactions %}
-    <span class="puce-reaction {{ 'puce-reaction-mienne' if r.mienne else '' }}" data-type-reaction="{{ r.type_reaction }}">
-      {{ {"pouce":"👍","coeur":"❤️","rire":"😂","etonne":"😮","triste":"😢","colere":"😡","fete":"🎉"}[r.type_reaction] }} {{ r.total }}
+  <span class="message-avatar" aria-hidden="true">{{ m.auteur[0] | upper }}</span>
+  <div class="message-corps">
+    <div class="message-entete">
+      <span class="message-auteur">{{ m.auteur }}</span>
+      <span class="message-heure">{{ m.date_envoi.strftime("%H:%M") }}</span>
+    </div>
+    {% if m.piece_jointe_chemin %}
+    <span class="message-contenu">
+      📎 <a href="/cercles/{{ cercle.id }}/messages/{{ m.id }}/piece-jointe" target="_blank">{{ m.piece_jointe_nom }}</a>
     </span>
-    {% endfor %}
+    {% else %}
+    <span class="message-contenu">{{ m.contenu }}</span>
+    {% endif %}
+    {% if m.modifie %}<span class="message-modifie-etiquette">(modifié)</span>{% endif %}
+    <div class="reactions-du-message">
+      {% for r in m.reactions %}
+      <span class="puce-reaction {{ 'puce-reaction-mienne' if r.mienne else '' }}" data-type-reaction="{{ r.type_reaction }}">
+        {{ {"pouce":"👍","coeur":"❤️","rire":"😂","etonne":"😮","triste":"😢","colere":"😡","fete":"🎉"}[r.type_reaction] }} {{ r.total }}
+      </span>
+      {% endfor %}
+    </div>
+    <span class="message-actions"></span>
+    {% if m.reponses > 0 %}
+    <button type="button" class="bouton-thread-ouvrir" data-thread-preexistant="{{ m.id }}">💬 {{ m.reponses }} réponse{{ "s" if m.reponses > 1 else "" }}</button>
+    {% endif %}
   </div>
-  <span class="message-actions"></span>
-  {% if m.reponses > 0 %}
-  <button type="button" class="bouton-thread-ouvrir" data-thread-preexistant="{{ m.id }}">💬 {{ m.reponses }} réponse{{ "s" if m.reponses > 1 else "" }}</button>
-  {% endif %}
 </div>

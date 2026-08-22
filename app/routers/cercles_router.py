@@ -860,6 +860,7 @@ async def envoyer_fichier(
         "contenu": "",
         "piece_jointe_nom": fichier.filename,
         "piece_jointe_url": f"/cercles/{cercle_id}/messages/{message.id}/piece-jointe",
+        "date_envoi": message.date_envoi.isoformat(),
     })
 
     return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
@@ -1356,6 +1357,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 "contenu": contenu,
                 "parent_message_id": parent_message_id,
                 "mentions": list(mentions_valides),
+                "date_envoi": message.date_envoi.isoformat(),
             })
     except WebSocketDisconnect:
         gestionnaire.deconnecter(cercle_id, websocket)

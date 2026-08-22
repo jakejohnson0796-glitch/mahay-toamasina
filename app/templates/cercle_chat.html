@@ -482,23 +482,40 @@
   function creerBulleThread(m) {
     const bulle = document.createElement("div");
     bulle.className = "message" + (m.est_moi ? " message-moi" : "");
+    const avatar = document.createElement("span");
+    avatar.className = "message-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = (m.auteur || "?").charAt(0).toUpperCase();
+    bulle.appendChild(avatar);
+    const corps = document.createElement("div");
+    corps.className = "message-corps";
+    bulle.appendChild(corps);
+    const entete = document.createElement("div");
+    entete.className = "message-entete";
     const auteur = document.createElement("span");
     auteur.className = "message-auteur";
-    auteur.textContent = m.auteur + (m.date_envoi ? " · " + formaterHeure(m.date_envoi) : "");
-    bulle.appendChild(auteur);
+    auteur.textContent = m.auteur;
+    entete.appendChild(auteur);
+    if (m.date_envoi) {
+      const heure = document.createElement("span");
+      heure.className = "message-heure";
+      heure.textContent = formaterHeure(m.date_envoi);
+      entete.appendChild(heure);
+    }
+    corps.appendChild(entete);
     const contenu = document.createElement("span");
     contenu.className = "message-contenu";
     contenu.textContent = m.contenu;
-    bulle.appendChild(contenu);
+    corps.appendChild(contenu);
     if (m.modifie) {
       const etiquette = document.createElement("span");
       etiquette.className = "message-modifie-etiquette";
       etiquette.textContent = "(modifié)";
-      bulle.appendChild(etiquette);
+      corps.appendChild(etiquette);
     }
     const reactions = document.createElement("div");
     reactions.className = "reactions-du-message";
-    bulle.appendChild(reactions);
+    corps.appendChild(reactions);
     return bulle;
   }
 
@@ -704,10 +721,27 @@
     bulle.dataset.reponses = "0";
     if (donnees.piece_jointe_url) bulle.dataset.piecejointe = "1";
 
+    const avatar = document.createElement("span");
+    avatar.className = "message-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = (donnees.auteur || "?").charAt(0).toUpperCase();
+    bulle.appendChild(avatar);
+
+    const corps = document.createElement("div");
+    corps.className = "message-corps";
+    bulle.appendChild(corps);
+
+    const entete = document.createElement("div");
+    entete.className = "message-entete";
     const auteur = document.createElement("span");
     auteur.className = "message-auteur";
     auteur.textContent = donnees.auteur;
-    bulle.appendChild(auteur);
+    entete.appendChild(auteur);
+    const heure = document.createElement("span");
+    heure.className = "message-heure";
+    heure.textContent = formaterHeure(donnees.date_envoi);
+    entete.appendChild(heure);
+    corps.appendChild(entete);
 
     const contenu = document.createElement("span");
     contenu.className = "message-contenu";
@@ -721,15 +755,15 @@
     } else {
       contenu.textContent = donnees.contenu;
     }
-    bulle.appendChild(contenu);
+    corps.appendChild(contenu);
 
     const reactionsDiv = document.createElement("div");
     reactionsDiv.className = "reactions-du-message";
-    bulle.appendChild(reactionsDiv);
+    corps.appendChild(reactionsDiv);
 
     const actions = document.createElement("span");
     actions.className = "message-actions";
-    bulle.appendChild(actions);
+    corps.appendChild(actions);
     decorerActions(bulle);
 
     fenetreChat.appendChild(bulle);
