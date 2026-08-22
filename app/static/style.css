@@ -394,6 +394,13 @@ input:focus, select:focus, textarea:focus {
   height: 60vh;
   min-height: 20em;
   overflow-y: auto;
+  /* Explicite plutot qu'implicite : avec overflow-y:auto, la spec CSS
+     force de toute facon overflow-x a "auto" des qu'il n'est pas
+     "visible" sur les deux axes a la fois. Le nommer ici documente
+     l'intention et rappelle que tout element positionne en absolute
+     dans ce conteneur (ex: .menu-actions-liste) doit rester dans ses
+     limites horizontales sous peine d'etre rogne silencieusement. */
+  overflow-x: hidden;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--rayon);
@@ -500,9 +507,21 @@ input:focus, select:focus, textarea:focus {
 .menu-actions-liste {
   position: absolute;
   bottom: 1.7rem;
-  right: 0;
+  /* Ancré a gauche par defaut : les messages des autres membres sont
+     alignes a gauche (.message, align-self:flex-start), donc la bulle
+     est proche du bord gauche de #fenetre-chat. Un ancrage a droite
+     (right:0) etendrait le menu vers la GAUCHE, hors des limites du
+     conteneur. Or #fenetre-chat a overflow-y:auto sans overflow-x
+     explicite ; la spec CSS force alors implicitement overflow-x a
+     "auto" (une regle peu connue : on ne peut pas avoir un axe visible
+     et l'autre non-visible), ce qui rogne silencieusement tout
+     depassement horizontal — d'ou le texte tronque a gauche. Etendre le
+     menu vers l'espace disponible (a droite ici) evite le depassement
+     a la source, plutot que de lutter contre ce comportement d'overflow. */
+  left: 0;
   z-index: 14;
   min-width: 9.5rem;
+  max-width: min(16rem, calc(100vw - 2.5rem));
   flex-direction: column;
   gap: 0.05rem;
   background: var(--bg-panel);
@@ -510,6 +529,33 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--rayon);
   box-shadow: var(--shadow-md);
   padding: 0.3rem;
+}
+/* Mes propres messages sont alignes a droite (.message-moi,
+   align-self:flex-end) : la bulle est proche du bord droit du
+   conteneur, donc l'espace disponible est a gauche du bouton "...".
+   On inverse l'ancrage pour la meme raison que ci-dessus. */
+.message-moi .menu-actions-liste { left: auto; right: 0; }
+/* Sur petit ecran, une bulle peut occuper jusqu'a 78% de la largeur
+   (.message { max-width:78% }) : meme du "bon" cote, l'espace restant
+   (~22%) peut etre plus etroit que le menu lui-meme, qui deborderait
+   alors de nouveau et serait rogne par overflow-x. Plutot que de
+   pourchasser l'espace disponible bouton par bouton (ce qui exigerait
+   du JS pour un calcul fiable), le menu devient sur mobile un panneau
+   ancre au bas de l'ecran (position:fixed), independant de la position
+   du bouton et de l'alignement du message — pattern courant type
+   "feuille d'actions", robuste quelle que soit la largeur de la bulle. */
+@media (max-width: 640px) {
+  .menu-actions-liste,
+  .message-moi .menu-actions-liste {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    top: auto;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+  }
 }
 .menu-actions-liste[hidden] { display: none; }
 .menu-actions-liste:not([hidden]) { display: flex; }
