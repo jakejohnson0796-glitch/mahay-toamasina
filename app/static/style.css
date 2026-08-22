@@ -514,6 +514,9 @@ input:focus, select:focus, textarea:focus {
 .menu-actions-liste[hidden] { display: none; }
 .menu-actions-liste:not([hidden]) { display: flex; }
 .menu-actions-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   background: none;
   border: none;
   text-align: left;
@@ -523,6 +526,11 @@ input:focus, select:focus, textarea:focus {
   color: var(--text);
   cursor: pointer;
   white-space: nowrap;
+}
+.menu-actions-icone {
+  flex: none;
+  width: 1.1em;
+  text-align: center;
 }
 .menu-actions-item:hover { background: var(--bg-panel-2); color: var(--accent-2); }
 

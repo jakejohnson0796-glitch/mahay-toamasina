@@ -537,11 +537,25 @@
     menu.className = "menu-actions-liste";
     menu.hidden = true;
 
-    function ajouterItem(texte, gestionnaire) {
+    function ajouterItem(icone, libelle, gestionnaire) {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "menu-actions-item";
-      item.textContent = texte;
+      // Icone et libelle dans des spans separes (plutot qu'un seul
+      // textContent "emoji + espace + mot") : certaines polices de
+      // secours rendent les glyphes ↩/✎/🚩/📌 avec une boite plus large
+      // que leur emplacement visuel quand l'emoji n'est pas couvert par
+      // la police systeme, ce qui peut chevaucher le debut du mot suivant
+      // et le rendre illisible. Deux spans avec un gap flexbox garantissent
+      // un espacement reel, insensible aux metriques de la police utilisee.
+      const spanIcone = document.createElement("span");
+      spanIcone.className = "menu-actions-icone";
+      spanIcone.textContent = icone;
+      spanIcone.setAttribute("aria-hidden", "true");
+      const spanLibelle = document.createElement("span");
+      spanLibelle.textContent = libelle;
+      item.appendChild(spanIcone);
+      item.appendChild(spanLibelle);
       item.addEventListener("click", function (evenement) {
         evenement.stopPropagation();
         menu.hidden = true;
@@ -570,22 +584,22 @@
     });
     corps.appendChild(panneauReaction);
 
-    ajouterItem("😊 Réagir", function () {
+    ajouterItem("😊", "Réagir", function () {
       document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { if (p !== panneauReaction) p.hidden = true; });
       panneauReaction.hidden = false;
     });
 
-    ajouterItem("↩ Répondre", function () { ouvrirThread(messageId); });
+    ajouterItem("↩", "Répondre", function () { ouvrirThread(messageId); });
 
     if (auteurId === idUtilisateur) {
       if (!estFichier) {
-        ajouterItem("✎ Modifier", function () { activerEditionMessage(bulle); });
+        ajouterItem("✎", "Modifier", function () { activerEditionMessage(bulle); });
       }
-      ajouterItem("🗑 Supprimer", function () { supprimerMessage(messageId); });
+      ajouterItem("🗑", "Supprimer", function () { supprimerMessage(messageId); });
     } else {
       const formSignalement = creerFormulaireSignalement(messageId);
       corps.appendChild(formSignalement);
-      ajouterItem("🚩 Signaler", function () {
+      ajouterItem("🚩", "Signaler", function () {
         formSignalement.hidden = false;
         formSignalement.querySelector("select").focus();
       });
@@ -594,7 +608,8 @@
     let itemEpingler = null;
     if (peutGerer) {
       itemEpingler = ajouterItem(
-        bulle.classList.contains("message-epingle") ? "📌 Désépingler" : "📌 Épingler",
+        "📌",
+        bulle.classList.contains("message-epingle") ? "Désépingler" : "Épingler",
         function () {
           if (bulle.classList.contains("message-epingle")) desepinglerMessage(messageId);
           else epinglerMessage(messageId);
@@ -605,7 +620,8 @@
     boutonMenu.addEventListener("click", function (evenement) {
       evenement.stopPropagation();
       if (itemEpingler) {
-        itemEpingler.textContent = bulle.classList.contains("message-epingle") ? "📌 Désépingler" : "📌 Épingler";
+        itemEpingler.querySelector(".menu-actions-icone + span").textContent =
+          bulle.classList.contains("message-epingle") ? "Désépingler" : "Épingler";
       }
       document.querySelectorAll(".menu-actions-liste").forEach(function (m) { if (m !== menu) m.hidden = true; });
       document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { p.hidden = true; });
