@@ -226,12 +226,20 @@ button:disabled {
   font-weight: 600;
   font-size: 0.95rem;
 }
-.bouton-primaire { background: var(--accent); color: #1A1206; }
-.bouton-primaire:hover { background: #f0a874; text-decoration: none; }
-.bouton-primaire:disabled, .bouton-primaire:disabled:hover { background: var(--accent); opacity: 0.5; }
-.bouton-secondaire { background: var(--bg-panel-2); border: 1px solid var(--border); color: var(--text); }
-.bouton-secondaire:hover { border-color: var(--accent); text-decoration: none; }
-.bouton-secondaire:disabled, .bouton-secondaire:disabled:hover { border-color: var(--border); }
+/* --- Etape 2 (composants generiques) : boutons repeints pour le theme
+   clair. Contrairement a .tampon-*/.table-manifeste plus bas, un
+   bouton porte deja son propre fond opaque + sa propre couleur de
+   texte -- rien ne depend du fond de la page qui l'entoure, donc ce
+   repaint est sans risque des maintenant, meme sur une page pas
+   encore migree (etapes 3-14). Couleurs et contrastes : voir §0/§1 de
+   ce fichier (var(--primary) mesure 6.44:1+ sur blanc, --primary-hover
+   9.39:1). */
+.bouton-primaire { background: var(--primary); color: var(--content-surface); }
+.bouton-primaire:hover { background: var(--primary-hover); text-decoration: none; }
+.bouton-primaire:disabled, .bouton-primaire:disabled:hover { background: var(--primary); opacity: 0.5; }
+.bouton-secondaire { background: var(--content-surface); border: 1px solid var(--primary); color: var(--primary); }
+.bouton-secondaire:hover { background: var(--content-bg); text-decoration: none; }
+.bouton-secondaire:disabled, .bouton-secondaire:disabled:hover { border-color: var(--content-border); color: var(--content-text-muted); background: var(--content-surface); }
 
 /* ---------- Stats ---------- */
 
@@ -271,6 +279,22 @@ button:disabled {
   letter-spacing: 0.03em;
 }
 
+/* --- Etape 2 (composants generiques) : .table-manifeste n'a pas de
+   fond a elle (transparente, se fond dans la page qui l'entoure) --
+   contrairement a .carte-formulaire/.offre plus bas. Repeindre
+   directement ses bordures/hover casserait leur lisibilite sur les
+   ~19 pages qui l'utilisent et ne sont pas encore migrees (fond
+   encore sombre --bg #0E2A32, ou --content-border #E5E7EB devient
+   quasi invisible). Variante claire donc posee derriere .contenu-clair
+   -- une page migree (etape 3, 8, 11...) ajoute cette classe sur son
+   wrapper de contenu pour l'activer, plutot qu'un changement global
+   qui degraderait les pages en attente de leur propre etape. Meme
+   logique pour .tampon-* juste apres. */
+.contenu-clair .table-manifeste th { color: var(--content-text-muted); border-bottom-color: var(--content-border); }
+.contenu-clair .table-manifeste td { border-bottom-color: var(--content-border); color: var(--content-text); }
+.contenu-clair .table-manifeste tr:hover td { background: var(--content-bg); }
+.contenu-clair .ref, .contenu-clair .reference { color: var(--primary); }
+
 /* Tampon de statut, façon cachet portuaire */
 .tampon {
   display: inline-block;
@@ -286,15 +310,59 @@ button:disabled {
 .tampon-approuve { color: var(--accent-2); }
 .tampon-attente { color: var(--accent); }
 .tampon-rejete { color: var(--danger); }
+/* Variante claire (voir note ci-dessus sur .contenu-clair) : mesure,
+   les tons --color-*-clair de l'etape 0 tombent a ~3:1 sur le fond
+   sombre --bg encore utilise par les pages pas migrees -- sous le
+   seuil AA texte (4.5:1). Le stamp garde son fond transparent + son
+   bord "currentColor" (identite Mahay, cf §3 du brief : pas question
+   d'en faire un badge plein) ; seule la couleur change selon le
+   contexte. */
+.contenu-clair .tampon-approuve { color: var(--color-success-clair); }
+.contenu-clair .tampon-attente { color: var(--color-warning-clair); }
+.contenu-clair .tampon-rejete { color: var(--color-danger-clair); }
 
 /* ---------- Formulaires ---------- */
 
+/* --- Etape 2 (composants generiques) : .carte-formulaire devient un
+   "ilot clair" autosuffisant -- contrairement a .table-manifeste/
+   .tampon-* plus haut, elle a deja son propre fond opaque, donc ce
+   repaint est sans risque des maintenant meme sur une page pas encore
+   migree (etapes 3-14). Mais un fond opaque blanc ne suffit pas : les
+   elements generiques a l'interieur (label/input/a/h1-h3/.erreur/
+   .info) heritent par defaut des couleurs SOMBRES globales (var(--text)
+   couleur creme, var(--accent) orange...), illisibles sur blanc. Il
+   faut donc les surcharger explicitement, uniquement dans le
+   perimetre de la carte -- le reste de la page (pas encore migree)
+   garde ses couleurs sombres inchangees. --- */
 .carte-formulaire {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--rayon);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
   padding: 2rem;
   max-width: 32em;
+  color: var(--content-text);
+}
+.carte-formulaire h1, .carte-formulaire h2, .carte-formulaire h3 { color: var(--content-text); }
+.carte-formulaire a { color: var(--content-link); }
+.carte-formulaire label { color: var(--content-text-muted); }
+.carte-formulaire input, .carte-formulaire select, .carte-formulaire textarea {
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
+  color: var(--content-text);
+}
+.carte-formulaire input:focus, .carte-formulaire select:focus, .carte-formulaire textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.carte-formulaire .erreur {
+  background: rgba(189, 78, 45, 0.08);
+  border: 1px solid var(--color-danger-clair);
+  color: var(--color-danger-clair);
+}
+.carte-formulaire .info {
+  background: rgba(79, 58, 232, 0.06);
+  border: 1px solid var(--primary);
+  color: var(--primary);
 }
 
 label { display: block; font-size: 0.85rem; color: var(--text-muted); margin: 1rem 0 0.35rem; }
@@ -345,20 +413,27 @@ input:focus, select:focus, textarea:focus {
 
 /* ---------- Cartes sponsoring ---------- */
 
+/* --- Etape 2 : meme traitement "ilot clair" que .carte-formulaire
+   ci-dessus, et pour la meme raison (deja un fond opaque a elle,
+   mais ses enfants generiques heritent sinon des couleurs sombres). --- */
 .offre {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--rayon);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
   padding: 2rem;
   max-width: 32em;
+  color: var(--content-text);
 }
-.prix { font-family: 'Fraunces', serif; font-size: 2.5rem; color: var(--accent); }
-.prix span { font-family: 'Inter', sans-serif; font-size: 1rem; color: var(--text-muted); }
+.offre h1, .offre h2, .offre h3 { color: var(--content-text); }
+.offre a { color: var(--content-link); }
+.offre label { color: var(--content-text-muted); }
+.prix { font-family: 'Fraunces', serif; font-size: 2.5rem; color: var(--primary); }
+.prix span { font-family: 'Inter', sans-serif; font-size: 1rem; color: var(--content-text-muted); }
 
 .fournisseurs { display: flex; gap: 0.75rem; margin: 1rem 0; flex-wrap: wrap; }
 .fournisseurs label {
   margin: 0;
-  border: 1px solid var(--border);
+  border: 1px solid var(--content-border);
   border-radius: var(--rayon);
   padding: 0.6rem 1rem;
   cursor: pointer;
@@ -366,6 +441,7 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 0.5rem;
   width: auto;
+  color: var(--content-text);
 }
 .fournisseurs input { width: auto; }
 
@@ -392,16 +468,20 @@ input:focus, select:focus, textarea:focus {
   flex-wrap: wrap;
   margin-bottom: 0.75rem;
 }
+/* --- Etape 2 (composants generiques) : .badge-presence a deja son
+   propre fond opaque -> repaint direct sans risque, meme logique que
+   .carte-formulaire/.offre plus haut. Le point vert de presence
+   (::before) est une couleur fixe independante du theme, inchangee. --- */
 .badge-presence {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  background: var(--bg-panel-2);
-  border: 1px solid var(--border);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
   border-radius: 999px;
   padding: 0.2rem 0.7rem;
   font-size: 0.8rem;
-  color: var(--text);
+  color: var(--content-text);
 }
 .badge-presence::before {
   content: "";
@@ -412,8 +492,8 @@ input:focus, select:focus, textarea:focus {
   display: inline-block;
 }
 .badge-presence-moi {
-  border-color: var(--accent);
-  color: var(--accent-2);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .fenetre-chat {
@@ -1064,20 +1144,6 @@ input:focus, select:focus, textarea:focus {
   border-radius: 999px;
   margin: 0.2rem;
 }
-
-/* --- Badges (reutilisables ailleurs, ex. etape 2 : .badge) : conserves
-   bien que .mega-item/.mega-trigger/.mega-panel/.mega-colonne/.mega-lien-simple
-   ci-dessus (specifiques a components/mega_menu.html, desormais retire du
-   flux par l'etape 1 -- sidebar globale) aient ete retires. --- */
-.badge-menu {
-  font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
-  font-weight: 600;
-}
-.badge-premium { background: var(--accent-soft); color: var(--accent); }
 
 /* --- Footer contact (base.html) --- */
 .pied-contact {
