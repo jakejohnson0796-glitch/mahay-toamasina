@@ -15,13 +15,22 @@
 {% if request.query_params.get("ok") %}<p><strong>Cercle mis a jour.</strong></p>{% endif %}
 
 <p>Assigner mention + niveau a chaque cercle existant. Un cercle sans les deux reste un cercle "libre" (comme aujourd'hui) et n'est pas concerne par la regle "un seul cercle national actif par mention+filiere+niveau".</p>
+<p class="stat-label">
+  {% if tous %}
+  Affiche TOUS les cercles, y compris archives. <a href="/admin/referentiel/cercles">Revenir aux cercles actifs seulement</a>.
+  {% else %}
+  Seuls les cercles ACTIFS sont affiches. <a href="/admin/referentiel/cercles?tous=1">Afficher aussi les cercles archives</a>
+  (ex: doublons fusionnes par scripts/dedupliquer_cercles_nationaux.py).
+  {% endif %}
+</p>
 
 <table class="table-manifeste">
-  <thead><tr><th>Cercle</th><th>Filiere actuelle</th><th>Mention</th><th>Niveau</th><th></th></tr></thead>
+  <thead><tr><th>Cercle</th><th>Statut</th><th>Filiere actuelle</th><th>Mention</th><th>Niveau</th><th></th></tr></thead>
   <tbody>
     {% for c in cercles %}
     <tr>
       <td>{{ c.nom }}</td>
+      <td>{{ "Archive" if c.statut.value == "archive" else "Actif" }}</td>
       <td>
         {% set filiere_actuelle = filieres | selectattr("id", "equalto", c.filiere_id) | first %}
         {{ filiere_actuelle.nom if filiere_actuelle else "— groupe libre —" }}
@@ -46,7 +55,7 @@
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="4">Aucun cercle pour l'instant.</td></tr>
+    <tr><td colspan="5">Aucun cercle pour l'instant.</td></tr>
     {% endfor %}
   </tbody>
 </table>

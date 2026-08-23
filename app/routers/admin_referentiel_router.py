@@ -129,17 +129,30 @@ def assigner_mention_filiere(
 
 
 @router.get("/admin/referentiel/cercles")
-def page_cercles_a_completer(request: Request, session: Session = Depends(get_session)):
+def page_cercles_a_completer(request: Request, tous: bool = False, session: Session = Depends(get_session)):
     """Liste les cercles existants pour lesquels mention_id et/ou
     niveau ne sont pas encore renseignes — etape prealable a la
     contrainte anti-doublon 'un seul cercle national actif par
     mention+filiere+niveau', qui ne s'applique qu'aux cercles ayant
-    les 3 champs remplis (voir la migration correspondante)."""
+    les 3 champs remplis (voir la migration correspondante).
+
+    Filtre sur ACTIF par defaut (?tous=1 pour aussi voir les archives) :
+    un cercle ARCHIVE (typiquement fusionne par
+    scripts/dedupliquer_cercles_nationaux.py, voir cercles_referentiel.py)
+    n'a plus besoin d'etre corrige ici, et melange visuellement avec les
+    cercles actifs preterait facilement a confusion (deux lignes au
+    meme nom, l'une active et l'autre archivee, indiscernables sans
+    cette distinction — signale par Jake apres deploiement)."""
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
 
-    cercles = session.exec(select(CercleEtude).order_by(CercleEtude.nom)).all()
+    from ..models import StatutCercle
+
+    requete = select(CercleEtude).order_by(CercleEtude.nom)
+    if not tous:
+        requete = requete.where(CercleEtude.statut == StatutCercle.ACTIF)
+    cercles = session.exec(requete).all()
     filieres = session.exec(select(Filiere)).all()
     mentions = session.exec(select(Mention).order_by(Mention.nom)).all()
 
@@ -152,6 +165,7 @@ def page_cercles_a_completer(request: Request, session: Session = Depends(get_se
             "filieres": filieres,
             "mentions": mentions,
             "niveaux": NIVEAUX,
+            "tous": tous,
         },
     )
 
