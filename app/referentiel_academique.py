@@ -20,9 +20,10 @@ Regles implementees (voir le brief "cercles nationaux") :
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlmodel import Session, and_, or_
+from sqlmodel import Session, and_, or_, select
 
 from .models import CercleEtude, Filiere, RoleUtilisateur, Utilisateur
+from .texte_normalise import normaliser as _normaliser_nom_parcours
 
 DELAI_MINIMUM_ENTRE_CHANGEMENTS_NIVEAU = timedelta(days=14)
 
@@ -84,12 +85,39 @@ def jours_avant_prochain_changement_niveau(utilisateur: Utilisateur) -> int:
     return max(1, int((restant.total_seconds() + 86399) // 86400))
 
 
+def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
+    """Renvoie les id de TOUTES les Filiere qui representent le meme
+    parcours national que `filiere` — meme mention_id + meme nom une
+    fois normalise, potentiellement rattachees a d'autres universites
+    (voir cercles_referentiel.py pour le contexte complet : Filiere est
+    scopee par universite, donc le meme parcours a une ligne differente
+    par universite qui l'offre).
+
+    Necessaire ici parce qu'un cercle national ne reference qu'UNE
+    seule Filiere representante (cercles_referentiel.py en choisit une
+    arbitrairement pour le groupe) — un etudiant dont la propre
+    filiere_id pointe vers une AUTRE Filiere du meme groupe doit quand
+    meme etre reconnu comme correspondant au cercle, sinon les
+    etudiants de toutes les universites sauf celle de la representante
+    ne pourraient jamais rejoindre leur propre cercle national."""
+    if not filiere.mention_id:
+        return [filiere.id]
+    nom_normalise = _normaliser_nom_parcours(filiere.nom)
+    return [
+        f.id for f in session.exec(
+            select(Filiere).where(Filiere.mention_id == filiere.mention_id)
+        ).all()
+        if _normaliser_nom_parcours(f.nom) == nom_normalise
+    ]
+
+
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
-    """§31 : vérifie mention + filiere + niveau. La mention de
-    l'utilisateur se deduit de sa filiere (Filiere.mention_id), un
-    Utilisateur n'a pas de mention_id propre — sa filiere EST sa
-    mention, par construction (§6 : une filiere appartient a une seule
-    mention)."""
+    """§31 : vérifie mention + parcours (national, pas juste
+    filiere_id brut — voir _filieres_equivalentes ci-dessus) + niveau.
+    La mention de l'utilisateur se deduit de sa filiere
+    (Filiere.mention_id), un Utilisateur n'a pas de mention_id propre —
+    sa filiere EST sa mention, par construction (§6 : une filiere
+    appartient a une seule mention)."""
     if not cercle_est_national(cercle):
         # Cercle libre : aucune restriction, comme avant cette evolution.
         return True
@@ -103,7 +131,7 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
 
     return (
         filiere_utilisateur.mention_id == cercle.mention_id
-        and utilisateur.filiere_id == cercle.filiere_id
+        and cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
         and utilisateur.niveau == cercle.niveau
     )
 
@@ -113,12 +141,17 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
     cercles 'disponibles' pour cet utilisateur, au meme sens que
     profil_correspond_au_cercle ci-dessus : les cercles libres, plus —
     si son profil filiere+niveau est complet — le seul cercle national
-    qui lui correspond exactement.
+    qui lui correspond (base sur le parcours national, pas juste sa
+    propre Filiere.id — voir _filieres_equivalentes).
 
     Construite cote SQL (plutot qu'evaluee ligne par ligne en Python
     apres avoir tout charge) pour rester efficace meme avec un grand
     nombre de cercles en base (voir cercles_referentiel.py, qui peut en
-    generer plusieurs centaines — un par filiere x niveau).
+    generer plusieurs centaines — un par parcours x niveau). La seule
+    partie Python est le calcul, une fois, de la liste des Filiere
+    equivalentes au parcours de l'utilisateur — necessairement en
+    Python puisque la normalisation (accents/casse) n'est pas
+    exprimable simplement en SQL portable SQLite/Postgres.
 
     Utilisateur non connecte, ou profil filiere/niveau incomplet : seuls
     les cercles libres sont consideres disponibles (il ne peut, de toute
@@ -137,11 +170,13 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
     if not filiere_utilisateur:
         return cercle_libre
 
+    filieres_equivalentes = _filieres_equivalentes(session, filiere_utilisateur)
+
     return or_(
         cercle_libre,
         and_(
             CercleEtude.mention_id == filiere_utilisateur.mention_id,
-            CercleEtude.filiere_id == utilisateur.filiere_id,
+            CercleEtude.filiere_id.in_(filieres_equivalentes),
             CercleEtude.niveau == utilisateur.niveau,
         ),
     )
