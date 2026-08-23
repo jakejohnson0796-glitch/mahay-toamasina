@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Theme de reflexion — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <p class="eyebrow">Muscler l'intellect · Theme du jour</p>
 <h2>{{ theme.date_affichee }}</h2>
 
@@ -23,4 +25,5 @@
 </form>
 
 <p><a href="/quiz">&larr; Retour au Quiz IA</a></p>
+</div>
 {% endblock %}

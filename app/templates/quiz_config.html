@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
 {% block titre %}Quiz IA — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <p class="eyebrow">Muscler l'intellect</p>
 <h2>Quiz IA</h2>
 <p>Choisissez une matiere, un niveau et une difficulte : l'IA genere le quiz pour vous.</p>
@@ -66,4 +68,5 @@
   <a href="/quiz/reflexion">Theme de reflexion du jour</a> ·
   <a href="/tuteur">Poser une question au tuteur IA</a>
 </p>
+</div>
 {% endblock %}

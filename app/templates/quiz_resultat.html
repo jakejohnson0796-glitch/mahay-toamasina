@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}Resultat — {{ tentative.matiere }} — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <p class="eyebrow">{{ tentative.matiere }} — {{ tentative.niveau }} — {{ tentative.difficulte }}</p>
 <h2>Resultat</h2>
 
@@ -45,4 +47,5 @@
 {% endfor %}
 
 <p class="quiz-liens-bas"><a class="bouton bouton-primaire" href="/quiz">Refaire un quiz</a> <a href="/quiz/historique">Voir mon historique</a></p>
+</div>
 {% endblock %}

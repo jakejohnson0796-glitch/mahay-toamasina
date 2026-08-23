@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Quiz — {{ document.titre }}{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <p class="eyebrow">Quiz genere par IA pour</p>
 <h2>{{ document.titre }}</h2>
 
@@ -30,4 +32,5 @@
 {% endfor %}
 
 <a href="/documents">&larr; Retour au manifeste</a>
+</div>
 {% endblock %}
