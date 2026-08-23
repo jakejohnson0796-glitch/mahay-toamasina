@@ -35,6 +35,13 @@
   </nav>
 </header>
 
+{% if profil_academique_a_actualiser(request) %}
+<div class="info" style="border-radius:0; margin-bottom:0; text-align:center;">
+  Votre profil academique doit etre actualise pour utiliser correctement les cercles d'etudes.
+  <a href="/profil/academique">Actualiser maintenant</a>
+</div>
+{% endif %}
+
 <main class="{% block main_classe %}{% endblock %}">
   {% block contenu %}{% endblock %}
 </main>

@@ -7,6 +7,10 @@ l'orchestration HTTP) et reutilisable partout ou elle est necessaire
 Regles implementees (voir le brief "cercles nationaux") :
 - §14 : le niveau ne peut etre modifie qu'une fois tous les 14 jours,
   controle cote backend (le frontend n'est jamais la seule protection) ;
+- §21-22 : un compte etudiant existant dont le profil academique est
+  incomplet ou incoherent doit recevoir un statut
+  PROFILE_ACADEMIC_UPDATE_REQUIRED (voir profil_academique_incomplet
+  ci-dessous) et une notification claire jusqu'a actualisation ;
 - §31-32 : un cercle "national" (mention_id + filiere_id + niveau tous
   renseignes) n'accepte que les etudiants dont le profil correspond
   exactement aux 3 ; la verification doit etre refaite au moment de
@@ -18,9 +22,30 @@ from typing import Optional
 
 from sqlmodel import Session, and_, or_
 
-from .models import CercleEtude, Filiere, Utilisateur
+from .models import CercleEtude, Filiere, RoleUtilisateur, Utilisateur
 
 DELAI_MINIMUM_ENTRE_CHANGEMENTS_NIVEAU = timedelta(days=14)
+
+
+def profil_academique_incomplet(utilisateur: Utilisateur, session: Session) -> bool:
+    """§21-22 du brief : vrai si ce compte a besoin du statut
+    PROFILE_ACADEMIC_UPDATE_REQUIRED — universite, filiere ou niveau
+    manquant, OU filiere qui ne correspond plus a l'universite
+    declaree (donnee devenue incoherente, ex. suite a une correction
+    du referentiel). Seuls les comptes ETUDIANT sont concernes : un
+    sponsor/repetiteur ou un admin n'a pas de parcours academique a
+    declarer (voir la meme exemption a l'inscription, auth_router.py)."""
+    if utilisateur.role != RoleUtilisateur.ETUDIANT:
+        return False
+
+    if not (utilisateur.universite_id and utilisateur.filiere_id and utilisateur.niveau):
+        return True
+
+    filiere = session.get(Filiere, utilisateur.filiere_id)
+    if not filiere or not filiere.faculte or filiere.faculte.universite_id != utilisateur.universite_id:
+        return True
+
+    return False
 
 
 def cercle_est_national(cercle: CercleEtude) -> bool:

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block titre %}Actualiser mon profil academique — Gasy Mahay{% endblock %}
+{% block contenu %}
+<h2>Actualiser mon profil academique</h2>
+<p class="stat-label">
+  Universite, composante, parcours et niveau doivent maintenant venir du referentiel academique national.
+  Choisissez-les ci-dessous — chaque etape n'affiche que les options rattachees a la precedente.
+</p>
+
+<div class="carte-formulaire">
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  <form method="post" action="/profil/academique" id="formulaire-actualisation-academique">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+    <label for="universite_id">Universite</label>
+    <select id="universite_id" name="universite_id" required>
+      <option value="">— choisissez votre universite —</option>
+      {% for u in universites %}
+      <option value="{{ u.id }}" {% if utilisateur.universite_id == u.id %}selected{% endif %}>{{ u.nom }}{% if u.ville %} ({{ u.ville }}){% endif %}</option>
+      {% endfor %}
+    </select>
+
+    <label for="composante_id">Composante / etablissement</label>
+    <select id="composante_id" name="composante_id" required disabled>
+      <option value="">— choisissez d'abord votre universite —</option>
+    </select>
+
+    <label for="filiere_id">Parcours / Filiere</label>
+    <select id="filiere_id" name="filiere_id" required disabled>
+      <option value="">— choisissez d'abord votre composante —</option>
+    </select>
+    <!-- Mention/Domaine ne sont jamais saisis : affiches en lecture
+         seule des que le parcours choisi les determine (§33). -->
+    <p class="stat-label" id="info-mention-domaine" style="display:none;"></p>
+
+    <label for="niveau">Niveau</label>
+    <select id="niveau" name="niveau" required disabled>
+      <option value="">— choisissez d'abord votre parcours —</option>
+      {% for n in niveaux %}
+      <option value="{{ n }}">{{ n }}</option>
+      {% endfor %}
+    </select>
+
+    <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer mon profil academique</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  // Meme cascade Universite -> Composante -> Filiere -> Niveau que sur
+  // /inscription (voir register.html) — dupliquee ici plutot que
+  // partagee via un include, pour rester coherent avec le style deja
+  // en place dans ce projet (chaque template JS est autonome).
+  const universiteSelect = document.getElementById("universite_id");
+  const composanteSelect = document.getElementById("composante_id");
+  const filiereSelect = document.getElementById("filiere_id");
+  const niveauSelect = document.getElementById("niveau");
+  const infoMentionDomaine = document.getElementById("info-mention-domaine");
+
+  function reinitialiserAPartir(etape) {
+    if (etape <= 1) {
+      composanteSelect.innerHTML = '<option value="">— choisissez d\'abord votre universite —</option>';
+      composanteSelect.disabled = true;
+    }
+    if (etape <= 2) {
+      filiereSelect.innerHTML = '<option value="">— choisissez d\'abord votre composante —</option>';
+      filiereSelect.disabled = true;
+      infoMentionDomaine.style.display = "none";
+    }
+    if (etape <= 3) {
+      niveauSelect.value = "";
+      niveauSelect.disabled = true;
+    }
+  }
+
+  async function chargerOptions(url) {
+    const reponse = await fetch(url);
+    if (!reponse.ok) return [];
+    return reponse.json();
+  }
+
+  universiteSelect.addEventListener("change", async function () {
+    reinitialiserAPartir(1);
+    if (!universiteSelect.value) return;
+    const composantes = await chargerOptions(`/api/academique/universites/${universiteSelect.value}/composantes`);
+    composanteSelect.innerHTML = '<option value="">— choisissez votre composante —</option>' +
+      composantes.map(function (c) { return `<option value="${c.id}">${c.nom}</option>`; }).join("");
+    composanteSelect.disabled = composantes.length === 0;
+    if (composantes.length === 0) {
+      composanteSelect.innerHTML = '<option value="">— aucune composante disponible pour l\'instant —</option>';
+    }
+  });
+
+  composanteSelect.addEventListener("change", async function () {
+    reinitialiserAPartir(2);
+    if (!composanteSelect.value) return;
+    const filieres = await chargerOptions(`/api/academique/composantes/${composanteSelect.value}/filieres`);
+    filiereSelect.innerHTML = '<option value="">— choisissez votre parcours —</option>' +
+      filieres.map(function (f) { return `<option value="${f.id}" data-mention="${f.mention || ''}" data-domaine="${f.domaine || ''}">${f.nom}</option>`; }).join("");
+    filiereSelect.disabled = filieres.length === 0;
+    if (filieres.length === 0) {
+      filiereSelect.innerHTML = '<option value="">— aucun parcours disponible pour l\'instant —</option>';
+    }
+  });
+
+  filiereSelect.addEventListener("change", function () {
+    reinitialiserAPartir(3);
+    if (!filiereSelect.value) return;
+    niveauSelect.disabled = false;
+
+    const optionChoisie = filiereSelect.selectedOptions[0];
+    const mention = optionChoisie ? optionChoisie.dataset.mention : "";
+    const domaine = optionChoisie ? optionChoisie.dataset.domaine : "";
+    if (mention) {
+      infoMentionDomaine.textContent = domaine ? `Mention : ${mention} — Domaine : ${domaine}` : `Mention : ${mention}`;
+      infoMentionDomaine.style.display = "";
+    } else {
+      infoMentionDomaine.style.display = "none";
+    }
+  });
+
+  // Si une universite etait deja selectionnee (cas "incoherent" plutot
+  // qu'"incomplet" : filiere/niveau deja presents mais universite ne
+  // correspondant plus a la filiere), on precharge sa cascade au
+  // chargement de la page plutot que de forcer un reclic inutile.
+  if (universiteSelect.value) {
+    universiteSelect.dispatchEvent(new Event("change"));
+  }
+})();
+</script>
+{% endblock %}

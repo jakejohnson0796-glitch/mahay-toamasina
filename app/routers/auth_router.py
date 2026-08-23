@@ -295,6 +295,86 @@ def deconnexion(request: Request):
 
 
 # ============================================================
+# Actualisation du profil academique (§21-24 du brief refonte
+# academique nationale) : ecran dedie pour un compte existant dont
+# referentiel_academique.profil_academique_incomplet() est vrai
+# (universite/filiere/niveau manquant ou devenu incoherent). La
+# notification qui y renvoie s'affiche sur toutes les pages tant que ce
+# n'est pas resolu — voir templating.py (profil_academique_a_actualiser)
+# et base.html. Reutilise la meme cascade Universite -> Composante ->
+# Filiere -> Niveau que l'inscription (memes endpoints
+# /api/academique/...), et la MEME validation stricte cote backend
+# (§9 : une combinaison universite/filiere incoherente est rejetee ici
+# aussi, jamais seulement empechee par le JS).
+# ============================================================
+
+@router.get("/profil/academique")
+def formulaire_actualisation_academique(request: Request, session: Session = Depends(get_session)):
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    return templates.TemplateResponse(
+        request, "profil_academique.html",
+        {
+            "utilisateur": utilisateur,
+            "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
+            "niveaux": NIVEAUX,
+            "erreur": None,
+        },
+    )
+
+
+@router.post("/profil/academique")
+def actualiser_profil_academique(
+    request: Request,
+    universite_id: Optional[str] = Form(None),
+    filiere_id: Optional[str] = Form(None),
+    niveau: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    def _reafficher(message_erreur: str):
+        return templates.TemplateResponse(
+            request, "profil_academique.html",
+            {
+                "utilisateur": utilisateur,
+                "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
+                "niveaux": NIVEAUX,
+                "erreur": message_erreur,
+            },
+        )
+
+    universite_id_nettoye = entier_ou_none(universite_id)
+    filiere_id_nettoye = entier_ou_none(filiere_id)
+
+    # §21-22 : les 3 champs redeviennent obligatoires pour resoudre le
+    # statut PROFILE_ACADEMIC_UPDATE_REQUIRED — memes regles qu'a
+    # l'inscription (§9), jamais une combinaison devinee ou partielle.
+    if not (universite_id_nettoye and filiere_id_nettoye and niveau):
+        return _reafficher("Universite, filiere/parcours et niveau sont tous les trois obligatoires.")
+    if niveau not in NIVEAUX:
+        return _reafficher("Niveau invalide.")
+
+    filiere = session.get(Filiere, filiere_id_nettoye)
+    if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
+        return _reafficher("Cette filiere ne correspond pas a l'universite selectionnee.")
+
+    utilisateur.universite_id = universite_id_nettoye
+    utilisateur.filiere_id = filiere_id_nettoye
+    utilisateur.niveau = niveau
+    utilisateur.niveau_modifie_le = datetime.utcnow()
+    session.add(utilisateur)
+    session.commit()
+
+    return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
+
+
+# ============================================================
 # Gestion de la double authentification (2FA / TOTP)
 # ============================================================
 
