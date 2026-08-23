@@ -17,6 +17,7 @@ pytesseract==0.3.13          # OCR optionnel (scans/images) - necessite le binai
 pdf2image==1.17.0            # OCR optionnel sur PDF scannes - necessite poppler-utils
 Pillow==10.4.0
 alembic==1.13.2
+openpyxl==3.1.5                 # lecture du fichier Excel par scripts/import_academic_data.py
 livekit-api==1.2.0           # generation des jetons audio/video/partage d'ecran (classe virtuelle)
 pyotp==2.9.0                  # double authentification TOTP (gratuite, calculee localement)
 qrcode==7.4.2                 # QR code d'activation 2FA (aucun service externe)

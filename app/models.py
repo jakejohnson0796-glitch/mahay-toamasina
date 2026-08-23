@@ -67,6 +67,33 @@ class Universite(SQLModel, table=True):
     facultes: list["Faculte"] = Relationship(back_populates="universite")
 
 
+class Domaine(SQLModel, table=True):
+    """Regroupement NATIONAL de Mention (ex: 'Economie / Gestion'
+    regroupe les mentions Gestion, Economie, Sociologie...).
+
+    Deliberement une entite nationale independante, PAS un enfant
+    strict de Faculte/Composante — decision prise lors de l'analyse du
+    referentiel MESUPRES (mahay_universites_mentions_filieres_recensement.xlsx) :
+    le meme domaine academique porte un intitule different selon
+    l'universite (ex: la mention nationale 'Gestion' releve du domaine
+    texte 'Economie / Gestion / Sociologie' a Antananarivo, 'Gestion'
+    tout court a Mahajanga/Toliara, 'Economie / Gestion' a
+    Fianarantsoa). Un Domaine enfant strict de Composante aurait
+    fragmente ces mentions en plusieurs domaines differents, contraire
+    au principe des cercles nationaux (§2-3 et §33 du brief : Domaine
+    fait partie de l'"identite academique" nationale, separee de
+    l'"origine universitaire" Universite/Ville/Composante).
+
+    Optionnel sur Mention (nullable) pour la meme raison que
+    Mention.l'est deja sur Filiere : ne jamais deviner une
+    classification ambigue (§44), laisser vide plutot qu'incertain."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nom: str = Field(index=True, unique=True)
+    est_active: bool = Field(default=True)
+
+    mentions: list["Mention"] = Relationship(back_populates="domaine")
+
+
 class Mention(SQLModel, table=True):
     """Regroupement de filieres (ex: 'Sciences de Gestion' regroupe
     Finance et Comptabilite, GRH...). Optionnel sur Filiere (nullable) :
@@ -76,8 +103,14 @@ class Mention(SQLModel, table=True):
     'la normalisation doit etre faite avec prudence')."""
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str = Field(index=True, unique=True)
+    # Nullable : voir la docstring de Domaine ci-dessus (rattachement
+    # national optionnel, jamais devine si ambigu — l'import depuis le
+    # fichier Excel le laisse vide des qu'une meme mention apparait
+    # sous plusieurs libelles de domaine differents selon l'universite).
+    domaine_id: Optional[int] = Field(default=None, foreign_key="domaine.id")
     est_active: bool = Field(default=True)
 
+    domaine: Optional[Domaine] = Relationship(back_populates="mentions")
     filieres: list["Filiere"] = Relationship(back_populates="mention")
 
 
