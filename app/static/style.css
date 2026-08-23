@@ -499,6 +499,14 @@ input:focus, select:focus, textarea:focus {
   color: var(--primary);
 }
 
+/* --- Etape 5 (chat des cercles, refonte theme clair) : toutes les
+   classes de ce bloc (.fenetre-chat a .liste-suggestions-mentions plus
+   bas) sont exclusives a cercle_chat.html/cercle_recherche.html/
+   _message_cercle.html -- verifie (grep) qu'aucune n'est partagee avec
+   classe_salle.html (son chat utilise .message-chat-salle, une classe
+   distincte) : reste opaque a .message-auteur (base, sans .message-moi)
+   et .lien-action, reellement partagees, donc traitees plus loin en
+   variante scopee .contenu-clair comme le reste du fichier. --- */
 .fenetre-chat {
   display: flex;
   flex-direction: column;
@@ -513,9 +521,9 @@ input:focus, select:focus, textarea:focus {
      dans ce conteneur (ex: .menu-actions-liste) doit rester dans ses
      limites horizontales sous peine d'etre rogne silencieusement. */
   overflow-x: hidden;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--rayon);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
   margin-bottom: 1rem;
 }
@@ -539,26 +547,26 @@ input:focus, select:focus, textarea:focus {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--nuit);
-  background: var(--accent-2);
+  color: var(--content-surface);
+  background: var(--color-success-clair);
   margin-top: 0.15rem;
 }
-.message-moi .message-avatar { background: var(--accent); }
+.message-moi .message-avatar { background: var(--primary); }
 
 .message-corps {
   position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--bg-panel-2);
-  border: 1px solid transparent;
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
   border-radius: 14px 14px 14px 4px;
   padding: 0.55rem 0.9rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+  box-shadow: var(--shadow-sm);
 }
 .message-moi .message-corps {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: rgba(79, 58, 232, 0.06);
+  border-color: var(--primary);
   border-radius: 14px 14px 4px 14px;
 }
 .message-entete {
@@ -567,6 +575,11 @@ input:focus, select:focus, textarea:focus {
   gap: 0.45rem;
   margin-bottom: 0.15rem;
 }
+/* .message-auteur (base) est partagee avec classe_salle.html (etape 7,
+   pas encore migree) -- regle generique inchangee, variante claire
+   scopee plus bas avec le reste de .contenu-clair. .message-moi
+   .message-auteur, lui, n'existe que dans ce fichier (classe_salle
+   utilise .message-chat-salle-moi, pas .message-moi) : sans risque. */
 .message-auteur {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.68rem;
@@ -574,11 +587,11 @@ input:focus, select:focus, textarea:focus {
   letter-spacing: 0.06em;
   color: var(--accent-2);
 }
-.message-moi .message-auteur { color: var(--accent); }
-.message-heure { font-size: 0.68rem; color: var(--text-muted); }
+.message-moi .message-auteur { color: var(--primary); }
+.message-heure { font-size: 0.68rem; color: var(--content-text-muted); }
 .message-contenu {
   display: block;
-  color: var(--text);
+  color: var(--content-text);
   word-break: break-word;
   font-size: 0.92rem;
   font-weight: 400;
@@ -602,6 +615,10 @@ input:focus, select:focus, textarea:focus {
   transition: background 0.12s ease, color 0.12s ease;
 }
 .lien-action:hover { color: var(--accent-2); background: rgba(242, 236, 221, 0.08); }
+/* .lien-action (base) est partagee avec des pages "Le Phare" pas encore
+   migrees (classe_etudiants.html, classe_devoir.html, classe_detail.html,
+   cercle_membres.html, quiz_resultat.html) -- variante claire scopee
+   plus bas, comme .stat-label/.message-auteur ci-dessus. */
 .conteneur-menu-actions { position: relative; display: inline-block; }
 .bouton-menu-actions {
   background: none;
@@ -611,11 +628,11 @@ input:focus, select:focus, textarea:focus {
   font-size: 1rem;
   line-height: 1;
   letter-spacing: 0.1em;
-  color: var(--text-muted);
+  color: var(--content-text-muted);
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease;
 }
-.bouton-menu-actions:hover { color: var(--accent-2); background: rgba(242, 236, 221, 0.08); }
+.bouton-menu-actions:hover { color: var(--primary); background: var(--content-bg); }
 .menu-actions-liste {
   position: absolute;
   bottom: 1.7rem;
@@ -636,9 +653,9 @@ input:focus, select:focus, textarea:focus {
   max-width: min(16rem, calc(100vw - 2.5rem));
   flex-direction: column;
   gap: 0.05rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--rayon);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   padding: 0.3rem;
 }
@@ -681,7 +698,7 @@ input:focus, select:focus, textarea:focus {
   padding: 0.4rem 0.6rem;
   border-radius: 4px;
   font-size: 0.78rem;
-  color: var(--text);
+  color: var(--content-text);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -690,7 +707,7 @@ input:focus, select:focus, textarea:focus {
   width: 1.1em;
   text-align: center;
 }
-.menu-actions-item:hover { background: var(--bg-panel-2); color: var(--accent-2); }
+.menu-actions-item:hover { background: var(--content-bg); color: var(--primary); }
 
 .conteneur-signalement {
   display: flex;
@@ -704,8 +721,8 @@ input:focus, select:focus, textarea:focus {
   flex-wrap: wrap;
   margin-top: 0.35rem;
   padding: 0.4rem 0.5rem;
-  background: var(--bg-panel-2);
-  border: 1px solid var(--border);
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
   border-radius: 6px;
 }
 /* L'attribut HTML "hidden" doit rester prioritaire sur le display:flex
@@ -716,10 +733,10 @@ input:focus, select:focus, textarea:focus {
 .champ-motif-autre {
   font-size: 0.68rem;
   padding: 0.2rem 0.35rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--content-border);
   border-radius: 4px;
-  background: var(--bg-panel);
-  color: var(--text);
+  background: var(--content-surface);
+  color: var(--content-text);
   max-width: 9rem;
 }
 .champ-motif-autre { min-width: 8rem; max-width: 12rem; }
@@ -727,8 +744,8 @@ input:focus, select:focus, textarea:focus {
 
 .conteneur-emoji-picker { position: relative; }
 .bouton-emoji-toggle {
-  background: var(--bg-panel-2);
-  border: 1px solid var(--border);
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
   border-radius: 50%;
   width: 2.4rem;
   height: 2.4rem;
@@ -736,7 +753,7 @@ input:focus, select:focus, textarea:focus {
   cursor: pointer;
   line-height: 1;
 }
-.bouton-emoji-toggle:hover { border-color: var(--accent); }
+.bouton-emoji-toggle:hover { border-color: var(--primary); }
 .panneau-emojis {
   position: absolute;
   bottom: 3rem;
@@ -744,11 +761,11 @@ input:focus, select:focus, textarea:focus {
   z-index: 10;
   width: 16rem;
   max-width: calc(100vw - 2rem);
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--rayon);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
   padding: 0.6rem;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  box-shadow: var(--shadow-md);
 }
 .entete-panneau-emojis {
   display: flex;
@@ -756,12 +773,12 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   margin-bottom: 0.5rem;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--content-border);
 }
 .bouton-emoji-fermer {
   background: none;
   border: none;
-  color: var(--accent-2);
+  color: var(--primary);
   font-size: 0.8rem;
   cursor: pointer;
   padding: 0.2rem 0.4rem;
@@ -774,14 +791,14 @@ input:focus, select:focus, textarea:focus {
   overflow-y: auto;
 }
 .bouton-emoji {
-  background: var(--bg-panel-2);
-  border: 1px solid var(--border);
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
   border-radius: 999px;
   padding: 0.15rem 0.5rem;
   font-size: 1rem;
   cursor: pointer;
 }
-.bouton-emoji:hover { border-color: var(--accent); }
+.bouton-emoji:hover { border-color: var(--primary); }
 
 .form-chat { display: flex; gap: 0.75rem; align-items: center; }
 .form-chat input { flex: 1; }
@@ -791,58 +808,35 @@ input:focus, select:focus, textarea:focus {
 .message-epingle-banniere {
   align-items: center;
   gap: 0.6rem;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: var(--rayon);
+  background: rgba(79, 58, 232, 0.06);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
   padding: 0.6rem 0.9rem;
   margin-bottom: 0.75rem;
   font-size: 0.85rem;
 }
 .message-epingle-banniere[hidden] { display: none; }
 .message-epingle-banniere:not([hidden]) { display: flex; }
-.message-epingle-banniere .stat-label { color: var(--accent); margin: 0; }
-.message-epingle-banniere .message-epingle-contenu { flex: 1; color: var(--text); }
+.message-epingle-banniere .stat-label { color: var(--primary); margin: 0; }
+.message-epingle-banniere .message-epingle-contenu { flex: 1; color: var(--content-text); }
 .message-epingle-banniere button {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--content-text-muted);
   cursor: pointer;
   font-size: 0.9rem;
   line-height: 1;
 }
-.message-epingle-banniere button:hover { color: var(--text); }
-
-.message-reponse-citation {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  border-left: 2px solid var(--accent-2);
-  padding: 0.25rem 0.6rem;
-  margin-bottom: 0.35rem;
-  background: rgba(242, 236, 221, 0.05);
-  border-radius: 0 4px 4px 0;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-.message-reponse-citation .message-auteur { margin: 0; }
-.message-reponse-citation .message-citation-texte {
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 22rem;
-}
+.message-epingle-banniere button:hover { color: var(--content-text); }
 
 .message-modifie-etiquette {
   font-size: 0.68rem;
-  color: var(--text-muted);
+  color: var(--content-text-muted);
   font-style: italic;
   margin-left: 0.35rem;
 }
 
-.message-epingle .message-corps { box-shadow: 0 0 0 1px var(--lumiere); }
-
-.mention-dans-texte { color: var(--accent-2); font-weight: 600; }
+.message-epingle .message-corps { box-shadow: 0 0 0 1px var(--star); }
 
 .reactions-du-message {
   display: flex;
@@ -854,57 +848,23 @@ input:focus, select:focus, textarea:focus {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
   border-radius: 999px;
   padding: 0.1rem 0.5rem;
   font-size: 0.78rem;
   cursor: pointer;
-  color: var(--text);
+  color: var(--content-text);
 }
-.puce-reaction:hover { border-color: var(--accent); }
-.puce-reaction-mienne { border-color: var(--accent); background: var(--accent-soft); }
-
-.conteneur-reaction-picker { position: relative; display: inline-block; }
-.bouton-reagir {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.bouton-reagir:hover { color: var(--accent-2); }
-.panneau-reaction-rapide {
-  position: absolute;
-  bottom: 1.6rem;
-  left: 0;
-  z-index: 12;
-  gap: 0.2rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.3rem 0.4rem;
-  box-shadow: var(--shadow-md);
-}
-.panneau-reaction-rapide[hidden] { display: none; }
-.panneau-reaction-rapide:not([hidden]) { display: flex; }
-.panneau-reaction-rapide button {
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 0.1rem 0.2rem;
-  border-radius: 50%;
-}
-.panneau-reaction-rapide button:hover { background: var(--bg-panel-2); }
+.puce-reaction:hover { border-color: var(--primary); }
+.puce-reaction-mienne { border-color: var(--primary); background: rgba(79, 58, 232, 0.08); }
 
 .bouton-thread-ouvrir {
   background: none;
   border: none;
   padding: 0;
   font-size: 0.75rem;
-  color: var(--accent-2);
+  color: var(--primary);
   cursor: pointer;
   text-align: left;
   margin-top: 0.3rem;
@@ -926,9 +886,9 @@ input:focus, select:focus, textarea:focus {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--rayon);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
   height: 60vh;
   min-height: 20em;
 }
@@ -938,18 +898,18 @@ input:focus, select:focus, textarea:focus {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--content-border);
 }
-.entete-panneau-thread h3 { margin: 0; font-size: 0.95rem; font-family: 'Inter', sans-serif; font-weight: 600; }
+.entete-panneau-thread h3 { margin: 0; font-size: 0.95rem; font-family: 'Inter', sans-serif; font-weight: 600; color: var(--content-text); }
 .bouton-fermer-thread {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--content-text-muted);
   font-size: 1.1rem;
   cursor: pointer;
   line-height: 1;
 }
-.bouton-fermer-thread:hover { color: var(--text); }
+.bouton-fermer-thread:hover { color: var(--content-text); }
 .corps-panneau-thread {
   flex: 1;
   overflow-y: auto;
@@ -959,13 +919,13 @@ input:focus, select:focus, textarea:focus {
   gap: 0.6rem;
 }
 .thread-message-parent {
-  background: var(--bg-panel-2);
-  border-radius: var(--rayon);
+  background: var(--content-bg);
+  border-radius: var(--radius-md);
   padding: 0.6rem 0.85rem;
   margin-bottom: 0.5rem;
 }
-.thread-compteur { font-size: 0.75rem; color: var(--text-muted); margin: 0 0 0.5rem; }
-.form-reponse-thread { display: flex; gap: 0.5rem; padding: 0.75rem; border-top: 1px solid var(--border); }
+.thread-compteur { font-size: 0.75rem; color: var(--content-text-muted); margin: 0 0 0.5rem; }
+.form-reponse-thread { display: flex; gap: 0.5rem; padding: 0.75rem; border-top: 1px solid var(--content-border); }
 .form-reponse-thread input { flex: 1; }
 
 .conteneur-mentions-suggestions { position: relative; flex: 1; }
@@ -977,9 +937,9 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   max-height: 10rem;
   overflow-y: auto;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--rayon);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
 }
 .liste-suggestions-mentions button {
@@ -988,13 +948,13 @@ input:focus, select:focus, textarea:focus {
   text-align: left;
   background: none;
   border: none;
-  color: var(--text);
+  color: var(--content-text);
   padding: 0.4rem 0.7rem;
   font-size: 0.85rem;
   cursor: pointer;
 }
 .liste-suggestions-mentions button:hover,
-.liste-suggestions-mentions button.suggestion-active { background: var(--bg-panel-2); }
+.liste-suggestions-mentions button.suggestion-active { background: var(--content-bg); }
 
 /* Panneau de fil de discussion en plein ecran sur mobile (§24) plutot
    qu'accole a la conversation, faute de place. */
@@ -1643,6 +1603,19 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .contenu-clair .erreur { background: rgba(189, 78, 45, 0.08); border-color: var(--color-danger-clair); color: var(--color-danger-clair); }
 .contenu-clair .info { background: rgba(79, 58, 232, 0.06); border-color: var(--primary); color: var(--primary); }
 .contenu-clair .info a, .contenu-clair a:not(.bouton) { color: var(--content-link); }
+
+/* --- Etape 5 (chat des cercles) : trois autres classes generiques
+   partagees avec des pages pas encore migrees, meme logique que
+   .eyebrow/.evc-texte/.erreur/.info ci-dessus :
+   - .message-auteur (base) -> partagee avec classe_salle.html (etape 7)
+   - .lien-action (base) -> partagee avec classe_etudiants.html,
+     classe_devoir.html, classe_detail.html, cercle_membres.html,
+     quiz_resultat.html (etapes 6/7/8, pas encore migrees)
+   - .stat-label -> partagee avec ~29 autres templates */
+.contenu-clair .message-auteur { color: var(--color-success-clair); }
+.contenu-clair .lien-action { color: var(--content-text-muted); }
+.contenu-clair .lien-action:hover { color: var(--primary); background: var(--content-bg); }
+.contenu-clair .stat-label { color: var(--content-text-muted); }
 
 /* --- Responsive : sidebar globale en drawer sous 768px --- */
 @media (max-width: 1024px) {
