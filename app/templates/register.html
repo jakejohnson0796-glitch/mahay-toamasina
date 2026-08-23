@@ -4,7 +4,7 @@
 <h2>Inscription</h2>
 <div class="carte-formulaire">
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
-  <form method="post" action="/inscription">
+  <form method="post" action="/inscription" id="formulaire-inscription">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="nom">Nom complet</label>
     <input type="text" id="nom" name="nom" required>
@@ -36,22 +36,43 @@
       <option value="sponsor">Repetiteur / sponsor</option>
     </select>
 
-    <label for="universite_id">Universite (facultatif)</label>
-    <select id="universite_id" name="universite_id">
-      <option value="">— aucune —</option>
-      {% for u in universites %}
-      <option value="{{ u.id }}">{{ u.nom }}</option>
-      {% endfor %}
-    </select>
+    <!-- Bloc academique : obligatoire et en cascade UNIQUEMENT pour un
+         compte etudiant (§7-8 du brief refonte academique nationale).
+         Un sponsor n'a pas de parcours academique a declarer -> le bloc
+         se masque et ses champs perdent leur "required" des que le role
+         change (voir le JS plus bas), pour ne jamais bloquer son
+         inscription sur un choix qui ne le concerne pas. -->
+    <div id="bloc-academique">
+      <label for="universite_id">Universite</label>
+      <select id="universite_id" name="universite_id" required>
+        <option value="">— choisissez votre universite —</option>
+        {% for u in universites %}
+        <option value="{{ u.id }}">{{ u.nom }}{% if u.ville %} ({{ u.ville }}){% endif %}</option>
+        {% endfor %}
+      </select>
 
-    <label for="filiere_id">Filiere (facultatif)</label>
-    <select id="filiere_id" name="filiere_id">
-      <option value="">— aucune —</option>
-      {% for filiere in filieres %}
-      <option value="{{ filiere.id }}">{{ filiere.nom }}</option>
-      {% endfor %}
-    </select>
-    <p class="stat-label">Le catalogue des filieres par universite est en cours de completion — la liste ci-dessus couvre pour l'instant surtout Toamasina.</p>
+      <label for="composante_id">Composante / etablissement</label>
+      <select id="composante_id" name="composante_id" required disabled>
+        <option value="">— choisissez d'abord votre universite —</option>
+      </select>
+
+      <label for="filiere_id">Parcours / Filiere</label>
+      <select id="filiere_id" name="filiere_id" required disabled>
+        <option value="">— choisissez d'abord votre composante —</option>
+      </select>
+      <!-- Mention/Domaine ne sont jamais saisis : affiches en lecture
+           seule des que le parcours choisi les determine (§33 : identite
+           academique deduite du parcours, jamais tapee a la main). -->
+      <p class="stat-label" id="info-mention-domaine" style="display:none;"></p>
+
+      <label for="niveau">Niveau</label>
+      <select id="niveau" name="niveau" required disabled>
+        <option value="">— choisissez d'abord votre parcours —</option>
+        {% for n in niveaux %}
+        <option value="{{ n }}">{{ n }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Creer mon compte</button>
   </form>
@@ -109,6 +130,97 @@
       bouton.setAttribute("aria-label", visible ? "Afficher le mot de passe" : "Masquer le mot de passe");
     });
   });
+})();
+
+(function () {
+  // Selecteurs academiques en cascade (§7-8 du brief refonte academique
+  // nationale) : Universite -> Composante -> Filiere/Parcours -> Niveau.
+  // Chaque etape charge SES options via /api/academique/... uniquement
+  // apres que la precedente est choisie — jamais de saisie libre, jamais
+  // de liste affichee avant que son parent ne soit connu (§26, §30).
+  const roleSelect = document.getElementById("role");
+  const blocAcademique = document.getElementById("bloc-academique");
+  const universiteSelect = document.getElementById("universite_id");
+  const composanteSelect = document.getElementById("composante_id");
+  const filiereSelect = document.getElementById("filiere_id");
+  const niveauSelect = document.getElementById("niveau");
+  const infoMentionDomaine = document.getElementById("info-mention-domaine");
+  const champsAcademiques = [universiteSelect, composanteSelect, filiereSelect, niveauSelect];
+
+  function reinitialiserAPartir(etape) {
+    // etape 1 = composante, 2 = filiere, 3 = niveau : reinitialise cette
+    // etape et toutes les suivantes (une liste ne doit jamais rester
+    // affichee/selectionnable si son parent vient de changer).
+    if (etape <= 1) {
+      composanteSelect.innerHTML = '<option value="">— choisissez d\'abord votre universite —</option>';
+      composanteSelect.disabled = true;
+    }
+    if (etape <= 2) {
+      filiereSelect.innerHTML = '<option value="">— choisissez d\'abord votre composante —</option>';
+      filiereSelect.disabled = true;
+      infoMentionDomaine.style.display = "none";
+    }
+    if (etape <= 3) {
+      niveauSelect.value = "";
+      niveauSelect.disabled = true;
+    }
+  }
+
+  async function chargerOptions(url) {
+    const reponse = await fetch(url);
+    if (!reponse.ok) return [];
+    return reponse.json();
+  }
+
+  universiteSelect.addEventListener("change", async function () {
+    reinitialiserAPartir(1);
+    if (!universiteSelect.value) return;
+    const composantes = await chargerOptions(`/api/academique/universites/${universiteSelect.value}/composantes`);
+    composanteSelect.innerHTML = '<option value="">— choisissez votre composante —</option>' +
+      composantes.map(function (c) { return `<option value="${c.id}">${c.nom}</option>`; }).join("");
+    composanteSelect.disabled = composantes.length === 0;
+    if (composantes.length === 0) {
+      composanteSelect.innerHTML = '<option value="">— aucune composante disponible pour l\'instant —</option>';
+    }
+  });
+
+  composanteSelect.addEventListener("change", async function () {
+    reinitialiserAPartir(2);
+    if (!composanteSelect.value) return;
+    const filieres = await chargerOptions(`/api/academique/composantes/${composanteSelect.value}/filieres`);
+    filiereSelect.innerHTML = '<option value="">— choisissez votre parcours —</option>' +
+      filieres.map(function (f) { return `<option value="${f.id}" data-mention="${f.mention || ''}" data-domaine="${f.domaine || ''}">${f.nom}</option>`; }).join("");
+    filiereSelect.disabled = filieres.length === 0;
+    if (filieres.length === 0) {
+      filiereSelect.innerHTML = '<option value="">— aucun parcours disponible pour l\'instant —</option>';
+    }
+  });
+
+  filiereSelect.addEventListener("change", function () {
+    reinitialiserAPartir(3);
+    if (!filiereSelect.value) return;
+    niveauSelect.disabled = false;
+
+    const optionChoisie = filiereSelect.selectedOptions[0];
+    const mention = optionChoisie ? optionChoisie.dataset.mention : "";
+    const domaine = optionChoisie ? optionChoisie.dataset.domaine : "";
+    if (mention) {
+      infoMentionDomaine.textContent = domaine ? `Mention : ${mention} — Domaine : ${domaine}` : `Mention : ${mention}`;
+      infoMentionDomaine.style.display = "";
+    } else {
+      infoMentionDomaine.style.display = "none";
+    }
+  });
+
+  function appliquerVisibiliteRole() {
+    const estEtudiant = roleSelect.value === "etudiant";
+    blocAcademique.style.display = estEtudiant ? "" : "none";
+    champsAcademiques.forEach(function (champ) {
+      champ.required = estEtudiant;
+    });
+  }
+  roleSelect.addEventListener("change", appliquerVisibiliteRole);
+  appliquerVisibiliteRole();
 })();
 </script>
 {% endblock %}

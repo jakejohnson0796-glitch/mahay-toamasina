@@ -28,12 +28,23 @@ def _ip_client(request: Request) -> str:
 router = APIRouter()
 
 
+def _contexte_formulaire_inscription(session: Session, erreur: Optional[str] = None) -> dict:
+    """Regroupe le contexte commun aux (re)rendus de register.html — la
+    liste des Composante/Filiere n'y figure plus : elles sont chargees
+    en cascade par le JS via /api/academique/... (§7-8 du brief), donc
+    seule la liste des Universite (etape 1, toujours affichee) est
+    encore preparee cote serveur."""
+    return {
+        "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
+        "niveaux": NIVEAUX,
+        "erreur": erreur,
+    }
+
+
 @router.get("/inscription")
 def formulaire_inscription(request: Request, session: Session = Depends(get_session)):
-    filieres = session.exec(select(Filiere)).all()
-    universites = session.exec(select(Universite).where(Universite.est_active == True)).all()  # noqa: E712
     return templates.TemplateResponse(
-        request, "register.html", {"filieres": filieres, "universites": universites, "erreur": None}
+        request, "register.html", _contexte_formulaire_inscription(session)
     )
 
 
@@ -46,6 +57,7 @@ def inscription(
     role: RoleUtilisateur = Form(RoleUtilisateur.ETUDIANT),
     filiere_id: Optional[str] = Form(None),
     universite_id: Optional[str] = Form(None),
+    niveau: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -58,11 +70,9 @@ def inscription(
     # d'inscriptions a aussi un cout direct, pas seulement un risque
     # d'abus des cercles/quiz).
     if limite_depassee(f"inscription:ip:{_ip_client(request)}", max_tentatives=8, fenetre_secondes=3600):
-        filieres = session.exec(select(Filiere)).all()
         return templates.TemplateResponse(
-            request,
-            "register.html",
-            {"filieres": filieres, "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(), "erreur": "Trop de tentatives d'inscription depuis cette adresse. Reessayez plus tard."},
+            request, "register.html",
+            _contexte_formulaire_inscription(session, "Trop de tentatives d'inscription depuis cette adresse. Reessayez plus tard."),
         )
 
     # SECURITE : le formulaire public (register.html) ne propose que
@@ -76,6 +86,41 @@ def inscription(
     if role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.SPONSOR):
         role = RoleUtilisateur.ETUDIANT
 
+    # §7-9 du brief refonte academique nationale : pour un(e) ETUDIANT(E),
+    # universite/filiere/niveau deviennent obligatoires et VALIDES cote
+    # backend (jamais uniquement cote JS, qui peut etre contourne par un
+    # appel direct). Un sponsor/repetiteur n'a pas de parcours academique
+    # a declarer — ces 3 champs restent optionnels pour ce role, comme
+    # avant.
+    if role == RoleUtilisateur.ETUDIANT:
+        if not (universite_id_nettoye and filiere_id_nettoye and niveau):
+            return templates.TemplateResponse(
+                request, "register.html",
+                _contexte_formulaire_inscription(session, "Universite, filiere/parcours et niveau sont obligatoires pour un compte etudiant."),
+            )
+        if niveau not in NIVEAUX:
+            return templates.TemplateResponse(
+                request, "register.html",
+                _contexte_formulaire_inscription(session, "Niveau invalide."),
+            )
+        filiere = session.get(Filiere, filiere_id_nettoye)
+        # §9 : une combinaison universite/filiere inexistante dans le
+        # referentiel (filiere introuvable, OU filiere rattachee a une
+        # AUTRE universite que celle choisie) est rejetee ici — jamais
+        # seulement empechee par le JS du formulaire.
+        if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
+            return templates.TemplateResponse(
+                request, "register.html",
+                _contexte_formulaire_inscription(session, "Cette filiere ne correspond pas a l'universite selectionnee."),
+            )
+    else:
+        # Un sponsor n'a pas de parcours academique : on ignore ces
+        # champs meme si un appel direct les fournissait, plutot que de
+        # les valider pour un role qui n'en a pas besoin.
+        universite_id_nettoye = None
+        filiere_id_nettoye = None
+        niveau = None
+
     # SECURITE : le backend est la source de verite pour la validation du
     # numero, jamais le frontend seul — un numero avec des lettres, un
     # mauvais indicatif ou une mauvaise longueur est rejete ici meme si le
@@ -85,20 +130,16 @@ def inscription(
     try:
         telephone_normalise = normaliser_telephone(telephone)
     except TelephoneInvalide as erreur:
-        filieres = session.exec(select(Filiere)).all()
         return templates.TemplateResponse(
-            request,
-            "register.html",
-            {"filieres": filieres, "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(), "erreur": str(erreur)},
+            request, "register.html",
+            _contexte_formulaire_inscription(session, str(erreur)),
         )
 
     deja_inscrit = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)).first()
     if deja_inscrit:
-        filieres = session.exec(select(Filiere)).all()
         return templates.TemplateResponse(
-            request,
-            "register.html",
-            {"filieres": filieres, "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(), "erreur": "Ce numero est deja enregistre."},
+            request, "register.html",
+            _contexte_formulaire_inscription(session, "Ce numero est deja enregistre."),
         )
 
     utilisateur = Utilisateur(
@@ -108,6 +149,7 @@ def inscription(
         role=role,
         filiere_id=filiere_id_nettoye,
         universite_id=universite_id_nettoye,
+        niveau=niveau,
     )
     session.add(utilisateur)
     session.commit()
