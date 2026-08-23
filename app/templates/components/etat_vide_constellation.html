@@ -1,9 +1,11 @@
 {#
-Etat vide "constellation" "Le Phare" (section 7 du brief). Distinct de
-.tb-etat-vide (dashboard) et .doc-etat-vide (documents), qui restent
-inchanges — ce composant est reserve aux emplacements qui l'adoptent
-explicitement (etape 4 du brief), pas une modification retroactive
-des etats vides deja en place.
+Etat vide "constellation" "Le Phare" (section 7 du brief).
+
+Etape 10 (refonte theme clair) : ce composant a en pratique remplace
+.tb-etat-vide (dashboard) et .doc-etat-vide (documents) partout ou il
+etait cense rester "distinct" (cf note d'origine ci-dessous) -- les
+deux classes n'etaient plus referencees par aucun template, retirees
+du CSS.
 
 Etape 3 (refonte theme clair) : meme correction que constellation.html
 -- stroke="#F2ECDD" code en dur devient currentColor (herite la

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Deposer un document — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <h2>Deposer un document</h2>
 <p>Votre document sera visible publiquement seulement apres validation par un moderateur.</p>
 <div class="carte-formulaire">
@@ -36,5 +38,6 @@
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Envoyer</button>
   </form>
+</div>
 </div>
 {% endblock %}
