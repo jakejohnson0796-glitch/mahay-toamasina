@@ -115,6 +115,9 @@
   --color-warning-clair: #9B6307;  /* base var(--lumiere) assombrie : 4.78:1 sur --content-bg, 5.02:1 sur --content-surface */
   --color-danger-clair: #BD4E2D;   /* base var(--danger) assombrie : 4.66:1 sur --content-bg, 4.89:1 sur --content-surface */
   --color-info-clair: #487686;     /* base var(--color-info) assombrie : 4.75:1 sur --content-bg, 4.99:1 sur --content-surface */
+  --color-violet-clair: #7B52EE;   /* etape 3 (dashboard) : 4e couleur de la grille de stats (§9.4 du brief : vert/orange/bleu/violet),
+                                       reprend la teinte violette deja utilisee (hors famille semantique) par l'ancien theme sombre
+                                       pour "jours restants" + l'icone d'activite quiz. 4.66:1 sur --content-bg, 4.90:1 sur --content-surface */
 
   /* Etats hover/focus/disabled/actif : verifies, aucun nouveau token
      necessaire au-dela de ce qui precede.
@@ -1384,15 +1387,32 @@ main.main-tb {
   z-index: 19;
 }
 
-/* --- Contenu principal (dashboard, etape 3) --- */
+/* --- Contenu principal (dashboard) ---
+   Etape 3 : .contenu-clair active les variantes claires de .tampon-*/
+   .table-manifeste posees en etape 2 (cette page n'en utilise aucune
+   directement aujourd'hui, mais un futur composant partage sur cette
+   page en beneficiera automatiquement). background sur main.main-tb
+   plutot que .tb-contenu : main.main-tb est flex:1 dans la colonne
+   .app-page (voir etape 1), donc son fond s'etend sur toute la
+   hauteur de la colonne y compris sous un contenu court -- un fond
+   pose seulement sur .tb-contenu (hauteur = son propre contenu) aurait
+   laisse apparaitre l'ancien fond sombre du <body> en dessous sur un
+   ecran haut/contenu court. */
+main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--content-text); }
 .tb-contenu { padding: 2rem 2.5rem 3rem; min-width: 0; max-width: 1400px; margin: 0 auto; }
 
 .tb-hero { padding-bottom: 1.75rem; }
 .tb-hero > * { animation: mahay-apparition 0.5s var(--ease-fluide) both; }
 .tb-hero-texte > *:nth-child(2) { animation-delay: 0.05s; }
 .tb-hero-texte > *:nth-child(3) { animation-delay: 0.1s; }
-.tb-titre { margin-bottom: 0.3rem; }
-.tb-sous-titre { color: var(--text-secondary); font-size: 1rem; margin: 0; }
+.tb-titre { margin-bottom: 0.3rem; color: var(--content-text); }
+.tb-sous-titre { color: var(--content-text-muted); font-size: 1rem; margin: 0; }
+/* .eyebrow (regle generique ligne ~191) utilise var(--accent-2), 2.72:1
+   sur blanc -- sous l'AA. Meme logique que .contenu-clair (etape 2) :
+   la regle generique reste inchangee (correcte sur les ~35 autres
+   pages pas encore migrees, fond encore sombre), variante claire
+   scopee ici au dashboard uniquement. */
+.tb-contenu .eyebrow { color: var(--color-success-clair); }
 
 .tb-ligne-principale {
   display: grid;
@@ -1408,17 +1428,18 @@ main.main-tb {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--color-success);
+  color: var(--color-success-clair);
   margin: 0 0 0.9rem;
 }
-.tb-etiquette-premium { color: var(--color-primary); display: flex; align-items: center; gap: 0.4rem; }
+.tb-etiquette-premium { color: var(--primary); display: flex; align-items: center; gap: 0.4rem; }
 
 .tb-carte-reprendre, .tb-carte-premium {
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
   padding: 1.5rem 1.75rem;
   box-shadow: var(--shadow-sm);
+  color: var(--content-text);
 }
 .tb-carte-reprendre { display: flex; flex-direction: column; justify-content: space-between; gap: 1.1rem; }
 .tb-reprendre-corps { display: flex; gap: 1.1rem; align-items: flex-start; }
@@ -1429,21 +1450,21 @@ main.main-tb {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  background: rgba(79, 58, 232, 0.08);
+  color: var(--primary);
   border-radius: var(--radius-md);
   font-size: 1.2rem;
 }
-.tb-reprendre-titre { margin: 0 0 0.2rem; font-size: 1.2rem; }
-.tb-reprendre-meta { color: var(--text-secondary); font-size: 0.88rem; margin: 0 0 0.4rem; }
-.tb-reprendre-delai { color: var(--text-secondary); font-size: 0.8rem; margin: 0; }
+.tb-reprendre-titre { margin: 0 0 0.2rem; font-size: 1.2rem; color: var(--content-text); }
+.tb-reprendre-meta { color: var(--content-text-muted); font-size: 0.88rem; margin: 0 0 0.4rem; }
+.tb-reprendre-delai { color: var(--content-text-muted); font-size: 0.8rem; margin: 0; }
 .tb-carte-reprendre-vide { align-items: flex-start; gap: 0.5rem; }
 .tb-carte-reprendre-vide .bouton { margin-top: 0.5rem; }
 
 .tb-carte-premium { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; justify-content: center; }
 .tb-premium-texte { margin: 0; font-size: 0.95rem; }
 
-/* --- Stats --- */
+/* --- Stats : 4 couleurs distinctes (§9.4 du brief), tokens clairs AA --- */
 .tb-grille-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1451,14 +1472,15 @@ main.main-tb {
   margin-bottom: 1.5rem;
 }
 .tb-carte-stat {
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
-  border-left: 3px solid var(--border-default);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-left: 3px solid var(--content-border);
   border-radius: var(--radius-lg);
   padding: 1.1rem 1.3rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  color: var(--content-text);
   transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide);
   animation: mahay-apparition 0.5s var(--ease-fluide) both;
 }
@@ -1467,13 +1489,17 @@ main.main-tb {
 .tb-grille-stats .tb-carte-stat:nth-child(3) { animation-delay: 0.18s; }
 .tb-grille-stats .tb-carte-stat:nth-child(4) { animation-delay: 0.22s; }
 .tb-carte-stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.tb-stat-vert { border-left-color: var(--color-success); }
-.tb-stat-orange { border-left-color: var(--color-primary); }
-.tb-stat-bleu { border-left-color: #4C8DFF; }
-.tb-stat-violet { border-left-color: #9B7CF2; }
-.tb-stat-icone { font-size: 1.1rem; opacity: 0.85; margin-bottom: 0.1rem; }
-.tb-stat-nombre { font-family: 'Fraunces', serif; font-size: 1.9rem; line-height: 1; }
-.tb-stat-label { font-size: 0.78rem; color: var(--text-secondary); }
+.tb-stat-vert { border-left-color: var(--color-success-clair); }
+.tb-stat-vert .tb-stat-icone { color: var(--color-success-clair); }
+.tb-stat-orange { border-left-color: var(--color-warning-clair); }
+.tb-stat-orange .tb-stat-icone { color: var(--color-warning-clair); }
+.tb-stat-bleu { border-left-color: var(--content-link); }
+.tb-stat-bleu .tb-stat-icone { color: var(--content-link); }
+.tb-stat-violet { border-left-color: var(--color-violet-clair); }
+.tb-stat-violet .tb-stat-icone { color: var(--color-violet-clair); }
+.tb-stat-icone { font-size: 1.1rem; opacity: 0.9; margin-bottom: 0.1rem; }
+.tb-stat-nombre { font-family: 'Fraunces', serif; font-size: 1.9rem; line-height: 1; color: var(--content-text); }
+.tb-stat-label { font-size: 0.78rem; color: var(--content-text-muted); }
 
 /* --- Panneaux (activite / cercles) --- */
 .tb-ligne-basse {
@@ -1483,17 +1509,18 @@ main.main-tb {
   align-items: start;
 }
 .tb-panneau {
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
   padding: 1.4rem 1.5rem;
+  color: var(--content-text);
   animation: mahay-apparition 0.5s var(--ease-fluide) both;
   animation-delay: 0.26s;
 }
 .tb-panneau-entete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
-.tb-titre-section { font-size: 1.05rem; margin: 0; }
-.tb-voir-tout { font-size: 0.84rem; color: var(--text-secondary); transition: color 0.15s var(--ease-fluide); }
-.tb-voir-tout:hover { color: var(--color-primary); text-decoration: none; }
+.tb-titre-section { font-size: 1.05rem; margin: 0; color: var(--content-text); }
+.tb-voir-tout { font-size: 0.84rem; color: var(--content-text-muted); transition: color 0.15s var(--ease-fluide); }
+.tb-voir-tout:hover { color: var(--primary); text-decoration: none; }
 
 /* --- Activite recente --- */
 .tb-liste-activite { display: flex; flex-direction: column; gap: 0.15rem; }
@@ -1505,7 +1532,7 @@ main.main-tb {
   border-radius: var(--radius-sm);
   transition: background 0.15s var(--ease-fluide);
 }
-.tb-ligne-activite:hover { background: var(--surface-3); }
+.tb-ligne-activite:hover { background: var(--content-bg); }
 .tb-activite-icone {
   width: 2rem;
   height: 2rem;
@@ -1516,12 +1543,12 @@ main.main-tb {
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
 }
-.tb-activite-document { background: var(--color-primary-soft); color: var(--color-success); }
-.tb-activite-quiz { background: rgba(155, 124, 242, 0.16); color: #9B7CF2; }
+.tb-activite-document { background: rgba(79, 58, 232, 0.08); color: var(--color-success-clair); }
+.tb-activite-quiz { background: rgba(123, 82, 238, 0.1); color: var(--color-violet-clair); }
 .tb-activite-infos { display: flex; flex-direction: column; gap: 0.05rem; flex: 1; min-width: 0; }
-.tb-activite-infos strong { font-size: 0.88rem; }
-.tb-activite-detail { font-size: 0.76rem; color: var(--text-secondary); }
-.tb-activite-delai { font-size: 0.76rem; color: var(--text-secondary); white-space: nowrap; }
+.tb-activite-infos strong { font-size: 0.88rem; color: var(--content-text); }
+.tb-activite-detail { font-size: 0.76rem; color: var(--content-text-muted); }
+.tb-activite-delai { font-size: 0.76rem; color: var(--content-text-muted); white-space: nowrap; }
 
 /* --- Cercles d'etude --- */
 .tb-grille-cercles {
@@ -1530,23 +1557,24 @@ main.main-tb {
   gap: 0.9rem;
 }
 .tb-carte-cercle-moderne {
-  background: var(--surface-1);
-  border: 1px solid var(--border-default);
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
   border-radius: var(--radius-md);
   padding: 1.1rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.4rem;
+  color: var(--content-text);
   transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
 }
-.tb-carte-cercle-moderne:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--color-primary); }
+.tb-carte-cercle-moderne:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); }
 .tb-cercle-avatar {
   width: 2.3rem;
   height: 2.3rem;
   border-radius: 50%;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  background: rgba(79, 58, 232, 0.1);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1554,12 +1582,12 @@ main.main-tb {
   font-size: 0.72rem;
   font-weight: 600;
 }
-.tb-cercle-nom { font-size: 0.95rem; }
-.tb-cercle-description { color: var(--text-secondary); font-size: 0.8rem; margin: 0; min-height: 1.1em; }
+.tb-cercle-nom { font-size: 0.95rem; color: var(--content-text); }
+.tb-cercle-description { color: var(--content-text-muted); font-size: 0.8rem; margin: 0; min-height: 1.1em; }
 .tb-cercle-lien { margin-top: 0.3rem; align-self: stretch; text-align: center; font-size: 0.85rem; }
 
 .tb-carte-rejoindre {
-  border: 1px dashed var(--border-default);
+  border: 1px dashed var(--content-border);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
@@ -1567,11 +1595,11 @@ main.main-tb {
   justify-content: center;
   gap: 0.4rem;
   min-height: 9rem;
-  color: var(--text-secondary);
+  color: var(--content-text-muted);
   font-size: 0.85rem;
   transition: border-color 0.18s var(--ease-fluide), color 0.18s var(--ease-fluide), transform 0.18s var(--ease-fluide);
 }
-.tb-carte-rejoindre:hover { border-color: var(--color-primary); color: var(--color-primary); text-decoration: none; transform: translateY(-3px); }
+.tb-carte-rejoindre:hover { border-color: var(--primary); color: var(--primary); text-decoration: none; transform: translateY(-3px); }
 .tb-rejoindre-icone {
   width: 2.1rem;
   height: 2.1rem;
@@ -1586,9 +1614,17 @@ main.main-tb {
 /* --- Etats vides --- */
 .tb-etat-vide { padding: 1.5rem 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
 .tb-etat-vide p { margin: 0; }
-.tb-etat-vide-texte { color: var(--text-secondary); font-size: 0.85rem; }
+.tb-etat-vide-texte { color: var(--content-text-muted); font-size: 0.85rem; }
 
-.tb-note-quiz { color: var(--text-secondary); font-size: 0.82rem; margin-top: 1.25rem; }
+.tb-note-quiz { color: var(--content-text-muted); font-size: 0.82rem; margin-top: 1.25rem; }
+
+/* .evc-texte (composant partage components/etat_vide_constellation.html)
+   utilise var(--text-secondary) = var(--text-muted) = #A9C0BD, pensee
+   pour l'ancien fond sombre -- illisible sur le nouveau fond clair du
+   dashboard. Meme logique que .eyebrow ci-dessus : regle generique
+   inchangee (correcte sur feedback.html/faq.html/mes_avis.html/
+   documents_list.html, pas encore migrees), variante scopee ici. */
+.tb-contenu .evc-texte { color: var(--content-text-muted); }
 
 /* --- Responsive : sidebar globale en drawer sous 768px --- */
 @media (max-width: 1024px) {

@@ -27,6 +27,22 @@ Couleur des liens : alternee selon cercle_id % 3 parmi les 3 couleurs
 de filiere du brief (--accent / --accent-2 / --color-info), stable
 par cercle, pas aleatoire.
 
+Etape 3 (refonte theme clair, brief section "Constellation Avatar") :
+verification demandee par le brief -- le point principal (#FBD9A0) et
+les points secondaires (#F2ECDD) etaient codes en dur pour l'ancien
+fond sombre, illisibles une fois le composant rendu sur le fond clair
+du dashboard (contraste mesure < 2:1). Corrige en reutilisant
+var(--star) (identite "etoiles/dores" du brief, plus vive, lisible sur
+sombre ET clair) pour le point principal, et currentColor pour les
+points secondaires : ils heritent alors de la couleur de texte
+ambiante (--text sur les pages pas encore migrees, --content-text sur
+le dashboard desormais clair) -- aucun changement visuel sur les
+pages pas encore migreees (cercles_list.html, etape 4), correction
+uniquement la ou le fond a deja bascule. Les lignes de liaison
+(couleurs de filiere fixes, tres fines/tres transparentes -- purement
+decoratives, pas du texte) restent inchangees pour l'instant : a
+revisiter si une future etape les rend trop discretes sur fond clair.
+
 Usage :
     {% from "components/constellation.html" import constellation_avatar %}
     {{ constellation_avatar(info.cercle.id, info.nb_membres, taille=37) }}
@@ -50,9 +66,9 @@ Usage :
     <line x1="{{ px0 }}" y1="{{ py0 }}" x2="{{ px }}" y2="{{ py }}" stroke="{{ couleur_lien }}" stroke-width="0.55" opacity="0.52"/>
     {%- endif %}
     {%- if i == 0 -%}
-    <circle cx="{{ px }}" cy="{{ py }}" r="3.2" fill="#FBD9A0"/>
+    <circle cx="{{ px }}" cy="{{ py }}" r="3.2" fill="var(--star)"/>
     {%- else -%}
-    <circle cx="{{ px }}" cy="{{ py }}" r="{{ 1.8 + (i % 3) * 0.2 }}" fill="#F2ECDD"/>
+    <circle cx="{{ px }}" cy="{{ py }}" r="{{ 1.8 + (i % 3) * 0.2 }}" fill="currentColor"/>
     {%- endif %}
   {%- endfor %}
   </g>
