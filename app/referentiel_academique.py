@@ -33,10 +33,13 @@ def profil_academique_incomplet(utilisateur: Utilisateur, session: Session) -> b
     PROFILE_ACADEMIC_UPDATE_REQUIRED — universite, filiere ou niveau
     manquant, OU filiere qui ne correspond plus a l'universite
     declaree (donnee devenue incoherente, ex. suite a une correction
-    du referentiel). Seuls les comptes ETUDIANT sont concernes : un
-    sponsor/repetiteur ou un admin n'a pas de parcours academique a
-    declarer (voir la meme exemption a l'inscription, auth_router.py)."""
-    if utilisateur.role != RoleUtilisateur.ETUDIANT:
+    du referentiel). Concerne les comptes ETUDIANT et PROFESSEUR (les
+    deux ont un parcours academique a declarer — un professeur anime
+    des cours dans un contexte universite/filiere donne, voir Classe
+    virtuelle) : un sponsor/repetiteur ou un admin n'a pas de parcours
+    academique a declarer (voir la meme exemption a l'inscription,
+    auth_router.py)."""
+    if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
         return False
 
     if not (utilisateur.universite_id and utilisateur.filiere_id and utilisateur.niveau):
