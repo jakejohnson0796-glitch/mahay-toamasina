@@ -1242,6 +1242,14 @@ main.main-tb {
   margin: 0;
 }
 
+/* --- Etape 4 : utilitaire partage pour les pages migrees vers le
+   theme clair qui n'ont pas besoin de deroger au conteneur centre-etroit
+   (960px, defini par la regle generique "main" plus haut) -- contrairement
+   au dashboard (.main-tb, etape 3, qui a besoin de toute la largeur pour
+   sa grille de stats). Prevu pour etre repris tel quel aux etapes 5-14 :
+   {% block main_classe %}main-clair{% endblock %} sur une page qui migre. */
+.main-clair { background: var(--content-bg); color: var(--content-text); min-height: 100%; }
+
 /* --- .tb-mise-en-page (grille 2 colonnes + glow reseau) : n'est plus
    utilisee depuis cette etape (dashboard_etudiant.html ne redeclare
    plus sa propre sidebar, cf §6 du brief). Conservee volontairement
@@ -1408,11 +1416,13 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .tb-titre { margin-bottom: 0.3rem; color: var(--content-text); }
 .tb-sous-titre { color: var(--content-text-muted); font-size: 1rem; margin: 0; }
 /* .eyebrow (regle generique ligne ~191) utilise var(--accent-2), 2.72:1
-   sur blanc -- sous l'AA. Meme logique que .contenu-clair (etape 2) :
-   la regle generique reste inchangee (correcte sur les ~35 autres
+   sur blanc -- sous l'AA. Meme logique que le reste de .contenu-clair
+   (etape 2) : la regle generique reste inchangee (correcte sur les
    pages pas encore migrees, fond encore sombre), variante claire
-   scopee ici au dashboard uniquement. */
-.tb-contenu .eyebrow { color: var(--color-success-clair); }
+   scopee ici -- reprise par toute page qui pose .contenu-clair sur son
+   wrapper (dashboard depuis l'etape 3, cercles_list.html depuis
+   l'etape 4, etc.), pas seulement le dashboard. */
+.contenu-clair .eyebrow { color: var(--color-success-clair); }
 
 .tb-ligne-principale {
   display: grid;
@@ -1624,7 +1634,15 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
    dashboard. Meme logique que .eyebrow ci-dessus : regle generique
    inchangee (correcte sur feedback.html/faq.html/mes_avis.html/
    documents_list.html, pas encore migrees), variante scopee ici. */
-.tb-contenu .evc-texte { color: var(--content-text-muted); }
+.contenu-clair .evc-texte { color: var(--content-text-muted); }
+
+/* --- Etape 4 : .erreur/.info autonomes (hors .carte-formulaire, ex.
+   boite "Connectez-vous pour..." ou "Cercle supprime" de cercles_list.html)
+   -- meme traitement que la variante deja scopee a .carte-formulaire
+   en etape 2, generalise a .contenu-clair pour couvrir aussi ces cas. */
+.contenu-clair .erreur { background: rgba(189, 78, 45, 0.08); border-color: var(--color-danger-clair); color: var(--color-danger-clair); }
+.contenu-clair .info { background: rgba(79, 58, 232, 0.06); border-color: var(--primary); color: var(--primary); }
+.contenu-clair .info a, .contenu-clair a:not(.bouton) { color: var(--content-link); }
 
 /* --- Responsive : sidebar globale en drawer sous 768px --- */
 @media (max-width: 1024px) {
@@ -1660,9 +1678,9 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 
 /* --- Theme du jour (cercles_list.html) --- */
 .theme-jour {
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
-  border-left: 3px solid var(--color-primary);
+  background: rgba(79, 58, 232, 0.08);
+  border: 1px solid var(--content-border);
+  border-left: 3px solid var(--primary);
   border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.75rem;
@@ -1672,12 +1690,12 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-primary);
+  color: var(--primary);
   margin: 0 0 0.6rem;
 }
-.theme-jour-question { margin: 0 0 0.5rem; font-size: 1.02rem; }
-.theme-jour-amorce { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 0.5rem; }
-.theme-jour-note { color: var(--text-secondary); font-size: 0.78rem; margin: 0; }
+.theme-jour-question { margin: 0 0 0.5rem; font-size: 1.02rem; color: var(--content-text); }
+.theme-jour-amorce { color: var(--content-text-muted); font-size: 0.9rem; margin: 0 0 0.5rem; }
+.theme-jour-note { color: var(--content-text-muted); font-size: 0.78rem; margin: 0; }
 
 /* --- Page /universites --- */
 .uni-grille {
@@ -2055,6 +2073,56 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   align-items: center;
   justify-content: center;
 }
+
+/* --- Etape 4 (cercles liste, refonte theme clair) : grille de cartes
+   dediee, distincte de .liste-cercles/.carte-cercle juste au-dessus.
+   .carte-cercle est partagee avec admin_feedback.html/admin_stats.html/
+   admin_index.html/classe_liste.html (pas encore migrees, etape 6/14) --
+   la repeindre/restructurer en grille casserait leur mise en page de
+   liste horizontale. Nouvelles classes .cercles-grille/.cercle-carte-claire
+   donc introduites plutot que reutilisees, pour ne rien dupliquer ni
+   casser (§30/regle "eviter la duplication de composants"). */
+.cercles-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1rem;
+}
+.cercle-carte-claire {
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  color: var(--content-text);
+  transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide);
+}
+.cercle-carte-claire:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.cercle-carte-corps { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.cercle-carte-avatar {
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(79, 58, 232, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cercle-carte-texte { min-width: 0; }
+.cercle-carte-nom {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--content-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cercle-carte-membres { font-size: 0.78rem; color: var(--content-text-muted); }
+.cercle-carte-description { font-size: 0.82rem; color: var(--content-text-muted); margin: 0; min-height: 1.1em; }
+.cercle-carte-claire > .bouton, .cercle-carte-claire > span.bouton { width: 100%; text-align: center; }
 
 /* --- Hero "Le Phare" (etape 7/10, section 9 du brief) : fond nuit +
    ciel etoile en arriere-plan. Etend .hero existant (padding/border
