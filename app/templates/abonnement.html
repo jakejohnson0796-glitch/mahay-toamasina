@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}Mon abonnement — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <h2>Mon abonnement</h2>
 
 {% if request.query_params.get("demande_envoyee") %}
@@ -59,4 +61,5 @@
   </form>
 </div>
 {% endif %}
+</div>
 {% endblock %}

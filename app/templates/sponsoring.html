@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Espace sponsors — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <h2>Espace sponsors &amp; repetiteurs</h2>
 <p>
   Touchez directement les etudiants de l'Universite de Toamasina. Votre
@@ -29,5 +31,6 @@
   {% else %}
   <p><a href="/connexion">Connectez-vous</a> pour envoyer votre demande.</p>
   {% endif %}
+</div>
 </div>
 {% endblock %}
