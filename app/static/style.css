@@ -985,6 +985,20 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* --- Salle virtuelle (classe_salle.html) --- */
+/* Etape 7 (refonte theme clair) : #grille-video/.tuile-video restent
+   INCHANGEES -- le brief demande explicitement qu'elles restent sur un
+   fond sombre/neutre, distinct de la sidebar (§13). .barre-outils-tableau/
+   .canvas-tableau restent egalement inchangees : la gomme du tableau
+   blanc (classe_tableau_fragment.html, JS) est codee en dur sur la
+   couleur de fond du canvas (ctx.strokeStyle = "#0E2A32" pour "effacer"
+   = repeindre par-dessus avec la couleur de fond) -- changer le fond
+   sans re-synchroniser cette couleur cassait la gomme pour de vrai
+   (trainees visibles au lieu d'un effacement), un risque fonctionnel
+   sur une fonctionnalite explicitement protegee ("ne pas casser... le
+   tableau blanc") que je ne peux pas tester en direct ici (pas de
+   session LiveKit reelle dans ce bac a sable). Toolbar+canvas forment
+   d'ailleurs un seul bloc visuel (rayons joints 8px 8px 0 0 / 0 0 8px
+   8px) : les repeindre separement les aurait de toute facon disloques. */
 .grille-video {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -1021,48 +1035,58 @@ input:focus, select:focus, textarea:focus {
   gap: 0.6rem;
   flex-wrap: wrap;
   padding: 0.75rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
   border-radius: 8px;
 }
+/* .bouton-controle est partagee avec classe_tableau_fragment.html (sa
+   propre barre d'outils, laissee sombre ci-dessus) : le bouton reste
+   lisible dans les deux contextes (fond clair ici, fond sombre la-bas)
+   car il porte son propre fond+bordure opaques, sans en dependre. */
 .bouton-controle {
   width: 2.6rem;
   height: 2.6rem;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg-panel-2);
+  border: 1px solid var(--content-border);
+  background: var(--content-bg);
   font-size: 1.1rem;
   cursor: pointer;
 }
-.bouton-controle-actif { background: var(--accent); border-color: var(--accent); }
+.bouton-controle-actif { background: var(--primary); border-color: var(--primary); }
 .bouton-quitter {
   width: auto;
   border-radius: 6px;
   padding: 0 1rem;
-  background: #C24E4E;
-  border-color: #C24E4E;
+  background: var(--color-danger-clair);
+  border-color: var(--color-danger-clair);
   color: #fff;
   font-size: 0.85rem;
 }
 #notifications-salle { display: flex; flex-direction: column; gap: 0.4rem; margin: 0.75rem 0; }
 .notification-salle {
   font-size: 0.8rem;
-  color: var(--text-muted);
-  background: var(--bg-panel-2);
+  color: var(--content-text-muted);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
   border-radius: 6px;
   padding: 0.4rem 0.7rem;
 }
 .panneau-chat-salle {
-  border: 1px solid var(--border);
+  border: 1px solid var(--content-border);
   border-radius: 8px;
-  background: var(--bg-panel);
+  background: var(--content-surface);
   padding: 0.75rem;
 }
 .messages-chat-salle { max-height: 220px; overflow-y: auto; margin-bottom: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem; }
-.message-chat-salle { font-size: 0.85rem; }
-.message-chat-salle .message-auteur { color: var(--accent-2); font-weight: 600; margin-right: 0.4rem; }
-.message-chat-salle-moi .message-auteur { color: var(--accent); }
+.message-chat-salle { font-size: 0.85rem; color: var(--content-text); }
+.message-chat-salle .message-auteur { color: var(--color-success-clair); font-weight: 600; margin-right: 0.4rem; }
+.message-chat-salle-moi .message-auteur { color: var(--primary); }
 #form-chat-salle { display: flex; gap: 0.5rem; }
+#form-chat-salle input {
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
+  color: var(--content-text);
+}
 #form-chat-salle input { flex: 1; }
 
 /* --- Tableau blanc (classe_tableau.html) --- */
@@ -1101,8 +1125,8 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  background: var(--accent-soft);
-  color: var(--text);
+  background: rgba(79, 58, 232, 0.08);
+  color: var(--content-text);
   padding: 0.3rem 0.6rem;
   border-radius: 999px;
   margin: 0.2rem;
@@ -1616,6 +1640,18 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .contenu-clair .lien-action { color: var(--content-text-muted); }
 .contenu-clair .lien-action:hover { color: var(--primary); background: var(--content-bg); }
 .contenu-clair .stat-label { color: var(--content-text-muted); }
+
+/* --- Etape 7 (classe virtuelle : salle) : .signal (point de statut,
+   components/signal.html) est partage avec ~15 pages admin_*/
+   classe_devoir/classe_detail/quiz_*/securite/abonnement pas encore
+   migrees -- variante claire scopee, meme logique que le reste de ce
+   bloc. Non-texte (point decoratif de statut), le seuil AA applicable
+   est celui des composants UI (3:1), confortablement respecte par les
+   tons -clair de l'etape 0. */
+.contenu-clair .signal-approuve { background: var(--color-success-clair); box-shadow: 0 0 8px 2px rgba(72, 121, 97, 0.35); }
+.contenu-clair .signal-attente { background: var(--color-warning-clair); }
+.contenu-clair .signal-rejete { border-color: var(--color-danger-clair); }
+.contenu-clair .signal-anneau { border-color: var(--color-warning-clair); }
 
 /* --- Responsive : sidebar globale en drawer sous 768px --- */
 @media (max-width: 1024px) {

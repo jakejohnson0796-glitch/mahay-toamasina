@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}Salle — {{ seance.titre }} — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <p class="eyebrow">{{ cours.nom }}</p>
 <h2>{{ seance.titre }} {{ signal("approuve") }}<span class="tampon tampon-approuve">LIVE</span></h2>
 
@@ -328,5 +330,6 @@ const room = new Room({
 })();
 </script>
 {% endif %}
+</div>
 {% endblock %}
 
