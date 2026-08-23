@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Tuteur IA — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <p class="eyebrow"><a href="/tuteur">&larr; Tuteur IA</a></p>
 <h2>{{ session_tuteur.question }}</h2>
 
@@ -31,4 +33,5 @@
 {% endif %}
 
 <p style="margin-top:1.5rem;"><a class="bouton bouton-primaire" href="/tuteur">Poser une autre question</a></p>
+</div>
 {% endblock %}
