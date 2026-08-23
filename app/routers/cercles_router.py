@@ -15,7 +15,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
-from sqlmodel import Session, select, or_
+from sqlmodel import Session, select, or_, func
 
 from ..database import get_session, engine
 from ..templating import templates
@@ -177,16 +177,33 @@ def liste_cercles(
     filiere_id: Optional[str] = None,
     niveau: Optional[str] = None,
     disponibles: Optional[str] = None,
+    page: int = 1,
     session: Session = Depends(get_session),
 ):
+    """PAGINEE et REQUETES GROUPEES (corrige un ralentissement severe
+    signale par Jake apres l'import du referentiel national — voir
+    scripts/import_academic_data.py) : avec ~1200+ cercles nationaux
+    desormais legitimes (un par parcours x niveau, pas des doublons —
+    voir cercles_referentiel.py), la version precedente de cette route
+    executait 3 a 5 requetes SEPAREES PAR CERCLE AFFICHE (nombre de
+    membres, est_membre, demande en attente, plus potentiellement des
+    INSERT un par un pour chaque admin manquant) : plusieurs MILLIERS
+    de requetes pour une seule page, pire encore pour un admin (qui
+    declenche en plus _assurer_membres_admins sur chaque cercle). Cette
+    version ne fait plus que quelques requetes GROUPEES au total, quel
+    que soit le nombre de cercles en base, plus une pagination pour ne
+    jamais avoir a rendre des centaines de lignes en une fois."""
+    TAILLE_PAGE = 30
+
     utilisateur = utilisateur_courant(request, session)
 
     q_nettoye = (q or "").strip()
     filiere_id_nettoye = entier_ou_none(filiere_id)
     niveau_nettoye = niveau if niveau in NIVEAUX else None
     afficher_disponibles_seulement = disponibles == "1"
+    page_nettoyee = max(1, page)
 
-    requete = select(CercleEtude).order_by(CercleEtude.date_creation.desc())
+    requete = select(CercleEtude)
     if q_nettoye:
         # ilike : recherche insensible a la casse, meme choix que
         # rechercher_messages() plus bas dans ce fichier.
@@ -199,35 +216,72 @@ def liste_cercles(
         # Construit cote SQL (voir referentiel_academique.py) plutot que
         # filtre ligne par ligne en Python : reste efficace meme avec
         # les centaines de cercles que cercles_referentiel.py peut
-        # generer (un par filiere x niveau).
+        # generer (un par parcours x niveau).
         requete = requete.where(referentiel_academique.condition_cercles_disponibles(utilisateur, session))
 
-    cercles = session.exec(requete).all()
+    total_cercles = session.exec(select(func.count()).select_from(requete.subquery())).one()
+    total_pages = max(1, (total_cercles + TAILLE_PAGE - 1) // TAILLE_PAGE)
+    page_nettoyee = min(page_nettoyee, total_pages)
+
+    cercles = session.exec(
+        requete.order_by(CercleEtude.date_creation.desc())
+        .offset((page_nettoyee - 1) * TAILLE_PAGE)
+        .limit(TAILLE_PAGE)
+    ).all()
+    cercle_ids = [c.id for c in cercles]
+
     filieres = session.exec(select(Filiere)).all()
 
     # Meme filet de securite que salon_cercle()/voir_membres() : sans cet
     # appel, un admin qui n'a pas encore ouvert individuellement un cercle
     # (ou qui vient d'etre promu admin) n'a pas encore de ligne MembreCercle
     # reelle pour ce cercle, et cette liste globale l'affichait alors a tort
-    # comme non-membre — d'ou les boutons "Demander a rejoindre" / "Demande
-    # en attente" vus par un Admin. On le fait ici, une fois par cercle,
-    # avant de calculer est_membre/en_attente ci-dessous.
-    if _est_admin(utilisateur):
-        for cercle in cercles:
-            _assurer_membres_admins(session, cercle.id)
+    # comme non-membre. Limite desormais aux cercles de la PAGE COURANTE
+    # (au plus TAILLE_PAGE), jamais a la totalite des cercles en base.
+    if _est_admin(utilisateur) and cercle_ids:
+        for cercle_id in cercle_ids:
+            _assurer_membres_admins(session, cercle_id)
+
+    # --- Requetes GROUPEES (une par type de donnee, pas une par
+    #     cercle) : nombre de membres par cercle, appartenance et
+    #     demande en attente de l'utilisateur courant. ---
+    nb_membres_par_cercle = {}
+    if cercle_ids:
+        for cercle_id, nb in session.exec(
+            select(MembreCercle.cercle_id, func.count())
+            .where(MembreCercle.cercle_id.in_(cercle_ids))
+            .group_by(MembreCercle.cercle_id)
+        ).all():
+            nb_membres_par_cercle[cercle_id] = nb
+
+    cercles_ou_membre = set()
+    cercles_en_attente = set()
+    if utilisateur and cercle_ids:
+        cercles_ou_membre = {
+            cid for cid in session.exec(
+                select(MembreCercle.cercle_id).where(
+                    MembreCercle.cercle_id.in_(cercle_ids),
+                    MembreCercle.utilisateur_id == utilisateur.id,
+                )
+            ).all()
+        }
+        cercles_en_attente = {
+            cid for cid in session.exec(
+                select(DemandeAdhesionCercle.cercle_id).where(
+                    DemandeAdhesionCercle.cercle_id.in_(cercle_ids),
+                    DemandeAdhesionCercle.utilisateur_id == utilisateur.id,
+                    DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE,
+                )
+            ).all()
+        }
 
     cercles_avec_info = []
     for cercle in cercles:
-        nb_membres = len(
-            session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle.id)).all()
-        )
-        est_membre = _est_membre(session, cercle.id, utilisateur.id) if utilisateur else False
-        en_attente = bool(
-            utilisateur and not est_membre and _demande_en_attente(session, cercle.id, utilisateur.id)
-        )
+        est_membre = cercle.id in cercles_ou_membre
+        en_attente = bool(utilisateur and not est_membre and cercle.id in cercles_en_attente)
         cercles_avec_info.append({
             "cercle": cercle,
-            "nb_membres": nb_membres,
+            "nb_membres": nb_membres_par_cercle.get(cercle.id, 0),
             "est_membre": est_membre,
             "en_attente": en_attente,
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
@@ -246,6 +300,9 @@ def liste_cercles(
             "recherche_filiere_id": filiere_id_nettoye,
             "recherche_niveau": niveau_nettoye,
             "recherche_disponibles": afficher_disponibles_seulement,
+            "page": page_nettoyee,
+            "total_pages": total_pages,
+            "total_cercles": total_cercles,
         },
     )
 

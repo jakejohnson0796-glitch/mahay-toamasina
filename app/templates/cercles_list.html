@@ -161,4 +161,18 @@ pas besoin de changer, seul le format de sortie serait concerne.
   {% endif %}
   {% endfor %}
 </div>
+
+{% if total_pages > 1 %}
+<nav class="pagination" style="display:flex; gap:1rem; align-items:center; justify-content:center; margin-top:1.5rem;">
+  {% set params = {"q": recherche_q, "filiere_id": recherche_filiere_id, "niveau": recherche_niveau, "disponibles": "1" if recherche_disponibles else None} %}
+  {% set querystring = params | dictsort | selectattr("1") | map("join", "=") | join("&") %}
+  {% if page > 1 %}
+  <a href="/cercles?{{ querystring }}{{ '&' if querystring else '' }}page={{ page - 1 }}">&larr; Precedent</a>
+  {% endif %}
+  <span class="stat-label">Page {{ page }} / {{ total_pages }} ({{ total_cercles }} cercles)</span>
+  {% if page < total_pages %}
+  <a href="/cercles?{{ querystring }}{{ '&' if querystring else '' }}page={{ page + 1 }}">Suivant &rarr;</a>
+  {% endif %}
+</nav>
+{% endif %}
 {% endblock %}

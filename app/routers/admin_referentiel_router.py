@@ -129,7 +129,7 @@ def assigner_mention_filiere(
 
 
 @router.get("/admin/referentiel/cercles")
-def page_cercles_a_completer(request: Request, tous: bool = False, session: Session = Depends(get_session)):
+def page_cercles_a_completer(request: Request, tous: bool = False, page: int = 1, session: Session = Depends(get_session)):
     """Liste les cercles existants pour lesquels mention_id et/ou
     niveau ne sont pas encore renseignes — etape prealable a la
     contrainte anti-doublon 'un seul cercle national actif par
@@ -142,18 +142,37 @@ def page_cercles_a_completer(request: Request, tous: bool = False, session: Sess
     n'a plus besoin d'etre corrige ici, et melange visuellement avec les
     cercles actifs preterait facilement a confusion (deux lignes au
     meme nom, l'une active et l'autre archivee, indiscernables sans
-    cette distinction — signale par Jake apres deploiement)."""
+    cette distinction — signale par Jake apres deploiement).
+
+    PAGINEE (signale par Jake : page tres lente apres l'import du
+    referentiel national) : le template cherchait auparavant la
+    filiere de CHAQUE cercle par une recherche lineaire (`selectattr`)
+    dans la liste ENTIERE des filieres — O(cercles x filieres), soit
+    plus de 200 000 comparaisons avec les ~1200 cercles et ~180
+    filieres qui existent desormais. Remplace par un dict {id: filiere}
+    construit une fois ici (O(1) par lookup), plus une pagination pour
+    ne jamais rendre des centaines de lignes en une fois."""
+    TAILLE_PAGE = 50
+
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
 
     from ..models import StatutCercle
+    from sqlmodel import func
 
-    requete = select(CercleEtude).order_by(CercleEtude.nom)
+    requete = select(CercleEtude)
     if not tous:
         requete = requete.where(CercleEtude.statut == StatutCercle.ACTIF)
-    cercles = session.exec(requete).all()
-    filieres = session.exec(select(Filiere)).all()
+
+    total_cercles = session.exec(select(func.count()).select_from(requete.subquery())).one()
+    total_pages = max(1, (total_cercles + TAILLE_PAGE - 1) // TAILLE_PAGE)
+    page_nettoyee = min(max(1, page), total_pages)
+
+    cercles = session.exec(
+        requete.order_by(CercleEtude.nom).offset((page_nettoyee - 1) * TAILLE_PAGE).limit(TAILLE_PAGE)
+    ).all()
+    filiere_par_id = {f.id: f for f in session.exec(select(Filiere)).all()}
     mentions = session.exec(select(Mention).order_by(Mention.nom)).all()
 
     return templates.TemplateResponse(
@@ -162,10 +181,13 @@ def page_cercles_a_completer(request: Request, tous: bool = False, session: Sess
         {
             "utilisateur": admin,
             "cercles": cercles,
-            "filieres": filieres,
+            "filiere_par_id": filiere_par_id,
             "mentions": mentions,
             "niveaux": NIVEAUX,
             "tous": tous,
+            "page": page_nettoyee,
+            "total_pages": total_pages,
+            "total_cercles": total_cercles,
         },
     )
 

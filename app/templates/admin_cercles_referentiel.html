@@ -32,7 +32,7 @@
       <td>{{ c.nom }}</td>
       <td>{{ "Archive" if c.statut.value == "archive" else "Actif" }}</td>
       <td>
-        {% set filiere_actuelle = filieres | selectattr("id", "equalto", c.filiere_id) | first %}
+        {% set filiere_actuelle = filiere_par_id.get(c.filiere_id) %}
         {{ filiere_actuelle.nom if filiere_actuelle else "— groupe libre —" }}
       </td>
       <td colspan="3">
@@ -59,4 +59,16 @@
     {% endfor %}
   </tbody>
 </table>
+
+{% if total_pages > 1 %}
+<nav class="pagination" style="display:flex; gap:1rem; align-items:center; justify-content:center; margin-top:1.5rem;">
+  {% if page > 1 %}
+  <a href="/admin/referentiel/cercles?{{ 'tous=1&' if tous else '' }}page={{ page - 1 }}">&larr; Precedent</a>
+  {% endif %}
+  <span class="stat-label">Page {{ page }} / {{ total_pages }} ({{ total_cercles }} cercles)</span>
+  {% if page < total_pages %}
+  <a href="/admin/referentiel/cercles?{{ 'tous=1&' if tous else '' }}page={{ page + 1 }}">Suivant &rarr;</a>
+  {% endif %}
+</nav>
+{% endif %}
 {% endblock %}
