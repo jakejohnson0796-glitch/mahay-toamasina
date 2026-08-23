@@ -128,17 +128,17 @@ terme, pas hypothetique. Meme piste de correctif que documents_list.html
 generation des positions elle-meme (components/constellation.html) n'a
 pas besoin de changer, seul le format de sortie serait concerne.
 #}
-<div class="cercles-grille">
+<div class="grille-cartes-claires">
   {% for info in cercles_avec_info %}
-  <div class="cercle-carte-claire">
-    <div class="cercle-carte-corps">
-      <span class="cercle-carte-avatar" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
-      <div class="cercle-carte-texte">
-        <div class="cercle-carte-nom">{{ info.cercle.nom }}</div>
-        <div class="cercle-carte-membres">{{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</div>
+  <div class="carte-claire">
+    <div class="carte-claire-corps">
+      <span class="carte-claire-avatar" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <div class="carte-claire-texte">
+        <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
+        <div class="carte-claire-meta">{{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</div>
       </div>
     </div>
-    <p class="cercle-carte-description">{{ info.cercle.description or "Pas de description." }}</p>
+    <p class="carte-claire-description">{{ info.cercle.description or "Pas de description." }}</p>
     {% if info.est_membre %}
     <a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat →</a>
     {% elif info.en_attente %}

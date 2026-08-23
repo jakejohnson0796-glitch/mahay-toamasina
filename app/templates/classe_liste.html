@@ -1,6 +1,9 @@
 {% extends "base.html" %}
+{% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
 {% block titre %}Classe virtuelle — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <p class="eyebrow">Cours en ligne</p>
 <h2>Classe virtuelle</h2>
 
@@ -22,23 +25,29 @@
 </div>
 {% endif %}
 
-<div class="liste-cercles">
+<div class="grille-cartes-claires">
   {% for cours in cours_visibles %}
-  <div class="carte-cercle">
-    <div>
-      <strong>{{ cours.nom }}</strong>
-      <p>{{ cours.matiere }} — {{ cours.niveau }}</p>
-      {% if cours.description %}<p class="stat-label">{{ cours.description }}</p>{% endif %}
+  <div class="carte-claire">
+    <div class="carte-claire-texte">
+      <div class="carte-claire-titre">{{ cours.nom }}</div>
+      <div class="carte-claire-meta">{{ cours.matiere }} — {{ cours.niveau }}</div>
     </div>
-    <div>
-      <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Ouvrir</a>
-    </div>
+    {% if cours.description %}<p class="carte-claire-description">{{ cours.description }}</p>{% endif %}
+    <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Ouvrir →</a>
   </div>
   {% else %}
-  <p>
-    {% if est_professeur %}Vous n'avez pas encore cree de cours.
-    {% else %}Vous n'etes inscrit a aucun cours pour l'instant — votre professeur doit vous y ajouter.{% endif %}
-  </p>
+  {% if est_professeur %}
+  {{ etat_vide_constellation(
+    titre="Aucun cours pour l'instant",
+    texte="Creez votre premier cours avec le formulaire ci-dessus.",
+  ) }}
+  {% else %}
+  {{ etat_vide_constellation(
+    titre="Aucun cours pour l'instant",
+    texte="Vous n'etes inscrit a aucun cours — votre professeur doit vous y ajouter.",
+  ) }}
+  {% endif %}
   {% endfor %}
+</div>
 </div>
 {% endblock %}

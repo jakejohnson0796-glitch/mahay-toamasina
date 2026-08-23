@@ -2050,17 +2050,20 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 /* --- Etape 4 (cercles liste, refonte theme clair) : grille de cartes
    dediee, distincte de .liste-cercles/.carte-cercle juste au-dessus.
    .carte-cercle est partagee avec admin_feedback.html/admin_stats.html/
-   admin_index.html/classe_liste.html (pas encore migrees, etape 6/14) --
-   la repeindre/restructurer en grille casserait leur mise en page de
-   liste horizontale. Nouvelles classes .cercles-grille/.cercle-carte-claire
+   admin_index.html (pas encore migrees, etape 14) -- la repeindre/
+   restructurer en grille casserait leur mise en page de liste
+   horizontale. Nouvelles classes .grille-cartes-claires/.carte-claire
    donc introduites plutot que reutilisees, pour ne rien dupliquer ni
-   casser (§30/regle "eviter la duplication de composants"). */
-.cercles-grille {
+   casser (§30/regle "eviter la duplication de composants").
+   Nommees generiquement (pas ".cercle-*") des le depart : etape 6
+   (classe_liste.html) les reutilise telles quelles pour ses cartes de
+   cours, la structure carte-dans-une-grille etant identique. */
+.grille-cartes-claires {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 1rem;
 }
-.cercle-carte-claire {
+.carte-claire {
   background: var(--content-surface);
   border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
@@ -2071,9 +2074,9 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   color: var(--content-text);
   transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide);
 }
-.cercle-carte-claire:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.cercle-carte-corps { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
-.cercle-carte-avatar {
+.carte-claire:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.carte-claire-corps { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.carte-claire-avatar {
   flex-shrink: 0;
   width: 2.6rem;
   height: 2.6rem;
@@ -2084,8 +2087,8 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   align-items: center;
   justify-content: center;
 }
-.cercle-carte-texte { min-width: 0; }
-.cercle-carte-nom {
+.carte-claire-texte { min-width: 0; }
+.carte-claire-titre {
   font-size: 0.92rem;
   font-weight: 500;
   color: var(--content-text);
@@ -2093,9 +2096,9 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cercle-carte-membres { font-size: 0.78rem; color: var(--content-text-muted); }
-.cercle-carte-description { font-size: 0.82rem; color: var(--content-text-muted); margin: 0; min-height: 1.1em; }
-.cercle-carte-claire > .bouton, .cercle-carte-claire > span.bouton { width: 100%; text-align: center; }
+.carte-claire-meta { font-size: 0.78rem; color: var(--content-text-muted); }
+.carte-claire-description { font-size: 0.82rem; color: var(--content-text-muted); margin: 0; min-height: 1.1em; }
+.carte-claire > .bouton, .carte-claire > span.bouton { width: 100%; text-align: center; }
 
 /* --- Hero "Le Phare" (etape 7/10, section 9 du brief) : fond nuit +
    ciel etoile en arriere-plan. Etend .hero existant (padding/border
