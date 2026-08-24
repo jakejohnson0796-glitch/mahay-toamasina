@@ -1710,21 +1710,22 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   margin: 1.5rem 0;
 }
 .uni-carte {
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
   padding: 1.3rem 1.4rem;
+  color: var(--content-text);
   transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
 }
-.uni-carte:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--color-primary); }
+.uni-carte:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); }
 .uni-entete { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
-.uni-nom { margin: 0; font-size: 1.08rem; }
-.uni-ville { font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
-.uni-a-venir { color: var(--text-secondary); font-size: 0.88rem; margin: 0; }
+.uni-nom { margin: 0; font-size: 1.08rem; color: var(--content-text); }
+.uni-ville { font-size: 0.78rem; color: var(--content-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.uni-a-venir { color: var(--content-text-muted); font-size: 0.88rem; margin: 0; }
 
 .uni-facultes { display: flex; flex-direction: column; gap: 0.4rem; }
 .uni-faculte {
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--content-border);
   border-radius: var(--radius-md);
   padding: 0.1rem 0.9rem;
 }
@@ -1732,6 +1733,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   cursor: pointer;
   padding: 0.65rem 0;
   font-size: 0.9rem;
+  color: var(--content-text);
   list-style: none;
   display: flex;
   justify-content: space-between;
@@ -1740,7 +1742,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .uni-faculte summary::-webkit-details-marker { display: none; }
 .uni-faculte summary::after {
   content: "+";
-  color: var(--color-primary);
+  color: var(--primary);
   font-size: 1.1rem;
   transition: transform 0.15s var(--ease-fluide);
 }
@@ -1749,7 +1751,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .uni-mention {
   margin-left: 0.4rem;
   font-size: 0.72rem;
-  color: var(--text-secondary);
+  color: var(--content-text-muted);
   font-family: 'IBM Plex Mono', monospace;
 }
 
