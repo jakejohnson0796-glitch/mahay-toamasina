@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
+{% from "components/etoiles.html" import etoiles_lecture, etoiles_saisie %}
+{#
+Etape 13 (brief refonte visuelle, section 19) : fusion de faq.html et
+feedback.html en une seule interface a deux colonnes. Rendue par DEUX
+routes (GET /faq et GET /feedback, voir faq_router.py/feedback_router.py) :
+les deux appellent desormais les memes fonctions partagees
+(app/aide_avis_data.py) et passent le meme jeu de variables, donc le
+template n'a pas besoin de savoir laquelle des deux l'a rendu.
+
+Regle de confidentialite ABSOLUE (section 19) : ce template ne filtre
+RIEN lui-meme sur avis_affiches -- le filtrage (est_public==True,
+statut != MASQUE) est fait une seule fois, cote requete SQL, dans
+app/aide_avis_data.py::donnees_avis(). Le template se contente
+d'afficher ce qu'on lui donne.
+#}
+{% block titre %}Aide & Avis — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<div class="contenu-clair">
+<p class="eyebrow">Assistance</p>
+<h2>Aide &amp; Avis</h2>
+
+<div class="aide-avis-grille">
+
+  <section class="aide-avis-colonne" aria-labelledby="titre-colonne-faq">
+    <h3 id="titre-colonne-faq" class="titre-carte">Questions frequentes</h3>
+    <p class="stat-label">Trouvez rapidement les reponses a vos questions sur Mahay.</p>
+
+    <form class="filtres" method="get" action="/faq">
+      <div>
+        <label for="q">Rechercher une question</label>
+        <input type="text" id="q" name="q" value="{{ q }}" placeholder="ex: comment creer un compte">
+      </div>
+      <div>
+        <label for="categorie">Categorie</label>
+        <select id="categorie" name="categorie" onchange="this.form.submit()">
+          <option value="">Toutes les categories</option>
+          {% for cat in categories_faq %}
+          <option value="{{ cat.value }}" {% if categorie_filtre == cat.value %}selected{% endif %}>
+            {{ { "general": "General", "compte": "Compte et inscription", "cours": "Cours et documents",
+                 "quiz": "Quiz", "cercles": "Cercles d'etude", "ia": "IA / Assistant",
+                 "profil": "Profil utilisateur", "securite": "Securite et confidentialite",
+                 "feedback": "Feedback et assistance" }[cat.value] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button class="bouton bouton-secondaire" type="submit">Filtrer</button>
+      </div>
+    </form>
+
+    {% if questions %}
+    <div class="faq-liste">
+      {% for item in questions %}
+      <div class="faq-item">
+        <h4 class="faq-question">
+          <button type="button" class="faq-question-bouton" aria-expanded="false" aria-controls="faq-reponse-{{ item.id }}" id="faq-bouton-{{ item.id }}">
+            <span>{{ item.question }}</span>
+            <span class="faq-chevron" aria-hidden="true">&darr;</span>
+          </button>
+        </h4>
+        <div class="faq-reponse" id="faq-reponse-{{ item.id }}" role="region" aria-labelledby="faq-bouton-{{ item.id }}" hidden>
+          <p>{{ item.reponse }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% elif q or categorie_filtre %}
+    {{ etat_vide_constellation(
+      titre="Aucun resultat pour cette recherche",
+      texte="Essayez un autre mot-cle ou choisissez une autre categorie.",
+      lien_cta="/faq",
+      texte_cta="Voir toute la FAQ",
+    ) }}
+    {% else %}
+    {{ etat_vide_constellation(
+      titre="La FAQ n'est pas encore disponible",
+      texte="Revenez un peu plus tard, ou contactez-nous directement.",
+      lien_cta="/contact",
+      texte_cta="Nous contacter",
+    ) }}
+    {% endif %}
+  </section>
+
+  <section class="aide-avis-colonne" aria-labelledby="titre-colonne-avis">
+    <h3 id="titre-colonne-avis" class="titre-carte">Avis</h3>
+
+    {% if note_moyenne %}
+    <div class="avis-resume">
+      {{ etoiles_lecture(note_moyenne|round|int) }}
+      <p class="avis-resume-texte"><strong>{{ note_moyenne }}</strong> / 5 — {{ total_avis }} avis public{{ "s" if total_avis != 1 else "" }}</p>
+    </div>
+    {% endif %}
+
+    {% if request.query_params.get("envoye") %}
+    <div class="info">Merci pour votre feedback ! Votre avis nous aide a ameliorer Mahay.</div>
+    {% endif %}
+    {% if request.query_params.get("erreur") == "note_invalide" %}<div class="erreur">La note doit etre comprise entre 1 et 5 etoiles.</div>{% endif %}
+    {% if request.query_params.get("erreur") == "commentaire_requis" %}<div class="erreur">Merci de laisser un commentaire.</div>{% endif %}
+    {% if request.query_params.get("erreur") == "commentaire_trop_long" %}<div class="erreur">Votre commentaire est trop long ({{ longueur_max }} caracteres maximum).</div>{% endif %}
+    {% if request.query_params.get("erreur") == "trop_de_tentatives" %}<div class="erreur">Trop d'avis envoyes recemment — reessayez un peu plus tard.</div>{% endif %}
+
+    {% if utilisateur %}
+    <details class="carte-formulaire avis-formulaire-repliable">
+      <summary class="titre-carte">Partagez votre experience</summary>
+
+      <form id="formulaire-feedback" method="post" action="/feedback">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+        <label>Votre note</label>
+        {{ etoiles_saisie(nom_champ="note", valeur=0) }}
+
+        <label for="categorie_feedback">Categorie (facultatif)</label>
+        <select id="categorie_feedback" name="categorie">
+          {% for cat in categories_avis %}
+          <option value="{{ cat.value }}">
+            {{ { "general": "Experience generale", "cours": "Cours", "quiz": "Quiz",
+                 "cercles": "Cercles d'etude", "ia": "IA", "interface": "Interface",
+                 "bug": "Bug / probleme technique", "suggestion": "Suggestion", "autre": "Autre" }[cat.value] }}
+          </option>
+          {% endfor %}
+        </select>
+
+        <label for="commentaire">Commentaire</label>
+        <textarea id="commentaire" name="commentaire" rows="4" maxlength="{{ longueur_max }}" placeholder="Partagez votre experience avec Mahay..." required></textarea>
+        <p class="stat-label" id="compteur-commentaire" style="text-align:right;">0 / {{ longueur_max }}</p>
+
+        <label class="faq-checkbox-label">
+          <input type="checkbox" id="est_public" name="est_public" value="1">
+          Afficher mon avis publiquement (seul votre prenom sera visible)
+        </label>
+
+        <button class="bouton bouton-primaire bouton-form" type="submit" data-bouton-envoi>Envoyer mon avis</button>
+      </form>
+    </details>
+
+    {% if mon_feedback_recent %}
+    <div class="carte-formulaire" style="margin-top:1rem;">
+      <h4 class="titre-carte">Votre dernier avis</h4>
+      {{ etoiles_lecture(mon_feedback_recent.note) }}
+      <p>{{ mon_feedback_recent.commentaire }}</p>
+      <p class="stat-label">
+        {% if mon_feedback_recent.statut.value == "repondu" or mon_feedback_recent.statut.value == "resolu" %}
+        L'equipe Mahay a repondu — <a href="/feedback/mes-avis">voir la reponse</a>
+        {% else %}
+        En attente de reponse de l'equipe Mahay.
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="info">
+      <a href="/connexion">Connectez-vous</a> pour laisser un avis sur Mahay.
+    </div>
+    {% endif %}
+
+    <form class="filtres" method="get" action="/feedback" style="margin-top:1.5rem;">
+      <div>
+        <label for="categorie_avis">Filtrer les avis par categorie</label>
+        <select id="categorie_avis" name="categorie_avis" onchange="this.form.submit()">
+          <option value="">Toutes les categories</option>
+          {% for cat in categories_avis %}
+          <option value="{{ cat.value }}" {% if categorie_avis_filtre == cat.value %}selected{% endif %}>
+            {{ { "general": "Experience generale", "cours": "Cours", "quiz": "Quiz",
+                 "cercles": "Cercles d'etude", "ia": "IA", "interface": "Interface",
+                 "bug": "Bug / probleme technique", "suggestion": "Suggestion", "autre": "Autre" }[cat.value] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+
+    {% if avis_affiches %}
+    {% for cat, groupe in avis_affiches|groupby('feedback.categorie') %}
+    <p class="avis-groupe-titre">
+      {{ { "general": "Experience generale", "cours": "Cours", "quiz": "Quiz",
+           "cercles": "Cercles d'etude", "ia": "IA", "interface": "Interface",
+           "bug": "Bug / probleme technique", "suggestion": "Suggestion", "autre": "Autre" }[cat.value] }}
+    </p>
+    <div class="faq-liste">
+      {% for item in groupe %}
+      <div class="carte-formulaire avis-carte">
+        {{ etoiles_lecture(item.feedback.note) }}
+        <p><strong>{{ item.prenom }}</strong> · <span class="stat-label">{{ item.feedback.date_creation.strftime("%d/%m/%Y") }}</span></p>
+        <p>{{ item.feedback.commentaire }}</p>
+        {% if item.reponse %}
+        <div class="avis-reponse-equipe">
+          <p class="stat-label"><strong>Reponse de l'equipe Mahay</strong> · {{ item.reponse.date_creation.strftime("%d/%m/%Y") }}</p>
+          <p>{{ item.reponse.reponse }}</p>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    {% else %}
+    {{ etat_vide_constellation(
+      titre="Pas encore d'avis publics",
+      texte="Soyez le premier a partager votre experience avec Mahay.",
+    ) }}
+    {% endif %}
+  </section>
+
+</div>
+
+<script src="/static/js/faq.js" defer></script>
+<script src="/static/js/feedback.js" defer></script>
+</div>
+{% endblock %}

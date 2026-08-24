@@ -17,7 +17,8 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import FAQ, CategorieFAQ, Utilisateur, RoleUtilisateur
+from ..models import FAQ, CategorieFAQ, CategorieFeedback, Utilisateur, RoleUtilisateur
+from ..aide_avis_data import donnees_faq, donnees_avis
 
 router = APIRouter()
 
@@ -40,30 +41,36 @@ def page_faq(
     categorie: Optional[CategorieFAQ] = None,
     session: Session = Depends(get_session),
 ):
-    requete = select(FAQ).where(FAQ.est_active == True)  # noqa: E712
-    if categorie:
-        requete = requete.where(FAQ.categorie == categorie)
-    if q:
-        # Recherche insensible a la casse dans la question ET la reponse
-        # (Partie 1 du brief). SQLite/Postgres traitent tous deux LIKE/ILIKE
-        # avec une casse deja insensible sur les colonnes texte usuelles,
-        # mais on force explicitement via ilike() pour un comportement
-        # identique sur les deux moteurs (voir database.py).
-        motif = f"%{q.strip()}%"
-        requete = requete.where(
-            (FAQ.question.ilike(motif)) | (FAQ.reponse.ilike(motif))
-        )
-    questions = session.exec(requete.order_by(FAQ.ordre_affichage, FAQ.id)).all()
+    questions = donnees_faq(session, q, categorie)
+
+    # Etape 13 (brief refonte visuelle) : /faq et /feedback rendent
+    # desormais la meme interface fusionnee -- la colonne Avis est donc
+    # aussi peuplee ici (donnees_avis, meme fonction partagee que
+    # feedback_router.py, meme regle de confidentialite absolue). Pas
+    # de filtre categorie cote Avis depuis /faq : le lien "Filtrer" de
+    # cette colonne pointe vers /feedback?categorie_avis=... pour rester
+    # dans une seule URL canonique par filtre plutot que d'en dupliquer
+    # la logique ici.
+    avis_affiches, note_moyenne, total_avis = donnees_avis(session, None)
+    utilisateur = utilisateur_courant(request, session)
+    mon_feedback_recent = None
 
     return templates.TemplateResponse(
         request,
-        "faq.html",
+        "aide_avis.html",
         {
-            "utilisateur": utilisateur_courant(request, session),
+            "utilisateur": utilisateur,
             "questions": questions,
-            "categories": list(CategorieFAQ),
+            "categories_faq": list(CategorieFAQ),
             "q": q or "",
             "categorie_filtre": categorie.value if categorie else "",
+            "avis_affiches": avis_affiches,
+            "note_moyenne": note_moyenne,
+            "total_avis": total_avis,
+            "categories_avis": list(CategorieFeedback),
+            "categorie_avis_filtre": "",
+            "longueur_max": 1000,
+            "mon_feedback_recent": mon_feedback_recent,
         },
     )
 

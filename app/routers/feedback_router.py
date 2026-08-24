@@ -23,7 +23,9 @@ from ..rate_limit import limite_depassee
 from ..models import (
     Feedback, ReponseFeedback, CategorieFeedback, StatutFeedback,
     Utilisateur, RoleUtilisateur, Notification, TypeNotification,
+    CategorieFAQ,
 )
+from ..aide_avis_data import donnees_faq, donnees_avis
 
 router = APIRouter()
 
@@ -41,13 +43,6 @@ def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     return utilisateur
 
 
-def _prenom_public(nom: str) -> str:
-    """Premier mot du champ `nom` (pas de champ prenom/pseudonyme separe
-    dans Utilisateur). Utilise uniquement pour l'affichage public d'un
-    avis quand l'utilisateur a explicitement choisi est_public=True."""
-    return (nom or "").strip().split(" ")[0] or "Utilisateur"
-
-
 def _creer_notification_reponse(session: Session, feedback: Feedback) -> None:
     session.add(Notification(
         destinataire_id=feedback.utilisateur_id,
@@ -62,33 +57,14 @@ def _creer_notification_reponse(session: Session, feedback: Feedback) -> None:
 # ============================================================
 
 @router.get("/feedback")
-def page_feedback(request: Request, session: Session = Depends(get_session)):
+def page_feedback(
+    request: Request,
+    categorie_avis: Optional[CategorieFeedback] = None,
+    session: Session = Depends(get_session),
+):
     utilisateur = utilisateur_courant(request, session)
 
-    avis_publics = session.exec(
-        select(Feedback)
-        .where(Feedback.est_public == True)  # noqa: E712
-        .where(Feedback.statut != StatutFeedback.MASQUE)
-        .order_by(Feedback.date_creation.desc())
-        .limit(20)
-    ).all()
-    ids_avis = [a.id for a in avis_publics]
-    reponses_par_feedback = {}
-    if ids_avis:
-        reponses = session.exec(
-            select(ReponseFeedback).where(ReponseFeedback.feedback_id.in_(ids_avis))
-        ).all()
-        reponses_par_feedback = {r.feedback_id: r for r in reponses}
-
-    avis_affiches = [
-        {
-            "feedback": a,
-            "prenom": _prenom_public(session.get(Utilisateur, a.utilisateur_id).nom)
-            if session.get(Utilisateur, a.utilisateur_id) else "Utilisateur",
-            "reponse": reponses_par_feedback.get(a.id),
-        }
-        for a in avis_publics
-    ]
+    avis_affiches, note_moyenne, total_avis = donnees_avis(session, categorie_avis)
 
     mon_feedback_recent = None
     if utilisateur:
@@ -98,15 +74,29 @@ def page_feedback(request: Request, session: Session = Depends(get_session)):
             .order_by(Feedback.date_creation.desc())
         ).first()
 
+    # Etape 13 (brief refonte visuelle) : voir le commentaire equivalent
+    # dans faq_router.py -- meme interface fusionnee des deux cotes,
+    # colonne FAQ peuplee ici sans filtre (le lien "Filtrer" de cette
+    # colonne pointe vers /faq?q=...&categorie=... pour rester sur une
+    # seule URL canonique par filtre).
+    questions = donnees_faq(session, None, None)
+
     return templates.TemplateResponse(
         request,
-        "feedback.html",
+        "aide_avis.html",
         {
             "utilisateur": utilisateur,
             "avis_affiches": avis_affiches,
-            "categories": list(CategorieFeedback),
+            "note_moyenne": note_moyenne,
+            "total_avis": total_avis,
+            "categories_avis": list(CategorieFeedback),
+            "categorie_avis_filtre": categorie_avis.value if categorie_avis else "",
             "longueur_max": LONGUEUR_MAX_COMMENTAIRE,
             "mon_feedback_recent": mon_feedback_recent,
+            "questions": questions,
+            "categories_faq": list(CategorieFAQ),
+            "q": "",
+            "categorie_filtre": "",
         },
     )
 
