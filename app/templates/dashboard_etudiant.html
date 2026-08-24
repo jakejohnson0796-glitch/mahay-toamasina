@@ -5,6 +5,8 @@
 {% block titre %}Mon tableau de bord — Gasy Mahay{% endblock %}
 {% block main_classe %}main-tb{% endblock %}
 {% block contenu %}
+{% if request.query_params.get("ok") == "profil_academique_actualise" %}<div class="info">Profil academique mis a jour.</div>{% endif %}
+{% if request.query_params.get("ok") == "demande_filiere_envoyee" %}<div class="info">Demande de changement de parcours envoyee — un administrateur doit la valider.</div>{% endif %}
 <div class="tb-mise-en-page">
 
   <aside class="tb-sidebar">

@@ -18,7 +18,7 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle
+from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from ..referentiel import NIVEAUX
 from ..cercles_referentiel import assurer_cercles_pour_filiere
 from ..web_utils import entier_ou_none
@@ -366,3 +366,92 @@ def rejeter_demande_creation(
         session.commit()
 
     return RedirectResponse("/admin/referentiel/demandes-creation?ok=rejetee", status_code=303)
+
+# ============================================================
+# Demandes de changement de filiere (§16-17 du brief refonte
+# academique national) : depuis /profil/academique, un etudiant ne
+# peut plus modifier filiere_id directement — voir la docstring de
+# DemandeChangementFiliere dans models.py, qui prevoyait deja ce
+# circuit sans jamais l'avoir branche a une UI. Universite et niveau
+# restent modifiables librement (voir /securite/universite,
+# /securite/niveau, /profil/academique) : seule la filiere, qui
+# determine l'appartenance aux cercles nationaux, passe par ici.
+# ============================================================
+
+@router.get("/admin/referentiel/demandes-filiere")
+def page_demandes_changement_filiere(request: Request, session: Session = Depends(get_session)):
+    """Liste les demandes de changement de filiere, en attente d'abord."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    demandes = session.exec(
+        select(DemandeChangementFiliere).order_by(
+            DemandeChangementFiliere.statut, DemandeChangementFiliere.date_creation.desc()
+        )
+    ).all()
+
+    utilisateurs = {u.id: u for u in session.exec(select(Utilisateur)).all()}
+    filieres = {f.id: f for f in session.exec(select(Filiere)).all()}
+
+    return templates.TemplateResponse(
+        request,
+        "admin_demandes_changement_filiere.html",
+        {
+            "utilisateur": admin,
+            "demandes": demandes,
+            "utilisateurs": utilisateurs,
+            "filieres": filieres,
+        },
+    )
+
+
+@router.post("/admin/referentiel/demandes-filiere/{demande_id}/approuver")
+def approuver_demande_changement_filiere(
+    request: Request,
+    demande_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    demande = session.get(DemandeChangementFiliere, demande_id)
+    if not demande or demande.statut != StatutDemandeChangementFiliere.EN_ATTENTE:
+        return RedirectResponse("/admin/referentiel/demandes-filiere", status_code=303)
+
+    etudiant = session.get(Utilisateur, demande.utilisateur_id)
+    if etudiant:
+        etudiant.filiere_id = demande.nouvelle_filiere_id
+        session.add(etudiant)
+
+    demande.statut = StatutDemandeChangementFiliere.APPROUVEE
+    demande.date_traitement = datetime.utcnow()
+    demande.traite_par_id = admin.id
+    session.add(demande)
+    session.commit()
+
+    return RedirectResponse("/admin/referentiel/demandes-filiere?ok=approuvee", status_code=303)
+
+
+@router.post("/admin/referentiel/demandes-filiere/{demande_id}/rejeter")
+def rejeter_demande_changement_filiere(
+    request: Request,
+    demande_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    demande = session.get(DemandeChangementFiliere, demande_id)
+    if demande and demande.statut == StatutDemandeChangementFiliere.EN_ATTENTE:
+        demande.statut = StatutDemandeChangementFiliere.REJETEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = admin.id
+        session.add(demande)
+        session.commit()
+
+    return RedirectResponse("/admin/referentiel/demandes-filiere?ok=rejetee", status_code=303)

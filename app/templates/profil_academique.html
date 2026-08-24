@@ -3,9 +3,17 @@
 {% block contenu %}
 <h2>Actualiser mon profil academique</h2>
 <p class="stat-label">
-  Universite, composante, parcours et niveau doivent maintenant venir du referentiel academique national.
-  Choisissez-les ci-dessous — chaque etape n'affiche que les options rattachees a la precedente.
+  Universite et niveau restent modifiables librement. Le parcours/filiere, lui, determine votre cercle national :
+  toute demande de parcours (nouveau ou different) doit etre validee par un administrateur.
 </p>
+
+{% if demande_en_attente %}
+<div class="info">
+  Votre demande de parcours <strong>{{ filiere_demandee.nom if filiere_demandee else "—" }}</strong>
+  est en attente de validation par un administrateur. Vous pouvez toujours mettre a jour votre universite
+  et votre niveau ci-dessous en attendant.
+</div>
+{% endif %}
 
 <div class="carte-formulaire">
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
@@ -25,13 +33,16 @@
       <option value="">— choisissez d'abord votre universite —</option>
     </select>
 
-    <label for="filiere_id">Parcours / Filiere</label>
+    <label for="filiere_id">Parcours / Filiere {% if utilisateur.filiere_id %}(votre parcours actuel restera inchange tant qu'aucune demande n'est approuvee){% endif %}</label>
     <select id="filiere_id" name="filiere_id" required disabled>
       <option value="">— choisissez d'abord votre composante —</option>
     </select>
     <!-- Mention/Domaine ne sont jamais saisis : affiches en lecture
          seule des que le parcours choisi les determine (§33). -->
     <p class="stat-label" id="info-mention-domaine" style="display:none;"></p>
+
+    <label for="motif_filiere">Pourquoi ce parcours ? (obligatoire si vous changez de parcours)</label>
+    <textarea id="motif_filiere" name="motif_filiere" rows="2" placeholder="Ex : c'est mon parcours reel, l'ancien etait une erreur de saisie / j'ai change de filiere cette annee..."></textarea>
 
     <label for="niveau">Niveau</label>
     <select id="niveau" name="niveau" required disabled>
@@ -41,9 +52,10 @@
       {% endfor %}
     </select>
 
-    <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer mon profil academique</button>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer</button>
   </form>
 </div>
+
 
 <script>
 (function () {

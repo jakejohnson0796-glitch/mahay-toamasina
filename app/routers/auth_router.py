@@ -11,7 +11,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Universite, CodeSecours2FA
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Universite, CodeSecours2FA, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
@@ -314,6 +314,14 @@ def formulaire_actualisation_academique(request: Request, session: Session = Dep
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    demande_en_attente = session.exec(
+        select(DemandeChangementFiliere).where(
+            DemandeChangementFiliere.utilisateur_id == utilisateur.id,
+            DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
+        )
+    ).first()
+    filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente else None
+
     return templates.TemplateResponse(
         request, "profil_academique.html",
         {
@@ -321,6 +329,8 @@ def formulaire_actualisation_academique(request: Request, session: Session = Dep
             "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
             "niveaux": NIVEAUX,
             "erreur": None,
+            "demande_en_attente": demande_en_attente,
+            "filiere_demandee": filiere_demandee,
         },
     )
 
@@ -331,14 +341,30 @@ def actualiser_profil_academique(
     universite_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
+    motif_filiere: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
+    """Universite et niveau restent modifiables librement (comme avant).
+    La filiere, elle, NE PEUT PLUS etre modifiee directement depuis
+    cette route (demande explicite de Jake) : elle passe desormais par
+    une DemandeChangementFiliere soumise a validation d'un admin — voir
+    /admin/referentiel/demandes-filiere. Ce circuit existait deja dans
+    le schema (models.py) depuis la refonte academique nationale mais
+    n'avait jamais ete branche a une UI ('non bloquant pour cette
+    premiere version' selon sa docstring d'origine)."""
     utilisateur = session.get(Utilisateur, request.session.get("user_id"))
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    def _reafficher(message_erreur: str):
+    def _contexte(message_erreur: str):
+        demande_en_attente = session.exec(
+            select(DemandeChangementFiliere).where(
+                DemandeChangementFiliere.utilisateur_id == utilisateur.id,
+                DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
+            )
+        ).first()
+        filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente else None
         return templates.TemplateResponse(
             request, "profil_academique.html",
             {
@@ -346,32 +372,70 @@ def actualiser_profil_academique(
                 "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
                 "niveaux": NIVEAUX,
                 "erreur": message_erreur,
+                "demande_en_attente": demande_en_attente,
+                "filiere_demandee": filiere_demandee,
             },
         )
 
     universite_id_nettoye = entier_ou_none(universite_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
 
-    # §21-22 : les 3 champs redeviennent obligatoires pour resoudre le
+    # §21-22 : les 3 champs restent tous obligatoires pour resoudre le
     # statut PROFILE_ACADEMIC_UPDATE_REQUIRED — memes regles qu'a
-    # l'inscription (§9), jamais une combinaison devinee ou partielle.
+    # l'inscription (§9). La filiere sert ici a VALIDER la coherence
+    # (elle doit appartenir a l'universite choisie) avant de creer la
+    # demande, jamais a etre enregistree directement sur le compte.
     if not (universite_id_nettoye and filiere_id_nettoye and niveau):
-        return _reafficher("Universite, filiere/parcours et niveau sont tous les trois obligatoires.")
+        return _contexte("Universite, filiere/parcours et niveau sont tous les trois obligatoires.")
     if niveau not in NIVEAUX:
-        return _reafficher("Niveau invalide.")
+        return _contexte("Niveau invalide.")
 
     filiere = session.get(Filiere, filiere_id_nettoye)
     if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
-        return _reafficher("Cette filiere ne correspond pas a l'universite selectionnee.")
+        return _contexte("Cette filiere ne correspond pas a l'universite selectionnee.")
 
+    # Universite + niveau : modifiables librement, enregistres tout de
+    # suite (aucune approbation requise pour ces deux-la).
     utilisateur.universite_id = universite_id_nettoye
-    utilisateur.filiere_id = filiere_id_nettoye
     utilisateur.niveau = niveau
     utilisateur.niveau_modifie_le = datetime.utcnow()
     session.add(utilisateur)
     session.commit()
 
-    return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
+    # Filiere deja identique a l'actuelle : rien a demander (evite une
+    # demande inutile si l'etudiant re-confirme juste son parcours
+    # existant en ajustant seulement son universite/niveau).
+    if filiere_id_nettoye == utilisateur.filiere_id:
+        return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
+
+    demande_existante = session.exec(
+        select(DemandeChangementFiliere).where(
+            DemandeChangementFiliere.utilisateur_id == utilisateur.id,
+            DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
+        )
+    ).first()
+    if demande_existante:
+        if demande_existante.nouvelle_filiere_id == filiere_id_nettoye:
+            # Demande identique deja en attente : rien a refaire.
+            return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
+        return _contexte(
+            "Vous avez deja une demande de changement de filiere en attente de validation. "
+            "Un admin doit la traiter avant d'en soumettre une nouvelle."
+        )
+
+    if not motif_filiere or not motif_filiere.strip():
+        return _contexte("Merci d'expliquer brievement pourquoi vous demandez ce parcours (obligatoire).")
+
+    session.add(DemandeChangementFiliere(
+        utilisateur_id=utilisateur.id,
+        ancienne_filiere_id=utilisateur.filiere_id,
+        nouvelle_filiere_id=filiere_id_nettoye,
+        motif=motif_filiere.strip(),
+        statut=StatutDemandeChangementFiliere.EN_ATTENTE,
+    ))
+    session.commit()
+
+    return RedirectResponse("/dashboard?ok=demande_filiere_envoyee", status_code=303)
 
 
 # ============================================================
