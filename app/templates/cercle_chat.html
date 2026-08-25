@@ -189,7 +189,12 @@
   let threadOuvertPourId = null;
 
   const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const ws = new WebSocket(protocole + "//" + window.location.host + "/cercles/" + cercleId + "/ws");
+  const urlWebSocket = protocole + "//" + window.location.host + "/cercles/" + cercleId + "/ws";
+  let ws;
+  let delaiReconnexion = 1000; // ms, double a chaque echec jusqu'a DELAI_RECONNEXION_MAX
+  const DELAI_RECONNEXION_MAX = 15000;
+  let heureDeconnexion = null;
+  let indicateurReconnexion = null;
 
   const MOTIFS_SIGNALEMENT = [
     "Spam",
@@ -818,33 +823,106 @@
     });
   }
 
-  ws.addEventListener("message", function (evenement) {
-    const donnees = JSON.parse(evenement.data);
-    if (donnees.type === "presence") {
-      mettreAJourPresence(donnees.utilisateurs);
-    } else if (donnees.type === "suppression") {
-      retirerMessage(donnees.id);
-    } else if (donnees.type === "reaction") {
-      const bulle = fenetreChat.querySelector('[data-message-id="' + donnees.message_id + '"]');
-      if (bulle) rendreReactions(bulle, donnees.reactions);
-    } else if (donnees.type === "message_modifie") {
-      appliquerMessageModifie(donnees);
-    } else if (donnees.type === "epinglage") {
-      appliquerEpinglage(donnees);
-    } else if (donnees.type === "desepinglage") {
-      appliquerDesepinglage(donnees);
-    } else {
-      ajouterMessage(donnees);
+  function connecterWebSocket() {
+    ws = new WebSocket(urlWebSocket);
+
+    ws.addEventListener("open", function () {
+      delaiReconnexion = 1000; // reussite -> reinitialise le backoff pour la prochaine fois
+      if (indicateurReconnexion) {
+        indicateurReconnexion.remove();
+        indicateurReconnexion = null;
+      }
+      // Deconnecte plus de quelques secondes (mise en veille du service
+      // gratuit Render apres 15 min d'inactivite, redeploiement, coupure
+      // reseau...) : des messages d'autres personnes ont pu arriver
+      // entre-temps sans qu'on les recoive en direct. Recharger la page
+      // les recupere tous d'un coup, plutot que de reimplementer un
+      // protocole de synchronisation "messages manques depuis X" pour un
+      // cas qui reste rare une fois la reconnexion automatique en place.
+      // Le brouillon en cours de frappe est preserve (voir plus bas).
+      if (heureDeconnexion && Date.now() - heureDeconnexion > 3000) {
+        if (champMessage.value.trim()) {
+          sessionStorage.setItem("mahay-brouillon-cercle-" + cercleId, champMessage.value);
+        }
+        window.location.reload();
+        return;
+      }
+      heureDeconnexion = null;
+    });
+
+    ws.addEventListener("message", function (evenement) {
+      const donnees = JSON.parse(evenement.data);
+      if (donnees.type === "presence") {
+        mettreAJourPresence(donnees.utilisateurs);
+      } else if (donnees.type === "suppression") {
+        retirerMessage(donnees.id);
+      } else if (donnees.type === "reaction") {
+        const bulle = fenetreChat.querySelector('[data-message-id="' + donnees.message_id + '"]');
+        if (bulle) rendreReactions(bulle, donnees.reactions);
+      } else if (donnees.type === "message_modifie") {
+        appliquerMessageModifie(donnees);
+      } else if (donnees.type === "epinglage") {
+        appliquerEpinglage(donnees);
+      } else if (donnees.type === "desepinglage") {
+        appliquerDesepinglage(donnees);
+      } else {
+        ajouterMessage(donnees);
+      }
+    });
+
+    ws.addEventListener("close", function (evenement) {
+      // 4401 (pas connecte) / 4403 (pas membre, pas Premium...) : le
+      // serveur refuse deliberement l'acces, retenter ne changerait rien
+      // et boucherait juste la console de tentatives inutiles.
+      if (evenement.code === 4401 || evenement.code === 4403) {
+        champMessage.placeholder = "Connexion refusee — reconnectez-vous.";
+        champMessage.disabled = true;
+        listePresence.textContent = "deconnecte";
+        return;
+      }
+
+      // Toute autre fermeture (mise en veille du service, redeploiement,
+      // reseau instable...) : reconnexion automatique en arriere-plan,
+      // avec un delai croissant pour ne pas marteler le serveur pendant
+      // qu'il redemarre (le cold start du plan gratuit Render prend
+      // environ une minute — voir render.yaml, plan: free).
+      listePresence.textContent = "reconnexion...";
+      if (!indicateurReconnexion) {
+        indicateurReconnexion = document.createElement("p");
+        indicateurReconnexion.className = "stat-label";
+        indicateurReconnexion.textContent = "Connexion perdue — nouvelle tentative en cours...";
+        formulaire.parentNode.insertBefore(indicateurReconnexion, formulaire);
+      }
+      if (!heureDeconnexion) heureDeconnexion = Date.now();
+
+      setTimeout(connecterWebSocket, delaiReconnexion);
+      delaiReconnexion = Math.min(delaiReconnexion * 2, DELAI_RECONNEXION_MAX);
+    });
+  }
+
+  connecterWebSocket();
+
+  // Reconnexion immediate des que l'onglet redevient visible/actif,
+  // plutot que d'attendre le prochain palier de backoff — la situation
+  // la plus frequente est un telephone qui met l'onglet en veille puis
+  // qu'on y revient, pas une vraie panne reseau prolongee.
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && ws && ws.readyState === WebSocket.CLOSED) {
+      delaiReconnexion = 1000;
+      connecterWebSocket();
     }
   });
 
-  ws.addEventListener("close", function (evenement) {
-    if (evenement.code === 4401 || evenement.code === 4403) {
-      champMessage.placeholder = "Connexion refusee — reconnectez-vous.";
-      champMessage.disabled = true;
+  // Restaure un brouillon laisse avant un rechargement automatique (voir
+  // le gestionnaire "open" ci-dessus).
+  (function restaurerBrouillon() {
+    const cle = "mahay-brouillon-cercle-" + cercleId;
+    const brouillon = sessionStorage.getItem(cle);
+    if (brouillon) {
+      champMessage.value = brouillon;
+      sessionStorage.removeItem(cle);
     }
-    listePresence.textContent = "deconnecte";
-  });
+  })();
 
   formulaire.addEventListener("submit", function (evenement) {
     evenement.preventDefault();
