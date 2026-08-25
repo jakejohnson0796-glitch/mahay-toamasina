@@ -13,15 +13,26 @@
 {% if not membre %}
 <div class="carte-formulaire">
   {% if en_attente %}
-  <p>Votre demande d'adhesion est en attente de validation.</p>
-  {% elif not profil_compatible %}
-  <p>Ce cercle national correspond a une autre mention, filiere ou niveau que le votre — vous ne pouvez pas le rejoindre. <a href="/securite">Verifier mon profil academique</a>.</p>
+  <p>Votre demande d'adhesion est en attente de validation par le createur du cercle ou un administrateur.</p>
+  {% elif profil_compatible %}
+  <!-- Cercle national qui correspond exactement au parcours+niveau de
+       l'etudiant : adhesion en un clic, sans demande ni raison — voir
+       demander_adhesion() dans cercles_router.py pour la justification
+       complete de cette distinction. -->
+  <p><strong>Ce cercle correspond exactement a votre parcours et votre niveau.</strong> Vous pouvez le rejoindre immediatement, sans validation.</p>
+  <form method="post" action="/cercles/{{ cercle.id }}/demander">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button class="bouton bouton-primaire bouton-form" type="submit">Rejoindre</button>
+  </form>
   {% else %}
   <p>Vous n'etes pas encore membre de ce cercle.</p>
+  {% if cercle_est_national %}
+  <p class="stat-label">Ce cercle correspond a une autre mention, filiere ou niveau que le votre. Vous pouvez tout de meme demander a le rejoindre — le createur du cercle ou un administrateur validera votre demande.</p>
+  {% else %}
+  <p class="stat-label">Ce cercle n'est pas rattache a un parcours particulier : votre demande sera examinee par le createur du cercle ou un administrateur.</p>
+  {% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}
   <div class="erreur">Merci d'expliquer pourquoi vous souhaitez rejoindre ce cercle.</div>
-  {% elif request.query_params.get("erreur") == "profil_incompatible" %}
-  <div class="erreur">Ce cercle correspond a une autre mention, filiere ou niveau que le votre.</div>
   {% endif %}
   <form method="post" action="/cercles/{{ cercle.id }}/demander">
     <label for="raison">Pourquoi souhaitez-vous rejoindre ce cercle ?</label>

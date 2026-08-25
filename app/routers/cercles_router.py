@@ -22,7 +22,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (
     CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Utilisateur,
-    RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
+    RoleUtilisateur, RoleMembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
     StatutDemandeCreationCercle, StatutCercle, ThemeDuJour,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
 )
@@ -463,19 +463,27 @@ def creer_cercle(
 def demander_adhesion(
     request: Request,
     cercle_id: int,
-    raison: str = Form(...),
+    raison: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    """Cree une demande d'adhesion EN_ATTENTE (remplace l'ancienne
-    adhesion immediate). L'utilisateur ne devient PAS membre ici — il
-    faut que le createur du cercle ou un admin l'accepte (voir
-    accepter_demande ci-dessous).
+    """Deux chemins bien distincts, corrige suite a un retour de Jake :
 
-    raison est desormais obligatoire (§29 du brief "cercles nationaux") :
-    les demandes creees AVANT ce changement peuvent avoir raison=None
-    (colonne nullable, voir migration e1a4c9d2b7f5) — on ne les modifie
-    pas retroactivement, seules les nouvelles demandes l'exigent."""
+    1) Le cercle national correspond EXACTEMENT au profil de l'etudiant
+       (meme mention/parcours/niveau, via profil_correspond_au_cercle) :
+       adhesion IMMEDIATE, sans demande ni raison a fournir — c'est son
+       cercle par construction (le referentiel academique l'a deja
+       determine a l'inscription/l'approbation de sa filiere), lui faire
+       en plus attendre une validation manuelle n'aurait aucun sens et
+       ne faisait que dupliquer un controle deja fait ailleurs.
+
+    2) N'importe quel autre cercle (nationale mais qui ne correspond
+       pas a son profil, OU cercle "libre") : reste soumis a une
+       DemandeAdhesionCercle EN_ATTENTE avec raison obligatoire, validee
+       par le createur/un admin — AVANT ce correctif, un cercle national
+       non-correspondant etait purement et simplement BLOQUE (aucune
+       demande possible) ; c'est desormais une vraie demande, pas un mur.
+    """
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
@@ -484,10 +492,6 @@ def demander_adhesion(
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle:
         return RedirectResponse("/cercles", status_code=303)
-
-    raison_nettoyee = raison.strip()
-    if not raison_nettoyee:
-        return RedirectResponse(f"/cercles/{cercle_id}?erreur=raison_requise", status_code=303)
 
     # Defense en profondeur : meme si l'interface ne devrait jamais
     # proposer ce bouton a un Admin (voir liste_cercles/salon_cercle qui
@@ -502,12 +506,18 @@ def demander_adhesion(
     if _est_membre(session, cercle_id, utilisateur.id):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
-    # §31 du brief "cercles nationaux" : un cercle national (mention +
-    # filiere + niveau tous renseignes) n'accepte que les etudiants dont
-    # le profil correspond exactement. Les cercles "libres" (au moins un
-    # des 3 manquant) ne sont pas concernes — comportement inchange.
-    if not referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session):
-        return RedirectResponse(f"/cercles/{cercle_id}?erreur=profil_incompatible", status_code=303)
+    if referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session):
+        # Chemin 1 : son propre cercle national -> adhesion immediate.
+        session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=utilisateur.id, role=RoleMembreCercle.MEMBRE))
+        session.commit()
+        return RedirectResponse(f"/cercles/{cercle_id}?ok=rejoint", status_code=303)
+
+    # Chemin 2 : cercle qui n'est pas le sien (autre mention/filiere/
+    # niveau, ou cercle libre) -> demande soumise a validation, raison
+    # obligatoire pour que le createur/admin comprenne la requete.
+    raison_nettoyee = (raison or "").strip()
+    if not raison_nettoyee:
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=raison_requise", status_code=303)
 
     # Empeche le doublon cote applicatif (verification rapide, UX claire) ;
     # l'index unique partiel en base (migration c4e91a2f7b6d) est le vrai
@@ -877,6 +887,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
