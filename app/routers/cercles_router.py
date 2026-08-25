@@ -1453,15 +1453,25 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                         message_id=message.id,
                     )
 
+                # Capture des valeurs scalaires AVANT la fermeture de la
+                # session (fin du bloc `with`) : les commits precedents
+                # (message, mentions) ont expire les attributs de `message`
+                # (expire_on_commit par defaut), donc y acceder apres la
+                # fermeture de la session levait DetachedInstanceError et
+                # faisait planter toute la diffusion websocket a chaque
+                # envoi (voir logs Render du 25/08).
+                id_message = message.id
+                date_envoi_message = message.date_envoi
+
             await gestionnaire.diffuser(cercle_id, {
                 "type": "message",
-                "id": message.id,
+                "id": id_message,
                 "auteur": nom_auteur,
                 "auteur_id": user_id,
                 "contenu": contenu,
                 "parent_message_id": parent_message_id,
                 "mentions": list(mentions_valides),
-                "date_envoi": message.date_envoi.isoformat(),
+                "date_envoi": date_envoi_message.isoformat(),
             })
     except WebSocketDisconnect:
         gestionnaire.deconnecter(cercle_id, websocket)
