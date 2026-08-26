@@ -1,12 +1,15 @@
 {% extends "base.html" %}
 {% block titre %}Codes de secours — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <h2>Codes de secours</h2>
 <div class="carte-formulaire">
   <div class="erreur">Notez ces codes maintenant — ils ne seront plus jamais affiches. Chacun ne fonctionne qu'une seule fois, si vous perdez l'acces a votre application d'authentification.</div>
-  <div style="font-family:'IBM Plex Mono', monospace; font-size:1.1rem; line-height:2; background:var(--bg-panel-2); padding:1rem; border-radius:8px; margin:1rem 0;">
+  <div style="font-family:'IBM Plex Mono', monospace; font-size:1.1rem; line-height:2; background:var(--content-bg); padding:1rem; border-radius:8px; margin:1rem 0;">
     {% for code in codes %}{{ code }}<br>{% endfor %}
   </div>
   <a href="/securite" class="bouton bouton-primaire bouton-form">J'ai note mes codes — Continuer</a>
+</div>
 </div>
 {% endblock %}

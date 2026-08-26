@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Moderation Quiz IA — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
 <h2>Moderation Quiz IA</h2>
 <p>Questions signalees par des etudiants comme fausses ou incoherentes.</p>
@@ -32,4 +34,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

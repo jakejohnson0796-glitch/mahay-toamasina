@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}Abonnements etudiants — Admin Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <h2>Abonnements etudiants</h2>
 
 <p class="filtres">
@@ -56,4 +58,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

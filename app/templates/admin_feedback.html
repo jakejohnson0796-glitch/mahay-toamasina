@@ -2,7 +2,9 @@
 {% from "components/signal.html" import signal %}
 {% from "components/etoiles.html" import etoiles_lecture %}
 {% block titre %}Feedbacks utilisateurs — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
 <h2>Feedbacks utilisateurs</h2>
 
@@ -115,4 +117,5 @@
 {% else %}
 <p>Aucun feedback ne correspond a ce filtre.</p>
 {% endfor %}
+</div>
 {% endblock %}

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Statistiques — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
 <h2>Statistiques</h2>
 
@@ -34,4 +36,5 @@
   </tbody>
 </table>
 {% endif %}
+</div>
 {% endblock %}

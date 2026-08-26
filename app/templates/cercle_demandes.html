@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Demandes d'adhésion — {{ cercle.nom }} — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; {{ cercle.nom }}</a></p>
 <h2>Demandes d'adhésion ({{ demandes|length }})</h2>
 
@@ -27,4 +29,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

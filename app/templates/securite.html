@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}Securite du compte — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <h2>Securite du compte</h2>
 
 {% if request.query_params.get("desactive") %}
@@ -69,11 +71,11 @@
     <button class="bouton bouton-secondaire bouton-form" type="submit">Regenerer mes codes de secours</button>
   </form>
 
-  <form method="post" action="/securite/2fa/desactiver" style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1.5rem;">
+  <form method="post" action="/securite/2fa/desactiver" style="margin-top:1.5rem;border-top:1px solid var(--content-border);padding-top:1.5rem;">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="mot_de_passe_desactiver">Mot de passe (pour confirmer la desactivation)</label>
     <input type="password" id="mot_de_passe_desactiver" name="mot_de_passe" required>
-    <button class="bouton bouton-secondaire bouton-form" type="submit" style="border-color:#C24E4E;color:#C24E4E;">Desactiver la 2FA</button>
+    <button class="bouton bouton-secondaire bouton-form" type="submit" style="border-color:var(--color-danger-clair);color:var(--color-danger-clair);">Desactiver la 2FA</button>
   </form>
   {% else %}
   <p>{{ signal("rejete") }}<span class="tampon tampon-rejete">Desactivee</span></p>
@@ -83,5 +85,6 @@
     <button class="bouton bouton-primaire bouton-form" type="submit">Activer la double authentification</button>
   </form>
   {% endif %}
+</div>
 </div>
 {% endblock %}

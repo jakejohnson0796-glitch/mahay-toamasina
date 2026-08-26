@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}Referentiel academique — Admin Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
 <h2>Referentiel academique</h2>
 
@@ -72,4 +74,5 @@
 <p><a href="/admin/referentiel/cercles">Assigner mention/niveau aux cercles existants &rarr;</a></p>
 <p><a href="/admin/referentiel/demandes-creation">Demandes de creation de cercle national &rarr;</a></p>
 <p><a href="/admin/referentiel/demandes-filiere">Demandes de changement de filiere &rarr;</a></p>
+</div>
 {% endblock %}

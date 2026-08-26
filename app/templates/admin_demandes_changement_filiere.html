@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}Demandes de changement de filiere — Admin Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/admin/referentiel">&larr; Referentiel academique</a></p>
 <h2>Demandes de changement de filiere</h2>
 <p class="stat-label">Un etudiant ne peut plus modifier sa filiere directement depuis son profil — chaque demande doit etre validee ici.</p>
@@ -54,4 +56,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

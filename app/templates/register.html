@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Inscription — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <h2>Inscription</h2>
 <div class="carte-formulaire">
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
@@ -223,4 +225,5 @@
   appliquerVisibiliteRole();
 })();
 </script>
+</div>
 {% endblock %}

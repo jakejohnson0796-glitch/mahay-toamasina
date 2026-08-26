@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Etudiants — {{ cours.nom }} — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/classe/{{ cours.id }}">&larr; {{ cours.nom }}</a></p>
 <h2>Etudiants inscrits</h2>
 
@@ -40,4 +42,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

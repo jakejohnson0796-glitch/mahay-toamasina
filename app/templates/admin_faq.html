@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}Gestion de la FAQ — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
 <h2>Gestion de la FAQ</h2>
 
@@ -112,4 +114,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

@@ -248,7 +248,7 @@ button:disabled {
 
 .stats { display: flex; gap: 3rem; padding: 2rem 0; flex-wrap: wrap; }
 .stat { display: flex; flex-direction: column; }
-.stat-nombre { font-family: 'Fraunces', serif; font-size: 2.2rem; color: var(--accent); }
+.stat-nombre { font-family: 'Fraunces', serif; font-size: 2.2rem; color: var(--primary); }
 .stat-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ---------- Table "manifeste" ---------- */
@@ -388,6 +388,28 @@ input:focus, select:focus, textarea:focus {
 
 .filtres { display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; margin-bottom: 1.5rem; }
 .filtres > div { flex: 1; min-width: 10em; }
+
+/* --- Etape 14 : bouton afficher/masquer le mot de passe (login.html,
+   register.html) -- deja cable en JS, jamais stylise. Sans fond propre
+   ni positionnement, un <button> herite du rendu gris natif du
+   navigateur (voir le reset "button" plus bas dans ce fichier) et
+   flotte au mauvais endroit : ici, superpose a droite du champ. */
+.champ-mot-de-passe { position: relative; }
+.champ-mot-de-passe input { padding-right: 2.6rem; }
+.bouton-toggle-mdp {
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.3rem;
+  cursor: pointer;
+  color: var(--content-text-muted);
+}
+.champ-telephone .stat-label { flex-shrink: 0; }
 
 .bouton-form {
   margin-top: 1.5rem;
@@ -2006,16 +2028,17 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 
 /* --- Carte generique (components/carte.html) --- */
 .carte-phare {
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
   padding: 1.2rem 1.35rem;
+  color: var(--content-text);
   transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
 }
-.carte-phare:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--color-primary); }
+.carte-phare:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); }
 .carte-phare-entete { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
-.carte-phare-icone { display: inline-flex; opacity: 0.9; }
-.carte-phare-titre { margin: 0; font-size: 1rem; }
+.carte-phare-icone { display: inline-flex; opacity: 0.9; color: var(--primary); }
+.carte-phare-titre { margin: 0; font-size: 1rem; color: var(--content-text); }
 
 /* --------------------------------------------------------------
    "Le Phare" — iconographie (etape 3/10)
@@ -2229,10 +2252,11 @@ button:focus-visible,
    "ap-" pour rester isolees a cette page. --- */
 .ap-section {
   padding: 3rem 0;
-  border-bottom: 1px dashed var(--border);
+  border-bottom: 1px dashed var(--content-border);
 }
 .ap-section:last-of-type { border-bottom: none; }
-.ap-section h2 { margin-bottom: 1rem; }
+.ap-section h2 { margin-bottom: 1rem; color: var(--content-text); }
+.ap-section > p { color: var(--content-text); }
 
 .ap-grille-3 {
   display: grid;
@@ -2247,8 +2271,11 @@ button:focus-visible,
   .ap-grille-3 { grid-template-columns: 1fr; }
 }
 
-/* Section "Vision nationale" : meme canvas nocturne que .hero-phare,
-   pour marquer une rupture visuelle sans introduire de nouveau token. */
+/* Section "Vision nationale" : meme canvas nocturne que .hero-phare
+   (choix delibere, identite "Le Phare" -- voir note plus haut sur
+   .hero-phare), pour marquer une rupture visuelle sans introduire de
+   nouveau token. Comme .hero-phare, reste sombre malgre .contenu-clair
+   ambiant : override explicite necessaire (voir bloc juste apres). */
 .ap-section-nuit {
   background: var(--nuit);
   border-radius: var(--radius-lg);
@@ -2260,6 +2287,23 @@ button:focus-visible,
 
 .ap-cta-finale { text-align: center; }
 .ap-cta-finale .cta-groupe { justify-content: center; margin-top: 1.5rem; }
+
+/* --- Etape 14 : filet de securite pour .hero-phare/.ap-section-nuit.
+   Ces deux blocs restent volontairement sombres (identite "Le Phare" :
+   ciel etoile, canvas nocturne -- --nuit #0A1B24 est d'ailleurs tres
+   proche de --sidebar-bg #0B1F42, coherent avec la nouvelle direction)
+   meme sur une page par ailleurs migree en .contenu-clair. Sans cette
+   regle, le texte a l'interieur heriterait de --content-text (gris
+   fonce) pose par .main-clair sur <main> -- illisible sur fond marine.
+   Specificite : ".contenu-clair .hero-phare ..." (3 classes) bat
+   ".contenu-clair .eyebrow" (2 classes), donc s'applique correctement
+   par-dessus. */
+.contenu-clair .hero-phare,
+.contenu-clair .hero-phare .sous-titre,
+.contenu-clair .ap-section-nuit p { color: var(--text); }
+.contenu-clair .hero-phare .eyebrow,
+.contenu-clair .ap-section-nuit h2 { color: var(--accent-2); }
+.contenu-clair .hero-phare h1 em { color: var(--accent); }
 
 @media (max-width: 640px) {
   .ap-section { padding: 2rem 0; }

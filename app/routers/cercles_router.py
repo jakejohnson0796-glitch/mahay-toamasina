@@ -370,6 +370,9 @@ def creer_cercle(
             {
                 "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "utilisateur": utilisateur,
                 "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
+                "theme_du_jour": theme_service.get_theme_du_jour(),
+                "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
+                "page": 1, "total_pages": 1, "total_cercles": len(cercles_avec_info),
             },
         )
 

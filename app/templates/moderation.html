@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Moderation — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <h2>Documents en attente</h2>
 <table class="table-manifeste">
   <thead>
@@ -58,4 +60,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

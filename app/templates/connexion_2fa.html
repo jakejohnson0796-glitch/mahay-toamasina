@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Verification en deux etapes — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class="contenu-clair">
 <h2>Verification en deux etapes</h2>
 <div class="carte-formulaire">
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
@@ -11,5 +13,6 @@
     <input type="text" id="code" name="code" required autocomplete="one-time-code" inputmode="text" autofocus>
     <button class="bouton bouton-primaire bouton-form" type="submit">Verifier</button>
   </form>
+</div>
 </div>
 {% endblock %}

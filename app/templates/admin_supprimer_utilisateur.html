@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Supprimer {{ cible.nom }} — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
+<div class=\"contenu-clair\">
 <p class="eyebrow"><a href="/admin/utilisateurs">&larr; Utilisateurs</a></p>
 <h2>Supprimer definitivement {{ cible.nom }}</h2>
 
@@ -88,4 +90,5 @@
     Supprimer definitivement
   </button>
 </form>
+</div>
 {% endblock %}
