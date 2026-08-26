@@ -2232,6 +2232,19 @@ button:focus-visible,
   outline-offset: 2px;
   border-radius: 2px;
 }
+/* Etape 15 (accessibilite, filet de securite final) : --lumiere est
+   calibree pour le fond sombre (12.05:1 sur --sidebar-bg, tres
+   confortable) mais tombe a ~1.3:1 sur un fond clair -- quasi invisible
+   au clavier sur toute page passee en .contenu-clair. var(--primary)
+   la remplace dans ce contexte (6.44:1 sur --content-bg, 6.77:1 sur
+   --content-surface). Le formulaire/input focus (etape 2,
+   .carte-formulaire input:focus) utilisait deja --primary de son cote :
+   cette regle aligne les liens/boutons sur la meme couleur. */
+.contenu-clair a:focus-visible,
+.contenu-clair button:focus-visible,
+.contenu-clair .bouton:focus-visible {
+  outline-color: var(--primary);
+}
 
 /* --- Respect des preferences d'accessibilite (§17 du brief) ---
    Doit rester en toute fin de fichier pour prevaloir sur les regles

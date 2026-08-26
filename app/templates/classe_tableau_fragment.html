@@ -6,22 +6,22 @@
 <div id="tableau-blanc" data-seance-id="{{ seance.id }}" data-peut-gerer="{{ 'true' if peut_gerer else 'false' }}" data-peut-ecrire="{{ 'true' if peut_ecrire else 'false' }}">
 
   <div class="barre-outils-tableau">
-    <button type="button" class="bouton-controle bouton-controle-actif" data-outil="stylo" title="Stylo">✏️</button>
-    <button type="button" class="bouton-controle" data-outil="gomme" title="Gomme">🧹</button>
-    <button type="button" class="bouton-controle" data-outil="rectangle" title="Rectangle">▭</button>
-    <button type="button" class="bouton-controle" data-outil="cercle" title="Cercle">◯</button>
-    <button type="button" class="bouton-controle" data-outil="ligne" title="Ligne">╱</button>
-    <button type="button" class="bouton-controle" data-outil="texte" title="Texte">🔤</button>
+    <button type="button" class="bouton-controle bouton-controle-actif" data-outil="stylo" aria-label="Stylo" title="Stylo">✏️</button>
+    <button type="button" class="bouton-controle" data-outil="gomme" aria-label="Gomme" title="Gomme">🧹</button>
+    <button type="button" class="bouton-controle" data-outil="rectangle" aria-label="Rectangle" title="Rectangle">▭</button>
+    <button type="button" class="bouton-controle" data-outil="cercle" aria-label="Cercle" title="Cercle">◯</button>
+    <button type="button" class="bouton-controle" data-outil="ligne" aria-label="Ligne" title="Ligne">╱</button>
+    <button type="button" class="bouton-controle" data-outil="texte" aria-label="Texte" title="Texte">🔤</button>
 
     <input type="color" id="couleur-tableau" value="#F2ECDD" title="Couleur">
     <input type="range" id="epaisseur-tableau" min="1" max="20" value="3" title="Epaisseur">
 
-    <button type="button" id="btn-annuler-tableau" class="bouton-controle" title="Annuler">↶</button>
-    <button type="button" id="btn-retablir-tableau" class="bouton-controle" title="Retablir">↷</button>
+    <button type="button" id="btn-annuler-tableau" class="bouton-controle" aria-label="Annuler" title="Annuler">↶</button>
+    <button type="button" id="btn-retablir-tableau" class="bouton-controle" aria-label="Retablir" title="Retablir">↷</button>
     {% if peut_gerer %}
-    <button type="button" id="btn-effacer-tout-tableau" class="bouton-controle" title="Tout effacer">🗑️</button>
+    <button type="button" id="btn-effacer-tout-tableau" class="bouton-controle" aria-label="Tout effacer" title="Tout effacer">🗑️</button>
     {% endif %}
-    <button type="button" id="btn-telecharger-tableau" class="bouton-controle" title="Telecharger">⬇️</button>
+    <button type="button" id="btn-telecharger-tableau" class="bouton-controle" aria-label="Telecharger" title="Telecharger">⬇️</button>
 
     <span id="statut-ecriture-tableau" class="stat-label" style="margin-left:auto;"></span>
   </div>

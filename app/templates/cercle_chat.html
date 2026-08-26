@@ -99,7 +99,7 @@
   <span class="stat-label">📌 Épinglé</span>
   <span id="banniere-epinglee-contenu" class="message-epingle-contenu">{{ message_epingle.contenu if message_epingle else "" }}</span>
   {% if peut_gerer %}
-  <button type="button" id="banniere-epinglee-fermer" title="Désépingler">✕</button>
+  <button type="button" id="banniere-epinglee-fermer" aria-label="Désépingler" title="Désépingler">✕</button>
   {% endif %}
 </div>
 
@@ -115,7 +115,7 @@
 
     <form id="form-chat" class="form-chat">
       <div class="conteneur-emoji-picker">
-        <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" title="Emojis">😊</button>
+        <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" aria-label="Emojis" title="Emojis">😊</button>
         <div id="panneau-emojis" class="panneau-emojis" hidden>
           <div class="entete-panneau-emojis">
             <span class="stat-label">Emojis</span>
@@ -146,7 +146,7 @@
   <div id="panneau-thread" class="panneau-thread" hidden>
     <div class="entete-panneau-thread">
       <h3>Fil de discussion</h3>
-      <button type="button" id="bouton-fermer-thread" class="bouton-fermer-thread" title="Fermer">✕</button>
+      <button type="button" id="bouton-fermer-thread" class="bouton-fermer-thread" aria-label="Fermer" title="Fermer">✕</button>
     </div>
     <div id="corps-panneau-thread" class="corps-panneau-thread">
       <p class="stat-label">Chargement…</p>

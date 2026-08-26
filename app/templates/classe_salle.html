@@ -21,17 +21,17 @@
   <div id="grille-video" class="grille-video"></div>
 
   <div class="barre-controles-salle">
-    <button type="button" id="btn-micro" class="bouton-controle" aria-pressed="false" title="Activer/couper le micro">🎤</button>
-    <button type="button" id="btn-camera" class="bouton-controle" aria-pressed="false" title="Activer/couper la camera">📷</button>
+    <button type="button" id="btn-micro" class="bouton-controle" aria-pressed="false" aria-label="Activer/couper le micro" title="Activer/couper le micro">🎤</button>
+    <button type="button" id="btn-camera" class="bouton-controle" aria-pressed="false" aria-label="Activer/couper la camera" title="Activer/couper la camera">📷</button>
     {% if peut_gerer %}
-    <button type="button" id="btn-partage-ecran" class="bouton-controle" aria-pressed="false" title="Partager l'ecran">🖥️</button>
+    <button type="button" id="btn-partage-ecran" class="bouton-controle" aria-pressed="false" aria-label="Partager l'ecran" title="Partager l'ecran">🖥️</button>
     {% endif %}
-    <button type="button" id="btn-lever-main" class="bouton-controle" title="Lever la main">✋</button>
-    <button type="button" id="btn-tableau" class="bouton-controle" aria-pressed="false" title="Tableau blanc">🖍️</button>
+    <button type="button" id="btn-lever-main" class="bouton-controle" aria-label="Lever la main" title="Lever la main">✋</button>
+    <button type="button" id="btn-tableau" class="bouton-controle" aria-pressed="false" aria-label="Tableau blanc" title="Tableau blanc">🖍️</button>
     <span id="compteur-participants" class="stat-label" style="margin-left:auto;align-self:center;">1 participant</span>
     <form method="post" action="/classe/seances/{{ seance.id }}/quitter" id="form-quitter">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <button type="submit" id="btn-quitter" class="bouton-controle bouton-quitter" title="Quitter la salle">Quitter</button>
+      <button type="submit" id="btn-quitter" class="bouton-controle bouton-quitter" aria-label="Quitter la salle" title="Quitter la salle">Quitter</button>
     </form>
   </div>
 
