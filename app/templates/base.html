@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v={{ version_asset('style.css') }}">
 </head>
 <body>
 {% from "components/icone.html" import icone %}
@@ -159,7 +159,7 @@
   </div>
 </div>
 
-<script src="/static/js/navigation.js" defer></script>
+<script src="/static/js/navigation.js?v={{ version_asset('js/navigation.js') }}" defer></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/sw.js').catch(() => {});

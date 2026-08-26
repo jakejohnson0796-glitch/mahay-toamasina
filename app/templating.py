@@ -7,6 +7,7 @@ qui les rend — une instance par router aurait exige d'enregistrer le
 global separement dans chacune, avec le risque d'en oublier une.
 """
 from pathlib import Path
+import hashlib
 
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
@@ -17,6 +18,37 @@ BASE_DIR = Path(__file__).resolve().parent
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.globals["jeton_csrf"] = obtenir_jeton_csrf
+
+
+def _version_asset(chemin_relatif: str) -> str:
+    """Global Jinja utilise dans base.html pour suffixer les fichiers
+    statiques (style.css, navigation.js) d'un parametre ?v=<hash> —
+    sans cache-busting, un navigateur qui a deja visite le site avant
+    un deploiement peut continuer a servir une COPIE EN MEMOIRE de
+    l'ancien style.css meme apres que le HTML change (l'URL du fichier
+    ne change jamais sinon, donc rien ne force le navigateur a le
+    re-telecharger). Le hash change automatiquement des que le
+    contenu du fichier change, sans jamais avoir besoin d'y penser a
+    la main (pas de numero de version a incrementer soi-meme, donc pas
+    de risque d'oubli a un futur deploiement).
+
+    8 caracteres de hash suffisent ici (simple invalidation de cache,
+    pas une preuve d'integrite) ; calcule une fois par demarrage du
+    serveur (pas a chaque requete) puisque le fichier ne change jamais
+    en cours d'execution."""
+    chemin_absolu = BASE_DIR / "static" / chemin_relatif
+    try:
+        contenu = chemin_absolu.read_bytes()
+    except FileNotFoundError:
+        return "0"
+    return hashlib.md5(contenu).hexdigest()[:8]
+
+
+_VERSIONS_ASSETS = {
+    "style.css": _version_asset("style.css"),
+    "js/navigation.js": _version_asset("js/navigation.js"),
+}
+templates.env.globals["version_asset"] = lambda chemin: _VERSIONS_ASSETS.get(chemin, "0")
 
 
 def _profil_academique_a_actualiser(request) -> bool:
