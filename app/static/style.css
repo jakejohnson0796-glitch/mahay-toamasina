@@ -145,6 +145,35 @@
   --sidebar-border: rgba(255, 255, 255, 0.08);    /* separateurs internes a la sidebar */
 }
 
+/* --- Dark mode : bascule du contenu (la sidebar reste identique dans
+   les deux modes -- deja bleu marine, conforme aux deux maquettes de
+   reference). [data-theme] est toujours pose explicitement par le
+   script inline de base.html (jamais absent), donc pas besoin de
+   variante ":root" sans attribut ici -- "clair" reste le comportement
+   par defaut du navigateur pour tout visiteur sans JS (progressive
+   enhancement).
+
+   Premiere passe de valeurs, choisies par coherence de teinte avec le
+   theme clair plutot que mesurees au contrastometre comme les tokens
+   clairs ci-dessus (qui documentent chacun leur ratio exact) : a
+   verifier avec un vrai controle de contraste avant de considerer
+   cette passe "terminee" au sens de la rigueur appliquee au reste de
+   ce fichier. */
+:root[data-theme="sombre"] {
+  --content-bg: #0B1330;
+  --content-surface: #141D3D;
+  --content-border: rgba(255, 255, 255, 0.09);
+  --content-text: #F3F4F6;
+  --content-text-muted: #9CA6C9;
+  --content-link: #8FB1FF;
+
+  --color-success-clair: #6FE0A0;
+  --color-warning-clair: #FBD9A0;
+  --color-danger-clair: #FF8F73;
+  --color-info-clair: #7FC2DA;
+  --color-violet-clair: #B79CFF;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -1372,6 +1401,40 @@ main.main-tb {
 }
 .tb-sidebar-compte-nom { font-size: 0.8rem; color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* --- Bouton clair/sombre : pilule sous la ligne de compte, meme
+   emplacement que sur les deux maquettes de reference. --- */
+.tb-toggle-theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius-lg);
+  color: var(--sidebar-text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease-fluide);
+}
+.tb-toggle-theme:hover { border-color: var(--star); }
+.tb-toggle-theme-icone { display: flex; align-items: center; color: var(--sidebar-text-muted); transition: color 0.15s var(--ease-fluide); }
+[data-theme="sombre"] .tb-toggle-theme-icone-lune { color: var(--star); }
+[data-theme="clair"] .tb-toggle-theme-icone-soleil { color: var(--star); }
+.tb-toggle-theme-curseur { width: 1.7rem; height: 0.95rem; border-radius: 999px; background: var(--primary); position: relative; flex-shrink: 0; }
+.tb-toggle-theme-curseur::after {
+  content: "";
+  position: absolute;
+  top: 0.12rem;
+  left: 0.12rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s var(--ease-fluide);
+}
+[data-theme="sombre"] .tb-toggle-theme-curseur::after { transform: translateX(0.72rem); }
+
 /* --- Bouton menu mobile (drawer) + overlay : remplace l'ancien
    .bouton-menu-mobile lie au header horizontal disparu. --- */
 .sidebar-bouton-mobile {
@@ -1561,10 +1624,51 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 }
 .tb-activite-document { background: rgba(79, 58, 232, 0.08); color: var(--color-success-clair); }
 .tb-activite-quiz { background: rgba(123, 82, 238, 0.1); color: var(--color-violet-clair); }
+.tb-activite-populaire { background: rgba(251, 187, 50, 0.14); color: var(--color-warning-clair); }
+.tb-activite-recommande { background: rgba(79, 58, 232, 0.08); color: var(--primary); }
+.tb-activite-echeance { background: rgba(255, 143, 115, 0.14); color: var(--color-danger-clair); }
 .tb-activite-infos { display: flex; flex-direction: column; gap: 0.05rem; flex: 1; min-width: 0; }
 .tb-activite-infos strong { font-size: 0.88rem; color: var(--content-text); }
 .tb-activite-detail { font-size: 0.76rem; color: var(--content-text-muted); }
 .tb-activite-delai { font-size: 0.76rem; color: var(--content-text-muted); white-space: nowrap; }
+
+/* --- Acces rapide (hero du dashboard) --- */
+.tb-acces-rapide { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 0.8rem; margin-bottom: 1.5rem; }
+.tb-acces-rapide-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem;
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
+  color: var(--content-text);
+  font-size: 0.82rem;
+  text-align: center;
+  transition: transform 0.18s var(--ease-fluide), border-color 0.18s var(--ease-fluide);
+}
+.tb-acces-rapide-item:hover { transform: translateY(-3px); border-color: var(--primary); text-decoration: none; }
+.tb-acces-rapide-icone {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(79, 58, 232, 0.08);
+  color: var(--primary);
+}
+
+/* --- Ressources populaires / Recommande / Echeances : meme grille de
+   panneaux que .tb-ligne-basse (Activite recente / Mes cercles),
+   ajoutee en dessous plutot que d'y surcharger une 3e/4e colonne. --- */
+.tb-ligne-supplementaire {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
 
 /* --- Cercles d'etude --- */
 .tb-grille-cercles {
@@ -1696,6 +1800,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   .app-page { padding-top: 3.6rem; }
   .tb-ligne-principale { grid-template-columns: 1fr; }
   .tb-ligne-basse { grid-template-columns: 1fr; }
+  .tb-ligne-supplementaire { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .tb-contenu { padding: 1.5rem 1.1rem 2rem; }

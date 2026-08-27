@@ -17,6 +17,14 @@
       </div>
     </section>
 
+    <div class="tb-acces-rapide">
+      <a href="/documents" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("documents", 20) }}</span> Documents</a>
+      <a href="/quiz" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("quiz", 20) }}</span> Quiz IA</a>
+      <a href="/cercles" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("cercles", 20) }}</span> Mes cercles</a>
+      <a href="/classe" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("classe", 20) }}</span> Classe virtuelle</a>
+      <a href="/tuteur" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("tuteur", 20) }}</span> Tuteur IA</a>
+    </div>
+
     {% if not acces_premium %}
     <div class="erreur">
       Votre acces Premium n'est plus actif. <a href="/abonnement">Souscrivez ou renouvelez</a> pour retrouver le quiz IA et les cercles d'etude.
@@ -141,6 +149,87 @@
           texte="Revise a plusieurs, par filiere ou en groupe libre.",
           lien_cta="/cercles",
           texte_cta="Decouvrir les cercles",
+        ) }}
+        {% endif %}
+      </div>
+
+    </div>
+
+    <div class="tb-ligne-supplementaire">
+
+      <div class="tb-panneau">
+        <div class="tb-panneau-entete">
+          <h2 class="tb-titre-section">Ressources populaires</h2>
+          <a href="/documents" class="tb-voir-tout">Voir tout →</a>
+        </div>
+        {% if ressources_populaires %}
+        <div class="tb-liste-activite">
+          {% for doc in ressources_populaires %}
+          <a href="/documents/{{ doc.id }}/telecharger" class="tb-ligne-activite" style="text-decoration:none;">
+            <span class="tb-activite-icone tb-activite-populaire">{{ icone("populaire", 16) }}</span>
+            <div class="tb-activite-infos">
+              <strong>{{ doc.titre }}</strong>
+              <span class="tb-activite-detail">{{ doc.matiere }}</span>
+            </div>
+            <span class="tb-activite-delai">{{ doc.nb_telechargements }} téléch.</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        {{ etat_vide_constellation(
+          titre="Aucune ressource pour le moment",
+          texte="Les documents les plus telecharges apparaitront ici.",
+        ) }}
+        {% endif %}
+      </div>
+
+      <div class="tb-panneau">
+        <div class="tb-panneau-entete">
+          <h2 class="tb-titre-section">Recommande pour toi</h2>
+        </div>
+        {% if recommandations %}
+        <div class="tb-liste-activite">
+          {% for doc in recommandations %}
+          <a href="/documents/{{ doc.id }}/telecharger" class="tb-ligne-activite" style="text-decoration:none;">
+            <span class="tb-activite-icone tb-activite-recommande">{{ icone("premium", 16) }}</span>
+            <div class="tb-activite-infos">
+              <strong>{{ doc.titre }}</strong>
+              <span class="tb-activite-detail">{{ doc.matiere }} · {{ doc.type_document.value }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        {{ etat_vide_constellation(
+          titre="Pas encore de recommandation",
+          texte="Renseigne ta filiere dans ton profil pour en recevoir.",
+          lien_cta="/profil/academique",
+          texte_cta="Completer mon profil",
+        ) }}
+        {% endif %}
+      </div>
+
+      <div class="tb-panneau">
+        <div class="tb-panneau-entete">
+          <h2 class="tb-titre-section">Echeances a venir</h2>
+        </div>
+        {% if echeances_a_venir %}
+        <div class="tb-liste-activite">
+          {% for e in echeances_a_venir %}
+          <a href="/classe/devoirs/{{ e.devoir.id }}" class="tb-ligne-activite" style="text-decoration:none;">
+            <span class="tb-activite-icone tb-activite-echeance">{{ icone("echeance", 16) }}</span>
+            <div class="tb-activite-infos">
+              <strong>{{ e.devoir.titre }}</strong>
+              <span class="tb-activite-detail">{{ e.cours.nom }}</span>
+            </div>
+            <span class="tb-activite-delai">{{ e.devoir.date_limite.strftime("%d/%m") }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        {{ etat_vide_constellation(
+          titre="Aucune echeance a venir",
+          texte="Les devoirs avec une date limite de tes cours apparaitront ici.",
         ) }}
         {% endif %}
       </div>

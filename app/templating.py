@@ -47,6 +47,7 @@ def _version_asset(chemin_relatif: str) -> str:
 _VERSIONS_ASSETS = {
     "style.css": _version_asset("style.css"),
     "js/navigation.js": _version_asset("js/navigation.js"),
+    "js/theme.js": _version_asset("js/theme.js"),
 }
 templates.env.globals["version_asset"] = lambda chemin: _VERSIONS_ASSETS.get(chemin, "0")
 

@@ -3,6 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  /* Pose [data-theme] AVANT le chargement de style.css (script inline
+     bloquant, pas defer) pour eviter un flash du mauvais theme au
+     premier rendu -- voir static/js/theme.js pour la bascule au clic. */
+  (function () {
+    var theme = "clair";
+    try {
+      if (localStorage.getItem("mahay-theme") === "sombre") { theme = "sombre"; }
+    } catch (erreur) { /* stockage indisponible (navigation privee, etc.) : reste en clair */ }
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
 <title>{% block titre %}Gasy Mahay — Toamasina{% endblock %}</title>
 <link rel="manifest" href="/static/manifest.json">
 <link rel="icon" href="/static/favicon.ico">
@@ -117,6 +129,11 @@
       {% endif %}
       <a href="/deconnexion" class="tb-sidebar-lien" style="margin-left:auto; padding:0.3rem 0.4rem;" aria-label="Deconnexion" title="Deconnexion">{{ icone("securite", 15) }}</a>
     </div>
+    <button type="button" id="bouton-theme" class="tb-toggle-theme" aria-label="Changer d'apparence (clair/sombre)" title="Changer d'apparence">
+      <span class="tb-toggle-theme-icone tb-toggle-theme-icone-lune">{{ icone("jours_restants", 14) }}</span>
+      <span class="tb-toggle-theme-curseur" aria-hidden="true"></span>
+      <span class="tb-toggle-theme-icone tb-toggle-theme-icone-soleil">{{ icone("soleil", 14) }}</span>
+    </button>
     {% else %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
       <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
@@ -160,6 +177,7 @@
 </div>
 
 <script src="/static/js/navigation.js?v={{ version_asset('js/navigation.js') }}" defer></script>
+<script src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/sw.js').catch(() => {});

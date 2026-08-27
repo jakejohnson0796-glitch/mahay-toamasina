@@ -8,11 +8,26 @@ from typing import List, Optional
 
 from sqlmodel import Session, select
 
-from .models import CercleEtude, MembreCercle, ConsultationDocument, Document, TentativeQuiz, Utilisateur
+from .models import (
+    CercleEtude,
+    MembreCercle,
+    ConsultationDocument,
+    Cours,
+    Devoir,
+    Document,
+    InscriptionCours,
+    RenduDevoir,
+    StatutDocument,
+    TentativeQuiz,
+    Utilisateur,
+)
 from . import subscription
 
 NB_DOCUMENTS_RECENTS = 5
 NB_ACTIVITES_RECENTES = 5
+NB_RESSOURCES_POPULAIRES = 4
+NB_RECOMMANDATIONS = 4
+NB_ECHEANCES = 4
 
 
 def cercles_rejoints(session: Session, utilisateur_id: int) -> List[dict]:
@@ -119,6 +134,110 @@ def activite_recente(
     return evenements[:NB_ACTIVITES_RECENTES]
 
 
+def ressources_populaires(session: Session, utilisateur: Utilisateur) -> List[Document]:
+    """Documents approuves les plus telecharges (Document.nb_telechargements,
+    deja incremente a chaque telechargement reel -- voir
+    documents_router.py, aucun compteur invente ici). Priorite a la
+    filiere de l'etudiant ; complete avec les documents populaires
+    toutes filieres si besoin (filiere non renseignee, ou pas assez de
+    documents populaires dans sa propre filiere)."""
+    requete_base = select(Document).where(Document.statut == StatutDocument.APPROUVE)
+
+    resultats: List[Document] = []
+    if utilisateur.filiere_id:
+        resultats = list(
+            session.exec(
+                requete_base.where(Document.filiere_id == utilisateur.filiere_id)
+                .order_by(Document.nb_telechargements.desc())
+                .limit(NB_RESSOURCES_POPULAIRES)
+            ).all()
+        )
+
+    if len(resultats) < NB_RESSOURCES_POPULAIRES:
+        deja_vus = {d.id for d in resultats}
+        complement = session.exec(
+            requete_base.order_by(Document.nb_telechargements.desc()).limit(
+                NB_RESSOURCES_POPULAIRES + len(deja_vus)
+            )
+        ).all()
+        for document in complement:
+            if document.id in deja_vus:
+                continue
+            resultats.append(document)
+            if len(resultats) >= NB_RESSOURCES_POPULAIRES:
+                break
+
+    return resultats[:NB_RESSOURCES_POPULAIRES]
+
+
+def recommandations(session: Session, utilisateur: Utilisateur) -> List[Document]:
+    """Documents approuves de la filiere de l'etudiant qu'il n'a pas
+    encore consultes (jamais telecharges par lui, toutes consultations
+    confondues -- pas seulement les NB_DOCUMENTS_RECENTS derniers).
+    Rien d'invente : sans filiere renseignee, ou si tout est deja vu,
+    la liste est simplement vide (etat vide cote template)."""
+    if not utilisateur.filiere_id:
+        return []
+
+    ids_consultes = set(
+        session.exec(
+            select(ConsultationDocument.document_id).where(
+                ConsultationDocument.utilisateur_id == utilisateur.id
+            )
+        ).all()
+    )
+
+    candidats = session.exec(
+        select(Document)
+        .where(Document.statut == StatutDocument.APPROUVE)
+        .where(Document.filiere_id == utilisateur.filiere_id)
+        .order_by(Document.date_upload.desc())
+    ).all()
+
+    return [d for d in candidats if d.id not in ids_consultes][:NB_RECOMMANDATIONS]
+
+
+def echeances_a_venir(session: Session, utilisateur_id: int) -> List[dict]:
+    """Devoirs a rendre (date_limite pas encore passee) pour les cours
+    ou l'etudiant est inscrit, qu'il n'a pas encore rendus. C'est la
+    SEULE source d'echeance reelle disponible aujourd'hui dans le
+    modele de donnees : les seances de classe virtuelle n'ont pas de
+    date planifiee a l'avance (Seance.date_debut_reelle n'est
+    renseignee qu'au moment ou le professeur demarre reellement la
+    session -- voir models.py), donc ce widget ne montre jamais de
+    fausse seance a venir."""
+    cours_ids = session.exec(
+        select(InscriptionCours.cours_id).where(InscriptionCours.utilisateur_id == utilisateur_id)
+    ).all()
+    if not cours_ids:
+        return []
+
+    devoirs = session.exec(
+        select(Devoir)
+        .where(Devoir.cours_id.in_(cours_ids))
+        .where(Devoir.date_limite != None)  # noqa: E711
+        .where(Devoir.date_limite > datetime.utcnow())
+        .order_by(Devoir.date_limite.asc())
+    ).all()
+
+    resultats = []
+    for devoir in devoirs:
+        deja_rendu = session.exec(
+            select(RenduDevoir)
+            .where(RenduDevoir.devoir_id == devoir.id)
+            .where(RenduDevoir.utilisateur_id == utilisateur_id)
+        ).first()
+        if deja_rendu:
+            continue
+        cours = session.get(Cours, devoir.cours_id)
+        if not cours:
+            continue
+        resultats.append({"devoir": devoir, "cours": cours})
+        if len(resultats) >= NB_ECHEANCES:
+            break
+    return resultats
+
+
 def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
     """Tout ce qu'il faut pour afficher le tableau de bord etudiant en un
     seul appel depuis le router."""
@@ -148,4 +267,7 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
         ),
         "nb_quiz_completes": len(tentatives),
         "activite_recente": activite_recente(session, utilisateur.id, documents, tentatives),
+        "ressources_populaires": ressources_populaires(session, utilisateur),
+        "recommandations": recommandations(session, utilisateur),
+        "echeances_a_venir": echeances_a_venir(session, utilisateur.id),
     }
