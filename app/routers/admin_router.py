@@ -18,13 +18,18 @@ from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..models import (
     Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, MessageCercle, SignalementMessage,
-    DemandeAdhesionCercle, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
+    DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
     EvenementTableauBlanc, AutorisationEcritureTableau, Devoir, RenduDevoir,
     Feedback, ReponseFeedback, StatutFeedback,
 )
 from ..storage import supprimer_fichier
+# Logique d'acceptation/refus reutilisee telle quelle depuis cercles_router.py
+# (meme principe que _assurer_membres_admins deja importe dans
+# admin_referentiel_router.py) : on evite de dupliquer la reverification de
+# profil faite au moment du traitement d'une demande d'adhesion.
+from .cercles_router import _traiter_acceptation_demande, _traiter_refus_demande
 import secrets
 
 router = APIRouter()
@@ -59,6 +64,11 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             select(Abonnement).where(Abonnement.statut == StatutAbonnement.EN_ATTENTE_PAIEMENT)
         ).all()
     )
+    nb_demandes_adhesion_en_attente = len(
+        session.exec(
+            select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE)
+        ).all()
+    )
     # Feedbacks sans reponse : on exclut ceux deja masques (une reponse
     # n'y a plus vraiment sa place une fois l'avis retire de la vue
     # publique), meme logique que le calcul fait dans feedback_router.py.
@@ -79,9 +89,72 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             "nb_signalements_quiz_en_attente": nb_signalements_quiz_en_attente,
             "nb_abonnements_en_attente": nb_abonnements_en_attente,
             "nb_sponsors_en_attente": nb_sponsors_en_attente,
+            "nb_demandes_adhesion_en_attente": nb_demandes_adhesion_en_attente,
             "nb_feedbacks_sans_reponse": nb_feedbacks_sans_reponse,
         },
     )
+
+
+@router.get("/admin/demandes-adhesion")
+def page_demandes_adhesion(request: Request, session: Session = Depends(get_session)):
+    """Vue globale (tous cercles confondus) des demandes d'adhesion en
+    attente — jusqu'ici la SEULE facon de les voir etait d'ouvrir
+    individuellement chaque cercle concerne via son menu "Options du
+    cercle", ce qui les rendait invisibles pour un admin qui ne savait
+    pas deja lequel en avait."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    lignes = session.exec(
+        select(DemandeAdhesionCercle, Utilisateur, CercleEtude)
+        .where(DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE)
+        .where(DemandeAdhesionCercle.utilisateur_id == Utilisateur.id)
+        .where(DemandeAdhesionCercle.cercle_id == CercleEtude.id)
+        .order_by(DemandeAdhesionCercle.date_creation)
+    ).all()
+    demandes = [{"demande": d, "utilisateur": u, "cercle": c} for d, u, c in lignes]
+
+    return templates.TemplateResponse(
+        request,
+        "admin_demandes_adhesion_cercle.html",
+        {"utilisateur": admin, "demandes": demandes},
+    )
+
+
+@router.post("/admin/demandes-adhesion/{demande_id}/accepter")
+def accepter_demande_adhesion_admin(
+    request: Request, demande_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    demande = session.get(DemandeAdhesionCercle, demande_id)
+    cercle = session.get(CercleEtude, demande.cercle_id) if demande else None
+    if not demande or not cercle:
+        return RedirectResponse("/admin/demandes-adhesion", status_code=303)
+
+    resultat = _traiter_acceptation_demande(session, cercle, demande, admin)
+    if resultat == "profil_change":
+        return RedirectResponse(f"/admin/demandes-adhesion?erreur=profil_change&demande={demande_id}", status_code=303)
+
+    return RedirectResponse("/admin/demandes-adhesion", status_code=303)
+
+
+@router.post("/admin/demandes-adhesion/{demande_id}/refuser")
+def refuser_demande_adhesion_admin(
+    request: Request, demande_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    demande = session.get(DemandeAdhesionCercle, demande_id)
+    if demande:
+        _traiter_refus_demande(session, demande, admin)
+
+    return RedirectResponse("/admin/demandes-adhesion", status_code=303)
 
 
 @router.get("/admin/stats")

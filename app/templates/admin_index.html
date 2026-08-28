@@ -27,6 +27,15 @@
 
   <div class="carte-cercle">
     <div>
+      <strong>Demandes d'adhesion aux cercles</strong>
+      <p>Accepter ou refuser les demandes de rejoindre un cercle, tous cercles confondus.</p>
+      {% if nb_demandes_adhesion_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_demandes_adhesion_en_attente }} en attente</span>{% endif %}
+    </div>
+    <div><a class="bouton bouton-secondaire" href="/admin/demandes-adhesion">Ouvrir</a></div>
+  </div>
+
+  <div class="carte-cercle">
+    <div>
       <strong>Moderation du salon</strong>
       <p>Traiter les messages signales par les etudiants.</p>
       {% if nb_signalements_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_signalements_en_attente }} en attente</span>{% endif %}

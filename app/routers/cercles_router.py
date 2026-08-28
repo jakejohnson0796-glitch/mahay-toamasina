@@ -661,6 +661,58 @@ def voir_demandes(request: Request, cercle_id: int, session: Session = Depends(g
     )
 
 
+def _traiter_acceptation_demande(session: Session, cercle: CercleEtude, demande: DemandeAdhesionCercle, traiteur: Utilisateur) -> Optional[str]:
+    """Logique d'acceptation d'une DemandeAdhesionCercle, partagee entre
+    la page de gestion du cercle (createur/admin, cercles_router.py) et
+    la liste globale admin (/admin/demandes-adhesion, admin_router.py) —
+    evite de dupliquer la reverification de profil ci-dessous dans les
+    deux endroits.
+
+    Retourne :
+    - None si la demande a ete acceptee (membre ajoute) ;
+    - "profil_change" si elle a ete rejetee a la place car le profil du
+      demandeur ne correspond plus au cercle (voir §32 du brief) ;
+    - "deja_traitee" si elle n'etait plus EN_ATTENTE (double-clic / action
+      concurrente) — ne fait rien dans ce cas.
+    """
+    if demande.statut != StatutDemandeAdhesion.EN_ATTENTE:
+        return "deja_traitee"
+
+    demandeur = session.get(Utilisateur, demande.utilisateur_id)
+    # §32 du brief : le niveau (ou la filiere) du demandeur a pu changer
+    # entre la demande et son traitement — la verification doit etre
+    # refaite ICI, pas seulement au moment de la demande. Si ca ne
+    # correspond plus, on refuse au lieu d'accepter silencieusement dans
+    # le mauvais cercle.
+    if demandeur and not referentiel_academique.profil_correspond_au_cercle(demandeur, cercle, session):
+        demande.statut = StatutDemandeAdhesion.REJETEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = traiteur.id
+        session.add(demande)
+        session.commit()
+        return "profil_change"
+
+    demande.statut = StatutDemandeAdhesion.ACCEPTEE
+    demande.date_traitement = datetime.utcnow()
+    demande.traite_par_id = traiteur.id
+    session.add(demande)
+    if not _est_membre(session, cercle.id, demande.utilisateur_id):
+        session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=demande.utilisateur_id))
+    session.commit()
+    return None
+
+
+def _traiter_refus_demande(session: Session, demande: DemandeAdhesionCercle, traiteur: Utilisateur) -> None:
+    """Logique de refus d'une DemandeAdhesionCercle, partagee avec la
+    liste globale admin — voir _traiter_acceptation_demande ci-dessus."""
+    if demande.statut == StatutDemandeAdhesion.EN_ATTENTE:
+        demande.statut = StatutDemandeAdhesion.REJETEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = traiteur.id
+        session.add(demande)
+        session.commit()
+
+
 @router.post("/cercles/{cercle_id}/demandes/{demande_id}/accepter")
 def accepter_demande(request: Request, cercle_id: int, demande_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     utilisateur = utilisateur_courant(request, session)
@@ -675,31 +727,9 @@ def accepter_demande(request: Request, cercle_id: int, demande_id: int, session:
     if not _peut_gerer_cercle(cercle, utilisateur):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
-    # Une demande deja traitee (acceptee/rejetee) ne peut pas etre
-    # retraitee — evite les doubles clics / actions concurrentes qui
-    # ajouteraient deux fois le membre ou ecraseraient une decision.
-    if demande.statut == StatutDemandeAdhesion.EN_ATTENTE:
-        demandeur = session.get(Utilisateur, demande.utilisateur_id)
-        # §32 du brief : le niveau (ou la filiere) du demandeur a pu
-        # changer entre la demande et son traitement — la verification
-        # doit etre refaite ICI, pas seulement au moment de la demande.
-        # Si ca ne correspond plus, on refuse au lieu d'accepter
-        # silencieusement dans le mauvais cercle.
-        if demandeur and not referentiel_academique.profil_correspond_au_cercle(demandeur, cercle, session):
-            demande.statut = StatutDemandeAdhesion.REJETEE
-            demande.date_traitement = datetime.utcnow()
-            demande.traite_par_id = utilisateur.id
-            session.add(demande)
-            session.commit()
-            return RedirectResponse(f"/cercles/{cercle_id}/demandes?erreur=profil_change", status_code=303)
-
-        demande.statut = StatutDemandeAdhesion.ACCEPTEE
-        demande.date_traitement = datetime.utcnow()
-        demande.traite_par_id = utilisateur.id
-        session.add(demande)
-        if not _est_membre(session, cercle_id, demande.utilisateur_id):
-            session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=demande.utilisateur_id))
-        session.commit()
+    resultat = _traiter_acceptation_demande(session, cercle, demande, utilisateur)
+    if resultat == "profil_change":
+        return RedirectResponse(f"/cercles/{cercle_id}/demandes?erreur=profil_change", status_code=303)
 
     return RedirectResponse(f"/cercles/{cercle_id}/demandes", status_code=303)
 
@@ -718,12 +748,7 @@ def refuser_demande(request: Request, cercle_id: int, demande_id: int, session: 
     if not _peut_gerer_cercle(cercle, utilisateur):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
-    if demande.statut == StatutDemandeAdhesion.EN_ATTENTE:
-        demande.statut = StatutDemandeAdhesion.REJETEE
-        demande.date_traitement = datetime.utcnow()
-        demande.traite_par_id = utilisateur.id
-        session.add(demande)
-        session.commit()
+    _traiter_refus_demande(session, demande, utilisateur)
 
     return RedirectResponse(f"/cercles/{cercle_id}/demandes", status_code=303)
 

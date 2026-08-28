@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "components/signal.html" import signal %}
+{% block titre %}Demandes d'adhésion aux cercles — Admin Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<div class=\"contenu-clair\">
+<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
+<h2>Demandes d'adhésion aux cercles</h2>
+<p class="stat-label">Vue globale, tous cercles confondus. Traiter une demande ici a exactement le meme effet que depuis le cercle concerne.</p>
+
+{% if request.query_params.get("erreur") == "profil_change" %}
+<div class="erreur">
+  Le profil du demandeur ne correspond plus a ce cercle (filiere/niveau change entre-temps) — la demande a ete automatiquement refusee au lieu d'etre acceptee.
+</div>
+{% endif %}
+
+<table class="table-manifeste">
+  <thead>
+    <tr>
+      <th>Demandeur</th>
+      <th>Cercle</th>
+      <th>Raison</th>
+      <th>Date de la demande</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for info in demandes %}
+    <tr>
+      <td>{{ info.utilisateur.nom }}</td>
+      <td><a href="/cercles/{{ info.cercle.id }}">{{ info.cercle.nom }}</a></td>
+      <td>{{ info.demande.raison or "—" }}</td>
+      <td>{{ info.demande.date_creation.strftime("%d/%m/%Y") }}</td>
+      <td>
+        <form method="post" action="/admin/demandes-adhesion/{{ info.demande.id }}/accepter" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="bouton bouton-primaire" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Accepter</button>
+        </form>
+        <form method="post" action="/admin/demandes-adhesion/{{ info.demande.id }}/refuser" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="bouton bouton-secondaire" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Refuser</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Aucune demande en attente.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
