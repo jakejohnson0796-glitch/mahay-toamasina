@@ -131,7 +131,7 @@
       </form>
 
       <div class="conteneur-emoji-picker">
-        <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" aria-label="Emojis" title="Emojis">😊</button>
+        <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" aria-label="Emojis" title="Emojis">{{ icone("emoji", taille=18) }}</button>
         <div id="panneau-emojis" class="panneau-emojis" hidden>
           <div class="entete-panneau-emojis">
             <span class="stat-label">Emojis</span>
@@ -722,6 +722,10 @@
     } else if (reponses > 0) {
       bulle.querySelector(".bouton-thread-ouvrir").addEventListener("click", function () { ouvrirThread(bulle.dataset.messageId); });
     }
+    const apercuThread = bulle.querySelector(".thread-apercu");
+    if (apercuThread) {
+      apercuThread.addEventListener("click", function () { ouvrirThread(bulle.dataset.messageId); });
+    }
   });
 
   // ---------- Autocompletion @mentions ----------
@@ -801,6 +805,26 @@
         } else {
           lien.textContent = "💬 " + nombreActuel + " réponse" + (nombreActuel > 1 ? "s" : "");
         }
+        // Apercu de la derniere reponse (voir _derniere_reponse() cote
+        // serveur pour le rendu initial) : on le cree ou on le met a
+        // jour ici pour que la personne qui regarde le fil principal au
+        // moment de l'envoi voie l'apercu se rafraichir sans recharger.
+        let apercu = bulleParent.querySelector(".thread-apercu");
+        if (!apercu) {
+          apercu = document.createElement("div");
+          apercu.className = "thread-apercu";
+          apercu.addEventListener("click", function () { ouvrirThread(donnees.parent_message_id); });
+          bulleParent.insertBefore(apercu, lien);
+        }
+        apercu.innerHTML = "";
+        const spanAuteurApercu = document.createElement("span");
+        spanAuteurApercu.className = "thread-apercu-auteur";
+        spanAuteurApercu.textContent = donnees.auteur;
+        apercu.appendChild(spanAuteurApercu);
+        const spanContenuApercu = document.createElement("span");
+        spanContenuApercu.className = "thread-apercu-contenu";
+        spanContenuApercu.textContent = donnees.contenu;
+        apercu.appendChild(spanContenuApercu);
       }
       const document_vide = document.getElementById("etat-vide-chat");
       if (document_vide) document_vide.remove();

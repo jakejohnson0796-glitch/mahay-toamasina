@@ -272,5 +272,19 @@ visuel sur les pages pas encore migrees.
           vector-effect="non-scaling-stroke"/>
   </g>
 </svg>
+{%- elif nom == "emoji" -%}
+{#- Refonte chat de cercle (§ composer) : visage souriant simple,
+   remplace l'emoji 😊 utilise jusqu'ici comme icone du bouton qui ouvre
+   le picker d'emojis (contraire a la regle "jamais de glyphe
+   Unicode/emoji" de ce fichier -- ironique vu ce que ce bouton ouvre,
+   mais l'icone qui le represente doit rester un trait, pas un emoji). -#}
+<svg viewBox="0 0 40 40" width="{{ taille }}" height="{{ taille }}" aria-hidden="true">
+  <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="20" cy="20" r="14"/>
+    <circle cx="14" cy="17" r="1.7" fill="currentColor" stroke="none"/>
+    <circle cx="26" cy="17" r="1.7" fill="currentColor" stroke="none"/>
+    <path d="M13,23.5 Q20,30 27,23.5"/>
+  </g>
+</svg>
 {%- endif -%}
 {% endmacro %}

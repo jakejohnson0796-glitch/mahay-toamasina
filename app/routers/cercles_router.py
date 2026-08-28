@@ -145,6 +145,32 @@ def _nombre_reponses(session: Session, message_id: int) -> int:
     ).all())
 
 
+def _derniere_reponse(session: Session, message_id: int) -> Optional[dict]:
+    """Reponse la plus recente a un message, pour l'apercu affiche dans le
+    flux principal a cote de "💬 N reponses" (§ refonte visuelle du chat
+    de cercle) -- un court avant-gout du fil sans avoir a l'ouvrir,
+    inspire des messageries type Slack. La bulle complete de la reponse
+    reste chargee a la demande via /messages/{id}/thread ; seuls
+    l'auteur et un extrait tronque du contenu sortent ici. N'est appelee
+    que pour les messages ayant au moins une reponse (voir l'appelant),
+    pour ne pas ajouter une requete par message sans fil."""
+    ligne = session.exec(
+        select(MessageCercle, Utilisateur)
+        .where(MessageCercle.parent_message_id == message_id)
+        .where(MessageCercle.supprime == False)  # noqa: E712
+        .where(MessageCercle.auteur_id == Utilisateur.id)
+        .order_by(MessageCercle.date_envoi.desc())
+    ).first()
+    if not ligne:
+        return None
+    m, u = ligne
+    contenu = m.piece_jointe_nom if m.piece_jointe_chemin else m.contenu
+    contenu = contenu or ""
+    if len(contenu) > 80:
+        contenu = contenu[:79].rstrip() + "…"
+    return {"auteur": u.nom, "contenu": contenu}
+
+
 def _creer_notification(
     session: Session,
     destinataire_id: int,
@@ -857,8 +883,10 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             u2.id: u2.nom
             for u2 in session.exec(select(Utilisateur).where(Utilisateur.id.in_(auteurs_epinglage_ids))).all()
         } if auteurs_epinglage_ids else {}
-        messages = [
-            {
+        messages = []
+        for m, u in lignes:
+            nb_reponses = _nombre_reponses(session, m.id)
+            messages.append({
                 "id": m.id,
                 "auteur": u.nom,
                 "auteur_id": u.id,
@@ -869,11 +897,10 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "date_envoi": m.date_envoi,
                 "modifie": m.date_modification is not None,
                 "epingle": m.epingle,
-                "reponses": _nombre_reponses(session, m.id),
+                "reponses": nb_reponses,
+                "derniere_reponse": _derniere_reponse(session, m.id) if nb_reponses else None,
                 "reactions": _reactions_du_message(session, m.id, utilisateur.id),
-            }
-            for m, u in lignes
-        ]
+            })
         ligne_epinglee = next((m for m, _ in lignes if m.epingle), None)
         if ligne_epinglee:
             message_epingle = {

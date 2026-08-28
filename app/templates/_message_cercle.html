@@ -26,6 +26,12 @@
     </div>
     <span class="message-actions"></span>
     {% if m.reponses > 0 %}
+    {% if m.derniere_reponse %}
+    <div class="thread-apercu">
+      <span class="thread-apercu-auteur">{{ m.derniere_reponse.auteur }}</span>
+      <span class="thread-apercu-contenu">{{ m.derniere_reponse.contenu }}</span>
+    </div>
+    {% endif %}
     <button type="button" class="bouton-thread-ouvrir" data-thread-preexistant="{{ m.id }}">💬 {{ m.reponses }} réponse{{ "s" if m.reponses > 1 else "" }}</button>
     {% endif %}
   </div>

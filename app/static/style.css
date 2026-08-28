@@ -791,16 +791,19 @@ input:focus, select:focus, textarea:focus {
 
 .conteneur-emoji-picker { position: relative; }
 .bouton-emoji-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--content-bg);
   border: 1px solid var(--content-border);
   border-radius: 50%;
-  width: 2.4rem;
-  height: 2.4rem;
-  font-size: 1.2rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  color: var(--content-text-muted);
   cursor: pointer;
-  line-height: 1;
+  flex-shrink: 0;
 }
-.bouton-emoji-toggle:hover { border-color: var(--primary); }
+.bouton-emoji-toggle:hover { border-color: var(--primary); color: var(--primary); }
 .panneau-emojis {
   position: absolute;
   bottom: 3rem;
@@ -1067,6 +1070,28 @@ input:focus, select:focus, textarea:focus {
 .puce-reaction:hover { border-color: var(--primary); }
 .puce-reaction-mienne { border-color: var(--primary); background: rgba(79, 58, 232, 0.08); }
 
+.thread-apercu {
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  max-width: 100%;
+}
+.thread-apercu:hover { border-color: var(--primary); }
+.thread-apercu-auteur { font-weight: 600; color: var(--content-text); flex-shrink: 0; }
+.thread-apercu-contenu {
+  color: var(--content-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
 .bouton-thread-ouvrir {
   background: none;
   border: none;

@@ -124,11 +124,15 @@ class TestRenduChatCercle(unittest.TestCase):
 
     def test_reponse_nest_pas_dans_le_flux_principal_mais_le_compteur_lest(self):
         reponse = self.client.get(f"/cercles/{self.cercle_id}")
-        # La reponse (parent_message_id renseigne) ne doit PAS apparaitre
-        # dans le flux principal (elle vit dans le panneau de thread,
-        # charge a la demande) — seul le compteur "N reponses" y figure.
-        self.assertNotIn("methode des unites", reponse.text.lower())
+        # La reponse (parent_message_id renseigne) n'apparait toujours pas
+        # comme une bulle de message a part entiere dans le flux principal
+        # (elle vit dans le panneau de thread, charge a la demande) — mais
+        # depuis la refonte visuelle du salon, un court apercu (auteur +
+        # debut du contenu) figure desormais a cote du compteur "N
+        # reponses", pour donner un avant-gout du fil sans l'ouvrir.
         self.assertIn("💬 1 réponse", reponse.text)
+        self.assertIn("methode des unites", reponse.text.lower())
+        self.assertIn("thread-apercu", reponse.text)
 
     def test_donnees_mentions_embarquees_pour_lautocompletion(self):
         reponse = self.client.get(f"/cercles/{self.cercle_id}")
