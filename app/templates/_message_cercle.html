@@ -3,7 +3,7 @@
      data-auteur-id="{{ m.auteur_id }}"
      data-reponses="{{ m.reponses }}"
      {% if m.piece_jointe_chemin %}data-piecejointe="1"{% endif %}>
-  <span class="message-avatar" aria-hidden="true">{{ m.auteur[0] | upper }}</span>
+  <span class="message-avatar" aria-hidden="true" {% if not m.est_moi %}style="background: {{ couleur_avatar(m.auteur) }};"{% endif %}>{{ m.auteur[0] | upper }}</span>
   <div class="message-corps">
     <div class="message-entete">
       <span class="message-auteur">{{ m.auteur }}</span>

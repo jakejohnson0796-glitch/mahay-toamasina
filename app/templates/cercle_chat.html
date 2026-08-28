@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icone.html" import icone %}
 {% block titre %}{{ cercle.nom }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
@@ -45,23 +46,38 @@
   {% endif %}
 </div>
 {% else %}
-<div class="barre-actions-cercle" style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
-  <a href="/cercles/{{ cercle.id }}/membres">Voir les membres</a>
-  {% if peut_gerer %}
-  <a href="/cercles/{{ cercle.id }}/demandes">Demandes d'adhésion</a>
-  {% endif %}
-  {% if utilisateur.id != cercle.createur_id %}
-  <form method="post" action="/cercles/{{ cercle.id }}/quitter" style="display:inline">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button type="submit" class="lien-action">Quitter le cercle</button>
-  </form>
-  {% endif %}
-  {% if peut_gerer %}
-  <form method="post" action="/cercles/{{ cercle.id }}/supprimer" style="display:inline" onsubmit="return confirm('Supprimer definitivement ce cercle et tous ses messages ?');">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button type="submit" class="lien-action">Supprimer le cercle</button>
-  </form>
-  {% endif %}
+<div class="entete-cercle-chat">
+  <div class="entete-cercle-identite">
+    <span class="entete-cercle-icone" aria-hidden="true">{{ icone("cercles", taille=22) }}</span>
+    <div class="entete-cercle-infos">
+      <h2 class="entete-cercle-titre">{{ cercle.nom }}</h2>
+      <p class="entete-cercle-sous-titre">En ligne : <span id="liste-presence">—</span></p>
+    </div>
+  </div>
+  <div class="entete-cercle-actions">
+    <a href="/cercles/{{ cercle.id }}/recherche" class="bouton-icone-cercle" title="Rechercher dans l'historique" aria-label="Rechercher dans l'historique">{{ icone("recherche", taille=18) }}</a>
+    <a href="/cercles/{{ cercle.id }}/membres" class="bouton-icone-cercle" title="Voir les membres" aria-label="Voir les membres">{{ icone("cercles", taille=18) }}</a>
+    <div class="menu-options-cercle">
+      <button type="button" class="bouton-icone-cercle" id="bouton-options-cercle" title="Options du cercle" aria-label="Options du cercle" aria-haspopup="true" aria-expanded="false">{{ icone("options", taille=18) }}</button>
+      <div class="liste-options-cercle" id="liste-options-cercle" hidden>
+        {% if peut_gerer %}
+        <a href="/cercles/{{ cercle.id }}/demandes">Demandes d'adhésion</a>
+        {% endif %}
+        {% if utilisateur.id != cercle.createur_id %}
+        <form method="post" action="/cercles/{{ cercle.id }}/quitter">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="lien-action">Quitter le cercle</button>
+        </form>
+        {% endif %}
+        {% if peut_gerer %}
+        <form method="post" action="/cercles/{{ cercle.id }}/supprimer" onsubmit="return confirm('Supprimer definitivement ce cercle et tous ses messages ?');">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit" class="lien-action lien-action-danger">Supprimer le cercle</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
 {% if request.query_params.get("erreur") == "createur_ne_peut_quitter" %}
 <div class="erreur">Vous etes le createur : supprimez le cercle plutot que de le quitter.</div>
@@ -69,13 +85,6 @@
 {% if request.query_params.get("erreur") == "cercle_existe_deja" %}
 <div class="erreur">Un cercle national existait deja pour cette mention, filiere et niveau — vous voila directement dessus.</div>
 {% endif %}
-
-<div id="panneau-presence" class="panneau-presence">
-  <span class="stat-label">En ligne maintenant :</span>
-  <span id="liste-presence">—</span>
-  <span style="margin-left:auto;"><a href="/cercles/{{ cercle.id }}/recherche">Rechercher dans l'historique</a></span>
-</div>
-
 {% if request.query_params.get("erreur") == "pdf_uniquement" %}
 <div class="erreur">Seuls les fichiers PDF peuvent etre partages dans le salon.</div>
 {% endif %}
@@ -96,7 +105,7 @@
 {% endif %}
 
 <div id="banniere-epinglee" class="message-epingle-banniere" {% if not message_epingle %}hidden{% endif %}>
-  <span class="stat-label">📌 Épinglé</span>
+  <span class="stat-label entete-epingle">{{ icone("epingle", taille=16) }} Épinglé</span>
   <span id="banniere-epinglee-contenu" class="message-epingle-contenu">{{ message_epingle.contenu if message_epingle else "" }}</span>
   {% if peut_gerer %}
   <button type="button" id="banniere-epinglee-fermer" aria-label="Désépingler" title="Désépingler">✕</button>
@@ -113,7 +122,14 @@
       {% endfor %}
     </div>
 
-    <form id="form-chat" class="form-chat">
+    <div class="barre-composition">
+      <form id="form-fichier" method="post" action="/cercles/{{ cercle.id }}/message-fichier" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="fichier-pdf" class="bouton-icone-cercle" title="Partager un PDF" aria-label="Partager un PDF">{{ icone("trombone", taille=18) }}</label>
+        <input type="file" id="fichier-pdf" name="fichier" accept="application/pdf" class="champ-fichier-cache">
+        <button class="bouton-envoyer-fichier" type="submit">Envoyer</button>
+      </form>
+
       <div class="conteneur-emoji-picker">
         <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" aria-label="Emojis" title="Emojis">😊</button>
         <div id="panneau-emojis" class="panneau-emojis" hidden>
@@ -128,19 +144,15 @@
           </div>
         </div>
       </div>
-      <div class="conteneur-mentions-suggestions">
-        <input type="text" id="champ-message" placeholder="Ecrire un message... (@ pour mentionner)" autocomplete="off" maxlength="2000">
-        <div id="suggestions-mentions-principal" class="liste-suggestions-mentions" hidden></div>
-      </div>
-      <button class="bouton bouton-primaire" type="submit">Envoyer</button>
-    </form>
 
-    <form id="form-fichier" method="post" action="/cercles/{{ cercle.id }}/message-fichier" enctype="multipart/form-data" style="margin-top:0.5rem;">
-      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <label for="fichier-pdf" style="font-size:0.85rem;">Partager un PDF :</label>
-      <input type="file" id="fichier-pdf" name="fichier" accept="application/pdf">
-      <button class="bouton bouton-secondaire" type="submit" style="padding:0.3rem 0.8rem;font-size:0.85rem;">Envoyer le fichier</button>
-    </form>
+      <form id="form-chat" class="form-chat">
+        <div class="conteneur-mentions-suggestions">
+          <input type="text" id="champ-message" placeholder="Ecrire un message... (@ pour mentionner)" autocomplete="off" maxlength="2000">
+          <div id="suggestions-mentions-principal" class="liste-suggestions-mentions" hidden></div>
+        </div>
+        <button class="bouton-envoyer-message" type="submit" aria-label="Envoyer le message" title="Envoyer">➤</button>
+      </form>
+    </div>
   </div>
 
   <div id="panneau-thread" class="panneau-thread" hidden>
@@ -184,6 +196,45 @@
   const boutonFermerThread = document.getElementById("bouton-fermer-thread");
   const formReponseThread = document.getElementById("form-reponse-thread");
   const champReponseThread = document.getElementById("champ-reponse-thread");
+  const boutonOptionsCercle = document.getElementById("bouton-options-cercle");
+  const listeOptionsCercle = document.getElementById("liste-options-cercle");
+  const formFichier = document.getElementById("form-fichier");
+  const champFichier = document.getElementById("fichier-pdf");
+
+  // Palette d'avatars du chat de cercle : DOIT rester identique, dans le
+  // meme ordre, a _PALETTE_AVATARS dans app/templating.py (voir le
+  // commentaire la-bas pour la raison de cette duplication). Un message
+  // rendu par le serveur au chargement de la page et ce meme message
+  // (ou un autre du meme auteur) ajoute en direct par le WebSocket
+  // doivent donner exactement la meme couleur d'avatar.
+  const PALETTE_AVATARS = ["#2B8A3E", "#1864AB", "#D9480F", "#C2255C", "#087F5B", "#862E9C"];
+  function couleurAvatar(nom) {
+    if (!nom) return PALETTE_AVATARS[0];
+    let somme = 0;
+    for (let i = 0; i < nom.length; i++) somme += nom.charCodeAt(i);
+    return PALETTE_AVATARS[somme % PALETTE_AVATARS.length];
+  }
+
+  if (boutonOptionsCercle && listeOptionsCercle) {
+    boutonOptionsCercle.addEventListener("click", function (evenement) {
+      evenement.stopPropagation();
+      document.querySelectorAll(".menu-actions-liste").forEach(function (m) { m.hidden = true; });
+      document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { p.hidden = true; });
+      const ouvrir = listeOptionsCercle.hidden;
+      listeOptionsCercle.hidden = !ouvrir;
+      boutonOptionsCercle.setAttribute("aria-expanded", String(ouvrir));
+    });
+  }
+
+  // Amelioration progressive : le bouton "Envoyer" du formulaire fichier
+  // (toujours present, voir cercle_chat.html) reste le chemin qui
+  // fonctionne meme sans JS. Choisir un fichier declenche en plus l'envoi
+  // immediat, pour eviter le clic supplementaire dans le cas courant.
+  if (champFichier && formFichier) {
+    champFichier.addEventListener("change", function () {
+      if (champFichier.files && champFichier.files.length > 0) formFichier.requestSubmit();
+    });
+  }
 
   const EMOJI_REACTION = { pouce: "👍", coeur: "❤️", rire: "😂", etonne: "😮", triste: "😢", colere: "😡", fete: "🎉" };
   const ORDRE_REACTIONS = ["pouce", "coeur", "rire", "etonne", "triste", "colere", "fete"];
@@ -338,6 +389,10 @@
   document.addEventListener("click", function () {
     document.querySelectorAll(".panneau-reaction-rapide").forEach(function (p) { p.hidden = true; });
     document.querySelectorAll(".menu-actions-liste").forEach(function (m) { m.hidden = true; });
+    if (listeOptionsCercle && !listeOptionsCercle.hidden) {
+      listeOptionsCercle.hidden = true;
+      boutonOptionsCercle.setAttribute("aria-expanded", "false");
+    }
   });
 
   // ---------- Edition ----------
@@ -449,6 +504,7 @@
     avatar.className = "message-avatar";
     avatar.setAttribute("aria-hidden", "true");
     avatar.textContent = (m.auteur || "?").charAt(0).toUpperCase();
+    if (!m.est_moi) avatar.style.background = couleurAvatar(m.auteur);
     bulle.appendChild(avatar);
     const corps = document.createElement("div");
     corps.className = "message-corps";
@@ -494,6 +550,10 @@
       if (corps.parent) {
         const parentBulle = document.createElement("div");
         parentBulle.className = "thread-message-parent";
+        const repondreA = document.createElement("span");
+        repondreA.className = "thread-repondre-a";
+        repondreA.textContent = "En réponse à " + corps.parent.auteur;
+        parentBulle.appendChild(repondreA);
         const auteur = document.createElement("span");
         auteur.className = "message-auteur";
         auteur.textContent = corps.parent.auteur;
@@ -761,6 +821,7 @@
     avatar.className = "message-avatar";
     avatar.setAttribute("aria-hidden", "true");
     avatar.textContent = (donnees.auteur || "?").charAt(0).toUpperCase();
+    if (donnees.auteur_id !== idUtilisateur) avatar.style.background = couleurAvatar(donnees.auteur);
     bulle.appendChild(avatar);
 
     const corps = document.createElement("div");

@@ -515,13 +515,6 @@ input:focus, select:focus, textarea:focus {
 }
 .carte-cercle p { margin: 0.35rem 0; }
 
-.panneau-presence {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.75rem;
-}
 /* --- Etape 2 (composants generiques) : .badge-presence a deja son
    propre fond opaque -> repaint direct sans risque, meme logique que
    .carte-formulaire/.offre plus haut. Le point vert de presence
@@ -598,8 +591,11 @@ input:focus, select:focus, textarea:focus {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--content-surface);
-  background: var(--color-success-clair);
+  color: #FFFFFF;
+  /* Repli si jamais le style inline (couleur par auteur, voir
+     couleur_avatar() dans templating.py) n'est pas pose -- meme
+     premiere couleur que la palette JS/Python pour rester coherent. */
+  background: #2B8A3E;
   margin-top: 0.15rem;
 }
 .message-moi .message-avatar { background: var(--primary); }
@@ -851,8 +847,169 @@ input:focus, select:focus, textarea:focus {
 }
 .bouton-emoji:hover { border-color: var(--primary); }
 
-.form-chat { display: flex; gap: 0.75rem; align-items: center; }
-.form-chat input { flex: 1; }
+/* ---------- Entete du chat de cercle (icone + titre + presence + menu
+   d'actions), et barre de composition en pilule -- refonte visuelle du
+   salon inspiree d'une messagerie type Slack (reference fournie par
+   l'utilisateur), en reutilisant les tokens --content-* et --primary
+   existants pour rester coherente avec les deux themes. ---------- */
+.entete-cercle-chat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.entete-cercle-identite { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+.entete-cercle-icone {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(79, 58, 232, 0.1);
+  color: var(--primary);
+}
+.entete-cercle-infos { min-width: 0; }
+.entete-cercle-titre {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--content-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.entete-cercle-sous-titre {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--content-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.entete-cercle-actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+.bouton-icone-cercle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  color: var(--content-text-muted);
+  cursor: pointer;
+}
+.bouton-icone-cercle:hover { border-color: var(--primary); color: var(--primary); }
+.entete-epingle { display: inline-flex; align-items: center; gap: 0.3rem; }
+.menu-options-cercle { position: relative; }
+.liste-options-cercle {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 15;
+  min-width: 12rem;
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.liste-options-cercle[hidden] { display: none; }
+.liste-options-cercle a,
+.liste-options-cercle .lien-action {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--content-text);
+  cursor: pointer;
+  text-decoration: none;
+}
+.liste-options-cercle a:hover,
+.liste-options-cercle .lien-action:hover { background: var(--content-bg); }
+.liste-options-cercle .lien-action-danger { color: var(--color-danger-clair); }
+
+.barre-composition {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.4rem 0.35rem 0.6rem;
+}
+/* form-fichier et form-chat sont deux <form> distincts (cibles POST
+   differentes, voir cercle_chat.html) qu'on veut neanmoins afficher
+   comme une seule barre visuelle : display:contents les rend invisibles
+   en tant que boites, leurs enfants deviennent directement des elements
+   flex de .barre-composition ci-dessus. */
+.barre-composition form#form-fichier,
+.barre-composition form#form-chat { display: contents; }
+.champ-fichier-cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.bouton-envoyer-fichier {
+  background: none;
+  border: none;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.68rem;
+  color: var(--content-text-muted);
+  cursor: pointer;
+}
+.bouton-envoyer-fichier:hover { color: var(--primary); }
+.barre-composition .conteneur-mentions-suggestions { flex: 1; min-width: 0; }
+.barre-composition #champ-message {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.2rem;
+  color: var(--content-text);
+  font-size: 0.92rem;
+}
+.barre-composition #champ-message:focus { outline: none; }
+.bouton-envoyer-message {
+  flex-shrink: 0;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: #FFFFFF;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bouton-envoyer-message:hover { background: var(--primary-hover); }
+
+.thread-repondre-a {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--content-text-muted);
+  margin-bottom: 0.2rem;
+}
 
 /* ---------- Messagerie enrichie (reactions, reponses, thread, mentions) ---------- */
 

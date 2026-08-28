@@ -88,3 +88,48 @@ def _profil_academique_a_actualiser(request) -> bool:
 
 
 templates.env.globals["profil_academique_a_actualiser"] = _profil_academique_a_actualiser
+
+
+# Palette d'avatars du chat de cercle (cercle_chat.html) : couleurs fixes
+# (independantes de [data-theme], contrairement a --color-*-clair qui
+# s'inversent entre les deux themes) choisies suffisamment saturees/sombres
+# pour rester lisibles avec le texte blanc de l'initiale par-dessus, dans
+# les deux themes a la fois -- un avatar identifie visuellement une
+# personne, il n'a pas de raison de changer de couleur quand on bascule
+# le theme. Non mesurees au contrastometre comme les tokens du fichier
+# CSS (l'initiale est aria-hidden, deja consideree decorative/redondante
+# avec le nom affiche juste a cote) mais choisies nettement plus sombres
+# que --content-surface/--content-bg des deux themes pour rester
+# confortables a l'oeil.
+#
+# ATTENTION EN CAS DE MODIFICATION : cette liste est dupliquee dans
+# cercle_chat.html (fonction JS couleurAvatar(), meme ordre exact) pour
+# que les messages ajoutes en direct par le WebSocket utilisent la meme
+# couleur que ceux rendus par le serveur au chargement de la page. Les
+# deux listes DOIVENT rester identiques, sinon l'avatar d'une meme
+# personne change de couleur selon que le message vient du rendu initial
+# ou du fil temps reel.
+_PALETTE_AVATARS = [
+    "#2B8A3E",  # vert foret
+    "#1864AB",  # bleu ocean
+    "#D9480F",  # orange brule
+    "#C2255C",  # rose fuchsia
+    "#087F5B",  # sarcelle
+    "#862E9C",  # violet amethyste (distinct de --primary, plus indigo)
+]
+
+
+def _couleur_avatar(nom: str) -> str:
+    """Couleur de fond deterministe pour l'avatar-initiale d'un auteur de
+    message (§ chat de cercle) : somme des code points du nom modulo la
+    taille de la palette, plutot qu'un hash cryptographique (md5 comme
+    _version_asset ci-dessus) qui serait plus lourd a reproduire a
+    l'identique en JS. ord() (Python) et charCodeAt() (JS) renvoient le
+    meme code point Unicode pour un caractere donne, donc cette somme
+    simple donne exactement le meme resultat des deux cotes."""
+    if not nom:
+        return _PALETTE_AVATARS[0]
+    return _PALETTE_AVATARS[sum(ord(c) for c in nom) % len(_PALETTE_AVATARS)]
+
+
+templates.env.globals["couleur_avatar"] = _couleur_avatar
