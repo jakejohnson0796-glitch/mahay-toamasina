@@ -128,17 +128,47 @@ terme, pas hypothetique. Meme piste de correctif que documents_list.html
 generation des positions elle-meme (components/constellation.html) n'a
 pas besoin de changer, seul le format de sortie serait concerne.
 #}
+{#
+Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
+- l'avatar constellation degenere visuellement des que nb_membres est
+  petit (1-2 points, cas dominant aujourd'hui pour les cercles
+  nationaux generes automatiquement par filiere/niveau) : deux cartes
+  finissent par se ressembler au premier coup d'oeil malgre un rendu
+  techniquement distinct par cercle (positions hashees, voir
+  components/constellation.html). Fond de couleur derive de cercle_id
+  ajoute ici pour rendre chaque carte reconnaissable independamment du
+  nombre d'etoiles dessinees -- rotation sur 5 teintes deja presentes
+  dans la palette (--accent/--accent-2/--color-info/--primary/
+  --color-violet-clair), aucune nouvelle couleur arbitraire (regle
+  section 3 du brief). En style inline plutot qu'en classes CSS :
+  .carte-claire-avatar n'est utilisee nulle part ailleurs dans le repo
+  (verifie par grep), donc rien a repercuter sur classe_liste.html.
+- "Pas de description." portait le meme style que du vrai contenu :
+  classe modificatrice ajoutee pour ce cas precis (italique/attenue),
+  voir .carte-claire-description--vide dans style.css.
+#}
+{% set couleurs_avatar_carte = [
+  "rgba(232, 147, 90, 0.18)",
+  "rgba(111, 169, 140, 0.18)",
+  "rgba(91, 147, 166, 0.18)",
+  "rgba(79, 58, 232, 0.12)",
+  "rgba(123, 82, 238, 0.16)"
+] %}
 <div class="grille-cartes-claires">
   {% for info in cercles_avec_info %}
   <div class="carte-claire">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar" aria-hidden="true" style="background: {{ couleurs_avatar_carte[info.cercle.id % 5] }};">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-meta">{{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</div>
       </div>
     </div>
-    <p class="carte-claire-description">{{ info.cercle.description or "Pas de description." }}</p>
+    {% if info.cercle.description %}
+    <p class="carte-claire-description">{{ info.cercle.description }}</p>
+    {% else %}
+    <p class="carte-claire-description carte-claire-description--vide">Pas de description.</p>
+    {% endif %}
     {% if info.est_membre %}
     <a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat →</a>
     {% elif info.en_attente %}

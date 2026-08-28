@@ -2437,6 +2437,13 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 }
 .carte-claire-meta { font-size: 0.78rem; color: var(--content-text-muted); }
 .carte-claire-description { font-size: 0.82rem; color: var(--content-text-muted); margin: 0; min-height: 1.1em; }
+/* Correctif audit visuel (point 5) : "Pas de description." reprenait
+   exactement le style d'une vraie description (meme classe, meme
+   couleur) -- donnait l'impression d'un placeholder non fini plutot
+   que d'un etat vide assume. Italique + legere attenuation, cercles_list.html
+   uniquement (classe_liste.html n'a pas de repli "Pas de description",
+   son <p> ne se rend pas du tout si cours.description est vide). */
+.carte-claire-description--vide { font-style: italic; opacity: 0.72; }
 .carte-claire > .bouton, .carte-claire > span.bouton { width: 100%; text-align: center; }
 
 /* --- Hero "Le Phare" (etape 7/10, section 9 du brief) : fond nuit +
