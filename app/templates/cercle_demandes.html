@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% from "components/entete_cercle.html" import entete_cercle %}
 {% block titre %}Demandes d'adhésion — {{ cercle.nom }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
-<div class=\"contenu-clair\">
-<p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; {{ cercle.nom }}</a></p>
-<h2>Demandes d'adhésion ({{ demandes|length }})</h2>
+<div class="contenu-clair">
+<p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; Retour au salon</a></p>
+{{ entete_cercle(cercle, sous_titre="Demandes d'adhésion · " ~ demandes|length) }}
 
 <table class="table-manifeste">
   <thead><tr><th>Nom</th><th>Date de la demande</th><th></th></tr></thead>

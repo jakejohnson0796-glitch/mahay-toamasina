@@ -858,12 +858,14 @@ input:focus, select:focus, textarea:focus {
 }
 .bouton-emoji:hover { border-color: var(--primary); }
 
-/* ---------- Entete du chat de cercle (icone + titre + presence + menu
-   d'actions), et barre de composition en pilule -- refonte visuelle du
-   salon inspiree d'une messagerie type Slack (reference fournie par
-   l'utilisateur), en reutilisant les tokens --content-* et --primary
-   existants pour rester coherente avec les deux themes. ---------- */
-.entete-cercle-chat {
+/* ---------- Entete generique d'une page rattachee a un cercle (icone +
+   titre + sous-titre + actions), nee dans le chat (refonte visuelle
+   inspiree d'une messagerie type Slack) puis reutilisee telle quelle
+   par les pages membres/demandes/recherche (via components/entete_cercle.html)
+   pour une identite coherente sur toutes les pages d'un meme cercle.
+   Tokens --content-* et --primary existants, coherente avec les deux
+   themes. ---------- */
+.entete-cercle {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1120,6 +1122,13 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   gap: 1rem;
   align-items: flex-start;
+  /* Filet de securite mobile : sans ceci, un descendant a largeur fixe
+     (ex. .thread-apercu-contenu en white-space:nowrap pour son ellipse,
+     voir plus bas) peut forcer .colonne-conversation a s'agrandir
+     au-dela de l'espace disponible et provoquer un scroll horizontal de
+     toute la page sur petit ecran. .panneau-thread est en position:fixed
+     (voir plus bas), donc jamais affecte par ce clip. */
+  overflow-x: hidden;
 }
 .colonne-conversation { flex: 1; min-width: 0; }
 .panneau-thread {

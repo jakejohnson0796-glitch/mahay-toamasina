@@ -10,10 +10,9 @@
   <circle cx="190" cy="30" r="110" fill="none" stroke="currentColor" stroke-width="1"/>
 </svg>
 <p class="eyebrow"><a href="/cercles">&larr; Cercles d'etude</a></p>
+{% if not membre %}
 <h2>{{ cercle.nom }}</h2>
 {% if cercle.description %}<p>{{ cercle.description }}</p>{% endif %}
-
-{% if not membre %}
 <div class="carte-formulaire">
   {% if en_attente %}
   <p>Votre demande d'adhesion est en attente de validation par le createur du cercle ou un administrateur.</p>
@@ -46,7 +45,7 @@
   {% endif %}
 </div>
 {% else %}
-<div class="entete-cercle-chat">
+<div class="entete-cercle">
   <div class="entete-cercle-identite">
     <span class="entete-cercle-icone" aria-hidden="true">{{ icone("cercles", taille=22) }}</span>
     <div class="entete-cercle-infos">

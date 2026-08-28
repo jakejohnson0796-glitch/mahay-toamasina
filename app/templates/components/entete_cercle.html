@@ -1,0 +1,46 @@
+{#
+Entete "Le Phare" pour une page rattachee a un cercle d'etude precis
+(icone + nom du cercle + sous-titre contextuel + actions optionnelles).
+
+Nee dans cercle_chat.html (refonte visuelle du salon, inspiree d'une
+messagerie type Slack) ou elle reste geree a la main -- entete plus
+riche (presence en direct, menu deroulant "..." avec formulaires
+quitter/supprimer) qui ne se pretait pas a une parametrisation simple.
+Ce composant reprend les memes classes CSS (.entete-cercle-*,
+.bouton-icone-cercle) pour les pages plus simples qui n'ont besoin que
+d'un titre, d'un sous-titre et, au besoin, de liens d'action -- garantit
+une identite visuelle identique sans dupliquer le HTML.
+
+Usage :
+    {% from "components/entete_cercle.html" import entete_cercle %}
+    {{ entete_cercle(cercle, sous_titre="12 membres") }}
+
+    Avec une ou plusieurs actions (icone + lien) :
+    {{ entete_cercle(cercle, sous_titre="3 demandes en attente", actions=[
+      {"icone": "cercles", "href": "/cercles/" ~ cercle.id, "titre": "Retour au salon"},
+    ]) }}
+
+icone_nom est optionnel (defaut "cercles", le seul pictogramme de
+groupe disponible dans le systeme aujourd'hui -- convient aussi bien
+pour "membres" que pour l'identite generale du cercle).
+#}
+{% from "components/icone.html" import icone %}
+
+{% macro entete_cercle(cercle, sous_titre=none, actions=[], icone_nom="cercles") %}
+<div class="entete-cercle">
+  <div class="entete-cercle-identite">
+    <span class="entete-cercle-icone" aria-hidden="true">{{ icone(icone_nom, taille=22) }}</span>
+    <div class="entete-cercle-infos">
+      <h2 class="entete-cercle-titre">{{ cercle.nom }}</h2>
+      {% if sous_titre %}<p class="entete-cercle-sous-titre">{{ sous_titre }}</p>{% endif %}
+    </div>
+  </div>
+  {% if actions %}
+  <div class="entete-cercle-actions">
+    {% for a in actions %}
+    <a href="{{ a.href }}" class="bouton-icone-cercle" title="{{ a.titre }}" aria-label="{{ a.titre }}">{{ icone(a.icone, taille=18) }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}

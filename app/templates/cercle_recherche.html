@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% from "components/entete_cercle.html" import entete_cercle %}
 {% block titre %}Recherche — {{ cercle.nom }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
-<p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; {{ cercle.nom }}</a></p>
-<h2>Rechercher dans l'historique</h2>
+<p class="eyebrow"><a href="/cercles/{{ cercle.id }}">&larr; Retour au salon</a></p>
+{{ entete_cercle(cercle, sous_titre="Recherche dans l'historique", icone_nom="recherche") }}
 
 <form method="get" action="/cercles/{{ cercle.id }}/recherche" class="carte-formulaire" style="display:flex;gap:0.75rem;align-items:end;">
   <div style="flex:1;">
