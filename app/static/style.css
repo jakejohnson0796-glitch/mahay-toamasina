@@ -1484,6 +1484,18 @@ main.main-tb {
    {% block main_classe %}main-clair{% endblock %} sur une page qui migre. */
 .main-clair { background: var(--content-bg); color: var(--content-text); min-height: 100%; }
 
+/* --- Cercles d'etude (chat + entete-cercle partagee avec membres/
+   demandes/recherche) : ces 4 pages ont besoin de toute la largeur de
+   la colonne de contenu (zone de conversation, panneau thread, barre
+   de composition...) plutot que du couloir de lecture de la regle
+   generique "main" -- meme logique que main.main-tb (dashboard)
+   ci-dessus, adaptee pour garder le theme .main-clair (fond/texte)
+   inchange. Le padding de la regle generique "main" (2rem) est
+   volontairement conserve (cf. demande : "un petit espace de
+   respiration ... mais pas une largeur fixe trop restrictive"),
+   seuls max-width/margin sont neutralises ici. */
+main.main-clair-pleine-largeur { max-width: none; margin: 0; }
+
 /* --- .tb-mise-en-page (grille 2 colonnes + glow reseau) : n'est plus
    utilisee depuis cette etape (dashboard_etudiant.html ne redeclare
    plus sa propre sidebar, cf §6 du brief). Conservee volontairement
