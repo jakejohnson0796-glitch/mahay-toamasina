@@ -184,6 +184,24 @@
 
 * { box-sizing: border-box; }
 
+/* Texte des placeholders (input/textarea) : sans cette regle, chaque
+   navigateur applique son propre gris par defaut (#757575 pour Chrome/
+   Edge), fixe et independant du theme -- mesure a 3.58:1 sur
+   --content-surface sombre et 3.96:1 sur --content-bg sombre, sous le
+   seuil AA 4.5:1 du texte normal (meme limite en clair : 4.61:1/4.38:1,
+   l'un des deux echoue aussi). --content-text-muted est deja verifie
+   dans les deux themes (voir ses commentaires plus haut/bas), regle
+   globale plutot que scopee a .contenu-clair/.main-tb car le token est
+   lui-meme defini au niveau :root, donc valide sur toute page quel que
+   soit son etat de migration. opacity:1 explicite : Firefox applique
+   par defaut une opacite reduite en plus de la couleur choisie sur
+   ::placeholder, ce qui re-affaiblirait le contraste choisi ici sans
+   cette ligne. */
+::placeholder {
+  color: var(--content-text-muted);
+  opacity: 1;
+}
+
 body {
   margin: 0;
   background: var(--bg);
