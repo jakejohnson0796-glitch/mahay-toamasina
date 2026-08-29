@@ -405,12 +405,31 @@ def promouvoir_professeur(request: Request, utilisateur_id: int, session: Sessio
 
 @router.post("/admin/utilisateurs/{utilisateur_id}/retrograder-etudiant")
 def retrograder_etudiant(request: Request, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    """Retire le statut PROFESSEUR ou ADMIN d'un utilisateur (retour a
+    ETUDIANT). Pour un ADMIN, deux garde-fous en plus du controle deja
+    fait cote template (le bouton n'apparait pas sur sa propre ligne) :
+    - un admin ne peut pas se retrograder lui-meme (meme logique que
+      l'auto-bannissement plus haut) ;
+    - impossible de retrograder le DERNIER admin restant, pour ne
+      jamais se retrouver avec une plateforme sans aucun admin."""
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
 
     cible = session.get(Utilisateur, utilisateur_id)
-    if cible and cible.role == RoleUtilisateur.PROFESSEUR:
+    if not cible:
+        return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+    if cible.role == RoleUtilisateur.PROFESSEUR:
+        cible.role = RoleUtilisateur.ETUDIANT
+        session.add(cible)
+        session.commit()
+    elif cible.role == RoleUtilisateur.ADMIN:
+        if cible.id == admin.id:
+            return RedirectResponse("/admin/utilisateurs?erreur=auto_retrogradation", status_code=303)
+        nb_admins = len(session.exec(select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)).all())
+        if nb_admins <= 1:
+            return RedirectResponse("/admin/utilisateurs?erreur=dernier_admin", status_code=303)
         cible.role = RoleUtilisateur.ETUDIANT
         session.add(cible)
         session.commit()

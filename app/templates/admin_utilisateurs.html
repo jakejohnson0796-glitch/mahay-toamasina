@@ -7,6 +7,12 @@
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
 <h2>Utilisateurs</h2>
 
+{% if request.query_params.get("erreur") == "auto_retrogradation" %}
+<div class="erreur">Impossible de retrograder votre propre compte admin.</div>
+{% elif request.query_params.get("erreur") == "dernier_admin" %}
+<div class="erreur">Impossible : c'est le dernier admin restant. Promouvez d'abord un autre compte admin avant de retrograder celui-ci.</div>
+{% endif %}
+
 <form method="get" action="/admin/utilisateurs" class="carte-formulaire" style="display:flex;gap:0.75rem;align-items:end;margin-bottom:1.5rem;">
   <div style="flex:1;">
     <label for="q">Rechercher (nom ou telephone)</label>
@@ -38,6 +44,11 @@
         <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" style="display:inline">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Retirer le statut professeur</button>
+        </form>
+        {% elif u.role.value == "admin" %}
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" style="display:inline" onsubmit="return confirm('Retrograder {{ u.nom }} en etudiant (retrait du statut admin) ?');">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Retirer le statut admin</button>
         </form>
         {% endif %}
         {% if u.banni %}
