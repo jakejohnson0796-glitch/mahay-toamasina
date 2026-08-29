@@ -96,11 +96,13 @@ templates.env.globals["profil_academique_a_actualiser"] = _profil_academique_a_a
 # pour rester lisibles avec le texte blanc de l'initiale par-dessus, dans
 # les deux themes a la fois -- un avatar identifie visuellement une
 # personne, il n'a pas de raison de changer de couleur quand on bascule
-# le theme. Non mesurees au contrastometre comme les tokens du fichier
-# CSS (l'initiale est aria-hidden, deja consideree decorative/redondante
-# avec le nom affiche juste a cote) mais choisies nettement plus sombres
-# que --content-surface/--content-bg des deux themes pour rester
-# confortables a l'oeil.
+# le theme. Mesurees au contrastometre (blanc #FFFFFF par-dessus, WCAG
+# 1.4.3) malgre le statut aria-hidden/decoratif de l'initiale : 4.30:1 et
+# 4.37:1 sur les deux premieres teintes d'origine, sous le seuil 4.5:1
+# du texte normal (l'initiale ne remplit pas les criteres de taille du
+# "grand texte" qui abaisserait ce seuil a 3:1) -- ajustees vers des
+# teintes plus sombres de meme famille pour repasser au-dessus. Ratio
+# de chaque teinte finale commente sur sa ligne ci-dessous.
 #
 # ATTENTION EN CAS DE MODIFICATION : cette liste est dupliquee dans
 # cercle_chat.html (fonction JS couleurAvatar(), meme ordre exact) pour
@@ -110,12 +112,12 @@ templates.env.globals["profil_academique_a_actualiser"] = _profil_academique_a_a
 # personne change de couleur selon que le message vient du rendu initial
 # ou du fil temps reel.
 _PALETTE_AVATARS = [
-    "#2B8A3E",  # vert foret
-    "#1864AB",  # bleu ocean
-    "#D9480F",  # orange brule
-    "#C2255C",  # rose fuchsia
-    "#087F5B",  # sarcelle
-    "#862E9C",  # violet amethyste (distinct de --primary, plus indigo)
+    "#1E7A34",  # vert foret (ajuste depuis #2B8A3E : 4.37:1 -> 5.40:1 sur blanc)
+    "#1864AB",  # bleu ocean (6.09:1 sur blanc)
+    "#C23E0A",  # orange brule (ajuste depuis #D9480F : 4.30:1 -> 5.27:1 sur blanc)
+    "#C2255C",  # rose fuchsia (5.66:1 sur blanc)
+    "#087F5B",  # sarcelle (5.00:1 sur blanc)
+    "#862E9C",  # violet amethyste (7.28:1 sur blanc) -- distinct de --primary, plus indigo
 ]
 
 
