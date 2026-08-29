@@ -7,6 +7,7 @@ Lancer avec :
 """
 import unittest
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 from sqlalchemy import event
 from sqlmodel import SQLModel, Session, create_engine, select
@@ -66,12 +67,21 @@ class TestCooldownNiveau(unittest.TestCase):
 
     def test_15_aout_plus_14_jours_donne_29_aout(self):
         """Exemple exact du brief : 15 aout L1->L2, prochain changement
-        autorise le 29 aout ou apres."""
+        autorise le 29 aout ou apres.
+
+        "Maintenant" est fige a une date interieure a la fenetre de
+        cooldown (20 aout, avant l'echeance du 29) plutot que de
+        dependre de la vraie date d'execution du test — sans ca, ce
+        test ne pouvait passer que les jours precedant le 29 aout 2026
+        et echouait mecaniquement a partir de cette date-la (et pour
+        toujours apres), independamment de tout bug reel."""
         u = Utilisateur(
             nom="Jake", telephone="034", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
             niveau="L2", niveau_modifie_le=datetime(2026, 8, 15, 10, 0, 0),
         )
-        echeance = prochain_changement_niveau_autorise_le(u)
+        with patch("app.referentiel_academique.datetime") as datetime_simule:
+            datetime_simule.utcnow.return_value = datetime(2026, 8, 20, 0, 0, 0)
+            echeance = prochain_changement_niveau_autorise_le(u)
         self.assertEqual(echeance, datetime(2026, 8, 29, 10, 0, 0))
 
 
