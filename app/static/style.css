@@ -285,7 +285,7 @@ button:disabled {
   font-size: 0.95rem;
 }
 /* --- Etape 2 (composants generiques) : boutons repeints pour le theme
-   clair. Contrairement a .tampon-*/.table-manifeste plus bas, un
+   clair. Contrairement a .tampon-* / .table-manifeste plus bas, un
    bouton porte deja son propre fond opaque + sa propre couleur de
    texte -- rien ne depend du fond de la page qui l'entoure, donc ce
    repaint est sans risque des maintenant, meme sur une page pas
@@ -1698,7 +1698,7 @@ main.main-clair-pleine-largeur { max-width: none; margin: 0; }
 }
 
 /* --- Contenu principal (dashboard) ---
-   Etape 3 : .contenu-clair active les variantes claires de .tampon-*/
+   Etape 3 : .contenu-clair active les variantes claires de .tampon-* /
    .table-manifeste posees en etape 2 (cette page n'en utilise aucune
    directement aujourd'hui, mais un futur composant partage sur cette
    page en beneficiera automatiquement). background sur main.main-tb
@@ -1997,8 +1997,8 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .contenu-clair .stat-label { color: var(--content-text-muted); }
 
 /* --- Etape 7 (classe virtuelle : salle) : .signal (point de statut,
-   components/signal.html) est partage avec ~15 pages admin_*/
-   classe_devoir/classe_detail/quiz_*/securite/abonnement pas encore
+   components/signal.html) est partage avec ~15 pages admin_* /
+   classe_devoir/classe_detail/quiz_* /securite/abonnement pas encore
    migrees -- variante claire scopee, meme logique que le reste de ce
    bloc. Non-texte (point decoratif de statut), le seuil AA applicable
    est celui des composants UI (3:1), confortablement respecte par les
