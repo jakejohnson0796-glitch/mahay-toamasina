@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% block titre %}{{ devoir.titre }} — {{ cours.nom }} — Gasy Mahay{% endblock %}
-{% block main_classe %}main-clair{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
 <p class="eyebrow"><a href="/classe/{{ cours.id }}">&larr; {{ cours.nom }}</a></p>
