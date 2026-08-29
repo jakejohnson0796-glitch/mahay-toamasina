@@ -212,7 +212,7 @@ p { color: var(--text-muted); }
    distinctes : .entete-panneau-emojis, .message-entete). Nouveau bouton
    mobile + styles : voir bloc ".sidebar-bouton-mobile" plus bas. --- */
 
-main { max-width: 960px; margin: 0 auto; padding: 2rem; }
+main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 
 .pied {
   text-align: center;
@@ -1478,7 +1478,7 @@ main.main-tb {
 
 /* --- Etape 4 : utilitaire partage pour les pages migrees vers le
    theme clair qui n'ont pas besoin de deroger au conteneur centre-etroit
-   (960px, defini par la regle generique "main" plus haut) -- contrairement
+   (1200px, defini par la regle generique "main" plus haut) -- contrairement
    au dashboard (.main-tb, etape 3, qui a besoin de toute la largeur pour
    sa grille de stats). Prevu pour etre repris tel quel aux etapes 5-14 :
    {% block main_classe %}main-clair{% endblock %} sur une page qui migre. */
