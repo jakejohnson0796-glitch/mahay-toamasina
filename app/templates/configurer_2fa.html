@@ -9,7 +9,7 @@
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   <p>1. Ouvrez Google Authenticator, Microsoft Authenticator ou une application equivalente sur votre telephone.</p>
   <p>2. Scannez ce QR code :</p>
-  <img src="{{ qr_data_uri }}" alt="QR code d'activation" style="background:#fff;padding:0.5rem;border-radius:8px;">
+  <img src="{{ qr_data_uri }}" alt="QR code d'activation" style="background:#fff;padding:0.5rem;border-radius:8px;display:block;margin:0.75rem auto;width:220px;height:220px;max-width:100%;">
   <p class="stat-label">Impossible de scanner ? Entrez cette cle manuellement : <code>{{ secret }}</code></p>
   <p>3. Entrez le code a 6 chiffres affiche par l'application pour confirmer :</p>
   <form method="post" action="/securite/2fa/confirmer">
