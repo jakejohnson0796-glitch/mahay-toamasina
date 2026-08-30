@@ -406,6 +406,7 @@ button:disabled {
   border-radius: var(--radius-lg);
   padding: 2rem;
   max-width: 32em;
+  box-shadow: var(--shadow-sm);
   color: var(--content-text);
 }
 .carte-formulaire h1, .carte-formulaire h2, .carte-formulaire h3 { color: var(--content-text); }
@@ -510,6 +511,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius-lg);
   padding: 2rem;
   max-width: 32em;
+  box-shadow: var(--shadow-sm);
   color: var(--content-text);
 }
 .offre h1, .offre h2, .offre h3 { color: var(--content-text); }
@@ -991,6 +993,7 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--content-border);
   border-radius: 999px;
   padding: 0.35rem 0.4rem 0.35rem 0.6rem;
+  box-shadow: var(--shadow-sm);
 }
 /* form-fichier et form-chat sont deux <form> distincts (cibles POST
    differentes, voir cercle_chat.html) qu'on veut neanmoins afficher
