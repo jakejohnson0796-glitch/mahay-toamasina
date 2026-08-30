@@ -18,11 +18,11 @@
     </section>
 
     <div class="tb-acces-rapide">
-      <a href="/documents" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("documents", 20) }}</span> Documents</a>
-      <a href="/quiz" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("quiz", 20) }}</span> Quiz IA</a>
-      <a href="/cercles" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("cercles", 20) }}</span> Mes cercles</a>
-      <a href="/classe" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("classe", 20) }}</span> Classe virtuelle</a>
-      <a href="/tuteur" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone">{{ icone("tuteur", 20) }}</span> Tuteur IA</a>
+      <a href="/documents" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-vert">{{ icone("documents", 20) }}</span> Documents</a>
+      <a href="/quiz" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-orange">{{ icone("quiz", 20) }}</span> Quiz IA</a>
+      <a href="/cercles" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-bleu">{{ icone("cercles", 20) }}</span> Mes cercles</a>
+      <a href="/classe" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-violet">{{ icone("classe", 20) }}</span> Classe virtuelle</a>
+      <a href="/tuteur" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-primaire">{{ icone("tuteur", 20) }}</span> Tuteur IA</a>
     </div>
 
     {% if not acces_premium %}
@@ -73,24 +73,32 @@
 
     <div class="tb-grille-stats">
       <div class="tb-carte-stat tb-stat-vert">
-        <span class="tb-stat-icone">{{ icone("documents", 18) }}</span>
-        <span class="tb-stat-nombre">{{ nb_documents_consultes }}</span>
-        <span class="tb-stat-label">Document{{ "s" if nb_documents_consultes != 1 else "" }} consulte{{ "s" if nb_documents_consultes != 1 else "" }}</span>
+        <span class="tb-stat-icone">{{ icone("documents", 20) }}</span>
+        <span class="tb-stat-corps">
+          <span class="tb-stat-nombre">{{ nb_documents_consultes }}</span>
+          <span class="tb-stat-label">Document{{ "s" if nb_documents_consultes != 1 else "" }} consulte{{ "s" if nb_documents_consultes != 1 else "" }}</span>
+        </span>
       </div>
       <div class="tb-carte-stat tb-stat-orange">
-        <span class="tb-stat-icone">{{ icone("quiz", 18) }}</span>
-        <span class="tb-stat-nombre">{{ nb_quiz_completes }}</span>
-        <span class="tb-stat-label">Quiz complete{{ "s" if nb_quiz_completes != 1 else "" }}</span>
+        <span class="tb-stat-icone">{{ icone("quiz", 20) }}</span>
+        <span class="tb-stat-corps">
+          <span class="tb-stat-nombre">{{ nb_quiz_completes }}</span>
+          <span class="tb-stat-label">Quiz complete{{ "s" if nb_quiz_completes != 1 else "" }}</span>
+        </span>
       </div>
       <div class="tb-carte-stat tb-stat-bleu">
-        <span class="tb-stat-icone">{{ icone("cercles", 18) }}</span>
-        <span class="tb-stat-nombre">{{ nb_cercles_rejoints }}</span>
-        <span class="tb-stat-label">Cercle{{ "s" if nb_cercles_rejoints != 1 else "" }} rejoint{{ "s" if nb_cercles_rejoints != 1 else "" }}</span>
+        <span class="tb-stat-icone">{{ icone("cercles", 20) }}</span>
+        <span class="tb-stat-corps">
+          <span class="tb-stat-nombre">{{ nb_cercles_rejoints }}</span>
+          <span class="tb-stat-label">Cercle{{ "s" if nb_cercles_rejoints != 1 else "" }} rejoint{{ "s" if nb_cercles_rejoints != 1 else "" }}</span>
+        </span>
       </div>
       <div class="tb-carte-stat tb-stat-violet">
-        <span class="tb-stat-icone">{{ icone("jours_restants", 18) }}</span>
-        <span class="tb-stat-nombre">{{ jours_restants }}</span>
-        <span class="tb-stat-label">Jour{{ "s" if jours_restants > 1 else "" }} restant{{ "s" if jours_restants > 1 else "" }}</span>
+        <span class="tb-stat-icone">{{ icone("jours_restants", 20) }}</span>
+        <span class="tb-stat-corps">
+          <span class="tb-stat-nombre">{{ jours_restants }}</span>
+          <span class="tb-stat-label">Jour{{ "s" if jours_restants > 1 else "" }} restant{{ "s" if jours_restants > 1 else "" }}</span>
+        </span>
       </div>
     </div>
 
