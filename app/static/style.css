@@ -218,10 +218,18 @@ body {
   line-height: 1.55;
 }
 
-h1, h2, h3 { font-family: 'Fraunces', serif; font-weight: 600; margin: 0 0 0.5em; }
+h1, h2, h3 { font-family: 'Fraunces', serif; font-weight: 600; margin: 0 0 0.5em; line-height: 1.25; }
 h1 { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; }
 h1 em { color: var(--accent); font-style: normal; }
 h2 { font-size: 1.4rem; }
+/* h3 n'avait aucune taille propre (seuls h1/h2 en definissaient une) --
+   retombait donc sur le corps de texte par defaut du navigateur (~1.17em),
+   deconnecte de l'echelle voulue. Affecte reellement .titre-carte
+   (FAQ/avis/contact/quiz/securite/universites : aucune de ces 8 pages
+   ne lui redefinit de taille) ; les autres classes de titre h3 du site
+   (.carte-phare-titre, .uni-nom, .doc-titre...) avaient deja leur
+   propre font-size explicite et ne changent donc pas ici. */
+h3 { font-size: 1.15rem; }
 
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -355,7 +363,18 @@ button:disabled {
    -- une page migree (etape 3, 8, 11...) ajoute cette classe sur son
    wrapper de contenu pour l'activer, plutot qu'un changement global
    qui degraderait les pages en attente de leur propre etape. Meme
-   logique pour .tampon-* juste apres. */
+   logique pour .tampon-* juste apres.
+
+   .contenu-clair p ci-dessous, meme necessite mais plus grave : le
+   <p> generique (paragraphes d'intro sans classe dediee, ex.
+   cercles_list.html) retombe sur la regle de base "p { color:
+   var(--text-muted) }" (#A9C0BD, pensee pour l'ancien fond sombre) --
+   mesure a 1.82:1 sur --content-bg clair et 1.92:1 sur
+   --content-surface clair, tres en dessous du seuil AA 4.5:1, quasi
+   illisible en pratique. Repointe vers --content-text-muted (deja
+   verifie : 15-17:1 dans les deux themes, cf. les commentaires du bloc
+   :root[data-theme="sombre"] plus haut). */
+.contenu-clair p { color: var(--content-text-muted); }
 .contenu-clair .table-manifeste th { color: var(--content-text-muted); border-bottom-color: var(--content-border); }
 .contenu-clair .table-manifeste td { border-bottom-color: var(--content-border); color: var(--content-text); }
 .contenu-clair .table-manifeste tr:hover td { background: var(--content-bg); }
