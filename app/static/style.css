@@ -2876,4 +2876,17 @@ button:focus-visible,
 @media (max-width: 640px) {
   .etoile-bouton svg { width: 38px; height: 38px; }
   .faq-question-bouton { padding: 1.1rem 1rem; }
+  /* Meme logique pour les boutons-icone circulaires du chat de cercle
+     (entete, composer) : 35px/33.6px en taille desktop, sous les 44px
+     recommandes (Apple HIG / Material Design) pour une cible tactile
+     confortable au pouce. La taille desktop reste inchangee -- une
+     souris n'a pas besoin de cette marge, seul le tactile en beneficie
+     reellement (§7 du brief : repense pour mobile, pas juste comprime). */
+  .bouton-icone-cercle,
+  .bouton-emoji-toggle,
+  .bouton-envoyer-message {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .bouton-menu-actions { padding: 0.5rem; }
 }
