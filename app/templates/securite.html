@@ -75,7 +75,7 @@
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="mot_de_passe_desactiver">Mot de passe (pour confirmer la desactivation)</label>
     <input type="password" id="mot_de_passe_desactiver" name="mot_de_passe" required>
-    <button class="bouton bouton-secondaire bouton-form" type="submit" style="border-color:var(--color-danger-clair);color:var(--color-danger-clair);">Desactiver la 2FA</button>
+    <button class="bouton bouton-danger bouton-form" type="submit">Desactiver la 2FA</button>
   </form>
   {% else %}
   <p>{{ signal("rejete") }}<span class="tampon tampon-rejete">Desactivee</span></p>

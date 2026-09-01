@@ -190,6 +190,18 @@
   --color-violet-clair: #B79CFF;   /* 8.01:1 sur --content-bg, 7.24:1 sur --content-surface */
 }
 
+/* Meme necessite que ::placeholder ci-dessus, cause differente : sans
+   color-scheme explicite, certains navigateurs (Chrome/Edge en
+   particulier) appliquent leur propre theme sombre natif aux controles
+   de formulaire non stylises (select, checkbox, radio, scrollbars) des
+   que l'OS est en mode sombre -- independamment du theme choisi dans
+   l'app. C'est ce qui causait le fond marine impose sur les <textarea>
+   evoque plus tot dans la conversation, jamais corrige a l'epoque
+   faute d'acces au depot ; memes symptomes releves depuis sur <select>
+   lors de cet audit. */
+:root { color-scheme: light; }
+:root[data-theme="sombre"] { color-scheme: dark; }
+
 * { box-sizing: border-box; }
 
 /* Texte des placeholders (input/textarea) : sans cette regle, chaque
@@ -314,6 +326,15 @@ button:disabled {
 .bouton-secondaire { background: var(--content-surface); border: 1px solid var(--primary); color: var(--primary); }
 .bouton-secondaire:hover { background: var(--content-bg); text-decoration: none; }
 .bouton-secondaire:disabled, .bouton-secondaire:disabled:hover { border-color: var(--content-border); color: var(--content-text-muted); background: var(--content-surface); }
+/* Aucune variante "danger" n'existait : chaque action destructive du
+   site (Supprimer un cercle/une FAQ/une entree de moderation,
+   Desactiver la 2FA) reutilisait soit .bouton-secondaire tel quel
+   (aucun signal visuel avant un clic destructif), soit un style inline
+   invente au cas par cas (securite.html) -- la meme action n'avait pas
+   la meme apparence d'une page a l'autre (§3 du brief). */
+.bouton-danger { background: var(--content-surface); border: 1px solid var(--color-danger-clair); color: var(--color-danger-clair); }
+.bouton-danger:hover { background: var(--color-danger-clair); color: var(--content-surface); text-decoration: none; }
+.bouton-danger:disabled, .bouton-danger:disabled:hover { border-color: var(--content-border); color: var(--content-text-muted); background: var(--content-surface); }
 
 /* ---------- Stats ---------- */
 
@@ -439,6 +460,40 @@ button:disabled {
 .carte-formulaire input:focus, .carte-formulaire select:focus, .carte-formulaire textarea:focus {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
+}
+/* Meme correctif que .carte-formulaire ci-dessus, mais pour tout champ
+   qui n'est PAS dans une carte-formulaire (ex. filtres inline hors
+   carte) -- sans ca, ces champs retombent sur la regle generique
+   "input, select, textarea { background: var(--bg) }" plus bas dans ce
+   fichier, qui pointe encore vers l'ancien token toujours sombre,
+   independant du theme. */
+.contenu-clair input, .contenu-clair select, .contenu-clair textarea {
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
+  color: var(--content-text);
+}
+.contenu-clair input:focus, .contenu-clair select:focus, .contenu-clair textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+/* <select> natif : sans ceci, la fleche et tout le chrome du controle
+   restent geres par le navigateur/l'OS, avec un rendu qui varie
+   fortement d'un navigateur a l'autre et ne correspond a aucune des
+   deux fleches (icone "options" etc.) du reste de l'identite Le Phare.
+   appearance:none retire le chrome natif (fleche incluse) ; la fleche
+   est redessinee en fond SVG, meme trace que les icones de ce fichier
+   (chevron simple, stroke fin), une couleur encodee par theme (les
+   variables CSS ne sont pas substituables dans un data-URI SVG). */
+.contenu-clair select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.25rem;
+}
+:root[data-theme="sombre"] .contenu-clair select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F3F4F6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
 .carte-formulaire .erreur {
   background: rgba(189, 78, 45, 0.08);
