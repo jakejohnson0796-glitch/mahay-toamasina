@@ -974,7 +974,16 @@ input:focus, select:focus, textarea:focus {
 .entete-cercle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* flex-start (et non plus space-between) : avec flex-wrap, si les
+     actions se retrouvent seules sur leur propre ligne (titre trop
+     long sur petit ecran), space-between les collait au bord GAUCHE
+     de cette ligne faute d'un second element avec qui "repartir"
+     l'espace -- d'ou le bug mobile. Le margin-left:auto sur
+     .entete-cercle-actions ci-dessous reproduit le comportement
+     "colle a droite" recherche, mais ligne par ligne : il fonctionne
+     aussi bien sur une seule ligne (desktop, comportement inchange)
+     que si les actions basculent seules sur la ligne suivante. */
+  justify-content: flex-start;
   gap: 1rem;
   flex-wrap: wrap;
   margin-bottom: 1rem;
@@ -1009,7 +1018,7 @@ input:focus, select:focus, textarea:focus {
   gap: 0.4rem;
   flex-wrap: wrap;
 }
-.entete-cercle-actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+.entete-cercle-actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; margin-left: auto; }
 .bouton-icone-cercle {
   display: inline-flex;
   align-items: center;
