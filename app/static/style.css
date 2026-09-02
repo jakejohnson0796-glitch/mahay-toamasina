@@ -1535,6 +1535,52 @@ input:focus, select:focus, textarea:focus {
 .hero > *:nth-child(3) { animation-delay: 0.12s; }
 .hero > *:nth-child(4) { animation-delay: 0.18s; }
 
+/* ---------- Modale de confirmation (remplace window.confirm(), voir
+   app/static/js/modale.js) : overlay plein ecran + boite centree,
+   memes tokens --content-*, --shadow-* et --radius-* que le reste du
+   design system pour rester coherente avec les cards, pas un habillage
+   a part. Fermeture par clic sur le fond, touche Echap, ou les deux
+   boutons -- geree en JS, ce bloc ne gere que l'apparence. ---------- */
+.mahay-modale-fond {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 19, 48, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  z-index: 1000;
+  animation: mahay-modale-fond-apparition 0.15s var(--ease-fluide) both;
+}
+/* display:flex ci-dessus l'emporte sur la regle par defaut du
+   navigateur pour [hidden] (display:none, tres faible priorite,
+   toujours battue par une regle d'auteur) -- sans cette ligne, la
+   modale reste presente en pleine page et intercepte les clics meme
+   avec l'attribut hidden pose. */
+.mahay-modale-fond[hidden] { display: none; }
+.mahay-modale {
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 1.5rem;
+  max-width: 26rem;
+  width: 100%;
+  color: var(--content-text);
+  animation: mahay-apparition 0.2s var(--ease-fluide) both;
+}
+.mahay-modale-titre { margin: 0 0 0.5rem; font-size: 1.15rem; }
+.mahay-modale-message { margin: 0 0 1.4rem; color: var(--content-text-muted); line-height: 1.5; }
+.mahay-modale-actions { display: flex; justify-content: flex-end; gap: 0.6rem; }
+@keyframes mahay-modale-fond-apparition {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (max-width: 480px) {
+  .mahay-modale-actions { flex-direction: column-reverse; }
+  .mahay-modale-actions .bouton { width: 100%; }
+}
+
 @keyframes mahay-apparition {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }

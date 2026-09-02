@@ -176,8 +176,26 @@
   </div>
 </div>
 
+{# Modale de confirmation reutilisable (remplace window.confirm(), voir
+   app/static/js/modale.js) : un seul shell partage pose ici pour que
+   TOUTE page qui etend base.html en dispose automatiquement, plutot
+   que de dupliquer ce balisage sur chacune des ~14 pages qui en ont
+   besoin. Cache par defaut (hidden), rempli et affiche dynamiquement
+   par mahayConfirm(). #}
+<div class="mahay-modale-fond" id="mahay-modale-fond" hidden>
+  <div class="mahay-modale" role="alertdialog" aria-modal="true" aria-labelledby="mahay-modale-titre" aria-describedby="mahay-modale-message">
+    <h2 class="mahay-modale-titre" id="mahay-modale-titre">Confirmer</h2>
+    <p class="mahay-modale-message" id="mahay-modale-message"></p>
+    <div class="mahay-modale-actions">
+      <button type="button" class="bouton bouton-secondaire" id="mahay-modale-annuler">Annuler</button>
+      <button type="button" class="bouton bouton-danger" id="mahay-modale-confirmer">Confirmer</button>
+    </div>
+  </div>
+</div>
+
 <script src="/static/js/navigation.js?v={{ version_asset('js/navigation.js') }}" defer></script>
 <script src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
+<script src="/static/js/modale.js?v={{ version_asset('js/modale.js') }}" defer></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/sw.js').catch(() => {});

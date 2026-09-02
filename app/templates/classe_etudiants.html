@@ -31,7 +31,7 @@
       <td>{{ info.utilisateur.nom }}</td>
       <td>{{ info.inscription.date_inscription.strftime("%d/%m/%Y") }}</td>
       <td>
-        <form method="post" action="/classe/{{ cours.id }}/etudiants/{{ info.utilisateur.id }}/retirer" style="display:inline" onsubmit="return confirm('Retirer cet etudiant du cours ?');">
+        <form method="post" action="/classe/{{ cours.id }}/etudiants/{{ info.utilisateur.id }}/retirer" style="display:inline" onsubmit="return mahayConfirmSubmit(event, 'Retirer cet etudiant du cours ?', {danger: false});">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button type="submit" class="lien-action">Retirer</button>
         </form>

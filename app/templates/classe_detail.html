@@ -93,7 +93,7 @@
           <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejoindre</button>
         </form>
         {% if peut_gerer %}
-        <form method="post" action="/classe/seances/{{ seance.id }}/terminer" style="display:inline" onsubmit="return confirm('Terminer cette seance pour tout le monde ?');">
+        <form method="post" action="/classe/seances/{{ seance.id }}/terminer" style="display:inline" onsubmit="return mahayConfirmSubmit(event, 'Terminer cette seance pour tout le monde ?');">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Terminer</button>
         </form>

@@ -102,7 +102,7 @@
           </button>
         </form>
         {% if item.est_active %}
-        <form method="post" action="/admin/faq/{{ item.id }}/supprimer" style="display:inline;" onsubmit="return confirm('Confirmer la suppression de cette question ?');">
+        <form method="post" action="/admin/faq/{{ item.id }}/supprimer" style="display:inline;" onsubmit="return mahayConfirmSubmit(event, 'Confirmer la suppression de cette question ?');">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-danger" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Supprimer</button>
         </form>

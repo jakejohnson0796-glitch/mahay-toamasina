@@ -238,8 +238,8 @@
   });
 
   {% if peut_gerer %}
-  document.getElementById("btn-effacer-tout-tableau").addEventListener("click", function () {
-    if (!confirm("Effacer tout le tableau pour tout le monde ?")) return;
+  document.getElementById("btn-effacer-tout-tableau").addEventListener("click", async function () {
+    if (!(await mahayConfirm("Effacer tout le tableau pour tout le monde ?"))) return;
     elements.clear();
     mesElements.length = 0;
     pileRetablir.length = 0;

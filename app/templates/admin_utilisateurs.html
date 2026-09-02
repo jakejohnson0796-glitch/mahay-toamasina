@@ -46,7 +46,7 @@
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Retirer le statut professeur</button>
         </form>
         {% elif u.role.value == "admin" %}
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" style="display:inline" onsubmit="return confirm('Retrograder {{ u.nom }} en etudiant (retrait du statut admin) ?');">
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" style="display:inline" onsubmit="return mahayConfirmSubmit(event, 'Retrograder {{ u.nom }} en etudiant (retrait du statut admin) ?');">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Retirer le statut admin</button>
         </form>

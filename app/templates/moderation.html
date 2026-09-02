@@ -24,7 +24,7 @@
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejeter</button>
         </form>
-        <form method="post" action="/moderation/{{ doc.id }}/supprimer" style="display:inline" onsubmit="return confirm('Supprimer definitivement ce document (fichier compris) ?');">
+        <form method="post" action="/moderation/{{ doc.id }}/supprimer" style="display:inline" onsubmit="return mahayConfirmSubmit(event, 'Supprimer definitivement ce document (fichier compris) ?');">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-danger" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Supprimer</button>
         </form>
@@ -49,7 +49,7 @@
       <td>{{ doc.matiere }}</td>
       <td>{{ doc.annee }}</td>
       <td>
-        <form method="post" action="/moderation/{{ doc.id }}/supprimer" style="display:inline" onsubmit="return confirm('Supprimer definitivement ce document (fichier compris) ?');">
+        <form method="post" action="/moderation/{{ doc.id }}/supprimer" style="display:inline" onsubmit="return mahayConfirmSubmit(event, 'Supprimer definitivement ce document (fichier compris) ?');">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-danger" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Supprimer</button>
         </form>

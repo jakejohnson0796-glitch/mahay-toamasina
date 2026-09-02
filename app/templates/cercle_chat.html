@@ -69,7 +69,7 @@
         </form>
         {% endif %}
         {% if peut_gerer %}
-        <form method="post" action="/cercles/{{ cercle.id }}/supprimer" onsubmit="return confirm('Supprimer definitivement ce cercle et tous ses messages ?');">
+        <form method="post" action="/cercles/{{ cercle.id }}/supprimer" onsubmit="return mahayConfirmSubmit(event, 'Supprimer definitivement ce cercle et tous ses messages ?');">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button type="submit" class="lien-action lien-action-danger">Supprimer le cercle</button>
         </form>
@@ -292,8 +292,8 @@
 
   // ---------- Suppression / Signalement ----------
 
-  function supprimerMessage(messageId) {
-    if (!confirm("Supprimer ce message ?")) return;
+  async function supprimerMessage(messageId) {
+    if (!(await mahayConfirm("Supprimer ce message ?"))) return;
     const form = document.createElement("form");
     form.method = "post";
     form.action = "/cercles/" + cercleId + "/messages/" + messageId + "/supprimer";

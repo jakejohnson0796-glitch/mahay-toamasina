@@ -107,7 +107,7 @@
       </select>
     </form>
     {% if item.feedback.statut.value != "masque" %}
-    <form method="post" action="/admin/feedback/{{ item.feedback.id }}/masquer" onsubmit="return confirm('Masquer cet avis de la vue publique ?');">
+    <form method="post" action="/admin/feedback/{{ item.feedback.id }}/masquer" onsubmit="return mahayConfirmSubmit(event, 'Masquer cet avis de la vue publique ?', {danger: false});">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
       <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Masquer</button>
     </form>

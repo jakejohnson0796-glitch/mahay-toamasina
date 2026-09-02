@@ -45,7 +45,7 @@
       <td>{{ info.membre.date_adhesion.strftime("%d/%m/%Y") }}</td>
       <td>
         {% if peut_gerer and info.utilisateur.id != cercle.createur_id %}
-        <form method="post" action="/cercles/{{ cercle.id }}/membres/{{ info.utilisateur.id }}/retirer" style="display:inline" onsubmit="return confirm('Retirer ce membre du cercle ?');">
+        <form method="post" action="/cercles/{{ cercle.id }}/membres/{{ info.utilisateur.id }}/retirer" style="display:inline" onsubmit="return mahayConfirmSubmit(event, 'Retirer ce membre du cercle ?', {danger: false});">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button type="submit" class="lien-action">Retirer</button>
         </form>
