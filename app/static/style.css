@@ -9,25 +9,71 @@
 */
 
 :root {
+  /* --- Etape 3 (nouvelle palette) : --bg/--bg-panel/--bg-panel-2/--text/
+     --text-muted/--border restent VOLONTAIREMENT INCHANGES, verifie
+     selecteur par selecteur avant cette passe :
+       - --bg (#0E2A32) est codee en dur dans le JS de la gomme du
+         tableau blanc (ctx.strokeStyle = "#0E2A32", classe_tableau_
+         fragment.html) -- la changer ici casserait l'effacement pour
+         de vrai sans re-synchroniser ce JS, cf. note complete plus bas
+         ("Salle virtuelle (classe_salle.html)") ;
+       - --bg-panel/--bg-panel-2/--border suivent le meme sort : encore
+         consommees directement par .tuile-video/#grille-video/
+         .barre-outils-tableau/.canvas-tableau, memes composants
+         "restent INCHANGEES" par decision deja actee (meme note) ;
+       - --text (#F2ECDD) et --text-muted (#A9C0BD) sont le texte CLAIR
+         volontairement conserve pour .hero-phare/.ap-section-nuit
+         (fond --nuit, desormais --ink -- toujours sombre) : les
+         repointer vers la nouvelle palette (sombre sur clair) les
+         rendrait illisibles sur ces panneaux, cf. note existante
+         juste avant ces regles ("filet de securite").
+     Les usages qui referencaient ces tokens bruts par simple oubli de
+     migration (body, formulaires generiques, pied de page, .carte-
+     cercle, etc. -- aucune des raisons ci-dessus ne s'y applique) sont
+     corriges individuellement plus bas dans ce fichier, sans toucher
+     aux valeurs elles-memes ici. --- */
   --bg: #0E2A32;
   --bg-panel: #163943;
   --bg-panel-2: #1D4650;
   --text: #F2ECDD;
   --text-muted: #A9C0BD;
-  --accent: #E8935A;
-  --accent-soft: rgba(232, 147, 90, 0.15);
-  --accent-2: #6FA98C;
+  --accent: var(--terracotta-texte);  /* etait #E8935A (orange "Le Phare") -- nouvelle palette, cf. bloc "presse universitaire" juste apres */
+  --accent-soft: rgba(143, 63, 42, 0.15);  /* etait rgba(232,147,90,.15) -- meme teinte que --accent (terracotta-texte), alleguie */
+  --accent-2: #6FA98C;  /* INCHANGEE -- couleur "succes" decouplee de la refonte de marque : aucune teinte verte fournie
+                            par la nouvelle palette, et la deriver de --terracotta rendrait "approuve" couleur brique
+                            (aucun sens semantique). Reste verifiee compatible : 5.90:1 sur --ink (etait 6.47:1 sur
+                            l'ancien --nuit), toujours largement au-dessus de 4.5:1 la ou elle sert de texte sur
+                            .hero-phare/.ap-section-nuit. */
   --danger: #C1502E;
   --border: rgba(242, 236, 221, 0.14);
   --rayon: 6px;
 
-  /* --- "Le Phare" : nouveaux tokens bruts, voir le brief de refonte
-     identite visuelle. --lumiere corrige une collision identifiee dans
-     l'audit (--color-warning pointait vers --accent, donc "attention"
-     et "action principale" etaient visuellement identiques). --- */
-  --lumiere: #FBD9A0;        /* lueur du phare / etoiles / statut "en attente" */
-  --accent-reseau: #3E7A78;  /* fond "reseau" du dashboard (section 10.B) */
-  --nuit: #0A1B24;           /* canvas nocturne — hero et panneaux pleine largeur uniquement, jamais fond global */
+  /* --- Nouvelle palette "presse universitaire" (etape 3 du brief de
+     refonte visuelle), remplace "Le Phare" (navy/indigo/or). Ratios
+     verifies par calcul (luminance relative WCAG) plutot que repris
+     tels quels du brief : un ecart trouve, documente sur --gold. --- */
+  --ink: #172420;              /* fond sidebar / carte premium */
+  --cream: #F6F1E7;            /* fond de page */
+  --surface: #FFFDF8;          /* fond des cartes */
+  --terracotta: #B8543A;       /* UI/icones/bordures uniquement -- 4.27:1 sur --cream, 4.73:1 sur --surface : sous le
+                                   seuil texte 4.5:1, jamais en `color:` (voir --terracotta-texte juste apres) */
+  --terracotta-texte: #8F3F2A; /* texte, boutons pleins, avatars -- 6.41:1 sur --cream, 7.09:1 sur --surface.
+                                   ATTENTION : seulement 2.22:1 sur --ink -- ne jamais l'utiliser en texte sur un
+                                   panneau sombre (.hero-phare/.ap-section-nuit utilisent --gold a la place, voir
+                                   plus bas "filet de securite") */
+  --gold: #B08A3E;              /* decoratif uniquement, jamais en texte sur fond clair -- 5.00:1 sur --ink (texte
+                                    premium OK sur panneau sombre), mais seulement 2.85:1 sur --cream (sous le seuil
+                                    UI 3:1 : le 3.15:1 annonce dans le brief correspond en fait a --surface, pas
+                                    --cream -- a reverifier visuellement partout ou --gold/--star tombe directement
+                                    sur --cream plutot que sur une carte) */
+
+  /* --- Anciens tokens "Le Phare" bruts : --lumiere et --nuit suivent la
+     nouvelle palette (role identique, nouvelle teinte) ; --accent-reseau
+     n'a pas d'equivalent fourni et reste hors perimetre. --- */
+  --lumiere: var(--gold);    /* etait #FBD9A0 -- lueur du phare / etoiles / statut "en attente", meme role que --star */
+  --accent-reseau: #3E7A78;  /* INCHANGEE -- fond "reseau" du dashboard (section 10.B), hors perimetre etape 3 */
+  --nuit: var(--ink);        /* etait #0A1B24 -- canvas nocturne, panneaux .hero-phare/.ap-section-nuit uniquement,
+                                 jamais fond global. Meme role que --ink (fond sidebar/carte premium). */
 
   /* --- Etape 9/10 (passe accessibilite) : variante plus claire de
      --danger, reservee a l'anneau vide de .signal-rejete. Mesure au
@@ -47,7 +93,10 @@
      rien casser ailleurs dans le CSS. A utiliser pour tout nouveau
      composant plutot que d'introduire encore d'autres valeurs brutes. */
   --color-primary: var(--accent);
-  --color-primary-hover: #f0a874;
+  --color-primary-hover: var(--primary-hover);  /* etait #f0a874 (survol plus clair, coherent avec l'ancien --accent
+                                                     orange). Non utilise ailleurs dans ce fichier (0 usage constate) --
+                                                     remis en coherence avec le nouveau --primary-hover plutot que
+                                                     laisse orpheline sur une teinte disparue */
   --color-primary-soft: var(--accent-soft);
   --color-accent: var(--accent-2);
   --color-success: var(--accent-2);
@@ -91,29 +140,29 @@
      migration page par page (etapes 1 a 14) n'est pas terminee : aucune
      valeur existante n'est modifiee ici, donc les pages pas encore
      migrees restent inchangees a l'oeil. --- */
-  --sidebar-bg: #0B1F42;
-  --content-bg: #F9F9FC;
-  --content-surface: #FFFFFF;
-  --content-border: #E5E7EB;
-  --content-text: #111827;
-  --content-text-muted: #1A1A1A;  /* Correctif audit point 6 : etait #6B7280 (gris moyen, 4.60:1),
-                                      remplace par un gris tres fonce quasi noir -- 16.56:1 sur
-                                      --content-bg, 17.40:1 sur --content-surface. Applique au token
-                                      central plutot que ligne par ligne (57 usages dans ce fichier) :
-                                      labels, meta, descriptions de carte, sous-titres en heritent
-                                      tous. Nuance conservee avec --content-text (#111827) pour ne
-                                      pas effacer toute hierarchie visuelle -- les deux sont
-                                      desormais quasi indiscernables, ce qui est le but demande. */
-  --content-link: #4980E5;        /* couleur mesuree sur la maquette (liens/secondaire). 3.82:1 sur --content-surface :
-                                      insuffisant pour du texte de lien courant (AA texte = 4.5:1). Correct pour un
-                                      usage UI/grand texte (seuil 3:1 : bouton, icone, bordure). A trancher a la
-                                      passe accessibilite finale si un lien texte pur en a besoin (souligne+gras,
-                                      ou variante plus foncee dediee). */
-  --primary: #4F3AE8;
-  --primary-hover: #3019D6;       /* -10% de luminosite HSL sur --primary : 9.39:1 sur --content-surface, 8.94:1 sur --content-bg */
-  --star: #FCBB32;                /* etoiles/elements dores de la maquette claire. 1.71:1 sur --content-surface :
-                                      usage decoratif uniquement (icones, remplissages SVG), jamais comme texte --
-                                      meme reserve que --lumiere plus haut dans ce fichier. */
+  --sidebar-bg: var(--ink);            /* etait #0B1F42 (navy) */
+  --content-bg: var(--cream);          /* etait #F9F9FC */
+  --content-surface: var(--surface);   /* etait #FFFFFF */
+  --content-border: #E6DFCF;           /* etait #E5E7EB -- valeur "presse universitaire" (filet decoratif) */
+  --content-text: #211D16;             /* etait #111827 -- 14.90:1 sur --content-bg, 16.50:1 sur --content-surface */
+  --content-text-muted: #6E6A5E;   /* etait #1A1A1A (correctif d'une passe precedente : gris tres
+                                       fonce quasi noir, pour forcer une quasi-indiscernabilite avec
+                                       --content-text). La nouvelle palette fournit une vraie teinte
+                                       "muted" deja conforme AA texte (4.80:1 sur --content-bg, 5.32:1
+                                       sur --content-surface) : on revient donc a une hierarchie texte
+                                       principal/attenue reelle, ce correctif n'est plus necessaire. */
+  --content-link: var(--terracotta-texte);  /* etait #4980E5 (3.82:1, deja signale insuffisant pour texte AA --
+                                                note desormais obsolete). --terracotta-texte (6.41:1 sur
+                                                --content-surface) corrige ce point au passage. */
+  --primary: var(--terracotta-texte);  /* etait #4F3AE8 (indigo). 81 usages verifies dont 11x `color:` texte et 2x
+                                           fond plein (bouton-primaire, avatar) -- --terracotta seule (4.27:1) est
+                                           insuffisante en texte, --terracotta-texte (6.41:1/7.09:1) est le seul
+                                           choix qui reste conforme partout ou --primary est utilisee. */
+  --primary-hover: #723222;  /* etait #3019D6. -20% de luminosite HSL sur --terracotta-texte (assombrissement plus
+                                 marque que l'ancien -10%, la teinte de depart etant deja sombre) : 8.50:1 sur
+                                 --content-bg, 9.41:1 sur --content-surface */
+  --star: var(--gold);  /* etait #FCBB32. Meme reserve que --gold dans le bloc "presse universitaire" plus haut
+                            (decoratif uniquement, jamais en texte) */
 
   /* Variantes claires des tokens semantiques, pour un usage EN TEXTE sur
      fond clair (--content-bg / --content-surface). Les tokens --color-*
@@ -126,8 +175,13 @@
      --accent) pour eviter de reproduire la collision visuelle
      warning/danger deja identifiee et corrigee plus haut dans ce
      fichier. */
+  /* INCHANGEES etape 3 : couleurs de statut decouplees de la refonte de
+     marque, meme raison que --accent-2 plus haut -- la nouvelle palette
+     ne fournit ni vert ni rouge, les deriver de --terracotta/--gold
+     romprait leur sens semantique (succes/danger doivent rester
+     vert/rouge quel que soit l'accent de marque). */
   --color-success-clair: #487961;  /* base var(--accent-2) assombrie : 4.78:1 sur --content-bg, 5.02:1 sur --content-surface */
-  --color-warning-clair: #9B6307;  /* base var(--lumiere) assombrie : 4.78:1 sur --content-bg, 5.02:1 sur --content-surface */
+  --color-warning-clair: #9B6307;  /* base var(--lumiere) d'origine assombrie : 4.78:1 sur --content-bg, 5.02:1 sur --content-surface */
   --color-danger-clair: #BD4E2D;   /* base var(--danger) assombrie : 4.66:1 sur --content-bg, 4.89:1 sur --content-surface */
   --color-info-clair: #487686;     /* base var(--color-info) assombrie : 4.75:1 sur --content-bg, 4.99:1 sur --content-surface */
   --color-violet-clair: #7B52EE;   /* etape 3 (dashboard) : 4e couleur de la grille de stats (§9.4 du brief : vert/orange/bleu/violet),
@@ -138,7 +192,7 @@
      necessaire au-dela de ce qui precede.
      - hover   -> --primary-hover ci-dessus pour les boutons/liens primaires ;
      - focus   -> reutiliser var(--primary) comme anneau de focus-visible
-                  (6.44:1 sur --content-bg, tres au-dessus du seuil 3:1
+                  (6.41:1 sur --content-bg, tres au-dessus du seuil 3:1
                   exige pour un indicateur non textuel), meme pattern que
                   a:focus-visible plus bas dans ce fichier (outline 2px) ;
      - disabled -> reutiliser var(--content-text-muted) + opacity 0.5,
@@ -153,9 +207,12 @@
   /* --- Etape 1 (sidebar globale) : tokens de texte propres a la sidebar,
      annonces comme "a ajouter ici" dans les problemes detectes de
      l'etape 0. Valeurs mesurees sur la maquette de reference. --- */
-  --sidebar-text: #FFFFFF;         /* logo, lien actif, initiale avatar : 16.29:1 sur --sidebar-bg */
-  --sidebar-text-muted: #C4CDE5;   /* liens inactifs : 10.25:1 sur --sidebar-bg */
-  --sidebar-text-subtle: #8C9BC2;  /* libelles de groupe, sous-texte logo : 5.88:1 sur --sidebar-bg */
+  --sidebar-text: #F6F1E7;         /* etait #FFFFFF -- logo, lien actif, initiale avatar : 14.24:1 sur --ink (etait 16.29:1 sur --sidebar-bg navy) */
+  --sidebar-text-muted: #A9B5A9;   /* etait #C4CDE5 -- liens inactifs : 7.54:1 sur --ink */
+  --sidebar-text-subtle: var(--sidebar-text-muted);  /* etait #8C9BC2 (palier distinct, 5.88:1) -- la nouvelle palette
+                                                          ne fournit que 2 paliers de texte sidebar (pas 3) : fusionne
+                                                          sur --sidebar-text-muted. Seul usage reel (.tb-sidebar-lieu,
+                                                          0.7rem) reste largement conforme (7.54:1 >> 4.5:1 requis) */
   --sidebar-hover-bg: rgba(255, 255, 255, 0.06);  /* survol lien inactif, discret */
   --sidebar-border: rgba(255, 255, 255, 0.08);    /* separateurs internes a la sidebar */
 }
@@ -224,8 +281,10 @@
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--content-bg);  /* etait var(--bg) -- straggler confirme (etape 3) : aucun couplage protege
+                                      ici (contrairement a .canvas-tableau), corrige la bande sombre visible
+                                      derriere .app-page (qui n'a pas de fond propre) et sous le pied de page */
+  color: var(--content-text);     /* etait var(--text) */
   font-family: 'Inter', sans-serif;
   line-height: 1.55;
 }
@@ -263,9 +322,12 @@ main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 .pied {
   text-align: center;
   padding: 2rem;
-  color: var(--text-muted);
+  color: var(--content-text-muted);  /* etait var(--text-muted) -- straggler confirme (etape 3) : le pied est
+                                         hors de <main> (donc hors .main-clair/.contenu-clair), son fond
+                                         transparent herite de body ci-dessus -- sans cette correction le texte
+                                         restait clair (pense pour l'ancien fond sombre) sur le nouveau body clair */
   font-size: 0.85rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--content-border);  /* etait var(--border) */
   margin-top: 3rem;
 }
 
@@ -280,7 +342,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
   margin-bottom: 0.75rem;
 }
 
-.hero { padding: 2rem 0 3rem; border-bottom: 1px dashed var(--border); }
+.hero { padding: 2rem 0 3rem; border-bottom: 1px dashed var(--content-border); }  /* etait var(--border) -- straggler mineur, etape 3 */
 .sous-titre { max-width: 46em; }
 
 .cta-groupe { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; }
@@ -506,16 +568,17 @@ button:disabled {
   color: var(--primary);
 }
 
-label { display: block; font-size: 0.85rem; color: var(--text-muted); margin: 1rem 0 0.35rem; }
+label { display: block; font-size: 0.85rem; color: var(--content-text-muted); margin: 1rem 0 0.35rem; }  /* etait var(--text-muted) -- straggler confirme (etape 3), aucun override .contenu-clair existant pour ce cas */
 label:first-child { margin-top: 0; }
 
 input, select, textarea {
   width: 100%;
   padding: 0.65rem 0.75rem;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--content-bg);   /* etait var(--bg) -- straggler confirme (etape 3), aligne sur la variante
+                                       .contenu-clair deja existante juste plus bas dans ce fichier */
+  border: 1px solid var(--content-border);  /* etait var(--border) */
   border-radius: var(--rayon);
-  color: var(--text);
+  color: var(--content-text);      /* etait var(--text) */
   font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
 }
@@ -617,8 +680,9 @@ input:focus, select:focus, textarea:focus {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  background: var(--content-surface);  /* etait var(--bg-panel) -- straggler confirme (etape 3), aucun
+                                           override .contenu-clair existant pour ce composant */
+  border: 1px solid var(--content-border);  /* etait var(--border) */
   border-radius: var(--rayon);
   padding: 1.25rem 1.5rem;
   flex-wrap: wrap;
@@ -1508,12 +1572,12 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 0.75rem;
   font-size: 0.85rem;
 }
-.pied-contact-etiquette { color: var(--text-secondary); }
+.pied-contact-etiquette { color: var(--content-text-muted); }  /* etait var(--text-secondary), meme raison que .pied ci-dessus */
 .pied-contact-lien {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--text-primary);
+  color: var(--content-text);  /* etait var(--text-primary), meme raison que .pied ci-dessus */
   transition: color 0.15s var(--ease-fluide);
 }
 .pied-contact-lien:hover { color: var(--color-primary); text-decoration: none; }
@@ -2594,8 +2658,8 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   width: 2.6rem;
   height: 2.6rem;
   border-radius: 50%;
-  background: var(--bg-panel-2);
-  border: 1px solid var(--border);
+  background: var(--content-surface);  /* etait var(--bg-panel-2) -- straggler confirme (etape 3) */
+  border: 1px solid var(--content-border);  /* etait var(--border) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2812,20 +2876,25 @@ button:focus-visible,
 
 /* --- Etape 14 : filet de securite pour .hero-phare/.ap-section-nuit.
    Ces deux blocs restent volontairement sombres (identite "Le Phare" :
-   ciel etoile, canvas nocturne -- --nuit #0A1B24 est d'ailleurs tres
-   proche de --sidebar-bg #0B1F42, coherent avec la nouvelle direction)
-   meme sur une page par ailleurs migree en .contenu-clair. Sans cette
-   regle, le texte a l'interieur heriterait de --content-text (gris
-   fonce) pose par .main-clair sur <main> -- illisible sur fond marine.
-   Specificite : ".contenu-clair .hero-phare ..." (3 classes) bat
-   ".contenu-clair .eyebrow" (2 classes), donc s'applique correctement
-   par-dessus. */
+   ciel etoile, canvas nocturne -- --nuit et --sidebar-bg pointent
+   d'ailleurs tous les deux vers --ink depuis l'etape 3, exactement la
+   meme teinte, coherent avec la nouvelle direction) meme sur une page
+   par ailleurs migree en .contenu-clair. Sans cette regle, le texte a
+   l'interieur heriterait de --content-text (sombre) pose par .main-clair
+   sur <main> -- illisible sur fond sombre. Specificite :
+   ".contenu-clair .hero-phare ..." (3 classes) bat ".contenu-clair
+   .eyebrow" (2 classes), donc s'applique correctement par-dessus.
+   NOTE etape 3 : .hero-phare h1 em utilise --gold et non --accent
+   (contrairement a sa contrepartie .contenu-clair generique) -- verifie
+   par calcul, --accent (desormais --terracotta-texte) ne fait que
+   2.22:1 sur --ink, illisible. --gold est concu precisement pour ce
+   cas ("texte premium sur fond sombre", 5.00:1 sur --ink). */
 .contenu-clair .hero-phare,
 .contenu-clair .hero-phare .sous-titre,
 .contenu-clair .ap-section-nuit p { color: var(--text); }
 .contenu-clair .hero-phare .eyebrow,
 .contenu-clair .ap-section-nuit h2 { color: var(--accent-2); }
-.contenu-clair .hero-phare h1 em { color: var(--accent); }
+.contenu-clair .hero-phare h1 em { color: var(--gold); }  /* etait var(--accent) -- voir note ci-dessus */
 
 @media (max-width: 640px) {
   .ap-section { padding: 2rem 0; }
