@@ -119,6 +119,46 @@
   --radius-lg: 10px;
   --radius-xl: 16px;
 
+  /* --- Etape 4 (fondations manquantes) : echelle d'espacement, base 4px,
+     --space-1 a --space-16. Pur ajout -- aucun composant existant n'est
+     migre vers ces tokens ici (etape 6 "harmonisation"), ils cohabitent
+     avec les valeurs en dur actuelles sans rien changer visuellement. --- */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-7: 1.75rem;   /* 28px */
+  --space-8: 2rem;      /* 32px */
+  --space-9: 2.25rem;   /* 36px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-11: 2.75rem;  /* 44px */
+  --space-12: 3rem;     /* 48px */
+  --space-13: 3.25rem;  /* 52px */
+  --space-14: 3.5rem;   /* 56px */
+  --space-15: 3.75rem;  /* 60px */
+  --space-16: 4rem;     /* 64px */
+
+  /* --- Etape 4 (fondations manquantes) : echelle typographique, --text-xs
+     a --text-display. Paliers choisis a partir de la distribution reelle
+     mesuree a l'etape 1 de l'audit (29 valeurs de font-size distinctes,
+     128 usages, regroupees en grappes autour de ~0.7/~0.85/~1/~1.15/
+     ~1.35/~1.85/~2.2rem) plutot qu'une progression abstraite -- objectif :
+     que la consolidation de l'etape 6 revienne a arrondir chaque valeur
+     existante au palier le plus proche, sans redessiner. --text-display
+     est un nouveau palier, au-dessus du maximum actuellement utilise
+     (2.5rem), reserve aux gros titres hero. Pur ajout ici aussi, aucun
+     selecteur existant n'est touche. --- */
+  --text-xs: 0.7rem;        /* labels/mono/badges -- couvre la grappe 0.68-0.72rem existante */
+  --text-sm: 0.85rem;       /* texte secondaire -- couvre la grappe 0.75-0.88rem, la plus frequente */
+  --text-base: 1rem;        /* texte courant -- couvre la grappe 0.92-1.02rem */
+  --text-md: 1.15rem;       /* texte legerement accentue / sous-titres -- couvre la grappe 1.05-1.2rem */
+  --text-lg: 1.35rem;       /* petits titres -- couvre la grappe 1.3-1.4rem */
+  --text-xl: 1.85rem;       /* titres de section -- couvre la grappe 1.8-1.9rem */
+  --text-2xl: 2.2rem;       /* grands titres -- couvre la grappe 2.1-2.2rem */
+  --text-display: 2.75rem;  /* nouveau palier -- au-dessus du maximum actuel (2.5rem), pour les titres hero */
+
   /* Ombres a deux couches (contact + ambiante) teintees vers l'indigo de
      la marque (23,24,62 ~ --content-bg sombre) plutot que du noir neutre
      -- une ombre pure noire lit comme un habillage generique de
