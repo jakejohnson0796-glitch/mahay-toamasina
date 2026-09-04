@@ -224,9 +224,11 @@
   --color-warning-clair: #9B6307;  /* base var(--lumiere) d'origine assombrie : 4.78:1 sur --content-bg, 5.02:1 sur --content-surface */
   --color-danger-clair: #BD4E2D;   /* base var(--danger) assombrie : 4.66:1 sur --content-bg, 4.89:1 sur --content-surface */
   --color-info-clair: #487686;     /* base var(--color-info) assombrie : 4.75:1 sur --content-bg, 4.99:1 sur --content-surface */
-  --color-violet-clair: #7B52EE;   /* etape 3 (dashboard) : 4e couleur de la grille de stats (§9.4 du brief : vert/orange/bleu/violet),
-                                       reprend la teinte violette deja utilisee (hors famille semantique) par l'ancien theme sombre
-                                       pour "jours restants" + l'icone d'activite quiz. 4.66:1 sur --content-bg, 4.90:1 sur --content-surface */
+  --color-violet-clair: #7B52EE;   /* utilisee a l'origine (§9.4 du brief precedent) comme 4e couleur de la grille de
+                                       stats vert/orange/bleu/violet -- ce role a disparu a l'etape 5 (teinte unique
+                                       --terracotta sur les stats), mais le token reste activement utilise ailleurs
+                                       (activite quiz, badge acces violet, icone document cours) donc conserve tel quel.
+                                       4.66:1 sur --content-bg, 4.90:1 sur --content-surface */
 
   /* Etats hover/focus/disabled/actif : verifies, aucun nouveau token
      necessaire au-dela de ce qui precede.
@@ -1827,8 +1829,19 @@ main.main-clair-pleine-largeur { max-width: none; margin: 0; }
   transition: background 0.15s var(--ease-fluide), color 0.15s var(--ease-fluide);
 }
 .tb-sidebar-lien:hover { background: var(--sidebar-hover-bg); color: var(--sidebar-text); text-decoration: none; }
-.tb-sidebar-lien-actif { background: var(--primary); color: var(--sidebar-text); font-weight: 600; }
-.tb-sidebar-lien-actif:hover { background: var(--primary); color: var(--sidebar-text); }
+.tb-sidebar-lien-actif {
+  background: none;  /* etait var(--primary) -- etape 5 (composant structurel #1) : barre gauche plutot que fond plein */
+  box-shadow: inset 2px 0 0 var(--terracotta);  /* barre 2px. box-shadow plutot que border : peint a l'interieur de la
+                                                     boite, ne decale pas le contenu -- pas besoin de reserver 2px sur
+                                                     les liens inactifs pour eviter un saut visuel au changement d'etat */
+  color: var(--sidebar-text);
+  font-weight: 600;
+}
+.tb-sidebar-lien-actif:hover {
+  background: var(--sidebar-hover-bg);  /* etait var(--primary) -- meme survol discret que les liens inactifs, la barre suffit a signaler l'etat actif */
+  box-shadow: inset 2px 0 0 var(--terracotta);
+  color: var(--sidebar-text);
+}
 .tb-icone { font-size: 1rem; width: 1.2rem; text-align: center; opacity: 0.9; }
 .tb-sidebar-badge {
   margin-left: auto;
@@ -1987,15 +2000,25 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   color: var(--color-success-clair);
   margin: 0 0 0.9rem;
 }
-.tb-etiquette-premium { color: var(--primary); display: flex; align-items: center; gap: 0.4rem; }
+.tb-etiquette-premium { color: var(--gold); display: flex; align-items: center; gap: 0.4rem; }  /* etait var(--primary) -- etape 5, "label en --gold" demande par le brief. 5.00:1 sur --ink (voir .tb-carte-premium) */
 
-.tb-carte-reprendre, .tb-carte-premium {
+.tb-carte-reprendre {
   background: var(--content-surface);
   border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
   padding: 1.5rem 1.75rem;
   box-shadow: var(--shadow-sm);
   color: var(--content-text);
+}
+.tb-carte-premium {
+  /* etape 5 (composant structurel #2) : separee de .tb-carte-reprendre
+     ci-dessus (qui partageait la meme regle) -- bloc --ink plein au lieu
+     d'une carte a bordure. Pas de bordure : un bloc plein n'en a pas besoin. */
+  background: var(--ink);              /* etait var(--content-surface) */
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.75rem;
+  box-shadow: var(--shadow-sm);
+  color: var(--sidebar-text);          /* etait var(--content-text) -- texte creme sur --ink, 14.24:1 */
 }
 .tb-carte-reprendre { display: flex; flex-direction: column; justify-content: space-between; gap: 1.1rem; }
 .tb-reprendre-corps { display: flex; gap: 1.1rem; align-items: flex-start; }
@@ -2019,8 +2042,26 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 
 .tb-carte-premium { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; justify-content: center; }
 .tb-premium-texte { margin: 0; font-size: 0.95rem; }
+.tb-carte-premium .bouton-secondaire {
+  /* etape 5 : .bouton-secondaire est concu pour un fond clair (fond blanc,
+     bordure/texte --primary) -- sans cette adaptation il apparaitrait en
+     rectangle blanc au milieu du bloc --ink, contraire a l'esprit "bloc
+     plein". Variante ghost coherente avec le reste du bloc (--gold, meme
+     teinte que le libelle juste au-dessus). */
+  background: transparent;
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.tb-carte-premium .bouton-secondaire:hover { background: rgba(176, 138, 62, 0.12); }
 
-/* --- Stats : 4 couleurs distinctes (§9.4 du brief), tokens clairs AA --- */
+/* --- Stats : etape 5 (composant structurel #3) -- teinte unique
+   (--terracotta) sur la puce d'icone, plus le codage 4 couleurs
+   (vert/orange/bleu/violet, §9.4 du brief precedent). La differenciation
+   visuelle vient du chiffre (Fraunces, semi-gras, deja le cas plus bas)
+   et du libelle, plus de la couleur -- comme demande par le nouveau
+   brief. Les classes .tb-stat-vert/orange/bleu/violet restent dans les
+   templates (aucune modification demandee dessus) mais ne pilotent plus
+   aucune couleur : les 4 regles qui les stylaient sont supprimees ici. */
 .tb-grille-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2045,11 +2086,6 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .tb-grille-stats .tb-carte-stat:nth-child(3) { animation-delay: 0.18s; }
 .tb-grille-stats .tb-carte-stat:nth-child(4) { animation-delay: 0.22s; }
 .tb-carte-stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-/* La puce d'icone (cercle teinte) porte desormais la couleur semantique
-   du fond ET du trait -- l'ancienne bordure gauche de 3px etait le seul
-   porteur de couleur, peu visible et deconnectee du chiffre lui-meme.
-   La puce, juste a cote du chiffre, associe immediatement icone/couleur/
-   metrique en un seul regard (§5 hierarchie du brief). */
 .tb-stat-icone {
   flex-shrink: 0;
   width: 2.5rem;
@@ -2059,12 +2095,12 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   justify-content: center;
   border-radius: 50%;
   font-size: 1.1rem;
+  background: rgba(184, 84, 58, 0.12);  /* --terracotta (#B8543A) a 12%, meme opacite que l'ancien codage 4 couleurs */
+  color: var(--terracotta);              /* etait vert/orange/bleu/violet selon variante -- desormais uniforme, cf.
+                                             note ci-dessus. Icone = usage UI (seuil 3:1), --terracotta convient
+                                             (4.73:1 sur --content-surface) sans avoir besoin de --terracotta-texte */
 }
 .tb-stat-corps { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.tb-stat-vert .tb-stat-icone { background: rgba(72, 121, 97, 0.12); color: var(--color-success-clair); }
-.tb-stat-orange .tb-stat-icone { background: rgba(155, 99, 7, 0.12); color: var(--color-warning-clair); }
-.tb-stat-bleu .tb-stat-icone { background: rgba(73, 128, 229, 0.12); color: var(--content-link); }
-.tb-stat-violet .tb-stat-icone { background: rgba(123, 82, 238, 0.12); color: var(--color-violet-clair); }
 .tb-stat-nombre { font-family: 'Fraunces', serif; font-weight: 600; font-size: 2.1rem; line-height: 1.05; color: var(--content-text); }
 .tb-stat-label { font-size: 0.78rem; color: var(--content-text-muted); }
 
