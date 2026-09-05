@@ -259,34 +259,47 @@
   --sidebar-border: rgba(255, 255, 255, 0.08);    /* separateurs internes a la sidebar */
 }
 
-/* --- Dark mode : bascule du contenu (la sidebar reste identique dans
-   les deux modes -- deja bleu marine, conforme aux deux maquettes de
-   reference). [data-theme] est toujours pose explicitement par le
-   script inline de base.html (jamais absent), donc pas besoin de
-   variante ":root" sans attribut ici -- "clair" reste le comportement
-   par defaut du navigateur pour tout visiteur sans JS (progressive
-   enhancement).
+/* --- Etape 8 (mode sombre) : bascule du contenu (la sidebar reste
+   identique dans les deux modes -- --ink des l'etape 3, coherent avec
+   les deux maquettes de reference). [data-theme] est toujours pose
+   explicitement par le script inline de base.html (jamais absent), donc
+   pas besoin de variante ":root" sans attribut ici -- "clair" reste le
+   comportement par defaut du navigateur pour tout visiteur sans JS
+   (progressive enhancement).
 
-   Premiere passe de valeurs, choisies par coherence de teinte avec le
-   theme clair. Verifiees au contrastometre (WCAG 1.4.3) le 29/08/2026 :
-   toutes >=7.2:1 sur --content-bg et --content-surface, largement
-   au-dessus du seuil 4.5:1 du texte normal -- voir chaque ratio commente
-   sur sa ligne ci-dessous. Seul --content-text-muted avait echoue et a
-   deja ete corrige (correctif audit point 6, voir sa ligne). */
+   Valeurs redefinies pour la nouvelle direction "presse universitaire"
+   (etaient un bleu marine tres sombre + accents froids, coherents avec
+   l'ancien indigo/navy) : charbon chaud plutot que noir/navy, creme
+   attenuee plutot que blanc pur, comme demande. Mesurees au calcul de
+   luminance relative WCAG le 05/09/2026, meme rigueur que le reste de ce
+   fichier -- toutes >=7.2:1 sur --content-bg et --content-surface sauf
+   mention contraire, voir chaque ratio commente sur sa ligne. --terracotta
+   brute (icones stats, non surchargee) tombe a 3.11:1 sur le nouveau
+   --content-surface -- au ras du seuil UI 3:1, a surveiller visuellement.
+
+   IMPORTANT : --primary (devenue --terracotta-texte a l'etape 3, concue
+   pour du texte sur fond CLAIR) n'etait pas surchargee ici avant cette
+   passe -- elle y serait passee quasi invisible (2.22:1 sur un fond
+   sombre, meme probleme mesure sur --ink a l'etape 5). Ajoutee ci-dessous
+   avec --primary-hover, absente elle aussi. --star/--gold n'ont en
+   revanche pas besoin de variante sombre : 5.22:1 sur --content-bg et
+   4.66:1 sur --content-surface sans aucun changement, memes valeurs que
+   le theme clair. */
 :root[data-theme="sombre"] {
-  --content-bg: #0B1330;
-  --content-surface: #141D3D;
-  --content-border: rgba(255, 255, 255, 0.09);
-  --content-text: #F3F4F6;  /* 16.59:1 sur --content-bg, 14.99:1 sur --content-surface */
-  --content-text-muted: #F5F5F5;  /* Correctif audit point 6 : etait #9CA6C9. 16.75:1 sur
-                                      --content-bg, 15.13:1 sur --content-surface (mesure). */
-  --content-link: #8FB1FF;  /* 8.61:1 sur --content-bg, 7.78:1 sur --content-surface */
+  --content-bg: #211D19;       /* etait #0B1330 (navy) -- charbon chaud */
+  --content-surface: #2C2620;  /* etait #141D3D -- separation avec --content-bg volontairement subtile (1.12:1), coherente avec l'ancien couple (1.11:1) : la hierarchie carte/page vient surtout de la bordure et de l'ombre, pas du contraste de fond */
+  --content-border: rgba(246, 241, 231, 0.10);  /* etait rgba(255,255,255,.09) -- meme principe (filet clair translucide) teinte creme plutot que blanc pur */
+  --content-text: #EDE7DA;  /* etait #F3F4F6 (quasi blanc pur) -- creme attenuee comme demande. 13.59:1 sur --content-bg, 12.13:1 sur --content-surface */
+  --content-text-muted: #BEB7A5;  /* etait #F5F5F5 (quasi indiscernable de --content-text, correctif d'une passe precedente). Le nouveau --content-text-muted clair (etape 3) etant deja une vraie teinte attenuee et non un correctif d'urgence, la meme logique s'applique ici : 8.38:1 sur --content-bg, 7.48:1 sur --content-surface, hierarchie texte principal/attenue reelle */
+  --content-link: #E8A788;  /* etait #8FB1FF (bleu) -- variante claire de --terracotta-texte pour rester dans la famille chromatique de la marque. 8.22:1 sur --content-bg, 7.34:1 sur --content-surface */
+  --primary: #E8A788;        /* absente avant cette passe -- voir note ci-dessus. Meme valeur que --content-link (meme logique qu'en theme clair, ou les deux pointent vers --terracotta-texte) */
+  --primary-hover: #DF855A;  /* absente avant cette passe -- -15% de luminosite HSL sur --primary ci-dessus (meme direction que le survol du theme clair, assombrir). Verifie contre le texte du bouton primaire (var(--content-surface), utilise en `color:` sur .bouton-primaire) : 5.44:1, largement AA */
 
-  --color-success-clair: #6FE0A0;  /* 11.17:1 sur --content-bg, 10.09:1 sur --content-surface */
-  --color-warning-clair: #FBD9A0;  /* 13.51:1 sur --content-bg, 12.20:1 sur --content-surface */
-  --color-danger-clair: #FF8F73;   /* 8.20:1 sur --content-bg, 7.41:1 sur --content-surface */
-  --color-info-clair: #7FC2DA;     /* 9.24:1 sur --content-bg, 8.35:1 sur --content-surface */
-  --color-violet-clair: #B79CFF;   /* 8.01:1 sur --content-bg, 7.24:1 sur --content-surface */
+  --color-success-clair: #6FE0A0;  /* inchangee -- 10.24:1 sur --content-bg, 9.14:1 sur --content-surface (recalcule sur le nouveau charbon, toujours conforme) */
+  --color-warning-clair: #FBD9A0;  /* inchangee -- 12.38:1 sur --content-bg, 11.06:1 sur --content-surface */
+  --color-danger-clair: #FFA189;   /* etait #FF8F73 -- legerement eclairci, l'ancienne valeur tombait a 6.71:1 sur le nouveau --content-surface (sous la barre >=7.2 tenue par les autres tokens de ce bloc). 8.54:1 sur --content-bg, 7.62:1 sur --content-surface */
+  --color-info-clair: #7FC2DA;     /* inchangee -- 8.48:1 sur --content-bg, 7.57:1 sur --content-surface */
+  --color-violet-clair: #C3ABFF;   /* etait #B79CFF -- meme raison que --color-danger-clair (ancienne valeur a 6.56:1 sur --content-surface). 8.44:1 sur --content-bg, 7.54:1 sur --content-surface */
 }
 
 /* Meme necessite que ::placeholder ci-dessus, cause differente : sans
