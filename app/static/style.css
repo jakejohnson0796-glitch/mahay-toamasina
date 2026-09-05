@@ -116,8 +116,8 @@
 
   --radius-sm: 4px;
   --radius-md: var(--rayon);
-  --radius-lg: 10px;
-  --radius-xl: 16px;
+  --radius-lg: 8px;   /* etait 10px -- etape 6, rayons resserres 8-10px sur les cartes/boutons (25 usages, cascade automatique) */
+  --radius-xl: 10px;  /* etait 16px -- non utilise actuellement (0 usage constate), mis en coherence avec la meme plage pour l'avenir */
 
   /* --- Etape 4 (fondations manquantes) : echelle d'espacement, base 4px,
      --space-1 a --space-16. Pur ajout -- aucun composant existant n'est
@@ -411,10 +411,10 @@ button:disabled {
 
 .bouton {
   display: inline-block;
-  padding: 0.75rem 1.4rem;
+  padding: var(--space-3) var(--space-6);  /* etait 0.75rem 1.4rem (0%/7.1% d'ecart) */
   border-radius: var(--rayon);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--text-base);  /* etait 0.95rem (5.3% d'ecart) */
 }
 /* --- Etape 2 (composants generiques) : boutons repeints pour le theme
    clair. Contrairement a .tampon-* / .table-manifeste plus bas, un
@@ -548,7 +548,7 @@ button:disabled {
   background: var(--content-surface);
   border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
-  padding: 2rem;
+  padding: var(--space-8);  /* etait 2rem (0% d'ecart) */
   max-width: 32em;
   box-shadow: var(--shadow-sm);
   color: var(--content-text);
@@ -615,14 +615,14 @@ label:first-child { margin-top: 0; }
 
 input, select, textarea {
   width: 100%;
-  padding: 0.65rem 0.75rem;
+  padding: 0.65rem var(--space-3);  /* 1ere valeur laissee en l'etat (0.65rem -> 15.4% d'ecart, hors seuil) ; 2e = 0.75rem (0% d'ecart) */
   background: var(--content-bg);   /* etait var(--bg) -- straggler confirme (etape 3), aligne sur la variante
                                        .contenu-clair deja existante juste plus bas dans ce fichier */
   border: 1px solid var(--content-border);  /* etait var(--border) */
   border-radius: var(--rayon);
   color: var(--content-text);      /* etait var(--text) */
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
+  font-size: var(--text-base);  /* etait 0.95rem (5.3% d'ecart) */
 }
 input:focus, select:focus, textarea:focus {
   outline: 2px solid var(--accent);
@@ -688,7 +688,7 @@ input:focus, select:focus, textarea:focus {
   background: var(--content-surface);
   border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
-  padding: 2rem;
+  padding: var(--space-8);  /* etait 2rem (0% d'ecart) */
   max-width: 32em;
   box-shadow: var(--shadow-sm);
   color: var(--content-text);
@@ -696,7 +696,7 @@ input:focus, select:focus, textarea:focus {
 .offre h1, .offre h2, .offre h3 { color: var(--content-text); }
 .offre a { color: var(--content-link); }
 .offre label { color: var(--content-text-muted); }
-.prix { font-family: 'Fraunces', serif; font-size: 2.5rem; color: var(--primary); }
+.prix { font-family: 'Fraunces', serif; font-size: var(--text-display); color: var(--primary); }  /* etait 2.5rem (10% d'ecart) -- le plus gros chiffre de la page, correspond au role de --text-display */
 .prix span { font-family: 'Inter', sans-serif; font-size: 1rem; color: var(--content-text-muted); }
 
 .fournisseurs { display: flex; gap: 0.75rem; margin: 1rem 0; flex-wrap: wrap; }
@@ -1800,32 +1800,32 @@ main.main-clair-pleine-largeur { max-width: none; margin: 0; }
   height: 100vh;
   overflow-y: auto;
   background: var(--sidebar-bg);
-  padding: 1.25rem 0.75rem;
+  padding: var(--space-5) var(--space-3);  /* etait 1.25rem 0.75rem (0% d'ecart) */
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-5);  /* etait 1.25rem (0% d'ecart) */
   z-index: 20;
 }
-.tb-sidebar-marque { padding: 0 0.6rem; margin-bottom: 0.25rem; }
-.tb-sidebar-logo { display: block; font-size: 0.95rem; font-weight: 500; color: var(--sidebar-text); }
-.tb-sidebar-lieu { display: block; font-size: 0.7rem; color: var(--sidebar-text-subtle); }
+.tb-sidebar-marque { padding: 0 0.6rem; margin-bottom: var(--space-1); }  /* 0.6rem laisse en l'etat (16.7% d'ecart, hors seuil) ; margin-bottom etait 0.25rem (0%) */
+.tb-sidebar-logo { display: block; font-size: var(--text-base); font-weight: 500; color: var(--sidebar-text); }  /* etait 0.95rem (5.3% d'ecart) */
+.tb-sidebar-lieu { display: block; font-size: var(--text-xs); color: var(--sidebar-text-subtle); }  /* etait 0.7rem (0% d'ecart) */
 
 .tb-sidebar-nav { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; overflow-y: auto; }
 .tb-sidebar-groupe {
-  font-size: 0.68rem;
+  font-size: var(--text-xs);  /* etait 0.68rem (2.9% d'ecart) */
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--sidebar-text-subtle);
-  margin: 1rem 0.6rem 0.3rem;
+  margin: var(--space-4) 0.6rem 0.3rem;  /* 1re valeur etait 1rem (0% d'ecart) ; les 2 autres (0.6rem/0.3rem) laissees en l'etat, hors seuil */
 }
 .tb-sidebar-lien {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.55rem 0.6rem;
+  gap: 0.65rem;  /* laisse en l'etat -- 15.4% d'ecart, hors seuil */
+  padding: 0.55rem 0.6rem;  /* laisse en l'etat -- 9.1%/16.7% d'ecart, la 2e valeur depasse le seuil donc je ne touche pas au shorthand */
   border-radius: var(--radius-md);
   color: var(--sidebar-text-muted);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);  /* etait 0.88rem (3.4% d'ecart) */
   transition: background 0.15s var(--ease-fluide), color 0.15s var(--ease-fluide);
 }
 .tb-sidebar-lien:hover { background: var(--sidebar-hover-bg); color: var(--sidebar-text); text-decoration: none; }
@@ -1847,34 +1847,34 @@ main.main-clair-pleine-largeur { max-width: none; margin: 0; }
   margin-left: auto;
   background: var(--star);
   color: #4A3300;
-  font-size: 0.7rem;
+  font-size: var(--text-xs);  /* etait 0.7rem (0% d'ecart) */
   font-weight: 700;
-  padding: 0.05rem 0.4rem;
+  padding: 0.05rem 0.4rem;  /* laisse en l'etat -- padding fin de pilule, sous l'echelle 4px */
   border-radius: 999px;
 }
 
 .tb-sidebar-premium {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--space-1);  /* etait 0.25rem (0% d'ecart) */
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--sidebar-border);
   border-radius: var(--radius-lg);
-  padding: 0.9rem;
+  padding: var(--space-4);  /* etait 0.9rem (11.1% d'ecart) */
   color: var(--sidebar-text);
   transition: border-color 0.15s var(--ease-fluide), transform 0.15s var(--ease-fluide);
 }
 .tb-sidebar-premium:hover { border-color: var(--star); text-decoration: none; transform: translateY(-2px); }
-.tb-sidebar-premium span { font-size: 0.78rem; color: var(--sidebar-text-muted); }
+.tb-sidebar-premium span { font-size: var(--text-sm); color: var(--sidebar-text-muted); }  /* etait 0.78rem (9.0% d'ecart) */
 .tb-premium-etoile { color: var(--star); }
 
 .tb-sidebar-compte {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 0.6rem;
+  gap: 0.6rem;  /* laisse en l'etat -- 16.7% d'ecart, hors seuil */
+  padding: var(--space-2) 0.6rem;  /* 1re valeur etait 0.5rem (0% d'ecart) ; 2e laissee en l'etat, hors seuil */
   border-top: 1px solid var(--sidebar-border);
-  padding-top: 0.9rem;
+  padding-top: var(--space-4);  /* etait 0.9rem (11.1% d'ecart) */
 }
 .tb-sidebar-avatar {
   width: 1.7rem;
@@ -1882,14 +1882,14 @@ main.main-clair-pleine-largeur { max-width: none; margin: 0; }
   border-radius: 50%;
   background: var(--primary);
   color: var(--sidebar-text);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);  /* etait 0.72rem (2.8% d'ecart) */
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.tb-sidebar-compte-nom { font-size: 0.8rem; color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-sidebar-compte-nom { font-size: var(--text-sm); color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }  /* etait 0.8rem (6.2% d'ecart) */
 
 /* --- Bouton clair/sombre : pilule sous la ligne de compte, meme
    emplacement que sur les deux maquettes de reference. --- */
@@ -2006,7 +2006,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   background: var(--content-surface);
   border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
-  padding: 1.5rem 1.75rem;
+  padding: var(--space-6) var(--space-7);  /* etait 1.5rem 1.75rem (0% d'ecart) */
   box-shadow: var(--shadow-sm);
   color: var(--content-text);
 }
@@ -2016,11 +2016,11 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
      d'une carte a bordure. Pas de bordure : un bloc plein n'en a pas besoin. */
   background: var(--ink);              /* etait var(--content-surface) */
   border-radius: var(--radius-lg);
-  padding: 1.5rem 1.75rem;
+  padding: var(--space-6) var(--space-7);  /* etait 1.5rem 1.75rem (0% d'ecart) */
   box-shadow: var(--shadow-sm);
   color: var(--sidebar-text);          /* etait var(--content-text) -- texte creme sur --ink, 14.24:1 */
 }
-.tb-carte-reprendre { display: flex; flex-direction: column; justify-content: space-between; gap: 1.1rem; }
+.tb-carte-reprendre { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-4); }  /* etait 1.1rem (9.1% d'ecart) */
 .tb-reprendre-corps { display: flex; gap: 1.1rem; align-items: flex-start; }
 .tb-reprendre-icone {
   width: 3rem;
@@ -2072,10 +2072,10 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   background: var(--content-surface);
   border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
-  padding: 1.2rem 1.3rem;
+  padding: var(--space-5);  /* etait 1.2rem 1.3rem (4.2%/3.8% d'ecart) -- meme valeur horizontal/vertical, la difference d'origine etait marginale */
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: var(--space-4);  /* etait 0.9rem (11.1% d'ecart) */
   color: var(--content-text);
   box-shadow: var(--shadow-sm);
   transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide);
@@ -2101,8 +2101,8 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
                                              (4.73:1 sur --content-surface) sans avoir besoin de --terracotta-texte */
 }
 .tb-stat-corps { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.tb-stat-nombre { font-family: 'Fraunces', serif; font-weight: 600; font-size: 2.1rem; line-height: 1.05; color: var(--content-text); }
-.tb-stat-label { font-size: 0.78rem; color: var(--content-text-muted); }
+.tb-stat-nombre { font-family: 'Fraunces', serif; font-weight: 600; font-size: var(--text-2xl); line-height: 1.05; color: var(--content-text); }  /* etait 2.1rem (4.8% d'ecart) */
+.tb-stat-label { font-size: var(--text-sm); color: var(--content-text-muted); }  /* etait 0.78rem (9.0% d'ecart) */
 
 /* --- Panneaux (activite / cercles) --- */
 .tb-ligne-basse {
@@ -2761,15 +2761,15 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   background: var(--content-surface);
   border: 1px solid var(--content-border);
   border-radius: var(--radius-lg);
-  padding: 1.1rem;
+  padding: var(--space-4);  /* etait 1.1rem (9.1% d'ecart) */
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: var(--space-4);  /* etait 0.9rem (11.1% d'ecart) */
   color: var(--content-text);
   transition: transform 0.18s var(--ease-fluide), box-shadow 0.18s var(--ease-fluide);
 }
 .carte-claire:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.carte-claire-corps { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.carte-claire-corps { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }  /* etait 0.7rem (7.1% d'ecart) */
 .carte-claire-avatar {
   flex-shrink: 0;
   width: 2.6rem;
