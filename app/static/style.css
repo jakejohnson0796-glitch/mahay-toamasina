@@ -937,7 +937,19 @@ input:focus, select:focus, textarea:focus {
    ancre au bas de l'ecran (position:fixed), independant de la position
    du bouton et de l'alignement du message — pattern courant type
    "feuille d'actions", robuste quelle que soit la largeur de la bulle. */
-@media (max-width: 640px) {
+/* --- Etape 7 (breakpoints) : consolidation vers 3 valeurs (480/768/1024px),
+   remplace 8 valeurs dispersees sans convention (420/480/640/720/768/800/
+   860/1024, releve etape 1 de l'audit). Mapping applique a chaque media
+   query de ce fichier : 420->480 (deja tres proche) ; 640/720/800/860->768
+   (tous des points de rupture "grille multi-colonnes -> 1-2 colonnes" ou
+   "sidebar -> panneau mobile", regroupes sur le seuil tablette existant
+   plutot que sur le seuil telephone, pour eviter une plage 480-768px ou
+   le rendu resterait entasse en plusieurs colonnes). Changement de
+   comportement reel (pas un simple renommage) : les ruptures qui
+   declenchaient a 640-860px se declenchent desormais a 768px -- a
+   verifier visuellement sur les pages concernees (dashboard, /documents,
+   /quiz, chat, FAQ/avis) avant mise en prod, cf. resume de l'etape. --- */
+@media (max-width: 768px) {
   .menu-actions-liste,
   .message-moi .menu-actions-liste {
     position: fixed;
@@ -1430,7 +1442,7 @@ input:focus, select:focus, textarea:focus {
 
 /* Panneau de fil de discussion en plein ecran sur mobile (§24) plutot
    qu'accole a la conversation, faute de place. */
-@media (max-width: 800px) {
+@media (max-width: 768px) {
   .disposition-chat { flex-direction: column; }
   .panneau-thread {
     position: fixed;
@@ -1452,7 +1464,7 @@ input:focus, select:focus, textarea:focus {
 .explication-quiz summary { cursor: pointer; color: var(--primary); }
 .explication-quiz p { margin: 0.5rem 0 0; }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   main { padding: 1.25rem; }
 }
 
@@ -2339,7 +2351,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   .tb-ligne-basse { grid-template-columns: 1fr; }
   .tb-ligne-supplementaire { grid-template-columns: 1fr; }
 }
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .tb-contenu { padding: 1.5rem 1.1rem 2rem; }
   .tb-grille-stats { grid-template-columns: repeat(2, 1fr); }
   .tb-reprendre-corps { flex-direction: column; }
@@ -2419,7 +2431,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   font-family: 'IBM Plex Mono', monospace;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .uni-grille { grid-template-columns: 1fr; }
 }
 
@@ -2481,10 +2493,10 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .doc-bouton { font-size: 0.85rem; }
 .doc-lien-quiz { font-size: 0.82rem; white-space: nowrap; color: var(--content-link); }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .doc-grille { grid-template-columns: 1fr 1fr; }
 }
-@media (max-width: 420px) {
+@media (max-width: 480px) {
   .doc-grille { grid-template-columns: 1fr; }
 }
 
@@ -2611,7 +2623,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   50% { opacity: 0.55; }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .quiz-grille { grid-template-columns: 1fr; }
 }
 
@@ -2835,7 +2847,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .stats-4 { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -2929,7 +2941,7 @@ button:focus-visible,
 @media (max-width: 1024px) {
   .ap-grille-3 { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .ap-grille-3 { grid-template-columns: 1fr; }
 }
 
@@ -2972,7 +2984,7 @@ button:focus-visible,
 .contenu-clair .ap-section-nuit h2 { color: var(--accent-2); }
 .contenu-clair .hero-phare h1 em { color: var(--gold); }  /* etait var(--accent) -- voir note ci-dessus */
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .ap-section { padding: 2rem 0; }
   .ap-section-nuit { padding: 1.75rem 1.25rem; }
 }
@@ -3046,7 +3058,7 @@ button:focus-visible,
   margin-top: 1.25rem;
 }
 .aide-avis-colonne { min-width: 0; }
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .aide-avis-grille { grid-template-columns: 1fr; }
 }
 
@@ -3128,7 +3140,7 @@ button:focus-visible,
 .compteur-limite { color: var(--accent); }
 
 /* Boutons tactiles suffisamment grands sur mobile (Partie 15 du brief) */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .etoile-bouton svg { width: 38px; height: 38px; }
   .faq-question-bouton { padding: 1.1rem 1rem; }
   /* Meme logique pour les boutons-icone circulaires du chat de cercle
