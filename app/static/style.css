@@ -184,23 +184,29 @@
   --content-bg: var(--cream);          /* etait #F9F9FC */
   --content-surface: var(--surface);   /* etait #FFFFFF */
   --content-border: #E6DFCF;           /* etait #E5E7EB -- valeur "presse universitaire" (filet decoratif) */
-  --content-text: #211D16;             /* etait #111827 -- 14.90:1 sur --content-bg, 16.50:1 sur --content-surface */
-  --content-text-muted: #6E6A5E;   /* etait #1A1A1A (correctif d'une passe precedente : gris tres
-                                       fonce quasi noir, pour forcer une quasi-indiscernabilite avec
-                                       --content-text). La nouvelle palette fournit une vraie teinte
-                                       "muted" deja conforme AA texte (4.80:1 sur --content-bg, 5.32:1
-                                       sur --content-surface) : on revient donc a une hierarchie texte
-                                       principal/attenue reelle, ce correctif n'est plus necessaire. */
-  --content-link: var(--terracotta-texte);  /* etait #4980E5 (3.82:1, deja signale insuffisant pour texte AA --
-                                                note desormais obsolete). --terracotta-texte (6.41:1 sur
-                                                --content-surface) corrige ce point au passage. */
-  --primary: var(--terracotta-texte);  /* etait #4F3AE8 (indigo). 81 usages verifies dont 11x `color:` texte et 2x
-                                           fond plein (bouton-primaire, avatar) -- --terracotta seule (4.27:1) est
-                                           insuffisante en texte, --terracotta-texte (6.41:1/7.09:1) est le seul
-                                           choix qui reste conforme partout ou --primary est utilisee. */
-  --primary-hover: #723222;  /* etait #3019D6. -20% de luminosite HSL sur --terracotta-texte (assombrissement plus
-                                 marque que l'ancien -10%, la teinte de depart etant deja sombre) : 8.50:1 sur
-                                 --content-bg, 9.41:1 sur --content-surface */
+  --content-text: #000000;  /* etait #211D16 -- demande explicite : texte principal en noir reel plutot
+                                que noir chaud teinte. 18.65:1 sur --content-bg, 20.66:1 sur --content-surface (quasi-max WCAG) */
+  --content-text-muted: #000000;   /* etait #6E6A5E (gris chaud) -- demande explicite : "tout texte gris
+                                       en noir reel". Alignee sur --content-text ci-dessus : la hierarchie
+                                       texte principal/attenue ne vient plus de la couleur (retiree a la
+                                       demande) mais du poids/de la taille de police la ou elle existe deja
+                                       (ex. .tb-stat-label, .pied). Toujours >=4.5:1 par construction (noir
+                                       pur sur cream/surface, ratio maximal). */
+  --content-link: var(--content-text);  /* etait var(--terracotta-texte) -- demande explicite : "tout texte
+                                            marron en noir fonce". Les liens se distinguent desormais par le
+                                            soulignement/underline du navigateur plutot que par la couleur. */
+  --primary: var(--content-text);  /* etait var(--terracotta-texte) -- meme demande que --content-link. Fait
+                                       basculer en noir toutes les utilisations texte de --primary (~30
+                                       selecteurs : hover d'actions, nombres de stats/quiz/prix, libelles actifs)
+                                       ainsi que ses fonds pleins (bouton-primaire, avatar -- noir plein, texte
+                                       clair dessus, toujours largement conforme) et ses bordures colorees.
+                                       --terracotta/--gold restent inchangees et non affectees (token separe) :
+                                       la barre active de la sidebar et les icones de stats gardent l'accent
+                                       terracotta, qui n'est pas du texte. */
+  --primary-hover: #262626;  /* etait #723222 (assombrissement de l'ancien terracotta-texte, n'a plus de sens
+                                 une fois --primary noir : on ne peut pas assombrir du noir). Eclaircissement
+                                 leger a la place (pattern usuel pour un survol de bouton deja noir) : 14.89:1
+                                 sur --content-surface (texte du bouton), tres largement AA */
   --star: var(--gold);  /* etait #FCBB32. Meme reserve que --gold dans le bloc "presse universitaire" plus haut
                             (decoratif uniquement, jamais en texte) */
 
@@ -618,7 +624,14 @@ button:disabled {
   color: var(--color-danger-clair);
 }
 .carte-formulaire .info {
-  background: rgba(79, 58, 232, 0.06);
+  /* etait rgba(79, 58, 232, 0.06) -- reste d'indigo code en dur (donc invisible
+     aux recherches sur var(--accent)/var(--primary)) jamais migre a l'etape 3.
+     Trouve en preparant ce changement : desormais que --primary est noir, ce
+     fond serait reste teinte indigo sous un texte noir -- incoherent. Remplace
+     par du terracotta a la meme opacite (18 occurrences dans ce fichier),
+     conserve un peu de la teinte de marque sur les etats "actif/en surbrillance"
+     maintenant que le texte lui-meme est neutre. */
+  background: rgba(184, 84, 58, 0.06);
   border: 1px solid var(--primary);
   color: var(--primary);
 }
@@ -842,7 +855,7 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-sm);
 }
 .message-moi .message-corps {
-  background: rgba(79, 58, 232, 0.06);
+  background: rgba(184, 84, 58, 0.06);
   border-color: var(--primary);
   border-radius: 14px 14px 4px 14px;
 }
@@ -1128,7 +1141,7 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(79, 58, 232, 0.1);
+  background: rgba(184, 84, 58, 0.1);
   color: var(--primary);
 }
 .entete-cercle-infos { min-width: 0; }
@@ -1276,7 +1289,7 @@ input:focus, select:focus, textarea:focus {
 .message-epingle-banniere {
   align-items: center;
   gap: 0.6rem;
-  background: rgba(79, 58, 232, 0.06);
+  background: rgba(184, 84, 58, 0.06);
   border: 1px solid var(--primary);
   border-radius: var(--radius-md);
   padding: 0.6rem 0.9rem;
@@ -1325,7 +1338,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--content-text);
 }
 .puce-reaction:hover { border-color: var(--primary); }
-.puce-reaction-mienne { border-color: var(--primary); background: rgba(79, 58, 232, 0.08); }
+.puce-reaction-mienne { border-color: var(--primary); background: rgba(184, 84, 58, 0.08); }
 
 .thread-apercu {
   margin-top: 0.4rem;
@@ -1622,7 +1635,7 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  background: rgba(79, 58, 232, 0.08);
+  background: rgba(184, 84, 58, 0.08);
   color: var(--content-text);
   padding: 0.3rem 0.6rem;
   border-radius: 999px;
@@ -2054,7 +2067,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(79, 58, 232, 0.08);
+  background: rgba(184, 84, 58, 0.08);
   color: var(--primary);
   border-radius: var(--radius-md);
   font-size: 1.2rem;
@@ -2175,7 +2188,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .tb-activite-document { background: rgba(72, 121, 97, 0.12); color: var(--color-success-clair); }
 .tb-activite-quiz { background: rgba(123, 82, 238, 0.1); color: var(--color-violet-clair); }
 .tb-activite-populaire { background: rgba(251, 187, 50, 0.14); color: var(--color-warning-clair); }
-.tb-activite-recommande { background: rgba(79, 58, 232, 0.08); color: var(--primary); }
+.tb-activite-recommande { background: rgba(184, 84, 58, 0.08); color: var(--primary); }
 .tb-activite-echeance { background: rgba(255, 143, 115, 0.14); color: var(--color-danger-clair); }
 .tb-activite-infos { display: flex; flex-direction: column; gap: 0.05rem; flex: 1; min-width: 0; }
 .tb-activite-infos strong { font-size: 0.88rem; color: var(--content-text); }
@@ -2207,7 +2220,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(79, 58, 232, 0.08);
+  background: rgba(184, 84, 58, 0.08);
   color: var(--primary);
 }
 /* Une couleur semantique distincte par raccourci plutot que le violet
@@ -2220,7 +2233,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 .tb-acces-orange { background: rgba(155, 99, 7, 0.12); color: var(--color-warning-clair); }
 .tb-acces-bleu { background: rgba(73, 128, 229, 0.12); color: var(--content-link); }
 .tb-acces-violet { background: rgba(123, 82, 238, 0.12); color: var(--color-violet-clair); }
-.tb-acces-primaire { background: rgba(79, 58, 232, 0.1); color: var(--primary); }
+.tb-acces-primaire { background: rgba(184, 84, 58, 0.1); color: var(--primary); }
 
 /* --- Ressources populaires / Recommande / Echeances : meme grille de
    panneaux que .tb-ligne-basse (Activite recente / Mes cercles),
@@ -2255,7 +2268,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   width: 2.3rem;
   height: 2.3rem;
   border-radius: 50%;
-  background: rgba(79, 58, 232, 0.1);
+  background: rgba(184, 84, 58, 0.1);
   color: var(--primary);
   display: flex;
   align-items: center;
@@ -2309,7 +2322,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
    -- meme traitement que la variante deja scopee a .carte-formulaire
    en etape 2, generalise a .contenu-clair pour couvrir aussi ces cas. */
 .contenu-clair .erreur { background: rgba(189, 78, 45, 0.08); border-color: var(--color-danger-clair); color: var(--color-danger-clair); }
-.contenu-clair .info { background: rgba(79, 58, 232, 0.06); border-color: var(--primary); color: var(--primary); }
+.contenu-clair .info { background: rgba(184, 84, 58, 0.06); border-color: var(--primary); color: var(--primary); }
 .contenu-clair .info a, .contenu-clair a:not(.bouton) { color: var(--content-link); }
 
 /* --- Etape 5 (chat des cercles) : trois autres classes generiques
@@ -2372,7 +2385,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
 
 /* --- Theme du jour (cercles_list.html) --- */
 .theme-jour {
-  background: rgba(79, 58, 232, 0.08);
+  background: rgba(184, 84, 58, 0.08);
   border: 1px solid var(--content-border);
   border-left: 3px solid var(--primary);
   border-radius: var(--radius-lg);
@@ -2464,7 +2477,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   transition: border-color 0.15s var(--ease-fluide), color 0.15s var(--ease-fluide), background 0.15s var(--ease-fluide);
 }
 .doc-chip:hover { border-color: var(--primary); color: var(--primary); text-decoration: none; }
-.doc-chip-actif { background: rgba(79, 58, 232, 0.08); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+.doc-chip-actif { background: rgba(184, 84, 58, 0.08); border-color: var(--primary); color: var(--primary); font-weight: 600; }
 
 .doc-grille {
   display: grid;
@@ -2494,7 +2507,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
 }
-.doc-icone-annale { background: rgba(79, 58, 232, 0.08); color: var(--primary); }
+.doc-icone-annale { background: rgba(184, 84, 58, 0.08); color: var(--primary); }
 .doc-icone-corrige { background: rgba(72, 121, 97, 0.12); color: var(--color-success-clair); }
 .doc-icone-fiche { background: rgba(72, 118, 134, 0.12); color: var(--content-link); }
 .doc-icone-cours { background: rgba(123, 82, 238, 0.12); color: var(--color-violet-clair); }
@@ -2613,7 +2626,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   transition: border-color 0.15s var(--ease-fluide), background 0.15s var(--ease-fluide);
 }
 .quiz-choix-option:hover { border-color: var(--primary); background: var(--content-bg); }
-.quiz-choix-option:has(input:checked) { border-color: var(--primary); background: rgba(79, 58, 232, 0.06); }
+.quiz-choix-option:has(input:checked) { border-color: var(--primary); background: rgba(184, 84, 58, 0.06); }
 .quiz-choix-option input { accent-color: var(--primary); }
 
 /* --- Chronometre (mode examen) --- */
@@ -2801,7 +2814,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   height: 2.6rem;
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(79, 58, 232, 0.08);
+  background: rgba(184, 84, 58, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3106,7 +3119,7 @@ button:focus-visible,
 .avis-groupe-titre:first-of-type { margin-top: 0.5rem; }
 .avis-carte { margin-bottom: 0; }
 .avis-reponse-equipe {
-  background: rgba(79, 58, 232, 0.06);
+  background: rgba(184, 84, 58, 0.06);
   border: 1px solid var(--primary);
   border-radius: var(--radius-sm);
   margin-top: 0.75rem;
