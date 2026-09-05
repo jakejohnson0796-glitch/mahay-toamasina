@@ -573,7 +573,15 @@ button:disabled {
   color: var(--content-text);
 }
 .carte-formulaire h1, .carte-formulaire h2, .carte-formulaire h3 { color: var(--content-text); }
-.carte-formulaire a { color: var(--content-link); }
+.carte-formulaire a:not(.bouton) { color: var(--content-link); }  /* etait ".carte-formulaire a" sans exclusion -- (0,1,0,1)
+                                    battait la specificite de .bouton-primaire/.bouton-secondaire (0,1,0,0) et leur
+                                    imposait --content-link comme couleur de TEXTE, par-dessus leur propre couleur
+                                    voulue. Invisible quand --content-link et --primary partageaient la meme teinte
+                                    (etapes 3-9), devenu flagrant (texte noir sur fond noir) une fois --primary
+                                    reste noir alors que --content-link... est aussi noir -- le bug etait deja la,
+                                    juste jamais rendu visible avant. Meme exclusion que ".contenu-clair a:not(.bouton)"
+                                    plus bas dans ce fichier, ~30 templates concernes (tout lien-bouton dans une
+                                    carte-formulaire : contact.html, universites.html, login/register, etc.). */
 .carte-formulaire label { color: var(--content-text-muted); }
 .carte-formulaire input, .carte-formulaire select, .carte-formulaire textarea {
   background: var(--content-bg);
@@ -720,7 +728,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--content-text);
 }
 .offre h1, .offre h2, .offre h3 { color: var(--content-text); }
-.offre a { color: var(--content-link); }
+.offre a:not(.bouton) { color: var(--content-link); }  /* meme correctif que .carte-formulaire a ci-dessus -- abonnement.html et sponsoring.html ont des boutons-lien dans .offre */
 .offre label { color: var(--content-text-muted); }
 .prix { font-family: 'Fraunces', serif; font-size: var(--text-display); color: var(--primary); }  /* etait 2.5rem (10% d'ecart) -- le plus gros chiffre de la page, correspond au role de --text-display */
 .prix span { font-family: 'Inter', sans-serif; font-size: 1rem; color: var(--content-text-muted); }
