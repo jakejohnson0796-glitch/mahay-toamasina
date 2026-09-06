@@ -26,8 +26,10 @@
     {% if peut_gerer %}
     <button type="button" id="btn-partage-ecran" class="bouton-controle" aria-pressed="false" aria-label="Partager l'ecran" title="Partager l'ecran">🖥️</button>
     {% endif %}
-    <button type="button" id="btn-lever-main" class="bouton-controle" aria-label="Lever la main" title="Lever la main">✋</button>
+    <button type="button" id="btn-lever-main" class="bouton-controle" aria-pressed="false" aria-label="Lever la main" title="Lever la main">✋</button>
     <button type="button" id="btn-tableau" class="bouton-controle" aria-pressed="false" aria-label="Tableau blanc" title="Tableau blanc">🖍️</button>
+    <button type="button" id="btn-participants" class="bouton-controle" aria-pressed="false" aria-label="Participants" title="Participants">👥</button>
+    <button type="button" id="btn-economie-donnees" class="bouton-controle" aria-pressed="false" aria-label="Mode economie de donnees (coupe la video recue, garde l'audio)" title="Mode economie de donnees (coupe la video recue, garde l'audio)">📶</button>
     <span id="compteur-participants" class="stat-label" style="margin-left:auto;align-self:center;">1 participant</span>
     <form method="post" action="/classe/seances/{{ seance.id }}/quitter" id="form-quitter">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -44,6 +46,22 @@
        fait qu'afficher/masquer une <div> : la Room, les
        RTCPeerConnection et les MediaStreamTrack ne sont jamais touches. -->
   <div id="panneau-tableau" class="carte-formulaire" hidden style="margin-top:1rem;"></div>
+
+  <!-- Panneau participants : construit cote client depuis room.remoteParticipants
+       (LiveKit connait deja tout le monde, pas besoin d'une route serveur
+       qui listerait la meme chose en double). Les boutons couper-micro/
+       expulser (peut_gerer uniquement) appellent les routes de moderation
+       cote serveur -- c'est LIVEKIT qui applique l'effet, pas juste ce
+       panneau qui se met a jour tout seul. -->
+  <div id="panneau-participants" class="carte-formulaire" hidden style="margin-top:1rem;">
+    <h3 class="titre-carte">Participants</h3>
+    <ul id="liste-participants" class="liste-participants-salle"></ul>
+  </div>
+
+  <div id="panneau-mains-levees" class="file-mains-levees" hidden>
+    <span class="stat-label">Mains levees, dans l'ordre :</span>
+    <ol id="liste-mains-levees"></ol>
+  </div>
 
   <div id="notifications-salle" aria-live="polite"></div>
 
@@ -76,11 +94,17 @@ const room = new Room({
   adaptiveStream: true,
   dynacast: true,
   videoCaptureDefaults: {
-    resolution: VideoPresets.h216.resolution,
+    resolution: VideoPresets.h360.resolution,
   },
   publishDefaults: {
-    videoEncoding: VideoPresets.h216.encoding,
-    simulcast: false,
+    videoEncoding: VideoPresets.h360.encoding,
+    simulcast: true,  // etait false -- avec adaptiveStream:true cote abonnes (juste au-dessus) sans
+                       // simulcast cote publication, il n'existait qu'UNE seule qualite a "adapter" :
+                       // tout le monde recevait la meme video, y compris un participant en 3G qui
+                       // n'a pas la bande passante pour la resolution de base. Simulcast fait publier
+                       // plusieurs paliers de qualite derives du flux capture (base relevee a 360p en
+                       // meme temps) ; chaque abonne recoit automatiquement le palier que sa connexion
+                       // peut tenir, sans que qui que ce soit n'ait a y penser.
   },
 });
 
@@ -133,12 +157,30 @@ const room = new Room({
     setTimeout(function () { n.remove(); }, 5000);
   }
 
+  // --- Mode economie de donnees : coupe la reception video de TOUS les
+  // participants distants (garde l'audio), sans se desabonner completement
+  // du flux -- setEnabled(false) suspend juste la reception, pas de
+  // renegociation WebRTC a chaque bascule. S'applique aussi aux
+  // participants qui rejoignent APRES l'activation (cf. TrackSubscribed
+  // plus bas). Rien a envoyer au serveur : c'est un choix de reception
+  // purement local, qui ne change rien pour les autres participants. */
+  let modeEconomieDonnees = false;
+  function appliquerModeEconomieSur(publicationVideo) {
+    if (publicationVideo) publicationVideo.setEnabled(!modeEconomieDonnees);
+  }
+  function appliquerModeEconomieDonnees() {
+    room.remoteParticipants.forEach(function (participant) {
+      participant.videoTrackPublications.forEach(appliquerModeEconomieSur);
+    });
+  }
+
   // --- Reception des flux video/audio des autres participants ---
   room.on(RoomEvent.TrackSubscribed, function (track, publication, participant) {
     const tuile = creerTuile(participant.identity, participant.name || "Participant");
     const element = track.attach();
     if (track.kind === Track.Kind.Video) {
       element.classList.add("tuile-video-flux");
+      appliquerModeEconomieSur(publication);  // applique le mode economie si deja actif au moment ou ce participant/flux arrive
     }
     tuile.appendChild(element);
     majCompteur();
@@ -151,12 +193,14 @@ const room = new Room({
   room.on(RoomEvent.ParticipantConnected, function (participant) {
     notifier(participant.name + " a rejoint la salle.");
     majCompteur();
+    mettreAJourPanneauParticipants();
   });
   room.on(RoomEvent.ParticipantDisconnected, function (participant) {
     const tuile = document.getElementById("tuile-" + participant.identity);
     if (tuile) tuile.remove();
     notifier(participant.name + " a quitte la salle.");
     majCompteur();
+    mettreAJourPanneauParticipants();
   });
 
   room.on(RoomEvent.Disconnected, function () {
@@ -169,7 +213,7 @@ const room = new Room({
     statutEl.textContent = "Connecte.";
   });
 
-  // --- Canal de donnees : chat + "lever la main" (pas de WebSocket
+  // --- Canal de donnees : chat + "mains levees" (pas de WebSocket
   // separe, on reutilise le canal deja ouvert par LiveKit) ---
   room.on(RoomEvent.DataReceived, function (payload, participant) {
     try {
@@ -177,7 +221,10 @@ const room = new Room({
       if (donnees.type === "chat") {
         ajouterMessageChat(donnees.nom, donnees.texte, false);
       } else if (donnees.type === "main_levee") {
+        ajouterMainLevee(donnees.nom);
         notifier(donnees.nom + " leve la main.");
+      } else if (donnees.type === "main_baissee") {
+        retirerMainLevee(donnees.nom);
       }
     } catch (e) { /* message non reconnu, on ignore */ }
   });
@@ -186,6 +233,110 @@ const room = new Room({
     const payload = new TextEncoder().encode(JSON.stringify(objet));
     room.localParticipant.publishData(payload, { reliable: true });
   }
+
+  // --- File "mains levees", visible de tous (pas seulement du
+  // professeur) : chaque client maintient la meme liste en ecoutant les
+  // memes evenements main_levee/main_baissee que tout le monde recoit
+  // deja. Classee par nom (pas d'ID partage fiable cote donnees), un
+  // meme nom ne peut apparaitre qu'une fois dans la file. */
+  const panneauMainsLevees = document.getElementById("panneau-mains-levees");
+  const listeMainsLeveesEl = document.getElementById("liste-mains-levees");
+  let mainsLevees = [];
+
+  function rendreListeMainsLevees() {
+    panneauMainsLevees.hidden = mainsLevees.length === 0;
+    listeMainsLeveesEl.innerHTML = "";
+    mainsLevees.forEach(function (nom) {
+      const item = document.createElement("li");
+      item.textContent = nom;
+      {% if peut_gerer %}
+      const btnEffacer = document.createElement("button");
+      btnEffacer.type = "button";
+      btnEffacer.className = "lien-action";
+      btnEffacer.textContent = "Fait";
+      btnEffacer.addEventListener("click", function () {
+        envoyerDonnee({ type: "main_baissee", nom: nom });
+        retirerMainLevee(nom);
+      });
+      item.appendChild(btnEffacer);
+      {% endif %}
+      listeMainsLeveesEl.appendChild(item);
+    });
+  }
+  function ajouterMainLevee(nom) {
+    if (mainsLevees.indexOf(nom) === -1) mainsLevees.push(nom);
+    rendreListeMainsLevees();
+  }
+  function retirerMainLevee(nom) {
+    mainsLevees = mainsLevees.filter(function (n) { return n !== nom; });
+    rendreListeMainsLevees();
+  }
+
+  // --- Panneau participants : (re)construit depuis room.remoteParticipants
+  // a chaque connexion/deconnexion -- LiveKit tient deja cette liste a
+  // jour, pas besoin d'un etat separe a synchroniser. */
+  const panneauParticipants = document.getElementById("panneau-participants");
+  const listeParticipantsEl = document.getElementById("liste-participants");
+  const btnParticipants = document.getElementById("btn-participants");
+
+  function mettreAJourPanneauParticipants() {
+    if (panneauParticipants.hidden) return;  // pas la peine de reconstruire un panneau ferme
+    listeParticipantsEl.innerHTML = "";
+    const soi = document.createElement("li");
+    soi.textContent = nomUtilisateur + " (vous)";
+    listeParticipantsEl.appendChild(soi);
+    room.remoteParticipants.forEach(function (participant) {
+      const item = document.createElement("li");
+      const nomSpan = document.createElement("span");
+      nomSpan.textContent = participant.name || "Participant";
+      item.appendChild(nomSpan);
+      {% if peut_gerer %}
+      const identite = participant.identity;
+      const btnMuter = document.createElement("button");
+      btnMuter.type = "button";
+      btnMuter.className = "lien-action";
+      btnMuter.textContent = "Couper le micro";
+      btnMuter.addEventListener("click", function () {
+        appelerModerationSalle("muter", identite, btnMuter, "Micro coupe.", "Ce participant n'a pas de micro actif.");
+      });
+      const btnExpulser = document.createElement("button");
+      btnExpulser.type = "button";
+      btnExpulser.className = "lien-action";
+      btnExpulser.textContent = "Expulser";
+      btnExpulser.addEventListener("click", function () {
+        if (!confirm("Expulser " + (participant.name || "ce participant") + " de la salle ?")) return;
+        appelerModerationSalle("expulser", identite, btnExpulser, "Participant expulse.", null);
+      });
+      item.appendChild(btnMuter);
+      item.appendChild(btnExpulser);
+      {% endif %}
+      listeParticipantsEl.appendChild(item);
+    });
+  }
+
+  {% if peut_gerer %}
+  function appelerModerationSalle(action, identiteCible, bouton, messageSucces, messageEchecDoux) {
+    bouton.disabled = true;
+    fetch("/classe/seances/{{ seance.id }}/salle/" + action + "/" + identiteCible, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "_csrf=" + encodeURIComponent({{ jeton_csrf(request) | tojson }}),
+    })
+      .then(function (reponse) { return reponse.json().then(function (corps) { return { ok: reponse.ok, corps: corps }; }); })
+      .then(function (resultat) {
+        if (!resultat.ok) {
+          notifier(resultat.corps.erreur || "Action impossible.");
+        } else if (action === "muter" && resultat.corps.coupe === false && messageEchecDoux) {
+          notifier(messageEchecDoux);
+        } else {
+          notifier(messageSucces);
+        }
+      })
+      .catch(function () { notifier("Action impossible (probleme reseau)."); })
+      .finally(function () { bouton.disabled = false; });
+  }
+  {% endif %}
 
   // --- Connexion ---
   room.connect(url, jeton).then(function () {
@@ -303,9 +454,36 @@ const room = new Room({
     }
   });
 
+  let mainLevee = false;
   document.getElementById("btn-lever-main").addEventListener("click", function () {
-    envoyerDonnee({ type: "main_levee", nom: nomUtilisateur });
-    notifier("Vous avez leve la main.");
+    mainLevee = !mainLevee;
+    this.setAttribute("aria-pressed", String(mainLevee));
+    this.classList.toggle("bouton-controle-actif", mainLevee);
+    envoyerDonnee({ type: mainLevee ? "main_levee" : "main_baissee", nom: nomUtilisateur });
+    if (mainLevee) {
+      ajouterMainLevee(nomUtilisateur);
+      notifier("Vous avez leve la main.");
+    } else {
+      retirerMainLevee(nomUtilisateur);
+    }
+  });
+
+  btnParticipants.addEventListener("click", function () {
+    const ouvrir = panneauParticipants.hidden;
+    panneauParticipants.hidden = !ouvrir;
+    this.setAttribute("aria-pressed", String(ouvrir));
+    this.classList.toggle("bouton-controle-actif", ouvrir);
+    if (ouvrir) mettreAJourPanneauParticipants();
+  });
+
+  document.getElementById("btn-economie-donnees").addEventListener("click", function () {
+    modeEconomieDonnees = !modeEconomieDonnees;
+    appliquerModeEconomieDonnees();
+    this.setAttribute("aria-pressed", String(modeEconomieDonnees));
+    this.classList.toggle("bouton-controle-actif", modeEconomieDonnees);
+    notifier(modeEconomieDonnees
+      ? "Mode economie de donnees active : video coupee, audio conserve."
+      : "Mode economie de donnees desactive.");
   });
 
   document.getElementById("form-chat-salle").addEventListener("submit", function (evenement) {

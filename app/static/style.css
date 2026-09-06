@@ -1595,6 +1595,40 @@ input:focus, select:focus, textarea:focus {
   background: var(--content-surface);
   padding: 0.75rem;
 }
+.liste-participants-salle, #liste-mains-levees {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.liste-participants-salle li, #liste-mains-levees li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--content-text);
+  padding: 0.4rem 0.1rem;
+  border-bottom: 1px solid var(--content-border);
+}
+.liste-participants-salle li:last-child, #liste-mains-levees li:last-child { border-bottom: none; }
+.liste-participants-salle .lien-action, #liste-mains-levees .lien-action { font-size: 0.78rem; white-space: nowrap; }
+.file-mains-levees {
+  border: 1px solid var(--content-border);
+  border-radius: 8px;
+  background: var(--content-surface);
+  padding: 0.6rem 0.85rem;
+  margin: 0.75rem 0;
+}
+#liste-mains-levees { counter-reset: rang-main; }
+#liste-mains-levees li::before {
+  counter-increment: rang-main;
+  content: counter(rang-main) ". ";
+  color: var(--content-text-muted);
+  font-weight: 600;
+}
 .messages-chat-salle { max-height: 220px; overflow-y: auto; margin-bottom: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem; }
 .message-chat-salle { font-size: 0.85rem; color: var(--content-text); }
 .message-chat-salle .message-auteur { color: var(--color-success-clair); font-weight: 600; margin-right: 0.4rem; }

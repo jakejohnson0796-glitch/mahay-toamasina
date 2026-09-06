@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect, UploadFile, File
-from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 from sqlmodel import Session, select
 
 from ..database import get_session, engine
@@ -26,7 +26,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir
 from ..auth import utilisateur_courant
-from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure
+from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
 from ..ws_manager import gestionnaire
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
@@ -481,6 +481,72 @@ def quitter_seance(request: Request, seance_id: int, session: Session = Depends(
         session.commit()
 
     return RedirectResponse(f"/classe/{seance.cours_id}", status_code=303)
+
+
+def _seance_et_cours_geres(session: Session, seance_id: int, utilisateur: Optional[Utilisateur]):
+    """Charge la seance + son cours et verifie que l'appelant peut gerer
+    CE cours precis. Retourne (seance, cours) ou (None, message_erreur)
+    -- factorise la meme suite de verifications deja dupliquee 6x dans ce
+    fichier pour salle_virtuelle/tableau/etc., utilisee ici pour les 2
+    nouvelles routes de moderation ci-dessous."""
+    if not utilisateur:
+        return None, ("Non connecte.", 401)
+    seance = session.get(Seance, seance_id)
+    if not seance:
+        return None, ("Seance introuvable.", 404)
+    cours = session.get(Cours, seance.cours_id)
+    if not cours or not _peut_gerer_cours(cours, utilisateur):
+        return None, ("Action reservee au professeur de ce cours.", 403)
+    return (seance, cours), None
+
+
+@router.post("/classe/seances/{seance_id}/salle/muter/{utilisateur_id}")
+async def muter_participant_salle(request: Request, seance_id: int, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    """Coupe le micro d'un participant precis, a la demande du professeur
+    (ou d'un admin) gerant ce cours. Repond en JSON et non par une
+    redirection : appelee en fetch() depuis classe_salle.html PENDANT
+    la seance -- une navigation de page couperait la Room LiveKit du
+    professeur lui-meme (meme raison que le tableau blanc, voir la note
+    a ce sujet dans classe_salle.html)."""
+    utilisateur = utilisateur_courant(request, session)
+    resultat, erreur = _seance_et_cours_geres(session, seance_id, utilisateur)
+    if erreur:
+        message, code = erreur
+        return JSONResponse({"erreur": message}, status_code=code)
+    seance, _cours = resultat
+
+    if not livekit_configure():
+        return JSONResponse({"erreur": "LiveKit n'est pas configure sur ce serveur."}, status_code=503)
+
+    coupe = await muter_micro_participant(seance.nom_salle_livekit, str(utilisateur_id))
+    return JSONResponse({"coupe": coupe})
+
+
+@router.post("/classe/seances/{seance_id}/salle/expulser/{utilisateur_id}")
+async def expulser_participant_salle(request: Request, seance_id: int, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    """Retire immediatement un participant de la salle audio/video.
+    Repond en JSON, memes raisons que muter_participant_salle ci-dessus.
+    N'empeche pas de rejoindre a nouveau (voir la note sur
+    expulser_participant dans livekit_tokens.py) : c'est une mesure
+    ponctuelle de moderation en seance, pas un bannissement du cours."""
+    utilisateur = utilisateur_courant(request, session)
+    resultat, erreur = _seance_et_cours_geres(session, seance_id, utilisateur)
+    if erreur:
+        message, code = erreur
+        return JSONResponse({"erreur": message}, status_code=code)
+    seance, _cours = resultat
+
+    # Garde-fou serveur en plus de celui cote JS (qui ne montre pas le
+    # bouton sur sa propre tuile) : sans ca, un clic malencontreux
+    # couperait la Room du professeur lui-meme.
+    if utilisateur_id == utilisateur.id:
+        return JSONResponse({"erreur": "Impossible de vous expulser vous-meme."}, status_code=400)
+
+    if not livekit_configure():
+        return JSONResponse({"erreur": "LiveKit n'est pas configure sur ce serveur."}, status_code=503)
+
+    await expulser_participant(seance.nom_salle_livekit, str(utilisateur_id))
+    return JSONResponse({"expulse": True})
 
 
 @router.get("/classe/seances/{seance_id}/presences")
