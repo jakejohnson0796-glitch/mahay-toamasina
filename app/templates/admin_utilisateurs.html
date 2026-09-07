@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
+{% from "components/avatar.html" import avatar_utilisateur %}
 {% block titre %}Utilisateurs — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
@@ -26,7 +27,7 @@
   <tbody>
     {% for u in utilisateurs %}
     <tr>
-      <td>{{ u.nom }}</td>
+      <td style="display:flex;align-items:center;gap:0.5rem;">{{ avatar_utilisateur(u, taille=24) }}{{ u.nom }}</td>
       <td>{{ u.telephone }}</td>
       <td>{{ u.role.value }}</td>
       <td>

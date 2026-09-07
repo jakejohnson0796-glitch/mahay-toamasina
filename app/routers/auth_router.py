@@ -4,8 +4,8 @@ Inscription, connexion, deconnexion.
 from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Request, Depends, Form
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException
+from fastapi.responses import RedirectResponse, FileResponse
 from sqlmodel import Session, select
 
 from ..database import get_session
@@ -20,6 +20,7 @@ from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_co
 from ..telephone import normaliser_telephone, TelephoneInvalide
 from ..web_utils import entier_ou_none
 from .. import subscription
+from ..storage import sauvegarder_avatar, obtenir_url_telechargement, supprimer_fichier, stockage_distant_actif, FichierInvalide
 
 
 def _ip_client(request: Request) -> str:
@@ -442,12 +443,14 @@ def actualiser_profil_academique(
 # Gestion de la double authentification (2FA / TOTP)
 # ============================================================
 
-@router.get("/securite")
-def page_securite(request: Request, session: Session = Depends(get_session)):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
-
+def _contexte_securite(utilisateur: Utilisateur, session: Session, erreur_photo: Optional[str] = None) -> dict:
+    """Factorise le contexte de securite.html, desormais construit a
+    deux endroits : le GET normal ci-dessous, et le POST /profil/photo
+    quand sauvegarder_avatar() rejette le fichier (meme principe que
+    _contexte() dans actualiser_profil_academique() plus haut -- on
+    re-rend directement le formulaire avec l'erreur plutot que de
+    passer par une redirection, pour eviter d'avoir a encoder un
+    message d'erreur libre dans l'URL)."""
     nb_codes_restants = 0
     if utilisateur.totp_active:
         nb_codes_restants = len(session.exec(
@@ -460,19 +463,102 @@ def page_securite(request: Request, session: Session = Depends(get_session)):
     filiere = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
     universite = session.get(Universite, utilisateur.universite_id) if utilisateur.universite_id else None
 
-    return templates.TemplateResponse(
-        request, "securite.html",
-        {
-            "utilisateur": utilisateur,
-            "nb_codes_restants": nb_codes_restants,
-            "filiere": filiere,
-            "universite": universite,
-            "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
-            "niveaux": NIVEAUX,
-            "peut_modifier_niveau": referentiel_academique.peut_modifier_niveau_maintenant(utilisateur),
-            "jours_avant_changement_niveau": referentiel_academique.jours_avant_prochain_changement_niveau(utilisateur),
-        },
-    )
+    return {
+        "utilisateur": utilisateur,
+        "nb_codes_restants": nb_codes_restants,
+        "filiere": filiere,
+        "universite": universite,
+        "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
+        "niveaux": NIVEAUX,
+        "peut_modifier_niveau": referentiel_academique.peut_modifier_niveau_maintenant(utilisateur),
+        "jours_avant_changement_niveau": referentiel_academique.jours_avant_prochain_changement_niveau(utilisateur),
+        "erreur_photo": erreur_photo,
+    }
+
+
+@router.get("/securite")
+def page_securite(request: Request, session: Session = Depends(get_session)):
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    return templates.TemplateResponse(request, "securite.html", _contexte_securite(utilisateur, session))
+
+
+# ============================================================
+# Photo de profil (upload reel OU avatar auto-genere) -- voir
+# app/storage.py (sauvegarder_avatar) et couleur_avatar() dans
+# app/templating.py pour le repli initiale+couleur quand aucune photo
+# n'est definie. Affichee depuis securite.html (carte "Photo de
+# profil"), la sidebar (base.html) et partout ou un Utilisateur est
+# liste (administration, membres d'un cercle) via le macro
+# components/avatar.html.
+# ============================================================
+
+@router.post("/profil/photo")
+def uploader_photo_profil(
+    request: Request,
+    photo: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    try:
+        # ancien_chemin=utilisateur.photo_chemin AVANT d'ecraser le
+        # champ ci-dessous : sauvegarder_avatar() s'en sert pour
+        # supprimer l'ancienne photo une fois la nouvelle validee (voir
+        # sa docstring dans storage.py).
+        utilisateur.photo_chemin = sauvegarder_avatar(photo, utilisateur.id, ancien_chemin=utilisateur.photo_chemin)
+    except FichierInvalide as exc:
+        return templates.TemplateResponse(
+            request, "securite.html", _contexte_securite(utilisateur, session, erreur_photo=str(exc))
+        )
+
+    session.add(utilisateur)
+    session.commit()
+    return RedirectResponse("/securite?ok=photo_mise_a_jour", status_code=303)
+
+
+@router.post("/profil/photo/supprimer")
+def supprimer_photo_profil(
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    if utilisateur.photo_chemin:
+        supprimer_fichier(utilisateur.photo_chemin)
+        utilisateur.photo_chemin = None
+        session.add(utilisateur)
+        session.commit()
+
+    return RedirectResponse("/securite?ok=photo_supprimee", status_code=303)
+
+
+@router.get("/profil/photo/{utilisateur_id}")
+def afficher_photo_profil(utilisateur_id: int, session: Session = Depends(get_session)):
+    """Sert la photo de profil d'un utilisateur. Volontairement PUBLIC
+    (pas de verification de session) : un avatar affiche dans un cercle
+    d'etude ou l'administration doit etre visible par les autres
+    membres/admins, exactement comme un document approuve est
+    telechargeable par n'importe qui -- aucune donnee sensible n'est
+    exposee (juste l'image elle-meme). Meme pattern que
+    documents_router.telecharger_document() : redirection vers l'URL
+    publique Supabase si le stockage distant est actif, sinon lecture
+    directe du disque local."""
+    utilisateur = session.get(Utilisateur, utilisateur_id)
+    if not utilisateur or not utilisateur.photo_chemin:
+        raise HTTPException(status_code=404)
+
+    if stockage_distant_actif():
+        return RedirectResponse(obtenir_url_telechargement(utilisateur.photo_chemin))
+    return FileResponse(utilisateur.photo_chemin)
 
 
 @router.post("/securite/universite")

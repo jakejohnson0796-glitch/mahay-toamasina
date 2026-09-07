@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
+{% from "components/avatar.html" import avatar_utilisateur %}
 {% block titre %}Securite du compte — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
@@ -16,6 +17,38 @@
 <div class="erreur">Vous avez recemment modifie votre niveau. Vous pourrez le modifier a nouveau dans {{ jours_avant_changement_niveau }} jour{{ "s" if jours_avant_changement_niveau > 1 else "" }}.</div>
 {% endif %}
 {% if request.query_params.get("ok") == "niveau_modifie" %}<div class="info">Niveau mis a jour.</div>{% endif %}
+
+<div class="carte-formulaire">
+  <h3 class="titre-carte">Photo de profil</h3>
+  {% if erreur_photo %}<div class="erreur">{{ erreur_photo }}</div>{% endif %}
+  {% if request.query_params.get("ok") == "photo_mise_a_jour" %}<div class="info">Photo de profil mise a jour.</div>{% endif %}
+  {% if request.query_params.get("ok") == "photo_supprimee" %}<div class="info">Photo de profil supprimee. L'avatar genere automatiquement est utilise a la place.</div>{% endif %}
+
+  <div style="display:flex; align-items:center; gap:1.25rem; margin-bottom:1.25rem;">
+    {{ avatar_utilisateur(utilisateur, taille=72) }}
+    <p class="stat-label" style="margin:0;">
+      {% if utilisateur.photo_chemin %}
+      Une photo est actuellement affichee sur votre profil.
+      {% else %}
+      Aucune photo definie : un avatar est genere automatiquement a partir de votre initiale.
+      {% endif %}
+    </p>
+  </div>
+
+  <form method="post" action="/profil/photo" enctype="multipart/form-data" style="margin-bottom:0.75rem;">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="photo">Choisir une photo (JPG, PNG ou WEBP, 5 Mo max)</label>
+    <input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" required>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Mettre a jour ma photo</button>
+  </form>
+
+  {% if utilisateur.photo_chemin %}
+  <form method="post" action="/profil/photo/supprimer" onsubmit="return mahayConfirmSubmit(event, 'Supprimer votre photo de profil ?', {danger: false});">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button class="bouton bouton-secondaire bouton-form" type="submit">Supprimer ma photo</button>
+  </form>
+  {% endif %}
+</div>
 
 <div class="carte-formulaire">
   <h3 class="titre-carte">Mon parcours academique</h3>

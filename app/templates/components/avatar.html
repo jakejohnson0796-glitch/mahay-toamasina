@@ -1,0 +1,38 @@
+{#
+Avatar generique d'un utilisateur (fonctionnalite "photo de profil /
+avatar") : affiche la VRAIE photo si l'utilisateur en a uploade une
+(Utilisateur.photo_chemin non vide), sinon repli automatique sur un
+avatar initiale+couleur -- le meme principe que celui deja utilise par
+le chat des cercles d'etude (voir couleur_avatar() dans
+app/templating.py, _message_cercle.html), ici generalise pour pouvoir
+etre utilise PARTOUT ou un utilisateur est affiche (sidebar de compte,
+liste des membres d'un cercle, administration des utilisateurs).
+
+La photo elle-meme n'est jamais accedee directement depuis un template :
+Utilisateur.photo_chemin est une reference OPAQUE (voir app/storage.py,
+meme regle que Document.chemin_fichier), seule la route
+/profil/photo/{utilisateur_id} (auth_router.py) sait l'interpreter
+(disque local ou Supabase Storage). Ce macro ne construit donc que
+l'URL de CETTE route, jamais le chemin lui-meme.
+
+Dimensionnement en pixels inline (via `taille`) plutot que par classe
+CSS contextuelle : un seul macro couvre alors tous les contextes
+(27px dans la sidebar, 72px sur la carte "Photo de profil" de
+securite.html, 24px dans une liste/tableau...) sans avoir a definir une
+classe de taille par usage.
+
+Usage :
+    {% from "components/avatar.html" import avatar_utilisateur %}
+    {{ avatar_utilisateur(utilisateur, taille=32) }}
+    {{ avatar_utilisateur(info.utilisateur, taille=24, classe_supplementaire="ma-classe") }}
+#}
+{% macro avatar_utilisateur(utilisateur, taille=32, classe_supplementaire="") %}
+{%- if utilisateur and utilisateur.photo_chemin -%}
+<img src="/profil/photo/{{ utilisateur.id }}" alt="" aria-hidden="true"
+     class="avatar-cercle {{ classe_supplementaire }}"
+     style="width:{{ taille }}px;height:{{ taille }}px;">
+{%- else -%}
+<span class="avatar-cercle avatar-initiale {{ classe_supplementaire }}" aria-hidden="true"
+      style="width:{{ taille }}px;height:{{ taille }}px;font-size:{{ (taille * 0.42) | round(1) }}px;background:{{ couleur_avatar(utilisateur.nom if utilisateur else '?') }};">{{ (utilisateur.nom[0] if utilisateur and utilisateur.nom else '?') | upper }}</span>
+{%- endif -%}
+{% endmacro %}

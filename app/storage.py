@@ -1,6 +1,7 @@
 """
 Abstraction de stockage des fichiers deposes par les etudiants (annales,
-fiches, cours...).
+fiches, cours...) ET des photos de profil (voir sauvegarder_avatar()
+plus bas, ajoutee pour la fonctionnalite "photo de profil / avatar").
 
 - Si SUPABASE_URL et SUPABASE_SERVICE_KEY sont definis (.env) : les
   fichiers sont envoyes dans un bucket Supabase Storage. C'est le mode a
@@ -10,17 +11,18 @@ fiches, cours...).
 - Sinon : fallback sur le disque local (dossier uploads/), exactement
   comme en V1. Pratique pour developper sans compte Supabase.
 
-Regle importante : Document.chemin_fichier ne doit JAMAIS etre construit
-ou interprete directement ailleurs dans le code. C'est une reference
-opaque (chemin local relatif, OU cle d'objet dans le bucket Supabase) qui
-ne doit passer que par les fonctions de ce module.
+Regle importante : Document.chemin_fichier ET Utilisateur.photo_chemin
+ne doivent JAMAIS etre construits ou interpretes directement ailleurs
+dans le code. Ce sont des references opaques (chemin local relatif, OU
+cle d'objet dans le bucket Supabase) qui ne doivent passer que par les
+fonctions de ce module.
 """
 import contextlib
 import re
 import tempfile
 import unicodedata
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Optional
 
 from fastapi import UploadFile
 
@@ -37,11 +39,19 @@ DOSSIER_UPLOADS_LOCAL = Path(__file__).resolve().parent.parent / "uploads"
 EXTENSIONS_AUTORISEES = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png"}
 TAILLE_MAX_DOCUMENT = 20 * 1024 * 1024  # 20 Mo
 
+# --- Photo de profil (fonctionnalite "photo de profil / avatar") :
+# uniquement des images, et une limite bien plus basse que les
+# documents -- une photo de profil n'a jamais besoin de 20 Mo. .webp
+# accepte en plus de .jpg/.jpeg/.png : format courant en sortie des
+# telephones/navigateurs recents, plus leger a poids egal.
+EXTENSIONS_AVATAR_AUTORISEES = {".jpg", ".jpeg", ".png", ".webp"}
+TAILLE_MAX_AVATAR = 5 * 1024 * 1024  # 5 Mo
+
 
 class FichierInvalide(ValueError):
-    """Leve par sauvegarder_fichier() si le fichier depose ne respecte
-    pas les regles ci-dessus (type ou taille). Le message est destine a
-    etre affiche tel quel a l'utilisateur."""
+    """Leve par sauvegarder_fichier()/sauvegarder_avatar() si le fichier
+    depose ne respecte pas les regles ci-dessus (type ou taille). Le
+    message est destine a etre affiche tel quel a l'utilisateur."""
 
 
 _client_supabase = None
@@ -126,6 +136,63 @@ def sauvegarder_fichier(fichier: UploadFile, reference: str) -> str:
     return str(chemin_local)
 
 
+def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: Optional[str] = None) -> str:
+    """Enregistre une photo de profil et renvoie la valeur a stocker dans
+    Utilisateur.photo_chemin. Meme mecanique que sauvegarder_fichier()
+    ci-dessus (Supabase ou disque local selon stockage_distant_actif()),
+    avec deux differences volontaires :
+
+    - Validation dediee, plus stricte (EXTENSIONS_AVATAR_AUTORISEES /
+      TAILLE_MAX_AVATAR) : une photo de profil n'a aucune raison
+      d'accepter un .pdf/.docx ni de peser 20 Mo.
+    - Nom d'objet FIXE par utilisateur ("avatars/avatar_<id>.<ext>",
+      sous-dossier dedie separe des documents) plutot que derive du nom
+      de fichier original : re-uploader une photo remplace directement
+      l'objet precedent. Si l'extension change (ex: .jpg -> .png), le
+      nom d'objet change aussi -- d'ou la suppression explicite de
+      l'ancien fichier (ancien_chemin, a passer par l'appelant depuis
+      Utilisateur.photo_chemin AVANT d'ecraser le champ en base) pour ne
+      jamais laisser une ancienne photo orpheline occuper du stockage.
+
+    Leve FichierInvalide si le type ou la taille ne respecte pas les
+    regles ci-dessus -- a capturer par l'appelant pour afficher un
+    message clair (voir /profil/photo dans auth_router.py)."""
+    nom_original = fichier.filename or "photo"
+    extension = Path(nom_original).suffix.lower()
+    if extension not in EXTENSIONS_AVATAR_AUTORISEES:
+        extensions_lisibles = ", ".join(sorted(EXTENSIONS_AVATAR_AUTORISEES))
+        raise FichierInvalide(f"Type de fichier non accepte. Formats autorises : {extensions_lisibles}.")
+
+    contenu = fichier.file.read()
+    if len(contenu) > TAILLE_MAX_AVATAR:
+        raise FichierInvalide(f"Photo trop volumineuse (max {TAILLE_MAX_AVATAR // (1024 * 1024)} Mo).")
+    if len(contenu) == 0:
+        raise FichierInvalide("Le fichier semble vide.")
+
+    # Supprime l'ancienne photo AVANT d'ecrire la nouvelle : si
+    # l'extension n'a pas change, ancien_chemin == le nom d'objet qu'on
+    # s'apprete a reecrire (aucun risque de supprimer la photo qu'on
+    # vient de deposer, l'ordre des operations le garantit).
+    if ancien_chemin:
+        supprimer_fichier(ancien_chemin)
+
+    nom_objet = f"avatars/avatar_{utilisateur_id}{extension}"
+
+    if stockage_distant_actif():
+        client = _obtenir_client_supabase()
+        client.storage.from_(parametres.supabase_bucket).upload(
+            nom_objet,
+            contenu,
+            {"content-type": fichier.content_type or "application/octet-stream"},
+        )
+        return nom_objet
+
+    chemin_local = DOSSIER_UPLOADS_LOCAL / nom_objet
+    chemin_local.parent.mkdir(parents=True, exist_ok=True)
+    chemin_local.write_bytes(contenu)
+    return str(chemin_local)
+
+
 def obtenir_url_telechargement(reference_fichier: str) -> str:
     """URL/chemin vers lequel rediriger pour telecharger le fichier."""
     if stockage_distant_actif():
@@ -136,12 +203,13 @@ def obtenir_url_telechargement(reference_fichier: str) -> str:
 
 def supprimer_fichier(reference_fichier: str) -> None:
     """Supprime le fichier physique (disque local) ou l'objet distant
-    (Supabase Storage) correspondant a Document.chemin_fichier.
+    (Supabase Storage) correspondant a Document.chemin_fichier OU
+    Utilisateur.photo_chemin.
 
     A appeler AVANT (ou juste apres, peu importe l'ordre exact tant que
     les deux sont faits dans la meme operation logique) la suppression
-    de l'enregistrement Document en base, pour ne jamais laisser un
-    fichier orphelin occuper du stockage indefiniment. Silencieuse si le
+    de l'enregistrement en base, pour ne jamais laisser un fichier
+    orphelin occuper du stockage indefiniment. Silencieuse si le
     fichier n'existe deja plus (ex: deuxieme tentative de suppression,
     ou fichier deja efface manuellement) : on ne veut pas qu'une
     suppression admin echoue juste parce que le fichier physique a deja

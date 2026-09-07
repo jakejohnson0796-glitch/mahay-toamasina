@@ -197,6 +197,23 @@ class Utilisateur(SQLModel, table=True):
     totp_secret: Optional[str] = None
     totp_active: bool = Field(default=False)
 
+    # --- Photo de profil (upload reel OU repli sur l'avatar genere
+    # automatiquement -- voir app/storage.py, sauvegarder_avatar(), et
+    # couleur_avatar() dans app/templating.py pour le calcul de la
+    # couleur/initiale quand ce champ est vide). None => aucune photo
+    # uploadee (le cas de tous les comptes existants juste apres cette
+    # migration) : l'avatar initiale+couleur est utilise a la place
+    # PARTOUT ou un utilisateur est affiche (voir
+    # components/avatar.html), jamais de valeur par defaut factice ici.
+    #
+    # Meme convention que Document.chemin_fichier ci-dessus : reference
+    # OPAQUE (chemin local relatif, OU cle d'objet dans le bucket
+    # Supabase), jamais interpretee en dehors de app/storage.py --
+    # l'affichage passe toujours par la route
+    # /profil/photo/{utilisateur_id} (voir auth_router.py), jamais par
+    # ce champ directement dans un template.
+    photo_chemin: Optional[str] = None
+
 
 class CodeSecours2FA(SQLModel, table=True):
     """Codes de secours a usage unique, generes a l'activation de la 2FA,

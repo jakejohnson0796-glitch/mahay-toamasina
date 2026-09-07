@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/entete_cercle.html" import entete_cercle %}
+{% from "components/avatar.html" import avatar_utilisateur %}
 {% block titre %}Membres — {{ cercle.nom }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
@@ -38,7 +39,8 @@
   <tbody>
     {% for info in membres %}
     <tr>
-      <td>
+      <td style="display:flex;align-items:center;gap:0.5rem;">
+        {{ avatar_utilisateur(info.utilisateur, taille=24) }}
         {{ info.utilisateur.nom }}
         {% if info.utilisateur.id == cercle.createur_id %}<span class="stat-label">(createur)</span>{% endif %}
       </td>

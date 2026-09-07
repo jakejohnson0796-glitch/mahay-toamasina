@@ -27,6 +27,7 @@
 </head>
 <body>
 {% from "components/icone.html" import icone %}
+{% from "components/avatar.html" import avatar_utilisateur %}
 {#
   Etape 1 (sidebar globale) du brief de refonte visuelle : remplace
   l'ancien header horizontal + mega-menu (components/mega_menu.html,
@@ -124,7 +125,7 @@
 
     <div class="tb-sidebar-compte">
       {% if utilisateur is defined and utilisateur %}
-      <span class="tb-sidebar-avatar" aria-hidden="true">{{ utilisateur.nom[0]|upper }}</span>
+      {{ avatar_utilisateur(utilisateur, taille=27) }}
       <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
       {% endif %}
       <a href="/deconnexion" class="tb-sidebar-lien" style="margin-left:auto; padding:0.3rem 0.4rem;" aria-label="Deconnexion" title="Deconnexion">{{ icone("securite", 15) }}</a>

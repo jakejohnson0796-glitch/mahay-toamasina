@@ -1989,20 +1989,37 @@ main.main-clair-pleine-largeur { max-width: none; margin: 0; }
   border-top: 1px solid var(--sidebar-border);
   padding-top: var(--space-4);  /* etait 0.9rem (11.1% d'ecart) */
 }
-.tb-sidebar-avatar {
-  width: 1.7rem;
-  height: 1.7rem;
+.tb-sidebar-compte-nom { font-size: var(--text-sm); color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }  /* etait 0.8rem (6.2% d'ecart) */
+
+/* --- Avatar generique (photo de profil OU initiale+couleur) --------
+   Ajoute pour la fonctionnalite "photo de profil / avatar" (voir
+   components/avatar.html, macro avatar_utilisateur) et utilise partout
+   ou un utilisateur est affiche : sidebar de compte, carte "Photo de
+   profil" de securite.html, liste des membres d'un cercle,
+   administration des utilisateurs. Remplace l'ancien
+   .tb-sidebar-avatar (taille/couleur codees en dur, initiale
+   uniquement, jamais de vraie photo) qui s'appuyait sur ces memes
+   proprietes -- desormais fournies inline par le macro, au cas par cas
+   selon la taille demandee, donc plus besoin d'une regle dediee ici.
+   .message-avatar (chat des cercles) reste une regle a part : son
+   fond "primaire" pour les messages de l'utilisateur courant
+   (.message-moi .message-avatar) est une nuance propre a ce contexte,
+   qui ne s'applique pas a un avatar de profil generique. */
+.avatar-cercle {
   border-radius: 50%;
-  background: var(--primary);
-  color: var(--sidebar-text);
-  font-size: var(--text-xs);  /* etait 0.72rem (2.8% d'ecart) */
-  font-weight: 600;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+  object-fit: cover;
+  vertical-align: middle;
 }
-.tb-sidebar-compte-nom { font-size: var(--text-sm); color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }  /* etait 0.8rem (6.2% d'ecart) */
+.avatar-cercle.avatar-initiale {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  color: #FFFFFF;
+}
 
 /* --- Bouton clair/sombre : pilule sous la ligne de compte, meme
    emplacement que sur les deux maquettes de reference. --- */
