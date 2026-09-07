@@ -1672,6 +1672,39 @@ input:focus, select:focus, textarea:focus {
   cursor: crosshair;
   touch-action: none;
 }
+.separateur-outils-tableau {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+  margin: 0 0.15rem;
+}
+.palette-couleurs-tableau { display: flex; gap: 0.3rem; align-items: center; }
+.pastille-couleur-tableau {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+.pastille-couleur-tableau.pastille-couleur-active { border-color: var(--star); }
+/* Agrandir/reduire (etape ulterieure a la refonte visuelle) : superposition
+   plein ecran, sous la modale de confirmation (z-index:1000, cf.
+   mahayConfirm) pour qu'un "Effacer tout" declenche en mode agrandi reste
+   confirmable par-dessus. --bg/--border ici (pas --content-*) : coherent
+   avec .barre-outils-tableau/.canvas-tableau ci-dessus, memes raisons
+   (fond volontairement sombre, cf. note "Salle virtuelle" plus haut). */
+.tableau-blanc-agrandi {
+  position: fixed;
+  inset: 0.75rem;
+  z-index: 900;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 0.75rem;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+}
+.tableau-blanc-agrandi .barre-outils-tableau { border-radius: 8px; }
 .badge-autorisation {
   display: inline-flex;
   align-items: center;
