@@ -36,7 +36,16 @@ _CSP = (
     "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "
-    "img-src 'self' data:; "
+    # img-src : 'self' (fichiers statiques du site) + data: (icones/SVG
+    # inline eventuels) + Supabase Storage -- necessaire depuis l'ajout
+    # de la photo de profil (voir /profil/photo/{id} dans
+    # auth_router.py, qui redirige vers l'URL publique Supabase du
+    # bucket "documents") : sans cette autorisation, le navigateur
+    # bloque silencieusement l'affichage de l'avatar en <img> (aucune
+    # erreur visible, juste rien qui s'affiche) alors qu'une navigation
+    # directe vers la meme URL fonctionne -- c'est le CSP, pas Supabase,
+    # qui bloquait dans ce cas.
+    "img-src 'self' data: https://*.supabase.co; "
     "connect-src 'self' ws: wss: https:; "
     # worker-src : le SDK LiveKit cree des Web Workers internes (blob:)
     # pour le traitement audio/video sans bloquer l'interface.
