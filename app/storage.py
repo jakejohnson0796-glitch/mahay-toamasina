@@ -145,12 +145,20 @@ def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: 
     - Validation dediee, plus stricte (EXTENSIONS_AVATAR_AUTORISEES /
       TAILLE_MAX_AVATAR) : une photo de profil n'a aucune raison
       d'accepter un .pdf/.docx ni de peser 20 Mo.
-    - Nom d'objet FIXE par utilisateur ("avatars/avatar_<id>.<ext>",
-      sous-dossier dedie separe des documents) plutot que derive du nom
-      de fichier original : re-uploader une photo remplace directement
-      l'objet precedent. Si l'extension change (ex: .jpg -> .png), le
-      nom d'objet change aussi -- d'ou la suppression explicite de
-      l'ancien fichier (ancien_chemin, a passer par l'appelant depuis
+    - Nom d'objet FIXE par utilisateur ("avatar_<id>.<ext>"), a la
+      racine du bucket -- SURTOUT PAS dans un sous-dossier ("avatars/...") :
+      constate en prod que Supabase Storage refusait de servir l'URL
+      publique d'un objet range dans un sous-dossier alors que les
+      documents (stockes a plat, ex: "TOA-DEG-2024-0147_algebre.pdf")
+      fonctionnent normalement -- tres probablement une regle d'acces
+      (policy) cote Supabase calee sur les noms d'objets existants, qui
+      ne couvre pas un chemin avec "/". Le prefixe "avatar_" suffit a
+      eviter toute collision avec les references de documents (qui ne
+      suivent pas ce format).
+      Re-uploader une photo remplace directement l'objet precedent. Si
+      l'extension change (ex: .jpg -> .png), le nom d'objet change
+      aussi -- d'ou la suppression explicite de l'ancien fichier
+      (ancien_chemin, a passer par l'appelant depuis
       Utilisateur.photo_chemin AVANT d'ecraser le champ en base) pour ne
       jamais laisser une ancienne photo orpheline occuper du stockage.
 
@@ -176,7 +184,7 @@ def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: 
     if ancien_chemin:
         supprimer_fichier(ancien_chemin)
 
-    nom_objet = f"avatars/avatar_{utilisateur_id}{extension}"
+    nom_objet = f"avatar_{utilisateur_id}{extension}"
 
     if stockage_distant_actif():
         client = _obtenir_client_supabase()
