@@ -1592,6 +1592,24 @@ input:focus, select:focus, textarea:focus {
   border-radius: 4px;
   z-index: 1;
 }
+
+/* --- Avatar generique (photo reelle ou repli initiale+couleur), salle
+   de classe virtuelle : voir construireAvatar() dans classe_salle.html.
+   Taille toujours posee inline en JS (parametre `taille`) -- ces regles
+   ne gerent que la forme (cercle, recadrage), pas les dimensions. */
+.avatar-repli { position: relative; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+.avatar-repli img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-repli-initiale {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+/* Placeholder affiche au centre d'une tuile video tant qu'aucun flux
+   video n'est attache (camera coupee) -- voir actualiserAffichageTuile()
+   qui bascule sa visibilite (attribut hidden), jamais retiree du DOM. */
+.tuile-avatar { z-index: 0; }
 .barre-controles-salle {
   display: flex;
   align-items: center;

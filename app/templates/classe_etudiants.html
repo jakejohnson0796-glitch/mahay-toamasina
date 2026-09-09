@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/avatar.html" import avatar_utilisateur %}
 {% block titre %}Etudiants — {{ cours.nom }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
@@ -28,7 +29,7 @@
   <tbody>
     {% for info in inscriptions %}
     <tr>
-      <td>{{ info.utilisateur.nom }}</td>
+      <td style="display:flex;align-items:center;gap:0.5rem;">{{ avatar_utilisateur(info.utilisateur, taille=24) }}{{ info.utilisateur.nom }}</td>
       <td>{{ info.inscription.date_inscription.strftime("%d/%m/%Y") }}</td>
       <td>
         <form method="post" action="/classe/{{ cours.id }}/etudiants/{{ info.utilisateur.id }}/retirer" style="display:inline" onsubmit="return mahayConfirmSubmit(event, 'Retirer cet etudiant du cours ?', {danger: false});">

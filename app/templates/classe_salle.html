@@ -83,6 +83,47 @@
   const peutPartagerEcran = conteneur.dataset.peutPartagerEcran === "true";
   const nomUtilisateur = {{ utilisateur.nom | tojson }};
 
+  // Palette d'avatars : DOIT rester identique, dans le meme ordre, a
+  // _PALETTE_AVATARS dans app/templating.py et a la copie utilisee dans
+  // cercle_chat.html -- un meme etudiant doit avoir la meme couleur
+  // d'initiale partout sur le site, cercles comme classe virtuelle.
+  const PALETTE_AVATARS = ["#1E7A34", "#1864AB", "#C23E0A", "#C2255C", "#087F5B", "#862E9C"];
+  function couleurAvatar(nom) {
+    if (!nom) return PALETTE_AVATARS[0];
+    let somme = 0;
+    for (let i = 0; i < nom.length; i++) somme += nom.charCodeAt(i);
+    return PALETTE_AVATARS[somme % PALETTE_AVATARS.length];
+  }
+
+  // Avatar (photo reelle ou repli initiale+couleur) pour un participant
+  // de la salle -- chat, panneau participants, tuile video. Contrairement
+  // au chat de cercle (ou le serveur sait deja qui a une photo), LiveKit
+  // ne nous donne que l'identity (= Utilisateur.id, voir
+  // generer_jeton_salle() dans livekit_tokens.py) et le nom : pas de
+  // flag "a_une_photo" disponible cote client. Solution la plus simple :
+  // on tente toujours l'image, et l'evenement onerror (404 si
+  // l'utilisateur n'a pas de photo) bascule sur l'initiale coloree.
+  function construireAvatar(id, nom, taille) {
+    const conteneur = document.createElement("span");
+    conteneur.className = "avatar-repli";
+    conteneur.style.width = taille + "px";
+    conteneur.style.height = taille + "px";
+    const img = document.createElement("img");
+    img.alt = "";
+    img.src = "/profil/photo/" + id;
+    img.onerror = function () {
+      img.remove();
+      const initiale = document.createElement("span");
+      initiale.className = "avatar-repli-initiale";
+      initiale.style.fontSize = Math.round(taille * 0.42) + "px";
+      initiale.style.background = couleurAvatar(nom);
+      initiale.textContent = (nom || "?").charAt(0).toUpperCase();
+      conteneur.appendChild(initiale);
+    };
+    conteneur.appendChild(img);
+    return conteneur;
+  }
+
   const statutEl = document.getElementById("statut-connexion");
   const grilleVideo = document.getElementById("grille-video");
   const compteurEl = document.getElementById("compteur-participants");
@@ -119,6 +160,9 @@ const room = new Room({
       tuile = document.createElement("div");
       tuile.className = "tuile-video";
       tuile.id = "tuile-" + identifiantParticipant;
+      const avatar = construireAvatar(identifiantParticipant, nom, 72);
+      avatar.classList.add("tuile-avatar");
+      tuile.appendChild(avatar);
       const etiquette = document.createElement("span");
       etiquette.className = "tuile-video-nom";
       etiquette.textContent = nom;
@@ -128,16 +172,27 @@ const room = new Room({
     return tuile;
   }
 
-  function retirerTuileSiVide(identifiantParticipant) {
+  // Remplace l'ancien retirerTuileSiVide() qui supprimait completement
+  // la tuile des qu'il n'y avait plus ni video ni audio -- du coup un
+  // participant camera coupee n'avait ABSOLUMENT aucune representation
+  // visuelle dans la grille. Desormais la tuile persiste tant que le
+  // participant est dans la salle (creee au connect/ParticipantConnected,
+  // supprimee seulement a ParticipantDisconnected) : cette fonction se
+  // contente d'afficher/cacher l'avatar selon qu'un flux VIDEO est
+  // actuellement attache (l'audio seul ne doit pas cacher l'avatar,
+  // d'ou le filtre sur .tuile-video-flux et non sur n'importe quel
+  // element media).
+  function actualiserAffichageTuile(identifiantParticipant) {
     const tuile = document.getElementById("tuile-" + identifiantParticipant);
-    if (tuile && !tuile.querySelector("video") && !tuile.querySelector("audio")) {
-      tuile.remove();
-    }
+    if (!tuile) return;
+    const avatar = tuile.querySelector(".tuile-avatar");
+    if (avatar) avatar.hidden = !!tuile.querySelector(".tuile-video-flux");
   }
 
-  function ajouterMessageChat(nom, texte, estMoi) {
+  function ajouterMessageChat(id, nom, texte, estMoi) {
     const ligne = document.createElement("div");
     ligne.className = "message-chat-salle" + (estMoi ? " message-chat-salle-moi" : "");
+    ligne.appendChild(construireAvatar(id, nom, 22));
     const auteur = document.createElement("span");
     auteur.className = "message-auteur";
     auteur.textContent = nom;
@@ -183,14 +238,16 @@ const room = new Room({
       appliquerModeEconomieSur(publication);  // applique le mode economie si deja actif au moment ou ce participant/flux arrive
     }
     tuile.appendChild(element);
+    actualiserAffichageTuile(participant.identity);
     majCompteur();
   });
   room.on(RoomEvent.TrackUnsubscribed, function (track, publication, participant) {
     track.detach().forEach(function (el) { el.remove(); });
-    retirerTuileSiVide(participant.identity);
+    actualiserAffichageTuile(participant.identity);
   });
 
   room.on(RoomEvent.ParticipantConnected, function (participant) {
+    creerTuile(participant.identity, participant.name || "Participant");
     notifier(participant.name + " a rejoint la salle.");
     majCompteur();
     mettreAJourPanneauParticipants();
@@ -219,7 +276,7 @@ const room = new Room({
     try {
       const donnees = JSON.parse(new TextDecoder().decode(payload));
       if (donnees.type === "chat") {
-        ajouterMessageChat(donnees.nom, donnees.texte, false);
+        ajouterMessageChat(participant.identity, donnees.nom, donnees.texte, false);
       } else if (donnees.type === "main_levee") {
         ajouterMainLevee(donnees.nom);
         notifier(donnees.nom + " leve la main.");
@@ -283,13 +340,23 @@ const room = new Room({
     if (panneauParticipants.hidden) return;  // pas la peine de reconstruire un panneau ferme
     listeParticipantsEl.innerHTML = "";
     const soi = document.createElement("li");
-    soi.textContent = nomUtilisateur + " (vous)";
+    const groupeSoi = document.createElement("span");
+    groupeSoi.style.cssText = "display:flex;align-items:center;gap:0.5rem;";
+    groupeSoi.appendChild(construireAvatar(room.localParticipant.identity, nomUtilisateur, 22));
+    const nomSoiSpan = document.createElement("span");
+    nomSoiSpan.textContent = nomUtilisateur + " (vous)";
+    groupeSoi.appendChild(nomSoiSpan);
+    soi.appendChild(groupeSoi);
     listeParticipantsEl.appendChild(soi);
     room.remoteParticipants.forEach(function (participant) {
       const item = document.createElement("li");
+      const groupeNom = document.createElement("span");
+      groupeNom.style.cssText = "display:flex;align-items:center;gap:0.5rem;";
+      groupeNom.appendChild(construireAvatar(participant.identity, participant.name || "Participant", 22));
       const nomSpan = document.createElement("span");
       nomSpan.textContent = participant.name || "Participant";
-      item.appendChild(nomSpan);
+      groupeNom.appendChild(nomSpan);
+      item.appendChild(groupeNom);
       {% if peut_gerer %}
       const identite = participant.identity;
       const btnMuter = document.createElement("button");
@@ -341,6 +408,16 @@ const room = new Room({
   // --- Connexion ---
   room.connect(url, jeton).then(function () {
     statutEl.textContent = "Connecte.";
+    // Cree tout de suite une tuile (avatar) pour soi-meme et pour tout
+    // participant DEJA present dans la salle -- ParticipantConnected ne
+    // se declenche que pour ceux qui arrivent APRES nous, et
+    // TrackSubscribed ne cree une tuile que si ce participant publie
+    // effectivement un flux. Sans cet appel, quelqu'un deja connecte
+    // sans camera/micro actifs resterait invisible.
+    creerTuile(room.localParticipant.identity, nomUtilisateur + " (vous)");
+    room.remoteParticipants.forEach(function (participant) {
+      creerTuile(participant.identity, participant.name || "Participant");
+    });
     majCompteur();
   }).catch(function (erreur) {
     statutEl.textContent = "Impossible de se connecter a la salle (" + erreur.message + ").";
@@ -370,10 +447,13 @@ const room = new Room({
             el.classList.add("tuile-video-flux");
             el.muted = true;  // evite l'echo de son propre micro
             tuile.appendChild(el);
+            actualiserAffichageTuile(room.localParticipant.identity);
           }
         });
       } else {
-        retirerTuileSiVide(room.localParticipant.identity);
+        const tuile = document.getElementById("tuile-" + room.localParticipant.identity);
+        if (tuile) tuile.querySelectorAll(".tuile-video-flux").forEach(function (el) { el.remove(); });
+        actualiserAffichageTuile(room.localParticipant.identity);
       }
     });
     this.setAttribute("aria-pressed", String(cameraActive));
@@ -492,7 +572,7 @@ const room = new Room({
     const texte = champ.value.trim();
     if (!texte) return;
     envoyerDonnee({ type: "chat", nom: nomUtilisateur, texte: texte });
-    ajouterMessageChat(nomUtilisateur, texte, true);
+    ajouterMessageChat(room.localParticipant.identity, nomUtilisateur, texte, true);
     champ.value = "";
   });
 
