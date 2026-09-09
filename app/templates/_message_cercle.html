@@ -3,7 +3,16 @@
      data-auteur-id="{{ m.auteur_id }}"
      data-reponses="{{ m.reponses }}"
      {% if m.piece_jointe_chemin %}data-piecejointe="1"{% endif %}>
-  <span class="message-avatar" aria-hidden="true" {% if not m.est_moi %}style="background: {{ couleur_avatar(m.auteur) }};"{% endif %}>{{ m.auteur[0] | upper }}</span>
+  <button type="button" class="message-avatar" data-utilisateur-id="{{ m.auteur_id }}"
+          aria-label="Voir le profil de {{ m.auteur }}"
+          {% if m.auteur_photo %}style="background: transparent;"
+          {% elif not m.est_moi %}style="background: {{ couleur_avatar(m.auteur) }};"{% endif %}>
+    {% if m.auteur_photo %}
+    <img src="/profil/photo/{{ m.auteur_id }}" alt="">
+    {% else %}
+    {{ m.auteur[0] | upper }}
+    {% endif %}
+  </button>
   <div class="message-corps">
     <div class="message-entete">
       <span class="message-auteur">{{ m.auteur }}</span>

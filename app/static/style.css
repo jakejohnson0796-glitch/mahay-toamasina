@@ -848,6 +848,27 @@ input:focus, select:focus, textarea:focus {
      (5.40:1 sur blanc, mesure). */
   background: #1E7A34;
   margin-top: 0.15rem;
+  /* Desormais un <button> (clic -> fiche de profil de l'auteur, voir
+     _message_cercle.html et ouvrirFicheProfil() dans cercle_chat.html),
+     plus un <span> decoratif -- on annule le chrome par defaut du
+     navigateur (bordure, padding) pour garder exactement le meme rendu
+     qu'avant. overflow/object-fit ne s'appliquent qu'au cas <img> (vraie
+     photo) ; sans effet sur le cas initiale+couleur. */
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+.message-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+.message-avatar:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 .message-moi .message-avatar { background: var(--primary); }
 
@@ -1808,6 +1829,101 @@ input:focus, select:focus, textarea:focus {
   .mahay-modale-actions { flex-direction: column-reverse; }
   .mahay-modale-actions .bouton { width: 100%; }
 }
+
+/* ---------- Fiche de profil d'un membre (clic sur un avatar dans le
+   chat d'un cercle -- voir _message_cercle.html et cercle_chat.html).
+   Meme structure overlay+boite que .mahay-modale ci-dessus (memes
+   tokens --content-*/--shadow-*/--radius-*), mais une boite distincte
+   (pas de bouton Confirmer/Annuler ici) : les deux peuvent coexister sur
+   la meme page (ex: fiche de profil ouverte, puis "Supprimer le
+   cercle"), donc pas question de partager un seul <div> fond/boite entre
+   les deux. ---------- */
+.mahay-fiche-profil-fond {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 19, 48, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  z-index: 1000;
+  animation: mahay-modale-fond-apparition 0.15s var(--ease-fluide) both;
+}
+.mahay-fiche-profil-fond[hidden] { display: none; }
+.mahay-fiche-profil {
+  position: relative;
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 1.75rem 1.5rem 1.5rem;
+  max-width: 22rem;
+  width: 100%;
+  color: var(--content-text);
+  animation: mahay-apparition 0.2s var(--ease-fluide) both;
+}
+.mahay-fiche-profil-fermer {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--content-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+.mahay-fiche-profil-fermer:hover { color: var(--content-text); }
+.mahay-fiche-profil-entete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+.mahay-fiche-profil-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+.mahay-fiche-profil-nom { margin: 0; font-size: 1.1rem; }
+.mahay-fiche-profil-statut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--content-text-muted);
+}
+.mahay-fiche-profil-statut::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--content-text-muted);
+}
+.mahay-fiche-profil-statut.mahay-fiche-profil-statut-en-ligne { color: #1E7A34; }
+.mahay-fiche-profil-statut.mahay-fiche-profil-statut-en-ligne::before { background: #1E7A34; }
+.mahay-fiche-profil-champs { display: flex; flex-direction: column; gap: 0.65rem; }
+.mahay-fiche-profil-champ { display: flex; flex-direction: column; gap: 0.1rem; }
+.mahay-fiche-profil-champ dt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--content-text-muted);
+}
+.mahay-fiche-profil-champ dd { margin: 0; font-size: 0.92rem; }
 
 @keyframes mahay-apparition {
   from { opacity: 0; transform: translateY(10px); }

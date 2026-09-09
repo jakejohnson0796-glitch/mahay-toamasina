@@ -172,6 +172,23 @@
   </div>
 </div>
 
+<!-- Fiche de profil (§ avatars reels dans le chat) : ouverte au clic sur
+     l'avatar d'un auteur de message (voir _message_cercle.html,
+     ajouterMessage() et creerBulleThread() plus bas). Contenu rempli en
+     JS depuis /cercles/{id}/membres/{utilisateur_id}/profil -- rien de
+     personnel n'est jamais interpole cote serveur ici, seulement la
+     structure vide, pour rester coherent avec le reste du gabarit
+     (attaques XSS via un nom d'utilisateur malveillant : toujours via
+     textContent, jamais innerHTML, voir plus bas). -->
+<div class="mahay-fiche-profil-fond" id="fiche-profil-fond" hidden>
+  <div class="mahay-fiche-profil" role="dialog" aria-modal="true" aria-labelledby="fiche-profil-nom">
+    <button type="button" class="mahay-fiche-profil-fermer" id="fiche-profil-fermer" aria-label="Fermer" title="Fermer">✕</button>
+    <div id="fiche-profil-corps">
+      <p class="stat-label">Chargement…</p>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   const idUtilisateur = {{ utilisateur.id }};
@@ -197,6 +214,9 @@
   const champReponseThread = document.getElementById("champ-reponse-thread");
   const boutonOptionsCercle = document.getElementById("bouton-options-cercle");
   const listeOptionsCercle = document.getElementById("liste-options-cercle");
+  const ficheProfilFond = document.getElementById("fiche-profil-fond");
+  const ficheProfilCorps = document.getElementById("fiche-profil-corps");
+  const ficheProfilFermer = document.getElementById("fiche-profil-fermer");
   const formFichier = document.getElementById("form-fichier");
   const champFichier = document.getElementById("fichier-pdf");
 
@@ -212,6 +232,32 @@
     let somme = 0;
     for (let i = 0; i < nom.length; i++) somme += nom.charCodeAt(i);
     return PALETTE_AVATARS[somme % PALETTE_AVATARS.length];
+  }
+
+  // Construit l'avatar (bouton -> ouvre la fiche de profil de l'auteur,
+  // voir ouvrirFicheProfil() plus bas) d'un message rendu en direct par
+  // le websocket -- reprend exactement la meme logique que
+  // _message_cercle.html cote serveur (photo reelle si l'auteur en a
+  // une, repli initiale+couleur sinon) pour qu'un message ajoute en
+  // direct rende a l'identique de celui obtenu par un rechargement de
+  // page. Utilisee par ajouterMessage() et creerBulleThread() ci-dessous.
+  function creerAvatarMessage(auteurId, auteurNom, estMoi, auteurPhoto) {
+    const avatar = document.createElement("button");
+    avatar.type = "button";
+    avatar.className = "message-avatar";
+    avatar.dataset.utilisateurId = auteurId;
+    avatar.setAttribute("aria-label", "Voir le profil de " + (auteurNom || ""));
+    if (auteurPhoto) {
+      avatar.style.background = "transparent";
+      const img = document.createElement("img");
+      img.src = "/profil/photo/" + auteurId;
+      img.alt = "";
+      avatar.appendChild(img);
+    } else {
+      avatar.textContent = (auteurNom || "?").charAt(0).toUpperCase();
+      if (!estMoi) avatar.style.background = couleurAvatar(auteurNom);
+    }
+    return avatar;
   }
 
   // Icones du menu d'actions d'un message (decorerActions() plus bas) et
@@ -261,6 +307,13 @@
   const ORDRE_REACTIONS = ["pouce", "coeur", "rire", "etonne", "triste", "colere", "fete"];
 
   let threadOuvertPourId = null;
+
+  // Utilisateurs actuellement connectes a ce salon (voir
+  // mettreAJourPresence() plus bas) : mis a jour a chaque message
+  // "presence" du websocket, consulte par ouvrirFicheProfil() pour
+  // afficher "En ligne"/"Hors ligne" sur la fiche de profil sans avoir a
+  // interroger le serveur une deuxieme fois.
+  const idsUtilisateursEnLigne = new Set();
 
   const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
   const urlWebSocket = protocole + "//" + window.location.host + "/cercles/" + cercleId + "/ws";
@@ -521,12 +574,7 @@
   function creerBulleThread(m) {
     const bulle = document.createElement("div");
     bulle.className = "message" + (m.est_moi ? " message-moi" : "");
-    const avatar = document.createElement("span");
-    avatar.className = "message-avatar";
-    avatar.setAttribute("aria-hidden", "true");
-    avatar.textContent = (m.auteur || "?").charAt(0).toUpperCase();
-    if (!m.est_moi) avatar.style.background = couleurAvatar(m.auteur);
-    bulle.appendChild(avatar);
+    bulle.appendChild(creerAvatarMessage(m.auteur_id, m.auteur, m.est_moi, m.auteur_photo));
     const corps = document.createElement("div");
     corps.className = "message-corps";
     bulle.appendChild(corps);
@@ -859,12 +907,9 @@
     bulle.dataset.reponses = "0";
     if (donnees.piece_jointe_url) bulle.dataset.piecejointe = "1";
 
-    const avatar = document.createElement("span");
-    avatar.className = "message-avatar";
-    avatar.setAttribute("aria-hidden", "true");
-    avatar.textContent = (donnees.auteur || "?").charAt(0).toUpperCase();
-    if (donnees.auteur_id !== idUtilisateur) avatar.style.background = couleurAvatar(donnees.auteur);
-    bulle.appendChild(avatar);
+    bulle.appendChild(creerAvatarMessage(
+      donnees.auteur_id, donnees.auteur, donnees.auteur_id === idUtilisateur, donnees.auteur_photo
+    ));
 
     const corps = document.createElement("div");
     corps.className = "message-corps";
@@ -915,6 +960,8 @@
   }
 
   function mettreAJourPresence(utilisateurs) {
+    idsUtilisateursEnLigne.clear();
+    (utilisateurs || []).forEach(function (u) { idsUtilisateursEnLigne.add(u.utilisateur_id); });
     if (!utilisateurs || utilisateurs.length === 0) {
       listePresence.textContent = "personne d'autre pour l'instant";
       return;
@@ -927,6 +974,110 @@
       listePresence.appendChild(badge);
     });
   }
+
+  // ---------- Fiche de profil (clic sur un avatar) ----------
+
+  function fermerFicheProfil() {
+    ficheProfilFond.hidden = true;
+  }
+
+  async function ouvrirFicheProfil(utilisateurId) {
+    ficheProfilFond.hidden = false;
+    ficheProfilCorps.innerHTML = '<p class="stat-label">Chargement…</p>';
+    try {
+      const reponse = await fetch("/cercles/" + cercleId + "/membres/" + utilisateurId + "/profil");
+      if (!reponse.ok) throw new Error("Impossible de charger ce profil.");
+      const profil = await reponse.json();
+
+      ficheProfilCorps.innerHTML = "";
+
+      const entete = document.createElement("div");
+      entete.className = "mahay-fiche-profil-entete";
+
+      const avatar = document.createElement("span");
+      avatar.className = "mahay-fiche-profil-avatar";
+      if (profil.photo) {
+        const img = document.createElement("img");
+        img.src = "/profil/photo/" + profil.id;
+        img.alt = "";
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "50%";
+        avatar.appendChild(img);
+      } else {
+        avatar.textContent = (profil.nom || "?").charAt(0).toUpperCase();
+        avatar.style.background = couleurAvatar(profil.nom);
+      }
+      entete.appendChild(avatar);
+
+      const nom = document.createElement("h3");
+      nom.className = "mahay-fiche-profil-nom";
+      nom.id = "fiche-profil-nom";
+      nom.textContent = profil.est_moi ? profil.nom + " (vous)" : profil.nom;
+      entete.appendChild(nom);
+
+      const enLigne = idsUtilisateursEnLigne.has(profil.id);
+      const statut = document.createElement("span");
+      statut.className = "mahay-fiche-profil-statut" + (enLigne ? " mahay-fiche-profil-statut-en-ligne" : "");
+      statut.textContent = enLigne ? "En ligne" : "Hors ligne";
+      entete.appendChild(statut);
+
+      ficheProfilCorps.appendChild(entete);
+
+      const champs = [
+        ["Université", profil.universite],
+        ["Mention", profil.mention],
+        ["Filière", profil.filiere],
+        ["Niveau", profil.niveau],
+      ].filter(function (c) { return c[1]; });
+
+      if (champs.length > 0) {
+        const dl = document.createElement("dl");
+        dl.className = "mahay-fiche-profil-champs";
+        champs.forEach(function (c) {
+          const champ = document.createElement("div");
+          champ.className = "mahay-fiche-profil-champ";
+          const dt = document.createElement("dt");
+          dt.textContent = c[0];
+          const dd = document.createElement("dd");
+          dd.textContent = c[1];
+          champ.appendChild(dt);
+          champ.appendChild(dd);
+          dl.appendChild(champ);
+        });
+        ficheProfilCorps.appendChild(dl);
+      } else {
+        const vide = document.createElement("p");
+        vide.className = "stat-label";
+        vide.textContent = "Profil académique non renseigné.";
+        ficheProfilCorps.appendChild(vide);
+      }
+    } catch (erreur) {
+      ficheProfilCorps.innerHTML = '<p class="erreur">' + erreur.message + "</p>";
+    }
+  }
+
+  // Delegation sur les deux conteneurs qui peuvent contenir un avatar de
+  // message (flux principal + panneau de fil) : les bulles sont creees a
+  // la fois cote serveur (chargement de la page) et cote client
+  // (ajouterMessage()/creerBulleThread(), temps reel), donc un seul
+  // listener ici couvre les deux cas plutot qu'un par avatar.
+  function gererClicAvatarMessage(evenement) {
+    const bouton = evenement.target.closest(".message-avatar");
+    if (!bouton || !bouton.dataset.utilisateurId) return;
+    ouvrirFicheProfil(Number(bouton.dataset.utilisateurId));
+  }
+  fenetreChat.addEventListener("click", gererClicAvatarMessage);
+  corpsPanneauThread.addEventListener("click", gererClicAvatarMessage);
+
+  ficheProfilFermer.addEventListener("click", fermerFicheProfil);
+  ficheProfilFond.addEventListener("mousedown", function (evenement) {
+    if (evenement.target === ficheProfilFond) fermerFicheProfil();
+  });
+  document.addEventListener("keydown", function (evenement) {
+    if (evenement.key === "Escape" && !ficheProfilFond.hidden) fermerFicheProfil();
+  });
 
   function connecterWebSocket() {
     ws = new WebSocket(urlWebSocket);
