@@ -857,6 +857,26 @@ input:focus, select:focus, textarea:focus {
 }
 .message-moi .message-avatar { background: var(--primary); }
 
+/* --- Conteneur avatar + pastille de presence (chat de cercle et
+   panneau "Profil de l'utilisateur") : position:relative pour ancrer
+   la pastille en absolute dans son coin bas-droit, sans changer la
+   disposition en ligne de .message (voir .message plus haut, display:
+   flex avec l'avatar comme premier enfant -- le conteneur prend
+   exactement sa place). */
+.conteneur-avatar { position: relative; flex-shrink: 0; display: inline-flex; cursor: pointer; }
+.message-auteur { cursor: pointer; }
+.point-presence {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: #2F9E44;
+  border: 2px solid var(--content-surface);
+}
+.message-moi .point-presence { border-color: var(--content-bg); }
+
 .message-corps {
   position: relative;
   display: flex;
@@ -1451,6 +1471,25 @@ input:focus, select:focus, textarea:focus {
 .thread-compteur { font-size: 0.75rem; color: var(--content-text-muted); margin: 0 0 0.5rem; }
 .form-reponse-thread { display: flex; gap: 0.5rem; padding: 0.75rem; border-top: 1px solid var(--content-border); }
 .form-reponse-thread input { flex: 1; }
+
+/* --- Panneau "Profil de l'utilisateur" (ouvert en cliquant sur un
+   avatar/nom dans le chat de cercle, voir ouvrirProfil() dans
+   cercle_chat.html) : la boite elle-meme reutilise .panneau-thread /
+   .corps-panneau-thread (voir class="panneau-thread
+   panneau-profil-utilisateur" dans le HTML) -- seul le CONTENU propre
+   a ce panneau (grande photo, nom, statut, champs academiques, bio)
+   est defini ici. */
+.profil-entete { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1rem; }
+.profil-avatar-conteneur .message-avatar { width: 3.5rem; height: 3.5rem; font-size: 1.3rem; cursor: default; }
+.profil-avatar-conteneur { cursor: default; }
+.profil-avatar-conteneur .point-presence { width: 0.85rem; height: 0.85rem; }
+.profil-nom { margin: 0; font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--content-text); }
+.profil-statut { margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--content-text-muted); }
+.profil-statut-en-ligne { color: #2F9E44; font-weight: 600; }
+.profil-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; margin-bottom: 1rem; }
+.profil-champs p { margin: 0 0 0.6rem; }
+.profil-bio { margin: 0 0 1rem; white-space: pre-wrap; }
+
 
 .conteneur-mentions-suggestions { position: relative; flex: 1; }
 .liste-suggestions-mentions {

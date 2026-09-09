@@ -21,7 +21,7 @@ from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (
-    CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Utilisateur,
+    CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
     RoleUtilisateur, RoleMembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
     StatutDemandeCreationCercle, StatutCercle, ThemeDuJour,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
@@ -1362,6 +1362,48 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
     return {
         "parent": _serialiser(parent, auteur_parent) if auteur_parent else None,
         "reponses": [_serialiser(m, u) for m, u in lignes_reponses],
+    }
+
+
+@router.get("/cercles/{cercle_id}/membres/{utilisateur_id}/profil")
+def profil_membre_cercle(cercle_id: int, utilisateur_id: int, request: Request, session: Session = Depends(get_session)):
+    """Renvoie les informations de profil (universite/mention/filiere/
+    niveau/bio + statut en ligne) d'un membre du cercle, pour le
+    panneau "Profil de l'utilisateur" ouvert en cliquant sur un avatar
+    ou un nom dans le chat (voir cercle_chat.html, ouvrirProfil()).
+    Restreint aux membres du MEME cercle des deux cotes (celui qui
+    consulte ET celui qu'on consulte) : ce n'est pas un annuaire public
+    de tous les utilisateurs du site."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecte.")
+    if not _est_membre(session, cercle_id, utilisateur.id):
+        raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if not cible or not _est_membre(session, cercle_id, utilisateur_id):
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable dans ce cercle.")
+
+    filiere = session.get(Filiere, cible.filiere_id) if cible.filiere_id else None
+    mention = session.get(Mention, filiere.mention_id) if filiere and filiere.mention_id else None
+    universite = session.get(Universite, cible.universite_id) if cible.universite_id else None
+
+    # "En ligne" = au moins une connexion websocket active dans CE
+    # cercle (voir GestionnaireConnexions.utilisateurs_actifs) -- pas un
+    # statut global "connecte au site", coherent avec la liste "En
+    # ligne" deja affichee en haut du salon.
+    en_ligne = any(u["utilisateur_id"] == utilisateur_id for u in gestionnaire.utilisateurs_actifs(cercle_id))
+
+    return {
+        "id": cible.id,
+        "nom": cible.nom,
+        "a_une_photo": bool(cible.photo_chemin),
+        "en_ligne": en_ligne,
+        "universite": universite.nom if universite else None,
+        "mention": mention.nom if mention else None,
+        "filiere": filiere.nom if filiere else None,
+        "niveau": cible.niveau,
+        "bio": cible.bio,
     }
 
 

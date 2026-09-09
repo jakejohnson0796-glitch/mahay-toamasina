@@ -170,6 +170,16 @@
       <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.9rem;">➤</button>
     </form>
   </div>
+
+  <div id="panneau-profil-utilisateur" class="panneau-thread panneau-profil-utilisateur" hidden>
+    <div class="entete-panneau-thread">
+      <h3>Profil de l'utilisateur</h3>
+      <button type="button" id="bouton-fermer-profil" class="bouton-fermer-thread" aria-label="Fermer" title="Fermer">✕</button>
+    </div>
+    <div id="corps-panneau-profil" class="corps-panneau-thread corps-panneau-profil">
+      <p class="stat-label">Chargement…</p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -195,6 +205,9 @@
   const boutonFermerThread = document.getElementById("bouton-fermer-thread");
   const formReponseThread = document.getElementById("form-reponse-thread");
   const champReponseThread = document.getElementById("champ-reponse-thread");
+  const panneauProfil = document.getElementById("panneau-profil-utilisateur");
+  const corpsPanneauProfil = document.getElementById("corps-panneau-profil");
+  const boutonFermerProfil = document.getElementById("bouton-fermer-profil");
   const boutonOptionsCercle = document.getElementById("bouton-options-cercle");
   const listeOptionsCercle = document.getElementById("liste-options-cercle");
   const formFichier = document.getElementById("form-fichier");
@@ -261,6 +274,12 @@
   const ORDRE_REACTIONS = ["pouce", "coeur", "rire", "etonne", "triste", "colere", "fete"];
 
   let threadOuvertPourId = null;
+  // Ensemble (Set) des utilisateur_id actuellement connectes a CE
+  // cercle, tenu a jour par mettreAJourPresence() a chaque evenement
+  // "presence" du websocket -- sert a afficher/cacher la pastille verte
+  // sur les avatars (voir appliquerPointsPresence()) et dans le
+  // panneau "Profil de l'utilisateur" (voir ouvrirProfil()).
+  let ensemblePresents = new Set();
 
   const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
   const urlWebSocket = protocole + "//" + window.location.host + "/cercles/" + cercleId + "/ws";
@@ -518,9 +537,16 @@
     catch (e) { return ""; }
   }
 
-  function creerBulleThread(m) {
-    const bulle = document.createElement("div");
-    bulle.className = "message" + (m.est_moi ? " message-moi" : "");
+  // Construit l'avatar (photo reelle ou initiale+couleur) + la pastille
+  // de presence qui l'accompagne, partage entre les messages du fil
+  // principal (temps reel) et les reponses de thread -- voir aussi le
+  // rendu cote serveur equivalent dans _message_cercle.html. La
+  // pastille demarre cachee (hidden) et est mise a jour par
+  // appliquerPointsPresence() des qu'un evenement de presence arrive
+  // (ou immediatement apres l'ajout au DOM, voir les deux points d'appel).
+  function creerConteneurAvatar(m) {
+    const conteneur = document.createElement("div");
+    conteneur.className = "conteneur-avatar";
     const avatar = document.createElement(m.auteur_a_une_photo ? "img" : "span");
     avatar.className = "message-avatar";
     avatar.setAttribute("aria-hidden", "true");
@@ -530,7 +556,20 @@
       avatar.textContent = (m.auteur || "?").charAt(0).toUpperCase();
       if (!m.est_moi) avatar.style.background = couleurAvatar(m.auteur);
     }
-    bulle.appendChild(avatar);
+    conteneur.appendChild(avatar);
+    const point = document.createElement("span");
+    point.className = "point-presence";
+    point.setAttribute("aria-hidden", "true");
+    point.hidden = true;
+    conteneur.appendChild(point);
+    return conteneur;
+  }
+
+  function creerBulleThread(m) {
+    const bulle = document.createElement("div");
+    bulle.className = "message" + (m.est_moi ? " message-moi" : "");
+    bulle.dataset.auteurId = m.auteur_id;
+    bulle.appendChild(creerConteneurAvatar(m));
     const corps = document.createElement("div");
     corps.className = "message-corps";
     bulle.appendChild(corps);
@@ -564,6 +603,7 @@
   }
 
   async function ouvrirThread(messageId) {
+    panneauProfil.hidden = true;
     threadOuvertPourId = messageId;
     panneauThread.hidden = false;
     corpsPanneauThread.innerHTML = '<p class="stat-label">Chargement…</p>';
@@ -595,6 +635,7 @@
       compteur.textContent = corps.reponses.length === 0 ? "Aucune réponse pour le moment." : corps.reponses.length + " réponse(s)";
       corpsPanneauThread.appendChild(compteur);
       corps.reponses.forEach(function (m) { corpsPanneauThread.appendChild(creerBulleThread(m)); });
+      appliquerPointsPresence();
     } catch (erreur) {
       corpsPanneauThread.innerHTML = '<p class="erreur">' + erreur.message + "</p>";
     }
@@ -603,6 +644,104 @@
   boutonFermerThread.addEventListener("click", function () {
     panneauThread.hidden = true;
     threadOuvertPourId = null;
+  });
+
+  // ---------- Profil de l'utilisateur ----------
+  // Ouvert en cliquant sur un avatar ou un nom d'auteur, dans le fil
+  // principal comme dans le panneau de fil de discussion (delegation
+  // sur document : les bulles du fil principal existent deja au
+  // chargement de la page -- rendues cote serveur -- alors que celles
+  // ajoutees en direct ou dans un thread arrivent bien apres que ce
+  // script se soit execute ; un ecouteur pose une fois pour toutes sur
+  // document evite d'avoir a le repeter a chaque bulle creee).
+  async function ouvrirProfil(auteurId) {
+    panneauThread.hidden = true;
+    panneauProfil.hidden = false;
+    corpsPanneauProfil.innerHTML = '<p class="stat-label">Chargement…</p>';
+    try {
+      const reponse = await fetch("/cercles/" + cercleId + "/membres/" + auteurId + "/profil");
+      if (!reponse.ok) throw new Error("Impossible de charger ce profil.");
+      const p = await reponse.json();
+      corpsPanneauProfil.innerHTML = "";
+
+      const entete = document.createElement("div");
+      entete.className = "profil-entete";
+      const conteneurAvatar = creerConteneurAvatar({
+        auteur: p.nom, auteur_id: p.id, auteur_a_une_photo: p.a_une_photo, est_moi: p.id === idUtilisateur,
+      });
+      conteneurAvatar.classList.add("profil-avatar-conteneur");
+      conteneurAvatar.querySelector(".point-presence").hidden = !p.en_ligne;
+      entete.appendChild(conteneurAvatar);
+      const identite = document.createElement("div");
+      const nom = document.createElement("h4");
+      nom.className = "profil-nom";
+      nom.textContent = p.nom;
+      identite.appendChild(nom);
+      const statut = document.createElement("p");
+      statut.className = "profil-statut" + (p.en_ligne ? " profil-statut-en-ligne" : "");
+      statut.textContent = p.en_ligne ? "● En ligne" : "Hors ligne";
+      identite.appendChild(statut);
+      entete.appendChild(identite);
+      corpsPanneauProfil.appendChild(entete);
+
+      const champs = [
+        ["Université", p.universite], ["Mention", p.mention],
+        ["Filière", p.filiere], ["Niveau", p.niveau],
+      ];
+      const listeChamps = document.createElement("div");
+      listeChamps.className = "profil-champs";
+      champs.forEach(function ([etiquette, valeur]) {
+        if (!valeur) return;
+        const paire = document.createElement("div");
+        const ligne = document.createElement("p");
+        ligne.className = "stat-label";
+        ligne.textContent = etiquette;
+        const forte = document.createElement("p");
+        forte.innerHTML = "<strong></strong>";
+        forte.querySelector("strong").textContent = valeur;
+        paire.appendChild(ligne);
+        paire.appendChild(forte);
+        listeChamps.appendChild(paire);
+      });
+      corpsPanneauProfil.appendChild(listeChamps);
+
+      if (p.bio) {
+        const titreBio = document.createElement("p");
+        titreBio.className = "stat-label";
+        titreBio.textContent = "À propos";
+        const texteBio = document.createElement("p");
+        texteBio.className = "profil-bio";
+        texteBio.textContent = p.bio;
+        corpsPanneauProfil.appendChild(titreBio);
+        corpsPanneauProfil.appendChild(texteBio);
+      }
+
+      if (p.id !== idUtilisateur) {
+        const boutonMentionner = document.createElement("button");
+        boutonMentionner.type = "button";
+        boutonMentionner.className = "bouton bouton-primaire bouton-form";
+        boutonMentionner.textContent = "Envoyer un message";
+        boutonMentionner.addEventListener("click", function () {
+          panneauProfil.hidden = true;
+          champMessage.value = "@" + p.nom + " ";
+          champMessage.focus();
+        });
+        corpsPanneauProfil.appendChild(boutonMentionner);
+      }
+    } catch (erreur) {
+      corpsPanneauProfil.innerHTML = '<p class="erreur">' + erreur.message + "</p>";
+    }
+  }
+
+  boutonFermerProfil.addEventListener("click", function () {
+    panneauProfil.hidden = true;
+  });
+
+  document.addEventListener("click", function (evenement) {
+    const declencheur = evenement.target.closest(".message-avatar, .conteneur-avatar, .message-auteur");
+    if (!declencheur) return;
+    const bulle = declencheur.closest(".message");
+    if (bulle && bulle.dataset.auteurId) ouvrirProfil(bulle.dataset.auteurId);
   });
 
   function creerLienNombreReponses(messageId, nombre) {
@@ -863,16 +1002,13 @@
     bulle.dataset.reponses = "0";
     if (donnees.piece_jointe_url) bulle.dataset.piecejointe = "1";
 
-    const avatar = document.createElement(donnees.auteur_a_une_photo ? "img" : "span");
-    avatar.className = "message-avatar";
-    avatar.setAttribute("aria-hidden", "true");
-    if (donnees.auteur_a_une_photo) {
-      avatar.src = "/profil/photo/" + donnees.auteur_id;
-    } else {
-      avatar.textContent = (donnees.auteur || "?").charAt(0).toUpperCase();
-      if (donnees.auteur_id !== idUtilisateur) avatar.style.background = couleurAvatar(donnees.auteur);
-    }
-    bulle.appendChild(avatar);
+    // creerConteneurAvatar() attend un champ est_moi (comme les objets
+    // `m` du thread, qui l'ont deja calcule cote serveur) -- donnees
+    // vient brut du websocket (meme payload envoye a tout le monde),
+    // donc on le calcule ici avant l'appel plutot que de dupliquer la
+    // logique avatar.
+    donnees.est_moi = donnees.auteur_id === idUtilisateur;
+    bulle.appendChild(creerConteneurAvatar(donnees));
 
     const corps = document.createElement("div");
     corps.className = "message-corps";
@@ -915,6 +1051,7 @@
 
     fenetreChat.appendChild(bulle);
     fenetreChat.scrollTop = fenetreChat.scrollHeight;
+    appliquerPointsPresence();
   }
 
   function retirerMessage(id) {
@@ -923,16 +1060,34 @@
   }
 
   function mettreAJourPresence(utilisateurs) {
+    ensemblePresents = new Set((utilisateurs || []).map(function (u) { return u.utilisateur_id; }));
+
     if (!utilisateurs || utilisateurs.length === 0) {
       listePresence.textContent = "personne d'autre pour l'instant";
-      return;
+    } else {
+      listePresence.innerHTML = "";
+      utilisateurs.forEach(function (u) {
+        const badge = document.createElement("span");
+        badge.className = "badge-presence" + (u.utilisateur_id === idUtilisateur ? " badge-presence-moi" : "");
+        badge.textContent = (u.utilisateur_id === idUtilisateur ? "Vous" : u.nom);
+        listePresence.appendChild(badge);
+      });
     }
-    listePresence.innerHTML = "";
-    utilisateurs.forEach(function (u) {
-      const badge = document.createElement("span");
-      badge.className = "badge-presence" + (u.utilisateur_id === idUtilisateur ? " badge-presence-moi" : "");
-      badge.textContent = (u.utilisateur_id === idUtilisateur ? "Vous" : u.nom);
-      listePresence.appendChild(badge);
+
+    appliquerPointsPresence();
+  }
+
+  // A appeler apres chaque evenement de presence ET apres l'ajout d'une
+  // nouvelle bulle de message au DOM (sa pastille demarre cachee, voir
+  // creerConteneurAvatar()) : recherche TOUS les avatars actuellement
+  // affiches (fil principal ET panneau de fil de discussion, d'ou le
+  // selecteur global plutot que scope a fenetreChat) et affiche/cache
+  // leur pastille selon ensemblePresents.
+  function appliquerPointsPresence() {
+    document.querySelectorAll(".message[data-auteur-id]").forEach(function (bulle) {
+      const point = bulle.querySelector(".point-presence");
+      if (!point) return;
+      point.hidden = !ensemblePresents.has(Number(bulle.dataset.auteurId));
     });
   }
 

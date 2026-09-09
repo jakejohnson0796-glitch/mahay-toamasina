@@ -214,6 +214,14 @@ class Utilisateur(SQLModel, table=True):
     # ce champ directement dans un template.
     photo_chemin: Optional[str] = None
 
+    # --- "A propos" (bio courte affichee dans le panneau "Profil de
+    # l'utilisateur" du chat de cercle, voir /cercles/{id}/membres/{id}/profil
+    # dans cercles_router.py). Facultatif, texte libre court (limite
+    # appliquee cote formulaire ET serveur, voir POST /profil/bio dans
+    # auth_router.py) -- None => aucune section "A propos" affichee,
+    # jamais de texte par defaut invente ici.
+    bio: Optional[str] = None
+
 
 class CodeSecours2FA(SQLModel, table=True):
     """Codes de secours a usage unique, generes a l'activation de la 2FA,

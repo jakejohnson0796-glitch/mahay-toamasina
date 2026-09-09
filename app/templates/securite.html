@@ -51,6 +51,18 @@
 </div>
 
 <div class="carte-formulaire">
+  <h3 class="titre-carte">A propos</h3>
+  <p class="stat-label">Affiche aux autres membres quand ils ouvrent votre profil dans un cercle d'etude.</p>
+  {% if erreur_bio %}<div class="erreur">{{ erreur_bio }}</div>{% endif %}
+  {% if request.query_params.get("ok") == "bio_mise_a_jour" %}<div class="info">A propos mis a jour.</div>{% endif %}
+  <form method="post" action="/profil/bio">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <textarea name="bio" rows="3" maxlength="280" placeholder="ex: Passionne par la tech et le developpement. Toujours motive pour apprendre et partager !">{{ utilisateur.bio or "" }}</textarea>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer</button>
+  </form>
+</div>
+
+<div class="carte-formulaire">
   <h3 class="titre-carte">Mon parcours academique</h3>
   <p class="stat-label">Universite</p>
   <p><strong>{{ universite.nom if universite else "Non renseignee" }}</strong></p>

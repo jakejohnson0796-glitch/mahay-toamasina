@@ -443,14 +443,18 @@ def actualiser_profil_academique(
 # Gestion de la double authentification (2FA / TOTP)
 # ============================================================
 
-def _contexte_securite(utilisateur: Utilisateur, session: Session, erreur_photo: Optional[str] = None) -> dict:
+def _contexte_securite(
+    utilisateur: Utilisateur, session: Session,
+    erreur_photo: Optional[str] = None, erreur_bio: Optional[str] = None,
+) -> dict:
     """Factorise le contexte de securite.html, desormais construit a
-    deux endroits : le GET normal ci-dessous, et le POST /profil/photo
-    quand sauvegarder_avatar() rejette le fichier (meme principe que
-    _contexte() dans actualiser_profil_academique() plus haut -- on
-    re-rend directement le formulaire avec l'erreur plutot que de
-    passer par une redirection, pour eviter d'avoir a encoder un
-    message d'erreur libre dans l'URL)."""
+    trois endroits : le GET normal ci-dessous, POST /profil/photo quand
+    sauvegarder_avatar() rejette le fichier, et POST /profil/bio quand
+    le texte depasse LONGUEUR_MAX_BIO (meme principe que _contexte()
+    dans actualiser_profil_academique() plus haut -- on re-rend
+    directement le formulaire avec l'erreur plutot que de passer par
+    une redirection, pour eviter d'avoir a encoder un message d'erreur
+    libre dans l'URL)."""
     nb_codes_restants = 0
     if utilisateur.totp_active:
         nb_codes_restants = len(session.exec(
@@ -473,6 +477,7 @@ def _contexte_securite(utilisateur: Utilisateur, session: Session, erreur_photo:
         "peut_modifier_niveau": referentiel_academique.peut_modifier_niveau_maintenant(utilisateur),
         "jours_avant_changement_niveau": referentiel_academique.jours_avant_prochain_changement_niveau(utilisateur),
         "erreur_photo": erreur_photo,
+        "erreur_bio": erreur_bio,
     }
 
 
@@ -559,6 +564,42 @@ def afficher_photo_profil(utilisateur_id: int, session: Session = Depends(get_se
     if stockage_distant_actif():
         return RedirectResponse(obtenir_url_telechargement(utilisateur.photo_chemin))
     return FileResponse(utilisateur.photo_chemin)
+
+
+# Longueur max de la bio ("A propos", voir Utilisateur.bio) : une courte
+# presentation, pas un texte long -- alignee sur la limite deja posee
+# cote formulaire (voir maxlength dans securite.html) pour que le
+# message d'erreur reste coherent avec ce que le champ autorise deja a
+# la frappe.
+LONGUEUR_MAX_BIO = 280
+
+
+@router.post("/profil/bio")
+def modifier_bio(
+    request: Request,
+    bio: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Met a jour le texte "A propos" affiche dans le panneau profil du
+    chat de cercle (voir GET /cercles/{id}/membres/{id}/profil dans
+    cercles_router.py). Champ facultatif : une valeur vide efface la
+    bio (redevient None), pas de chaine vide stockee en base."""
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    bio_nettoyee = bio.strip()
+    if len(bio_nettoyee) > LONGUEUR_MAX_BIO:
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_bio=f"Texte trop long (max {LONGUEUR_MAX_BIO} caracteres)."),
+        )
+
+    utilisateur.bio = bio_nettoyee or None
+    session.add(utilisateur)
+    session.commit()
+    return RedirectResponse("/securite?ok=bio_mise_a_jour", status_code=303)
 
 
 @router.post("/securite/universite")
