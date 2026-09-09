@@ -21,7 +21,7 @@ from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (
-    CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
+    CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Utilisateur,
     RoleUtilisateur, RoleMembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
     StatutDemandeCreationCercle, StatutCercle, ThemeDuJour,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
@@ -81,26 +81,6 @@ def _peut_gerer_cercle(cercle: CercleEtude, utilisateur: Optional[Utilisateur]) 
     if not utilisateur:
         return False
     return utilisateur.id == cercle.createur_id or _est_admin(utilisateur)
-
-
-def _infos_academiques_publiques(session: Session, utilisateur: Utilisateur) -> dict:
-    """Universite/mention/filiere/niveau formates pour la fiche de profil
-    ouverte au clic sur un avatar dans le chat d'un cercle (voir
-    profil_public_membre() plus bas). Champs nullable sur Utilisateur
-    (comptes crees avant le referentiel academique national, voir
-    profil_academique_incomplet() dans referentiel_academique.py) : on
-    renvoie None plutot que d'inventer une valeur des qu'un maillon
-    manque, jamais une chaine vide qui se confondrait avec une vraie
-    valeur cote frontend."""
-    universite = session.get(Universite, utilisateur.universite_id) if utilisateur.universite_id else None
-    filiere = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
-    mention = session.get(Mention, filiere.mention_id) if filiere and filiere.mention_id else None
-    return {
-        "universite": universite.nom if universite else None,
-        "mention": mention.nom if mention else None,
-        "filiere": filiere.nom if filiere else None,
-        "niveau": utilisateur.niveau,
-    }
 
 
 def _demande_en_attente(session: Session, cercle_id: int, utilisateur_id: int) -> Optional[DemandeAdhesionCercle]:
@@ -618,41 +598,6 @@ def voir_membres(request: Request, cercle_id: int, session: Session = Depends(ge
     )
 
 
-@router.get("/cercles/{cercle_id}/membres/{utilisateur_id}/profil")
-def profil_public_membre(request: Request, cercle_id: int, utilisateur_id: int, session: Session = Depends(get_session)):
-    """Fiche de profil publique d'un membre (JSON), ouverte au clic sur
-    son avatar dans le chat du cercle -- voir _message_cercle.html et
-    ajouterMessage()/creerBulleThread() dans cercle_chat.html. Restreinte
-    aux membres du MEME cercle (comme voir_membres() ci-dessus), pas une
-    fiche consultable pour n'importe quel compte de la plateforme depuis
-    n'importe ou : le cercle est le seul contexte ou deux utilisateurs se
-    connaissent forcement deja."""
-    utilisateur = utilisateur_courant(request, session)
-    if not utilisateur:
-        raise HTTPException(status_code=401, detail="Non connecte.")
-
-    cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
-        raise HTTPException(status_code=404, detail="Cercle introuvable.")
-
-    if _est_admin(utilisateur):
-        _assurer_membres_admins(session, cercle_id)
-    if not _est_membre(session, cercle_id, utilisateur.id) and not _peut_gerer_cercle(cercle, utilisateur):
-        raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
-
-    cible = session.get(Utilisateur, utilisateur_id)
-    if not cible or not _est_membre(session, cercle_id, utilisateur_id):
-        raise HTTPException(status_code=404, detail="Membre introuvable dans ce cercle.")
-
-    return {
-        "id": cible.id,
-        "nom": cible.nom,
-        "photo": bool(cible.photo_chemin),
-        "est_moi": cible.id == utilisateur.id,
-        **_infos_academiques_publiques(session, cible),
-    }
-
-
 @router.post("/cercles/{cercle_id}/membres/ajouter")
 def ajouter_membre_par_telephone(
     request: Request,
@@ -970,12 +915,6 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "id": m.id,
                 "auteur": u.nom,
                 "auteur_id": u.id,
-                # bool, jamais le chemin lui-meme (voir la docstring de
-                # Utilisateur.photo_chemin dans models.py) : le template
-                # n'a besoin de savoir QUE si une photo existe pour
-                # choisir entre <img src="/profil/photo/{id}"> et le
-                # repli initiale+couleur — jamais du chemin opaque.
-                "auteur_photo": bool(u.photo_chemin),
                 "contenu": m.contenu,
                 "piece_jointe_chemin": m.piece_jointe_chemin,
                 "piece_jointe_nom": m.piece_jointe_nom,
@@ -1077,7 +1016,6 @@ async def envoyer_fichier(
         "id": message.id,
         "auteur": utilisateur.nom,
         "auteur_id": utilisateur.id,
-        "auteur_photo": bool(utilisateur.photo_chemin),
         "contenu": "",
         "piece_jointe_nom": fichier.filename,
         "piece_jointe_url": f"/cercles/{cercle_id}/messages/{message.id}/piece-jointe",
@@ -1402,7 +1340,6 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
             "id": m.id,
             "auteur": u.nom,
             "auteur_id": u.id,
-            "auteur_photo": bool(u.photo_chemin),
             "contenu": m.contenu,
             "date_envoi": m.date_envoi.isoformat(),
             "modifie": m.date_modification is not None,
@@ -1492,12 +1429,6 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
             return
 
         nom_auteur = utilisateur.nom
-        # Capture au meme instant que nom_auteur (voir le commentaire sur
-        # ce dernier plus haut dans le fichier) : si la personne change de
-        # photo en cours de session, ce sera reflete a la prochaine
-        # reconnexion, pas en direct -- meme limitation deja acceptee pour
-        # un changement de nom, pas une regression introduite ici.
-        photo_auteur = bool(utilisateur.photo_chemin)
 
     await gestionnaire.connecter(cercle_id, websocket, user_id, nom_auteur)
     await gestionnaire.diffuser_presence(cercle_id)
@@ -1592,7 +1523,6 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 "id": id_message,
                 "auteur": nom_auteur,
                 "auteur_id": user_id,
-                "auteur_photo": photo_auteur,
                 "contenu": contenu,
                 "parent_message_id": parent_message_id,
                 "mentions": list(mentions_valides),
