@@ -838,6 +838,12 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* object-fit/overflow : sans effet sur le <span> (repli
+     initiale+couleur), necessaire quand c'est un <img> (vraie photo de
+     profil, voir _message_cercle.html et cercle_chat.html) pour que la
+     photo remplisse le cercle sans etre deformee. */
+  object-fit: cover;
+  overflow: hidden;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.78rem;
   font-weight: 600;

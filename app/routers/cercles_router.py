@@ -915,6 +915,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "id": m.id,
                 "auteur": u.nom,
                 "auteur_id": u.id,
+                "auteur_a_une_photo": bool(u.photo_chemin),
                 "contenu": m.contenu,
                 "piece_jointe_chemin": m.piece_jointe_chemin,
                 "piece_jointe_nom": m.piece_jointe_nom,
@@ -1016,6 +1017,7 @@ async def envoyer_fichier(
         "id": message.id,
         "auteur": utilisateur.nom,
         "auteur_id": utilisateur.id,
+        "auteur_a_une_photo": bool(utilisateur.photo_chemin),
         "contenu": "",
         "piece_jointe_nom": fichier.filename,
         "piece_jointe_url": f"/cercles/{cercle_id}/messages/{message.id}/piece-jointe",
@@ -1340,6 +1342,7 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
             "id": m.id,
             "auteur": u.nom,
             "auteur_id": u.id,
+            "auteur_a_une_photo": bool(u.photo_chemin),
             "contenu": m.contenu,
             "date_envoi": m.date_envoi.isoformat(),
             "modifie": m.date_modification is not None,
@@ -1429,6 +1432,11 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
             return
 
         nom_auteur = utilisateur.nom
+        # Meme precaution que nom_auteur ci-dessus : capture en scalaire
+        # AVANT la fermeture de cette session (bloc `with`), sinon
+        # acceder a utilisateur.photo_chemin plus bas (apres la
+        # fermeture) leverait DetachedInstanceError.
+        auteur_a_une_photo = bool(utilisateur.photo_chemin)
 
     await gestionnaire.connecter(cercle_id, websocket, user_id, nom_auteur)
     await gestionnaire.diffuser_presence(cercle_id)
@@ -1523,6 +1531,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 "id": id_message,
                 "auteur": nom_auteur,
                 "auteur_id": user_id,
+                "auteur_a_une_photo": auteur_a_une_photo,
                 "contenu": contenu,
                 "parent_message_id": parent_message_id,
                 "mentions": list(mentions_valides),

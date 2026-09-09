@@ -521,11 +521,15 @@
   function creerBulleThread(m) {
     const bulle = document.createElement("div");
     bulle.className = "message" + (m.est_moi ? " message-moi" : "");
-    const avatar = document.createElement("span");
+    const avatar = document.createElement(m.auteur_a_une_photo ? "img" : "span");
     avatar.className = "message-avatar";
     avatar.setAttribute("aria-hidden", "true");
-    avatar.textContent = (m.auteur || "?").charAt(0).toUpperCase();
-    if (!m.est_moi) avatar.style.background = couleurAvatar(m.auteur);
+    if (m.auteur_a_une_photo) {
+      avatar.src = "/profil/photo/" + m.auteur_id;
+    } else {
+      avatar.textContent = (m.auteur || "?").charAt(0).toUpperCase();
+      if (!m.est_moi) avatar.style.background = couleurAvatar(m.auteur);
+    }
     bulle.appendChild(avatar);
     const corps = document.createElement("div");
     corps.className = "message-corps";
@@ -859,11 +863,15 @@
     bulle.dataset.reponses = "0";
     if (donnees.piece_jointe_url) bulle.dataset.piecejointe = "1";
 
-    const avatar = document.createElement("span");
+    const avatar = document.createElement(donnees.auteur_a_une_photo ? "img" : "span");
     avatar.className = "message-avatar";
     avatar.setAttribute("aria-hidden", "true");
-    avatar.textContent = (donnees.auteur || "?").charAt(0).toUpperCase();
-    if (donnees.auteur_id !== idUtilisateur) avatar.style.background = couleurAvatar(donnees.auteur);
+    if (donnees.auteur_a_une_photo) {
+      avatar.src = "/profil/photo/" + donnees.auteur_id;
+    } else {
+      avatar.textContent = (donnees.auteur || "?").charAt(0).toUpperCase();
+      if (donnees.auteur_id !== idUtilisateur) avatar.style.background = couleurAvatar(donnees.auteur);
+    }
     bulle.appendChild(avatar);
 
     const corps = document.createElement("div");
