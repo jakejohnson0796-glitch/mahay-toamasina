@@ -63,6 +63,36 @@
 </div>
 
 <div class="carte-formulaire">
+  <h3 class="titre-carte">Email de recuperation</h3>
+  <p class="stat-label">Vous restez connecte avec votre numero de telephone. Cet email sert uniquement a recevoir un code si vous oubliez votre mot de passe.</p>
+  {% if erreur_email %}<div class="erreur">{{ erreur_email }}</div>{% endif %}
+  {% if request.query_params.get("ok") == "email_mis_a_jour" %}<div class="info">Email mis a jour.</div>{% endif %}
+  <form method="post" action="/profil/email">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="email">Adresse email</label>
+    <input type="email" id="email" name="email" value="{{ utilisateur.email or '' }}" placeholder="vous@exemple.com">
+    <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer</button>
+  </form>
+</div>
+
+<div class="carte-formulaire">
+  <h3 class="titre-carte">Changer mon mot de passe</h3>
+  {% if utilisateur.doit_changer_mot_de_passe %}
+  <div class="erreur">Vous utilisez un mot de passe temporaire (genere par un admin ou recu par email). Definissez-en un nouveau ci-dessous.</div>
+  {% endif %}
+  {% if erreur_mot_de_passe %}<div class="erreur">{{ erreur_mot_de_passe }}</div>{% endif %}
+  {% if request.query_params.get("ok") == "mot_de_passe_modifie" %}<div class="info">Mot de passe modifie.</div>{% endif %}
+  <form method="post" action="/securite/mot-de-passe">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="ancien_mot_de_passe">Mot de passe actuel</label>
+    <input type="password" id="ancien_mot_de_passe" name="ancien_mot_de_passe" required autocomplete="current-password">
+    <label for="nouveau_mot_de_passe">Nouveau mot de passe</label>
+    <input type="password" id="nouveau_mot_de_passe" name="nouveau_mot_de_passe" required minlength="8" autocomplete="new-password">
+    <button class="bouton bouton-primaire bouton-form" type="submit">Changer le mot de passe</button>
+  </form>
+</div>
+
+<div class="carte-formulaire">
   <h3 class="titre-carte">Mon parcours academique</h3>
   <p class="stat-label">Universite</p>
   <p><strong>{{ universite.nom if universite else "Non renseignee" }}</strong></p>

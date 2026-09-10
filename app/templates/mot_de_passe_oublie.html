@@ -1,13 +1,12 @@
 {% extends "base.html" %}
-{% block titre %}Connexion — Gasy Mahay{% endblock %}
+{% block titre %}Mot de passe oublie — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
-<h2>Connexion</h2>
+<h2>Mot de passe oublie</h2>
 <div class="carte-formulaire">
-  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
-  {% if request.query_params.get("ok") == "mot_de_passe_reinitialise" %}<div class="info">Mot de passe reinitialise. Vous pouvez vous connecter.</div>{% endif %}
-  <form method="post" action="/connexion">
+  <p class="stat-label">Entrez votre numero de telephone. Si un email de recuperation est enregistre sur ce compte (voir "Email de recuperation" sur /securite), un code vous y sera envoye.</p>
+  <form method="post" action="/mot-de-passe-oublie">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="telephone_local">Numero de telephone</label>
     <div class="champ-telephone" style="display:flex;align-items:center;gap:0.5rem;">
@@ -16,28 +15,21 @@
              placeholder="34 12 345 67" maxlength="12" required
              pattern="[0-9 ]*" title="9 chiffres, sans lettre ni symbole">
     </div>
-    <!-- Meme convention que le formulaire d'inscription : le champ visible
+    <!-- Meme convention que /connexion et /inscription : le champ visible
          ne collecte que les 9 chiffres locaux, le champ cache envoye au
-         backend recompose le numero complet ("0XXXXXXXXX"). Validation
-         definitive toujours cote SERVEUR (voir app/telephone.py). -->
+         backend recompose le numero complet ("0XXXXXXXXX"). -->
     <input type="hidden" id="telephone" name="telephone">
 
-    <label for="mot_de_passe">Mot de passe</label>
-    <div class="champ-mot-de-passe">
-      <input type="password" id="mot_de_passe" name="mot_de_passe" required autocomplete="current-password">
-      <button type="button" class="bouton-toggle-mdp" data-cible="mot_de_passe" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button>
-    </div>
-    <p><a href="/mot-de-passe-oublie">Mot de passe oublie ?</a></p>
-
-    <button class="bouton bouton-primaire bouton-form" type="submit">Se connecter</button>
+    <button class="bouton bouton-primaire bouton-form" type="submit">Envoyer le code</button>
   </form>
 </div>
-<p>Pas encore de compte ? <a href="/inscription">Inscrivez-vous</a>.</p>
+<p>Vous n'avez pas d'email enregistre, ou pas acces a l'appareil habituel ? <a href="https://wa.me/261343779552" target="_blank" rel="noopener">Contactez un administrateur sur WhatsApp</a>.</p>
+<p><a href="/connexion">&larr; Retour a la connexion</a></p>
 
 <script>
 (function () {
   // Confort de saisie uniquement — la validation qui compte est cote
-  // serveur (app/telephone.py). Meme comportement que /inscription.
+  // serveur (app/telephone.py). Meme comportement que /connexion.
   const champLocal = document.getElementById("telephone_local");
   const champCache = document.getElementById("telephone");
   const formulaire = champLocal.closest("form");
@@ -62,21 +54,6 @@
     }
     champLocal.setCustomValidity("");
     champCache.value = "0" + chiffres;
-  });
-})();
-
-(function () {
-  // Bascule afficher/masquer pour chaque champ mot de passe de la page.
-  document.querySelectorAll(".bouton-toggle-mdp").forEach(function (bouton) {
-    const champ = document.getElementById(bouton.dataset.cible);
-    if (!champ) return;
-    bouton.addEventListener("click", function () {
-      const visible = champ.type === "text";
-      champ.type = visible ? "password" : "text";
-      bouton.textContent = visible ? "👁" : "🙈";
-      bouton.setAttribute("aria-pressed", String(!visible));
-      bouton.setAttribute("aria-label", visible ? "Afficher le mot de passe" : "Masquer le mot de passe");
-    });
   });
 })();
 </script>

@@ -30,6 +30,7 @@ from ..storage import supprimer_fichier
 # admin_referentiel_router.py) : on evite de dupliquer la reverification de
 # profil faite au moment du traitement d'une demande d'adhesion.
 from .cercles_router import _traiter_acceptation_demande, _traiter_refus_demande
+from ..auth import hacher_mot_de_passe
 import secrets
 
 router = APIRouter()
@@ -40,6 +41,13 @@ def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return None
     return utilisateur
+
+
+# Alphabet sans caracteres ambigus (0/O, 1/l/I) pour le mot de passe
+# temporaire genere par reinitialiser_mot_de_passe_admin() plus bas --
+# il doit etre relu et retranscrit a la main (WhatsApp, appel...) par
+# l'admin vers l'etudiant, une erreur de lecture serait sinon frequente.
+_ALPHABET_MOT_DE_PASSE_TEMPORAIRE = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
 
 @router.get("/admin")
@@ -346,11 +354,54 @@ def page_utilisateurs(request: Request, q: Optional[str] = None, session: Sessio
         requete = requete.where((Utilisateur.nom.ilike(terme)) | (Utilisateur.telephone.ilike(terme)))
     utilisateurs = session.exec(requete).all()
 
+    # Mot de passe temporaire genere par la requete PRECEDENTE (redirection
+    # juste apres reinitialiser_mot_de_passe_admin() ci-dessous) : stocke
+    # en session le temps d'UNE SEULE redirection puis immediatement
+    # efface (session.pop), jamais dans l'URL ni dans une table -- pour
+    # ne pas le laisser trainer dans l'historique du navigateur ou les
+    # logs d'acces du serveur (qui journalisent l'URL complete).
+    mot_de_passe_temporaire = request.session.pop("mot_de_passe_temporaire_admin", None)
+    utilisateur_reinitialise_id = request.session.pop("utilisateur_reinitialise_id", None)
+
     return templates.TemplateResponse(
         request,
         "admin_utilisateurs.html",
-        {"utilisateur": admin, "utilisateurs": utilisateurs, "recherche": q or ""},
+        {
+            "utilisateur": admin, "utilisateurs": utilisateurs, "recherche": q or "",
+            "mot_de_passe_temporaire": mot_de_passe_temporaire,
+            "utilisateur_reinitialise_id": utilisateur_reinitialise_id,
+        },
     )
+
+
+@router.post("/admin/utilisateurs/{utilisateur_id}/reinitialiser-mot-de-passe")
+def reinitialiser_mot_de_passe_admin(request: Request, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+    """Genere un mot de passe temporaire pour un etudiant qui ne peut
+    pas le reinitialiser lui-meme (pas de SMS configure, ou en attendant
+    que ce le soit -- voir /mot-de-passe-oublie dans auth_router.py pour
+    la voie self-service). L'admin le relaie ensuite manuellement
+    (WhatsApp, en personne...) : voir le commentaire sur
+    mot_de_passe_temporaire_admin dans page_utilisateurs() ci-dessus
+    pour ou/comment il est affiche UNE SEULE fois.
+
+    doit_changer_mot_de_passe=True force un rappel sur /securite tant
+    que l'etudiant n'a pas defini lui-meme un mot de passe definitif
+    (voir POST /securite/mot-de-passe)."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if cible:
+        mot_de_passe_temporaire = "".join(secrets.choice(_ALPHABET_MOT_DE_PASSE_TEMPORAIRE) for _ in range(10))
+        cible.mot_de_passe_hash = hacher_mot_de_passe(mot_de_passe_temporaire)
+        cible.doit_changer_mot_de_passe = True
+        session.add(cible)
+        session.commit()
+        request.session["mot_de_passe_temporaire_admin"] = mot_de_passe_temporaire
+        request.session["utilisateur_reinitialise_id"] = cible.id
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
 
 
 @router.post("/admin/utilisateurs/{utilisateur_id}/bannir")

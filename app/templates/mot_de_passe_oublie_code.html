@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titre %}Code de reinitialisation — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair">
+<h2>Code de reinitialisation</h2>
+<div class="carte-formulaire">
+  <p class="stat-label">Si un code a pu vous etre envoye, verifiez votre boite mail (et vos indesirables) — il expire dans 15 minutes.</p>
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  <form method="post" action="/mot-de-passe-oublie/code">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <label for="code">Code recu par email</label>
+    <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required>
+
+    <label for="nouveau_mot_de_passe">Nouveau mot de passe</label>
+    <div class="champ-mot-de-passe">
+      <input type="password" id="nouveau_mot_de_passe" name="nouveau_mot_de_passe" required minlength="8" autocomplete="new-password">
+      <button type="button" class="bouton-toggle-mdp" data-cible="nouveau_mot_de_passe" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button>
+    </div>
+
+    <button class="bouton bouton-primaire bouton-form" type="submit">Reinitialiser le mot de passe</button>
+  </form>
+</div>
+<p><a href="/mot-de-passe-oublie">&larr; Je n'ai pas recu de code / renvoyer</a></p>
+
+<script>
+document.querySelectorAll(".bouton-toggle-mdp").forEach(function (bouton) {
+  const champ = document.getElementById(bouton.dataset.cible);
+  if (!champ) return;
+  bouton.addEventListener("click", function () {
+    const visible = champ.type === "text";
+    champ.type = visible ? "password" : "text";
+    bouton.textContent = visible ? "👁" : "🙈";
+    bouton.setAttribute("aria-pressed", String(!visible));
+    bouton.setAttribute("aria-label", visible ? "Afficher le mot de passe" : "Masquer le mot de passe");
+  });
+});
+</script>
+</div>
+{% endblock %}

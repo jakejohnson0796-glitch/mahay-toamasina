@@ -73,5 +73,22 @@ class Parametres:
     groq_api_key: str = field(default_factory=lambda: os.getenv("GROQ_API_KEY", ""))
     groq_model: str = field(default_factory=lambda: os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"))
 
+    # --- Email (SMTP) pour "mot de passe oublie" (voir app/email_utils.py
+    # et /mot-de-passe-oublie dans auth_router.py) : GRATUIT, contrairement
+    # a un envoi de SMS -- fonctionne avec n'importe quel fournisseur SMTP
+    # (compte Gmail avec un "mot de passe d'application", ou l'offre SMTP
+    # gratuite de Brevo/Sendinblue, par exemple). smtp_from_email est
+    # l'adresse expeditrice affichee au destinataire (souvent la meme que
+    # smtp_utilisateur, mais pas obligatoirement selon le fournisseur).
+    # Si l'une des valeurs manque, /mot-de-passe-oublie affiche une erreur
+    # claire au lieu de planter au demarrage du site (module optionnel,
+    # comme LiveKit ci-dessus) -- la reinitialisation par un admin depuis
+    # /admin/utilisateurs reste utilisable meme sans SMTP configure.
+    smtp_hote: str = field(default_factory=lambda: os.getenv("SMTP_HOTE", ""))
+    smtp_port: int = field(default_factory=lambda: int(os.getenv("SMTP_PORT", "587")))
+    smtp_utilisateur: str = field(default_factory=lambda: os.getenv("SMTP_UTILISATEUR", ""))
+    smtp_mot_de_passe: str = field(default_factory=lambda: os.getenv("SMTP_MOT_DE_PASSE", ""))
+    smtp_from_email: str = field(default_factory=lambda: os.getenv("SMTP_FROM_EMAIL", ""))
+
 
 parametres = Parametres()

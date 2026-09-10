@@ -2,7 +2,8 @@
 Inscription, connexion, deconnexion.
 """
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+import secrets
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
@@ -11,7 +12,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Universite, CodeSecours2FA, DemandeChangementFiliere, StatutDemandeChangementFiliere
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
@@ -21,10 +22,24 @@ from ..telephone import normaliser_telephone, TelephoneInvalide
 from ..web_utils import entier_ou_none
 from .. import subscription
 from ..storage import sauvegarder_avatar, obtenir_url_telechargement, supprimer_fichier, stockage_distant_actif, FichierInvalide
+from ..email_utils import envoyer_email, email_configure, EmailNonConfigure
 
 
 def _ip_client(request: Request) -> str:
     return request.client.host if request.client else "inconnu"
+
+
+def _redirection_apres_connexion(utilisateur: Utilisateur) -> RedirectResponse:
+    """Point de sortie commun aux deux chemins de connexion reussie (avec
+    et sans 2FA, voir connexion() et verifier_2fa()) : si le mot de passe
+    vient d'etre reinitialise par un admin ou via /mot-de-passe-oublie,
+    on renvoie vers /securite plutot que l'accueil -- le rappel visible
+    tant que doit_changer_mot_de_passe est actif (voir la carte "Changer
+    mon mot de passe" dans securite.html) s'affiche alors immediatement,
+    au lieu de dependre de l'utilisateur pour aller le chercher lui-meme."""
+    if utilisateur.doit_changer_mot_de_passe:
+        return RedirectResponse("/securite", status_code=303)
+    return RedirectResponse("/", status_code=303)
 
 router = APIRouter()
 
@@ -224,7 +239,7 @@ def connexion(
         return RedirectResponse("/connexion/2fa", status_code=303)
 
     request.session["user_id"] = utilisateur.id
-    return RedirectResponse("/", status_code=303)
+    return _redirection_apres_connexion(utilisateur)
 
 
 @router.get("/connexion/2fa")
@@ -286,7 +301,148 @@ def verifier_2fa(
 
     request.session.pop("en_attente_2fa_user_id", None)
     request.session["user_id"] = utilisateur.id
-    return RedirectResponse("/", status_code=303)
+    return _redirection_apres_connexion(utilisateur)
+
+
+# ============================================================
+# Mot de passe oublie (code envoye par EMAIL, gratuit -- voir
+# app/email_utils.py). L'identifiant reste le TELEPHONE (comme pour la
+# connexion) : l'email n'est qu'un canal de secours facultatif renseigne
+# sur /securite (voir modifier_email() plus haut). Un compte sans email
+# enregistre, ou si le SMTP n'est pas configure sur ce serveur, ne peut
+# pas passer par ce flux self-service -- seule la reinitialisation par
+# un admin (/admin/utilisateurs) reste possible pour lui.
+#
+# Comme pour la connexion, la reponse a l'etape "saisir mon numero" est
+# TOUJOURS la meme (redirection vers l'etape code), que le compte
+# existe ou non, qu'il ait un email ou non, et meme si la limite
+# anti-abus est depassee : ne jamais laisser deviner par le
+# comportement de la page si un numero est enregistre sur le site.
+# ============================================================
+
+DUREE_VALIDITE_CODE_RESET = timedelta(minutes=15)
+
+
+@router.get("/mot-de-passe-oublie")
+def formulaire_mot_de_passe_oublie(request: Request):
+    return templates.TemplateResponse(request, "mot_de_passe_oublie.html", {})
+
+
+@router.post("/mot-de-passe-oublie")
+def demander_reinitialisation(
+    request: Request,
+    telephone: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    # Anti-abus : memes deux limites cumulees que la connexion (voir
+    # connexion() plus haut) -- eviter qu'un script fasse partir des
+    # emails en rafale (cout de service + spam pour la victime) en
+    # essayant plein de numeros, ou en boucle sur UN numero precis.
+    trop_ip = limite_depassee(f"reinit:ip:{_ip_client(request)}", max_tentatives=8, fenetre_secondes=3600)
+    trop_tel = limite_depassee(f"reinit:tel:{telephone}", max_tentatives=3, fenetre_secondes=3600)
+
+    if not (trop_ip or trop_tel):
+        try:
+            telephone_normalise = normaliser_telephone(telephone)
+        except TelephoneInvalide:
+            telephone_normalise = telephone
+
+        utilisateur = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)).first()
+
+        if utilisateur and utilisateur.email and email_configure():
+            code = f"{secrets.randbelow(1_000_000):06d}"
+            session.add(CodeReinitialisationMotDePasse(
+                utilisateur_id=utilisateur.id,
+                code_hash=hacher_mot_de_passe(code),
+                expire_le=datetime.utcnow() + DUREE_VALIDITE_CODE_RESET,
+            ))
+            session.commit()
+
+            try:
+                envoyer_email(
+                    utilisateur.email,
+                    "Gasy Mahay — code de reinitialisation",
+                    f"Votre code de reinitialisation de mot de passe est : {code}\n\n"
+                    "Il expire dans 15 minutes. Si vous n'etes pas a l'origine de cette "
+                    "demande, ignorez cet email : votre mot de passe actuel reste valable.",
+                )
+            except Exception as exc:
+                # Echec d'envoi (hote SMTP injoignable, identifiants
+                # invalides...) : jamais repercute dans la reponse (le
+                # message reste generique, voir mot_de_passe_oublie_code.html)
+                # pour ne pas reveler d'info a un attaquant -- mais on le
+                # journalise cote serveur pour pouvoir diagnostiquer.
+                print(f"[mot-de-passe-oublie] echec envoi email : {exc}")
+
+            request.session["en_attente_reinit_user_id"] = utilisateur.id
+
+    return RedirectResponse("/mot-de-passe-oublie/code", status_code=303)
+
+
+@router.get("/mot-de-passe-oublie/code")
+def formulaire_code_reinitialisation(request: Request):
+    return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": None})
+
+
+@router.post("/mot-de-passe-oublie/code")
+def verifier_code_reinitialisation(
+    request: Request,
+    code: str = Form(...),
+    nouveau_mot_de_passe: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    erreur_generique = "Code invalide ou expire."
+    user_id = request.session.get("en_attente_reinit_user_id")
+
+    # Anti brute-force sur le code (6 chiffres, 1 million de
+    # combinaisons) : meme principe double IP+cible que la 2FA plus haut.
+    trop_ip = limite_depassee(f"reinit-code:ip:{_ip_client(request)}", max_tentatives=10, fenetre_secondes=600)
+    trop_user = user_id and limite_depassee(f"reinit-code:user:{user_id}", max_tentatives=6, fenetre_secondes=600)
+    if trop_ip or trop_user:
+        return templates.TemplateResponse(
+            request, "mot_de_passe_oublie_code.html", {"erreur": "Trop de tentatives. Reessayez dans quelques minutes."}
+        )
+
+    # Pas de session en attente : soit personne n'a demande de code
+    # (acces direct a cette page), soit le numero saisi a l'etape
+    # precedente n'a genere aucun code (compte inexistant/sans email).
+    # Meme message d'erreur que "code invalide" dans tous les cas.
+    if not user_id:
+        return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
+
+    if len(nouveau_mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE:
+        return templates.TemplateResponse(
+            request, "mot_de_passe_oublie_code.html",
+            {"erreur": f"Le nouveau mot de passe doit faire au moins {LONGUEUR_MIN_MOT_DE_PASSE} caracteres."},
+        )
+
+    codes_valides = session.exec(
+        select(CodeReinitialisationMotDePasse).where(
+            CodeReinitialisationMotDePasse.utilisateur_id == user_id,
+            CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
+            CodeReinitialisationMotDePasse.expire_le > datetime.utcnow(),
+        )
+    ).all()
+
+    code_saisi = code.strip()
+    entree_correspondante = next(
+        (entree for entree in codes_valides if verifier_mot_de_passe(code_saisi, entree.code_hash)), None
+    )
+    if not entree_correspondante:
+        return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
+
+    utilisateur = session.get(Utilisateur, user_id)
+    entree_correspondante.utilise = True
+    utilisateur.mot_de_passe_hash = hacher_mot_de_passe(nouveau_mot_de_passe)
+    utilisateur.doit_changer_mot_de_passe = False
+    session.add(entree_correspondante)
+    session.add(utilisateur)
+    session.commit()
+    request.session.pop("en_attente_reinit_user_id", None)
+
+    return RedirectResponse("/connexion?ok=mot_de_passe_reinitialise", status_code=303)
 
 
 @router.get("/deconnexion")
@@ -446,15 +602,15 @@ def actualiser_profil_academique(
 def _contexte_securite(
     utilisateur: Utilisateur, session: Session,
     erreur_photo: Optional[str] = None, erreur_bio: Optional[str] = None,
+    erreur_email: Optional[str] = None, erreur_mot_de_passe: Optional[str] = None,
 ) -> dict:
-    """Factorise le contexte de securite.html, desormais construit a
-    trois endroits : le GET normal ci-dessous, POST /profil/photo quand
-    sauvegarder_avatar() rejette le fichier, et POST /profil/bio quand
-    le texte depasse LONGUEUR_MAX_BIO (meme principe que _contexte()
-    dans actualiser_profil_academique() plus haut -- on re-rend
-    directement le formulaire avec l'erreur plutot que de passer par
-    une redirection, pour eviter d'avoir a encoder un message d'erreur
-    libre dans l'URL)."""
+    """Factorise le contexte de securite.html, construit a plusieurs
+    endroits : le GET normal ci-dessous, et chaque POST /profil/... ou
+    /securite/mot-de-passe quand la valeur soumise est rejetee (meme
+    principe que _contexte() dans actualiser_profil_academique() plus
+    haut -- on re-rend directement le formulaire avec l'erreur plutot
+    que de passer par une redirection, pour eviter d'avoir a encoder un
+    message d'erreur libre dans l'URL)."""
     nb_codes_restants = 0
     if utilisateur.totp_active:
         nb_codes_restants = len(session.exec(
@@ -478,6 +634,8 @@ def _contexte_securite(
         "jours_avant_changement_niveau": referentiel_academique.jours_avant_prochain_changement_niveau(utilisateur),
         "erreur_photo": erreur_photo,
         "erreur_bio": erreur_bio,
+        "erreur_email": erreur_email,
+        "erreur_mot_de_passe": erreur_mot_de_passe,
     }
 
 
@@ -600,6 +758,86 @@ def modifier_bio(
     session.add(utilisateur)
     session.commit()
     return RedirectResponse("/securite?ok=bio_mise_a_jour", status_code=303)
+
+
+@router.post("/profil/email")
+def modifier_email(
+    request: Request,
+    email: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Met a jour l'email de recuperation (voir carte "Email de
+    recuperation" sur securite.html). Champ facultatif : une valeur
+    vide efface l'email (redevient None) -- dans ce cas, "mot de passe
+    oublie" (voir plus bas) ne pourra plus etre utilise en self-service
+    pour ce compte, seule la reinitialisation par un admin restera
+    possible. Validation minimale (presence d'un "@" et d'un "." apres)
+    : ce n'est qu'un canal de secours, pas l'identifiant de connexion
+    (qui reste le telephone), pas besoin d'une verification par lien de
+    confirmation pour ce niveau d'enjeu."""
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    email_nettoye = email.strip()
+    if email_nettoye and ("@" not in email_nettoye or "." not in email_nettoye.split("@")[-1]):
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_email="Adresse email invalide."),
+        )
+
+    utilisateur.email = email_nettoye or None
+    session.add(utilisateur)
+    session.commit()
+    return RedirectResponse("/securite?ok=email_mis_a_jour", status_code=303)
+
+
+# Longueur min du mot de passe : alignee sur la regle deja appliquee a
+# l'inscription (voir inscription() plus haut) -- un nouveau mot de
+# passe ne doit pas pouvoir etre plus faible que ce qu'on exige a la
+# creation du compte.
+LONGUEUR_MIN_MOT_DE_PASSE = 8
+
+
+@router.post("/securite/mot-de-passe")
+def modifier_mot_de_passe(
+    request: Request,
+    ancien_mot_de_passe: str = Form(...),
+    nouveau_mot_de_passe: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Change son propre mot de passe en etant deja connecte -- exige
+    l'ANCIEN mot de passe (que ce soit le mot de passe habituel, ou le
+    mot de passe temporaire genere par un admin / recu par email, voir
+    plus bas) pour eviter qu'une session laissee ouverte sur un
+    appareil partage suffise a elle seule a prendre le controle du
+    compte. Efface doit_changer_mot_de_passe : c'est le point de sortie
+    du rappel affiche apres une reinitialisation (admin ou email)."""
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    if not verifier_mot_de_passe(ancien_mot_de_passe, utilisateur.mot_de_passe_hash):
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_mot_de_passe="Ancien mot de passe incorrect."),
+        )
+    if len(nouveau_mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE:
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(
+                utilisateur, session,
+                erreur_mot_de_passe=f"Le nouveau mot de passe doit faire au moins {LONGUEUR_MIN_MOT_DE_PASSE} caracteres.",
+            ),
+        )
+
+    utilisateur.mot_de_passe_hash = hacher_mot_de_passe(nouveau_mot_de_passe)
+    utilisateur.doit_changer_mot_de_passe = False
+    session.add(utilisateur)
+    session.commit()
+    return RedirectResponse("/securite?ok=mot_de_passe_modifie", status_code=303)
 
 
 @router.post("/securite/universite")

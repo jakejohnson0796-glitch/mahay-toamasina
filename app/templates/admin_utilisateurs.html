@@ -14,6 +14,14 @@
 <div class="erreur">Impossible : c'est le dernier admin restant. Promouvez d'abord un autre compte admin avant de retrograder celui-ci.</div>
 {% endif %}
 
+{% if mot_de_passe_temporaire %}
+<div class="info">
+  Mot de passe temporaire genere{% for u in utilisateurs %}{% if u.id == utilisateur_reinitialise_id %} pour <strong>{{ u.nom }}</strong>{% endif %}{% endfor %} :
+  <code style="font-size:1.1rem;">{{ mot_de_passe_temporaire }}</code><br>
+  Transmettez-le a l'interesse (WhatsApp, en personne...) — il ne sera plus jamais affiche. Il sera invite a en definir un nouveau des sa prochaine connexion.
+</div>
+{% endif %}
+
 <form method="get" action="/admin/utilisateurs" class="carte-formulaire" style="display:flex;gap:0.75rem;align-items:end;margin-bottom:1.5rem;">
   <div style="flex:1;">
     <label for="q">Rechercher (nom ou telephone)</label>
@@ -64,6 +72,10 @@
         </form>
         {% endif %}
         <a href="/admin/utilisateurs/{{ u.id }}/supprimer" class="bouton bouton-secondaire" style="padding:0.4rem 0.8rem;font-size:0.85rem;text-decoration:none;display:inline-block;">Supprimer</a>
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/reinitialiser-mot-de-passe" style="display:inline" onsubmit="return mahayConfirmSubmit(event, 'Generer un nouveau mot de passe temporaire pour {{ u.nom }} ? L\'ancien cessera de fonctionner immediatement.', {danger: false});">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Reinitialiser mot de passe</button>
+        </form>
         {% else %}
         <span class="stat-label">(vous)</span>
         {% endif %}

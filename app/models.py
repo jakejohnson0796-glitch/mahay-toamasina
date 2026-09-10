@@ -168,7 +168,24 @@ class Utilisateur(SQLModel, table=True):
     # Le telephone sert d'identifiant de connexion : c'est ce que tout le
     # monde utilise deja pour mobile money, plus fiable qu'un email ici.
     telephone: str = Field(index=True, unique=True)
+    # Facultatif -- l'identifiant de connexion reste le telephone, cet
+    # email ne sert QUE de canal de secours pour "mot de passe oublie"
+    # (voir /mot-de-passe-oublie dans auth_router.py, /securite pour le
+    # renseigner). Sans email sur le compte, seule la reinitialisation
+    # par un admin (/admin/utilisateurs) reste possible. Pas de contrainte
+    # unique : deux comptes ne devraient normalement pas partager un
+    # email, mais ce n'est pas ce champ qui identifie un compte (c'est
+    # telephone), donc pas besoin d'en faire une regle stricte au niveau
+    # base de donnees.
+    email: Optional[str] = None
     mot_de_passe_hash: str
+    # True juste apres une reinitialisation par un admin (voir
+    # /admin/utilisateurs/{id}/reinitialiser-mot-de-passe) ou par SMS
+    # (voir /mot-de-passe-oublie) : affiche un rappel sur /securite tant
+    # que l'utilisateur n'a pas defini lui-meme un nouveau mot de passe
+    # (voir POST /securite/mot-de-passe dans auth_router.py, qui remet
+    # ce champ a False). Jamais True par defaut a l'inscription.
+    doit_changer_mot_de_passe: bool = Field(default=False)
     role: RoleUtilisateur = Field(default=RoleUtilisateur.ETUDIANT)
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
     # Ajoutes pour le referentiel academique national (§15 du brief) :
@@ -236,6 +253,22 @@ class CodeSecours2FA(SQLModel, table=True):
     utilise: bool = Field(default=False)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_utilisation: Optional[datetime] = None
+
+
+class CodeReinitialisationMotDePasse(SQLModel, table=True):
+    """Code a 6 chiffres envoye par SMS pour la fonctionnalite "mot de
+    passe oublie" (voir /mot-de-passe-oublie dans auth_router.py et
+    app/sms.py). Meme principe que CodeSecours2FA ci-dessus (hache,
+    jamais stocke en clair, marque utilise plutot que supprime) avec une
+    difference : une expiration courte (expire_le, 15 minutes -- un code
+    de reinitialisation n'a pas vocation a rester valable des jours,
+    contrairement a un code de secours 2FA)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    code_hash: str
+    expire_le: datetime
+    utilise: bool = Field(default=False)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
 class Document(SQLModel, table=True):
