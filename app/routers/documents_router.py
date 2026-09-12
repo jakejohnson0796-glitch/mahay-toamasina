@@ -155,7 +155,13 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
         return redirection
 
     document = session.get(Document, document_id)
-    if not document:
+    # Meme regle que telecharger_document() ci-dessus : un document encore
+    # en attente de moderation (ou rejete) n'a jamais ete valide comme
+    # public. Sans cette verification, n'importe quel abonne premium
+    # pouvait generer un quiz a partir d'un document_id devine/enumere,
+    # avant meme le passage en moderation -- contournement complet du
+    # controle d'acces cense proteger ce contenu.
+    if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
 
     with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
