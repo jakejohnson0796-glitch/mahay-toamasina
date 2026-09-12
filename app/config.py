@@ -71,7 +71,7 @@ class Parametres:
     # --- Generation de quiz par IA (API Groq — gratuite) ---
     # Cle gratuite sur https://console.groq.com (aucune carte bancaire requise).
     groq_api_key: str = field(default_factory=lambda: os.getenv("GROQ_API_KEY", ""))
-    groq_model: str = field(default_factory=lambda: os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"))
+    groq_model: str = field(default_factory=lambda: os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"))
 
     # --- Email (SMTP) pour "mot de passe oublie" (voir app/email_utils.py
     # et /mot-de-passe-oublie dans auth_router.py) : GRATUIT, contrairement
