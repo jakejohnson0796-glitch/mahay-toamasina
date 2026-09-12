@@ -2808,6 +2808,68 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   .quiz-grille { grid-template-columns: 1fr; }
 }
 
+/* --- Retour visuel pendant la generation IA (quiz par theme, examen,
+   et quiz par document) + progression de reponse en passant un quiz.
+   Ajout du 12/09/2026 : la generation appelle Groq de maniere
+   synchrone (1 a 4 appels enchaines selon _generer_quiz_confiant dans
+   app/quiz.py), ce qui peut prendre plusieurs dizaines de secondes
+   sans le moindre retour visuel avant cet ajout. --- */
+.chargement-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0.85;
+  vertical-align: -0.15em;
+  animation: chargement-rotation 0.7s linear infinite;
+}
+@keyframes chargement-rotation { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .chargement-spinner { animation: none; opacity: 0.5; }
+}
+.quiz-aide-generation { font-size: 0.8rem; color: var(--content-text-muted); margin: 0.5rem 0 0; }
+.bouton-form[disabled] { opacity: 0.75; cursor: progress; }
+
+.quiz-progression {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
+  padding: 0.65rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.82rem;
+  color: var(--content-text-muted);
+}
+.quiz-progression--statique { position: static; }
+.quiz-progression-piste {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--content-border);
+  overflow: hidden;
+}
+.quiz-progression-remplissage {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: width 0.2s var(--ease-fluide);
+}
+.quiz-progression-texte { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Rendu "carte" pour le quiz genere depuis un document (lecture seule,
+   pas de <input>) : reprend .quiz-choix-option pour la coherence
+   visuelle avec le quiz interactif, sans le curseur cliquable. */
+.quiz-choix-option--lecture-seule { cursor: default; }
+.quiz-choix-option--lecture-seule:hover { border-color: var(--content-border); background: none; }
+
 /* ============================================================
    "Le Phare" — composants Jinja partages (etape 2/10)
    Voir app/templates/components/*.html pour les macros

@@ -80,4 +80,19 @@ session dediee, avec sa propre verification desktop+mobile.
 ) }}
 {% endif %}
 </div>
+
+<script>
+(function () {
+  // Le clic sur "Quiz IA" declenche une generation par IA synchrone
+  // (voir /documents/{id}/quiz) qui peut prendre plusieurs secondes
+  // sans retour visuel avant cet ajout. On ne bloque pas la navigation
+  // (comportement du lien inchange), on donne juste un retour immediat.
+  document.querySelectorAll(".doc-lien-quiz").forEach(function (lien) {
+    lien.addEventListener("click", function () {
+      lien.innerHTML = '<span class="chargement-spinner" aria-hidden="true"></span> Generation…';
+      lien.style.pointerEvents = "none";
+    });
+  });
+})();
+</script>
 {% endblock %}

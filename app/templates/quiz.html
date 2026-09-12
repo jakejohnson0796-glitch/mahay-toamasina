@@ -11,16 +11,19 @@
   <p class="question-quiz"><strong>{{ loop.index }}. {{ item.question }}</strong></p>
 
   {% if item.choix and item.choix|length > 1 %}
-  <ol type="A" class="choix-quiz">
+  <div class="choix-quiz quiz-choix-cliquables">
     {% for choix in item.choix %}
-    <li>{{ choix }}</li>
+    <div class="quiz-choix-option quiz-choix-option--lecture-seule">
+      <span>{{ ["A","B","C","D","E","F"][loop.index0] }}.</span>
+      <span>{{ choix }}</span>
+    </div>
     {% endfor %}
-  </ol>
+  </div>
 
   <details class="explication-quiz">
     <summary>Voir la bonne reponse</summary>
     {% if item.index_bonne_reponse is not none and item.index_bonne_reponse < item.choix|length %}
-    <p><strong>Reponse : {{ item.choix[item.index_bonne_reponse] }}</strong></p>
+    <p class="quiz-choix-correct">Reponse : {{ item.choix[item.index_bonne_reponse] }}</p>
     {% endif %}
     {% if item.explication %}<p>{{ item.explication }}</p>{% endif %}
   </details>

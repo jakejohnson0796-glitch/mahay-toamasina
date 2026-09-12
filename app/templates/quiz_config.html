@@ -49,6 +49,7 @@
       </select>
 
       <button class="bouton bouton-primaire bouton-form" type="submit">Generer le quiz</button>
+      <p class="quiz-aide-generation">La generation par IA prend generalement 10 a 30 secondes.</p>
     </form>
   </div>
 
@@ -59,6 +60,7 @@
     <form method="post" action="/quiz/examen/generer">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
       <button class="bouton bouton-secondaire bouton-form" type="submit">Lancer un examen blanc</button>
+      <p class="quiz-aide-generation">La generation par IA prend generalement 10 a 30 secondes.</p>
     </form>
   </div>
 </div>
@@ -69,4 +71,24 @@
   <a href="/tuteur">Poser une question au tuteur IA</a>
 </p>
 </div>
+
+<script>
+(function () {
+  // Retour visuel pendant la generation IA (voir commentaire CSS
+  // correspondant) : au clic, on desactive le bouton et on remplace
+  // son libelle par un spinner + un message, pour eviter tout double
+  // envoi et rassurer l'etudiant pendant les quelques secondes ou la
+  // page ne fait, en apparence, plus rien. Le formulaire continue de
+  // se soumettre normalement (aucune interception de la soumission).
+  document.querySelectorAll(".quiz-carte-generer form, .quiz-carte-examen form").forEach(function (formulaire) {
+    formulaire.addEventListener("submit", function () {
+      var bouton = formulaire.querySelector("button[type=submit]");
+      if (!bouton || bouton.disabled) return;
+      bouton.disabled = true;
+      bouton.dataset.libelleOriginal = bouton.textContent;
+      bouton.innerHTML = '<span class="chargement-spinner" aria-hidden="true"></span> Generation en cours…';
+    });
+  });
+})();
+</script>
 {% endblock %}

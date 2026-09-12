@@ -13,6 +13,11 @@
 </div>
 {% endif %}
 
+<div class="quiz-progression {{ 'quiz-progression--statique' if tentative.mode_examen else '' }}">
+  <span class="quiz-progression-texte" id="quiz-progression-texte">0 / {{ questions|length }} repondues</span>
+  <span class="quiz-progression-piste"><span class="quiz-progression-remplissage" id="quiz-progression-remplissage"></span></span>
+</div>
+
 <form id="form-quiz" method="post" action="/quiz/{{ tentative.id }}/soumettre">
   <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
   {% for item in questions %}
@@ -34,8 +39,48 @@
   </div>
   {% endfor %}
 
-  <button class="bouton bouton-primaire bouton-form" type="submit">Valider mes reponses</button>
+  <button id="bouton-valider-quiz" class="bouton bouton-primaire bouton-form" type="submit">Valider mes reponses</button>
 </form>
+
+<script>
+(function () {
+  // Progression de reponse : compte les groupes de radios ayant deja
+  // une reponse cochee, et met a jour la barre + le texte a chaque
+  // changement. Purement visuel, ne remplace pas la validation HTML5
+  // "required" deja en place (voir plus haut).
+  var formulaire = document.getElementById("form-quiz");
+  var nbQuestions = {{ questions|length }};
+  var texteProgression = document.getElementById("quiz-progression-texte");
+  var remplissageProgression = document.getElementById("quiz-progression-remplissage");
+
+  function nomsDeGroupes() {
+    var noms = [];
+    for (var i = 0; i < nbQuestions; i++) noms.push("question_" + i);
+    return noms;
+  }
+
+  function majProgression() {
+    var repondues = 0;
+    nomsDeGroupes().forEach(function (nom) {
+      if (formulaire.querySelector('input[name="' + nom + '"]:checked')) repondues += 1;
+    });
+    texteProgression.textContent = repondues + " / " + nbQuestions + " repondues";
+    remplissageProgression.style.width = (nbQuestions ? (repondues / nbQuestions * 100) : 0) + "%";
+  }
+
+  formulaire.addEventListener("change", majProgression);
+  majProgression();
+
+  // Empeche un double envoi si l'etudiant clique deux fois pendant que
+  // la page part vers /resultat.
+  formulaire.addEventListener("submit", function () {
+    var bouton = document.getElementById("bouton-valider-quiz");
+    if (bouton.disabled) return;
+    bouton.disabled = true;
+    bouton.innerHTML = '<span class="chargement-spinner" aria-hidden="true"></span> Envoi en cours…';
+  });
+})();
+</script>
 
 {% if tentative.mode_examen %}
 <script>
@@ -67,7 +112,10 @@
       formulaire.querySelectorAll("[required]").forEach(function (champ) {
         champ.removeAttribute("required");
       });
-      formulaire.submit();
+      // requestSubmit() (plutot que submit()) declenche aussi l'ecouteur
+      // "submit" ajoute plus haut, pour le meme retour visuel (bouton
+      // desactive + spinner) meme lors de cet envoi automatique.
+      formulaire.requestSubmit();
       return;
     }
     affichage.textContent = formater(secondesRestantes);
