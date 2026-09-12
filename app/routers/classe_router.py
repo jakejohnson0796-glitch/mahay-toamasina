@@ -627,10 +627,32 @@ def _donnees_tableau(session: Session, seance_id: int, request: Request):
 
     peut_ecrire = _peut_ecrire_tableau(session, seance_id, cours, utilisateur)
 
+    # echapper_pour_script() : json.dumps() n'echappe jamais "</script>",
+    # et ce JSON est injecte tel quel a l'INTERIEUR d'une balise <script>
+    # (voir classe_tableau_fragment.html) -- pas via JSON.parse() sur un
+    # texte recu separement. Un evenement de tableau contient du texte
+    # libre tape par un etudiant autorise a ecrire (outil "Texte", voir
+    # le prompt() cote client) : sans cet echappement, "</script><script>
+    # ...</script>" dans ce texte casse hors du <script> d'origine et
+    # execute du JS arbitraire pour quiconque ouvre ensuite ce tableau
+    # (y compris le prof ou un admin) -- XSS stocke exploitable via le
+    # jeton CSRF, expose globalement dans la page, que ce script peut
+    # alors lire pour forger n'importe quelle requete au nom de la
+    # victime. \u003c/\u003e/\u0026 restent des sequences JSON valides
+    # (JSON.parse et l'evaluation JS les decodent normalement en <, >,
+    # &) mais n'apparaissent jamais comme caracteres HTML litteraux dans
+    # la page -- "</script>" ne peut donc plus jamais s'y former.
+    etat_initial_json = (
+        json.dumps(etat_initial)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+
     contexte = {
         "utilisateur": utilisateur, "cours": cours, "seance": seance,
         "peut_gerer": peut_gerer, "peut_ecrire": peut_ecrire,
-        "etat_initial_json": json.dumps(etat_initial),
+        "etat_initial_json": etat_initial_json,
         "autorises": autorises, "inscrits_non_autorises": inscrits_non_autorises,
     }
     return contexte, seance, cours
