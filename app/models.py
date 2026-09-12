@@ -142,6 +142,22 @@ class Filiere(SQLModel, table=True):
     faculte_id: int = Field(foreign_key="faculte.id")
     # Nullable expres : voir la docstring de Mention ci-dessus.
     mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
+    # Ajoute suite a l'analyse du referentiel Toamasina niveau-par-niveau
+    # (rapport du 10/09/2026, cf. la note laissee dans a3c7f1e9b2d4 sur
+    # ce point precis) : une ligne Filiere represente maintenant un
+    # triplet (mention, niveau, nom de parcours), pas juste un nom sur
+    # toute la scolarite. "Entreprises agro-industrielles et Commerce
+    # International" (L3) et "Commerce International" (M1) sous la
+    # mention Gestion sont donc deux lignes distinctes.
+    #
+    # NULL = ligne heritee non-datee (toutes les Filiere creees avant
+    # ce champ) : reste valide, juste moins precise qu'une nouvelle
+    # ligne -- jamais invalidee ni migree de force (voir la migration
+    # qui a introduit ce champ). Pas de colonne Debut/Fin specialisation
+    # separee : l'etendue d'un parcours (ex: "Droit prive" existe de L3
+    # a M2") se lit directement dans l'ensemble des lignes qui partagent
+    # le meme (mention_id, nom normalise), jamais stockee en double.
+    niveau: Optional[str] = None
 
     faculte: Optional[Faculte] = Relationship(back_populates="filieres")
     mention: Optional[Mention] = Relationship(back_populates="filieres")
@@ -188,6 +204,18 @@ class Utilisateur(SQLModel, table=True):
     doit_changer_mot_de_passe: bool = Field(default=False)
     role: RoleUtilisateur = Field(default=RoleUtilisateur.ETUDIANT)
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    # Ajoute avec Filiere.niveau (voir sa docstring) : jusqu'ici "la
+    # filiere EST la mention" (§6 du brief) -- mais un etudiant en
+    # tronc commun (avant specialisation, ex: tout L1) n'a justement
+    # AUCUNE filiere, et se retrouvait donc sans mention du tout. Ce
+    # champ se renseigne des le tronc commun, independamment de
+    # filiere_id (qui, lui, reste NULL tant qu'aucun parcours nomme
+    # n'est choisi -- voir profil_academique_incomplet() dans
+    # referentiel_academique.py). Si filiere_id est renseigne, il doit
+    # pointer vers une Filiere de CE mention_id (verifie a l'ecriture,
+    # pas de contrainte SQL -- meme logique que le reste du profil
+    # academique dans ce fichier).
+    mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
     # Ajoutes pour le referentiel academique national (§15 du brief) :
     # nullable, les comptes existants n'en ont pas et continuent de
     # fonctionner normalement (aucune fonctionnalite actuelle n'exige

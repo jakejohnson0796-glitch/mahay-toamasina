@@ -70,16 +70,23 @@ def assurer_cercles_pour_groupe_parcours(
 ) -> int:
     """Cree, pour un GROUPE de Filiere representant le meme parcours
     national (meme mention_id + meme nom normalise, potentiellement
-    plusieurs universites), le cercle manquant pour chaque niveau —
-    UN SEUL cercle par niveau pour tout le groupe, jamais un par
-    Filiere. Renvoie le nombre de cercles effectivement crees."""
+    plusieurs universites), le cercle manquant pour chaque niveau ou ce
+    parcours existe reellement — UN SEUL cercle par niveau pour tout le
+    groupe, jamais un par Filiere. Renvoie le nombre de cercles
+    effectivement crees.
+
+    Depuis l'ajout de Filiere.niveau (rapport du 10/09/2026) : si au
+    moins une Filiere du groupe a un niveau renseigne, SEULS ces
+    niveaux-la sont provisionnes (ex: "CCA" existe reellement en M1/M2,
+    pas la peine d'un cercle "CCA — L1" que personne ne pourra jamais
+    rejoindre). Si aucune n'a de niveau (groupe entierement heritee,
+    pas encore enrichie), on retombe sur l'ancien comportement — les 8
+    niveaux — plutot que de ne rien creer du tout."""
     from .routers.cercles_router import _assurer_membres_admins
 
     filiere_ids_du_groupe = [f.id for f in filieres_du_groupe]
-    # Representante arbitraire (la plus ancienne = id le plus petit) :
-    # le cercle doit bien referencer UNE Filiere pour sa FK, mais
-    # laquelle n'a pas d'importance — voir la docstring du module.
-    filiere_representante = min(filieres_du_groupe, key=lambda f: f.id)
+
+    niveaux_cibles = {f.niveau for f in filieres_du_groupe if f.niveau} or set(NIVEAUX)
 
     niveaux_existants = {
         c.niveau
@@ -93,9 +100,15 @@ def assurer_cercles_pour_groupe_parcours(
     }
 
     nb_crees = 0
-    for niveau in NIVEAUX:
+    for niveau in niveaux_cibles:
         if niveau in niveaux_existants:
             continue
+
+        # Representante pour CE niveau precis : une Filiere du groupe
+        # qui a explicitement ce niveau si elle existe, sinon la plus
+        # ancienne du groupe (cas legacy, niveau=None partout).
+        candidates_du_niveau = [f for f in filieres_du_groupe if f.niveau == niveau]
+        filiere_representante = min(candidates_du_niveau or filieres_du_groupe, key=lambda f: f.id)
 
         cercle = CercleEtude(
             nom=f"{filiere_representante.nom} — {libelle_niveau(niveau)}",
