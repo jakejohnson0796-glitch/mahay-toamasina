@@ -393,6 +393,7 @@ def page_demandes_changement_filiere(request: Request, session: Session = Depend
 
     utilisateurs = {u.id: u for u in session.exec(select(Utilisateur)).all()}
     filieres = {f.id: f for f in session.exec(select(Filiere)).all()}
+    mentions = {m.id: m for m in session.exec(select(Mention)).all()}
 
     return templates.TemplateResponse(
         request,
@@ -402,6 +403,7 @@ def page_demandes_changement_filiere(request: Request, session: Session = Depend
             "demandes": demandes,
             "utilisateurs": utilisateurs,
             "filieres": filieres,
+            "mentions": mentions,
         },
     )
 
@@ -424,6 +426,11 @@ def approuver_demande_changement_filiere(
     etudiant = session.get(Utilisateur, demande.utilisateur_id)
     if etudiant:
         etudiant.filiere_id = demande.nouvelle_filiere_id
+        # nouvelle_mention_id peut etre absent sur d'anciennes demandes
+        # (creees avant son ajout, voir la migration ceab424f3667) : ne
+        # pas ecraser la mention actuelle de l'etudiant dans ce cas.
+        if demande.nouvelle_mention_id:
+            etudiant.mention_id = demande.nouvelle_mention_id
         session.add(etudiant)
 
     demande.statut = StatutDemandeChangementFiliere.APPROUVEE

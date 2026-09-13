@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
@@ -71,12 +71,14 @@ def inscription(
     telephone: str = Form(...),
     mot_de_passe: str = Form(...),
     role: RoleUtilisateur = Form(RoleUtilisateur.ETUDIANT),
+    mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     universite_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
+    mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
     universite_id_nettoye = entier_ou_none(universite_id)
 
@@ -102,38 +104,47 @@ def inscription(
     if role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.SPONSOR):
         role = RoleUtilisateur.ETUDIANT
 
-    # §7-9 du brief refonte academique nationale : pour un(e) ETUDIANT(E),
-    # universite/filiere/niveau deviennent obligatoires et VALIDES cote
-    # backend (jamais uniquement cote JS, qui peut etre contourne par un
-    # appel direct). Un sponsor/repetiteur n'a pas de parcours academique
-    # a declarer — ces 3 champs restent optionnels pour ce role, comme
-    # avant.
+    # §7-9 du brief refonte academique nationale, revu le 10/09/2026
+    # (Filiere.niveau) : pour un(e) ETUDIANT(E), universite/mention/niveau
+    # deviennent obligatoires et VALIDES cote backend (jamais uniquement
+    # cote JS, qui peut etre contourne par un appel direct) -- filiere_id,
+    # lui, reste FACULTATIF : un etudiant en tronc commun (aucun parcours
+    # nomme a son niveau) n'a justement rien a choisir de plus. Un
+    # sponsor/repetiteur n'a pas de parcours academique a declarer — ces
+    # 4 champs restent optionnels pour ce role, comme avant.
     if role == RoleUtilisateur.ETUDIANT:
-        if not (universite_id_nettoye and filiere_id_nettoye and niveau):
+        if not (universite_id_nettoye and mention_id_nettoye and niveau):
             return templates.TemplateResponse(
                 request, "register.html",
-                _contexte_formulaire_inscription(session, "Universite, filiere/parcours et niveau sont obligatoires pour un compte etudiant."),
+                _contexte_formulaire_inscription(session, "Universite, mention et niveau sont obligatoires pour un compte etudiant."),
             )
         if niveau not in NIVEAUX:
             return templates.TemplateResponse(
                 request, "register.html",
                 _contexte_formulaire_inscription(session, "Niveau invalide."),
             )
-        filiere = session.get(Filiere, filiere_id_nettoye)
-        # §9 : une combinaison universite/filiere inexistante dans le
-        # referentiel (filiere introuvable, OU filiere rattachee a une
-        # AUTRE universite que celle choisie) est rejetee ici — jamais
-        # seulement empechee par le JS du formulaire.
-        if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
-            return templates.TemplateResponse(
-                request, "register.html",
-                _contexte_formulaire_inscription(session, "Cette filiere ne correspond pas a l'universite selectionnee."),
-            )
+        if filiere_id_nettoye:
+            # §9 : une combinaison universite/mention/filiere incoherente
+            # (filiere introuvable, rattachee a une AUTRE universite, ou
+            # a une autre mention que celle choisie) est rejetee ici —
+            # jamais seulement empechee par le JS du formulaire.
+            filiere = session.get(Filiere, filiere_id_nettoye)
+            if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
+                return templates.TemplateResponse(
+                    request, "register.html",
+                    _contexte_formulaire_inscription(session, "Ce parcours ne correspond pas a l'universite selectionnee."),
+                )
+            if filiere.mention_id and filiere.mention_id != mention_id_nettoye:
+                return templates.TemplateResponse(
+                    request, "register.html",
+                    _contexte_formulaire_inscription(session, "Ce parcours ne correspond pas a la mention selectionnee."),
+                )
     else:
         # Un sponsor n'a pas de parcours academique : on ignore ces
         # champs meme si un appel direct les fournissait, plutot que de
         # les valider pour un role qui n'en a pas besoin.
         universite_id_nettoye = None
+        mention_id_nettoye = None
         filiere_id_nettoye = None
         niveau = None
 
@@ -163,6 +174,7 @@ def inscription(
         telephone=telephone_normalise,
         mot_de_passe_hash=hacher_mot_de_passe(mot_de_passe),
         role=role,
+        mention_id=mention_id_nettoye,
         filiere_id=filiere_id_nettoye,
         universite_id=universite_id_nettoye,
         niveau=niveau,
@@ -477,7 +489,8 @@ def formulaire_actualisation_academique(request: Request, session: Session = Dep
             DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
         )
     ).first()
-    filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente else None
+    filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente and demande_en_attente.nouvelle_filiere_id else None
+    mention_demandee = session.get(Mention, demande_en_attente.nouvelle_mention_id) if demande_en_attente and demande_en_attente.nouvelle_mention_id else None
 
     return templates.TemplateResponse(
         request, "profil_academique.html",
@@ -488,6 +501,7 @@ def formulaire_actualisation_academique(request: Request, session: Session = Dep
             "erreur": None,
             "demande_en_attente": demande_en_attente,
             "filiere_demandee": filiere_demandee,
+            "mention_demandee": mention_demandee,
         },
     )
 
@@ -496,6 +510,7 @@ def formulaire_actualisation_academique(request: Request, session: Session = Dep
 def actualiser_profil_academique(
     request: Request,
     universite_id: Optional[str] = Form(None),
+    mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
     motif_filiere: Optional[str] = Form(None),
@@ -503,13 +518,15 @@ def actualiser_profil_academique(
     _csrf: None = Depends(verifier_csrf),
 ):
     """Universite et niveau restent modifiables librement (comme avant).
-    La filiere, elle, NE PEUT PLUS etre modifiee directement depuis
-    cette route (demande explicite de Jake) : elle passe desormais par
-    une DemandeChangementFiliere soumise a validation d'un admin — voir
-    /admin/referentiel/demandes-filiere. Ce circuit existait deja dans
-    le schema (models.py) depuis la refonte academique nationale mais
-    n'avait jamais ete branche a une UI ('non bloquant pour cette
-    premiere version' selon sa docstring d'origine)."""
+    La mention et la filiere, elles, NE PEUVENT PAS etre modifiees
+    directement depuis cette route (demande explicite de Jake) : elles
+    passent desormais par une DemandeChangementFiliere soumise a
+    validation d'un admin — voir /admin/referentiel/demandes-filiere.
+    Etendue le 10/09/2026 (Filiere.niveau, Utilisateur.mention_id) pour
+    couvrir la mention en plus de la filiere : une demande peut porter
+    sur la mention seule (ex: passage/retour au tronc commun a un
+    niveau qui n'a pas de parcours nomme), sur la filiere seule, ou sur
+    les deux ensemble."""
     utilisateur = session.get(Utilisateur, request.session.get("user_id"))
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -521,7 +538,8 @@ def actualiser_profil_academique(
                 DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
             )
         ).first()
-        filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente else None
+        filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente and demande_en_attente.nouvelle_filiere_id else None
+        mention_demandee = session.get(Mention, demande_en_attente.nouvelle_mention_id) if demande_en_attente and demande_en_attente.nouvelle_mention_id else None
         return templates.TemplateResponse(
             request, "profil_academique.html",
             {
@@ -531,25 +549,31 @@ def actualiser_profil_academique(
                 "erreur": message_erreur,
                 "demande_en_attente": demande_en_attente,
                 "filiere_demandee": filiere_demandee,
+                "mention_demandee": mention_demandee,
             },
         )
 
     universite_id_nettoye = entier_ou_none(universite_id)
+    mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
 
-    # §21-22 : les 3 champs restent tous obligatoires pour resoudre le
-    # statut PROFILE_ACADEMIC_UPDATE_REQUIRED — memes regles qu'a
-    # l'inscription (§9). La filiere sert ici a VALIDER la coherence
-    # (elle doit appartenir a l'universite choisie) avant de creer la
-    # demande, jamais a etre enregistree directement sur le compte.
-    if not (universite_id_nettoye and filiere_id_nettoye and niveau):
-        return _contexte("Universite, filiere/parcours et niveau sont tous les trois obligatoires.")
+    # §21-22 : universite, mention et niveau restent tous obligatoires
+    # pour resoudre le statut PROFILE_ACADEMIC_UPDATE_REQUIRED — memes
+    # regles qu'a l'inscription (§9). Filiere reste facultatif (tronc
+    # commun) ; mention et filiere servent ici a VALIDER la coherence
+    # avant de creer la demande, jamais a etre enregistres directement
+    # sur le compte.
+    if not (universite_id_nettoye and mention_id_nettoye and niveau):
+        return _contexte("Universite, mention et niveau sont tous les trois obligatoires.")
     if niveau not in NIVEAUX:
         return _contexte("Niveau invalide.")
 
-    filiere = session.get(Filiere, filiere_id_nettoye)
-    if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
-        return _contexte("Cette filiere ne correspond pas a l'universite selectionnee.")
+    if filiere_id_nettoye:
+        filiere = session.get(Filiere, filiere_id_nettoye)
+        if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
+            return _contexte("Ce parcours ne correspond pas a l'universite selectionnee.")
+        if filiere.mention_id and filiere.mention_id != mention_id_nettoye:
+            return _contexte("Ce parcours ne correspond pas a la mention selectionnee.")
 
     # Universite + niveau : modifiables librement, enregistres tout de
     # suite (aucune approbation requise pour ces deux-la).
@@ -559,10 +583,10 @@ def actualiser_profil_academique(
     session.add(utilisateur)
     session.commit()
 
-    # Filiere deja identique a l'actuelle : rien a demander (evite une
-    # demande inutile si l'etudiant re-confirme juste son parcours
-    # existant en ajustant seulement son universite/niveau).
-    if filiere_id_nettoye == utilisateur.filiere_id:
+    # Mention ET filiere deja identiques aux actuelles : rien a demander
+    # (evite une demande inutile si l'etudiant re-confirme juste ses
+    # choix existants en ajustant seulement son universite/niveau).
+    if mention_id_nettoye == utilisateur.mention_id and filiere_id_nettoye == utilisateur.filiere_id:
         return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
 
     demande_existante = session.exec(
@@ -572,21 +596,22 @@ def actualiser_profil_academique(
         )
     ).first()
     if demande_existante:
-        if demande_existante.nouvelle_filiere_id == filiere_id_nettoye:
+        if demande_existante.nouvelle_mention_id == mention_id_nettoye and demande_existante.nouvelle_filiere_id == filiere_id_nettoye:
             # Demande identique deja en attente : rien a refaire.
             return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
         return _contexte(
-            "Vous avez deja une demande de changement de filiere en attente de validation. "
+            "Vous avez deja une demande de changement de mention/parcours en attente de validation. "
             "Un admin doit la traiter avant d'en soumettre une nouvelle."
         )
 
     if not motif_filiere or not motif_filiere.strip():
-        return _contexte("Merci d'expliquer brievement pourquoi vous demandez ce parcours (obligatoire).")
+        return _contexte("Merci d'expliquer brievement pourquoi vous demandez ce changement (obligatoire).")
 
     session.add(DemandeChangementFiliere(
         utilisateur_id=utilisateur.id,
         ancienne_filiere_id=utilisateur.filiere_id,
         nouvelle_filiere_id=filiere_id_nettoye,
+        nouvelle_mention_id=mention_id_nettoye,
         motif=motif_filiere.strip(),
         statut=StatutDemandeChangementFiliere.EN_ATTENTE,
     ))

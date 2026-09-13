@@ -539,15 +539,22 @@ class StatutDemandeChangementFiliere(str, Enum):
 
 
 class DemandeChangementFiliere(SQLModel, table=True):
-    """Prepare le changement de filiere (§17 du brief) : schema pret,
-    non branche a l'UI pour cette premiere version (non bloquant pour
-    le reste). Un etudiant ne peut pas modifier filiere_id directement
-    depuis son profil (§16) — ce sera, plus tard, le seul chemin pour
-    en changer, apres validation admin."""
+    """Change de mention et/ou de parcours (§17 du brief) : un etudiant
+    ne peut pas modifier mention_id/filiere_id directement depuis son
+    profil (§16) — passe par une demande soumise a validation admin.
+    nouvelle_filiere_id est nullable depuis l'ajout de Filiere.niveau
+    et Utilisateur.mention_id (rapport du 10/09/2026) : une demande peut
+    ne concerner que la mention (retour/passage au tronc commun, ou
+    changement de mention avant d'avoir choisi un parcours precis),
+    sans parcours cible."""
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
     ancienne_filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
-    nouvelle_filiere_id: int = Field(foreign_key="filiere.id")
+    nouvelle_filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    # Ajoute avec Utilisateur.mention_id : la mention cible de la
+    # demande. Nullable pour les demandes anciennes (approuvees avant
+    # ce champ) -- jamais retro-remplie, juste absente pour elles.
+    nouvelle_mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
     motif: str
     statut: StatutDemandeChangementFiliere = Field(default=StatutDemandeChangementFiliere.EN_ATTENTE)
     date_creation: datetime = Field(default_factory=datetime.utcnow)

@@ -5,13 +5,17 @@
 <div class="contenu-clair">
 <h2>Actualiser mon profil academique</h2>
 <p class="stat-label">
-  Universite et niveau restent modifiables librement. Le parcours/filiere, lui, determine votre cercle national :
-  toute demande de parcours (nouveau ou different) doit etre validee par un administrateur.
+  Universite et niveau restent modifiables librement. La mention et le parcours/filiere, eux, determinent
+  votre cercle national : toute demande de mention et/ou de parcours (nouveau ou different) doit etre
+  validee par un administrateur.
 </p>
 
 {% if demande_en_attente %}
 <div class="info">
-  Votre demande de parcours <strong>{{ filiere_demandee.nom if filiere_demandee else "—" }}</strong>
+  Votre demande
+  {% if mention_demandee %}de mention <strong>{{ mention_demandee.nom }}</strong>{% endif %}
+  {% if mention_demandee and filiere_demandee %} et {% endif %}
+  {% if filiere_demandee %}de parcours <strong>{{ filiere_demandee.nom }}</strong>{% endif %}
   est en attente de validation par un administrateur. Vous pouvez toujours mettre a jour votre universite
   et votre niveau ci-dessous en attendant.
 </div>
@@ -35,24 +39,29 @@
       <option value="">— choisissez d'abord votre universite —</option>
     </select>
 
-    <label for="filiere_id">Parcours / Filiere {% if utilisateur.filiere_id %}(votre parcours actuel restera inchange tant qu'aucune demande n'est approuvee){% endif %}</label>
-    <select id="filiere_id" name="filiere_id" required disabled>
+    <label for="mention_id">Mention {% if utilisateur.mention_id %}(votre mention actuelle restera inchangee tant qu'aucune demande n'est approuvee){% endif %}</label>
+    <select id="mention_id" name="mention_id" required disabled>
       <option value="">— choisissez d'abord votre composante —</option>
     </select>
-    <!-- Mention/Domaine ne sont jamais saisis : affiches en lecture
-         seule des que le parcours choisi les determine (§33). -->
-    <p class="stat-label" id="info-mention-domaine" style="display:none;"></p>
-
-    <label for="motif_filiere">Pourquoi ce parcours ? (obligatoire si vous changez de parcours)</label>
-    <textarea id="motif_filiere" name="motif_filiere" rows="2" placeholder="Ex : c'est mon parcours reel, l'ancien etait une erreur de saisie / j'ai change de filiere cette annee..."></textarea>
 
     <label for="niveau">Niveau</label>
     <select id="niveau" name="niveau" required disabled>
-      <option value="">— choisissez d'abord votre parcours —</option>
+      <option value="">— choisissez d'abord votre mention —</option>
       {% for n in niveaux %}
       <option value="{{ n }}">{{ n }}</option>
       {% endfor %}
     </select>
+
+    <label for="filiere_id">Parcours / Filiere {% if utilisateur.filiere_id %}(votre parcours actuel restera inchange tant qu'aucune demande n'est approuvee){% endif %}</label>
+    <select id="filiere_id" name="filiere_id" disabled>
+      <option value="">— choisissez d'abord votre niveau —</option>
+    </select>
+    <p class="stat-label" id="info-tronc-commun" style="display:none;">
+      Aucun parcours specifique a ce niveau pour cette mention : tronc commun, rien de plus a choisir ici.
+    </p>
+
+    <label for="motif_filiere">Pourquoi ce changement ? (obligatoire si vous changez de mention et/ou de parcours)</label>
+    <textarea id="motif_filiere" name="motif_filiere" rows="2" placeholder="Ex : c'est ma mention/mon parcours reel, l'ancien etait une erreur de saisie / j'ai change cette annee..."></textarea>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer</button>
   </form>
@@ -61,15 +70,16 @@
 
 <script>
 (function () {
-  // Meme cascade Universite -> Composante -> Filiere -> Niveau que sur
-  // /inscription (voir register.html) — dupliquee ici plutot que
-  // partagee via un include, pour rester coherent avec le style deja
-  // en place dans ce projet (chaque template JS est autonome).
+  // Meme cascade Universite -> Composante -> Mention -> Niveau -> Parcours
+  // que sur /inscription (voir register.html) — dupliquee ici plutot que
+  // partagee via un include, pour rester coherent avec le style deja en
+  // place dans ce projet (chaque template JS est autonome).
   const universiteSelect = document.getElementById("universite_id");
   const composanteSelect = document.getElementById("composante_id");
-  const filiereSelect = document.getElementById("filiere_id");
+  const mentionSelect = document.getElementById("mention_id");
   const niveauSelect = document.getElementById("niveau");
-  const infoMentionDomaine = document.getElementById("info-mention-domaine");
+  const filiereSelect = document.getElementById("filiere_id");
+  const infoTroncCommun = document.getElementById("info-tronc-commun");
 
   function reinitialiserAPartir(etape) {
     if (etape <= 1) {
@@ -77,13 +87,17 @@
       composanteSelect.disabled = true;
     }
     if (etape <= 2) {
-      filiereSelect.innerHTML = '<option value="">— choisissez d\'abord votre composante —</option>';
-      filiereSelect.disabled = true;
-      infoMentionDomaine.style.display = "none";
+      mentionSelect.innerHTML = '<option value="">— choisissez d\'abord votre composante —</option>';
+      mentionSelect.disabled = true;
     }
     if (etape <= 3) {
       niveauSelect.value = "";
       niveauSelect.disabled = true;
+    }
+    if (etape <= 4) {
+      filiereSelect.innerHTML = '<option value="">— choisissez d\'abord votre niveau —</option>';
+      filiereSelect.disabled = true;
+      infoTroncCommun.style.display = "none";
     }
   }
 
@@ -108,35 +122,42 @@
   composanteSelect.addEventListener("change", async function () {
     reinitialiserAPartir(2);
     if (!composanteSelect.value) return;
-    const filieres = await chargerOptions(`/api/academique/composantes/${composanteSelect.value}/filieres`);
-    filiereSelect.innerHTML = '<option value="">— choisissez votre parcours —</option>' +
-      filieres.map(function (f) { return `<option value="${f.id}" data-mention="${f.mention || ''}" data-domaine="${f.domaine || ''}">${f.nom}</option>`; }).join("");
-    filiereSelect.disabled = filieres.length === 0;
-    if (filieres.length === 0) {
-      filiereSelect.innerHTML = '<option value="">— aucun parcours disponible pour l\'instant —</option>';
+    const mentions = await chargerOptions(`/api/academique/composantes/${composanteSelect.value}/mentions`);
+    mentionSelect.innerHTML = '<option value="">— choisissez votre mention —</option>' +
+      mentions.map(function (m) { return `<option value="${m.id}">${m.nom}</option>`; }).join("");
+    mentionSelect.disabled = mentions.length === 0;
+    if (mentions.length === 0) {
+      mentionSelect.innerHTML = '<option value="">— aucune mention disponible pour l\'instant —</option>';
     }
   });
 
-  filiereSelect.addEventListener("change", function () {
+  mentionSelect.addEventListener("change", function () {
     reinitialiserAPartir(3);
-    if (!filiereSelect.value) return;
+    if (!mentionSelect.value) return;
     niveauSelect.disabled = false;
-
-    const optionChoisie = filiereSelect.selectedOptions[0];
-    const mention = optionChoisie ? optionChoisie.dataset.mention : "";
-    const domaine = optionChoisie ? optionChoisie.dataset.domaine : "";
-    if (mention) {
-      infoMentionDomaine.textContent = domaine ? `Mention : ${mention} — Domaine : ${domaine}` : `Mention : ${mention}`;
-      infoMentionDomaine.style.display = "";
-    } else {
-      infoMentionDomaine.style.display = "none";
-    }
   });
+
+  async function chargerParcours() {
+    reinitialiserAPartir(4);
+    if (!niveauSelect.value) return;
+    const url = `/api/academique/composantes/${composanteSelect.value}/mentions/${mentionSelect.value}/filieres?niveau=${encodeURIComponent(niveauSelect.value)}`;
+    const filieres = await chargerOptions(url);
+    filiereSelect.disabled = false;
+    if (filieres.length === 0) {
+      filiereSelect.innerHTML = '<option value="">— aucun parcours specifique a ce niveau —</option>';
+      infoTroncCommun.style.display = "";
+    } else {
+      filiereSelect.innerHTML = '<option value="">— choisissez votre parcours —</option>' +
+        filieres.map(function (f) { return `<option value="${f.id}">${f.nom}</option>`; }).join("");
+      infoTroncCommun.style.display = "none";
+    }
+  }
+  niveauSelect.addEventListener("change", chargerParcours);
 
   // Si une universite etait deja selectionnee (cas "incoherent" plutot
-  // qu'"incomplet" : filiere/niveau deja presents mais universite ne
-  // correspondant plus a la filiere), on precharge sa cascade au
-  // chargement de la page plutot que de forcer un reclic inutile.
+  // qu'"incomplet" : mention/filiere/niveau deja presents mais universite
+  // ne correspondant plus), on precharge sa cascade au chargement de la
+  // page plutot que de forcer un reclic inutile.
   if (universiteSelect.value) {
     universiteSelect.dispatchEvent(new Event("change"));
   }

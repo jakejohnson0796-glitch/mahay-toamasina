@@ -4,10 +4,14 @@ cascade (§7-8 du brief refonte academique nationale) : permettent au
 JS du formulaire d'inscription de charger dynamiquement, a chaque
 etape, uniquement les options rattachees au choix precedent.
 
-Universite -> Composante (Faculte) -> Filiere/Parcours (avec Mention
-et Domaine affiches en lecture seule des que connus). Le Niveau n'a
-pas besoin d'endpoint : c'est une liste fixe (app/referentiel.NIVEAUX),
-deja rendue directement par le template.
+Universite -> Composante (Faculte) -> Mention -> Niveau -> Parcours/
+Filiere (facultatif : voir /mentions/{id}/filieres, qui peut renvoyer
+une liste vide -- tronc commun, voir le rapport du 10/09/2026 sur
+Filiere.niveau). Le Niveau n'a pas besoin d'endpoint : c'est une liste
+fixe (app/referentiel.NIVEAUX), deja rendue directement par le
+template, et valide a N'IMPORTE QUEL niveau (le tronc commun peut
+exister a n'importe quel niveau selon la mention, jamais suppose L1/L2
+en dur).
 
 Aucune ecriture ici — la creation/modification du referentiel reste
 reservee a /admin/referentiel (voir admin_referentiel_router.py).
@@ -37,12 +41,61 @@ def lister_composantes(universite_id: int, session: Session = Depends(get_sessio
     return [{"id": c.id, "nom": c.nom} for c in composantes]
 
 
+@router.get("/composantes/{composante_id}/mentions")
+def lister_mentions(composante_id: int, session: Session = Depends(get_session)):
+    """Mentions offertes par cette composante, deduites des Filiere qui
+    y sont deja rattachees (une Mention sans AUCUNE Filiere nulle part
+    dans cette composante n'a pour l'instant aucun moyen d'etre reliee
+    a elle -- limite connue, voir le rapport du 10/09/2026 : concerne
+    quelques mentions ENS pour lesquelles seul le tronc commun est
+    verifie a ce jour, sans parcours de specialisation encore confirme
+    qui permettrait de les rattacher ici automatiquement)."""
+    ids_mentions = session.exec(
+        select(Filiere.mention_id)
+        .where(Filiere.faculte_id == composante_id, Filiere.mention_id.is_not(None))
+        .distinct()
+    ).all()
+    if not ids_mentions:
+        return []
+    mentions = session.exec(
+        select(Mention).where(Mention.id.in_(ids_mentions)).order_by(Mention.nom)
+    ).all()
+    return [{"id": m.id, "nom": m.nom} for m in mentions]
+
+
+@router.get("/composantes/{composante_id}/mentions/{mention_id}/filieres")
+def lister_filieres_par_mention_niveau(
+    composante_id: int, mention_id: int, niveau: str, session: Session = Depends(get_session),
+):
+    """Parcours nommes pour cette mention, A CE NIVEAU precis, dans
+    cette composante. Liste VIDE = tronc commun a ce niveau pour cette
+    mention (aucun parcours a choisir, voir le rapport du 10/09/2026) --
+    ce n'est pas une erreur, c'est un etat normal et attendu.
+
+    Inclut aussi les Filiere heritees (niveau NULL, pas encore
+    enrichies) : moins precises, mais toujours des choix valides."""
+    filieres = session.exec(
+        select(Filiere).where(
+            Filiere.faculte_id == composante_id,
+            Filiere.mention_id == mention_id,
+            (Filiere.niveau == niveau) | (Filiere.niveau.is_(None)),
+        ).order_by(Filiere.nom)
+    ).all()
+    return [{"id": f.id, "nom": f.nom} for f in filieres]
+
+
 @router.get("/composantes/{composante_id}/filieres")
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine
     se remplir automatiquement au choix du parcours, sans jamais les
-    saisir lui-meme (§26 : aucune saisie libre)."""
+    saisir lui-meme (§26 : aucune saisie libre).
+
+    Conserve tel quel (non filtre par mention/niveau) pour les usages
+    qui listent encore tous les parcours d'une composante d'un coup —
+    voir /admin/referentiel. Le formulaire d'inscription/profil
+    academique utilise desormais /mentions et /mentions/{id}/filieres
+    ci-dessus, plus precis."""
     filieres = session.exec(
         select(Filiere).where(Filiere.faculte_id == composante_id).order_by(Filiere.nom)
     ).all()
