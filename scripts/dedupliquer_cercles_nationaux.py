@@ -42,6 +42,14 @@ Ce script :
 Idempotent : un groupe deja fusionne (un seul cercle ACTIF restant)
 n'est plus modifie au prochain lancement.
 
+Execute AUTOMATIQUEMENT a chaque demarrage de l'appli depuis le
+11/09/2026 (voir main.py, apres assurer_cercles_referentiel) : le plan
+gratuit de Render ne donne pas d'acces shell pour lancer ce script a la
+demande, et l'idempotence ci-dessus le rend sans risque a rejouer a
+chaque redemarrage. L'usage CLI ci-dessous reste utile pour un
+dry-run manuel (verifier ce qui serait fait avant de redemarrer
+l'appli), ou sur un environnement avec acces shell.
+
 Usage :
     python -m scripts.dedupliquer_cercles_nationaux [--dry-run]
 """
@@ -54,6 +62,7 @@ import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 from sqlmodel import Session, select
 
@@ -112,10 +121,19 @@ class Rapport:
             print(f"  - #{c}")
 
 
-def deduplicquer(dry_run: bool = False) -> Rapport:
+def deduplicquer(session: Optional[Session] = None, dry_run: bool = False) -> Rapport:
+    """Fusionne les cercles nationaux doublons (voir le docstring en
+    tete de fichier). Accepte une session EXISTANTE (reutilisee par
+    exemple par le demarrage de l'appli, voir main.py) pour eviter
+    d'ouvrir une connexion supplementaire a chaque redemarrage --
+    sinon en ouvre une a elle seule, comme avant (usage CLI direct,
+    voir le bloc __main__ plus bas)."""
     rapport = Rapport()
+    session_a_fermer = session is None
+    if session is None:
+        session = Session(engine)
 
-    with Session(engine) as session:
+    try:
         cercles = session.exec(
             select(CercleEtude).where(
                 CercleEtude.statut == StatutCercle.ACTIF,
@@ -243,6 +261,9 @@ def deduplicquer(dry_run: bool = False) -> Rapport:
 
         if dry_run:
             session.rollback()
+    finally:
+        if session_a_fermer:
+            session.close()
 
     return rapport
 

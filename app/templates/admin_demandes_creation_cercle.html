@@ -33,7 +33,7 @@
       <td>{{ utilisateurs[d.utilisateur_id].nom if d.utilisateur_id in utilisateurs else "—" }}</td>
       <td>
         {{ mentions[d.mention_id].nom if d.mention_id in mentions else "—" }} /
-        {{ filieres[d.filiere_id].nom if d.filiere_id in filieres else "—" }} /
+        {{ filieres[d.filiere_id].nom if d.filiere_id in filieres else ("Tronc commun" if not d.filiere_id else "—") }} /
         {{ d.niveau or "—" }}
       </td>
       <td>{{ d.nom }}{% if d.description %}<br><span class="stat-label">{{ d.description }}</span>{% endif %}</td>

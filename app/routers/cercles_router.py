@@ -200,6 +200,7 @@ def _creer_notification(
 def liste_cercles(
     request: Request,
     q: Optional[str] = None,
+    mention_id: Optional[str] = None,
     filiere_id: Optional[str] = None,
     niveau: Optional[str] = None,
     disponibles: Optional[str] = None,
@@ -218,24 +219,52 @@ def liste_cercles(
     declenche en plus _assurer_membres_admins sur chaque cercle). Cette
     version ne fait plus que quelques requetes GROUPEES au total, quel
     que soit le nombre de cercles en base, plus une pagination pour ne
-    jamais avoir a rendre des centaines de lignes en une fois."""
+    jamais avoir a rendre des centaines de lignes en une fois.
+
+    Revue du 11/09/2026 (Jake : "je crois qu'il y a de la duplication,
+    et il faut ameliorer la recherche") : cette route ne filtrait PAS
+    par statut, donc un cercle ARCHIVE (doublon fusionne par
+    scripts/dedupliquer_cercles_nationaux.py, ou parcours devenu perime
+    a un niveau donne — voir cercles_referentiel.py) continuait a
+    s'afficher ici, indiscernable d'un cercle actif : corrige
+    ci-dessous. Le filtre "Filiere" (liste plate de TOUTES les
+    filieres, toutes universites confondues) est remplace par une
+    cascade Mention -> Niveau -> Parcours (voir
+    /api/academique/mentions et /mentions/{id}/parcours-nationaux),
+    avec prise en charge de la recherche de cercles de tronc commun
+    (mention+niveau, sans parcours -- filiere_id="tronc_commun")."""
     TAILLE_PAGE = 30
 
     utilisateur = utilisateur_courant(request, session)
 
     q_nettoye = (q or "").strip()
-    filiere_id_nettoye = entier_ou_none(filiere_id)
+    mention_id_nettoye = entier_ou_none(mention_id)
+    filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
+    recherche_tronc_commun = filiere_id == "tronc_commun"
     niveau_nettoye = niveau if niveau in NIVEAUX else None
     afficher_disponibles_seulement = disponibles == "1"
     page_nettoyee = max(1, page)
 
-    requete = select(CercleEtude)
+    requete = select(CercleEtude).where(CercleEtude.statut == StatutCercle.ACTIF)
     if q_nettoye:
         # ilike : recherche insensible a la casse, meme choix que
         # rechercher_messages() plus bas dans ce fichier.
         requete = requete.where(CercleEtude.nom.ilike(f"%{q_nettoye}%"))
-    if filiere_id_nettoye:
-        requete = requete.where(CercleEtude.filiere_id == filiere_id_nettoye)
+    if mention_id_nettoye:
+        requete = requete.where(CercleEtude.mention_id == mention_id_nettoye)
+    if recherche_tronc_commun:
+        requete = requete.where(CercleEtude.filiere_id.is_(None))
+    elif filiere_id_nettoye:
+        # Correspondance par PARCOURS NATIONAL (voir
+        # referentiel_academique._filieres_equivalentes), pas par
+        # egalite exacte de filiere_id : le representant choisi cote
+        # /api/academique/mentions/{id}/parcours-nationaux n'est pas
+        # forcement la Filiere precise que reference le cercle actif
+        # (qui peut appartenir a une autre universite du meme groupe).
+        filiere_choisie = session.get(Filiere, filiere_id_nettoye)
+        if filiere_choisie:
+            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
+            requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
     if niveau_nettoye:
         requete = requete.where(CercleEtude.niveau == niveau_nettoye)
     if afficher_disponibles_seulement:
@@ -256,7 +285,8 @@ def liste_cercles(
     ).all()
     cercle_ids = [c.id for c in cercles]
 
-    filieres = session.exec(select(Filiere)).all()
+    mentions = session.exec(select(Mention).order_by(Mention.nom)).all()
+    filiere_recherchee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
 
     # Meme filet de securite que salon_cercle()/voir_membres() : sans cet
     # appel, un admin qui n'a pas encore ouvert individuellement un cercle
@@ -318,12 +348,15 @@ def liste_cercles(
         "cercles_list.html",
         {
             "cercles_avec_info": cercles_avec_info,
-            "filieres": filieres,
+            "mentions": mentions,
+            "filiere_recherchee": filiere_recherchee,
             "niveaux": NIVEAUX,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
             "recherche_q": q_nettoye,
+            "recherche_mention_id": mention_id_nettoye,
             "recherche_filiere_id": filiere_id_nettoye,
+            "recherche_tronc_commun": recherche_tronc_commun,
             "recherche_niveau": niveau_nettoye,
             "recherche_disponibles": afficher_disponibles_seulement,
             "page": page_nettoyee,
@@ -338,6 +371,7 @@ def creer_cercle(
     request: Request,
     nom: str = Form(...),
     description: Optional[str] = Form(None),
+    mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
     raison: Optional[str] = Form(None),
@@ -346,11 +380,15 @@ def creer_cercle(
 ):
     """Deux comportements distincts, selon ce qui est rempli :
 
-    1) filiere_id ET niveau fournis -> c'est une demande de CERCLE
-       NATIONAL (§20-27 du brief "cercles nationaux"). Pas de creation
-       immediate : une DemandeCreationCercle EN_ATTENTE est creee,
-       soumise a validation admin (voir approuver_demande_creation
-       plus bas). La raison devient obligatoire dans ce cas.
+    1) niveau fourni ET (filiere_id OU mention_id) -> c'est une demande
+       de CERCLE NATIONAL (§20-27 du brief "cercles nationaux"). Pas de
+       creation immediate : une DemandeCreationCercle EN_ATTENTE est
+       creee, soumise a validation admin (voir approuver_demande_creation
+       plus bas). La raison devient obligatoire dans ce cas. Depuis le
+       11/09/2026 (Jake : "ameliorer la recherche/creation") :
+       mention_id SEUL (sans filiere_id) demande un cercle de TRONC
+       COMMUN -- mention+niveau, sans parcours precis -- jusque-la
+       impossible a demander depuis ce formulaire.
 
     2) Sinon (filiere_id seul, ou aucun des deux = "groupe libre") ->
        comportement INCHANGE d'avant cette evolution : creation
@@ -362,6 +400,7 @@ def creer_cercle(
         return redirection
 
     filiere_id_nettoye = entier_ou_none(filiere_id)
+    mention_id_nettoye = entier_ou_none(mention_id)
 
     # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
     # numero de telephone. On verrouille la ligne utilisateur
@@ -404,21 +443,30 @@ def creer_cercle(
 
     niveau_nettoye = (niveau or "").strip() or None
 
-    # --- Cas 1 : demande de cercle NATIONAL (filiere + niveau) ---
-    if filiere_id_nettoye and niveau_nettoye:
+    # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
+    if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
         if niveau_nettoye not in NIVEAUX:
             return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
 
-        filiere = session.get(Filiere, filiere_id_nettoye)
-        if not filiere:
-            return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
-
-        if not filiere.mention_id:
-            # §10 du brief : la coherence mention/filiere doit etre
-            # verifiee avant tout. Une filiere sans mention assignee ne
-            # peut pas encore porter de cercle national (voir
-            # /admin/referentiel pour l'assigner).
-            return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+        filiere = None
+        if filiere_id_nettoye:
+            filiere = session.get(Filiere, filiere_id_nettoye)
+            if not filiere:
+                return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+            if not filiere.mention_id:
+                # §10 du brief : la coherence mention/filiere doit etre
+                # verifiee avant tout. Une filiere sans mention assignee ne
+                # peut pas encore porter de cercle national (voir
+                # /admin/referentiel pour l'assigner).
+                return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            mention_id_cible = filiere.mention_id
+        else:
+            # Tronc commun (11/09/2026) : mention seule, aucun parcours
+            # precis -- voir le rapport du 10/09/2026 sur Filiere.niveau.
+            mention = session.get(Mention, mention_id_nettoye)
+            if not mention:
+                return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+            mention_id_cible = mention.id
 
         raison_nettoyee = (raison or "").strip()
         if not raison_nettoyee:
@@ -428,7 +476,7 @@ def creer_cercle(
         # doublon — rediriger vers l'existant.
         cercle_existant = session.exec(
             select(CercleEtude).where(
-                CercleEtude.mention_id == filiere.mention_id,
+                CercleEtude.mention_id == mention_id_cible,
                 CercleEtude.filiere_id == filiere_id_nettoye,
                 CercleEtude.niveau == niveau_nettoye,
                 CercleEtude.statut == StatutCercle.ACTIF,
@@ -444,7 +492,7 @@ def creer_cercle(
         # moment de l'approbation).
         demande_existante = session.exec(
             select(DemandeCreationCercle).where(
-                DemandeCreationCercle.mention_id == filiere.mention_id,
+                DemandeCreationCercle.mention_id == mention_id_cible,
                 DemandeCreationCercle.filiere_id == filiere_id_nettoye,
                 DemandeCreationCercle.niveau == niveau_nettoye,
                 DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
@@ -455,7 +503,7 @@ def creer_cercle(
 
         session.add(DemandeCreationCercle(
             utilisateur_id=utilisateur.id,
-            mention_id=filiere.mention_id,
+            mention_id=mention_id_cible,
             filiere_id=filiere_id_nettoye,
             niveau=niveau_nettoye,
             nom=nom,

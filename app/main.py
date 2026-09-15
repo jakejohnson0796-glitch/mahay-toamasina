@@ -22,6 +22,7 @@ from .seed_data import peupler_donnees_initiales
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
+from scripts.dedupliquer_cercles_nationaux import deduplicquer as deduplicquer_cercles_nationaux
 from .auth import utilisateur_courant
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -130,6 +131,23 @@ async def au_demarrage() -> None:
         nb_cercles_crees = assurer_cercles_referentiel(session)
         if nb_cercles_crees:
             print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
+
+        # Fusionne les cercles nationaux "doublons" restants (un par
+        # universite au lieu d'un seul, bug historique corrige dans
+        # cercles_referentiel.py mais dont les doublons d'AVANT la
+        # correction ne se nettoient pas tout seuls — voir
+        # scripts/dedupliquer_cercles_nationaux.py). Execute ici, a
+        # chaque demarrage plutot qu'a la main via `python -m
+        # scripts...`, parce que le plan gratuit de Render ne donne pas
+        # d'acces shell pour lancer un script a la demande. Idempotent
+        # (un groupe deja fusionne n'est plus retouche), donc sans
+        # risque de le rejouer a chaque redemarrage.
+        rapport_dedup = deduplicquer_cercles_nationaux(session)
+        if rapport_dedup.cercles_archives:
+            print(
+                f"[DEBUG DATABASE] {len(rapport_dedup.cercles_archives)} cercle(s) national/nationaux "
+                f"doublon(s) fusionne(s) et archive(s) ({rapport_dedup.membres_reassignes} membre(s) reassigne(s))."
+            )
     print("[DEBUG DATABASE] Donnees initiales OK.")
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
     print("[DEBUG DATABASE] Demarrage termine.")

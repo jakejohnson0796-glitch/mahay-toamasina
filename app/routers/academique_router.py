@@ -21,6 +21,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Faculte, Filiere, Mention, Universite
+from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
 
@@ -84,7 +85,41 @@ def lister_filieres_par_mention_niveau(
     return [{"id": f.id, "nom": f.nom} for f in filieres]
 
 
-@router.get("/composantes/{composante_id}/filieres")
+@router.get("/mentions")
+def lister_toutes_mentions(session: Session = Depends(get_session)):
+    """Toutes les mentions (national, aucun filtre par universite) —
+    utilise par la recherche et la creation de cercle (voir
+    cercles_router.py) : un cercle est national, jamais rattache a une
+    seule universite, donc son formulaire ne doit pas non plus l'etre."""
+    mentions = session.exec(select(Mention).order_by(Mention.nom)).all()
+    return [{"id": m.id, "nom": m.nom} for m in mentions]
+
+
+@router.get("/mentions/{mention_id}/parcours-nationaux")
+def lister_parcours_nationaux(mention_id: int, niveau: str, session: Session = Depends(get_session)):
+    """Parcours nommes pour cette mention a ce niveau, DEDUPLIQUES par
+    nom normalise A TRAVERS TOUTES LES UNIVERSITES (voir
+    referentiel_academique._normaliser_nom_parcours) : contrairement a
+    /composantes/{id}/mentions/{id}/filieres (scope a une seule
+    universite, pour l'inscription), un cercle est national -- "Finance"
+    a Toamasina et a Fianarantsoa doit apparaitre comme UNE SEULE
+    option, pas deux. Un seul id representant est renvoye par groupe
+    (peu importe lequel : voir _filieres_equivalentes, utilisee cote
+    recherche/creation de cercle pour retrouver tout le groupe a partir
+    de ce representant).
+
+    Liste VIDE = tronc commun a ce niveau pour cette mention (aucun
+    parcours a choisir), meme convention que pour l'inscription."""
+    filieres = session.exec(
+        select(Filiere).where(Filiere.mention_id == mention_id, Filiere.niveau == niveau)
+    ).all()
+
+    vus: dict[str, dict] = {}
+    for f in filieres:
+        cle = _normaliser_nom_parcours(f.nom)
+        if cle not in vus:
+            vus[cle] = {"id": f.id, "nom": f.nom}
+    return sorted(vus.values(), key=lambda p: p["nom"])
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine

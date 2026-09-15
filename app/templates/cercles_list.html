@@ -27,17 +27,17 @@
 {% if utilisateur %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 class="titre-carte">Rechercher un cercle</h3>
-  <form class="filtres" method="get" action="/cercles">
+  <form class="filtres" method="get" action="/cercles" id="formulaire-recherche-cercles">
     <div>
       <label for="q">Nom du cercle</label>
       <input type="text" id="q" name="q" value="{{ recherche_q }}" placeholder="ex: Info Generale">
     </div>
     <div>
-      <label for="recherche_filiere_id">Filiere</label>
-      <select id="recherche_filiere_id" name="filiere_id">
+      <label for="recherche_mention_id">Mention</label>
+      <select id="recherche_mention_id" name="mention_id">
         <option value="">— toutes —</option>
-        {% for filiere in filieres %}
-        <option value="{{ filiere.id }}" {% if recherche_filiere_id == filiere.id %}selected{% endif %}>{{ filiere.nom }}</option>
+        {% for m in mentions %}
+        <option value="{{ m.id }}" {% if recherche_mention_id == m.id %}selected{% endif %}>{{ m.nom }}</option>
         {% endfor %}
       </select>
     </div>
@@ -51,6 +51,14 @@
       </select>
     </div>
     <div>
+      <label for="recherche_filiere_id">Parcours</label>
+      <select id="recherche_filiere_id" name="filiere_id">
+        <option value="">— tous —</option>
+        {% if recherche_tronc_commun %}<option value="tronc_commun" selected>— tronc commun —</option>{% endif %}
+        {% if filiere_recherchee %}<option value="{{ filiere_recherchee.id }}" selected>{{ filiere_recherchee.nom }}</option>{% endif %}
+      </select>
+    </div>
+    <div>
       <label for="disponibles" style="display:flex;align-items:center;gap:0.4rem;margin-top:1.6rem;">
         <input type="checkbox" id="disponibles" name="disponibles" value="1" style="width:auto;" {% if recherche_disponibles %}checked{% endif %}>
         Disponibles pour moi
@@ -60,7 +68,7 @@
       <button class="bouton bouton-secondaire" type="submit">Rechercher</button>
     </div>
   </form>
-  {% if recherche_q or recherche_filiere_id or recherche_niveau or recherche_disponibles %}
+  {% if recherche_q or recherche_mention_id or recherche_niveau or recherche_disponibles %}
   <p style="margin-top:1rem;"><a href="/cercles">Reinitialiser la recherche</a></p>
   {% endif %}
 </div>
@@ -72,11 +80,12 @@
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
   {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
 
-  <form method="post" action="/cercles/creer">
+  <form method="post" action="/cercles/creer" id="formulaire-creation-cercle">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="nom">Nom du cercle</label>
     <input type="text" id="nom" name="nom" required placeholder="ex: Revision Droit civil S3">
@@ -84,23 +93,31 @@
     <label for="description">Description (facultatif)</label>
     <input type="text" id="description" name="description" placeholder="ex: Prep du partiel de janvier">
 
-    <label for="filiere_id">Filiere (facultatif)</label>
-    <select id="filiere_id" name="filiere_id">
+    <label for="creation_mention_id">Mention (facultatif — remplir pour un cercle NATIONAL, soumis a validation)</label>
+    <select id="creation_mention_id" name="mention_id">
       <option value="">— aucune / groupe libre —</option>
-      {% for filiere in filieres %}
-      <option value="{{ filiere.id }}">{{ filiere.nom }}</option>
+      {% for m in mentions %}
+      <option value="{{ m.id }}">{{ m.nom }}</option>
       {% endfor %}
     </select>
 
-    <label for="niveau">Niveau (facultatif — si rempli avec une filiere, ce sera un cercle NATIONAL soumis a validation)</label>
-    <select id="niveau" name="niveau">
-      <option value="">— aucun —</option>
+    <label for="creation_niveau">Niveau (obligatoire des qu'une mention est choisie)</label>
+    <select id="creation_niveau" name="niveau" disabled>
+      <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
       <option value="{{ n }}">{{ n }}</option>
       {% endfor %}
     </select>
 
-    <label for="raison">Raison (obligatoire uniquement pour un cercle national)</label>
+    <label for="creation_filiere_id">Parcours (facultatif — laissez vide pour un cercle de tronc commun)</label>
+    <select id="creation_filiere_id" name="filiere_id" disabled>
+      <option value="">— choisissez d'abord un niveau —</option>
+    </select>
+    <p class="stat-label" id="creation-info-tronc-commun" style="display:none;">
+      Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
+    </p>
+
+    <label for="raison">Raison (obligatoire uniquement pour un cercle national, donc des qu'une mention est choisie)</label>
     <textarea id="raison" name="raison" rows="2" placeholder="ex: Plusieurs etudiants de cette filiere et ce niveau, dans differentes universites, souhaitent un espace commun pour partager cours et revisions."></textarea>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cercle</button>
@@ -194,7 +211,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
 
 {% if total_pages > 1 %}
 <nav class="pagination" style="display:flex; gap:1rem; align-items:center; justify-content:center; margin-top:1.5rem;">
-  {% set params = {"q": recherche_q, "filiere_id": recherche_filiere_id, "niveau": recherche_niveau, "disponibles": "1" if recherche_disponibles else None} %}
+  {% set params = {"q": recherche_q, "mention_id": recherche_mention_id, "filiere_id": ("tronc_commun" if recherche_tronc_commun else recherche_filiere_id), "niveau": recherche_niveau, "disponibles": "1" if recherche_disponibles else None} %}
   {% set querystring = params | dictsort | selectattr("1") | map("join", "=") | join("&") %}
   {% if page > 1 %}
   <a href="/cercles?{{ querystring }}{{ '&' if querystring else '' }}page={{ page - 1 }}">&larr; Precedent</a>
@@ -206,4 +223,100 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
 </nav>
 {% endif %}
 </div>
+
+<script>
+(function () {
+  // Cascade Mention -> Niveau -> Parcours pour la RECHERCHE (voir
+  // /api/academique/mentions et /mentions/{id}/parcours-nationaux,
+  // deduplique a travers toutes les universites -- pas la meme source
+  // que la cascade d'inscription, qui elle est scopee a UNE universite).
+  // Ajoutee le 11/09/2026 (Jake : "ameliorer la recherche") a la place
+  // de l'ancienne liste plate de toutes les filieres.
+  async function chargerOptions(url) {
+    const reponse = await fetch(url);
+    if (!reponse.ok) return [];
+    return reponse.json();
+  }
+
+  function cablerCascade({ mentionSelect, niveauSelect, filiereSelect, infoTroncCommun, filiereRequise, valeurFiliereInitiale }) {
+    async function chargerParcours() {
+      filiereSelect.innerHTML = '<option value="">— choisissez d\'abord un niveau —</option>';
+      filiereSelect.disabled = true;
+      if (infoTroncCommun) infoTroncCommun.style.display = "none";
+      if (!mentionSelect.value || !niveauSelect.value) return;
+
+      const url = `/api/academique/mentions/${mentionSelect.value}/parcours-nationaux?niveau=${encodeURIComponent(niveauSelect.value)}`;
+      const parcours = await chargerOptions(url);
+      filiereSelect.disabled = false;
+      const optionVide = filiereRequise ? "" : '<option value="">— aucun / groupe libre —</option>';
+      if (parcours.length === 0) {
+        filiereSelect.innerHTML = filiereRequise
+          ? '<option value="">— aucun parcours specifique a ce niveau —</option>'
+          : optionVide;
+        if (infoTroncCommun) infoTroncCommun.style.display = "";
+      } else {
+        filiereSelect.innerHTML = optionVide +
+          parcours.map(function (p) { return `<option value="${p.id}">${p.nom}</option>`; }).join("");
+      }
+    }
+
+    mentionSelect.addEventListener("change", function () {
+      niveauSelect.disabled = !mentionSelect.value;
+      if (!mentionSelect.value) niveauSelect.value = "";
+      chargerParcours();
+    });
+    niveauSelect.addEventListener("change", chargerParcours);
+
+    // Precharge si mention+niveau sont deja renseignes au chargement de
+    // la page (recherche revenant d'une URL avec parametres, ou
+    // formulaire de creation apres une erreur de validation).
+    if (mentionSelect.value) {
+      niveauSelect.disabled = false;
+      if (niveauSelect.value) chargerParcours();
+    }
+    return { chargerParcours };
+  }
+
+  // --- Recherche ---
+  const rechercheMention = document.getElementById("recherche_mention_id");
+  const rechercheNiveau = document.getElementById("recherche_niveau");
+  const rechercheFiliere = document.getElementById("recherche_filiere_id");
+  if (rechercheMention && rechercheNiveau && rechercheFiliere) {
+    // Le select "Parcours" de la recherche contient deja, rendues cote
+    // serveur, l'option actuellement selectionnee le cas echeant (voir
+    // recherche_filiere_id / recherche_tronc_commun dans
+    // cercles_router.py) -- la cascade JS AJOUTE les autres options
+    // disponibles pour ce mention+niveau sans perdre cette selection.
+    const valeurInitiale = rechercheFiliere.value;
+    cablerCascade({
+      mentionSelect: rechercheMention, niveauSelect: rechercheNiveau, filiereSelect: rechercheFiliere,
+      infoTroncCommun: null, filiereRequise: false,
+    });
+    if (rechercheMention.value && rechercheNiveau.value && valeurInitiale) {
+      // Reinjecte l'option "tronc commun" (jamais renvoyee par l'API,
+      // qui ne liste que les parcours nommes) si c'etait la recherche
+      // active, une fois la cascade rechargee.
+      if (valeurInitiale === "tronc_commun") {
+        const opt = document.createElement("option");
+        opt.value = "tronc_commun";
+        opt.textContent = "— tronc commun —";
+        opt.selected = true;
+        rechercheFiliere.appendChild(opt);
+      }
+    }
+  }
+
+  // --- Creation de cercle ---
+  const creationMention = document.getElementById("creation_mention_id");
+  const creationNiveau = document.getElementById("creation_niveau");
+  const creationFiliere = document.getElementById("creation_filiere_id");
+  const creationInfo = document.getElementById("creation-info-tronc-commun");
+  if (creationMention && creationNiveau && creationFiliere) {
+    cablerCascade({
+      mentionSelect: creationMention, niveauSelect: creationNiveau, filiereSelect: creationFiliere,
+      infoTroncCommun: creationInfo, filiereRequise: true,
+    });
+  }
+})();
+</script>
 {% endblock %}

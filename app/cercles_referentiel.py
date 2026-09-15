@@ -43,7 +43,7 @@ une AUTRE Filiere du meme groupe (meme mention + meme nom normalise).
 import logging
 from typing import Optional
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from .models import (
     CercleEtude, Filiere, MembreCercle, RoleMembreCercle, RoleUtilisateur,
@@ -67,13 +67,12 @@ def _createur_systeme(session: Session) -> Optional[Utilisateur]:
 
 def assurer_cercles_pour_groupe_parcours(
     session: Session, mention_id: int, filieres_du_groupe: list[Filiere], createur: Utilisateur
-) -> int:
+) -> tuple[int, int]:
     """Cree, pour un GROUPE de Filiere representant le meme parcours
     national (meme mention_id + meme nom normalise, potentiellement
     plusieurs universites), le cercle manquant pour chaque niveau ou ce
     parcours existe reellement — UN SEUL cercle par niveau pour tout le
-    groupe, jamais un par Filiere. Renvoie le nombre de cercles
-    effectivement crees.
+    groupe, jamais un par Filiere. Renvoie (nb_crees, nb_archives).
 
     Depuis l'ajout de Filiere.niveau (rapport du 10/09/2026) : si au
     moins une Filiere du groupe a un niveau renseigne, SEULS ces
@@ -81,23 +80,66 @@ def assurer_cercles_pour_groupe_parcours(
     pas la peine d'un cercle "CCA — L1" que personne ne pourra jamais
     rejoindre). Si aucune n'a de niveau (groupe entierement heritee,
     pas encore enrichie), on retombe sur l'ancien comportement — les 8
-    niveaux — plutot que de ne rien creer du tout."""
+    niveaux — plutot que de ne rien creer du tout.
+
+    Analyse du 11/09/2026 (signalee par Jake, "je crois qu'il y a de la
+    duplication") : cette fonction elle-meme ne cree plus de cercle en
+    trop depuis la correction ci-dessus, MAIS un cercle deja cree AVANT
+    elle (ex: "Droit Prive — L1", provisionne quand ce groupe n'avait
+    encore aucun niveau connu) restait actif indefiniment, meme une
+    fois L1 identifie comme invalide pour ce parcours — jamais recree
+    (la boucle plus bas ne fait que sauter les niveaux deja presents),
+    mais jamais nettoye non plus. Des que niveaux_cibles est deductible
+    avec certitude (au moins une Filiere du groupe a un niveau), tout
+    cercle ACTIF du groupe dont le niveau n'y figure PAS est desormais
+    ARCHIVE (jamais supprime, §24 du brief : donnees recuperables
+    pendant la transition) plutot que laisse trainer indefiniment."""
     from .routers.cercles_router import _assurer_membres_admins
 
     filiere_ids_du_groupe = [f.id for f in filieres_du_groupe]
 
     niveaux_cibles = {f.niveau for f in filieres_du_groupe if f.niveau} or set(NIVEAUX)
 
-    niveaux_existants = {
-        c.niveau
-        for c in session.exec(
-            select(CercleEtude).where(
-                CercleEtude.mention_id == mention_id,
-                CercleEtude.filiere_id.in_(filiere_ids_du_groupe),
-                CercleEtude.statut == StatutCercle.ACTIF,
-            )
-        ).all()
-    }
+    cercles_du_groupe = session.exec(
+        select(CercleEtude).where(
+            CercleEtude.mention_id == mention_id,
+            CercleEtude.filiere_id.in_(filiere_ids_du_groupe),
+            CercleEtude.statut == StatutCercle.ACTIF,
+        )
+    ).all()
+    niveaux_existants = {c.niveau for c in cercles_du_groupe}
+
+    nb_archives = 0
+    if niveaux_cibles != set(NIVEAUX):
+        # niveaux_cibles n'est PAS le repli "on ne sait rien" (tous les
+        # niveaux) : on connait desormais avec certitude les niveaux
+        # valides pour ce parcours, donc tout cercle ACTIF a un AUTRE
+        # niveau est perime, pas juste heritage neutre.
+        for cercle in cercles_du_groupe:
+            if cercle.niveau not in niveaux_cibles:
+                nb_membres_reels = session.exec(
+                    select(func.count()).select_from(MembreCercle).where(
+                        MembreCercle.cercle_id == cercle.id,
+                        MembreCercle.utilisateur_id != createur.id,
+                    )
+                ).one()
+                if nb_membres_reels:
+                    # Un vrai etudiant (pas seulement le createur systeme)
+                    # a rejoint ce cercle devenu perime : jamais archive
+                    # silencieusement dans ce cas, une decision humaine
+                    # est necessaire (ou vont ces membres ?) — signale au
+                    # lieu d'agir a leur place.
+                    logger.warning(
+                        "Cercle #%d (%s, niveau %s) perime mais compte %d membre(s) reel(s) — "
+                        "laisse ACTIF, revue admin necessaire.",
+                        cercle.id, cercle.nom, cercle.niveau, nb_membres_reels,
+                    )
+                    continue
+                cercle.statut = StatutCercle.ARCHIVE
+                session.add(cercle)
+                nb_archives += 1
+        if nb_archives:
+            session.commit()
 
     nb_crees = 0
     for niveau in niveaux_cibles:
@@ -134,7 +176,7 @@ def assurer_cercles_pour_groupe_parcours(
 
         nb_crees += 1
 
-    return nb_crees
+    return nb_crees, nb_archives
 
 
 def assurer_cercles_pour_filiere(session: Session, filiere: Filiere, createur: Utilisateur) -> int:
@@ -162,10 +204,13 @@ def assurer_cercles_referentiel(session: Session) -> int:
     """Parcourt TOUTES les filieres deja rattachees a une mention,
     les regroupe par parcours national (mention_id + nom normalise —
     voir la docstring du module), et garantit qu'UN SEUL cercle existe
-    par groupe et par niveau. Appelee au demarrage (main.py, apres
-    assurer_compte_admin) et peut etre appelee a nouveau sans risque
-    (idempotente). Renvoie le nombre total de cercles crees (0 si tout
-    existait deja)."""
+    par groupe et par niveau (les cercles perimes d'un niveau desormais
+    exclu sont archives au passage, voir assurer_cercles_pour_groupe_parcours).
+    Appelee au demarrage (main.py, apres assurer_compte_admin) et peut
+    etre appelee a nouveau sans risque (idempotente). Renvoie le
+    nombre total de cercles crees (0 si tout existait deja) ; le
+    nombre archive est journalise mais pas renvoye (usage historique
+    de la valeur de retour limite au seul compteur de creations)."""
     createur = _createur_systeme(session)
     if not createur:
         logger.warning(
@@ -183,11 +228,16 @@ def assurer_cercles_referentiel(session: Session) -> int:
         cle = (filiere.mention_id, _normaliser_nom_parcours(filiere.nom))
         groupes.setdefault(cle, []).append(filiere)
 
-    total = 0
+    total_crees = 0
+    total_archives = 0
     for (mention_id, _nom_normalise), filieres_du_groupe in groupes.items():
-        total += assurer_cercles_pour_groupe_parcours(session, mention_id, filieres_du_groupe, createur)
+        crees, archives = assurer_cercles_pour_groupe_parcours(session, mention_id, filieres_du_groupe, createur)
+        total_crees += crees
+        total_archives += archives
 
-    if total:
-        logger.info("%d cercle(s) national/nationaux provisionne(s) automatiquement.", total)
+    if total_crees:
+        logger.info("%d cercle(s) national/nationaux provisionne(s) automatiquement.", total_crees)
+    if total_archives:
+        logger.info("%d cercle(s) national/nationaux archive(s) (niveau devenu invalide pour leur parcours).", total_archives)
 
-    return total
+    return total_crees
