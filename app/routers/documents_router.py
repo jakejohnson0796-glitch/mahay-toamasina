@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument
+from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
@@ -21,6 +21,21 @@ from ..dependencies import acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
 
 router = APIRouter()
+
+
+def _est_membre_cercle(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
+    """Meme verification que cercles_router._est_membre : reimplementee ici
+    (plutot qu'importee) pour ne pas creer de dependance croisee entre les
+    deux routers."""
+    return (
+        session.exec(
+            select(MembreCercle).where(
+                MembreCercle.cercle_id == cercle_id,
+                MembreCercle.utilisateur_id == utilisateur_id,
+            )
+        ).first()
+        is not None
+    )
 
 
 def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
@@ -37,10 +52,25 @@ def liste_documents(
     filiere_id: Optional[str] = None,
     matiere: Optional[str] = None,
     type_document: Optional[TypeDocument] = None,
+    cercle_id: Optional[int] = None,
     session: Session = Depends(get_session),
 ):
     filiere_id = entier_ou_none(filiere_id)
+    cercle = None
+    if cercle_id is not None:
+        # Vue "Documents du cercle" : reservee aux membres, comme le salon
+        # de discussion. Un document non-approuve reste invisible ici
+        # aussi (meme garantie de moderation que la bibliotheque generale).
+        utilisateur_pour_cercle = utilisateur_courant(request, session)
+        if not utilisateur_pour_cercle or not _est_membre_cercle(session, cercle_id, utilisateur_pour_cercle.id):
+            return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+        cercle = session.get(CercleEtude, cercle_id)
+        if not cercle:
+            return RedirectResponse("/cercles", status_code=303)
+
     requete = select(Document).where(Document.statut == StatutDocument.APPROUVE)
+    if cercle_id is not None:
+        requete = requete.where(Document.cercle_id == cercle_id)
     if filiere_id:
         requete = requete.where(Document.filiere_id == filiere_id)
     if matiere:
@@ -60,20 +90,33 @@ def liste_documents(
             "matiere": matiere or "",
             "type_document": type_document.value if type_document else "",
             "types_document": list(TypeDocument),
+            "cercle": cercle,
             "utilisateur": utilisateur_courant(request, session),
         },
     )
 
 
+@router.get("/cercles/{cercle_id}/documents")
+def documents_du_cercle(cercle_id: int):
+    """Alias lisible de /documents?cercle_id=... (lien affiche dans
+    l'entete du salon de cercle, voir cercle_chat.html)."""
+    return RedirectResponse(f"/documents?cercle_id={cercle_id}", status_code=307)
+
+
 @router.get("/documents/upload")
-def formulaire_upload(request: Request, session: Session = Depends(get_session)):
+def formulaire_upload(request: Request, cercle_id: Optional[int] = None, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    cercle = None
+    if cercle_id is not None:
+        if not _est_membre_cercle(session, cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+        cercle = session.get(CercleEtude, cercle_id)
     filieres = session.exec(select(Filiere)).all()
     return templates.TemplateResponse(
         "document_upload.html",
-        {"request": request, "filieres": filieres, "utilisateur": utilisateur},
+        {"request": request, "filieres": filieres, "cercle": cercle, "utilisateur": utilisateur},
     )
 
 
@@ -85,6 +128,7 @@ def upload_document(
     type_document: TypeDocument = Form(...),
     annee: int = Form(...),
     filiere_id: int = Form(...),
+    cercle_id: Optional[int] = Form(default=None),
     fichier: UploadFile = File(...),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -92,6 +136,13 @@ def upload_document(
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+
+    # cercle_id vient d'un champ cache du formulaire (voir
+    # document_upload.html) : on revalide quand meme l'appartenance
+    # cote serveur, un utilisateur ne pouvant pas fabriquer une requete
+    # avec un cercle_id arbitraire auquel il n'appartient pas.
+    if cercle_id is not None and not _est_membre_cercle(session, cercle_id, utilisateur.id):
+        cercle_id = None
 
     filiere = session.get(Filiere, filiere_id)
     reference = generer_reference(filiere, annee, session)
@@ -104,9 +155,10 @@ def upload_document(
         chemin_stocke = sauvegarder_fichier(fichier, reference)
     except FichierInvalide as erreur:
         filieres = session.exec(select(Filiere)).all()
+        cercle = session.get(CercleEtude, cercle_id) if cercle_id else None
         return templates.TemplateResponse(
             "document_upload.html",
-            {"request": request, "filieres": filieres, "erreur": str(erreur)},
+            {"request": request, "filieres": filieres, "cercle": cercle, "erreur": str(erreur)},
         )
 
     document = Document(
@@ -116,12 +168,16 @@ def upload_document(
         type_document=type_document,
         annee=annee,
         filiere_id=filiere_id,
+        cercle_id=cercle_id,
         uploader_id=utilisateur.id,
         chemin_fichier=chemin_stocke,
         statut=StatutDocument.EN_ATTENTE,  # visible seulement apres validation par un moderateur
     )
     session.add(document)
     session.commit()
+
+    if cercle_id:
+        return RedirectResponse(f"/documents?cercle_id={cercle_id}&envoye=1", status_code=303)
     return RedirectResponse("/documents?envoye=1", status_code=303)
 
 

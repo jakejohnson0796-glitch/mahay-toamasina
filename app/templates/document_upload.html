@@ -4,11 +4,16 @@
 {% block contenu %}
 <div class="contenu-clair">
 <h2>Deposer un document</h2>
+{% if cercle %}
+<p>Ce document sera ajoute au cercle <strong>{{ cercle.nom }}</strong>, et visible publiquement dans la bibliotheque une fois valide par un moderateur.</p>
+{% else %}
 <p>Votre document sera visible publiquement seulement apres validation par un moderateur.</p>
+{% endif %}
 <div class="carte-formulaire">
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   <form method="post" action="/documents/upload" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    {% if cercle %}<input type="hidden" name="cercle_id" value="{{ cercle.id }}">{% endif %}
     <label for="titre">Titre</label>
     <input type="text" id="titre" name="titre" required placeholder="ex: Partiel de Droit civil - S3">
 

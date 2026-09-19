@@ -313,6 +313,13 @@ class Document(SQLModel, table=True):
     statut: StatutDocument = Field(default=StatutDocument.EN_ATTENTE)
     nb_telechargements: int = Field(default=0)
     date_upload: datetime = Field(default_factory=datetime.utcnow)
+    # Portee cercle, optionnelle : un document reste toujours visible dans
+    # la bibliotheque generale (/documents, filtree par filiere/matiere/
+    # type), et apparait EN PLUS dans l'onglet Documents du cercle si
+    # uploade depuis un cercle precis. None = uploade directement depuis
+    # la bibliotheque, sans passer par un cercle (comportement d'origine,
+    # inchange pour toutes les lignes existantes).
+    cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
 
 
 class TentativeQuiz(SQLModel, table=True):

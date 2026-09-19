@@ -5,8 +5,14 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
-<p class="eyebrow">Bibliotheque</p>
-<h2>Documents</h2>
+<p class="eyebrow">{% if cercle %}Cercle {{ cercle.nom }}{% else %}Bibliotheque{% endif %}</p>
+<div class="tb-panneau-entete">
+  <h2>{% if cercle %}Documents du cercle{% else %}Documents{% endif %}</h2>
+  {% if utilisateur %}
+  <a class="bouton bouton-primaire" href="/documents/upload{{ '?cercle_id=' ~ cercle.id if cercle else '' }}">Deposer un document</a>
+  {% endif %}
+</div>
+{% if cercle %}<p class="stat-label"><a href="/cercles/{{ cercle.id }}">&larr; Retour au salon</a></p>{% endif %}
 
 {% if request.query_params.get("envoye") %}
 <div class="info">Document envoye — il sera visible ici une fois valide par un moderateur.</div>
