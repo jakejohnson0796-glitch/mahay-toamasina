@@ -254,31 +254,47 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
 
 
 
-def cercle_est_national(cercle: CercleEtude) -> bool:
-    """Un cercle national possede au minimum une mention et un niveau.
-    L'absence de filiere signifie explicitement ``tronc commun``.
+def type_cercle(cercle: CercleEtude) -> str:
+    """Classifie un cercle selon UNE hierarchie canonique.
+
+    libre        : aucun attribut academique ;
+    tronc_commun : mention + niveau, sans parcours ;
+    parcours     : mention + parcours + niveau ;
+    incomplet    : combinaison partielle/incoherente a revoir.
     """
-    return bool(cercle.mention_id and cercle.niveau)
+    if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
+        return "libre"
+    if cercle.mention_id and cercle.niveau and not cercle.filiere_id:
+        return "tronc_commun"
+    if cercle.mention_id and cercle.filiere_id and cercle.niveau:
+        return "parcours"
+    return "incomplet"
+
+
+def cercle_est_national(cercle: CercleEtude) -> bool:
+    """Vrai uniquement pour les cercles nationaux complets :
+    parcours specialise ou tronc commun."""
+    return type_cercle(cercle) in {"tronc_commun", "parcours"}
+
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
-    """§31 : verifie mention + niveau, et le parcours (national, pas
-    juste filiere_id brut — voir _filieres_equivalentes ci-dessus)
-    quand le cercle en exige un. Utilisateur.mention_id (voir le
-    rapport du 10/09/2026) est desormais la source de verite pour la
-    mention -- plus besoin de la deduire de filiere_id, ce qui permet a
-    un etudiant en tronc commun (filiere_id vide) de correspondre a un
-    cercle de mention+niveau."""
-    if not cercle_est_national(cercle):
-        # Cercle libre : aucune restriction, comme avant cette evolution.
+    """Test canonique d'eligibilite a un cercle."""
+    nature = type_cercle(cercle)
+    if nature == "libre":
         return True
+    if nature == "incomplet":
+        return False
 
     profil = contexte_profil_academique(utilisateur, session)
     if not profil["coherent"]:
         return False
+
     mention = profil["mention"]
     if not mention or mention.id != cercle.mention_id or profil["niveau"] != cercle.niveau:
         return False
-    if not cercle.filiere_id:
+
+    if nature == "tronc_commun":
         return True
+
     filiere_utilisateur = profil["filiere"]
     if not filiere_utilisateur:
         return False
@@ -307,8 +323,9 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
     les cercles libres sont consideres disponibles (il ne peut, de toute
     facon, rejoindre aucun cercle national tant que son profil n'est pas
     complet — voir la meme regle dans profil_correspond_au_cercle)."""
-    cercle_libre = or_(
+    cercle_libre = and_(
         CercleEtude.mention_id.is_(None),
+        CercleEtude.filiere_id.is_(None),
         CercleEtude.niveau.is_(None),
     )
 
