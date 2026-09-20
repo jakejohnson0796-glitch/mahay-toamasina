@@ -51,7 +51,7 @@
       <select id="recherche_mention_id" name="mention_id">
         <option value="">Toutes les mentions</option>
         {% for m in mentions %}
-        <option value="{{ m.id }}" {% if recherche_mention_id == m.id %}selected{% endif %}>{{ m.nom }}</option>
+        <option value="{{ m.id }}" data-domaine-id="{{ m.domaine_id or '' }}" {% if recherche_mention_id == m.id %}selected{% endif %}>{{ m.nom }}</option>
         {% endfor %}
       </select>
     </div>
@@ -240,69 +240,6 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
 {% endif %}
 </div>
 
-<script>
-(function () {
-  async function chargerOptions(url) {
-    const reponse = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!reponse.ok) return [];
-    return reponse.json();
-  }
+<script src="{{ url_for('static', path='js/cercles-list.js') }}?v={{ version_asset('js/cercles-list.js') }}"></script>
 
-  const domaineSelect = document.getElementById("recherche_domaine_id");
-  const mentionSelect = document.getElementById("recherche_mention_id");
-  const niveauSelect = document.getElementById("recherche_niveau");
-  const filiereSelect = document.getElementById("recherche_filiere_id");
-  const mentionInitiale = mentionSelect ? mentionSelect.value : "";
-  const filiereInitiale = filiereSelect ? filiereSelect.value : "";
-
-  async function chargerMentionsDuDomaine() {
-    if (!domaineSelect || !mentionSelect || !domaineSelect.value) return;
-    const valeurMention = mentionInitiale;
-    const mentions = await chargerOptions(`/api/academique/domaines/${domaineSelect.value}/mentions`);
-    mentionSelect.replaceChildren();
-    const toutes = document.createElement("option");
-    toutes.value = ""; toutes.textContent = "Toutes les mentions"; mentionSelect.appendChild(toutes);
-    mentions.forEach(function (m) {
-      const option = document.createElement("option");
-      option.value = m.id;
-      option.textContent = m.nom;
-      mentionSelect.appendChild(option);
-    });
-    if (mentions.some(function (m) { return String(m.id) === String(valeurMention); })) mentionSelect.value = valeurMention;
-  }
-
-  async function chargerParcours() {
-    if (!mentionSelect || !niveauSelect || !filiereSelect) return;
-    const valeurFiliere = filiereInitiale;
-    filiereSelect.replaceChildren();
-    const tous = document.createElement("option");
-    tous.value = ""; tous.textContent = "Tous les parcours"; filiereSelect.appendChild(tous);
-    if (!mentionSelect.value || !niveauSelect.value) return;
-    const parcours = await chargerOptions(`/api/academique/mentions/${mentionSelect.value}/parcours-nationaux?niveau=${encodeURIComponent(niveauSelect.value)}`);
-    parcours.forEach(function (p) {
-      const option = document.createElement("option");
-      option.value = p.id;
-      option.textContent = p.nom;
-      filiereSelect.appendChild(option);
-    });
-    if (valeurFiliere === "tronc_commun") {
-      const option = document.createElement("option");
-      option.value = "tronc_commun"; option.textContent = "Tronc commun";
-      filiereSelect.appendChild(option);
-    }
-    if (valeurFiliere && Array.from(filiereSelect.options).some(function (o) { return o.value === String(valeurFiliere); })) filiereSelect.value = valeurFiliere;
-  }
-
-  if (domaineSelect) domaineSelect.addEventListener("change", function () {
-    if (mentionSelect) mentionSelect.value = "";
-    if (filiereSelect) filiereSelect.innerHTML = '<option value="">Tous les parcours</option>';
-    chargerMentionsDuDomaine();
-  });
-  if (mentionSelect) mentionSelect.addEventListener("change", function () { chargerParcours(); });
-  if (niveauSelect) niveauSelect.addEventListener("change", function () { chargerParcours(); });
-
-  if (domaineSelect && domaineSelect.value) chargerMentionsDuDomaine().then(chargerParcours);
-  else if (mentionSelect && mentionSelect.value && niveauSelect && niveauSelect.value) chargerParcours();
-})();
-</script>
 {% endblock %}
