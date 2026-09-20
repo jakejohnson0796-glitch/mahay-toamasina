@@ -27,21 +27,22 @@
     select.appendChild(node);
   }
 
-  async function chargerParcoursNationaux(mentionId, niveau, select, valeurCourante, allowTronc) {
-    select.replaceChildren();
-    option(select, "", "Tous les parcours", !valeurCourante);
-    if (!mentionId || !niveau) {
-      select.disabled = true;
-      return;
-    }
-
-    const parcours = await chargerJSON(
+  async function chargerParcoursNationaux(mentionId, niveau) {
+    if (!mentionId || !niveau) return [];
+    return await chargerJSON(
       "/api/academique/mentions/" + encodeURIComponent(mentionId)
       + "/parcours-nationaux?niveau=" + encodeURIComponent(niveau)
     );
+  }
 
+  function remplirParcours(select, parcours, valeurCourante, allowTronc, aucuneOption) {
+    select.replaceChildren();
+    option(select, "", aucuneOption, !valeurCourante);
     const valeur = String(valeurCourante || "");
-    if (allowTronc) option(select, "tronc_commun", "Tronc commun", valeur === "tronc_commun");
+
+    if (allowTronc) {
+      option(select, "tronc_commun", "Tronc commun", valeur === "tronc_commun");
+    }
 
     parcours.forEach(function (item) {
       option(select, item.id, item.nom, String(item.id) === valeur);
@@ -89,14 +90,10 @@
 
     async function actualiserParcours(valeurCourante) {
       const ticket = ++generation;
-      await chargerParcoursNationaux(
-        mention.value,
-        niveau.value,
-        parcours,
-        valeurCourante,
-        true
-      );
+      parcours.disabled = true;
+      const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      remplirParcours(parcours, rows, valeurCourante, true, "Tous les parcours");
     }
 
     domaine.addEventListener("change", function () {
@@ -153,10 +150,7 @@
       resetParcours();
       if (!mention.value || !niveau.value) return;
 
-      const rows = await chargerJSON(
-        "/api/academique/mentions/" + encodeURIComponent(mention.value)
-        + "/parcours-nationaux?niveau=" + encodeURIComponent(niveau.value)
-      );
+      const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
 
       parcours.replaceChildren();
