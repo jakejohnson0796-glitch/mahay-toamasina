@@ -498,33 +498,54 @@ def deconnexion(request: Request, _csrf: None = Depends(verifier_csrf)):
 # aussi, jamais seulement empechee par le JS).
 # ============================================================
 
-@router.get("/profil/academique")
-def formulaire_actualisation_academique(request: Request, session: Session = Depends(get_session)):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
-
+def _rendu_formulaire_profil_academique(
+    request: Request,
+    utilisateur: Utilisateur,
+    session: Session,
+    erreur: Optional[str] = None,
+):
     demande_en_attente = session.exec(
         select(DemandeChangementFiliere).where(
             DemandeChangementFiliere.utilisateur_id == utilisateur.id,
             DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
         )
     ).first()
-    filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente and demande_en_attente.nouvelle_filiere_id else None
-    mention_demandee = session.get(Mention, demande_en_attente.nouvelle_mention_id) if demande_en_attente and demande_en_attente.nouvelle_mention_id else None
+    filiere_demandee = (
+        session.get(Filiere, demande_en_attente.nouvelle_filiere_id)
+        if demande_en_attente and demande_en_attente.nouvelle_filiere_id
+        else None
+    )
+    mention_demandee = (
+        session.get(Mention, demande_en_attente.nouvelle_mention_id)
+        if demande_en_attente and demande_en_attente.nouvelle_mention_id
+        else None
+    )
+    profil = referentiel_academique.contexte_profil_academique(utilisateur, session)
 
     return templates.TemplateResponse(
-        request, "profil_academique.html",
+        request,
+        "profil_academique.html",
         {
             "utilisateur": utilisateur,
-            "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
+            "universites": session.exec(
+                select(Universite).where(Universite.est_active == True)  # noqa: E712
+            ).all(),
             "niveaux": NIVEAUX,
-            "erreur": None,
+            "erreur": erreur,
             "demande_en_attente": demande_en_attente,
             "filiere_demandee": filiere_demandee,
             "mention_demandee": mention_demandee,
+            "composante_id_actuelle": profil["faculte"].id if profil["faculte"] else None,
         },
     )
+
+
+@router.get("/profil/academique")
+def formulaire_actualisation_academique(request: Request, session: Session = Depends(get_session)):
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    return _rendu_formulaire_profil_academique(request, utilisateur, session)
 
 
 @router.post("/profil/academique")
@@ -553,26 +574,7 @@ def actualiser_profil_academique(
         return RedirectResponse("/connexion", status_code=303)
 
     def _contexte(message_erreur: str):
-        demande_en_attente = session.exec(
-            select(DemandeChangementFiliere).where(
-                DemandeChangementFiliere.utilisateur_id == utilisateur.id,
-                DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
-            )
-        ).first()
-        filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente and demande_en_attente.nouvelle_filiere_id else None
-        mention_demandee = session.get(Mention, demande_en_attente.nouvelle_mention_id) if demande_en_attente and demande_en_attente.nouvelle_mention_id else None
-        return templates.TemplateResponse(
-            request, "profil_academique.html",
-            {
-                "utilisateur": utilisateur,
-                "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
-                "niveaux": NIVEAUX,
-                "erreur": message_erreur,
-                "demande_en_attente": demande_en_attente,
-                "filiere_demandee": filiere_demandee,
-                "mention_demandee": mention_demandee,
-            },
-        )
+        return _rendu_formulaire_profil_academique(request, utilisateur, session, message_erreur)
 
     universite_id_nettoye = entier_ou_none(universite_id)
     mention_id_nettoye = entier_ou_none(mention_id)
