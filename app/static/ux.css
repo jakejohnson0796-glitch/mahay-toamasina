@@ -879,3 +879,16 @@ textarea {
     padding: 0.55rem 0.6rem;
   }
 }
+
+.puce-incomplet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.18rem 0.48rem;
+  border: 1px dashed var(--content-border);
+  border-radius: 999px;
+  color: var(--content-text-muted);
+  background: var(--content-bg);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
