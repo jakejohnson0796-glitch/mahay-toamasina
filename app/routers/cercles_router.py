@@ -12,6 +12,7 @@ requetes HTTP classiques qu'aux connexions WebSocket.
 """
 from typing import Optional
 from datetime import datetime
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
@@ -21,7 +22,7 @@ from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (
-    CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
+    CercleEtude, Domaine, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
     RoleUtilisateur, RoleMembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
     StatutDemandeCreationCercle, StatutCercle, ThemeDuJour, Document,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
@@ -59,14 +60,31 @@ MOTIFS_SIGNALEMENT_AUTORISES = {
 }
 
 
-def _est_membre(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
+def _a_acces_cercle(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
+    """Acces effectif au cercle : membre reel OU administrateur global.
+
+    L'administrateur n'est pas materialise comme membre de chaque cercle :
+    cela evite une enorme redondance de lignes MembreCercle et toutes les
+    operations d'entretien associees. Les compteurs de membres continuent,
+    eux, de compter uniquement les membres reels.
+    """
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle or cercle.statut != StatutCercle.ACTIF:
         return False
+
     return session.exec(
-        select(MembreCercle).where(
-            MembreCercle.cercle_id == cercle_id,
-            MembreCercle.utilisateur_id == utilisateur_id,
+        select(Utilisateur.id)
+        .outerjoin(
+            MembreCercle,
+            (MembreCercle.cercle_id == cercle_id)
+            & (MembreCercle.utilisateur_id == Utilisateur.id),
+        )
+        .where(
+            Utilisateur.id == utilisateur_id,
+            or_(
+                Utilisateur.role == RoleUtilisateur.ADMIN,
+                MembreCercle.id.is_not(None),
+            ),
         )
     ).first() is not None
 
@@ -95,56 +113,6 @@ def _demande_en_attente(session: Session, cercle_id: int, utilisateur_id: int) -
             DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE,
         )
     ).first()
-
-
-def _assurer_membres_admins(session: Session, cercle_id: int) -> None:
-    """Garantit que TOUS les administrateurs globaux ont une entree
-    MembreCercle reelle pour ce cercle (pas juste un bypass de
-    permission) : c'est ce qui leur permet par exemple de voir/participer
-    au chat, dont l'acces est conditionne a `membre` dans salon_cercle().
-    Hierarchie voulue : ADMIN_GLOBAL > OWNER, donc l'admin doit avoir
-    acces a n'importe quel cercle sans avoir a demander a le rejoindre.
-
-    Idempotent : n'insere que les admins qui n'ont pas deja de ligne
-    (pas de doublon), qu'ils viennent d'etre crees ou que ce cercle
-    existait deja avant l'introduction de cette regle."""
-    deja_membres_ids = {
-        m.utilisateur_id
-        for m in session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)).all()
-    }
-    admins = session.exec(select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)).all()
-    a_ajouter = [a for a in admins if a.id not in deja_membres_ids]
-    if not a_ajouter:
-        return
-    for admin in a_ajouter:
-        session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=admin.id))
-    session.commit()
-
-
-def _assurer_membres_admins_pour_cercles(session: Session, cercle_ids: list[int]) -> None:
-    """Garantit les adhesions des admins sur plusieurs cercles en deux requetes."""
-    if not cercle_ids:
-        return
-    admins = session.exec(select(Utilisateur.id).where(Utilisateur.role == RoleUtilisateur.ADMIN)).all()
-    if not admins:
-        return
-    existants = {
-        (cercle_id, utilisateur_id)
-        for cercle_id, utilisateur_id in session.exec(
-            select(MembreCercle.cercle_id, MembreCercle.utilisateur_id)
-            .where(MembreCercle.cercle_id.in_(cercle_ids))
-            .where(MembreCercle.utilisateur_id.in_(admins))
-        ).all()
-    }
-    a_ajouter = [
-        MembreCercle(cercle_id=cercle_id, utilisateur_id=admin_id)
-        for cercle_id in cercle_ids
-        for admin_id in admins
-        if (cercle_id, admin_id) not in existants
-    ]
-    if a_ajouter:
-        session.add_all(a_ajouter)
-        session.commit()
 
 
 def _reactions_du_message(session: Session, message_id: int, utilisateur_id: int) -> list[dict]:
@@ -331,6 +299,7 @@ def _supprimer_cercle_et_contenu(session: Session, cercle_id: int) -> bool:
 def liste_cercles(
     request: Request,
     q: Optional[str] = None,
+    domaine_id: Optional[str] = None,
     mention_id: Optional[str] = None,
     filiere_id: Optional[str] = None,
     niveau: Optional[str] = None,
@@ -338,112 +307,105 @@ def liste_cercles(
     page: int = 1,
     session: Session = Depends(get_session),
 ):
-    """PAGINEE et REQUETES GROUPEES (corrige un ralentissement severe
-    signale par Jake apres l'import du referentiel national — voir
-    scripts/import_academic_data.py) : avec ~1200+ cercles nationaux
-    desormais legitimes (un par parcours x niveau, pas des doublons —
-    voir cercles_referentiel.py), la version precedente de cette route
-    executait 3 a 5 requetes SEPAREES PAR CERCLE AFFICHE (nombre de
-    membres, est_membre, demande en attente, plus potentiellement des
-    INSERT un par un pour chaque admin manquant) : plusieurs MILLIERS
-    de requetes pour une seule page, pire encore pour un admin (qui
-    declenche en plus _assurer_membres_admins sur chaque cercle). Cette
-    version ne fait plus que quelques requetes GROUPEES au total, quel
-    que soit le nombre de cercles en base, plus une pagination pour ne
-    jamais avoir a rendre des centaines de lignes en une fois.
+    """Recherche nationale des cercles avec une hierarchie explicite.
 
-    Revue du 11/09/2026 (Jake : "je crois qu'il y a de la duplication,
-    et il faut ameliorer la recherche") : cette route ne filtrait PAS
-    par statut, donc un cercle ARCHIVE (doublon fusionne par
-    scripts/dedupliquer_cercles_nationaux.py, ou parcours devenu perime
-    a un niveau donne — voir cercles_referentiel.py) continuait a
-    s'afficher ici, indiscernable d'un cercle actif : corrige
-    ci-dessous. Le filtre "Filiere" (liste plate de TOUTES les
-    filieres, toutes universites confondues) est remplace par une
-    cascade Mention -> Niveau -> Parcours (voir
-    /api/academique/mentions et /mentions/{id}/parcours-nationaux),
-    avec prise en charge de la recherche de cercles de tronc commun
-    (mention+niveau, sans parcours -- filiere_id="tronc_commun")."""
+    Identite affichee : Domaine -> Mention -> Parcours -> Niveau.
+    La recherche textuelle couvre le nom, la description, la mention et
+    le parcours au lieu de limiter le resultat au nom du cercle.
+    """
     TAILLE_PAGE = 30
-
     utilisateur = utilisateur_courant(request, session)
 
     q_nettoye = (q or "").strip()
+    domaine_id_nettoye = entier_ou_none(domaine_id)
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
     recherche_tronc_commun = filiere_id == "tronc_commun"
     niveau_nettoye = niveau if niveau in NIVEAUX else None
+    if mention_id_nettoye and not domaine_id_nettoye:
+        mention_selectionnee = session.get(Mention, mention_id_nettoye)
+        domaine_id_nettoye = mention_selectionnee.domaine_id if mention_selectionnee and mention_selectionnee.domaine_id else None
     afficher_disponibles_seulement = disponibles == "1"
     page_nettoyee = max(1, page)
 
-    requete = select(CercleEtude).where(CercleEtude.statut == StatutCercle.ACTIF)
+    requete = (
+        select(CercleEtude)
+        .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
+        .outerjoin(Mention, Mention.id == CercleEtude.mention_id)
+        .where(CercleEtude.statut == StatutCercle.ACTIF)
+        .where(or_(CercleEtude.mention_id.is_(None), Mention.est_active == True))  # noqa: E712
+    )
+
     if q_nettoye:
-        # ilike : recherche insensible a la casse, meme choix que
-        # rechercher_messages() plus bas dans ce fichier.
-        requete = requete.where(CercleEtude.nom.ilike(f"%{q_nettoye}%"))
+        motif = f"%{q_nettoye}%"
+        requete = requete.where(or_(
+            CercleEtude.nom.ilike(motif),
+            CercleEtude.description.ilike(motif),
+            Mention.nom.ilike(motif),
+            Filiere.nom.ilike(motif),
+        ))
+
+    if domaine_id_nettoye:
+        requete = requete.where(Mention.domaine_id == domaine_id_nettoye)
+
     if mention_id_nettoye:
         requete = requete.where(CercleEtude.mention_id == mention_id_nettoye)
+
     if recherche_tronc_commun:
         requete = requete.where(CercleEtude.filiere_id.is_(None))
     elif filiere_id_nettoye:
-        # Correspondance par PARCOURS NATIONAL (voir
-        # referentiel_academique._filieres_equivalentes), pas par
-        # egalite exacte de filiere_id : le representant choisi cote
-        # /api/academique/mentions/{id}/parcours-nationaux n'est pas
-        # forcement la Filiere precise que reference le cercle actif
-        # (qui peut appartenir a une autre universite du meme groupe).
         filiere_choisie = session.get(Filiere, filiere_id_nettoye)
         if filiere_choisie:
             ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
             requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
+        else:
+            requete = requete.where(CercleEtude.id == -1)
+
     if niveau_nettoye:
         requete = requete.where(CercleEtude.niveau == niveau_nettoye)
-    if afficher_disponibles_seulement:
-        # Construit cote SQL (voir referentiel_academique.py) plutot que
-        # filtre ligne par ligne en Python : reste efficace meme avec
-        # les centaines de cercles que cercles_referentiel.py peut
-        # generer (un par parcours x niveau).
-        requete = requete.where(referentiel_academique.condition_cercles_disponibles(utilisateur, session))
 
-    total_cercles = session.exec(select(func.count()).select_from(requete.subquery())).one()
+    condition_disponibilite = None
+    if afficher_disponibles_seulement and not _est_admin(utilisateur):
+        # Construit une seule fois : la meme condition sert au filtre SQL et
+        # au badge de compatibilite de la page, sans recalculer le profil.
+        condition_disponibilite = referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+        requete = requete.where(condition_disponibilite)
+
+    total_cercles = session.exec(
+        select(func.count()).select_from(requete.subquery())
+    ).one()
     total_pages = max(1, (total_cercles + TAILLE_PAGE - 1) // TAILLE_PAGE)
     page_nettoyee = min(page_nettoyee, total_pages)
 
     cercles = session.exec(
-        requete.order_by(CercleEtude.date_creation.desc())
+        requete
+        .order_by(CercleEtude.date_creation.desc(), CercleEtude.id.desc())
         .offset((page_nettoyee - 1) * TAILLE_PAGE)
         .limit(TAILLE_PAGE)
     ).all()
     cercle_ids = [c.id for c in cercles]
 
-    mentions = session.exec(select(Mention).order_by(Mention.nom)).all()
-    filiere_recherchee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
+    # Le formulaire suit la hierarchie nationale : Domaine -> Mention.
+    domaines = session.exec(
+        select(Domaine).where(Domaine.est_active == True).order_by(Domaine.nom)  # noqa: E712
+    ).all()
+    domaines_map = {d.id: d for d in domaines}
+    mentions = session.exec(
+        select(Mention).where(Mention.est_active == True).order_by(Mention.nom)  # noqa: E712
+    ).all()
 
-    # Meme filet de securite que salon_cercle()/voir_membres() : sans cet
-    # appel, un admin qui n'a pas encore ouvert individuellement un cercle
-    # (ou qui vient d'etre promu admin) n'a pas encore de ligne MembreCercle
-    # reelle pour ce cercle, et cette liste globale l'affichait alors a tort
-    # comme non-membre. Limite desormais aux cercles de la PAGE COURANTE
-    # (au plus TAILLE_PAGE), jamais a la totalite des cercles en base.
-    if _est_admin(utilisateur) and cercle_ids:
-        _assurer_membres_admins_pour_cercles(session, cercle_ids)
+    filiere_ids = {c.filiere_id for c in cercles if c.filiere_id}
+    filieres_map = {}
+    if filiere_ids:
+        filieres_map = {
+            f.id: f for f in session.exec(select(Filiere).where(Filiere.id.in_(filiere_ids))).all()
+        }
+    mentions_map = {m.id: m for m in mentions}
 
-    # --- Requetes GROUPEES (une par type de donnee, pas une par
-    #     cercle) : nombre de membres par cercle, appartenance et
-    #     demande en attente de l'utilisateur courant. ---
-    nb_membres_par_cercle = {}
-    if cercle_ids:
-        for cercle_id, nb in session.exec(
-            select(MembreCercle.cercle_id, func.count())
-            .where(MembreCercle.cercle_id.in_(cercle_ids))
-            .group_by(MembreCercle.cercle_id)
-        ).all():
-            nb_membres_par_cercle[cercle_id] = nb
-
-    cercles_ou_membre = set()
-    cercles_en_attente = set()
-    if utilisateur and cercle_ids:
-        cercles_ou_membre = {
+    if _est_admin(utilisateur):
+        cercles_ou_accessibles = set(cercle_ids)
+    elif utilisateur and cercle_ids:
+        cercles_ou_accessibles = {
             cid for cid in session.exec(
                 select(MembreCercle.cercle_id).where(
                     MembreCercle.cercle_id.in_(cercle_ids),
@@ -451,6 +413,11 @@ def liste_cercles(
                 )
             ).all()
         }
+    else:
+        cercles_ou_accessibles = set()
+
+    cercles_en_attente = set()
+    if utilisateur and cercle_ids:
         cercles_en_attente = {
             cid for cid in session.exec(
                 select(DemandeAdhesionCercle.cercle_id).where(
@@ -461,29 +428,73 @@ def liste_cercles(
             ).all()
         }
 
+    compatibilites = set()
+    if utilisateur and cercle_ids and not _est_admin(utilisateur):
+        condition_compatibilite = (
+            condition_disponibilite
+            if condition_disponibilite is not None
+            else referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+        )
+        compatibilites = {
+            cid for cid in session.exec(
+                select(CercleEtude.id)
+                .where(CercleEtude.id.in_(cercle_ids))
+                .where(condition_compatibilite)
+            ).all()
+        }
+
+    nb_membres_par_cercle = {}
+    if cercle_ids:
+        nb_membres_par_cercle = {
+            cid: nb for cid, nb in session.exec(
+                select(MembreCercle.cercle_id, func.count())
+                .where(MembreCercle.cercle_id.in_(cercle_ids))
+                .group_by(MembreCercle.cercle_id)
+            ).all()
+        }
+
     cercles_avec_info = []
     for cercle in cercles:
-        est_membre = cercle.id in cercles_ou_membre
-        en_attente = bool(utilisateur and not est_membre and cercle.id in cercles_en_attente)
+        mention = mentions_map.get(cercle.mention_id)
+        domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
+        filiere = filieres_map.get(cercle.filiere_id)
         cercles_avec_info.append({
             "cercle": cercle,
+            "domaine": domaine,
+            "mention": mention,
+            "filiere": filiere,
             "nb_membres": nb_membres_par_cercle.get(cercle.id, 0),
-            "est_membre": est_membre,
-            "en_attente": en_attente,
+            "est_membre": cercle.id in cercles_ou_accessibles,
+            "en_attente": bool(utilisateur and cercle.id not in cercles_ou_accessibles and cercle.id in cercles_en_attente),
+            "profil_compatible": cercle.id in compatibilites or bool(_est_admin(utilisateur)),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
         })
+
+    filiere_recherchee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
+    querystring = urlencode({
+        k: v for k, v in {
+            "q": q_nettoye,
+            "domaine_id": domaine_id_nettoye,
+            "mention_id": mention_id_nettoye,
+            "filiere_id": "tronc_commun" if recherche_tronc_commun else filiere_id_nettoye,
+            "niveau": niveau_nettoye,
+            "disponibles": "1" if afficher_disponibles_seulement else None,
+        }.items() if v not in (None, "")
+    })
 
     return templates.TemplateResponse(
         request,
         "cercles_list.html",
         {
             "cercles_avec_info": cercles_avec_info,
+            "domaines": domaines,
             "mentions": mentions,
             "filiere_recherchee": filiere_recherchee,
             "niveaux": NIVEAUX,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
             "recherche_q": q_nettoye,
+            "recherche_domaine_id": domaine_id_nettoye,
             "recherche_mention_id": mention_id_nettoye,
             "recherche_filiere_id": filiere_id_nettoye,
             "recherche_tronc_commun": recherche_tronc_commun,
@@ -492,9 +503,9 @@ def liste_cercles(
             "page": page_nettoyee,
             "total_pages": total_pages,
             "total_cercles": total_cercles,
+            "querystring": querystring,
         },
     )
-
 
 @router.post("/cercles/creer")
 def creer_cercle(
@@ -690,11 +701,6 @@ def creer_cercle(
     ))
     session.commit()
 
-    # Hierarchie ADMIN_GLOBAL > OWNER : tout administrateur global doit
-    # avoir acces automatique a ce nouvel espace, sans avoir a demander a
-    # le rejoindre (voir _assurer_membres_admins).
-    _assurer_membres_admins(session, cercle.id)
-
     return RedirectResponse(f"/cercles/{cercle.id}", status_code=303)
 
 
@@ -738,11 +744,9 @@ def demander_adhesion(
     # (POST forge, ancienne page en cache, etc.) ne doit jamais faire
     # passer un Admin par le circuit de demande — il est rendu membre
     # immediatement, sans creation de DemandeAdhesionCercle.
-    if _est_admin(utilisateur):
-        _assurer_membres_admins(session, cercle_id)
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
-    if _est_membre(session, cercle_id, utilisateur.id):
+    if _a_acces_cercle(session, cercle_id, utilisateur.id):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     if referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session):
@@ -779,13 +783,11 @@ def voir_membres(request: Request, cercle_id: int, session: Session = Depends(ge
     if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
-    if _est_admin(utilisateur):
-        _assurer_membres_admins(session, cercle_id)
 
     # Seuls les membres du cercle (+ createur/admin, qui sont de toute
     # facon membres ou geres a part) peuvent voir la liste — un visiteur
     # externe non-membre n'a pas a voir qui est dans le cercle.
-    if not _est_membre(session, cercle_id, utilisateur.id) and not _peut_gerer_cercle(cercle, utilisateur):
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id) and not _peut_gerer_cercle(cercle, utilisateur):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     lignes = session.exec(
@@ -842,7 +844,7 @@ def ajouter_membre_par_telephone(
                 status_code=303,
             )
 
-    if not _est_membre(session, cercle_id, cible.id):
+    if not _a_acces_cercle(session, cercle_id, cible.id):
         session.add(MembreCercle(
             cercle_id=cercle_id,
             utilisateur_id=cible.id,
@@ -917,7 +919,7 @@ def _traiter_acceptation_demande(session: Session, cercle: CercleEtude, demande:
     demande.date_traitement = datetime.utcnow()
     demande.traite_par_id = traiteur.id
     session.add(demande)
-    if not _est_membre(session, cercle.id, demande.utilisateur_id):
+    if not _a_acces_cercle(session, cercle.id, demande.utilisateur_id):
         session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=demande.utilisateur_id))
     session.commit()
     return None
@@ -1075,10 +1077,8 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
     # Filet de securite pour les cercles crees AVANT cette regle (ou si un
     # nouvel admin a ete cree apres coup) : garantit que l'admin courant a
     # bien une adhesion reelle avant qu'on calcule `membre` juste apres.
-    if _est_admin(utilisateur):
-        _assurer_membres_admins(session, cercle_id)
 
-    membre = _est_membre(session, cercle_id, utilisateur.id)
+    membre = _a_acces_cercle(session, cercle_id, utilisateur.id)
     en_attente = bool(not membre and _demande_en_attente(session, cercle_id, utilisateur.id))
 
     messages = []
@@ -1225,9 +1225,7 @@ async def envoyer_fichier(
     if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
-    if _est_admin(utilisateur):
-        _assurer_membres_admins(session, cercle_id)
-    if not _est_membre(session, cercle_id, utilisateur.id):
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         return RedirectResponse("/cercles", status_code=303)
 
     if not fichier.filename or not fichier.filename.lower().endswith(".pdf"):
@@ -1283,9 +1281,7 @@ def telecharger_piece_jointe(request: Request, cercle_id: int, message_id: int, 
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
-    if _est_admin(utilisateur):
-        _assurer_membres_admins(session, cercle_id)
-    if not _est_membre(session, cercle_id, utilisateur.id):
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         return RedirectResponse("/connexion", status_code=303)
 
     message = session.get(MessageCercle, message_id)
@@ -1355,7 +1351,7 @@ def signaler_message(
         return RedirectResponse("/connexion", status_code=303)
 
     message = session.get(MessageCercle, message_id)
-    if not message or message.cercle_id != cercle_id or not _est_membre(session, cercle_id, utilisateur.id):
+    if not message or message.cercle_id != cercle_id or not _a_acces_cercle(session, cercle_id, utilisateur.id):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     if message.auteur_id == utilisateur.id:
@@ -1422,7 +1418,7 @@ async def reagir_message(
     message = session.get(MessageCercle, message_id)
     if not message or message.cercle_id != cercle_id or message.supprime:
         raise HTTPException(status_code=404, detail="Message introuvable.")
-    if not _est_membre(session, cercle_id, utilisateur.id):
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
 
     reaction_existante = session.exec(
@@ -1588,7 +1584,7 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         raise HTTPException(status_code=401, detail="Non connecte.")
-    if not _est_membre(session, cercle_id, utilisateur.id):
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
 
     parent = session.get(MessageCercle, message_id)
@@ -1640,46 +1636,70 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
 
 
 @router.get("/cercles/{cercle_id}/membres/{utilisateur_id}/profil")
-def profil_membre_cercle(cercle_id: int, utilisateur_id: int, request: Request, session: Session = Depends(get_session)):
-    """Renvoie les informations de profil (universite/mention/filiere/
-    niveau/bio + statut en ligne) d'un membre du cercle, pour le
-    panneau "Profil de l'utilisateur" ouvert en cliquant sur un avatar
-    ou un nom dans le chat (voir cercle_chat.html, ouvrirProfil()).
-    Restreint aux membres du MEME cercle des deux cotes (celui qui
-    consulte ET celui qu'on consulte) : ce n'est pas un annuaire public
-    de tous les utilisateurs du site."""
+def profil_membre_cercle(
+    cercle_id: int,
+    utilisateur_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """Profil visible uniquement entre personnes ayant acces au meme cercle.
+
+    Le parcours est restitue dans la meme hierarchie partout :
+    Universite -> Composante -> Domaine -> Mention -> Parcours -> Niveau.
+    La coherence academique provient du service centralise afin de ne pas
+    avoir une version differente entre profil, recherche et adhesion.
+    """
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         raise HTTPException(status_code=401, detail="Non connecte.")
-    if not _est_membre(session, cercle_id, utilisateur.id):
-        raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
+        raise HTTPException(status_code=403, detail="Vous n'avez pas acces a ce cercle.")
 
     cible = session.get(Utilisateur, utilisateur_id)
-    if not cible or not _est_membre(session, cercle_id, utilisateur_id):
+    if not cible or not _a_acces_cercle(session, cercle_id, utilisateur_id):
         raise HTTPException(status_code=404, detail="Utilisateur introuvable dans ce cercle.")
 
-    filiere = session.get(Filiere, cible.filiere_id) if cible.filiere_id else None
-    mention = session.get(Mention, filiere.mention_id) if filiere and filiere.mention_id else None
-    universite = session.get(Universite, cible.universite_id) if cible.universite_id else None
+    profil = referentiel_academique.contexte_profil_academique(cible, session)
+    mention = profil["mention"]
+    filiere = profil["filiere"]
+    universite = profil["universite"]
+    faculte = profil["faculte"]
+    domaine = profil["domaine"]
 
-    # "En ligne" = au moins une connexion websocket active dans CE
-    # cercle (voir GestionnaireConnexions.utilisateurs_actifs) -- pas un
-    # statut global "connecte au site", coherent avec la liste "En
-    # ligne" deja affichee en haut du salon.
-    en_ligne = any(u["utilisateur_id"] == utilisateur_id for u in gestionnaire.utilisateurs_actifs(cercle_id))
+    en_ligne = any(
+        u["utilisateur_id"] == utilisateur_id
+        for u in gestionnaire.utilisateurs_actifs(cercle_id)
+    )
 
+    academique = {
+        "universite": universite.nom if universite else None,
+        "composante": faculte.nom if faculte else None,
+        "domaine": domaine.nom if domaine else None,
+        "mention": mention.nom if mention else None,
+        "parcours": filiere.nom if filiere else None,
+        "niveau": profil["niveau"],
+        "coherent": bool(profil["coherent"]),
+        "tronc_commun": bool(profil["tronc_commun"]),
+    }
+
+    # Les anciennes cles restent presentes pour ne pas casser un frontend
+    # deja deploye ; la nouvelle cle academique devient la representation
+    # canonique et hierarchique.
     return {
         "id": cible.id,
         "nom": cible.nom,
         "a_une_photo": bool(cible.photo_chemin),
         "en_ligne": en_ligne,
-        "universite": universite.nom if universite else None,
-        "mention": mention.nom if mention else None,
-        "filiere": filiere.nom if filiere else None,
-        "niveau": cible.niveau,
+        "academique": academique,
+        "universite": academique["universite"],
+        "composante": academique["composante"],
+        "domaine": academique["domaine"],
+        "mention": academique["mention"],
+        "filiere": academique["parcours"],
+        "niveau": academique["niveau"],
+        "profil_academique_coherent": academique["coherent"],
         "bio": cible.bio,
     }
-
 
 @router.get("/cercles/{cercle_id}/recherche")
 def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: Session = Depends(get_session)):
@@ -1691,9 +1711,7 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
-    if _est_admin(utilisateur):
-        _assurer_membres_admins(session, cercle_id)
-    if not _est_membre(session, cercle_id, utilisateur.id):
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         return RedirectResponse("/cercles", status_code=303)
 
     resultats = []
@@ -1736,9 +1754,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
         ):
             await websocket.close(code=4403)
             return
-        if utilisateur.role == RoleUtilisateur.ADMIN:
-            _assurer_membres_admins(session, cercle_id)
-        if not _est_membre(session, cercle_id, user_id):
+        if not _a_acces_cercle(session, cercle_id, user_id):
             await websocket.close(code=4403)
             return
 

@@ -22,67 +22,102 @@ from typing import Optional
 
 from sqlmodel import Session, and_, or_, select
 
-from .models import CercleEtude, Filiere, RoleUtilisateur, Utilisateur
+from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, RoleUtilisateur, Utilisateur
 from .texte_normalise import normaliser as _normaliser_nom_parcours
 
 DELAI_MINIMUM_ENTRE_CHANGEMENTS_NIVEAU = timedelta(days=14)
 
 
-def profil_academique_incomplet(utilisateur: Utilisateur, session: Session) -> bool:
-    """§21-22 du brief : vrai si ce compte a besoin du statut
-    PROFILE_ACADEMIC_UPDATE_REQUIRED. Concerne les comptes ETUDIANT et
-    PROFESSEUR (les deux ont un parcours academique a declarer — un
-    professeur anime des cours dans un contexte universite/filiere
-    donne, voir Classe virtuelle) : un sponsor/repetiteur ou un admin
-    n'a pas de parcours academique a declarer (voir la meme exemption a
-    l'inscription, auth_router.py).
+def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> dict:
+    """Source de verite unique pour l'identite academique.
 
-    Depuis l'ajout de Filiere.niveau et Utilisateur.mention_id (rapport
-    du 10/09/2026) : universite, mention et niveau sont toujours
-    requis, mais filiere_id ne l'est PAS pour un etudiant en tronc
-    commun -- valide tant qu'aucune Filiere nommee n'existe encore pour
-    son (mention, niveau). Des qu'au moins une existe, il doit en
-    choisir une (le champ redevient obligatoire a ce niveau-la)."""
+    Ordre hierarchique : Universite -> Composante -> Domaine -> Mention
+    -> Parcours -> Niveau. ``coherent`` indique si le profil est assez
+    fiable pour les regles des cercles nationaux.
+    """
+    if not utilisateur:
+        return {"universite": None, "faculte": None, "domaine": None, "mention": None,
+                "filiere": None, "niveau": None, "coherent": False, "tronc_commun": False}
+
+    universite = session.get(Universite, utilisateur.universite_id) if utilisateur.universite_id else None
+    filiere = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
+    faculte = session.get(Faculte, filiere.faculte_id) if filiere else None
+    mention = session.get(Mention, utilisateur.mention_id) if utilisateur.mention_id else None
+    mention_affichee = mention or (session.get(Mention, filiere.mention_id) if filiere and filiere.mention_id else None)
+    domaine = session.get(Domaine, mention_affichee.domaine_id) if mention_affichee and mention_affichee.domaine_id else None
+
+    coherent = utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR)
+    if utilisateur.role in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
+        coherent = bool(
+            universite and universite.est_active
+            and mention and mention.est_active and utilisateur.niveau
+            and (not mention.domaine_id or (domaine and domaine.est_active))
+        )
+        if coherent and filiere:
+            coherent = bool(
+                faculte and faculte.universite_id == universite.id
+                and filiere.mention_id == mention.id
+                and (not filiere.niveau or filiere.niveau == utilisateur.niveau)
+            )
+        if coherent and filiere is None:
+            existe_une_specialisation = session.exec(select(Filiere.id).where(
+                Filiere.mention_id == mention.id,
+                Filiere.niveau == utilisateur.niveau,
+            )).first()
+            coherent = existe_une_specialisation is None
+
+    return {
+        "universite": universite, "faculte": faculte, "domaine": domaine,
+        "mention": mention_affichee, "filiere": filiere, "niveau": utilisateur.niveau,
+        "coherent": coherent,
+        "tronc_commun": bool(coherent and filiere is None and mention_affichee and utilisateur.niveau),
+    }
+
+def erreur_choix_academique(
+    session: Session, universite_id: Optional[int], mention_id: Optional[int],
+    filiere_id: Optional[int], niveau: Optional[str], niveaux_valides: set[str],
+) -> Optional[str]:
+    """Valide un choix academique avant toute ecriture utilisateur.
+
+    Cette verification unique evite que plusieurs flux recodent la hierarchie
+    avec des regles differentes ou des champs optionnels mal controles.
+    """
+    if not (universite_id and mention_id and niveau):
+        return "Universite, mention et niveau sont obligatoires."
+    if niveau not in niveaux_valides:
+        return "Niveau invalide."
+    universite = session.get(Universite, universite_id)
+    mention = session.get(Mention, mention_id)
+    if not universite or not universite.est_active:
+        return "Universite invalide ou inactive."
+    if not mention or not mention.est_active:
+        return "Mention invalide ou inactive."
+
+    if filiere_id:
+        filiere = session.get(Filiere, filiere_id)
+        if not filiere:
+            return "Parcours introuvable."
+        faculte = session.get(Faculte, filiere.faculte_id)
+        if not faculte or faculte.universite_id != universite_id:
+            return "Ce parcours ne correspond pas a l universite selectionnee."
+        if filiere.mention_id != mention_id:
+            return "Ce parcours ne correspond pas a la mention selectionnee."
+        if filiere.niveau and filiere.niveau != niveau:
+            return "Ce parcours n est pas propose a ce niveau."
+        return None
+
+    existe_une_specialisation = session.exec(select(Filiere.id).where(
+        Filiere.mention_id == mention_id,
+        Filiere.niveau == niveau,
+    )).first()
+    if existe_une_specialisation:
+        return "Un parcours specifique existe pour cette mention et ce niveau : selectionnez-le."
+    return None
+def profil_academique_incomplet(utilisateur: Utilisateur, session: Session) -> bool:
+    """Vrai si le profil academique ne peut pas servir de reference fiable."""
     if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
         return False
-
-    if not (utilisateur.universite_id and utilisateur.mention_id and utilisateur.niveau):
-        return True
-
-    if utilisateur.filiere_id:
-        filiere = session.get(Filiere, utilisateur.filiere_id)
-        if not filiere or not filiere.faculte or filiere.faculte.universite_id != utilisateur.universite_id:
-            return True
-        if filiere.mention_id and filiere.mention_id != utilisateur.mention_id:
-            return True
-        if filiere.niveau and filiere.niveau != utilisateur.niveau:
-            return True
-        return False
-
-    # Pas de filiere choisie : valide UNIQUEMENT si c'est reellement du
-    # tronc commun, c'est-a-dire si aucun parcours nomme n'existe pour
-    # cette mention a ce niveau (deduit des donnees, jamais code en dur
-    # -- un meme niveau peut etre tronc commun pour une mention et deja
-    # specialise pour une autre, voir le rapport).
-    existe_une_specialisation = session.exec(
-        select(Filiere.id).where(
-            Filiere.mention_id == utilisateur.mention_id,
-            Filiere.niveau == utilisateur.niveau,
-        )
-    ).first()
-    return existe_une_specialisation is not None
-
-
-def cercle_est_national(cercle: CercleEtude) -> bool:
-    """Un cercle 'libre' (mention_id ou niveau manquant) n'est soumis a
-    aucune des regles ci-dessous — il continue de fonctionner exactement
-    comme avant cette evolution. Un cercle avec mention_id + niveau EST
-    deja national/restreint, que filiere_id soit renseigne (cercle scope
-    a un parcours precis) ou non (cercle de tronc commun, scope
-    mention+niveau uniquement -- voir le rapport du 10/09/2026 sur
-    Filiere.niveau)."""
-    return bool(cercle.mention_id and cercle.niveau)
-
+    return not contexte_profil_academique(utilisateur, session)["coherent"]
 
 def prochain_changement_niveau_autorise_le(utilisateur: Utilisateur) -> Optional[datetime]:
     """None si l'utilisateur peut changer son niveau des maintenant
@@ -141,6 +176,12 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
     ]
 
 
+
+def cercle_est_national(cercle: CercleEtude) -> bool:
+    """Un cercle national possede au minimum une mention et un niveau.
+    L'absence de filiere signifie explicitement ``tronc commun``.
+    """
+    return bool(cercle.mention_id and cercle.niveau)
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
     """§31 : verifie mention + niveau, et le parcours (national, pas
     juste filiere_id brut — voir _filieres_equivalentes ci-dessus)
@@ -153,27 +194,17 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
         # Cercle libre : aucune restriction, comme avant cette evolution.
         return True
 
-    if not utilisateur.niveau:
+    profil = contexte_profil_academique(utilisateur, session)
+    if not profil["coherent"]:
         return False
-
-    # Compatibilite avec les profils historiques : la mention peut encore
-    # etre derivee de la filiere si Utilisateur.mention_id est vide.
-    filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
-    mention_id = utilisateur.mention_id or (filiere_utilisateur.mention_id if filiere_utilisateur else None)
-    if mention_id != cercle.mention_id or utilisateur.niveau != cercle.niveau:
+    mention = profil["mention"]
+    if not mention or mention.id != cercle.mention_id or profil["niveau"] != cercle.niveau:
         return False
-
     if not cercle.filiere_id:
-        # Cercle de tronc commun (mention+niveau, sans parcours precis) :
-        # correspond a tout etudiant de cette mention/niveau, qu'il ait
-        # deja choisi une filiere specifique ou non.
         return True
-
-    if not utilisateur.filiere_id:
-        return False
+    filiere_utilisateur = profil["filiere"]
     if not filiere_utilisateur:
         return False
-
     return cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
 
 
@@ -207,15 +238,12 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
     if utilisateur is None or not utilisateur.niveau:
         return cercle_libre
 
-    # Compatibilite des profils historiques : si mention_id manque,
-    # on la deduit de la filiere rattachee au compte.
-    mention_id = utilisateur.mention_id
-    filiere_utilisateur = None
-    if not mention_id and utilisateur.filiere_id:
-        filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id)
-        mention_id = filiere_utilisateur.mention_id if filiere_utilisateur else None
-    if not mention_id:
+    profil = contexte_profil_academique(utilisateur, session)
+    if not profil["coherent"]:
         return cercle_libre
+
+    mention_id = profil["mention"].id
+    filiere_utilisateur = profil["filiere"]
 
     # Cercle de tronc commun pour la mention+niveau de l'utilisateur :
     # correspond qu'il ait deja choisi une filiere ou non (voir
@@ -229,8 +257,6 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
     if not utilisateur.filiere_id:
         return or_(cercle_libre, cercle_tronc_commun_correspondant)
 
-    if filiere_utilisateur is None:
-        filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id)
     if not filiere_utilisateur:
         return or_(cercle_libre, cercle_tronc_commun_correspondant)
 

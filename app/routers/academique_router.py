@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
 from ..database import get_session
-from ..models import Faculte, Filiere, Mention, Universite
+from ..models import Domaine, Faculte, Filiere, Mention, Universite
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -85,13 +85,35 @@ def lister_filieres_par_mention_niveau(
     return [{"id": f.id, "nom": f.nom} for f in filieres]
 
 
+@router.get("/domaines")
+def lister_domaines(session: Session = Depends(get_session)):
+    """Domaines actifs du referentiel national, niveau superieur a la mention."""
+    domaines = session.exec(
+        select(Domaine).where(Domaine.est_active == True).order_by(Domaine.nom)  # noqa: E712
+    ).all()
+    return [{"id": d.id, "nom": d.nom} for d in domaines]
+
+
+@router.get("/domaines/{domaine_id}/mentions")
+def lister_mentions_par_domaine(domaine_id: int, session: Session = Depends(get_session)):
+    """Mentions actives d'un domaine, pour la cascade Domaine -> Mention."""
+    mentions = session.exec(
+        select(Mention)
+        .where(Mention.domaine_id == domaine_id, Mention.est_active == True)  # noqa: E712
+        .order_by(Mention.nom)
+    ).all()
+    return [{"id": m.id, "nom": m.nom} for m in mentions]
+
+
 @router.get("/mentions")
 def lister_toutes_mentions(session: Session = Depends(get_session)):
     """Toutes les mentions (national, aucun filtre par universite) —
     utilise par la recherche et la creation de cercle (voir
     cercles_router.py) : un cercle est national, jamais rattache a une
     seule universite, donc son formulaire ne doit pas non plus l'etre."""
-    mentions = session.exec(select(Mention).order_by(Mention.nom)).all()
+    mentions = session.exec(
+        select(Mention).where(Mention.est_active == True).order_by(Mention.nom)  # noqa: E712
+    ).all()
     return [{"id": m.id, "nom": m.nom} for m in mentions]
 
 

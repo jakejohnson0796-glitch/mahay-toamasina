@@ -91,8 +91,17 @@ class TestRechercheCercles(unittest.TestCase):
                 mention_id=mention.id, filiere_id=autre_filiere.id, niveau="L3",
             ))
             session.commit()
+            cls.universite_id = universite.id
+            cls.mention_id = mention.id
 
-        cls.client = _creer_client_connecte("0350000099", "Etudiant Test", filiere_id=cls.filiere_id, niveau="L3")
+        cls.client = _creer_client_connecte(
+            "0350000099",
+            "Etudiant Test",
+            universite_id=cls.universite_id,
+            mention_id=cls.mention_id,
+            filiere_id=cls.filiere_id,
+            niveau="L3",
+        )
 
     def test_sans_filtre_affiche_tous_les_cercles(self):
         page = self.client.get("/cercles")
@@ -134,7 +143,7 @@ class TestRechercheCercles(unittest.TestCase):
 
     def test_recherche_vide_ne_correspond_a_rien_affiche_etat_vide(self):
         page = self.client.get("/cercles", params={"q": "xyzxyzxyz-introuvable"})
-        self.assertIn("Aucun resultat", page.text)
+        self.assertIn("Aucun résultat", page.text)
 
 
 if __name__ == "__main__":

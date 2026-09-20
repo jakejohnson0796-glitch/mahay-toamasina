@@ -23,7 +23,6 @@ from ..referentiel import NIVEAUX
 from .. import referentiel_academique
 from ..cercles_referentiel import assurer_cercles_pour_filiere
 from ..web_utils import entier_ou_none
-from .cercles_router import _assurer_membres_admins
 
 router = APIRouter()
 
@@ -354,7 +353,6 @@ def approuver_demande_creation(
 
     session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=demande.utilisateur_id, role=RoleMembreCercle.CREATEUR))
     session.commit()
-    _assurer_membres_admins(session, cercle.id)
 
     demande.statut = StatutDemandeCreationCercle.APPROUVEE
     demande.date_traitement = datetime.utcnow()
@@ -445,6 +443,20 @@ def approuver_demande_changement_filiere(
 
     etudiant = session.get(Utilisateur, demande.utilisateur_id)
     if etudiant:
+        if demande.nouvelle_mention_id:
+            erreur_academique = referentiel_academique.erreur_choix_academique(
+                session,
+                etudiant.universite_id,
+                demande.nouvelle_mention_id,
+                demande.nouvelle_filiere_id,
+                etudiant.niveau,
+                set(NIVEAUX),
+            )
+            if erreur_academique:
+                return RedirectResponse(
+                    "/admin/referentiel/demandes-filiere?erreur=profil_incoherent",
+                    status_code=303,
+                )
         etudiant.filiere_id = demande.nouvelle_filiere_id
         # nouvelle_mention_id peut etre absent sur d'anciennes demandes
         # (creees avant son ajout, voir la migration ceab424f3667) : ne

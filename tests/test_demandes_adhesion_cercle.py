@@ -19,7 +19,7 @@ from app.models import (
     Universite, Faculte, Mention, Filiere, CercleEtude, MembreCercle, StatutCercle,
     Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion,
 )
-from app.routers.cercles_router import _traiter_acceptation_demande, _traiter_refus_demande
+from app.routers.cercles_router import _a_acces_cercle, _traiter_acceptation_demande, _traiter_refus_demande
 
 
 def _nouvel_engine_sqlite():
@@ -54,7 +54,8 @@ class TestDemandesAdhesionCercle(unittest.TestCase):
 
             etudiant = Utilisateur(
                 nom="Jake", telephone="0340000001", mot_de_passe_hash="x",
-                role=RoleUtilisateur.ETUDIANT, filiere_id=self.filiere_id, niveau="L3",
+                role=RoleUtilisateur.ETUDIANT, universite_id=universite.id,
+                mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L3",
             )
             session.add(etudiant); session.commit(); session.refresh(etudiant)
             self.etudiant_id = etudiant.id
@@ -82,6 +83,18 @@ class TestDemandesAdhesionCercle(unittest.TestCase):
             )
             session.add(cercle_autre_parcours); session.commit(); session.refresh(cercle_autre_parcours)
             self.cercle_autre_parcours_id = cercle_autre_parcours.id
+
+    def test_admin_accede_au_cercle_sans_ligne_de_membre(self):
+        with Session(self.engine) as session:
+            admin = session.get(Utilisateur, self.admin_id)
+            self.assertTrue(_a_acces_cercle(session, self.cercle_national_id, admin.id))
+            ligne = session.exec(
+                select(MembreCercle).where(
+                    MembreCercle.cercle_id == self.cercle_national_id,
+                    MembreCercle.utilisateur_id == admin.id,
+                )
+            ).first()
+            self.assertIsNone(ligne)
 
     def _creer_demande(self, session: Session, cercle_id: int) -> DemandeAdhesionCercle:
         demande = DemandeAdhesionCercle(cercle_id=cercle_id, utilisateur_id=self.etudiant_id, raison="Je veux echanger sur les revisions.")

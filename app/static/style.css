@@ -3400,3 +3400,73 @@ button:focus-visible,
   }
   .bouton-menu-actions { padding: 0.5rem; }
 }
+
+
+/* ---------- Recherche cercles : hierarchie etat/profil ---------- */
+.carte-claire-hierarchie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.18rem 0.35rem;
+  margin-top: 0.2rem;
+  color: var(--content-text-muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+.puce-niveau,
+.puce-statut,
+.puce-compatibilite {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.puce-niveau {
+  margin-left: 0.2rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.puce-statut {
+  background: var(--content-bg);
+  color: var(--content-text-muted);
+  border: 1px solid var(--content-border);
+}
+.puce-compatibilite {
+  background: rgba(47, 158, 68, 0.12);
+  color: #2F7D3C;
+}
+.carte-claire-badges {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  min-height: 1.55rem;
+}
+.carte-claire-actions {
+  margin-top: auto;
+}
+.entete-recherche-cercles {
+  margin-bottom: 0.9rem;
+}
+.actions-recherche-cercles {
+  display: flex;
+  gap: 0.55rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.profil-champs-academiques {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 600px) {
+  .profil-champs-academiques {
+    grid-template-columns: 1fr;
+  }
+  .actions-recherche-cercles {
+    width: 100%;
+  }
+  .actions-recherche-cercles .bouton {
+    flex: 1 1 10rem;
+  }
+}
