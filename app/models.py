@@ -204,6 +204,11 @@ class Utilisateur(SQLModel, table=True):
     doit_changer_mot_de_passe: bool = Field(default=False)
     role: RoleUtilisateur = Field(default=RoleUtilisateur.ETUDIANT)
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    # Composante choisie explicitement dans le profil. Indispensable pour
+    # les etudiants en tronc commun, car aucune Filiere ne permet sinon de
+    # retrouver une composante unique. Pour les anciens comptes specialises,
+    # le backend peut encore la deduire de filiere_id jusqu'a actualisation.
+    faculte_id: Optional[int] = Field(default=None, foreign_key="faculte.id", index=True)
     # Ajoute avec Filiere.niveau (voir sa docstring) : jusqu'ici "la
     # filiere EST la mention" (§6 du brief) -- mais un etudiant en
     # tronc commun (avant specialisation, ex: tout L1) n'a justement
@@ -608,6 +613,11 @@ class DemandeChangementFiliere(SQLModel, table=True):
     # demande. Nullable pour les demandes anciennes (approuvees avant
     # ce champ) -- jamais retro-remplie, juste absente pour elles.
     nouvelle_mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
+    # Composante cible du changement academique. Obligatoire pour une
+    # demande vers le tronc commun ; pour les anciennes demandes, None
+    # reste compatible et le backend derive la composante d'un parcours
+    # cible quand c'est possible.
+    nouvelle_faculte_id: Optional[int] = Field(default=None, foreign_key="faculte.id")
     motif: str
     statut: StatutDemandeChangementFiliere = Field(default=StatutDemandeChangementFiliere.EN_ATTENTE)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
