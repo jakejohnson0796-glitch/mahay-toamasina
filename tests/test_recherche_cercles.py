@@ -29,7 +29,7 @@ from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
-    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Mention, Filiere, MembreCercle,
+    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere, ProgrammeUniversitaire, MembreCercle,
 )
 
 
@@ -68,16 +68,29 @@ class TestRechercheCercles(unittest.TestCase):
             session.add(universite); session.commit(); session.refresh(universite)
             faculte = Faculte(nom="DEGMIA", universite_id=universite.id)
             session.add(faculte); session.commit(); session.refresh(faculte)
-            mention = Mention(nom="Sciences de Gestion")
+            domaine = Domaine(nom="Economie et Gestion")
+            session.add(domaine); session.commit(); session.refresh(domaine)
+            mention = Mention(nom="Sciences de Gestion", domaine_id=domaine.id)
             session.add(mention); session.commit(); session.refresh(mention)
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             cls.filiere_id = filiere.id
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
             autre_mention = Mention(nom="Mention Contradictoire Recherche")
             session.add(autre_mention); session.commit(); session.refresh(autre_mention)
             autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=autre_mention.id)
             session.add(autre_filiere); session.commit(); session.refresh(autre_filiere)
             cls.autre_filiere_id = autre_filiere.id
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=autre_filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             createur = Utilisateur(nom="Createur", telephone="0350000001", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             session.add(createur); session.commit(); session.refresh(createur)
@@ -91,6 +104,10 @@ class TestRechercheCercles(unittest.TestCase):
             session.add(CercleEtude(
                 nom="Droit prive — Licence 3", createur_id=createur_id,
                 mention_id=autre_mention.id, filiere_id=autre_filiere.id, niveau="L3",
+            ))
+            session.add(CercleEtude(
+                nom="CCA — Comptabilite Controle Audit — Master 1", createur_id=createur_id,
+                mention_id=mention.id, filiere_id=filiere.id, niveau="M1",
             ))
             session.commit()
             cls.universite_id = universite.id
@@ -160,6 +177,19 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Droit prive — Licence 3", page.text)
         self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
 
+    def test_filtre_par_domaine_et_selection_visuelle(self):
+        with Session(engine) as session:
+            domaine_id = session.exec(
+                select(Domaine.id).join(Mention, Mention.domaine_id == Domaine.id)
+                .where(Mention.id == self.mention_id)
+            ).one()
+
+        page = self.client.get("/cercles", params={"domaine_id": str(domaine_id)})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("selected", page.text)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertIn("Droit prive — Licence 3", page.text)
+
     def test_filtre_par_niveau_invalide_est_ignore_silencieusement(self):
         """Un niveau bricole dans l'URL ne doit pas planter la page — le
         filtre est simplement ignore (voir liste_cercles)."""
@@ -178,6 +208,116 @@ class TestRechercheCercles(unittest.TestCase):
     def test_recherche_vide_ne_correspond_a_rien_affiche_etat_vide(self):
         page = self.client.get("/cercles", params={"q": "xyzxyzxyz-introuvable"})
         self.assertIn("Aucun résultat", page.text)
+
+    def test_recherche_multiterme_ne_depende_pas_de_l_ordre(self):
+        page = self.client.get("/cercles", params={"q": "analyse financiere"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Revision Analyse Financiere", page.text)
+        self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
+
+    def test_recherche_textuelle_couvre_le_domaine(self):
+        page = self.client.get("/cercles", params={"q": "gestion"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertIn("Droit prive — Licence 3", page.text)
+        self.assertNotIn("Revision Analyse Financiere", page.text)
+
+    def test_recherche_textuelle_couvre_le_niveau(self):
+        page = self.client.get("/cercles", params={"q": "M1"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("CCA — Comptabilite Controle Audit — Master 1", page.text)
+        self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertNotIn("Droit prive — Licence 3", page.text)
+
+    def test_recherche_combine_domaine_niveau_et_parcours(self):
+        page = self.client.get("/cercles", params={"q": "gestion L3 finance"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertNotIn("Droit prive — Licence 3", page.text)
+
+    def test_recherche_tronc_commun(self):
+        with Session(engine) as session:
+            createur = session.exec(
+                select(Utilisateur).where(Utilisateur.nom == "Createur")
+            ).one()
+            cercle = CercleEtude(
+                nom="Gestion L1 — Tronc commun",
+                createur_id=createur.id,
+                mention_id=self.mention_id,
+                filiere_id=None,
+                niveau="L1",
+            )
+            session.add(cercle)
+            session.commit()
+
+        page = self.client.get("/cercles", params={"q": "gestion L1 tronc commun"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Gestion L1 — Tronc commun", page.text)
+
+    def test_cercle_legacy_avec_mention_nulle_reste_filtrable_par_domaine(self):
+        with Session(engine) as session:
+            cercle = session.exec(
+                select(CercleEtude).where(CercleEtude.filiere_id == self.filiere_id)
+            ).first()
+            cercle.mention_id = None
+            session.add(cercle)
+            session.commit()
+
+            domaine_id = session.exec(
+                select(Domaine.id).join(Mention, Mention.domaine_id == Domaine.id)
+                .where(Mention.id == self.mention_id)
+            ).one()
+
+        page = self.client.get("/cercles", params={"domaine_id": str(domaine_id)})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+
+    def test_le_contexte_du_profil_est_affiche_hierarchiquement(self):
+        page = self.client.get("/cercles")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Ton profil de référence", page.text)
+        self.assertIn("Sciences de Gestion", page.text)
+        self.assertIn("Finance et Comptabilite", page.text)
+
+    def test_endpoint_parcours_nationaux_accepte_un_niveau_optionnel(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux"
+        )
+        self.assertEqual(page.status_code, 200)
+        noms = {entree["nom"] for entree in page.json()}
+        self.assertIn("Finance et Comptabilite", noms)
+        self.assertIn("Droit prive", noms)
+
+
+
+    def test_recherche_sans_accent_trouve_un_titre_accentue(self):
+        page = self.client.get("/cercles", params={"q": "comptabilite"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+
+    def test_recherche_morphologique_supporte_le_pluriel(self):
+        page = self.client.get("/cercles", params={"q": "revisions"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Revision Analyse Financiere", page.text)
+
+    def test_filieres_nationales_excluent_une_offre_inactive(self):
+        with Session(engine) as session:
+            offre = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.filiere_id == self.autre_filiere_id
+                )
+            ).one()
+            offre.est_active = False
+            session.add(offre)
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        noms = {entry["nom"] for entry in page.json()}
+        self.assertIn("Finance et Comptabilite", noms)
+        self.assertNotIn("Droit prive", noms)
 
 
 
@@ -199,7 +339,6 @@ class TestRechercheCercles(unittest.TestCase):
                 select(CercleEtude).where(CercleEtude.filiere_id == self.filiere_id)
             ).first()
             session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=membre.id))
-            # Le profil d'un membre n'est visible qu'aux membres du cercle.
             connecte = session.exec(
                 select(Utilisateur).where(Utilisateur.telephone == "0350000099")
             ).first()
