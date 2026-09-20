@@ -175,7 +175,7 @@
       <div class="tb-continuite-item">
         <span class="tb-continuite-icone">{{ icone("quiz", 18) }}</span>
         <span>
-          <strong>{{ score_moyen_quiz }}%{% if nb_quiz_completes %}{% endif %}</strong>
+          <strong>{% if nb_quiz_completes %}{{ score_moyen_quiz }}%{% else %}—{% endif %}</strong>
           <small>score moyen des quiz</small>
         </span>
       </div>
