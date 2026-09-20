@@ -95,6 +95,7 @@ def inscription(
     mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     universite_id: Optional[str] = Form(None),
+    composante_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -102,6 +103,7 @@ def inscription(
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
     universite_id_nettoye = entier_ou_none(universite_id)
+    composante_id_nettoye = entier_ou_none(composante_id)
 
     nom = nom.strip()
     if not nom or len(nom) > LONGUEUR_MAX_NOM:
@@ -149,6 +151,7 @@ def inscription(
         erreur_academique = referentiel_academique.erreur_choix_academique(
             session,
             universite_id_nettoye,
+            composante_id_nettoye,
             mention_id_nettoye,
             filiere_id_nettoye,
             niveau,
@@ -164,6 +167,7 @@ def inscription(
         # champs meme si un appel direct les fournissait, plutot que de
         # les valider pour un role qui n'en a pas besoin.
         universite_id_nettoye = None
+        composante_id_nettoye = None
         mention_id_nettoye = None
         filiere_id_nettoye = None
         niveau = None
@@ -196,6 +200,7 @@ def inscription(
         role=role,
         mention_id=mention_id_nettoye,
         filiere_id=filiere_id_nettoye,
+        faculte_id=composante_id_nettoye,
         universite_id=universite_id_nettoye,
         niveau=niveau,
     )
@@ -498,39 +503,61 @@ def deconnexion(request: Request, _csrf: None = Depends(verifier_csrf)):
 # aussi, jamais seulement empechee par le JS).
 # ============================================================
 
-@router.get("/profil/academique")
-def formulaire_actualisation_academique(request: Request, session: Session = Depends(get_session)):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
-
+def _rendu_formulaire_profil_academique(
+    request: Request,
+    utilisateur: Utilisateur,
+    session: Session,
+    erreur: Optional[str] = None,
+):
     demande_en_attente = session.exec(
         select(DemandeChangementFiliere).where(
             DemandeChangementFiliere.utilisateur_id == utilisateur.id,
             DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
         )
     ).first()
-    filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente and demande_en_attente.nouvelle_filiere_id else None
-    mention_demandee = session.get(Mention, demande_en_attente.nouvelle_mention_id) if demande_en_attente and demande_en_attente.nouvelle_mention_id else None
+    filiere_demandee = (
+        session.get(Filiere, demande_en_attente.nouvelle_filiere_id)
+        if demande_en_attente and demande_en_attente.nouvelle_filiere_id
+        else None
+    )
+    mention_demandee = (
+        session.get(Mention, demande_en_attente.nouvelle_mention_id)
+        if demande_en_attente and demande_en_attente.nouvelle_mention_id
+        else None
+    )
+    profil = referentiel_academique.contexte_profil_academique(utilisateur, session)
 
     return templates.TemplateResponse(
-        request, "profil_academique.html",
+        request,
+        "profil_academique.html",
         {
             "utilisateur": utilisateur,
-            "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
+            "universites": session.exec(
+                select(Universite).where(Universite.est_active == True)  # noqa: E712
+            ).all(),
             "niveaux": NIVEAUX,
-            "erreur": None,
+            "erreur": erreur,
             "demande_en_attente": demande_en_attente,
             "filiere_demandee": filiere_demandee,
             "mention_demandee": mention_demandee,
+            "composante_id_actuelle": profil["faculte"].id if profil["faculte"] else None,
         },
     )
+
+
+@router.get("/profil/academique")
+def formulaire_actualisation_academique(request: Request, session: Session = Depends(get_session)):
+    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    return _rendu_formulaire_profil_academique(request, utilisateur, session)
 
 
 @router.post("/profil/academique")
 def actualiser_profil_academique(
     request: Request,
     universite_id: Optional[str] = Form(None),
+    composante_id: Optional[str] = Form(None),
     mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
@@ -553,28 +580,10 @@ def actualiser_profil_academique(
         return RedirectResponse("/connexion", status_code=303)
 
     def _contexte(message_erreur: str):
-        demande_en_attente = session.exec(
-            select(DemandeChangementFiliere).where(
-                DemandeChangementFiliere.utilisateur_id == utilisateur.id,
-                DemandeChangementFiliere.statut == StatutDemandeChangementFiliere.EN_ATTENTE,
-            )
-        ).first()
-        filiere_demandee = session.get(Filiere, demande_en_attente.nouvelle_filiere_id) if demande_en_attente and demande_en_attente.nouvelle_filiere_id else None
-        mention_demandee = session.get(Mention, demande_en_attente.nouvelle_mention_id) if demande_en_attente and demande_en_attente.nouvelle_mention_id else None
-        return templates.TemplateResponse(
-            request, "profil_academique.html",
-            {
-                "utilisateur": utilisateur,
-                "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
-                "niveaux": NIVEAUX,
-                "erreur": message_erreur,
-                "demande_en_attente": demande_en_attente,
-                "filiere_demandee": filiere_demandee,
-                "mention_demandee": mention_demandee,
-            },
-        )
+        return _rendu_formulaire_profil_academique(request, utilisateur, session, message_erreur)
 
     universite_id_nettoye = entier_ou_none(universite_id)
+    composante_id_nettoye = entier_ou_none(composante_id)
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
 
@@ -585,6 +594,7 @@ def actualiser_profil_academique(
     erreur_academique = referentiel_academique.erreur_choix_academique(
         session,
         universite_id_nettoye,
+        composante_id_nettoye,
         mention_id_nettoye,
         filiere_id_nettoye,
         niveau,
@@ -593,11 +603,14 @@ def actualiser_profil_academique(
     if erreur_academique:
         return _contexte(erreur_academique)
 
-    # Universite + niveau : modifiables librement, enregistres tout de
-    # suite (aucune approbation requise pour ces deux-la).
+    # Universite + niveau : modifiables librement. Le cooldown ne
+    # demarre que si le niveau CHANGE reellement ; re-soumettre le meme
+    # niveau ne doit pas prolonger artificiellement l'attente de 14 jours.
+    ancien_niveau = utilisateur.niveau
     utilisateur.universite_id = universite_id_nettoye
     utilisateur.niveau = niveau
-    utilisateur.niveau_modifie_le = datetime.utcnow()
+    if niveau != ancien_niveau:
+        utilisateur.niveau_modifie_le = datetime.utcnow()
     session.add(utilisateur)
     session.commit()
 
@@ -605,6 +618,9 @@ def actualiser_profil_academique(
     # (evite une demande inutile si l'etudiant re-confirme juste ses
     # choix existants en ajustant seulement son universite/niveau).
     if mention_id_nettoye == utilisateur.mention_id and filiere_id_nettoye == utilisateur.filiere_id:
+        utilisateur.faculte_id = composante_id_nettoye
+        session.add(utilisateur)
+        session.commit()
         return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
 
     demande_existante = session.exec(
@@ -614,7 +630,11 @@ def actualiser_profil_academique(
         )
     ).first()
     if demande_existante:
-        if demande_existante.nouvelle_mention_id == mention_id_nettoye and demande_existante.nouvelle_filiere_id == filiere_id_nettoye:
+        if (
+            demande_existante.nouvelle_mention_id == mention_id_nettoye
+            and demande_existante.nouvelle_filiere_id == filiere_id_nettoye
+            and demande_existante.nouvelle_faculte_id == composante_id_nettoye
+        ):
             # Demande identique deja en attente : rien a refaire.
             return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
         return _contexte(
@@ -630,6 +650,7 @@ def actualiser_profil_academique(
         ancienne_filiere_id=utilisateur.filiere_id,
         nouvelle_filiere_id=filiere_id_nettoye,
         nouvelle_mention_id=mention_id_nettoye,
+        nouvelle_faculte_id=composante_id_nettoye,
         motif=motif_filiere.strip(),
         statut=StatutDemandeChangementFiliere.EN_ATTENTE,
     ))
@@ -668,11 +689,6 @@ def _contexte_securite(
     return {
         "utilisateur": utilisateur,
         "nb_codes_restants": nb_codes_restants,
-        "filiere": profil_academique["filiere"],
-        "universite": profil_academique["universite"],
-        "mention": profil_academique["mention"],
-        "faculte": profil_academique["faculte"],
-        "domaine": profil_academique["domaine"],
         "profil_academique": profil_academique,
         "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
         "niveaux": NIVEAUX,
@@ -932,6 +948,9 @@ def modifier_niveau(
 
     if niveau not in NIVEAUX:
         return RedirectResponse("/securite?erreur=niveau_invalide", status_code=303)
+
+    if niveau == utilisateur.niveau:
+        return RedirectResponse("/securite?ok=niveau_deja_a_jour", status_code=303)
 
     if not referentiel_academique.peut_modifier_niveau_maintenant(utilisateur):
         return RedirectResponse("/securite?erreur=niveau_cooldown", status_code=303)

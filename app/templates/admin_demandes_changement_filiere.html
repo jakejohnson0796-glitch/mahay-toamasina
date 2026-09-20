@@ -16,6 +16,7 @@
     <tr>
       <th>Etudiant</th>
       <th>Ancienne filiere</th>
+      <th>Nouvelle composante demandee</th>
       <th>Nouvelle mention demandee</th>
       <th>Nouvelle filiere demandee</th>
       <th>Motif</th>
@@ -31,6 +32,7 @@
         <br><span class="stat-label">{{ utilisateurs[d.utilisateur_id].telephone if d.utilisateur_id in utilisateurs else "" }}</span>
       </td>
       <td>{{ filieres[d.ancienne_filiere_id].nom if d.ancienne_filiere_id and d.ancienne_filiere_id in filieres else "— aucune —" }}</td>
+      <td>{{ facultes[d.nouvelle_faculte_id].nom if d.nouvelle_faculte_id and d.nouvelle_faculte_id in facultes else "—" }}</td>
       <td>{{ mentions[d.nouvelle_mention_id].nom if d.nouvelle_mention_id and d.nouvelle_mention_id in mentions else "—" }}</td>
       <td>{{ filieres[d.nouvelle_filiere_id].nom if d.nouvelle_filiere_id and d.nouvelle_filiere_id in filieres else "— tronc commun —" }}</td>
       <td>{{ d.motif }}</td>
@@ -54,7 +56,7 @@
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="7">Aucune demande pour l'instant.</td></tr>
+    <tr><td colspan="8">Aucune demande pour l'instant.</td></tr>
     {% endfor %}
   </tbody>
 </table>
