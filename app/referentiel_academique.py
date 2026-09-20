@@ -55,10 +55,15 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
         )
         if coherent and filiere:
             coherent = bool(
-                faculte and faculte.universite_id == universite.id
-                and filiere.mention_id == mention.id
+                filiere.mention_id == mention.id
                 and (not filiere.niveau or filiere.niveau == utilisateur.niveau)
+                and offre_filiere_active_universite(session, universite.id, filiere.id)
             )
+            # La composante historique de Filiere n'est affichée que si elle
+            # appartient à l'université du profil. ProgrammeUniversitaire
+            # reste la source de vérité pour l'offre inter-universités.
+            if coherent and faculte and faculte.universite_id != universite.id:
+                faculte = None
         if coherent and filiere is None:
             existe_une_specialisation = session.exec(select(Filiere.id).where(
                 Filiere.mention_id == mention.id,
