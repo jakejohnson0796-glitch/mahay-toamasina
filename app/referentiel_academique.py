@@ -73,6 +73,36 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
         "tronc_commun": bool(coherent and filiere is None and mention_affichee and utilisateur.niveau),
     }
 
+
+def serialiser_profil_academique(profil: dict) -> dict:
+    """Representation JSON canonique du profil academique.
+
+    Seule cette structure est exposee aux interfaces qui affichent le profil :
+    elle separe l'origine (ou l'etudiant etudie) de la formation (ce qu'il
+    etudie), et evite de dupliquer les memes champs a plat dans plusieurs
+    endpoints/frontends.
+    """
+    universite = profil.get("universite")
+    faculte = profil.get("faculte")
+    domaine = profil.get("domaine")
+    mention = profil.get("mention")
+    filiere = profil.get("filiere")
+
+    return {
+        "origine": {
+            "universite": universite.nom if universite else None,
+            "composante": faculte.nom if faculte else None,
+        },
+        "formation": {
+            "domaine": domaine.nom if domaine else None,
+            "mention": mention.nom if mention else None,
+            "parcours": "Tronc commun" if profil.get("tronc_commun") else (filiere.nom if filiere else None),
+            "niveau": profil.get("niveau"),
+        },
+        "coherent": bool(profil.get("coherent")),
+        "tronc_commun": bool(profil.get("tronc_commun")),
+    }
+
 def erreur_choix_academique(
     session: Session, universite_id: Optional[int], mention_id: Optional[int],
     filiere_id: Optional[int], niveau: Optional[str], niveaux_valides: set[str],
