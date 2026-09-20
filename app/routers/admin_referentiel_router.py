@@ -18,10 +18,10 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle, DemandeChangementFiliere, StatutDemandeChangementFiliere
+from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, ProgrammeUniversitaire, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from ..referentiel import NIVEAUX
 from .. import referentiel_academique
-from ..cercles_referentiel import assurer_cercles_pour_filiere
+from ..cercles_referentiel import assurer_cercles_pour_filiere, assurer_cercles_referentiel
 from ..web_utils import entier_ou_none
 
 router = APIRouter()
@@ -40,10 +40,20 @@ def page_referentiel(request: Request, session: Session = Depends(get_session)):
     if not admin:
         return RedirectResponse("/", status_code=303)
 
-    universites = session.exec(select(Universite)).all()
-    mentions = session.exec(select(Mention).order_by(Mention.nom)).all()
-    filieres = session.exec(select(Filiere)).all()
+    universites = session.exec(select(Universite).where(Universite.est_active == True).order_by(Universite.nom)).all()  # noqa: E712
+    mentions = session.exec(select(Mention).where(Mention.est_active == True).order_by(Mention.nom)).all()  # noqa: E712
+    filieres = session.exec(select(Filiere).order_by(Filiere.nom)).all()
     facultes = {f.id: f for f in session.exec(select(Faculte)).all()}
+    programmes = session.exec(
+        select(ProgrammeUniversitaire).order_by(
+            ProgrammeUniversitaire.est_active.desc(),
+            ProgrammeUniversitaire.universite_id,
+            ProgrammeUniversitaire.filiere_id,
+        )
+    ).all()
+    mentions_par_id = {m.id: m for m in mentions}
+    universites_par_id = {u.id: u for u in session.exec(select(Universite)).all()}
+    filieres_par_id = {f.id: f for f in filieres}
 
     nb_filieres_sans_mention = len([f for f in filieres if f.mention_id is None])
 
@@ -57,6 +67,10 @@ def page_referentiel(request: Request, session: Session = Depends(get_session)):
             "filieres": filieres,
             "facultes": facultes,
             "nb_filieres_sans_mention": nb_filieres_sans_mention,
+            "programmes": programmes,
+            "mentions_par_id": mentions_par_id,
+            "universites_par_id": universites_par_id,
+            "filieres_par_id": filieres_par_id,
         },
     )
 
@@ -126,6 +140,82 @@ def assigner_mention_filiere(
     assurer_cercles_pour_filiere(session, filiere, admin)
 
     return RedirectResponse("/admin/referentiel?ok=filiere_mise_a_jour", status_code=303)
+
+
+
+@router.post("/admin/referentiel/programmes/creer")
+def creer_programme_universitaire(
+    request: Request,
+    universite_id: Optional[str] = Form(None),
+    filiere_id: Optional[str] = Form(None),
+    annee_academique: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Déclare explicitement qu'un parcours est offert par une université."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    uid = entier_ou_none(universite_id)
+    fid = entier_ou_none(filiere_id)
+    if not uid or not fid:
+        return RedirectResponse("/admin/referentiel?erreur=programme_champs_requis", status_code=303)
+
+    if not session.get(Universite, uid) or not session.get(Filiere, fid):
+        return RedirectResponse("/admin/referentiel?erreur=programme_reference_invalide", status_code=303)
+
+    annee = (annee_academique or "").strip() or None
+    if annee and (len(annee) != 9 or annee[4] != "-" or not annee[:4].isdigit() or not annee[5:].isdigit()):
+        return RedirectResponse("/admin/referentiel?erreur=annee_invalide", status_code=303)
+
+    actif = session.exec(
+        select(ProgrammeUniversitaire).where(
+            ProgrammeUniversitaire.universite_id == uid,
+            ProgrammeUniversitaire.filiere_id == fid,
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+        )
+    ).first()
+    if actif:
+        return RedirectResponse("/admin/referentiel?erreur=programme_existe_deja", status_code=303)
+
+    session.add(ProgrammeUniversitaire(
+        universite_id=uid,
+        filiere_id=fid,
+        annee_academique=annee,
+        est_active=True,
+    ))
+    session.commit()
+
+    filiere = session.get(Filiere, fid)
+    if filiere and filiere.mention_id:
+        assurer_cercles_pour_filiere(session, filiere, admin)
+
+    return RedirectResponse("/admin/referentiel?ok=programme_cree", status_code=303)
+
+
+@router.post("/admin/referentiel/programmes/{programme_id}/desactiver")
+def desactiver_programme_universitaire(
+    request: Request,
+    programme_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    programme = session.get(ProgrammeUniversitaire, programme_id)
+    if not programme:
+        return RedirectResponse("/admin/referentiel?erreur=programme_introuvable", status_code=303)
+
+    programme.est_active = False
+    session.add(programme)
+    session.commit()
+
+    assurer_cercles_referentiel(session)
+
+    return RedirectResponse("/admin/referentiel?ok=programme_desactive", status_code=303)
 
 
 @router.get("/admin/referentiel/cercles")

@@ -23,13 +23,13 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_DB_FICHIER}"
 os.environ.setdefault("SESSION_SECRET_KEY", "cle-de-test-uniquement-jamais-en-production")
 
 from starlette.testclient import TestClient  # noqa: E402
-from sqlmodel import Session  # noqa: E402
+from sqlmodel import Session, select  # noqa: E402
 
 from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
-    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere,
+    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere, ProgrammeUniversitaire,
 )
 
 
@@ -75,9 +75,20 @@ class TestRechercheCercles(unittest.TestCase):
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             cls.filiere_id = filiere.id
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
             autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=mention.id)
             session.add(autre_filiere); session.commit(); session.refresh(autre_filiere)
             cls.autre_filiere_id = autre_filiere.id
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=autre_filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             createur = Utilisateur(nom="Createur", telephone="0350000001", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             session.add(createur); session.commit(); session.refresh(createur)
@@ -175,6 +186,37 @@ class TestRechercheCercles(unittest.TestCase):
         noms = {entree["nom"] for entree in page.json()}
         self.assertIn("Finance et Comptabilite", noms)
         self.assertIn("Droit prive", noms)
+
+
+
+    def test_recherche_sans_accent_trouve_un_titre_accentue(self):
+        page = self.client.get("/cercles", params={"q": "comptabilite"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+
+    def test_recherche_morphologique_supporte_le_pluriel(self):
+        page = self.client.get("/cercles", params={"q": "revisions"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Revision Analyse Financiere", page.text)
+
+    def test_filieres_nationales_excluent_une_offre_inactive(self):
+        with Session(engine) as session:
+            offre = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.filiere_id == self.autre_filiere_id
+                )
+            ).one()
+            offre.est_active = False
+            session.add(offre)
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        noms = {entry["nom"] for entry in page.json()}
+        self.assertIn("Finance et Comptabilite", noms)
+        self.assertNotIn("Droit prive", noms)
 
 
 

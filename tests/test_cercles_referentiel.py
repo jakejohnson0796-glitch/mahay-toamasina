@@ -15,7 +15,7 @@ from sqlmodel import SQLModel, Session, create_engine, select
 from app.cercles_referentiel import assurer_cercles_pour_filiere, assurer_cercles_referentiel
 from app.models import (
     CercleEtude, Faculte, Filiere, MembreCercle, Mention, RoleMembreCercle,
-    RoleUtilisateur, StatutCercle, Universite, Utilisateur,
+    RoleUtilisateur, StatutCercle, Universite, Utilisateur, ProgrammeUniversitaire,
 )
 from app.referentiel import NIVEAUX
 
@@ -46,6 +46,7 @@ class TestCerclesReferentiel(unittest.TestCase):
             faculte = Faculte(nom="Sciences", universite_id=universite.id)
             session.add(faculte); session.commit(); session.refresh(faculte)
             self.faculte_id = faculte.id
+            self.universite_id = universite.id
 
             mention = Mention(nom="Informatique")
             session.add(mention); session.commit(); session.refresh(mention)
@@ -55,6 +56,12 @@ class TestCerclesReferentiel(unittest.TestCase):
         with Session(self.engine) as session:
             filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
             session.add(filiere); session.commit(); session.refresh(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             total = assurer_cercles_referentiel(session)
             self.assertEqual(total, len(NIVEAUX))
@@ -79,7 +86,13 @@ class TestCerclesReferentiel(unittest.TestCase):
     def test_idempotent_deuxieme_appel_ne_recree_rien(self):
         with Session(self.engine) as session:
             filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
-            session.add(filiere); session.commit()
+            session.add(filiere); session.commit(); session.refresh(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             assurer_cercles_referentiel(session)
             total_second_appel = assurer_cercles_referentiel(session)
@@ -94,6 +107,12 @@ class TestCerclesReferentiel(unittest.TestCase):
         with Session(self.engine) as session:
             filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
             session.add(filiere); session.commit(); session.refresh(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             session.add(CercleEtude(
                 nom="Info Generale — Licence 3 (deja existant)",
@@ -111,6 +130,12 @@ class TestCerclesReferentiel(unittest.TestCase):
         with Session(self.engine) as session:
             filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
             session.add(filiere); session.commit(); session.refresh(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             admin = session.get(Utilisateur, self.admin_id)
             assurer_cercles_pour_filiere(session, filiere, admin)
@@ -131,7 +156,13 @@ class TestCerclesReferentiel(unittest.TestCase):
             session.commit()
 
             filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
-            session.add(filiere); session.commit()
+            session.add(filiere); session.commit(); session.refresh(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             total = assurer_cercles_referentiel(session)
             self.assertEqual(total, 0)

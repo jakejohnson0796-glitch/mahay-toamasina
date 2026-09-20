@@ -9,6 +9,11 @@
 
 {% if request.query_params.get("erreur") == "nom_requis" %}<div class="erreur">Le nom de la mention est requis.</div>{% endif %}
 {% if request.query_params.get("erreur") == "mention_existe_deja" %}<div class="erreur">Cette mention existe deja.</div>{% endif %}
+{% if request.query_params.get("erreur") == "programme_champs_requis" %}<div class="erreur">Universite et parcours sont obligatoires pour une offre.</div>{% endif %}
+{% if request.query_params.get("erreur") == "programme_reference_invalide" %}<div class="erreur">L'universite ou le parcours choisi est invalide.</div>{% endif %}
+{% if request.query_params.get("erreur") == "annee_invalide" %}<div class="erreur">L'annee academique doit avoir le format AAAA-AAAA.</div>{% endif %}
+{% if request.query_params.get("erreur") == "programme_existe_deja" %}<div class="erreur">Cette offre active existe deja.</div>{% endif %}
+{% if request.query_params.get("erreur") == "programme_introuvable" %}<div class="erreur">Offre universitaire introuvable.</div>{% endif %}
 {% if request.query_params.get("ok") %}<p><strong>Enregistre.</strong></p>{% endif %}
 
 <h3>Universites</h3>
@@ -67,6 +72,68 @@
         </form>
       </td>
     </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+<h3>Offres universitaires</h3>
+<p>Une filiere ne devient disponible pour les étudiants que si une offre active existe ici. La même filiere peut être offerte dans plusieurs universités sans créer une nouvelle filiere nationale.</p>
+
+<form method="post" action="/admin/referentiel/programmes/creer" class="carte-formulaire">
+  <label for="programme_universite_id">Universite</label>
+  <select id="programme_universite_id" name="universite_id" required>
+    <option value="">— choisissez une universite —</option>
+    {% for u in universites %}
+    <option value="{{ u.id }}">{{ u.nom }}{% if u.ville %} ({{ u.ville }}){% endif %}</option>
+    {% endfor %}
+  </select>
+
+  <label for="programme_filiere_id">Parcours / filiere</label>
+  <select id="programme_filiere_id" name="filiere_id" required>
+    <option value="">— choisissez un parcours —</option>
+    {% for f in filieres %}
+    <option value="{{ f.id }}">
+      {{ f.nom }}
+      {% if f.mention_id and mentions_par_id.get(f.mention_id) %} — {{ mentions_par_id[f.mention_id].nom }}{% endif %}
+    </option>
+    {% endfor %}
+  </select>
+
+  <label for="programme_annee">Annee academique (facultatif)</label>
+  <input type="text" id="programme_annee" name="annee_academique" placeholder="ex. 2026-2027" maxlength="9">
+
+  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+  <button class="bouton bouton-primaire bouton-form" type="submit">Activer l'offre</button>
+</form>
+
+<table class="table-manifeste">
+  <thead><tr><th>Universite</th><th>Parcours</th><th>Mention</th><th>Annee</th><th>Etat</th><th>Action</th></tr></thead>
+  <tbody>
+    {% for p in programmes %}
+    {% set universite_offre = universites_par_id.get(p.universite_id) %}
+    {% set filiere_offre = filieres_par_id.get(p.filiere_id) %}
+    {% if universite_offre and filiere_offre %}
+    <tr>
+      <td>{{ universite_offre.nom }}</td>
+      <td>{{ filiere_offre.nom }}</td>
+      <td>{{ mentions_par_id[filiere_offre.mention_id].nom if filiere_offre.mention_id in mentions_par_id else "—" }}</td>
+      <td>{{ p.annee_academique or "En cours" }}</td>
+      <td><span class="tampon {{ 'tampon-attente' if p.est_active else '' }}">{{ "Active" if p.est_active else "Inactive" }}</span></td>
+      <td>
+        {% if p.est_active %}
+        <form method="post" action="/admin/referentiel/programmes/{{ p.id }}/desactiver">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit">Desactiver</button>
+        </form>
+        {% else %}
+        <span class="stat-label">Historique conserve</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endif %}
+    {% else %}
+    <tr><td colspan="6">Aucune offre enregistree.</td></tr>
     {% endfor %}
   </tbody>
 </table>

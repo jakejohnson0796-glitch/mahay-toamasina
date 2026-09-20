@@ -12,7 +12,7 @@ from unittest.mock import patch
 from sqlalchemy import event
 from sqlmodel import SQLModel, Session, create_engine, select
 
-from app.models import Universite, Faculte, Mention, Filiere, CercleEtude, Utilisateur, RoleUtilisateur
+from app.models import Universite, Faculte, Mention, Filiere, ProgrammeUniversitaire, CercleEtude, Utilisateur, RoleUtilisateur
 from app.referentiel_academique import (
     cercle_est_national,
     peut_modifier_niveau_maintenant,
@@ -103,6 +103,12 @@ class TestCorrespondanceCercle(unittest.TestCase):
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             self.filiere_id = filiere.id
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             autre_mention = Mention(nom="Droit")
             session.add(autre_mention); session.commit(); session.refresh(autre_mention)
@@ -217,6 +223,31 @@ class TestCorrespondanceCercle(unittest.TestCase):
         self.assertEqual(donnees["formation"]["parcours"], "Finance et Comptabilite")
         self.assertEqual(donnees["formation"]["niveau"], "L3")
 
+    def test_choix_filiere_refuse_si_offre_inactive(self):
+        with Session(self.engine) as session:
+            offre = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.universite_id == self.universite_id,
+                    ProgrammeUniversitaire.filiere_id == self.filiere_id,
+                )
+            ).one()
+            offre.est_active = False
+            session.add(offre)
+            session.commit()
+
+            erreur = __import__(
+                "app.referentiel_academique",
+                fromlist=["erreur_choix_academique"],
+            ).erreur_choix_academique(
+                session,
+                self.universite_id,
+                self.mention_id,
+                self.filiere_id,
+                "L3",
+                {"L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3"},
+            )
+            self.assertIn("pas actuellement propose", erreur)
+
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
     """condition_cercles_disponibles() doit filtrer exactement les memes
@@ -237,6 +268,12 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             self.filiere_id = filiere.id
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
 
             autre_mention = Mention(nom="Droit")
             session.add(autre_mention); session.commit(); session.refresh(autre_mention)

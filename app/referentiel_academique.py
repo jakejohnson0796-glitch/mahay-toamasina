@@ -22,7 +22,7 @@ from typing import Optional
 
 from sqlmodel import Session, and_, or_, select
 
-from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, RoleUtilisateur, Utilisateur
+from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire, RoleUtilisateur, Utilisateur
 from .texte_normalise import normaliser as _normaliser_nom_parcours
 
 DELAI_MINIMUM_ENTRE_CHANGEMENTS_NIVEAU = timedelta(days=14)
@@ -55,10 +55,15 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
         )
         if coherent and filiere:
             coherent = bool(
-                faculte and faculte.universite_id == universite.id
-                and filiere.mention_id == mention.id
+                filiere.mention_id == mention.id
                 and (not filiere.niveau or filiere.niveau == utilisateur.niveau)
+                and offre_filiere_active_universite(session, universite.id, filiere.id)
             )
+            # La composante historique de Filiere n'est affichée que si elle
+            # appartient à l'université du profil. ProgrammeUniversitaire
+            # reste la source de vérité pour l'offre inter-universités.
+            if coherent and faculte and faculte.universite_id != universite.id:
+                faculte = None
         if coherent and filiere is None:
             existe_une_specialisation = session.exec(select(Filiere.id).where(
                 Filiere.mention_id == mention.id,
@@ -103,6 +108,22 @@ def serialiser_profil_academique(profil: dict) -> dict:
         "tronc_commun": bool(profil.get("tronc_commun")),
     }
 
+def offre_filiere_active_universite(session: Session, universite_id: int, filiere_id: int) -> bool:
+    """Vrai uniquement si le parcours est explicitement offert dans cette universite.
+
+    ProgrammeUniversitaire est la source de vérité de l'offre. La relation
+    Filiere -> Faculte reste utilisée pour l'identité de la formation, mais
+    ne remplace plus la table d'offre.
+    """
+    return session.exec(
+        select(ProgrammeUniversitaire.id).where(
+            ProgrammeUniversitaire.universite_id == universite_id,
+            ProgrammeUniversitaire.filiere_id == filiere_id,
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+        )
+    ).first() is not None
+
+
 def erreur_choix_academique(
     session: Session, universite_id: Optional[int], mention_id: Optional[int],
     filiere_id: Optional[int], niveau: Optional[str], niveaux_valides: set[str],
@@ -127,13 +148,12 @@ def erreur_choix_academique(
         filiere = session.get(Filiere, filiere_id)
         if not filiere:
             return "Parcours introuvable."
-        faculte = session.get(Faculte, filiere.faculte_id)
-        if not faculte or faculte.universite_id != universite_id:
-            return "Ce parcours ne correspond pas a l universite selectionnee."
         if filiere.mention_id != mention_id:
             return "Ce parcours ne correspond pas a la mention selectionnee."
         if filiere.niveau and filiere.niveau != niveau:
             return "Ce parcours n est pas propose a ce niveau."
+        if not offre_filiere_active_universite(session, universite_id, filiere.id):
+            return "Ce parcours n est pas actuellement propose dans cette universite."
         return None
 
     existe_une_specialisation = session.exec(select(Filiere.id).where(
