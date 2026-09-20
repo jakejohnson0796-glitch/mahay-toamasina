@@ -663,14 +663,17 @@ def _contexte_securite(
             )
         ).all())
 
-    filiere = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
-    universite = session.get(Universite, utilisateur.universite_id) if utilisateur.universite_id else None
+    profil_academique = referentiel_academique.contexte_profil_academique(utilisateur, session)
 
     return {
         "utilisateur": utilisateur,
         "nb_codes_restants": nb_codes_restants,
-        "filiere": filiere,
-        "universite": universite,
+        "filiere": profil_academique["filiere"],
+        "universite": profil_academique["universite"],
+        "mention": profil_academique["mention"],
+        "faculte": profil_academique["faculte"],
+        "domaine": profil_academique["domaine"],
+        "profil_academique": profil_academique,
         "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
         "niveaux": NIVEAUX,
         "peut_modifier_niveau": referentiel_academique.peut_modifier_niveau_maintenant(utilisateur),
