@@ -24,6 +24,28 @@
   <p class="theme-jour-note">Meme theme pour tout le monde aujourd'hui — debattez-en dans vos cercles.</p>
 </div>
 
+{% if profil_academique_recherche %}
+<div class="carte-formulaire" style="margin-bottom:1rem;">
+  <p class="stat-label" style="margin:0;">Ton profil de référence</p>
+  {% set origine = profil_academique_recherche.origine %}
+  {% set formation = profil_academique_recherche.formation %}
+  <div class="carte-claire-hierarchie" style="font-size:0.8rem; margin-top:0.45rem;">
+    {% if origine.universite %}<strong>{{ origine.universite }}</strong>{% endif %}
+    {% if origine.composante %}<span aria-hidden="true"> · </span><span>{{ origine.composante }}</span>{% endif %}
+  </div>
+  <div class="carte-claire-hierarchie" style="font-size:0.8rem;">
+    {% if formation.domaine %}<span>{{ formation.domaine }}</span>{% endif %}
+    {% if formation.mention %}<span aria-hidden="true"> → </span><strong>{{ formation.mention }}</strong>{% endif %}
+    {% if formation.parcours %}<span aria-hidden="true"> → </span><span>{{ formation.parcours }}</span>{% endif %}
+    {% if formation.niveau %}<span class="puce-niveau">{{ formation.niveau }}</span>{% endif %}
+  </div>
+  {% if not profil_academique_recherche.coherent %}
+  <p class="stat-label" style="margin:0.5rem 0 0;">Profil académique à actualiser avant d’utiliser la correspondance automatique.</p>
+  {% endif %}
+</div>
+</div>
+{% endif %}
+
 <div class="carte-formulaire carte-recherche-cercles" style="margin-bottom:2rem;">
   <div class="entete-recherche-cercles">
     <div>
@@ -273,24 +295,44 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
 
   async function chargerParcours() {
     if (!mentionSelect || !niveauSelect || !filiereSelect) return;
-    const valeurFiliere = filiereInitiale;
+    const valeurFiliere = filiereSelect.value || filiereInitiale;
     filiereSelect.replaceChildren();
     const tous = document.createElement("option");
     tous.value = ""; tous.textContent = "Tous les parcours"; filiereSelect.appendChild(tous);
-    if (!mentionSelect.value || !niveauSelect.value) return;
-    const parcours = await chargerOptions(`/api/academique/mentions/${mentionSelect.value}/parcours-nationaux?niveau=${encodeURIComponent(niveauSelect.value)}`);
+    if (!mentionSelect.value) return;
+
+    const params = new URLSearchParams();
+    if (niveauSelect.value) params.set("niveau", niveauSelect.value);
+    const suffixe = params.toString() ? "?" + params.toString() : "";
+    const parcours = await chargerOptions(
+      "/api/academique/mentions/" + mentionSelect.value + "/parcours-nationaux" + suffixe
+    );
     parcours.forEach(function (p) {
       const option = document.createElement("option");
       option.value = p.id;
       option.textContent = p.nom;
       filiereSelect.appendChild(option);
     });
-    if (valeurFiliere === "tronc_commun") {
+
+    // Le tronc commun est un cercle national distinct du parcours nommé.
+    // Dès qu’un niveau est fixé, on laisse ce choix disponible même si aucun
+    // cercle n’existe encore : le filtre peut alors simplement renvoyer 0
+    // résultat au lieu de masquer une catégorie valide.
+    if (niveauSelect.value) {
       const option = document.createElement("option");
-      option.value = "tronc_commun"; option.textContent = "Tronc commun";
+      option.value = "tronc_commun";
+      option.textContent = "Tronc commun";
       filiereSelect.appendChild(option);
     }
-    if (valeurFiliere && Array.from(filiereSelect.options).some(function (o) { return o.value === String(valeurFiliere); })) filiereSelect.value = valeurFiliere;
+
+    if (
+      valeurFiliere &&
+      Array.from(filiereSelect.options).some(function (o) {
+        return o.value === String(valeurFiliere);
+      })
+    ) {
+      filiereSelect.value = valeurFiliere;
+    }
   }
 
   if (domaineSelect) domaineSelect.addEventListener("change", function () {
