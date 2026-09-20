@@ -24,6 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css?v={{ version_asset('style.css') }}">
+<link rel="stylesheet" href="/static/ux.css?v={{ version_asset('ux.css') }}">
 </head>
 <body>
 {% from "components/icone.html" import icone %}
@@ -152,7 +153,39 @@
     {% endif %}
   </aside>
 
+  {% if request.session.get("user_id") %}
+  <nav class="navigation-mobile-fixe" aria-label="Navigation rapide mobile">
+    <a href="/dashboard" class="navigation-mobile-lien{{ ' actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
+      {{ icone("dashboard", 20) }}<span>Accueil</span>
+    </a>
+    <a href="/documents" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}>
+      {{ icone("documents", 20) }}<span>Documents</span>
+    </a>
+    <a href="/quiz" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}>
+      {{ icone("quiz", 20) }}<span>Quiz</span>
+    </a>
+    <a href="/cercles" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
+      {{ icone("cercles", 20) }}<span>Cercles</span>
+    </a>
+    <a href="/securite" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}>
+      {{ icone("securite", 20) }}<span>Profil</span>
+    </a>
+  </nav>
+  {% endif %}
+
   <div class="app-page">
+    <header class="mobile-entete-app" aria-label="En-tête mobile">
+      <a href="{% if request.session.get("user_id") %}/dashboard{% else %}/{% endif %}" style="text-decoration:none;">
+        <span class="mobile-entete-app-marque">Gasy Mahay</span>
+        <span class="mobile-entete-app-sous-marque">Toamasina</span>
+      </a>
+      {% if request.session.get("user_id") and utilisateur is defined and utilisateur %}
+      <a class="mobile-entete-app-avatar" href="/securite" aria-label="Ouvrir mon profil">
+        {{ avatar_utilisateur(utilisateur, taille=30) }}
+        <span>{{ utilisateur.nom.split(" ")[0] }}</span>
+      </a>
+      {% endif %}
+    </header>
     {% if profil_academique_a_actualiser(request) %}
     <div class="info" style="border-radius:0; margin-bottom:0; text-align:center;">
       Votre profil academique doit etre actualise pour utiliser correctement les cercles d'etudes.
@@ -180,6 +213,20 @@
   </div>
 </div>
 
+<div class="pwa-installation" id="pwa-installation" hidden>
+  <div class="pwa-installation-corps">
+    <span class="pwa-installation-icone" aria-hidden="true">{{ icone("premium", 18) }}</span>
+    <div class="pwa-installation-texte">
+      <strong>Installer Gasy Mahay</strong>
+      <span>Un accès plus rapide depuis l’écran d’accueil de ton téléphone.</span>
+    </div>
+  </div>
+  <div class="pwa-installation-actions">
+    <button type="button" class="pwa-fermer">Plus tard</button>
+    <button type="button" class="pwa-installer">Installer</button>
+  </div>
+</div>
+
 {# Modale de confirmation reutilisable (remplace window.confirm(), voir
    app/static/js/modale.js) : un seul shell partage pose ici pour que
    TOUTE page qui etend base.html en dispose automatiquement, plutot
@@ -201,6 +248,7 @@
 <script src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
 <script src="/static/js/modale.js?v={{ version_asset('js/modale.js') }}" defer></script>
 <script src="/static/js/soumission.js?v={{ version_asset('js/soumission.js') }}" defer></script>
+<script src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/sw.js').catch(() => {});

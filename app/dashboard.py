@@ -3,7 +3,7 @@ Agregation des donnees du tableau de bord etudiant. Separe du router pour
 garder celui-ci fin (responsabilite unique : le router orchestre la
 requete HTTP, ce module sait comment lire les donnees).
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from sqlmodel import Session, select
@@ -83,6 +83,53 @@ def quiz_completes(session: Session, utilisateur_id: int) -> List[TentativeQuiz]
         .where(TentativeQuiz.date_soumission != None)  # noqa: E711 (SQLAlchemy exige != None, pas "is not None")
         .order_by(TentativeQuiz.date_soumission.desc())
     ).all()
+
+
+def quiz_en_cours(session: Session, utilisateur_id: int) -> Optional[TentativeQuiz]:
+    """Derniere tentative non soumise, pour reprendre un quiz interrompu."""
+    return session.exec(
+        select(TentativeQuiz)
+        .where(
+            TentativeQuiz.utilisateur_id == utilisateur_id,
+            TentativeQuiz.date_soumission == None,  # noqa: E711
+        )
+        .order_by(TentativeQuiz.date_creation.desc())
+        .limit(1)
+    ).first()
+
+
+def jours_actifs_consecutifs(
+    session: Session,
+    utilisateur_id: int,
+    tentatives_quiz: List[TentativeQuiz],
+) -> int:
+    """Calcule une regularite a partir d'activites reellement enregistrees."""
+    dates = {
+        consultation.date_consultation.date()
+        for consultation in session.exec(
+            select(ConsultationDocument).where(
+                ConsultationDocument.utilisateur_id == utilisateur_id
+            )
+        ).all()
+    }
+    dates.update(
+        tentative.date_soumission.date()
+        for tentative in tentatives_quiz
+        if tentative.date_soumission
+    )
+
+    if not dates:
+        return 0
+
+    jour = datetime.utcnow().date()
+    if jour not in dates:
+        jour = max(dates)
+
+    total = 0
+    while jour in dates:
+        total += 1
+        jour -= timedelta(days=1)
+    return total
 
 
 def _delai_relatif(moment: datetime) -> str:
@@ -248,8 +295,17 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
     cercles = cercles_rejoints(session, utilisateur.id)
     documents = documents_consultes_recemment(session, utilisateur.id)
     tentatives = quiz_completes(session, utilisateur.id)
+    tentative_en_cours = quiz_en_cours(session, utilisateur.id)
 
     dernier_document: Optional[dict] = documents[0] if documents else None
+    dernier_quiz: Optional[TentativeQuiz] = tentatives[0] if tentatives else None
+    scores_valides = [
+        (t.score / t.nb_questions * 100)
+        for t in tentatives
+        if t.score is not None and t.nb_questions
+    ]
+    score_moyen_quiz = round(sum(scores_valides) / len(scores_valides)) if scores_valides else 0
+    streak_jours = jours_actifs_consecutifs(session, utilisateur.id, tentatives)
 
     return {
         "abonnement": abonnement,
@@ -266,6 +322,10 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
             ).all()
         ),
         "nb_quiz_completes": len(tentatives),
+        "dernier_quiz": dernier_quiz,
+        "tentative_quiz_en_cours": tentative_en_cours,
+        "score_moyen_quiz": score_moyen_quiz,
+        "jours_actifs_consecutifs": streak_jours,
         "activite_recente": activite_recente(session, utilisateur.id, documents, tentatives),
         "ressources_populaires": ressources_populaires(session, utilisateur),
         "recommandations": recommandations(session, utilisateur),
