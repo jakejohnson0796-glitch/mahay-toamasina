@@ -244,6 +244,8 @@ def erreur_choix_academique(
             return "Ce parcours ne correspond pas a la mention selectionnee."
         if filiere.niveau and filiere.niveau != niveau:
             return "Ce parcours n'est pas propose a ce niveau."
+        if not offre_filiere_active_universite(session, universite_id, filiere.id):
+            return "Ce parcours n'est pas actuellement propose dans cette universite."
         return None
 
     if _specialisation_dans_faculte(session, mention_id, faculte_id, niveau):
