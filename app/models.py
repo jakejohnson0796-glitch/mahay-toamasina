@@ -164,18 +164,35 @@ class Filiere(SQLModel, table=True):
 
 
 class ProgrammeUniversitaire(SQLModel, table=True):
-    """Table de liaison (§4 et §7 du brief) : indique qu'une filiere
-    globale est proposee dans une universite donnee, pour une annee
-    academique donnee. Permet a terme qu'une meme filiere (meme
-    filiere_id) soit proposee par plusieurs universites, sans dupliquer
-    la filiere elle-meme. La migration seede une ligne par filiere
-    existante -> Universite de Toamasina (fait deja vrai, aucune
-    invention de donnees)."""
+    """Source de verite de l'offre d'une filiere dans une universite.
+
+    Filiere decrit le parcours national ; ProgrammeUniversitaire dit ou
+    ce parcours est reellement propose. Une offre active est unique pour
+    le couple universite/filiere ; les anciennes offres peuvent rester
+    en base avec est_active=False pour conserver l'historique.
+    """
     id: Optional[int] = Field(default=None, primary_key=True)
     universite_id: int = Field(foreign_key="universite.id")
     filiere_id: int = Field(foreign_key="filiere.id")
-    annee_academique: Optional[str] = None  # ex: "2026-2027" ; laisse vide = "en cours, sans date de fin connue"
+    annee_academique: Optional[str] = None
     est_active: bool = Field(default=True)
+
+    __table_args__ = (
+        Index(
+            "ix_programme_universite_filiere_actif",
+            "universite_id",
+            "filiere_id",
+            "est_active",
+        ),
+        Index(
+            "uq_programme_actif_universite_filiere",
+            "universite_id",
+            "filiere_id",
+            unique=True,
+            postgresql_where=text("est_active = TRUE"),
+            sqlite_where=text("est_active = 1"),
+        ),
+    )
 
 
 class Utilisateur(SQLModel, table=True):
