@@ -183,7 +183,7 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
                 fil.mention_id,
                 _normaliser(fil.niveau),
                 _normaliser(fil.nom),
-                fac_nom_par_id.get(fil.faculte_id, ""),
+                fac_source_nom_par_id.get(fil.faculte_id, ""),
             ) in expected_keys
         }
         assert expected_filiere_ids
