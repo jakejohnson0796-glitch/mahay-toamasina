@@ -139,6 +139,29 @@ class TestRenduChatCercle(unittest.TestCase):
         self.assertIn("membresPourMentions", reponse.text)
         self.assertIn("Thomas", reponse.text)
 
+    def test_profil_membre_n_expose_pas_de_champs_academiques_dupliques(self):
+        with Session(engine) as session:
+            thomas = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == "0341000002")
+            ).first()
+            thomas_id = thomas.id
+
+        reponse = self.client.get(
+            f"/cercles/{self.cercle_id}/membres/{thomas_id}/profil"
+        )
+        self.assertEqual(reponse.status_code, 200)
+        corps = reponse.json()
+        self.assertIn("academique", corps)
+        self.assertIn("origine", corps["academique"])
+        self.assertIn("formation", corps["academique"])
+        self.assertNotIn("universite", corps)
+        self.assertNotIn("composante", corps)
+        self.assertNotIn("domaine", corps)
+        self.assertNotIn("mention", corps)
+        self.assertNotIn("filiere", corps)
+        self.assertNotIn("niveau", corps)
+        self.assertNotIn("profil_academique_coherent", corps)
+
     def test_route_thread_renvoie_bien_la_reponse(self):
         reponse = self.client.get(f"/cercles/{self.cercle_id}/messages/{self.message_id}/thread")
         self.assertEqual(reponse.status_code, 200)

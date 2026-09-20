@@ -21,6 +21,7 @@ from app.referentiel_academique import (
     profil_correspond_au_cercle,
     condition_cercles_disponibles,
     contexte_profil_academique,
+    serialiser_profil_academique,
 )
 
 
@@ -193,6 +194,28 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(filiere)
             session.commit()
             self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
+
+    def test_serialisation_separe_origine_et_formation(self):
+        with Session(self.engine) as session:
+            utilisateur = Utilisateur(
+                nom="Profil", telephone="0340000016", mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            profil = contexte_profil_academique(utilisateur, session)
+            donnees = serialiser_profil_academique(profil)
+
+        self.assertEqual(
+            set(donnees.keys()),
+            {"origine", "formation", "coherent", "tronc_commun"},
+        )
+        self.assertEqual(donnees["origine"]["universite"], "Universite de Toamasina")
+        self.assertEqual(donnees["formation"]["mention"], "Sciences de Gestion")
+        self.assertEqual(donnees["formation"]["parcours"], "Finance et Comptabilite")
+        self.assertEqual(donnees["formation"]["niveau"], "L3")
 
 
 class TestConditionCerclesDisponibles(unittest.TestCase):

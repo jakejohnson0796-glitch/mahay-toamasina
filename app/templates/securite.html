@@ -98,9 +98,13 @@
   {% if not p.coherent %}
   <div class="erreur">Votre profil académique doit être actualisé avant de pouvoir correspondre de façon fiable aux cercles nationaux.</div>
   {% endif %}
+  <p class="stat-label">Origine académique</p>
   <div class="profil-champs profil-champs-academiques">
     <div><p class="stat-label">Université</p><p><strong>{{ p.universite.nom if p.universite else "Non renseignée" }}</strong></p></div>
     <div><p class="stat-label">Composante</p><p><strong>{{ p.faculte.nom if p.faculte else "Non renseignée" }}</strong></p></div>
+  </div>
+  <p class="stat-label" style="margin-top:0.5rem;">Formation</p>
+  <div class="profil-champs profil-champs-academiques">
     <div><p class="stat-label">Domaine</p><p><strong>{{ p.domaine.nom if p.domaine else "Non renseigné" }}</strong></p></div>
     <div><p class="stat-label">Mention</p><p><strong>{{ p.mention.nom if p.mention else "Non renseignée" }}</strong></p></div>
     <div><p class="stat-label">Parcours</p><p><strong>{{ "Tronc commun" if p.tronc_commun else (p.filiere.nom if p.filiere else "Non renseigné") }}</strong></p></div>

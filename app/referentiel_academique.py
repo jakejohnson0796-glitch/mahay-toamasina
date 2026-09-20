@@ -73,6 +73,36 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
         "tronc_commun": bool(coherent and filiere is None and mention_affichee and utilisateur.niveau),
     }
 
+
+def serialiser_profil_academique(profil: dict) -> dict:
+    """Representation JSON canonique du profil academique.
+
+    Seule cette structure est exposee aux interfaces qui affichent le profil :
+    elle separe l'origine (ou l'etudiant etudie) de la formation (ce qu'il
+    etudie), et evite de dupliquer les memes champs a plat dans plusieurs
+    endpoints/frontends.
+    """
+    universite = profil.get("universite")
+    faculte = profil.get("faculte")
+    domaine = profil.get("domaine")
+    mention = profil.get("mention")
+    filiere = profil.get("filiere")
+
+    return {
+        "origine": {
+            "universite": universite.nom if universite else None,
+            "composante": faculte.nom if faculte else None,
+        },
+        "formation": {
+            "domaine": domaine.nom if domaine else None,
+            "mention": mention.nom if mention else None,
+            "parcours": "Tronc commun" if profil.get("tronc_commun") else (filiere.nom if filiere else None),
+            "niveau": profil.get("niveau"),
+        },
+        "coherent": bool(profil.get("coherent")),
+        "tronc_commun": bool(profil.get("tronc_commun")),
+    }
+
 def erreur_choix_academique(
     session: Session, universite_id: Optional[int], mention_id: Optional[int],
     filiere_id: Optional[int], niveau: Optional[str], niveaux_valides: set[str],
@@ -208,7 +238,11 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
     return cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
 
 
-def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: Session):
+def condition_cercles_disponibles(
+    utilisateur: Optional[Utilisateur],
+    session: Session,
+    profil: Optional[dict] = None,
+):
     """Condition SQLAlchemy (a passer a .where()) qui identifie les
     cercles 'disponibles' pour cet utilisateur, au meme sens que
     profil_correspond_au_cercle ci-dessus : les cercles libres, plus le
@@ -238,7 +272,7 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
     if utilisateur is None or not utilisateur.niveau:
         return cercle_libre
 
-    profil = contexte_profil_academique(utilisateur, session)
+    profil = profil or contexte_profil_academique(utilisateur, session)
     if not profil["coherent"]:
         return cercle_libre
 

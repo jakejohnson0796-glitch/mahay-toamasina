@@ -16,6 +16,8 @@ en dur).
 Aucune ecriture ici — la creation/modification du referentiel reste
 reservee a /admin/referentiel (voir admin_referentiel_router.py).
 """
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
@@ -118,7 +120,11 @@ def lister_toutes_mentions(session: Session = Depends(get_session)):
 
 
 @router.get("/mentions/{mention_id}/parcours-nationaux")
-def lister_parcours_nationaux(mention_id: int, niveau: str, session: Session = Depends(get_session)):
+def lister_parcours_nationaux(
+    mention_id: int,
+    niveau: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
     """Parcours nommes pour cette mention a ce niveau, DEDUPLIQUES par
     nom normalise A TRAVERS TOUTES LES UNIVERSITES (voir
     referentiel_academique._normaliser_nom_parcours) : contrairement a
@@ -132,9 +138,10 @@ def lister_parcours_nationaux(mention_id: int, niveau: str, session: Session = D
 
     Liste VIDE = tronc commun a ce niveau pour cette mention (aucun
     parcours a choisir), meme convention que pour l'inscription."""
-    filieres = session.exec(
-        select(Filiere).where(Filiere.mention_id == mention_id, Filiere.niveau == niveau)
-    ).all()
+    requete = select(Filiere).where(Filiere.mention_id == mention_id)
+    if niveau:
+        requete = requete.where(Filiere.niveau == niveau)
+    filieres = session.exec(requete).all()
 
     vus: dict[str, dict] = {}
     for f in filieres:
