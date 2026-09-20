@@ -40,6 +40,7 @@ Usage :
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 import unicodedata
@@ -55,12 +56,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.database import engine  # noqa: E402
 from app.models import Domaine, Faculte, Filiere, Mention, ProgrammeUniversitaire, Universite  # noqa: E402
 
-FICHIER_PAR_DEFAUT = "mahay_universites_mentions_filieres_recensement.xlsx"
+FICHIER_PAR_DEFAUT = "mahay_toamasina_referentiel_source.json"
 
-# Perimetre : uniquement les 6 universites publiques (decide avec Jake
-# le 22/08/2026). Compare par nom NORMALISE (voir normaliser() plus
-# bas) -- pas besoin de faire correspondre exactement les accents ici,
-# ils sont retires avant comparaison.
 PERIMETRE_UNIVERSITES_PUBLIQUES = {
     "universite d'antananarivo",
     "universite d'antsiranana",
@@ -70,15 +67,22 @@ PERIMETRE_UNIVERSITES_PUBLIQUES = {
     "universite de toliara",
 }
 
+# Noms historiques des composantes déjà présents en base. La source
+# Toamasina fournie emploie des intitulés plus courts/officiels ; on
+# rattache ces lignes aux IDs existants plutôt que de créer des doublons.
+ALIASES_COMPOSANTES_TOAMASINA = {
+    "faculte deg": "Droit, Economie, Gestion, Mathematiques et Informatique (DEGMIA)",
+    "faculte des sciences et technologie": "Sciences et Technologies",
+    "ecole normale superieure": "Ecole Normale Superieure (ENS)",
+    "faculte des lettres et sciences humaines": "Lettres et Sciences Humaines",
+}
+
 
 def normaliser(texte: str | None) -> str:
     """Normalise un texte pour COMPARAISON uniquement (jamais pour
     l'affichage/le stockage) : accents retires, apostrophes
     typographiques uniformisees, espaces multiples reduits, casse
-    ignoree. Permet de faire correspondre 'Université d'Antananarivo'
-    (fichier Excel) et 'Universite d'Antananarivo' (base actuelle,
-    sans accent), ou 'Physique et applications' / 'Physique et
-    Applications' (collision de casse presente dans le fichier)."""
+    ignoree."""
     if not texte:
         return ""
     texte = texte.strip().replace("\u2019", "'")
@@ -98,7 +102,6 @@ class Rapport:
     facultes_creees: list = field(default_factory=list)
     filieres_creees: list = field(default_factory=list)
     programmes_crees: int = 0
-    # --- Universites "curatees" (jamais de creation de Filiere) ---
     filieres_existantes_rattachees_domaine: list = field(default_factory=list)
     lignes_sans_correspondance: list = field(default_factory=list)
 
@@ -120,7 +123,7 @@ class Rapport:
         for u, f, fil in self.filieres_creees:
             print(f"   - [{u} / {f}] {fil}")
         print(f"Liens ProgrammeUniversitaire crees : {self.programmes_crees}")
-        print(f"\n--- Universites deja curatees a la main (aucune Filiere creee) ---")
+        print("\n--- Universites deja curatees a la main (aucune Filiere creee) ---")
         print(f"Filieres existantes rattachees a un Domaine : {len(self.filieres_existantes_rattachees_domaine)}")
         for u, fil, dom in self.filieres_existantes_rattachees_domaine:
             print(f"   - [{u}] {fil} -> domaine {dom}")
@@ -129,7 +132,23 @@ class Rapport:
             print(f"   - [{u} / {comp}] {dom} > {ment} > {parc}")
 
 
-def lire_lignes_excel(chemin: str) -> list[dict]:
+def lire_lignes_source(chemin: str) -> list[dict]:
+    if Path(chemin).suffix.lower() == ".json":
+        payload = json.loads(Path(chemin).read_text(encoding="utf-8"))
+        return [
+            {
+                "universite": str(ligne.get("universite") or "").strip(),
+                "ville": str(ligne.get("ville") or "").strip(),
+                "composante": str(ligne.get("composante") or "").strip(),
+                "domaine": str(ligne.get("domaine") or "").strip(),
+                "mention": str(ligne.get("mention") or "").strip(),
+                "niveau": str(ligne.get("niveau") or "").strip(),
+                "type": str(ligne.get("type") or "").strip(),
+                "parcours": str(ligne.get("parcours") or "").strip(),
+            }
+            for ligne in payload.get("formations", [])
+        ]
+
     classeur = load_workbook(chemin, read_only=True, data_only=True)
     feuille = classeur.active
     lignes_brutes = list(feuille.iter_rows(values_only=True))
@@ -142,58 +161,59 @@ def lire_lignes_excel(chemin: str) -> list[dict]:
         lignes.append({
             "universite": (d.get("Université") or "").strip(),
             "ville": (d.get("Ville") or "").strip(),
-            "composante": (d.get("Composante") or "").strip(),
+            "composante": (d.get("Composante") or d.get("Composante / Établissement") or "").strip(),
             "domaine": (d.get("Domaine") or "").strip(),
             "mention": (d.get("Mention") or "").strip(),
-            "parcours": (d.get("Parcours/Filière") or "").strip(),
+            "niveau": (d.get("Niveau") or "").strip(),
+            "type": (d.get("Type") or "").strip(),
+            "parcours": (d.get("Parcours/Filière") or d.get("Parcours / Filière") or "").strip(),
         })
     return lignes
 
 
 def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
     rapport = Rapport()
-    lignes = lire_lignes_excel(chemin_excel)
+    lignes = lire_lignes_source(chemin_excel)
+    source_stricte = Path(chemin_excel).suffix.lower() == ".json"
 
     with Session(engine) as session:
-        # --- Index en memoire de l'existant, cle = nom normalise ---
         universites_par_nom = {normaliser(u.nom): u for u in session.exec(select(Universite)).all()}
         domaines_par_nom = {normaliser(d.nom): d for d in session.exec(select(Domaine)).all()}
-        mentions_par_nom = {normaliser(m.nom): m for m in session.exec(select(Mention)).all()}
+
+        # Plusieurs versions historiques d'une meme Mention peuvent
+        # exister en base a cause de variantes de casse/accents. On
+        # conserve toutes les variantes au lieu d'en choisir une au hasard.
+        mentions_par_nom: defaultdict[str, list[Mention]] = defaultdict(list)
+        for mention in session.exec(select(Mention)).all():
+            mentions_par_nom[normaliser(mention.nom)].append(mention)
+
         facultes_par_cle = {
             (f.universite_id, normaliser(f.nom)): f for f in session.exec(select(Faculte)).all()
         }
-        filieres_par_faculte = defaultdict(dict)  # faculte_id -> {nom_normalise: Filiere}
+        filieres_par_faculte = defaultdict(dict)
+        filieres_exactes_par_faculte = defaultdict(dict)
         for fil in session.exec(select(Filiere)).all():
             filieres_par_faculte[fil.faculte_id][normaliser(fil.nom)] = fil
+            filieres_exactes_par_faculte[fil.faculte_id][
+                (fil.mention_id, normaliser(fil.niveau), normaliser(fil.nom))
+            ] = fil
         programmes_existants = {
             (p.universite_id, p.filiere_id) for p in session.exec(select(ProgrammeUniversitaire)).all()
         }
 
-        # --- Universites deja "curatees" = ont au moins une Filiere
-        #     existante rattachee (peu importe la faculte). Determine
-        #     dynamiquement plutot que code en dur : reste correct si
-        #     Fianarantsoa/Mahajanga/Toliara/Antsiranana recoivent un
-        #     jour des Filiere par un autre moyen. ---
         universites_curatees_ids = {
             fac.universite_id
             for fac in session.exec(select(Faculte)).all()
             if filieres_par_faculte.get(fac.id)
         }
 
-        # --- Ne garder que les lignes du perimetre (6 universites
-        #     publiques), et filtrer les lignes dont l'universite du
-        #     fichier ne correspond a AUCUNE Universite en base
-        #     (ne devrait pas arriver pour le perimetre public, mais
-        #     on ne veut jamais planter silencieusement / inventer). ---
         lignes_retenues = []
         for ligne in lignes:
-            cle = normaliser(ligne["universite"])
-            if cle not in PERIMETRE_UNIVERSITES_PUBLIQUES:
+            if normaliser(ligne["universite"]) not in PERIMETRE_UNIVERSITES_PUBLIQUES:
                 rapport.universites_hors_perimetre.add(ligne["universite"])
                 continue
             lignes_retenues.append(ligne)
 
-        # === ETAPE 1 : Domaine (national, dedup par nom normalise) ===
         for ligne in lignes_retenues:
             cle = normaliser(ligne["domaine"])
             if not cle or cle in domaines_par_nom:
@@ -206,14 +226,11 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             domaines_par_nom[cle] = dom
             rapport.domaines_crees.append(ligne["domaine"])
 
-        # === ETAPE 2 : Mention (nationale, dedup par nom normalise) +
-        #     rattachement Domaine SEULEMENT si non ambigu ===
         domaine_textes_par_mention = defaultdict(set)
         for ligne in lignes_retenues:
             cle_mention = normaliser(ligne["mention"])
-            if not cle_mention:
-                continue
-            domaine_textes_par_mention[cle_mention].add(ligne["domaine"])
+            if cle_mention:
+                domaine_textes_par_mention[cle_mention].add(ligne["domaine"])
 
         for ligne in lignes_retenues:
             cle_mention = normaliser(ligne["mention"])
@@ -225,54 +242,193 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                     session.add(ment)
                     session.commit()
                     session.refresh(ment)
-                mentions_par_nom[cle_mention] = ment
+                mentions_par_nom[cle_mention].append(ment)
                 rapport.mentions_creees.append(ligne["mention"])
 
         for cle_mention, textes_domaine in domaine_textes_par_mention.items():
-            mention = mentions_par_nom[cle_mention]
-            if mention.domaine_id is not None:
-                continue  # deja rattachee (import precedent ou admin) : ne jamais ecraser
+            mentions_trouvees = mentions_par_nom[cle_mention]
             textes_normalises = {normaliser(t) for t in textes_domaine if t}
             if len(textes_normalises) != 1:
-                rapport.mentions_domaine_ambigu[mention.nom] = textes_domaine
+                rapport.mentions_domaine_ambigu[cle_mention] = textes_domaine
                 continue
             domaine = domaines_par_nom.get(next(iter(textes_normalises)))
             if domaine is None:
                 continue
-            mention.domaine_id = domaine.id
-            if not dry_run:
-                session.add(mention)
-                session.commit()
-            rapport.mentions_domaine_rattache.append((mention.nom, domaine.nom))
 
-        # === ETAPE 3 : selon curatee ou vide ===
+            # Rattache le Domaine a TOUTES les variantes historiques de
+            # cette Mention dont le domaine est encore NULL. Ainsi une
+            # ligne "Sciences de gestion" n'est pas perdue si une ancienne
+            # migration avait deja "Sciences de Gestion" en base, et vice
+            # versa. On ne remplace jamais un Domaine deja renseigne.
+            for mention in mentions_trouvees:
+                if mention.domaine_id is not None:
+                    continue
+                mention.domaine_id = domaine.id
+                if not dry_run:
+                    session.add(mention)
+                    session.commit()
+                rapport.mentions_domaine_rattache.append((mention.nom, domaine.nom))
+
         for ligne in lignes_retenues:
-            cle_universite = normaliser(ligne["universite"])
-            universite = universites_par_nom.get(cle_universite)
+            universite = universites_par_nom.get(normaliser(ligne["universite"]))
             if universite is None:
-                # Ne devrait pas arriver (verifie a l'etape perimetre),
-                # garde-fou pour ne jamais planter sur une donnee
-                # inattendue.
                 rapport.lignes_sans_correspondance.append(
                     (ligne["universite"], ligne["composante"], ligne["domaine"], ligne["mention"], ligne["parcours"])
                 )
                 continue
 
-            mention = mentions_par_nom.get(normaliser(ligne["mention"]))
+            variantes_mention = mentions_par_nom.get(normaliser(ligne["mention"]), [])
+            mention = next(
+                (candidate for candidate in variantes_mention if candidate.domaine_id is not None),
+                variantes_mention[0] if variantes_mention else None,
+            )
+
+            if source_stricte:
+                # Pour la source Toamasina exacte, on ne depend pas du statut
+                # historique "curatee" : chaque triplet Mention + Niveau +
+                # Parcours doit exister et son offre doit etre active.
+                if normaliser(ligne.get("type")) == normaliser("Tronc commun"):
+                    continue
+
+                nom_composante_source = ligne["composante"]
+                nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
+                    normaliser(nom_composante_source),
+                    nom_composante_source,
+                )
+                facultes_universite = session.exec(
+                    select(Faculte).where(Faculte.universite_id == universite.id)
+                ).all()
+                faculte = next(
+                    (
+                        fac for fac in facultes_universite
+                        if normaliser(fac.nom) == normaliser(nom_composante_cible)
+                    ),
+                    None,
+                )
+                if faculte is None:
+                    # Dernier filet : ne pas dupliquer une composante dont
+                    # le nom historique n'aurait pas ete declare dans les alias.
+                    faculte = next(
+                        (
+                            fac for fac in facultes_universite
+                            if normaliser(fac.nom) == normaliser(nom_composante_source)
+                        ),
+                        None,
+                    )
+                if faculte is None:
+                    faculte = Faculte(
+                        nom=nom_composante_source,
+                        universite_id=universite.id,
+                    )
+                    if not dry_run:
+                        session.add(faculte)
+                        session.commit()
+                        session.refresh(faculte)
+                    facultes_par_cle[(universite.id, normaliser(nom_composante_source))] = faculte
+                    rapport.facultes_creees.append(
+                        (ligne["universite"], nom_composante_source)
+                    )
+
+                cle_exacte = (
+                    mention.id if mention is not None else None,
+                    normaliser(ligne.get("niveau")),
+                    normaliser(ligne["parcours"]),
+                )
+                filiere = filieres_exactes_par_faculte.get(faculte.id, {}).get(cle_exacte)
+                if filiere is None:
+                    filiere = Filiere(
+                        nom=ligne["parcours"],
+                        faculte_id=faculte.id,
+                        mention_id=mention.id if mention is not None else None,
+                        niveau=ligne.get("niveau") or None,
+                    )
+                    if not dry_run:
+                        session.add(filiere)
+                        session.commit()
+                        session.refresh(filiere)
+                    filieres_par_faculte[faculte.id][normaliser(filiere.nom)] = filiere
+                    filieres_exactes_par_faculte[faculte.id][
+                        (filiere.mention_id, normaliser(filiere.niveau), normaliser(filiere.nom))
+                    ] = filiere
+                    rapport.filieres_creees.append(
+                        (ligne["universite"], nom_composante_source, ligne["parcours"])
+                    )
+
+                cle_programme = (universite.id, filiere.id)
+                if cle_programme not in programmes_existants:
+                    if not dry_run:
+                        session.add(
+                            ProgrammeUniversitaire(
+                                universite_id=universite.id,
+                                filiere_id=filiere.id,
+                                est_active=True,
+                            )
+                        )
+                        session.commit()
+                    programmes_existants.add(cle_programme)
+                    rapport.programmes_crees += 1
+                continue
 
             if universite.id in universites_curatees_ids:
-                # --- Universite curatee a la main : jamais de nouvelle
-                #     Filiere. On cherche uniquement une correspondance
-                #     EXACTE (nom normalise) parmi les Filiere deja
-                #     rattachees a cette universite, pour lui rattacher
-                #     un Domaine via sa Mention si elle n'en a pas. ---
-                cle_parcours = normaliser(ligne["parcours"])
+                # Le Tronc commun reste porte par Mention + niveau dans le profil :
+                # il ne devient pas artificiellement une Filiere nommee.
+                if source_stricte and normaliser(ligne.get("type")) == normaliser("Tronc commun"):
+                    continue
+
                 filiere_existante = None
-                for fac in session.exec(select(Faculte).where(Faculte.universite_id == universite.id)).all():
-                    candidate = filieres_par_faculte.get(fac.id, {}).get(cle_parcours)
-                    if candidate is not None:
-                        filiere_existante = candidate
+                faculte_trouvee = None
+                facultes_universite = session.exec(
+                    select(Faculte).where(Faculte.universite_id == universite.id)
+                ).all()
+                if source_stricte:
+                    nom_composante_recherche = ALIASES_COMPOSANTES_TOAMASINA.get(
+                        normaliser(ligne["composante"]),
+                        ligne["composante"],
+                    )
+                    for fac in facultes_universite:
+                        if normaliser(fac.nom) != normaliser(nom_composante_recherche):
+                            continue
+                        faculte_trouvee = fac
+                        candidate = filieres_exactes_par_faculte.get(fac.id, {}).get(
+                            (
+                                mention.id if mention is not None else None,
+                                normaliser(ligne.get("niveau")),
+                                normaliser(ligne["parcours"]),
+                            )
+                        )
+                        if candidate is not None:
+                            filiere_existante = candidate
                         break
+                else:
+                    cle_parcours = normaliser(ligne["parcours"])
+                    for fac in facultes_universite:
+                        candidate = filieres_par_faculte.get(fac.id, {}).get(cle_parcours)
+                        if candidate is not None:
+                            filiere_existante = candidate
+                            break
+
+                if filiere_existante is None and source_stricte and faculte_trouvee is not None:
+                    filiere_existante = Filiere(
+                        nom=ligne["parcours"],
+                        faculte_id=faculte_trouvee.id,
+                        mention_id=mention.id if mention is not None else None,
+                        niveau=ligne.get("niveau") or None,
+                    )
+                    if not dry_run:
+                        session.add(filiere_existante)
+                        session.commit()
+                        session.refresh(filiere_existante)
+                    filieres_par_faculte[faculte_trouvee.id][normaliser(filiere_existante.nom)] = filiere_existante
+                    filieres_exactes_par_faculte[faculte_trouvee.id][
+                        (
+                            filiere_existante.mention_id,
+                            normaliser(filiere_existante.niveau),
+                            normaliser(filiere_existante.nom),
+                        )
+                    ] = filiere_existante
+                    rapport.filieres_creees.append(
+                        (ligne["universite"], ligne["composante"], ligne["parcours"])
+                    )
 
                 if filiere_existante is None:
                     rapport.lignes_sans_correspondance.append(
@@ -288,9 +444,21 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                     rapport.filieres_existantes_rattachees_domaine.append(
                         (ligne["universite"], filiere_existante.nom, mention.domaine.nom if mention.domaine else "(aucun)")
                     )
+
+                cle_programme = (universite.id, filiere_existante.id)
+                if cle_programme not in programmes_existants:
+                    if not dry_run:
+                        session.add(
+                            ProgrammeUniversitaire(
+                                universite_id=universite.id,
+                                filiere_id=filiere_existante.id,
+                            )
+                        )
+                        session.commit()
+                    programmes_existants.add(cle_programme)
+                    rapport.programmes_crees += 1
                 continue
 
-            # --- Universite "vide" : import complet ---
             cle_faculte = (universite.id, normaliser(ligne["composante"]))
             faculte = facultes_par_cle.get(cle_faculte)
             if faculte is None:

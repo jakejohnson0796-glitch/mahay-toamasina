@@ -12,7 +12,7 @@ from unittest.mock import patch
 from sqlalchemy import event
 from sqlmodel import SQLModel, Session, create_engine, select
 
-from app.models import Universite, Faculte, Mention, Filiere, ProgrammeUniversitaire, CercleEtude, Utilisateur, RoleUtilisateur
+from app.models import Universite, Faculte, Mention, Filiere, CercleEtude, Utilisateur, RoleUtilisateur, ProgrammeUniversitaire
 from app.referentiel_academique import (
     cercle_est_national,
     peut_modifier_niveau_maintenant,
@@ -21,7 +21,9 @@ from app.referentiel_academique import (
     profil_correspond_au_cercle,
     condition_cercles_disponibles,
     contexte_profil_academique,
+    erreur_choix_academique,
     serialiser_profil_academique,
+    type_cercle,
 )
 
 
@@ -100,15 +102,10 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(mention); session.commit(); session.refresh(mention)
             self.mention_id = mention.id
             self.universite_id = universite.id
+            self.faculte_id = faculte.id
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             self.filiere_id = filiere.id
-            session.add(ProgrammeUniversitaire(
-                universite_id=universite.id,
-                filiere_id=filiere.id,
-                est_active=True,
-            ))
-            session.commit()
 
             autre_mention = Mention(nom="Droit")
             session.add(autre_mention); session.commit(); session.refresh(autre_mention)
@@ -162,6 +159,17 @@ class TestCorrespondanceCercle(unittest.TestCase):
                              filiere_id=self.autre_filiere_id, niveau="L3")
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
 
+    def test_cercles_incomplets_ne_sont_pas_des_cercles_libres(self):
+        with Session(self.engine) as session:
+            exemples = [
+                CercleEtude(nom="Mention sans niveau", createur_id=self.createur_id, mention_id=self.mention_id),
+                CercleEtude(nom="Niveau sans mention", createur_id=self.createur_id, niveau="L3"),
+                CercleEtude(nom="Filiere sans mention", createur_id=self.createur_id, filiere_id=self.filiere_id, niveau="L3"),
+            ]
+            for cercle in exemples:
+                self.assertEqual(type_cercle(cercle), "incomplet")
+                self.assertFalse(cercle_est_national(cercle))
+
     def test_utilisateur_sans_filiere_ne_correspond_a_aucun_cercle_national(self):
         with Session(self.engine) as session:
             cercle = CercleEtude(
@@ -172,6 +180,113 @@ class TestCorrespondanceCercle(unittest.TestCase):
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
 
 
+    def test_tronc_commun_depend_de_l_universite_et_non_du_referentiel_national(self):
+        with Session(self.engine) as session:
+            universite_autre = Universite(nom="Universite Autre")
+            session.add(universite_autre)
+            session.commit()
+            session.refresh(universite_autre)
+
+            faculte_autre = Faculte(nom="Faculte Autre", universite_id=universite_autre.id)
+            session.add(faculte_autre)
+            session.commit()
+            session.refresh(faculte_autre)
+
+            filiere_locale = session.get(Filiere, self.filiere_id)
+            filiere_locale.niveau = "L3"
+            session.add(filiere_locale)
+            session.add(Filiere(
+                nom="Finance et Comptabilite",
+                faculte_id=faculte_autre.id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            ))
+            session.commit()
+
+            u = Utilisateur(
+                nom="Tronc local",
+                telephone="0340000009",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            )
+            profil = contexte_profil_academique(u, session)
+            self.assertTrue(profil["coherent"])
+            self.assertTrue(profil["tronc_commun"])
+
+    def test_tronc_commun_est_incoherent_si_un_parcours_existe_dans_sa_propre_universite(self):
+        with Session(self.engine) as session:
+            filiere_locale = session.get(Filiere, self.filiere_id)
+            filiere_locale.niveau = "L1"
+            session.add(filiere_locale)
+            session.commit()
+
+            u = Utilisateur(
+                nom="Pas tronc",
+                telephone="0340000016",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            )
+            profil = contexte_profil_academique(u, session)
+            self.assertFalse(profil["coherent"])
+            self.assertFalse(profil["tronc_commun"])
+
+    def test_validation_du_tronc_commun_est_scopee_a_l_universite(self):
+        with Session(self.engine) as session:
+            autre_universite = Universite(nom="Universite Validation Autre")
+            session.add(autre_universite)
+            session.commit()
+            session.refresh(autre_universite)
+            autre_faculte = Faculte(nom="Faculte Validation Autre", universite_id=autre_universite.id)
+            session.add(autre_faculte)
+            session.commit()
+            session.refresh(autre_faculte)
+            session.add(Filiere(
+                nom="Finance et Comptabilite",
+                faculte_id=autre_faculte.id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            ))
+            session.commit()
+
+            erreur = erreur_choix_academique(
+                session,
+                self.universite_id,
+                self.faculte_id,
+                self.mention_id,
+                None,
+                "L1",
+                {"L1", "L2", "L3", "M1", "M2"},
+            )
+            self.assertIsNone(erreur)
+
+    def test_serializer_academique_est_hierarchique(self):
+        with Session(self.engine) as session:
+            u = Utilisateur(
+                nom="Profil serialize",
+                telephone="0340000017",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            profil = contexte_profil_academique(u, session)
+            data = serialiser_profil_academique(profil)
+            self.assertEqual(data["type"], "parcours")
+            self.assertEqual(data["universite"]["id"], self.universite_id)
+            self.assertEqual(data["mention"]["id"], self.mention_id)
+            self.assertEqual(data["parcours"]["id"], self.filiere_id)
+            self.assertEqual(data["niveau"], "L3")
+
     def test_profil_sans_filiere_est_valide_en_tronc_commun(self):
         with Session(self.engine) as session:
             mention = session.get(Mention, self.mention_id)
@@ -179,13 +294,56 @@ class TestCorrespondanceCercle(unittest.TestCase):
             u = Utilisateur(
                 nom="Tronc", telephone="0340000007", mot_de_passe_hash="x",
                 role=RoleUtilisateur.ETUDIANT,
-                universite_id=self.universite_id, mention_id=self.mention_id, niveau="L1",
+                universite_id=self.universite_id, faculte_id=self.faculte_id,
+                mention_id=self.mention_id, niveau="L1",
             )
             profil = contexte_profil_academique(u, session)
             self.assertTrue(profil["coherent"])
             self.assertTrue(profil["tronc_commun"])
             self.assertEqual(profil["universite"].id, self.universite_id)
             self.assertEqual(profil["mention"].id, self.mention_id)
+
+    def test_serialisation_conserve_les_blocs_hierarchiques_legacy(self):
+        with Session(self.engine) as session:
+            utilisateur = Utilisateur(
+                nom="Profil legacy", telephone="0340000018", mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            profil = contexte_profil_academique(utilisateur, session)
+            donnees = serialiser_profil_academique(profil)
+
+        self.assertEqual(donnees["type"], "parcours")
+        self.assertEqual(donnees["universite"]["id"], self.universite_id)
+        self.assertEqual(donnees["mention"]["id"], self.mention_id)
+        self.assertEqual(donnees["parcours"]["id"], self.filiere_id)
+        self.assertEqual(donnees["origine"]["universite"], "Universite de Toamasina")
+        self.assertEqual(donnees["formation"]["parcours"], "Finance et Comptabilite")
+
+    def test_choix_filiere_refuse_si_offre_inactive(self):
+        with Session(self.engine) as session:
+            offre = ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=self.filiere_id,
+                est_active=False,
+            )
+            session.add(offre)
+            session.commit()
+
+            erreur = erreur_choix_academique(
+                session,
+                self.universite_id,
+                self.faculte_id,
+                self.mention_id,
+                self.filiere_id,
+                "L3",
+                {"L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3"},
+            )
+        self.assertIn("pas actuellement propose", erreur)
 
     def test_profil_filiere_sans_mention_n_est_pas_coherent(self):
         with Session(self.engine) as session:
@@ -200,53 +358,6 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(filiere)
             session.commit()
             self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
-
-    def test_serialisation_separe_origine_et_formation(self):
-        with Session(self.engine) as session:
-            utilisateur = Utilisateur(
-                nom="Profil", telephone="0340000016", mot_de_passe_hash="x",
-                role=RoleUtilisateur.ETUDIANT,
-                universite_id=self.universite_id,
-                mention_id=self.mention_id,
-                filiere_id=self.filiere_id,
-                niveau="L3",
-            )
-            profil = contexte_profil_academique(utilisateur, session)
-            donnees = serialiser_profil_academique(profil)
-
-        self.assertEqual(
-            set(donnees.keys()),
-            {"origine", "formation", "coherent", "tronc_commun"},
-        )
-        self.assertEqual(donnees["origine"]["universite"], "Universite de Toamasina")
-        self.assertEqual(donnees["formation"]["mention"], "Sciences de Gestion")
-        self.assertEqual(donnees["formation"]["parcours"], "Finance et Comptabilite")
-        self.assertEqual(donnees["formation"]["niveau"], "L3")
-
-    def test_choix_filiere_refuse_si_offre_inactive(self):
-        with Session(self.engine) as session:
-            offre = session.exec(
-                select(ProgrammeUniversitaire).where(
-                    ProgrammeUniversitaire.universite_id == self.universite_id,
-                    ProgrammeUniversitaire.filiere_id == self.filiere_id,
-                )
-            ).one()
-            offre.est_active = False
-            session.add(offre)
-            session.commit()
-
-            erreur = __import__(
-                "app.referentiel_academique",
-                fromlist=["erreur_choix_academique"],
-            ).erreur_choix_academique(
-                session,
-                self.universite_id,
-                self.mention_id,
-                self.filiere_id,
-                "L3",
-                {"L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3"},
-            )
-            self.assertIn("pas actuellement propose", erreur)
 
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
@@ -268,12 +379,6 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             self.filiere_id = filiere.id
-            session.add(ProgrammeUniversitaire(
-                universite_id=universite.id,
-                filiere_id=filiere.id,
-                est_active=True,
-            ))
-            session.commit()
 
             autre_mention = Mention(nom="Droit")
             session.add(autre_mention); session.commit(); session.refresh(autre_mention)
@@ -331,6 +436,18 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
     def test_utilisateur_sans_profil_ne_voit_que_les_cercles_libres(self):
         u = Utilisateur(nom="X", telephone="0340000014", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
         self.assertEqual(self._noms_disponibles(u), {"Groupe libre"})
+
+    def test_cercle_academique_incomplet_n_est_pas_considere_libre(self):
+        with Session(self.engine) as session:
+            session.add(CercleEtude(
+                nom="Profil incomplet",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                niveau=None,
+            ))
+            session.commit()
+        u = Utilisateur(nom="X", telephone="0340000019", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
+        self.assertNotIn("Profil incomplet", self._noms_disponibles(u))
 
     def test_utilisateur_none_ne_voit_que_les_cercles_libres(self):
         self.assertEqual(self._noms_disponibles(None), {"Groupe libre"})

@@ -361,9 +361,35 @@ def liste_cercles(
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
     recherche_tronc_commun = filiere_id == "tronc_commun"
     niveau_nettoye = niveau if niveau in NIVEAUX else None
-    if mention_id_nettoye and not domaine_id_nettoye:
-        mention_selectionnee = session.get(Mention, mention_id_nettoye)
-        domaine_id_nettoye = mention_selectionnee.domaine_id if mention_selectionnee and mention_selectionnee.domaine_id else None
+
+    # Cohérence stricte de la cascade : Parcours -> Mention -> Domaine.
+    # Un paramètre incohérent ne doit jamais élargir les résultats.
+    filiere_selectionnee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
+    if filiere_selectionnee:
+        if (
+            mention_id_nettoye
+            and filiere_selectionnee.mention_id
+            and mention_id_nettoye != filiere_selectionnee.mention_id
+        ):
+            filiere_id_nettoye = -1
+            filiere_selectionnee = None
+        elif filiere_selectionnee.mention_id:
+            mention_id_nettoye = filiere_selectionnee.mention_id
+
+    mention_selectionnee = session.get(Mention, mention_id_nettoye) if mention_id_nettoye else None
+    if mention_selectionnee and mention_selectionnee.domaine_id:
+        if domaine_id_nettoye and domaine_id_nettoye != mention_selectionnee.domaine_id:
+            domaine_id_nettoye = -1
+        elif not domaine_id_nettoye:
+            domaine_id_nettoye = mention_selectionnee.domaine_id
+
+    # Le tronc commun n'est défini que dans le contexte d'une mention.
+    if recherche_tronc_commun and not mention_id_nettoye:
+        recherche_tronc_commun = False
+        recherche_tronc_commun_dans_q = False
+        filiere_id_nettoye = -1
+        niveau_nettoye = "__filtre_invalide__"
+
     afficher_disponibles_seulement = disponibles == "1"
     page_nettoyee = max(1, page)
 
@@ -544,6 +570,7 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
+            "type_cercle": referentiel_academique.type_cercle(cercle),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,

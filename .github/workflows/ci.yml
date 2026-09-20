@@ -36,3 +36,67 @@ jobs:
             echo "===== $test_file ====="
             pytest -q "$test_file"
           done
+
+  postgres-smoke:
+    runs-on: ubuntu-latest
+    env:
+      ENVIRONNEMENT: developpement
+      SESSION_SECRET_KEY: ci-only-not-for-production
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mahay_ci
+      SUPABASE_BUCKET: documents
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mahay_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mahay_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Installer les dependances
+        run: python -m pip install -r requirements.txt
+      - name: Préparer le contrat Supabase Storage pour le smoke test
+        run: |
+          python - <<'PY'
+          import os
+          import psycopg2
+
+          conn = psycopg2.connect(os.environ["DATABASE_URL"])
+          conn.autocommit = True
+          cur = conn.cursor()
+          cur.execute("CREATE SCHEMA IF NOT EXISTS storage")
+          cur.execute(
+              """
+              CREATE TABLE IF NOT EXISTS storage.buckets (
+                  id text PRIMARY KEY,
+                  public boolean NOT NULL DEFAULT true,
+                  file_size_limit bigint,
+                  allowed_mime_types text[]
+              )
+              """
+          )
+          cur.execute(
+              """
+              INSERT INTO storage.buckets (id, public)
+              VALUES ('documents', true)
+              ON CONFLICT (id) DO NOTHING
+              """
+          )
+          cur.close()
+          conn.close()
+          PY
+      - name: Appliquer toutes les migrations PostgreSQL
+        run: alembic upgrade head
+      - name: Tester le démarrage réel et le référentiel Excel sur PostgreSQL
+        run: pytest -q tests/test_postgres_referentiel_smoke.py

@@ -38,7 +38,7 @@
          parcours nomme n'existe pour la mention+niveau choisis, on
          l'indique clairement plutot que de bloquer l'inscription --
          c'est le tronc commun, un etat normal, pas une erreur. -->
-    <div id="bloc-academique">
+    <div id="bloc-academique" data-cascade-academique>
       <label for="universite_id">Universite</label>
       <select id="universite_id" name="universite_id" required>
         <option value="">— choisissez votre universite —</option>
@@ -69,7 +69,7 @@
       <select id="filiere_id" name="filiere_id" disabled>
         <option value="">— choisissez d'abord votre niveau —</option>
       </select>
-      <p class="stat-label" id="info-tronc-commun" style="display:none;">
+      <p class="stat-label" id="info-tronc-commun" hidden>
         Aucun parcours specifique a ce niveau pour cette mention : vous etes en tronc commun, rien de plus a choisir ici.
       </p>
     </div>
@@ -123,91 +123,14 @@
 })();
 
 (function () {
-  // Selecteurs academiques en cascade (§7-8 du brief, revu le
-  // 10/09/2026) : Universite -> Composante -> Mention -> Niveau ->
-  // Parcours (facultatif).
   const roleSelect = document.getElementById("role");
   const blocAcademique = document.getElementById("bloc-academique");
-  const universiteSelect = document.getElementById("universite_id");
-  const composanteSelect = document.getElementById("composante_id");
-  const mentionSelect = document.getElementById("mention_id");
-  const niveauSelect = document.getElementById("niveau");
-  const filiereSelect = document.getElementById("filiere_id");
-  const infoTroncCommun = document.getElementById("info-tronc-commun");
-  const champsAcademiquesRequis = [universiteSelect, composanteSelect, mentionSelect, niveauSelect];
-
-  function reinitialiserAPartir(etape) {
-    if (etape <= 1) {
-      composanteSelect.innerHTML = '<option value="">— choisissez d\'abord votre universite —</option>';
-      composanteSelect.disabled = true;
-    }
-    if (etape <= 2) {
-      mentionSelect.innerHTML = '<option value="">— choisissez d\'abord votre composante —</option>';
-      mentionSelect.disabled = true;
-    }
-    if (etape <= 3) {
-      niveauSelect.value = "";
-      niveauSelect.disabled = true;
-    }
-    if (etape <= 4) {
-      filiereSelect.innerHTML = '<option value="">— choisissez d\'abord votre niveau —</option>';
-      filiereSelect.disabled = true;
-      infoTroncCommun.style.display = "none";
-    }
-  }
-
-  async function chargerOptions(url) {
-    const reponse = await fetch(url);
-    if (!reponse.ok) return [];
-    return reponse.json();
-  }
-
-  universiteSelect.addEventListener("change", async function () {
-    reinitialiserAPartir(1);
-    if (!universiteSelect.value) return;
-    const composantes = await chargerOptions(`/api/academique/universites/${universiteSelect.value}/composantes`);
-    composanteSelect.innerHTML = '<option value="">— choisissez votre composante —</option>' +
-      composantes.map(function (c) { return `<option value="${c.id}">${c.nom}</option>`; }).join("");
-    composanteSelect.disabled = composantes.length === 0;
-    if (composantes.length === 0) {
-      composanteSelect.innerHTML = '<option value="">— aucune composante disponible pour l\'instant —</option>';
-    }
-  });
-
-  composanteSelect.addEventListener("change", async function () {
-    reinitialiserAPartir(2);
-    if (!composanteSelect.value) return;
-    const mentions = await chargerOptions(`/api/academique/composantes/${composanteSelect.value}/mentions`);
-    mentionSelect.innerHTML = '<option value="">— choisissez votre mention —</option>' +
-      mentions.map(function (m) { return `<option value="${m.id}">${m.nom}</option>`; }).join("");
-    mentionSelect.disabled = mentions.length === 0;
-    if (mentions.length === 0) {
-      mentionSelect.innerHTML = '<option value="">— aucune mention disponible pour l\'instant —</option>';
-    }
-  });
-
-  mentionSelect.addEventListener("change", function () {
-    reinitialiserAPartir(3);
-    if (!mentionSelect.value) return;
-    niveauSelect.disabled = false;
-  });
-
-  async function chargerParcours() {
-    reinitialiserAPartir(4);
-    if (!niveauSelect.value) return;
-    const url = `/api/academique/composantes/${composanteSelect.value}/mentions/${mentionSelect.value}/filieres?niveau=${encodeURIComponent(niveauSelect.value)}`;
-    const filieres = await chargerOptions(url);
-    filiereSelect.disabled = false;
-    if (filieres.length === 0) {
-      filiereSelect.innerHTML = '<option value="">— aucun parcours specifique a ce niveau —</option>';
-      infoTroncCommun.style.display = "";
-    } else {
-      filiereSelect.innerHTML = '<option value="">— choisissez votre parcours —</option>' +
-        filieres.map(function (f) { return `<option value="${f.id}">${f.nom}</option>`; }).join("");
-      infoTroncCommun.style.display = "none";
-    }
-  }
-  niveauSelect.addEventListener("change", chargerParcours);
+  const champsAcademiquesRequis = [
+    document.getElementById("universite_id"),
+    document.getElementById("composante_id"),
+    document.getElementById("mention_id"),
+    document.getElementById("niveau"),
+  ];
 
   function appliquerVisibiliteRole() {
     const estEtudiant = roleSelect.value === "etudiant";
@@ -216,9 +139,11 @@
       champ.required = estEtudiant;
     });
   }
+
   roleSelect.addEventListener("change", appliquerVisibiliteRole);
   appliquerVisibiliteRole();
 })();
 </script>
+<script src="{{ url_for('static', path='js/cascade-academique.js') }}?v={{ version_asset('js/cascade-academique.js') }}"></script>
 </div>
 {% endblock %}

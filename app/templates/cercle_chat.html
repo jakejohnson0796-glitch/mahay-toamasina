@@ -685,47 +685,45 @@
       entete.appendChild(identite);
       corpsPanneauProfil.appendChild(entete);
 
-      const academique = p.academique || {};
-      const origine = academique.origine || {};
-      const formation = academique.formation || {};
+      // Le backend expose une hierarchie academique canonique (avec retrocompatibilite).
+      const a = p.academique || {};
+      const titreParcours = document.createElement("p");
+      titreParcours.className = "stat-label";
+      titreParcours.textContent = "Parcours académique";
+      corpsPanneauProfil.appendChild(titreParcours);
 
-      function ajouterSectionProfil(titre, champs) {
-        const titreSection = document.createElement("p");
-        titreSection.className = "stat-label";
-        titreSection.textContent = titre;
-        corpsPanneauProfil.appendChild(titreSection);
+      const listeChamps = document.createElement("div");
+      listeChamps.className = "profil-hierarchie";
+      [
+        ["Université", a.universite && a.universite.nom],
+        ["Composante", a.composante && a.composante.nom],
+        ["Domaine", a.domaine && a.domaine.nom],
+        ["Mention", a.mention && a.mention.nom],
+        [
+          "Parcours",
+          a.parcours && a.parcours.nom
+            ? a.parcours.nom
+            : a.type === "tronc_commun" ? "Tronc commun" : null,
+        ],
+        ["Niveau", a.niveau],
+      ].forEach(function ([etiquette, valeur], index) {
+        if (!valeur) return;
+        const paire = document.createElement("div");
+        paire.className = "profil-hierarchie-item profil-hierarchie-item-" + index;
+        const ligne = document.createElement("p");
+        ligne.className = "stat-label";
+        ligne.textContent = etiquette;
+        const forte = document.createElement("p");
+        const valeurForte = document.createElement("strong");
+        valeurForte.textContent = valeur;
+        forte.appendChild(valeurForte);
+        paire.appendChild(ligne);
+        paire.appendChild(forte);
+        listeChamps.appendChild(paire);
+      });
+      corpsPanneauProfil.appendChild(listeChamps);
 
-        const listeChamps = document.createElement("div");
-        listeChamps.className = "profil-champs";
-        champs.forEach(function ([etiquette, valeur]) {
-          if (!valeur) return;
-          const paire = document.createElement("div");
-          const ligne = document.createElement("p");
-          ligne.className = "stat-label";
-          ligne.textContent = etiquette;
-          const forte = document.createElement("p");
-          const valeurForte = document.createElement("strong");
-          valeurForte.textContent = valeur;
-          forte.appendChild(valeurForte);
-          paire.appendChild(ligne);
-          paire.appendChild(forte);
-          listeChamps.appendChild(paire);
-        });
-        corpsPanneauProfil.appendChild(listeChamps);
-      }
-
-      ajouterSectionProfil("Origine académique", [
-        ["Université", origine.universite],
-        ["Composante", origine.composante],
-      ]);
-      ajouterSectionProfil("Formation", [
-        ["Domaine", formation.domaine],
-        ["Mention", formation.mention],
-        ["Parcours", formation.parcours],
-        ["Niveau", formation.niveau],
-      ]);
-
-      if (academique.coherent === false) {
+      if (a.coherent === false) {
         const alerteProfil = document.createElement("p");
         alerteProfil.className = "stat-label";
         alerteProfil.textContent = "Profil académique à actualiser";

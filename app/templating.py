@@ -50,6 +50,8 @@ _VERSIONS_ASSETS = {
     "js/theme.js": _version_asset("js/theme.js"),
     "js/modale.js": _version_asset("js/modale.js"),
     "js/soumission.js": _version_asset("js/soumission.js"),
+    "js/cascade-academique.js": _version_asset("js/cascade-academique.js"),
+    "js/cercles-list.js": _version_asset("js/cercles-list.js"),
     "ux.css": _version_asset("ux.css"),
     "ux.js": _version_asset("ux.js"),
 }
