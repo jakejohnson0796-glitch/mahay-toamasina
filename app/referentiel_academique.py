@@ -68,6 +68,47 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
         "coherent": coherent,
         "tronc_commun": bool(coherent and filiere is None and mention_affichee and utilisateur.niveau),
     }
+
+def erreur_choix_academique(
+    session: Session, universite_id: Optional[int], mention_id: Optional[int],
+    filiere_id: Optional[int], niveau: Optional[str], niveaux_valides: set[str],
+) -> Optional[str]:
+    """Valide un choix academique avant toute ecriture utilisateur.
+
+    Cette verification unique evite que plusieurs flux recodent la hierarchie
+    avec des regles differentes ou des champs optionnels mal controles.
+    """
+    if not (universite_id and mention_id and niveau):
+        return "Universite, mention et niveau sont obligatoires."
+    if niveau not in niveaux_valides:
+        return "Niveau invalide."
+    universite = session.get(Universite, universite_id)
+    mention = session.get(Mention, mention_id)
+    if not universite or not universite.est_active:
+        return "Universite invalide ou inactive."
+    if not mention or not mention.est_active:
+        return "Mention invalide ou inactive."
+
+    if filiere_id:
+        filiere = session.get(Filiere, filiere_id)
+        if not filiere:
+            return "Parcours introuvable."
+        faculte = session.get(Faculte, filiere.faculte_id)
+        if not faculte or faculte.universite_id != universite_id:
+            return "Ce parcours ne correspond pas a l universite selectionnee."
+        if filiere.mention_id != mention_id:
+            return "Ce parcours ne correspond pas a la mention selectionnee."
+        if filiere.niveau and filiere.niveau != niveau:
+            return "Ce parcours n est pas propose a ce niveau."
+        return None
+
+    existe_une_specialisation = session.exec(select(Filiere.id).where(
+        Filiere.mention_id == mention_id,
+        Filiere.niveau == niveau,
+    )).first()
+    if existe_une_specialisation:
+        return "Un parcours specifique existe pour cette mention et ce niveau : selectionnez-le."
+    return None
 def profil_academique_incomplet(utilisateur: Utilisateur, session: Session) -> bool:
     """Vrai si le profil academique ne peut pas servir de reference fiable."""
     if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
