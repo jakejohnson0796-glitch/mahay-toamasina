@@ -21,6 +21,8 @@ from app.referentiel_academique import (
     profil_correspond_au_cercle,
     condition_cercles_disponibles,
     contexte_profil_academique,
+    erreur_choix_academique,
+    serialiser_profil_academique,
 )
 
 
@@ -164,6 +166,110 @@ class TestCorrespondanceCercle(unittest.TestCase):
             u = Utilisateur(nom="X", telephone="0340000006", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
 
+
+    def test_tronc_commun_depend_de_l_universite_et_non_du_referentiel_national(self):
+        with Session(self.engine) as session:
+            universite_autre = Universite(nom="Universite Autre")
+            session.add(universite_autre)
+            session.commit()
+            session.refresh(universite_autre)
+
+            faculte_autre = Faculte(nom="Faculte Autre", universite_id=universite_autre.id)
+            session.add(faculte_autre)
+            session.commit()
+            session.refresh(faculte_autre)
+
+            filiere_locale = session.get(Filiere, self.filiere_id)
+            filiere_locale.niveau = "L3"
+            session.add(filiere_locale)
+            session.add(Filiere(
+                nom="Finance et Comptabilite",
+                faculte_id=faculte_autre.id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            ))
+            session.commit()
+
+            u = Utilisateur(
+                nom="Tronc local",
+                telephone="0340000009",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            )
+            profil = contexte_profil_academique(u, session)
+            self.assertTrue(profil["coherent"])
+            self.assertTrue(profil["tronc_commun"])
+
+    def test_tronc_commun_est_incoherent_si_un_parcours_existe_dans_sa_propre_universite(self):
+        with Session(self.engine) as session:
+            filiere_locale = session.get(Filiere, self.filiere_id)
+            filiere_locale.niveau = "L1"
+            session.add(filiere_locale)
+            session.commit()
+
+            u = Utilisateur(
+                nom="Pas tronc",
+                telephone="0340000016",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            )
+            profil = contexte_profil_academique(u, session)
+            self.assertFalse(profil["coherent"])
+            self.assertFalse(profil["tronc_commun"])
+
+    def test_validation_du_tronc_commun_est_scopee_a_l_universite(self):
+        with Session(self.engine) as session:
+            autre_universite = Universite(nom="Universite Validation Autre")
+            session.add(autre_universite)
+            session.commit()
+            session.refresh(autre_universite)
+            autre_faculte = Faculte(nom="Faculte Validation Autre", universite_id=autre_universite.id)
+            session.add(autre_faculte)
+            session.commit()
+            session.refresh(autre_faculte)
+            session.add(Filiere(
+                nom="Finance et Comptabilite",
+                faculte_id=autre_faculte.id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            ))
+            session.commit()
+
+            erreur = erreur_choix_academique(
+                session,
+                self.universite_id,
+                self.mention_id,
+                None,
+                "L1",
+                {"L1", "L2", "L3", "M1", "M2"},
+            )
+            self.assertIsNone(erreur)
+
+    def test_serializer_academique_est_hierarchique(self):
+        with Session(self.engine) as session:
+            u = Utilisateur(
+                nom="Profil serialize",
+                telephone="0340000017",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            profil = contexte_profil_academique(u, session)
+            data = serialiser_profil_academique(profil)
+            self.assertEqual(data["type"], "parcours")
+            self.assertEqual(data["universite"]["id"], self.universite_id)
+            self.assertEqual(data["mention"]["id"], self.mention_id)
+            self.assertEqual(data["parcours"]["id"], self.filiere_id)
+            self.assertEqual(data["niveau"], "L3")
 
     def test_profil_sans_filiere_est_valide_en_tronc_commun(self):
         with Session(self.engine) as session:
