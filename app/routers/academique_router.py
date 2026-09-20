@@ -22,7 +22,7 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
 from ..database import get_session
-from ..models import Domaine, Faculte, Filiere, Mention, Universite
+from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -53,9 +53,19 @@ def lister_mentions(composante_id: int, session: Session = Depends(get_session))
     quelques mentions ENS pour lesquelles seul le tronc commun est
     verifie a ce jour, sans parcours de specialisation encore confirme
     qui permettrait de les rattacher ici automatiquement)."""
+    composante = session.get(Faculte, composante_id)
+    if not composante or not composante.universite_id:
+        return []
+
     ids_mentions = session.exec(
         select(Filiere.mention_id)
-        .where(Filiere.faculte_id == composante_id, Filiere.mention_id.is_not(None))
+        .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .where(
+            Filiere.faculte_id == composante_id,
+            Filiere.mention_id.is_not(None),
+            ProgrammeUniversitaire.universite_id == composante.universite_id,
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+        )
         .distinct()
     ).all()
     if not ids_mentions:
@@ -77,12 +87,22 @@ def lister_filieres_par_mention_niveau(
 
     Inclut aussi les Filiere heritees (niveau NULL, pas encore
     enrichies) : moins precises, mais toujours des choix valides."""
+    composante = session.get(Faculte, composante_id)
+    if not composante or not composante.universite_id:
+        return []
+
     filieres = session.exec(
-        select(Filiere).where(
+        select(Filiere)
+        .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .where(
             Filiere.faculte_id == composante_id,
             Filiere.mention_id == mention_id,
+            ProgrammeUniversitaire.universite_id == composante.universite_id,
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
             (Filiere.niveau == niveau) | (Filiere.niveau.is_(None)),
-        ).order_by(Filiere.nom)
+        )
+        .distinct()
+        .order_by(Filiere.nom)
     ).all()
     return [{"id": f.id, "nom": f.nom} for f in filieres]
 
@@ -138,10 +158,17 @@ def lister_parcours_nationaux(
 
     Liste VIDE = tronc commun a ce niveau pour cette mention (aucun
     parcours a choisir), meme convention que pour l'inscription."""
-    requete = select(Filiere).where(Filiere.mention_id == mention_id)
+    requete = (
+        select(Filiere)
+        .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .where(
+            Filiere.mention_id == mention_id,
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+        )
+    )
     if niveau:
-        requete = requete.where(Filiere.niveau == niveau)
-    filieres = session.exec(requete).all()
+        requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
+    filieres = session.exec(requete.distinct()).all()
 
     vus: dict[str, dict] = {}
     for f in filieres:
