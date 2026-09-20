@@ -72,7 +72,7 @@
       <select id="recherche_mention_id" name="mention_id">
         <option value="">Toutes les mentions</option>
         {% for m in mentions %}
-        <option value="{{ m.id }}" {% if recherche_mention_id == m.id %}selected{% endif %}>{{ m.nom }}</option>
+        <option value="{{ m.id }}" data-domaine-id="{{ m.domaine_id or '' }}" {% if recherche_mention_id == m.id %}selected{% endif %}>{{ m.nom }}</option>
         {% endfor %}
       </select>
     </div>
@@ -286,6 +286,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
     mentions.forEach(function (m) {
       const option = document.createElement("option");
       option.value = m.id;
+      option.dataset.domaineId = domaineSelect.value || "";
       option.textContent = m.nom;
       mentionSelect.appendChild(option);
     });
@@ -339,10 +340,27 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
     if (filiereSelect) filiereSelect.innerHTML = '<option value="">Tous les parcours</option>';
     chargerMentionsDuDomaine();
   });
-  if (mentionSelect) mentionSelect.addEventListener("change", function () { chargerParcours(); });
+  function synchroniserDomaineDepuisMention() {
+    if (!domaineSelect || !mentionSelect || !mentionSelect.value) return;
+    const option = mentionSelect.options[mentionSelect.selectedIndex];
+    const domaineId = option ? (option.dataset.domaineId || "") : "";
+    if (domaineId && String(domaineSelect.value) !== String(domaineId)) {
+      domaineSelect.value = String(domaineId);
+    }
+  }
+
+  if (mentionSelect) mentionSelect.addEventListener("change", function () {
+    synchroniserDomaineDepuisMention();
+    chargerParcours();
+  });
   if (niveauSelect) niveauSelect.addEventListener("change", function () { chargerParcours(); });
 
-  if (domaineSelect && domaineSelect.value) chargerMentionsDuDomaine().then(chargerParcours);
+  synchroniserDomaineDepuisMention();
+
+  if (domaineSelect && domaineSelect.value) chargerMentionsDuDomaine().then(function () {
+    synchroniserDomaineDepuisMention();
+    chargerParcours();
+  });
   else if (mentionSelect && mentionSelect.value && niveauSelect && niveauSelect.value) chargerParcours();
 })();
 </script>
