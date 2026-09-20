@@ -46,7 +46,7 @@ from typing import Optional
 from sqlmodel import Session, func, select
 
 from .models import (
-    CercleEtude, Filiere, MembreCercle, RoleMembreCercle, RoleUtilisateur,
+    CercleEtude, Filiere, MembreCercle, ProgrammeUniversitaire, RoleMembreCercle, RoleUtilisateur,
     StatutCercle, Utilisateur,
 )
 from .referentiel import NIVEAUX, libelle_niveau
@@ -213,8 +213,18 @@ def assurer_cercles_referentiel(session: Session) -> int:
         )
         return 0
 
+    # Une filiere n'est candidate au provisionnement national que si
+    # elle a au moins une offre universitaire active. La table
+    # ProgrammeUniversitaire est la source de vérité de l'offre réelle ;
+    # une ligne Filiere orpheline ne doit donc pas produire de cercle.
     filieres = session.exec(
-        select(Filiere).where(Filiere.mention_id.is_not(None))
+        select(Filiere)
+        .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .where(
+            Filiere.mention_id.is_not(None),
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+        )
+        .distinct()
     ).all()
 
     groupes: dict[tuple[int, str], list[Filiere]] = {}
