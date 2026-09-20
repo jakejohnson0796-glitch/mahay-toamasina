@@ -23,7 +23,6 @@ from ..referentiel import NIVEAUX
 from .. import referentiel_academique
 from ..cercles_referentiel import assurer_cercles_pour_filiere
 from ..web_utils import entier_ou_none
-from .cercles_router import _assurer_membres_admins
 
 router = APIRouter()
 
@@ -354,7 +353,6 @@ def approuver_demande_creation(
 
     session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=demande.utilisateur_id, role=RoleMembreCercle.CREATEUR))
     session.commit()
-    _assurer_membres_admins(session, cercle.id)
 
     demande.statut = StatutDemandeCreationCercle.APPROUVEE
     demande.date_traitement = datetime.utcnow()
