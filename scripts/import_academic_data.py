@@ -40,6 +40,7 @@ Usage :
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 import unicodedata
@@ -55,7 +56,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.database import engine  # noqa: E402
 from app.models import Domaine, Faculte, Filiere, Mention, ProgrammeUniversitaire, Universite  # noqa: E402
 
-FICHIER_PAR_DEFAUT = "mahay_universites_mentions_filieres_recensement.xlsx"
+FICHIER_PAR_DEFAUT = "mahay_toamasina_referentiel_source.json"
 
 PERIMETRE_UNIVERSITES_PUBLIQUES = {
     "universite d'antananarivo",
@@ -121,7 +122,23 @@ class Rapport:
             print(f"   - [{u} / {comp}] {dom} > {ment} > {parc}")
 
 
-def lire_lignes_excel(chemin: str) -> list[dict]:
+def lire_lignes_source(chemin: str) -> list[dict]:
+    if Path(chemin).suffix.lower() == ".json":
+        payload = json.loads(Path(chemin).read_text(encoding="utf-8"))
+        return [
+            {
+                "universite": str(ligne.get("universite") or "").strip(),
+                "ville": str(ligne.get("ville") or "").strip(),
+                "composante": str(ligne.get("composante") or "").strip(),
+                "domaine": str(ligne.get("domaine") or "").strip(),
+                "mention": str(ligne.get("mention") or "").strip(),
+                "niveau": str(ligne.get("niveau") or "").strip(),
+                "type": str(ligne.get("type") or "").strip(),
+                "parcours": str(ligne.get("parcours") or "").strip(),
+            }
+            for ligne in payload.get("formations", [])
+        ]
+
     classeur = load_workbook(chemin, read_only=True, data_only=True)
     feuille = classeur.active
     lignes_brutes = list(feuille.iter_rows(values_only=True))
@@ -134,17 +151,20 @@ def lire_lignes_excel(chemin: str) -> list[dict]:
         lignes.append({
             "universite": (d.get("Université") or "").strip(),
             "ville": (d.get("Ville") or "").strip(),
-            "composante": (d.get("Composante") or "").strip(),
+            "composante": (d.get("Composante") or d.get("Composante / Établissement") or "").strip(),
             "domaine": (d.get("Domaine") or "").strip(),
             "mention": (d.get("Mention") or "").strip(),
-            "parcours": (d.get("Parcours/Filière") or "").strip(),
+            "niveau": (d.get("Niveau") or "").strip(),
+            "type": (d.get("Type") or "").strip(),
+            "parcours": (d.get("Parcours/Filière") or d.get("Parcours / Filière") or "").strip(),
         })
     return lignes
 
 
 def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
     rapport = Rapport()
-    lignes = lire_lignes_excel(chemin_excel)
+    lignes = lire_lignes_source(chemin_excel)
+    source_stricte = Path(chemin_excel).suffix.lower() == ".json"
 
     with Session(engine) as session:
         universites_par_nom = {normaliser(u.nom): u for u in session.exec(select(Universite)).all()}
@@ -161,8 +181,12 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             (f.universite_id, normaliser(f.nom)): f for f in session.exec(select(Faculte)).all()
         }
         filieres_par_faculte = defaultdict(dict)
+        filieres_exactes_par_faculte = defaultdict(dict)
         for fil in session.exec(select(Filiere)).all():
             filieres_par_faculte[fil.faculte_id][normaliser(fil.nom)] = fil
+            filieres_exactes_par_faculte[fil.faculte_id][
+                (fil.mention_id, normaliser(fil.niveau), normaliser(fil.nom))
+            ] = fil
         programmes_existants = {
             (p.universite_id, p.filiere_id) for p in session.exec(select(ProgrammeUniversitaire)).all()
         }
@@ -250,13 +274,61 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             )
 
             if universite.id in universites_curatees_ids:
-                cle_parcours = normaliser(ligne["parcours"])
+                # Le Tronc commun reste porte par Mention + niveau dans le profil :
+                # il ne devient pas artificiellement une Filiere nommee.
+                if source_stricte and normaliser(ligne.get("type")) == normaliser("Tronc commun"):
+                    continue
+
                 filiere_existante = None
-                for fac in session.exec(select(Faculte).where(Faculte.universite_id == universite.id)).all():
-                    candidate = filieres_par_faculte.get(fac.id, {}).get(cle_parcours)
-                    if candidate is not None:
-                        filiere_existante = candidate
+                faculte_trouvee = None
+                facultes_universite = session.exec(
+                    select(Faculte).where(Faculte.universite_id == universite.id)
+                ).all()
+                if source_stricte:
+                    for fac in facultes_universite:
+                        if normaliser(fac.nom) != normaliser(ligne["composante"]):
+                            continue
+                        faculte_trouvee = fac
+                        candidate = filieres_exactes_par_faculte.get(fac.id, {}).get(
+                            (
+                                mention.id if mention is not None else None,
+                                normaliser(ligne.get("niveau")),
+                                normaliser(ligne["parcours"]),
+                            )
+                        )
+                        if candidate is not None:
+                            filiere_existante = candidate
                         break
+                else:
+                    cle_parcours = normaliser(ligne["parcours"])
+                    for fac in facultes_universite:
+                        candidate = filieres_par_faculte.get(fac.id, {}).get(cle_parcours)
+                        if candidate is not None:
+                            filiere_existante = candidate
+                            break
+
+                if filiere_existante is None and source_stricte and faculte_trouvee is not None:
+                    filiere_existante = Filiere(
+                        nom=ligne["parcours"],
+                        faculte_id=faculte_trouvee.id,
+                        mention_id=mention.id if mention is not None else None,
+                        niveau=ligne.get("niveau") or None,
+                    )
+                    if not dry_run:
+                        session.add(filiere_existante)
+                        session.commit()
+                        session.refresh(filiere_existante)
+                    filieres_par_faculte[faculte_trouvee.id][normaliser(filiere_existante.nom)] = filiere_existante
+                    filieres_exactes_par_faculte[faculte_trouvee.id][
+                        (
+                            filiere_existante.mention_id,
+                            normaliser(filiere_existante.niveau),
+                            normaliser(filiere_existante.nom),
+                        )
+                    ] = filiere_existante
+                    rapport.filieres_creees.append(
+                        (ligne["universite"], ligne["composante"], ligne["parcours"])
+                    )
 
                 if filiere_existante is None:
                     rapport.lignes_sans_correspondance.append(
@@ -272,6 +344,19 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                     rapport.filieres_existantes_rattachees_domaine.append(
                         (ligne["universite"], filiere_existante.nom, mention.domaine.nom if mention.domaine else "(aucun)")
                     )
+
+                cle_programme = (universite.id, filiere_existante.id)
+                if cle_programme not in programmes_existants:
+                    if not dry_run:
+                        session.add(
+                            ProgrammeUniversitaire(
+                                universite_id=universite.id,
+                                filiere_id=filiere_existante.id,
+                            )
+                        )
+                        session.commit()
+                    programmes_existants.add(cle_programme)
+                    rapport.programmes_crees += 1
                 continue
 
             cle_faculte = (universite.id, normaliser(ligne["composante"]))
