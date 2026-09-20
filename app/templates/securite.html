@@ -93,9 +93,19 @@
 </div>
 
 <div class="carte-formulaire">
-  <h3 class="titre-carte">Mon parcours academique</h3>
-  <p class="stat-label">Universite</p>
-  <p><strong>{{ universite.nom if universite else "Non renseignee" }}</strong></p>
+  <h3 class="titre-carte">Mon parcours académique</h3>
+  {% set p = profil_academique %}
+  {% if not p.coherent %}
+  <div class="erreur">Votre profil académique doit être actualisé avant de pouvoir correspondre de façon fiable aux cercles nationaux.</div>
+  {% endif %}
+  <div class="profil-champs profil-champs-academiques">
+    <div><p class="stat-label">Université</p><p><strong>{{ p.universite.nom if p.universite else "Non renseignée" }}</strong></p></div>
+    <div><p class="stat-label">Composante</p><p><strong>{{ p.faculte.nom if p.faculte else "Non renseignée" }}</strong></p></div>
+    <div><p class="stat-label">Domaine</p><p><strong>{{ p.domaine.nom if p.domaine else "Non renseigné" }}</strong></p></div>
+    <div><p class="stat-label">Mention</p><p><strong>{{ p.mention.nom if p.mention else "Non renseignée" }}</strong></p></div>
+    <div><p class="stat-label">Parcours</p><p><strong>{{ "Tronc commun" if p.tronc_commun else (p.filiere.nom if p.filiere else "Non renseigné") }}</strong></p></div>
+    <div><p class="stat-label">Niveau</p><p><strong>{{ p.niveau or "Non renseigné" }}</strong></p></div>
+  </div>
 
   {% if not universite %}
   <form method="post" action="/securite/universite" style="margin-bottom:1rem;">
@@ -110,11 +120,6 @@
     <button class="bouton bouton-secondaire bouton-form" type="submit">Enregistrer</button>
   </form>
   {% endif %}
-
-  <p class="stat-label">Filiere</p>
-  <p><strong>{{ filiere.nom if filiere else "Non renseignee" }}</strong></p>
-  <p class="stat-label">Niveau</p>
-  <p><strong>{{ utilisateur.niveau or "Non renseigne" }}</strong></p>
 
   {% if peut_modifier_niveau %}
   <form method="post" action="/securite/niveau" style="margin-top:1rem;">
@@ -132,8 +137,9 @@
   <p class="stat-label">Vous avez recemment modifie votre niveau. Prochain changement possible dans {{ jours_avant_changement_niveau }} jour{{ "s" if jours_avant_changement_niveau > 1 else "" }}.</p>
   {% endif %}
 
-  <p class="stat-label" style="margin-top:1rem;">La filiere ne peut pas etre modifiee directement ici.</p>
-</div>
+  <p class="stat-label" style="margin-top:1rem;">La mention et le parcours se changent via une demande validee par un administrateur.</p>
+  <a class="bouton bouton-secondaire bouton-form" href="/profil/academique">Actualiser mon parcours académique</a>
+</div></div>
 
 <div class="carte-formulaire">
   <h3 class="titre-carte">Double authentification (2FA)</h3>
