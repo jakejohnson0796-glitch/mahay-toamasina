@@ -70,14 +70,14 @@
   outline:none!important;border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(23,36,32,.08)!important
 }
 .carte-recherche-cercles .bouton-primaire{border-radius:10px;min-height:44px}
-.grille-cartes-claires{gap:1rem!important}
+.grille-cartes-claires{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:1rem!important}
 .cercle-card-premium{
   overflow:hidden;border-radius:16px!important;border:1px solid var(--content-border)!important;
   background:var(--content-surface)!important;box-shadow:var(--shadow-sm)!important;
   transition:transform .22s var(--ease-fluide),box-shadow .22s var(--ease-fluide),border-color .22s ease;
 }
 .cercle-card-premium:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)!important;border-color:#d7ccb6!important}
-.cercle-card-premium-inner{display:grid;grid-template-columns:128px minmax(0,1fr);gap:1rem;padding:.85rem}
+.cercle-card-premium-inner{display:grid;grid-template-columns:150px minmax(0,1fr);gap:1rem;padding:.85rem}
 .cercle-card-premium-media{position:relative;min-height:152px;overflow:hidden;border-radius:12px;background:#ede6d8}
 .cercle-card-premium-media img{width:100%;height:100%;display:block;object-fit:cover}
 .cercle-card-premium-media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,36,32,0) 48%,rgba(23,36,32,.42))}
@@ -104,7 +104,8 @@
   color:var(--content-text-muted);font-size:.72rem;background:rgba(255,253,248,.62)
 }
 .cercles-source-note a{text-decoration:underline}
-@media (max-width:900px){
+@media (max-width:980px){
+  .grille-cartes-claires{grid-template-columns:1fr!important}
   .cercles-hero-visuel{grid-template-columns:1fr;min-height:340px}
   .cercles-hero-contenu{padding:1.6rem 1.4rem 1.2rem}
   .cercles-hero-stats{margin:0 1.2rem 1.2rem}
@@ -119,6 +120,7 @@
   .cercles-hero-actions{display:grid;grid-template-columns:1fr}
   .cercles-hero-actions .bouton{width:100%;text-align:center}
   .cercles-hero-stats{margin:0 .9rem .9rem;padding:.8rem 1rem}
+  .grille-cartes-claires{grid-template-columns:1fr!important}
   .cercle-card-premium-inner{grid-template-columns:96px minmax(0,1fr);gap:.7rem;padding:.7rem}
   .cercle-card-premium-media{min-height:126px}
   .cercle-card-premium .carte-claire-titre{font-size:.94rem}
