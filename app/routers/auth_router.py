@@ -673,11 +673,6 @@ def _contexte_securite(
     return {
         "utilisateur": utilisateur,
         "nb_codes_restants": nb_codes_restants,
-        "filiere": profil_academique["filiere"],
-        "universite": profil_academique["universite"],
-        "mention": profil_academique["mention"],
-        "faculte": profil_academique["faculte"],
-        "domaine": profil_academique["domaine"],
         "profil_academique": profil_academique,
         "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
         "niveaux": NIVEAUX,
