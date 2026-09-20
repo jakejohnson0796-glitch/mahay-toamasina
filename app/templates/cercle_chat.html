@@ -685,26 +685,52 @@
       entete.appendChild(identite);
       corpsPanneauProfil.appendChild(entete);
 
-      const champs = [
-        ["Université", p.universite], ["Mention", p.mention],
-        ["Filière", p.filiere], ["Niveau", p.niveau],
-      ];
+      const a = p.academique || {
+        universite: p.universite,
+        composante: p.composante,
+        domaine: p.domaine,
+        mention: p.mention,
+        parcours: p.filiere,
+        niveau: p.niveau,
+        coherent: p.profil_academique_coherent,
+        tronc_commun: false,
+      };
+      const titreParcours = document.createElement("p");
+      titreParcours.className = "stat-label";
+      titreParcours.textContent = "Parcours académique";
+      corpsPanneauProfil.appendChild(titreParcours);
+
       const listeChamps = document.createElement("div");
       listeChamps.className = "profil-champs";
-      champs.forEach(function ([etiquette, valeur]) {
+      [
+        ["Université", a.universite],
+        ["Composante", a.composante],
+        ["Domaine", a.domaine],
+        ["Mention", a.mention],
+        ["Parcours", a.tronc_commun ? "Tronc commun" : a.parcours],
+        ["Niveau", a.niveau],
+      ].forEach(function ([etiquette, valeur]) {
         if (!valeur) return;
         const paire = document.createElement("div");
         const ligne = document.createElement("p");
         ligne.className = "stat-label";
         ligne.textContent = etiquette;
         const forte = document.createElement("p");
-        forte.innerHTML = "<strong></strong>";
-        forte.querySelector("strong").textContent = valeur;
+        const valeurForte = document.createElement("strong");
+        valeurForte.textContent = valeur;
+        forte.appendChild(valeurForte);
         paire.appendChild(ligne);
         paire.appendChild(forte);
         listeChamps.appendChild(paire);
       });
       corpsPanneauProfil.appendChild(listeChamps);
+
+      if (a.coherent === false) {
+        const alerteProfil = document.createElement("p");
+        alerteProfil.className = "stat-label";
+        alerteProfil.textContent = "Profil académique à actualiser";
+        corpsPanneauProfil.appendChild(alerteProfil);
+      }
 
       if (p.bio) {
         const titreBio = document.createElement("p");
