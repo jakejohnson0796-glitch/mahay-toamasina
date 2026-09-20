@@ -73,7 +73,7 @@ class TestRechercheCercles(unittest.TestCase):
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             cls.filiere_id = filiere.id
-            autre_mention = Mention(nom="Droit")
+            autre_mention = Mention(nom="Mention Contradictoire Recherche")
             session.add(autre_mention); session.commit(); session.refresh(autre_mention)
             autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=autre_mention.id)
             session.add(autre_filiere); session.commit(); session.refresh(autre_filiere)
