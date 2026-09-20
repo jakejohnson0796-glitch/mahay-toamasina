@@ -29,7 +29,7 @@
     <div>
       <p class="stat-label" style="margin:0;">Explorer</p>
       <h3 class="titre-carte">Trouver ton cercle</h3>
-      <p class="stat-label" style="margin:0.25rem 0 0;">Recherche par nom, description, domaine, mention ou parcours.</p>
+      <p class="stat-label" style="margin:0.25rem 0 0;">Recherche par nom, description, domaine, mention, niveau ou parcours.</p>
     </div>
   </div>
   <form class="filtres" method="get" action="/cercles" id="formulaire-recherche-cercles">
@@ -251,6 +251,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
 {% endif %}
 </div>
 
+<!-- Cascade de recherche nationale : Domaine -> Mention -> Niveau -> Parcours. -->
 <script src="{{ url_for('static', path='js/cercles-list.js') }}?v={{ version_asset('js/cercles-list.js') }}"></script>
 
 {% endblock %}
