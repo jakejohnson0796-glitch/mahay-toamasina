@@ -344,7 +344,7 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
     if nature == "incomplet":
         return False
 
-    profil = profil or contexte_profil_academique(utilisateur, session)
+    profil = contexte_profil_academique(utilisateur, session)
     if not profil["coherent"]:
         return False
 
