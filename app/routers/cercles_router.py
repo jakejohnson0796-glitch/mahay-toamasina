@@ -511,6 +511,7 @@ def liste_cercles(
         filiere = filieres_map.get(cercle.filiere_id)
         cercles_avec_info.append({
             "cercle": cercle,
+            "type_cercle": referentiel_academique.type_cercle(cercle),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
