@@ -23,6 +23,7 @@ from app.referentiel_academique import (
     contexte_profil_academique,
     erreur_choix_academique,
     serialiser_profil_academique,
+    type_cercle,
 )
 
 
@@ -156,6 +157,17 @@ class TestCorrespondanceCercle(unittest.TestCase):
                              universite_id=self.universite_id, mention_id=self.mention_id,
                              filiere_id=self.autre_filiere_id, niveau="L3")
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
+
+    def test_cercles_incomplets_ne_sont_pas_des_cercles_libres(self):
+        with Session(self.engine) as session:
+            exemples = [
+                CercleEtude(nom="Mention sans niveau", createur_id=self.createur_id, mention_id=self.mention_id),
+                CercleEtude(nom="Niveau sans mention", createur_id=self.createur_id, niveau="L3"),
+                CercleEtude(nom="Filiere sans mention", createur_id=self.createur_id, filiere_id=self.filiere_id, niveau="L3"),
+            ]
+            for cercle in exemples:
+                self.assertEqual(type_cercle(cercle), "incomplet")
+                self.assertFalse(cercle_est_national(cercle))
 
     def test_utilisateur_sans_filiere_ne_correspond_a_aucun_cercle_national(self):
         with Session(self.engine) as session:
