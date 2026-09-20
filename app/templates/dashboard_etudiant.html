@@ -80,7 +80,20 @@
     {% endif %}
 
     <div class="tb-ligne-principale">
-      {% if dernier_document %}
+      {% if tentative_quiz_en_cours %}
+      <div class="tb-carte-reprendre">
+        <p class="tb-etiquette-carte">Reprendre</p>
+        <div class="tb-reprendre-corps">
+          <span class="tb-reprendre-icone">{{ icone("quiz", 22) }}</span>
+          <div class="tb-reprendre-infos">
+            <h2 class="tb-reprendre-titre">Quiz {{ tentative_quiz_en_cours.matiere }}</h2>
+            <p class="tb-reprendre-meta">{{ tentative_quiz_en_cours.niveau }} · {{ tentative_quiz_en_cours.difficulte }} · {{ tentative_quiz_en_cours.nb_questions }} questions</p>
+            <p class="tb-reprendre-delai">Tu as commencé ce quiz sans encore le terminer.</p>
+          </div>
+        </div>
+        <a class="bouton bouton-primaire" href="/quiz/{{ tentative_quiz_en_cours.id }}">Reprendre le quiz →</a>
+      </div>
+      {% elif dernier_document %}
       <div class="tb-carte-reprendre">
         <p class="tb-etiquette-carte">Reprendre</p>
         <div class="tb-reprendre-corps">
@@ -149,6 +162,40 @@
         </span>
       </div>
     </div>
+
+    <section class="tb-continuite" aria-label="Ta progression">
+      <div class="tb-continuite-item">
+        <span class="tb-continuite-icone">{{ icone("jours_restants", 18) }}</span>
+        <span>
+          <strong>{{ jours_actifs_consecutifs }} jour{{ "s" if jours_actifs_consecutifs != 1 else "" }}</strong>
+          <small>de régularité</small>
+        </span>
+      </div>
+      <div class="tb-continuite-separateur" aria-hidden="true"></div>
+      <div class="tb-continuite-item">
+        <span class="tb-continuite-icone">{{ icone("quiz", 18) }}</span>
+        <span>
+          <strong>{{ score_moyen_quiz }}%{% if nb_quiz_completes %}{% endif %}</strong>
+          <small>score moyen des quiz</small>
+        </span>
+      </div>
+      <div class="tb-continuite-separateur" aria-hidden="true"></div>
+      <div class="tb-continuite-item">
+        {% if dernier_quiz %}
+        <span class="tb-continuite-icone">{{ icone("documents", 18) }}</span>
+        <span>
+          <strong>{{ dernier_quiz.score }}/{{ dernier_quiz.nb_questions }}</strong>
+          <small>dernier quiz · {{ dernier_quiz.matiere }}</small>
+        </span>
+        {% else %}
+        <span class="tb-continuite-icone">{{ icone("documents", 18) }}</span>
+        <span>
+          <strong>Premier quiz</strong>
+          <small>Commence pour mesurer ta progression</small>
+        </span>
+        {% endif %}
+      </div>
+    </section>
 
     <div class="tb-ligne-basse">
 
