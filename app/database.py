@@ -10,6 +10,8 @@ des deux est utilise.
 """
 from pathlib import Path
 
+from sqlalchemy import event
+
 from sqlmodel import SQLModel, Session, create_engine
 
 from .config import parametres
@@ -67,6 +69,19 @@ engine = create_engine(
     # plutot que d'attendre indefiniment qu'une connexion se libere.
     pool_timeout=10,
 )
+
+
+
+# SQLite ne dispose pas de la recherche linguistique PostgreSQL. On expose
+# donc la meme normalisation accent/casse au moteur local via une petite
+# fonction SQL deterministe ; la logique de recherche elle-meme reste
+# centralisee dans app/recherche.py.
+if DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def _enregistrer_fonction_normalisation_sqlite(dbapi_connection, _record):
+        from .texte_normalise import normaliser
+        dbapi_connection.create_function("mahay_normaliser", 1, normaliser)
+
 
 RACINE_PROJET = Path(__file__).resolve().parent.parent
 
