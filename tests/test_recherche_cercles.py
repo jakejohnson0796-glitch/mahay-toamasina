@@ -93,8 +93,8 @@ class TestRechercheCercles(unittest.TestCase):
             session.commit()
 
         cls.universite_id = universite.id
-    cls.mention_id = mention.id
-    cls.client = _creer_client_connecte(
+        cls.mention_id = mention.id
+        cls.client = _creer_client_connecte(
         "0350000099",
         "Etudiant Test",
         universite_id=cls.universite_id,
