@@ -19,4 +19,4 @@ EXPOSE 8080
 # connexions WebSocket en memoire dans le process (voir README, section
 # "Cercles d'etude"). Ne PAS ajouter --workers > 1 sans changer cette
 # architecture (pub/sub partage type Redis/Supabase Realtime).
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
