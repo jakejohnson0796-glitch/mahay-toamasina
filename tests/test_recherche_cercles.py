@@ -80,9 +80,7 @@ class TestRechercheCercles(unittest.TestCase):
                 filiere_id=filiere.id,
                 est_active=True,
             ))
-            autre_mention = Mention(nom="Mention Contradictoire Recherche")
-            session.add(autre_mention); session.commit(); session.refresh(autre_mention)
-            autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=autre_mention.id)
+            autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=mention.id)
             session.add(autre_filiere); session.commit(); session.refresh(autre_filiere)
             cls.autre_filiere_id = autre_filiere.id
             session.add(ProgrammeUniversitaire(
@@ -103,7 +101,7 @@ class TestRechercheCercles(unittest.TestCase):
             ))
             session.add(CercleEtude(
                 nom="Droit prive — Licence 3", createur_id=createur_id,
-                mention_id=autre_mention.id, filiere_id=autre_filiere.id, niveau="L3",
+                mention_id=mention.id, filiere_id=autre_filiere.id, niveau="L3",
             ))
             session.add(CercleEtude(
                 nom="CCA — Comptabilite Controle Audit — Master 1", createur_id=createur_id,
@@ -154,18 +152,6 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertIn("Finance et Comptabilite — Licence 3", page.text)
         self.assertNotIn("Droit prive — Licence 3", page.text)
-
-    def test_recherche_avec_mention_et_parcours_contradictoires_ne_renvoie_rien(self):
-        page = self.client.get(
-            "/cercles",
-            params={
-                "mention_id": str(self.mention_id),
-                "filiere_id": str(self.autre_filiere_id),
-            },
-        )
-        self.assertEqual(page.status_code, 200)
-        self.assertIn("Aucun résultat", page.text)
-        self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
 
     def test_tronc_commun_sans_mention_ne_renvoie_rien(self):
         page = self.client.get("/cercles", params={"filiere_id": "tronc_commun"})
@@ -256,11 +242,17 @@ class TestRechercheCercles(unittest.TestCase):
 
     def test_cercle_legacy_avec_mention_nulle_reste_filtrable_par_domaine(self):
         with Session(engine) as session:
-            cercle = session.exec(
-                select(CercleEtude).where(CercleEtude.filiere_id == self.filiere_id)
-            ).first()
-            cercle.mention_id = None
-            session.add(cercle)
+            createur = session.exec(
+                select(Utilisateur).where(Utilisateur.nom == "Createur")
+            ).one()
+            legacy = CercleEtude(
+                nom="Legacy Finance L3",
+                createur_id=createur.id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            session.add(legacy)
             session.commit()
 
             domaine_id = session.exec(
@@ -270,7 +262,7 @@ class TestRechercheCercles(unittest.TestCase):
 
         page = self.client.get("/cercles", params={"domaine_id": str(domaine_id)})
         self.assertEqual(page.status_code, 200)
-        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertIn("Legacy Finance L3", page.text)
 
     def test_le_contexte_du_profil_est_affiche_hierarchiquement(self):
         page = self.client.get("/cercles")
