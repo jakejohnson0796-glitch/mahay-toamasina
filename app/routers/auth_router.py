@@ -146,32 +146,19 @@ def inscription(
     # sponsor/repetiteur n'a pas de parcours academique a declarer — ces
     # 4 champs restent optionnels pour ce role, comme avant.
     if role == RoleUtilisateur.ETUDIANT:
-        if not (universite_id_nettoye and mention_id_nettoye and niveau):
+        erreur_academique = referentiel_academique.erreur_choix_academique(
+            session,
+            universite_id_nettoye,
+            mention_id_nettoye,
+            filiere_id_nettoye,
+            niveau,
+            set(NIVEAUX),
+        )
+        if erreur_academique:
             return templates.TemplateResponse(
                 request, "register.html",
-                _contexte_formulaire_inscription(session, "Universite, mention et niveau sont obligatoires pour un compte etudiant."),
+                _contexte_formulaire_inscription(session, erreur_academique),
             )
-        if niveau not in NIVEAUX:
-            return templates.TemplateResponse(
-                request, "register.html",
-                _contexte_formulaire_inscription(session, "Niveau invalide."),
-            )
-        if filiere_id_nettoye:
-            # §9 : une combinaison universite/mention/filiere incoherente
-            # (filiere introuvable, rattachee a une AUTRE universite, ou
-            # a une autre mention que celle choisie) est rejetee ici —
-            # jamais seulement empechee par le JS du formulaire.
-            filiere = session.get(Filiere, filiere_id_nettoye)
-            if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
-                return templates.TemplateResponse(
-                    request, "register.html",
-                    _contexte_formulaire_inscription(session, "Ce parcours ne correspond pas a l'universite selectionnee."),
-                )
-            if filiere.mention_id and filiere.mention_id != mention_id_nettoye:
-                return templates.TemplateResponse(
-                    request, "register.html",
-                    _contexte_formulaire_inscription(session, "Ce parcours ne correspond pas a la mention selectionnee."),
-                )
     else:
         # Un sponsor n'a pas de parcours academique : on ignore ces
         # champs meme si un appel direct les fournissait, plutot que de
@@ -591,23 +578,20 @@ def actualiser_profil_academique(
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
 
-    # §21-22 : universite, mention et niveau restent tous obligatoires
-    # pour resoudre le statut PROFILE_ACADEMIC_UPDATE_REQUIRED — memes
-    # regles qu'a l'inscription (§9). Filiere reste facultatif (tronc
-    # commun) ; mention et filiere servent ici a VALIDER la coherence
-    # avant de creer la demande, jamais a etre enregistres directement
-    # sur le compte.
-    if not (universite_id_nettoye and mention_id_nettoye and niveau):
-        return _contexte("Universite, mention et niveau sont tous les trois obligatoires.")
-    if niveau not in NIVEAUX:
-        return _contexte("Niveau invalide.")
-
-    if filiere_id_nettoye:
-        filiere = session.get(Filiere, filiere_id_nettoye)
-        if not filiere or not filiere.faculte or filiere.faculte.universite_id != universite_id_nettoye:
-            return _contexte("Ce parcours ne correspond pas a l'universite selectionnee.")
-        if filiere.mention_id and filiere.mention_id != mention_id_nettoye:
-            return _contexte("Ce parcours ne correspond pas a la mention selectionnee.")
+    # Meme validateur que l'inscription : le profil ne peut jamais
+    # enregistrer une combinaison Universite / Mention / Parcours / Niveau
+    # incoherente. La mention et le parcours restent soumis a approbation,
+    # mais leur coherence est verifiee avant de creer la demande.
+    erreur_academique = referentiel_academique.erreur_choix_academique(
+        session,
+        universite_id_nettoye,
+        mention_id_nettoye,
+        filiere_id_nettoye,
+        niveau,
+        set(NIVEAUX),
+    )
+    if erreur_academique:
+        return _contexte(erreur_academique)
 
     # Universite + niveau : modifiables librement, enregistres tout de
     # suite (aucune approbation requise pour ces deux-la).
