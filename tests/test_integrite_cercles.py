@@ -163,11 +163,19 @@ class TestIntegriteCercles(unittest.TestCase):
             self.message_id = message.id
 
     def test_une_seule_appartenance_par_utilisateur(self):
+        with Session(self.engine) as session:
+            session.add(MembreCercle(
+                cercle_id=self.cercle_id,
+                utilisateur_id=self.bob_id,
+                role=RoleMembreCercle.MEMBRE,
+            ))
+            session.commit()
+
         with self.assertRaises(IntegrityError):
             with Session(self.engine) as session:
                 session.add(MembreCercle(
                     cercle_id=self.cercle_id,
-                    utilisateur_id=self.alice_id,
+                    utilisateur_id=self.bob_id,
                     role=RoleMembreCercle.MEMBRE,
                 ))
                 session.commit()
