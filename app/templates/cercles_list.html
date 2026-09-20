@@ -132,7 +132,7 @@
 
 <section class="cercles-hero-visuel" aria-labelledby="titre-hero-cercles">
   <div class="cercles-hero-photo" aria-hidden="true">
-    <img src="https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=1600&q=82" alt="" fetchpriority="high">
+    <img src="/static/images/cercles/livre-4.svg" alt="" fetchpriority="high">
   </div>
   <div class="cercles-hero-contenu">
     <span class="cercles-hero-kicker">Université de Toamasina · Cercles d'étude</span>
@@ -157,9 +157,9 @@
     <p class="stat-label">Des visuels de livres et de travail académique accompagnent les cartes pour donner à la page un visage plus éditorial et plus chaleureux.</p>
   </div>
   <div class="cercles-inspiration-livres">
-    <div class="photo"><img loading="lazy" src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=800&q=80" alt="Livre relié posé sur un support"></div>
-    <div class="photo"><img loading="lazy" src="https://images.unsplash.com/photo-1456324504439-367cee3b3c32?auto=format&fit=crop&w=800&q=80" alt="Table de travail avec livre et carnet"></div>
-    <div class="photo"><img loading="lazy" src="https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=800&q=80" alt="Livres et lecture"></div>
+    <div class="photo"><img loading="lazy" src="/static/images/cercles/livre-1.svg" alt="Livre relié posé sur un support"></div>
+    <div class="photo"><img loading="lazy" src="/static/images/cercles/livre-2.svg" alt="Table de travail avec livre et carnet"></div>
+    <div class="photo"><img loading="lazy" src="/static/images/cercles/livre-3.svg" alt="Livres et lecture"></div>
   </div>
 </section>
 
@@ -371,9 +371,10 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
     <div class="cercle-card-premium-inner">
       <div class="cercle-card-premium-media">
         {% set images_cercle = [
-          {"url":"https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=500&q=78","alt":"Livre d'étude"},
-          {"url":"https://images.unsplash.com/photo-1456324504439-367cee3b3c32?auto=format&fit=crop&w=500&q=78","alt":"Table de travail et carnet"},
-          {"url":"https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=500&q=78","alt":"Livres en lecture"}
+          {"url":"/static/images/cercles/livre-1.svg","alt":"Livre d'étude"},
+          {"url":"/static/images/cercles/livre-2.svg","alt":"Table de travail et carnet"},
+          {"url":"/static/images/cercles/livre-3.svg","alt":"Livres en lecture"},
+          {"url":"/static/images/cercles/livre-4.svg","alt":"Bureau et livres d’étude"}
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
@@ -432,14 +433,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
   {% endfor %}
 </div>
 
-<div class="cercles-source-note">
-  <span>Visuels éditoriaux : photos Unsplash, utilisées comme illustrations de la page.</span>
-  <span>
-    <a href="https://unsplash.com/photos/laptop-on-desk-in-home-workspace-w5kfpugEIbo" target="_blank" rel="noopener">Source photo 1</a>
-    ·
-    <a href="https://unsplash.com/photos/a-desk-with-a-laptop-pen-eyeglasses-and-a-notebook-0nc4sJqL87U" target="_blank" rel="noopener">Source photo 2</a>
-  </span>
-</div>
+<div class="cercles-source-note"><span>Illustrations d’étude intégrées localement dans Gasy Mahay : aucune dépendance à un service d’images externe.</span></div>
 
 {% if total_pages > 1 %}
 <nav class="pagination" aria-label="Pagination des cercles" style="display:flex; gap:1rem; align-items:center; justify-content:center; margin-top:1.5rem;">
