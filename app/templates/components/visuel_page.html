@@ -1,0 +1,49 @@
+{# Bandeau visuel global : une illustration locale par grand univers du site. #}
+{% set chemin = request.url.path %}
+{% set image = "/static/images/site/community.svg" %}
+{% set titre = "Apprendre ensemble" %}
+{% set texte = "Un espace visuel pensé pour accompagner ton parcours universitaire." %}
+
+{% if chemin == "/" %}
+  {% set image = "/static/images/site/hero-campus.svg" %}
+  {% set titre = "Bienvenue à Gasy Mahay" %}
+  {% set texte = "Ton campus de révision pour l’Université de Toamasina." %}
+{% elif chemin.startswith("/documents") or chemin.startswith("/document") %}
+  {% set image = "/static/images/site/documents.svg" %}
+  {% set titre = "Tes ressources d’étude" %}
+  {% set texte = "Cours, fiches, annales et documents à portée de main." %}
+{% elif chemin.startswith("/quiz") %}
+  {% set image = "/static/images/site/quiz.svg" %}
+  {% set titre = "Réviser en mode quiz" %}
+  {% set texte = "Transforme tes révisions en entraînement interactif." %}
+{% elif chemin.startswith("/tuteur") %}
+  {% set image = "/static/images/site/tuteur.svg" %}
+  {% set titre = "Ton tuteur de révision" %}
+  {% set texte = "Pose tes questions et avance étape par étape." %}
+{% elif chemin.startswith("/classe") %}
+  {% set image = "/static/images/site/classe.svg" %}
+  {% set titre = "Ta classe, au même endroit" %}
+  {% set texte = "Cours, devoirs, présence et travail collectif réunis." %}
+{% elif chemin.startswith("/universites") or chemin.startswith("/profil/academique") %}
+  {% set image = "/static/images/site/universite.svg" %}
+  {% set titre = "Ton parcours universitaire" %}
+  {% set texte = "Retrouve ta composante, ta mention, ton niveau et ton parcours." %}
+{% elif chemin.startswith("/cercles") %}
+  {% set image = "/static/images/site/community.svg" %}
+  {% set titre = "Étudier à plusieurs" %}
+  {% set texte = "Des communautés d’étudiants autour des mêmes objectifs." %}
+{% elif chemin.startswith("/connexion") or chemin.startswith("/inscription") or chemin.startswith("/mot-de-passe") %}
+  {% set image = "/static/images/site/study-books.svg" %}
+  {% set titre = "Construire de bonnes habitudes" %}
+  {% set texte = "Gasy Mahay t’accompagne avant, pendant et après tes révisions." %}
+{% endif %}
+
+<div class="visuel-page-global" aria-hidden="true">
+  <div class="visuel-page-global-illustration">
+    <img src="{{ image }}" alt="" loading="lazy" decoding="async">
+  </div>
+  <div class="visuel-page-global-texte">
+    <span>{{ titre }}</span>
+    <small>{{ texte }}</small>
+  </div>
+</div>
