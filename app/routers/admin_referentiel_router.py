@@ -20,6 +20,7 @@ from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from ..referentiel import NIVEAUX
+from .. import referentiel_academique
 from ..cercles_referentiel import assurer_cercles_pour_filiere
 from ..web_utils import entier_ou_none
 from .cercles_router import _assurer_membres_admins
@@ -214,10 +215,18 @@ def assigner_cercle(
         return RedirectResponse("/admin/referentiel/cercles?erreur=niveau_invalide", status_code=303)
 
     mention_id_nettoye = entier_ou_none(mention_id)
+    filiere = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+
     if mention_id_nettoye:
         mention = session.get(Mention, mention_id_nettoye)
         if not mention:
             return RedirectResponse("/admin/referentiel/cercles?erreur=mention_introuvable", status_code=303)
+        # Une Filiere rattachee a une Mention ne peut pas etre affectee a
+        # une autre Mention au niveau du cercle. Sans ce controle, un admin
+        # pourrait creer un triplet academique incoherent, puis rendre le
+        # cercle accessible a des etudiants d'une mauvaise mention.
+        if filiere and filiere.mention_id and filiere.mention_id != mention_id_nettoye:
+            return RedirectResponse("/admin/referentiel/cercles?erreur=incoherence_mention_filiere", status_code=303)
         cercle.mention_id = mention.id
     else:
         cercle.mention_id = None
@@ -225,16 +234,14 @@ def assigner_cercle(
     cercle.niveau = niveau_nettoye
 
     # Verification anti-doublon (defense en profondeur — la migration
-    # pose deja un index unique partiel cote base pour le meme cas) :
-    # si les 3 champs sont desormais tous renseignes, s'assurer qu'aucun
-    # AUTRE cercle actif n'a deja exactement cette combinaison.
+    # pose deja un index unique partiel cote base pour le meme cas).
     if cercle.mention_id and cercle.filiere_id and cercle.niveau:
-        from ..models import StatutCercle
+        filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere) if filiere else [cercle.filiere_id]
         doublon = session.exec(
             select(CercleEtude).where(
                 CercleEtude.id != cercle.id,
                 CercleEtude.mention_id == cercle.mention_id,
-                CercleEtude.filiere_id == cercle.filiere_id,
+                CercleEtude.filiere_id.in_(filieres_equivalentes),
                 CercleEtude.niveau == cercle.niveau,
                 CercleEtude.statut == StatutCercle.ACTIF,
             )
@@ -295,18 +302,31 @@ def approuver_demande_creation(
     if not demande or demande.statut != StatutDemandeCreationCercle.EN_ATTENTE:
         return RedirectResponse("/admin/referentiel/demandes-creation", status_code=303)
 
-    # Re-verification du doublon AU MOMENT DE L'APPROBATION (meme
-    # principe que pour les demandes d'adhesion, §32 du brief) : une
+    # Re-verification du doublon AU MOMENT DE L'APPROBATION : une
     # autre demande equivalente a pu etre approuvee entre-temps, ou un
-    # cercle cree par un autre chemin.
-    doublon = session.exec(
-        select(CercleEtude).where(
-            CercleEtude.mention_id == demande.mention_id,
-            CercleEtude.filiere_id == demande.filiere_id,
-            CercleEtude.niveau == demande.niveau,
-            CercleEtude.statut == StatutCercle.ACTIF,
-        )
-    ).first()
+    # cercle cree par un autre chemin. Pour un parcours, la comparaison
+    # est nationale (toutes les Filiere equivalentes d'une meme mention),
+    # pas seulement l'id d'une universite.
+    filiere_demandee = session.get(Filiere, demande.filiere_id) if demande.filiere_id else None
+    if filiere_demandee and demande.mention_id and filiere_demandee.mention_id != demande.mention_id:
+        demande.statut = StatutDemandeCreationCercle.REJETEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = admin.id
+        session.add(demande)
+        session.commit()
+        return RedirectResponse("/admin/referentiel/demandes-creation?erreur=incoherence_mention_filiere", status_code=303)
+
+    doublon_requete = select(CercleEtude).where(
+        CercleEtude.mention_id == demande.mention_id,
+        CercleEtude.niveau == demande.niveau,
+        CercleEtude.statut == StatutCercle.ACTIF,
+    )
+    if filiere_demandee:
+        filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere_demandee)
+        doublon_requete = doublon_requete.where(CercleEtude.filiere_id.in_(filieres_equivalentes))
+    else:
+        doublon_requete = doublon_requete.where(CercleEtude.filiere_id.is_(None))
+    doublon = session.exec(doublon_requete).first()
     if doublon:
         demande.statut = StatutDemandeCreationCercle.REJETEE
         demande.date_traitement = datetime.utcnow()
