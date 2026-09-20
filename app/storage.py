@@ -27,6 +27,7 @@ from typing import Iterator, Optional
 from fastapi import UploadFile
 
 from .config import parametres
+from .upload_validation import valider_upload
 
 DOSSIER_UPLOADS_LOCAL = Path(__file__).resolve().parent.parent / "uploads"
 
@@ -108,25 +109,20 @@ def sauvegarder_fichier(fichier: UploadFile, reference: str) -> str:
     pas les regles (voir EXTENSIONS_AUTORISEES / TAILLE_MAX_DOCUMENT) —
     a capturer par l'appelant pour afficher un message clair."""
     nom_original = fichier.filename or "document"
-    extension = Path(nom_original).suffix.lower()
-    if extension not in EXTENSIONS_AUTORISEES:
-        extensions_lisibles = ", ".join(sorted(EXTENSIONS_AUTORISEES))
-        raise FichierInvalide(f"Type de fichier non accepte. Formats autorises : {extensions_lisibles}.")
-
     contenu = fichier.file.read()
-    if len(contenu) > TAILLE_MAX_DOCUMENT:
-        raise FichierInvalide(f"Fichier trop volumineux (max {TAILLE_MAX_DOCUMENT // (1024 * 1024)} Mo).")
-    if len(contenu) == 0:
-        raise FichierInvalide("Le fichier semble vide.")
+    try:
+        mime_reel = valider_upload(contenu, nom_original, TAILLE_MAX_DOCUMENT, EXTENSIONS_AUTORISEES)
+    except ValueError as exc:
+        raise FichierInvalide(str(exc)) from exc
 
     nom_objet = _nom_objet_sur(reference, nom_original)
 
     if stockage_distant_actif():
         client = _obtenir_client_supabase()
         client.storage.from_(parametres.supabase_bucket).upload(
-            nom_objet,
-            contenu,
-            {"content-type": fichier.content_type or "application/octet-stream"},
+            file=contenu,
+            path=nom_objet,
+            file_options={"content-type": mime_reel, "upsert": "false"},
         )
         return nom_objet
 
@@ -166,16 +162,11 @@ def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: 
     regles ci-dessus -- a capturer par l'appelant pour afficher un
     message clair (voir /profil/photo dans auth_router.py)."""
     nom_original = fichier.filename or "photo"
-    extension = Path(nom_original).suffix.lower()
-    if extension not in EXTENSIONS_AVATAR_AUTORISEES:
-        extensions_lisibles = ", ".join(sorted(EXTENSIONS_AVATAR_AUTORISEES))
-        raise FichierInvalide(f"Type de fichier non accepte. Formats autorises : {extensions_lisibles}.")
-
     contenu = fichier.file.read()
-    if len(contenu) > TAILLE_MAX_AVATAR:
-        raise FichierInvalide(f"Photo trop volumineuse (max {TAILLE_MAX_AVATAR // (1024 * 1024)} Mo).")
-    if len(contenu) == 0:
-        raise FichierInvalide("Le fichier semble vide.")
+    try:
+        mime_reel = valider_upload(contenu, nom_original, TAILLE_MAX_AVATAR, EXTENSIONS_AVATAR_AUTORISEES)
+    except ValueError as exc:
+        raise FichierInvalide(str(exc)) from exc
 
     # Supprime l'ancienne photo AVANT d'ecrire la nouvelle : si
     # l'extension n'a pas change, ancien_chemin == le nom d'objet qu'on
@@ -189,9 +180,9 @@ def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: 
     if stockage_distant_actif():
         client = _obtenir_client_supabase()
         client.storage.from_(parametres.supabase_bucket).upload(
-            nom_objet,
-            contenu,
-            {"content-type": fichier.content_type or "application/octet-stream"},
+            file=contenu,
+            path=nom_objet,
+            file_options={"content-type": mime_reel, "upsert": "true"},
         )
         return nom_objet
 
@@ -201,12 +192,20 @@ def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: 
     return str(chemin_local)
 
 
-def obtenir_url_telechargement(reference_fichier: str) -> str:
-    """URL/chemin vers lequel rediriger pour telecharger le fichier."""
+def obtenir_url_telechargement(reference_fichier: str, expires_in: int = 60, telechargement: bool = True) -> str:
+    """URL temporaire pour un objet Supabase prive, ou chemin local."""
     if stockage_distant_actif():
         client = _obtenir_client_supabase()
-        return client.storage.from_(parametres.supabase_bucket).get_public_url(reference_fichier)
-    return reference_fichier  # chemin local : FileResponse s'en charge directement
+        options = {"download": True} if telechargement else {}
+        reponse = client.storage.from_(parametres.supabase_bucket).create_signed_url(
+            reference_fichier, expires_in, options
+        )
+        if isinstance(reponse, dict):
+            url = reponse.get("signedURL") or reponse.get("signedUrl") or reponse.get("signed_url")
+            if url:
+                return url
+        raise RuntimeError("Supabase n'a pas retourne d'URL signee.")
+    return reference_fichier
 
 
 def supprimer_fichier(reference_fichier: str) -> None:

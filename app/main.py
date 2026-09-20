@@ -11,7 +11,7 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
 from starlette.middleware.sessions import SessionMiddleware
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 
 from .config import parametres
 from .database import executer_migrations, engine, get_session
@@ -156,25 +156,29 @@ async def au_demarrage() -> None:
 @app.get("/")
 def accueil(request: Request, session: Session = Depends(get_session)):
     facultes = session.exec(select(Faculte)).all()
-    documents_approuves = session.exec(
+    derniers_documents = session.exec(
         select(Document).where(Document.statut == StatutDocument.APPROUVE)
+        .order_by(Document.date_upload.desc()).limit(5)
     ).all()
-    derniers_documents = sorted(
-        documents_approuves, key=lambda d: d.date_upload, reverse=True
-    )[:5]
 
     # Section 9 du brief "Le Phare" : hero a 4 stats (documents,
     # universites, cercles actifs, quiz completes) au lieu de 2.
-    nb_universites = len(session.exec(select(Universite).where(Universite.est_active == True)).all())  # noqa: E712
-    nb_cercles_actifs = len(session.exec(select(CercleEtude).where(CercleEtude.statut == StatutCercle.ACTIF)).all())
-    nb_quiz_completes = len(session.exec(select(TentativeQuiz).where(TentativeQuiz.date_soumission.is_not(None))).all())
+    nb_universites = session.exec(
+        select(func.count()).select_from(Universite).where(Universite.est_active == True)  # noqa: E712
+    ).one()
+    nb_cercles_actifs = session.exec(
+        select(func.count()).select_from(CercleEtude).where(CercleEtude.statut == StatutCercle.ACTIF)
+    ).one()
+    nb_quiz_completes = session.exec(
+        select(func.count()).select_from(TentativeQuiz).where(TentativeQuiz.date_soumission.is_not(None))
+    ).one()
 
     return templates.TemplateResponse(
         request,
         "index.html",
         {
             "facultes": facultes,
-            "nb_documents": len(documents_approuves),
+            "nb_documents": session.exec(select(func.count()).select_from(Document).where(Document.statut == StatutDocument.APPROUVE)).one(),
             "derniers_documents": derniers_documents,
             "nb_universites": nb_universites,
             "nb_cercles_actifs": nb_cercles_actifs,
@@ -186,7 +190,7 @@ def accueil(request: Request, session: Session = Depends(get_session)):
 
 @app.get("/a-propos")
 def a_propos(request: Request, session: Session = Depends(get_session)):
-    nb_universites = len(session.exec(select(Universite).where(Universite.est_active == True)).all())  # noqa: E712
+    nb_universites = session.exec(select(func.count()).select_from(Universite).where(Universite.est_active == True)).one()
     return templates.TemplateResponse(
         request, "a_propos.html",
         {"nb_universites": nb_universites, "utilisateur": utilisateur_courant(request, session)},

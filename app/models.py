@@ -310,7 +310,7 @@ class Document(SQLModel, table=True):
     filiere_id: int = Field(foreign_key="filiere.id")
     uploader_id: int = Field(foreign_key="utilisateur.id")
     chemin_fichier: str
-    statut: StatutDocument = Field(default=StatutDocument.EN_ATTENTE)
+    statut: StatutDocument = Field(default=StatutDocument.EN_ATTENTE, index=True)
     nb_telechargements: int = Field(default=0)
     date_upload: datetime = Field(default_factory=datetime.utcnow)
     # Portee cercle, optionnelle : un document reste toujours visible dans
@@ -319,7 +319,7 @@ class Document(SQLModel, table=True):
     # uploade depuis un cercle precis. None = uploade directement depuis
     # la bibliotheque, sans passer par un cercle (comportement d'origine,
     # inchange pour toutes les lignes existantes).
-    cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
+    cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id", index=True)
 
 
 class TentativeQuiz(SQLModel, table=True):
@@ -330,7 +330,7 @@ class TentativeQuiz(SQLModel, table=True):
     normalisees : structure qui ne varie jamais independamment de la
     tentative, pas besoin de la requeter en dehors de cette tentative."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
     matiere: str
     niveau: str
     difficulte: str
@@ -453,8 +453,8 @@ class MembreCercle(SQLModel, table=True):
     """Appartenance d'un utilisateur a un cercle d'etude — seuls les
     membres voient et envoient des messages dans le salon."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    cercle_id: int = Field(foreign_key="cercleetude.id")
-    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    cercle_id: int = Field(foreign_key="cercleetude.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
     # Le createur du cercle a toujours role=CREATEUR (voir §23 du brief) ;
     # backfille par la migration a partir de CercleEtude.createur_id
     # pour toutes les lignes existantes, donc jamais NULL en pratique

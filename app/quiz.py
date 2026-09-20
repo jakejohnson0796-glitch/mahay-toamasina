@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 
 from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz
 from . import ai_quiz
+from .quiz_validation import QuizValidationError, valider_questions
 
 from .referentiel import NIVEAUX  # centralise (voir app/referentiel.py) ; reexporte ici pour ne rien casser dans quiz_router.py qui importe quiz_module.NIVEAUX
 DIFFICULTES = ["Facile", "Moyen", "Difficile"]
@@ -19,6 +20,20 @@ NB_QUESTIONS_POSSIBLES = [5, 10, 15, 20]
 
 
 ESSAIS_MAX_GENERATION = 2
+LONGUEUR_MAX_MATIERE = 120
+
+
+def valider_parametres(matiere: str, niveau: str, difficulte: str, nb_questions: int) -> str:
+    matiere = (matiere or "").strip()
+    if not matiere or len(matiere) > LONGUEUR_MAX_MATIERE:
+        raise QuizValidationError(f"La matiere doit contenir entre 1 et {LONGUEUR_MAX_MATIERE} caracteres.")
+    if niveau not in NIVEAUX:
+        raise QuizValidationError("Niveau de quiz invalide.")
+    if difficulte not in DIFFICULTES:
+        raise QuizValidationError("Difficulte de quiz invalide.")
+    if nb_questions not in NB_QUESTIONS_POSSIBLES:
+        raise QuizValidationError("Nombre de questions invalide.")
+    return matiere
 
 
 def _generer_quiz_confiant(matiere: str, niveau: str, difficulte: str, nb_questions: int) -> List[Dict]:
@@ -30,13 +45,21 @@ def _generer_quiz_confiant(matiere: str, niveau: str, difficulte: str, nb_questi
     jamais bloquer indefiniment l'etudiant. Si aucun essai n'aboutit a
     une confiance totale, on livre quand meme le dernier resultat verifie
     (un quiz relu vaut mieux qu'un quiz jamais livre)."""
-    questions_verifiees: List[Dict] = []
+    dernieres_questions: List[Dict] = []
     for _ in range(ESSAIS_MAX_GENERATION):
         questions_generees = ai_quiz.generer_quiz_par_theme(matiere, niveau, difficulte, nb_questions)
+        try:
+            questions_generees = valider_questions(questions_generees, expected_count=nb_questions)
+        except QuizValidationError:
+            continue
         questions_verifiees, confiant = ai_quiz.verifier_et_corriger_questions(questions_generees, matiere, niveau)
+        try:
+            dernieres_questions = valider_questions(questions_verifiees, expected_count=nb_questions)
+        except QuizValidationError:
+            continue
         if confiant:
             break
-    return questions_verifiees
+    return dernieres_questions
 
 
 def creer_tentative(
@@ -53,7 +76,10 @@ def creer_tentative(
     on cree quand meme la tentative avec le message d'erreur comme
     unique 'question' — ca reste coherent avec le comportement existant,
     et evite un ecran d'erreur brut."""
+    matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
     questions_verifiees = _generer_quiz_confiant(matiere, niveau, difficulte, nb_questions)
+    if len(questions_verifiees) != nb_questions:
+        raise QuizValidationError("Impossible de generer un quiz conforme apres plusieurs tentatives.")
 
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
@@ -70,7 +96,7 @@ def creer_tentative(
 
 
 def questions(tentative: TentativeQuiz) -> List[dict]:
-    return json.loads(tentative.questions_json)
+    return valider_questions(json.loads(tentative.questions_json), expected_count=tentative.nb_questions)
 
 
 def reponses(tentative: TentativeQuiz) -> Optional[List[Optional[int]]]:
@@ -84,6 +110,11 @@ def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List
     reponses, et fige la tentative (elle devient un resultat d'historique
     consultable, plus modifiable)."""
     qs = questions(tentative)
+    if len(reponses_soumises) != len(qs):
+        raise QuizValidationError("Le nombre de reponses ne correspond pas au quiz.")
+    for index, reponse in enumerate(reponses_soumises):
+        if reponse is not None and (isinstance(reponse, bool) or not isinstance(reponse, int) or reponse < 0 or reponse >= len(qs[index]["choix"])):
+            raise QuizValidationError("Une reponse de quiz est invalide.")
     score = sum(
         1
         for i, q in enumerate(qs)

@@ -88,6 +88,8 @@ class EnTetesSecuriteMiddleware(BaseHTTPMiddleware):
         reponse.headers["Permissions-Policy"] = "geolocation=(self), microphone=(self), camera=(self)"
 
         reponse.headers["Content-Security-Policy"] = _CSP
+        reponse.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        reponse.headers["Cross-Origin-Resource-Policy"] = "same-origin"
 
         # HSTS : force le navigateur a ne plus jamais essayer HTTP (meme
         # si quelqu'un tape/clique un lien http://) pendant 1 an, pour ce

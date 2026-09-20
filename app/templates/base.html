@@ -128,7 +128,10 @@
       {{ avatar_utilisateur(utilisateur, taille=27) }}
       <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
       {% endif %}
-      <a href="/deconnexion" class="tb-sidebar-lien" style="margin-left:auto; padding:0.3rem 0.4rem;" aria-label="Deconnexion" title="Deconnexion">{{ icone("securite", 15) }}</a>
+      <form method="post" action="/deconnexion" style="margin-left:auto; display:inline;">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <button type="submit" class="tb-sidebar-lien" style="border:0; background:transparent; cursor:pointer; padding:0.3rem 0.4rem;" aria-label="Deconnexion" title="Deconnexion">{{ icone("securite", 15) }}</button>
+      </form>
     </div>
     <button type="button" id="bouton-theme" class="tb-toggle-theme" aria-label="Changer d'apparence (clair/sombre)" title="Changer d'apparence">
       <span class="tb-toggle-theme-icone tb-toggle-theme-icone-lune">{{ icone("jours_restants", 14) }}</span>

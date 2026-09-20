@@ -1,7 +1,7 @@
 import random
 from typing import List, Optional
 
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
@@ -65,8 +65,15 @@ def generer_quiz(
         return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
 
     nb_questions = nb_questions if nb_questions in quiz_module.NB_QUESTIONS_POSSIBLES else 10
+    try:
+        matiere_choisie = quiz_module.valider_parametres(matiere_choisie, niveau, difficulte, nb_questions)
+    except quiz_module.QuizValidationError:
+        return RedirectResponse("/quiz?erreur=parametres_invalides", status_code=303)
 
-    tentative = quiz_module.creer_tentative(session, utilisateur, matiere_choisie, niveau, difficulte, nb_questions)
+    try:
+        tentative = quiz_module.creer_tentative(session, utilisateur, matiere_choisie, niveau, difficulte, nb_questions)
+    except quiz_module.QuizValidationError:
+        return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
@@ -156,7 +163,10 @@ def generer_examen(request: Request, session: Session = Depends(get_session), _c
     niveau = random.choice(quiz_module.NIVEAUX)
     difficulte = random.choice(quiz_module.DIFFICULTES)
 
-    tentative = quiz_module.creer_tentative_examen(session, utilisateur, matiere, niveau, difficulte)
+    try:
+        tentative = quiz_module.creer_tentative_examen(session, utilisateur, matiere, niveau, difficulte)
+    except quiz_module.QuizValidationError:
+        return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
@@ -174,14 +184,34 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
     if tentative.date_soumission is not None:
         return RedirectResponse(f"/quiz/{tentative.id}/resultat", status_code=303)
 
-    formulaire = await request.form()
-    nb = len(quiz_module.questions(tentative))
-    reponses_soumises: List[Optional[int]] = []
-    for i in range(nb):
-        valeur = formulaire.get(f"question_{i}")
-        reponses_soumises.append(int(valeur) if valeur is not None and valeur != "" else None)
+    try:
+        questions = quiz_module.questions(tentative)
+    except (ValueError, quiz_module.QuizValidationError) as exc:
+        raise HTTPException(status_code=500, detail="Quiz stocke invalide.") from exc
 
-    quiz_module.corriger(session, tentative, reponses_soumises)
+    formulaire = await request.form()
+    nb = len(questions)
+    reponses_soumises: List[Optional[int]] = []
+    for i, question in enumerate(questions):
+        valeur = formulaire.get(f"question_{i}")
+        if valeur is None or valeur == "":
+            reponses_soumises.append(None)
+            continue
+        try:
+            reponse = int(str(valeur))
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="Reponse de quiz invalide.") from exc
+        if reponse < 0 or reponse >= len(question["choix"]):
+            raise HTTPException(status_code=400, detail="Reponse de quiz invalide.")
+        reponses_soumises.append(reponse)
+
+    if tentative.mode_examen and quiz_module.secondes_restantes_examen(tentative) <= 0:
+        reponses_soumises = [None] * nb
+
+    try:
+        quiz_module.corriger(session, tentative, reponses_soumises)
+    except quiz_module.QuizValidationError as exc:
+        raise HTTPException(status_code=400, detail="Reponses de quiz invalides.") from exc
     return RedirectResponse(f"/quiz/{tentative.id}/resultat", status_code=303)
 
 
