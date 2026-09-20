@@ -103,6 +103,10 @@ class TestRechercheCercles(unittest.TestCase):
                 nom="Droit prive — Licence 3", createur_id=createur_id,
                 mention_id=mention.id, filiere_id=autre_filiere.id, niveau="L3",
             ))
+            session.add(CercleEtude(
+                nom="CCA — Comptabilite Controle Audit — Master 1", createur_id=createur_id,
+                mention_id=mention.id, filiere_id=filiere.id, niveau="M1",
+            ))
             session.commit()
             cls.universite_id = universite.id
             cls.mention_id = mention.id
@@ -187,8 +191,7 @@ class TestRechercheCercles(unittest.TestCase):
     def test_recherche_textuelle_couvre_le_niveau(self):
         page = self.client.get("/cercles", params={"q": "M1"})
         self.assertEqual(page.status_code, 200)
-        # Ce test depend du referentiel de recherche, pas du titre du cercle.
-        # Les deux cercles de test sont L3 : aucun ne doit ressortir.
+        self.assertIn("CCA — Comptabilite Controle Audit — Master 1", page.text)
         self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
         self.assertNotIn("Droit prive — Licence 3", page.text)
 
