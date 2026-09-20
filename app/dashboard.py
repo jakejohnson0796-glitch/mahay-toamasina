@@ -3,7 +3,7 @@ Agregation des donnees du tableau de bord etudiant. Separe du router pour
 garder celui-ci fin (responsabilite unique : le router orchestre la
 requete HTTP, ce module sait comment lire les donnees).
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from sqlmodel import Session, select
@@ -126,7 +126,6 @@ def jours_actifs_consecutifs(
         jour = max(dates)
 
     total = 0
-    from datetime import timedelta
     while jour in dates:
         total += 1
         jour -= timedelta(days=1)
