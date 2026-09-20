@@ -17,7 +17,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..models import (
-    Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, MessageCercle, SignalementMessage,
+    Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, RoleMembreCercle, MessageCercle, SignalementMessage,
     DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
