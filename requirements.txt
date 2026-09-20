@@ -24,3 +24,5 @@ qrcode==7.4.2                 # QR code d'activation 2FA (aucun service externe)
 
 pytest==8.3.5
 httpx==0.28.1
+
+snowballstemmer==3.1.1        # racines morphologiques françaises pour le fallback SQLite/dev
