@@ -111,7 +111,7 @@ def _nettoyer_signalements(conn) -> None:
         conn,
         "SELECT id, message_id, signale_par_id "
         "FROM signalementmessage "
-        "WHERE traite = 0 "
+        "WHERE traite IS FALSE "
         "ORDER BY message_id, signale_par_id, id"
     )
     groupes: dict[tuple[int, int], list[dict]] = defaultdict(list)
