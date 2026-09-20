@@ -340,13 +340,21 @@ def liste_cercles(
     afficher_disponibles_seulement = disponibles == "1"
     page_nettoyee = max(1, page)
 
+    # Legacy compatibility : avant l'introduction de
+    # CercleEtude.mention_id, certains cercles stockaient uniquement
+    # filiere_id. La source de verite de la mention reste alors
+    # Filiere.mention_id. On construit une "mention effective" pour que
+    # la recherche Domaine -> Mention -> Niveau -> Parcours fonctionne
+    # aussi sur ces cercles historiques.
+    mention_effective_id = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+
     requete = (
         select(CercleEtude)
         .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
-        .outerjoin(Mention, Mention.id == CercleEtude.mention_id)
+        .outerjoin(Mention, Mention.id == mention_effective_id)
         .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
         .where(CercleEtude.statut == StatutCercle.ACTIF)
-        .where(or_(CercleEtude.mention_id.is_(None), Mention.est_active == True))  # noqa: E712
+        .where(or_(mention_effective_id.is_(None), Mention.est_active == True))  # noqa: E712
     )
 
     referentiel_recherche = (
@@ -368,7 +376,7 @@ def liste_cercles(
         requete = requete.where(Mention.domaine_id == domaine_id_nettoye)
 
     if mention_id_nettoye:
-        requete = requete.where(CercleEtude.mention_id == mention_id_nettoye)
+        requete = requete.where(mention_effective_id == mention_id_nettoye)
 
     if recherche_tronc_commun:
         requete = requete.where(CercleEtude.filiere_id.is_(None))
@@ -482,9 +490,10 @@ def liste_cercles(
 
     cercles_avec_info = []
     for cercle in cercles:
-        mention = mentions_map.get(cercle.mention_id)
-        domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         filiere = filieres_map.get(cercle.filiere_id)
+        mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+        mention = mentions_map.get(mention_id_effectif)
+        domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
             "domaine": domaine,
