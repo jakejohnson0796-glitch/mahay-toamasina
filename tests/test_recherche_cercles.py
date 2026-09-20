@@ -73,7 +73,9 @@ class TestRechercheCercles(unittest.TestCase):
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             cls.filiere_id = filiere.id
-            autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=mention.id)
+            autre_mention = Mention(nom="Droit")
+            session.add(autre_mention); session.commit(); session.refresh(autre_mention)
+            autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=autre_mention.id)
             session.add(autre_filiere); session.commit(); session.refresh(autre_filiere)
             cls.autre_filiere_id = autre_filiere.id
 
@@ -197,6 +199,11 @@ class TestRechercheCercles(unittest.TestCase):
                 select(CercleEtude).where(CercleEtude.filiere_id == self.filiere_id)
             ).first()
             session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=membre.id))
+            # Le profil d'un membre n'est visible qu'aux membres du cercle.
+            connecte = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == "0350000099")
+            ).first()
+            session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=connecte.id))
             session.commit()
             membre_id = membre.id
             cercle_id = cercle.id
