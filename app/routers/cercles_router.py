@@ -1638,46 +1638,70 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
 
 
 @router.get("/cercles/{cercle_id}/membres/{utilisateur_id}/profil")
-def profil_membre_cercle(cercle_id: int, utilisateur_id: int, request: Request, session: Session = Depends(get_session)):
-    """Renvoie les informations de profil (universite/mention/filiere/
-    niveau/bio + statut en ligne) d'un membre du cercle, pour le
-    panneau "Profil de l'utilisateur" ouvert en cliquant sur un avatar
-    ou un nom dans le chat (voir cercle_chat.html, ouvrirProfil()).
-    Restreint aux membres du MEME cercle des deux cotes (celui qui
-    consulte ET celui qu'on consulte) : ce n'est pas un annuaire public
-    de tous les utilisateurs du site."""
+def profil_membre_cercle(
+    cercle_id: int,
+    utilisateur_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """Profil visible uniquement entre personnes ayant acces au meme cercle.
+
+    Le parcours est restitue dans la meme hierarchie partout :
+    Universite -> Composante -> Domaine -> Mention -> Parcours -> Niveau.
+    La coherence academique provient du service centralise afin de ne pas
+    avoir une version differente entre profil, recherche et adhesion.
+    """
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         raise HTTPException(status_code=401, detail="Non connecte.")
     if not _a_acces_cercle(session, cercle_id, utilisateur.id):
-        raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
+        raise HTTPException(status_code=403, detail="Vous n'avez pas acces a ce cercle.")
 
     cible = session.get(Utilisateur, utilisateur_id)
     if not cible or not _a_acces_cercle(session, cercle_id, utilisateur_id):
         raise HTTPException(status_code=404, detail="Utilisateur introuvable dans ce cercle.")
 
-    filiere = session.get(Filiere, cible.filiere_id) if cible.filiere_id else None
-    mention = session.get(Mention, filiere.mention_id) if filiere and filiere.mention_id else None
-    universite = session.get(Universite, cible.universite_id) if cible.universite_id else None
+    profil = referentiel_academique.contexte_profil_academique(cible, session)
+    mention = profil["mention"]
+    filiere = profil["filiere"]
+    universite = profil["universite"]
+    faculte = profil["faculte"]
+    domaine = profil["domaine"]
 
-    # "En ligne" = au moins une connexion websocket active dans CE
-    # cercle (voir GestionnaireConnexions.utilisateurs_actifs) -- pas un
-    # statut global "connecte au site", coherent avec la liste "En
-    # ligne" deja affichee en haut du salon.
-    en_ligne = any(u["utilisateur_id"] == utilisateur_id for u in gestionnaire.utilisateurs_actifs(cercle_id))
+    en_ligne = any(
+        u["utilisateur_id"] == utilisateur_id
+        for u in gestionnaire.utilisateurs_actifs(cercle_id)
+    )
 
+    academique = {
+        "universite": universite.nom if universite else None,
+        "composante": faculte.nom if faculte else None,
+        "domaine": domaine.nom if domaine else None,
+        "mention": mention.nom if mention else None,
+        "parcours": filiere.nom if filiere else None,
+        "niveau": profil["niveau"],
+        "coherent": bool(profil["coherent"]),
+        "tronc_commun": bool(profil["tronc_commun"]),
+    }
+
+    # Les anciennes cles restent presentes pour ne pas casser un frontend
+    # deja deploye ; la nouvelle cle academique devient la representation
+    # canonique et hierarchique.
     return {
         "id": cible.id,
         "nom": cible.nom,
         "a_une_photo": bool(cible.photo_chemin),
         "en_ligne": en_ligne,
-        "universite": universite.nom if universite else None,
-        "mention": mention.nom if mention else None,
-        "filiere": filiere.nom if filiere else None,
-        "niveau": cible.niveau,
+        "academique": academique,
+        "universite": academique["universite"],
+        "composante": academique["composante"],
+        "domaine": academique["domaine"],
+        "mention": academique["mention"],
+        "filiere": academique["parcours"],
+        "niveau": academique["niveau"],
+        "profil_academique_coherent": academique["coherent"],
         "bio": cible.bio,
     }
-
 
 @router.get("/cercles/{cercle_id}/recherche")
 def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: Session = Depends(get_session)):
