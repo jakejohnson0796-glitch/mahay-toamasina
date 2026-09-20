@@ -238,9 +238,13 @@ def _supprimer_cercle_et_contenu(session: Session, cercle_id: int) -> bool:
     supprimes, y compris les fichiers joints du chat.
     """
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle or cercle.statut != StatutCercle.ACTIF:
+    if not cercle:
         return False
 
+    # Cette fonction est un primitive de suppression interne : elle doit
+    # aussi pouvoir supprimer un cercle ARCHIVE lors de la suppression
+    # administrative de son createur. Les routes utilisateur, elles,
+    # imposent ACTIF avant d'appeler cette primitive.
     message_ids = [
         m.id for m in session.exec(
             select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)
