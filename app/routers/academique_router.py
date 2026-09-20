@@ -124,7 +124,7 @@ def lister_mentions_par_domaine(domaine_id: int, session: Session = Depends(get_
         .where(Mention.domaine_id == domaine_id, Mention.est_active == True)  # noqa: E712
         .order_by(Mention.nom)
     ).all()
-    return [{"id": m.id, "nom": m.nom} for m in mentions]
+    return [{"id": m.id, "nom": m.nom, "domaine_id": m.domaine_id} for m in mentions]
 
 
 @router.get("/mentions")
