@@ -139,6 +139,19 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Droit prive — Licence 3", page.text)
         self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
 
+    def test_filtre_par_domaine_et_selection_visuelle(self):
+        with Session(engine) as session:
+            domaine_id = session.exec(
+                select(Domaine.id).join(Mention, Mention.domaine_id == Domaine.id)
+                .where(Mention.id == self.mention_id)
+            ).one()
+
+        page = self.client.get("/cercles", params={"domaine_id": str(domaine_id)})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("selected", page.text)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertIn("Droit prive — Licence 3", page.text)
+
     def test_filtre_par_niveau_invalide_est_ignore_silencieusement(self):
         """Un niveau bricole dans l'URL ne doit pas planter la page — le
         filtre est simplement ignore (voir liste_cercles)."""
