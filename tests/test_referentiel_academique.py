@@ -230,6 +230,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
                 mot_de_passe_hash="x",
                 role=RoleUtilisateur.ETUDIANT,
                 universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
                 mention_id=self.mention_id,
                 niveau="L1",
             )
