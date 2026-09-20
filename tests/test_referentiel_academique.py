@@ -12,7 +12,7 @@ from unittest.mock import patch
 from sqlalchemy import event
 from sqlmodel import SQLModel, Session, create_engine, select
 
-from app.models import Universite, Faculte, Mention, Filiere, CercleEtude, Utilisateur, RoleUtilisateur
+from app.models import Universite, Faculte, Mention, Filiere, CercleEtude, Utilisateur, RoleUtilisateur, ProgrammeUniversitaire
 from app.referentiel_academique import (
     cercle_est_national,
     peut_modifier_niveau_maintenant,
@@ -302,6 +302,48 @@ class TestCorrespondanceCercle(unittest.TestCase):
             self.assertTrue(profil["tronc_commun"])
             self.assertEqual(profil["universite"].id, self.universite_id)
             self.assertEqual(profil["mention"].id, self.mention_id)
+
+    def test_serialisation_conserve_les_blocs_hierarchiques_legacy(self):
+        with Session(self.engine) as session:
+            utilisateur = Utilisateur(
+                nom="Profil legacy", telephone="0340000018", mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            profil = contexte_profil_academique(utilisateur, session)
+            donnees = serialiser_profil_academique(profil)
+
+        self.assertEqual(donnees["type"], "parcours")
+        self.assertEqual(donnees["universite"]["id"], self.universite_id)
+        self.assertEqual(donnees["mention"]["id"], self.mention_id)
+        self.assertEqual(donnees["parcours"]["id"], self.filiere_id)
+        self.assertEqual(donnees["origine"]["universite"], "Universite de Toamasina")
+        self.assertEqual(donnees["formation"]["parcours"], "Finance et Comptabilite")
+
+    def test_choix_filiere_refuse_si_offre_inactive(self):
+        with Session(self.engine) as session:
+            offre = ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=self.filiere_id,
+                est_active=False,
+            )
+            session.add(offre)
+            session.commit()
+
+            erreur = erreur_choix_academique(
+                session,
+                self.universite_id,
+                self.faculte_id,
+                self.mention_id,
+                self.filiere_id,
+                "L3",
+                {"L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3"},
+            )
+        self.assertIn("pas actuellement propose", erreur)
 
     def test_profil_filiere_sans_mention_n_est_pas_coherent(self):
         with Session(self.engine) as session:
