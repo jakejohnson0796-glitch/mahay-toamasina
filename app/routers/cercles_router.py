@@ -1642,13 +1642,8 @@ def profil_membre_cercle(
     request: Request,
     session: Session = Depends(get_session),
 ):
-    """Profil visible uniquement entre personnes ayant acces au meme cercle.
-
-    Le parcours est restitue dans la meme hierarchie partout :
-    Universite -> Composante -> Domaine -> Mention -> Parcours -> Niveau.
-    La coherence academique provient du service centralise afin de ne pas
-    avoir une version differente entre profil, recherche et adhesion.
-    """
+    """Profil visible entre membres du meme cercle, avec un contrat
+    academique unique et hierarchise."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         raise HTTPException(status_code=401, detail="Non connecte.")
@@ -1660,44 +1655,17 @@ def profil_membre_cercle(
         raise HTTPException(status_code=404, detail="Utilisateur introuvable dans ce cercle.")
 
     profil = referentiel_academique.contexte_profil_academique(cible, session)
-    mention = profil["mention"]
-    filiere = profil["filiere"]
-    universite = profil["universite"]
-    faculte = profil["faculte"]
-    domaine = profil["domaine"]
-
     en_ligne = any(
         u["utilisateur_id"] == utilisateur_id
         for u in gestionnaire.utilisateurs_actifs(cercle_id)
     )
 
-    academique = {
-        "universite": universite.nom if universite else None,
-        "composante": faculte.nom if faculte else None,
-        "domaine": domaine.nom if domaine else None,
-        "mention": mention.nom if mention else None,
-        "parcours": filiere.nom if filiere else None,
-        "niveau": profil["niveau"],
-        "coherent": bool(profil["coherent"]),
-        "tronc_commun": bool(profil["tronc_commun"]),
-    }
-
-    # Les anciennes cles restent presentes pour ne pas casser un frontend
-    # deja deploye ; la nouvelle cle academique devient la representation
-    # canonique et hierarchique.
     return {
         "id": cible.id,
         "nom": cible.nom,
         "a_une_photo": bool(cible.photo_chemin),
         "en_ligne": en_ligne,
-        "academique": academique,
-        "universite": academique["universite"],
-        "composante": academique["composante"],
-        "domaine": academique["domaine"],
-        "mention": academique["mention"],
-        "filiere": academique["parcours"],
-        "niveau": academique["niveau"],
-        "profil_academique_coherent": academique["coherent"],
+        "academique": referentiel_academique.serialiser_profil_academique(profil),
         "bio": cible.bio,
     }
 
