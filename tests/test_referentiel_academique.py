@@ -97,6 +97,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
             mention = Mention(nom="Sciences de Gestion")
             session.add(mention); session.commit(); session.refresh(mention)
             self.mention_id = mention.id
+            self.universite_id = universite.id
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             self.filiere_id = filiere.id
@@ -126,6 +127,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
             )
             self.assertTrue(cercle_est_national(cercle))
             u = Utilisateur(nom="X", telephone="0340000003", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                             universite_id=self.universite_id, mention_id=self.mention_id,
                              filiere_id=self.filiere_id, niveau="L3")
             self.assertTrue(profil_correspond_au_cercle(u, cercle, session))
 
@@ -137,6 +139,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
                 mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L2",
             )
             u = Utilisateur(nom="X", telephone="0340000004", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                             universite_id=self.universite_id, mention_id=self.mention_id,
                              filiere_id=self.filiere_id, niveau="L1")
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
 
@@ -147,6 +150,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
                 mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L3",
             )
             u = Utilisateur(nom="X", telephone="0340000005", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                             universite_id=self.universite_id, mention_id=self.mention_id,
                              filiere_id=self.autre_filiere_id, niveau="L3")
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
 
@@ -158,6 +162,36 @@ class TestCorrespondanceCercle(unittest.TestCase):
             )
             u = Utilisateur(nom="X", telephone="0340000006", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
+
+
+    def test_profil_sans_filiere_est_valide_en_tronc_commun(self):
+        with Session(self.engine) as session:
+            mention = session.get(Mention, self.mention_id)
+            # Aucun parcours n'est encore date pour L1 dans cette fixture.
+            u = Utilisateur(
+                nom="Tronc", telephone="0340000007", mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id, mention_id=self.mention_id, niveau="L1",
+            )
+            profil = __import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)
+            self.assertTrue(profil["coherent"])
+            self.assertTrue(profil["tronc_commun"])
+            self.assertEqual(profil["universite"].id, self.universite_id)
+            self.assertEqual(profil["mention"].id, self.mention_id)
+
+    def test_profil_filiere_sans_mention_n_est_pas_coherent(self):
+        with Session(self.engine) as session:
+            u = Utilisateur(
+                nom="Incoherent", telephone="0340000008", mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id, mention_id=self.mention_id,
+                filiere_id=self.filiere_id, niveau="L3",
+            )
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.mention_id = None
+            session.add(filiere)
+            session.commit()
+            self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
 
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
@@ -175,6 +209,7 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
             mention = Mention(nom="Sciences de Gestion")
             session.add(mention); session.commit(); session.refresh(mention)
             self.mention_id = mention.id
+            self.universite_id = universite.id
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             self.filiere_id = filiere.id
@@ -216,16 +251,19 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
 
     def test_etudiant_avec_profil_complet_voit_le_libre_et_son_cercle_national(self):
         u = Utilisateur(nom="X", telephone="0340000011", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                         universite_id=self.universite_id, mention_id=self.mention_id,
                          filiere_id=self.filiere_id, niveau="L3")
         self.assertEqual(self._noms_disponibles(u), {"Groupe libre", "Finance L3"})
 
     def test_etudiant_ne_voit_pas_le_meme_cercle_national_a_un_autre_niveau(self):
         u = Utilisateur(nom="X", telephone="0340000012", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                         universite_id=self.universite_id, mention_id=self.mention_id,
                          filiere_id=self.filiere_id, niveau="L2")
         self.assertEqual(self._noms_disponibles(u), {"Groupe libre", "Finance L2"})
 
     def test_etudiant_ne_voit_pas_les_cercles_dune_autre_filiere(self):
         u = Utilisateur(nom="X", telephone="0340000013", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                         universite_id=self.universite_id, mention_id=self.mention_id,
                          filiere_id=self.filiere_id, niveau="L3")
         self.assertNotIn("Droit L3", self._noms_disponibles(u))
 
@@ -242,6 +280,7 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
         en filtrant chaque cercle un par un avec profil_correspond_au_cercle
         (plus l'appartenance a un cercle libre, deja couverte par les deux)."""
         u = Utilisateur(nom="X", telephone="0340000015", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                         universite_id=self.universite_id, mention_id=self.mention_id,
                          filiere_id=self.filiere_id, niveau="L3")
         with Session(self.engine) as session:
             tous = session.exec(select(CercleEtude)).all()
