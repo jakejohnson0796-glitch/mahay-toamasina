@@ -95,6 +95,7 @@ def inscription(
     mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     universite_id: Optional[str] = Form(None),
+    composante_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -102,6 +103,7 @@ def inscription(
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
     universite_id_nettoye = entier_ou_none(universite_id)
+    composante_id_nettoye = entier_ou_none(composante_id)
 
     nom = nom.strip()
     if not nom or len(nom) > LONGUEUR_MAX_NOM:
@@ -149,6 +151,7 @@ def inscription(
         erreur_academique = referentiel_academique.erreur_choix_academique(
             session,
             universite_id_nettoye,
+            composante_id_nettoye,
             mention_id_nettoye,
             filiere_id_nettoye,
             niveau,
@@ -164,6 +167,7 @@ def inscription(
         # champs meme si un appel direct les fournissait, plutot que de
         # les valider pour un role qui n'en a pas besoin.
         universite_id_nettoye = None
+        composante_id_nettoye = None
         mention_id_nettoye = None
         filiere_id_nettoye = None
         niveau = None
@@ -552,6 +556,7 @@ def formulaire_actualisation_academique(request: Request, session: Session = Dep
 def actualiser_profil_academique(
     request: Request,
     universite_id: Optional[str] = Form(None),
+    composante_id: Optional[str] = Form(None),
     mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
@@ -577,6 +582,7 @@ def actualiser_profil_academique(
         return _rendu_formulaire_profil_academique(request, utilisateur, session, message_erreur)
 
     universite_id_nettoye = entier_ou_none(universite_id)
+    composante_id_nettoye = entier_ou_none(composante_id)
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
 
@@ -587,6 +593,7 @@ def actualiser_profil_academique(
     erreur_academique = referentiel_academique.erreur_choix_academique(
         session,
         universite_id_nettoye,
+        composante_id_nettoye,
         mention_id_nettoye,
         filiere_id_nettoye,
         niveau,
@@ -610,6 +617,9 @@ def actualiser_profil_academique(
     # (evite une demande inutile si l'etudiant re-confirme juste ses
     # choix existants en ajustant seulement son universite/niveau).
     if mention_id_nettoye == utilisateur.mention_id and filiere_id_nettoye == utilisateur.filiere_id:
+        utilisateur.faculte_id = composante_id_nettoye
+        session.add(utilisateur)
+        session.commit()
         return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
 
     demande_existante = session.exec(
@@ -635,6 +645,7 @@ def actualiser_profil_academique(
         ancienne_filiere_id=utilisateur.filiere_id,
         nouvelle_filiere_id=filiere_id_nettoye,
         nouvelle_mention_id=mention_id_nettoye,
+        nouvelle_faculte_id=composante_id_nettoye,
         motif=motif_filiere.strip(),
         statut=StatutDemandeChangementFiliere.EN_ATTENTE,
     ))
