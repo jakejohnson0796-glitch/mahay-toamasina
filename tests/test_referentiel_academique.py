@@ -390,6 +390,18 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
         u = Utilisateur(nom="X", telephone="0340000014", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
         self.assertEqual(self._noms_disponibles(u), {"Groupe libre"})
 
+    def test_cercle_academique_incomplet_n_est_pas_considere_libre(self):
+        with Session(self.engine) as session:
+            session.add(CercleEtude(
+                nom="Profil incomplet",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                niveau=None,
+            ))
+            session.commit()
+        u = Utilisateur(nom="X", telephone="0340000016", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
+        self.assertNotIn("Profil incomplet", self._noms_disponibles(u))
+
     def test_utilisateur_none_ne_voit_que_les_cercles_libres(self):
         self.assertEqual(self._noms_disponibles(None), {"Groupe libre"})
 
