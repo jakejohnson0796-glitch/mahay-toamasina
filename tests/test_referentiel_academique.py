@@ -102,6 +102,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(mention); session.commit(); session.refresh(mention)
             self.mention_id = mention.id
             self.universite_id = universite.id
+            self.faculte_id = faculte.id
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             self.filiere_id = filiere.id
@@ -208,6 +209,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
                 mot_de_passe_hash="x",
                 role=RoleUtilisateur.ETUDIANT,
                 universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
                 mention_id=self.mention_id,
                 niveau="L1",
             )
@@ -256,6 +258,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
             erreur = erreur_choix_academique(
                 session,
                 self.universite_id,
+                self.faculte_id,
                 self.mention_id,
                 None,
                 "L1",
