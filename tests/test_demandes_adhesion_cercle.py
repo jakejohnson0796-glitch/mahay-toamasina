@@ -17,7 +17,7 @@ from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import (
     Universite, Faculte, Mention, Filiere, CercleEtude, MembreCercle, StatutCercle,
-    Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion,
+    Utilisateur, RoleUtilisateur, DemandeAdhesionCercle, StatutDemandeAdhesion, ProgrammeUniversitaire,
 )
 from app.routers.cercles_router import _a_acces_cercle, _traiter_acceptation_demande, _traiter_refus_demande
 
@@ -48,6 +48,12 @@ class TestDemandesAdhesionCercle(unittest.TestCase):
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             self.filiere_id = filiere.id
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
             autre_filiere = Filiere(nom="Marketing", faculte_id=faculte.id, mention_id=mention.id)
             session.add(autre_filiere); session.commit(); session.refresh(autre_filiere)
             self.autre_filiere_id = autre_filiere.id
