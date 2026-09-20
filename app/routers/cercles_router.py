@@ -336,8 +336,15 @@ def liste_cercles(
             mention_id_nettoye = filiere_selectionnee.mention_id
 
     mention_selectionnee = session.get(Mention, mention_id_nettoye) if mention_id_nettoye else None
-    if mention_selectionnee and mention_selectionnee.domaine_id:
-        domaine_id_nettoye = mention_selectionnee.domaine_id
+    if mention_selectionnee:
+        if (
+            domaine_id_nettoye
+            and mention_selectionnee.domaine_id
+            and domaine_id_nettoye != mention_selectionnee.domaine_id
+        ):
+            domaine_id_nettoye = -1
+        elif mention_selectionnee.domaine_id and not domaine_id_nettoye:
+            domaine_id_nettoye = mention_selectionnee.domaine_id
 
     # "Tronc commun" n'a de sens qu'avec une mention. Sans elle, on
     # renvoie simplement zero resultat au lieu de melanger les parcours.
