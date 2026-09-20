@@ -48,7 +48,11 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
 
     coherent = utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR)
     if utilisateur.role in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
-        coherent = bool(universite and universite.est_active and mention and mention.est_active and utilisateur.niveau)
+        coherent = bool(
+            universite and universite.est_active
+            and mention and mention.est_active and utilisateur.niveau
+            and (not mention.domaine_id or (domaine and domaine.est_active))
+        )
         if coherent and filiere:
             coherent = bool(
                 faculte and faculte.universite_id == universite.id
