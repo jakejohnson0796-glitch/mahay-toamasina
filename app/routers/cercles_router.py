@@ -318,15 +318,51 @@ def liste_cercles(
     TAILLE_PAGE = 30
     utilisateur = utilisateur_courant(request, session)
 
-    q_nettoye = re.sub(r"\s+", " ", (q or "").strip())[:120]
+    profil_academique_brut = None
+    profil_academique_recherche = None
+    if utilisateur and utilisateur.role in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
+        profil_academique_brut = referentiel_academique.contexte_profil_academique(utilisateur, session)
+        profil_academique_recherche = referentiel_academique.serialiser_profil_academique(profil_academique_brut)
+
+    q_nettoye = " ".join((q or "").split())[:160]
+
+    # Les niveaux et le tronc commun sont des dimensions academiques,
+    # pas de simples mots de titre. Les extraire ici permet a une requete
+    # comme "gestion M1 CCA" de filtrer M1 tout en laissant la recherche
+    # textuelle chercher "gestion" et "CCA" dans la hierarchie.
+    niveaux_dans_q = []
+    motifs_niveaux = (
+        (r"\b(?:licence|l)\s*1\b", "L1"),
+        (r"\b(?:licence|l)\s*2\b", "L2"),
+        (r"\b(?:licence|l)\s*3\b", "L3"),
+        (r"\b(?:master|m)\s*1\b", "M1"),
+        (r"\b(?:master|m)\s*2\b", "M2"),
+    )
+    q_pour_recherche = q_nettoye
+    for motif, valeur in motifs_niveaux:
+        if re.search(motif, q_pour_recherche, flags=re.IGNORECASE):
+            niveaux_dans_q.append(valeur)
+            q_pour_recherche = re.sub(motif, " ", q_pour_recherche, flags=re.IGNORECASE)
+    recherche_tronc_commun_dans_q = bool(
+        re.search(r"\btronc\s+commun\b", q_pour_recherche, flags=re.IGNORECASE)
+    )
+    q_pour_recherche = re.sub(
+        r"\btronc\s+commun\b", " ", q_pour_recherche, flags=re.IGNORECASE
+    )
+    q_pour_recherche = " ".join(q_pour_recherche.split())[:160]
+
+    # Une requete composee de plusieurs mots doit rester utile meme si
+    # l'utilisateur ne connait pas l'ordre exact du titre : chaque terme
+    # doit apparaitre dans au moins un champ searchable. On borne a 6 termes
+    # pour ne pas gonfler artificiellement la requete SQL.
     domaine_id_nettoye = entier_ou_none(domaine_id)
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
     recherche_tronc_commun = filiere_id == "tronc_commun"
     niveau_nettoye = niveau if niveau in NIVEAUX else None
 
-    # La hierarchie est deterministe : Parcours -> Mention -> Domaine.
-    # Un parametre forge ne doit jamais afficher un couple incoherent.
+    # La hiérarchie est déterministe : Parcours -> Mention -> Domaine.
+    # Un paramètre incohérent/forgé ne doit jamais élargir les résultats.
     filiere_selectionnee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
     if filiere_selectionnee and filiere_selectionnee.mention_id:
         if mention_id_nettoye and mention_id_nettoye != filiere_selectionnee.mention_id:
@@ -346,8 +382,7 @@ def liste_cercles(
         elif mention_selectionnee.domaine_id and not domaine_id_nettoye:
             domaine_id_nettoye = mention_selectionnee.domaine_id
 
-    # "Tronc commun" n'a de sens qu'avec une mention. Sans elle, on
-    # renvoie simplement zero resultat au lieu de melanger les parcours.
+    # Le tronc commun n'a de sens qu'avec une mention.
     if recherche_tronc_commun and not mention_id_nettoye:
         recherche_tronc_commun = False
         niveau_nettoye = "__filtre_invalide__"
@@ -355,44 +390,75 @@ def liste_cercles(
     afficher_disponibles_seulement = disponibles == "1"
     page_nettoyee = max(1, page)
 
+    # Legacy compatibility : avant l'introduction de
+    # CercleEtude.mention_id, certains cercles stockaient uniquement
+    # filiere_id. La source de verite de la mention reste alors
+    # Filiere.mention_id. On construit une "mention effective" pour que
+    # la recherche Domaine -> Mention -> Niveau -> Parcours fonctionne
+    # aussi sur ces cercles historiques.
+    mention_effective_id = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+
     requete = (
         select(CercleEtude)
         .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
-        .outerjoin(Mention, Mention.id == CercleEtude.mention_id)
+        .outerjoin(Mention, Mention.id == mention_effective_id)
         .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
         .where(CercleEtude.statut == StatutCercle.ACTIF)
-        .where(or_(CercleEtude.mention_id.is_(None), Mention.est_active == True))  # noqa: E712
+        .where(or_(mention_effective_id.is_(None), Mention.est_active == True))  # noqa: E712
     )
-    if q_nettoye:
-        # Recherche multi-termes : "finance L3" fonctionne meme si le nom
-        # exact du cercle est "Revision Finance et Comptabilite".
-        for terme in [t for t in re.split(r"\s+", q_nettoye) if t][:6]:
-            motif = f"%{terme}%"
-            requete = requete.where(or_(
-                CercleEtude.nom.ilike(motif),
-                CercleEtude.description.ilike(motif),
-                Domaine.nom.ilike(motif),
-                Mention.nom.ilike(motif),
-                Filiere.nom.ilike(motif),
-                CercleEtude.niveau.ilike(motif),
-            ))
+
+    # Le texte searchable reprend toute la hierarchie de la base
+    # Toamasina : Domaine -> Mention -> Niveau -> Parcours. Les cercles
+    # de tronc commun sont representes sans Filiere, on leur ajoute donc
+    # un tag de recherche explicite "tronc commun".
+    referentiel_recherche = (
+        func.coalesce(Domaine.nom, "")
+        + " " + func.coalesce(Mention.nom, "")
+        + " " + func.coalesce(CercleEtude.niveau, "")
+        + " " + func.coalesce(Filiere.nom, "")
+        + " "
+        + func.coalesce(
+            case(
+                (CercleEtude.filiere_id.is_(None), "tronc commun"),
+                else_="",
+            ),
+            "",
+        )
+    )
+    condition_recherche, pertinence_recherche = clause_recherche_cercles(
+        session,
+        q_pour_recherche,
+        CercleEtude.nom,
+        CercleEtude.description,
+        referentiel_recherche,
+    )
+    if condition_recherche is not None:
+        requete = requete.where(condition_recherche)
+
+    if niveaux_dans_q:
+        requete = requete.where(
+            CercleEtude.niveau.in_(sorted(set(niveaux_dans_q)))
+        )
+
+    if recherche_tronc_commun_dans_q:
+        requete = requete.where(CercleEtude.filiere_id.is_(None))
 
     if domaine_id_nettoye:
         requete = requete.where(Mention.domaine_id == domaine_id_nettoye)
 
     if mention_id_nettoye:
-        requete = requete.where(CercleEtude.mention_id == mention_id_nettoye)
+        requete = requete.where(mention_effective_id == mention_id_nettoye)
 
     if recherche_tronc_commun:
         requete = requete.where(
-            CercleEtude.mention_id == mention_id_nettoye,
+            mention_effective_id == mention_id_nettoye,
             CercleEtude.filiere_id.is_(None),
         )
     elif filiere_id_nettoye:
         if filiere_selectionnee:
             ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_selectionnee)
             requete = requete.where(
-                CercleEtude.mention_id == mention_id_nettoye,
+                mention_effective_id == mention_id_nettoye,
                 CercleEtude.filiere_id.in_(ids_equivalents),
             )
         else:
@@ -405,7 +471,9 @@ def liste_cercles(
     if afficher_disponibles_seulement and not _est_admin(utilisateur):
         # Construit une seule fois : la meme condition sert au filtre SQL et
         # au badge de compatibilite de la page, sans recalculer le profil.
-        condition_disponibilite = referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+        condition_disponibilite = referentiel_academique.condition_cercles_disponibles(
+            utilisateur, session, profil=profil_academique_brut
+        )
         requete = requete.where(condition_disponibilite)
 
     total_cercles = session.exec(
@@ -414,30 +482,13 @@ def liste_cercles(
     total_pages = max(1, (total_cercles + TAILLE_PAGE - 1) // TAILLE_PAGE)
     page_nettoyee = min(page_nettoyee, total_pages)
 
-    if q_nettoye:
-        motif_exact = q_nettoye
-        motif_prefixe = f"{q_nettoye}%"
-        pertinence = case(
-            (CercleEtude.nom.ilike(motif_exact), 0),
-            (Mention.nom.ilike(motif_exact), 1),
-            (Filiere.nom.ilike(motif_exact), 2),
-            (Domaine.nom.ilike(motif_exact), 3),
-            (CercleEtude.nom.ilike(motif_prefixe), 4),
-            else_=10,
-        )
-        requete = requete.order_by(
-            pertinence,
-            CercleEtude.date_creation.desc(),
-            CercleEtude.id.desc(),
-        )
-    else:
-        requete = requete.order_by(
-            CercleEtude.date_creation.desc(),
-            CercleEtude.id.desc(),
-        )
+    ordre = [CercleEtude.date_creation.desc(), CercleEtude.id.desc()]
+    if pertinence_recherche is not None:
+        ordre = [pertinence_recherche.desc()] + ordre
 
     cercles = session.exec(
         requete
+        .order_by(*ordre)
         .offset((page_nettoyee - 1) * TAILLE_PAGE)
         .limit(TAILLE_PAGE)
     ).all()
@@ -491,7 +542,9 @@ def liste_cercles(
         condition_compatibilite = (
             condition_disponibilite
             if condition_disponibilite is not None
-            else referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+            else referentiel_academique.condition_cercles_disponibles(
+                utilisateur, session, profil=profil_academique_brut
+            )
         )
         compatibilites = {
             cid for cid in session.exec(
@@ -513,9 +566,10 @@ def liste_cercles(
 
     cercles_avec_info = []
     for cercle in cercles:
-        mention = mentions_map.get(cercle.mention_id)
-        domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         filiere = filieres_map.get(cercle.filiere_id)
+        mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+        mention = mentions_map.get(mention_id_effectif)
+        domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
             "type_cercle": referentiel_academique.type_cercle(cercle),
@@ -552,6 +606,7 @@ def liste_cercles(
             "niveaux": NIVEAUX,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
+            "profil_academique_recherche": profil_academique_recherche,
             "recherche_q": q_nettoye,
             "recherche_domaine_id": domaine_id_nettoye,
             "recherche_mention_id": mention_id_nettoye,
