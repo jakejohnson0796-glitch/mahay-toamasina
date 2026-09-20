@@ -356,7 +356,6 @@ def liste_cercles(
     # l'utilisateur ne connait pas l'ordre exact du titre : chaque terme
     # doit apparaitre dans au moins un champ searchable. On borne a 6 termes
     # pour ne pas gonfler artificiellement la requete SQL.
-    termes_recherche = [t for t in q_nettoye.split(" ") if t][:6]
     domaine_id_nettoye = entier_ou_none(domaine_id)
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
