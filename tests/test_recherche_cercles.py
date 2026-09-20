@@ -200,7 +200,9 @@ class TestRechercheCercles(unittest.TestCase):
 
     def test_recherche_tronc_commun(self):
         with Session(engine) as session:
-            createur = session.get(Utilisateur, 1)
+            createur = session.exec(
+                select(Utilisateur).where(Utilisateur.nom == "Createur")
+            ).one()
             cercle = CercleEtude(
                 nom="Gestion L1 — Tronc commun",
                 createur_id=createur.id,
