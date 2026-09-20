@@ -134,7 +134,7 @@ class TestRechercheCercles(unittest.TestCase):
 
     def test_recherche_vide_ne_correspond_a_rien_affiche_etat_vide(self):
         page = self.client.get("/cercles", params={"q": "xyzxyzxyz-introuvable"})
-        self.assertIn("Aucun resultat", page.text)
+        self.assertIn("Aucun résultat", page.text)
 
 
 if __name__ == "__main__":
