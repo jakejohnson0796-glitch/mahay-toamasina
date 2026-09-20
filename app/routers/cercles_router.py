@@ -22,7 +22,7 @@ from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (
-    CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
+    CercleEtude, Domaine, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
     RoleUtilisateur, RoleMembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
     StatutDemandeCreationCercle, StatutCercle, ThemeDuJour, Document,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
@@ -384,8 +384,7 @@ def liste_cercles(
     ).all()
     cercle_ids = [c.id for c in cercles]
 
-    domaines = session.exec(select(Domaine).where(Domaine.est_active == True).order_by(Domaine.nom)).all() if False else []
-    # Les domaines sont recuperes via Mention ci-dessous pour ne faire qu'une
+    # Les domaines sont recuperes via les mentions actives pour ne faire qu'une
     # requete supplementaire sur le petit referentiel national.
     mentions = session.exec(
         select(Mention).where(Mention.est_active == True).order_by(Mention.nom)
@@ -398,11 +397,7 @@ def liste_cercles(
     } if domaines_ids else {}
 
     filiere_ids = {c.filiere_id for c in cercles if c.filiere_id}
-    filieres_map = {
-        f.id: f for f in session.exec(
-            select(Filiere).where(Filiere.id.in_(filiere_ids)).all()
-        )
-    } if False else {}
+    filieres_map = {}
     if filiere_ids:
         filieres_map = {
             f.id: f for f in session.exec(select(Filiere).where(Filiere.id.in_(filiere_ids))).all()
