@@ -322,6 +322,9 @@ def liste_cercles(
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
     recherche_tronc_commun = filiere_id == "tronc_commun"
     niveau_nettoye = niveau if niveau in NIVEAUX else None
+    if mention_id_nettoye and not domaine_id_nettoye:
+        mention_selectionnee = session.get(Mention, mention_id_nettoye)
+        domaine_id_nettoye = mention_selectionnee.domaine_id if mention_selectionnee and mention_selectionnee.domaine_id else None
     afficher_disponibles_seulement = disponibles == "1"
     page_nettoyee = max(1, page)
 
