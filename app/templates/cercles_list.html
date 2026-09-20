@@ -355,6 +355,16 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
   });
   if (niveauSelect) niveauSelect.addEventListener("change", function () { chargerParcours(); });
 
+  const formulaireRecherche = document.getElementById("formulaire-recherche-cercles");
+  if (formulaireRecherche) {
+    formulaireRecherche.addEventListener("submit", function () {
+      // Le GET doit toujours refléter la hierarchie visible :
+      // Mention -> Domaine. Cela couvre aussi le cas ou le navigateur
+      // soumet le formulaire apres un changement rapide des selects.
+      synchroniserDomaineDepuisMention();
+    });
+  }
+
   synchroniserDomaineDepuisMention();
 
   if (domaineSelect && domaineSelect.value) chargerMentionsDuDomaine().then(function () {
