@@ -317,6 +317,12 @@ def liste_cercles(
     TAILLE_PAGE = 30
     utilisateur = utilisateur_courant(request, session)
 
+    profil_academique_brut = None
+    profil_academique_recherche = None
+    if utilisateur and utilisateur.role in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
+        profil_academique_brut = referentiel_academique.contexte_profil_academique(utilisateur, session)
+        profil_academique_recherche = referentiel_academique.serialiser_profil_academique(profil_academique_brut)
+
     q_nettoye = " ".join((q or "").split())[:160]
     # Une requete composee de plusieurs mots doit rester utile meme si
     # l'utilisateur ne connait pas l'ordre exact du titre : chaque terme
@@ -396,7 +402,9 @@ def liste_cercles(
     if afficher_disponibles_seulement and not _est_admin(utilisateur):
         # Construit une seule fois : la meme condition sert au filtre SQL et
         # au badge de compatibilite de la page, sans recalculer le profil.
-        condition_disponibilite = referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+        condition_disponibilite = referentiel_academique.condition_cercles_disponibles(
+            utilisateur, session, profil=profil_academique_brut
+        )
         requete = requete.where(condition_disponibilite)
 
     total_cercles = session.exec(
@@ -465,7 +473,9 @@ def liste_cercles(
         condition_compatibilite = (
             condition_disponibilite
             if condition_disponibilite is not None
-            else referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+            else referentiel_academique.condition_cercles_disponibles(
+                utilisateur, session, profil=profil_academique_brut
+            )
         )
         compatibilites = {
             cid for cid in session.exec(
@@ -525,6 +535,7 @@ def liste_cercles(
             "niveaux": NIVEAUX,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
+            "profil_academique_recherche": profil_academique_recherche,
             "recherche_q": q_nettoye,
             "recherche_domaine_id": domaine_id_nettoye,
             "recherche_mention_id": mention_id_nettoye,
