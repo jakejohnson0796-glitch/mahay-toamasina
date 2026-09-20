@@ -184,6 +184,55 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Droit prive — Licence 3", page.text)
         self.assertNotIn("Revision Analyse Financiere", page.text)
 
+    def test_recherche_textuelle_couvre_le_niveau(self):
+        page = self.client.get("/cercles", params={"q": "M1"})
+        self.assertEqual(page.status_code, 200)
+        # Ce test depend du referentiel de recherche, pas du titre du cercle.
+        # Les deux cercles de test sont L3 : aucun ne doit ressortir.
+        self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertNotIn("Droit prive — Licence 3", page.text)
+
+    def test_recherche_combine_domaine_niveau_et_parcours(self):
+        page = self.client.get("/cercles", params={"q": "gestion L3 finance"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertNotIn("Droit prive — Licence 3", page.text)
+
+    def test_recherche_tronc_commun(self):
+        with Session(engine) as session:
+            createur = session.get(Utilisateur, 1)
+            cercle = CercleEtude(
+                nom="Gestion L1 — Tronc commun",
+                createur_id=createur.id,
+                mention_id=self.mention_id,
+                filiere_id=None,
+                niveau="L1",
+            )
+            session.add(cercle)
+            session.commit()
+
+        page = self.client.get("/cercles", params={"q": "gestion L1 tronc commun"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Gestion L1 — Tronc commun", page.text)
+
+    def test_cercle_legacy_avec_mention_nulle_reste_filtrable_par_domaine(self):
+        with Session(engine) as session:
+            cercle = session.exec(
+                select(CercleEtude).where(CercleEtude.filiere_id == self.filiere_id)
+            ).first()
+            cercle.mention_id = None
+            session.add(cercle)
+            session.commit()
+
+            domaine_id = session.exec(
+                select(Domaine.id).join(Mention, Mention.domaine_id == Domaine.id)
+                .where(Mention.id == self.mention_id)
+            ).one()
+
+        page = self.client.get("/cercles", params={"domaine_id": str(domaine_id)})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+
     def test_le_contexte_du_profil_est_affiche_hierarchiquement(self):
         page = self.client.get("/cercles")
         self.assertEqual(page.status_code, 200)
