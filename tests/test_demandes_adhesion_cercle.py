@@ -54,7 +54,8 @@ class TestDemandesAdhesionCercle(unittest.TestCase):
 
             etudiant = Utilisateur(
                 nom="Jake", telephone="0340000001", mot_de_passe_hash="x",
-                role=RoleUtilisateur.ETUDIANT, filiere_id=self.filiere_id, niveau="L3",
+                role=RoleUtilisateur.ETUDIANT, universite_id=universite.id,
+                mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L3",
             )
             session.add(etudiant); session.commit(); session.refresh(etudiant)
             self.etudiant_id = etudiant.id
