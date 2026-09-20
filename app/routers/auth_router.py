@@ -595,11 +595,14 @@ def actualiser_profil_academique(
     if erreur_academique:
         return _contexte(erreur_academique)
 
-    # Universite + niveau : modifiables librement, enregistres tout de
-    # suite (aucune approbation requise pour ces deux-la).
+    # Universite + niveau : modifiables librement. Le cooldown ne
+    # demarre que si le niveau CHANGE reellement ; re-soumettre le meme
+    # niveau ne doit pas prolonger artificiellement l'attente de 14 jours.
+    ancien_niveau = utilisateur.niveau
     utilisateur.universite_id = universite_id_nettoye
     utilisateur.niveau = niveau
-    utilisateur.niveau_modifie_le = datetime.utcnow()
+    if niveau != ancien_niveau:
+        utilisateur.niveau_modifie_le = datetime.utcnow()
     session.add(utilisateur)
     session.commit()
 
@@ -934,6 +937,9 @@ def modifier_niveau(
 
     if niveau not in NIVEAUX:
         return RedirectResponse("/securite?erreur=niveau_invalide", status_code=303)
+
+    if niveau == utilisateur.niveau:
+        return RedirectResponse("/securite?ok=niveau_deja_a_jour", status_code=303)
 
     if not referentiel_academique.peut_modifier_niveau_maintenant(utilisateur):
         return RedirectResponse("/securite?erreur=niveau_cooldown", status_code=303)
