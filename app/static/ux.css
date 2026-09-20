@@ -841,3 +841,41 @@ textarea {
     height: 1px;
   }
 }
+
+
+/* ---------- Profils academiques des membres ---------- */
+.profil-hierarchie {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+}
+
+.profil-hierarchie-item {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-md);
+  background: var(--content-surface);
+}
+
+.profil-hierarchie-item .stat-label {
+  margin: 0 0 0.12rem;
+  font-size: 0.68rem;
+}
+
+.profil-hierarchie-item p:last-child {
+  margin: 0;
+}
+
+.profil-hierarchie-item-0 {
+  background: var(--content-bg);
+}
+
+@media (max-width: 768px) {
+  .profil-hierarchie {
+    gap: 0.45rem;
+  }
+
+  .profil-hierarchie-item {
+    padding: 0.55rem 0.6rem;
+  }
+}
