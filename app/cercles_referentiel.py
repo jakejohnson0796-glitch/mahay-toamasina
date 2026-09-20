@@ -94,8 +94,6 @@ def assurer_cercles_pour_groupe_parcours(
     cercle ACTIF du groupe dont le niveau n'y figure PAS est desormais
     ARCHIVE (jamais supprime, §24 du brief : donnees recuperables
     pendant la transition) plutot que laisse trainer indefiniment."""
-    from .routers.cercles_router import _assurer_membres_admins
-
     filiere_ids_du_groupe = [f.id for f in filieres_du_groupe]
 
     niveaux_cibles = {f.niveau for f in filieres_du_groupe if f.niveau} or set(NIVEAUX)
@@ -169,10 +167,6 @@ def assurer_cercles_pour_groupe_parcours(
         ))
         session.commit()
 
-        # Hierarchie ADMIN_GLOBAL > OWNER (voir cercles_router.py) : tout
-        # admin doit avoir acces immediat, meme aux cercles generes
-        # automatiquement, sans avoir a le rejoindre.
-        _assurer_membres_admins(session, cercle.id)
 
         nb_crees += 1
 
