@@ -60,6 +60,7 @@ class TestIntegriteCercles(unittest.TestCase):
                 MessageReaction,
                 SignalementMessage,
                 MessageCercle,
+                MembreCercle,
                 DemandeAdhesionCercle,
                 DemandeCreationCercle,
                 Document,
