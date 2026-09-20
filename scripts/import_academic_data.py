@@ -67,6 +67,16 @@ PERIMETRE_UNIVERSITES_PUBLIQUES = {
     "universite de toliara",
 }
 
+# Noms historiques des composantes déjà présents en base. La source
+# Toamasina fournie emploie des intitulés plus courts/officiels ; on
+# rattache ces lignes aux IDs existants plutôt que de créer des doublons.
+ALIASES_COMPOSANTES_TOAMASINA = {
+    "faculte deg": "Droit, Economie, Gestion, Mathematiques et Informatique (DEGMIA)",
+    "faculte des sciences et technologie": "Sciences et Technologies",
+    "ecole normale superieure": "Ecole Normale Superieure (ENS)",
+    "faculte des lettres et sciences humaines": "Lettres et Sciences Humaines",
+}
+
 
 def normaliser(texte: str | None) -> str:
     """Normalise un texte pour COMPARAISON uniquement (jamais pour
@@ -285,8 +295,12 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                     select(Faculte).where(Faculte.universite_id == universite.id)
                 ).all()
                 if source_stricte:
+                    nom_composante_recherche = ALIASES_COMPOSANTES_TOAMASINA.get(
+                        normaliser(ligne["composante"]),
+                        ligne["composante"],
+                    )
                     for fac in facultes_universite:
-                        if normaliser(fac.nom) != normaliser(ligne["composante"]):
+                        if normaliser(fac.nom) != normaliser(nom_composante_recherche):
                             continue
                         faculte_trouvee = fac
                         candidate = filieres_exactes_par_faculte.get(fac.id, {}).get(
