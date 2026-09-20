@@ -23,6 +23,7 @@ from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
 from scripts.dedupliquer_cercles_nationaux import deduplicquer as deduplicquer_cercles_nationaux
+from scripts.import_academic_data import importer as importer_referentiel_academique
 from .auth import utilisateur_courant
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -123,6 +124,42 @@ async def au_demarrage() -> None:
 
     print("[DEBUG DATABASE] Verification des donnees initiales...")
     with Session(engine) as session:
+        # Le referentiel national (dont les Domaines) est fourni dans le
+        # classeur versionne du projet. La migration b8f4d1c6a2e7 cree la
+        # structure SQL mais, historiquement, l'importeur etait seulement
+        # documente comme une commande manuelle. Sur Render/Supabase aucun
+        # shell post-deploiement n'etait disponible : la table Domaine
+        # restait donc vide et le filtre des Cercles ne pouvait afficher
+        # que "Tous les domaines". On rejoue ici l'importeur, uniquement
+        # sur Postgres, car il est idempotent et n'ecrase jamais un
+        # rattachement Domaine existant. SQLite/tests continuent de
+        # fonctionner comme avant.
+        if not parametres.database_url.startswith("sqlite"):
+            chemin_referentiel = BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx"
+            if chemin_referentiel.exists():
+                try:
+                    rapport_referentiel = importer_referentiel_academique(str(chemin_referentiel))
+                    print(
+                        "[DEBUG ACADEMIQUE] Referentiel national synchronise — "
+                        f"{len(rapport_referentiel.domaines_crees)} domaine(s), "
+                        f"{len(rapport_referentiel.mentions_domaine_rattache)} rattachement(s) "
+                        f"Mention→Domaine, "
+                        f"{len(rapport_referentiel.mentions_domaine_ambigu)} mention(s) ambigue(s)."
+                    )
+                except Exception as erreur_referentiel:
+                    # Le referentiel est une donnee d'enrichissement : une
+                    # erreur d'import ne doit pas masquer une application
+                    # autrement saine. L'erreur reste visible dans les logs
+                    # pour permettre une correction du fichier/importeur.
+                    print(
+                        "[ERREUR ACADEMIQUE] Synchronisation du referentiel "
+                        f"impossible : {type(erreur_referentiel).__name__}: {erreur_referentiel}"
+                    )
+            else:
+                print(
+                    "[DEBUG ACADEMIQUE] Classeur du referentiel absent — "
+                    "synchronisation ignoree."
+                )
         peupler_donnees_initiales(session)
         peupler_faq_initiale(session)
         assurer_compte_admin(session)
