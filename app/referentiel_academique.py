@@ -172,6 +172,12 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
     ]
 
 
+
+def cercle_est_national(cercle: CercleEtude) -> bool:
+    """Un cercle national possede au minimum une mention et un niveau.
+    L'absence de filiere signifie explicitement ``tronc commun``.
+    """
+    return bool(cercle.mention_id and cercle.niveau)
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
     """§31 : verifie mention + niveau, et le parcours (national, pas
     juste filiere_id brut — voir _filieres_equivalentes ci-dessus)
