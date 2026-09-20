@@ -268,12 +268,51 @@ def assurer_cercles_referentiel(session: Session) -> int:
             ).all()
         )
 
-    groupe_offert_par_nom = {}
-    for cle, groupe in groupes.items():
-        groupe_offert_par_nom[cle] = groupe
+    filieres_representantes = {}
+    ids_representants = {c.filiere_id for c in cercles_nationaux if c.filiere_id}
+    if ids_representants:
+        filieres_representantes = {
+            f.id: f
+            for f in session.exec(
+                select(Filiere).where(Filiere.id.in_(ids_representants))
+            ).all()
+        }
 
     total_crees = 0
     total_archives = 0
+    for cercle in cercles_nationaux:
+        representant = filieres_representantes.get(cercle.filiere_id)
+        if not representant:
+            continue
+        groupe_offert = groupes.get(
+            (representant.mention_id, _normaliser_nom_parcours(representant.nom))
+        )
+        offre_niveau = bool(
+            groupe_offert
+            and any(
+                filiere.niveau is None or filiere.niveau == cercle.niveau
+                for filiere in groupe_offert
+            )
+        )
+        if offre_niveau:
+            continue
+
+        nb_membres = membres_par_cercle.get(cercle.id, 0)
+        if nb_membres:
+            logger.warning(
+                "Cercle #%d (%s, niveau %s) n'a plus d'offre universitaire active "
+                "correspondante mais compte %d membre(s) : laisse ACTIF pour revue admin.",
+                cercle.id, cercle.nom, cercle.niveau, nb_membres,
+            )
+            continue
+
+        cercle.statut = StatutCercle.ARCHIVE
+        session.add(cercle)
+        total_archives += 1
+
+    if total_archives:
+        session.commit()
+
     for (mention_id, _nom_normalise), filieres_du_groupe in groupes.items():
         crees, archives = assurer_cercles_pour_groupe_parcours(session, mention_id, filieres_du_groupe, createur)
         total_crees += crees
