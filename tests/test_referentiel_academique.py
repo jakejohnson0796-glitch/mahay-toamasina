@@ -195,9 +195,6 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.commit()
             self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
 
-
-class TestSerialisationProfilAcademique(unittest.TestCase):
-
     def test_serialisation_separe_origine_et_formation(self):
         with Session(self.engine) as session:
             utilisateur = Utilisateur(
