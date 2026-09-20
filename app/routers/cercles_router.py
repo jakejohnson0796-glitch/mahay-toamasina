@@ -13,6 +13,7 @@ requetes HTTP classiques qu'aux connexions WebSocket.
 from typing import Optional
 from datetime import datetime
 from urllib.parse import urlencode
+import re
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
@@ -325,6 +326,32 @@ def liste_cercles(
         profil_academique_recherche = referentiel_academique.serialiser_profil_academique(profil_academique_brut)
 
     q_nettoye = " ".join((q or "").split())[:160]
+
+    # Les niveaux et le tronc commun sont des dimensions academiques,
+    # pas de simples mots de titre. Les extraire ici permet a une requete
+    # comme "gestion M1 CCA" de filtrer M1 tout en laissant la recherche
+    # textuelle chercher "gestion" et "CCA" dans la hierarchie.
+    niveaux_dans_q = []
+    motifs_niveaux = (
+        (r"\b(?:licence|l)\s*1\b", "L1"),
+        (r"\b(?:licence|l)\s*2\b", "L2"),
+        (r"\b(?:licence|l)\s*3\b", "L3"),
+        (r"\b(?:master|m)\s*1\b", "M1"),
+        (r"\b(?:master|m)\s*2\b", "M2"),
+    )
+    q_pour_recherche = q_nettoye
+    for motif, valeur in motifs_niveaux:
+        if re.search(motif, q_pour_recherche, flags=re.IGNORECASE):
+            niveaux_dans_q.append(valeur)
+            q_pour_recherche = re.sub(motif, " ", q_pour_recherche, flags=re.IGNORECASE)
+    recherche_tronc_commun_dans_q = bool(
+        re.search(r"\btronc\s+commun\b", q_pour_recherche, flags=re.IGNORECASE)
+    )
+    q_pour_recherche = re.sub(
+        r"\btronc\s+commun\b", " ", q_pour_recherche, flags=re.IGNORECASE
+    )
+    q_pour_recherche = " ".join(q_pour_recherche.split())[:160]
+
     # Une requete composee de plusieurs mots doit rester utile meme si
     # l'utilisateur ne connait pas l'ordre exact du titre : chaque terme
     # doit apparaitre dans au moins un champ searchable. On borne a 6 termes
@@ -378,13 +405,21 @@ def liste_cercles(
     )
     condition_recherche, pertinence_recherche = clause_recherche_cercles(
         session,
-        q_nettoye,
+        q_pour_recherche,
         CercleEtude.nom,
         CercleEtude.description,
         referentiel_recherche,
     )
     if condition_recherche is not None:
         requete = requete.where(condition_recherche)
+
+    if niveaux_dans_q:
+        requete = requete.where(
+            CercleEtude.niveau.in_(sorted(set(niveaux_dans_q)))
+        )
+
+    if recherche_tronc_commun_dans_q:
+        requete = requete.where(CercleEtude.filiere_id.is_(None))
 
     if domaine_id_nettoye:
         requete = requete.where(Mention.domaine_id == domaine_id_nettoye)
