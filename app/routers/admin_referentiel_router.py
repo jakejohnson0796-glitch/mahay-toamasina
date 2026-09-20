@@ -412,6 +412,7 @@ def page_demandes_changement_filiere(request: Request, session: Session = Depend
     utilisateurs = {u.id: u for u in session.exec(select(Utilisateur)).all()}
     filieres = {f.id: f for f in session.exec(select(Filiere)).all()}
     mentions = {m.id: m for m in session.exec(select(Mention)).all()}
+    facultes = {f.id: f for f in session.exec(select(Faculte)).all()}
 
     return templates.TemplateResponse(
         request,
@@ -422,6 +423,7 @@ def page_demandes_changement_filiere(request: Request, session: Session = Depend
             "utilisateurs": utilisateurs,
             "filieres": filieres,
             "mentions": mentions,
+            "facultes": facultes,
         },
     )
 
