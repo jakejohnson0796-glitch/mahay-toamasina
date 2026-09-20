@@ -23,14 +23,25 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     conn = op.get_bind()
+    # Requete volontairement portable SQLite + PostgreSQL :
+    # une sous-requete correlee remplace UPDATE ... FROM, car cette migration
+    # s'execute aussi dans la CI SQLite.
     conn.execute(sa.text(
         """
         UPDATE cercleetude
-        SET mention_id = filiere.mention_id
-        FROM filiere
+        SET mention_id = (
+            SELECT f.mention_id
+            FROM filiere f
+            WHERE f.id = cercleetude.filiere_id
+        )
         WHERE cercleetude.mention_id IS NULL
-          AND cercleetude.filiere_id = filiere.id
-          AND filiere.mention_id IS NOT NULL
+          AND cercleetude.filiere_id IS NOT NULL
+          AND EXISTS (
+              SELECT 1
+              FROM filiere f2
+              WHERE f2.id = cercleetude.filiere_id
+                AND f2.mention_id IS NOT NULL
+          )
         """
     ))
 
