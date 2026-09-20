@@ -42,16 +42,25 @@ def upgrade() -> None:
 
     # Index de lecture : l'offre est interrogée par universite/filiere et
     # filtre sur est_active dans toutes les validations de profil.
-    try:
+    if conn.dialect.name == "postgresql":
+        index_existant = conn.execute(
+            sa.text(
+                "SELECT 1 FROM pg_class WHERE relname = 'ix_programme_universite_filiere_actif' LIMIT 1"
+            )
+        ).first()
+    else:
+        index_existant = conn.execute(
+            sa.text(
+                "SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = 'ix_programme_universite_filiere_actif' LIMIT 1"
+            )
+        ).first()
+
+    if index_existant is None:
         op.create_index(
             "ix_programme_universite_filiere_actif",
             "programmeuniversitaire",
             ["universite_id", "filiere_id", "est_active"],
         )
-    except Exception:
-        # L'index peut déjà exister sur un environnement ayant applique une
-        # variante de la migration ; on ne bloque pas le deploiement pour ca.
-        pass
 
     # Une seule offre active pour une universite et une filiere.
     # Les offres historiques inactives restent multiples.
