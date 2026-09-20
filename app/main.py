@@ -135,29 +135,37 @@ async def au_demarrage() -> None:
         # rattachement Domaine existant. SQLite/tests continuent de
         # fonctionner comme avant.
         if not parametres.database_url.startswith("sqlite"):
-            chemin_referentiel = BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx"
-            if chemin_referentiel.exists():
+            # Source prioritaire : le referentiel Toamasina exact fourni avec le projet.
+            # Le fichier national historique reste un fallback de compatibilite.
+            candidats_referentiel = [
+                BASE_DIR.parent / "mahay_toamasina_referentiel_source.json",
+                BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx",
+            ]
+            chemin_referentiel = next(
+                (chemin for chemin in candidats_referentiel if chemin.exists()),
+                None,
+            )
+            if chemin_referentiel is not None:
                 try:
                     rapport_referentiel = importer_referentiel_academique(str(chemin_referentiel))
                     print(
-                        "[DEBUG ACADEMIQUE] Referentiel national synchronise — "
+                        "[DEBUG ACADEMIQUE] Referentiel synchronise — "
+                        f"source={chemin_referentiel.name}, "
                         f"{len(rapport_referentiel.domaines_crees)} domaine(s), "
                         f"{len(rapport_referentiel.mentions_domaine_rattache)} rattachement(s) "
                         f"Mention→Domaine, "
-                        f"{len(rapport_referentiel.mentions_domaine_ambigu)} mention(s) ambigue(s)."
+                        f"{len(rapport_referentiel.mentions_domaine_ambigu)} mention(s) ambigue(s), "
+                        f"{len(rapport_referentiel.filieres_creees)} filiere(s) creee(s), "
+                        f"{rapport_referentiel.programmes_crees} offre(s) creee(s)."
                     )
                 except Exception as erreur_referentiel:
-                    # Le referentiel est une donnee d'enrichissement : une
-                    # erreur d'import ne doit pas masquer une application
-                    # autrement saine. L'erreur reste visible dans les logs
-                    # pour permettre une correction du fichier/importeur.
                     print(
                         "[ERREUR ACADEMIQUE] Synchronisation du referentiel "
                         f"impossible : {type(erreur_referentiel).__name__}: {erreur_referentiel}"
                     )
             else:
                 print(
-                    "[DEBUG ACADEMIQUE] Classeur du referentiel absent — "
+                    "[DEBUG ACADEMIQUE] Source du referentiel absente — "
                     "synchronisation ignoree."
                 )
         peupler_donnees_initiales(session)
