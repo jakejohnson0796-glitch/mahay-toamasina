@@ -1,0 +1,765 @@
+/*
+ * Gasy Mahay — couche UX 2026
+ * Priorites : mobile d'abord, actions claires, lecture rapide,
+ * cibles tactiles confortables, continuite d'apprentissage.
+ *
+ * Cette feuille est volontairement additive : elle ne remplace pas
+ * style.css, elle le complete pour limiter les regressions.
+ */
+
+/* ---------- Navigation mobile ---------- */
+
+.mobile-entete-app {
+  display: none;
+}
+
+.navigation-mobile-fixe {
+  display: none;
+}
+
+.pwa-installation {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 55;
+  width: min(23rem, calc(100vw - 2rem));
+  background: var(--content-surface);
+  color: var(--content-text);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 0.9rem 1rem;
+}
+
+.pwa-installation[hidden] {
+  display: none;
+}
+
+.pwa-installation-corps {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pwa-installation-icone {
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--content-bg);
+  color: var(--primary);
+}
+
+.pwa-installation-texte {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-installation-texte strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.pwa-installation-texte span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.76rem;
+  color: var(--content-text-muted);
+}
+
+.pwa-installation-actions {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.pwa-installation-actions button {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--content-border);
+  background: transparent;
+  color: var(--content-text);
+  cursor: pointer;
+}
+
+.pwa-installation-actions .pwa-installer {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* ---------- Dashboard : hierarchie + action principale ---------- */
+
+.tb-hero {
+  position: relative;
+}
+
+.tb-hero-texte {
+  max-width: 48rem;
+}
+
+.tb-hero .tb-titre {
+  font-size: clamp(2rem, 4vw, 3.15rem);
+  line-height: 1.03;
+  letter-spacing: -0.025em;
+}
+
+.tb-hero .tb-sous-titre {
+  max-width: 42rem;
+  font-size: clamp(0.98rem, 1.2vw, 1.05rem);
+}
+
+.tb-acces-rapide {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.tb-acces-rapide-item {
+  min-height: 7rem;
+  justify-content: center;
+}
+
+.tb-acces-rapide-item:focus-visible {
+  transform: translateY(-1px);
+}
+
+.tb-routine {
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.1rem;
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-routine-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.tb-routine-entete h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--content-text);
+}
+
+.tb-routine-entete p {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--content-text-muted);
+}
+
+.tb-routine-compteur {
+  flex: 0 0 auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.tb-routine-piste {
+  height: 0.4rem;
+  overflow: hidden;
+  background: var(--content-bg);
+  border-radius: 999px;
+  margin-bottom: 0.9rem;
+}
+
+.tb-routine-remplissage {
+  width: 0;
+  height: 100%;
+  background: var(--primary);
+  border-radius: inherit;
+  transition: width 0.22s var(--ease-fluide);
+}
+
+.tb-routine-etapes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.tb-routine-etape {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-md);
+  background: var(--content-bg);
+  color: var(--content-text);
+}
+
+.tb-routine-etape[data-terminee="true"] {
+  background: rgba(72, 121, 97, 0.08);
+  border-color: var(--color-success-clair);
+}
+
+.tb-routine-numero {
+  width: 1.85rem;
+  height: 1.85rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--content-text-muted);
+}
+
+.tb-routine-etape[data-terminee="true"] .tb-routine-numero {
+  border-color: var(--color-success-clair);
+  color: var(--color-success-clair);
+}
+
+.tb-routine-contenu {
+  min-width: 0;
+}
+
+.tb-routine-contenu strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.tb-routine-contenu span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--content-text-muted);
+}
+
+.tb-routine-contenu a {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  text-decoration: underline;
+}
+
+.tb-routine-fait {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--content-border);
+  border-radius: 50%;
+  background: var(--content-surface);
+  color: var(--content-text-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.tb-routine-fait:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tb-routine-fait[aria-pressed="true"] {
+  background: var(--color-success-clair);
+  border-color: var(--color-success-clair);
+  color: #fff;
+}
+
+.tb-routine-fait:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.tb-routine-finale {
+  display: none;
+  margin: 0.8rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-success-clair);
+  font-weight: 600;
+}
+
+.tb-routine[data-complete="true"] .tb-routine-finale {
+  display: block;
+}
+
+/* Plus d'air entre les zones d'action sur desktop. */
+.tb-ligne-principale,
+.tb-ligne-basse,
+.tb-ligne-supplementaire {
+  scroll-margin-top: 1rem;
+}
+
+/* ---------- Formulaires / navigation : accessibilite tactile ---------- */
+
+.bouton,
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.bouton {
+  min-height: 2.75rem;
+}
+
+.carte-formulaire input,
+.carte-formulaire select,
+.carte-formulaire textarea,
+.filtres input,
+.filtres select,
+.filtres textarea {
+  min-height: 2.75rem;
+}
+
+.filtres {
+  gap: 0.85rem;
+}
+
+.doc-chip {
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.doc-actions {
+  min-height: 2.75rem;
+}
+
+.doc-bouton {
+  min-height: 2.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quiz-choix-option {
+  min-height: 3rem;
+}
+
+.tb-voir-tout {
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 768px) {
+  :root {
+    --mobile-gouttiere: max(1rem, env(safe-area-inset-left));
+    --mobile-gouttiere-droite: max(1rem, env(safe-area-inset-right));
+    --mobile-nav-hauteur: 4.25rem;
+  }
+
+  html {
+    scroll-padding-top: 4.5rem;
+    scroll-padding-bottom: 5rem;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .sidebar-bouton-mobile {
+    top: max(0.6rem, env(safe-area-inset-top));
+    left: max(0.7rem, env(safe-area-inset-left));
+    width: 2.9rem;
+    height: 2.9rem;
+    border-radius: 0.85rem;
+  }
+
+  .app-page {
+    padding-top: 3.8rem;
+    padding-bottom: calc(var(--mobile-nav-hauteur) + 1.5rem + env(safe-area-inset-bottom));
+  }
+
+  .mobile-entete-app {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    min-height: 3.25rem;
+    margin: -0.2rem 0 0.75rem;
+    padding: 0.45rem var(--mobile-gouttiere-droite) 0.55rem var(--mobile-gouttiere);
+    background: color-mix(in srgb, var(--content-bg) 94%, transparent);
+    border-bottom: 1px solid var(--content-border);
+    backdrop-filter: blur(10px);
+  }
+
+  .mobile-entete-app-marque {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--content-text);
+  }
+
+  .mobile-entete-app-sous-marque {
+    font-size: 0.68rem;
+    color: var(--content-text-muted);
+    margin-left: 0.35rem;
+  }
+
+  .mobile-entete-app-avatar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--content-text);
+    font-size: 0.76rem;
+    text-decoration: none;
+  }
+
+  .navigation-mobile-fixe {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.2rem;
+    padding: 0.45rem max(0.4rem, env(safe-area-inset-right)) max(0.45rem, env(safe-area-inset-bottom)) max(0.4rem, env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--content-surface) 96%, transparent);
+    border-top: 1px solid var(--content-border);
+    box-shadow: 0 -6px 18px rgba(23, 24, 62, 0.08);
+    backdrop-filter: blur(12px);
+  }
+
+  .navigation-mobile-lien {
+    min-width: 0;
+    min-height: 3.45rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.18rem;
+    border-radius: 0.75rem;
+    color: var(--content-text-muted);
+    text-decoration: none;
+    font-size: 0.63rem;
+    font-weight: 600;
+  }
+
+  .navigation-mobile-lien:hover {
+    text-decoration: none;
+    background: var(--content-bg);
+  }
+
+  .navigation-mobile-lien.actif {
+    color: var(--primary);
+    background: rgba(184, 84, 58, 0.08);
+  }
+
+  .navigation-mobile-lien svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .contenu-clair {
+    width: 100%;
+  }
+
+  .tb-contenu {
+    width: 100%;
+    padding: 0.75rem 1rem 1.5rem;
+  }
+
+  .tb-hero {
+    padding: 0.35rem 0 1rem;
+  }
+
+  .tb-hero .tb-titre {
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+    line-height: 1.07;
+  }
+
+  .tb-hero .tb-sous-titre {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .tb-acces-rapide {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    padding: 0.15rem 0.1rem 0.45rem;
+    margin-right: -0.1rem;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+
+  .tb-acces-rapide-item {
+    flex: 0 0 7.2rem;
+    min-height: 6.3rem;
+    scroll-snap-align: start;
+    padding: 0.75rem 0.55rem;
+    font-size: 0.76rem;
+  }
+
+  .tb-acces-rapide-icone {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .tb-routine {
+    margin-bottom: 1rem;
+    padding: 0.9rem;
+  }
+
+  .tb-routine-entete {
+    align-items: flex-start;
+  }
+
+  .tb-routine-etapes {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tb-routine-etape {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 4.25rem;
+  }
+
+  .tb-routine-contenu span {
+    font-size: 0.7rem;
+  }
+
+  .tb-ligne-principale {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .tb-carte-reprendre,
+  .tb-carte-premium {
+    padding: 1.15rem;
+  }
+
+  .tb-carte-reprendre .bouton,
+  .tb-carte-premium .bouton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tb-grille-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .tb-carte-stat {
+    min-width: 0;
+    padding: 0.85rem;
+    gap: 0.65rem;
+  }
+
+  .tb-stat-icone {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .tb-stat-nombre {
+    font-size: 1.65rem;
+  }
+
+  .tb-stat-label {
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+
+  .tb-ligne-basse,
+  .tb-ligne-supplementaire {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .tb-panneau {
+    padding: 1rem;
+  }
+
+  .tb-panneau-entete {
+    margin-bottom: 0.75rem;
+  }
+
+  .tb-liste-activite {
+    gap: 0.05rem;
+  }
+
+  .tb-ligne-activite {
+    min-height: 3.25rem;
+    gap: 0.65rem;
+    padding: 0.55rem 0.2rem;
+  }
+
+  .tb-activite-infos strong {
+    font-size: 0.82rem;
+    line-height: 1.25;
+  }
+
+  .tb-activite-detail,
+  .tb-activite-delai {
+    font-size: 0.7rem;
+  }
+
+  .tb-grille-cercles {
+    grid-template-columns: 1fr;
+  }
+
+  /* Pages contenu : une seule colonne lisible, avec actions empilees. */
+  .tb-panneau-entete,
+  .entete-cercle,
+  .doc-actions {
+    gap: 0.55rem;
+  }
+
+  .doc-actions {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .doc-bouton {
+    flex: 1 1 11rem;
+  }
+
+  .doc-lien-quiz {
+    min-height: 2.65rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 8rem;
+    border: 1px solid var(--content-border);
+    border-radius: var(--radius-md);
+    background: var(--content-bg);
+  }
+
+  .filtres {
+    grid-template-columns: 1fr !important;
+  }
+
+  .filtres > div {
+    width: 100%;
+  }
+
+  .filtres .bouton,
+  .filtres button {
+    width: 100%;
+  }
+
+  .doc-filtres-type {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+    scrollbar-width: thin;
+  }
+
+  .doc-chip {
+    flex: 0 0 auto;
+  }
+
+  .quiz-grille {
+    margin-top: 1rem;
+  }
+
+  .quiz-carte-generer,
+  .quiz-carte-examen {
+    padding: 1rem;
+  }
+
+  .quiz-chrono-carte {
+    top: 0.35rem;
+    border-radius: 0.75rem;
+  }
+
+  .quiz-progression {
+    top: 0.35rem;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .quiz-choix-option {
+    min-height: 3.35rem;
+    padding: 0.75rem;
+  }
+
+  .aide-avis-grille {
+    gap: 0.9rem;
+  }
+
+  .grille-cartes-claires {
+    grid-template-columns: 1fr;
+  }
+
+  .carte-claire {
+    padding: 1rem;
+  }
+
+  .entete-cercle-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .barre-composition {
+    border-radius: 1.1rem;
+    padding: 0.3rem 0.35rem 0.3rem 0.5rem;
+  }
+
+  .barre-composition #champ-message {
+    min-height: 2.7rem;
+  }
+
+  .panneau-thread {
+    width: calc(100vw - 1.5rem);
+    max-width: none;
+  }
+
+  .pwa-installation {
+    bottom: calc(var(--mobile-nav-hauteur) + 0.65rem + env(safe-area-inset-bottom));
+  }
+
+  /* Sur mobile, on évite les hover "lift" qui donnent une sensation de
+     page qui saute au doigt. */
+  .doc-carte:hover,
+  .carte-claire:hover,
+  .tb-carte-stat:hover,
+  .tb-acces-rapide-item:hover,
+  .tb-carte-cercle-moderne:hover {
+    transform: none;
+  }
+}
+
+/* Très petits téléphones : contenu plus compact sans perdre les cibles tactiles. */
+@media (max-width: 390px) {
+  .tb-grille-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tb-stat-corps {
+    min-width: 0;
+  }
+
+  .tb-stat-label {
+    font-size: 0.68rem;
+  }
+
+  .navigation-mobile-lien {
+    font-size: 0.59rem;
+  }
+
+  .tb-acces-rapide-item {
+    flex-basis: 6.8rem;
+  }
+}
+
+/* Respect des préférences d'animation. */
+@media (prefers-reduced-motion: reduce) {
+  .tb-routine-remplissage {
+    transition: none;
+  }
+
+  .navigation-mobile-fixe {
+    backdrop-filter: none;
+  }
+}
