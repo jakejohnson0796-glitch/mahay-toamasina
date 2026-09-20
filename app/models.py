@@ -514,6 +514,16 @@ class DemandeAdhesionCercle(SQLModel, table=True):
     date_traitement: Optional[datetime] = None
     traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
 
+    __table_args__ = (
+        Index(
+            "ix_demande_unique_en_attente",
+            "cercle_id", "utilisateur_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE'"),
+            postgresql_where=text("statut = 'EN_ATTENTE'"),
+        ),
+    )
+
 
 class StatutDemandeCreationCercle(str, Enum):
     EN_ATTENTE = "en_attente"
