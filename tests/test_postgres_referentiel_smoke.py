@@ -190,7 +190,15 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         assert expected_filiere_ids.issubset({p.filiere_id for p in programmes})
 
         createur = session.exec(select(Utilisateur)).first()
-        assert createur is not None, "Aucun utilisateur disponible pour créer le cercle de smoke test"
+        if createur is None:
+            createur = Utilisateur(
+                nom="Smoke PostgreSQL",
+                telephone="0320000001",
+                mot_de_passe_hash="smoke-only",
+            )
+            session.add(createur)
+            session.commit()
+            session.refresh(createur)
 
         cca = next(
             fil for fil in filieres
