@@ -12,10 +12,12 @@ requetes HTTP classiques qu'aux connexions WebSocket.
 """
 from typing import Optional
 from datetime import datetime
+import re
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
+from sqlalchemy import case
 from sqlmodel import Session, select, or_, func
 
 from ..database import get_session, engine
@@ -316,15 +318,33 @@ def liste_cercles(
     TAILLE_PAGE = 30
     utilisateur = utilisateur_courant(request, session)
 
-    q_nettoye = (q or "").strip()
+    q_nettoye = re.sub(r"\s+", " ", (q or "").strip())[:120]
     domaine_id_nettoye = entier_ou_none(domaine_id)
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
     recherche_tronc_commun = filiere_id == "tronc_commun"
     niveau_nettoye = niveau if niveau in NIVEAUX else None
-    if mention_id_nettoye and not domaine_id_nettoye:
-        mention_selectionnee = session.get(Mention, mention_id_nettoye)
-        domaine_id_nettoye = mention_selectionnee.domaine_id if mention_selectionnee and mention_selectionnee.domaine_id else None
+
+    # La hierarchie est deterministe : Parcours -> Mention -> Domaine.
+    # Un parametre forge ne doit jamais afficher un couple incoherent.
+    filiere_selectionnee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
+    if filiere_selectionnee and filiere_selectionnee.mention_id:
+        if mention_id_nettoye and mention_id_nettoye != filiere_selectionnee.mention_id:
+            filiere_selectionnee = None
+            filiere_id_nettoye = -1
+        else:
+            mention_id_nettoye = filiere_selectionnee.mention_id
+
+    mention_selectionnee = session.get(Mention, mention_id_nettoye) if mention_id_nettoye else None
+    if mention_selectionnee and mention_selectionnee.domaine_id:
+        domaine_id_nettoye = mention_selectionnee.domaine_id
+
+    # "Tronc commun" n'a de sens qu'avec une mention. Sans elle, on
+    # renvoie simplement zero resultat au lieu de melanger les parcours.
+    if recherche_tronc_commun and not mention_id_nettoye:
+        recherche_tronc_commun = False
+        niveau_nettoye = "__filtre_invalide__"
+
     afficher_disponibles_seulement = disponibles == "1"
     page_nettoyee = max(1, page)
 
@@ -332,18 +352,23 @@ def liste_cercles(
         select(CercleEtude)
         .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
         .outerjoin(Mention, Mention.id == CercleEtude.mention_id)
+        .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
         .where(CercleEtude.statut == StatutCercle.ACTIF)
         .where(or_(CercleEtude.mention_id.is_(None), Mention.est_active == True))  # noqa: E712
     )
-
     if q_nettoye:
-        motif = f"%{q_nettoye}%"
-        requete = requete.where(or_(
-            CercleEtude.nom.ilike(motif),
-            CercleEtude.description.ilike(motif),
-            Mention.nom.ilike(motif),
-            Filiere.nom.ilike(motif),
-        ))
+        # Recherche multi-termes : "finance L3" fonctionne meme si le nom
+        # exact du cercle est "Revision Finance et Comptabilite".
+        for terme in [t for t in re.split(r"\s+", q_nettoye) if t][:6]:
+            motif = f"%{terme}%"
+            requete = requete.where(or_(
+                CercleEtude.nom.ilike(motif),
+                CercleEtude.description.ilike(motif),
+                Domaine.nom.ilike(motif),
+                Mention.nom.ilike(motif),
+                Filiere.nom.ilike(motif),
+                CercleEtude.niveau.ilike(motif),
+            ))
 
     if domaine_id_nettoye:
         requete = requete.where(Mention.domaine_id == domaine_id_nettoye)
@@ -352,12 +377,17 @@ def liste_cercles(
         requete = requete.where(CercleEtude.mention_id == mention_id_nettoye)
 
     if recherche_tronc_commun:
-        requete = requete.where(CercleEtude.filiere_id.is_(None))
+        requete = requete.where(
+            CercleEtude.mention_id == mention_id_nettoye,
+            CercleEtude.filiere_id.is_(None),
+        )
     elif filiere_id_nettoye:
-        filiere_choisie = session.get(Filiere, filiere_id_nettoye)
-        if filiere_choisie:
-            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
-            requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
+        if filiere_selectionnee:
+            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_selectionnee)
+            requete = requete.where(
+                CercleEtude.mention_id == mention_id_nettoye,
+                CercleEtude.filiere_id.in_(ids_equivalents),
+            )
         else:
             requete = requete.where(CercleEtude.id == -1)
 
@@ -377,9 +407,30 @@ def liste_cercles(
     total_pages = max(1, (total_cercles + TAILLE_PAGE - 1) // TAILLE_PAGE)
     page_nettoyee = min(page_nettoyee, total_pages)
 
+    if q_nettoye:
+        motif_exact = q_nettoye
+        motif_prefixe = f"{q_nettoye}%"
+        pertinence = case(
+            (CercleEtude.nom.ilike(motif_exact), 0),
+            (Mention.nom.ilike(motif_exact), 1),
+            (Filiere.nom.ilike(motif_exact), 2),
+            (Domaine.nom.ilike(motif_exact), 3),
+            (CercleEtude.nom.ilike(motif_prefixe), 4),
+            else_=10,
+        )
+        requete = requete.order_by(
+            pertinence,
+            CercleEtude.date_creation.desc(),
+            CercleEtude.id.desc(),
+        )
+    else:
+        requete = requete.order_by(
+            CercleEtude.date_creation.desc(),
+            CercleEtude.id.desc(),
+        )
+
     cercles = session.exec(
         requete
-        .order_by(CercleEtude.date_creation.desc(), CercleEtude.id.desc())
         .offset((page_nettoyee - 1) * TAILLE_PAGE)
         .limit(TAILLE_PAGE)
     ).all()
