@@ -463,6 +463,13 @@ class MembreCercle(SQLModel, table=True):
     role: RoleMembreCercle = Field(default=RoleMembreCercle.MEMBRE)
     date_adhesion: datetime = Field(default_factory=datetime.utcnow)
 
+    __table_args__ = (
+        UniqueConstraint(
+            "cercle_id", "utilisateur_id",
+            name="uq_membrecercle_cercle_utilisateur",
+        ),
+    )
+
 
 class ThemeDuJour(SQLModel, table=True):
     """Correspond exactement au schema cree par la migration
@@ -538,6 +545,35 @@ class DemandeCreationCercle(SQLModel, table=True):
     # cette demande depuis l'historique admin.
     cercle_cree_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
 
+    __table_args__ = (
+        Index(
+            "ix_demande_creation_unique_nationale_attente",
+            "mention_id", "filiere_id", "niveau",
+            unique=True,
+            sqlite_where=text(
+                "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
+                "AND filiere_id IS NOT NULL AND niveau IS NOT NULL"
+            ),
+            postgresql_where=text(
+                "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
+                "AND filiere_id IS NOT NULL AND niveau IS NOT NULL"
+            ),
+        ),
+        Index(
+            "ix_demande_creation_unique_tronc_attente",
+            "mention_id", "niveau",
+            unique=True,
+            sqlite_where=text(
+                "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
+                "AND filiere_id IS NULL AND niveau IS NOT NULL"
+            ),
+            postgresql_where=text(
+                "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
+                "AND filiere_id IS NULL AND niveau IS NOT NULL"
+            ),
+        ),
+    )
+
 
 class StatutDemandeChangementFiliere(str, Enum):
     EN_ATTENTE = "en_attente"
@@ -612,6 +648,20 @@ class SignalementMessage(SQLModel, table=True):
     date_signalement: datetime = Field(default_factory=datetime.utcnow)
     traite: bool = Field(default=False)
 
+    # Un meme membre ne doit pas pouvoir empiler plusieurs signalements
+    # encore ouverts sur le meme message. La contrainte est partielle :
+    # apres traitement, un nouveau signalement reste possible si
+    # necessaire.
+    __table_args__ = (
+        Index(
+            "ix_signalement_message_unique_nontraite",
+            "message_id", "signale_par_id",
+            unique=True,
+            sqlite_where=text("traite = 0"),
+            postgresql_where=text("traite = false"),
+        ),
+    )
+
 
 class TypeReaction(str, Enum):
     """Les 7 reactions initiales du brief (§4). La valeur stockee est le
@@ -642,7 +692,11 @@ class MessageReaction(SQLModel, table=True):
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
     __table_args__ = (
-        UniqueConstraint("message_id", "utilisateur_id", "type_reaction", name="uq_reaction_message_utilisateur_type"),
+        # Le contrat metier est "une reaction active max par utilisateur
+        # et par message", meme si l'ancien schema autorisait encore
+        # plusieurs types simultanes. L'unicite est maintenant imposee
+        # sur la paire elle-meme.
+        UniqueConstraint("message_id", "utilisateur_id", name="uq_reaction_message_utilisateur"),
     )
 
 
