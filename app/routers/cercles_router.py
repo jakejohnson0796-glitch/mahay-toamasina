@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
+from sqlalchemy import case
 from sqlmodel import Session, select, or_, func
 
 from ..database import get_session, engine
@@ -357,10 +358,23 @@ def liste_cercles(
         .where(or_(mention_effective_id.is_(None), Mention.est_active == True))  # noqa: E712
     )
 
+    # Le texte searchable reprend toute la hierarchie de la base
+    # Toamasina : Domaine -> Mention -> Niveau -> Parcours. Les cercles
+    # de tronc commun sont representes sans Filiere, on leur ajoute donc
+    # un tag de recherche explicite "tronc commun".
     referentiel_recherche = (
         func.coalesce(Domaine.nom, "")
         + " " + func.coalesce(Mention.nom, "")
+        + " " + func.coalesce(CercleEtude.niveau, "")
         + " " + func.coalesce(Filiere.nom, "")
+        + " "
+        + func.coalesce(
+            case(
+                (CercleEtude.filiere_id.is_(None), "tronc commun"),
+                else_="",
+            ),
+            "",
+        )
     )
     condition_recherche, pertinence_recherche = clause_recherche_cercles(
         session,
