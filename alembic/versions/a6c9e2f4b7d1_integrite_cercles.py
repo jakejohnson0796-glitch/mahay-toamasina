@@ -12,6 +12,7 @@ outils Alembic.
 """
 from collections import defaultdict
 from typing import Sequence, Union
+import unicodedata
 
 from alembic import op
 import sqlalchemy as sa
@@ -123,11 +124,29 @@ def _nettoyer_signalements(conn) -> None:
     _supprimer_ids(conn, "signalementmessage", a_supprimer)
 
 
+def _normaliser_nom_filiere(nom: str | None) -> str:
+    """Meme cle de nommage que le referentiel, sans dependre de l'import
+    applicatif pendant une migration Alembic."""
+    texte = (nom or "").strip().lower()
+    texte = unicodedata.normalize("NFKD", texte)
+    return "".join(c for c in texte if not unicodedata.combining(c))
+
+
 def _nettoyer_demandes_creation(conn) -> None:
-    # Les demandes en attente sont uniques par identite du cercle national.
-    # Deux variantes sont necessaires :
-    #   - parcours : mention + filiere + niveau
-    #   - tronc commun : mention + niveau, sans filiere
+    # Les demandes en attente sont uniques par identite NATIONALE :
+    #   - parcours : mention + nom de filiere normalise + niveau ;
+    #   - tronc commun : mention + niveau, sans filiere.
+    #
+    # Important : deux universites peuvent avoir deux filiere_id differents
+    # pour le meme parcours national. Le nettoyage doit donc utiliser le nom
+    # normalise, pas seulement l'identifiant technique.
+    filieres = {
+        ligne["id"]: ligne
+        for ligne in _rows(
+            conn,
+            "SELECT id, mention_id, nom, niveau FROM filiere",
+        )
+    }
     lignes = _rows(
         conn,
         "SELECT id, mention_id, filiere_id, niveau "
@@ -139,20 +158,30 @@ def _nettoyer_demandes_creation(conn) -> None:
     for ligne in lignes:
         if ligne["mention_id"] is None or ligne["niveau"] is None:
             continue
-        cle = (
-            "filiere",
-            ligne["mention_id"],
-            ligne["filiere_id"],
-            ligne["niveau"],
-        ) if ligne["filiere_id"] is not None else (
-            "tronc",
-            ligne["mention_id"],
-            ligne["niveau"],
-        )
+
+        if ligne["filiere_id"] is not None and ligne["filiere_id"] in filieres:
+            filiere = filieres[ligne["filiere_id"]]
+            cle = (
+                "filiere",
+                ligne["mention_id"],
+                _normaliser_nom_filiere(filiere["nom"]),
+                ligne["niveau"],
+            )
+        elif ligne["filiere_id"] is None:
+            cle = ("tronc", ligne["mention_id"], ligne["niveau"])
+        else:
+            # FK invalide impossible normalement, mais conserver une cle
+            # technique plutot que de fusionner deux donnees douteuses.
+            cle = (
+                "filiere_id_invalide",
+                ligne["mention_id"],
+                ligne["filiere_id"],
+                ligne["niveau"],
+            )
         groupes[cle].append(ligne)
 
     for _cle, lignes_groupe in groupes.items():
-        # On garde la plus ancienne demande, et on rejette les autres pour
+        # On garde la plus ancienne demande et on rejette les autres pour
         # ne jamais effacer l'historique d'une action utilisateur.
         for doublon in lignes_groupe[1:]:
             conn.execute(
