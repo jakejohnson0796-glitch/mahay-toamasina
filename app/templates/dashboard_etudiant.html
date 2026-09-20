@@ -17,6 +17,54 @@
       </div>
     </section>
 
+    <section class="tb-routine" id="routine-du-jour" aria-labelledby="routine-du-jour-titre" data-complete="false">
+      <div class="tb-routine-entete">
+        <div>
+          <h2 id="routine-du-jour-titre">Ta routine du jour</h2>
+          <p>Une petite session régulière vaut mieux qu'une longue session rare.</p>
+        </div>
+        <span class="tb-routine-compteur" aria-live="polite">0/3 aujourd'hui</span>
+      </div>
+
+      <div class="tb-routine-piste" aria-hidden="true">
+        <div class="tb-routine-remplissage"></div>
+      </div>
+
+      <div class="tb-routine-etapes">
+        <article class="tb-routine-etape" data-routine-id="quiz">
+          <span class="tb-routine-numero">1</span>
+          <div class="tb-routine-contenu">
+            <strong>2–5 min · Un mini quiz</strong>
+            <span>Teste ce que tu sais déjà.</span>
+            <a href="/quiz">Commencer →</a>
+          </div>
+          <button type="button" class="tb-routine-fait" data-routine-id="quiz" aria-pressed="false" aria-label="Marquer cette étape comme terminée">○</button>
+        </article>
+
+        <article class="tb-routine-etape" data-routine-id="document">
+          <span class="tb-routine-numero">2</span>
+          <div class="tb-routine-contenu">
+            <strong>5 min · Une ressource</strong>
+            <span>Relis une annale, une fiche ou un cours.</span>
+            <a href="/documents">Voir les documents →</a>
+          </div>
+          <button type="button" class="tb-routine-fait" data-routine-id="document" aria-pressed="false" aria-label="Marquer cette étape comme terminée">○</button>
+        </article>
+
+        <article class="tb-routine-etape" data-routine-id="cercle">
+          <span class="tb-routine-numero">3</span>
+          <div class="tb-routine-contenu">
+            <strong>3 min · Une interaction</strong>
+            <span>Pose une question ou lis les échanges d’un cercle.</span>
+            <a href="/cercles">Ouvrir mes cercles →</a>
+          </div>
+          <button type="button" class="tb-routine-fait" data-routine-id="cercle" aria-pressed="false" aria-label="Marquer cette étape comme terminée">○</button>
+        </article>
+      </div>
+
+      <p class="tb-routine-finale">Routine terminée aujourd’hui. Bravo pour la régularité — à demain pour la prochaine session.</p>
+    </section>
+
     <div class="tb-acces-rapide">
       <a href="/documents" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-vert">{{ icone("documents", 20) }}</span> Documents</a>
       <a href="/quiz" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-orange">{{ icone("quiz", 20) }}</span> Quiz IA</a>
