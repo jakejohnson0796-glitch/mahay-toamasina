@@ -27,7 +27,7 @@ def upgrade() -> None:
         """
         DELETE FROM membrecercle
         WHERE utilisateur_id IN (
-            SELECT id FROM utilisateur WHERE role = 'ADMIN'
+            SELECT id FROM utilisateur WHERE CAST(role AS TEXT) = 'ADMIN'
         )
         AND NOT EXISTS (
             SELECT 1
