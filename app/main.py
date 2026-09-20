@@ -4,6 +4,7 @@ Point d'entree de Gasy Mahay Toamasina.
 Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
 """
+import asyncio
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -122,6 +123,18 @@ async def au_demarrage() -> None:
         print("=" * 70)
         raise  # on relance l'erreur pour que uvicorn plante au lieu de demarrer silencieusement en mode degrade
 
+    # Les migrations restent synchrones : le schema doit etre pret avant que
+    # l'application serve des donnees. Le remplissage/maintenance peut en
+    # revanche etre effectue apres le boot, dans un thread, afin que Render
+    # puisse atteindre le serveur et valider son health check sans attendre
+    # l'import du referentiel, le seed et la maintenance des cercles.
+    print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
+    initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
+    app.state.initialisation_donnees = initialisation
+    (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
+    print("[DEBUG DATABASE] Demarrage HTTP pret.")
+
+def _initialiser_donnees_apres_demarrage() -> None:
     print("[DEBUG DATABASE] Verification des donnees initiales...")
     with Session(engine) as session:
         # Le referentiel national (dont les Domaines) est fourni dans le
@@ -176,7 +189,7 @@ async def au_demarrage() -> None:
         nb_cercles_crees = assurer_cercles_referentiel(session)
         if nb_cercles_crees:
             print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
-
+    
         # Fusionne les cercles nationaux "doublons" restants (un par
         # universite au lieu d'un seul, bug historique corrige dans
         # cercles_referentiel.py mais dont les doublons d'AVANT la
@@ -196,6 +209,13 @@ async def au_demarrage() -> None:
     print("[DEBUG DATABASE] Donnees initiales OK.")
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
     print("[DEBUG DATABASE] Demarrage termine.")
+
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    """Endpoint de liveness ultra-leger pour le health check Render."""
+    return {"status": "ok"}
 
 
 @app.get("/")
