@@ -194,10 +194,21 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
-          {% if info.domaine %}<span>{{ info.domaine.nom }}</span><span aria-hidden="true"> · </span>{% endif %}
-          {% if info.mention %}<span>{{ info.mention.nom }}</span>{% endif %}
-          {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% elif info.cercle.niveau %}<span aria-hidden="true"> · </span><span>Tronc commun</span>{% else %}<span aria-hidden="true"> · </span><span>Groupe libre</span>{% endif %}
+          {% if info.type_cercle == "parcours" %}
+          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
+          {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
           {% if info.cercle.niveau %}<span class="puce-niveau">{{ info.cercle.niveau }}</span>{% endif %}
+          {% elif info.type_cercle == "tronc_commun" %}
+          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
+          <span aria-hidden="true"> · </span><span>Tronc commun</span>
+          <span class="puce-niveau">{{ info.cercle.niveau }}</span>
+          {% elif info.type_cercle == "libre" %}
+          <span>Groupe libre</span>
+          {% else %}
+          <span class="puce-incomplet">Référentiel à vérifier</span>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -206,7 +217,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
     <p class="carte-claire-description">{{ info.cercle.description }}</p>
     {% endif %}
     <div class="carte-claire-badges">
-      {% if info.profil_compatible and not info.est_membre %}<span class="puce-compatibilite">Correspond à ton profil</span>{% endif %}
+      {% if info.type_cercle != "incomplet" and info.profil_compatible and not info.est_membre %}<span class="puce-compatibilite">Correspond à ton profil</span>{% endif %}
       {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% elif info.en_attente %}<span class="puce-statut">Demande en attente</span>{% endif %}
     </div>
     <div class="carte-claire-actions">
