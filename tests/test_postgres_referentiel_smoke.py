@@ -133,5 +133,15 @@ def test_postgres_demarrage_import_et_idempotence():
         nb_domaines_apres = session.exec(select(func.count()).select_from(Domaine)).one()
         nb_mentions_apres = session.exec(select(func.count()).select_from(Mention)).one()
 
+        # Contrat appliqué par la migration f7c2d9a4e1b6, simulé dans le
+        # smoke test par un schema storage minimal (voir CI).
+        bucket = session.connection().exec_driver_sql(
+            "SELECT public, file_size_limit, allowed_mime_types "
+            "FROM storage.buckets WHERE id = 'documents'"
+        ).one()
+        assert bucket[0] is False
+        assert bucket[1] == 20 * 1024 * 1024
+        assert "application/pdf" in bucket[2]
+
     assert nb_domaines_apres == len(domaines)
     assert nb_mentions_apres == len(mentions)
