@@ -40,7 +40,7 @@ else:
         # n'arrive jamais (souci reseau, pooler capricieux...). Sans ca,
         # rien ne borne cette attente et l'app peut se figer pour
         # toujours, exactement le symptome observe.
-        "options": "-c statement_timeout=10000",
+        "options": "-c statement_timeout=10000 -c search_path=public,extensions",
     }
 
 engine = create_engine(
