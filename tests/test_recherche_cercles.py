@@ -29,7 +29,7 @@ from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
-    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Mention, Filiere,
+    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere,
 )
 
 
@@ -68,7 +68,9 @@ class TestRechercheCercles(unittest.TestCase):
             session.add(universite); session.commit(); session.refresh(universite)
             faculte = Faculte(nom="DEGMIA", universite_id=universite.id)
             session.add(faculte); session.commit(); session.refresh(faculte)
-            mention = Mention(nom="Sciences de Gestion")
+            domaine = Domaine(nom="Economie et Gestion")
+            session.add(domaine); session.commit(); session.refresh(domaine)
+            mention = Mention(nom="Sciences de Gestion", domaine_id=domaine.id)
             session.add(mention); session.commit(); session.refresh(mention)
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
@@ -144,6 +146,36 @@ class TestRechercheCercles(unittest.TestCase):
     def test_recherche_vide_ne_correspond_a_rien_affiche_etat_vide(self):
         page = self.client.get("/cercles", params={"q": "xyzxyzxyz-introuvable"})
         self.assertIn("Aucun résultat", page.text)
+
+    def test_recherche_multiterme_ne_depende_pas_de_l_ordre(self):
+        page = self.client.get("/cercles", params={"q": "finance analyse"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Revision Analyse Financiere", page.text)
+        self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
+
+    def test_recherche_textuelle_couvre_le_domaine(self):
+        page = self.client.get("/cercles", params={"q": "gestion"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertIn("Droit prive — Licence 3", page.text)
+        self.assertNotIn("Revision Analyse Financiere", page.text)
+
+    def test_le_contexte_du_profil_est_affiche_hierarchiquement(self):
+        page = self.client.get("/cercles")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Ton profil de référence", page.text)
+        self.assertIn("Sciences de Gestion", page.text)
+        self.assertIn("Finance et Comptabilite", page.text)
+
+    def test_endpoint_parcours_nationaux_accepte_un_niveau_optionnel(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux"
+        )
+        self.assertEqual(page.status_code, 200)
+        noms = {entree["nom"] for entree in page.json()}
+        self.assertIn("Finance et Comptabilite", noms)
+        self.assertIn("Droit prive", noms)
+
 
 
 if __name__ == "__main__":
