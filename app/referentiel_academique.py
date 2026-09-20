@@ -238,7 +238,11 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
     return cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
 
 
-def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: Session):
+def condition_cercles_disponibles(
+    utilisateur: Optional[Utilisateur],
+    session: Session,
+    profil: Optional[dict] = None,
+):
     """Condition SQLAlchemy (a passer a .where()) qui identifie les
     cercles 'disponibles' pour cet utilisateur, au meme sens que
     profil_correspond_au_cercle ci-dessus : les cercles libres, plus le
@@ -268,7 +272,7 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
     if utilisateur is None or not utilisateur.niveau:
         return cercle_libre
 
-    profil = contexte_profil_academique(utilisateur, session)
+    profil = profil or contexte_profil_academique(utilisateur, session)
     if not profil["coherent"]:
         return cercle_libre
 
