@@ -399,7 +399,7 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
                 niveau=None,
             ))
             session.commit()
-        u = Utilisateur(nom="X", telephone="0340000016", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
+        u = Utilisateur(nom="X", telephone="0340000019", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
         self.assertNotIn("Profil incomplet", self._noms_disponibles(u))
 
     def test_utilisateur_none_ne_voit_que_les_cercles_libres(self):
