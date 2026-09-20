@@ -685,6 +685,7 @@
       entete.appendChild(identite);
       corpsPanneauProfil.appendChild(entete);
 
+      // Le backend expose une hierarchie academique canonique (avec retrocompatibilite).
       const a = p.academique || {};
       const titreParcours = document.createElement("p");
       titreParcours.className = "stat-label";
