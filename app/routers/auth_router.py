@@ -200,6 +200,7 @@ def inscription(
         role=role,
         mention_id=mention_id_nettoye,
         filiere_id=filiere_id_nettoye,
+        faculte_id=composante_id_nettoye,
         universite_id=universite_id_nettoye,
         niveau=niveau,
     )
@@ -629,7 +630,11 @@ def actualiser_profil_academique(
         )
     ).first()
     if demande_existante:
-        if demande_existante.nouvelle_mention_id == mention_id_nettoye and demande_existante.nouvelle_filiere_id == filiere_id_nettoye:
+        if (
+            demande_existante.nouvelle_mention_id == mention_id_nettoye
+            and demande_existante.nouvelle_filiere_id == filiere_id_nettoye
+            and demande_existante.nouvelle_faculte_id == composante_id_nettoye
+        ):
             # Demande identique deja en attente : rien a refaire.
             return RedirectResponse("/dashboard?ok=profil_academique_actualise", status_code=303)
         return _contexte(
