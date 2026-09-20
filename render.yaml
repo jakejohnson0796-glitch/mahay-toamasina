@@ -10,7 +10,7 @@ services:
     plan: free
     region: frankfurt  # region la plus proche de Madagascar disponible sur Render
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /
+    healthCheckPath: /health
     envVars:
       - key: ENVIRONNEMENT
         value: production
