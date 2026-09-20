@@ -35,6 +35,13 @@ from scripts.import_academic_data import importer
 SOURCE = Path(__file__).resolve().parent.parent / "mahay_toamasina_referentiel_source.json"
 SOURCE_SHA256 = "fefcd0e5b0886ec181f74d568378afca87c7f1fd54e0b1a30790b249d89ca2ed"
 
+FACULTES_SOURCE_VERS_BASE = {
+    "faculte deg": "droit, economie, gestion, mathematiques et informatique (degmia)",
+    "faculte des sciences et technologie": "sciences et technologies",
+    "ecole normale superieure": "ecole normale superieure (ens)",
+    "faculte des lettres et sciences humaines": "lettres et sciences humaines",
+}
+
 
 def _normaliser(texte: str | None) -> str:
     if not texte:
@@ -135,13 +142,22 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             cle: {mention.id for mention in variantes}
             for cle, variantes in mentions_par_nom.items()
         }
-        fac_nom_par_id = {fac.id: _normaliser(fac.nom) for fac in facs.values()}
+        fac_source_nom_par_id = {}
+        for fac in facs.values():
+            nom_base = _normaliser(fac.nom)
+            fac_source_nom_par_id[fac.id] = next(
+                (
+                    nom_source for nom_source, nom_base_attendu in FACULTES_SOURCE_VERS_BASE.items()
+                    if nom_base == nom_base_attendu
+                ),
+                nom_base,
+            )
         filiere_keys = {
             (
                 fil.mention_id,
                 _normaliser(fil.niveau),
                 _normaliser(fil.nom),
-                fac_nom_par_id.get(fil.faculte_id, ""),
+                fac_source_nom_par_id.get(fil.faculte_id, ""),
             )
             for fil in filieres
         }
