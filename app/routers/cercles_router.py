@@ -16,7 +16,6 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
-from sqlalchemy import case
 from sqlmodel import Session, select, or_, func
 
 from ..database import get_session, engine
@@ -37,6 +36,7 @@ from .. import theme_service
 from .. import referentiel_academique
 from ..web_utils import entier_ou_none
 from ..referentiel import NIVEAUX
+from ..recherche import clause_recherche_cercles
 
 router = APIRouter()
 
@@ -349,35 +349,20 @@ def liste_cercles(
         .where(or_(CercleEtude.mention_id.is_(None), Mention.est_active == True))  # noqa: E712
     )
 
-    pertinence_recherche = None
-    if termes_recherche:
-        for terme in termes_recherche:
-            motif = f"%{terme}%"
-            requete = requete.where(or_(
-                CercleEtude.nom.ilike(motif),
-                CercleEtude.description.ilike(motif),
-                Domaine.nom.ilike(motif),
-                Mention.nom.ilike(motif),
-                Filiere.nom.ilike(motif),
-            ))
-
-        # Classe les correspondances fortes avant les simples sous-chaînes,
-        # sans introduire de recherche approximative couteuse ni de moteur
-        # externe. Le resultat reste deterministe a score egal.
-        scores = [
-            case(
-                (CercleEtude.nom.ilike(terme), 100),
-                (CercleEtude.nom.ilike(f"{terme}%"), 60),
-                (Mention.nom.ilike(f"{terme}%"), 45),
-                (Filiere.nom.ilike(f"{terme}%"), 45),
-                (Domaine.nom.ilike(f"{terme}%"), 35),
-                (CercleEtude.description.ilike(motif), 15),
-                else_=0,
-            )
-            for terme in termes_recherche
-            for motif in [f"%{terme}%"]
-        ]
-        pertinence_recherche = sum(scores)
+    referentiel_recherche = (
+        func.coalesce(Domaine.nom, "")
+        + " " + func.coalesce(Mention.nom, "")
+        + " " + func.coalesce(Filiere.nom, "")
+    )
+    condition_recherche, pertinence_recherche = clause_recherche_cercles(
+        session,
+        q_nettoye,
+        CercleEtude.nom,
+        CercleEtude.description,
+        referentiel_recherche,
+    )
+    if condition_recherche is not None:
+        requete = requete.where(condition_recherche)
 
     if domaine_id_nettoye:
         requete = requete.where(Mention.domaine_id == domaine_id_nettoye)
