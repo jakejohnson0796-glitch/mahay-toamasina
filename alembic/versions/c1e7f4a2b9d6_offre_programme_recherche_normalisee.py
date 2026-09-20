@@ -57,20 +57,21 @@ def upgrade() -> None:
     # Les offres historiques inactives restent multiples.
     dialecte = conn.dialect.name
     if dialecte == "postgresql":
-        op.create_index(
-            "uq_programme_actif_universite_filiere",
-            "programmeuniversitaire",
-            ["universite_id", "filiere_id"],
-            unique=True,
-            postgresql_where=sa.text("est_active = TRUE"),
-        )
+        # Supabase expose l'extension unaccent. On ne suppose pas son schema :
+        # on le lit après création/activation pour fonctionner aussi bien avec
+        # un cluster où elle existe déjà dans public qu'avec schema extensions.
+        conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS unaccent"))
+        schema_unaccent = conn.execute(
+            sa.text(
+                """
+                SELECT n.nspname
+                FROM pg_extension e
+                JOIN pg_namespace n ON n.oid = e.extnamespace
+                WHERE e.extname = 'unaccent'
+                """
+            )
+        ).scalar_one()
 
-        # Le dictionnaire unaccent retire les diacritiques avant french_stem.
-        # La configuration est separee pour ne pas modifier la configuration
-        # francaise globale de la base.
-        conn.execute(sa.text(
-            "CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA extensions"
-        ))
         conn.execute(sa.text(
             """
             DO $$
@@ -87,16 +88,26 @@ def upgrade() -> None:
             $$;
             """
         ))
+
+        schema_quote = conn.dialect.identifier_preparer.quote(schema_unaccent)
         conn.execute(sa.text(
-            """
+            f"""
             ALTER TEXT SEARCH CONFIGURATION public.mahay_french
             ALTER MAPPING FOR hword, hword_part, word
-            WITH extensions.unaccent, pg_catalog.french_stem
+            WITH {schema_quote}.unaccent, pg_catalog.french_stem
             """
         ))
+
+        op.create_index(
+            "uq_programme_actif_universite_filiere",
+            "programmeuniversitaire",
+            ["universite_id", "filiere_id"],
+            unique=True,
+            postgresql_where=sa.text("est_active = TRUE"),
+        )
     else:
-        # SQLite recoit la fonction de normalisation via app.database et
-        # utilise le fallback Snowball applicatif.
+        # SQLite reçoit la fonction mahay_normaliser via app.database et le
+        # fallback Snowball applicatif dans app.recherche.
         op.create_index(
             "uq_programme_actif_universite_filiere",
             "programmeuniversitaire",
