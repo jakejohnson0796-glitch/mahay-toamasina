@@ -23,7 +23,7 @@ from ..csrf import verifier_csrf
 from ..models import (
     CercleEtude, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
     RoleUtilisateur, RoleMembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
-    StatutDemandeCreationCercle, StatutCercle, ThemeDuJour,
+    StatutDemandeCreationCercle, StatutCercle, ThemeDuJour, Document,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
 )
 from ..auth import utilisateur_courant
