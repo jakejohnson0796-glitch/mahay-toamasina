@@ -1,9 +1,9 @@
 """Recherche textuelle des Cercles.
 
 La production utilise PostgreSQL lorsque disponible :
-- dictionnaire français natif pour la morphologie ;
-- unaccent pour ignorer les diacritiques ;
-- recherche plein texte native et classement par pertinence.
+- configuration française avec unaccent + french_stem ;
+- recherche plein texte native ;
+- classement par pertinence.
 
 SQLite (tests/dev) reçoit un fallback portable :
 - normalisation Unicode accent/casse ;
@@ -28,7 +28,7 @@ try:
 except ImportError:  # pragma: no cover
     snowballstemmer = None
 
-_CONFIG_POSTGRES = "french"
+_CONFIG_POSTGRES = "public.mahay_french"
 _MOTEUR_FRANCAIS = (
     snowballstemmer.stemmer("french")
     if snowballstemmer is not None
@@ -77,17 +77,17 @@ def _texte_pondere_postgres(colonnes: Iterable[ColumnElement]) -> ColumnElement:
     nom, referentiel, description = list(colonnes)
     return (
         func.setweight(
-            func.to_tsvector(_CONFIG_POSTGRES, func.unaccent(func.coalesce(nom, ""))), "A"
+            func.to_tsvector(_CONFIG_POSTGRES, func.coalesce(nom, "")), "A"
         )
         .op("||")(
             func.setweight(
-                func.to_tsvector(_CONFIG_POSTGRES, func.unaccent(func.coalesce(referentiel, ""))),
+                func.to_tsvector(_CONFIG_POSTGRES, func.coalesce(referentiel, "")),
                 "B",
             )
         )
         .op("||")(
             func.setweight(
-                func.to_tsvector(_CONFIG_POSTGRES, func.unaccent(func.coalesce(description, ""))),
+                func.to_tsvector(_CONFIG_POSTGRES, func.coalesce(description, "")),
                 "D",
             )
         )
@@ -110,10 +110,7 @@ def clause_recherche_cercles(
     dialecte = session.get_bind().dialect.name
     if dialecte == "postgresql":
         document = _texte_pondere_postgres([nom, referentiel, description])
-        tsquery = func.websearch_to_tsquery(
-            _CONFIG_POSTGRES,
-            func.unaccent(brut),
-        )
+        tsquery = func.websearch_to_tsquery(_CONFIG_POSTGRES, brut)
         return document.op("@@")(tsquery), func.ts_rank_cd(document, tsquery, 32)
 
     champs = [nom, referentiel, description]
