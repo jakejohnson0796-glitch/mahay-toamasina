@@ -29,7 +29,7 @@ from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
-    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Mention, Filiere,
+    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Mention, Filiere, MembreCercle,
 )
 
 
@@ -121,6 +121,38 @@ class TestRechercheCercles(unittest.TestCase):
         page = self.client.get("/cercles", params={"q": "analyse financiere"})
         self.assertIn("Revision Analyse Financiere", page.text)
 
+    def test_recherche_multi_termes_croise_nom_et_niveau(self):
+        page = self.client.get("/cercles", params={"q": "Finance L3"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertNotIn("Revision Analyse Financiere", page.text)
+
+    def test_recherche_par_mention_et_parcours(self):
+        page = self.client.get(
+            "/cercles",
+            params={"mention_id": str(self.mention_id), "filiere_id": str(self.filiere_id)},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertNotIn("Droit prive — Licence 3", page.text)
+
+    def test_recherche_avec_mention_et_parcours_contradictoires_ne_renvoie_rien(self):
+        page = self.client.get(
+            "/cercles",
+            params={
+                "mention_id": str(self.mention_id),
+                "filiere_id": str(self.autre_filiere_id),
+            },
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Aucun résultat", page.text)
+        self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
+
+    def test_tronc_commun_sans_mention_ne_renvoie_rien(self):
+        page = self.client.get("/cercles", params={"filiere_id": "tronc_commun"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Aucun résultat", page.text)
+
     def test_filtre_par_filiere(self):
         page = self.client.get("/cercles", params={"filiere_id": str(self.autre_filiere_id)})
         self.assertIn("Droit prive — Licence 3", page.text)
@@ -145,6 +177,39 @@ class TestRechercheCercles(unittest.TestCase):
         page = self.client.get("/cercles", params={"q": "xyzxyzxyz-introuvable"})
         self.assertIn("Aucun résultat", page.text)
 
+
+
+    def test_profil_membre_ne_duplique_pas_la_hierarchie_academique(self):
+        with Session(engine) as session:
+            membre = Utilisateur(
+                nom="Profil Test",
+                telephone="0350000018",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            session.add(membre)
+            session.commit()
+            cercle = session.exec(
+                select(CercleEtude).where(CercleEtude.filiere_id == self.filiere_id)
+            ).first()
+            session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=membre.id))
+            session.commit()
+            membre_id = membre.id
+            cercle_id = cercle.id
+
+        page = self.client.get(f"/cercles/{cercle_id}/membres/{membre_id}/profil")
+        self.assertEqual(page.status_code, 200)
+        data = page.json()
+        self.assertIn("academique", data)
+        self.assertNotIn("universite", data)
+        self.assertNotIn("filiere", data)
+        self.assertNotIn("mention", data)
+        self.assertIsInstance(data["academique"]["universite"], dict)
+        self.assertEqual(data["academique"]["universite"]["id"], self.universite_id)
 
 if __name__ == "__main__":
     unittest.main()
