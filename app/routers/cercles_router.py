@@ -29,7 +29,7 @@ from ..models import (
 from ..auth import utilisateur_courant
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
-from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
+from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide, supprimer_fichier
 from .. import subscription
 from .. import theme_service
 from .. import referentiel_academique
@@ -60,6 +60,9 @@ MOTIFS_SIGNALEMENT_AUTORISES = {
 
 
 def _est_membre(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
+        return False
     return session.exec(
         select(MembreCercle).where(
             MembreCercle.cercle_id == cercle_id,
@@ -74,11 +77,12 @@ def _est_admin(utilisateur: Optional[Utilisateur]) -> bool:
 
 def _peut_gerer_cercle(cercle: CercleEtude, utilisateur: Optional[Utilisateur]) -> bool:
     """Createur du cercle (uniquement le sien) ou admin (n'importe
-    lequel) — utilise pour : voir les membres, voir/traiter les
-    demandes, retirer un membre, supprimer le cercle, ajouter un membre
-    directement par numero. Reverifie a CHAQUE appel de route, jamais
-    fait confiance a ce que l'interface affiche ou masque."""
-    if not utilisateur:
+    lequel), mais uniquement tant que le cercle est ACTIF.
+
+    Un cercle ARCHIVE reste recuperable pour l'historique, mais ne doit
+    plus accepter d'actions utilisateur (adhesion, moderation, messages,
+    membres, etc.)."""
+    if not utilisateur or cercle.statut != StatutCercle.ACTIF:
         return False
     return utilisateur.id == cercle.createur_id or _est_admin(utilisateur)
 
@@ -220,6 +224,103 @@ def _creer_notification(
         message_id=message_id,
     ))
     session.commit()
+
+
+def _supprimer_cercle_et_contenu(session: Session, cercle_id: int) -> bool:
+    """Supprime un cercle et ses donnees strictement propres, dans un ordre
+    compatible avec les FK Postgres/Supabase.
+
+    Les ressources historiques partageables ne sont pas supprimees :
+    - Document.cercle_id est detache (le document reste dans la bibliotheque) ;
+    - ThemeDuJour.cercle_id est detache (l'historique du theme est conserve) ;
+    - DemandeCreationCercle.cercle_cree_id est detache (l'historique admin reste).
+    En revanche, les messages et toutes leurs dependances propres sont
+    supprimes, y compris les fichiers joints du chat.
+    """
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
+        return False
+
+    message_ids = [
+        m.id for m in session.exec(
+            select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)
+        ).all()
+    ]
+
+    # Dependances des messages avant suppression des messages eux-memes.
+    if message_ids:
+        for signalement in session.exec(
+            select(SignalementMessage).where(SignalementMessage.message_id.in_(message_ids))
+        ).all():
+            session.delete(signalement)
+        for reaction in session.exec(
+            select(MessageReaction).where(MessageReaction.message_id.in_(message_ids))
+        ).all():
+            session.delete(reaction)
+        for mention in session.exec(
+            select(MessageMention).where(MessageMention.message_id.in_(message_ids))
+        ).all():
+            session.delete(mention)
+        for notification in session.exec(
+            select(Notification).where(Notification.message_id.in_(message_ids))
+        ).all():
+            session.delete(notification)
+
+    # Les notifications directement rattachees au cercle, sans message.
+    for notification in session.exec(
+        select(Notification).where(Notification.cercle_id == cercle_id)
+    ).all():
+        session.delete(notification)
+
+    # Les documents restent dans la bibliotheque generale.
+    for document in session.exec(
+        select(Document).where(Document.cercle_id == cercle_id)
+    ).all():
+        document.cercle_id = None
+        session.add(document)
+
+    # L'historique des demandes de creation reste en base.
+    for demande_creation in session.exec(
+        select(DemandeCreationCercle).where(DemandeCreationCercle.cercle_cree_id == cercle_id)
+    ).all():
+        demande_creation.cercle_cree_id = None
+        session.add(demande_creation)
+
+    # L'historique des themes reste en base ; seul le lien vers le cercle disparait.
+    for theme_jour in session.exec(
+        select(ThemeDuJour).where(ThemeDuJour.cercle_id == cercle_id)
+    ).all():
+        theme_jour.cercle_id = None
+        session.add(theme_jour)
+
+    # Suppression des messages : les reponses sont effacees avant les parents
+    # pour eviter toute violation de la FK auto-referencee parent_message_id.
+    messages = session.exec(
+        select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)
+    ).all()
+    messages_tries = sorted(messages, key=lambda m: 1 if m.parent_message_id else 0)
+    for message in messages_tries:
+        if message.piece_jointe_chemin:
+            try:
+                supprimer_fichier(message.piece_jointe_chemin)
+            except Exception:
+                # Une erreur de nettoyage du stockage ne doit pas empecher
+                # la suppression logique du cercle en base.
+                pass
+        session.delete(message)
+
+    for demande in session.exec(
+        select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.cercle_id == cercle_id)
+    ).all():
+        session.delete(demande)
+
+    for membre in session.exec(
+        select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)
+    ).all():
+        session.delete(membre)
+
+    session.delete(cercle)
+    return True
 
 
 @router.get("/cercles")
@@ -511,14 +612,24 @@ def creer_cercle(
 
         # §48 : si le cercle national existe deja, ne pas proposer de
         # doublon — rediriger vers l'existant.
-        cercle_existant = session.exec(
-            select(CercleEtude).where(
-                CercleEtude.mention_id == mention_id_cible,
-                CercleEtude.filiere_id == filiere_id_nettoye,
-                CercleEtude.niveau == niveau_nettoye,
-                CercleEtude.statut == StatutCercle.ACTIF,
+        if filiere:
+            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
+        else:
+            filieres_equivalentes = []
+
+        cercle_existant_requete = select(CercleEtude).where(
+            CercleEtude.mention_id == mention_id_cible,
+            CercleEtude.niveau == niveau_nettoye,
+            CercleEtude.statut == StatutCercle.ACTIF,
+        )
+        if filiere:
+            cercle_existant_requete = cercle_existant_requete.where(
+                CercleEtude.filiere_id.in_(filieres_equivalentes)
             )
-        ).first()
+        else:
+            cercle_existant_requete = cercle_existant_requete.where(CercleEtude.filiere_id.is_(None))
+
+        cercle_existant = session.exec(cercle_existant_requete).first()
         if cercle_existant:
             return RedirectResponse(f"/cercles/{cercle_existant.id}?erreur=cercle_existe_deja", status_code=303)
 
@@ -527,14 +638,20 @@ def creer_cercle(
         # applicative, le vrai garde-fou contre les cercles en double
         # reste l'index unique sur CercleEtude, verifie a nouveau au
         # moment de l'approbation).
-        demande_existante = session.exec(
-            select(DemandeCreationCercle).where(
-                DemandeCreationCercle.mention_id == mention_id_cible,
-                DemandeCreationCercle.filiere_id == filiere_id_nettoye,
-                DemandeCreationCercle.niveau == niveau_nettoye,
-                DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
+        demande_existante_requete = select(DemandeCreationCercle).where(
+            DemandeCreationCercle.mention_id == mention_id_cible,
+            DemandeCreationCercle.niveau == niveau_nettoye,
+            DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
+        )
+        if filiere:
+            demande_existante_requete = demande_existante_requete.where(
+                DemandeCreationCercle.filiere_id.in_(filieres_equivalentes)
             )
-        ).first()
+        else:
+            demande_existante_requete = demande_existante_requete.where(
+                DemandeCreationCercle.filiere_id.is_(None)
+            )
+        demande_existante = session.exec(demande_existante_requete).first()
         if demande_existante:
             return RedirectResponse("/cercles?erreur=demande_deja_en_attente", status_code=303)
 
@@ -562,7 +679,11 @@ def creer_cercle(
     session.refresh(cercle)
 
     # Le createur rejoint automatiquement son propre cercle.
-    session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=utilisateur.id))
+    session.add(MembreCercle(
+        cercle_id=cercle.id,
+        utilisateur_id=utilisateur.id,
+        role=RoleMembreCercle.CREATEUR,
+    ))
     session.commit()
 
     # Hierarchie ADMIN_GLOBAL > OWNER : tout administrateur global doit
@@ -604,7 +725,7 @@ def demander_adhesion(
         return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     # Defense en profondeur : meme si l'interface ne devrait jamais
@@ -651,7 +772,7 @@ def voir_membres(request: Request, cercle_id: int, session: Session = Depends(ge
         return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     if _est_admin(utilisateur):
@@ -700,7 +821,7 @@ def ajouter_membre_par_telephone(
         return RedirectResponse("/connexion", status_code=303)
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     if not _peut_gerer_cercle(cercle, utilisateur):
@@ -710,8 +831,19 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
+    if referentiel_academique.cercle_est_national(cercle):
+        if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
+            return RedirectResponse(
+                f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
+                status_code=303,
+            )
+
     if not _est_membre(session, cercle_id, cible.id):
-        session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=cible.id))
+        session.add(MembreCercle(
+            cercle_id=cercle_id,
+            utilisateur_id=cible.id,
+            role=RoleMembreCercle.MEMBRE,
+        ))
         session.commit()
 
     return RedirectResponse(f"/cercles/{cercle_id}/membres?ajoute=1", status_code=303)
@@ -724,7 +856,7 @@ def voir_demandes(request: Request, cercle_id: int, session: Session = Depends(g
         return RedirectResponse("/connexion", status_code=303)
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     if not _peut_gerer_cercle(cercle, utilisateur):
@@ -845,7 +977,7 @@ def quitter_cercle(request: Request, cercle_id: int, session: Session = Depends(
         return RedirectResponse("/connexion", status_code=303)
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     # Le createur ne peut pas "quitter" comme un membre normal : il doit
@@ -874,7 +1006,7 @@ def retirer_membre(request: Request, cercle_id: int, utilisateur_id: int, sessio
         return RedirectResponse("/connexion", status_code=303)
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     if not _peut_gerer_cercle(cercle, utilisateur):
@@ -913,31 +1045,13 @@ def supprimer_cercle(request: Request, cercle_id: int, session: Session = Depend
         return RedirectResponse("/connexion", status_code=303)
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     if not _peut_gerer_cercle(cercle, utilisateur):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
-    # Nettoyage complet : membres, demandes, messages (+ signalements
-    # associes) et enfin le cercle lui-meme — evite de laisser des lignes
-    # orphelines en base qui referenceraient un cercle_id inexistant.
-    for membre in session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)).all():
-        session.delete(membre)
-    for demande in session.exec(select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.cercle_id == cercle_id)).all():
-        session.delete(demande)
-    messages = session.exec(select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)).all()
-    for message in messages:
-        for signalement in session.exec(select(SignalementMessage).where(SignalementMessage.message_id == message.id)).all():
-            session.delete(signalement)
-        session.delete(message)
-    # cercle_id est nullable sur ThemeDuJour (un theme du jour peut exister
-    # sans cercle dedie) : on detache plutot que supprimer, pour garder
-    # l'historique des themes passes meme si leur cercle est efface.
-    for theme_jour in session.exec(select(ThemeDuJour).where(ThemeDuJour.cercle_id == cercle_id)).all():
-        theme_jour.cercle_id = None
-        session.add(theme_jour)
-    session.delete(cercle)
+    _supprimer_cercle_et_contenu(session, cercle_id)
     session.commit()
 
     return RedirectResponse("/cercles?supprime=1", status_code=303)
@@ -951,7 +1065,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
         return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     # Filet de securite pour les cercles crees AVANT cette regle (ou si un
@@ -1104,7 +1218,7 @@ async def envoyer_fichier(
         return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
     if _est_admin(utilisateur):
@@ -1194,6 +1308,9 @@ async def supprimer_message(request: Request, cercle_id: int, message_id: int, s
         return RedirectResponse("/connexion", status_code=303)
 
     cercle = session.get(CercleEtude, cercle_id)
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
+        return RedirectResponse("/cercles", status_code=303)
+
     message = session.get(MessageCercle, message_id)
     if not cercle or not message or message.cercle_id != cercle_id:
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
@@ -1353,6 +1470,10 @@ async def modifier_message(
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         raise HTTPException(status_code=401, detail="Non connecte.")
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
+        raise HTTPException(status_code=404, detail="Cercle introuvable.")
 
     message = session.get(MessageCercle, message_id)
     if not message or message.cercle_id != cercle_id or message.supprime:
@@ -1564,7 +1685,7 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
         return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle:
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
     if _est_admin(utilisateur):
         _assurer_membres_admins(session, cercle_id)
@@ -1602,7 +1723,13 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
 
     with Session(engine) as session:
         utilisateur = session.get(Utilisateur, user_id)
-        if not utilisateur or not session.get(CercleEtude, cercle_id):
+        cercle = session.get(CercleEtude, cercle_id)
+        if (
+            not utilisateur
+            or utilisateur.banni
+            or not cercle
+            or cercle.statut != StatutCercle.ACTIF
+        ):
             await websocket.close(code=4403)
             return
         if utilisateur.role == RoleUtilisateur.ADMIN:
