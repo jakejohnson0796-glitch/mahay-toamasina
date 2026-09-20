@@ -3470,3 +3470,33 @@ button:focus-visible,
     flex: 1 1 10rem;
   }
 }
+
+
+/* Visuels globaux : illustrations locales, rapides et sans dépendance externe. */
+.visuel-page-global{
+  position:relative;display:grid;grid-template-columns:minmax(0,1fr) 280px;align-items:stretch;gap:1.25rem;
+  min-height:150px;margin:0 0 1.5rem;padding:0;overflow:hidden;border:1px solid var(--content-border);
+  border-radius:18px;background:linear-gradient(105deg,var(--content-surface) 0%,#f0eadf 100%);box-shadow:var(--shadow-sm)
+}
+.visuel-page-global-illustration{min-width:0;overflow:hidden;order:2;background:#ded4c3}
+.visuel-page-global-illustration img{display:block;width:100%;height:100%;min-height:150px;object-fit:cover}
+.visuel-page-global-texte{display:flex;flex-direction:column;justify-content:center;padding:1.35rem 1.5rem;position:relative;z-index:1}
+.visuel-page-global-texte::before{content:"";display:block;width:42px;height:4px;border-radius:999px;background:var(--primary);margin-bottom:.75rem}
+.visuel-page-global-texte span{font-size:1.3rem;font-weight:700;line-height:1.1;letter-spacing:-.025em;color:var(--content-text)}
+.visuel-page-global-texte small{max-width:52ch;margin-top:.45rem;font-size:.83rem;line-height:1.55;color:var(--content-text-muted)}
+.visuel-page-global:hover .visuel-page-global-illustration img{transform:scale(1.025)}
+.visuel-page-global-illustration img{transition:transform .45s var(--ease-fluide)}
+@media (max-width:900px){
+  .visuel-page-global{grid-template-columns:1fr;min-height:0}
+  .visuel-page-global-illustration{order:0;max-height:150px}
+  .visuel-page-global-illustration img{min-height:150px;height:150px;object-position:center}
+}
+@media (max-width:640px){
+  .visuel-page-global{margin-bottom:1rem;border-radius:14px}
+  .visuel-page-global-illustration{max-height:110px}
+  .visuel-page-global-illustration img{height:110px;min-height:110px}
+  .visuel-page-global-texte{padding:1rem}
+  .visuel-page-global-texte span{font-size:1.05rem}
+  .visuel-page-global-texte small{font-size:.75rem}
+}
+@media (prefers-reduced-motion:reduce){.visuel-page-global-illustration img{transition:none}}
