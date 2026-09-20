@@ -685,33 +685,30 @@
       entete.appendChild(identite);
       corpsPanneauProfil.appendChild(entete);
 
-      const a = p.academique || {
-        universite: p.universite,
-        composante: p.composante,
-        domaine: p.domaine,
-        mention: p.mention,
-        parcours: p.filiere,
-        niveau: p.niveau,
-        coherent: p.profil_academique_coherent,
-        tronc_commun: false,
-      };
+      const a = p.academique || {};
       const titreParcours = document.createElement("p");
       titreParcours.className = "stat-label";
       titreParcours.textContent = "Parcours académique";
       corpsPanneauProfil.appendChild(titreParcours);
 
       const listeChamps = document.createElement("div");
-      listeChamps.className = "profil-champs";
+      listeChamps.className = "profil-hierarchie";
       [
-        ["Université", a.universite],
-        ["Composante", a.composante],
-        ["Domaine", a.domaine],
-        ["Mention", a.mention],
-        ["Parcours", a.tronc_commun ? "Tronc commun" : a.parcours],
+        ["Université", a.universite && a.universite.nom],
+        ["Composante", a.composante && a.composante.nom],
+        ["Domaine", a.domaine && a.domaine.nom],
+        ["Mention", a.mention && a.mention.nom],
+        [
+          "Parcours",
+          a.parcours && a.parcours.nom
+            ? a.parcours.nom
+            : a.type === "tronc_commun" ? "Tronc commun" : null,
+        ],
         ["Niveau", a.niveau],
-      ].forEach(function ([etiquette, valeur]) {
+      ].forEach(function ([etiquette, valeur], index) {
         if (!valeur) return;
         const paire = document.createElement("div");
+        paire.className = "profil-hierarchie-item profil-hierarchie-item-" + index;
         const ligne = document.createElement("p");
         ligne.className = "stat-label";
         ligne.textContent = etiquette;
