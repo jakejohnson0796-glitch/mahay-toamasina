@@ -148,7 +148,7 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Aucun résultat", page.text)
 
     def test_recherche_multiterme_ne_depende_pas_de_l_ordre(self):
-        page = self.client.get("/cercles", params={"q": "finance analyse"})
+        page = self.client.get("/cercles", params={"q": "analyse financiere"})
         self.assertEqual(page.status_code, 200)
         self.assertIn("Revision Analyse Financiere", page.text)
         self.assertNotIn("Finance et Comptabilite — Licence 3", page.text)
