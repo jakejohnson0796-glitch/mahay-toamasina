@@ -29,7 +29,11 @@ from ..storage import supprimer_fichier
 # (meme principe que _assurer_membres_admins deja importe dans
 # admin_referentiel_router.py) : on evite de dupliquer la reverification de
 # profil faite au moment du traitement d'une demande d'adhesion.
-from .cercles_router import _traiter_acceptation_demande, _traiter_refus_demande
+from .cercles_router import (
+    _traiter_acceptation_demande,
+    _traiter_refus_demande,
+    _supprimer_cercle_et_contenu,
+)
 from ..auth import hacher_mot_de_passe
 import secrets
 
@@ -551,30 +555,13 @@ def page_confirmation_suppression(request: Request, utilisateur_id: int, session
 
 
 def _cascade_supprimer_cercle(session: Session, cercle_id: int) -> None:
-    """Supprime definitivement un CercleEtude et tout son contenu propre
-    (ordre = enfants avant parent, pour ne jamais laisser de cle
-    etrangere orpheline)."""
-    ids_messages = [
-        m.id for m in session.exec(select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)).all()
-    ]
-    if ids_messages:
-        for signalement in session.exec(
-            select(SignalementMessage).where(SignalementMessage.message_id.in_(ids_messages))
-        ).all():
-            session.delete(signalement)
-    for message in session.exec(select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)).all():
-        if message.piece_jointe_chemin:
-            supprimer_fichier(message.piece_jointe_chemin)
-        session.delete(message)
-    for demande in session.exec(
-        select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.cercle_id == cercle_id)
-    ).all():
-        session.delete(demande)
-    for membre in session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)).all():
-        session.delete(membre)
-    cercle = session.get(CercleEtude, cercle_id)
-    if cercle:
-        session.delete(cercle)
+    """Compatibilite pour le flux de suppression d'utilisateur.
+
+    La vraie suppression est centralisee dans cercles_router afin que la
+    route utilisateur et le nettoyage admin appliquent exactement les
+    memes dependances (reactions, mentions, notifications, documents,
+    themes, demandes, pieces jointes, etc.)."""
+    _supprimer_cercle_et_contenu(session, cercle_id)
 
 
 def _cascade_supprimer_cours(session: Session, cours_id: int) -> None:
@@ -678,8 +665,15 @@ async def supprimer_utilisateur(
                     MembreCercle.utilisateur_id == nouveau_proprietaire_id,
                 )
             ).first()
-            if not deja_membre:
-                session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=nouveau_proprietaire_id))
+            if deja_membre:
+                deja_membre.role = RoleMembreCercle.CREATEUR
+                session.add(deja_membre)
+            else:
+                session.add(MembreCercle(
+                    cercle_id=cercle.id,
+                    utilisateur_id=nouveau_proprietaire_id,
+                    role=RoleMembreCercle.CREATEUR,
+                ))
         else:
             _cascade_supprimer_cercle(session, cercle.id)
     session.commit()
