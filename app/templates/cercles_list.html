@@ -4,7 +4,163 @@
 {% block titre %}Cercles d'etude — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
+<div class="contenu-clair cercles-page-shell">
+<style>
+/* Refonte visuelle Cercles — images editoriales + hierarchie plus premium. */
+.cercles-page-shell{position:relative;z-index:1}
+.cercles-hero-visuel{
+  position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.8fr);
+  min-height:300px;margin:0 0 1.5rem;border-radius:18px;background:var(--ink);box-shadow:var(--shadow-lg);
+  isolation:isolate;
+}
+.cercles-hero-visuel::after{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(90deg,rgba(23,36,32,.96) 0%,rgba(23,36,32,.82) 48%,rgba(23,36,32,.2) 100%);
+}
+.cercles-hero-photo{position:absolute;inset:0;z-index:-2}
+.cercles-hero-photo img{width:100%;height:100%;object-fit:cover;object-position:center 55%;display:block}
+.cercles-hero-contenu{padding:2.2rem 2.4rem;display:flex;flex-direction:column;justify-content:center;max-width:680px}
+.cercles-hero-kicker{
+  display:inline-flex;align-items:center;gap:.5rem;width:max-content;padding:.4rem .7rem;border-radius:999px;
+  background:rgba(246,241,231,.12);border:1px solid rgba(246,241,231,.2);color:var(--sidebar-text);
+  font:500 var(--text-xs)/1 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.08em
+}
+.cercles-hero-titre{margin:.9rem 0 .65rem;color:var(--sidebar-text);font-size:clamp(2rem,4vw,3.25rem);line-height:1.02;letter-spacing:-.045em}
+.cercles-hero-sous-titre{margin:0;max-width:52ch;color:rgba(246,241,231,.85);font-size:1rem;line-height:1.65}
+.cercles-hero-actions{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.15rem}
+.cercles-hero-actions .bouton{border-radius:10px}
+.cercles-hero-actions .bouton-primaire{background:var(--sidebar-text);color:var(--ink)}
+.cercles-hero-actions .bouton-primaire:hover{background:#fff}
+.cercles-hero-actions .bouton-secondaire{background:rgba(246,241,231,.08);color:var(--sidebar-text);border-color:rgba(246,241,231,.28)}
+.cercles-hero-actions .bouton-secondaire:hover{background:rgba(246,241,231,.15)}
+.cercles-hero-stats{
+  align-self:end;display:grid;grid-template-columns:1fr 1fr;gap:.65rem;padding:1rem 1.2rem;
+  margin:0 1.4rem 1.4rem 0;border:1px solid rgba(246,241,231,.18);border-radius:14px;
+  background:rgba(255,255,255,.08);backdrop-filter:blur(10px)
+}
+.cercles-hero-stat strong{display:block;color:var(--sidebar-text);font-size:1.15rem}
+.cercles-hero-stat span{display:block;margin-top:.15rem;color:rgba(246,241,231,.7);font-size:.72rem}
+.cercles-inspiration{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,380px);gap:1rem;align-items:stretch;margin:0 0 1.5rem
+}
+.cercles-inspiration-texte{
+  padding:1.25rem 1.4rem;border:1px solid var(--content-border);border-radius:14px;background:var(--content-surface);
+  box-shadow:var(--shadow-sm);display:flex;flex-direction:column;justify-content:center
+}
+.cercles-inspiration-texte .stat-label{margin:0;text-transform:uppercase;letter-spacing:.08em}
+.cercles-inspiration-texte h3{margin:.3rem 0 .35rem;font-size:1.18rem;letter-spacing:-.02em}
+.cercles-inspiration-texte p:last-child{margin:0;line-height:1.55}
+.cercles-inspiration-livres{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;min-height:180px}
+.cercles-inspiration-livres .photo{overflow:hidden;border-radius:14px;border:1px solid var(--content-border);box-shadow:var(--shadow-sm);background:var(--content-border)}
+.cercles-inspiration-livres .photo:first-child{grid-row:span 2}
+.cercles-inspiration-livres img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .5s var(--ease-fluide)}
+.cercles-inspiration-livres .photo:hover img{transform:scale(1.04)}
+.carte-recherche-cercles{
+  border:1px solid var(--content-border)!important;background:linear-gradient(180deg,var(--content-surface),rgba(255,253,248,.92))!important;
+  box-shadow:var(--shadow-md)!important;border-radius:16px!important;overflow:hidden
+}
+.carte-recherche-cercles::before{
+  content:"";display:block;height:4px;background:linear-gradient(90deg,var(--primary),var(--color-violet-clair),var(--color-success-clair))
+}
+.carte-recherche-cercles .entete-recherche-cercles{padding-top:1.15rem}
+.carte-recherche-cercles select,.carte-recherche-cercles input{
+  border-radius:10px!important;border-color:#ddd5c5!important;background:var(--content-surface)!important;min-height:44px
+}
+.carte-recherche-cercles select:focus,.carte-recherche-cercles input:focus{
+  outline:none!important;border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(23,36,32,.08)!important
+}
+.carte-recherche-cercles .bouton-primaire{border-radius:10px;min-height:44px}
+.grille-cartes-claires{gap:1rem!important}
+.cercle-card-premium{
+  overflow:hidden;border-radius:16px!important;border:1px solid var(--content-border)!important;
+  background:var(--content-surface)!important;box-shadow:var(--shadow-sm)!important;
+  transition:transform .22s var(--ease-fluide),box-shadow .22s var(--ease-fluide),border-color .22s ease;
+}
+.cercle-card-premium:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)!important;border-color:#d7ccb6!important}
+.cercle-card-premium-inner{display:grid;grid-template-columns:128px minmax(0,1fr);gap:1rem;padding:.85rem}
+.cercle-card-premium-media{position:relative;min-height:152px;overflow:hidden;border-radius:12px;background:#ede6d8}
+.cercle-card-premium-media img{width:100%;height:100%;display:block;object-fit:cover}
+.cercle-card-premium-media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,36,32,0) 48%,rgba(23,36,32,.42))}
+.cercle-card-premium-type{
+  position:absolute;left:.55rem;bottom:.55rem;z-index:1;padding:.3rem .48rem;border-radius:999px;
+  color:var(--sidebar-text);background:rgba(23,36,32,.78);backdrop-filter:blur(6px);
+  font:600 .64rem/1 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.05em
+}
+.cercle-card-premium-contenu{min-width:0;display:flex;flex-direction:column}
+.cercle-card-premium-contenu .carte-claire-corps{padding:0!important}
+.cercle-card-premium .carte-claire-titre{font-size:1.02rem;line-height:1.25}
+.cercle-card-premium .carte-claire-hierarchie{margin-top:.28rem;line-height:1.45}
+.cercle-card-premium .carte-claire-meta{margin:.65rem 0 .35rem}
+.cercle-card-premium .carte-claire-description{
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:.35rem 0 0!important
+}
+.cercle-card-premium .carte-claire-badges{margin-top:.6rem}
+.cercle-card-premium .carte-claire-actions{margin-top:auto;padding-top:.75rem!important}
+.cercle-card-premium .carte-claire-actions .bouton{border-radius:9px}
+.cercle-card-premium .puce-statut,.cercle-card-premium .puce-compatibilite{border-radius:999px}
+.cercles-source-note{
+  display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;
+  margin-top:1rem;padding:.7rem .9rem;border:1px dashed var(--content-border);border-radius:10px;
+  color:var(--content-text-muted);font-size:.72rem;background:rgba(255,253,248,.62)
+}
+.cercles-source-note a{text-decoration:underline}
+@media (max-width:900px){
+  .cercles-hero-visuel{grid-template-columns:1fr;min-height:340px}
+  .cercles-hero-contenu{padding:1.6rem 1.4rem 1.2rem}
+  .cercles-hero-stats{margin:0 1.2rem 1.2rem}
+  .cercles-inspiration{grid-template-columns:1fr}
+  .cercles-inspiration-livres{min-height:210px}
+}
+@media (max-width:640px){
+  .cercles-hero-visuel{min-height:400px;border-radius:14px}
+  .cercles-hero-visuel::after{background:linear-gradient(180deg,rgba(23,36,32,.92) 0%,rgba(23,36,32,.72) 58%,rgba(23,36,32,.56) 100%)}
+  .cercles-hero-contenu{padding:1.25rem}
+  .cercles-hero-titre{font-size:2rem}
+  .cercles-hero-actions{display:grid;grid-template-columns:1fr}
+  .cercles-hero-actions .bouton{width:100%;text-align:center}
+  .cercles-hero-stats{margin:0 .9rem .9rem;padding:.8rem 1rem}
+  .cercles-card-premium-inner{grid-template-columns:96px minmax(0,1fr);gap:.7rem;padding:.7rem}
+  .cercle-card-premium-media{min-height:126px}
+  .cercle-card-premium .carte-claire-titre{font-size:.94rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .cercle-card-premium,.cercles-inspiration-livres img{transition:none}
+}
+</style>
+
+<section class="cercles-hero-visuel" aria-labelledby="titre-hero-cercles">
+  <div class="cercles-hero-photo" aria-hidden="true">
+    <img src="https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=1600&q=82" alt="" fetchpriority="high">
+  </div>
+  <div class="cercles-hero-contenu">
+    <span class="cercles-hero-kicker">Université de Toamasina · Cercles d'étude</span>
+    <h1 id="titre-hero-cercles" class="cercles-hero-titre">Réviser ensemble.<br>Progresser plus vite.</h1>
+    <p class="cercles-hero-sous-titre">Trouve un espace de travail autour de ta mention, de ton parcours et de ton niveau, puis retrouve les autres étudiants au même endroit.</p>
+    <div class="cercles-hero-actions">
+      <a class="bouton bouton-primaire" href="#formulaire-recherche-cercles">Explorer les cercles</a>
+      <a class="bouton bouton-secondaire" href="#resultats-cercles">Voir les résultats</a>
+    </div>
+  </div>
+  <div class="cercles-hero-stats" aria-label="Principes de la recherche">
+    <div class="cercles-hero-stat"><strong>01</strong><span>Mention + niveau</span></div>
+    <div class="cercles-hero-stat"><strong>02</strong><span>Parcours précis</span></div>
+    <div class="cercles-hero-stat"><strong>03</strong><span>Groupes nationaux</span></div>
+    <div class="cercles-hero-stat"><strong>04</strong><span>Chat en direct</span></div>
+  </div>
+</section>
+<section class="cercles-inspiration" aria-label="Inspiration de travail">
+  <div class="cercles-inspiration-texte">
+    <p class="stat-label">Coin bibliothèque</p>
+    <h3>Un vrai univers d'étude, pas seulement une liste.</h3>
+    <p class="stat-label">Des visuels de livres et de travail académique accompagnent les cartes pour donner à la page un visage plus éditorial et plus chaleureux.</p>
+  </div>
+  <div class="cercles-inspiration-livres">
+    <div class="photo"><img loading="lazy" src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=800&q=80" alt="Livre relié posé sur un support"></div>
+    <div class="photo"><img loading="lazy" src="https://images.unsplash.com/photo-1456324504439-367cee3b3c32?auto=format&fit=crop&w=800&q=80" alt="Table de travail avec livre et carnet"></div>
+    <div class="photo"><img loading="lazy" src="https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=800&q=80" alt="Livres et lecture"></div>
+  </div>
+</section>
+
 <svg class="fond-anneaux" viewBox="0 0 240 240" aria-hidden="true">
   <circle cx="190" cy="30" r="40" fill="none" stroke="currentColor" stroke-width="1"/>
   <circle cx="190" cy="30" r="75" fill="none" stroke="currentColor" stroke-width="1"/>
@@ -207,9 +363,21 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
   "rgba(79, 58, 232, 0.12)",
   "rgba(123, 82, 238, 0.16)"
 ] %}
-<div class="grille-cartes-claires">
+<div class="grille-cartes-claires" id="resultats-cercles">
   {% for info in cercles_avec_info %}
-  <article class="carte-claire">
+  <article class="carte-claire cercle-card-premium">
+    <div class="cercle-card-premium-inner">
+      <div class="cercle-card-premium-media">
+        {% set images_cercle = [
+          {"url":"https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=500&q=78","alt":"Livre d'étude"},
+          {"url":"https://images.unsplash.com/photo-1456324504439-367cee3b3c32?auto=format&fit=crop&w=500&q=78","alt":"Table de travail et carnet"},
+          {"url":"https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=500&q=78","alt":"Livres en lecture"}
+        ] %}
+        {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
+        <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
+        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+      </div>
+      <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
       <span class="carte-claire-avatar" aria-hidden="true" style="background: {{ couleurs_avatar_carte[info.cercle.id % 5] }};">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
@@ -250,6 +418,8 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
       <a class="bouton bouton-primaire" href="/cercles/{{ info.cercle.id }}">Voir le cercle</a>
       {% endif %}
     </div>
+      </div>
+    </div>
   </article>
   {% else %}
   {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_disponibles %}
@@ -259,6 +429,16 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
   {% endif %}
   {% endfor %}
 </div>
+
+<div class="cercles-source-note">
+  <span>Visuels éditoriaux : photos Unsplash, utilisées comme illustrations de la page.</span>
+  <span>
+    <a href="https://unsplash.com/photos/laptop-on-desk-in-home-workspace-w5kfpugEIbo" target="_blank" rel="noopener">Source photo 1</a>
+    ·
+    <a href="https://unsplash.com/photos/a-desk-with-a-laptop-pen-eyeglasses-and-a-notebook-0nc4sJqL87U" target="_blank" rel="noopener">Source photo 2</a>
+  </span>
+</div>
+
 {% if total_pages > 1 %}
 <nav class="pagination" aria-label="Pagination des cercles" style="display:flex; gap:1rem; align-items:center; justify-content:center; margin-top:1.5rem;">
   {% if page > 1 %}
