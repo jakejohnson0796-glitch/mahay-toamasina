@@ -364,14 +364,12 @@ def liste_cercles(
     if niveau_nettoye:
         requete = requete.where(CercleEtude.niveau == niveau_nettoye)
 
-    if afficher_disponibles_seulement:
-        # Un admin a acces a tous les cercles actifs sans etre inscrit
-        # individuellement. Pour un etudiant, le filtre repose sur la meme
-        # logique centrale que l'action "Rejoindre".
-        if _est_admin(utilisateur):
-            pass
-        else:
-            requete = requete.where(referentiel_academique.condition_cercles_disponibles(utilisateur, session))
+    condition_disponibilite = None
+    if afficher_disponibles_seulement and not _est_admin(utilisateur):
+        # Construit une seule fois : la meme condition sert au filtre SQL et
+        # au badge de compatibilite de la page, sans recalculer le profil.
+        condition_disponibilite = referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+        requete = requete.where(condition_disponibilite)
 
     total_cercles = session.exec(
         select(func.count()).select_from(requete.subquery())
@@ -387,17 +385,14 @@ def liste_cercles(
     ).all()
     cercle_ids = [c.id for c in cercles]
 
-    # Les domaines sont recuperes via les mentions actives pour ne faire qu'une
-    # requete supplementaire sur le petit referentiel national.
-    mentions = session.exec(
-        select(Mention).where(Mention.est_active == True).order_by(Mention.nom)
+    # Le formulaire suit la hierarchie nationale : Domaine -> Mention.
+    domaines = session.exec(
+        select(Domaine).where(Domaine.est_active == True).order_by(Domaine.nom)  # noqa: E712
     ).all()
-    domaines_ids = {m.domaine_id for m in mentions if m.domaine_id}
-    domaines_map = {
-        d.id: d for d in session.exec(
-            select(Domaine).where(Domaine.id.in_(domaines_ids), Domaine.est_active == True).order_by(Domaine.nom)
-        ).all()
-    } if domaines_ids else {}
+    domaines_map = {d.id: d for d in domaines}
+    mentions = session.exec(
+        select(Mention).where(Mention.est_active == True).order_by(Mention.nom)  # noqa: E712
+    ).all()
 
     filiere_ids = {c.filiere_id for c in cercles if c.filiere_id}
     filieres_map = {}
@@ -435,11 +430,12 @@ def liste_cercles(
 
     compatibilites = set()
     if utilisateur and cercle_ids and not _est_admin(utilisateur):
+        condition_compatibilite = condition_disponibilite or referentiel_academique.condition_cercles_disponibles(utilisateur, session)
         compatibilites = {
             cid for cid in session.exec(
                 select(CercleEtude.id)
                 .where(CercleEtude.id.in_(cercle_ids))
-                .where(referentiel_academique.condition_cercles_disponibles(utilisateur, session))
+                .where(condition_compatibilite)
             ).all()
         }
 
@@ -487,7 +483,7 @@ def liste_cercles(
         "cercles_list.html",
         {
             "cercles_avec_info": cercles_avec_info,
-            "domaines": [d for d in domaines_map.values()],
+            "domaines": domaines,
             "mentions": mentions,
             "filiere_recherchee": filiere_recherchee,
             "niveaux": NIVEAUX,
