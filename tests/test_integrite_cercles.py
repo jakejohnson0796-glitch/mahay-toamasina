@@ -20,6 +20,7 @@ from app.models import (
     CercleEtude,
     DemandeAdhesionCercle,
     DemandeCreationCercle,
+    MembreCercle,
     Document,
     Faculte,
     Filiere,
