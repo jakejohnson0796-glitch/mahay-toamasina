@@ -22,10 +22,32 @@ from typing import Optional
 
 from sqlmodel import Session, and_, or_, select
 
-from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, RoleUtilisateur, Utilisateur
+from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire, RoleUtilisateur, Utilisateur
 from .texte_normalise import normaliser as _normaliser_nom_parcours
 
 DELAI_MINIMUM_ENTRE_CHANGEMENTS_NIVEAU = timedelta(days=14)
+
+
+def offre_filiere_active_universite(session: Session, universite_id: int, filiere_id: int) -> bool:
+    """Vrai si le parcours est explicitement offert dans l'universite.
+
+    Quand aucune offre n'est encore renseignee pour cette universite (cas
+    des anciennes bases/tests), on conserve la compatibilite historique et
+    la composante de la Filiere reste la source de rattachement locale.
+    Des que des lignes ProgrammeUniversitaire existent pour l'universite,
+    une offre active est obligatoire.
+    """
+    offres = session.exec(
+        select(ProgrammeUniversitaire).where(
+            ProgrammeUniversitaire.universite_id == universite_id,
+        )
+    ).all()
+    if not offres:
+        return True
+    return any(
+        o.filiere_id == filiere_id and o.est_active
+        for o in offres
+    )
 
 
 def _mention_offerte_dans_faculte(session: Session, mention_id: int, faculte_id: int) -> bool:
@@ -110,6 +132,7 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
                 filiere.faculte_id == faculte.id
                 and filiere.mention_id == mention.id
                 and (not filiere.niveau or filiere.niveau == utilisateur.niveau)
+                and offre_filiere_active_universite(session, universite.id, filiere.id)
             )
         elif coherent and filiere is None:
             if _specialisation_dans_faculte(session, mention.id, faculte.id, utilisateur.niveau):
@@ -291,7 +314,7 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
     if nature == "incomplet":
         return False
 
-    profil = contexte_profil_academique(utilisateur, session)
+    profil = profil or contexte_profil_academique(utilisateur, session)
     if not profil["coherent"]:
         return False
 
@@ -308,7 +331,9 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
     return cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
 
 
-def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: Session):
+def condition_cercles_disponibles(
+    utilisateur: Optional[Utilisateur], session: Session, profil: Optional[dict] = None
+):
     """Condition SQLAlchemy (a passer a .where()) qui identifie les
     cercles 'disponibles' pour cet utilisateur, au meme sens que
     profil_correspond_au_cercle ci-dessus : les cercles libres, plus le
