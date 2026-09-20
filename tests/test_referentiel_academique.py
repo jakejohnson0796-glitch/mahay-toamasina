@@ -20,6 +20,7 @@ from app.referentiel_academique import (
     prochain_changement_niveau_autorise_le,
     profil_correspond_au_cercle,
     condition_cercles_disponibles,
+    contexte_profil_academique,
 )
 
 
@@ -173,7 +174,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
                 role=RoleUtilisateur.ETUDIANT,
                 universite_id=self.universite_id, mention_id=self.mention_id, niveau="L1",
             )
-            profil = __import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)
+            profil = contexte_profil_academique(u, session)
             self.assertTrue(profil["coherent"])
             self.assertTrue(profil["tronc_commun"])
             self.assertEqual(profil["universite"].id, self.universite_id)
