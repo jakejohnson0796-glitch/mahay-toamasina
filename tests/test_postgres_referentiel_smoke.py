@@ -1,40 +1,42 @@
 """
-Smoke test PostgreSQL du référentiel académique.
+Smoke test PostgreSQL du référentiel académique Toamasina.
 
-Ce test ne remplace pas les tests unitaires SQLite : il vérifie le chemin
-réel de production (PostgreSQL + Alembic + startup FastAPI + import Excel)
-sur une base neuve, puis vérifie que le second passage est idempotent.
+Ce test vérifie le chemin de production (PostgreSQL + Alembic + startup
+FastAPI + import de la source issue du classeur fourni) sur une base neuve,
+puis vérifie l'idempotence et une recherche HTTP réelle dans /cercles.
 """
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
+import re
+import unicodedata
 
 import pytest
 from fastapi.testclient import TestClient
-from openpyxl import load_workbook
 from sqlmodel import Session, select, func
 
 from app.main import app
-from app.models import Domaine, Mention, ProgrammeUniversitaire, Universite, Filiere, Faculte
+from app.models import (
+    CercleEtude,
+    Domaine,
+    Faculte,
+    Filiere,
+    Mention,
+    ProgrammeUniversitaire,
+    Universite,
+    Utilisateur,
+)
 from scripts.import_academic_data import importer
 
 
-PERIMETRE_PUBLIC = {
-    "universite d'antananarivo",
-    "universite d'antsiranana",
-    "universite de fianarantsoa",
-    "universite de mahajanga",
-    "universite de toamasina",
-    "universite de toliara",
-}
+SOURCE = Path(__file__).resolve().parent.parent / "mahay_toamasina_referentiel_source.json"
+SOURCE_SHA256 = "fefcd0e5b0886ec181f74d568378afca87c7f1fd54e0b1a30790b249d89ca2ed"
 
 
 def _normaliser(texte: str | None) -> str:
-    import re
-    import unicodedata
-
     if not texte:
         return ""
     texte = texte.strip().replace("\u2019", "'")
@@ -43,45 +45,39 @@ def _normaliser(texte: str | None) -> str:
     return re.sub(r"\s+", " ", texte).lower()
 
 
-def _source_referentiel() -> tuple[set[str], set[str]]:
-    chemin = Path(__file__).resolve().parent.parent / "mahay_universites_mentions_filieres_recensement.xlsx"
-    assert chemin.exists(), f"Classeur absent du dépôt : {chemin}"
-
-    classeur = load_workbook(chemin, read_only=True, data_only=True)
-    feuille = classeur.active
-    lignes = list(feuille.iter_rows(values_only=True))
-    entetes = [str(cell).strip() for cell in lignes[0]]
-    index = {nom: i for i, nom in enumerate(entetes)}
-
-    domaines: set[str] = set()
-    mentions: set[str] = set()
-    for ligne in lignes[1:]:
-        if not any(ligne):
-            continue
-        universite = str(ligne[index["Université"]] or "").strip()
-        if _normaliser(universite) not in PERIMETRE_PUBLIC:
-            continue
-        domaine = str(ligne[index["Domaine"]] or "").strip()
-        mention = str(ligne[index["Mention"]] or "").strip()
-        if domaine:
-            domaines.add(domaine)
-        if mention:
-            mentions.add(mention)
-    return domaines, mentions
+def _source() -> dict:
+    assert SOURCE.exists(), f"Source du référentiel absente du dépôt : {SOURCE}"
+    payload = json.loads(SOURCE.read_text(encoding="utf-8"))
+    assert payload["sha256"] == SOURCE_SHA256
+    assert _normaliser(payload["universite"]) == "universite de toamasina"
+    assert payload["hierarchie"] == ["Université", "Composante", "Domaine", "Mention", "Niveau", "Parcours"]
+    assert len(payload["formations"]) == 111
+    assert {ligne["domaine"] for ligne in payload["formations"]} == {
+        "Droit et sciences politiques",
+        "Sciences économiques",
+        "Sciences de gestion",
+        "Sciences et technologie",
+        "Sciences de l'éducation et didactique",
+        "Lettres et sciences humaines",
+    }
+    assert len({ligne["mention"] for ligne in payload["formations"]}) == 21
+    return payload
 
 
 @pytest.mark.skipif(
     not os.environ.get("DATABASE_URL", "").startswith(("postgresql://", "postgresql+psycopg2://")),
     reason="Smoke test réservé à PostgreSQL",
 )
-def test_postgres_demarrage_import_et_idempotence():
+def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
+    payload = _source()
+
     # Le TestClient déclenche réellement le startup FastAPI :
-    # Alembic, import du référentiel Excel, seed et provisionnement des cercles.
+    # Alembic, import de la source Toamasina exacte, seed et provisionnement.
     with TestClient(app) as client:
         response = client.get("/")
         assert response.status_code == 200
-
-    domaines_source, mentions_source = _source_referentiel()
+        cercles_page = client.get("/cercles")
+        assert cercles_page.status_code == 200
 
     from app.database import engine
 
@@ -90,51 +86,120 @@ def test_postgres_demarrage_import_et_idempotence():
         domaines = {d.nom for d in session.exec(select(Domaine)).all()}
         mentions = session.exec(select(Mention)).all()
 
-        assert {
-            "Universite de Toamasina",
-            "Universite d'Antananarivo",
-            "Universite de Fianarantsoa",
-            "Universite de Mahajanga",
-            "Universite de Toliara",
-            "Universite d'Antsiranana",
-        }.issubset(universites)
+        assert any(_normaliser(nom) == "universite de toamasina" for nom in universites)
 
+        domaines_source = {ligne["domaine"] for ligne in payload["formations"]}
         assert domaines_source.issubset(domaines)
 
-        mentions_par_nom = {_normaliser(m.nom): m for m in mentions}
-        for nom in mentions_source:
-            assert _normaliser(nom) in mentions_par_nom, f"Mention Excel absente de la base : {nom}"
-            assert mentions_par_nom[_normaliser(nom)].domaine_id is not None, (
-                f"Mention sans Domaine après synchronisation : {nom}"
+        mentions_par_nom: dict[str, list[Mention]] = {}
+        for mention in mentions:
+            mentions_par_nom.setdefault(_normaliser(mention.nom), []).append(mention)
+
+        for nom in {ligne["mention"] for ligne in payload["formations"]}:
+            variantes = mentions_par_nom.get(_normaliser(nom), [])
+            assert variantes, f"Mention source absente de la base : {nom}"
+            assert any(mention.domaine_id is not None for mention in variantes), (
+                f"Mention source sans Domaine après synchronisation : {nom}"
             )
 
-        uto = next(u for u in session.exec(select(Universite)).all() if _normaliser(u.nom) == "universite de toamasina")
-        nb_filieres_uto = session.exec(
-            select(func.count())
-            .select_from(Filiere)
-            .join(Faculte, Filiere.faculte_id == Faculte.id)
-            .where(Faculte.universite_id == uto.id)
-        ).one()
-        nb_programmes_uto = session.exec(
-            select(func.count())
-            .select_from(ProgrammeUniversitaire)
-            .where(ProgrammeUniversitaire.universite_id == uto.id)
-        ).one()
-
-        assert nb_filieres_uto == nb_programmes_uto
-
-        rapport_second_passage = importer(
-            str(Path(__file__).resolve().parent.parent / "mahay_universites_mentions_filieres_recensement.xlsx")
+        uto = next(
+            u for u in session.exec(select(Universite)).all()
+            if _normaliser(u.nom) == "universite de toamasina"
         )
+
+        facs = {
+            _normaliser(f.nom): f
+            for f in session.exec(select(Faculte).where(Faculte.universite_id == uto.id)).all()
+        }
+        filieres = session.exec(
+            select(Filiere).where(
+                Filiere.faculte_id.in_([f.id for f in facs.values()])
+            )
+        ).all()
+        programmes = session.exec(
+            select(ProgrammeUniversitaire).where(
+                ProgrammeUniversitaire.universite_id == uto.id,
+                ProgrammeUniversitaire.est_active.is_(True),
+            )
+        ).all()
+
+        # Le référentiel exact porte le niveau au niveau du triplet
+        # Mention + Niveau + Parcours ; le Tronc commun reste volontairement
+        # représenté sans Filiere dans le modèle métier.
+        attendues = [
+            ligne for ligne in payload["formations"]
+            if _normaliser(ligne["type"]) != _normaliser("Tronc commun")
+        ]
+
+        mention_ids_par_nom = {
+            cle: {mention.id for mention in variantes}
+            for cle, variantes in mentions_par_nom.items()
+        }
+        fac_nom_par_id = {fac.id: _normaliser(fac.nom) for fac in facs.values()}
+        filiere_keys = {
+            (
+                fil.mention_id,
+                _normaliser(fil.niveau),
+                _normaliser(fil.nom),
+                fac_nom_par_id.get(fil.faculte_id, ""),
+            )
+            for fil in filieres
+        }
+
+        expected_keys = set()
+        for ligne in attendues:
+            mention_ids = mention_ids_par_nom.get(_normaliser(ligne["mention"]), set())
+            assert mention_ids, f"Mention inconnue pour {ligne['mention']}"
+            fac_key = _normaliser(ligne["composante"])
+            key_found = {
+                (mid, _normaliser(ligne["niveau"]), _normaliser(ligne["parcours"]), fac_key)
+                for mid in mention_ids
+            }
+            assert filiere_keys & key_found, (
+                "Parcours source absent de Filiere : "
+                f"{ligne['mention']} / {ligne['niveau']} / {ligne['parcours']}"
+            )
+            expected_keys.update(key_found)
+
+        expected_filiere_ids = {
+            fil.id for fil in filieres
+            if (
+                fil.mention_id,
+                _normaliser(fil.niveau),
+                _normaliser(fil.nom),
+                fac_nom_par_id.get(fil.faculte_id, ""),
+            ) in expected_keys
+        }
+        assert expected_filiere_ids
+        assert expected_filiere_ids.issubset({p.filiere_id for p in programmes})
+
+        createur = session.exec(select(Utilisateur)).first()
+        assert createur is not None, "Aucun utilisateur disponible pour créer le cercle de smoke test"
+
+        cca = next(
+            fil for fil in filieres
+            if _normaliser(fil.nom) == _normaliser("CCA — Comptabilité, Contrôle, Audit")
+            and _normaliser(fil.niveau) == "m1"
+        )
+        smoke = CercleEtude(
+            nom="Smoke PostgreSQL — CCA M1 Toamasina",
+            createur_id=createur.id,
+            mention_id=cca.mention_id,
+            filiere_id=cca.id,
+            niveau="M1",
+        )
+        session.add(smoke)
+        session.commit()
+
+        rapport_second_passage = importer(str(SOURCE))
         assert rapport_second_passage.domaines_crees == []
         assert rapport_second_passage.mentions_creees == []
+        assert rapport_second_passage.filieres_creees == []
         assert rapport_second_passage.programmes_crees == 0
 
-        nb_domaines_apres = session.exec(select(func.count()).select_from(Domaine)).one()
-        nb_mentions_apres = session.exec(select(func.count()).select_from(Mention)).one()
+        nb_domaines = session.exec(select(func.count()).select_from(Domaine)).one()
+        nb_mentions = session.exec(select(func.count()).select_from(Mention)).one()
 
-        # Contrat appliqué par la migration f7c2d9a4e1b6, simulé dans le
-        # smoke test par un schema storage minimal (voir CI).
         bucket = session.connection().exec_driver_sql(
             "SELECT public, file_size_limit, allowed_mime_types "
             "FROM storage.buckets WHERE id = 'documents'"
@@ -143,5 +208,10 @@ def test_postgres_demarrage_import_et_idempotence():
         assert bucket[1] == 20 * 1024 * 1024
         assert "application/pdf" in bucket[2]
 
-    assert nb_domaines_apres == len(domaines)
-    assert nb_mentions_apres == len(mentions)
+    with TestClient(app) as client:
+        page = client.get("/cercles", params={"q": "CCA M1"})
+        assert page.status_code == 200
+        assert "Smoke PostgreSQL — CCA M1 Toamasina" in page.text
+
+    assert nb_domaines >= len(domaines_source)
+    assert nb_mentions >= len(mentions_par_nom)
