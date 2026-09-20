@@ -570,6 +570,7 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
+            "type_cercle": referentiel_academique.type_cercle(cercle),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
