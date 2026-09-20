@@ -430,7 +430,11 @@ def liste_cercles(
 
     compatibilites = set()
     if utilisateur and cercle_ids and not _est_admin(utilisateur):
-        condition_compatibilite = condition_disponibilite or referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+        condition_compatibilite = (
+            condition_disponibilite
+            if condition_disponibilite is not None
+            else referentiel_academique.condition_cercles_disponibles(utilisateur, session)
+        )
         compatibilites = {
             cid for cid in session.exec(
                 select(CercleEtude.id)
