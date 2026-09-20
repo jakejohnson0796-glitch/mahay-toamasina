@@ -3,6 +3,7 @@ Inscription, connexion, deconnexion.
 """
 from typing import Optional
 from datetime import datetime, timedelta
+import hashlib
 import secrets
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException
@@ -43,6 +44,26 @@ def _redirection_apres_connexion(utilisateur: Utilisateur) -> RedirectResponse:
 
 router = APIRouter()
 
+LONGUEUR_MIN_MOT_DE_PASSE = 8
+LONGUEUR_MAX_MOT_DE_PASSE = 72
+LONGUEUR_MAX_NOM = 120
+
+
+def _rotation_session_authentifiee(request: Request) -> None:
+    """Rotation de session apres authentification en conservant le jeton CSRF."""
+    jeton_csrf = request.session.get("_csrf_token")
+    request.session.clear()
+    if jeton_csrf:
+        request.session["_csrf_token"] = jeton_csrf
+
+
+def _telephone_rate_key(telephone: str) -> str:
+    try:
+        return f"tel:{normaliser_telephone(telephone)}"
+    except TelephoneInvalide:
+        brute = (telephone or "").strip().casefold()[:128]
+        return "invalide:" + hashlib.sha256(brute.encode("utf-8")).hexdigest()[:16]
+
 
 def _contexte_formulaire_inscription(session: Session, erreur: Optional[str] = None) -> dict:
     """Regroupe le contexte commun aux (re)rendus de register.html — la
@@ -81,6 +102,18 @@ def inscription(
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id)
     universite_id_nettoye = entier_ou_none(universite_id)
+
+    nom = nom.strip()
+    if not nom or len(nom) > LONGUEUR_MAX_NOM:
+        return templates.TemplateResponse(
+            request, "register.html",
+            _contexte_formulaire_inscription(session, f"Le nom est obligatoire et limite a {LONGUEUR_MAX_NOM} caracteres."),
+        )
+    if len(mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE or len(mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE:
+        return templates.TemplateResponse(
+            request, "register.html",
+            _contexte_formulaire_inscription(session, f"Le mot de passe doit contenir entre {LONGUEUR_MIN_MOT_DE_PASSE} et {LONGUEUR_MAX_MOT_DE_PASSE} caracteres."),
+        )
 
     # Anti-spam : limite la creation automatisee de comptes en masse
     # (chaque etudiant inscrit declenche un essai gratuit — voir
@@ -212,7 +245,11 @@ def connexion(
     # pour qu'un attaquant ne puisse pas "garder sous le seuil" l'un des
     # deux en jouant sur l'ordre des tentatives.
     trop_ip = limite_depassee(f"connexion:ip:{_ip_client(request)}", max_tentatives=15, fenetre_secondes=60)
-    trop_tel = limite_depassee(f"connexion:tel:{telephone}", max_tentatives=6, fenetre_secondes=60)
+    try:
+        telephone_normalise = normaliser_telephone(telephone)
+    except TelephoneInvalide:
+        telephone_normalise = telephone
+    trop_tel = limite_depassee(f"connexion:{_telephone_rate_key(telephone)}", max_tentatives=6, fenetre_secondes=60)
     if trop_ip or trop_tel:
         return templates.TemplateResponse(
             request, "login.html", {"erreur": "Trop de tentatives. Reessayez dans une minute."}
@@ -226,11 +263,6 @@ def connexion(
     # ici (pas de message distinct) : on le laisse simplement echouer au
     # lookup, pour ne pas donner d'indice supplementaire a un attaquant
     # et garder le meme message d'erreur generique.
-    try:
-        telephone_normalise = normaliser_telephone(telephone)
-    except TelephoneInvalide:
-        telephone_normalise = telephone
-
     utilisateur = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)).first()
     if not utilisateur or not verifier_mot_de_passe(mot_de_passe, utilisateur.mot_de_passe_hash):
         return templates.TemplateResponse(
@@ -242,6 +274,7 @@ def connexion(
         )
 
     if utilisateur.totp_active:
+        _rotation_session_authentifiee(request)
         # Ne pas ouvrir la session tout de suite : le mot de passe seul
         # ne suffit pas, il faut encore le code 2FA. On memorise juste
         # QUI est en train de se connecter (utile nulle part d'autre tant
@@ -250,6 +283,7 @@ def connexion(
         request.session["en_attente_2fa_user_id"] = utilisateur.id
         return RedirectResponse("/connexion/2fa", status_code=303)
 
+    _rotation_session_authentifiee(request)
     request.session["user_id"] = utilisateur.id
     return _redirection_apres_connexion(utilisateur)
 
@@ -311,7 +345,7 @@ def verifier_2fa(
             request, "connexion_2fa.html", {"erreur": "Code invalide."}
         )
 
-    request.session.pop("en_attente_2fa_user_id", None)
+    _rotation_session_authentifiee(request)
     request.session["user_id"] = utilisateur.id
     return _redirection_apres_connexion(utilisateur)
 
@@ -352,7 +386,7 @@ def demander_reinitialisation(
     # emails en rafale (cout de service + spam pour la victime) en
     # essayant plein de numeros, ou en boucle sur UN numero precis.
     trop_ip = limite_depassee(f"reinit:ip:{_ip_client(request)}", max_tentatives=8, fenetre_secondes=3600)
-    trop_tel = limite_depassee(f"reinit:tel:{telephone}", max_tentatives=3, fenetre_secondes=3600)
+    trop_tel = limite_depassee(f"reinit:{_telephone_rate_key(telephone)}", max_tentatives=3, fenetre_secondes=3600)
 
     if not (trop_ip or trop_tel):
         try:
@@ -424,7 +458,7 @@ def verifier_code_reinitialisation(
     if not user_id:
         return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
 
-    if len(nouveau_mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE:
+    if len(nouveau_mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE or len(nouveau_mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE:
         return templates.TemplateResponse(
             request, "mot_de_passe_oublie_code.html",
             {"erreur": f"Le nouveau mot de passe doit faire au moins {LONGUEUR_MIN_MOT_DE_PASSE} caracteres."},
@@ -457,8 +491,8 @@ def verifier_code_reinitialisation(
     return RedirectResponse("/connexion?ok=mot_de_passe_reinitialise", status_code=303)
 
 
-@router.get("/deconnexion")
-def deconnexion(request: Request):
+@router.post("/deconnexion")
+def deconnexion(request: Request, _csrf: None = Depends(verifier_csrf)):
     request.session.clear()
     return RedirectResponse("/", status_code=303)
 
@@ -745,7 +779,7 @@ def afficher_photo_profil(utilisateur_id: int, session: Session = Depends(get_se
         raise HTTPException(status_code=404)
 
     if stockage_distant_actif():
-        return RedirectResponse(obtenir_url_telechargement(utilisateur.photo_chemin))
+        return RedirectResponse(obtenir_url_telechargement(utilisateur.photo_chemin, expires_in=300, telechargement=False))
     return FileResponse(utilisateur.photo_chemin)
 
 

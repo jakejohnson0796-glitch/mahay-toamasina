@@ -137,7 +137,7 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
         f.id for f in session.exec(
             select(Filiere).where(Filiere.mention_id == filiere.mention_id)
         ).all()
-        if _normaliser_nom_parcours(f.nom) == nom_normalise and f.niveau == filiere.niveau
+        if _normaliser_nom_parcours(f.nom) == nom_normalise and (f.niveau is None or f.niveau == filiere.niveau)
     ]
 
 
@@ -153,9 +153,14 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
         # Cercle libre : aucune restriction, comme avant cette evolution.
         return True
 
-    if not utilisateur.mention_id or not utilisateur.niveau:
+    if not utilisateur.niveau:
         return False
-    if utilisateur.mention_id != cercle.mention_id or utilisateur.niveau != cercle.niveau:
+
+    # Compatibilite avec les profils historiques : la mention peut encore
+    # etre derivee de la filiere si Utilisateur.mention_id est vide.
+    filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
+    mention_id = utilisateur.mention_id or (filiere_utilisateur.mention_id if filiere_utilisateur else None)
+    if mention_id != cercle.mention_id or utilisateur.niveau != cercle.niveau:
         return False
 
     if not cercle.filiere_id:
@@ -166,7 +171,6 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
 
     if not utilisateur.filiere_id:
         return False
-    filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id)
     if not filiere_utilisateur:
         return False
 
@@ -200,14 +204,24 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
         CercleEtude.niveau.is_(None),
     )
 
-    if utilisateur is None or not utilisateur.mention_id or not utilisateur.niveau:
+    if utilisateur is None or not utilisateur.niveau:
+        return cercle_libre
+
+    # Compatibilite des profils historiques : si mention_id manque,
+    # on la deduit de la filiere rattachee au compte.
+    mention_id = utilisateur.mention_id
+    filiere_utilisateur = None
+    if not mention_id and utilisateur.filiere_id:
+        filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id)
+        mention_id = filiere_utilisateur.mention_id if filiere_utilisateur else None
+    if not mention_id:
         return cercle_libre
 
     # Cercle de tronc commun pour la mention+niveau de l'utilisateur :
     # correspond qu'il ait deja choisi une filiere ou non (voir
     # profil_correspond_au_cercle).
     cercle_tronc_commun_correspondant = and_(
-        CercleEtude.mention_id == utilisateur.mention_id,
+        CercleEtude.mention_id == mention_id,
         CercleEtude.niveau == utilisateur.niveau,
         CercleEtude.filiere_id.is_(None),
     )
@@ -215,7 +229,8 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
     if not utilisateur.filiere_id:
         return or_(cercle_libre, cercle_tronc_commun_correspondant)
 
-    filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id)
+    if filiere_utilisateur is None:
+        filiere_utilisateur = session.get(Filiere, utilisateur.filiere_id)
     if not filiere_utilisateur:
         return or_(cercle_libre, cercle_tronc_commun_correspondant)
 
@@ -225,7 +240,7 @@ def condition_cercles_disponibles(utilisateur: Optional[Utilisateur], session: S
         cercle_libre,
         cercle_tronc_commun_correspondant,
         and_(
-            CercleEtude.mention_id == utilisateur.mention_id,
+            CercleEtude.mention_id == mention_id,
             CercleEtude.filiere_id.in_(filieres_equivalentes),
             CercleEtude.niveau == utilisateur.niveau,
         ),

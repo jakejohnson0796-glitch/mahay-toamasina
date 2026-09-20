@@ -478,7 +478,7 @@ def retrograder_etudiant(request: Request, utilisateur_id: int, session: Session
     elif cible.role == RoleUtilisateur.ADMIN:
         if cible.id == admin.id:
             return RedirectResponse("/admin/utilisateurs?erreur=auto_retrogradation", status_code=303)
-        nb_admins = len(session.exec(select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)).all())
+        nb_admins = session.exec(select(func.count()).select_from(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)).one()
         if nb_admins <= 1:
             return RedirectResponse("/admin/utilisateurs?erreur=dernier_admin", status_code=303)
         cible.role = RoleUtilisateur.ETUDIANT
@@ -507,18 +507,28 @@ def page_confirmation_suppression(request: Request, utilisateur_id: int, session
         return RedirectResponse("/admin/utilisateurs", status_code=303)
 
     cercles_possedes = session.exec(select(CercleEtude).where(CercleEtude.createur_id == utilisateur_id)).all()
-    cercles_info = []
-    for c in cercles_possedes:
-        nb_membres = len(session.exec(select(MembreCercle).where(MembreCercle.cercle_id == c.id)).all())
-        nb_messages = len(session.exec(select(MessageCercle).where(MessageCercle.cercle_id == c.id)).all())
-        cercles_info.append({"cercle": c, "nb_membres": nb_membres, "nb_messages": nb_messages})
+    cercle_ids = [c.id for c in cercles_possedes]
+    membres_par_cercle = {cid: nb for cid, nb in session.exec(
+        select(MembreCercle.cercle_id, func.count()).where(MembreCercle.cercle_id.in_(cercle_ids or [-1]))
+        .group_by(MembreCercle.cercle_id)
+    ).all()}
+    messages_par_cercle = {cid: nb for cid, nb in session.exec(
+        select(MessageCercle.cercle_id, func.count()).where(MessageCercle.cercle_id.in_(cercle_ids or [-1]))
+        .group_by(MessageCercle.cercle_id)
+    ).all()}
+    cercles_info = [{"cercle": c, "nb_membres": membres_par_cercle.get(c.id, 0), "nb_messages": messages_par_cercle.get(c.id, 0)} for c in cercles_possedes]
 
     cours_possedes = session.exec(select(Cours).where(Cours.professeur_id == utilisateur_id)).all()
-    cours_info = []
-    for c in cours_possedes:
-        nb_inscrits = len(session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == c.id)).all())
-        nb_seances = len(session.exec(select(Seance).where(Seance.cours_id == c.id)).all())
-        cours_info.append({"cours": c, "nb_inscrits": nb_inscrits, "nb_seances": nb_seances})
+    cours_ids = [c.id for c in cours_possedes]
+    inscrits_par_cours = {cid: nb for cid, nb in session.exec(
+        select(InscriptionCours.cours_id, func.count()).where(InscriptionCours.cours_id.in_(cours_ids or [-1]))
+        .group_by(InscriptionCours.cours_id)
+    ).all()}
+    seances_par_cours = {cid: nb for cid, nb in session.exec(
+        select(Seance.cours_id, func.count()).where(Seance.cours_id.in_(cours_ids or [-1]))
+        .group_by(Seance.cours_id)
+    ).all()}
+    cours_info = [{"cours": c, "nb_inscrits": inscrits_par_cours.get(c.id, 0), "nb_seances": seances_par_cours.get(c.id, 0)} for c in cours_possedes]
 
     # Cibles de reattribution possibles : tout compte autre que la cible
     # elle-meme. Un cercle/cours peut techniquement etre reattribue a

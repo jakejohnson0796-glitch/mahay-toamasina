@@ -50,6 +50,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    if bind.dialect.name != "postgresql":
+        # SQLite n'a pas de type enum natif : le downgrade est un no-op.
+        return
+
     # Postgres ne permet pas de retirer une valeur d'un type enum
     # existant (il faudrait recreer le type entierement et migrer
     # toutes les colonnes qui l'utilisent). Si une vraie annulation est

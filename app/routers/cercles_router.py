@@ -117,6 +117,32 @@ def _assurer_membres_admins(session: Session, cercle_id: int) -> None:
     session.commit()
 
 
+def _assurer_membres_admins_pour_cercles(session: Session, cercle_ids: list[int]) -> None:
+    """Garantit les adhesions des admins sur plusieurs cercles en deux requetes."""
+    if not cercle_ids:
+        return
+    admins = session.exec(select(Utilisateur.id).where(Utilisateur.role == RoleUtilisateur.ADMIN)).all()
+    if not admins:
+        return
+    existants = {
+        (cercle_id, utilisateur_id)
+        for cercle_id, utilisateur_id in session.exec(
+            select(MembreCercle.cercle_id, MembreCercle.utilisateur_id)
+            .where(MembreCercle.cercle_id.in_(cercle_ids))
+            .where(MembreCercle.utilisateur_id.in_(admins))
+        ).all()
+    }
+    a_ajouter = [
+        MembreCercle(cercle_id=cercle_id, utilisateur_id=admin_id)
+        for cercle_id in cercle_ids
+        for admin_id in admins
+        if (cercle_id, admin_id) not in existants
+    ]
+    if a_ajouter:
+        session.add_all(a_ajouter)
+        session.commit()
+
+
 def _reactions_du_message(session: Session, message_id: int, utilisateur_id: int) -> list[dict]:
     """Compte les reactions d'un message, groupees par type (§4 du brief :
     "👍 5   ❤️ 3   😂 1"), en indiquant si l'utilisateur courant en fait
@@ -137,12 +163,12 @@ def _nombre_reponses(session: Session, message_id: int) -> int:
     Ne compte pas recursivement les reponses-a-des-reponses : un thread
     reste a un seul niveau de profondeur, comme le reste de l'UX cible
     (Messenger/WhatsApp ne font pas non plus de threads imbriques)."""
-    return len(session.exec(
-        select(MessageCercle.id).where(
+    return session.exec(
+        select(func.count()).select_from(MessageCercle).where(
             MessageCercle.parent_message_id == message_id,
             MessageCercle.supprime == False,  # noqa: E712
         )
-    ).all())
+    ).one()
 
 
 def _derniere_reponse(session: Session, message_id: int) -> Optional[dict]:
@@ -295,8 +321,7 @@ def liste_cercles(
     # comme non-membre. Limite desormais aux cercles de la PAGE COURANTE
     # (au plus TAILLE_PAGE), jamais a la totalite des cercles en base.
     if _est_admin(utilisateur) and cercle_ids:
-        for cercle_id in cercle_ids:
-            _assurer_membres_admins(session, cercle_id)
+        _assurer_membres_admins_pour_cercles(session, cercle_ids)
 
     # --- Requetes GROUPEES (une par type de donnee, pas une par
     #     cercle) : nombre de membres par cercle, appartenance et
@@ -414,21 +439,33 @@ def creer_cercle(
     session.exec(
         select(Utilisateur).where(Utilisateur.id == utilisateur.id).with_for_update()
     ).first()
-    nb_cercles_existants = len(
-        session.exec(select(CercleEtude).where(CercleEtude.createur_id == utilisateur.id)).all()
-    )
+    nb_cercles_existants = session.exec(
+        select(func.count()).select_from(CercleEtude).where(CercleEtude.createur_id == utilisateur.id)
+    ).one()
     if nb_cercles_existants >= MAX_CERCLES_PAR_UTILISATEUR:
         filieres = session.exec(select(Filiere)).all()
         cercles = session.exec(select(CercleEtude).order_by(CercleEtude.date_creation.desc())).all()
-        cercles_avec_info = []
-        for c in cercles:
-            nb_membres = len(session.exec(select(MembreCercle).where(MembreCercle.cercle_id == c.id)).all())
-            cercles_avec_info.append({
-                "cercle": c, "nb_membres": nb_membres,
-                "est_membre": _est_membre(session, c.id, utilisateur.id),
-                "en_attente": False,
-                "peut_gerer": _peut_gerer_cercle(c, utilisateur),
-            })
+        cercle_ids = [c.id for c in cercles]
+        nb_membres_par_cercle = {cid: nb for cid, nb in session.exec(
+            select(MembreCercle.cercle_id, func.count())
+            .where(MembreCercle.cercle_id.in_(cercle_ids or [-1]))
+            .group_by(MembreCercle.cercle_id)
+        ).all()}
+        membres_utilisateur = {
+            cid for cid in session.exec(
+                select(MembreCercle.cercle_id).where(
+                    MembreCercle.cercle_id.in_(cercle_ids or [-1]),
+                    MembreCercle.utilisateur_id == utilisateur.id,
+                )
+            ).all()
+        }
+        cercles_avec_info = [{
+            "cercle": c,
+            "nb_membres": nb_membres_par_cercle.get(c.id, 0),
+            "est_membre": c.id in membres_utilisateur,
+            "en_attente": False,
+            "peut_gerer": _peut_gerer_cercle(c, utilisateur),
+        } for c in cercles]
         return templates.TemplateResponse(
             request,
             "cercles_list.html",
@@ -956,9 +993,57 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             u2.id: u2.nom
             for u2 in session.exec(select(Utilisateur).where(Utilisateur.id.in_(auteurs_epinglage_ids))).all()
         } if auteurs_epinglage_ids else {}
+
+        message_ids = [m.id for m, _u in lignes]
+        nb_reponses_par_message = {mid: nb for mid, nb in session.exec(
+            select(MessageCercle.parent_message_id, func.count())
+            .where(
+                MessageCercle.parent_message_id.in_(message_ids or [-1]),
+                MessageCercle.supprime == False,  # noqa: E712
+            )
+            .group_by(MessageCercle.parent_message_id)
+        ).all()}
+        reponses = session.exec(
+            select(MessageCercle, Utilisateur)
+            .where(
+                MessageCercle.parent_message_id.in_(message_ids or [-1]),
+                MessageCercle.supprime == False,  # noqa: E712
+            )
+            .where(MessageCercle.auteur_id == Utilisateur.id)
+        ).all()
+        derniere_reponse_par_message = {}
+        for reponse, auteur_reponse in reponses:
+            courante = derniere_reponse_par_message.get(reponse.parent_message_id)
+            if courante is None or reponse.date_envoi > courante[0].date_envoi:
+                contenu = reponse.piece_jointe_nom if reponse.piece_jointe_chemin else (reponse.contenu or "")
+                derniere_reponse_par_message[reponse.parent_message_id] = (
+                    reponse, auteur_reponse,
+                    contenu[:79].rstrip() + "…" if len(contenu) > 80 else contenu,
+                )
+
+        reactions_lignes = session.exec(
+            select(MessageReaction).where(MessageReaction.message_id.in_(message_ids or [-1]))
+        ).all()
+        reactions_par_message = {}
+        for reaction in reactions_lignes:
+            par_type = reactions_par_message.setdefault(reaction.message_id, {})
+            entree = par_type.setdefault(reaction.type_reaction.value, {
+                "type_reaction": reaction.type_reaction.value, "total": 0, "mienne": False
+            })
+            entree["total"] += 1
+            if reaction.utilisateur_id == utilisateur.id:
+                entree["mienne"] = True
+
         messages = []
         for m, u in lignes:
-            nb_reponses = _nombre_reponses(session, m.id)
+            nb_reponses = nb_reponses_par_message.get(m.id, 0)
+            derniere = derniere_reponse_par_message.get(m.id)
+            dernier_apercu = (
+                {"auteur": derniere[1].nom, "contenu": derniere[2]}
+                if derniere else None
+            )
+            groupes = reactions_par_message.get(m.id, {})
+            reactions = [groupes[t.value] for t in TypeReaction if t.value in groupes]
             messages.append({
                 "id": m.id,
                 "auteur": u.nom,
@@ -972,8 +1057,8 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "modifie": m.date_modification is not None,
                 "epingle": m.epingle,
                 "reponses": nb_reponses,
-                "derniere_reponse": _derniere_reponse(session, m.id) if nb_reponses else None,
-                "reactions": _reactions_du_message(session, m.id, utilisateur.id),
+                "derniere_reponse": dernier_apercu,
+                "reactions": reactions,
             })
         ligne_epinglee = next((m for m, _ in lignes if m.epingle), None)
         if ligne_epinglee:
@@ -1385,6 +1470,31 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
     if not parent or parent.cercle_id != cercle_id:
         raise HTTPException(status_code=404, detail="Message introuvable.")
 
+    auteur_parent = session.get(Utilisateur, parent.auteur_id)
+    lignes_reponses = session.exec(
+        select(MessageCercle, Utilisateur)
+        .where(MessageCercle.parent_message_id == message_id)
+        .where(MessageCercle.auteur_id == Utilisateur.id)
+        .where(MessageCercle.supprime == False)  # noqa: E712
+        .order_by(MessageCercle.date_envoi)
+    ).all()
+
+    message_ids = [parent.id] + [m.id for m, _u in lignes_reponses]
+    reactions = session.exec(
+        select(MessageReaction).where(MessageReaction.message_id.in_(message_ids or [-1]))
+    ).all()
+    reactions_par_message = {}
+    for reaction in reactions:
+        par_type = reactions_par_message.setdefault(reaction.message_id, {})
+        par_type.setdefault(reaction.type_reaction.value, {"type_reaction": reaction.type_reaction.value, "total": 0, "mienne": False})
+        par_type[reaction.type_reaction.value]["total"] += 1
+        if reaction.utilisateur_id == utilisateur.id:
+            par_type[reaction.type_reaction.value]["mienne"] = True
+
+    def _reactions_serialisees(message_id: int) -> list[dict]:
+        par_type = reactions_par_message.get(message_id, {})
+        return [par_type[t.value] for t in TypeReaction if t.value in par_type]
+
     def _serialiser(m: MessageCercle, u: Utilisateur) -> dict:
         return {
             "id": m.id,
@@ -1395,17 +1505,8 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
             "date_envoi": m.date_envoi.isoformat(),
             "modifie": m.date_modification is not None,
             "est_moi": u.id == utilisateur.id,
-            "reactions": _reactions_du_message(session, m.id, utilisateur.id),
+            "reactions": _reactions_serialisees(m.id),
         }
-
-    auteur_parent = session.get(Utilisateur, parent.auteur_id)
-    lignes_reponses = session.exec(
-        select(MessageCercle, Utilisateur)
-        .where(MessageCercle.parent_message_id == message_id)
-        .where(MessageCercle.auteur_id == Utilisateur.id)
-        .where(MessageCercle.supprime == False)  # noqa: E712
-        .order_by(MessageCercle.date_envoi)
-    ).all()
 
     return {
         "parent": _serialiser(parent, auteur_parent) if auteur_parent else None,

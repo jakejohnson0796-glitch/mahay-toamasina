@@ -125,13 +125,13 @@ class TestSelectsVides(unittest.TestCase):
             },
             follow_redirects=False,
         )
-        self.assertEqual(reponse.status_code, 303, reponse.text[:300])
+        # Le parser doit accepter les selects vides sans 422, puis la
+        # validation metier refuse correctement un profil etudiant incomplet.
+        self.assertEqual(reponse.status_code, 200, reponse.text[:300])
         with Session(engine) as session:
             from sqlmodel import select
             u = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000099")).first()
-            self.assertIsNotNone(u)
-            self.assertIsNone(u.filiere_id)
-            self.assertIsNone(u.universite_id)
+            self.assertIsNone(u)
 
     # --- 5. POST /admin/referentiel/filieres/{id}/assigner-mention avec mention_id="" ---
     def test_assigner_mention_vide_retire_la_mention(self):

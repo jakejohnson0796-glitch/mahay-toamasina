@@ -4,6 +4,7 @@ et les valider (moderation) avant qu'ils soient publics.
 """
 from pathlib import Path
 from typing import Optional
+import secrets
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse
@@ -39,11 +40,10 @@ def _est_membre_cercle(session: Session, cercle_id: int, utilisateur_id: int) ->
 
 
 def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
-    """Reference facon 'manifeste de cargo portuaire' : TOA-<FILIERE>-<ANNEE>-<NUMERO>.
-    C'est le clin d'oeil a Toamasina (le port) qui sert de fil conducteur visuel."""
-    prefixe = "".join(c for c in filiere.nom.upper() if c.isalpha())[:3]
-    compteur = len(session.exec(select(Document)).all()) + 1
-    return f"TOA-{prefixe}-{annee}-{compteur:04d}"
+    """Reference unique sans charger/compter toute la table des documents."""
+    prefixe = "".join(c for c in filiere.nom.upper() if c.isalpha())[:3] or "DOC"
+    jeton = secrets.token_hex(4).upper()
+    return f"TOA-{prefixe}-{annee}-{jeton}"
 
 
 @router.get("/documents")
@@ -211,7 +211,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
         return redirection
 
     document = session.get(Document, document_id)
-    if not document:
+    if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
 
     with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
