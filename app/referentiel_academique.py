@@ -41,14 +41,15 @@ def _mention_offerte_dans_faculte(session: Session, mention_id: int, faculte_id:
 
 
 def _specialisation_dans_faculte(session: Session, mention_id: int, faculte_id: int, niveau: str) -> bool:
-    """Verifie qu'un parcours nomme existe a ce niveau dans la composante.
-    Les lignes historiques sans niveau restent considerees comme potentielles."""
+    """Verifie qu'un parcours nomme est explicitement rattache a ce niveau.
+    Une ligne historique sans niveau reste une donnee a completer, pas une
+    preuve qu'elle couvre tous les niveaux."""
     return session.exec(
         select(Filiere.id)
         .where(
             Filiere.mention_id == mention_id,
             Filiere.faculte_id == faculte_id,
-            or_(Filiere.niveau == niveau, Filiere.niveau.is_(None)),
+            Filiere.niveau == niveau,
         )
         .limit(1)
     ).first() is not None
