@@ -100,6 +100,20 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
         else session.get(Faculte, filiere.faculte_id) if filiere else None
     )
     mention = session.get(Mention, utilisateur.mention_id) if utilisateur.mention_id else None
+
+    # Compatibilite des anciens profils de tronc commun : avant faculte_id,
+    # une mention+niveau pouvait etre enregistree sans composante explicite.
+    # On ne choisit une composante par defaut que si la mention n'est offerte
+    # que par une seule faculte; plusieurs composantes => profil ambigu.
+    if faculte is None and mention is not None:
+        faculte_ids = {
+            f.faculte_id for f in session.exec(
+                select(Filiere).where(Filiere.mention_id == mention.id)
+            ).all()
+            if f.faculte_id
+        }
+        if len(faculte_ids) == 1:
+            faculte = session.get(Faculte, next(iter(faculte_ids)))
     mention_affichee = mention or (
         session.get(Mention, filiere.mention_id)
         if filiere and filiere.mention_id
@@ -153,7 +167,13 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
 
 
 def serialiser_profil_academique(profil: dict) -> dict:
-    """Contrat JSON canonique pour un profil membre de cercle."""
+    """Contrat JSON canonique hierarchique, avec retrocompatibilite."""
+    universite = profil.get("universite")
+    faculte = profil.get("faculte")
+    domaine = profil.get("domaine")
+    mention = profil.get("mention")
+    filiere = profil.get("filiere")
+
     def entite(obj):
         if not obj:
             return None
@@ -162,24 +182,34 @@ def serialiser_profil_academique(profil: dict) -> dict:
             data["ville"] = obj.ville
         return data
 
-    if not profil["universite"] or not profil["mention"] or not profil["niveau"]:
+    if not universite or not mention or not profil.get("niveau"):
         type_profil = "incomplet"
-    elif profil["filiere"] is not None:
+    elif filiere is not None:
         type_profil = "parcours"
     else:
         type_profil = "tronc_commun"
 
     return {
         "type": type_profil,
-        "universite": entite(profil["universite"]),
-        "composante": entite(profil["faculte"]),
-        "domaine": entite(profil["domaine"]),
-        "mention": entite(profil["mention"]),
-        "parcours": entite(profil["filiere"]),
-        "niveau": profil["niveau"],
-        "coherent": bool(profil["coherent"]),
+        "universite": entite(universite),
+        "composante": entite(faculte),
+        "domaine": entite(domaine),
+        "mention": entite(mention),
+        "parcours": entite(filiere),
+        "niveau": profil.get("niveau"),
+        "origine": {
+            "universite": universite.nom if universite else None,
+            "composante": faculte.nom if faculte else None,
+        },
+        "formation": {
+            "domaine": domaine.nom if domaine else None,
+            "mention": mention.nom if mention else None,
+            "parcours": "Tronc commun" if profil.get("tronc_commun") else (filiere.nom if filiere else None),
+            "niveau": profil.get("niveau"),
+        },
+        "coherent": bool(profil.get("coherent")),
+        "tronc_commun": bool(profil.get("tronc_commun")),
     }
-
 
 def erreur_choix_academique(
     session: Session, universite_id: Optional[int], faculte_id: Optional[int],
