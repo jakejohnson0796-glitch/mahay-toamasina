@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
+from sqlalchemy import case
 from sqlmodel import Session, select, or_, func
 
 from ..database import get_session, engine
@@ -316,7 +317,12 @@ def liste_cercles(
     TAILLE_PAGE = 30
     utilisateur = utilisateur_courant(request, session)
 
-    q_nettoye = (q or "").strip()
+    q_nettoye = " ".join((q or "").split())[:160]
+    # Une requete composee de plusieurs mots doit rester utile meme si
+    # l'utilisateur ne connait pas l'ordre exact du titre : chaque terme
+    # doit apparaitre dans au moins un champ searchable. On borne a 6 termes
+    # pour ne pas gonfler artificiellement la requete SQL.
+    termes_recherche = [t for t in q_nettoye.split(" ") if t][:6]
     domaine_id_nettoye = entier_ou_none(domaine_id)
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
@@ -332,18 +338,40 @@ def liste_cercles(
         select(CercleEtude)
         .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
         .outerjoin(Mention, Mention.id == CercleEtude.mention_id)
+        .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
         .where(CercleEtude.statut == StatutCercle.ACTIF)
         .where(or_(CercleEtude.mention_id.is_(None), Mention.est_active == True))  # noqa: E712
     )
 
-    if q_nettoye:
-        motif = f"%{q_nettoye}%"
-        requete = requete.where(or_(
-            CercleEtude.nom.ilike(motif),
-            CercleEtude.description.ilike(motif),
-            Mention.nom.ilike(motif),
-            Filiere.nom.ilike(motif),
-        ))
+    pertinence_recherche = None
+    if termes_recherche:
+        for terme in termes_recherche:
+            motif = f"%{terme}%"
+            requete = requete.where(or_(
+                CercleEtude.nom.ilike(motif),
+                CercleEtude.description.ilike(motif),
+                Domaine.nom.ilike(motif),
+                Mention.nom.ilike(motif),
+                Filiere.nom.ilike(motif),
+            ))
+
+        # Classe les correspondances fortes avant les simples sous-chaînes,
+        # sans introduire de recherche approximative couteuse ni de moteur
+        # externe. Le resultat reste deterministe a score egal.
+        scores = [
+            case(
+                (CercleEtude.nom.ilike(terme), 100),
+                (CercleEtude.nom.ilike(f"{terme}%"), 60),
+                (Mention.nom.ilike(f"{terme}%"), 45),
+                (Filiere.nom.ilike(f"{terme}%"), 45),
+                (Domaine.nom.ilike(f"{terme}%"), 35),
+                (CercleEtude.description.ilike(motif), 15),
+                else_=0,
+            )
+            for terme in termes_recherche
+            for motif in [f"%{terme}%"]
+        ]
+        pertinence_recherche = sum(scores)
 
     if domaine_id_nettoye:
         requete = requete.where(Mention.domaine_id == domaine_id_nettoye)
@@ -377,9 +405,13 @@ def liste_cercles(
     total_pages = max(1, (total_cercles + TAILLE_PAGE - 1) // TAILLE_PAGE)
     page_nettoyee = min(page_nettoyee, total_pages)
 
+    ordre = [CercleEtude.date_creation.desc(), CercleEtude.id.desc()]
+    if pertinence_recherche is not None:
+        ordre = [pertinence_recherche.desc()] + ordre
+
     cercles = session.exec(
         requete
-        .order_by(CercleEtude.date_creation.desc(), CercleEtude.id.desc())
+        .order_by(*ordre)
         .offset((page_nettoyee - 1) * TAILLE_PAGE)
         .limit(TAILLE_PAGE)
     ).all()
