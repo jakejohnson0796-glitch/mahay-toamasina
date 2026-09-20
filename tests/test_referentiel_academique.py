@@ -294,7 +294,8 @@ class TestCorrespondanceCercle(unittest.TestCase):
             u = Utilisateur(
                 nom="Tronc", telephone="0340000007", mot_de_passe_hash="x",
                 role=RoleUtilisateur.ETUDIANT,
-                universite_id=self.universite_id, mention_id=self.mention_id, niveau="L1",
+                universite_id=self.universite_id, faculte_id=self.faculte_id,
+                mention_id=self.mention_id, niveau="L1",
             )
             profil = contexte_profil_academique(u, session)
             self.assertTrue(profil["coherent"])
