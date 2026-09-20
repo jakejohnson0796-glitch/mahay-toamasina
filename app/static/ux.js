@@ -1,8 +1,7 @@
 /*
  * Gasy Mahay — interactions UX 2026
- * - routine quotidienne locale, explicitement limitée à cet appareil ;
- * - installation PWA non intrusive ;
- * - aucun tracking externe, aucune donnée personnelle ajoutée.
+ * Routine quotidienne locale + installation PWA.
+ * Aucune donnée personnelle ni tracking externe.
  */
 (function () {
   "use strict";
@@ -33,12 +32,12 @@
     function sauvegarder() {
       try {
         localStorage.setItem(cleRoutineDuJour(), JSON.stringify(etat));
-    } catch (_erreur) {
-      /* stockage local indisponible : l'UI reste utilisable */
+      } catch (_erreur) {
+        /* Le stockage local est optionnel : l'UI reste utilisable. */
+      }
     }
-  }
 
-  function appliquer() {
+    function appliquer() {
       const total = boutons.length;
       const terminees = boutons.filter(function (bouton) {
         return etat[bouton.dataset.routineId] === true;
@@ -47,24 +46,25 @@
       boutons.forEach(function (bouton) {
         const faite = etat[bouton.dataset.routineId] === true;
         bouton.setAttribute("aria-pressed", faite ? "true" : "false");
-        bouton.setAttribute("aria-label", faite ? "Etape terminée" : "Marquer cette étape comme terminée");
+        bouton.setAttribute(
+          "aria-label",
+          faite ? "Étape terminée" : "Marquer cette étape comme terminée"
+        );
 
         const etape = bouton.closest(".tb-routine-etape");
         if (etape) etape.dataset.terminee = faite ? "true" : "false";
-
         bouton.textContent = faite ? "✓" : "○";
       });
 
-      if (compteur) {
-        compteur.textContent = terminees + "/" + total + " aujourd'hui";
-      }
-
+      if (compteur) compteur.textContent = terminees + "/" + total + " aujourd'hui";
       if (remplissage) {
-        remplissage.style.width = total ? ((terminees / total) * 100) + "%" : "0%";
+        remplissage.style.width = total
+          ? ((terminees / total) * 100) + "%"
+          : "0%";
       }
 
       routine.dataset.complete = total > 0 && terminees === total ? "true" : "false";
-  }
+    }
 
     appliquer();
 
@@ -88,6 +88,7 @@
     } catch (_erreur) {}
 
     let evenementInstallation = null;
+
     window.addEventListener("beforeinstallprompt", function (evenement) {
       evenement.preventDefault();
       evenementInstallation = evenement;
