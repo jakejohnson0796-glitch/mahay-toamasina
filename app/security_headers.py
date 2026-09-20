@@ -45,7 +45,7 @@ _CSP = (
     # erreur visible, juste rien qui s'affiche) alors qu'une navigation
     # directe vers la meme URL fonctionne -- c'est le CSP, pas Supabase,
     # qui bloquait dans ce cas.
-    "img-src 'self' data: https://*.supabase.co; "
+    "img-src 'self' data: https://*.supabase.co https://images.unsplash.com; "
     "connect-src 'self' ws: wss: https:; "
     # worker-src : le SDK LiveKit cree des Web Workers internes (blob:)
     # pour le traitement audio/video sans bloquer l'interface.
