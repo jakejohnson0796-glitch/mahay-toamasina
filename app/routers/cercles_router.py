@@ -698,11 +698,6 @@ def creer_cercle(
     ))
     session.commit()
 
-    # Hierarchie ADMIN_GLOBAL > OWNER : tout administrateur global doit
-    # avoir acces automatique a ce nouvel espace, sans avoir a demander a
-    # le rejoindre (voir _assurer_membres_admins).
-    _assurer_membres_admins(session, cercle.id)
-
     return RedirectResponse(f"/cercles/{cercle.id}", status_code=303)
 
 
@@ -1756,8 +1751,6 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
         ):
             await websocket.close(code=4403)
             return
-        if utilisateur.role == RoleUtilisateur.ADMIN:
-            _assurer_membres_admins(session, cercle_id)
         if not _a_acces_cercle(session, cercle_id, user_id):
             await websocket.close(code=4403)
             return
