@@ -36,6 +36,8 @@ from app.models import (
     ThemeDuJour,
     TypeNotification,
     TypeReaction,
+    TypeDocument,
+    StatutDocument,
     Universite,
     Utilisateur,
 )
@@ -62,7 +64,7 @@ class TestIntegriteCercles(unittest.TestCase):
                 Document,
                 ThemeDuJour,
                 AbonnementEtudiant,
-                from_dummy if False else CercleEtude,
+                CercleEtude,
                 Utilisateur,
                 Filiere,
                 Mention,
@@ -268,12 +270,12 @@ class TestIntegriteCercles(unittest.TestCase):
                 reference="TEST-INTEGRITE-001",
                 titre="Document test",
                 matiere="Test",
-                type_document="FICHE",
+                type_document=TypeDocument.FICHE,
                 annee=2026,
                 filiere_id=self.filiere_id,
                 uploader_id=self.alice_id,
                 chemin_fichier="test.pdf",
-                statut="APPROUVE",
+                statut=StatutDocument.APPROUVE,
                 cercle_id=cercle.id,
             )
             theme = ThemeDuJour(
