@@ -24,7 +24,6 @@
   <p class="theme-jour-note">Meme theme pour tout le monde aujourd'hui — debattez-en dans vos cercles.</p>
 </div>
 
-{% if utilisateur %}
 <div class="carte-formulaire carte-recherche-cercles" style="margin-bottom:2rem;">
   <div class="entete-recherche-cercles">
     <div>
@@ -89,7 +88,6 @@
     </div>
   </form>
 </div>
-{% endif %}
 
 {% if utilisateur %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
@@ -258,26 +256,39 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
   const filiereInitiale = filiereSelect ? filiereSelect.value : "";
 
   async function chargerMentionsDuDomaine() {
-    if (!domaineSelect || !mentionSelect) return;
+    if (!domaineSelect || !mentionSelect || !domaineSelect.value) return;
     const valeurMention = mentionInitiale;
-    if (!domaineSelect.value) return;
     const mentions = await chargerOptions(`/api/academique/domaines/${domaineSelect.value}/mentions`);
-    mentionSelect.innerHTML = '<option value="">Toutes les mentions</option>' +
-      mentions.map(function (m) { return `<option value="${m.id}">${m.nom}</option>`; }).join("");
+    mentionSelect.replaceChildren();
+    const toutes = document.createElement("option");
+    toutes.value = ""; toutes.textContent = "Toutes les mentions"; mentionSelect.appendChild(toutes);
+    mentions.forEach(function (m) {
+      const option = document.createElement("option");
+      option.value = m.id;
+      option.textContent = m.nom;
+      mentionSelect.appendChild(option);
+    });
     if (mentions.some(function (m) { return String(m.id) === String(valeurMention); })) mentionSelect.value = valeurMention;
   }
 
   async function chargerParcours() {
     if (!mentionSelect || !niveauSelect || !filiereSelect) return;
     const valeurFiliere = filiereInitiale;
-    filiereSelect.innerHTML = '<option value="">Tous les parcours</option>';
+    filiereSelect.replaceChildren();
+    const tous = document.createElement("option");
+    tous.value = ""; tous.textContent = "Tous les parcours"; filiereSelect.appendChild(tous);
     if (!mentionSelect.value || !niveauSelect.value) return;
     const parcours = await chargerOptions(`/api/academique/mentions/${mentionSelect.value}/parcours-nationaux?niveau=${encodeURIComponent(niveauSelect.value)}`);
-    const fragments = ['<option value="">Tous les parcours</option>'];
-    parcours.forEach(function (p) { fragments.push(`<option value="${p.id}">${p.nom}</option>`); });
-    filiereSelect.innerHTML = fragments.join("");
+    parcours.forEach(function (p) {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent = p.nom;
+      filiereSelect.appendChild(option);
+    });
     if (valeurFiliere === "tronc_commun") {
-      const option = document.createElement("option"); option.value = "tronc_commun"; option.textContent = "Tronc commun"; filiereSelect.appendChild(option);
+      const option = document.createElement("option");
+      option.value = "tronc_commun"; option.textContent = "Tronc commun";
+      filiereSelect.appendChild(option);
     }
     if (valeurFiliere && Array.from(filiereSelect.options).some(function (o) { return o.value === String(valeurFiliere); })) filiereSelect.value = valeurFiliere;
   }
