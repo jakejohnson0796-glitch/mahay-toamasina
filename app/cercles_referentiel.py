@@ -187,10 +187,21 @@ def assurer_cercles_pour_filiere(session: Session, filiere: Filiere, createur: U
         return 0
 
     nom_normalise = _normaliser_nom_parcours(filiere.nom)
+    filieres_du_groupe = session.exec(
+        select(Filiere)
+        .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .where(
+            Filiere.mention_id == filiere.mention_id,
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+        )
+        .distinct()
+    ).all()
     filieres_du_groupe = [
-        f for f in session.exec(select(Filiere).where(Filiere.mention_id == filiere.mention_id)).all()
+        f for f in filieres_du_groupe
         if _normaliser_nom_parcours(f.nom) == nom_normalise
     ]
+    if not any(f.id == filiere.id for f in filieres_du_groupe):
+        return 0
     return assurer_cercles_pour_groupe_parcours(session, filiere.mention_id, filieres_du_groupe, createur)
 
 
@@ -231,6 +242,35 @@ def assurer_cercles_referentiel(session: Session) -> int:
     for filiere in filieres:
         cle = (filiere.mention_id, _normaliser_nom_parcours(filiere.nom))
         groupes.setdefault(cle, []).append(filiere)
+
+    # Archive aussi les cercles nationaux devenus orphelins d'une
+    # offre active. On conserve ceux qui ont de vrais membres pour ne pas
+    # déplacer silencieusement des étudiants ; ils sont signalés pour revue
+    # admin. Le groupe est défini par (mention, nom normalisé) et non par
+    # l'id de la filiere représentante, car une même formation peut être
+    # proposée dans plusieurs universités.
+    cercles_nationaux = session.exec(
+        select(CercleEtude).where(
+            CercleEtude.statut == StatutCercle.ACTIF,
+            CercleEtude.mention_id.is_not(None),
+            CercleEtude.filiere_id.is_not(None),
+            CercleEtude.niveau.is_not(None),
+        )
+    ).all()
+    membres_par_cercle = {}
+    if cercles_nationaux:
+        ids_cercles = [c.id for c in cercles_nationaux]
+        membres_par_cercle = dict(
+            session.exec(
+                select(MembreCercle.cercle_id, func.count())
+                .where(MembreCercle.cercle_id.in_(ids_cercles))
+                .group_by(MembreCercle.cercle_id)
+            ).all()
+        )
+
+    groupe_offert_par_nom = {}
+    for cle, groupe in groupes.items():
+        groupe_offert_par_nom[cle] = groupe
 
     total_crees = 0
     total_archives = 0
