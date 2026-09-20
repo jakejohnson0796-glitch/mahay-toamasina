@@ -73,7 +73,7 @@ def lister_mentions(composante_id: int, session: Session = Depends(get_session))
     mentions = session.exec(
         select(Mention).where(Mention.id.in_(ids_mentions)).order_by(Mention.nom)
     ).all()
-    return [{"id": m.id, "nom": m.nom} for m in mentions]
+    return [{"id": m.id, "nom": m.nom, "domaine_id": m.domaine_id} for m in mentions]
 
 
 @router.get("/composantes/{composante_id}/mentions/{mention_id}/filieres")
