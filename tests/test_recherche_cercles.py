@@ -90,7 +90,7 @@ class TestRechercheCercles(unittest.TestCase):
             ))
             session.add(CercleEtude(
                 nom="Droit prive — Licence 3", createur_id=createur_id,
-                mention_id=mention.id, filiere_id=autre_filiere.id, niveau="L3",
+                mention_id=autre_mention.id, filiere_id=autre_filiere.id, niveau="L3",
             ))
             session.commit()
             cls.universite_id = universite.id
