@@ -57,10 +57,6 @@ from app.models import Domaine, Faculte, Filiere, Mention, ProgrammeUniversitair
 
 FICHIER_PAR_DEFAUT = "mahay_universites_mentions_filieres_recensement.xlsx"
 
-# Perimetre : uniquement les 6 universites publiques (decide avec Jake
-# le 22/08/2026). Compare par nom NORMALISE (voir normaliser() plus
-# bas) -- pas besoin de faire correspondre exactement les accents ici,
-# ils sont retires avant comparaison.
 PERIMETRE_UNIVERSITES_PUBLIQUES = {
     "universite d'antananarivo",
     "universite d'antsiranana",
@@ -75,10 +71,7 @@ def normaliser(texte: str | None) -> str:
     """Normalise un texte pour COMPARAISON uniquement (jamais pour
     l'affichage/le stockage) : accents retires, apostrophes
     typographiques uniformisees, espaces multiples reduits, casse
-    ignoree. Permet de faire correspondre 'Université d'Antananarivo'
-    (fichier Excel) et 'Universite d'Antananarivo' (base actuelle,
-    sans accent), ou 'Physique et applications' / 'Physique et
-    Applications' (collision de casse presente dans le fichier)."""
+    ignoree."""
     if not texte:
         return ""
     texte = texte.strip().replace("\u2019", "'")
@@ -98,7 +91,6 @@ class Rapport:
     facultes_creees: list = field(default_factory=list)
     filieres_creees: list = field(default_factory=list)
     programmes_crees: int = 0
-    # --- Universites "curatees" (jamais de creation de Filiere) ---
     filieres_existantes_rattachees_domaine: list = field(default_factory=list)
     lignes_sans_correspondance: list = field(default_factory=list)
 
@@ -120,7 +112,7 @@ class Rapport:
         for u, f, fil in self.filieres_creees:
             print(f"   - [{u} / {f}] {fil}")
         print(f"Liens ProgrammeUniversitaire crees : {self.programmes_crees}")
-        print(f"\n--- Universites deja curatees a la main (aucune Filiere creee) ---")
+        print("\n--- Universites deja curatees a la main (aucune Filiere creee) ---")
         print(f"Filieres existantes rattachees a un Domaine : {len(self.filieres_existantes_rattachees_domaine)}")
         for u, fil, dom in self.filieres_existantes_rattachees_domaine:
             print(f"   - [{u}] {fil} -> domaine {dom}")
@@ -155,45 +147,39 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
     lignes = lire_lignes_excel(chemin_excel)
 
     with Session(engine) as session:
-        # --- Index en memoire de l'existant, cle = nom normalise ---
         universites_par_nom = {normaliser(u.nom): u for u in session.exec(select(Universite)).all()}
         domaines_par_nom = {normaliser(d.nom): d for d in session.exec(select(Domaine)).all()}
-        mentions_par_nom = {normaliser(m.nom): m for m in session.exec(select(Mention)).all()}
+
+        # Plusieurs versions historiques d'une meme Mention peuvent
+        # exister en base a cause de variantes de casse/accents. On
+        # conserve toutes les variantes au lieu d'en choisir une au hasard.
+        mentions_par_nom: defaultdict[str, list[Mention]] = defaultdict(list)
+        for mention in session.exec(select(Mention)).all():
+            mentions_par_nom[normaliser(mention.nom)].append(mention)
+
         facultes_par_cle = {
             (f.universite_id, normaliser(f.nom)): f for f in session.exec(select(Faculte)).all()
         }
-        filieres_par_faculte = defaultdict(dict)  # faculte_id -> {nom_normalise: Filiere}
+        filieres_par_faculte = defaultdict(dict)
         for fil in session.exec(select(Filiere)).all():
             filieres_par_faculte[fil.faculte_id][normaliser(fil.nom)] = fil
         programmes_existants = {
             (p.universite_id, p.filiere_id) for p in session.exec(select(ProgrammeUniversitaire)).all()
         }
 
-        # --- Universites deja "curatees" = ont au moins une Filiere
-        #     existante rattachee (peu importe la faculte). Determine
-        #     dynamiquement plutot que code en dur : reste correct si
-        #     Fianarantsoa/Mahajanga/Toliara/Antsiranana recoivent un
-        #     jour des Filiere par un autre moyen. ---
         universites_curatees_ids = {
             fac.universite_id
             for fac in session.exec(select(Faculte)).all()
             if filieres_par_faculte.get(fac.id)
         }
 
-        # --- Ne garder que les lignes du perimetre (6 universites
-        #     publiques), et filtrer les lignes dont l'universite du
-        #     fichier ne correspond a AUCUNE Universite en base
-        #     (ne devrait pas arriver pour le perimetre public, mais
-        #     on ne veut jamais planter silencieusement / inventer). ---
         lignes_retenues = []
         for ligne in lignes:
-            cle = normaliser(ligne["universite"])
-            if cle not in PERIMETRE_UNIVERSITES_PUBLIQUES:
+            if normaliser(ligne["universite"]) not in PERIMETRE_UNIVERSITES_PUBLIQUES:
                 rapport.universites_hors_perimetre.add(ligne["universite"])
                 continue
             lignes_retenues.append(ligne)
 
-        # === ETAPE 1 : Domaine (national, dedup par nom normalise) ===
         for ligne in lignes_retenues:
             cle = normaliser(ligne["domaine"])
             if not cle or cle in domaines_par_nom:
@@ -206,14 +192,11 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             domaines_par_nom[cle] = dom
             rapport.domaines_crees.append(ligne["domaine"])
 
-        # === ETAPE 2 : Mention (nationale, dedup par nom normalise) +
-        #     rattachement Domaine SEULEMENT si non ambigu ===
         domaine_textes_par_mention = defaultdict(set)
         for ligne in lignes_retenues:
             cle_mention = normaliser(ligne["mention"])
-            if not cle_mention:
-                continue
-            domaine_textes_par_mention[cle_mention].add(ligne["domaine"])
+            if cle_mention:
+                domaine_textes_par_mention[cle_mention].add(ligne["domaine"])
 
         for ligne in lignes_retenues:
             cle_mention = normaliser(ligne["mention"])
@@ -225,47 +208,48 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                     session.add(ment)
                     session.commit()
                     session.refresh(ment)
-                mentions_par_nom[cle_mention] = ment
+                mentions_par_nom[cle_mention].append(ment)
                 rapport.mentions_creees.append(ligne["mention"])
 
         for cle_mention, textes_domaine in domaine_textes_par_mention.items():
-            mention = mentions_par_nom[cle_mention]
-            if mention.domaine_id is not None:
-                continue  # deja rattachee (import precedent ou admin) : ne jamais ecraser
+            mentions_trouvees = mentions_par_nom[cle_mention]
             textes_normalises = {normaliser(t) for t in textes_domaine if t}
             if len(textes_normalises) != 1:
-                rapport.mentions_domaine_ambigu[mention.nom] = textes_domaine
+                rapport.mentions_domaine_ambigu[cle_mention] = textes_domaine
                 continue
             domaine = domaines_par_nom.get(next(iter(textes_normalises)))
             if domaine is None:
                 continue
-            mention.domaine_id = domaine.id
-            if not dry_run:
-                session.add(mention)
-                session.commit()
-            rapport.mentions_domaine_rattache.append((mention.nom, domaine.nom))
 
-        # === ETAPE 3 : selon curatee ou vide ===
+            # Rattache le Domaine a TOUTES les variantes historiques de
+            # cette Mention dont le domaine est encore NULL. Ainsi une
+            # ligne "Sciences de gestion" n'est pas perdue si une ancienne
+            # migration avait deja "Sciences de Gestion" en base, et vice
+            # versa. On ne remplace jamais un Domaine deja renseigne.
+            for mention in mentions_trouvees:
+                if mention.domaine_id is not None:
+                    continue
+                mention.domaine_id = domaine.id
+                if not dry_run:
+                    session.add(mention)
+                    session.commit()
+                rapport.mentions_domaine_rattache.append((mention.nom, domaine.nom))
+
         for ligne in lignes_retenues:
-            cle_universite = normaliser(ligne["universite"])
-            universite = universites_par_nom.get(cle_universite)
+            universite = universites_par_nom.get(normaliser(ligne["universite"]))
             if universite is None:
-                # Ne devrait pas arriver (verifie a l'etape perimetre),
-                # garde-fou pour ne jamais planter sur une donnee
-                # inattendue.
                 rapport.lignes_sans_correspondance.append(
                     (ligne["universite"], ligne["composante"], ligne["domaine"], ligne["mention"], ligne["parcours"])
                 )
                 continue
 
-            mention = mentions_par_nom.get(normaliser(ligne["mention"]))
+            variantes_mention = mentions_par_nom.get(normaliser(ligne["mention"]), [])
+            mention = next(
+                (candidate for candidate in variantes_mention if candidate.domaine_id is not None),
+                variantes_mention[0] if variantes_mention else None,
+            )
 
             if universite.id in universites_curatees_ids:
-                # --- Universite curatee a la main : jamais de nouvelle
-                #     Filiere. On cherche uniquement une correspondance
-                #     EXACTE (nom normalise) parmi les Filiere deja
-                #     rattachees a cette universite, pour lui rattacher
-                #     un Domaine via sa Mention si elle n'en a pas. ---
                 cle_parcours = normaliser(ligne["parcours"])
                 filiere_existante = None
                 for fac in session.exec(select(Faculte).where(Faculte.universite_id == universite.id)).all():
@@ -290,7 +274,6 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                     )
                 continue
 
-            # --- Universite "vide" : import complet ---
             cle_faculte = (universite.id, normaliser(ligne["composante"]))
             faculte = facultes_par_cle.get(cle_faculte)
             if faculte is None:
