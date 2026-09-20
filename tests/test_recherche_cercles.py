@@ -23,13 +23,13 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_DB_FICHIER}"
 os.environ.setdefault("SESSION_SECRET_KEY", "cle-de-test-uniquement-jamais-en-production")
 
 from starlette.testclient import TestClient  # noqa: E402
-from sqlmodel import Session  # noqa: E402
+from sqlmodel import Session, select  # noqa: E402
 
 from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
-    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere,
+    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere, ProgrammeUniversitaire,
 )
 
 
