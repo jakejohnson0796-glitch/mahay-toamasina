@@ -30,3 +30,10 @@
 .ops-mobile-note{display:none;margin-top:.6rem;color:var(--content-text-muted);font-size:.55rem}
 @media (max-width:1050px){.ops-hero,.ops-status-hero,.ops-profile{grid-template-columns:1fr}.ops-admin-groups{grid-template-columns:1fr 1fr}.ops-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ops-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:740px){.ops-page{padding:.75rem .75rem 2rem}.ops-hero{padding:1.15rem;border-radius:18px}.ops-hero h1{font-size:clamp(2.1rem,11vw,3rem)}.ops-grid,.ops-grid-2,.ops-admin-groups,.ops-metric-grid,.ops-payment-grid{grid-template-columns:1fr}.ops-search{align-items:stretch;flex-direction:column}.ops-search .bouton{width:100%}.ops-mobile-note{display:block}.ops-table{min-width:920px}.ops-actions{justify-content:flex-start}}
+
+.ops-score-0{--security-score:0%}
+.ops-score-1{--security-score:20%}
+.ops-score-2{--security-score:40%}
+.ops-score-3{--security-score:60%}
+.ops-score-4{--security-score:80%}
+.ops-score-5{--security-score:100%}
