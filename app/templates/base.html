@@ -33,11 +33,11 @@
 <link rel="stylesheet" href="/static/ux.css?v={{ version_asset('ux.css') }}">
 <link rel="stylesheet" href="/static/refonte.css?v={{ version_asset('refonte.css') }}">
 <link rel="stylesheet" href="/static/csp-utilities.css?v={{ version_asset('csp-utilities.css') }}">
-{% if request.url.path in ["/connexion", "/inscription"] %}
+{% if request.url.path in ["/connexion", "/inscription", "/mot-de-passe-oublie", "/mot-de-passe-oublie/code", "/connexion/2fa"] %}
 <link rel="stylesheet" href="/static/auth.css?v={{ version_asset('auth.css') }}">
 {% endif %}
 </head>
-<body class="{% if request.url.path in ['/connexion', '/inscription'] %}page-auth{% endif %}">
+<body class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}">
 {% from "components/icone.html" import icone %}
 {% from "components/avatar.html" import avatar_utilisateur %}
 {#
