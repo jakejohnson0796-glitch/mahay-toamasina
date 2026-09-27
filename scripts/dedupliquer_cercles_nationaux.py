@@ -457,6 +457,16 @@ def _fusionner_groupe(
     survivant = max(cercles_du_groupe, key=score)
     perdants = [c for c in cercles_du_groupe if c.id != survivant.id]
 
+    # Libère immédiatement la clé SQL de tout perdant avant de pouvoir
+    # canonicaliser le survivant vers sa Filiere représentante. Sans ce
+    # flush préalable, SQLite/PostgreSQL peuvent voir simultanément les deux
+    # lignes ACTIF et refuser temporairement la fusion.
+    if not dry_run:
+        for perdant in perdants:
+            perdant.statut = StatutCercle.ARCHIVE
+            session.add(perdant)
+        session.flush()
+
     if cle[0] == "tronc":
         nb_pseudo_tronc = sum(
             1
@@ -493,8 +503,9 @@ def _fusionner_groupe(
         _fusionner_demandes_adhesion(session, survivant, perdant, rapport, dry_run)
         _fusionner_dependances(session, survivant, perdant, rapport, dry_run)
 
+        # Le perdant a déjà été marqué ARCHIVE juste avant la
+        # canonicalisation pour libérer immédiatement les index uniques.
         if not dry_run:
-            perdant.statut = StatutCercle.ARCHIVE
             session.add(perdant)
         rapport.cercles_archives.append(perdant.id)
 
