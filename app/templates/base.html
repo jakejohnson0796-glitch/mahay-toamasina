@@ -131,15 +131,59 @@
       <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> Contact</a>
     </nav>
 
-    <div class="tb-sidebar-compte">
-      {% if utilisateur is defined and utilisateur %}
-      {{ avatar_utilisateur(utilisateur, taille=27) }}
-      <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
-      {% endif %}
-      <form method="post" action="/deconnexion" style="margin-left:auto; display:inline;">
-        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-        <button type="submit" class="tb-sidebar-lien" style="border:0; background:transparent; cursor:pointer; padding:0.3rem 0.4rem;" aria-label="Deconnexion" title="Deconnexion">{{ icone("securite", 15) }}</button>
-      </form>
+    <div class="tb-sidebar-compte-zone">
+      <button
+        type="button"
+        class="tb-sidebar-compte"
+        id="bouton-menu-compte"
+        aria-expanded="false"
+        aria-controls="menu-compte-utilisateur"
+        aria-haspopup="true"
+      >
+        {% if utilisateur is defined and utilisateur %}
+        {{ avatar_utilisateur(utilisateur, taille=30) }}
+        <span class="tb-sidebar-compte-identite">
+          <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
+          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% else %}Mon compte{% endif %}</span>
+        </span>
+        {% endif %}
+        <span class="tb-sidebar-compte-chevron" aria-hidden="true">⌄</span>
+      </button>
+
+      <div class="tb-menu-compte" id="menu-compte-utilisateur" hidden>
+        <div class="tb-menu-compte-entete">
+          <strong>{% if utilisateur is defined and utilisateur %}{{ utilisateur.nom }}{% else %}Mon compte{% endif %}</strong>
+          <span>Actions rapides</span>
+        </div>
+
+        <p class="tb-menu-compte-groupe">Mon espace</p>
+        <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord</span></a>
+        <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Mon profil &amp; sécurité</span></a>
+        <a class="tb-menu-compte-item" href="/profil/academique"><span class="tb-menu-compte-icone">{{ icone("universites", 16) }}</span><span>Profil académique</span></a>
+
+        <p class="tb-menu-compte-groupe">Apprendre</p>
+        <a class="tb-menu-compte-item" href="/documents"><span class="tb-menu-compte-icone">{{ icone("documents", 16) }}</span><span>Mes documents</span></a>
+        <a class="tb-menu-compte-item" href="/quiz"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>Quiz IA</span></a>
+        <a class="tb-menu-compte-item" href="/tuteur"><span class="tb-menu-compte-icone">{{ icone("tuteur", 16) }}</span><span>Tuteur IA</span></a>
+
+        <p class="tb-menu-compte-groupe">Collaborer</p>
+        <a class="tb-menu-compte-item" href="/cercles"><span class="tb-menu-compte-icone">{{ icone("cercles", 16) }}</span><span>Mes cercles</span></a>
+        <a class="tb-menu-compte-item" href="/classe"><span class="tb-menu-compte-icone">{{ icone("classe", 16) }}</span><span>Classe virtuelle</span></a>
+
+        <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
+        <a class="tb-menu-compte-item" href="/abonnement"><span class="tb-menu-compte-icone">{{ icone("premium", 16) }}</span><span>Abonnement</span></a>
+        <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
+        <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter Gasy Mahay</span></a>
+        {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
+        <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>Administration</span></a>
+        {% endif %}
+
+        <div class="tb-menu-compte-separateur"></div>
+        <form method="post" action="/deconnexion" class="tb-menu-compte-deconnexion">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Se déconnecter</span></button>
+        </form>
+      </div>
     </div>
     <button type="button" id="bouton-theme" class="tb-toggle-theme" aria-label="Changer d'apparence (clair/sombre)" title="Changer d'apparence">
       <span class="tb-toggle-theme-icone tb-toggle-theme-icone-lune">{{ icone("jours_restants", 14) }}</span>
