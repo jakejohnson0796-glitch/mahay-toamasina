@@ -2019,27 +2019,57 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
             donnees_recues = await websocket.receive_json()
             if limite_depassee(f"ws-cercle:user:{user_id}:{cercle_id}", 60, 60):
                 continue
+
             contenu = (donnees_recues.get("contenu") or "").strip()[:LONGUEUR_MAX_MESSAGE]
             if not contenu:
                 continue
-            # parent_message_id : presence d'une reponse (§5). mentions :
-            # liste d'IDs choisis explicitement par l'autocompletion cote
-            # client (§7) — on ne re-parse jamais le texte pour deviner
-            # qui est mentionne, ce qui serait fragile (accents, noms
-            # composes, homonymes) et non fiable pour declencher une
-            # notification.
+
             parent_message_id = donnees_recues.get("parent_message_id")
             mentions_demandees = donnees_recues.get("mentions") or []
 
+            # Revalidation post-connexion : un changement de mot de passe,
+            # une desactivation de 2FA, un bannissement ou le retrait du
+            # membre doivent aussi invalider une connexion WebSocket deja
+            # ouverte. On ne fait jamais confiance a l'etat capture au
+            # moment du handshake.
             with Session(engine) as session:
+                utilisateur_frais = session.get(Utilisateur, user_id)
+                cercle_frais = session.get(CercleEtude, cercle_id)
+                if (
+                    not utilisateur_frais
+                    or not session_utilisateur_valide(websocket.session, utilisateur_frais)
+                    or utilisateur_frais.banni
+                ):
+                    await websocket.close(code=4401)
+                    break
+                if not cercle_frais or cercle_frais.statut != StatutCercle.ACTIF:
+                    await websocket.close(code=4403)
+                    break
+                if not _a_acces_cercle(session, cercle_id, user_id):
+                    await websocket.close(code=4403)
+                    break
+
+                abonnement = subscription.obtenir_abonnement(session, user_id)
+                if abonnement:
+                    abonnement = subscription.synchroniser_expiration(session, abonnement)
+                if not subscription.acces_premium_valide(abonnement):
+                    await websocket.close(code=4402)
+                    break
+
+                nom_auteur = utilisateur_frais.nom
+                auteur_a_une_photo = bool(utilisateur_frais.photo_chemin)
+
                 parent = None
                 if parent_message_id is not None:
                     parent = session.get(MessageCercle, parent_message_id)
-                    # Reponse invalide (parent inexistant/supprime/autre
-                    # cercle, ou reponse-a-une-reponse) : on degrade
-                    # silencieusement en message normal plutot que de
-                    # rejeter tout l'envoi pour une incoherence mineure.
-                    if not parent or parent.cercle_id != cercle_id or parent.supprime or parent.parent_message_id is not None:
+                    # Une reponse ne peut viser qu'un message principal actif
+                    # du meme cercle.
+                    if (
+                        not parent
+                        or parent.cercle_id != cercle_id
+                        or parent.supprime
+                        or parent.parent_message_id is not None
+                    ):
                         parent_message_id = None
                         parent = None
 
@@ -2058,18 +2088,29 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 # se mentionner soi-meme.
                 ids_membres_valides = {
                     m.utilisateur_id
-                    for m in session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)).all()
+                    for m in session.exec(
+                        select(MembreCercle).where(MembreCercle.cercle_id == cercle_id)
+                    ).all()
                 }
                 mentions_valides = {
-                    int(uid) for uid in mentions_demandees
-                    if isinstance(uid, (int, str)) and str(uid).isdigit() and int(uid) in ids_membres_valides and int(uid) != user_id
+                    int(uid)
+                    for uid in mentions_demandees
+                    if isinstance(uid, (int, str))
+                    and str(uid).isdigit()
+                    and int(uid) in ids_membres_valides
+                    and int(uid) != user_id
                 }
                 for uid_mentionne in mentions_valides:
-                    session.add(MessageMention(message_id=message.id, utilisateur_mentionne_id=uid_mentionne))
+                    session.add(
+                        MessageMention(
+                            message_id=message.id,
+                            utilisateur_mentionne_id=uid_mentionne,
+                        )
+                    )
                 session.commit()
+
                 if mentions_valides:
-                    cercle_actuel = session.get(CercleEtude, cercle_id)
-                    nom_cercle = cercle_actuel.nom if cercle_actuel else "un cercle"
+                    nom_cercle = cercle_frais.nom
                     for uid_mentionne in mentions_valides:
                         _creer_notification(
                             session,
@@ -2092,13 +2133,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                         message_id=message.id,
                     )
 
-                # Capture des valeurs scalaires AVANT la fermeture de la
-                # session (fin du bloc `with`) : les commits precedents
-                # (message, mentions) ont expire les attributs de `message`
-                # (expire_on_commit par defaut), donc y acceder apres la
-                # fermeture de la session levait DetachedInstanceError et
-                # faisait planter toute la diffusion websocket a chaque
-                # envoi (voir logs Render du 25/08).
+                # Captures scalaires avant fermeture de session.
                 id_message = message.id
                 date_envoi_message = message.date_envoi
 
@@ -2114,5 +2149,9 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 "date_envoi": date_envoi_message.isoformat(),
             })
     except WebSocketDisconnect:
+        pass
+    finally:
+        # Nettoyage garanti aussi quand le serveur ferme la socket lui-meme
+        # apres une revalidation d'authentification/adhesion.
         gestionnaire.deconnecter(cercle_id, websocket)
         await gestionnaire.diffuser_presence(cercle_id)

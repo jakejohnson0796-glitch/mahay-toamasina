@@ -188,18 +188,33 @@ def upload_document(
 
 @router.get("/documents/{document_id}/telecharger")
 def telecharger_document(request: Request, document_id: int, session: Session = Depends(get_session)):
-    host = request.client.host if request.client else "inconnu"
-    if limite_depassee(f"ia-document-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-document-quiz:ip:{host}", 12, 300):
-        return RedirectResponse("/documents?erreur=trop_de_generations", status_code=303)
+    """Telechargement d'un document approuve.
 
+    Les documents generaux restent publics apres moderation. Un document
+    rattache a un cercle, en revanche, reste prive aux membres de ce cercle
+    (meme garde-fou que la liste /documents?cercle_id=...).
+    """
+    utilisateur = utilisateur_courant(request, session)
     document = session.get(Document, document_id)
+
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
+
+    if document.cercle_id is not None:
+        if not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+
+    host = request.client.host if request.client else "inconnu"
+    if utilisateur:
+        if limite_depassee(f"telechargement-document:user:{utilisateur.id}", 60, 300):
+            return RedirectResponse("/documents?erreur=trop_de_telechargements", status_code=303)
+    elif limite_depassee(f"telechargement-document:ip:{host}", 60, 300):
+        return RedirectResponse("/documents?erreur=trop_de_telechargements", status_code=303)
+
     document.nb_telechargements += 1
     session.add(document)
     session.commit()
 
-    utilisateur = utilisateur_courant(request, session)
     if utilisateur:
         session.add(ConsultationDocument(utilisateur_id=utilisateur.id, document_id=document.id))
         session.commit()
