@@ -81,7 +81,7 @@
           </div>
           <span class="ops-activity-count">{{ jours_inactivite }} j</span>
         </div>
-        <p class="ops-security-card-intro" style="margin-top:.65rem;">Dernière activité : {{ utilisateur.derniere_activite_le.strftime("%d/%m/%Y à %H:%M") if utilisateur.derniere_activite_le else "pas encore enregistrée" }} UTC.</p>
+        <p class="ops-security-card-intro ops-activity-last">Dernière activité : {{ utilisateur.derniere_activite_le.strftime("%d/%m/%Y à %H:%M") if utilisateur.derniere_activite_le else "pas encore enregistrée" }} UTC.</p>
       </section>
 
       <section class="ops-security-card">
