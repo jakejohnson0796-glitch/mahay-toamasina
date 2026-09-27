@@ -11,7 +11,7 @@
       <div class="quiz-run-topbar">
         <div>
           <span class="ai-kicker">Quiz en cours{% if tentative.mode_examen %} · Mode examen{% endif %}</span>
-          <h1 id="quiz-run-title" class="quiz-question-title" style="margin:.4rem 0 0;">{{ tentative.matiere }}</h1>
+          <h1 id="quiz-run-title" class="quiz-run-title">{{ tentative.matiere }}</h1>
         </div>
         <div class="quiz-run-meta" aria-label="Paramètres du quiz">
           <span class="quiz-chip quiz-chip-primary">{{ tentative.niveau }}</span>
@@ -25,9 +25,7 @@
           <span data-quiz-progress-text>0 / {{ questions|length }} répondues</span>
           <span data-quiz-progress-percent>0%</span>
         </div>
-        <div class="quiz-progress-track">
-          <span class="quiz-progress-fill" data-quiz-progress-fill></span>
-        </div>
+        <progress class="quiz-progress-native" data-quiz-progress-fill value="0" max="{{ questions|length }}">0 / {{ questions|length }}</progress>
       </div>
 
       <form
