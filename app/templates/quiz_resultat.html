@@ -16,9 +16,7 @@
       <span class="ai-kicker">Bilan de ton entraînement</span>
       <h1 id="resultat-title">{{ tentative.matiere }}</h1>
       <p>{{ tentative.niveau }} · {{ tentative.difficulte }} · {{ tentative.nb_questions }} questions{% if tentative.mode_examen %} · examen blanc{% endif %}</p>
-      <div class="ai-result-progress" aria-label="Progression du score">
-        <span class="ai-result-progress-fill" style="--score-width: {{ pourcentage }}%;"></span>
-      </div>
+      <progress class="ai-result-native-progress" value="{{ tentative.score }}" max="{{ tentative.nb_questions }}" aria-label="Score du quiz">{{ tentative.score }}/{{ tentative.nb_questions }}</progress>
       <div class="ai-result-actions">
         <a class="bouton bouton-primaire" href="/quiz">Nouveau quiz</a>
         <a class="bouton bouton-secondaire" href="/quiz/historique">Voir mon historique</a>
