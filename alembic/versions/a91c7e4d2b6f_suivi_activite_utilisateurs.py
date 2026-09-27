@@ -23,11 +23,6 @@ def upgrade() -> None:
         ["derniere_activite_le"],
     )
 
-    if op.get_bind().dialect.name == "postgresql":
-        op.execute(
-            "ALTER TYPE typenotification ADD VALUE IF NOT EXISTS 'inactivite_3_jours'"
-        )
-
 
 def downgrade() -> None:
     op.drop_index(
