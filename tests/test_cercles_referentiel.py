@@ -52,9 +52,9 @@ class TestCerclesReferentiel(unittest.TestCase):
             session.add(mention); session.commit(); session.refresh(mention)
             self.mention_id = mention.id
 
-    def test_cree_un_cercle_par_niveau_pour_une_filiere_avec_mention(self):
+    def test_cree_un_cercle_pour_le_niveau_verifie_dune_filiere(self):
         with Session(self.engine) as session:
-            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
+            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id, niveau="L3")
             session.add(filiere); session.commit(); session.refresh(filiere)
             session.add(ProgrammeUniversitaire(
                 universite_id=self.universite_id,
@@ -64,11 +64,11 @@ class TestCerclesReferentiel(unittest.TestCase):
             session.commit()
 
             total = assurer_cercles_referentiel(session)
-            self.assertEqual(total, len(NIVEAUX))
+            self.assertEqual(total, 1)
 
             cercles = session.exec(select(CercleEtude)).all()
-            self.assertEqual(len(cercles), len(NIVEAUX))
-            self.assertEqual({c.niveau for c in cercles}, set(NIVEAUX))
+            self.assertEqual(len(cercles), 1)
+            self.assertEqual({c.niveau for c in cercles}, {"L3"})
             for c in cercles:
                 self.assertEqual(c.mention_id, self.mention_id)
                 self.assertEqual(c.filiere_id, filiere.id)
@@ -98,7 +98,7 @@ class TestCerclesReferentiel(unittest.TestCase):
             total_second_appel = assurer_cercles_referentiel(session)
 
             self.assertEqual(total_second_appel, 0)
-            self.assertEqual(len(session.exec(select(CercleEtude)).all()), len(NIVEAUX))
+            self.assertEqual(len(session.exec(select(CercleEtude)).all()), 1)
 
     def test_cercle_deja_cree_manuellement_pour_un_niveau_nest_pas_duplique(self):
         """Si un cercle national existe deja pour un niveau donne (cree
@@ -123,7 +123,7 @@ class TestCerclesReferentiel(unittest.TestCase):
             session.commit()
 
             total = assurer_cercles_referentiel(session)
-            self.assertEqual(total, len(NIVEAUX) - 1)
+            self.assertEqual(total, 0)
             self.assertEqual(len(session.exec(select(CercleEtude)).all()), len(NIVEAUX))
 
     def test_createur_devient_membre_avec_role_createur(self):
@@ -143,7 +143,7 @@ class TestCerclesReferentiel(unittest.TestCase):
             membres = session.exec(
                 select(MembreCercle).where(MembreCercle.utilisateur_id == self.admin_id)
             ).all()
-            self.assertEqual(len(membres), len(NIVEAUX))
+            self.assertEqual(len(membres), 1)
             for m in membres:
                 self.assertEqual(m.role, RoleMembreCercle.CREATEUR)
 
