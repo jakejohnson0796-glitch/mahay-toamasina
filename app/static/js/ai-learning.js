@@ -42,7 +42,10 @@
       const repondues = reponsesCount();
       const pourcentage = total ? (repondues / total) * 100 : 0;
       if (texte) texte.textContent = repondues + " / " + total + " répondues";
-      if (remplissage) remplissage.style.setProperty("--quiz-progress-width", pourcentage + "%");
+      if (remplissage) {
+        remplissage.value = repondues;
+        remplissage.max = total;
+      }
 
       questions.forEach(function (question) {
         const item = nav ? nav.querySelector('[data-nav-index="' + question.dataset.quizIndex + '"]') : null;
