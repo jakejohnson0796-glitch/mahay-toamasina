@@ -1,57 +1,73 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
-{% from "components/signal.html" import signal %}
+
 {% block titre %}Historique Quiz IA — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow">Quiz IA</p>
-<h2>Mon historique de quiz</h2>
+<div class="ai-learning-page">
+  <section class="ai-section" aria-labelledby="historique-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Quiz IA · ma progression</span>
+        <h2 id="historique-title">Mes entraînements</h2>
+        <p>Retrouve tes tentatives terminées et utilise les corrections pour cibler tes prochaines révisions.</p>
+      </div>
+      <a class="bouton bouton-primaire" href="/quiz">Créer un nouveau quiz</a>
+    </div>
 
-<div class="quiz-stats-grille">
-  <div class="quiz-carte-stat quiz-stat-orange">
-    <span class="quiz-stat-icone">{{ icone("quiz", 18) }}</span>
-    <span class="quiz-stat-nombre">{{ stats.nb_quiz }}</span>
-    <span class="quiz-stat-label">Quiz realises</span>
-  </div>
-  <div class="quiz-carte-stat quiz-stat-vert">
-    <span class="quiz-stat-icone">{{ icone("tuteur", 18) }}</span>
-    <span class="quiz-stat-nombre">{{ stats.score_moyen_pourcent }}%</span>
-    <span class="quiz-stat-label">Score moyen</span>
-  </div>
-  {% if stats.meilleure_matiere %}
-  <div class="quiz-carte-stat quiz-stat-bleu">
-    <span class="quiz-stat-icone">{{ icone("premium", 18) }}</span>
-    <span class="quiz-stat-nombre quiz-stat-nombre-texte">{{ stats.meilleure_matiere }}</span>
-    <span class="quiz-stat-label">Meilleure matiere</span>
-  </div>
-  {% endif %}
-</div>
+    <div class="ai-history-grid">
+      <aside class="ai-history-stats" aria-label="Statistiques de progression">
+        <div class="ai-history-stat"><strong>{{ stats.nb_quiz }}</strong><span>quiz terminés</span></div>
+        <div class="ai-history-stat"><strong>{{ stats.score_moyen_pourcent }}%</strong><span>score moyen</span></div>
+        {% if stats.meilleure_matiere %}
+        <div class="ai-history-stat"><strong>{{ stats.meilleure_matiere }}</strong><span>matière avec ton meilleur résultat</span></div>
+        {% endif %}
+        <div class="ai-panel ai-form-card">
+          <div class="ai-form-header">
+            <div>
+              <h3>Continuer à apprendre</h3>
+              <p>Utilise le Tuteur IA lorsqu'une notion reste difficile après une correction.</p>
+            </div>
+          </div>
+          <a class="bouton bouton-secondaire" href="/tuteur">Ouvrir le Tuteur IA</a>
+        </div>
+      </aside>
 
-{% if tentatives %}
-<table class="table-manifeste">
-  <thead><tr><th>Matiere</th><th>Niveau</th><th>Difficulte</th><th>Score</th><th>Date</th><th></th></tr></thead>
-  <tbody>
-    {% for t in tentatives %}
-    <tr>
-      <td>{{ t.matiere }}</td>
-      <td>{{ t.niveau }}</td>
-      <td>{{ t.difficulte }}</td>
-      <td>
-        <span class="tampon {{ 'tampon-approuve' if (t.score / t.nb_questions) >= 0.5 else 'tampon-rejete' }}">{{ signal("approuve" if (t.score / t.nb_questions) >= 0.5 else "rejete") }}{{ t.score }}/{{ t.nb_questions }}</span>
-      </td>
-      <td>{{ t.date_soumission.strftime("%d/%m/%Y") }}</td>
-      <td><a href="/quiz/{{ t.id }}/resultat">Revoir</a></td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<div class="quiz-etat-vide">
-  <span>{{ icone("quiz", 28) }}</span>
-  <p><strong>Aucun quiz termine pour le moment.</strong></p>
-  <a class="bouton bouton-primaire" href="/quiz">Lancer un quiz &rarr;</a>
-</div>
-{% endif %}
+      <div class="ai-history-list">
+        {% if tentatives %}
+          {% for t in tentatives %}
+          {% set pct = (t.score / t.nb_questions * 100) if t.nb_questions else 0 %}
+          <article class="ai-history-item">
+            <div class="ai-history-item-main">
+              <h3>{{ t.matiere }}</h3>
+              <div class="ai-history-item-meta">
+                <span>{{ t.niveau }}</span>
+                <span>·</span>
+                <span>{{ t.difficulte }}</span>
+                <span>·</span>
+                <span>{{ t.date_soumission.strftime("%d/%m/%Y") }}</span>
+                {% if t.mode_examen %}<span>· examen</span>{% endif %}
+              </div>
+            </div>
+            <div class="ai-history-score">
+              <strong>{{ t.score }}/{{ t.nb_questions }}</strong>
+              <span>{{ "%.0f"|format(pct) }}% · <a href="/quiz/{{ t.id }}/resultat">Revoir</a></span>
+            </div>
+          </article>
+          {% endfor %}
+        {% else %}
+          <div class="ai-history-empty">
+            <div>
+              <span class="ai-quicknav-icon">{{ icone("quiz", 24) }}</span>
+              <strong>Aucun quiz terminé pour le moment.</strong>
+              <p>Commence un premier entraînement pour construire ton historique et visualiser ta progression.</p>
+              <a class="bouton bouton-primaire" href="/quiz">Lancer mon premier quiz</a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
 </div>
 {% endblock %}
