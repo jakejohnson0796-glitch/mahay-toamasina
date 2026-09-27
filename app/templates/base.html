@@ -36,6 +36,9 @@
 {% if request.url.path in ["/connexion", "/inscription", "/mot-de-passe-oublie", "/mot-de-passe-oublie/code", "/connexion/2fa"] %}
 <link rel="stylesheet" href="/static/auth.css?v={{ version_asset('auth.css') }}">
 {% endif %}
+{% if request.url.path == "/mode-emploi" %}
+<link rel="stylesheet" href="/static/mode-emploi.css?v={{ version_asset('mode-emploi.css') }}">
+{% endif %}
 </head>
 <body class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}">
 {% from "components/icone.html" import icone %}
@@ -130,6 +133,8 @@
 
       <p class="tb-sidebar-groupe">Ressources</p>
       <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
+      <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Mode d'emploi</a>
+      <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Mode d'emploi</a>
       <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
       <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
       <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> Contact</a>
