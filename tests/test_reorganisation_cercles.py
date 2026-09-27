@@ -305,10 +305,11 @@ class TestReorganisationCercles(unittest.TestCase):
 
             createur = session.get(Utilisateur, self.admin_id)
             self.assertIsNotNone(createur)
-            self.assertEqual(
-                assurer_cercles_pour_filiere(session, filiere, createur),
-                0,
+            nb_crees, nb_archives = assurer_cercles_pour_filiere(
+                session, filiere, createur
             )
+            self.assertEqual(nb_crees, 0)
+            self.assertEqual(nb_archives, 0)
             self.assertEqual(
                 session.exec(
                     select(CercleEtude).where(CercleEtude.filiere_id == filiere.id)
