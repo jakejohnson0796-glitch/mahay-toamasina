@@ -15,7 +15,7 @@
       if (!champCache || !formulaire) return;
 
       champLocal.addEventListener("input", function () {
-        const chiffres = champLocal.value.replace(/\D/g, "").slice(0, 9);
+        const chiffres = champLocal.value.replace(/\D/g, "").slice(0, 10);
         champLocal.value = formaterTelephoneLocal(chiffres);
       });
 
