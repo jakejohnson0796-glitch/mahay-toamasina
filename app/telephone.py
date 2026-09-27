@@ -2,15 +2,16 @@
 Validation et normalisation du numero de telephone malgache.
 
 Format accepte en saisie (frontend ET backend) :
-  - international : +261 XX XX XXX XX  (261 + 9 chiffres)
-  - local          : 0XX XX XXX XX     (10 chiffres, commence par 0)
+  - international prefere pour l'interface : +261 034 12 345 67
+    (10 chiffres saisis apres +261, dont le 0 local)
+  - international historique accepte : +261 34 12 345 67
+    (9 chiffres apres +261, sans le 0 local)
+  - local : 034 12 345 67 (10 chiffres, commence par 0)
 
-Les deux formes designent le meme numero physique (+261 34 12 345 67
-== 034 12 345 67) : le "0" local correspond au "+261" international,
-jamais les deux en meme temps. On normalise donc TOUJOURS vers une
-forme canonique unique avant stockage/comparaison, afin qu'une meme
-personne ne puisse pas creer deux comptes avec deux ecritures du
-meme numero (+261..., 261..., 0...).
+La forme canonique reste locale a 10 chiffres. Le backend accepte donc
+le nouveau format demande par l'interface (+261 suivi de 10 chiffres)
+tout en conservant l'ancien format international a 9 chiffres pour ne
+pas casser les comptes existants.
 
 Forme canonique retenue : locale a 10 chiffres ("034XXXXXXX"). C'est
 deja le format present dans la base existante (voir placeholder
@@ -60,11 +61,27 @@ def normaliser_telephone(brut: str) -> str:
 
     if sans_separateurs.startswith("+261"):
         reste = sans_separateurs[4:]
-        prefixe_normalise = "0" + reste
-    elif sans_separateurs.startswith("261") and len(sans_separateurs) == 12:
-        # "261341234567" sans le "+" — tolere, meme regle que ci-dessus.
+        if len(reste) == 10 and reste.startswith("0"):
+            # Nouveau format d'interface : +261 + 10 chiffres,
+            # en conservant le 0 local dans la saisie.
+            prefixe_normalise = reste
+        elif len(reste) == 9:
+            # Compatibilite avec l'ancien format international.
+            prefixe_normalise = "0" + reste
+        else:
+            raise TelephoneInvalide(
+                "Entrez 10 chiffres apres +261 (par exemple 0341234567)."
+            )
+    elif sans_separateurs.startswith("261"):
         reste = sans_separateurs[3:]
-        prefixe_normalise = "0" + reste
+        if len(reste) == 10 and reste.startswith("0"):
+            prefixe_normalise = reste
+        elif len(reste) == 9:
+            prefixe_normalise = "0" + reste
+        else:
+            raise TelephoneInvalide(
+                "Entrez 10 chiffres apres 261 (par exemple 0341234567)."
+            )
     elif sans_separateurs.startswith("0"):
         prefixe_normalise = sans_separateurs
     else:
@@ -79,8 +96,8 @@ def normaliser_telephone(brut: str) -> str:
 
     if not _RE_LOCAL.match(prefixe_normalise):
         raise TelephoneInvalide(
-            "Le numero doit contenir exactement 9 chiffres apres +261 "
-            "(soit 10 chiffres au format local commencant par 0)."
+            "Le numero doit contenir exactement 10 chiffres au format local "
+            "(par exemple 0341234567)."
         )
 
     if prefixe_normalise[:3] not in _PREFIXES_MOBILES_VALIDES:
