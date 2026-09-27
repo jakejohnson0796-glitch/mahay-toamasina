@@ -590,6 +590,141 @@ def liste_cercles(
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
         })
 
+    # Visibilite directe liee au profil academique :
+    # - Mes cercles : ceux que l'utilisateur a deja rejoints ;
+    # - Ma mention : tous les cercles actifs de la meme mention, quel que
+    #   soit le niveau ou l'universite ;
+    # - Mon domaine : cercles actifs de tout le domaine, hors limite
+    #   d'universite. Les listes sont volontairement bornees pour garder
+    #   la page rapide ; chaque section propose ensuite un lien vers le
+    #   filtre complet.
+    cercles_profil_visibilite = {
+        "mes": [],
+        "mention": [],
+        "domaine": [],
+        "mention_id": None,
+        "mention_nom": None,
+        "domaine_id": None,
+        "domaine_nom": None,
+        "niveau": profil_academique_recherche.get("niveau") if profil_academique_recherche else None,
+    }
+
+    def _charger_cercles_resume(requete_base, limite: int = 8):
+        lignes = session.exec(
+            requete_base
+            .order_by(CercleEtude.date_creation.desc(), CercleEtude.id.desc())
+            .limit(limite)
+        ).all()
+        ids = [c.id for c in lignes]
+        if not ids:
+            return []
+
+        compte_membres = {
+            cid: int(nb)
+            for cid, nb in session.exec(
+                select(MembreCercle.cercle_id, func.count(MembreCercle.id))
+                .where(MembreCercle.cercle_id.in_(ids))
+                .group_by(MembreCercle.cercle_id)
+            ).all()
+        }
+        membres_moi = {
+            cid for cid in session.exec(
+                select(MembreCercle.cercle_id).where(
+                    MembreCercle.cercle_id.in_(ids),
+                    MembreCercle.utilisateur_id == utilisateur.id,
+                )
+            ).all()
+        }
+
+        # Recuperation de la hierarchie en un seul lot.
+        filiere_ids_resume = {c.filiere_id for c in lignes if c.filiere_id}
+        filieres_resume = {
+            f.id: f
+            for f in session.exec(
+                select(Filiere).where(Filiere.id.in_(filiere_ids_resume))
+            ).all()
+        } if filiere_ids_resume else {}
+        mention_ids_resume = {
+            c.mention_id or filieres_resume.get(c.filiere_id).mention_id
+            for c in lignes
+            if c.mention_id or (c.filiere_id and filieres_resume.get(c.filiere_id) and filieres_resume.get(c.filiere_id).mention_id)
+        }
+        mentions_resume = {
+            m.id: m
+            for m in session.exec(
+                select(Mention).where(Mention.id.in_(mention_ids_resume))
+            ).all()
+        } if mention_ids_resume else {}
+        domaine_ids_resume = {m.domaine_id for m in mentions_resume.values() if m.domaine_id}
+        domaines_resume = {
+            d.id: d
+            for d in session.exec(
+                select(Domaine).where(Domaine.id.in_(domaine_ids_resume))
+            ).all()
+        } if domaine_ids_resume else {}
+
+        resultat = []
+        for cercle in lignes:
+            filiere = filieres_resume.get(cercle.filiere_id)
+            mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+            mention = mentions_resume.get(mention_id_effectif)
+            domaine = domaines_resume.get(mention.domaine_id) if mention and mention.domaine_id else None
+            resultat.append({
+                "cercle": cercle,
+                "filiere": filiere,
+                "mention": mention,
+                "domaine": domaine,
+                "nb_membres": compte_membres.get(cercle.id, 0),
+                "est_membre": cercle.id in membres_moi,
+                "type_cercle": referentiel_academique.type_cercle(cercle),
+            })
+        return resultat
+
+    if utilisateur and profil_academique_recherche and profil_academique_recherche.get("coherent"):
+        mention_profil = profil_academique_recherche.get("mention") or {}
+        domaine_profil = profil_academique_recherche.get("domaine") or {}
+        mention_profil_id = mention_profil.get("id")
+        domaine_profil_id = domaine_profil.get("id")
+        cercles_profil_visibilite["mention_id"] = mention_profil_id
+        cercles_profil_visibilite["mention_nom"] = mention_profil.get("nom")
+        cercles_profil_visibilite["domaine_id"] = domaine_profil_id
+        cercles_profil_visibilite["domaine_nom"] = domaine_profil.get("nom")
+
+        cercles_profil_visibilite["mes"] = _charger_cercles_resume(
+            select(CercleEtude)
+            .join(MembreCercle, MembreCercle.cercle_id == CercleEtude.id)
+            .where(
+                MembreCercle.utilisateur_id == utilisateur.id,
+                CercleEtude.statut == StatutCercle.ACTIF,
+            ),
+            limite=8,
+        )
+
+        if mention_profil_id:
+            mention_effective_resume = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+            cercles_profil_visibilite["mention"] = _charger_cercles_resume(
+                select(CercleEtude)
+                .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
+                .where(
+                    CercleEtude.statut == StatutCercle.ACTIF,
+                    mention_effective_resume == mention_profil_id,
+                ),
+                limite=12,
+            )
+
+        if domaine_profil_id:
+            mention_effective_resume = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+            cercles_profil_visibilite["domaine"] = _charger_cercles_resume(
+                select(CercleEtude)
+                .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
+                .outerjoin(Mention, Mention.id == mention_effective_resume)
+                .where(
+                    CercleEtude.statut == StatutCercle.ACTIF,
+                    Mention.domaine_id == domaine_profil_id,
+                ),
+                limite=12,
+            )
+
     filiere_recherchee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
     querystring = urlencode({
         k: v for k, v in {

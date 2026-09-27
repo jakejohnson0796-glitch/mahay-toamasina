@@ -203,6 +203,204 @@
 </div>
 {% endif %}
 
+<style>
+.cercles-visibilite{
+  margin:0 0 2rem;
+  padding:1.1rem;
+  border:1px solid var(--content-border);
+  border-radius:16px;
+  background:var(--content-surface);
+  box-shadow:var(--shadow-sm);
+}
+.cercles-visibilite-entete{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:1rem;
+  margin-bottom:.9rem;
+}
+.cercles-visibilite-entete h3{margin:.15rem 0 0;font-size:1.25rem}
+.cercles-visibilite-entete p{margin:0;color:var(--content-text-muted);font-size:.76rem;line-height:1.5}
+.cercles-visibilite-sections{display:grid;gap:1rem}
+.cercles-visibilite-section{
+  padding:.85rem;
+  border:1px solid var(--content-border);
+  border-radius:13px;
+  background:var(--content-bg);
+}
+.cercles-visibilite-section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.8rem;
+  margin-bottom:.7rem;
+}
+.cercles-visibilite-section-head h4{margin:0;font-size:.88rem}
+.cercles-visibilite-section-head span{color:var(--content-text-muted);font-size:.68rem}
+.cercles-visibilite-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.65rem;
+}
+.cercles-visibilite-card{
+  min-width:0;
+  padding:.75rem;
+  border:1px solid var(--content-border);
+  border-radius:11px;
+  background:var(--content-surface);
+  transition:transform .18s var(--ease-fluide),box-shadow .18s var(--ease-fluide),border-color .18s var(--ease-fluide);
+}
+.cercles-visibilite-card:hover{
+  transform:translateY(-2px);
+  border-color:var(--content-link);
+  box-shadow:var(--shadow-sm);
+}
+.cercles-visibilite-card h5{
+  margin:0;
+  font-size:.78rem;
+  line-height:1.35;
+}
+.cercles-visibilite-meta{
+  margin:.3rem 0 0;
+  color:var(--content-text-muted);
+  font-size:.66rem;
+  line-height:1.45;
+}
+.cercles-visibilite-card .puce-statut{margin-top:.45rem}
+.cercles-visibilite-action{margin-top:.55rem}
+.cercles-visibilite-action a{
+  font-size:.67rem;
+  text-decoration:underline;
+}
+.cercles-visibilite-vide{
+  padding:.65rem;
+  color:var(--content-text-muted);
+  font-size:.7rem;
+}
+@media(max-width:900px){
+  .cercles-visibilite-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+  .cercles-visibilite{padding:.85rem}
+  .cercles-visibilite-entete{display:block}
+  .cercles-visibilite-grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  .cercles-visibilite-card{transition:none}
+}
+</style>
+
+{% if utilisateur and cercles_profil_visibilite %}
+<section class="cercles-visibilite" aria-labelledby="visibilite-profil-titre">
+  <div class="cercles-visibilite-entete">
+    <div>
+      <p class="stat-label" style="margin:0;">Visibilité directe</p>
+      <h3 id="visibilite-profil-titre">Les cercles autour de ton profil</h3>
+    </div>
+    {% if cercles_profil_visibilite.mention_nom %}
+    <p>
+      {{ cercles_profil_visibilite.mention_nom }}
+      {% if cercles_profil_visibilite.niveau %} · {{ cercles_profil_visibilite.niveau }}{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="cercles-visibilite-sections">
+    <section class="cercles-visibilite-section" aria-labelledby="mes-cercles-directs">
+      <div class="cercles-visibilite-section-head">
+        <div>
+          <h4 id="mes-cercles-directs">Mes cercles</h4>
+          <span>Les espaces que tu as déjà rejoints.</span>
+        </div>
+        <a href="/cercles">Voir tous →</a>
+      </div>
+      {% if cercles_profil_visibilite.mes %}
+      <div class="cercles-visibilite-grid">
+        {% for info in cercles_profil_visibilite.mes %}
+        <article class="cercles-visibilite-card">
+          <h5>{{ info.cercle.nom }}</h5>
+          <p class="cercles-visibilite-meta">
+            {% if info.mention %}{{ info.mention.nom }}{% endif %}
+            {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
+            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
+          </p>
+          <span class="puce-statut">Tu es membre</span>
+          <div class="cercles-visibilite-action"><a href="/cercles/{{ info.cercle.id }}">Ouvrir le cercle →</a></div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="cercles-visibilite-vide">Tu n'as encore rejoint aucun cercle.</div>
+      {% endif %}
+    </section>
+
+    {% if cercles_profil_visibilite.mention_id %}
+    <section class="cercles-visibilite-section" aria-labelledby="cercles-ma-mention">
+      <div class="cercles-visibilite-section-head">
+        <div>
+          <h4 id="cercles-ma-mention">Tous les cercles de ma mention — {{ cercles_profil_visibilite.mention_nom }}</h4>
+          <span>Université et niveau ne limitent pas cette vue : tu vois les autres cercles de la même mention.</span>
+        </div>
+        <a href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">Voir tous →</a>
+      </div>
+      {% if cercles_profil_visibilite.mention %}
+      <div class="cercles-visibilite-grid">
+        {% for info in cercles_profil_visibilite.mention %}
+        <article class="cercles-visibilite-card">
+          <h5>{{ info.cercle.nom }}</h5>
+          <p class="cercles-visibilite-meta">
+            {% if info.domaine %}{{ info.domaine.nom }} · {% endif %}
+            {{ info.mention.nom if info.mention else cercles_profil_visibilite.mention_nom }}
+            {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
+            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
+          </p>
+          {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
+          <div class="cercles-visibilite-action"><a href="/cercles/{{ info.cercle.id }}">Voir le cercle →</a></div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="cercles-visibilite-vide">Aucun cercle actif pour cette mention pour le moment.</div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if cercles_profil_visibilite.domaine_id %}
+    <section class="cercles-visibilite-section" aria-labelledby="cercles-mon-domaine">
+      <div class="cercles-visibilite-section-head">
+        <div>
+          <h4 id="cercles-mon-domaine">Mon domaine — {{ cercles_profil_visibilite.domaine_nom }}</h4>
+          <span>Une vue plus large de ton domaine pour découvrir d'autres mentions.</span>
+        </div>
+        <a href="/cercles?domaine_id={{ cercles_profil_visibilite.domaine_id }}">Voir tous →</a>
+      </div>
+      {% if cercles_profil_visibilite.domaine %}
+      <div class="cercles-visibilite-grid">
+        {% for info in cercles_profil_visibilite.domaine %}
+        <article class="cercles-visibilite-card">
+          <h5>{{ info.cercle.nom }}</h5>
+          <p class="cercles-visibilite-meta">
+            {% if info.mention %}{{ info.mention.nom }}{% endif %}
+            {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
+            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
+          </p>
+          {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
+          <div class="cercles-visibilite-action"><a href="/cercles/{{ info.cercle.id }}">Voir le cercle →</a></div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="cercles-visibilite-vide">Aucun cercle actif dans ce domaine pour le moment.</div>
+      {% endif %}
+    </section>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
 <div class="carte-formulaire carte-recherche-cercles" style="margin-bottom:2rem;">
   <div class="entete-recherche-cercles">
     <div>
