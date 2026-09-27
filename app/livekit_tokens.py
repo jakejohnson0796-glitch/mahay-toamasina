@@ -86,7 +86,7 @@ async def expulser_participant(nom_salle: str, identite_participant: str) -> Non
 
 
 def generer_jeton_salle(nom_salle: str, utilisateur_id: int, nom_affiche: str, peut_publier: bool, peut_partager_ecran: bool) -> str:
-    """Genere un jeton JWT signe, valable 4h, limite a CETTE salle et a
+    """Genere un jeton JWT signe, valable 30 minutes, limite a CETTE salle et a
     CET utilisateur precis.
 
     peut_publier=True (tout participant autorise a rejoindre) permet de
@@ -120,7 +120,7 @@ def generer_jeton_salle(nom_salle: str, utilisateur_id: int, nom_affiche: str, p
         .with_identity(str(utilisateur_id))
         .with_name(nom_affiche)
         .with_grants(grants)
-        .with_ttl(timedelta(hours=4))
+        .with_ttl(timedelta(minutes=30))
         .to_jwt()
     )
     return jeton

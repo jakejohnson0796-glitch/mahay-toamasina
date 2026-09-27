@@ -16,7 +16,7 @@ from ..csrf import verifier_csrf
 from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
-from ..auth import hacher_mot_de_passe, verifier_mot_de_passe
+from ..auth import hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur
 from ..rate_limit import limite_depassee
 from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_code_totp, generer_codes_secours, hacher_code_secours, verifier_code_secours
 from ..telephone import normaliser_telephone, TelephoneInvalide
@@ -277,6 +277,7 @@ def connexion(
 
     _rotation_session_authentifiee(request)
     request.session["user_id"] = utilisateur.id
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     return _redirection_apres_connexion(utilisateur)
 
 
@@ -899,6 +900,7 @@ def modifier_mot_de_passe(
     utilisateur.doit_changer_mot_de_passe = False
     session.add(utilisateur)
     session.commit()
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     return RedirectResponse("/securite?ok=mot_de_passe_modifie", status_code=303)
 
 
@@ -1027,6 +1029,7 @@ def confirmer_activation_2fa(
     session.commit()
 
     request.session.pop("totp_secret_en_attente", None)
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     # Les codes en clair ne sont jamais stockes nulle part (ni session, ni
     # base) — uniquement passes une fois au template pour cet affichage,
     # perdus des que la page suivante est quittee.

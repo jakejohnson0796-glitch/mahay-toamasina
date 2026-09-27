@@ -25,11 +25,12 @@ from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir
-from ..auth import utilisateur_courant
+from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
 from ..ws_manager import gestionnaire
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
+from ..rate_limit import limite_depassee
 
 router = APIRouter()
 
@@ -762,7 +763,7 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
             return
 
         utilisateur = session.get(Utilisateur, user_id)
-        if not utilisateur:
+        if not utilisateur or not session_utilisateur_valide(websocket.session, utilisateur):
             await websocket.close(code=4401)
             return
 
@@ -786,6 +787,8 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
         try:
             while True:
                 brut = await websocket.receive_json()
+                if limite_depassee(f"ws-tableau:user:{utilisateur.id}:{seance_id}", 240, 60):
+                    continue
                 type_evt = brut.get("type")
 
                 if type_evt not in ("trait", "forme", "texte", "suppression", "effacer_tout"):

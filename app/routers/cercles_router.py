@@ -29,7 +29,7 @@ from ..models import (
     StatutDemandeCreationCercle, StatutCercle, ThemeDuJour, Document,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
 )
-from ..auth import utilisateur_courant
+from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide, supprimer_fichier
@@ -1982,6 +1982,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
         cercle = session.get(CercleEtude, cercle_id)
         if (
             not utilisateur
+            or not session_utilisateur_valide(websocket.session, utilisateur)
             or utilisateur.banni
             or not cercle
             or cercle.statut != StatutCercle.ACTIF
@@ -2015,6 +2016,8 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
     try:
         while True:
             donnees_recues = await websocket.receive_json()
+            if limite_depassee(f"ws-cercle:user:{user_id}:{cercle_id}", 60, 60):
+                continue
             contenu = (donnees_recues.get("contenu") or "").strip()[:LONGUEUR_MAX_MESSAGE]
             if not contenu:
                 continue
