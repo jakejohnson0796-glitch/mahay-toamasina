@@ -153,3 +153,5 @@ html[data-theme="sombre"] .tb-sidebar-compte-activite {
     display: none !important;
   }
 }
+
+.ops-activity-last { margin-top: .65rem; }
