@@ -43,6 +43,39 @@
   }
 
   initMenuCompte();
+
+  // Sidebar desktop : mode compact mémorisé localement.
+  const boutonCollapse = document.getElementById("bouton-sidebar-collapse");
+  if (boutonCollapse) {
+    const compact = localStorage.getItem("mahay-sidebar-compact") === "1";
+
+    function appliquerSidebarCompacte(actif) {
+      document.body.classList.toggle("sidebar-compact", actif);
+      boutonCollapse.setAttribute("aria-pressed", String(actif));
+      boutonCollapse.setAttribute(
+        "aria-label",
+        actif ? "Agrandir la barre latérale" : "Réduire la barre latérale"
+      );
+      boutonCollapse.title = actif ? "Agrandir la barre latérale" : "Réduire la barre latérale";
+    }
+
+    appliquerSidebarCompacte(compact);
+
+    boutonCollapse.addEventListener("click", function () {
+      const actif = !document.body.classList.contains("sidebar-compact");
+      appliquerSidebarCompacte(actif);
+      localStorage.setItem("mahay-sidebar-compact", actif ? "1" : "0");
+    });
+
+    window.addEventListener("resize", function () {
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        document.body.classList.remove("sidebar-compact");
+      } else {
+        appliquerSidebarCompacte(localStorage.getItem("mahay-sidebar-compact") === "1");
+      }
+    });
+  }
+
   const bouton = document.getElementById("bouton-menu-mobile");
   const sidebar = document.getElementById("nav-principale");
   const overlay = document.getElementById("sidebar-overlay");
