@@ -3,7 +3,7 @@
   "use strict";
 
   function formaterTelephoneLocal(chiffres) {
-    return [chiffres.slice(0, 2), chiffres.slice(2, 4), chiffres.slice(4, 7), chiffres.slice(7, 9)]
+    return [chiffres.slice(0, 3), chiffres.slice(3, 5), chiffres.slice(5, 8), chiffres.slice(8, 10)]
       .filter(Boolean)
       .join(" ");
   }
@@ -21,14 +21,14 @@
 
       formulaire.addEventListener("submit", function (evenement) {
         const chiffres = champLocal.value.replace(/\D/g, "");
-        if (chiffres.length !== 9) {
+        if (chiffres.length !== 10 || !chiffres.startsWith("0")) {
           evenement.preventDefault();
-          champLocal.setCustomValidity("Entrez exactement 9 chiffres après +261.");
+          champLocal.setCustomValidity("Entrez les 10 chiffres, par exemple 034 12 345 67.");
           champLocal.reportValidity();
           return;
         }
         champLocal.setCustomValidity("");
-        champCache.value = "0" + chiffres;
+        champCache.value = chiffres;
       });
     });
   }
