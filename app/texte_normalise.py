@@ -25,6 +25,7 @@ def normaliser(texte: str | None) -> str:
     if not texte:
         return ""
     texte = texte.strip().replace("\u2019", "'")
+    texte = re.sub(r"\s*&\s*", " et ", texte)
     texte = unicodedata.normalize("NFKD", texte)
     texte = "".join(c for c in texte if not unicodedata.combining(c))
     texte = re.sub(r"\s+", " ", texte)
