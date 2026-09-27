@@ -58,8 +58,10 @@
 
   <section class="classe-chat" aria-label="Chat de la séance">
     <div id="messages-chat-salle" class="classe-chat-history"></div>
-    <input type="text" id="champ-chat-salle" placeholder="Message à tous…" autocomplete="off" maxlength="500">
-    <button type="button" class="bouton bouton-secondaire" id="btn-envoyer-chat">Envoyer</button>
+    <form id="form-chat-salle">
+      <input type="text" id="champ-chat-salle" placeholder="Message à tous…" autocomplete="off" maxlength="500">
+      <button type="submit" class="bouton bouton-secondaire">Envoyer</button>
+    </form>
   </section>
   {% endif %}
 </div>
