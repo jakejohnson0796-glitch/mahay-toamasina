@@ -50,6 +50,7 @@ def _version_asset(chemin_relatif: str) -> str:
 
 _VERSIONS_ASSETS = {
     "style.css": _version_asset("style.css"),
+    "activite.css": _version_asset("activite.css"),
     "js/navigation.js": _version_asset("js/navigation.js"),
     "js/theme.js": _version_asset("js/theme.js"),
     "js/modale.js": _version_asset("js/modale.js"),
