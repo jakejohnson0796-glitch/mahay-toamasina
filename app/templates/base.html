@@ -134,7 +134,6 @@
       <p class="tb-sidebar-groupe">Ressources</p>
       <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
       <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Mode d'emploi</a>
-      <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Mode d'emploi</a>
       <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
       <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
       <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> Contact</a>
@@ -182,6 +181,8 @@
         <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
         <a class="tb-menu-compte-item" href="/abonnement"><span class="tb-menu-compte-icone">{{ icone("premium", 16) }}</span><span>Abonnement</span></a>
         <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
+        <a class="tb-menu-compte-item" href="/mode-emploi"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Mode d'emploi</span></a>
+
         <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter Gasy Mahay</span></a>
         {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
         <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>Administration</span></a>
@@ -207,6 +208,7 @@
       <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
       <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
       <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> Contact</a>
+      <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Mode d'emploi</a>
 
       <p class="tb-sidebar-groupe">Compte</p>
       <a href="/connexion" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/connexion' else '' }}" {{ 'aria-current="page"' if request.url.path == '/connexion' else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Connexion</a>
