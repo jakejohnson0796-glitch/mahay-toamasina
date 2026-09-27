@@ -1,65 +1,87 @@
 {% extends "base.html" %}
-{% from "components/signal.html" import signal %}
 {% block titre %}Mon abonnement — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<h2>Mon abonnement</h2>
-
-{% if request.query_params.get("demande_envoyee") %}
-<div class="info">Demande envoyee — un administrateur va verifier votre paiement sous peu.</div>
-{% endif %}
-{% if request.query_params.get("premium_requis") %}
-<div class="erreur">Cette fonctionnalite est reservee aux abonnes Premium. Souscrivez ou verifiez votre abonnement ci-dessous pour y acceder.</div>
-{% endif %}
-
-{% if abonnement %}
-  {% if abonnement.statut == StatutAbonnementEtudiant.ESSAI %}
-    <p>{{ signal("approuve") }}<span class="tampon tampon-approuve">Essai gratuit</span></p>
-    {% if acces_premium %}
-    <p>Il vous reste <strong>{{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }}</strong> d'essai gratuit avec acces complet aux fonctionnalites Premium.</p>
-    {% else %}
-    <p>Votre essai gratuit est termine. Souscrivez ci-dessous pour continuer a profiter du Premium.</p>
-    {% endif %}
-  {% elif abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}
-    <p>{{ signal("attente") }}<span class="tampon tampon-attente">En attente de validation</span></p>
-    <p>Votre demande a ete recue et sera verifiee par un administrateur.
-      {% if acces_premium %}En attendant, votre essai gratuit reste actif ({{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }} restant{{ 's' if jours_restants > 1 else '' }}).{% endif %}</p>
-  {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}
-    <p>{{ signal("approuve") }}<span class="tampon tampon-approuve">Actif</span></p>
-    <p>Votre abonnement Premium est actif pour encore <strong>{{ jours_restants }} jour{{ 's' if jours_restants > 1 else '' }}</strong>.</p>
-  {% elif abonnement.statut == StatutAbonnementEtudiant.EXPIRE %}
-    <p>{{ signal("rejete") }}<span class="tampon tampon-rejete">Expire</span></p>
-    <p>Votre acces Premium a expire. Souscrivez ci-dessous pour le reactiver.</p>
-  {% elif abonnement.statut == StatutAbonnementEtudiant.REFUSE %}
-    <p>{{ signal("rejete") }}<span class="tampon tampon-rejete">Demande refusee</span></p>
-    {% if abonnement.motif_refus %}<p>Motif indique par l'administrateur : {{ abonnement.motif_refus }}</p>{% endif %}
-    <p>Vous pouvez soumettre une nouvelle demande ci-dessous.</p>
-  {% endif %}
-{% endif %}
-
-{% if not abonnement or abonnement.statut != StatutAbonnementEtudiant.EN_ATTENTE %}
-<div class="offre">
-  <p class="prix">{{ prix }} <span>Ar / mois</span></p>
-  <form method="post" action="/abonnement/demande" enctype="multipart/form-data">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <p>Choisissez votre moyen de paiement :</p>
-    <div class="fournisseurs">
-      <label><input type="radio" name="fournisseur_paiement" value="mvola" required> MVola</label>
-      <label><input type="radio" name="fournisseur_paiement" value="orange_money"> Orange Money</label>
-      <label><input type="radio" name="fournisseur_paiement" value="airtel_money"> Airtel Money</label>
-      <label><input type="radio" name="fournisseur_paiement" value="virement"> Virement bancaire</label>
+<div class="ops-page">
+  <section class="ops-hero">
+    <div>
+      <span class="ops-kicker">Accès Premium · étudiant</span>
+      <h1>Ton abonnement, ton état d'accès, ton prochain pas.</h1>
+      <p>Visualise ton essai, ton abonnement actuel et envoie une demande de paiement depuis un espace unique.</p>
+      <div class="ops-hero-actions"><a href="/mode-emploi">Mode d'emploi</a><a href="/securite">Sécurité du compte</a></div>
     </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ jours_restants }}</strong><span>jour{{ "s" if jours_restants > 1 else "" }} restant{{ "s" if jours_restants > 1 else "" }}</span></div>
+      <div class="ops-stat"><strong>{{ "PREMIUM" if acces_premium else "LIBRE" }}</strong><span>état actuel de l'accès</span></div>
+    </div>
+  </section>
 
-    <label for="reference_paiement">Reference de la transaction (optionnel)</label>
-    <input type="text" id="reference_paiement" name="reference_paiement" placeholder="ex: numero de reference Mobile Money">
+  {% if request.query_params.get("demande_envoyee") %}
+  <div class="ops-alert ops-alert-info">Demande envoyée. Un administrateur vérifiera ton paiement.</div>
+  {% endif %}
+  {% if request.query_params.get("premium_requis") %}
+  <div class="ops-alert ops-alert-warn">Cette fonctionnalité nécessite Premium. Vérifie ton abonnement ou envoie une demande ci-dessous.</div>
+  {% endif %}
 
-    <label for="preuve">Preuve de paiement — capture d'ecran ou photo (optionnel)</label>
-    <input type="file" id="preuve" name="preuve" accept="image/*,.pdf">
+  {% if abonnement %}
+  <section class="ops-section">
+    <div class="ops-status-hero">
+      <div class="ops-status-main">
+        <span class="ops-kicker">État de ton compte</span>
+        {% if abonnement.statut == StatutAbonnementEtudiant.ESSAI %}
+        <h2>Essai gratuit{% if not acces_premium %} terminé{% endif %}</h2>
+        <p>{% if acces_premium %}Il te reste <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong> d'accès complet.{% else %}Ton essai est terminé. Tu peux souscrire ci-dessous.{% endif %}</p>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}
+        <h2>Demande en cours de vérification</h2>
+        <p>La demande a bien été reçue. {% if acces_premium %}Ton essai reste actif pendant la vérification ({{ jours_restants }} jours).{% endif %}</p>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}
+        <h2>Premium actif</h2>
+        <p>Ton accès Premium est actif pour encore <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.</p>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.EXPIRE %}
+        <h2>Abonnement expiré</h2><p>Ton accès Premium peut être réactivé avec une nouvelle demande.</p>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.REFUSE %}
+        <h2>Demande refusée</h2><p>{% if abonnement.motif_refus %}Motif : {{ abonnement.motif_refus }}. {% endif %}Tu peux envoyer une nouvelle demande.</p>
+        {% endif %}
+      </div>
+      <div class="ops-status-side">
+        {% if abonnement.statut == StatutAbonnementEtudiant.ACTIF %}<span class="ops-badge is-success">Actif</span>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}<span class="ops-badge is-alert">En attente</span>
+        {% elif abonnement.statut == StatutAbonnementEtudiant.ESSAI %}<span class="ops-badge">Essai</span>
+        {% else %}<span class="ops-badge">{{ abonnement.statut.value }}</span>{% endif %}
+        <strong>{{ jours_restants }}</strong><span>jours restants</span>
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
-    <button class="bouton bouton-primaire bouton-form" type="submit">Envoyer ma demande</button>
-  </form>
-</div>
-{% endif %}
+  {% if not abonnement or abonnement.statut != StatutAbonnementEtudiant.EN_ATTENTE %}
+  <section class="ops-section">
+    <div class="ops-grid ops-grid-2">
+      <div class="ops-card">
+        <div class="ops-card-head"><div><span class="ops-kicker">Tarif actuel</span><h2>Premium étudiant</h2></div><span class="ops-badge is-success">30 jours</span></div>
+        <p>Une demande correspond à un mois d'accès. Le montant actuel de la plateforme est affiché ci-dessous.</p>
+        <div class="ops-offer-price"><strong>{{ prix }}</strong><span>Ar / mois</span></div>
+        <div class="ops-subsection"><h3>Après paiement</h3><p>Choisis le moyen utilisé, ajoute la référence si disponible et joins la preuve si tu en as une.</p></div>
+      </div>
+
+      <div class="ops-offer">
+        <span class="ops-kicker">Nouvelle demande</span>
+        <h2>Envoyer mon paiement</h2>
+        <form method="post" action="/abonnement/demande" enctype="multipart/form-data" class="ops-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <div><label>Moyen de paiement</label><div class="ops-payment-grid">
+            <div class="ops-payment-option"><input id="mvola" type="radio" name="fournisseur_paiement" value="mvola" required><label for="mvola">MVola</label></div>
+            <div class="ops-payment-option"><input id="orange" type="radio" name="fournisseur_paiement" value="orange_money"><label for="orange">Orange Money</label></div>
+            <div class="ops-payment-option"><input id="airtel" type="radio" name="fournisseur_paiement" value="airtel_money"><label for="airtel">Airtel Money</label></div>
+            <div class="ops-payment-option"><input id="virement" type="radio" name="fournisseur_paiement" value="virement"><label for="virement">Virement bancaire</label></div>
+          </div></div>
+          <div><label for="reference_paiement">Référence de transaction</label><input type="text" id="reference_paiement" name="reference_paiement" placeholder="Ex. référence Mobile Money"></div>
+          <div><label for="preuve">Preuve de paiement</label><input type="file" id="preuve" name="preuve" accept="image/*,.pdf"><span class="stat-label">Capture ou PDF selon les formats autorisés.</span></div>
+          <div class="ops-form-actions"><button class="bouton bouton-primaire" type="submit">Envoyer ma demande</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+  {% endif %}
 </div>
 {% endblock %}
