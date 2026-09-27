@@ -85,7 +85,7 @@ class TestCerclesReferentiel(unittest.TestCase):
 
     def test_idempotent_deuxieme_appel_ne_recree_rien(self):
         with Session(self.engine) as session:
-            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
+            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id, niveau="L3")
             session.add(filiere); session.commit(); session.refresh(filiere)
             session.add(ProgrammeUniversitaire(
                 universite_id=self.universite_id,
@@ -105,7 +105,7 @@ class TestCerclesReferentiel(unittest.TestCase):
         via l'ancien workflow de demande/approbation), le provisionnement
         automatique ne doit generer que les 7 niveaux restants."""
         with Session(self.engine) as session:
-            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
+            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id, niveau="L3")
             session.add(filiere); session.commit(); session.refresh(filiere)
             session.add(ProgrammeUniversitaire(
                 universite_id=self.universite_id,
@@ -124,11 +124,11 @@ class TestCerclesReferentiel(unittest.TestCase):
 
             total = assurer_cercles_referentiel(session)
             self.assertEqual(total, 0)
-            self.assertEqual(len(session.exec(select(CercleEtude)).all()), len(NIVEAUX))
+            self.assertEqual(len(session.exec(select(CercleEtude)).all()), 1)
 
     def test_createur_devient_membre_avec_role_createur(self):
         with Session(self.engine) as session:
-            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
+            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id, niveau="L3")
             session.add(filiere); session.commit(); session.refresh(filiere)
             session.add(ProgrammeUniversitaire(
                 universite_id=self.universite_id,
@@ -155,7 +155,7 @@ class TestCerclesReferentiel(unittest.TestCase):
                 session.delete(m)
             session.commit()
 
-            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id)
+            filiere = Filiere(nom="Info Generale", faculte_id=self.faculte_id, mention_id=self.mention_id, niveau="L3")
             session.add(filiere); session.commit(); session.refresh(filiere)
             session.add(ProgrammeUniversitaire(
                 universite_id=self.universite_id,
