@@ -74,8 +74,8 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.17.0/dist/livekit-client.umd.min.js"></script>
-<script>
+<script nonce="{{ csp_nonce(request) }}" src="https://cdn.jsdelivr.net/npm/livekit-client@2.17.0/dist/livekit-client.umd.min.js"></script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   const conteneur = document.getElementById("salle-virtuelle");
   const url = conteneur.dataset.url;
@@ -504,7 +504,7 @@ const room = new Room({
         .then(function (html) {
           panneauTableau.innerHTML = html;
           tableauCharge = true;
-          // Les <script> injectes via innerHTML ne s'executent pas
+          // Les <script nonce="{{ csp_nonce(request) }}"> injectes via innerHTML ne s'executent pas
           // automatiquement (comportement standard du DOM) : on les
           // recree explicitement pour que le JS du tableau blanc tourne.
           panneauTableau.querySelectorAll("script").forEach(function (ancien) {

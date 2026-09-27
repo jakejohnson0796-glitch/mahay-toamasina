@@ -79,7 +79,7 @@
 </div>
 <p>Deja inscrit(e) ? <a href="/connexion">Connectez-vous</a>.</p>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   const champLocal = document.getElementById("telephone_local");
   const champCache = document.getElementById("telephone");
@@ -144,6 +144,6 @@
   appliquerVisibiliteRole();
 })();
 </script>
-<script src="{{ url_for('static', path='js/cascade-academique.js') }}?v={{ version_asset('js/cascade-academique.js') }}"></script>
+<script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/cascade-academique.js') }}?v={{ version_asset('js/cascade-academique.js') }}"></script>
 </div>
 {% endblock %}

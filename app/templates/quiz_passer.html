@@ -42,7 +42,7 @@
   <button id="bouton-valider-quiz" class="bouton bouton-primaire bouton-form" type="submit">Valider mes reponses</button>
 </form>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   // Progression de reponse : compte les groupes de radios ayant deja
   // une reponse cochee, et met a jour la barre + le texte a chaque
@@ -83,7 +83,7 @@
 </script>
 
 {% if tentative.mode_examen %}
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   let secondesRestantes = {{ secondes_restantes }};
   const affichage = document.getElementById("chronometre");

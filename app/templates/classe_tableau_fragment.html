@@ -74,7 +74,7 @@
   {% endif %}
 </div>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   // NOTE ARCHITECTURE : ce fragment est injecte par fetch() dans le DOM de
   // classe_salle.html (voir #panneau-tableau la-bas), PAS charge via une

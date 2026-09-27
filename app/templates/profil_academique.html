@@ -74,7 +74,7 @@
 </div>
 
 
-<script src="{{ url_for('static', path='js/cascade-academique.js') }}?v={{ version_asset('js/cascade-academique.js') }}"></script>
+<script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/cascade-academique.js') }}?v={{ version_asset('js/cascade-academique.js') }}"></script>
 
 </div>
 {% endblock %}
