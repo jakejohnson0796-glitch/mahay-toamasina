@@ -48,6 +48,56 @@
 .contact-trust-item{padding:1rem;border:1px solid var(--content-border);border-radius:14px;background:rgba(255,253,248,.76)}
 .contact-trust-item strong{display:block;font-size:.8rem}
 .contact-trust-item span{display:block;margin-top:.3rem;color:var(--content-text-muted);font-size:.7rem;line-height:1.45}
+/* Contrastes explicites du thème sombre : les blocs décoratifs clairs
+   doivent changer de surface eux aussi, sinon le texte clair devient
+   illisible sur un fond blanc. */
+:root[data-theme="sombre"] .contact-hero-copy{
+  background:linear-gradient(145deg,#2f2923,#25211d);
+  color:var(--content-text);
+}
+:root[data-theme="sombre"] .contact-hero-copy .contact-kicker{
+  background:rgba(246,241,231,.10);
+  color:var(--content-text);
+  border:1px solid rgba(246,241,231,.16);
+}
+:root[data-theme="sombre"] .contact-hero-copy>p:last-child{
+  color:var(--content-text-muted);
+}
+:root[data-theme="sombre"] .contact-wa-number{
+  color:var(--content-text);
+  background:rgba(246,241,231,.07);
+  border-color:rgba(246,241,231,.16);
+}
+:root[data-theme="sombre"] .contact-qr-card{
+  background:linear-gradient(160deg,#302a24,#25211d)!important;
+}
+:root[data-theme="sombre"] .contact-qr-badge{
+  color:#172420;
+  background:#efe9dd;
+}
+:root[data-theme="sombre"] .contact-qr-card .contact-qr-subtitle,
+:root[data-theme="sombre"] .contact-qr-card .contact-qr-step span{
+  color:#c9c1b2;
+}
+:root[data-theme="sombre"] .contact-qr-step{
+  background:rgba(246,241,231,.055);
+  border-color:rgba(246,241,231,.15);
+}
+:root[data-theme="sombre"] .contact-qr-step strong{
+  color:#efe9dd;
+}
+:root[data-theme="sombre"] .contact-trust-item{
+  background:#2f2923;
+  border-color:rgba(246,241,231,.16);
+  color:var(--content-text);
+}
+:root[data-theme="sombre"] .contact-trust-item strong{
+  color:#efe9dd;
+}
+:root[data-theme="sombre"] .contact-trust-item span{
+  color:#c9c1b2;
+}
+
 @media (max-width:920px){
   .contact-hero,.contact-grid{grid-template-columns:1fr}
   .contact-hero-note{min-height:150px}
