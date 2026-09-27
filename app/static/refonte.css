@@ -1867,3 +1867,24 @@ main h2 {
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* ---------- Correctif mobile drawer : ordre des calques ---------- */
+@media (max-width: 900px) {
+  .tb-sidebar {
+    z-index: 110 !important;
+  }
+
+  .sidebar-overlay {
+    z-index: 100 !important;
+  }
+
+  .sidebar-bouton-mobile {
+    z-index: 120 !important;
+  }
+
+  body.menu-mobile-ouvert {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
