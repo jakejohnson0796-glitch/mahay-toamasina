@@ -13,7 +13,7 @@
   chaque espace qu'il/elle possede avant de confirmer.
 </div>
 
-<form method="post" action="/admin/utilisateurs/{{ cible.id }}/supprimer" onsubmit="return mahayConfirmSubmit(event, 'Confirmer la suppression definitive de {{ cible.nom }} ?');">
+<form method="post" action="/admin/utilisateurs/{{ cible.id }}/supprimer" data-confirm-message="Confirmer la suppression definitive de {{ cible.nom }} ?">
   <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
 
   {% if cercles_info %}
@@ -31,7 +31,7 @@
         <label style="display:flex;gap:0.4rem;align-items:center;font-weight:normal;">
           <input type="radio" name="cercle_{{ info.cercle.id }}" id="reattrib-cercle-{{ info.cercle.id }}">
           Reattribuer a :
-          <select onchange="document.getElementById('reattrib-cercle-{{ info.cercle.id }}').value = 'reattribuer:' + this.value; document.getElementById('reattrib-cercle-{{ info.cercle.id }}').checked = true;">
+          <select data-reattribuer-target="reattrib-cercle-{{ info.cercle.id }}">
             <option value="">— choisir —</option>
             {% for compte in comptes_possibles %}
             <option value="{{ compte.id }}">{{ compte.nom }} ({{ compte.role.value }})</option>
@@ -59,7 +59,7 @@
         <label style="display:flex;gap:0.4rem;align-items:center;font-weight:normal;">
           <input type="radio" name="cours_{{ info.cours.id }}" id="reattrib-cours-{{ info.cours.id }}">
           Reattribuer a :
-          <select onchange="document.getElementById('reattrib-cours-{{ info.cours.id }}').value = 'reattribuer:' + this.value; document.getElementById('reattrib-cours-{{ info.cours.id }}').checked = true;">
+          <select data-reattribuer-target="reattrib-cours-{{ info.cours.id }}">
             <option value="">— choisir —</option>
             {% for compte in comptes_possibles %}
             <option value="{{ compte.id }}">{{ compte.nom }} ({{ compte.role.value }})</option>

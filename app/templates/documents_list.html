@@ -21,7 +21,7 @@
 <form class="filtres" method="get" action="/documents">
   <div>
     <label for="filiere_id">Filiere</label>
-    <select id="filiere_id" name="filiere_id" onchange="this.form.submit()">
+    <select id="filiere_id" name="filiere_id" data-submit-on-change>
       <option value="">Toutes les filieres</option>
       {% for filiere in filieres %}
       <option value="{{ filiere.id }}" {% if filiere_id == filiere.id %}selected{% endif %}>{{ filiere.nom }}</option>
@@ -87,7 +87,7 @@ session dediee, avec sa propre verification desktop+mobile.
 {% endif %}
 </div>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   // Le clic sur "Quiz IA" declenche une generation par IA synchrone
   // (voir /documents/{id}/quiz) qui peut prendre plusieurs secondes

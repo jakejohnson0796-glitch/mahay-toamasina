@@ -43,7 +43,7 @@
   </form>
 
   {% if utilisateur.photo_chemin %}
-  <form method="post" action="/profil/photo/supprimer" onsubmit="return mahayConfirmSubmit(event, 'Supprimer votre photo de profil ?', {danger: false});">
+  <form method="post" action="/profil/photo/supprimer" data-confirm-message="Supprimer votre photo de profil ?" data-confirm-danger="false">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <button class="bouton bouton-secondaire bouton-form" type="submit">Supprimer ma photo</button>
   </form>

@@ -100,14 +100,14 @@
   <div style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
     <form method="post" action="/admin/feedback/{{ item.feedback.id }}/statut" style="display:inline-flex;gap:0.5rem;align-items:center;">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <select name="statut" onchange="this.form.submit()">
+      <select name="statut" data-submit-on-change>
         {% for s in statuts %}
         <option value="{{ s.value }}" {% if s.value == item.feedback.statut.value %}selected{% endif %}>{{ s.value }}</option>
         {% endfor %}
       </select>
     </form>
     {% if item.feedback.statut.value != "masque" %}
-    <form method="post" action="/admin/feedback/{{ item.feedback.id }}/masquer" onsubmit="return mahayConfirmSubmit(event, 'Masquer cet avis de la vue publique ?', {danger: false});">
+    <form method="post" action="/admin/feedback/{{ item.feedback.id }}/masquer" data-confirm-message="Masquer cet avis de la vue publique ?" data-confirm-danger="false">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
       <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Masquer</button>
     </form>
