@@ -39,6 +39,7 @@ from .. import referentiel_academique
 from ..web_utils import entier_ou_none
 from ..referentiel import NIVEAUX
 from ..recherche import clause_recherche_cercles
+from ..rate_limit import limite_depassee
 
 router = APIRouter()
 

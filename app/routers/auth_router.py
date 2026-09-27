@@ -1067,6 +1067,7 @@ def desactiver_2fa(
     for c in anciens_codes:
         session.delete(c)
     session.commit()
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
 
     return RedirectResponse("/securite?desactive=1", status_code=303)
 

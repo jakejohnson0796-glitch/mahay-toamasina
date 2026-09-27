@@ -20,6 +20,10 @@ from pathlib import Path
 import pdfplumber
 
 SEUIL_CARACTERES_PDF_TEXTE = 100  # en dessous de ca, on suppose que c'est un scan
+MAX_PAGES_PDF_TEXTE = 60
+MAX_PAGES_PDF_OCR = 20
+MAX_TEXTE_EXTRAIT = 300_000
+MAX_OCR_DPI = 120
 
 
 def extraire_texte(chemin_fichier: str) -> str:
@@ -44,8 +48,13 @@ def _extraire_texte_pdf(chemin: Path) -> str:
     morceaux = []
     try:
         with pdfplumber.open(chemin) as pdf:
-            for page in pdf.pages:
-                morceaux.append(page.extract_text() or "")
+            total = 0
+            for page in pdf.pages[:MAX_PAGES_PDF_TEXTE]:
+                morceau = page.extract_text() or ""
+                morceaux.append(morceau)
+                total += len(morceau)
+                if total >= MAX_TEXTE_EXTRAIT:
+                    break
     except Exception:
         return ""
     return "\n".join(morceaux)
@@ -60,8 +69,16 @@ def _extraire_texte_pdf_par_ocr(chemin: Path) -> str:
     except ImportError:
         return ""
     try:
-        pages = convert_from_path(str(chemin))
-        return "\n".join(pytesseract.image_to_string(page, lang="fra") for page in pages)
+        pages = convert_from_path(str(chemin), first_page=1, last_page=MAX_PAGES_PDF_OCR, dpi=MAX_OCR_DPI, use_pdftocairo=True)
+        morceaux = []
+        total = 0
+        for page in pages:
+            morceau = pytesseract.image_to_string(page, lang="fra")
+            morceaux.append(morceau)
+            total += len(morceau)
+            if total >= MAX_TEXTE_EXTRAIT:
+                break
+        return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
     except Exception:
         return ""
 
@@ -73,6 +90,6 @@ def _extraire_texte_image(chemin: Path) -> str:
     except ImportError:
         return ""
     try:
-        return pytesseract.image_to_string(Image.open(chemin), lang="fra")
+        return pytesseract.image_to_string(Image.open(chemin), lang="fra")[:MAX_TEXTE_EXTRAIT]
     except Exception:
         return ""

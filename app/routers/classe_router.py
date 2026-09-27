@@ -963,6 +963,10 @@ def rendre_devoir(
     if not _est_inscrit(session, cours.id, utilisateur.id):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"upload-devoir:user:{utilisateur.id}", 10, 3600) or limite_depassee(f"upload-devoir:ip:{host}", 25, 3600):
+        return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=trop_de_depots", status_code=303)
+
     if devoir.date_limite and datetime.utcnow() > devoir.date_limite:
         return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=delai_depasse", status_code=303)
 
