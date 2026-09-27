@@ -242,7 +242,13 @@ def _cle_canonique(
     if filiere.mention_id != cercle.mention_id:
         return ("incomplet", cercle.id), "mention du cercle différente de celle du parcours"
 
-    if filiere.niveau and filiere.niveau != cercle.niveau:
+    # Une Filiere nationale sans niveau vérifié ne permet pas de savoir si
+    # le cercle correspond à L1, L2, L3, M1 ou M2. Ce n'est pas une permission
+    # de considérer tous les niveaux comme valides : le cercle est suspect.
+    if not filiere.niveau:
+        return ("incomplet", cercle.id), "niveau du parcours non vérifié"
+
+    if filiere.niveau != cercle.niveau:
         return ("incomplet", cercle.id), "niveau du cercle différent du niveau explicite du parcours"
 
     if not _offre_active_filiere(contexte, filiere):
@@ -490,7 +496,7 @@ def _fusionner_groupe(
             if f.mention_id == cle[1]
             and normaliser(f.nom) == cle[2]
             and _offre_active_filiere(contexte, f)
-            and (not f.niveau or f.niveau == cle[3])
+            and f.niveau == cle[3]
         ]
         if candidates:
             filiere_canonique = min(candidates, key=lambda f: f.id)

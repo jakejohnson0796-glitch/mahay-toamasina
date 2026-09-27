@@ -96,7 +96,11 @@ def assurer_cercles_pour_groupe_parcours(
     pendant la transition) plutot que laisse trainer indefiniment."""
     filiere_ids_du_groupe = [f.id for f in filieres_du_groupe]
 
-    niveaux_cibles = {f.niveau for f in filieres_du_groupe if f.niveau} or set(NIVEAUX)
+    niveaux_cibles = {f.niveau for f in filieres_du_groupe if f.niveau}
+    # Un niveau absent ne signifie PAS "tous les niveaux". Cela signifie
+    # simplement que le référentiel ne permet pas encore de valider le niveau
+    # réel de ce parcours. Aucun Cercle national ne doit être inventé dans ce
+    # cas : il sera provisionné dès qu'un niveau vérifié apparaîtra.
 
     cercles_du_groupe = session.exec(
         select(CercleEtude).where(
@@ -108,11 +112,9 @@ def assurer_cercles_pour_groupe_parcours(
     niveaux_existants = {c.niveau for c in cercles_du_groupe}
 
     nb_archives = 0
-    if niveaux_cibles != set(NIVEAUX):
-        # niveaux_cibles n'est PAS le repli "on ne sait rien" (tous les
-        # niveaux) : on connait desormais avec certitude les niveaux
-        # valides pour ce parcours, donc tout cercle ACTIF a un AUTRE
-        # niveau est perime, pas juste heritage neutre.
+    if niveaux_cibles:
+        # On connaît désormais avec certitude les niveaux valides pour ce
+        # parcours : tout cercle ACTIF sur un autre niveau est périmé.
         for cercle in cercles_du_groupe:
             if cercle.niveau not in niveaux_cibles:
                 nb_membres_reels = session.exec(

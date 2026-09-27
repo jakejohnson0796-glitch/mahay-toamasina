@@ -283,6 +283,71 @@ class TestReorganisationCercles(unittest.TestCase):
             self.assertEqual(len(archives), 1)
             self.assertEqual(rapport.pseudo_tronc_normalises, 1)
 
+    def test_ne_cree_plus_les_huit_niveaux_sans_niveau_verifie(self):
+        with Session(self.engine) as session:
+            filiere = Filiere(
+                nom="Parcours sans niveau",
+                faculte_id=session.exec(select(Faculte)).first().id,
+                mention_id=self.mention_id,
+                niveau=None,
+            )
+            session.add(filiere)
+            session.commit()
+            session.refresh(filiere)
+            session.add(
+                ProgrammeUniversitaire(
+                    universite_id=session.exec(select(Universite)).first().id,
+                    filiere_id=filiere.id,
+                    est_active=True,
+                )
+            )
+            session.commit()
+
+            self.assertEqual(assurer_cercles_referentiel(session), 0)
+            self.assertEqual(
+                session.exec(
+                    select(CercleEtude).where(CercleEtude.filiere_id == filiere.id)
+                ).all(),
+                [],
+            )
+
+    def test_archive_un_ancien_cercle_sans_niveau_verifie(self):
+        with Session(self.engine) as session:
+            filiere = Filiere(
+                nom="Ancien parcours sans niveau",
+                faculte_id=session.exec(select(Faculte)).first().id,
+                mention_id=self.mention_id,
+                niveau=None,
+            )
+            session.add(filiere)
+            session.commit()
+            session.refresh(filiere)
+            session.add(
+                ProgrammeUniversitaire(
+                    universite_id=session.exec(select(Universite)).first().id,
+                    filiere_id=filiere.id,
+                    est_active=True,
+                )
+            )
+            cercle = CercleEtude(
+                nom="Ancien parcours L1",
+                mention_id=self.mention_id,
+                filiere_id=filiere.id,
+                niveau="L1",
+                createur_id=self.admin_id,
+                statut=StatutCercle.ACTIF,
+            )
+            session.add(cercle)
+            session.commit()
+
+            rapport = deduplicquer(session)
+
+            self.assertEqual(
+                session.get(CercleEtude, cercle.id).statut,
+                StatutCercle.ARCHIVE,
+            )
+            self.assertEqual(len(rapport.cercles_suspects), 0)
+
     def test_archive_un_cercle_incomplet_sans_contenu_mais_conserve_un_suspect(self):
         with Session(self.engine) as session:
             suspect_vide = CercleEtude(
