@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block titre %}Mode d'emploi — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
+{% block contenu %}
+<div class="mode-emploi-page">
+  <section class="mode-emploi-hero" aria-labelledby="mode-emploi-titre">
+    <div>
+      <span class="mode-emploi-eyebrow">Guide officiel · Gasy Mahay</span>
+      <h1 id="mode-emploi-titre">Apprendre à utiliser le site, étape par étape.</h1>
+      <p>
+        Ce mode d'emploi explique concrètement quoi faire depuis la création du compte
+        jusqu'aux documents, quiz IA, tuteur, cercles d'étude et classe virtuelle.
+        Chaque section montre le chemin à suivre et ce que tu dois attendre à l'écran.
+      </p>
+      <div class="mode-emploi-hero-actions">
+        <a href="#demarrage">Commencer le parcours</a>
+        <a href="#navigation">Voir la carte du site</a>
+        <a href="/faq">Questions fréquentes</a>
+      </div>
+    </div>
+
+    <div class="mode-emploi-hero-side" aria-label="Résumé du guide">
+      <div class="mode-emploi-compteur">
+        <div class="mode-emploi-compteur-card">
+          <strong>08</strong>
+          <span>grandes étapes expliquées</span>
+        </div>
+        <div class="mode-emploi-compteur-card">
+          <strong>06</strong>
+          <span>parcours fonctionnels visualisés</span>
+        </div>
+        <div class="mode-emploi-compteur-card">
+          <strong>03</strong>
+          <span>profils d'utilisation</span>
+        </div>
+        <div class="mode-emploi-compteur-card">
+          <strong>24/7</strong>
+          <span>guide disponible depuis le site</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="mode-emploi-toc" aria-label="Sommaire du mode d'emploi">
+    <a href="#demarrage"><strong>01 · Démarrer</strong><span>Compte, connexion et première ouverture.</span></a>
+    <a href="#navigation"><strong>02 · Naviguer</strong><span>Comprendre le tableau de bord et le menu.</span></a>
+    <a href="#documents"><strong>03 · Documents</strong><span>Chercher, consulter et déposer des ressources.</span></a>
+    <a href="#apprendre"><strong>04 · Apprendre avec l'IA</strong><span>Quiz IA et Tuteur IA.</span></a>
+    <a href="#cercles"><strong>05 · Cercles d'étude</strong><span>Rejoindre, participer et partager.</span></a>
+    <a href="#classe"><strong>06 · Classe virtuelle</strong><span>Cours, séances, devoirs et tableau blanc.</span></a>
+    <a href="#compte"><strong>07 · Compte &amp; sécurité</strong><span>Profil, 2FA et mot de passe oublié.</span></a>
+    <a href="#depannage"><strong>08 · En cas de problème</strong><span>Diagnostic rapide et solutions.</span></a>
+  </nav>
+
+  <section class="mode-emploi-section" id="demarrage">
+    <div class="mode-emploi-section-head">
+      <span class="mode-emploi-section-num">01</span>
+      <div>
+        <h2>Créer ton compte et démarrer</h2>
+        <p>Le premier parcours est volontairement simple : tu crées ton identité, puis ton profil académique si tu es étudiant.</p>
+      </div>
+    </div>
+
+    <div class="mode-emploi-panel">
+      <div class="mode-emploi-flow" aria-label="Parcours de création de compte">
+        <article class="mode-emploi-flow-step">
+          <span class="mode-emploi-flow-num">01</span>
+          <h3>Inscription</h3>
+          <p>Ouvre <strong>/inscription</strong>, choisis ton rôle et renseigne ton nom, ton numéro et ton mot de passe.</p>
+        </article>
+        <article class="mode-emploi-flow-step">
+          <span class="mode-emploi-flow-num">02</span>
+          <h3>Numéro</h3>
+          <p>Tu peux saisir <strong>034 12 345 67</strong> ou le format historique <strong>34 12 345 67</strong>.</p>
+        </article>
+        <article class="mode-emploi-flow-step">
+          <span class="mode-emploi-flow-num">03</span>
+          <h3>Parcours</h3>
+          <p>Pour un étudiant : université → composante → mention → niveau → filière si nécessaire.</p>
+        </article>
+        <article class="mode-emploi-flow-step">
+          <span class="mode-emploi-flow-num">04</span>
+          <h3>Connexion</h3>
+          <p>Retourne sur <strong>/connexion</strong>. Si le 2FA est activé, un deuxième écran demande le code.</p>
+        </article>
+      </div>
+
+      <div class="mode-emploi-callout" class="mode-emploi-mt-8">
+        <span class="mode-emploi-badge">!</span>
+        <div>
+          <strong>Important pour les anciens comptes</strong>
+          <span>Un ancien compte peut continuer à utiliser son numéro au format <strong>34 xx xxx xx</strong>. Le site normalise ce numéro vers sa forme locale avant vérification.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mode-emploi-section" id="navigation">
+    <div class="mode-emploi-section-head">
+      <span class="mode-emploi-section-num">02</span>
+      <div>
+        <h2>Comprendre la navigation</h2>
+        <p>Le menu de gauche regroupe les fonctions par objectif. Sur mobile, le menu est adapté à un écran plus petit.</p>
+      </div>
+    </div>
+
+    <div class="mode-emploi-panel">
+      <div class="mode-emploi-ui" aria-label="Visualisation simplifiée du tableau de bord">
+        <div class="mode-emploi-ui-side">
+          <div class="mode-emploi-ui-logo">Gasy Mahay</div>
+          <div class="mode-emploi-ui-link mode-emploi-ui-link-active">Tableau de bord</div>
+          <div class="mode-emploi-ui-link">Documents</div>
+          <div class="mode-emploi-ui-link">Quiz IA</div>
+          <div class="mode-emploi-ui-link">Cercles</div>
+          <div class="mode-emploi-ui-link">Classe virtuelle</div>
+          <div class="mode-emploi-ui-link">Sécurité</div>
+          <div class="mode-emploi-ui-link">Mode d'emploi</div>
+        </div>
+        <div class="mode-emploi-ui-main">
+          <h3>Tableau de bord</h3>
+          <div class="mode-emploi-ui-stat-grid">
+            <div class="mode-emploi-ui-stat"><strong>01</strong><span>reprendre une activité</span></div>
+            <div class="mode-emploi-ui-stat"><strong>02</strong><span>voir ses documents</span></div>
+            <div class="mode-emploi-ui-stat"><strong>03</strong><span>suivre ses quiz</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-emploi-grid-3" class="mode-emploi-mt-8">
+        <article class="mode-emploi-card">
+          <h3>Apprendre</h3>
+          <p>Documents, Quiz IA et Tuteur IA sont regroupés ici. Commence par les documents si tu veux travailler à partir de tes supports de cours.</p>
+        </article>
+        <article class="mode-emploi-card">
+          <h3>Collaborer</h3>
+          <p>Cercles d'étude et Classe virtuelle servent à travailler avec d'autres étudiants ou avec un professeur.</p>
+        </article>
+        <article class="mode-emploi-card">
+          <h3>Compte &amp; aide</h3>
+          <p>Sécurité, abonnement, sponsoring, universités, FAQ, contact et ce mode d'emploi sont accessibles depuis le menu.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="mode-emploi-section" id="documents">
+    <div class="mode-emploi-section-head">
+      <span class="mode-emploi-section-num">03</span>
+      <div>
+        <h2>Utiliser les documents</h2>
+        <p>Les documents approuvés constituent la bibliothèque de ressources. Un document en attente de modération n'est pas encore public.</p>
+      </div>
+    </div>
+
+    <div class="mode-emploi-grid-2">
+      <article class="mode-emploi-card">
+        <h3>Pour chercher une ressource</h3>
+        <ul>
+          <li>Ouvre <strong>Documents</strong> depuis le menu.</li>
+          <li>Utilise la filière, la matière, le type de document ou le cercle pour affiner.</li>
+          <li>Ouvre le document voulu pour le consulter.</li>
+          <li>Un document approuvé peut être téléchargé selon les règles d'accès de son cercle.</li>
+        </ul>
+      </article>
+      <article class="mode-emploi-card">
+        <h3>Pour déposer un document</h3>
+        <ul>
+          <li>Ouvre la page de dépôt de documents.</li>
+          <li>Renseigne le titre, la matière, l'année et la filière.</li>
+          <li>Choisis éventuellement un cercle.</li>
+          <li>Ajoute le fichier autorisé puis envoie-le.</li>
+          <li>Le document passe ensuite par la modération avant d'être public.</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="mode-emploi-panel" class="mode-emploi-mt-8">
+      <div class="mode-emploi-flow" aria-label="Flux de dépôt d'un document">
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">A</span><h3>Choisir</h3><p>Un support PDF ou un autre format autorisé par la plateforme.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">B</span><h3>Décrire</h3><p>Ajoute les informations pédagogiques pour que la ressource soit facilement retrouvée.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">C</span><h3>Modérer</h3><p>Le document reste en attente tant qu'un administrateur ne l'a pas approuvé.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">D</span><h3>Partager</h3><p>Une fois approuvé, il rejoint la bibliothèque publique ou le cercle concerné.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="mode-emploi-section" id="apprendre">
+    <div class="mode-emploi-section-head">
+      <span class="mode-emploi-section-num">04</span>
+      <div>
+        <h2>Apprendre avec les outils IA</h2>
+        <p>Quiz IA et Tuteur IA sont deux usages différents : l'un mesure et entraîne tes connaissances, l'autre t'accompagne dans ton raisonnement.</p>
+      </div>
+    </div>
+
+    <div class="mode-emploi-grid-2">
+      <article class="mode-emploi-card">
+        <h3>Quiz IA</h3>
+        <ul>
+          <li>Choisis un quiz ou génère un quiz à partir d'un document disponible.</li>
+          <li>Réponds aux questions une par une.</li>
+          <li>Soumets la tentative pour obtenir le résultat.</li>
+          <li>Le tableau de bord peut ensuite afficher les quiz réellement terminés.</li>
+        </ul>
+      </article>
+      <article class="mode-emploi-card">
+        <h3>Tuteur IA</h3>
+        <ul>
+          <li>Pose une question liée à ton travail.</li>
+          <li>Donne suffisamment de contexte pour obtenir une réponse utile.</li>
+          <li>Utilise l'explication pour comprendre, puis vérifie avec ton cours.</li>
+          <li>Évite d'utiliser l'IA comme seule source pour une décision académique importante.</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="mode-emploi-panel" class="mode-emploi-mt-8">
+      <div class="mode-emploi-map" aria-label="Différence visuelle entre Quiz IA et Tuteur IA">
+        <div class="mode-emploi-map-list mode-emploi-map-left">
+          <div class="mode-emploi-map-item"><strong>Question</strong><span>« Teste-moi sur ce chapitre. »</span></div>
+          <div class="mode-emploi-map-item"><strong>Réponse</strong><span>Tu choisis ou écris une réponse.</span></div>
+        </div>
+        <div class="mode-emploi-map-center">
+          <div><strong>Apprentissage</strong><span>Comprendre → pratiquer → vérifier → recommencer</span></div>
+        </div>
+        <div class="mode-emploi-map-list mode-emploi-map-right">
+          <div class="mode-emploi-map-item"><strong>Question tuteur</strong><span>« Pourquoi cette formule fonctionne ? »</span></div>
+          <div class="mode-emploi-map-item"><strong>Explication</strong><span>L'outil répond et t'aide à raisonner.</span></div>
+        </div>
+        <div class="mode-emploi-map-bottom">
+          <div class="mode-emploi-map-item"><strong>Quiz</strong><span>Mesurer ta compréhension.</span></div>
+          <div class="mode-emploi-map-item"><strong>Tuteur</strong><span>Débloquer une difficulté.</span></div>
+          <div class="mode-emploi-map-item"><strong>Document</strong><span>Revenir à la source.</span></div>
+          <div class="mode-emploi-map-item"><strong>Progression</strong><span>Reprendre ensuite.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mode-emploi-section" id="cercles">
+    <div class="mode-emploi-section-head">
+      <span class="mode-emploi-section-num">05</span>
+      <div>
+        <h2>Travailler dans un cercle d'étude</h2>
+        <p>Les cercles sont des espaces collaboratifs. L'accès dépend du cercle, du statut du compte et, selon les cas, de l'abonnement.</p>
+      </div>
+    </div>
+
+    <div class="mode-emploi-panel">
+      <div class="mode-emploi-flow" aria-label="Parcours d'un cercle d'étude">
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">01</span><h3>Trouver</h3><p>Ouvre <strong>Cercles</strong> et consulte les cercles disponibles.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">02</span><h3>Rejoindre</h3><p>Si ton profil correspond, l'adhésion peut être directe ; sinon une demande peut être nécessaire selon le cercle.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">03</span><h3>Participer</h3><p>Utilise le chat, les réactions, les réponses et les ressources partagées.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">04</span><h3>Partager</h3><p>Un membre autorisé peut publier une pièce jointe ; les contrôles d'accès restent appliqués au serveur.</p></article>
+      </div>
+    </div>
+
+    <div class="mode-emploi-grid-3" class="mode-emploi-mt-8">
+      <article class="mode-emploi-card"><h3>Messages</h3><p>Écris un message court et clair. Les réponses et mentions permettent de poursuivre une discussion sans perdre le contexte.</p></article>
+      <article class="mode-emploi-card"><h3>Documents du cercle</h3><p>Les documents liés à un cercle restent protégés : ils sont réservés aux personnes qui ont réellement accès à ce cercle.</p></article>
+      <article class="mode-emploi-card"><h3>Modération</h3><p>Les actions de gestion sont réservées au créateur du cercle ou aux administrateurs selon les règles de permission.</p></article>
+    </div>
+  </section>
+
+  <section class="mode-emploi-section" id="classe">
+    <div class="mode-emploi-section-head">
+      <span class="mode-emploi-section-num">06</span>
+      <div>
+        <h2>Utiliser la classe virtuelle</h2>
+        <p>Cette zone rassemble les cours, les inscriptions, les séances, les devoirs, la salle vidéo LiveKit et le tableau blanc collaboratif.</p>
+      </div>
+    </div>
+
+    <div class="mode-emploi-panel">
+      <div class="mode-emploi-flow">
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">01</span><h3>Cours</h3><p>Ouvre <strong>Classe virtuelle</strong> et accède à un cours auquel tu es inscrit ou que tu gères.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">02</span><h3>Séance</h3><p>Quand une séance est ouverte, rejoins la salle prévue pour le cours.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">03</span><h3>Travail</h3><p>Utilise la vidéo, le chat de séance et, selon les permissions, le tableau blanc.</p></article>
+        <article class="mode-emploi-flow-step"><span class="mode-emploi-flow-num">04</span><h3>Devoir</h3><p>Consulte l'énoncé et dépose ton rendu. Un étudiant ne peut récupérer que son propre rendu.</p></article>
+      </div>
+    </div>
+
+    <div class="mode-emploi-callout" class="mode-emploi-mt-8">
+      <span class="mode-emploi-badge">R</span>
+      <div>
+        <strong>Permissions en temps réel</strong>
+        <span>Le tableau blanc revalide côté serveur la session et les permissions pendant l'utilisation. Une permission révoquée n'est donc pas censée rester active simplement parce qu'une ancienne connexion WebSocket est encore ouverte.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="mode-emploi-section" id="compte">
+    <div class="mode-emploi-section-head">
+      <span class="mode-emploi-section-num">07</span>
+      <div>
+        <h2>Gérer ton compte et ta sécurité</h2>
+        <p>Le menu Sécurité centralise le profil, le mot de passe, l'email de récupération, le 2FA et les paramètres importants du compte.</p>
+      </div>
+    </div>
+
+    <div class="mode-emploi-role-tabs" aria-label="Parcours selon le type de compte">
+      <article class="mode-emploi-role"><strong>Étudiant</strong><span>Profil académique, documents, quiz, tuteur, cercles et classe virtuelle.</span></article>
+      <article class="mode-emploi-role"><strong>Répétiteur / sponsor</strong><span>Compte sans parcours académique obligatoire, avec les fonctions accessibles à ce rôle.</span></article>
+      <article class="mode-emploi-role"><strong>Administrateur</strong><span>Accès supplémentaire aux outils de modération et de gestion.</span></article>
+    </div>
+
+    <div class="mode-emploi-grid-3">
+      <article class="mode-emploi-card">
+        <h3>Mot de passe oublié</h3>
+        <p>Depuis la connexion, sélectionne « Mot de passe oublié ? ». Le numéro sert à retrouver le compte et, si un email de récupération est disponible, un code temporaire est envoyé.</p>
+      </article>
+      <article class="mode-emploi-card">
+        <h3>2FA</h3>
+        <p>Quand la double authentification est active, la connexion se poursuit avec un code TOTP ou un code de secours.</p>
+      </article>
+      <article class="mode-emploi-card">
+        <h3>Bon réflexe</h3>
+        <p>Ne communique jamais ton mot de passe ni un code 2FA. Utilise le canal de récupération prévu si tu perds l'accès à ton compte.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="mode-emploi-section" id="depannage">
+    <div class="mode-emploi-section-head">
+      <span class="mode-emploi-section-num">08</span>
+      <div>
+        <h2>En cas de problème</h2>
+        <p>Avant de signaler un bug, suis ce mini diagnostic. Il couvre les problèmes d'accès les plus courants.</p>
+      </div>
+    </div>
+
+    <div class="mode-emploi-faq">
+      <details open>
+        <summary>Je connais mon mot de passe mais la connexion est refusée.</summary>
+        <p>Vérifie le format du numéro. Pour un ancien compte, essaye aussi le format historique <strong>34 37 795 52</strong> sans le 0 après +261. Pour un nouveau compte, tu peux saisir <strong>034 37 795 52</strong>. Le serveur normalise les deux variantes vers le même format.</p>
+      </details>
+      <details>
+        <summary>Je ne vois pas un document que je viens de déposer.</summary>
+        <p>Un nouveau document peut être en attente de modération. Tant qu'il n'est pas approuvé, il n'apparaît pas comme une ressource publique.</p>
+      </details>
+      <details>
+        <summary>Je ne peux pas entrer dans un cercle.</summary>
+        <p>Le cercle peut être actif mais l'adhésion dépend de ses règles. Vérifie aussi ton compte, ton profil académique et ton accès premium lorsque la fonctionnalité l'exige.</p>
+      </details>
+      <details>
+        <summary>La classe virtuelle ou le tableau blanc ne fonctionne pas.</summary>
+        <p>Vérifie que tu es réellement inscrit au cours ou que tu en es le professeur/admin, puis recharge la page. Les connexions temps réel sont contrôlées côté serveur.</p>
+      </details>
+      <details>
+        <summary>Je n'ai plus accès à mon email de récupération.</summary>
+        <p>Utilise le canal d'assistance indiqué sur la page de récupération du mot de passe. Ne partage pas ton mot de passe ni un code de sécurité dans un message public.</p>
+      </details>
+    </div>
+  </section>
+
+  <div class="mode-emploi-footer">
+    <p>
+      Le mode d'emploi évoluera avec les fonctionnalités du site. Pour les questions qui
+      ne sont pas couvertes ici, consulte la FAQ ou la page Contact.
+    </p>
+    <a class="bouton bouton-primaire" href="/faq">Ouvrir Aide &amp; Avis</a>
+    <a class="bouton bouton-secondaire" href="/contact">Contacter Gasy Mahay</a>
+  </div>
+</div>
+{% endblock %}
