@@ -13,6 +13,7 @@ from ..dependencies import acces_premium_ou_redirection
 from ..models import Document, StatutDocument, TentativeQuiz
 from .. import quiz as quiz_module
 from .. import theme_service
+from ..rate_limit import limite_depassee
 
 router = APIRouter()
 
@@ -59,6 +60,10 @@ def generer_quiz(
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
+
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
+        return RedirectResponse("/quiz?erreur=trop_de_generations", status_code=303)
 
     matiere_choisie = (matiere_libre or "").strip() or (matiere or "").strip()
     if not matiere_choisie:
@@ -157,6 +162,10 @@ def generer_examen(request: Request, session: Session = Depends(get_session), _c
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
+
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
+        return RedirectResponse("/quiz?erreur=trop_de_generations", status_code=303)
 
     matieres = _matieres_disponibles(session)
     matiere = random.choice(matieres) if matieres else "Culture generale"

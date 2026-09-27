@@ -9,6 +9,7 @@ from ..auth import utilisateur_courant
 from ..dependencies import acces_premium_ou_redirection
 from ..models import SessionTuteur
 from .. import ai_quiz
+from ..rate_limit import limite_depassee
 
 router = APIRouter()
 
@@ -43,7 +44,11 @@ def demander_tuteur(request: Request, question: str = Form(...), session: Sessio
     if redirection:
         return redirection
 
-    question = question.strip()
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"ia-tuteur:user:{utilisateur.id}", 10, 300) or limite_depassee(f"ia-tuteur:ip:{host}", 30, 300):
+        return RedirectResponse("/tuteur?erreur=trop_de_questions", status_code=303)
+
+    question = question.strip()[:4000]
     if not question:
         return RedirectResponse("/tuteur?erreur=question_requise", status_code=303)
 

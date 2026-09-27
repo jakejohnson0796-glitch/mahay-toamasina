@@ -20,6 +20,7 @@ from ..text_extraction import extraire_texte
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
 from ..dependencies import acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
+from ..rate_limit import limite_depassee
 
 router = APIRouter()
 
@@ -137,6 +138,10 @@ def upload_document(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(f"upload-document:ip:{host}", 40, 3600):
+        return RedirectResponse("/documents?erreur=trop_de_depots", status_code=303)
+
     # cercle_id vient d'un champ cache du formulaire (voir
     # document_upload.html) : on revalide quand meme l'appartenance
     # cote serveur, un utilisateur ne pouvant pas fabriquer une requete
@@ -183,6 +188,10 @@ def upload_document(
 
 @router.get("/documents/{document_id}/telecharger")
 def telecharger_document(request: Request, document_id: int, session: Session = Depends(get_session)):
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"ia-document-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-document-quiz:ip:{host}", 12, 300):
+        return RedirectResponse("/documents?erreur=trop_de_generations", status_code=303)
+
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
