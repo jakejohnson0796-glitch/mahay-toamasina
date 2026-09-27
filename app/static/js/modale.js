@@ -20,6 +20,25 @@ Deux fonctions exposees sur window :
   le onsubmit lui-meme sur ce meme formulaire.
 */
 (function () {
+  // Les formulaires destructifs declarent maintenant data-confirm-message
+  // plutot qu'un attribut onsubmit inline, incompatible avec
+  // script-src-attr 'none'.
+  document.addEventListener("submit", function (evenement) {
+    if (evenement.defaultPrevented) return;
+    var formulaire = evenement.target;
+    var message = formulaire.dataset.confirmMessage;
+    if (!message) return;
+    evenement.preventDefault();
+    var options = {};
+    if (formulaire.dataset.confirmDanger === "false") options.danger = false;
+    window.mahayConfirm(message, options).then(function (ok) {
+      if (ok) {
+        formulaire.dataset.pasDeConfirmation = "1";
+        formulaire.submit();
+      }
+    });
+  });
+
   var fond = document.getElementById("mahay-modale-fond");
   if (!fond) return; // page sans le shell : ne devrait pas arriver, base.html le pose partout
 
@@ -77,6 +96,9 @@ Deux fonctions exposees sur window :
 
   window.mahayConfirm = mahayConfirm;
 
+  // Compatibilite JS pour les rares integrations externes qui appelleraient
+  // encore la fonction directement. Les templates ne l'utilisent plus via
+  // onsubmit inline.
   window.mahayConfirmSubmit = function (evenement, message, options) {
     evenement.preventDefault();
     var formulaire = evenement.target;

@@ -9,6 +9,7 @@ client (clickjacking, sniffing MIME, fuite de referrer, injection de
 script depuis un domaine tiers...).
 """
 from starlette.middleware.base import BaseHTTPMiddleware
+import secrets
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -64,6 +65,8 @@ class EnTetesSecuriteMiddleware(BaseHTTPMiddleware):
         self.https_actif = https_actif
 
     async def dispatch(self, request: Request, call_next) -> Response:
+        # Nonce unique par requete, expose au moteur Jinja via request.state.
+        request.state.csp_nonce = secrets.token_urlsafe(32)
         reponse = await call_next(request)
 
         # Empeche le navigateur de deviner un type de contenu different
@@ -88,7 +91,7 @@ class EnTetesSecuriteMiddleware(BaseHTTPMiddleware):
        # acceder, meme si un script malveillant s'executait.
         reponse.headers["Permissions-Policy"] = "geolocation=(), microphone=(self), camera=(self)"
 
-        reponse.headers["Content-Security-Policy"] = _CSP
+        reponse.headers["Content-Security-Policy"] = _construire_csp(request.state.csp_nonce)
         reponse.headers["Cross-Origin-Opener-Policy"] = "same-origin"
         reponse.headers["Cross-Origin-Resource-Policy"] = "same-origin"
 

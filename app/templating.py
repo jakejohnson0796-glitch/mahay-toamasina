@@ -142,3 +142,11 @@ def _couleur_avatar(nom: str) -> str:
 
 
 templates.env.globals["couleur_avatar"] = _couleur_avatar
+
+
+def csp_nonce(request) -> str:
+    """Nonce CSP de la requete courante, genere par le middleware de securite."""
+    return getattr(request.state, "csp_nonce", "")
+
+
+templates.env.globals["csp_nonce"] = csp_nonce

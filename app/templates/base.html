@@ -90,7 +90,7 @@
 
   <aside class="tb-sidebar" id="nav-principale" aria-label="Navigation principale">
     <div class="tb-sidebar-marque">
-      <a href="/" style="text-decoration:none;">
+      <a href="/" class="sans-decoration">
         <span class="tb-sidebar-logo">Gasy Mahay</span>
         <span class="tb-sidebar-lieu">Toamasina</span>
       </a>
@@ -228,7 +228,7 @@
 
   <div class="app-page">
     <header class="mobile-entete-app" aria-label="En-tête mobile">
-      <a href="{% if request.session.get("user_id") %}/dashboard{% else %}/{% endif %}" style="text-decoration:none;">
+      <a href="{% if request.session.get("user_id") %}/dashboard{% else %}/{% endif %}" class="sans-decoration">
         <span class="mobile-entete-app-marque">Gasy Mahay</span>
         <span class="mobile-entete-app-sous-marque">Toamasina</span>
       </a>
@@ -240,7 +240,7 @@
       {% endif %}
     </header>
     {% if profil_academique_a_actualiser(request) %}
-    <div class="info" style="border-radius:0; margin-bottom:0; text-align:center;">
+    <div class="info info-profil-academique">
       Votre profil academique doit etre actualise pour utiliser correctement les cercles d'etudes.
       <a href="/profil/academique">Actualiser maintenant</a>
     </div>
@@ -298,12 +298,12 @@
   </div>
 </div>
 
-<script src="/static/js/navigation.js?v={{ version_asset('js/navigation.js') }}" defer></script>
-<script src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
-<script src="/static/js/modale.js?v={{ version_asset('js/modale.js') }}" defer></script>
-<script src="/static/js/soumission.js?v={{ version_asset('js/soumission.js') }}" defer></script>
-<script src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
-<script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/navigation.js?v={{ version_asset('js/navigation.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/modale.js?v={{ version_asset('js/modale.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/soumission.js?v={{ version_asset('js/soumission.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}">
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/sw.js').catch(() => {});
   }
