@@ -694,7 +694,14 @@ def liste_cercles(
         )
 
     if utilisateur and profil_academique_recherche and profil_academique_recherche.get("coherent"):
-
+        mention_profil = profil_academique_recherche.get("mention") or {}
+        domaine_profil = profil_academique_recherche.get("domaine") or {}
+        mention_profil_id = mention_profil.get("id")
+        domaine_profil_id = domaine_profil.get("id")
+        cercles_profil_visibilite["mention_id"] = mention_profil_id
+        cercles_profil_visibilite["mention_nom"] = mention_profil.get("nom")
+        cercles_profil_visibilite["domaine_id"] = domaine_profil_id
+        cercles_profil_visibilite["domaine_nom"] = domaine_profil.get("nom")
 
         if mention_profil_id:
             mention_effective_resume = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
