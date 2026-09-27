@@ -1,5 +1,5 @@
 """
-Logique metier de l'acces Premium etudiant : essai gratuit de 14 jours,
+Logique metier de l'acces Premium etudiant : essai gratuit de 60 jours,
 puis abonnement paye de 5 000 Ar/mois valide manuellement par un admin.
 
 Centralise ici (plutot que disperse dans les routers) pour respecter le
@@ -13,13 +13,13 @@ from sqlmodel import Session, select
 
 from .models import AbonnementEtudiant, StatutAbonnementEtudiant, Utilisateur
 
-DUREE_ESSAI_JOURS = 14
+DUREE_ESSAI_JOURS = 60
 PRIX_ABONNEMENT_ETUDIANT_ARIARY = 5_000
 DUREE_PROLONGATION_JOURS = 30
 
 
 def creer_essai_gratuit(session: Session, utilisateur: Utilisateur) -> AbonnementEtudiant:
-    """Cree l'abonnement en essai gratuit pour un nouvel etudiant.
+    """Cree l'abonnement en essai gratuit de 60 jours pour un nouvel etudiant.
     Appele une seule fois, juste apres l'inscription. Si un enregistrement
     existe deja pour cet utilisateur (ne devrait pas arriver vu la
     contrainte unique, mais on reste defensif), on le renvoie tel quel

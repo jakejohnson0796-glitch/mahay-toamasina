@@ -45,7 +45,7 @@ class StatutAbonnementEtudiant(str, Enum):
     un autre cote du marche avec une autre logique d'activation) : ici
     l'activation passe TOUJOURS par une validation manuelle d'un admin sur
     preuve de paiement, jamais automatique."""
-    ESSAI = "essai"                 # essai gratuit de 14 jours, actif automatiquement a l'inscription
+    ESSAI = "essai"                 # essai gratuit de 60 jours, actif automatiquement a l'inscription
     EN_ATTENTE = "en_attente"       # demande soumise (avec ou sans preuve), en attente de validation admin
     ACTIF = "actif"                 # valide par un admin, Premium accessible
     EXPIRE = "expire"               # essai ou abonnement paye arrive a echeance sans renouvellement
