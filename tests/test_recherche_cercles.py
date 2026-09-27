@@ -278,6 +278,19 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertIn("Legacy Finance L3", page.text)
 
+    def test_la_visibilite_directe_du_profil_est_affichee_sur_la_vue_generale(self):
+        page = self.client.get("/cercles")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Les cercles autour de ton profil", page.text)
+        self.assertIn("Tous les cercles de ma mention", page.text)
+        self.assertIn("Mon domaine", page.text)
+
+    def test_la_visibilite_directe_n_altere_pas_les_vues_filtrees(self):
+        page = self.client.get("/cercles", params={"disponibles": "1"})
+        self.assertEqual(page.status_code, 200)
+        self.assertNotIn("Tous les cercles de ma mention", page.text)
+        self.assertNotIn("Mon domaine", page.text)
+
     def test_le_contexte_du_profil_est_affiche_hierarchiquement(self):
         page = self.client.get("/cercles")
         self.assertEqual(page.status_code, 200)

@@ -290,7 +290,14 @@
 }
 </style>
 
-{% if utilisateur and cercles_profil_visibilite %}
+{% if utilisateur and cercles_profil_visibilite
+      and not recherche_q
+      and not recherche_domaine_id
+      and not recherche_mention_id
+      and not recherche_filiere_id
+      and not recherche_niveau
+      and not recherche_tronc_commun
+      and not recherche_disponibles %}
 <section class="cercles-visibilite" aria-labelledby="visibilite-profil-titre">
   <div class="cercles-visibilite-entete">
     <div>
