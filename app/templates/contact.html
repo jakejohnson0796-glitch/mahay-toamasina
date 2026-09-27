@@ -3,16 +3,90 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
+<style>
+.contact-whatsapp-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:1.25rem;align-items:center}
+.contact-whatsapp-qr{display:flex;justify-content:center;align-items:center;padding:1rem;border:1px solid var(--content-border);border-radius:14px;background:#fff}
+.contact-whatsapp-qr img{display:block;width:230px;height:230px;max-width:100%}
+.contact-whatsapp-message{min-height:120px;resize:vertical}
+.contact-whatsapp-actions{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:.7rem}
+.contact-whatsapp-number{font-family:'IBM Plex Mono',monospace;font-weight:600}
+@media (max-width:760px){.contact-whatsapp-grid{grid-template-columns:1fr}.contact-whatsapp-qr{order:-1}}
+</style>
+
 <p class="eyebrow">Nous contacter</p>
 <h2>Contact</h2>
 <p>Une question, une suggestion, un partenariat ? Ecrivez-nous directement sur WhatsApp.</p>
 
 <div class="carte-formulaire">
-  <h3 class="titre-carte">WhatsApp</h3>
-  <p class="stat-label">Reponse generalement rapide, du lundi au samedi.</p>
-  <a href="https://wa.me/261343779552" target="_blank" rel="noopener" class="bouton bouton-primaire bouton-form">
-    Ecrire sur WhatsApp — +261 34 37 795 52
-  </a>
+  <div class="contact-whatsapp-grid">
+    <div>
+      <h3 class="titre-carte">WhatsApp</h3>
+      <p class="stat-label">Numero officiel : <span class="contact-whatsapp-number">+261 33 75 817 32</span></p>
+
+      <label for="message-whatsapp">Votre message</label>
+      <textarea id="message-whatsapp" class="contact-whatsapp-message" rows="5" maxlength="1000">Bonjour Gasy Mahay, je vous contacte depuis le site.</textarea>
+
+      <div class="contact-whatsapp-actions">
+        <a
+          id="lien-whatsapp"
+          href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site."
+          target="_blank"
+          rel="noopener"
+          class="bouton bouton-primaire"
+        >Ecrire sur WhatsApp</a>
+        <button class="bouton bouton-secondaire" type="button" id="copier-message-whatsapp">Copier le message</button>
+      </div>
+      <p class="stat-label" style="margin-top:.7rem;">Scannez le QR code avec votre téléphone pour ouvrir directement la conversation WhatsApp.</p>
+    </div>
+
+    <a
+      class="contact-whatsapp-qr"
+      href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site."
+      target="_blank"
+      rel="noopener"
+      aria-label="Ouvrir WhatsApp avec Gasy Mahay"
+    >
+      <img
+        src="{{ url_for('static', path='images/contact/whatsapp-gasy-mahay.png') }}"
+        alt="QR code WhatsApp Gasy Mahay"
+        width="230"
+        height="230"
+        loading="eager"
+      >
+    </a>
+  </div>
 </div>
 </div>
+
+<script>
+(() => {
+  const numero = "261337581732";
+  const champ = document.getElementById("message-whatsapp");
+  const lien = document.getElementById("lien-whatsapp");
+  const boutonCopier = document.getElementById("copier-message-whatsapp");
+
+  if (!champ || !lien) return;
+
+  const mettreAJourLien = () => {
+    const message = (champ.value || "").trim() || "Bonjour Gasy Mahay, je vous contacte depuis le site.";
+    lien.href = "https://wa.me/" + numero + "?text=" + encodeURIComponent(message);
+  };
+
+  champ.addEventListener("input", mettreAJourLien);
+  mettreAJourLien();
+
+  if (boutonCopier) {
+    boutonCopier.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText((champ.value || "").trim());
+        boutonCopier.textContent = "Message copié";
+        setTimeout(() => { boutonCopier.textContent = "Copier le message"; }, 1800);
+      } catch (_) {
+        champ.select();
+        document.execCommand("copy");
+      }
+    });
+  }
+})();
+</script>
 {% endblock %}
