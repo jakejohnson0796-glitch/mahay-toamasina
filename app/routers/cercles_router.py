@@ -2149,5 +2149,9 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 "date_envoi": date_envoi_message.isoformat(),
             })
     except WebSocketDisconnect:
+        pass
+    finally:
+        # Nettoyage garanti aussi quand le serveur ferme la socket lui-meme
+        # apres une revalidation d'authentification/adhesion.
         gestionnaire.deconnecter(cercle_id, websocket)
         await gestionnaire.diffuser_presence(cercle_id)
