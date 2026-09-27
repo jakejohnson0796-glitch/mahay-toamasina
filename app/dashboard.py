@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from sqlmodel import Session, select, func
 from sqlalchemy import exists
+from sqlalchemy.orm import load_only
 
 from .models import (
     CercleEtude,
@@ -97,6 +98,19 @@ def quiz_completes(session: Session, utilisateur_id: int) -> List[TentativeQuiz]
     sont calcules séparément par SQL dans donnees_dashboard()."""
     return session.exec(
         select(TentativeQuiz)
+        .options(load_only(
+            TentativeQuiz.id,
+            TentativeQuiz.utilisateur_id,
+            TentativeQuiz.matiere,
+            TentativeQuiz.niveau,
+            TentativeQuiz.difficulte,
+            TentativeQuiz.nb_questions,
+            TentativeQuiz.score,
+            TentativeQuiz.date_creation,
+            TentativeQuiz.date_soumission,
+            TentativeQuiz.mode_examen,
+            TentativeQuiz.duree_secondes,
+        ))
         .where(TentativeQuiz.utilisateur_id == utilisateur_id)
         .where(TentativeQuiz.date_soumission != None)  # noqa: E711
         .order_by(TentativeQuiz.date_soumission.desc())
