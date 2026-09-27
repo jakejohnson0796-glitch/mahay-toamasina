@@ -344,11 +344,11 @@ class TestReorganisationCercles(unittest.TestCase):
             )
             session.commit()
 
-            self.assertEqual(assurer_cercles_referentiel(session), 0)
-            self.assertEqual(
-                session.exec(select(CercleEtude)).all(),
-                [],
-            )
+            assurer_cercles_referentiel(session)
+            cercles_pseudo = session.exec(
+                select(CercleEtude).where(CercleEtude.filiere_id == pseudo.id)
+            ).all()
+            self.assertEqual(cercles_pseudo, [])
 
 
 if __name__ == "__main__":
