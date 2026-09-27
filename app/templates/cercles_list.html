@@ -5,7 +5,7 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair cercles-page-shell">
-<style>
+<style nonce="{{ csp_nonce(request) }}">
 /* Refonte visuelle Cercles — images editoriales + hierarchie plus premium. */
 .cercles-page-shell{position:relative;z-index:1}
 .cercles-hero-visuel{
@@ -203,7 +203,7 @@
 </div>
 {% endif %}
 
-<style>
+<style nonce="{{ csp_nonce(request) }}">
 .cercles-visibilite{
   margin:0 0 2rem;
   padding:1.1rem;
@@ -588,7 +588,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true" style="background: {{ couleurs_avatar_carte[info.cercle.id % 5] }};">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar" aria-hidden="true" class="carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
@@ -655,6 +655,6 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
 </div>
 
 <!-- Cascade de recherche nationale : Domaine -> Mention -> Niveau -> Parcours. -->
-<script src="{{ url_for('static', path='js/cercles-list.js') }}?v={{ version_asset('js/cercles-list.js') }}"></script>
+<script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/cercles-list.js') }}?v={{ version_asset('js/cercles-list.js') }}"></script>
 
 {% endblock %}

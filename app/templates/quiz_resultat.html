@@ -15,8 +15,14 @@
   <span class="quiz-score-nombre">{{ tentative.score }}/{{ tentative.nb_questions }}</span>
   <span class="quiz-score-label">Bonnes reponses</span>
   {% set pourcentage = (tentative.score / tentative.nb_questions * 100) if tentative.nb_questions else 0 %}
-  <span class="quiz-progression-piste" style="margin-top: 0.4rem;">
-    <span class="quiz-progression-remplissage" style="width: {{ pourcentage }}%; background: {{ 'var(--color-success-clair)' if pourcentage >= 50 else 'var(--color-danger-clair)' }};"></span>
+  <style nonce="{{ csp_nonce(request) }}">
+    .quiz-resultat-progress-{{ tentative.id }} {
+      width: {{ pourcentage }}%;
+      background: {{ 'var(--color-success-clair)' if pourcentage >= 50 else 'var(--color-danger-clair)' }};
+    }
+  </style>
+  <span class="quiz-progression-piste quiz-score-piste">
+    <span class="quiz-progression-remplissage quiz-resultat-progress-{{ tentative.id }}"></span>
   </span>
 </div>
 
