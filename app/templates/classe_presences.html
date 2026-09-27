@@ -1,26 +1,31 @@
 {% extends "base.html" %}
 {% from "components/avatar.html" import avatar_utilisateur %}
-{% block titre %}Presences — {{ seance.titre }} — Gasy Mahay{% endblock %}
+{% block titre %}Présences — {{ seance.titre }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow"><a href="/classe/{{ cours.id }}">&larr; {{ cours.nom }}</a></p>
-<h2>Presences — {{ seance.titre }}</h2>
+<div class="classe-page">
+  <p class="classe-breadcrumb"><a href="/classe/{{ cours.id }}">{{ cours.nom }}</a> / Présences</p>
+  <header class="classe-detail-head">
+    <div><h1>Présences</h1><p class="classe-detail-meta">{{ seance.titre }} · suivi des participations à la séance.</p></div>
+    <span class="classe-course-badge">{{ presences|length }} participant{{ "s" if presences|length != 1 else "" }}</span>
+  </header>
 
-<table class="table-manifeste">
-  <thead><tr><th>Etudiant</th><th>Entree</th><th>Sortie</th><th>Duree estimee</th></tr></thead>
-  <tbody>
-    {% for info in presences %}
-    <tr>
-      <td style="display:flex;align-items:center;gap:0.5rem;">{{ avatar_utilisateur(info.utilisateur, taille=24) }}{{ info.utilisateur.nom }}</td>
-      <td>{{ info.presence.heure_entree.strftime("%H:%M:%S") }}</td>
-      <td>{{ info.presence.heure_sortie.strftime("%H:%M:%S") if info.presence.heure_sortie else "en cours" }}</td>
-      <td>{{ (info.presence.duree_estimee_secondes // 60) }} min</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="4">Personne n'a encore rejoint cette seance.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <section class="classe-section-card">
+    <table class="classe-table">
+      <thead><tr><th>Étudiant</th><th>Entrée</th><th>Sortie</th><th>Durée</th></tr></thead>
+      <tbody>
+        {% for info in presences %}
+        <tr>
+          <td>{{ avatar_utilisateur(info.utilisateur, taille=30) }} {{ info.utilisateur.nom }}</td>
+          <td>{{ info.presence.heure_entree.strftime("%H:%M:%S") }}</td>
+          <td>{{ info.presence.heure_sortie.strftime("%H:%M:%S") if info.presence.heure_sortie else "en cours" }}</td>
+          <td>{{ info.presence.duree_estimee_secondes // 60 }} min</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">Personne n'a encore rejoint cette séance.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
 </div>
 {% endblock %}
