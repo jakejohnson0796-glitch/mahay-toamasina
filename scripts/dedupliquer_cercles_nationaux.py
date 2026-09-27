@@ -69,6 +69,7 @@ def normaliser(texte: str | None) -> str:
     if not texte:
         return ""
     texte = texte.strip().replace("\u2019", "'")
+    texte = re.sub(r"\s*&\s*", " et ", texte)
     texte = unicodedata.normalize("NFKD", texte)
     texte = "".join(c for c in texte if not unicodedata.combining(c))
     texte = re.sub(r"\s+", " ", texte)
@@ -457,10 +458,7 @@ def _fusionner_groupe(
     perdants = [c for c in cercles_du_groupe if c.id != survivant.id]
 
     if cle[0] == "tronc":
-        if not dry_run:
-            survivant.filiere_id = None
-            session.add(survivant)
-        rapport.pseudo_tronc_normalises += sum(
+        nb_pseudo_tronc = sum(
             1
             for c in cercles_du_groupe
             if c.filiere_id is not None
@@ -469,6 +467,10 @@ def _fusionner_groupe(
                 and normaliser(contexte.filieres[c.filiere_id].nom) == "tronc commun"
             )
         )
+        if not dry_run:
+            survivant.filiere_id = None
+            session.add(survivant)
+        rapport.pseudo_tronc_normalises += nb_pseudo_tronc
     else:
         # Un cercle national doit pointer vers une Filiere représentative
         # qui a une offre active. On garde l'ID le plus petit parmi les
