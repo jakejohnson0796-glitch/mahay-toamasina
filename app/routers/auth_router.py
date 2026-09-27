@@ -16,7 +16,7 @@ from ..csrf import verifier_csrf
 from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
-from ..auth import hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire
+from ..auth import hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite
 from ..rate_limit import limite_depassee
 from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_code_totp, generer_codes_secours, hacher_code_secours, verifier_code_secours
 from ..telephone import normaliser_telephone, TelephoneInvalide
@@ -356,6 +356,7 @@ def verifier_2fa(
     _rotation_session_authentifiee(request)
     request.session["user_id"] = utilisateur.id
     request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
+    _preparer_rappel_inactivite_apres_connexion(request, session, utilisateur)
     return _redirection_apres_connexion(utilisateur)
 
 
@@ -705,7 +706,7 @@ def _contexte_securite(
 
     return {
         "utilisateur": utilisateur,
-        "jours_inactivite": __import__("app.auth", fromlist=["jours_inactivite"]).jours_inactivite(utilisateur),
+        "jours_inactivite": jours_inactivite(utilisateur),
         "nb_codes_restants": nb_codes_restants,
         "profil_academique": profil_academique,
         "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
