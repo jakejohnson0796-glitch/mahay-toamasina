@@ -51,6 +51,7 @@
   function ouvrir() {
     sidebar.classList.add("tb-sidebar-ouverte");
     overlay.classList.add("sidebar-overlay-visible");
+    document.body.classList.add("menu-mobile-ouvert");
     bouton.setAttribute("aria-expanded", "true");
     // Le premier lien recoit le focus : au clavier/lecteur d'ecran, on
     // atterrit directement dans le menu qui vient de s'ouvrir plutot que
@@ -63,6 +64,7 @@
   function fermer(rendreFocusAuBouton) {
     sidebar.classList.remove("tb-sidebar-ouverte");
     overlay.classList.remove("sidebar-overlay-visible");
+    document.body.classList.remove("menu-mobile-ouvert");
     bouton.setAttribute("aria-expanded", "false");
     if (rendreFocusAuBouton) bouton.focus();
   }
