@@ -33,6 +33,9 @@
 <link rel="stylesheet" href="/static/ux.css?v={{ version_asset('ux.css') }}">
 <link rel="stylesheet" href="/static/refonte.css?v={{ version_asset('refonte.css') }}">
 <link rel="stylesheet" href="/static/csp-utilities.css?v={{ version_asset('csp-utilities.css') }}">
+{% if request.url.path.startswith("/admin") or request.url.path in ["/abonnement", "/sponsoring", "/securite"] %}
+<link rel="stylesheet" href="/static/ops.css?v={{ version_asset('ops.css') }}">
+{% endif %}
 <link rel="stylesheet" href="/static/sidebar.css?v={{ version_asset('sidebar.css') }}">
 {% if request.url.path.startswith("/classe") %}
 <link rel="stylesheet" href="/static/classe.css?v={{ version_asset('classe.css') }}">
@@ -47,7 +50,7 @@
 <link rel="stylesheet" href="/static/ai-learning.css?v={{ version_asset('ai-learning.css') }}">
 {% endif %}
 </head>
-<body class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}">
+<body class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}">
 {% from "components/icone.html" import icone %}
 {% from "components/avatar.html" import avatar_utilisateur %}
 {#

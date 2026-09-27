@@ -1,175 +1,175 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
 {% from "components/avatar.html" import avatar_utilisateur %}
-{% block titre %}Securite du compte — Gasy Mahay{% endblock %}
+{% block titre %}Sécurité du compte — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<h2>Securite du compte</h2>
+{% set score = 0 %}
+{% if utilisateur.email %}{% set score = score + 1 %}{% endif %}
+{% if utilisateur.totp_active %}{% set score = score + 2 %}{% endif %}
+{% if utilisateur.photo_chemin %}{% set score = score + 1 %}{% endif %}
+{% if profil_academique.coherent %}{% set score = score + 1 %}{% endif %}
 
-{% if request.query_params.get("desactive") %}
-<div class="info">Double authentification desactivee.</div>
-{% endif %}
-{% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+<div class="ops-page">
+  <section class="ops-hero">
+    <div>
+      <span class="ops-kicker">Compte · sécurité & profil</span>
+      <h1>Protéger ton compte sans chercher les réglages.</h1>
+      <p>
+        Gère ton mot de passe, ton email de récupération, la double authentification,
+        ta photo et ton parcours académique depuis une seule page.
+      </p>
+      <div class="ops-hero-actions"><a href="/mode-emploi#compte">Mode d'emploi</a><a href="/connexion">Écran de connexion</a></div>
+    </div>
+    <div>
+      <div class="ops-score">
+        <div class="ops-score-ring ops-score-{{ score }}" aria-label="Niveau de sécurité {{ score }} sur 5"><strong>{{ score }}/5</strong></div>
+        <div class="ops-score-copy">
+          <strong>{% if score >= 4 %}Protection renforcée{% elif score >= 2 %}Protection correcte{% else %}À renforcer{% endif %}</strong>
+          <span>Le score est un repère visuel basé sur les protections configurées, pas une garantie absolue.</span>
+        </div>
+      </div>
+      <div class="ops-checklist">
+        <div class="ops-check {{ '' if utilisateur.email else 'is-off' }}"><span class="ops-check-mark">{{ '✓' if utilisateur.email else '!' }}</span><div><strong>Email de récupération</strong><span>{{ 'Configuré' if utilisateur.email else 'À configurer' }}</span></div></div>
+        <div class="ops-check {{ '' if utilisateur.totp_active else 'is-off' }}"><span class="ops-check-mark">{{ '✓' if utilisateur.totp_active else '!' }}</span><div><strong>Double authentification</strong><span>{{ 'Active' if utilisateur.totp_active else 'Désactivée' }}</span></div></div>
+        <div class="ops-check {{ '' if utilisateur.photo_chemin else 'is-off' }}"><span class="ops-check-mark">{{ '✓' if utilisateur.photo_chemin else '!' }}</span><div><strong>Profil personnalisé</strong><span>{{ 'Photo ajoutée' if utilisateur.photo_chemin else 'Avatar automatique' }}</span></div></div>
+      </div>
+    </div>
+  </section>
 
-{% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
-{% if request.query_params.get("erreur") == "niveau_cooldown" %}
-<div class="erreur">Vous avez recemment modifie votre niveau. Vous pourrez le modifier a nouveau dans {{ jours_avant_changement_niveau }} jour{{ "s" if jours_avant_changement_niveau > 1 else "" }}.</div>
-{% endif %}
-{% if request.query_params.get("ok") == "niveau_modifie" %}<div class="info">Niveau mis a jour.</div>{% endif %}
+  {% if request.query_params.get("desactive") %}<div class="ops-alert ops-alert-info">Double authentification désactivée.</div>{% endif %}
+  {% if erreur %}<div class="ops-alert ops-alert-danger">{{ erreur }}</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="ops-alert ops-alert-danger">Niveau invalide.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_cooldown" %}<div class="ops-alert ops-alert-warn">Tu as récemment modifié ton niveau. Il reste {{ jours_avant_changement_niveau }} jour{{ "s" if jours_avant_changement_niveau > 1 else "" }}.</div>{% endif %}
+  {% if request.query_params.get("ok") %}<div class="ops-alert ops-alert-info">Modification enregistrée.</div>{% endif %}
 
-<div class="carte-formulaire">
-  <h3 class="titre-carte">Photo de profil</h3>
-  {% if erreur_photo %}<div class="erreur">{{ erreur_photo }}</div>{% endif %}
-  {% if request.query_params.get("ok") == "photo_mise_a_jour" %}<div class="info">Photo de profil mise a jour.</div>{% endif %}
-  {% if request.query_params.get("ok") == "photo_supprimee" %}<div class="info">Photo de profil supprimee. L'avatar genere automatiquement est utilise a la place.</div>{% endif %}
+  <div class="ops-profile ops-section">
+    <aside>
+      <section class="ops-security-card">
+        <h2>Ton identité</h2>
+        <p class="ops-security-card-intro">Ces éléments servent à identifier ton compte et à personnaliser les espaces collaboratifs.</p>
+        <div class="ops-security-status">
+          {{ avatar_utilisateur(utilisateur, taille=54) }}
+          <div><strong>{{ utilisateur.nom }}</strong><span>{{ utilisateur.telephone }} · {{ utilisateur.role.value }}</span></div>
+        </div>
+        <div class="ops-subsection">
+          <h3>Email de récupération</h3>
+          <p class="ops-security-card-intro">{% if utilisateur.email %}{{ utilisateur.email }}{% else %}Aucune adresse configurée{% endif %}</p>
+          <form method="post" action="/profil/email" class="ops-form">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <label for="email">Adresse email</label>
+            <input type="email" id="email" name="email" value="{{ utilisateur.email or '' }}" placeholder="vous@exemple.com">
+            <button class="bouton bouton-secondaire" type="submit">Enregistrer</button>
+          </form>
+        </div>
+      </section>
 
-  <div style="display:flex; align-items:center; gap:1.25rem; margin-bottom:1.25rem;">
-    {{ avatar_utilisateur(utilisateur, taille=72) }}
-    <p class="stat-label" style="margin:0;">
-      {% if utilisateur.photo_chemin %}
-      Une photo est actuellement affichee sur votre profil.
-      {% else %}
-      Aucune photo definie : un avatar est genere automatiquement a partir de votre initiale.
-      {% endif %}
-    </p>
+      <section class="ops-security-card">
+        <h2>Double authentification</h2>
+        <p class="ops-security-card-intro">Un code supplémentaire est demandé à la connexion lorsque la 2FA est active.</p>
+        {% if utilisateur.totp_active %}
+          <div class="ops-security-status"><span class="ops-security-dot is-on"></span><div><strong>2FA active</strong><span>{{ nb_codes_restants }} code{{ 's' if nb_codes_restants != 1 else '' }} de secours restant{{ 's' if nb_codes_restants != 1 else '' }}</span></div></div>
+          <div class="ops-form-actions">
+            <form method="post" action="/securite/2fa/regenerer-codes-secours"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Régénérer les codes</button></form>
+          </div>
+          <div class="ops-subsection">
+            <form method="post" action="/securite/2fa/desactiver" class="ops-form">
+              <label for="mot_de_passe_desactiver">Mot de passe pour confirmer la désactivation</label>
+              <input type="password" id="mot_de_passe_desactiver" name="mot_de_passe" required autocomplete="current-password">
+              <button class="bouton bouton-danger" type="submit">Désactiver la 2FA</button>
+            </form>
+          </div>
+        {% else %}
+          <div class="ops-security-status"><span class="ops-security-dot"></span><div><strong>2FA désactivée</strong><span>Active-la pour renforcer la connexion.</span></div></div>
+          <form method="post" action="/securite/2fa/demarrer" class="ops-form">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <button class="bouton bouton-primaire" type="submit">Activer la 2FA</button>
+          </form>
+        {% endif %}
+      </section>
+    </aside>
+
+    <main>
+      <section class="ops-security-card">
+        <h2>Photo de profil</h2>
+        <p class="ops-security-card-intro">La photo est visible dans les espaces où ton profil apparaît.</p>
+        {% if erreur_photo %}<div class="ops-alert ops-alert-danger">{{ erreur_photo }}</div>{% endif %}
+        <div class="ops-security-status">
+          {{ avatar_utilisateur(utilisateur, taille=68) }}
+          <div><strong>{{ 'Photo actuelle' if utilisateur.photo_chemin else 'Avatar automatique' }}</strong><span>{{ 'Une photo est actuellement utilisée.' if utilisateur.photo_chemin else 'Ton initiale sert actuellement d’avatar.' }}</span></div>
+        </div>
+        <form method="post" action="/profil/photo" enctype="multipart/form-data" class="ops-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <label for="photo">Choisir une photo · JPG, PNG ou WEBP · 5 Mo max</label>
+          <input type="file" id="photo" name="photo" accept="image/png,image/jpeg,image/webp" required>
+          <div class="ops-form-actions"><button class="bouton bouton-primaire" type="submit">Mettre à jour la photo</button></div>
+        </form>
+        {% if utilisateur.photo_chemin %}
+        <form method="post" action="/profil/photo/supprimer" data-confirm-message="Supprimer votre photo de profil ?" data-confirm-danger="false">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit">Supprimer la photo</button>
+        </form>
+        {% endif %}
+      </section>
+
+      <section class="ops-security-card">
+        <h2>Mot de passe</h2>
+        <p class="ops-security-card-intro">Le mot de passe est votre première ligne de défense. Un nouveau mot de passe invalide aussi les anciennes sessions lorsque le système le détecte.</p>
+        {% if utilisateur.doit_changer_mot_de_passe %}<div class="ops-alert ops-alert-warn">Ce compte utilise un mot de passe temporaire. Il doit être remplacé.</div>{% endif %}
+        {% if erreur_mot_de_passe %}<div class="ops-alert ops-alert-danger">{{ erreur_mot_de_passe }}</div>{% endif %}
+        <form method="post" action="/securite/mot-de-passe" class="ops-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <div><label for="ancien_mot_de_passe">Mot de passe actuel</label><input type="password" id="ancien_mot_de_passe" name="ancien_mot_de_passe" required autocomplete="current-password"></div>
+          <div><label for="nouveau_mot_de_passe">Nouveau mot de passe</label><input type="password" id="nouveau_mot_de_passe" name="nouveau_mot_de_passe" required minlength="8" maxlength="72" autocomplete="new-password"></div>
+          <div class="ops-form-actions"><button class="bouton bouton-primaire" type="submit">Changer le mot de passe</button></div>
+        </form>
+      </section>
+
+      <section class="ops-security-card">
+        <h2>À propos de moi</h2>
+        <p class="ops-security-card-intro">Une courte présentation affichée dans certains espaces collaboratifs.</p>
+        {% if erreur_bio %}<div class="ops-alert ops-alert-danger">{{ erreur_bio }}</div>{% endif %}
+        <form method="post" action="/profil/bio" class="ops-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <textarea name="bio" maxlength="280" placeholder="Ex. Passionné par la tech et le développement…">{{ utilisateur.bio or '' }}</textarea>
+          <div class="ops-form-actions"><button class="bouton bouton-secondaire" type="submit">Enregistrer</button></div>
+        </form>
+      </section>
+
+      <section class="ops-security-card">
+        <h2>Parcours académique</h2>
+        <p class="ops-security-card-intro">Ton parcours sert à contextualiser les ressources et les cercles.</p>
+        {% set p = profil_academique %}
+        {% if not p.coherent %}<div class="ops-alert ops-alert-warn">Ton profil académique doit être actualisé pour correspondre correctement aux cercles.</div>{% endif %}
+        <div class="ops-grid ops-grid-2">
+          <div class="ops-card"><h3>Université</h3><p>{{ p.universite.nom if p.universite else "Non renseignée" }}</p></div>
+          <div class="ops-card"><h3>Composante</h3><p>{{ p.faculte.nom if p.faculte else "Non renseignée" }}</p></div>
+          <div class="ops-card"><h3>Mention</h3><p>{{ p.mention.nom if p.mention else "Non renseignée" }}</p></div>
+          <div class="ops-card"><h3>Parcours</h3><p>{{ "Tronc commun" if p.tronc_commun else (p.filiere.nom if p.filiere else "Non renseigné") }}</p></div>
+          <div class="ops-card"><h3>Niveau</h3><p>{{ p.niveau or "Non renseigné" }}</p></div>
+          <div class="ops-card"><h3>Actualisation</h3><p>La mention et le parcours se changent via une demande administrateur lorsque c'est requis.</p></div>
+        </div>
+        {% if not universite %}
+        <form method="post" action="/securite/universite" class="ops-form ops-subsection">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <label for="universite_id">Choisir mon université</label>
+          <select id="universite_id" name="universite_id" required><option value="">— choisir —</option>{% for u in universites %}<option value="{{ u.id }}">{{ u.nom }}</option>{% endfor %}</select>
+          <button class="bouton bouton-secondaire" type="submit">Enregistrer</button>
+        </form>
+        {% endif %}
+        {% if peut_modifier_niveau %}
+        <form method="post" action="/securite/niveau" class="ops-form ops-subsection">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <label for="niveau">Modifier mon niveau</label>
+          <select id="niveau" name="niveau" required><option value="">— choisir —</option>{% for n in niveaux %}<option value="{{ n }}" {{ "selected" if n == utilisateur.niveau else "" }}>{{ n }}</option>{% endfor %}</select>
+          <button class="bouton bouton-secondaire" type="submit">Enregistrer</button>
+        </form>
+        {% else %}
+        <p class="ops-security-card-intro ops-subsection">Prochain changement de niveau possible dans {{ jours_avant_changement_niveau }} jour{{ "s" if jours_avant_changement_niveau > 1 else "" }}.</p>
+        {% endif %}
+        <div class="ops-form-actions"><a class="bouton bouton-secondaire" href="/profil/academique">Actualiser mon parcours académique</a></div>
+      </section>
+    </main>
   </div>
-
-  <form method="post" action="/profil/photo" enctype="multipart/form-data" style="margin-bottom:0.75rem;">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="photo">Choisir une photo (JPG, PNG ou WEBP, 5 Mo max)</label>
-    <input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" required>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Mettre a jour ma photo</button>
-  </form>
-
-  {% if utilisateur.photo_chemin %}
-  <form method="post" action="/profil/photo/supprimer" data-confirm-message="Supprimer votre photo de profil ?" data-confirm-danger="false">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button class="bouton bouton-secondaire bouton-form" type="submit">Supprimer ma photo</button>
-  </form>
-  {% endif %}
-</div>
-
-<div class="carte-formulaire">
-  <h3 class="titre-carte">A propos</h3>
-  <p class="stat-label">Affiche aux autres membres quand ils ouvrent votre profil dans un cercle d'etude.</p>
-  {% if erreur_bio %}<div class="erreur">{{ erreur_bio }}</div>{% endif %}
-  {% if request.query_params.get("ok") == "bio_mise_a_jour" %}<div class="info">A propos mis a jour.</div>{% endif %}
-  <form method="post" action="/profil/bio">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <textarea name="bio" rows="3" maxlength="280" placeholder="ex: Passionne par la tech et le developpement. Toujours motive pour apprendre et partager !">{{ utilisateur.bio or "" }}</textarea>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer</button>
-  </form>
-</div>
-
-<div class="carte-formulaire">
-  <h3 class="titre-carte">Email de recuperation</h3>
-  <p class="stat-label">Vous restez connecte avec votre numero de telephone. Cet email sert uniquement a recevoir un code si vous oubliez votre mot de passe.</p>
-  {% if erreur_email %}<div class="erreur">{{ erreur_email }}</div>{% endif %}
-  {% if request.query_params.get("ok") == "email_mis_a_jour" %}<div class="info">Email mis a jour.</div>{% endif %}
-  <form method="post" action="/profil/email">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="email">Adresse email</label>
-    <input type="email" id="email" name="email" value="{{ utilisateur.email or '' }}" placeholder="vous@exemple.com">
-    <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer</button>
-  </form>
-</div>
-
-<div class="carte-formulaire">
-  <h3 class="titre-carte">Changer mon mot de passe</h3>
-  {% if utilisateur.doit_changer_mot_de_passe %}
-  <div class="erreur">Vous utilisez un mot de passe temporaire (genere par un admin ou recu par email). Definissez-en un nouveau ci-dessous.</div>
-  {% endif %}
-  {% if erreur_mot_de_passe %}<div class="erreur">{{ erreur_mot_de_passe }}</div>{% endif %}
-  {% if request.query_params.get("ok") == "mot_de_passe_modifie" %}<div class="info">Mot de passe modifie.</div>{% endif %}
-  <form method="post" action="/securite/mot-de-passe">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="ancien_mot_de_passe">Mot de passe actuel</label>
-    <input type="password" id="ancien_mot_de_passe" name="ancien_mot_de_passe" required autocomplete="current-password">
-    <label for="nouveau_mot_de_passe">Nouveau mot de passe</label>
-    <input type="password" id="nouveau_mot_de_passe" name="nouveau_mot_de_passe" required minlength="8" autocomplete="new-password">
-    <button class="bouton bouton-primaire bouton-form" type="submit">Changer le mot de passe</button>
-  </form>
-</div>
-
-<div class="carte-formulaire">
-  <h3 class="titre-carte">Mon parcours académique</h3>
-  {% set p = profil_academique %}
-  {% if not p.coherent %}
-  <div class="erreur">Votre profil académique doit être actualisé avant de pouvoir correspondre de façon fiable aux cercles nationaux.</div>
-  {% endif %}
-  <p class="stat-label">Origine académique</p>
-  <div class="profil-champs profil-champs-academiques">
-    <div><p class="stat-label">Université</p><p><strong>{{ p.universite.nom if p.universite else "Non renseignée" }}</strong></p></div>
-    <div><p class="stat-label">Composante</p><p><strong>{{ p.faculte.nom if p.faculte else "Non renseignée" }}</strong></p></div>
-  </div>
-  <p class="stat-label" style="margin-top:0.5rem;">Formation</p>
-  <div class="profil-champs profil-champs-academiques">
-    <div><p class="stat-label">Domaine</p><p><strong>{{ p.domaine.nom if p.domaine else "Non renseigné" }}</strong></p></div>
-    <div><p class="stat-label">Mention</p><p><strong>{{ p.mention.nom if p.mention else "Non renseignée" }}</strong></p></div>
-    <div><p class="stat-label">Parcours</p><p><strong>{{ "Tronc commun" if p.tronc_commun else (p.filiere.nom if p.filiere else "Non renseigné") }}</strong></p></div>
-    <div><p class="stat-label">Niveau</p><p><strong>{{ p.niveau or "Non renseigné" }}</strong></p></div>
-  </div>
-
-  {% if not universite %}
-  <form method="post" action="/securite/universite" style="margin-bottom:1rem;">
-    <label for="universite_id">Choisir mon universite</label>
-    <select id="universite_id" name="universite_id" required>
-      <option value="">— choisir —</option>
-      {% for u in universites %}
-      <option value="{{ u.id }}">{{ u.nom }}</option>
-      {% endfor %}
-    </select>
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button class="bouton bouton-secondaire bouton-form" type="submit">Enregistrer</button>
-  </form>
-  {% endif %}
-
-  {% if peut_modifier_niveau %}
-  <form method="post" action="/securite/niveau" style="margin-top:1rem;">
-    <label for="niveau">Modifier mon niveau</label>
-    <select id="niveau" name="niveau" required>
-      <option value="">— choisir —</option>
-      {% for n in niveaux %}
-      <option value="{{ n }}" {{ "selected" if n == utilisateur.niveau else "" }}>{{ n }}</option>
-      {% endfor %}
-    </select>
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button class="bouton bouton-secondaire bouton-form" type="submit">Enregistrer</button>
-  </form>
-  {% else %}
-  <p class="stat-label">Vous avez recemment modifie votre niveau. Prochain changement possible dans {{ jours_avant_changement_niveau }} jour{{ "s" if jours_avant_changement_niveau > 1 else "" }}.</p>
-  {% endif %}
-
-  <p class="stat-label" style="margin-top:1rem;">La mention et le parcours se changent via une demande validee par un administrateur.</p>
-  <a class="bouton bouton-secondaire bouton-form" href="/profil/academique">Actualiser mon parcours académique</a>
-</div></div>
-
-<div class="carte-formulaire">
-  <h3 class="titre-carte">Double authentification (2FA)</h3>
-  {% if utilisateur.totp_active %}
-  <p>{{ signal("approuve") }}<span class="tampon tampon-approuve">Activee</span></p>
-  <p class="stat-label">Codes de secours restants : {{ nb_codes_restants }}</p>
-
-  <form method="post" action="/securite/2fa/regenerer-codes-secours" style="margin-top:1rem;">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button class="bouton bouton-secondaire bouton-form" type="submit">Regenerer mes codes de secours</button>
-  </form>
-
-  <form method="post" action="/securite/2fa/desactiver" style="margin-top:1.5rem;border-top:1px solid var(--content-border);padding-top:1.5rem;">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="mot_de_passe_desactiver">Mot de passe (pour confirmer la desactivation)</label>
-    <input type="password" id="mot_de_passe_desactiver" name="mot_de_passe" required>
-    <button class="bouton bouton-danger bouton-form" type="submit">Desactiver la 2FA</button>
-  </form>
-  {% else %}
-  <p>{{ signal("rejete") }}<span class="tampon tampon-rejete">Desactivee</span></p>
-  <p>Ajoutez une couche de securite supplementaire : en plus de votre mot de passe, un code genere par une application comme Google Authenticator sera demande a chaque connexion.</p>
-  <form method="post" action="/securite/2fa/demarrer">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button class="bouton bouton-primaire bouton-form" type="submit">Activer la double authentification</button>
-  </form>
-  {% endif %}
-</div>
 </div>
 {% endblock %}

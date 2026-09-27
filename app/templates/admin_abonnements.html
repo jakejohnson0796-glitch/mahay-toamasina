@@ -1,62 +1,72 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
-{% block titre %}Abonnements etudiants — Admin Gasy Mahay{% endblock %}
+{% block titre %}Abonnements étudiants — Admin Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<h2>Abonnements etudiants</h2>
+<div class="ops-page">
+  <section class="ops-status-hero">
+    <div class="ops-status-main">
+      <span class="ops-kicker">Revenus · abonnements étudiants</span>
+      <h2>Valider les demandes sans perdre les preuves.</h2>
+      <p>Chaque ligne permet de vérifier l'étudiant, le moyen de paiement, la référence et la preuve avant d'activer ou prolonger l'accès.</p>
+    </div>
+    <div class="ops-status-side">
+      <strong>{{ lignes|length }}</strong>
+      <span>éléments dans ce filtre</span>
+    </div>
+  </section>
 
-<p class="filtres">
-  <a href="/admin/abonnements">En attente</a> ·
-  <a href="/admin/abonnements?statut=actif">Actifs</a> ·
-  <a href="/admin/abonnements?statut=expire">Expires</a> ·
-  <a href="/admin/abonnements?statut=refuse">Refuses</a> ·
-  <a href="/admin/abonnements?statut=essai">Essais</a>
-</p>
+  <nav class="ops-nav" aria-label="Filtres abonnements">
+    <a class="{{ 'is-active' if not statut_filtre else '' }}" href="/admin/abonnements">En attente</a>
+    <a class="{{ 'is-active' if statut_filtre and statut_filtre.value == 'actif' else '' }}" href="/admin/abonnements?statut=actif">Actifs</a>
+    <a class="{{ 'is-active' if statut_filtre and statut_filtre.value == 'expire' else '' }}" href="/admin/abonnements?statut=expire">Expirés</a>
+    <a class="{{ 'is-active' if statut_filtre and statut_filtre.value == 'refuse' else '' }}" href="/admin/abonnements?statut=refuse">Refusés</a>
+    <a class="{{ 'is-active' if statut_filtre and statut_filtre.value == 'essai' else '' }}" href="/admin/abonnements?statut=essai">Essais</a>
+  </nav>
 
-<table class="table-manifeste">
-  <thead>
-    <tr><th>Etudiant</th><th>Telephone</th><th>Statut</th><th>Paiement</th><th>Preuve</th><th></th></tr>
-  </thead>
-  <tbody>
-    {% for abonnement, etudiant in lignes %}
-    <tr>
-      <td>{{ etudiant.nom }}</td>
-      <td>{{ etudiant.telephone }}</td>
-      <td>
-        {% if abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}{{ signal("attente") }}<span class="tampon tampon-attente">En attente</span>
-        {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Actif</span>
-        {% elif abonnement.statut == StatutAbonnementEtudiant.ESSAI %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Essai</span>
-        {% else %}{{ signal("rejete") }}<span class="tampon tampon-rejete">{{ abonnement.statut.value }}</span>{% endif %}
-      </td>
-      <td>
-        {% if abonnement.fournisseur_paiement %}{{ abonnement.fournisseur_paiement }}{% endif %}
-        {% if abonnement.reference_paiement %}<br><small>{{ abonnement.reference_paiement }}</small>{% endif %}
-      </td>
-      <td>
-        {% if abonnement.preuve_paiement_chemin %}
-        <a href="/admin/abonnements/{{ abonnement.id }}/preuve" target="_blank">Voir</a>
-        {% else %}—{% endif %}
-      </td>
-      <td>
-        <form method="post" action="/admin/abonnements/{{ abonnement.id }}/valider" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Valider (+30j)</button>
-        </form>
-        <form method="post" action="/admin/abonnements/{{ abonnement.id }}/prolonger" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Prolonger 30j</button>
-        </form>
-        <form method="post" action="/admin/abonnements/{{ abonnement.id }}/refuser" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Refuser</button>
-        </form>
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="6">Rien ici pour le moment.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <div class="ops-table-wrap">
+    <table class="ops-table">
+      <thead><tr><th>Étudiant</th><th>Téléphone</th><th>Statut</th><th>Paiement</th><th>Preuve</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for abonnement, etudiant in lignes %}
+        <tr>
+          <td><strong>{{ etudiant.nom }}</strong></td>
+          <td>{{ etudiant.telephone }}</td>
+          <td>
+            {% if abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}<span class="ops-badge is-alert">En attente</span>
+            {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}<span class="ops-badge is-success">Actif</span>
+            {% elif abonnement.statut == StatutAbonnementEtudiant.ESSAI %}<span class="ops-badge">Essai</span>
+            {% else %}<span class="ops-badge">{{ abonnement.statut.value }}</span>{% endif %}
+          </td>
+          <td>
+            {% if abonnement.fournisseur_paiement %}<strong>{{ abonnement.fournisseur_paiement }}</strong>{% endif %}
+            {% if abonnement.reference_paiement %}<br><span class="stat-label">{{ abonnement.reference_paiement }}</span>{% endif %}
+            {% if not abonnement.fournisseur_paiement and not abonnement.reference_paiement %}—{% endif %}
+          </td>
+          <td>{% if abonnement.preuve_paiement_chemin %}<a class="lien-action" href="/admin/abonnements/{{ abonnement.id }}/preuve" target="_blank" rel="noopener">Ouvrir</a>{% else %}—{% endif %}</td>
+          <td>
+            <div class="ops-actions">
+              <form method="post" action="/admin/abonnements/{{ abonnement.id }}/valider">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-primaire" type="submit">Valider +30j</button>
+              </form>
+              <form method="post" action="/admin/abonnements/{{ abonnement.id }}/prolonger">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Prolonger</button>
+              </form>
+              <form method="post" action="/admin/abonnements/{{ abonnement.id }}/refuser" data-confirm-message="Refuser cette demande d'abonnement ?">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Refuser</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6"><div class="ops-card"><strong>Aucune demande dans ce filtre</strong><p>Tout est à jour pour cette vue.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="ops-mobile-note">Sur téléphone, fais glisser horizontalement le tableau pour accéder aux actions.</p>
 </div>
 {% endblock %}

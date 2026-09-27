@@ -1,36 +1,63 @@
 {% extends "base.html" %}
-{% block titre %}Espace sponsors — Gasy Mahay{% endblock %}
+{% block titre %}Sponsors & répétiteurs — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<h2>Espace sponsors &amp; repetiteurs</h2>
-<p>
-  Touchez directement les etudiants de l'Universite de Toamasina. Votre
-  partenariat finance le manifeste gratuit pour les etudiants, et vous donne
-  une visibilite privilegiee (badge verifie, mise en avant dans les
-  resultats de recherche).
-</p>
-<p>
-  Il n'y a pas de tarif fixe affiche ici : chaque sponsor est different
-  (repetiteur individuel, petit commerce, service...), le prix se discute
-  directement avec nous une fois votre demande recue.
-</p>
+<div class="ops-page">
+  <section class="ops-hero">
+    <div>
+      <span class="ops-kicker">Partenariat · visibilité étudiante</span>
+      <h1>Présente ton activité à la communauté Gasy Mahay.</h1>
+      <p>
+        L'espace sponsor permet aux répétiteurs, commerces et services de proposer
+        un partenariat. Le prix n'est pas affiché publiquement : la demande est étudiée puis négociée.
+      </p>
+      <div class="ops-hero-actions"><a href="/mode-emploi">Comprendre la plateforme</a><a href="/contact">Nous contacter</a></div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>30 j</strong><span>durée d'un partenariat activé</span></div>
+      <div class="ops-stat"><strong>01</strong><span>demande de contact avant négociation</span></div>
+    </div>
+  </section>
 
-{% if request.query_params.get("demande_envoyee") %}
-<div class="info">Demande envoyee — nous vous recontactons prochainement pour discuter du partenariat.</div>
-{% endif %}
-
-<div class="offre">
-  {% if utilisateur %}
-  <form method="post" action="/sponsoring/contact">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="message">Parlez-nous de votre activite et de ce que vous recherchez (facultatif) :</label>
-    <textarea id="message" name="message" rows="4" maxlength="2000"></textarea>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Envoyer ma demande de contact</button>
-  </form>
-  {% else %}
-  <p><a href="/connexion">Connectez-vous</a> pour envoyer votre demande.</p>
+  {% if request.query_params.get("demande_envoyee") %}
+  <div class="ops-alert ops-alert-info">Demande envoyée. Nous te recontacterons pour discuter du partenariat.</div>
   {% endif %}
-</div>
+
+  <div class="ops-grid ops-grid-2 ops-section">
+    <article class="ops-card">
+      <div class="ops-card-head"><div><span class="ops-kicker">Ce que le partenariat apporte</span><h2>Une visibilité mieux structurée.</h2></div><span class="ops-badge is-success">Vérifié</span></div>
+      <div class="ops-checklist">
+        <div class="ops-check"><span class="ops-check-mark">✓</span><div><strong>Présence auprès des étudiants</strong><span>Ton activité peut être mise en avant dans les espaces prévus par la plateforme.</span></div></div>
+        <div class="ops-check"><span class="ops-check-mark">✓</span><div><strong>Badge et mise en avant</strong><span>Selon les fonctionnalités actives du partenariat, un badge vérifié et une meilleure visibilité peuvent être appliqués.</span></div></div>
+        <div class="ops-check"><span class="ops-check-mark">✓</span><div><strong>Tarif négocié</strong><span>Le prix et le moyen de paiement sont définis avec l'équipe, puis saisis par un administrateur.</span></div></div>
+      </div>
+    </article>
+
+    <article class="ops-offer">
+      <span class="ops-kicker">Premier contact</span>
+      <h2>Parler de ton activité</h2>
+      {% if utilisateur %}
+      <form method="post" action="/sponsoring/contact" class="ops-form">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <div><label for="message">Présente ton activité et ton besoin</label><textarea id="message" name="message" rows="6" maxlength="2000" placeholder="Ex. Je suis répétiteur en mathématiques et je souhaite proposer des séances aux étudiants…"></textarea><span class="stat-label">2 000 caractères maximum.</span></div>
+        <div class="ops-form-actions"><button class="bouton bouton-primaire" type="submit">Envoyer ma demande</button></div>
+      </form>
+      {% else %}
+      <p>Connecte-toi pour enregistrer une demande de contact sponsor.</p>
+      <div class="ops-form-actions"><a class="bouton bouton-primaire" href="/connexion">Se connecter</a><a class="bouton bouton-secondaire" href="/inscription">Créer un compte</a></div>
+      {% endif %}
+    </article>
+  </div>
+
+  <section class="ops-section">
+    <div class="ops-card">
+      <h3>Comment ça se passe ?</h3>
+      <div class="ops-grid">
+        <div class="ops-card"><span class="ops-badge">01</span><h3>Demande</h3><p>Tu présentes ton activité et ce que tu recherches.</p></div>
+        <div class="ops-card"><span class="ops-badge">02</span><h3>Échange</h3><p>L'équipe prend contact avec toi et définit les modalités.</p></div>
+        <div class="ops-card"><span class="ops-badge">03</span><h3>Activation</h3><p>Le partenariat est activé par un administrateur après accord.</p></div>
+      </div>
+    </div>
+  </section>
 </div>
 {% endblock %}

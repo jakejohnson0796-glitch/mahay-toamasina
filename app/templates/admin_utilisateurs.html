@@ -1,90 +1,70 @@
 {% extends "base.html" %}
-{% from "components/signal.html" import signal %}
 {% from "components/avatar.html" import avatar_utilisateur %}
 {% block titre %}Utilisateurs — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
-<h2>Utilisateurs</h2>
+<div class="ops-page">
+  <section class="ops-status-hero">
+    <div class="ops-status-main">
+      <span class="ops-kicker">Identités · comptes</span>
+      <h2>Gérer les comptes avec des actions claires.</h2>
+      <p>Recherche, rôle, état du compte, modération et récupération du mot de passe restent regroupés par utilisateur.</p>
+    </div>
+    <div class="ops-status-side"><strong>{{ utilisateurs|length }}</strong><span>résultats affichés</span></div>
+  </section>
 
-{% if request.query_params.get("erreur") == "auto_retrogradation" %}
-<div class="erreur">Impossible de retrograder votre propre compte admin.</div>
-{% elif request.query_params.get("erreur") == "dernier_admin" %}
-<div class="erreur">Impossible : c'est le dernier admin restant. Promouvez d'abord un autre compte admin avant de retrograder celui-ci.</div>
-{% endif %}
+  {% if request.query_params.get("erreur") == "auto_retrogradation" %}
+  <div class="ops-alert ops-alert-danger">Impossible de rétrograder votre propre compte admin.</div>
+  {% elif request.query_params.get("erreur") == "dernier_admin" %}
+  <div class="ops-alert ops-alert-danger">Impossible : c'est le dernier admin restant. Promouvez d'abord un autre compte admin.</div>
+  {% endif %}
 
-{% if mot_de_passe_temporaire %}
-<div class="info">
-  Mot de passe temporaire genere{% for u in utilisateurs %}{% if u.id == utilisateur_reinitialise_id %} pour <strong>{{ u.nom }}</strong>{% endif %}{% endfor %} :
-  <code style="font-size:1.1rem;">{{ mot_de_passe_temporaire }}</code><br>
-  Transmettez-le a l'interesse (WhatsApp, en personne...) — il ne sera plus jamais affiche. Il sera invite a en definir un nouveau des sa prochaine connexion.
-</div>
-{% endif %}
-
-<form method="get" action="/admin/utilisateurs" class="carte-formulaire" style="display:flex;gap:0.75rem;align-items:end;margin-bottom:1.5rem;">
-  <div style="flex:1;">
-    <label for="q">Rechercher (nom ou telephone)</label>
-    <input type="text" id="q" name="q" value="{{ recherche }}">
+  {% if mot_de_passe_temporaire %}
+  <div class="ops-alert ops-alert-warn">
+    Mot de passe temporaire généré{% for u in utilisateurs %}{% if u.id == utilisateur_reinitialise_id %} pour <strong>{{ u.nom }}</strong>{% endif %}{% endfor %} :
+    <strong><code>{{ mot_de_passe_temporaire }}</code></strong>.
+    Transmettez-le au membre ; il doit le changer à sa prochaine connexion.
   </div>
-  <button class="bouton bouton-primaire" type="submit">Rechercher</button>
-</form>
+  {% endif %}
 
-<table class="table-manifeste">
-  <thead><tr><th>Nom</th><th>Telephone</th><th>Role</th><th>Statut</th><th></th></tr></thead>
-  <tbody>
-    {% for u in utilisateurs %}
-    <tr>
-      <td style="display:flex;align-items:center;gap:0.5rem;">{{ avatar_utilisateur(u, taille=24) }}{{ u.nom }}</td>
-      <td>{{ u.telephone }}</td>
-      <td>{{ u.role.value }}</td>
-      <td>
-        {% if u.banni %}{{ signal("rejete") }}<span class="tampon tampon-rejete">Banni</span>
-        {% else %}{{ signal("approuve") }}<span class="tampon tampon-approuve">Actif</span>{% endif %}
-      </td>
-      <td>
-        {% if u.id != utilisateur.id %}
-        {% if u.role.value == "etudiant" %}
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Promouvoir professeur</button>
-        </form>
-        {% elif u.role.value == "professeur" %}
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Retirer le statut professeur</button>
-        </form>
-        {% elif u.role.value == "admin" %}
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" style="display:inline" data-confirm-message="Retrograder {{ u.nom }} en etudiant (retrait du statut admin) ?">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Retirer le statut admin</button>
-        </form>
-        {% endif %}
-        {% if u.banni %}
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/debannir" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Debannir</button>
-        </form>
-        {% else %}
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/bannir" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Bannir</button>
-        </form>
-        {% endif %}
-        <a href="/admin/utilisateurs/{{ u.id }}/supprimer" class="bouton bouton-secondaire" style="padding:0.4rem 0.8rem;font-size:0.85rem;text-decoration:none;display:inline-block;">Supprimer</a>
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/reinitialiser-mot-de-passe" style="display:inline" data-confirm-message="Generer un nouveau mot de passe temporaire pour {{ u.nom }} ? L'ancien cessera de fonctionner immediatement." data-confirm-danger="false">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Reinitialiser mot de passe</button>
-        </form>
-        {% else %}
-        <span class="stat-label">(vous)</span>
-        {% endif %}
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="5">Aucun utilisateur trouve.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <form method="get" action="/admin/utilisateurs" class="ops-search">
+    <div class="ops-search-main"><label for="q">Rechercher un nom ou un téléphone</label><input type="search" id="q" name="q" value="{{ recherche }}" placeholder="Ex. Rakoto ou 034…"></div>
+    <button class="bouton bouton-primaire" type="submit">Rechercher</button>
+  </form>
+
+  <div class="ops-table-wrap">
+    <table class="ops-table">
+      <thead><tr><th>Compte</th><th>Téléphone</th><th>Rôle</th><th>État</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for u in utilisateurs %}
+        <tr>
+          <td>{{ avatar_utilisateur(u, taille=28) }} <strong>{{ u.nom }}</strong></td>
+          <td>{{ u.telephone }}</td>
+          <td><span class="ops-badge">{{ u.role.value }}</span></td>
+          <td>{% if u.banni %}<span class="ops-badge is-alert">Banni</span>{% else %}<span class="ops-badge is-success">Actif</span>{% endif %}</td>
+          <td>
+            {% if u.id != utilisateur.id %}
+            <div class="ops-actions">
+              {% if u.role.value == "etudiant" %}
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Promouvoir</button></form>
+              {% elif u.role.value in ["professeur","admin"] %}
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" {% if u.role.value == "admin" %}data-confirm-message="Retirer le statut admin de {{ u.nom }} ?"{% endif %}><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Rétrograder</button></form>
+              {% endif %}
+              {% if u.banni %}
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/debannir"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Débannir</button></form>
+              {% else %}
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/bannir" data-confirm-message="Bannir {{ u.nom }} ?"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Bannir</button></form>
+              {% endif %}
+              <a class="bouton bouton-secondaire" href="/admin/utilisateurs/{{ u.id }}/supprimer">Supprimer</a>
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/reinitialiser-mot-de-passe" data-confirm-message="Générer un nouveau mot de passe temporaire pour {{ u.nom }} ?"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Réinitialiser</button></form>
+            </div>
+            {% else %}<span class="stat-label">Votre compte</span>{% endif %}
+          </td>
+        </tr>
+        {% else %}<tr><td colspan="5">Aucun utilisateur trouvé.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="ops-mobile-note">Sur téléphone, fais glisser horizontalement le tableau pour accéder aux actions.</p>
 </div>
 {% endblock %}
