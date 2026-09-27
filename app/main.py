@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI, Request, Depends
+from fastapi.responses import PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -216,6 +217,55 @@ def _initialiser_donnees_apres_demarrage() -> None:
 def health() -> dict[str, str]:
     """Endpoint de liveness ultra-leger pour le health check Render."""
     return {"status": "ok"}
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots(request: Request) -> Response:
+    """Expose une politique simple d'exploration : pages publiques indexables,
+    zones privees et actions internes exclues des moteurs."""
+    return PlainTextResponse(
+        "\n".join([
+            "User-agent: *",
+            "Allow: /",
+            "Disallow: /admin",
+            "Disallow: /securite",
+            "Disallow: /dashboard",
+            "Disallow: /abonnement",
+            "Disallow: /mot-de-passe-oublie",
+            "Disallow: /connexion/2fa",
+            "Disallow: /cercles/*/membres",
+            "Disallow: /cercles/*/demandes",
+            f"Sitemap: {request.base_url}sitemap.xml",
+        ]) + "\n"
+    )
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap(request: Request) -> Response:
+    """Sitemap minimal des pages publiques stables."""
+    base_url = str(request.base_url).rstrip("/")
+    chemins = [
+        "/",
+        "/a-propos",
+        "/universites",
+        "/documents",
+        "/cercles",
+        "/faq",
+        "/contact",
+        "/inscription",
+        "/connexion",
+    ]
+    lignes = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for chemin in chemins:
+        lignes.extend([f"  <url><loc>{base_url}{chemin}</loc></url>"])
+    lignes.append("</urlset>")
+    return Response(
+        content="\n".join(lignes),
+        media_type="application/xml",
+    )
 
 
 @app.get("/")

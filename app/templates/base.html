@@ -20,7 +20,12 @@
 <link rel="icon" href="/static/favicon.ico">
 <link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
 <meta name="theme-color" content="#0A3538">
-<meta name="description" content="Gasy Mahay — plateforme d’apprentissage et de collaboration pour les étudiants malgaches.">
+<meta name="description" content="Gasy Mahay — plateforme publique d’apprentissage et de collaboration pour les étudiants malgaches. Documents, cercles d’étude, universités et outils d’apprentissage à Toamasina.">
+<meta property="og:title" content="Gasy Mahay — Toamasina">
+<meta property="og:description" content="Apprendre, réviser et collaborer entre étudiants malgaches.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.url }}">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -143,6 +148,8 @@
     </button>
     {% else %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
+      <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
+      <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}><span class="tb-icone">{{ icone("cercles", 17) }}</span> Cercles d’étude</a>
       <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
       <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
       <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
@@ -203,8 +210,8 @@
     <footer class="pied">
       <div class="pied-contact">
         <span class="pied-contact-etiquette">Un mot a nous dire ?</span>
-        <a class="pied-contact-lien" href="tel:+261343779552">
-          <span class="pied-contact-icone">☎</span> +261 34 37 795 52
+        <a class="pied-contact-lien" href="/contact">
+          <span class="pied-contact-icone">☎</span> Nous contacter
         </a>
         <a class="pied-contact-lien pied-contact-whatsapp" href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site." target="_blank" rel="noopener">
           <span class="pied-contact-icone">💬</span> WhatsApp · +261 33 75 817 32

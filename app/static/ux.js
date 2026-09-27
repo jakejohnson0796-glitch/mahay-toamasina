@@ -120,7 +120,42 @@
     }
   }
 
+  function initAnimations() {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const candidats = Array.from(document.querySelectorAll(
+      "main h1, main h2, main .hero-phare, main .tb-carte-stat, main .tb-carte-cercle-moderne, main .carte-claire, main .doc-carte, main .quiz-card, main .carte-formulaire, main .section-phare"
+    ));
+
+    const elements = candidats.filter(function (element, index) {
+      return candidats.indexOf(element) === index;
+    }).slice(0, 50);
+
+    if (!elements.length) return;
+
+    elements.forEach(function (element, index) {
+      element.classList.add("gm-reveal", "gm-hover-lift");
+      element.classList.add("gm-delay-" + Math.min((index % 4) + 1, 4));
+    });
+
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach(function (element) { element.classList.add("gm-visible"); });
+      return;
+    }
+
+    const observer = new IntersectionObserver(function (entries, instance) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("gm-visible");
+        instance.unobserve(entry.target);
+      });
+    }, { threshold: 0.08, rootMargin: "0px 0px -40px 0px" });
+
+    elements.forEach(function (element) { observer.observe(element); });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
+    initAnimations();
     initRoutine();
     initPwa();
   });

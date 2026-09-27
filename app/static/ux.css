@@ -892,3 +892,40 @@ textarea {
   font-size: 0.68rem;
   font-weight: 600;
 }
+
+/* ============================================================
+   Animations globales Gasy Mahay
+   - progressives et discretes
+   - aucun contenu ne depend de JS pour s'afficher
+   - desactivees automatiquement si l'utilisateur demande
+     de reduire les animations
+   ============================================================ */
+.gm-reveal{
+  opacity:0;
+  transform:translateY(16px);
+  transition:opacity .55s var(--ease-fluide,ease),transform .55s var(--ease-fluide,ease);
+  will-change:opacity,transform;
+}
+.gm-reveal.gm-visible{
+  opacity:1;
+  transform:none;
+}
+.gm-hover-lift{
+  transition:transform .22s var(--ease-fluide,ease),box-shadow .22s var(--ease-fluide,ease);
+}
+.gm-hover-lift:hover{
+  transform:translateY(-3px);
+}
+.gm-delay-1{transition-delay:.05s}
+.gm-delay-2{transition-delay:.10s}
+.gm-delay-3{transition-delay:.15s}
+.gm-delay-4{transition-delay:.20s}
+@media (prefers-reduced-motion:reduce){
+  .gm-reveal,
+  .gm-reveal.gm-visible,
+  .gm-hover-lift{
+    opacity:1;
+    transform:none;
+    transition:none!important;
+  }
+}
