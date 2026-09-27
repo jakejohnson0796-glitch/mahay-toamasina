@@ -25,7 +25,7 @@ from app.models import (
     Universite,
     Utilisateur,
 )
-from app.cercles_referentiel import assurer_cercles_referentiel
+from app.cercles_referentiel import assurer_cercles_referentiel, assurer_cercles_pour_filiere
 from scripts.dedupliquer_cercles_nationaux import deduplicquer
 
 
@@ -303,7 +303,12 @@ class TestReorganisationCercles(unittest.TestCase):
             )
             session.commit()
 
-            self.assertEqual(assurer_cercles_referentiel(session), 0)
+            createur = session.get(Utilisateur, self.admin_id)
+            self.assertIsNotNone(createur)
+            self.assertEqual(
+                assurer_cercles_pour_filiere(session, filiere, createur),
+                0,
+            )
             self.assertEqual(
                 session.exec(
                     select(CercleEtude).where(CercleEtude.filiere_id == filiere.id)
