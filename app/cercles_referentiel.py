@@ -187,6 +187,11 @@ def assurer_cercles_pour_filiere(session: Session, filiere: Filiere, createur: U
         return 0
 
     nom_normalise = _normaliser_nom_parcours(filiere.nom)
+    # "Tronc commun" est un état de la mention+niveau, jamais un parcours
+    # national. Les anciennes lignes héritées portant ce libellé ne doivent
+    # plus générer de cercle de parcours.
+    if nom_normalise == "tronc commun":
+        return 0
     filieres_du_groupe = session.exec(
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
@@ -237,6 +242,13 @@ def assurer_cercles_referentiel(session: Session) -> int:
         )
         .distinct()
     ).all()
+
+    # Une ancienne base peut encore contenir une Filiere technique nommée
+    # "Tronc commun". Ce libellé ne doit jamais produire de cercle national.
+    filieres = [
+        filiere for filiere in filieres
+        if _normaliser_nom_parcours(filiere.nom) != "tronc commun"
+    ]
 
     groupes: dict[tuple[int, str], list[Filiere]] = {}
     for filiere in filieres:
