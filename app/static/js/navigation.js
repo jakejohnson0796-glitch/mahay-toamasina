@@ -47,7 +47,12 @@
   // Sidebar desktop : mode compact mémorisé localement.
   const boutonCollapse = document.getElementById("bouton-sidebar-collapse");
   if (boutonCollapse) {
-    const compact = localStorage.getItem("mahay-sidebar-compact") === "1";
+    let compact = false;
+    try {
+      compact = localStorage.getItem("mahay-sidebar-compact") === "1";
+    } catch (erreur) {
+      compact = false;
+    }
 
     function appliquerSidebarCompacte(actif) {
       document.body.classList.toggle("sidebar-compact", actif);
@@ -64,14 +69,24 @@
     boutonCollapse.addEventListener("click", function () {
       const actif = !document.body.classList.contains("sidebar-compact");
       appliquerSidebarCompacte(actif);
-      localStorage.setItem("mahay-sidebar-compact", actif ? "1" : "0");
+      try {
+        localStorage.setItem("mahay-sidebar-compact", actif ? "1" : "0");
+      } catch (erreur) {
+        // Le mode compact reste fonctionnel même si le stockage est indisponible.
+      }
     });
 
     window.addEventListener("resize", function () {
       if (window.matchMedia("(max-width: 900px)").matches) {
         document.body.classList.remove("sidebar-compact");
       } else {
-        appliquerSidebarCompacte(localStorage.getItem("mahay-sidebar-compact") === "1");
+        let memorise = false;
+        try {
+          memorise = localStorage.getItem("mahay-sidebar-compact") === "1";
+        } catch (erreur) {
+          memorise = false;
+        }
+        appliquerSidebarCompacte(memorise);
       }
     });
   }
