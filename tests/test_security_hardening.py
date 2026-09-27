@@ -46,3 +46,12 @@ class TestSecurityHardening(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_strict_csp_has_no_unsafe_inline():
+    from app.security_headers import _construire_csp
+    csp = _construire_csp("nonce-test-123")
+    assert "unsafe-inline" not in csp
+    assert "nonce-nonce-test-123" in csp
+    assert "script-src-attr 'none'" in csp
+    assert "style-src-attr 'unsafe-hashes'" in csp
