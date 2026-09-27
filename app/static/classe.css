@@ -844,3 +844,19 @@ body.page-classe {
     white-space:nowrap;
   }
 }
+
+
+.classe-field-spaced { margin-top: .65rem; }
+.classe-chat form {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:.5rem;
+}
+.classe-chat form input {
+  min-height:2.8rem;
+  border-radius:11px;
+  background:var(--content-bg);
+  border:1px solid var(--content-border);
+  color:var(--content-text);
+}
+.classe-chat form .bouton { min-width:6rem; }
