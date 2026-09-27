@@ -19,6 +19,10 @@ BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.globals["jeton_csrf"] = obtenir_jeton_csrf
 
+from .auth import jours_inactivite as _jours_inactivite
+
+templates.env.globals["jours_inactivite"] = _jours_inactivite
+
 
 def _version_asset(chemin_relatif: str) -> str:
     """Global Jinja utilise dans base.html pour suffixer les fichiers
@@ -46,6 +50,7 @@ def _version_asset(chemin_relatif: str) -> str:
 
 _VERSIONS_ASSETS = {
     "style.css": _version_asset("style.css"),
+    "activite.css": _version_asset("activite.css"),
     "js/navigation.js": _version_asset("js/navigation.js"),
     "js/theme.js": _version_asset("js/theme.js"),
     "js/modale.js": _version_asset("js/modale.js"),

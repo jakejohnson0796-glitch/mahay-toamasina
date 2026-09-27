@@ -1,0 +1,157 @@
+/* Activité du compte — rappel après inactivité */
+
+.notification-inactivite {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: .7rem;
+  margin: .65rem clamp(.8rem, 3vw, 2rem) 0;
+  padding: .72rem .8rem;
+  border: 1px solid rgba(221,183,101,.28);
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(221,183,101,.10), rgba(47,143,137,.055)),
+    var(--content-surface);
+  box-shadow: var(--refonte-shadow-sm);
+}
+
+.notification-inactivite-icone {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: rgba(221,183,101,.16);
+  color: #8f6c20;
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+.notification-inactivite-contenu {
+  min-width: 0;
+}
+
+.notification-inactivite-contenu strong {
+  display: block;
+  color: var(--content-text);
+  font-size: .71rem;
+}
+
+.notification-inactivite-contenu span {
+  display: block;
+  margin-top: .15rem;
+  color: var(--content-text-muted);
+  font-size: .61rem;
+  line-height: 1.45;
+}
+
+.notification-inactivite-fermer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: .35rem .55rem;
+  border: 1px solid var(--content-border);
+  border-radius: 9px;
+  background: var(--content-bg);
+  color: var(--content-text-muted);
+  font-size: .59rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.notification-inactivite-fermer:hover {
+  color: var(--content-text);
+  border-color: rgba(47,143,137,.28);
+}
+
+.ops-activity-card {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: .7rem;
+  padding: .8rem;
+  border: 1px solid rgba(47,143,137,.19);
+  border-radius: 13px;
+  background: rgba(47,143,137,.045);
+}
+
+.ops-activity-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(47,143,137,.12);
+  color: var(--refonte-teal);
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.ops-activity-main strong {
+  display: block;
+  font-size: .7rem;
+}
+
+.ops-activity-main span {
+  display: block;
+  margin-top: .14rem;
+  color: var(--content-text-muted);
+  font-size: .58rem;
+  line-height: 1.45;
+}
+
+.ops-activity-count {
+  padding: .38rem .5rem;
+  border-radius: 999px;
+  background: var(--content-bg);
+  color: var(--content-text);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .56rem;
+  font-weight: 800;
+}
+
+@media (max-width: 700px) {
+  .notification-inactivite {
+    grid-template-columns: auto minmax(0,1fr);
+    margin-inline: .75rem;
+  }
+
+  .notification-inactivite-fermer {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .ops-activity-card {
+    grid-template-columns: auto minmax(0,1fr);
+  }
+
+  .ops-activity-count {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+
+.tb-sidebar-compte-activite {
+  display: block;
+  margin-top: .08rem;
+  color: rgba(239,249,246,.52);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .49rem;
+  letter-spacing: .03em;
+}
+
+html[data-theme="sombre"] .tb-sidebar-compte-activite {
+  color: rgba(239,249,246,.58);
+}
+
+@media (min-width: 901px) {
+  body.sidebar-compact .tb-sidebar-compte-activite {
+    display: none !important;
+  }
+}
+
+.ops-activity-last { margin-top: .65rem; }

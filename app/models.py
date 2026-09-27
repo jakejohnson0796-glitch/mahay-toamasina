@@ -289,6 +289,11 @@ class Utilisateur(SQLModel, table=True):
     # jamais de texte par defaut invente ici.
     bio: Optional[str] = None
 
+    # Activite du compte : sert a afficher le nombre de jours ecoules depuis
+    # la derniere utilisation et a declencher un rappel apres au moins
+    # 3 jours sans utilisation lors de la prochaine authentification.
+    derniere_activite_le: Optional[datetime] = Field(default=None, index=True)
+
 
 class CodeSecours2FA(SQLModel, table=True):
     """Codes de secours a usage unique, generes a l'activation de la 2FA,
@@ -752,6 +757,7 @@ class TypeNotification(str, Enum):
     REACTION = "reaction"
     MENTION = "mention"
     REPONSE_FEEDBACK = "reponse_feedback"
+    INACTIVITE_3_JOURS = "inactivite_3_jours"
 
 
 class Notification(SQLModel, table=True):

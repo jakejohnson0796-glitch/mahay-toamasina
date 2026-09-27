@@ -33,6 +33,7 @@
 <link rel="stylesheet" href="/static/ux.css?v={{ version_asset('ux.css') }}">
 <link rel="stylesheet" href="/static/refonte.css?v={{ version_asset('refonte.css') }}">
 <link rel="stylesheet" href="/static/csp-utilities.css?v={{ version_asset('csp-utilities.css') }}">
+<link rel="stylesheet" href="/static/activite.css?v={{ version_asset('activite.css') }}">
 {% if request.url.path.startswith("/admin") or request.url.path in ["/abonnement", "/sponsoring", "/securite"] %}
 <link rel="stylesheet" href="/static/ops.css?v={{ version_asset('ops.css') }}">
 {% endif %}
@@ -166,6 +167,8 @@
         <span class="tb-sidebar-compte-identite">
           <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
           <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% else %}Mon compte{% endif %}</span>
+          {% set jours_compte = jours_inactivite(utilisateur) %}
+          <span class="tb-sidebar-compte-activite">{{ jours_compte }} j. inactif</span>
         </span>
         {% endif %}
         <span class="tb-sidebar-compte-chevron" aria-hidden="true">⌄</span>
@@ -268,6 +271,21 @@
       Votre profil academique doit etre actualise pour utiliser correctement les cercles d'etudes.
       <a href="/profil/academique">Actualiser maintenant</a>
     </div>
+    {% endif %}
+
+    {% set rappel_inactivite = request.session.get("notification_inactivite") %}
+    {% if rappel_inactivite %}
+    <aside class="notification-inactivite" aria-live="polite">
+      <span class="notification-inactivite-icone" aria-hidden="true">!</span>
+      <div class="notification-inactivite-contenu">
+        <strong>Bienvenue de retour</strong>
+        <span>Tu n'as pas utilisé Gasy Mahay depuis {{ rappel_inactivite.jours }} jour{{ "s" if rappel_inactivite.jours != 1 else "" }}. Reprends ton apprentissage quand tu le souhaites.</span>
+      </div>
+      <form method="post" action="/notifications/inactivite/lue">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <button class="notification-inactivite-fermer" type="submit">J'ai compris</button>
+      </form>
+    </aside>
     {% endif %}
 
     <main class="{% block main_classe %}{% endblock %}" data-page="{{ request.url.path }}">
