@@ -340,6 +340,7 @@ def verifier_2fa(
 
     _rotation_session_authentifiee(request)
     request.session["user_id"] = utilisateur.id
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     return _redirection_apres_connexion(utilisateur)
 
 
