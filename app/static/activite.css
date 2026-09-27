@@ -133,3 +133,23 @@
     justify-self: start;
   }
 }
+
+
+.tb-sidebar-compte-activite {
+  display: block;
+  margin-top: .08rem;
+  color: rgba(239,249,246,.52);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .49rem;
+  letter-spacing: .03em;
+}
+
+html[data-theme="sombre"] .tb-sidebar-compte-activite {
+  color: rgba(239,249,246,.58);
+}
+
+@media (min-width: 901px) {
+  body.sidebar-compact .tb-sidebar-compte-activite {
+    display: none !important;
+  }
+}
