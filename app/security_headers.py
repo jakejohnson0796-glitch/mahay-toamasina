@@ -44,6 +44,11 @@ def _construire_csp(nonce: str) -> str:
 
 
 
+# Compatibilite pour les anciens tests/imports internes. La production
+# utilise toujours _construire_csp() avec un nonce unique par requete.
+_CSP = _construire_csp("compat-test-nonce")
+
+
 class EnTetesSecuriteMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, https_actif: bool = False):
         super().__init__(app)
