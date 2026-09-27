@@ -41,6 +41,7 @@ def test_telechargement_document_general_utilise_un_compte_courant(monkeypatch):
         cercle_id=None,
         nb_telechargements=0,
         chemin_fichier=contenu.name,
+        id=42,
     )
     utilisateur = SimpleNamespace(id=17)
 
