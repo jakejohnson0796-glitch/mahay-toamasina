@@ -1,39 +1,136 @@
 {% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+
 {% block titre %}Tuteur IA — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow">Muscler l'intellect</p>
-<h2>Tuteur IA</h2>
-<p>Posez une question sur n'importe quel sujet de vos cours — l'IA vous repond avec une explication, un exemple, un exercice et sa correction.</p>
+<div class="ai-learning-page">
+  <section class="ai-hero" aria-labelledby="tuteur-hero-title">
+    <div>
+      <span class="ai-kicker">Apprentissage assisté · Tuteur IA</span>
+      <h1 id="tuteur-hero-title">Ne reste pas bloqué sur une notion.</h1>
+      <p>
+        Pose ta question avec ton contexte. Le Tuteur IA transforme ensuite la question
+        en explication, exemple, exercice et correction pour t'aider à progresser.
+      </p>
+      <div class="ai-hero-actions">
+        <a href="#question">Poser une question</a>
+        <a href="#historique">Voir mes questions</a>
+        <a href="/quiz">Faire un quiz</a>
+      </div>
+    </div>
 
-{% if request.query_params.get("erreur") == "question_requise" %}
-<div class="erreur">Ecrivez une question avant d'envoyer.</div>
-{% endif %}
+    <div class="ai-hero-side" aria-label="Méthode du Tuteur IA">
+      <div class="ai-stat-grid">
+        <div class="ai-stat-card"><strong>01</strong><span>comprendre l'explication</span></div>
+        <div class="ai-stat-card"><strong>02</strong><span>voir un exemple concret</span></div>
+        <div class="ai-stat-card"><strong>03</strong><span>faire un exercice</span></div>
+        <div class="ai-stat-card"><strong>04</strong><span>vérifier avec la correction</span></div>
+      </div>
+    </div>
+  </section>
 
-<div class="carte-formulaire carte-quiz">
-  <form method="post" action="/tuteur/demander">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="question">Votre question</label>
-    <textarea id="question" name="question" rows="3" placeholder="ex: Explique-moi la comptabilite analytique." required></textarea>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Demander au tuteur</button>
-  </form>
-</div>
+  <section class="ai-section" id="question" aria-labelledby="question-title">
+    <div class="ai-tuteur-layout">
+      <main class="ai-tuteur-main">
+        <div class="ai-chat-card">
+          <div class="ai-chat-intro">
+            <span class="ai-chat-avatar" aria-hidden="true">IA</span>
+            <div>
+              <strong>Ton espace de question</strong>
+              <span>Décris ton blocage comme tu le ferais à un professeur. Plus le contexte est précis, plus la réponse peut être exploitable.</span>
+            </div>
+          </div>
 
-{% if historique %}
-<h3>Vos dernieres questions</h3>
-<table class="table-manifeste">
-  <thead><tr><th>Question</th><th>Date</th><th></th></tr></thead>
-  <tbody>
-    {% for s in historique %}
-    <tr>
-      <td>{{ s.question }}</td>
-      <td>{{ s.date_creation.strftime("%d/%m/%Y %H:%M") }}</td>
-      <td><a href="/tuteur/{{ s.id }}">Revoir</a></td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
+          <div class="ai-prompt-grid" aria-label="Suggestions de questions">
+            <button type="button" class="ai-prompt" data-tuteur-prompt="Explique-moi cette notion comme si je débutais le chapitre, puis donne-moi un exemple simple.">Expliquer une notion simplement</button>
+            <button type="button" class="ai-prompt" data-tuteur-prompt="Aide-moi à comprendre la différence entre deux concepts de mon cours et montre-moi comment les reconnaître dans un exercice.">Comparer deux concepts</button>
+            <button type="button" class="ai-prompt" data-tuteur-prompt="Donne-moi un exercice progressif sur ce chapitre sans donner la réponse immédiatement.">Créer un exercice</button>
+            <button type="button" class="ai-prompt" data-tuteur-prompt="Je ne comprends pas cette étape de mon raisonnement. Aide-moi à trouver l'erreur et explique pourquoi.">Comprendre une erreur</button>
+          </div>
+
+          {% if request.query_params.get("erreur") == "question_requise" %}
+          <div class="erreur" role="alert">Écris une question avant d'envoyer.</div>
+          {% elif request.query_params.get("erreur") == "trop_de_questions" %}
+          <div class="erreur" role="alert">Trop de questions rapprochées. Attends quelques instants avant de continuer.</div>
+          {% endif %}
+
+          <form method="post" action="/tuteur/demander" class="ai-form" data-tuteur-form>
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+            <div class="ai-textarea-wrap">
+              <textarea
+                id="question"
+                name="question"
+                maxlength="4000"
+                data-tuteur-question
+                placeholder="Ex. Explique-moi la comptabilité analytique et montre-moi comment raisonner sur un exercice de coûts complets."
+                required
+                aria-describedby="question-aide"></textarea>
+              <span class="ai-char-count" data-tuteur-count>0 / 4000</span>
+            </div>
+
+            <p class="ai-field-help" id="question-aide">
+              Évite les mots de passe, codes de sécurité ou informations personnelles sensibles. Utilise plutôt le nom du cours, le chapitre et la difficulté rencontrée.
+            </p>
+
+            <div class="ai-submit-row">
+              <span class="ai-submit-note">Réponse structurée : explication → exemple → exercice → correction.</span>
+              <button class="bouton bouton-primaire" type="submit" data-tuteur-submit>Demander au Tuteur IA</button>
+            </div>
+          </form>
+        </div>
+      </main>
+
+      <aside class="ai-tuteur-side">
+        <div class="ai-tuteur-side-card">
+          <h3>Comment obtenir une meilleure réponse</h3>
+          <ul>
+            <li>Indique le niveau et le chapitre.</li>
+            <li>Copie uniquement la partie utile de ton exercice.</li>
+            <li>Explique ce que tu as déjà essayé.</li>
+            <li>Demande une méthode avant de demander uniquement la réponse.</li>
+          </ul>
+        </div>
+
+        <div class="ai-tuteur-side-card">
+          <h3>Ce que le Tuteur produit</h3>
+          <ul>
+            <li>Une explication structurée.</li>
+            <li>Un exemple pour concrétiser.</li>
+            <li>Un exercice pour pratiquer.</li>
+            <li>Une correction pour vérifier ton raisonnement.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="ai-section" id="historique" aria-labelledby="historique-tuteur-title">
+    <div class="ai-section-head">
+      <div>
+        <h2 id="historique-tuteur-title">Tes dernières questions</h2>
+        <p>Ouvre une ancienne session pour relire l'explication et continuer ton travail.</p>
+      </div>
+    </div>
+
+    {% if historique %}
+    <div class="ai-tuteur-history">
+      {% for s in historique %}
+      <a href="/tuteur/{{ s.id }}">
+        <strong>{{ s.question }}</strong>
+        <span>{{ s.date_creation.strftime("%d/%m/%Y %H:%M") }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="ai-empty">
+      <strong>Pas encore de question enregistrée.</strong>
+      <p>Commence avec une question de cours, une difficulté d'exercice ou une demande d'explication.</p>
+      <a class="bouton bouton-primaire" href="#question">Poser ma première question</a>
+    </div>
+    {% endif %}
+  </section>
 </div>
 {% endblock %}
