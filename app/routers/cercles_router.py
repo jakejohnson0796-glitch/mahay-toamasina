@@ -752,6 +752,7 @@ def liste_cercles(
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
             "profil_academique_recherche": profil_academique_recherche,
+            "cercles_profil_visibilite": cercles_profil_visibilite,
             "recherche_q": q_nettoye,
             "recherche_domaine_id": domaine_id_nettoye,
             "recherche_mention_id": mention_id_nettoye,
