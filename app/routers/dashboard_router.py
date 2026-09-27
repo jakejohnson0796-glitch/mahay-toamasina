@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import Response
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
@@ -20,13 +19,8 @@ def page_dashboard(request: Request, session: Session = Depends(get_session)):
 
     donnees = dashboard_module.donnees_dashboard(session, utilisateur)
 
-    reponse = templates.TemplateResponse(
+    return templates.TemplateResponse(
         request,
         "dashboard_etudiant.html",
         {"utilisateur": utilisateur, **donnees},
     )
-    # Le dashboard contient uniquement les données privées de l’utilisateur.
-    # Une courte mise en cache navigateur réduit les rechargements inutiles
-    # lors des retours/rafraîchissements rapides, sans partager la réponse.
-    reponse.headers["Cache-Control"] = "private, max-age=15, stale-while-revalidate=30"
-    return reponse

@@ -6,9 +6,7 @@ requete HTTP, ce module sait comment lire les donnees).
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from sqlmodel import Session, select, func
-from sqlalchemy import exists
-from sqlalchemy.orm import load_only
+from sqlmodel import Session, select
 
 from .models import (
     CercleEtude,
@@ -33,109 +31,71 @@ NB_ECHEANCES = 4
 
 
 def cercles_rejoints(session: Session, utilisateur_id: int) -> List[dict]:
-    """Retourne uniquement les cercles visibles sur le dashboard (4 max)
-    et leur nombre de membres, sans requête N+1."""
-    membres = session.exec(
+    """Cercles dont l'etudiant est membre, les plus recemment rejoints
+    d'abord, avec le nombre reel de membres de chaque cercle (donnee
+    deja en base, jamais remontee jusqu'ici)."""
+    resultats = session.exec(
         select(MembreCercle, CercleEtude)
         .join(CercleEtude, MembreCercle.cercle_id == CercleEtude.id)
         .where(MembreCercle.utilisateur_id == utilisateur_id)
         .order_by(MembreCercle.date_adhesion.desc())
-        .limit(4)
     ).all()
 
-    if not membres:
-        return []
-
-    cercle_ids = [cercle.id for _, cercle in membres]
-    comptes = {
-        cercle_id: nb
-        for cercle_id, nb in session.exec(
-            select(MembreCercle.cercle_id, func.count(MembreCercle.id))
-            .where(MembreCercle.cercle_id.in_(cercle_ids))
-            .group_by(MembreCercle.cercle_id)
-        ).all()
-    }
-    return [
-        {
-            "cercle": cercle,
-            "date_adhesion": membre.date_adhesion,
-            "nb_membres": int(comptes.get(cercle.id, 0)),
-        }
-        for membre, cercle in membres
-    ]
+    infos = []
+    for membre, cercle in resultats:
+        nb_membres = len(
+            session.exec(select(MembreCercle).where(MembreCercle.cercle_id == cercle.id)).all()
+        )
+        infos.append({"cercle": cercle, "date_adhesion": membre.date_adhesion, "nb_membres": nb_membres})
+    return infos
 
 
 def documents_consultes_recemment(session: Session, utilisateur_id: int) -> List[dict]:
-    """Les 5 derniers documents distincts, calcules directement en SQL."""
-    lignes = session.exec(
-        select(
-            ConsultationDocument.document_id,
-            func.max(ConsultationDocument.date_consultation).label("date_consultation"),
-        )
+    """Les derniers documents consultes par l'etudiant, un seul par
+    document (la consultation la plus recente), les plus recents
+    d'abord."""
+    consultations = session.exec(
+        select(ConsultationDocument)
         .where(ConsultationDocument.utilisateur_id == utilisateur_id)
-        .group_by(ConsultationDocument.document_id)
-        .order_by(func.max(ConsultationDocument.date_consultation).desc())
-        .limit(NB_DOCUMENTS_RECENTS)
+        .order_by(ConsultationDocument.date_consultation.desc())
     ).all()
 
-    if not lignes:
-        return []
-
-    document_ids = [document_id for document_id, _ in lignes]
-    documents = {
-        doc.id: doc
-        for doc in session.exec(select(Document).where(Document.id.in_(document_ids))).all()
-    }
-    return [
-        {"document": documents[document_id], "date_consultation": date_consultation}
-        for document_id, date_consultation in lignes
-        if document_id in documents
-    ]
+    vus = set()
+    resultats = []
+    for c in consultations:
+        if c.document_id in vus:
+            continue
+        vus.add(c.document_id)
+        document = session.get(Document, c.document_id)
+        if document:
+            resultats.append({"document": document, "date_consultation": c.date_consultation})
+        if len(resultats) >= NB_DOCUMENTS_RECENTS:
+            break
+    return resultats
 
 
 def quiz_completes(session: Session, utilisateur_id: int) -> List[TentativeQuiz]:
-    """Les 5 derniers quiz soumis uniquement : les compteurs et moyennes
-    sont calcules séparément par SQL dans donnees_dashboard()."""
+    """Tentatives de quiz deja soumises (score != None), les plus
+    recentes d'abord."""
     return session.exec(
         select(TentativeQuiz)
-        .options(load_only(
-            TentativeQuiz.id,
-            TentativeQuiz.utilisateur_id,
-            TentativeQuiz.matiere,
-            TentativeQuiz.niveau,
-            TentativeQuiz.difficulte,
-            TentativeQuiz.nb_questions,
-            TentativeQuiz.score,
-            TentativeQuiz.date_creation,
-            TentativeQuiz.date_soumission,
-            TentativeQuiz.mode_examen,
-            TentativeQuiz.duree_secondes,
-        ))
         .where(TentativeQuiz.utilisateur_id == utilisateur_id)
-        .where(TentativeQuiz.date_soumission != None)  # noqa: E711
+        .where(TentativeQuiz.date_soumission != None)  # noqa: E711 (SQLAlchemy exige != None, pas "is not None")
         .order_by(TentativeQuiz.date_soumission.desc())
-        .limit(max(NB_ACTIVITES_RECENTES, 5))
     ).all()
 
 
-def quiz_stats(session: Session, utilisateur_id: int) -> tuple[int, int]:
-    """Retourne count + score moyen sans charger le JSON des quiz."""
-    total = session.exec(
-        select(func.count())
-        .select_from(TentativeQuiz)
-        .where(TentativeQuiz.utilisateur_id == utilisateur_id)
-        .where(TentativeQuiz.date_soumission != None)  # noqa: E711
-    ).one()
-
-    moyenne = session.exec(
-        select(func.avg(TentativeQuiz.score * 100.0 / TentativeQuiz.nb_questions))
-        .where(TentativeQuiz.utilisateur_id == utilisateur_id)
-        .where(TentativeQuiz.date_soumission != None)  # noqa: E711
-        .where(TentativeQuiz.score != None)  # noqa: E711
-        .where(TentativeQuiz.nb_questions > 0)
-    ).one()
-
-    return int(total or 0), round(float(moyenne)) if moyenne is not None else 0
+def quiz_en_cours(session: Session, utilisateur_id: int) -> Optional[TentativeQuiz]:
+    """Derniere tentative non soumise, pour reprendre un quiz interrompu."""
+    return session.exec(
+        select(TentativeQuiz)
+        .where(
+            TentativeQuiz.utilisateur_id == utilisateur_id,
+            TentativeQuiz.date_soumission == None,  # noqa: E711
+        )
+        .order_by(TentativeQuiz.date_creation.desc())
+        .limit(1)
+    ).first()
 
 
 def jours_actifs_consecutifs(
@@ -143,27 +103,19 @@ def jours_actifs_consecutifs(
     utilisateur_id: int,
     tentatives_quiz: List[TentativeQuiz],
 ) -> int:
-    """Calcule la regularite sans charger tous les champs des quiz.
-    Les activites historiques sont bornees a 366 jours."""
+    """Calcule une regularite a partir d'activites reellement enregistrees."""
     dates = {
-        moment.date()
-        for moment in session.exec(
-            select(ConsultationDocument.date_consultation)
-            .where(ConsultationDocument.utilisateur_id == utilisateur_id)
-            .order_by(ConsultationDocument.date_consultation.desc())
-            .limit(366)
+        consultation.date_consultation.date()
+        for consultation in session.exec(
+            select(ConsultationDocument).where(
+                ConsultationDocument.utilisateur_id == utilisateur_id
+            )
         ).all()
     }
     dates.update(
-        moment.date()
-        for moment in session.exec(
-            select(TentativeQuiz.date_soumission)
-            .where(TentativeQuiz.utilisateur_id == utilisateur_id)
-            .where(TentativeQuiz.date_soumission != None)  # noqa: E711
-            .order_by(TentativeQuiz.date_soumission.desc())
-            .limit(366)
-        ).all()
-        if moment
+        tentative.date_soumission.date()
+        for tentative in tentatives_quiz
+        if tentative.date_soumission
     )
 
     if not dates:
@@ -266,50 +218,76 @@ def ressources_populaires(session: Session, utilisateur: Utilisateur) -> List[Do
 
 
 def recommandations(session: Session, utilisateur: Utilisateur) -> List[Document]:
-    """4 documents recents non consultes, selectionnes directement en SQL."""
+    """Documents approuves de la filiere de l'etudiant qu'il n'a pas
+    encore consultes (jamais telecharges par lui, toutes consultations
+    confondues -- pas seulement les NB_DOCUMENTS_RECENTS derniers).
+    Rien d'invente : sans filiere renseignee, ou si tout est deja vu,
+    la liste est simplement vide (etat vide cote template)."""
     if not utilisateur.filiere_id:
         return []
 
-    sous_requete = select(ConsultationDocument.document_id).where(
-        ConsultationDocument.utilisateur_id == utilisateur.id
-    )
-    return list(
+    ids_consultes = set(
         session.exec(
-            select(Document)
-            .where(Document.statut == StatutDocument.APPROUVE)
-            .where(Document.filiere_id == utilisateur.filiere_id)
-            .where(~Document.id.in_(sous_requete))
-            .order_by(Document.date_upload.desc())
-            .limit(NB_RECOMMANDATIONS)
+            select(ConsultationDocument.document_id).where(
+                ConsultationDocument.utilisateur_id == utilisateur.id
+            )
         ).all()
     )
 
+    candidats = session.exec(
+        select(Document)
+        .where(Document.statut == StatutDocument.APPROUVE)
+        .where(Document.filiere_id == utilisateur.filiere_id)
+        .order_by(Document.date_upload.desc())
+    ).all()
+
+    return [d for d in candidats if d.id not in ids_consultes][:NB_RECOMMANDATIONS]
+
 
 def echeances_a_venir(session: Session, utilisateur_id: int) -> List[dict]:
-    """4 devoirs a venir non rendus, sans N+1."""
-    maintenant = datetime.utcnow()
-    lignes = session.exec(
-        select(Devoir, Cours)
-        .join(InscriptionCours, InscriptionCours.cours_id == Devoir.cours_id)
-        .join(Cours, Cours.id == Devoir.cours_id)
-        .where(InscriptionCours.utilisateur_id == utilisateur_id)
-        .where(Devoir.date_limite != None)  # noqa: E711
-        .where(Devoir.date_limite > maintenant)
-        .where(
-            ~exists().where(
-                (RenduDevoir.devoir_id == Devoir.id)
-                & (RenduDevoir.utilisateur_id == utilisateur_id)
-            )
-        )
-        .order_by(Devoir.date_limite.asc())
-        .limit(NB_ECHEANCES)
+    """Devoirs a rendre (date_limite pas encore passee) pour les cours
+    ou l'etudiant est inscrit, qu'il n'a pas encore rendus. C'est la
+    SEULE source d'echeance reelle disponible aujourd'hui dans le
+    modele de donnees : les seances de classe virtuelle n'ont pas de
+    date planifiee a l'avance (Seance.date_debut_reelle n'est
+    renseignee qu'au moment ou le professeur demarre reellement la
+    session -- voir models.py), donc ce widget ne montre jamais de
+    fausse seance a venir."""
+    cours_ids = session.exec(
+        select(InscriptionCours.cours_id).where(InscriptionCours.utilisateur_id == utilisateur_id)
     ).all()
-    return [{"devoir": devoir, "cours": cours} for devoir, cours in lignes]
+    if not cours_ids:
+        return []
+
+    devoirs = session.exec(
+        select(Devoir)
+        .where(Devoir.cours_id.in_(cours_ids))
+        .where(Devoir.date_limite != None)  # noqa: E711
+        .where(Devoir.date_limite > datetime.utcnow())
+        .order_by(Devoir.date_limite.asc())
+    ).all()
+
+    resultats = []
+    for devoir in devoirs:
+        deja_rendu = session.exec(
+            select(RenduDevoir)
+            .where(RenduDevoir.devoir_id == devoir.id)
+            .where(RenduDevoir.utilisateur_id == utilisateur_id)
+        ).first()
+        if deja_rendu:
+            continue
+        cours = session.get(Cours, devoir.cours_id)
+        if not cours:
+            continue
+        resultats.append({"devoir": devoir, "cours": cours})
+        if len(resultats) >= NB_ECHEANCES:
+            break
+    return resultats
 
 
 def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
-    """Agregation compacte du dashboard : peu de lignes SQL, pas de N+1,
-    et aucun chargement massif des historiques/JSON."""
+    """Tout ce qu'il faut pour afficher le tableau de bord etudiant en un
+    seul appel depuis le router."""
     abonnement = subscription.obtenir_abonnement(session, utilisateur.id)
     if abonnement:
         abonnement = subscription.synchroniser_expiration(session, abonnement)
@@ -319,22 +297,14 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
     tentatives = quiz_completes(session, utilisateur.id)
     tentative_en_cours = quiz_en_cours(session, utilisateur.id)
 
-    nb_quiz_completes, score_moyen_quiz = quiz_stats(session, utilisateur.id)
-
-    nb_documents_consultes = session.exec(
-        select(func.count())
-        .select_from(ConsultationDocument)
-        .where(ConsultationDocument.utilisateur_id == utilisateur.id)
-    ).one()
-
-    nb_cercles_rejoints = session.exec(
-        select(func.count())
-        .select_from(MembreCercle)
-        .where(MembreCercle.utilisateur_id == utilisateur.id)
-    ).one()
-
     dernier_document: Optional[dict] = documents[0] if documents else None
     dernier_quiz: Optional[TentativeQuiz] = tentatives[0] if tentatives else None
+    scores_valides = [
+        (t.score / t.nb_questions * 100)
+        for t in tentatives
+        if t.score is not None and t.nb_questions
+    ]
+    score_moyen_quiz = round(sum(scores_valides) / len(scores_valides)) if scores_valides else 0
     streak_jours = jours_actifs_consecutifs(session, utilisateur.id, tentatives)
 
     return {
@@ -345,9 +315,13 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
         "documents_recents": documents,
         "dernier_document": dernier_document,
         "dernier_document_delai": _delai_relatif(dernier_document["date_consultation"]) if dernier_document else None,
-        "nb_cercles_rejoints": int(nb_cercles_rejoints or 0),
-        "nb_documents_consultes": int(nb_documents_consultes or 0),
-        "nb_quiz_completes": nb_quiz_completes,
+        "nb_cercles_rejoints": len(cercles),
+        "nb_documents_consultes": len(
+            session.exec(
+                select(ConsultationDocument).where(ConsultationDocument.utilisateur_id == utilisateur.id)
+            ).all()
+        ),
+        "nb_quiz_completes": len(tentatives),
         "dernier_quiz": dernier_quiz,
         "tentative_quiz_en_cours": tentative_en_cours,
         "score_moyen_quiz": score_moyen_quiz,
