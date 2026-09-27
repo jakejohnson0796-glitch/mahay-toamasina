@@ -13,10 +13,10 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
-from ..auth import hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur
+from ..auth import hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire
 from ..rate_limit import limite_depassee
 from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_code_totp, generer_codes_secours, hacher_code_secours, verifier_code_secours
 from ..telephone import normaliser_telephone, TelephoneInvalide
@@ -56,6 +56,19 @@ def _rotation_session_authentifiee(request: Request) -> None:
     if jeton_csrf:
         request.session["_csrf_token"] = jeton_csrf
 
+
+
+def _preparer_rappel_inactivite_apres_connexion(
+    request: Request,
+    session: Session,
+    utilisateur: Utilisateur,
+) -> None:
+    jours, notification_id = creer_rappel_inactivite_si_necessaire(utilisateur, session)
+    if notification_id:
+        request.session["notification_inactivite"] = {
+            "notification_id": notification_id,
+            "jours": jours,
+        }
 
 def _telephone_rate_key(telephone: str) -> str:
     try:
@@ -278,6 +291,7 @@ def connexion(
     _rotation_session_authentifiee(request)
     request.session["user_id"] = utilisateur.id
     request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
+    _preparer_rappel_inactivite_apres_connexion(request, session, utilisateur)
     return _redirection_apres_connexion(utilisateur)
 
 
@@ -1091,3 +1105,21 @@ def regenerer_codes_secours(request: Request, session: Session = Depends(get_ses
     return templates.TemplateResponse(
         request, "codes_secours_2fa.html", {"utilisateur": utilisateur, "codes": codes_clairs},
     )
+
+
+
+@router.post("/notifications/inactivite/lue")
+def marquer_notification_inactivite_lue(
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    notification_data = request.session.pop("notification_inactivite", None)
+    if notification_data:
+        notification_id = notification_data.get("notification_id")
+        notification = session.get(Notification, notification_id) if notification_id else None
+        if notification and notification.destinataire_id == request.session.get("user_id") and notification.type_notification == TypeNotification.INACTIVITE_3_JOURS:
+            notification.lu = True
+            session.add(notification)
+            session.commit()
+    return RedirectResponse(request.headers.get("referer") or "/", status_code=303)
