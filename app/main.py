@@ -60,6 +60,7 @@ app.add_middleware(
     # Session expiree apres 14 jours d'inactivite : limite la fenetre de
     # danger si un cookie est vole (poste partage, appareil perdu...).
     max_age=14 * 24 * 60 * 60,
+    session_cookie="__Host-session" if parametres.environnement == "production" else "session",
 )
 app.add_middleware(EnTetesSecuriteMiddleware, https_actif=parametres.environnement == "production")
 

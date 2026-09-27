@@ -46,11 +46,12 @@ _CSP = (
     # directe vers la meme URL fonctionne -- c'est le CSP, pas Supabase,
     # qui bloquait dans ce cas.
     "img-src 'self' data: https://*.supabase.co; "
-    "connect-src 'self' ws: wss: https:; "
+    "connect-src 'self' ws: wss: https://*.supabase.co; "
     # worker-src : le SDK LiveKit cree des Web Workers internes (blob:)
     # pour le traitement audio/video sans bloquer l'interface.
     "worker-src 'self' blob:; "
     "media-src 'self' blob:; "
+    "object-src 'none'; "
     "frame-ancestors 'none'; "
     "base-uri 'self'; "
     "form-action 'self';"
@@ -85,11 +86,15 @@ class EnTetesSecuriteMiddleware(BaseHTTPMiddleware):
        # site elle-meme ("self") — la classe virtuelle (LiveKit) a besoin du
        # micro/camera. Aucun domaine tiers ni iframe etranger ne peut y
        # acceder, meme si un script malveillant s'executait.
-        reponse.headers["Permissions-Policy"] = "geolocation=(self), microphone=(self), camera=(self)"
+        reponse.headers["Permissions-Policy"] = "geolocation=(), microphone=(self), camera=(self)"
 
         reponse.headers["Content-Security-Policy"] = _CSP
         reponse.headers["Cross-Origin-Opener-Policy"] = "same-origin"
         reponse.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+
+        if request.session.get("user_id"):
+            reponse.headers["Cache-Control"] = "no-store, max-age=0"
+            reponse.headers["Pragma"] = "no-cache"
 
         # HSTS : force le navigateur a ne plus jamais essayer HTTP (meme
         # si quelqu'un tape/clique un lien http://) pendant 1 an, pour ce
