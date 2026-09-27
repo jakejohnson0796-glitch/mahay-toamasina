@@ -1,61 +1,90 @@
 {% extends "base.html" %}
-{% from "components/signal.html" import signal %}
-{% block titre %}Resultat — {{ tentative.matiere }} — Gasy Mahay{% endblock %}
+{% from "components/icone.html" import icone %}
+
+{% block titre %}Résultat — {{ tentative.matiere }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow">{{ tentative.matiere }} — {{ tentative.niveau }} — {{ tentative.difficulte }}</p>
-<h2>Resultat</h2>
-
-{% if request.query_params.get("signale") %}
-<div class="info">Question signalee — merci, un administrateur va la verifier.</div>
-{% endif %}
-
-<div class="quiz-score-carte">
-  <span class="quiz-score-nombre">{{ tentative.score }}/{{ tentative.nb_questions }}</span>
-  <span class="quiz-score-label">Bonnes reponses</span>
-  {% set pourcentage = (tentative.score / tentative.nb_questions * 100) if tentative.nb_questions else 0 %}
-  <style nonce="{{ csp_nonce(request) }}">
-    .quiz-resultat-progress-{{ tentative.id }} {
-      width: {{ pourcentage }}%;
-      background: {{ 'var(--color-success-clair)' if pourcentage >= 50 else 'var(--color-danger-clair)' }};
-    }
-  </style>
-  <span class="quiz-progression-piste quiz-score-piste">
-    <span class="quiz-progression-remplissage quiz-resultat-progress-{{ tentative.id }}"></span>
-  </span>
-</div>
-
-{% for item in questions %}
-{% set q_index = loop.index0 %}
-{% set reponse_donnee = reponses[q_index] if reponses and q_index < reponses|length else none %}
-{% set correcte = reponse_donnee == item.index_bonne_reponse %}
-<div class="carte-formulaire carte-quiz quiz-question-corrigee {{ 'quiz-question-correcte' if correcte else 'quiz-question-incorrecte' }}">
-  <p class="question-quiz"><strong>{{ loop.index }}. {{ item.question }}</strong></p>
-
-  {% if item.choix and item.choix|length > 1 %}
-  <ol type="A" class="choix-quiz">
-    {% for choix in item.choix %}
-    <li class="{% if loop.index0 == item.index_bonne_reponse %}quiz-choix-correct{% elif loop.index0 == reponse_donnee %}quiz-choix-donne-incorrect{% endif %}">
-      {{ choix }}
-      {% if loop.index0 == item.index_bonne_reponse %} — bonne reponse{% endif %}
-      {% if loop.index0 == reponse_donnee and not correcte %} — votre reponse{% endif %}
-    </li>
-    {% endfor %}
-  </ol>
-  <p class="tampon {{ 'tampon-approuve' if correcte else 'tampon-rejete' }}">{{ signal("approuve" if correcte else "rejete") }}{{ "Correct" if correcte else ("Pas de reponse" if reponse_donnee is none else "Incorrect") }}</p>
-  {% if item.explication %}<p>{{ item.explication }}</p>{% endif %}
-  {% else %}
-  <p>{{ item.choix[0] if item.choix else "" }}</p>
+<div class="ai-learning-page">
+  {% if request.query_params.get("signale") %}
+  <div class="info" role="status">Question signalée. Merci : elle sera vérifiée par un administrateur.</div>
   {% endif %}
 
-  <form method="post" action="/quiz/{{ tentative.id }}/questions/{{ q_index }}/signaler" class="quiz-form-signaler">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <button type="submit" class="lien-action">Signaler cette question (reponse ou explication fausse)</button>
-  </form>
-</div>
-{% endfor %}
+  {% set pourcentage = (tentative.score / tentative.nb_questions * 100) if tentative.nb_questions else 0 %}
+  <section class="ai-result-hero" aria-labelledby="resultat-title">
+    <div class="ai-result-summary">
+      <span class="ai-kicker">Bilan de ton entraînement</span>
+      <h1 id="resultat-title">{{ tentative.matiere }}</h1>
+      <p>{{ tentative.niveau }} · {{ tentative.difficulte }} · {{ tentative.nb_questions }} questions{% if tentative.mode_examen %} · examen blanc{% endif %}</p>
+      <div class="ai-result-progress" aria-label="Progression du score">
+        <span class="ai-result-progress-fill" style="--score-width: {{ pourcentage }}%;"></span>
+      </div>
+      <div class="ai-result-actions">
+        <a class="bouton bouton-primaire" href="/quiz">Nouveau quiz</a>
+        <a class="bouton bouton-secondaire" href="/quiz/historique">Voir mon historique</a>
+        <a class="bouton bouton-secondaire" href="/tuteur">Demander une explication au Tuteur IA</a>
+      </div>
+    </div>
 
-<p class="quiz-liens-bas"><a class="bouton bouton-primaire" href="/quiz">Refaire un quiz</a> <a href="/quiz/historique">Voir mon historique</a></p>
+    <div class="ai-result-score">
+      <span class="ai-result-score-number">{{ tentative.score }}/{{ tentative.nb_questions }}</span>
+      <span class="ai-result-score-label">{{ "%.0f"|format(pourcentage) }}% de bonnes réponses</span>
+    </div>
+  </section>
+
+  <section class="ai-section" aria-labelledby="correction-title">
+    <div class="ai-section-head">
+      <div>
+        <h2 id="correction-title">Correction question par question</h2>
+        <p>Compare ta réponse, la bonne réponse et l'explication fournie avec la question.</p>
+      </div>
+      <span class="ai-badge">{{ questions|length }} corrections</span>
+    </div>
+
+    <div class="ai-correction-list">
+      {% for item in questions %}
+      {% set q_index = loop.index0 %}
+      {% set reponse_donnee = reponses[q_index] if reponses and q_index < reponses|length else none %}
+      {% set correcte = reponse_donnee == item.index_bonne_reponse %}
+      <article class="ai-correction-card {{ 'is-good' if correcte else 'is-bad' }}">
+        <div class="ai-correction-top">
+          <span class="ai-correction-index">QUESTION {{ "%02d" % loop.index }}</span>
+          <span class="ai-correction-status">
+            {{ "Correcte" if correcte else ("Sans réponse" if reponse_donnee is none else "À revoir") }}
+          </span>
+        </div>
+
+        <h3 class="ai-correction-question">{{ item.question }}</h3>
+
+        {% if item.choix and item.choix|length > 1 %}
+        <div class="ai-correction-options">
+          {% for choix in item.choix %}
+          <div class="ai-correction-option
+              {{ 'is-correct' if loop.index0 == item.index_bonne_reponse else '' }}
+              {{ 'is-selected-bad' if loop.index0 == reponse_donnee and not correcte else '' }}">
+            <strong>{{ ["A","B","C","D","E","F"][loop.index0] }}.</strong> {{ choix }}
+            {% if loop.index0 == item.index_bonne_reponse %} · bonne réponse{% endif %}
+            {% if loop.index0 == reponse_donnee and not correcte %} · ta réponse{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="ai-correction-explanation">{{ item.choix[0] if item.choix else "" }}</div>
+        {% endif %}
+
+        {% if item.explication %}
+        <div class="ai-correction-explanation">
+          <strong>Pourquoi ?</strong><br>{{ item.explication }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="/quiz/{{ tentative.id }}/questions/{{ q_index }}/signaler" class="ai-flag-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button type="submit">Signaler cette question si la réponse ou l'explication semble incorrecte</button>
+        </form>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
 </div>
 {% endblock %}
