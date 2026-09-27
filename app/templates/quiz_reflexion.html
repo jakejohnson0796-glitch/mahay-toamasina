@@ -1,29 +1,50 @@
 {% extends "base.html" %}
-{% block titre %}Theme de reflexion — Gasy Mahay{% endblock %}
+
+{% block titre %}Thème de réflexion — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow">Muscler l'intellect · Theme du jour</p>
-<h2>{{ theme.date_affichee }}</h2>
+<div class="ai-learning-page">
+  <section class="ai-section" aria-labelledby="reflexion-title">
+    <div class="ai-reflexion-card">
+      <span class="ai-reflexion-date">Muscler l'intellect · thème du jour · {{ theme.date_affichee }}</span>
+      <h1 id="reflexion-title" class="ai-reflexion-theme">{{ theme.theme }}</h1>
+      {% if theme.amorce %}
+      <p class="ai-reflexion-amorce">{{ theme.amorce }}</p>
+      {% endif %}
 
-<div class="carte-formulaire carte-quiz">
-  <p class="question-quiz"><strong>{{ theme.theme }}</strong></p>
-  {% if theme.amorce %}<p>{{ theme.amorce }}</p>{% endif %}
-</div>
+      <div class="ai-feature-strip">
+        <div class="ai-feature"><strong>Réfléchir</strong><span>Note les idées ou arguments qui te viennent spontanément.</span></div>
+        <div class="ai-feature"><strong>Comparer</strong><span>Discute le sujet dans un cercle d'étude ou avec tes camarades.</span></div>
+        <div class="ai-feature"><strong>Approfondir</strong><span>Utilise le Tuteur IA pour demander des explications ciblées.</span></div>
+      </div>
+    </div>
+  </section>
 
-<p>Debattez-en dans un <a href="/cercles">cercle d'etude</a>. Ce theme reste le meme pour tout le monde aujourd'hui et changera automatiquement demain.</p>
+  <section class="ai-section" aria-labelledby="orientation-title">
+    <div class="ai-section-head">
+      <div>
+        <h2 id="orientation-title">Orienter la réflexion</h2>
+        <p>Tu peux garder le sujet libre ou le rapprocher d'une matière disponible sur la plateforme.</p>
+      </div>
+    </div>
 
-<form method="get" action="/quiz/reflexion" class="carte-formulaire">
-  <label for="matiere">Orienter vers une matiere (optionnel)</label>
-  <select id="matiere" name="matiere">
-    <option value="">— aucune, sujet libre —</option>
-    {% for m in matieres %}
-    <option value="{{ m }}" {{ "selected" if m == matiere_selectionnee else "" }}>{{ m }}</option>
-    {% endfor %}
-  </select>
-  <button class="bouton bouton-secondaire bouton-form" type="submit">Filtrer par matiere</button>
-</form>
-
-<p><a href="/quiz">&larr; Retour au Quiz IA</a></p>
+    <form method="get" action="/quiz/reflexion" class="ai-panel ai-form-card">
+      <div class="ai-field">
+        <label for="matiere">Matière (optionnel)</label>
+        <select id="matiere" name="matiere">
+          <option value="">— sujet libre —</option>
+          {% for m in matieres %}
+          <option value="{{ m }}" {{ "selected" if m == matiere_selectionnee else "" }}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="ai-inline-actions">
+        <button class="bouton bouton-primary bouton-primaire" type="submit">Orienter le thème</button>
+        <a class="bouton bouton-secondaire" href="/cercles">En discuter dans un cercle</a>
+        <a class="bouton bouton-secondaire" href="/quiz">Retour au Quiz IA</a>
+      </div>
+    </form>
+  </section>
 </div>
 {% endblock %}
