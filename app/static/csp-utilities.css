@@ -1,0 +1,18 @@
+/* CSP-safe styles that formerly required dynamic inline style attributes. */
+.avatar-taille-24{width:24px;height:24px;font-size:10.1px}
+.avatar-taille-27{width:27px;height:27px;font-size:11.3px}
+.avatar-taille-30{width:30px;height:30px;font-size:12.6px}
+.avatar-taille-32{width:32px;height:32px;font-size:13.4px}
+.avatar-taille-34{width:34px;height:34px;font-size:14.3px}
+.avatar-taille-72{width:72px;height:72px;font-size:30.2px}
+.avatar-couleur-0,.message-avatar-couleur-0{background:#1E7A34}
+.avatar-couleur-1,.message-avatar-couleur-1{background:#1864AB}
+.avatar-couleur-2,.message-avatar-couleur-2{background:#C23E0A}
+.avatar-couleur-3,.message-avatar-couleur-3{background:#C2255C}
+.avatar-couleur-4,.message-avatar-couleur-4{background:#087F5B}
+.avatar-couleur-5,.message-avatar-couleur-5{background:#862E9C}
+.carte-claire-avatar-couleur-0{background:rgba(232,147,90,.18)}
+.carte-claire-avatar-couleur-1{background:rgba(111,169,140,.18)}
+.carte-claire-avatar-couleur-2{background:rgba(91,147,166,.18)}
+.carte-claire-avatar-couleur-3{background:rgba(79,58,232,.12)}
+.carte-claire-avatar-couleur-4{background:rgba(123,82,238,.16)}

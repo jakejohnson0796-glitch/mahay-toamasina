@@ -32,6 +32,7 @@
 <link rel="stylesheet" href="/static/style.css?v={{ version_asset('style.css') }}">
 <link rel="stylesheet" href="/static/ux.css?v={{ version_asset('ux.css') }}">
 <link rel="stylesheet" href="/static/refonte.css?v={{ version_asset('refonte.css') }}">
+<link rel="stylesheet" href="/static/csp-utilities.css?v={{ version_asset('csp-utilities.css') }}">
 </head>
 <body>
 {% from "components/icone.html" import icone %}
@@ -302,6 +303,7 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/modale.js?v={{ version_asset('js/modale.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/soumission.js?v={{ version_asset('js/soumission.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/security-ui.js?v={{ version_asset('security-ui.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}">
   if ('serviceWorker' in navigator) {

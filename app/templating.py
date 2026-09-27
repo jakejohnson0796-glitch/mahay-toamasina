@@ -150,3 +150,21 @@ def csp_nonce(request) -> str:
 
 
 templates.env.globals["csp_nonce"] = csp_nonce
+
+
+def couleur_avatar_index(nom: str) -> int:
+    if not nom:
+        return 0
+    return sum(ord(c) for c in nom) % len(_PALETTE_AVATARS)
+
+
+def avatar_taille_classe(taille: int) -> int:
+    try:
+        valeur = int(taille)
+    except (TypeError, ValueError):
+        return 32
+    return valeur if valeur in (24, 27, 30, 32, 34, 72) else 32
+
+
+templates.env.globals["couleur_avatar_index"] = couleur_avatar_index
+templates.env.globals["avatar_taille_classe"] = avatar_taille_classe
