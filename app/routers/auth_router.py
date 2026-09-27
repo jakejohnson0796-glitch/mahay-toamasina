@@ -216,6 +216,7 @@ def inscription(
         faculte_id=composante_id_nettoye,
         universite_id=universite_id_nettoye,
         niveau=niveau,
+        derniere_activite_le=datetime.utcnow(),
     )
     session.add(utilisateur)
     session.commit()
