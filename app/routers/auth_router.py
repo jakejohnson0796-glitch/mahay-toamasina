@@ -705,6 +705,7 @@ def _contexte_securite(
 
     return {
         "utilisateur": utilisateur,
+        "jours_inactivite": __import__("app.auth", fromlist=["jours_inactivite"]).jours_inactivite(utilisateur),
         "nb_codes_restants": nb_codes_restants,
         "profil_academique": profil_academique,
         "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
