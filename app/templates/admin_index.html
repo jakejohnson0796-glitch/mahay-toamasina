@@ -3,103 +3,91 @@
 {% block titre %}Administration — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<h2>Administration</h2>
-
-<div class="liste-cercles" style="margin-bottom:2rem;">
-  <div class="carte-cercle">
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="admin-title">
     <div>
-      <strong>Abonnements etudiants</strong>
-      <p>Valider les paiements, gerer les demandes en attente.</p>
-      {% if nb_abonnements_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_abonnements_en_attente }} en attente</span>{% endif %}
+      <span class="ops-kicker">Centre de contrôle · Administration</span>
+      <h1 id="admin-title">Piloter Gasy Mahay sans perdre le fil.</h1>
+      <p>
+        Un espace unique pour surveiller les demandes, modérer les contenus,
+        gérer les utilisateurs, les abonnements, les sponsors et le référentiel académique.
+      </p>
+      <div class="ops-hero-actions">
+        <a href="/admin/abonnements">Abonnements</a>
+        <a href="/admin/sponsors">Sponsors</a>
+        <a href="/admin/utilisateurs">Utilisateurs</a>
+        <a href="/admin/stats">Statistiques</a>
+      </div>
     </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/abonnements">Ouvrir</a></div>
-  </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ nb_abonnements_en_attente }}</strong><span>abonnements à vérifier</span></div>
+      <div class="ops-stat"><strong>{{ nb_sponsors_en_attente }}</strong><span>demandes sponsors</span></div>
+      <div class="ops-stat"><strong>{{ nb_demandes_adhesion_en_attente }}</strong><span>demandes de cercles</span></div>
+      <div class="ops-stat"><strong>{{ nb_signalements_en_attente + nb_signalements_quiz_en_attente }}</strong><span>signalements à traiter</span></div>
+    </div>
+  </section>
 
-  <div class="carte-cercle">
-    <div>
-      <strong>Sponsors</strong>
-      <p>Traiter les demandes de contact, fixer le prix negocie et activer le partenariat.</p>
-      {% if nb_sponsors_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_sponsors_en_attente }} en attente</span>{% endif %}
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/sponsors">Ouvrir</a></div>
-  </div>
+  <nav class="ops-nav" aria-label="Navigation administration">
+    <a class="is-active" href="/admin">Vue d'ensemble</a>
+    <a href="/admin/abonnements">Abonnements</a>
+    <a href="/admin/sponsors">Sponsors</a>
+    <a href="/admin/utilisateurs">Utilisateurs</a>
+    <a href="/admin/stats">Statistiques</a>
+    <a href="/moderation">Documents</a>
+    <a href="/admin/referentiel">Référentiel</a>
+  </nav>
 
-  <div class="carte-cercle">
-    <div>
-      <strong>Demandes d'adhesion aux cercles</strong>
-      <p>Accepter ou refuser les demandes de rejoindre un cercle, tous cercles confondus.</p>
-      {% if nb_demandes_adhesion_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_demandes_adhesion_en_attente }} en attente</span>{% endif %}
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/demandes-adhesion">Ouvrir</a></div>
-  </div>
+  <div class="ops-admin-groups">
+    <section class="ops-admin-group">
+      <h2>Opérations</h2>
+      <div class="ops-admin-items">
+        <a class="ops-admin-item" href="/admin/abonnements">
+          <span><strong>Abonnements étudiants</strong><span>Valider les paiements et prolonger les accès.</span></span>
+          {% if nb_abonnements_en_attente %}<span class="ops-badge is-alert">{{ nb_abonnements_en_attente }}</span>{% else %}<span class="ops-badge is-success">OK</span>{% endif %}
+        </a>
+        <a class="ops-admin-item" href="/admin/sponsors">
+          <span><strong>Sponsors</strong><span>Traiter les demandes et activer les partenariats.</span></span>
+          {% if nb_sponsors_en_attente %}<span class="ops-badge is-alert">{{ nb_sponsors_en_attente }}</span>{% else %}<span class="ops-badge is-success">OK</span>{% endif %}
+        </a>
+        <a class="ops-admin-item" href="/admin/utilisateurs"><span><strong>Utilisateurs</strong><span>Rôles, bannissement et récupération de compte.</span></span><span class="ops-badge">Gérer</span></a>
+        <a class="ops-admin-item" href="/admin/stats"><span><strong>Statistiques</strong><span>Vue globale sur activité, contenus et accès.</span></span><span class="ops-badge">Voir</span></a>
+      </div>
+    </section>
 
-  <div class="carte-cercle">
-    <div>
-      <strong>Moderation du salon</strong>
-      <p>Traiter les messages signales par les etudiants.</p>
-      {% if nb_signalements_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_signalements_en_attente }} en attente</span>{% endif %}
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/moderation-salon">Ouvrir</a></div>
-  </div>
+    <section class="ops-admin-group">
+      <h2>Modération</h2>
+      <div class="ops-admin-items">
+        <a class="ops-admin-item" href="/moderation">
+          <span><strong>Documents</strong><span>Approuver ou rejeter les ressources.</span></span>
+          <span class="ops-badge">Ouvrir</span>
+        </a>
+        <a class="ops-admin-item" href="/admin/moderation-salon">
+          <span><strong>Salon</strong><span>Messages signalés par les étudiants.</span></span>
+          {% if nb_signalements_en_attente %}<span class="ops-badge is-alert">{{ nb_signalements_en_attente }}</span>{% else %}<span class="ops-badge is-success">OK</span>{% endif %}
+        </a>
+        <a class="ops-admin-item" href="/admin/moderation-quiz">
+          <span><strong>Quiz IA</strong><span>Questions générées à vérifier.</span></span>
+          {% if nb_signalements_quiz_en_attente %}<span class="ops-badge is-alert">{{ nb_signalements_quiz_en_attente }}</span>{% else %}<span class="ops-badge is-success">OK</span>{% endif %}
+        </a>
+        <a class="ops-admin-item" href="/admin/feedback">
+          <span><strong>Feedbacks</strong><span>Répondre et modérer les retours utilisateurs.</span></span>
+          {% if nb_feedbacks_sans_reponse %}<span class="ops-badge is-alert">{{ nb_feedbacks_sans_reponse }}</span>{% else %}<span class="ops-badge is-success">OK</span>{% endif %}
+        </a>
+      </div>
+    </section>
 
-  <div class="carte-cercle">
-    <div>
-      <strong>Moderation Quiz IA</strong>
-      <p>Traiter les questions signalees comme fausses ou incoherentes.</p>
-      {% if nb_signalements_quiz_en_attente %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_signalements_quiz_en_attente }} en attente</span>{% endif %}
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/moderation-quiz">Ouvrir</a></div>
+    <section class="ops-admin-group">
+      <h2>Référentiel & communautés</h2>
+      <div class="ops-admin-items">
+        <a class="ops-admin-item" href="/admin/demandes-adhesion">
+          <span><strong>Adhésions aux cercles</strong><span>Accepter ou refuser les demandes.</span></span>
+          {% if nb_demandes_adhesion_en_attente %}<span class="ops-badge is-alert">{{ nb_demandes_adhesion_en_attente }}</span>{% else %}<span class="ops-badge is-success">OK</span>{% endif %}
+        </a>
+        <a class="ops-admin-item" href="/admin/referentiel"><span><strong>Référentiel académique</strong><span>Universités, mentions, filières et cercles.</span></span><span class="ops-badge">Gérer</span></a>
+        <a class="ops-admin-item" href="/admin/faq"><span><strong>FAQ</strong><span>Maintenir les réponses d'aide publiques.</span></span><span class="ops-badge">Gérer</span></a>
+        <a class="ops-admin-item" href="/admin/demandes-changement-filiere"><span><strong>Changements de filière</strong><span>Examiner les demandes de profil.</span></span><span class="ops-badge">Voir</span></a>
+      </div>
+    </section>
   </div>
-
-  <div class="carte-cercle">
-    <div>
-      <strong>Documents</strong>
-      <p>Approuver ou rejeter les documents deposes.</p>
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/moderation">Ouvrir</a></div>
-  </div>
-
-  <div class="carte-cercle">
-    <div>
-      <strong>Utilisateurs</strong>
-      <p>Rechercher un compte, bannir/debannir.</p>
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/utilisateurs">Ouvrir</a></div>
-  </div>
-
-  <div class="carte-cercle">
-    <div>
-      <strong>Referentiel academique</strong>
-      <p>Universites, mentions, assignation des filieres et cercles.</p>
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/referentiel">Ouvrir</a></div>
-  </div>
-
-  <div class="carte-cercle">
-    <div>
-      <strong>Statistiques</strong>
-      <p>Vue d'ensemble de la plateforme.</p>
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/stats">Ouvrir</a></div>
-  </div>
-
-  <div class="carte-cercle">
-    <div>
-      <strong>FAQ</strong>
-      <p>Creer, modifier, activer/desactiver les questions frequentes.</p>
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/faq">Ouvrir</a></div>
-  </div>
-
-  <div class="carte-cercle">
-    <div>
-      <strong>Feedbacks utilisateurs</strong>
-      <p>Consulter les avis, repondre, moderer.</p>
-      {% if nb_feedbacks_sans_reponse %}{{ signal("attente") }}<span class="tampon tampon-attente">{{ nb_feedbacks_sans_reponse }} sans reponse</span>{% endif %}
-    </div>
-    <div><a class="bouton bouton-secondaire" href="/admin/feedback">Ouvrir</a></div>
-  </div>
-</div>
 </div>
 {% endblock %}
