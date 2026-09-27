@@ -3,7 +3,15 @@
   "use strict";
 
   function formaterTelephoneLocal(chiffres) {
-    return [chiffres.slice(0, 3), chiffres.slice(3, 5), chiffres.slice(5, 8), chiffres.slice(8, 10)]
+    // Affiche le format local a 10 chiffres (034 12 345 67) lorsqu'un 0
+    // est saisi, tout en conservant le format international historique
+    // a 9 chiffres (34 12 345 67) pour les comptes existants.
+    if (chiffres.startsWith("0")) {
+      return [chiffres.slice(0, 3), chiffres.slice(3, 5), chiffres.slice(5, 8), chiffres.slice(8, 10)]
+        .filter(Boolean)
+        .join(" ");
+    }
+    return [chiffres.slice(0, 2), chiffres.slice(2, 4), chiffres.slice(4, 7), chiffres.slice(7, 9)]
       .filter(Boolean)
       .join(" ");
   }
@@ -21,14 +29,23 @@
 
       formulaire.addEventListener("submit", function (evenement) {
         const chiffres = champLocal.value.replace(/\D/g, "");
-        if (chiffres.length !== 10 || !chiffres.startsWith("0")) {
-          evenement.preventDefault();
-          champLocal.setCustomValidity("Entrez les 10 chiffres, par exemple 034 12 345 67.");
-          champLocal.reportValidity();
+        // Compatibilite : un utilisateur peut saisir son ancien format
+        // international de 9 chiffres (34xxxxxxxx) ou le nouveau format
+        // local de 10 chiffres incluant le 0 (034xxxxxxxx). Dans les deux
+        // cas, on envoie toujours au backend la forme canonique locale.
+        if (chiffres.length === 9) {
+          champLocal.setCustomValidity("");
+          champCache.value = "0" + chiffres;
           return;
         }
-        champLocal.setCustomValidity("");
-        champCache.value = chiffres;
+        if (chiffres.length === 10 && chiffres.startsWith("0")) {
+          champLocal.setCustomValidity("");
+          champCache.value = chiffres;
+          return;
+        }
+        evenement.preventDefault();
+        champLocal.setCustomValidity("Entrez le numéro complet : 034 12 345 67 ou 34 12 345 67.");
+        champLocal.reportValidity();
       });
     });
   }
