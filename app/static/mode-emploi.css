@@ -659,3 +659,7 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.mode-emploi-mt-8 { margin-top: .8rem; }
+.mode-emploi-mt-12 { margin-top: 1.2rem; }
