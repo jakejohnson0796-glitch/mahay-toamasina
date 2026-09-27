@@ -1,593 +1,67 @@
-{% extends "base.html" %}
-{% from "components/signal.html" import signal %}
-{% block titre %}Salle — {{ seance.titre }} — Gasy Mahay{% endblock %}
-{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
-{% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow">{{ cours.nom }}</p>
-<h2>{{ seance.titre }} {{ signal("approuve") }}<span class="tampon tampon-approuve">LIVE</span></h2>
+<div class="classe-salle">
+  <header class="classe-salle-head">
+    <div>
+      <p class="classe-breadcrumb">{{ cours.nom }}</p>
+      <h1 class="classe-salle-title">{{ seance.titre }}</h1>
+      <p class="classe-salle-subtitle">Séance en direct · {{ utilisateur.nom }}</p>
+    </div>
+    <div class="classe-salle-status">
+      <span class="classe-live-pill">LIVE</span>
+      <span id="statut-connexion" class="classe-salle-subtitle">Connexion à la salle…</span>
+    </div>
+  </header>
 
 {% if erreur_livekit %}
-<div class="erreur">{{ erreur_livekit }}</div>
-<form method="post" action="/classe/seances/{{ seance.id }}/quitter">
-  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-  <button class="bouton bouton-secondaire bouton-form" type="submit">Retour au cours</button>
-</form>
+  <div class="erreur" role="alert">{{ erreur_livekit }}</div>
+  <form method="post" action="/classe/seances/{{ seance.id }}/quitter">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button class="bouton bouton-secondaire bouton-form" type="submit">Retour au cours</button>
+  </form>
 {% else %}
 
 <div id="salle-virtuelle" data-url="{{ url_livekit }}" data-jeton="{{ jeton_livekit }}" data-peut-partager-ecran="{{ 'true' if peut_gerer else 'false' }}">
-  <div id="statut-connexion" class="stat-label">Connexion a la salle…</div>
+  <section class="classe-salle-stage" aria-label="Vidéo de la classe">
+    <div id="grille-video" class="grille-video"></div>
+    <div id="salle-vide" class="classe-empty-stage" hidden>
+      <div><strong>En attente des participants</strong><p>La caméra peut être coupée tout en restant présente dans la salle.</p></div>
+    </div>
+  </section>
 
-  <div id="grille-video" class="grille-video"></div>
-
-  <div class="barre-controles-salle">
-    <button type="button" id="btn-micro" class="bouton-controle" aria-pressed="false" aria-label="Activer/couper le micro" title="Activer/couper le micro">🎤</button>
-    <button type="button" id="btn-camera" class="bouton-controle" aria-pressed="false" aria-label="Activer/couper la camera" title="Activer/couper la camera">📷</button>
+  <div class="classe-salle-controls">
+    <button type="button" id="btn-micro" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer ou couper le micro" title="Micro">🎤</button>
+    <button type="button" id="btn-camera" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer ou couper la caméra" title="Caméra">📷</button>
     {% if peut_gerer %}
-    <button type="button" id="btn-partage-ecran" class="bouton-controle" aria-pressed="false" aria-label="Partager l'ecran" title="Partager l'ecran">🖥️</button>
+    <button type="button" id="btn-partage-ecran" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Partager l'écran" title="Partager l'écran">🖥️</button>
     {% endif %}
-    <button type="button" id="btn-lever-main" class="bouton-controle" aria-pressed="false" aria-label="Lever la main" title="Lever la main">✋</button>
-    <button type="button" id="btn-tableau" class="bouton-controle" aria-pressed="false" aria-label="Tableau blanc" title="Tableau blanc">🖍️</button>
-    <button type="button" id="btn-participants" class="bouton-controle" aria-pressed="false" aria-label="Participants" title="Participants">👥</button>
-    <button type="button" id="btn-economie-donnees" class="bouton-controle" aria-pressed="false" aria-label="Mode economie de donnees (coupe la video recue, garde l'audio)" title="Mode economie de donnees (coupe la video recue, garde l'audio)">📶</button>
-    <span id="compteur-participants" class="stat-label" style="margin-left:auto;align-self:center;">1 participant</span>
+    <button type="button" id="btn-lever-main" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Lever la main" title="Lever la main">✋</button>
+    <button type="button" id="btn-tableau" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Ouvrir le tableau blanc" title="Tableau blanc">🖍️</button>
+    <button type="button" id="btn-participants" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Afficher les participants" title="Participants">👥</button>
+    <button type="button" id="btn-economie-donnees" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer le mode économie de données" title="Économie de données">📶</button>
+    <span id="compteur-participants" class="classe-salle-participants">1 participant</span>
     <form method="post" action="/classe/seances/{{ seance.id }}/quitter" id="form-quitter">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <button type="submit" id="btn-quitter" class="bouton-controle bouton-quitter" aria-label="Quitter la salle" title="Quitter la salle">Quitter</button>
+      <button type="submit" id="btn-quitter" class="classe-salle-control bouton-controle bouton-quitter" aria-label="Quitter la salle" title="Quitter la salle">Quitter</button>
     </form>
-  </div>
-
-  <!-- Panneau tableau blanc : composant totalement independant de la
-       Room LiveKit ci-dessus. Masque par defaut (hidden), son contenu est
-       charge une seule fois via fetch() sur /tableau/fragment et injecte
-       ici — jamais via une navigation de page, precisement pour ne
-       jamais declencher le "beforeunload" qui coupait auparavant la
-       camera/le micro/le partage d'ecran. Ouvrir/fermer ce panneau ne
-       fait qu'afficher/masquer une <div> : la Room, les
-       RTCPeerConnection et les MediaStreamTrack ne sont jamais touches. -->
-  <div id="panneau-tableau" class="carte-formulaire" hidden style="margin-top:1rem;"></div>
-
-  <!-- Panneau participants : construit cote client depuis room.remoteParticipants
-       (LiveKit connait deja tout le monde, pas besoin d'une route serveur
-       qui listerait la meme chose en double). Les boutons couper-micro/
-       expulser (peut_gerer uniquement) appellent les routes de moderation
-       cote serveur -- c'est LIVEKIT qui applique l'effet, pas juste ce
-       panneau qui se met a jour tout seul. -->
-  <div id="panneau-participants" class="carte-formulaire" hidden style="margin-top:1rem;">
-    <h3 class="titre-carte">Participants</h3>
-    <ul id="liste-participants" class="liste-participants-salle"></ul>
-  </div>
-
-  <div id="panneau-mains-levees" class="file-mains-levees" hidden>
-    <span class="stat-label">Mains levees, dans l'ordre :</span>
-    <ol id="liste-mains-levees"></ol>
   </div>
 
   <div id="notifications-salle" aria-live="polite"></div>
 
-  <div class="panneau-chat-salle">
-    <div id="messages-chat-salle" class="messages-chat-salle"></div>
-    <form id="form-chat-salle">
-      <input type="text" id="champ-chat-salle" placeholder="Message a tous..." autocomplete="off" maxlength="500">
-      <button type="submit" class="bouton bouton-secondaire" style="padding:0.5rem 1rem;">Envoyer</button>
-    </form>
+  <section id="panneau-tableau" class="classe-salle-panel" hidden aria-label="Tableau blanc"></section>
+  <section id="panneau-participants" class="classe-salle-panel" hidden aria-labelledby="participants-title">
+    <h2 id="participants-title" class="titre-carte">Participants</h2>
+    <ul id="liste-participants" class="liste-participants-salle"></ul>
+  </section>
+  <div id="panneau-mains-levees" class="file-mains-levees" hidden>
+    <span class="stat-label">Mains levées, dans l'ordre :</span>
+    <ol id="liste-mains-levees"></ol>
   </div>
-</div>
 
-<script nonce="{{ csp_nonce(request) }}" src="https://cdn.jsdelivr.net/npm/livekit-client@2.17.0/dist/livekit-client.umd.min.js"></script>
-<script nonce="{{ csp_nonce(request) }}">
-(function () {
-  const conteneur = document.getElementById("salle-virtuelle");
-  const url = conteneur.dataset.url;
-  const jeton = conteneur.dataset.jeton;
-  const peutPartagerEcran = conteneur.dataset.peutPartagerEcran === "true";
-  const nomUtilisateur = {{ utilisateur.nom | tojson }};
-
-  // Palette d'avatars : DOIT rester identique, dans le meme ordre, a
-  // _PALETTE_AVATARS dans app/templating.py et a la copie utilisee dans
-  // cercle_chat.html -- un meme etudiant doit avoir la meme couleur
-  // d'initiale partout sur le site, cercles comme classe virtuelle.
-  const PALETTE_AVATARS = ["#1E7A34", "#1864AB", "#C23E0A", "#C2255C", "#087F5B", "#862E9C"];
-  function couleurAvatar(nom) {
-    if (!nom) return PALETTE_AVATARS[0];
-    let somme = 0;
-    for (let i = 0; i < nom.length; i++) somme += nom.charCodeAt(i);
-    return PALETTE_AVATARS[somme % PALETTE_AVATARS.length];
-  }
-
-  // Avatar (photo reelle ou repli initiale+couleur) pour un participant
-  // de la salle -- chat, panneau participants, tuile video. Contrairement
-  // au chat de cercle (ou le serveur sait deja qui a une photo), LiveKit
-  // ne nous donne que l'identity (= Utilisateur.id, voir
-  // generer_jeton_salle() dans livekit_tokens.py) et le nom : pas de
-  // flag "a_une_photo" disponible cote client. Solution la plus simple :
-  // on tente toujours l'image, et l'evenement onerror (404 si
-  // l'utilisateur n'a pas de photo) bascule sur l'initiale coloree.
-  function construireAvatar(id, nom, taille) {
-    const conteneur = document.createElement("span");
-    conteneur.className = "avatar-repli";
-    conteneur.style.width = taille + "px";
-    conteneur.style.height = taille + "px";
-    const img = document.createElement("img");
-    img.alt = "";
-    img.src = "/profil/photo/" + id;
-    img.onerror = function () {
-      img.remove();
-      const initiale = document.createElement("span");
-      initiale.className = "avatar-repli-initiale";
-      initiale.style.fontSize = Math.round(taille * 0.42) + "px";
-      initiale.style.background = couleurAvatar(nom);
-      initiale.textContent = (nom || "?").charAt(0).toUpperCase();
-      conteneur.appendChild(initiale);
-    };
-    conteneur.appendChild(img);
-    return conteneur;
-  }
-
-  const statutEl = document.getElementById("statut-connexion");
-  const grilleVideo = document.getElementById("grille-video");
-  const compteurEl = document.getElementById("compteur-participants");
-  const notifsEl = document.getElementById("notifications-salle");
-  const messagesEl = document.getElementById("messages-chat-salle");
-
-  const { Room, RoomEvent, Track, VideoPresets } = LivekitClient;
-const room = new Room({
-  adaptiveStream: true,
-  dynacast: true,
-  videoCaptureDefaults: {
-    resolution: VideoPresets.h360.resolution,
-  },
-  publishDefaults: {
-    videoEncoding: VideoPresets.h360.encoding,
-    simulcast: true,  // etait false -- avec adaptiveStream:true cote abonnes (juste au-dessus) sans
-                       // simulcast cote publication, il n'existait qu'UNE seule qualite a "adapter" :
-                       // tout le monde recevait la meme video, y compris un participant en 3G qui
-                       // n'a pas la bande passante pour la resolution de base. Simulcast fait publier
-                       // plusieurs paliers de qualite derives du flux capture (base relevee a 360p en
-                       // meme temps) ; chaque abonne recoit automatiquement le palier que sa connexion
-                       // peut tenir, sans que qui que ce soit n'ait a y penser.
-  },
-});
-
-  function majCompteur() {
-    const n = room.numParticipants || (room.remoteParticipants.size + 1);
-    compteurEl.textContent = n + " participant" + (n > 1 ? "s" : "");
-  }
-
-  function creerTuile(identifiantParticipant, nom) {
-    let tuile = document.getElementById("tuile-" + identifiantParticipant);
-    if (!tuile) {
-      tuile = document.createElement("div");
-      tuile.className = "tuile-video";
-      tuile.id = "tuile-" + identifiantParticipant;
-      const avatar = construireAvatar(identifiantParticipant, nom, 72);
-      avatar.classList.add("tuile-avatar");
-      tuile.appendChild(avatar);
-      const etiquette = document.createElement("span");
-      etiquette.className = "tuile-video-nom";
-      etiquette.textContent = nom;
-      tuile.appendChild(etiquette);
-      grilleVideo.appendChild(tuile);
-    }
-    return tuile;
-  }
-
-  // Remplace l'ancien retirerTuileSiVide() qui supprimait completement
-  // la tuile des qu'il n'y avait plus ni video ni audio -- du coup un
-  // participant camera coupee n'avait ABSOLUMENT aucune representation
-  // visuelle dans la grille. Desormais la tuile persiste tant que le
-  // participant est dans la salle (creee au connect/ParticipantConnected,
-  // supprimee seulement a ParticipantDisconnected) : cette fonction se
-  // contente d'afficher/cacher l'avatar selon qu'un flux VIDEO est
-  // actuellement attache (l'audio seul ne doit pas cacher l'avatar,
-  // d'ou le filtre sur .tuile-video-flux et non sur n'importe quel
-  // element media).
-  function actualiserAffichageTuile(identifiantParticipant) {
-    const tuile = document.getElementById("tuile-" + identifiantParticipant);
-    if (!tuile) return;
-    const avatar = tuile.querySelector(".tuile-avatar");
-    if (avatar) avatar.hidden = !!tuile.querySelector(".tuile-video-flux");
-  }
-
-  function ajouterMessageChat(id, nom, texte, estMoi) {
-    const ligne = document.createElement("div");
-    ligne.className = "message-chat-salle" + (estMoi ? " message-chat-salle-moi" : "");
-    ligne.appendChild(construireAvatar(id, nom, 22));
-    const auteur = document.createElement("span");
-    auteur.className = "message-auteur";
-    auteur.textContent = nom;
-    const contenu = document.createElement("span");
-    contenu.textContent = texte;
-    ligne.appendChild(auteur);
-    ligne.appendChild(contenu);
-    messagesEl.appendChild(ligne);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  function notifier(texte) {
-    const n = document.createElement("div");
-    n.className = "notification-salle";
-    n.textContent = texte;
-    notifsEl.appendChild(n);
-    setTimeout(function () { n.remove(); }, 5000);
-  }
-
-  // --- Mode economie de donnees : coupe la reception video de TOUS les
-  // participants distants (garde l'audio), sans se desabonner completement
-  // du flux -- setEnabled(false) suspend juste la reception, pas de
-  // renegociation WebRTC a chaque bascule. S'applique aussi aux
-  // participants qui rejoignent APRES l'activation (cf. TrackSubscribed
-  // plus bas). Rien a envoyer au serveur : c'est un choix de reception
-  // purement local, qui ne change rien pour les autres participants. */
-  let modeEconomieDonnees = false;
-  function appliquerModeEconomieSur(publicationVideo) {
-    if (publicationVideo) publicationVideo.setEnabled(!modeEconomieDonnees);
-  }
-  function appliquerModeEconomieDonnees() {
-    room.remoteParticipants.forEach(function (participant) {
-      participant.videoTrackPublications.forEach(appliquerModeEconomieSur);
-    });
-  }
-
-  // --- Reception des flux video/audio des autres participants ---
-  room.on(RoomEvent.TrackSubscribed, function (track, publication, participant) {
-    const tuile = creerTuile(participant.identity, participant.name || "Participant");
-    const element = track.attach();
-    if (track.kind === Track.Kind.Video) {
-      element.classList.add("tuile-video-flux");
-      appliquerModeEconomieSur(publication);  // applique le mode economie si deja actif au moment ou ce participant/flux arrive
-    }
-    tuile.appendChild(element);
-    actualiserAffichageTuile(participant.identity);
-    majCompteur();
-  });
-  room.on(RoomEvent.TrackUnsubscribed, function (track, publication, participant) {
-    track.detach().forEach(function (el) { el.remove(); });
-    actualiserAffichageTuile(participant.identity);
-  });
-
-  room.on(RoomEvent.ParticipantConnected, function (participant) {
-    creerTuile(participant.identity, participant.name || "Participant");
-    notifier(participant.name + " a rejoint la salle.");
-    majCompteur();
-    mettreAJourPanneauParticipants();
-  });
-  room.on(RoomEvent.ParticipantDisconnected, function (participant) {
-    const tuile = document.getElementById("tuile-" + participant.identity);
-    if (tuile) tuile.remove();
-    notifier(participant.name + " a quitte la salle.");
-    majCompteur();
-    mettreAJourPanneauParticipants();
-  });
-
-  room.on(RoomEvent.Disconnected, function () {
-    statutEl.textContent = "Deconnecte de la salle.";
-  });
-  room.on(RoomEvent.Reconnecting, function () {
-    statutEl.textContent = "Reconnexion en cours...";
-  });
-  room.on(RoomEvent.Reconnected, function () {
-    statutEl.textContent = "Connecte.";
-  });
-
-  // --- Canal de donnees : chat + "mains levees" (pas de WebSocket
-  // separe, on reutilise le canal deja ouvert par LiveKit) ---
-  room.on(RoomEvent.DataReceived, function (payload, participant) {
-    try {
-      const donnees = JSON.parse(new TextDecoder().decode(payload));
-      if (donnees.type === "chat") {
-        ajouterMessageChat(participant.identity, donnees.nom, donnees.texte, false);
-      } else if (donnees.type === "main_levee") {
-        ajouterMainLevee(donnees.nom);
-        notifier(donnees.nom + " leve la main.");
-      } else if (donnees.type === "main_baissee") {
-        retirerMainLevee(donnees.nom);
-      }
-    } catch (e) { /* message non reconnu, on ignore */ }
-  });
-
-  function envoyerDonnee(objet) {
-    const payload = new TextEncoder().encode(JSON.stringify(objet));
-    room.localParticipant.publishData(payload, { reliable: true });
-  }
-
-  // --- File "mains levees", visible de tous (pas seulement du
-  // professeur) : chaque client maintient la meme liste en ecoutant les
-  // memes evenements main_levee/main_baissee que tout le monde recoit
-  // deja. Classee par nom (pas d'ID partage fiable cote donnees), un
-  // meme nom ne peut apparaitre qu'une fois dans la file. */
-  const panneauMainsLevees = document.getElementById("panneau-mains-levees");
-  const listeMainsLeveesEl = document.getElementById("liste-mains-levees");
-  let mainsLevees = [];
-
-  function rendreListeMainsLevees() {
-    panneauMainsLevees.hidden = mainsLevees.length === 0;
-    listeMainsLeveesEl.innerHTML = "";
-    mainsLevees.forEach(function (nom) {
-      const item = document.createElement("li");
-      item.textContent = nom;
-      {% if peut_gerer %}
-      const btnEffacer = document.createElement("button");
-      btnEffacer.type = "button";
-      btnEffacer.className = "lien-action";
-      btnEffacer.textContent = "Fait";
-      btnEffacer.addEventListener("click", function () {
-        envoyerDonnee({ type: "main_baissee", nom: nom });
-        retirerMainLevee(nom);
-      });
-      item.appendChild(btnEffacer);
-      {% endif %}
-      listeMainsLeveesEl.appendChild(item);
-    });
-  }
-  function ajouterMainLevee(nom) {
-    if (mainsLevees.indexOf(nom) === -1) mainsLevees.push(nom);
-    rendreListeMainsLevees();
-  }
-  function retirerMainLevee(nom) {
-    mainsLevees = mainsLevees.filter(function (n) { return n !== nom; });
-    rendreListeMainsLevees();
-  }
-
-  // --- Panneau participants : (re)construit depuis room.remoteParticipants
-  // a chaque connexion/deconnexion -- LiveKit tient deja cette liste a
-  // jour, pas besoin d'un etat separe a synchroniser. */
-  const panneauParticipants = document.getElementById("panneau-participants");
-  const listeParticipantsEl = document.getElementById("liste-participants");
-  const btnParticipants = document.getElementById("btn-participants");
-
-  function mettreAJourPanneauParticipants() {
-    if (panneauParticipants.hidden) return;  // pas la peine de reconstruire un panneau ferme
-    listeParticipantsEl.innerHTML = "";
-    const soi = document.createElement("li");
-    const groupeSoi = document.createElement("span");
-    groupeSoi.style.cssText = "display:flex;align-items:center;gap:0.5rem;";
-    groupeSoi.appendChild(construireAvatar(room.localParticipant.identity, nomUtilisateur, 22));
-    const nomSoiSpan = document.createElement("span");
-    nomSoiSpan.textContent = nomUtilisateur + " (vous)";
-    groupeSoi.appendChild(nomSoiSpan);
-    soi.appendChild(groupeSoi);
-    listeParticipantsEl.appendChild(soi);
-    room.remoteParticipants.forEach(function (participant) {
-      const item = document.createElement("li");
-      const groupeNom = document.createElement("span");
-      groupeNom.style.cssText = "display:flex;align-items:center;gap:0.5rem;";
-      groupeNom.appendChild(construireAvatar(participant.identity, participant.name || "Participant", 22));
-      const nomSpan = document.createElement("span");
-      nomSpan.textContent = participant.name || "Participant";
-      groupeNom.appendChild(nomSpan);
-      item.appendChild(groupeNom);
-      {% if peut_gerer %}
-      const identite = participant.identity;
-      const btnMuter = document.createElement("button");
-      btnMuter.type = "button";
-      btnMuter.className = "lien-action";
-      btnMuter.textContent = "Couper le micro";
-      btnMuter.addEventListener("click", function () {
-        appelerModerationSalle("muter", identite, btnMuter, "Micro coupe.", "Ce participant n'a pas de micro actif.");
-      });
-      const btnExpulser = document.createElement("button");
-      btnExpulser.type = "button";
-      btnExpulser.className = "lien-action";
-      btnExpulser.textContent = "Expulser";
-      btnExpulser.addEventListener("click", function () {
-        if (!confirm("Expulser " + (participant.name || "ce participant") + " de la salle ?")) return;
-        appelerModerationSalle("expulser", identite, btnExpulser, "Participant expulse.", null);
-      });
-      item.appendChild(btnMuter);
-      item.appendChild(btnExpulser);
-      {% endif %}
-      listeParticipantsEl.appendChild(item);
-    });
-  }
-
-  {% if peut_gerer %}
-  function appelerModerationSalle(action, identiteCible, bouton, messageSucces, messageEchecDoux) {
-    bouton.disabled = true;
-    fetch("/classe/seances/{{ seance.id }}/salle/" + action + "/" + identiteCible, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "_csrf=" + encodeURIComponent({{ jeton_csrf(request) | tojson }}),
-    })
-      .then(function (reponse) { return reponse.json().then(function (corps) { return { ok: reponse.ok, corps: corps }; }); })
-      .then(function (resultat) {
-        if (!resultat.ok) {
-          notifier(resultat.corps.erreur || "Action impossible.");
-        } else if (action === "muter" && resultat.corps.coupe === false && messageEchecDoux) {
-          notifier(messageEchecDoux);
-        } else {
-          notifier(messageSucces);
-        }
-      })
-      .catch(function () { notifier("Action impossible (probleme reseau)."); })
-      .finally(function () { bouton.disabled = false; });
-  }
+  <section class="classe-chat" aria-label="Chat de la séance">
+    <div id="messages-chat-salle" class="classe-chat-history"></div>
+    <input type="text" id="champ-chat-salle" placeholder="Message à tous…" autocomplete="off" maxlength="500">
+    <button type="button" class="bouton bouton-secondaire" id="btn-envoyer-chat">Envoyer</button>
+  </section>
   {% endif %}
-
-  // --- Connexion ---
-  room.connect(url, jeton).then(function () {
-    statutEl.textContent = "Connecte.";
-    // Cree tout de suite une tuile (avatar) pour soi-meme et pour tout
-    // participant DEJA present dans la salle -- ParticipantConnected ne
-    // se declenche que pour ceux qui arrivent APRES nous, et
-    // TrackSubscribed ne cree une tuile que si ce participant publie
-    // effectivement un flux. Sans cet appel, quelqu'un deja connecte
-    // sans camera/micro actifs resterait invisible.
-    creerTuile(room.localParticipant.identity, nomUtilisateur + " (vous)");
-    room.remoteParticipants.forEach(function (participant) {
-      creerTuile(participant.identity, participant.name || "Participant");
-    });
-    majCompteur();
-  }).catch(function (erreur) {
-    statutEl.textContent = "Impossible de se connecter a la salle (" + erreur.message + ").";
-  });
-
-  // --- Controles ---
-  let microActif = false;
-  let cameraActive = false;
-  let partageActif = false;
-
-  document.getElementById("btn-micro").addEventListener("click", function () {
-    microActif = !microActif;
-    room.localParticipant.setMicrophoneEnabled(microActif);
-    this.setAttribute("aria-pressed", String(microActif));
-    this.classList.toggle("bouton-controle-actif", microActif);
-  });
-
-  document.getElementById("btn-camera").addEventListener("click", function () {
-    cameraActive = !cameraActive;
-    room.localParticipant.setCameraEnabled(cameraActive).then(function () {
-      if (cameraActive) {
-        const pub = room.localParticipant.videoTrackPublications;
-        pub.forEach(function (p) {
-          if (p.track) {
-            const tuile = creerTuile(room.localParticipant.identity, nomUtilisateur + " (vous)");
-            const el = p.track.attach();
-            el.classList.add("tuile-video-flux");
-            el.muted = true;  // evite l'echo de son propre micro
-            tuile.appendChild(el);
-            actualiserAffichageTuile(room.localParticipant.identity);
-          }
-        });
-      } else {
-        const tuile = document.getElementById("tuile-" + room.localParticipant.identity);
-        if (tuile) tuile.querySelectorAll(".tuile-video-flux").forEach(function (el) { el.remove(); });
-        actualiserAffichageTuile(room.localParticipant.identity);
-      }
-    });
-    this.setAttribute("aria-pressed", String(cameraActive));
-    this.classList.toggle("bouton-controle-actif", cameraActive);
-  });
-
-  {% if peut_gerer %}
-  document.getElementById("btn-partage-ecran").addEventListener("click", function () {
-    partageActif = !partageActif;
-    room.localParticipant.setScreenShareEnabled(partageActif).catch(function (erreur) {
-      // L'utilisateur peut annuler la demande de partage (boite de dialogue
-      // du navigateur) — on remet juste le bouton dans son etat precedent.
-      partageActif = !partageActif;
-      notifier("Partage d'ecran annule.");
-    });
-    this.setAttribute("aria-pressed", String(partageActif));
-    this.classList.toggle("bouton-controle-actif", partageActif);
-  });
-  {% endif %}
-
-  // --- Tableau blanc : panneau independant, jamais de navigation ---
-  // Cause racine du bug historique : le bouton tableau blanc etait un
-  // <a href="/classe/seances/{id}/tableau"> qui faisait NAVIGUER le
-  // navigateur vers une AUTRE page HTML. Cette navigation declenchait le
-  // "beforeunload" ci-dessous (room.disconnect()) et detruisait la Room
-  // LiveKit -> camera, micro et partage d'ecran coupes immediatement.
-  // Le tableau blanc lui-meme n'y etait pour rien : c'est le simple fait
-  // de changer de document qui tuait la connexion WebRTC. Correction :
-  // le tableau blanc est maintenant charge en AJAX (fragment HTML, sans
-  // <html>/<head>) et affiche/masque dans un panneau de CETTE page, donc
-  // "room" n'est jamais recree ni deconnecte.
-  const panneauTableau = document.getElementById("panneau-tableau");
-  const btnTableau = document.getElementById("btn-tableau");
-  let tableauCharge = false;
-  let tableauOuvert = false;
-
-  function ouvrirPanneauTableau() {
-    tableauOuvert = true;
-    panneauTableau.hidden = false;
-    btnTableau.setAttribute("aria-pressed", "true");
-    btnTableau.classList.add("bouton-controle-actif");
-    if (!tableauCharge) {
-      fetch("/classe/seances/{{ seance.id }}/tableau/fragment", { credentials: "same-origin" })
-        .then(function (reponse) {
-          if (!reponse.ok) throw new Error("HTTP " + reponse.status);
-          return reponse.text();
-        })
-        .then(function (html) {
-          panneauTableau.innerHTML = html;
-          tableauCharge = true;
-          // Les <script nonce="{{ csp_nonce(request) }}"> injectes via innerHTML ne s'executent pas
-          // automatiquement (comportement standard du DOM) : on les
-          // recree explicitement pour que le JS du tableau blanc tourne.
-          panneauTableau.querySelectorAll("script").forEach(function (ancien) {
-            const nouveau = document.createElement("script");
-            nouveau.textContent = ancien.textContent;
-            ancien.replaceWith(nouveau);
-          });
-        })
-        .catch(function () {
-          panneauTableau.innerHTML = '<p class="erreur">Impossible de charger le tableau blanc pour le moment.</p>';
-        });
-    }
-  }
-
-  window.fermerPanneauTableau = function () {
-    tableauOuvert = false;
-    panneauTableau.hidden = true;
-    btnTableau.setAttribute("aria-pressed", "false");
-    btnTableau.classList.remove("bouton-controle-actif");
-  };
-
-  btnTableau.addEventListener("click", function () {
-    if (tableauOuvert) {
-      window.fermerPanneauTableau();
-    } else {
-      ouvrirPanneauTableau();
-    }
-  });
-
-  let mainLevee = false;
-  document.getElementById("btn-lever-main").addEventListener("click", function () {
-    mainLevee = !mainLevee;
-    this.setAttribute("aria-pressed", String(mainLevee));
-    this.classList.toggle("bouton-controle-actif", mainLevee);
-    envoyerDonnee({ type: mainLevee ? "main_levee" : "main_baissee", nom: nomUtilisateur });
-    if (mainLevee) {
-      ajouterMainLevee(nomUtilisateur);
-      notifier("Vous avez leve la main.");
-    } else {
-      retirerMainLevee(nomUtilisateur);
-    }
-  });
-
-  btnParticipants.addEventListener("click", function () {
-    const ouvrir = panneauParticipants.hidden;
-    panneauParticipants.hidden = !ouvrir;
-    this.setAttribute("aria-pressed", String(ouvrir));
-    this.classList.toggle("bouton-controle-actif", ouvrir);
-    if (ouvrir) mettreAJourPanneauParticipants();
-  });
-
-  document.getElementById("btn-economie-donnees").addEventListener("click", function () {
-    modeEconomieDonnees = !modeEconomieDonnees;
-    appliquerModeEconomieDonnees();
-    this.setAttribute("aria-pressed", String(modeEconomieDonnees));
-    this.classList.toggle("bouton-controle-actif", modeEconomieDonnees);
-    notifier(modeEconomieDonnees
-      ? "Mode economie de donnees active : video coupee, audio conserve."
-      : "Mode economie de donnees desactive.");
-  });
-
-  document.getElementById("form-chat-salle").addEventListener("submit", function (evenement) {
-    evenement.preventDefault();
-    const champ = document.getElementById("champ-chat-salle");
-    const texte = champ.value.trim();
-    if (!texte) return;
-    envoyerDonnee({ type: "chat", nom: nomUtilisateur, texte: texte });
-    ajouterMessageChat(room.localParticipant.identity, nomUtilisateur, texte, true);
-    champ.value = "";
-  });
-
-  // Deconnexion propre de LiveKit avant de quitter la page (bouton
-  // "Quitter" ou fermeture d'onglet) — sinon la salle croit que la
-  // personne est encore connectee jusqu'au timeout reseau.
-  document.getElementById("form-quitter").addEventListener("submit", function () {
-    room.disconnect();
-  });
-  window.addEventListener("beforeunload", function () {
-    room.disconnect();
-  });
-})();
-</script>
-{% endif %}
 </div>
 {% endblock %}
 
