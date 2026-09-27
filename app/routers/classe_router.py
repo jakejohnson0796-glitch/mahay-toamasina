@@ -799,10 +799,39 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
                 # entre-temps doit bloquer immediatement, pas seulement
                 # apres une reconnexion.
                 with Session(engine) as session_fraiche:
-                    if not _peut_ecrire_tableau(session_fraiche, seance_id, cours, utilisateur):
+                    utilisateur_frais = session_fraiche.get(Utilisateur, utilisateur.id)
+                    seance_fraiche = session_fraiche.get(Seance, seance_id)
+                    cours_frais = (
+                        session_fraiche.get(Cours, seance_fraiche.cours_id)
+                        if seance_fraiche
+                        else None
+                    )
+                    if (
+                        not utilisateur_frais
+                        or not session_utilisateur_valide(websocket.session, utilisateur_frais)
+                        or utilisateur_frais.banni
+                        or not seance_fraiche
+                        or not cours_frais
+                    ):
+                        await websocket.close(code=4401)
+                        break
+
+                    # L'inscription et le role sont relus a chaque evenement :
+                    # une revocation en cours de session doit prendre effet
+                    # sans attendre une nouvelle connexion WebSocket.
+                    peut_gerer_frais = _peut_gerer_cours(cours_frais, utilisateur_frais)
+                    if not peut_gerer_frais and not _est_inscrit(
+                        session_fraiche, cours_frais.id, utilisateur_frais.id
+                    ):
+                        await websocket.close(code=4403)
+                        break
+
+                    if not _peut_ecrire_tableau(
+                        session_fraiche, seance_fraiche.id, cours_frais, utilisateur_frais
+                    ):
                         continue
 
-                    if type_evt == "effacer_tout" and not peut_gerer:
+                    if type_evt == "effacer_tout" and not peut_gerer_frais:
                         # Effacer TOUT le tableau reste reserve au
                         # prof/admin, meme pour un etudiant autorise a
                         # dessiner — un etudiant autorise peut ajouter et
@@ -818,7 +847,7 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
                         # Un etudiant ne peut supprimer QUE ses propres
                         # elements ; le prof/admin peut supprimer
                         # n'importe lequel (moderation).
-                        if not peut_gerer:
+                        if not peut_gerer_frais:
                             evenement_original = session_fraiche.exec(
                                 select(EvenementTableauBlanc)
                                 .where(EvenementTableauBlanc.seance_id == seance_id)
