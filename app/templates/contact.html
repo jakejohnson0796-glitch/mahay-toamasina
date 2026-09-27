@@ -2,60 +2,164 @@
 {% block titre %}Contact — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
+<div class="contenu-clair contact-page">
 <style>
-.contact-whatsapp-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:1.25rem;align-items:center}
-.contact-whatsapp-qr{display:flex;justify-content:center;align-items:center;padding:1rem;border:1px solid var(--content-border);border-radius:14px;background:#fff}
-.contact-whatsapp-qr img{display:block;width:230px;height:230px;max-width:100%}
-.contact-whatsapp-message{min-height:120px;resize:vertical}
-.contact-whatsapp-actions{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:.7rem}
-.contact-whatsapp-number{font-family:'IBM Plex Mono',monospace;font-weight:600}
-@media (max-width:760px){.contact-whatsapp-grid{grid-template-columns:1fr}.contact-whatsapp-qr{order:-1}}
+.contact-page{max-width:1120px;margin:0 auto;padding-bottom:2rem}
+.contact-hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:1.25rem;margin-bottom:1.4rem}
+.contact-hero-copy{padding:1.7rem 1.8rem;border:1px solid var(--content-border);border-radius:18px;background:linear-gradient(145deg,var(--content-surface),rgba(255,253,248,.92));box-shadow:var(--shadow-md)}
+.contact-kicker{display:inline-flex;align-items:center;gap:.5rem;padding:.36rem .65rem;border-radius:999px;background:rgba(23,36,32,.08);color:var(--ink);font:600 .68rem/1 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+.contact-hero-copy h2{margin:.75rem 0 .6rem;font-size:clamp(2rem,4vw,3rem);letter-spacing:-.045em}
+.contact-hero-copy>p:last-child{max-width:62ch;margin:0;line-height:1.7;color:var(--content-text-muted)}
+.contact-hero-note{display:flex;flex-direction:column;justify-content:center;padding:1.4rem 1.5rem;border:1px solid var(--content-border);border-radius:18px;background:var(--ink);color:var(--sidebar-text);box-shadow:var(--shadow-md)}
+.contact-hero-note .eyebrow{color:var(--sidebar-text);opacity:.75;margin:0}
+.contact-hero-note strong{font-size:1.15rem;margin:.35rem 0 .55rem}
+.contact-hero-note span{font-size:.82rem;line-height:1.55;opacity:.82}
+.contact-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:1.25rem;align-items:stretch}
+.contact-card{border:1px solid var(--content-border)!important;border-radius:18px!important;background:var(--content-surface)!important;box-shadow:var(--shadow-md)!important}
+.contact-composer{padding:1.45rem 1.55rem}
+.contact-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.contact-card-title{margin:0;font-size:1.2rem;letter-spacing:-.02em}
+.contact-card-subtitle{margin:.28rem 0 0;color:var(--content-text-muted);font-size:.78rem;line-height:1.55}
+.contact-wa-number{display:inline-flex;align-items:center;gap:.45rem;white-space:nowrap;padding:.42rem .65rem;border-radius:999px;background:rgba(23,36,32,.06);border:1px solid var(--content-border);font:600 .72rem/1 'IBM Plex Mono',monospace;color:var(--ink)}
+.contact-wa-dot{width:8px;height:8px;border-radius:50%;background:var(--color-success,#5ba37a);box-shadow:0 0 0 3px rgba(91,163,122,.12)}
+.contact-field-label{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.45rem;font-size:.8rem;font-weight:600}
+.contact-counter{color:var(--content-text-muted);font:500 .68rem/1 'IBM Plex Mono',monospace}
+.contact-whatsapp-message{width:100%;min-height:190px;resize:vertical;border-radius:13px!important;padding:.85rem .9rem!important;line-height:1.55}
+.contact-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.7rem;margin-top:.8rem}
+.contact-actions .bouton{min-height:46px;border-radius:11px}
+.contact-copy-number{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--content-border)}
+.contact-copy-number-text{font:500 .72rem/1 'IBM Plex Mono',monospace;color:var(--content-text-muted)}
+.contact-mini-help{margin:.8rem 0 0;color:var(--content-text-muted);font-size:.72rem;line-height:1.5}
+.contact-qr-card{position:relative;overflow:hidden;padding:1.25rem;background:linear-gradient(160deg,#fff,var(--content-surface))!important}
+.contact-qr-card::before{content:"";position:absolute;inset:0 auto auto 0;width:100%;height:5px;background:linear-gradient(90deg,var(--primary),var(--color-success-clair,#9bcbb0),var(--color-violet-clair,#b4a4ff))}
+.contact-qr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.contact-qr-badge{display:inline-flex;align-items:center;gap:.45rem;padding:.38rem .6rem;border-radius:999px;background:rgba(23,36,32,.06);font:600 .68rem/1 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+.contact-qr-wrap{display:flex;justify-content:center;margin:1.1rem 0 .95rem}
+.contact-whatsapp-qr{display:flex;align-items:center;justify-content:center;width:min(100%,290px);aspect-ratio:1;padding:1rem;border:1px solid #e8e0d2;border-radius:18px;background:#fff;box-shadow:0 10px 30px rgba(23,36,32,.08)}
+.contact-whatsapp-qr img{display:block;width:100%;height:100%;object-fit:contain;image-rendering:auto}
+.contact-qr-title{margin:0;text-align:center;font-size:1.05rem;letter-spacing:-.02em}
+.contact-qr-subtitle{margin:.35rem auto 0;max-width:34ch;text-align:center;color:var(--content-text-muted);font-size:.76rem;line-height:1.55}
+.contact-qr-button{display:block;margin:.9rem auto 0;width:min(100%,290px);text-align:center}
+.contact-qr-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:1rem}
+.contact-qr-step{padding:.7rem .6rem;border:1px solid var(--content-border);border-radius:11px;background:rgba(23,36,32,.025);text-align:center}
+.contact-qr-step strong{display:block;font:700 .7rem/1 'IBM Plex Mono',monospace}
+.contact-qr-step span{display:block;margin-top:.35rem;font-size:.64rem;line-height:1.35;color:var(--content-text-muted)}
+.contact-trust{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:1.25rem}
+.contact-trust-item{padding:1rem;border:1px solid var(--content-border);border-radius:14px;background:rgba(255,253,248,.76)}
+.contact-trust-item strong{display:block;font-size:.8rem}
+.contact-trust-item span{display:block;margin-top:.3rem;color:var(--content-text-muted);font-size:.7rem;line-height:1.45}
+@media (max-width:920px){
+  .contact-hero,.contact-grid{grid-template-columns:1fr}
+  .contact-hero-note{min-height:150px}
+}
+@media (max-width:640px){
+  .contact-page{padding-bottom:1rem}
+  .contact-hero-copy,.contact-hero-note,.contact-composer,.contact-qr-card{padding:1.1rem}
+  .contact-card-header{display:block}
+  .contact-wa-number{margin-top:.7rem}
+  .contact-actions{grid-template-columns:1fr}
+  .contact-qr-steps,.contact-trust{grid-template-columns:1fr}
+  .contact-whatsapp-qr{width:min(100%,250px)}
+}
 </style>
 
-<p class="eyebrow">Nous contacter</p>
-<h2>Contact</h2>
-<p>Une question, une suggestion, un partenariat ? Ecrivez-nous directement sur WhatsApp.</p>
+<section class="contact-hero" aria-labelledby="contact-title">
+  <div class="contact-hero-copy">
+    <span class="contact-kicker">Nous contacter</span>
+    <h2 id="contact-title">Parlons directement à l'équipe Gasy Mahay.</h2>
+    <p>Une question, une suggestion, un partenariat ou un problème sur le site ? Écris ton message ici, puis ouvre WhatsApp en un clic — ou scanne le QR avec ton téléphone.</p>
+  </div>
+  <aside class="contact-hero-note">
+    <p class="eyebrow">WhatsApp officiel</p>
+    <strong>+261 33 75 817 32</strong>
+    <span>Le message est préparé sur cette page pour éviter de devoir recopier ton texte sur ton téléphone.</span>
+  </aside>
+</section>
 
-<div class="carte-formulaire">
-  <div class="contact-whatsapp-grid">
-    <div>
-      <h3 class="titre-carte">WhatsApp</h3>
-      <p class="stat-label">Numero officiel : <span class="contact-whatsapp-number">+261 33 75 817 32</span></p>
-
-      <label for="message-whatsapp">Votre message</label>
-      <textarea id="message-whatsapp" class="contact-whatsapp-message" rows="5" maxlength="1000">Bonjour Gasy Mahay, je vous contacte depuis le site.</textarea>
-
-      <div class="contact-whatsapp-actions">
-        <a
-          id="lien-whatsapp"
-          href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site."
-          target="_blank"
-          rel="noopener"
-          class="bouton bouton-primaire"
-        >Ecrire sur WhatsApp</a>
-        <button class="bouton bouton-secondaire" type="button" id="copier-message-whatsapp">Copier le message</button>
+<section class="contact-grid" aria-label="Contact WhatsApp">
+  <div class="contact-card contact-composer">
+    <div class="contact-card-header">
+      <div>
+        <h3 class="contact-card-title">Écrire un message</h3>
+        <p class="contact-card-subtitle">Rédige ton message ici. Le bouton WhatsApp ouvrira directement la conversation avec le texte déjà préparé.</p>
       </div>
-      <p class="stat-label" style="margin-top:.7rem;">Scannez le QR code avec votre téléphone pour ouvrir directement la conversation WhatsApp.</p>
+      <span class="contact-wa-number"><span class="contact-wa-dot" aria-hidden="true"></span> +261 33 75 817 32</span>
     </div>
 
+    <label class="contact-field-label" for="message-whatsapp">
+      <span>Votre message</span>
+      <span class="contact-counter" id="compteur-message-whatsapp">0 / 1000</span>
+    </label>
+    <textarea id="message-whatsapp" class="contact-whatsapp-message" rows="7" maxlength="1000" placeholder="Bonjour Gasy Mahay, je vous contacte au sujet de…">Bonjour Gasy Mahay, je vous contacte depuis le site.</textarea>
+
+    <div class="contact-actions">
+      <a
+        id="lien-whatsapp"
+        href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site."
+        target="_blank"
+        rel="noopener"
+        class="bouton bouton-primaire"
+      >Ouvrir WhatsApp →</a>
+      <button class="bouton bouton-secondaire" type="button" id="copier-message-whatsapp">Copier le message</button>
+    </div>
+
+    <div class="contact-copy-number">
+      <span class="contact-copy-number-text">Numéro direct : +261 33 75 817 32</span>
+      <a class="bouton bouton-secondaire" href="tel:+261337581732">Appeler</a>
+    </div>
+
+    <p class="contact-mini-help">Le message reste dans ton navigateur jusqu'à ce que tu choisisses d'ouvrir WhatsApp. Il n'est pas envoyé automatiquement.</p>
+  </div>
+
+  <div class="contact-card contact-qr-card">
+    <div class="contact-qr-top">
+      <div>
+        <span class="contact-qr-badge">QR WhatsApp</span>
+      </div>
+      <span class="contact-wa-number">Scan rapide</span>
+    </div>
+
+    <div class="contact-qr-wrap">
+      <a
+        class="contact-whatsapp-qr"
+        href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site."
+        target="_blank"
+        rel="noopener"
+        aria-label="Ouvrir WhatsApp avec Gasy Mahay"
+      >
+        <img
+          src="{{ url_for('static', path='images/contact/whatsapp-gasy-mahay.png') }}"
+          alt="QR code WhatsApp Gasy Mahay"
+          width="280"
+          height="280"
+          loading="eager"
+        >
+      </a>
+    </div>
+
+    <h3 class="contact-qr-title">Scanne pour démarrer</h3>
+    <p class="contact-qr-subtitle">Pointe l'appareil photo de ton téléphone vers le QR. WhatsApp s'ouvre ensuite avec un message prérempli.</p>
+
     <a
-      class="contact-whatsapp-qr"
+      class="bouton bouton-primaire contact-qr-button"
       href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site."
       target="_blank"
       rel="noopener"
-      aria-label="Ouvrir WhatsApp avec Gasy Mahay"
-    >
-      <img
-        src="{{ url_for('static', path='images/contact/whatsapp-gasy-mahay.png') }}"
-        alt="QR code WhatsApp Gasy Mahay"
-        width="230"
-        height="230"
-        loading="eager"
-      >
-    </a>
+    >Tester le lien WhatsApp</a>
+
+    <div class="contact-qr-steps" aria-label="Étapes de connexion">
+      <div class="contact-qr-step"><strong>01</strong><span>Scanne le QR</span></div>
+      <div class="contact-qr-step"><strong>02</strong><span>Vérifie le message</span></div>
+      <div class="contact-qr-step"><strong>03</strong><span>Appuie sur envoyer</span></div>
+    </div>
   </div>
-</div>
+</section>
+
+<section class="contact-trust" aria-label="Informations pratiques">
+  <div class="contact-trust-item"><strong>Réponse directe</strong><span>Tu échanges avec le contact WhatsApp officiel de Gasy Mahay.</span></div>
+  <div class="contact-trust-item"><strong>Message personnalisable</strong><span>Tu peux écrire ou modifier ton texte avant d'ouvrir WhatsApp.</span></div>
+  <div class="contact-trust-item"><strong>QR toujours visible</strong><span>Le code reste accessible même sur mobile pour un accès rapide.</span></div>
+</section>
 </div>
 
 <script>
@@ -64,26 +168,33 @@
   const champ = document.getElementById("message-whatsapp");
   const lien = document.getElementById("lien-whatsapp");
   const boutonCopier = document.getElementById("copier-message-whatsapp");
+  const compteur = document.getElementById("compteur-message-whatsapp");
+  const valeurParDefaut = "Bonjour Gasy Mahay, je vous contacte depuis le site.";
 
   if (!champ || !lien) return;
 
-  const mettreAJourLien = () => {
-    const message = (champ.value || "").trim() || "Bonjour Gasy Mahay, je vous contacte depuis le site.";
+  const mettreAJour = () => {
+    const message = (champ.value || "").trim() || valeurParDefaut;
     lien.href = "https://wa.me/" + numero + "?text=" + encodeURIComponent(message);
+    if (compteur) compteur.textContent = (champ.value || "").length + " / 1000";
   };
 
-  champ.addEventListener("input", mettreAJourLien);
-  mettreAJourLien();
+  champ.addEventListener("input", mettreAJour);
+  mettreAJour();
 
   if (boutonCopier) {
     boutonCopier.addEventListener("click", async () => {
+      const texte = (champ.value || "").trim();
+      if (!texte) return;
       try {
-        await navigator.clipboard.writeText((champ.value || "").trim());
-        boutonCopier.textContent = "Message copié";
+        await navigator.clipboard.writeText(texte);
+        boutonCopier.textContent = "Message copié ✓";
         setTimeout(() => { boutonCopier.textContent = "Copier le message"; }, 1800);
       } catch (_) {
         champ.select();
         document.execCommand("copy");
+        boutonCopier.textContent = "Message copié ✓";
+        setTimeout(() => { boutonCopier.textContent = "Copier le message"; }, 1800);
       }
     });
   }
