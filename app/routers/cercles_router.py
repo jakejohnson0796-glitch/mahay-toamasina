@@ -338,6 +338,9 @@ def liste_cercles(
         (r"\b(?:licence|l)\s*3\b", "L3"),
         (r"\b(?:master|m)\s*1\b", "M1"),
         (r"\b(?:master|m)\s*2\b", "M2"),
+        (r"\b(?:doctorat|d|phd)\s*1\b", "D1"),
+        (r"\b(?:doctorat|d|phd)\s*2\b", "D2"),
+        (r"\b(?:doctorat|d|phd)\s*3\b", "D3"),
     )
     q_pour_recherche = q_nettoye
     for motif, valeur in motifs_niveaux:
@@ -350,6 +353,12 @@ def liste_cercles(
     q_pour_recherche = re.sub(
         r"\btronc\s+commun\b", " ", q_pour_recherche, flags=re.IGNORECASE
     )
+    if niveaux_dans_q:
+        # Autorise une formulation naturelle comme "finance niveau L3"
+        # sans forcer le mot "niveau" a etre present dans les champs.
+        q_pour_recherche = re.sub(
+            r"\b(?:niveau|niv)\b", " ", q_pour_recherche, flags=re.IGNORECASE
+        )
     q_pour_recherche = " ".join(q_pour_recherche.split())[:160]
 
     # Une requete composee de plusieurs mots doit rester utile meme si

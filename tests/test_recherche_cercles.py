@@ -144,6 +144,20 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Finance et Comptabilite — Licence 3", page.text)
         self.assertNotIn("Revision Analyse Financiere", page.text)
 
+    def test_recherche_par_mot_et_filtre_niveau(self):
+        page = self.client.get(
+            "/cercles",
+            params={"q": "Finance", "niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+        self.assertNotIn("CCA — Comptabilite Controle Audit — Master 1", page.text)
+
+    def test_recherche_niveau_libelle_long(self):
+        page = self.client.get("/cercles", params={"q": "Finance Licence 3"})
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Finance et Comptabilite — Licence 3", page.text)
+
     def test_recherche_par_mention_et_parcours(self):
         page = self.client.get(
             "/cercles",
