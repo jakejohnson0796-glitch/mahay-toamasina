@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>
+<script nonce="{{ csp_nonce(request) }}">
   /* Pose [data-theme] AVANT le chargement de style.css (script inline
      bloquant, pas defer) pour eviter un flash du mauvais theme au
      premier rendu -- voir static/js/theme.js pour la bascule au clic. */
