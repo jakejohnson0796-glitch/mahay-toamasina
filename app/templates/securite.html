@@ -132,7 +132,7 @@
         <form method="post" action="/profil/bio" class="ops-form">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <textarea name="bio" maxlength="280" placeholder="Ex. Passionné par la tech et le développement…">{{ utilisateur.bio or '' }}</textarea>
-          <div class="ops-form-actions"><button class="bouton bouton-secondary" type="submit">Enregistrer</button></div>
+          <div class="ops-form-actions"><button class="bouton bouton-secondaire" type="submit">Enregistrer</button></div>
         </form>
       </section>
 
