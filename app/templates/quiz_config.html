@@ -1,94 +1,183 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
+
 {% block titre %}Quiz IA — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow">Muscler l'intellect</p>
-<h2>Quiz IA</h2>
-<p>Choisissez une matiere, un niveau et une difficulte : l'IA genere le quiz pour vous.</p>
+<div class="ai-learning-page">
+  <section class="ai-hero" aria-labelledby="quiz-hero-title">
+    <div>
+      <span class="ai-kicker">Apprentissage assisté · Quiz IA</span>
+      <h1 id="quiz-hero-title">Transforme ton cours en entraînement.</h1>
+      <p>
+        Configure un quiz adapté à ton niveau, pratique immédiatement, puis analyse
+        tes réponses. Le même espace rassemble génération, examen blanc, historique
+        et réflexion.
+      </p>
+      <div class="ai-hero-actions">
+        <a href="#generer">Créer un quiz</a>
+        <a href="/quiz/historique">Voir ma progression</a>
+        <a href="/tuteur">Ouvrir le Tuteur IA</a>
+      </div>
+    </div>
 
-{% if request.query_params.get("erreur") == "matiere_requise" %}
-<div class="erreur">Choisissez une matiere dans la liste, ou tapez-en une dans le champ libre.</div>
-{% endif %}
+    <div class="ai-hero-side" aria-label="Fonctions du Quiz IA">
+      <div class="ai-stat-grid">
+        <div class="ai-stat-card"><strong>{{ nb_questions_possibles|length }}</strong><span>formats de longueur disponibles</span></div>
+        <div class="ai-stat-card"><strong>{{ difficultes|length }}</strong><span>niveaux de difficulté</span></div>
+        <div class="ai-stat-card"><strong>{{ niveaux|length }}</strong><span>niveaux académiques</span></div>
+        <div class="ai-stat-card"><strong>15 min</strong><span>durée du mode examen</span></div>
+      </div>
+    </div>
+  </section>
 
-<div class="quiz-grille">
-  <div class="carte-formulaire carte-quiz quiz-carte-generer">
-    <h3 class="titre-carte">Generer un quiz</h3>
-    <form method="post" action="/quiz/generer">
-      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <label for="matiere">Matiere</label>
-      <select id="matiere" name="matiere">
-        <option value="">— choisir dans la liste —</option>
-        {% for m in matieres %}
-        <option value="{{ m }}">{{ m }}</option>
-        {% endfor %}
-      </select>
-      <label for="matiere_libre">Ou tapez une autre matiere</label>
-      <input type="text" id="matiere_libre" name="matiere_libre" placeholder="ex: Droit des obligations">
+  <nav class="ai-quicknav" aria-label="Navigation Quiz IA">
+    <a href="#generer">
+      <span class="ai-quicknav-icon">{{ icone("quiz", 17) }}</span>
+      <span><strong>Générer</strong><span>Choisir matière, niveau et difficulté.</span></span>
+    </a>
+    <a href="/quiz/historique">
+      <span class="ai-quicknav-icon">{{ icone("dashboard", 17) }}</span>
+      <span><strong>Historique</strong><span>Revoir les quiz et les scores.</span></span>
+    </a>
+    <a href="/quiz/reflexion">
+      <span class="ai-quicknav-icon">{{ icone("tuteur", 17) }}</span>
+      <span><strong>Réflexion</strong><span>Un thème à travailler chaque jour.</span></span>
+    </a>
+    <a href="/tuteur">
+      <span class="ai-quicknav-icon">{{ icone("tuteur", 17) }}</span>
+      <span><strong>Tuteur IA</strong><span>Demander une explication personnalisée.</span></span>
+    </a>
+  </nav>
 
-      <label for="niveau">Niveau</label>
-      <select id="niveau" name="niveau" required>
-        {% for n in niveaux %}
-        <option value="{{ n }}">{{ n }}</option>
-        {% endfor %}
-      </select>
-
-      <label for="difficulte">Difficulte</label>
-      <select id="difficulte" name="difficulte" required>
-        {% for d in difficultes %}
-        <option value="{{ d }}">{{ d }}</option>
-        {% endfor %}
-      </select>
-
-      <label for="nb_questions">Nombre de questions</label>
-      <select id="nb_questions" name="nb_questions">
-        {% for n in nb_questions_possibles %}
-        <option value="{{ n }}" {{ "selected" if n == 10 else "" }}>{{ n }}</option>
-        {% endfor %}
-      </select>
-
-      <button class="bouton bouton-primaire bouton-form" type="submit">Generer le quiz</button>
-      <p class="quiz-aide-generation">La generation par IA prend generalement 10 a 30 secondes.</p>
-    </form>
+  {% if request.query_params.get("erreur") %}
+  <div class="erreur" role="alert">
+    {% set erreur = request.query_params.get("erreur") %}
+    {% if erreur == "matiere_requise" %}
+      Choisis une matière ou renseigne une matière libre.
+    {% elif erreur == "trop_de_generations" %}
+      Trop de générations rapprochées. Attends un peu avant de relancer un quiz.
+    {% elif erreur == "parametres_invalides" %}
+      Les paramètres du quiz sont invalides. Vérifie les choix puis réessaie.
+    {% elif erreur == "generation_invalide" %}
+      La génération n'a pas pu produire un quiz valide. Réessaie avec une autre combinaison.
+    {% else %}
+      Une erreur est survenue pendant la préparation du quiz.
+    {% endif %}
   </div>
+  {% endif %}
 
-  <div class="carte-formulaire carte-quiz quiz-carte-examen">
-    <span class="quiz-badge-examen">{{ icone("jours_restants", 22) }}</span>
-    <h3 class="titre-carte">Mode examen</h3>
-    <p class="stat-label">Matiere, niveau et difficulte tires au sort. 10 questions, 15 minutes chronometrees, correction uniquement a la fin.</p>
-    <form method="post" action="/quiz/examen/generer">
-      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <button class="bouton bouton-secondaire bouton-form" type="submit">Lancer un examen blanc</button>
-      <p class="quiz-aide-generation">La generation par IA prend generalement 10 a 30 secondes.</p>
-    </form>
-  </div>
+  <section class="ai-section" id="generer" aria-labelledby="generer-titre">
+    <div class="ai-section-head">
+      <div>
+        <h2 id="generer-titre">Créer un quiz personnalisé</h2>
+        <p>Choisis le contexte d'apprentissage. Tu peux partir d'une matière existante ou taper un sujet précis.</p>
+      </div>
+      <span class="ai-badge">génération contrôlée</span>
+    </div>
+
+    <div class="ai-generation-grid">
+      <article class="ai-panel ai-form-card">
+        <div class="ai-form-header">
+          <div>
+            <h3>Paramètres du quiz</h3>
+            <p>Utilise des réglages simples pour obtenir un entraînement cohérent avec ton niveau.</p>
+          </div>
+          <span class="ai-badge">{{ nb_questions_possibles[0] }}–{{ nb_questions_possibles[-1] }} questions</span>
+        </div>
+
+        <form method="post" action="/quiz/generer" class="ai-form" data-ai-generation-form>
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+          <div class="ai-field">
+            <label for="matiere">Matière</label>
+            <select id="matiere" name="matiere">
+              <option value="">— choisir dans la liste —</option>
+              {% for m in matieres %}
+              <option value="{{ m }}">{{ m }}</option>
+              {% endfor %}
+            </select>
+            <p class="ai-field-help">Les matières proposées viennent des documents approuvés disponibles sur la plateforme.</p>
+          </div>
+
+          <div class="ai-field">
+            <label for="matiere_libre">Ou préciser un autre sujet</label>
+            <input type="text" id="matiere_libre" name="matiere_libre" maxlength="160" placeholder="Ex. Droit des obligations">
+            <p class="ai-field-help">La matière libre prend la priorité lorsqu'elle est renseignée.</p>
+          </div>
+
+          <div class="ai-field-grid">
+            <div class="ai-field">
+              <label for="niveau">Niveau</label>
+              <select id="niveau" name="niveau" required>
+                {% for n in niveaux %}
+                <option value="{{ n }}">{{ n }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="ai-field">
+              <label for="difficulte">Difficulté</label>
+              <select id="difficulte" name="difficulte" required>
+                {% for d in difficultes %}
+                <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="ai-field">
+              <label for="nb_questions">Questions</label>
+              <select id="nb_questions" name="nb_questions">
+                {% for n in nb_questions_possibles %}
+                <option value="{{ n }}" {{ "selected" if n == 10 else "" }}>{{ n }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="ai-inline-actions">
+            <button class="bouton bouton-primaire" type="submit" data-ai-submit>Générer mon quiz</button>
+          </div>
+
+          <div class="ai-loading" data-ai-loading role="status" aria-live="polite">
+            <span class="ai-loading-dot" aria-hidden="true"></span>
+            <span>Le quiz est en cours de génération. Garde cette page ouverte quelques instants.</span>
+          </div>
+        </form>
+      </article>
+
+      <aside class="ai-panel ai-exam-card">
+        <div>
+          <div class="ai-exam-title">
+            <span class="ai-exam-icon">{{ icone("jours_restants", 20) }}</span>
+            <div>
+              <h3>Mode examen</h3>
+              <span class="ai-badge">chronométré</span>
+            </div>
+          </div>
+          <p>
+            Matière, niveau et difficulté sont tirés au sort par le serveur.
+            Le mode examen impose 10 questions et 15 minutes, puis corrige à la fin.
+          </p>
+        </div>
+
+        <form method="post" action="/quiz/examen/generer" data-ai-generation-form>
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit" data-ai-submit>Lancer un examen blanc</button>
+          <div class="ai-loading" data-ai-loading role="status" aria-live="polite">
+            <span class="ai-loading-dot" aria-hidden="true"></span>
+            <span>Préparation de l'examen…</span>
+          </div>
+        </form>
+      </aside>
+    </div>
+
+    <div class="ai-feature-strip">
+      <div class="ai-feature"><strong>Pratique ciblée</strong><span>Adapte le niveau et la difficulté au contexte choisi.</span></div>
+      <div class="ai-feature"><strong>Correction</strong><span>Après soumission, chaque question peut être revue avec son explication.</span></div>
+      <div class="ai-feature"><strong>Progression</strong><span>Les tentatives terminées apparaissent dans ton historique.</span></div>
+    </div>
+  </section>
 </div>
-
-<p class="quiz-liens-bas">
-  <a href="/quiz/historique">Voir mon historique et mes statistiques</a> ·
-  <a href="/quiz/reflexion">Theme de reflexion du jour</a> ·
-  <a href="/tuteur">Poser une question au tuteur IA</a>
-</p>
-</div>
-
-<script nonce="{{ csp_nonce(request) }}">
-(function () {
-  // Retour visuel pendant la generation IA (voir commentaire CSS
-  // correspondant) : au clic, on desactive le bouton et on remplace
-  // son libelle par un spinner + un message, pour eviter tout double
-  // envoi et rassurer l'etudiant pendant les quelques secondes ou la
-  // page ne fait, en apparence, plus rien. Le formulaire continue de
-  // se soumettre normalement (aucune interception de la soumission).
-  document.querySelectorAll(".quiz-carte-generer form, .quiz-carte-examen form").forEach(function (formulaire) {
-    formulaire.addEventListener("submit", function () {
-      var bouton = formulaire.querySelector("button[type=submit]");
-      if (!bouton || bouton.disabled) return;
-      bouton.disabled = true;
-      bouton.dataset.libelleOriginal = bouton.textContent;
-      bouton.innerHTML = '<span class="chargement-spinner" aria-hidden="true"></span> Generation en cours…';
-    });
-  });
-})();
-</script>
 {% endblock %}

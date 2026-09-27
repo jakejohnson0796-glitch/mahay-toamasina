@@ -1,37 +1,68 @@
 {% extends "base.html" %}
-{% block titre %}Tuteur IA — Gasy Mahay{% endblock %}
+{% from "components/icone.html" import icone %}
+
+{% block titre %}Tuteur IA — réponse — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow"><a href="/tuteur">&larr; Tuteur IA</a></p>
-<h2>{{ session_tuteur.question }}</h2>
+<div class="ai-learning-page">
+  <div class="ai-answer-header">
+    <span class="ai-chat-avatar" aria-hidden="true">IA</span>
+    <div>
+      <span class="ai-kicker">Tuteur IA · session d'apprentissage</span>
+      <h1>Ta réponse pédagogique</h1>
+      <p class="ai-answer-question">{{ session_tuteur.question }}</p>
+    </div>
+    <a class="ai-answer-back" href="/tuteur">Nouvelle question</a>
+  </div>
 
-<div class="carte-formulaire carte-quiz">
-  <p class="stat-label">Explication</p>
-  <p>{{ session_tuteur.explication }}</p>
-</div>
+  <div class="ai-answer-grid">
+    <article class="ai-answer-card">
+      <div class="ai-answer-card-head">
+        <span class="ai-answer-card-icon">{{ icone("tuteur", 16) }}</span>
+        <h2>Explication</h2>
+      </div>
+      <p>{{ session_tuteur.explication }}</p>
+    </article>
 
-{% if session_tuteur.exemple %}
-<div class="carte-formulaire carte-quiz">
-  <p class="stat-label">Exemple</p>
-  <p>{{ session_tuteur.exemple }}</p>
-</div>
-{% endif %}
+    {% if session_tuteur.exemple %}
+    <article class="ai-answer-card">
+      <div class="ai-answer-card-head">
+        <span class="ai-answer-card-icon">{{ icone("documents", 16) }}</span>
+        <h2>Exemple</h2>
+      </div>
+      <p>{{ session_tuteur.exemple }}</p>
+    </article>
+    {% endif %}
 
-{% if session_tuteur.exercice %}
-<div class="carte-formulaire carte-quiz">
-  <p class="stat-label">Exercice</p>
-  <p>{{ session_tuteur.exercice }}</p>
-</div>
-{% endif %}
+    {% if session_tuteur.exercice %}
+    <article class="ai-answer-card ai-answer-card-full">
+      <div class="ai-answer-card-head">
+        <span class="ai-answer-card-icon">{{ icone("quiz", 16) }}</span>
+        <h2>Exercice pour pratiquer</h2>
+      </div>
+      <p>{{ session_tuteur.exercice }}</p>
+    </article>
+    {% endif %}
 
-{% if session_tuteur.correction %}
-<details class="carte-formulaire carte-quiz">
-  <summary class="stat-label" style="cursor:pointer;">Voir la correction</summary>
-  <p style="margin-top:0.5rem;">{{ session_tuteur.correction }}</p>
-</details>
-{% endif %}
+    {% if session_tuteur.correction %}
+    <article class="ai-answer-card ai-answer-card-full ai-answer-correction">
+      <div class="ai-answer-card-head">
+        <span class="ai-answer-card-icon">{{ icone("securite", 16) }}</span>
+        <h2>Vérifier ton raisonnement</h2>
+      </div>
+      <details>
+        <summary>Afficher la correction</summary>
+        <div class="ai-answer-correction-body">{{ session_tuteur.correction }}</div>
+      </details>
+    </article>
+    {% endif %}
+  </div>
 
-<p style="margin-top:1.5rem;"><a class="bouton bouton-primaire" href="/tuteur">Poser une autre question</a></p>
+  <div class="ai-answer-next">
+    <a class="bouton bouton-primaire" href="/tuteur">Poser une autre question</a>
+    <a class="bouton bouton-secondaire" href="/quiz">Transformer la notion en quiz</a>
+    <a class="bouton bouton-secondaire" href="/quiz/reflexion">Ouvrir le thème de réflexion</a>
+  </div>
 </div>
 {% endblock %}

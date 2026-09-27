@@ -1,127 +1,92 @@
 {% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+
 {% block titre %}Quiz — {{ tentative.matiere }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow">{{ tentative.matiere }} — {{ tentative.niveau }} — {{ tentative.difficulte }}</p>
-<h2>Repondez aux {{ questions|length }} questions</h2>
+<div class="ai-learning-page">
+  <div class="quiz-run-shell">
+    <main class="quiz-run-main" aria-labelledby="quiz-run-title">
+      <div class="quiz-run-topbar">
+        <div>
+          <span class="ai-kicker">Quiz en cours{% if tentative.mode_examen %} · Mode examen{% endif %}</span>
+          <h1 id="quiz-run-title" class="quiz-run-title">{{ tentative.matiere }}</h1>
+        </div>
+        <div class="quiz-run-meta" aria-label="Paramètres du quiz">
+          <span class="quiz-chip quiz-chip-primary">{{ tentative.niveau }}</span>
+          <span class="quiz-chip">{{ tentative.difficulte }}</span>
+          <span class="quiz-chip">{{ questions|length }} questions</span>
+        </div>
+      </div>
 
-{% if tentative.mode_examen %}
-<div class="quiz-chrono-carte">
-  <span class="quiz-chrono-label">Temps restant</span>
-  <p id="chronometre" class="quiz-chrono-nombre">--:--</p>
-</div>
-{% endif %}
+      <div class="quiz-progress-card" aria-live="polite">
+        <div class="quiz-progress-head">
+          <span data-quiz-progress-text>0 / {{ questions|length }} répondues</span>
+          <span data-quiz-progress-percent>0%</span>
+        </div>
+        <progress class="quiz-progress-native" data-quiz-progress-fill value="0" max="{{ questions|length }}">0 / {{ questions|length }}</progress>
+      </div>
 
-<div class="quiz-progression {{ 'quiz-progression--statique' if tentative.mode_examen else '' }}">
-  <span class="quiz-progression-texte" id="quiz-progression-texte">0 / {{ questions|length }} repondues</span>
-  <span class="quiz-progression-piste"><span class="quiz-progression-remplissage" id="quiz-progression-remplissage"></span></span>
-</div>
+      <form
+        id="form-quiz"
+        method="post"
+        action="/quiz/{{ tentative.id }}/soumettre"
+        data-quiz-form
+        data-examen-secondes="{{ secondes_restantes if tentative.mode_examen else 0 }}"
+      >
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
 
-<form id="form-quiz" method="post" action="/quiz/{{ tentative.id }}/soumettre">
-  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-  {% for item in questions %}
-  {% set q_index = loop.index0 %}
-  <div class="carte-formulaire carte-quiz">
-    <p class="question-quiz"><strong>{{ loop.index }}. {{ item.question }}</strong></p>
-    {% if item.choix and item.choix|length > 1 %}
-    <div class="choix-quiz quiz-choix-cliquables">
-      {% for choix in item.choix %}
-      <label class="quiz-choix-option">
-        <input type="radio" name="question_{{ q_index }}" value="{{ loop.index0 }}" {{ "required" if loop.first }}>
-        <span>{{ choix }}</span>
-      </label>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p>{{ item.choix[0] if item.choix else "" }}</p>
-    {% endif %}
+        {% for item in questions %}
+        {% set q_index = loop.index0 %}
+        <article class="quiz-question-card" data-quiz-question data-quiz-index="{{ q_index }}" id="question-{{ q_index }}" tabindex="-1">
+          <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
+          <h2 class="quiz-question-title">{{ item.question }}</h2>
+
+          {% if item.choix and item.choix|length > 1 %}
+          <div class="quiz-choice-grid" role="radiogroup" aria-label="Réponses à la question {{ loop.index }}">
+            {% for choix in item.choix %}
+            <label class="quiz-choice">
+              <input type="radio" name="question_{{ q_index }}" value="{{ loop.index0 }}" {{ "required" if loop.first }}>
+              <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
+              <span class="quiz-choice-text">{{ choix }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <p class="quiz-answer-state">Clique sur une réponse pour la sélectionner. Utilise les numéros du panneau pour te déplacer.</p>
+          {% else %}
+          <p class="quiz-answer-state">{{ item.choix[0] if item.choix else "Cette question ne contient pas de choix exploitables." }}</p>
+          {% endif %}
+        </article>
+        {% endfor %}
+
+        <div class="quiz-submit-bar">
+          <span class="quiz-submit-help">Tu peux revoir tes réponses avant de valider. En mode examen, le temps restant est prioritaire.</span>
+          <button id="bouton-valider-quiz" class="bouton bouton-primaire" type="submit" data-quiz-submit>
+            {{ "Terminer l'examen" if tentative.mode_examen else "Valider mes réponses" }}
+          </button>
+        </div>
+      </form>
+    </main>
+
+    <aside class="quiz-run-sidebar" aria-label="Navigation du quiz">
+      <div class="quiz-nav-card">
+        <p class="quiz-nav-title">Navigation</p>
+        <div class="quiz-nav-grid" data-quiz-nav></div>
+      </div>
+
+      {% if tentative.mode_examen %}
+      <div class="quiz-chrono-card" data-quiz-timer-card>
+        <span class="quiz-chrono-label">Temps restant</span>
+        <div class="quiz-chrono-value" data-quiz-timer>--:--</div>
+      </div>
+      {% endif %}
+
+      <div class="quiz-side-actions">
+        <a class="bouton bouton-secondaire" href="/quiz">Quitter le quiz</a>
+        <span class="ai-field-help">Les réponses non soumises ne sont pas enregistrées comme tentative terminée.</span>
+      </div>
+    </aside>
   </div>
-  {% endfor %}
-
-  <button id="bouton-valider-quiz" class="bouton bouton-primaire bouton-form" type="submit">Valider mes reponses</button>
-</form>
-
-<script nonce="{{ csp_nonce(request) }}">
-(function () {
-  // Progression de reponse : compte les groupes de radios ayant deja
-  // une reponse cochee, et met a jour la barre + le texte a chaque
-  // changement. Purement visuel, ne remplace pas la validation HTML5
-  // "required" deja en place (voir plus haut).
-  var formulaire = document.getElementById("form-quiz");
-  var nbQuestions = {{ questions|length }};
-  var texteProgression = document.getElementById("quiz-progression-texte");
-  var remplissageProgression = document.getElementById("quiz-progression-remplissage");
-
-  function nomsDeGroupes() {
-    var noms = [];
-    for (var i = 0; i < nbQuestions; i++) noms.push("question_" + i);
-    return noms;
-  }
-
-  function majProgression() {
-    var repondues = 0;
-    nomsDeGroupes().forEach(function (nom) {
-      if (formulaire.querySelector('input[name="' + nom + '"]:checked')) repondues += 1;
-    });
-    texteProgression.textContent = repondues + " / " + nbQuestions + " repondues";
-    remplissageProgression.style.width = (nbQuestions ? (repondues / nbQuestions * 100) : 0) + "%";
-  }
-
-  formulaire.addEventListener("change", majProgression);
-  majProgression();
-
-  // Empeche un double envoi si l'etudiant clique deux fois pendant que
-  // la page part vers /resultat.
-  formulaire.addEventListener("submit", function () {
-    var bouton = document.getElementById("bouton-valider-quiz");
-    if (bouton.disabled) return;
-    bouton.disabled = true;
-    bouton.innerHTML = '<span class="chargement-spinner" aria-hidden="true"></span> Envoi en cours…';
-  });
-})();
-</script>
-
-{% if tentative.mode_examen %}
-<script nonce="{{ csp_nonce(request) }}">
-(function () {
-  let secondesRestantes = {{ secondes_restantes }};
-  const affichage = document.getElementById("chronometre");
-  const formulaire = document.getElementById("form-quiz");
-
-  function formater(secondes) {
-    const m = Math.floor(secondes / 60);
-    const s = secondes % 60;
-    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
-  }
-
-  affichage.textContent = formater(secondesRestantes);
-
-  const intervalle = setInterval(function () {
-    secondesRestantes -= 1;
-    if (secondesRestantes <= 60) {
-      affichage.classList.add("quiz-chrono-urgent");
-    }
-    if (secondesRestantes <= 0) {
-      clearInterval(intervalle);
-      affichage.textContent = "00:00";
-      // Desactive la validation HTML5 (radios "required") pour ne pas
-      // bloquer la soumission automatique si l'etudiant n'a pas fini —
-      // en mode examen, le temps ecoule doit soumettre ce qui est
-      // rempli, pas empecher l'envoi.
-      formulaire.querySelectorAll("[required]").forEach(function (champ) {
-        champ.removeAttribute("required");
-      });
-      // requestSubmit() (plutot que submit()) declenche aussi l'ecouteur
-      // "submit" ajoute plus haut, pour le meme retour visuel (bouton
-      // desactive + spinner) meme lors de cet envoi automatique.
-      formulaire.requestSubmit();
-      return;
-    }
-    affichage.textContent = formater(secondesRestantes);
-  }, 1000);
-})();
-</script>
-{% endif %}
 </div>
 {% endblock %}
