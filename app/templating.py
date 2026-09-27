@@ -53,6 +53,7 @@ _VERSIONS_ASSETS = {
     "js/cascade-academique.js": _version_asset("js/cascade-academique.js"),
     "js/cercles-list.js": _version_asset("js/cercles-list.js"),
     "ux.css": _version_asset("ux.css"),
+    "refonte.css": _version_asset("refonte.css"),
     "ux.js": _version_asset("ux.js"),
 }
 templates.env.globals["version_asset"] = lambda chemin: _VERSIONS_ASSETS.get(chemin, "0")
