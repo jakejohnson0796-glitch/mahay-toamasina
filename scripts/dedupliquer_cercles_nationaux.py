@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -171,7 +172,7 @@ def _charger_contexte(session: Session, cercles: list[CercleEtude]) -> _Contexte
     nb_messages = {}
     if ids:
         for cercle_id, nb in session.exec(
-            select(MessageCercle.cercle_id, __import__("sqlalchemy").func.count())
+            select(MessageCercle.cercle_id, func.count())
             .where(MessageCercle.cercle_id.in_(ids))
             .group_by(MessageCercle.cercle_id)
         ).all():
