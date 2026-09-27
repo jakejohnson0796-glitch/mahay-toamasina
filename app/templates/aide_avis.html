@@ -6,7 +6,7 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair aide-avis-page">
-<style>
+<style nonce="{{ csp_nonce(request) }}">
 .aide-avis-page{max-width:1180px;margin:0 auto;padding-bottom:2rem}
 .aide-avis-hero{
   display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.6fr);gap:1rem;
@@ -362,7 +362,7 @@
   </section>
 </div>
 
-<script src="/static/js/faq.js" defer></script>
-<script src="/static/js/feedback.js" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/faq.js" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/feedback.js" defer></script>
 </div>
 {% endblock %}

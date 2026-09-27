@@ -3,7 +3,7 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair contact-page">
-<style>
+<style nonce="{{ csp_nonce(request) }}">
 .contact-page{max-width:1120px;margin:0 auto;padding-bottom:2rem}
 .contact-hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:1.25rem;margin-bottom:1.4rem}
 .contact-hero-copy{padding:1.7rem 1.8rem;border:1px solid var(--content-border);border-radius:18px;background:linear-gradient(145deg,var(--content-surface),rgba(255,253,248,.92));box-shadow:var(--shadow-md)}
@@ -212,7 +212,7 @@
 </section>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (() => {
   const numero = "261337581732";
   const champ = document.getElementById("message-whatsapp");

@@ -57,7 +57,7 @@
       <td>{{ info.rendu.note if info.rendu.note is not none else "—" }}/20</td>
       <td>
         <a href="/classe/devoirs/rendus/{{ info.rendu.id }}/telecharger" class="lien-action">Telecharger</a>
-        <button type="button" class="lien-action" onclick="document.getElementById('form-noter-{{ info.rendu.id }}').hidden = !document.getElementById('form-noter-{{ info.rendu.id }}').hidden;" style="margin-left:0.5rem;">Noter</button>
+        <button type="button" class="lien-action" data-toggle-target="form-noter-{{ info.rendu.id }}" style="margin-left:0.5rem;">Noter</button>
         <form method="post" action="/classe/devoirs/rendus/{{ info.rendu.id }}/noter" id="form-noter-{{ info.rendu.id }}" hidden style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <input type="number" name="note" min="0" max="20" step="0.5" value="{{ info.rendu.note if info.rendu.note is not none else '' }}" style="width:5rem;" placeholder="/20">

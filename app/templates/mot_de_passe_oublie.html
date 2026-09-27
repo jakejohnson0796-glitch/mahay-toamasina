@@ -26,7 +26,7 @@
 <p>Vous n'avez pas d'email enregistre, ou pas acces a l'appareil habituel ? <a href="https://wa.me/261343779552" target="_blank" rel="noopener">Contactez un administrateur sur WhatsApp</a>.</p>
 <p><a href="/connexion">&larr; Retour a la connexion</a></p>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   // Confort de saisie uniquement — la validation qui compte est cote
   // serveur (app/telephone.py). Meme comportement que /connexion.

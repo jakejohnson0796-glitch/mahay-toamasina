@@ -23,7 +23,7 @@
 </div>
 <p><a href="/mot-de-passe-oublie">&larr; Je n'ai pas recu de code / renvoyer</a></p>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 document.querySelectorAll(".bouton-toggle-mdp").forEach(function (bouton) {
   const champ = document.getElementById(bouton.dataset.cible);
   if (!champ) return;

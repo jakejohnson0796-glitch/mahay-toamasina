@@ -70,7 +70,7 @@
         </form>
         {% endif %}
         {% if peut_gerer %}
-        <form method="post" action="/cercles/{{ cercle.id }}/supprimer" onsubmit="return mahayConfirmSubmit(event, 'Supprimer definitivement ce cercle et tous ses messages ?');">
+        <form method="post" action="/cercles/{{ cercle.id }}/supprimer" data-confirm-message="Supprimer definitivement ce cercle et tous ses messages ?">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button type="submit" class="lien-action lien-action-danger">Supprimer le cercle</button>
         </form>
@@ -183,7 +183,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   const idUtilisateur = {{ utilisateur.id }};
   const cercleId = {{ cercle.id }};

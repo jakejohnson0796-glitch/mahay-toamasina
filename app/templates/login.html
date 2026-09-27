@@ -34,7 +34,7 @@
 </div>
 <p>Pas encore de compte ? <a href="/inscription">Inscrivez-vous</a>.</p>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
 (function () {
   // Confort de saisie uniquement — la validation qui compte est cote
   // serveur (app/telephone.py). Meme comportement que /inscription.
