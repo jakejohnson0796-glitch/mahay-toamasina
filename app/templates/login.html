@@ -1,84 +1,100 @@
 {% extends "base.html" %}
 {% block titre %}Connexion — Gasy Mahay{% endblock %}
-{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block main_classe %}main-auth-page{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<h2>Connexion</h2>
-<div class="carte-formulaire">
-  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
-  {% if request.query_params.get("ok") == "mot_de_passe_reinitialise" %}<div class="info">Mot de passe reinitialise. Vous pouvez vous connecter.</div>{% endif %}
-  <form method="post" action="/connexion">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="telephone_local">Numero de telephone</label>
-    <div class="champ-telephone" style="display:flex;align-items:center;gap:0.5rem;">
-      <span class="stat-label" aria-hidden="true">+261</span>
-      <input type="tel" id="telephone_local" inputmode="numeric" autocomplete="tel-national"
-             placeholder="34 12 345 67" maxlength="12" required
-             pattern="[0-9 ]*" title="9 chiffres, sans lettre ni symbole">
+<div class="auth-page-shell">
+  <section class="auth-showcase" aria-label="Présentation de Gasy Mahay">
+    <a class="auth-brand" href="/">
+      <span class="auth-brand-mark">GM</span>
+      <span class="auth-brand-text">
+        <span class="auth-brand-name">Gasy Mahay</span>
+        <span class="auth-brand-place">Toamasina · Madagascar</span>
+      </span>
+    </a>
+
+    <div class="auth-showcase-copy">
+      <p class="auth-kicker">Ton espace d’apprentissage</p>
+      <h1>Retrouve ton rythme. Apprends avec les autres.</h1>
+      <p>
+        Accède à tes documents, quiz, cercles d’étude et outils d’apprentissage
+        depuis un espace pensé pour les étudiants malgaches.
+      </p>
+
+      <div class="auth-benefices" aria-label="Fonctionnalités principales">
+        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>Documents et ressources pour réviser plus efficacement.</span></div>
+        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>Quiz et accompagnement IA pour progresser étape par étape.</span></div>
+        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>Cercles d’étude et espaces de collaboration.</span></div>
+      </div>
     </div>
-    <!-- Meme convention que le formulaire d'inscription : le champ visible
-         ne collecte que les 9 chiffres locaux, le champ cache envoye au
-         backend recompose le numero complet ("0XXXXXXXXX"). Validation
-         definitive toujours cote SERVEUR (voir app/telephone.py). -->
-    <input type="hidden" id="telephone" name="telephone">
 
-    <label for="mot_de_passe">Mot de passe</label>
-    <div class="champ-mot-de-passe">
-      <input type="password" id="mot_de_passe" name="mot_de_passe" required autocomplete="current-password">
-      <button type="button" class="bouton-toggle-mdp" data-cible="mot_de_passe" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button>
+    <div class="auth-showcase-foot">
+      <span><strong>Gasy Mahay</strong> · apprendre, réviser, collaborer</span>
+      <span>Toamasina</span>
     </div>
-    <p><a href="/mot-de-passe-oublie">Mot de passe oublie ?</a></p>
+  </section>
 
-    <button class="bouton bouton-primaire bouton-form" type="submit">Se connecter</button>
-  </form>
+  <section class="auth-form-pane" aria-labelledby="titre-connexion">
+    <div class="auth-form-shell">
+      <div class="auth-card">
+        <div class="auth-card-top">
+          <span class="auth-card-badge"><span class="auth-card-badge-dot" aria-hidden="true"></span> Espace membre</span>
+        </div>
+
+        <div class="auth-card-main">
+          <h2 id="titre-connexion">Bienvenue à nouveau.</h2>
+          <p class="auth-card-intro">Connectez-vous avec votre numéro de téléphone et votre mot de passe.</p>
+
+          {% if erreur %}
+          <div class="auth-alert auth-alert-error" role="alert">{{ erreur }}</div>
+          {% endif %}
+          {% if request.query_params.get("ok") == "mot_de_passe_reinitialise" %}
+          <div class="auth-alert auth-alert-info" role="status">Mot de passe réinitialisé. Vous pouvez maintenant vous connecter.</div>
+          {% endif %}
+
+          <form method="post" action="/connexion" class="auth-form">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+            <div class="auth-field">
+              <label for="telephone_local">Numéro de téléphone <span class="auth-required" aria-hidden="true">*</span></label>
+              <div class="auth-phone-wrap">
+                <span class="auth-phone-prefix" aria-hidden="true">+261</span>
+                <input type="tel" id="telephone_local" data-telephone-local="telephone"
+                       inputmode="numeric" autocomplete="tel-national"
+                       placeholder="34 12 345 67" maxlength="11" required
+                       pattern="[0-9 ]*" title="9 chiffres, sans lettre ni symbole"
+                       aria-describedby="telephone-aide">
+              </div>
+              <input type="hidden" id="telephone" name="telephone">
+              <p class="auth-help" id="telephone-aide">Saisissez les 9 chiffres locaux. L’indicatif +261 est déjà affiché.</p>
+            </div>
+
+            <div class="auth-field">
+              <label for="mot_de_passe">Mot de passe <span class="auth-required" aria-hidden="true">*</span></label>
+              <div class="auth-input-wrap auth-password-wrap">
+                <input type="password" id="mot_de_passe" name="mot_de_passe"
+                       required autocomplete="current-password"
+                       aria-describedby="mot-de-passe-aide">
+                <button type="button" class="auth-password-toggle"
+                        data-password-target="mot_de_passe"
+                        aria-label="Afficher le mot de passe"
+                        aria-pressed="false">Voir</button>
+              </div>
+              <p class="auth-help" id="mot-de-passe-aide">Utilisez le mot de passe associé à votre compte.</p>
+            </div>
+
+            <div class="auth-form-actions">
+              <a class="auth-link-principal" href="/mot-de-passe-oublie">Mot de passe oublié ?</a>
+            </div>
+
+            <button class="bouton bouton-primaire auth-submit" type="submit">Se connecter</button>
+            <div class="auth-submit-meta"><span class="auth-submit-meta-dot" aria-hidden="true"></span><span>Protection anti-abus active</span></div>
+          </form>
+
+          <p class="auth-switch">Pas encore de compte ? <a href="/inscription"><strong>Créer mon espace Gasy Mahay</strong></a></p>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
-<p>Pas encore de compte ? <a href="/inscription">Inscrivez-vous</a>.</p>
-
-<script nonce="{{ csp_nonce(request) }}">
-(function () {
-  // Confort de saisie uniquement — la validation qui compte est cote
-  // serveur (app/telephone.py). Meme comportement que /inscription.
-  const champLocal = document.getElementById("telephone_local");
-  const champCache = document.getElementById("telephone");
-  const formulaire = champLocal.closest("form");
-
-  function formaterAffichage(chiffres) {
-    const groupes = [chiffres.slice(0, 2), chiffres.slice(2, 4), chiffres.slice(4, 7), chiffres.slice(7, 9)];
-    return groupes.filter(Boolean).join(" ");
-  }
-
-  champLocal.addEventListener("input", function () {
-    const chiffres = champLocal.value.replace(/\D/g, "").slice(0, 9);
-    champLocal.value = formaterAffichage(chiffres);
-  });
-
-  formulaire.addEventListener("submit", function (evenement) {
-    const chiffres = champLocal.value.replace(/\D/g, "");
-    if (chiffres.length !== 9) {
-      evenement.preventDefault();
-      champLocal.setCustomValidity("Entrez exactement 9 chiffres apres +261.");
-      champLocal.reportValidity();
-      return;
-    }
-    champLocal.setCustomValidity("");
-    champCache.value = "0" + chiffres;
-  });
-})();
-
-(function () {
-  // Bascule afficher/masquer pour chaque champ mot de passe de la page.
-  document.querySelectorAll(".bouton-toggle-mdp").forEach(function (bouton) {
-    const champ = document.getElementById(bouton.dataset.cible);
-    if (!champ) return;
-    bouton.addEventListener("click", function () {
-      const visible = champ.type === "text";
-      champ.type = visible ? "password" : "text";
-      bouton.textContent = visible ? "👁" : "🙈";
-      bouton.setAttribute("aria-pressed", String(!visible));
-      bouton.setAttribute("aria-label", visible ? "Afficher le mot de passe" : "Masquer le mot de passe");
-    });
-  });
-})();
-</script>
-</div>
+<script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/auth-ui.js') }}?v={{ version_asset('js/auth-ui.js') }}"></script>
 {% endblock %}
