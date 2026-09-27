@@ -33,12 +33,14 @@ class FakeSession:
 
 
 def creer_utilisateur(derniere_activite_le):
-    return Utilisateur(
+    utilisateur = Utilisateur(
         nom="Test Utilisateur",
         telephone="0341234567",
         mot_de_passe_hash="hash",
         derniere_activite_le=derniere_activite_le,
     )
+    utilisateur.id = 42
+    return utilisateur
 
 
 def test_compteur_inactivite_en_jours_complets():
