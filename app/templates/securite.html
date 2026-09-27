@@ -65,6 +65,26 @@
       </section>
 
       <section class="ops-security-card">
+        <h2>Activité du compte</h2>
+        <p class="ops-security-card-intro">Le compteur mesure le nombre de jours complets depuis ta dernière utilisation du site.</p>
+        <div class="ops-activity-card">
+          <span class="ops-activity-icon" aria-hidden="true">◷</span>
+          <div class="ops-activity-main">
+            <strong>{{ jours_inactivite }} jour{{ "s" if jours_inactivite != 1 else "" }} d'inactivité</strong>
+            <span>
+              {% if jours_inactivite == 0 %}
+              Ton compte est actuellement utilisé.
+              {% else %}
+              Une notification est créée lors de la prochaine connexion après 3 jours ou plus d'absence.
+              {% endif %}
+            </span>
+          </div>
+          <span class="ops-activity-count">{{ jours_inactivite }} j</span>
+        </div>
+        <p class="ops-security-card-intro" style="margin-top:.65rem;">Dernière activité : {{ utilisateur.derniere_activite_le.strftime("%d/%m/%Y à %H:%M") if utilisateur.derniere_activite_le else "pas encore enregistrée" }} UTC.</p>
+      </section>
+
+      <section class="ops-security-card">
         <h2>Double authentification</h2>
         <p class="ops-security-card-intro">Un code supplémentaire est demandé à la connexion lorsque la 2FA est active.</p>
         {% if utilisateur.totp_active %}
