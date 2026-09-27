@@ -1,113 +1,164 @@
 {% extends "base.html" %}
 {% from "components/signal.html" import signal %}
+{% from "components/icone.html" import icone %}
 {% block titre %}{{ cours.nom }} — Classe virtuelle — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow"><a href="/classe">&larr; Classe virtuelle</a></p>
-<h2>{{ cours.nom }}</h2>
-<p class="stat-label">{{ cours.matiere }} — {{ cours.niveau }} — Professeur : {{ professeur.nom }} — {{ nb_etudiants }} etudiant{{ "s" if nb_etudiants != 1 else "" }}</p>
-{% if cours.description %}<p>{{ cours.description }}</p>{% endif %}
+<div class="classe-page">
+  <header class="classe-detail-head">
+    <div>
+      <p class="classe-breadcrumb"><a href="/classe">Classe virtuelle</a> / {{ cours.nom }}</p>
+      <h1>{{ cours.nom }}</h1>
+      <p class="classe-detail-meta">{{ cours.matiere }} · {{ cours.niveau }} · Professeur : {{ professeur.nom }} · {{ nb_etudiants }} étudiant{{ "s" if nb_etudiants != 1 else "" }}</p>
+      {% if cours.description %}<p class="classe-detail-meta">{{ cours.description }}</p>{% endif %}
+    </div>
+    <div>
+      {% if seances and seances|selectattr("statut.value","equalto","en_cours")|list %}
+      <span class="classe-live-pill">Cours en direct</span>
+      {% else %}
+      <span class="classe-course-badge">Espace de cours</span>
+      {% endif %}
+    </div>
+  </header>
 
-{% if request.query_params.get("erreur") == "seance_non_demarree" %}
-<div class="erreur">Cette seance n'est pas encore en cours.</div>
-{% endif %}
+  {% if request.query_params.get("erreur") == "seance_non_demarree" %}
+  <div class="erreur" role="alert">Cette séance n'est pas encore en cours.</div>
+  {% endif %}
 
-{% if peut_gerer %}
-<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
-  <a href="/classe/{{ cours.id }}/etudiants">Voir les etudiants</a>
-</div>
+  <div class="classe-overview-grid">
+    <div class="classe-overview-card"><strong>{{ seances|length }}</strong><span>séances planifiées ou terminées</span></div>
+    <div class="classe-overview-card"><strong>{{ devoirs|length }}</strong><span>devoir{{ "s" if devoirs|length != 1 else "" }}</span></div>
+    <div class="classe-overview-card"><strong>{{ nb_etudiants }}</strong><span>étudiant{{ "s" if nb_etudiants != 1 else "" }} inscrit{{ "s" if nb_etudiants != 1 else "" }}</span></div>
+  </div>
 
-<div class="carte-formulaire" style="margin-bottom:2rem;">
-  <h3 style="margin-top:0;">Nouvelle seance</h3>
-  <form method="post" action="/classe/{{ cours.id }}/seances/creer">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="titre">Titre</label>
-    <input type="text" id="titre" name="titre" required placeholder="ex: Introduction">
-    <label for="description">Description (optionnel)</label>
-    <textarea id="description" name="description" rows="2"></textarea>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Creer la seance</button>
-  </form>
-</div>
-{% endif %}
+  {% if peut_gerer %}
+  <div class="classe-toolbar">
+    <div class="classe-toolbar-left">
+      <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}/etudiants">{{ icone("cercles", 15) }} Étudiants</a>
+    </div>
+    <div class="classe-toolbar-right">
+      <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Vue du cours</a>
+    </div>
+  </div>
 
-{% if peut_gerer %}
-<div class="carte-formulaire" style="margin-bottom:2rem;">
-  <h3 style="margin-top:0;">Nouveau devoir</h3>
-  <form method="post" action="/classe/{{ cours.id }}/devoirs/creer">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="titre_devoir">Titre</label>
-    <input type="text" id="titre_devoir" name="titre" required placeholder="ex: Exercice chapitre 3">
-    <label for="description_devoir">Description (optionnel)</label>
-    <textarea id="description_devoir" name="description" rows="2"></textarea>
-    <label for="date_limite">Date limite (optionnel)</label>
-    <input type="datetime-local" id="date_limite" name="date_limite">
-    <button class="bouton bouton-primaire bouton-form" type="submit">Creer le devoir</button>
-  </form>
-</div>
-{% endif %}
+  <div class="classe-detail-columns">
+    <section class="classe-section-card" aria-labelledby="seance-create-title">
+      <div class="classe-form-head">
+        <div>
+          <h2 id="seance-create-title">Programmer une séance</h2>
+          <p>Crée une salle LiveKit qui sera accessible après démarrage.</p>
+        </div>
+      </div>
+      <form method="post" action="/classe/{{ cours.id }}/seances/creer">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <div class="classe-form-grid">
+          <div class="classe-field classe-field-full">
+            <label for="titre">Titre</label>
+            <input type="text" id="titre" name="titre" required placeholder="Ex. Introduction au chapitre 3">
+          </div>
+          <div class="classe-field classe-field-full">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="3" placeholder="Objectifs, consignes ou prérequis…"></textarea>
+          </div>
+        </div>
+        <div class="classe-form-actions"><button class="bouton bouton-primaire" type="submit">Créer la séance</button></div>
+      </form>
+    </section>
 
-<h3>Devoirs</h3>
-<table class="table-manifeste">
-  <thead><tr><th>Titre</th><th>Date limite</th><th></th></tr></thead>
-  <tbody>
-    {% for devoir in devoirs %}
-    <tr>
-      <td>{{ devoir.titre }}</td>
-      <td>{{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "—" }}</td>
-      <td>
-        <a href="/classe/devoirs/{{ devoir.id }}" class="lien-action">
-          {% if peut_gerer %}Voir les rendus
-          {% elif devoir.id in mes_rendus_ids %}Rendu envoye
-          {% else %}Rendre le devoir{% endif %}
-        </a>
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="3">Aucun devoir pour l'instant.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+    <section class="classe-section-card" aria-labelledby="devoir-create-title">
+      <div class="classe-form-head">
+        <div>
+          <h2 id="devoir-create-title">Créer un devoir</h2>
+          <p>Ajoute une consigne et, si nécessaire, une date limite.</p>
+        </div>
+      </div>
+      <form method="post" action="/classe/{{ cours.id }}/devoirs/creer">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <div class="classe-form-grid">
+          <div class="classe-field classe-field-full">
+            <label for="titre_devoir">Titre</label>
+            <input type="text" id="titre_devoir" name="titre" required placeholder="Ex. Exercice chapitre 3">
+          </div>
+          <div class="classe-field classe-field-full">
+            <label for="description_devoir">Description</label>
+            <textarea id="description_devoir" name="description" rows="3" placeholder="Ce que l'étudiant doit produire…"></textarea>
+          </div>
+          <div class="classe-field classe-field-full">
+            <label for="date_limite">Date limite</label>
+            <input type="datetime-local" id="date_limite" name="date_limite">
+          </div>
+        </div>
+        <div class="classe-form-actions"><button class="bouton bouton-primaire" type="submit">Créer le devoir</button></div>
+      </form>
+    </section>
+  </div>
+  {% endif %}
 
-<h3>Seances</h3>
-<table class="table-manifeste">
-  <thead><tr><th>Titre</th><th>Statut</th><th></th></tr></thead>
-  <tbody>
-    {% for seance in seances %}
-    <tr>
-      <td>{{ seance.titre }}</td>
-      <td>
-        {% if seance.statut.value == "planifiee" %}{{ signal("attente") }}<span class="tampon tampon-attente">Planifiee</span>
-        {% elif seance.statut.value == "en_cours" %}{{ signal("approuve") }}<span class="tampon tampon-approuve">LIVE</span>
-        {% else %}{{ signal("rejete") }}<span class="tampon tampon-rejete">Terminee</span>{% endif %}
-      </td>
-      <td>
-        {% if seance.statut.value == "planifiee" and peut_gerer %}
-        <form method="post" action="/classe/seances/{{ seance.id }}/demarrer" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Demarrer</button>
-        </form>
-        {% elif seance.statut.value == "en_cours" %}
-        <form method="post" action="/classe/seances/{{ seance.id }}/rejoindre" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejoindre</button>
-        </form>
-        {% if peut_gerer %}
-        <form method="post" action="/classe/seances/{{ seance.id }}/terminer" style="display:inline" data-confirm-message="Terminer cette seance pour tout le monde ?">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Terminer</button>
-        </form>
-        {% endif %}
-        {% endif %}
-        {% if peut_gerer %}
-        <a href="/classe/seances/{{ seance.id }}/presences" class="lien-action" style="margin-left:0.5rem;">Presences</a>
-        {% endif %}
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="3">Aucune seance pour l'instant.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <div class="classe-detail-columns">
+    <section class="classe-section-card" aria-labelledby="devoirs-title">
+      <h2 id="devoirs-title">Devoirs</h2>
+      <p class="classe-section-card-intro">Retrouve les consignes et l'état de tes rendus.</p>
+      <div class="classe-list">
+        {% for devoir in devoirs %}
+        <div class="classe-row">
+          <div class="classe-row-main">
+            <strong>{{ devoir.titre }}</strong>
+            <span>Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }}</span>
+          </div>
+          <div class="classe-row-actions">
+            <a href="/classe/devoirs/{{ devoir.id }}" class="bouton bouton-secondaire">{{ "Voir les rendus" if peut_gerer else ("Rendu envoyé" if devoir.id in mes_rendus_ids else "Rendre le devoir") }}</a>
+          </div>
+        </div>
+        {% else %}
+        <div class="classe-empty"><div><strong>Aucun devoir pour l'instant</strong><p>Les devoirs ajoutés à ce cours apparaîtront ici.</p></div></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="classe-section-card" aria-labelledby="seances-title">
+      <h2 id="seances-title">Séances</h2>
+      <p class="classe-section-card-intro">Rejoins une séance uniquement quand elle est en cours.</p>
+      <div class="classe-list">
+        {% for seance in seances %}
+        <div class="classe-row">
+          <div class="classe-row-main">
+            <strong>{{ seance.titre }}</strong>
+            {% if seance.statut.value == "planifiee" %}
+            <span class="classe-row-status classe-status-planned">Planifiée</span>
+            {% elif seance.statut.value == "en_cours" %}
+            <span class="classe-row-status classe-status-live">En direct</span>
+            {% else %}
+            <span class="classe-row-status classe-status-done">Terminée</span>
+            {% endif %}
+          </div>
+          <div class="classe-row-actions">
+            {% if seance.statut.value == "planifiee" and peut_gerer %}
+            <form method="post" action="/classe/seances/{{ seance.id }}/demarrer">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-primaire" type="submit">Démarrer</button>
+            </form>
+            {% elif seance.statut.value == "en_cours" %}
+            <form method="post" action="/classe/seances/{{ seance.id }}/rejoindre">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-primaire" type="submit">Rejoindre</button>
+            </form>
+            {% if peut_gerer %}
+            <form method="post" action="/classe/seances/{{ seance.id }}/terminer" data-confirm-message="Terminer cette séance pour tout le monde ?">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Terminer</button>
+            </form>
+            {% endif %}
+            {% endif %}
+            {% if peut_gerer %}
+            <a href="/classe/seances/{{ seance.id }}/presences" class="bouton bouton-secondaire">Présences</a>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="classe-empty"><div><strong>Aucune séance pour l'instant</strong><p>Crée une première séance pour activer la classe en direct.</p></div></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
 </div>
 {% endblock %}

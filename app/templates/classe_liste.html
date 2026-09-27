@@ -1,53 +1,134 @@
 {% extends "base.html" %}
 {% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
+{% from "components/icone.html" import icone %}
 {% block titre %}Classe virtuelle — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow">Cours en ligne</p>
-<h2>Classe virtuelle</h2>
-
-{% if est_professeur %}
-<div class="carte-formulaire" style="margin-bottom:2rem;">
-  <h3 style="margin-top:0;">Creer un cours</h3>
-  <form method="post" action="/classe/creer">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="nom">Nom du cours</label>
-    <input type="text" id="nom" name="nom" required>
-    <label for="matiere">Matiere</label>
-    <input type="text" id="matiere" name="matiere" required>
-    <label for="niveau">Niveau</label>
-    <input type="text" id="niveau" name="niveau" required placeholder="ex: L2, L3...">
-    <label for="description">Description (optionnel)</label>
-    <textarea id="description" name="description" rows="2"></textarea>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cours</button>
-  </form>
-</div>
-{% endif %}
-
-<div class="grille-cartes-claires">
-  {% for cours in cours_visibles %}
-  <div class="carte-claire">
-    <div class="carte-claire-texte">
-      <div class="carte-claire-titre">{{ cours.nom }}</div>
-      <div class="carte-claire-meta">{{ cours.matiere }} — {{ cours.niveau }}</div>
+<div class="classe-page">
+  <section class="classe-hero" aria-labelledby="classe-title">
+    <div>
+      <span class="classe-kicker">Apprentissage en direct · Classe virtuelle</span>
+      <h1 id="classe-title">Cours, séances et devoirs au même endroit.</h1>
+      <p>
+        Retrouve tes cours en ligne, rejoins les séances en direct et suis les devoirs
+        sans multiplier les pages. Les outils collaboratifs restent disponibles pendant la séance.
+      </p>
+      <div class="classe-hero-actions">
+        {% if est_professeur %}
+        <a class="bouton bouton-primaire" href="#nouveau-cours">Créer un cours</a>
+        {% endif %}
+        <a class="bouton bouton-secondaire" href="/mode-emploi#classe">Comment ça marche ?</a>
+      </div>
     </div>
-    {% if cours.description %}<p class="carte-claire-description">{{ cours.description }}</p>{% endif %}
-    <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Ouvrir →</a>
+    <div class="classe-hero-side">
+      <div class="classe-stats">
+        <div class="classe-stat">
+          <strong>{{ cours_visibles|length }}</strong>
+          <span>cours visibles dans ton espace</span>
+        </div>
+        <div class="classe-stat">
+          <strong>LIVE</strong>
+          <span>séances vidéo quand un professeur démarre le cours</span>
+        </div>
+        <div class="classe-stat">
+          <strong>IA</strong>
+          <span>Quiz et Tuteur restent accessibles depuis le menu</span>
+        </div>
+        <div class="classe-stat">
+          <strong>24/7</strong>
+          <span>accès aux ressources et devoirs hors séance</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="classe-toolbar">
+    <div class="classe-toolbar-left">
+      <span class="classe-toolbar-label">Mon espace</span>
+      <span class="classe-course-badge">{{ cours_visibles|length }} cours</span>
+    </div>
+    <div class="classe-toolbar-right">
+      <a class="bouton bouton-secondaire" href="/documents">Documents</a>
+      <a class="bouton bouton-secondaire" href="/quiz">Quiz IA</a>
+      <a class="bouton bouton-secondaire" href="/tuteur">Tuteur IA</a>
+    </div>
   </div>
-  {% else %}
+
   {% if est_professeur %}
-  {{ etat_vide_constellation(
-    titre="Aucun cours pour l'instant",
-    texte="Creez votre premier cours avec le formulaire ci-dessus.",
-  ) }}
-  {% else %}
-  {{ etat_vide_constellation(
-    titre="Aucun cours pour l'instant",
-    texte="Vous n'etes inscrit a aucun cours — votre professeur doit vous y ajouter.",
-  ) }}
+  <section class="classe-form-panel" id="nouveau-cours" aria-labelledby="nouveau-cours-title">
+    <div class="classe-form-head">
+      <div>
+        <h2 id="nouveau-cours-title">Créer un nouveau cours</h2>
+        <p>Une fois créé, tu pourras ajouter des étudiants, des séances et des devoirs.</p>
+      </div>
+      <span class="classe-course-badge">Professeur</span>
+    </div>
+
+    <form method="post" action="/classe/creer">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <div class="classe-form-grid">
+        <div class="classe-field">
+          <label for="nom">Nom du cours</label>
+          <input type="text" id="nom" name="nom" required placeholder="Ex. Comptabilité générale">
+        </div>
+        <div class="classe-field">
+          <label for="matiere">Matière</label>
+          <input type="text" id="matiere" name="matiere" required placeholder="Ex. Comptabilité">
+        </div>
+        <div class="classe-field">
+          <label for="niveau">Niveau</label>
+          <input type="text" id="niveau" name="niveau" required placeholder="Ex. L2, L3…">
+        </div>
+        <div class="classe-field classe-field-full">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" rows="2" placeholder="Objectif du cours, contenu ou consignes…"></textarea>
+        </div>
+      </div>
+      <div class="classe-form-actions">
+        <button class="bouton bouton-primaire" type="submit">Créer le cours</button>
+      </div>
+    </form>
+  </section>
   {% endif %}
-  {% endfor %}
-</div>
+
+  {% if cours_visibles %}
+  <section aria-label="Mes cours" class="classe-grid">
+    {% for cours in cours_visibles %}
+    <article class="classe-course-card">
+      <div class="classe-course-top">
+        <span class="classe-course-icon" aria-hidden="true">{{ icone("classe", 19) }}</span>
+        <span class="classe-course-badge">{{ cours.niveau }}</span>
+      </div>
+      <h2 class="classe-course-title">{{ cours.nom }}</h2>
+      <span class="classe-course-meta">{{ cours.matiere }} · {{ cours.niveau }}</span>
+      {% if cours.description %}
+      <p class="classe-course-description">{{ cours.description }}</p>
+      {% else %}
+      <p class="classe-course-description">Cours virtuel disponible pour les participants autorisés.</p>
+      {% endif %}
+      <div class="classe-course-footer">
+        <span class="classe-course-meta">Cours #{{ cours.id }}</span>
+        <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Ouvrir</a>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <div class="classe-empty">
+    <div>
+      <strong>{% if est_professeur %}Aucun cours pour l'instant{% else %}Tu n'es inscrit à aucun cours{% endif %}</strong>
+      <p>
+        {% if est_professeur %}
+        Crée ton premier cours pour commencer à organiser des séances et des devoirs.
+        {% else %}
+        Ton professeur doit t'ajouter à un cours avant que celui-ci apparaisse ici.
+        {% endif %}
+      </p>
+      {% if est_professeur %}
+      <a class="bouton bouton-primaire" href="#nouveau-cours">Créer mon premier cours</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

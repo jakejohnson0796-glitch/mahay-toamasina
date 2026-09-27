@@ -1,0 +1,182 @@
+/* Gasy Mahay — sidebar premium */
+
+:root {
+  --sidebar-largeur: 272px;
+  --sidebar-largeur-compacte: 84px;
+}
+
+.tb-sidebar {
+  isolation:isolate;
+  overflow:visible;
+  padding:.9rem .75rem .8rem !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228,125,85,.16), transparent 15rem),
+    linear-gradient(180deg,#0a3538 0%,#062b2e 100%) !important;
+  border-right-color:rgba(255,255,255,.09) !important;
+  box-shadow:12px 0 35px rgba(4,31,34,.12) !important;
+}
+
+.tb-sidebar-marque {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:.45rem;
+  margin-bottom:.35rem !important;
+  padding:.35rem .45rem .8rem !important;
+}
+
+.tb-sidebar-marque > a {
+  min-width:0;
+  display:flex !important;
+}
+
+.tb-sidebar-logo {
+  font-size:1.38rem !important;
+}
+
+.tb-sidebar-lieu {
+  font-size:.56rem !important;
+}
+
+.tb-sidebar-collapse {
+  display:grid;
+  width:2.05rem;
+  height:2.05rem;
+  place-items:center;
+  flex:0 0 auto;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:9px;
+  background:rgba(255,255,255,.045);
+  color:#b7ceca;
+  cursor:pointer;
+  transition:transform .18s var(--ease-fluide),background .18s var(--ease-fluide);
+}
+
+.tb-sidebar-collapse:hover {
+  background:rgba(255,255,255,.09);
+  transform:translateY(-1px);
+}
+
+.tb-sidebar-collapse svg {
+  transition:transform .18s var(--ease-fluide);
+}
+
+.tb-sidebar-groupe {
+  margin:.85rem .55rem .25rem !important;
+}
+
+.tb-sidebar-lien {
+  min-height:2.55rem !important;
+  padding:.52rem .62rem !important;
+  border-radius:11px !important;
+}
+
+.tb-sidebar-lien .tb-icone {
+  width:1.82rem !important;
+  height:1.82rem !important;
+  border-radius:8px !important;
+}
+
+.tb-sidebar-lien:hover {
+  transform:translateX(2px);
+}
+
+.tb-sidebar-nav {
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.16) transparent;
+}
+
+.tb-sidebar-compte-zone {
+  margin-top:auto !important;
+  padding-top:.55rem;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+
+.tb-sidebar-compte {
+  min-height:3.1rem;
+  padding:.42rem .5rem !important;
+  border-radius:12px !important;
+  border-color:transparent !important;
+}
+
+.tb-toggle-theme {
+  margin-top:.5rem;
+  border-radius:11px !important;
+}
+
+/* Desktop compact mode */
+@media (min-width:901px) {
+  body.sidebar-compact .app-mise-en-page {
+    grid-template-columns:var(--sidebar-largeur-compacte) minmax(0,1fr);
+  }
+
+  body.sidebar-compact .tb-sidebar {
+    width:var(--sidebar-largeur-compacte) !important;
+  }
+
+  body.sidebar-compact .tb-sidebar-marque {
+    grid-template-columns:1fr;
+    justify-items:center;
+  }
+
+  body.sidebar-compact .tb-sidebar-marque > a {
+    align-items:center;
+  }
+
+  body.sidebar-compact .tb-sidebar-lieu,
+  body.sidebar-compact .tb-sidebar-groupe,
+  body.sidebar-compact .tb-sidebar-lien > :not(.tb-icone),
+  body.sidebar-compact .tb-sidebar-badge,
+  body.sidebar-compact .tb-sidebar-compte-identite,
+  body.sidebar-compact .tb-sidebar-compte-chevron,
+  body.sidebar-compact .tb-toggle-theme-curseur {
+    display:none !important;
+  }
+
+  body.sidebar-compact .tb-sidebar-lien {
+    justify-content:center;
+    padding:.45rem !important;
+  }
+
+  body.sidebar-compact .tb-sidebar-lien .tb-icone {
+    margin:0;
+  }
+
+  body.sidebar-compact .tb-sidebar-compte {
+    justify-content:center;
+  }
+
+  body.sidebar-compact .tb-sidebar-collapse svg {
+    transform:rotate(180deg);
+  }
+}
+
+@media (max-width:900px) {
+  .tb-sidebar {
+    width:min(88vw,330px) !important;
+    padding:.8rem .65rem .75rem !important;
+    box-shadow:20px 0 55px rgba(0,0,0,.26) !important;
+  }
+
+  .tb-sidebar-collapse {
+    display:none;
+  }
+
+  .tb-sidebar-lien {
+    min-height:2.85rem !important;
+    font-size:.78rem !important;
+  }
+
+  .sidebar-overlay {
+    background:rgba(3,18,20,.58) !important;
+    backdrop-filter:blur(3px);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .tb-sidebar-lien,
+  .tb-sidebar-collapse,
+  .tb-sidebar-collapse svg {
+    transition:none !important;
+  }
+}

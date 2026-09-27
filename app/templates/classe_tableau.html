@@ -2,9 +2,14 @@
 {% block titre %}Tableau blanc — {{ seance.titre }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<p class="eyebrow"><a href="/classe/seances/{{ seance.id }}/salle">&larr; Retour a la salle</a></p>
-<h2>Tableau blanc — {{ seance.titre }}</h2>
-{% include "classe_tableau_fragment.html" %}
+<div class="classe-page">
+  <p class="classe-breadcrumb"><a href="/classe/seances/{{ seance.id }}/salle">{{ seance.titre }}</a> / Tableau blanc</p>
+  <div class="classe-section-card classe-tableau">
+    <div class="classe-form-head">
+      <div><h2>Tableau blanc collaboratif</h2><p>Dessine, écris et partage pendant la séance.</p></div>
+      <span class="classe-course-badge">Temps réel</span>
+    </div>
+    {% include "classe_tableau_fragment.html" %}
+  </div>
 </div>
 {% endblock %}
