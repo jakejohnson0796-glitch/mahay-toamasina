@@ -680,16 +680,9 @@ def liste_cercles(
             })
         return resultat
 
-    if utilisateur and profil_academique_recherche and profil_academique_recherche.get("coherent"):
-        mention_profil = profil_academique_recherche.get("mention") or {}
-        domaine_profil = profil_academique_recherche.get("domaine") or {}
-        mention_profil_id = mention_profil.get("id")
-        domaine_profil_id = domaine_profil.get("id")
-        cercles_profil_visibilite["mention_id"] = mention_profil_id
-        cercles_profil_visibilite["mention_nom"] = mention_profil.get("nom")
-        cercles_profil_visibilite["domaine_id"] = domaine_profil_id
-        cercles_profil_visibilite["domaine_nom"] = domaine_profil.get("nom")
-
+    if utilisateur:
+        # Toujours afficher les cercles déjà rejoints, même si le profil
+        # académique doit encore être complété.
         cercles_profil_visibilite["mes"] = _charger_cercles_resume(
             select(CercleEtude)
             .join(MembreCercle, MembreCercle.cercle_id == CercleEtude.id)
@@ -699,6 +692,9 @@ def liste_cercles(
             ),
             limite=8,
         )
+
+    if utilisateur and profil_academique_recherche and profil_academique_recherche.get("coherent"):
+
 
         if mention_profil_id:
             mention_effective_resume = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
