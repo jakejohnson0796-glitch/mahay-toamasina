@@ -9,9 +9,9 @@ cercle pour une combinaison qui n'existe pas encore et doit justifier
 pourquoi), ce provisionnement-ci est purement mecanique : la mention
 et la filiere sont deja connues avec certitude (assignation explicite
 d'un admin via /admin/referentiel, jamais devinee — voir §44 du brief
-refonte academique), seul le produit cartesien avec les 8 niveaux
-restait a generer. Aucune ambiguite ici, donc pas besoin d'un circuit
-d'approbation pour cette etape precise.
+refonte academique), les cercles sont generes uniquement pour les
+niveaux explicitement verifies dans le referentiel. Un niveau absent
+reste inconnu et ne doit jamais etre interprete comme "tous les niveaux".
 
 IMPORTANT — identite d'un "parcours national" (corrige suite a un bug
 de doublons signale par Jake apres l'import du referentiel MESUPRES) :
@@ -78,9 +78,9 @@ def assurer_cercles_pour_groupe_parcours(
     moins une Filiere du groupe a un niveau renseigne, SEULS ces
     niveaux-la sont provisionnes (ex: "CCA" existe reellement en M1/M2,
     pas la peine d'un cercle "CCA — L1" que personne ne pourra jamais
-    rejoindre). Si aucune n'a de niveau (groupe entierement heritee,
-    pas encore enrichie), on retombe sur l'ancien comportement — les 8
-    niveaux — plutot que de ne rien creer du tout.
+    rejoindre). Si aucune n'a de niveau, aucun cercle n'est cree : le
+    niveau reel reste inconnu jusqu'a ce qu'une filiere soit explicitement
+    enrichie dans le referentiel.
 
     Analyse du 11/09/2026 (signalee par Jake, "je crois qu'il y a de la
     duplication") : cette fonction elle-meme ne cree plus de cercle en
@@ -146,11 +146,11 @@ def assurer_cercles_pour_groupe_parcours(
         if niveau in niveaux_existants:
             continue
 
-        # Representante pour CE niveau precis : une Filiere du groupe
-        # qui a explicitement ce niveau si elle existe, sinon la plus
-        # ancienne du groupe (cas legacy, niveau=None partout).
+        # Representante pour CE niveau precis : elle doit elle-meme
+        # porter explicitement ce niveau. Comme niveau=None n'est pas
+        # un wildcard, cette liste ne peut pas etre vide.
         candidates_du_niveau = [f for f in filieres_du_groupe if f.niveau == niveau]
-        filiere_representante = min(candidates_du_niveau or filieres_du_groupe, key=lambda f: f.id)
+        filiere_representante = min(candidates_du_niveau, key=lambda f: f.id)
 
         cercle = CercleEtude(
             nom=f"{filiere_representante.nom} — {libelle_niveau(niveau)}",
@@ -301,11 +301,14 @@ def assurer_cercles_referentiel(session: Session) -> int:
         groupe_offert = groupes.get(
             (representant.mention_id, _normaliser_nom_parcours(representant.nom))
         )
+        # Un niveau None signifie "inconnu" : il ne couvre aucun niveau
+        # de cercle. Seul un niveau explicitement egal peut valider l'offre.
         offre_niveau = bool(
             groupe_offert
             and any(
-                filiere.niveau is None or filiere.niveau == cercle.niveau
+                filiere.niveau == cercle.niveau
                 for filiere in groupe_offert
+                if filiere.niveau
             )
         )
         if offre_niveau:
