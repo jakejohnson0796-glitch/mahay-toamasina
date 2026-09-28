@@ -24,6 +24,7 @@
       <div class="ops-stat"><strong>{{ nb_sponsors_en_attente }}</strong><span>demandes sponsors</span></div>
       <div class="ops-stat"><strong>{{ nb_demandes_adhesion_en_attente }}</strong><span>demandes de cercles</span></div>
       <div class="ops-stat"><strong>{{ nb_signalements_en_attente + nb_signalements_quiz_en_attente }}</strong><span>signalements à traiter</span></div>
+      <div class="ops-stat"><strong>{{ nb_nouveaux_arrivants }}</strong><span>nouveaux arrivants non lus</span></div>
     </div>
   </section>
 
@@ -33,9 +34,49 @@
     <a href="/admin/sponsors">Sponsors</a>
     <a href="/admin/utilisateurs">Utilisateurs</a>
     <a href="/admin/stats">Statistiques</a>
+    <a href="#nouveaux-arrivants" class="ops-nav-alert{% if nb_nouveaux_arrivants %} is-alert{% endif %}">Nouveaux arrivants{% if nb_nouveaux_arrivants %} · {{ nb_nouveaux_arrivants }}{% endif %}</a>
     <a href="/moderation">Documents</a>
     <a href="/admin/referentiel">Référentiel</a>
   </nav>
+
+  <section class="ops-new-users" id="nouveaux-arrivants" aria-labelledby="nouveaux-arrivants-title">
+    <div class="ops-new-users-head">
+      <div>
+        <span class="ops-kicker">Notification admin</span>
+        <h2 id="nouveaux-arrivants-title">Nouveaux arrivants</h2>
+        <p>Chaque nouvelle inscription crée une notification interne pour les administrateurs.</p>
+      </div>
+      {% if nb_nouveaux_arrivants %}
+      <form method="post" action="/admin/notifications/nouvelles-inscriptions/lues">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <button class="bouton bouton-secondaire" type="submit">Tout marquer comme lu</button>
+      </form>
+      {% endif %}
+    </div>
+
+    {% if nouveaux_arrivants %}
+    <div class="ops-new-users-list">
+      {% for item in nouveaux_arrivants %}
+      <article class="ops-new-user">
+        <div class="ops-new-user-main">
+          <strong>{{ item.utilisateur.nom }}</strong>
+          <span>{{ item.utilisateur.telephone }} · {{ item.utilisateur.role.value }}</span>
+          <span>Compte créé le {{ item.utilisateur.date_creation.strftime("%d/%m/%Y à %H:%M") }} · {{ jours_depuis_creation(item.utilisateur) }} jour{{ "s" if jours_depuis_creation(item.utilisateur) != 1 else "" }} d'ancienneté</span>
+        </div>
+        <div class="ops-new-user-actions">
+          <span class="ops-badge is-alert">Nouveau</span>
+          <a class="bouton bouton-secondaire" href="/admin/utilisateurs?q={{ item.utilisateur.telephone|urlencode }}">Voir le compte</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="ops-new-users-empty">
+      <strong>Aucune nouvelle inscription non lue.</strong>
+      <span>Les prochains comptes créés apparaîtront ici.</span>
+    </div>
+    {% endif %}
+  </section>
 
   <div class="ops-admin-groups">
     <section class="ops-admin-group">
