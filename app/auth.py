@@ -11,10 +11,10 @@ import hashlib
 
 from fastapi import Request, Depends
 from passlib.context import CryptContext
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from .database import get_session
-from .models import Utilisateur, Notification, TypeNotification
+from .models import Utilisateur, RoleUtilisateur, Notification, TypeNotification
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
