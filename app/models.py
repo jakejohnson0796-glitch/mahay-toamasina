@@ -860,6 +860,7 @@ class SessionTuteur(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
     notion: Optional[str] = None
+    progression_id: Optional[int] = Field(default=None, foreign_key="progressionnotion.id")
     question: str
     explication: str
     exemple: str
