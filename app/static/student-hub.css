@@ -51,3 +51,13 @@
 .hub-notion-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .hub-notion-actions form{margin:0}
 @media (max-width:760px){.hub-notions-grille{grid-template-columns:1fr}}
+
+.tb-parcours-panneau{margin-top:1rem}
+.tb-parcours-liste{display:grid;gap:.45rem}
+.tb-parcours-item{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.75rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-surface)}
+.tb-parcours-item>div:first-child{min-width:0}
+.tb-parcours-item span,.tb-parcours-item small{display:block;color:var(--content-text-muted);font-size:.57rem}
+.tb-parcours-item strong{display:block;margin:.18rem 0;font-size:.72rem;overflow:hidden;text-overflow:ellipsis}
+.tb-parcours-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+.tb-parcours-actions form{margin:0}
+@media(max-width:700px){.tb-parcours-item{align-items:flex-start;flex-direction:column}.tb-parcours-actions{width:100%}.tb-parcours-actions .bouton{flex:1 1 8rem;text-align:center}}
