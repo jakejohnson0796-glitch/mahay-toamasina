@@ -59,9 +59,24 @@
     {% endif %}
   </div>
 
+  {% if session_tuteur.notion %}
+  <section class="ai-target-context" aria-label="Notion travaillée">
+    <span class="ai-kicker">Notion ciblée</span>
+    <strong>{{ session_tuteur.notion }}</strong>
+    <p>Cette session fait partie de ton parcours de remise à niveau.</p>
+  </section>
+  {% endif %}
+
   <div class="ai-answer-next">
     <a class="bouton bouton-primaire" href="/tuteur">Poser une autre question</a>
-    <a class="bouton bouton-secondaire" href="/quiz">Transformer la notion en quiz</a>
+    {% if session_tuteur.progression_id %}
+    <form method="post" action="/quiz/cible" class="ai-inline-action">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <input type="hidden" name="progression_id" value="{{ session_tuteur.progression_id }}">
+      <button class="bouton bouton-secondaire" type="submit">Faire maintenant le quiz ciblé</button>
+    </form>
+    {% endif %}
+    <a class="bouton bouton-secondaire" href="/quiz">Créer un quiz libre</a>
     <a class="bouton bouton-secondaire" href="/quiz/reflexion">Ouvrir le thème de réflexion</a>
   </div>
 </div>
