@@ -34,13 +34,15 @@
 
   <div class="ops-table-wrap">
     <table class="ops-table">
-      <thead><tr><th>Compte</th><th>Téléphone</th><th>Rôle</th><th>État</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Compte</th><th>Téléphone</th><th>Rôle</th><th>Création</th><th>Ancienneté</th><th>État</th><th>Actions</th></tr></thead>
       <tbody>
         {% for u in utilisateurs %}
         <tr>
           <td>{{ avatar_utilisateur(u, taille=28) }} <strong>{{ u.nom }}</strong></td>
           <td>{{ u.telephone }}</td>
           <td><span class="ops-badge">{{ u.role.value }}</span></td>
+          <td><span class="ops-table-date">{{ u.date_creation.strftime("%d/%m/%Y") }}</span></td>
+          <td><span class="ops-badge ops-age-badge">{{ jours_depuis_creation(u) }} j</span></td>
           <td>{% if u.banni %}<span class="ops-badge is-alert">Banni</span>{% else %}<span class="ops-badge is-success">Actif</span>{% endif %}</td>
           <td>
             {% if u.id != utilisateur.id %}
@@ -61,7 +63,7 @@
             {% else %}<span class="stat-label">Votre compte</span>{% endif %}
           </td>
         </tr>
-        {% else %}<tr><td colspan="5">Aucun utilisateur trouvé.</td></tr>{% endfor %}
+        {% else %}<tr><td colspan="7">Aucun utilisateur trouvé.</td></tr>{% endfor %}
       </tbody>
     </table>
   </div>
