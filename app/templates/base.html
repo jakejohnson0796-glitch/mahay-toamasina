@@ -211,10 +211,16 @@
         </form>
       </div>
     </div>
-    <button type="button" id="bouton-theme" class="tb-toggle-theme" aria-label="Changer d'apparence (clair/sombre)" title="Changer d'apparence">
-      <span class="tb-toggle-theme-icone tb-toggle-theme-icone-lune">{{ icone("jours_restants", 14) }}</span>
-      <span class="tb-toggle-theme-curseur" aria-hidden="true"></span>
-      <span class="tb-toggle-theme-icone tb-toggle-theme-icone-soleil">{{ icone("soleil", 14) }}</span>
+    <button type="button" id="bouton-theme" class="tb-toggle-theme" aria-label="Changer d'apparence" title="Changer d'apparence" aria-pressed="false">
+      <span class="tb-toggle-theme-label">
+        <span class="tb-toggle-theme-label-title">Apparence</span>
+        <span class="tb-toggle-theme-label-state" data-theme-label>Clair</span>
+      </span>
+      <span class="tb-toggle-theme-switch" aria-hidden="true">
+        <span class="tb-toggle-theme-switch-icon tb-toggle-theme-switch-icon-lune">{{ icone("jours_restants", 13) }}</span>
+        <span class="tb-toggle-theme-switch-piste"><span class="tb-toggle-theme-switch-pastille"></span></span>
+        <span class="tb-toggle-theme-switch-icon tb-toggle-theme-switch-icon-soleil">{{ icone("soleil", 13) }}</span>
+      </span>
     </button>
     {% else %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
