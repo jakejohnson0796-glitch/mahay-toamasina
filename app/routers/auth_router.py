@@ -16,7 +16,7 @@ from ..csrf import verifier_csrf
 from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
-from ..auth import hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite
+from ..auth import hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
 from ..rate_limit import limite_depassee
 from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_code_totp, generer_codes_secours, hacher_code_secours, verifier_code_secours
 from ..telephone import normaliser_telephone, TelephoneInvalide
@@ -225,27 +225,9 @@ def inscription(
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         subscription.creer_essai_gratuit(session, utilisateur)
 
-    # Notification interne : chaque administrateur recoit une alerte quand
-    # un nouveau compte vient d'etre cree. On passe par le systeme de
-    # Notification existant afin que l'evenement reste historisable et
-    # puisse etre marque lu depuis l'interface admin.
-    administrateurs = session.exec(
-        select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)
-    ).all()
-    for administrateur in administrateurs:
-        session.add(
-            Notification(
-                destinataire_id=administrateur.id,
-                type_notification=TypeNotification.NOUVELLE_INSCRIPTION,
-                contenu=(
-                    f"Nouvelle inscription : {utilisateur.nom} "
-                    f"(compte cree le {utilisateur.date_creation.strftime('%d/%m/%Y')})."
-                ),
-                acteur_id=utilisateur.id,
-            )
-        )
-    if administrateurs:
-        session.commit()
+    # Notification interne : chaque administrateur recoit une alerte.
+    notifier_nouvelle_inscription_aux_admins(utilisateur, session)
+    session.commit()
 
     request.session["user_id"] = utilisateur.id
     return RedirectResponse("/", status_code=303)
