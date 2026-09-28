@@ -49,6 +49,46 @@
     {% endif %}
   </section>
 
+  {% if notions_a_revoir %}
+  <section class="hub-section hub-focus-section">
+    <div class="hub-section-entete">
+      <div>
+        <p class="eyebrow">Parcours personnalisé</p>
+        <h2>Notions à revoir</h2>
+      </div>
+      <a href="/tuteur">Ouvrir le Tuteur IA →</a>
+    </div>
+    <p class="hub-section-intro">Ces notions ont généré des erreurs dans tes quiz. Gasy Mahay les remet en priorité dans ton parcours.</p>
+    <div class="hub-notions-grille">
+      {% for n in notions_a_revoir %}
+      {% set total_n = n.nb_questions if n.nb_questions else 1 %}
+      {% set erreurs_pct = (n.nb_erreurs / total_n * 100)|round %}
+      <article class="hub-notion-carte">
+        <div class="hub-notion-top">
+          <span class="hub-notion-matiere">{{ n.matiere }}</span>
+          <span class="hub-notion-score">{{ erreurs_pct }}% d'erreurs</span>
+        </div>
+        <h3>{{ n.notion }}</h3>
+        <p>{{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} sur {{ n.nb_questions }} question{{ "s" if n.nb_questions != 1 else "" }}</p>
+        <div class="hub-notion-actions">
+          <form method="post" action="/tuteur/demander">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ n.id }}">
+            <input type="hidden" name="question" value="Explique-moi {{ n.notion }} en {{ n.matiere }}, montre-moi l'erreur que je dois éviter et donne-moi une méthode simple pour réussir un exercice sur cette notion.">
+            <button class="bouton bouton-secondaire" type="submit">Avec le Tuteur</button>
+          </form>
+          <form method="post" action="/quiz/cible">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ n.id }}">
+            <button class="bouton bouton-primaire" type="submit">Quiz ciblé</button>
+          </form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <div class="hub-deux-colonnes">
     <section class="hub-section">
       <div class="hub-section-entete"><div><p class="eyebrow">Historique</p><h2>Documents récents</h2></div><a href="/documents">Bibliothèque →</a></div>
