@@ -64,7 +64,7 @@ def _nb_notifications_admin_nouvelles(request) -> int:
 templates.env.globals["nb_notifications_admin_nouvelles"] = _nb_notifications_admin_nouvelles
 
 
-def _nb_notifications_non_lues(request) -> int:
+def _compter_notifications_non_lues(request) -> int:
     """Compteur des notifications non lues de l'utilisateur courant."""
     user_id = request.session.get("user_id")
     if not user_id:
@@ -80,7 +80,7 @@ def _nb_notifications_non_lues(request) -> int:
         ).one())
 
 
-templates.env.globals["nb_notifications_non_lues"] = _nb_notifications_non_lues
+templates.env.globals["compter_notifications_non_lues"] = _compter_notifications_non_lues
 
 
 def _calculer_jours_inactivite(utilisateur, maintenant=None) -> int:
