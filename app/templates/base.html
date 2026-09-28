@@ -41,6 +41,7 @@
 <link rel="stylesheet" href="/static/ops.css?v={{ version_asset('ops.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/sidebar.css?v={{ version_asset('sidebar.css') }}">
+{% if request.url.path in ["/notifications", "/mes-revisions", "/dashboard"] %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
 {% if request.url.path.startswith("/classe") %}
 <link rel="stylesheet" href="/static/classe.css?v={{ version_asset('classe.css') }}">
 {% endif %}
@@ -139,6 +140,8 @@
       <a href="/classe" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}><span class="tb-icone">{{ icone("classe", 17) }}</span> Classe virtuelle</a>
 
       <p class="tb-sidebar-groupe">Compte</p>
+      <a href="/notifications" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/notifications') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/notifications') else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Notifications{% set nb_notifs = nb_notifications_non_lues(request) %}{% if nb_notifs %}<span class="tb-sidebar-badge">{{ nb_notifs if nb_notifs < 100 else "99+" }}</span>{% endif %}</a>
+      <a href="/mes-revisions" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/mes-revisions') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/mes-revisions') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Mes révisions</a>
       <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Securite</a>
       {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
       <a href="/admin" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin') else '' }}><span class="tb-icone">{{ icone("admin", 17) }}</span> Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %}<span class="tb-sidebar-badge">{{ nb_admin_notifs }}</span>{% endif %}</a>
@@ -185,6 +188,8 @@
 
         <p class="tb-menu-compte-groupe">Mon espace</p>
         <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord</span></a>
+        <a class="tb-menu-compte-item" href="/mes-revisions"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>Mes révisions</span></a>
+        <a class="tb-menu-compte-item" href="/notifications"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Notifications{% set nb_notifs = nb_notifications_non_lues(request) %}{% if nb_notifs %} · {{ nb_notifs }} non lues{% endif %}</span></a>
         <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Mon profil &amp; sécurité</span></a>
         <a class="tb-menu-compte-item" href="/profil/academique"><span class="tb-menu-compte-icone">{{ icone("universites", 16) }}</span><span>Profil académique</span></a>
 
@@ -269,6 +274,9 @@
         <span class="mobile-entete-app-sous-marque">Toamasina</span>
       </a>
       {% if request.session.get("user_id") and utilisateur is defined and utilisateur %}
+      <a class="mobile-entete-app-notifications" href="/notifications" aria-label="Notifications">
+        {{ icone("aide", 20) }}{% set nb_notifs = nb_notifications_non_lues(request) %}{% if nb_notifs %}<span>{{ nb_notifs if nb_notifs < 10 else "9+" }}</span>{% endif %}
+      </a>
       <a class="mobile-entete-app-avatar" href="/securite" aria-label="Ouvrir mon profil">
         {{ avatar_utilisateur(utilisateur, taille=30) }}
         <span>{{ utilisateur.nom.split(" ")[0] }}</span>

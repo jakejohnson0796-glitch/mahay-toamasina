@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+{% block titre %}Notifications — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<div class="contenu-clair hub-page">
+  <section class="hub-hero">
+    <div>
+      <p class="eyebrow">Centre de notifications</p>
+      <h1>Ce qui s'est passé pendant que tu n'étais pas là.</h1>
+      <p class="hub-hero-sous-titre">Retrouve ici les événements importants liés à ton apprentissage et à tes cercles.</p>
+    </div>
+    {% if nb_notifications_non_lues %}
+    <form method="post" action="/notifications/lire-toutes">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-secondaire" type="submit">Tout marquer comme lu</button>
+    </form>
+    {% endif %}
+  </section>
+
+  {% if notifications %}
+  <section class="notifications-liste" aria-label="Notifications">
+    {% for item in notifications %}
+      {% set n = item.notification %}
+      <article class="notification-carte{% if not n.lu %} notification-non-lue{% endif %}">
+        <div class="notification-point" aria-hidden="true"></div>
+        <div class="notification-corps">
+          <div class="notification-meta">
+            <span>{{ n.type_notification.value|replace("_", " ")|capitalize }}</span>
+            <time datetime="{{ n.date_creation.isoformat() }}">{{ n.date_creation.strftime("%d/%m/%Y %H:%M") }}</time>
+          </div>
+          <p>{{ n.contenu }}</p>
+          <div class="notification-actions">
+            {% if item.lien %}
+            <a class="bouton bouton-secondaire" href="{{ item.lien }}">Ouvrir</a>
+            {% endif %}
+            {% if not n.lu %}
+            <form method="post" action="/notifications/{{ n.id }}/lire">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-primaire" type="submit">Marquer comme lu</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="hub-vide">
+    <div class="hub-vide-icone">{{ icone("aide", 24) }}</div>
+    <h2>Tu es à jour</h2>
+    <p>Aucune notification à afficher pour le moment.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

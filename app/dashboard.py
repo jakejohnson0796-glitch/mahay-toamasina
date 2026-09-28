@@ -28,6 +28,7 @@ NB_ACTIVITES_RECENTES = 5
 NB_RESSOURCES_POPULAIRES = 4
 NB_RECOMMANDATIONS = 4
 NB_ECHEANCES = 4
+NB_PROGRESSIONS = 8
 
 
 def cercles_rejoints(session: Session, utilisateur_id: int) -> List[dict]:
@@ -285,6 +286,33 @@ def echeances_a_venir(session: Session, utilisateur_id: int) -> List[dict]:
     return resultats
 
 
+def progression_matieres(session: Session, utilisateur: Utilisateur) -> List[dict]:
+    """Performances réellement enregistrées par matière, sans estimation."""
+    tentatives = quiz_completes(session, utilisateur.id)
+    groupes: dict[str, list[tuple[int, datetime]]] = {}
+    for tentative in tentatives:
+        if tentative.score is None or not tentative.nb_questions:
+            continue
+        matiere = (tentative.matiere or "Matière non précisée").strip() or "Matière non précisée"
+        groupes.setdefault(matiere, []).append(
+            (tentative.score * 100 // tentative.nb_questions, tentative.date_soumission or tentative.date_creation)
+        )
+
+    resultat = []
+    for matiere, valeurs in groupes.items():
+        moyenne = round(sum(v[0] for v in valeurs) / len(valeurs))
+        dernier = max(v[1] for v in valeurs)
+        resultat.append({
+            "matiere": matiere,
+            "moyenne": max(0, min(100, moyenne)),
+            "nb_quiz": len(valeurs),
+            "dernier": dernier,
+        })
+
+    resultat.sort(key=lambda item: item["dernier"], reverse=True)
+    return resultat[:NB_PROGRESSIONS]
+
+
 def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
     """Tout ce qu'il faut pour afficher le tableau de bord etudiant en un
     seul appel depuis le router."""
@@ -330,4 +358,5 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
         "ressources_populaires": ressources_populaires(session, utilisateur),
         "recommandations": recommandations(session, utilisateur),
         "echeances_a_venir": echeances_a_venir(session, utilisateur.id),
+        "progression_matieres": progression_matieres(session, utilisateur),
     }

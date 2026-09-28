@@ -132,7 +132,32 @@
       </div>
     </div>
 
-    <div class="tb-grille-stats">
+    <section class="tb-panneau tb-progression-dashboard" aria-labelledby="progression-dashboard-titre">
+  <div class="tb-panneau-entete">
+    <div>
+      <p class="eyebrow">Progression</p>
+      <h2 class="tb-titre-section" id="progression-dashboard-titre">Tes matières</h2>
+    </div>
+    <a href="/mes-revisions" class="tb-voir-tout">Voir mes révisions →</a>
+  </div>
+  {% if progression_matieres %}
+  <div class="progression-grille">
+    {% for p in progression_matieres[:4] %}
+    <article class="progression-carte">
+      <div class="progression-entete">
+        <div><strong>{{ p.matiere }}</strong><span>{{ p.nb_quiz }} quiz</span></div>
+        <b>{{ p.moyenne }}%</b>
+      </div>
+      <div class="progression-barre"><span style="width: {{ p.moyenne }}%"></span></div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="tb-texte-secondaire">Termine un quiz pour commencer à mesurer ta progression par matière.</p>
+  {% endif %}
+</section>
+
+<div class="tb-grille-stats">
       <div class="tb-carte-stat tb-stat-vert">
         <span class="tb-stat-icone">{{ icone("documents", 20) }}</span>
         <span class="tb-stat-corps">
@@ -339,9 +364,7 @@
 
     </div>
 
-    <p class="tb-note-quiz">
-      La progression detaillee par matiere arrivera avec une prochaine mise a jour.
-    </p>
+    <p class="tb-note-quiz">Ta progression détaillée est disponible dans <a href="/mes-revisions">Mes révisions</a>.</p>
 
   </div>
 {% endblock %}
