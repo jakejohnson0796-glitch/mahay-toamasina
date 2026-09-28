@@ -1,0 +1,341 @@
+/* Gasy Mahay — refonte publique A propos + FAQ */
+
+.public-page {
+  width:min(100%,1220px);
+  margin:0 auto;
+  padding:1rem 2rem 3.2rem;
+}
+
+.public-hero {
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);
+  gap:1rem;
+  padding:clamp(1.4rem,3.4vw,2.8rem);
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 88% 12%,rgba(228,125,85,.23),transparent 15rem),
+    radial-gradient(circle at 10% 88%,rgba(47,143,137,.20),transparent 18rem),
+    linear-gradient(135deg,#062b2e 0%,#0a3538 58%,#12484a 100%);
+  color:#fff;
+  box-shadow:var(--refonte-shadow-lg);
+}
+.public-hero::after{
+  content:"";
+  position:absolute;
+  width:19rem;height:19rem;
+  right:-8rem;bottom:-10rem;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:50%;
+  box-shadow:0 0 0 2rem rgba(255,255,255,.025),0 0 0 4rem rgba(255,255,255,.012);
+  pointer-events:none;
+}
+.public-kicker{
+  display:inline-flex;align-items:center;gap:.45rem;
+  color:#a8e2da;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:.62rem;font-weight:800;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.public-hero h1{
+  max-width:13ch;
+  margin:.6rem 0 .75rem;
+  color:#fff;
+  font-family:"Fraunces",Georgia,serif;
+  font-size:clamp(2.55rem,5.7vw,4.9rem);
+  line-height:.96;
+  letter-spacing:-.055em;
+}
+.public-hero p{
+  max-width:60ch;margin:0;
+  color:rgba(241,249,246,.79);
+  font-size:.9rem;line-height:1.7;
+}
+.public-actions{
+  display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.2rem;
+}
+.public-hero-panel{
+  display:grid;align-content:center;gap:.7rem;
+}
+.public-metric-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.55rem;
+}
+.public-metric{
+  min-height:5.6rem;
+  padding:.75rem;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:13px;
+  background:rgba(255,255,255,.055);
+  backdrop-filter:blur(10px);
+}
+.public-metric strong{
+  display:block;color:#fff;
+  font-family:"Fraunces",Georgia,serif;font-size:1.6rem;
+}
+.public-metric span{
+  display:block;margin-top:.17rem;color:rgba(241,249,246,.63);
+  font-size:.59rem;line-height:1.4;
+}
+
+.public-section{margin-top:1rem;}
+.public-section-head{
+  display:flex;align-items:end;justify-content:space-between;
+  gap:.8rem;margin-bottom:.7rem;
+}
+.public-section-head h2{
+  margin:0;font-size:1.5rem;line-height:1.05;
+}
+.public-section-head p{
+  margin:.25rem 0 0;color:var(--content-text-muted);
+  font-size:.67rem;line-height:1.5;
+}
+.public-panel{
+  padding:1.05rem;
+  border:1px solid var(--content-border);
+  border-radius:17px;
+  background:var(--content-surface);
+  box-shadow:var(--refonte-shadow-sm);
+}
+.public-grid-2{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;
+}
+.public-grid-3{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;
+}
+.public-card{
+  min-width:0;
+  padding:.95rem;
+  border:1px solid var(--content-border);
+  border-radius:14px;
+  background:var(--content-surface);
+}
+.public-card-soft{background:var(--content-bg);}
+.public-card h3{margin:0 0 .35rem;font-size:.9rem;}
+.public-card p{
+  margin:0;color:var(--content-text-muted);
+  font-size:.66rem;line-height:1.6;
+}
+.public-card ul{
+  margin:.55rem 0 0;padding-left:1.05rem;
+  color:var(--content-text-muted);
+  font-size:.65rem;line-height:1.55;
+}
+.public-card li+li{margin-top:.18rem;}
+.public-card-icon{
+  display:grid;width:2.15rem;height:2.15rem;place-items:center;
+  margin-bottom:.55rem;border-radius:10px;
+  background:rgba(47,143,137,.11);color:var(--refonte-teal);
+}
+
+.public-story{
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:.8rem;
+}
+.public-story + .public-story{margin-top:.8rem;}
+.public-story-marker{
+  display:grid;width:2.4rem;height:2.4rem;place-items:center;
+  border-radius:11px;background:rgba(47,143,137,.1);color:var(--refonte-teal);
+  font-family:"IBM Plex Mono",monospace;font-size:.62rem;font-weight:800;
+}
+.public-story h3{margin:.08rem 0 .25rem;font-size:.82rem;}
+.public-story p{margin:0;color:var(--content-text-muted);font-size:.64rem;line-height:1.55;}
+
+.public-principles{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.6rem;
+}
+.public-principle{
+  min-height:7rem;padding:.8rem;
+  border:1px solid var(--content-border);border-radius:12px;
+  background:var(--content-bg);
+}
+.public-principle strong{display:block;font-size:.67rem;}
+.public-principle span{display:block;margin-top:.22rem;color:var(--content-text-muted);font-size:.57rem;line-height:1.45;}
+
+.public-ecosystem{
+  display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr);gap:.75rem;
+}
+.public-ecosystem-core{
+  display:grid;min-height:18rem;place-items:center;
+  padding:1.2rem;border:1px solid rgba(47,143,137,.23);border-radius:19px;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(47,143,137,.13),transparent 8rem),
+    var(--content-bg);
+  text-align:center;
+}
+.public-ecosystem-core strong{
+  display:block;font-family:"Fraunces",Georgia,serif;font-size:1.75rem;
+}
+.public-ecosystem-core span{
+  display:block;margin-top:.3rem;color:var(--content-text-muted);font-size:.62rem;line-height:1.5;
+}
+.public-ecosystem-items{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;
+}
+.public-ecosystem-item{
+  padding:.75rem;border:1px solid var(--content-border);border-radius:12px;
+  background:var(--content-surface);
+}
+.public-ecosystem-item strong{display:block;font-size:.67rem;}
+.public-ecosystem-item span{display:block;margin-top:.2rem;color:var(--content-text-muted);font-size:.57rem;line-height:1.45;}
+
+.public-final{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;padding:1.1rem;
+  border:1px solid rgba(47,143,137,.20);
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 8% 20%,rgba(47,143,137,.10),transparent 12rem),
+    var(--content-surface);
+}
+.public-final h2{margin:0;font-size:1.25rem;}
+.public-final p{margin:.25rem 0 0;color:var(--content-text-muted);font-size:.64rem;line-height:1.5;}
+.public-final-actions{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:flex-end;}
+
+.faq-page .public-hero{
+  grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);
+}
+.faq-summary-card{
+  display:grid;align-content:center;gap:.45rem;
+  min-height:100%;padding:1rem;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:15px;background:rgba(255,255,255,.055);
+  backdrop-filter:blur(10px);
+}
+.faq-summary-card strong{
+  font-family:"Fraunces",Georgia,serif;font-size:2rem;color:#fff;
+}
+.faq-summary-card span{color:rgba(241,249,246,.64);font-size:.61rem;line-height:1.45;}
+.faq-topic-nav{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.55rem;margin:1rem 0;
+}
+.faq-topic{
+  display:block;padding:.7rem .75rem;
+  border:1px solid var(--content-border);border-radius:12px;
+  background:var(--content-surface);color:var(--content-text);
+  text-decoration:none;
+}
+.faq-topic:hover{border-color:rgba(47,143,137,.35);text-decoration:none;}
+.faq-topic strong{display:block;font-size:.68rem;}
+.faq-topic span{display:block;margin-top:.18rem;color:var(--content-text-muted);font-size:.56rem;line-height:1.35;}
+.faq-layout{
+  display:grid;grid-template-columns:minmax(0,1.08fr) minmax(340px,.92fr);gap:1rem;align-items:start;
+}
+.faq-panel{
+  padding:1rem;border:1px solid var(--content-border);border-radius:17px;
+  background:var(--content-surface);box-shadow:var(--refonte-shadow-sm);
+}
+.faq-panel-head{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:.7rem;margin-bottom:.8rem;
+}
+.faq-panel-head h2{margin:.15rem 0 0;font-size:1.15rem;}
+.faq-panel-head p{margin:0;color:var(--content-text-muted);font-size:.61rem;line-height:1.45;}
+.faq-count{
+  display:inline-flex;align-items:center;min-height:1.7rem;padding:.3rem .48rem;
+  border:1px solid var(--content-border);border-radius:999px;
+  background:var(--content-bg);color:var(--content-text-muted);
+  font-family:"IBM Plex Mono",monospace;font-size:.54rem;font-weight:800;white-space:nowrap;
+}
+.faq-search{
+  display:grid;grid-template-columns:minmax(0,1fr) 190px auto;gap:.55rem;
+  margin-bottom:.8rem;
+}
+.faq-search .bouton{align-self:end;}
+.faq-search input,.faq-search select{width:100%;}
+.faq-clear{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:2.55rem;padding:.55rem .7rem;border:1px solid var(--content-border);
+  border-radius:10px;background:var(--content-bg);color:var(--content-text-muted);
+  font-size:.61rem;font-weight:800;text-decoration:none;
+}
+.faq-clear:hover{text-decoration:none;color:var(--content-text);}
+.faq-empty{
+  display:grid;place-items:center;min-height:13rem;
+  border:1px dashed var(--content-border);border-radius:13px;
+  background:var(--content-bg);text-align:center;padding:1rem;
+}
+.faq-empty strong{display:block;font-size:.8rem;}
+.faq-empty p{max-width:42ch;margin:.35rem auto .7rem;color:var(--content-text-muted);font-size:.61rem;line-height:1.5;}
+.faq-list{display:grid;gap:.5rem;}
+.faq-item{
+  overflow:hidden;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);
+}
+.faq-question-bouton{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.7rem;
+  width:100%;padding:.75rem .8rem;border:0;background:transparent;color:var(--content-text);
+  text-align:left;font-size:.68rem;font-weight:800;cursor:pointer;
+}
+.faq-question-bouton:hover{background:rgba(47,143,137,.045);}
+.faq-question-bouton[aria-expanded="true"]{background:rgba(47,143,137,.065);}
+.faq-chevron{font-size:.9rem;transition:transform .16s var(--ease-fluide);color:var(--content-text-muted);}
+.faq-question-bouton[aria-expanded="true"] .faq-chevron{transform:rotate(180deg);}
+.faq-answer{
+  padding:.05rem .8rem .8rem;color:var(--content-text-muted);font-size:.65rem;line-height:1.65;
+}
+.faq-answer p{margin:0;}
+.faq-answer strong{color:var(--content-text);}
+.faq-side-stack{display:grid;gap:.6rem;}
+.faq-side-card{
+  padding:.8rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-bg);
+}
+.faq-side-card strong{display:block;font-size:.7rem;}
+.faq-side-card span,.faq-side-card p{display:block;margin:.2rem 0 0;color:var(--content-text-muted);font-size:.59rem;line-height:1.5;}
+.faq-side-card a{display:inline-flex;margin-top:.5rem;}
+.faq-rating{
+  display:grid;grid-template-columns:auto 1fr auto;gap:.75rem;align-items:center;
+  padding:.75rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);
+}
+.faq-rating-score{font:800 1.35rem/1 "IBM Plex Mono",monospace;color:var(--content-text);}
+.faq-rating-text{font-size:.6rem;color:var(--content-text-muted);}
+.faq-form{
+  margin-top:.6rem;padding:.75rem;
+  border:1px solid var(--content-border);border-radius:12px;background:var(--content-surface);
+}
+.faq-form summary{cursor:pointer;font-size:.66rem;font-weight:800;}
+.faq-form form{display:grid;gap:.55rem;margin-top:.65rem;}
+.faq-form textarea{min-height:110px;}
+.faq-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
+.faq-avis-list{display:grid;gap:.5rem;margin-top:.7rem;}
+.faq-review{
+  padding:.75rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);
+}
+.faq-review-top{display:flex;justify-content:space-between;gap:.5rem;align-items:center;}
+.faq-review-top strong{font-size:.61rem;}
+.faq-review-top span{color:var(--content-text-muted);font-size:.53rem;}
+.faq-review p{margin:.35rem 0 0;color:var(--content-text);font-size:.62rem;line-height:1.55;}
+.faq-review-reply{
+  margin-top:.55rem;padding:.55rem .6rem;border-radius:10px;
+  background:rgba(228,125,85,.055);border:1px solid rgba(228,125,85,.15);
+}
+.faq-review-reply span{display:block;color:var(--content-text-muted);font-size:.54rem;line-height:1.45;}
+.faq-footer{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  margin-top:1rem;padding:1rem;
+  border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface);
+}
+.faq-footer strong{font-size:.78rem;}
+.faq-footer span{display:block;margin-top:.2rem;color:var(--content-text-muted);font-size:.58rem;}
+.faq-footer-actions{display:flex;flex-wrap:wrap;gap:.4rem;}
+
+@media (max-width:1000px){
+  .public-hero,.faq-page .public-hero{grid-template-columns:1fr;}
+  .public-grid-3{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .public-principles{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .public-ecosystem,.faq-layout{grid-template-columns:1fr;}
+  .faq-topic-nav{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:700px){
+  .public-page{padding:.75rem .75rem 2rem;}
+  .public-hero{padding:1.2rem;border-radius:18px;}
+  .public-grid-2,.public-grid-3,.public-principles,.public-ecosystem-items{grid-template-columns:1fr;}
+  .public-final,.faq-footer{display:grid;grid-template-columns:1fr;}
+  .public-final-actions,.faq-footer-actions{justify-content:flex-start;}
+  .faq-topic-nav{grid-template-columns:1fr 1fr;}
+  .faq-search{grid-template-columns:1fr;}
+  .faq-search .bouton,.faq-clear{width:100%;}
+  .faq-form-grid{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){
+  .faq-chevron{transition:none;}
+}
