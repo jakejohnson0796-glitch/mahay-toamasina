@@ -1,21 +1,41 @@
 /*
-Bascule clair/sombre. Le theme AU CHARGEMENT est deja pose par le
-script inline bloquant dans <head> de base.html (evite le flash du
-mauvais theme) -- ce fichier ne gere que le CLIC sur le bouton.
+Bascule clair/sombre. Le theme initial est pose tres tot dans <head>
+pour eviter le flash du mauvais theme. Ce fichier gere l'interaction,
+l'etat accessible du bouton et la memorisation locale.
 */
 (function () {
+  "use strict";
+
   var CLE_STOCKAGE = "mahay-theme";
   var bouton = document.getElementById("bouton-theme");
-  if (!bouton) return; // page sans sidebar connectee (visiteur non connecte) : rien a cabler
+  if (!bouton) return;
+
+  var label = bouton.querySelector("[data-theme-label]");
+
+  function lireTheme() {
+    return document.documentElement.getAttribute("data-theme") === "sombre" ? "sombre" : "clair";
+  }
+
+  function synchroniserUI() {
+    var theme = lireTheme();
+    var sombre = theme === "sombre";
+    bouton.setAttribute("aria-pressed", String(sombre));
+    bouton.setAttribute("aria-label", sombre ? "Passer au thème clair" : "Passer au thème sombre");
+    bouton.title = sombre ? "Passer au thème clair" : "Passer au thème sombre";
+    if (label) label.textContent = sombre ? "Sombre" : "Clair";
+  }
 
   bouton.addEventListener("click", function () {
-    var actuel = document.documentElement.getAttribute("data-theme") === "sombre" ? "sombre" : "clair";
-    var suivant = actuel === "sombre" ? "clair" : "sombre";
+    var suivant = lireTheme() === "sombre" ? "clair" : "sombre";
     document.documentElement.setAttribute("data-theme", suivant);
+    synchroniserUI();
+
     try {
       localStorage.setItem(CLE_STOCKAGE, suivant);
     } catch (erreur) {
-      /* stockage indisponible : le theme choisi vaut pour cette page seulement, pas de risque, pas d'erreur bloquante */
+      /* Le theme reste actif pour la page courante si le stockage est indisponible. */
     }
   });
+
+  synchroniserUI();
 })();
