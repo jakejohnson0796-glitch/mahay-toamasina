@@ -10,7 +10,7 @@ from pathlib import Path
 import hashlib
 
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session
+from sqlmodel import Session, select, func
 
 from .csrf import obtenir_jeton_csrf
 
@@ -64,6 +64,25 @@ def _nb_notifications_admin_nouvelles(request) -> int:
 templates.env.globals["nb_notifications_admin_nouvelles"] = _nb_notifications_admin_nouvelles
 
 
+def _nb_notifications_non_lues(request) -> int:
+    """Compteur des notifications non lues de l'utilisateur courant."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return 0
+    from .database import engine
+    from .models import Notification
+    with Session(engine) as session:
+        return int(session.exec(
+            select(func.count())
+            .select_from(Notification)
+            .where(Notification.destinataire_id == user_id)
+            .where(Notification.lu == False)  # noqa: E712
+        ).one())
+
+
+templates.env.globals["nb_notifications_non_lues"] = _nb_notifications_non_lues
+
+
 def _calculer_jours_inactivite(utilisateur, maintenant=None) -> int:
     """Global Jinja non conflictuel avec les contextes qui exposent deja
     un entier nomme jours_inactivite."""
@@ -110,6 +129,7 @@ _VERSIONS_ASSETS = {
     "ux.css": _version_asset("ux.css"),
     "refonte.css": _version_asset("refonte.css"),
     "ux.js": _version_asset("ux.js"),
+    "student-hub.css": _version_asset("student-hub.css"),
 }
 templates.env.globals["version_asset"] = lambda chemin: _VERSIONS_ASSETS.get(chemin, "0")
 
