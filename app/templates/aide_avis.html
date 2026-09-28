@@ -2,367 +2,305 @@
 {% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
 {% from "components/etoiles.html" import etoiles_lecture, etoiles_saisie %}
 
-{% block titre %}Aide & Avis — Gasy Mahay{% endblock %}
+{% set libelles_faq = {
+  "general":"Général",
+  "compte":"Compte et inscription",
+  "cours":"Cours et documents",
+  "quiz":"Quiz",
+  "cercles":"Cercles d'étude",
+  "ia":"IA / Assistant",
+  "profil":"Profil utilisateur",
+  "securite":"Sécurité et confidentialité",
+  "feedback":"Feedback et assistance"
+} %}
+{% set libelles_avis = {
+  "general":"Expérience générale",
+  "cours":"Cours",
+  "quiz":"Quiz",
+  "cercles":"Cercles d'étude",
+  "ia":"IA",
+  "interface":"Interface",
+  "bug":"Bug / problème technique",
+  "suggestion":"Suggestion",
+  "autre":"Autre"
+} %}
+
+{% block titre %}FAQ & Aide — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair aide-avis-page">
-<style nonce="{{ csp_nonce(request) }}">
-.aide-avis-page{max-width:1180px;margin:0 auto;padding-bottom:2rem}
-.aide-avis-hero{
-  display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.6fr);gap:1rem;
-  margin-bottom:1.1rem;
-}
-.aide-avis-hero-main,.aide-avis-hero-side{
-  border:1px solid var(--content-border);border-radius:18px;box-shadow:var(--shadow-md);
-}
-.aide-avis-hero-main{
-  padding:1.6rem 1.8rem;background:linear-gradient(145deg,var(--content-surface),var(--content-bg));
-}
-.aide-avis-kicker{
-  display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .6rem;border-radius:999px;
-  background:rgba(23,36,32,.07);color:var(--content-text);
-  font:600 .65rem/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;
-}
-.aide-avis-hero-main h2{
-  margin:.65rem 0 .45rem;font-size:clamp(2rem,4vw,3rem);line-height:1.03;letter-spacing:-.045em;
-}
-.aide-avis-hero-main>p{
-  margin:0;max-width:62ch;color:var(--content-text-muted);line-height:1.65;
-}
-.aide-avis-hero-side{
-  display:flex;flex-direction:column;justify-content:center;padding:1.35rem;background:var(--ink);color:var(--sidebar-text);
-}
-.aide-avis-hero-side strong{font-size:1.15rem}
-.aide-avis-hero-side span{margin-top:.35rem;font-size:.76rem;line-height:1.5;color:var(--sidebar-muted)}
-.aide-avis-actions{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin-bottom:1.4rem;
-}
-.aide-avis-action{
-  display:flex;flex-direction:column;gap:.35rem;min-height:6.2rem;padding:.9rem;
-  border:1px solid var(--content-border);border-radius:13px;background:var(--content-surface);
-  color:var(--content-text);text-decoration:none;box-shadow:var(--shadow-sm);
-  transition:transform .18s var(--ease-fluide),border-color .18s var(--ease-fluide),box-shadow .18s var(--ease-fluide);
-}
-.aide-avis-action:hover{transform:translateY(-2px);border-color:var(--content-link);box-shadow:var(--shadow-md);text-decoration:none}
-.aide-avis-action strong{font-size:.83rem}
-.aide-avis-action span{color:var(--content-text-muted);font-size:.68rem;line-height:1.4}
-.aide-avis-layout{
-  display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:1rem;align-items:start;
-}
-.aide-avis-panel{
-  min-width:0;padding:1.15rem 1.2rem;border:1px solid var(--content-border);
-  border-radius:16px;background:var(--content-surface);box-shadow:var(--shadow-sm);
-}
-.aide-avis-panel-head{
-  display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;margin-bottom:.9rem;
-}
-.aide-avis-panel-head h3{margin:.15rem 0 0;font-size:1.2rem}
-.aide-avis-panel-head p{margin:0;color:var(--content-text-muted);font-size:.72rem;line-height:1.45}
-.aide-avis-search{
-  display:grid;grid-template-columns:minmax(0,1fr) 210px auto;gap:.65rem;
-  margin-bottom:1rem;
-}
-.aide-avis-search .bouton{align-self:end}
-.aide-avis-search input,.aide-avis-search select{width:100%}
-.faq-liste{margin-top:.4rem}
-.faq-item{
-  overflow:hidden;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);
-}
-.faq-item+.faq-item{margin-top:.6rem}
-.faq-question-bouton{padding:.9rem 1rem!important}
-.faq-reponse{background:var(--content-surface);border-top:1px solid var(--content-border);line-height:1.65}
-.aide-avis-count{
-  display:inline-flex;align-items:center;padding:.35rem .55rem;border-radius:999px;
-  background:var(--content-bg);border:1px solid var(--content-border);
-  color:var(--content-text-muted);font:600 .65rem/1 'IBM Plex Mono',monospace;
-}
-.avis-resume{
-  display:grid;grid-template-columns:auto 1fr auto;gap:.9rem;align-items:center;
-  margin:.3rem 0 1rem;padding:.9rem;border-radius:13px;background:var(--content-bg);
-}
-.avis-resume-texte{margin:0;font-size:.8rem;color:var(--content-text)}
-.avis-note-forte{font:700 1.35rem/1 'IBM Plex Mono',monospace;color:var(--content-text)}
-.avis-formulaire-repliable{
-  border:1px solid var(--content-border)!important;border-radius:13px!important;
-  background:var(--content-bg)!important;padding:.9rem!important;margin-bottom:1rem;
-}
-.avis-formulaire-repliable>summary{margin:0!important;padding:.1rem 0 .2rem}
-.avis-formulaire-repliable form{margin-top:.7rem}
-.avis-formulaire-repliable textarea{min-height:120px}
-.avis-formulaire-repliable .bouton-form{width:100%;margin-top:.5rem}
-.avis-groupe-titre{
-  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
-  margin:1rem 0 .45rem;font-size:.68rem;
-}
-.avis-carte{
-  position:relative;margin-bottom:.65rem!important;padding:1rem!important;
-  background:var(--content-bg)!important;border:1px solid var(--content-border)!important;border-radius:12px!important;
-}
-.avis-carte::before{
-  content:"";position:absolute;left:0;top:.85rem;bottom:.85rem;width:3px;border-radius:99px;background:var(--primary);
-}
-.avis-carte p{line-height:1.55}
-.avis-reponse-equipe{
-  padding:.75rem .85rem!important;background:rgba(184,84,58,.06)!important;
-  border:1px solid var(--content-border)!important;border-radius:10px!important;
-}
-.aide-avis-aside-card{
-  padding:.9rem;border:1px dashed var(--content-border);border-radius:12px;background:var(--content-bg);
-}
-.aide-avis-aside-card strong{display:block;font-size:.78rem}
-.aide-avis-aside-card span{display:block;margin-top:.25rem;color:var(--content-text-muted);font-size:.68rem;line-height:1.45}
-@media(max-width:980px){
-  .aide-avis-hero{grid-template-columns:1fr}
-  .aide-avis-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .aide-avis-layout{grid-template-columns:1fr}
-}
-@media(max-width:620px){
-  .aide-avis-page{padding-bottom:1rem}
-  .aide-avis-hero-main,.aide-avis-hero-side,.aide-avis-panel{padding:1rem}
-  .aide-avis-actions{grid-template-columns:1fr 1fr}
-  .aide-avis-search{grid-template-columns:1fr}
-  .aide-avis-search .bouton{width:100%}
-  .avis-resume{grid-template-columns:1fr}
-}
-@media(prefers-reduced-motion:reduce){
-  .aide-avis-action{transition:none}
-}
-</style>
+<div class="public-page faq-page">
 
-<section class="aide-avis-hero" aria-labelledby="titre-aide-avis">
-  <div class="aide-avis-hero-main">
-    <span class="aide-avis-kicker">Centre d'aide</span>
-    <h2 id="titre-aide-avis">Besoin d'une réponse ou envie de nous aider ?</h2>
-    <p>Retrouve les réponses aux questions les plus fréquentes, consulte les avis des étudiants et partage ton expérience avec l'équipe Gasy Mahay.</p>
-  </div>
-  <aside class="aide-avis-hero-side">
-    <span>Besoin d'une aide directe ?</span>
-    <strong>On est à un message de toi.</strong>
-    <span>Pour un problème urgent, une suggestion ou une question sur ton compte, contacte directement Gasy Mahay.</span>
-    <a href="/contact" class="bouton bouton-primaire" style="margin-top:.8rem;width:max-content;">Contacter l'équipe →</a>
-  </aside>
-</section>
-
-<nav class="aide-avis-actions" aria-label="Accès rapides">
-  <a class="aide-avis-action" href="#faq">
-    <strong>Questions fréquentes</strong>
-    <span>Compte, documents, quiz, cercles et IA.</span>
-  </a>
-  <a class="aide-avis-action" href="#avis">
-    <strong>Avis des étudiants</strong>
-    <span>Découvre les retours déjà publiés.</span>
-  </a>
-  <a class="aide-avis-action" href="/documents">
-    <strong>Documents</strong>
-    <span>Accéder directement à la bibliothèque.</span>
-  </a>
-  <a class="aide-avis-action" href="/cercles">
-    <strong>Cercles d'étude</strong>
-    <span>Trouver ou rejoindre un cercle.</span>
-  </a>
-</nav>
-
-<div class="aide-avis-layout">
-
-  <section class="aide-avis-panel" id="faq" aria-labelledby="titre-colonne-faq">
-    <div class="aide-avis-panel-head">
-      <div>
-        <p class="stat-label" style="margin:0;">Trouver une réponse</p>
-        <h3 id="titre-colonne-faq">Questions fréquentes</h3>
-        <p>Recherche par mot-clé ou filtre par catégorie.</p>
+  <section class="public-hero" aria-labelledby="faq-title">
+    <div>
+      <span class="public-kicker">Centre d'aide · Gasy Mahay</span>
+      <h1 id="faq-title">Trouver une réponse sans parcourir tout le site.</h1>
+      <p>
+        Recherche une question, filtre par sujet, consulte les réponses détaillées
+        et découvre les retours de la communauté. Pour un problème personnel,
+        le contact direct reste disponible.
+      </p>
+      <div class="public-actions">
+        <a class="bouton bouton-primaire" href="#faq-recherche">Chercher une réponse</a>
+        <a class="bouton bouton-secondaire" href="/mode-emploi">Voir le mode d'emploi</a>
+        <a class="bouton bouton-secondaire" href="/contact">Contacter l'équipe</a>
       </div>
-      <span class="aide-avis-count">{{ questions|length }} résultat{{ "s" if questions|length != 1 else "" }}</span>
     </div>
 
-    <form class="aide-avis-search" method="get" action="/faq">
-      <div>
-        <label for="q">Rechercher</label>
-        <input type="search" id="q" name="q" value="{{ q }}" placeholder="Ex. compte, mot de passe, cercle..." autocomplete="off">
-      </div>
-      <div>
-        <label for="categorie">Catégorie</label>
-        <select id="categorie" name="categorie">
-          <option value="">Toutes les catégories</option>
-          {% for cat in categories_faq %}
-          <option value="{{ cat.value }}" {% if categorie_filtre == cat.value %}selected{% endif %}>
-            {{ { "general": "Général", "compte": "Compte et inscription", "cours": "Cours et documents",
-                 "quiz": "Quiz", "cercles": "Cercles d'étude", "ia": "IA / Assistant",
-                 "profil": "Profil utilisateur", "securite": "Sécurité et confidentialité",
-                 "feedback": "Feedback et assistance" }[cat.value] }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      <button class="bouton bouton-primaire" type="submit">Rechercher</button>
-    </form>
-
-    {% if questions %}
-    <div class="faq-liste">
-      {% for item in questions %}
-      <div class="faq-item">
-        <h4 class="faq-question">
-          <button type="button" class="faq-question-bouton" aria-expanded="false" aria-controls="faq-reponse-{{ item.id }}" id="faq-bouton-{{ item.id }}">
-            <span>{{ item.question }}</span>
-            <span class="faq-chevron" aria-hidden="true">⌄</span>
-          </button>
-        </h4>
-        <div class="faq-reponse" id="faq-reponse-{{ item.id }}" role="region" aria-labelledby="faq-bouton-{{ item.id }}" hidden>
-          <p>{{ item.reponse }}</p>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% elif q or categorie_filtre %}
-    {{ etat_vide_constellation(
-      titre="Aucun résultat pour cette recherche",
-      texte="Essaie un autre mot-clé ou choisis une autre catégorie.",
-      lien_cta="/faq",
-      texte_cta="Voir toute la FAQ",
-    ) }}
-    {% else %}
-    {{ etat_vide_constellation(
-      titre="La FAQ n'est pas encore disponible",
-      texte="Reviens un peu plus tard, ou contacte-nous directement.",
-      lien_cta="/contact",
-      texte_cta="Nous contacter",
-    ) }}
-    {% endif %}
+    <aside class="faq-summary-card" aria-label="Résumé de l'aide">
+      <span>Base de connaissances</span>
+      <strong>{{ questions|length }}</strong>
+      <span>résultat{{ "s" if questions|length != 1 else "" }} dans la sélection actuelle.</span>
+      <span>{{ total_avis }} avis publics après modération.</span>
+    </aside>
   </section>
 
-  <section class="aide-avis-panel" id="avis" aria-labelledby="titre-colonne-avis">
-    <div class="aide-avis-panel-head">
-      <div>
-        <p class="stat-label" style="margin:0;">Retour des étudiants</p>
-        <h3 id="titre-colonne-avis">Avis</h3>
-        <p>Les retours publics sont affichés ici après modération.</p>
+  <nav class="faq-topic-nav" aria-label="Sujets d'aide">
+    <a class="faq-topic" href="/faq?categorie=compte"><strong>Compte</strong><span>Inscription, connexion et récupération.</span></a>
+    <a class="faq-topic" href="/faq?categorie=cours"><strong>Documents</strong><span>Bibliothèque, dépôts et ressources.</span></a>
+    <a class="faq-topic" href="/faq?categorie=quiz"><strong>Quiz</strong><span>Création, examen et résultats.</span></a>
+    <a class="faq-topic" href="/faq?categorie=ia"><strong>IA</strong><span>Tuteur, réponses et bonnes pratiques.</span></a>
+    <a class="faq-topic" href="/faq?categorie=cercles"><strong>Cercles</strong><span>Accès, messages et partage.</span></a>
+    <a class="faq-topic" href="/faq?categorie=securite"><strong>Sécurité</strong><span>Sessions, 2FA et confidentialité.</span></a>
+    <a class="faq-topic" href="/mode-emploi#classe"><strong>Classe virtuelle</strong><span>Séances, vidéo, devoirs et tableau blanc.</span></a>
+    <a class="faq-topic" href="/contact"><strong>Assistance</strong><span>Quand la FAQ ne suffit pas.</span></a>
+  </nav>
+
+  <div class="faq-layout">
+
+    <section class="faq-panel" id="faq-recherche" aria-labelledby="faq-panel-title">
+      <div class="faq-panel-head">
+        <div>
+          <p class="public-kicker">Base de réponses</p>
+          <h2 id="faq-panel-title">Questions fréquentes</h2>
+          <p>Recherche un mot-clé ou choisis une catégorie.</p>
+        </div>
+        <span class="faq-count">{{ questions|length }} résultat{{ "s" if questions|length != 1 else "" }}</span>
       </div>
-      <span class="aide-avis-count">{{ total_avis }} avis</span>
-    </div>
 
-    {% if note_moyenne %}
-    <div class="avis-resume">
-      <div class="avis-note-forte">{{ note_moyenne }}</div>
-      <div>
-        {{ etoiles_lecture(note_moyenne|round|int) }}
-        <p class="avis-resume-texte">Note moyenne des avis publics.</p>
-      </div>
-      <div class="stat-label">/ 5</div>
-    </div>
-    {% else %}
-    <div class="aide-avis-aside-card" style="margin-bottom:1rem;">
-      <strong>Pas encore de note publique</strong>
-      <span>Ton retour peut aider les prochains étudiants à comprendre comment utiliser Gasy Mahay.</span>
-    </div>
-    {% endif %}
-
-    {% if request.query_params.get("envoye") %}
-    <div class="info">Merci pour ton feedback ! Ton avis nous aide à améliorer Mahay.</div>
-    {% endif %}
-    {% if request.query_params.get("erreur") == "note_invalide" %}<div class="erreur">La note doit être comprise entre 1 et 5 étoiles.</div>{% endif %}
-    {% if request.query_params.get("erreur") == "commentaire_requis" %}<div class="erreur">Merci de laisser un commentaire.</div>{% endif %}
-    {% if request.query_params.get("erreur") == "commentaire_trop_long" %}<div class="erreur">Ton commentaire est trop long ({{ longueur_max }} caractères maximum).</div>{% endif %}
-    {% if request.query_params.get("erreur") == "trop_de_tentatives" %}<div class="erreur">Trop d'avis envoyés récemment — réessaie un peu plus tard.</div>{% endif %}
-
-    {% if utilisateur %}
-    <details class="carte-formulaire avis-formulaire-repliable">
-      <summary class="titre-carte">Donner mon avis</summary>
-      <form id="formulaire-feedback" method="post" action="/feedback">
-        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-
-        <label>Ta note</label>
-        {{ etoiles_saisie(nom_champ="note", valeur=0) }}
-
-        <label for="categorie_feedback">Catégorie</label>
-        <select id="categorie_feedback" name="categorie">
-          {% for cat in categories_avis %}
-          <option value="{{ cat.value }}">
-            {{ { "general": "Expérience générale", "cours": "Cours", "quiz": "Quiz",
-                 "cercles": "Cercles d'étude", "ia": "IA", "interface": "Interface",
-                 "bug": "Bug / problème technique", "suggestion": "Suggestion", "autre": "Autre" }[cat.value] }}
-          </option>
-          {% endfor %}
-        </select>
-
-        <label for="commentaire">Ton commentaire</label>
-        <textarea id="commentaire" name="commentaire" rows="4" maxlength="{{ longueur_max }}" placeholder="Qu'est-ce qui fonctionne bien ? Qu'est-ce qu'on devrait améliorer ?" required></textarea>
-        <p class="stat-label" id="compteur-commentaire" style="text-align:right;">0 / {{ longueur_max }}</p>
-
-        <label class="faq-checkbox-label">
-          <input type="checkbox" id="est_public" name="est_public" value="1">
-          Afficher mon avis publiquement (seul ton prénom sera visible)
-        </label>
-
-        <button class="bouton bouton-primaire bouton-form" type="submit" data-bouton-envoi>Publier mon avis</button>
+      <form class="faq-search" method="get" action="/faq">
+        <div>
+          <label for="q">Recherche</label>
+          <input type="search" id="q" name="q" value="{{ q }}" placeholder="Ex. mot de passe, document, cercle…" autocomplete="off">
+        </div>
+        <div>
+          <label for="categorie">Catégorie</label>
+          <select id="categorie" name="categorie">
+            <option value="">Toutes les catégories</option>
+            {% for cat in categories_faq %}
+            <option value="{{ cat.value }}" {% if categorie_filtre == cat.value %}selected{% endif %}>{{ libelles_faq[cat.value] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="bouton bouton-primaire" type="submit">Rechercher</button>
       </form>
-    </details>
 
-    {% if mon_feedback_recent %}
-    <div class="aide-avis-aside-card" style="margin-bottom:1rem;">
-      <strong>Ton dernier avis</strong>
-      <div style="margin:.35rem 0;">{{ etoiles_lecture(mon_feedback_recent.note) }}</div>
-      <span>{{ mon_feedback_recent.commentaire }}</span>
-      {% if mon_feedback_recent.statut.value == "repondu" or mon_feedback_recent.statut.value == "resolu" %}
-      <a href="/feedback/mes-avis" style="display:inline-block;margin-top:.5rem;">Voir la réponse de l'équipe →</a>
-      {% else %}
-      <span style="margin-top:.5rem;">En attente de réponse de l'équipe.</span>
-      {% endif %}
-    </div>
-    {% endif %}
-    {% else %}
-    <div class="info"><a href="/connexion">Connecte-toi</a> pour laisser un avis sur Mahay.</div>
-    {% endif %}
-
-    <form class="filtres" method="get" action="/feedback" style="margin:.85rem 0 1rem;">
-      <div>
-        <label for="categorie_avis">Filtrer les avis</label>
-        <select id="categorie_avis" name="categorie_avis">
-          <option value="">Toutes les catégories</option>
-          {% for cat in categories_avis %}
-          <option value="{{ cat.value }}" {% if categorie_avis_filtre == cat.value %}selected{% endif %}>
-            {{ { "general": "Expérience générale", "cours": "Cours", "quiz": "Quiz",
-                 "cercles": "Cercles d'étude", "ia": "IA", "interface": "Interface",
-                 "bug": "Bug / problème technique", "suggestion": "Suggestion", "autre": "Autre" }[cat.value] }}
-          </option>
-          {% endfor %}
-        </select>
+      {% if q or categorie_filtre %}
+      <div class="faq-search-meta">
+        <span>Filtre actuel : <strong>{{ q if q else "toutes les questions" }}</strong>{% if categorie_filtre %} · {{ libelles_faq.get(categorie_filtre, categorie_filtre) }}{% endif %}</span>
+        <a class="faq-clear" href="/faq">Effacer les filtres</a>
       </div>
-      <button class="bouton bouton-secondaire" type="submit">Filtrer les avis</button>
-    </form>
+      {% endif %}
 
-    {% if avis_affiches %}
-      {% for cat, groupe in avis_affiches|groupby('feedback.categorie') %}
-      <p class="avis-groupe-titre">
-        <span>{{ { "general": "Expérience générale", "cours": "Cours", "quiz": "Quiz",
-             "cercles": "Cercles d'étude", "ia": "IA", "interface": "Interface",
-             "bug": "Bug / problème technique", "suggestion": "Suggestion", "autre": "Autre" }[cat.value] }}</span>
-        <span class="aide-avis-count">{{ groupe|list|length }}</span>
-      </p>
-      <div class="faq-liste">
+      {% if questions %}
+      <div class="faq-list">
+        {% for item in questions %}
+        <article class="faq-item">
+          <h3 class="faq-question">
+            <button type="button" class="faq-question-bouton" aria-expanded="false" aria-controls="faq-answer-{{ item.id }}" id="faq-question-{{ item.id }}">
+              <span>{{ item.question }}</span>
+              <span class="faq-chevron" aria-hidden="true">⌄</span>
+            </button>
+          </h3>
+          <div class="faq-answer" id="faq-answer-{{ item.id }}" role="region" aria-labelledby="faq-question-{{ item.id }}" hidden>
+            <p>{{ item.reponse }}</p>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% elif q or categorie_filtre %}
+      {{ etat_vide_constellation(
+        titre="Aucune réponse trouvée",
+        texte="Essaie un autre mot-clé ou enlève le filtre de catégorie.",
+        lien_cta="/faq",
+        texte_cta="Afficher toute la FAQ",
+      ) }}
+      {% else %}
+      {{ etat_vide_constellation(
+        titre="La FAQ est en cours d'enrichissement",
+        texte="Pour une question qui n'est pas encore documentée, contacte directement l'équipe.",
+        lien_cta="/contact",
+        texte_cta="Contacter l'équipe",
+      ) }}
+      {% endif %}
+    </section>
+
+    <aside class="faq-side-stack" aria-label="Aide complémentaire">
+      <div class="faq-side-card">
+        <strong>Un problème avec ton compte ?</strong>
+        <span>Utilise la récupération du mot de passe ou consulte la page Sécurité pour les réglages du compte.</span>
+        <a class="bouton bouton-secondaire" href="/securite">Ouvrir Sécurité</a>
+      </div>
+
+      <div class="faq-side-card">
+        <strong>Tu veux apprendre à utiliser le site ?</strong>
+        <span>Le mode d'emploi détaille la navigation, les documents, les quiz, le Tuteur IA, les cercles et la classe virtuelle.</span>
+        <a class="bouton bouton-secondaire" href="/mode-emploi">Lire le guide</a>
+      </div>
+
+      <div class="faq-side-card">
+        <strong>Besoin d'un humain ?</strong>
+        <span>Pour un cas personnel ou un problème technique non couvert par la FAQ, passe directement par le contact.</span>
+        <a class="bouton bouton-primaire" href="/contact">Contacter Gasy Mahay</a>
+      </div>
+
+      <div class="faq-side-card">
+        <strong>Conseil pour les outils IA</strong>
+        <span>Utilise le Quiz IA pour pratiquer et le Tuteur IA pour comprendre une difficulté. Vérifie toujours les notions importantes avec ton cours.</span>
+      </div>
+    </aside>
+
+    <section class="faq-panel" id="avis" aria-labelledby="avis-title">
+      <div class="faq-panel-head">
+        <div>
+          <p class="public-kicker">Retour de la communauté</p>
+          <h2 id="avis-title">Avis des étudiants</h2>
+          <p>Les avis visibles publiquement passent par la modération.</p>
+        </div>
+        <span class="faq-count">{{ total_avis }} avis</span>
+      </div>
+
+      {% if note_moyenne %}
+      <div class="faq-rating">
+        <div class="faq-rating-score">{{ note_moyenne }}</div>
+        <div>
+          {{ etoiles_lecture(note_moyenne|round|int) }}
+          <div class="faq-rating-text">note moyenne des avis publics</div>
+        </div>
+        <span class="faq-count">/ 5</span>
+      </div>
+      {% else %}
+      <div class="faq-side-card">
+        <strong>Pas encore de note publique</strong>
+        <span>Ton retour peut aider à identifier ce qui doit être amélioré.</span>
+      </div>
+      {% endif %}
+
+      {% if request.query_params.get("envoye") %}
+      <div class="info">Merci pour ton feedback. Ton avis sera traité selon les règles de modération.</div>
+      {% endif %}
+      {% if request.query_params.get("erreur") == "note_invalide" %}<div class="erreur">La note doit être comprise entre 1 et 5.</div>{% endif %}
+      {% if request.query_params.get("erreur") == "commentaire_requis" %}<div class="erreur">Merci de laisser un commentaire.</div>{% endif %}
+      {% if request.query_params.get("erreur") == "commentaire_trop_long" %}<div class="erreur">Ton commentaire dépasse {{ longueur_max }} caractères.</div>{% endif %}
+      {% if request.query_params.get("erreur") == "trop_de_tentatives" %}<div class="erreur">Trop d'avis envoyés récemment. Réessaie plus tard.</div>{% endif %}
+
+      {% if utilisateur %}
+      <details class="faq-form">
+        <summary>Donner mon avis</summary>
+        <form id="formulaire-feedback" method="post" action="/feedback">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <label>Ta note</label>
+          {{ etoiles_saisie(nom_champ="note", valeur=0) }}
+
+          <div class="faq-form-grid">
+            <div>
+              <label for="categorie_feedback">Catégorie</label>
+              <select id="categorie_feedback" name="categorie">
+                {% for cat in categories_avis %}
+                <option value="{{ cat.value }}">{{ libelles_avis[cat.value] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label for="est_public">Visibilité</label>
+              <select id="est_public" name="est_public">
+                <option value="0">Ne pas afficher publiquement</option>
+                <option value="1">Afficher mon avis</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="commentaire">Commentaire</label>
+            <textarea id="commentaire" name="commentaire" rows="4" maxlength="{{ longueur_max }}" placeholder="Qu'est-ce qui fonctionne bien ? Qu'est-ce qu'on devrait améliorer ?" required></textarea>
+            <div class="faq-search-meta"><span>Ton avis doit respecter les règles de respect et de confidentialité.</span><span id="compteur-commentaire">0 / {{ longueur_max }}</span></div>
+          </div>
+
+          <button class="bouton bouton-primaire" type="submit" data-bouton-envoi>Envoyer mon avis</button>
+        </form>
+      </details>
+
+      {% if mon_feedback_recent %}
+      <div class="faq-side-card">
+        <strong>Ton dernier avis</strong>
+        <span>{{ etoiles_lecture(mon_feedback_recent.note) }}</span>
+        <span>{{ mon_feedback_recent.commentaire }}</span>
+        {% if mon_feedback_recent.statut.value == "repondu" or mon_feedback_recent.statut.value == "resolu" %}
+        <a href="/feedback/mes-avis">Voir la réponse de l'équipe →</a>
+        {% else %}
+        <span>En attente de réponse de l'équipe.</span>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% else %}
+      <div class="info"><a href="/connexion">Connecte-toi</a> pour laisser un avis.</div>
+      {% endif %}
+
+      <form class="faq-search" method="get" action="/feedback">
+        <div>
+          <label for="categorie_avis">Filtrer les avis</label>
+          <select id="categorie_avis" name="categorie_avis">
+            <option value="">Toutes les catégories</option>
+            {% for cat in categories_avis %}
+            <option value="{{ cat.value }}" {% if categorie_avis_filtre == cat.value %}selected{% endif %}>{{ libelles_avis[cat.value] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div></div>
+        <button class="bouton bouton-secondaire" type="submit">Filtrer</button>
+      </form>
+
+      {% if avis_affiches %}
+      <div class="faq-avis-list">
+        {% for cat, groupe in avis_affiches|groupby('feedback.categorie') %}
+        <div class="faq-search-meta"><span><strong>{{ libelles_avis[cat.value] }}</strong></span><span>{{ groupe|list|length }} avis</span></div>
         {% for item in groupe %}
-        <article class="carte-formulaire avis-carte">
+        <article class="faq-review">
+          <div class="faq-review-top">
+            <strong>{{ item.prenom }}</strong>
+            <span>{{ item.feedback.date_creation.strftime("%d/%m/%Y") }}</span>
+          </div>
           {{ etoiles_lecture(item.feedback.note) }}
-          <p><strong>{{ item.prenom }}</strong> · <span class="stat-label">{{ item.feedback.date_creation.strftime("%d/%m/%Y") }}</span></p>
           <p>{{ item.feedback.commentaire }}</p>
           {% if item.reponse %}
-          <div class="avis-reponse-equipe">
-            <p class="stat-label"><strong>Réponse de l'équipe Mahay</strong> · {{ item.reponse.date_creation.strftime("%d/%m/%Y") }}</p>
-            <p>{{ item.reponse.reponse }}</p>
+          <div class="faq-review-reply">
+            <span><strong>Réponse de l'équipe Mahay</strong> · {{ item.reponse.date_creation.strftime("%d/%m/%Y") }}</span>
+            <span>{{ item.reponse.reponse }}</span>
           </div>
           {% endif %}
         </article>
         {% endfor %}
+        {% endfor %}
       </div>
-      {% endfor %}
-    {% else %}
+      {% else %}
       {{ etat_vide_constellation(
         titre="Pas encore d'avis publics",
-        texte="Sois le premier à partager ton expérience avec Mahay.",
+        texte="Sois le premier à partager ton expérience.",
       ) }}
-    {% endif %}
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="faq-footer">
+    <div>
+      <strong>La réponse que tu cherches n'est pas encore dans la FAQ ?</strong>
+      <span>Le mode d'emploi couvre les parcours complets ; pour un cas personnel, contacte-nous directement.</span>
+    </div>
+    <div class="faq-footer-actions">
+      <a class="bouton bouton-secondaire" href="/mode-emploi">Mode d'emploi</a>
+      <a class="bouton bouton-primaire" href="/contact">Contacter l'équipe</a>
+    </div>
   </section>
 </div>
-
-<script nonce="{{ csp_nonce(request) }}" src="/static/js/faq.js" defer></script>
-<script nonce="{{ csp_nonce(request) }}" src="/static/js/feedback.js" defer></script>
-</div>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/faq.js?v={{ version_asset('faq.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/feedback.js?v={{ version_asset('feedback.js') }}" defer></script>
 {% endblock %}
