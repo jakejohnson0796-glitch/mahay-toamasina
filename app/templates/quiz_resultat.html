@@ -30,6 +30,35 @@
     </div>
   </section>
 
+  {% if notions_detectees %}
+  <section class="ai-section ai-remediation-result" aria-labelledby="remediation-result-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Ce que ton quiz a détecté</span>
+        <h2 id="remediation-result-title">Notions à retravailler</h2>
+        <p>Une réponse incorrecte devient automatiquement un point de travail dans ton parcours.</p>
+      </div>
+    </div>
+    <div class="ai-remediation-result-list">
+      {% for n in notions_detectees %}
+      <article class="ai-remediation-result-item">
+        <div>
+          <span>À revoir</span>
+          <strong>{{ n.notion }}</strong>
+        </div>
+        {% if n.progression_id %}
+        <form method="post" action="/tuteur/demander" class="ai-inline-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="progression_id" value="{{ n.progression_id }}">
+          <input type="hidden" name="question" value="Explique-moi {{ n.notion }} et aide-moi à corriger mon erreur sur cette notion avec un exercice progressif.">
+          <button class="bouton bouton-secondaire" type="submit">Avec le Tuteur</button>
+        </form>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
   <section class="ai-section" aria-labelledby="correction-title">
     <div class="ai-section-head">
       <div>
