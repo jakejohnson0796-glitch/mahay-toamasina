@@ -189,7 +189,7 @@
         <p class="tb-menu-compte-groupe">Mon espace</p>
         <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord</span></a>
         <a class="tb-menu-compte-item" href="/mes-revisions"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>Mes révisions</span></a>
-        <a class="tb-menu-compte-item" href="/notifications"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Notifications{% set nb_notifs = nb_notifications_non_lues(request) %}{% if nb_notifs %} · {{ nb_notifs }} non lues{% endif %}</span></a>
+        <a class="tb-menu-compte-item" href="/notifications"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Notifications{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %} · {{ nb_notifs }} non lues{% endif %}</span></a>
         <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Mon profil &amp; sécurité</span></a>
         <a class="tb-menu-compte-item" href="/profil/academique"><span class="tb-menu-compte-icone">{{ icone("universites", 16) }}</span><span>Profil académique</span></a>
 
@@ -275,7 +275,7 @@
       </a>
       {% if request.session.get("user_id") and utilisateur is defined and utilisateur %}
       <a class="mobile-entete-app-notifications" href="/notifications" aria-label="Notifications">
-        {{ icone("aide", 20) }}{% set nb_notifs = nb_notifications_non_lues(request) %}{% if nb_notifs %}<span>{{ nb_notifs if nb_notifs < 10 else "9+" }}</span>{% endif %}
+        {{ icone("aide", 20) }}{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %}<span>{{ nb_notifs if nb_notifs < 10 else "9+" }}</span>{% endif %}
       </a>
       <a class="mobile-entete-app-avatar" href="/securite" aria-label="Ouvrir mon profil">
         {{ avatar_utilisateur(utilisateur, taille=30) }}
