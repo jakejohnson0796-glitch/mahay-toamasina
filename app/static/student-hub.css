@@ -38,3 +38,16 @@
 @media (max-width:760px){.hub-page{padding-top:12px}.hub-hero{display:block}.hub-hero .bouton{display:inline-flex;margin-top:16px}.hub-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
 .hub-deux-colonnes,.hub-tuteur-grille{grid-template-columns:1fr}.notification-meta{display:block}.notification-meta time{display:block;margin-top:4px}.hub-section-entete{align-items:flex-start;flex-direction:column}.hub-section-entete a{white-space:normal}
 }
+
+/* Parcours personnalise */
+.hub-section-intro{margin:-6px 0 18px;color:var(--content-text-muted);line-height:1.55}
+.hub-notions-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.hub-notion-carte{padding:17px;border:1px solid var(--content-border);border-radius:16px;background:var(--content-bg);color:var(--content-text)}
+.hub-notion-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.hub-notion-matiere{font-size:.72rem;font-weight:800;color:var(--content-text-muted)}
+.hub-notion-score{font-family:"IBM Plex Mono",monospace;font-size:.62rem;color:var(--refonte-danger)}
+.hub-notion-carte h3{margin:9px 0 4px;font-size:1.05rem;color:var(--content-text)}
+.hub-notion-carte p{margin:0;color:var(--content-text-muted);font-size:.78rem}
+.hub-notion-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.hub-notion-actions form{margin:0}
+@media (max-width:760px){.hub-notions-grille{grid-template-columns:1fr}}
