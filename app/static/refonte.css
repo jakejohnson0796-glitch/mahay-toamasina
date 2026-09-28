@@ -2002,3 +2002,18 @@ main h2 {
     justify-content:flex-start;
   }
 }
+
+
+.ops-table-date {
+  color:var(--content-text-muted);
+  font-family:"IBM Plex Mono",monospace;
+  font-size:.58rem;
+}
+
+.ops-age-badge {
+  min-width:3rem;
+  justify-content:center;
+  border-color:rgba(47,143,137,.22);
+  background:rgba(47,143,137,.07);
+  color:var(--refonte-teal);
+}
