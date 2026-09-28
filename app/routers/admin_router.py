@@ -22,7 +22,7 @@ from ..models import (
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
     EvenementTableauBlanc, AutorisationEcritureTableau, Devoir, RenduDevoir,
-    Feedback, ReponseFeedback, StatutFeedback,
+    Feedback, ReponseFeedback, StatutFeedback, Notification, TypeNotification,
 )
 from ..storage import supprimer_fichier
 # Logique d'acceptation/refus reutilisee telle quelle depuis cercles_router.py
@@ -92,6 +92,21 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
         if f.id not in ids_feedback_avec_reponse and f.statut != StatutFeedback.MASQUE
     ])
 
+    notifications_nouveaux = session.exec(
+        select(Notification, Utilisateur)
+        .where(Notification.destinataire_id == admin.id)
+        .where(Notification.type_notification == TypeNotification.NOUVELLE_INSCRIPTION)
+        .where(Notification.lu == False)  # noqa: E712
+        .where(Notification.acteur_id == Utilisateur.id)
+        .order_by(Notification.date_creation.desc())
+        .limit(12)
+    ).all()
+
+    nouveaux_arrivants = [
+        {"notification": notification, "utilisateur": utilisateur}
+        for notification, utilisateur in notifications_nouveaux
+    ]
+
     return templates.TemplateResponse(
         request,
         "admin_index.html",
@@ -103,8 +118,38 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             "nb_sponsors_en_attente": nb_sponsors_en_attente,
             "nb_demandes_adhesion_en_attente": nb_demandes_adhesion_en_attente,
             "nb_feedbacks_sans_reponse": nb_feedbacks_sans_reponse,
+            "nb_nouveaux_arrivants": len(nouveaux_arrivants),
+            "nouveaux_arrivants": nouveaux_arrivants,
         },
     )
+
+
+@router.post("/admin/notifications/nouvelles-inscriptions/lues")
+def marquer_notifications_nouvelles_inscriptions_lues(
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    notifications = session.exec(
+        select(Notification)
+        .where(Notification.destinataire_id == admin.id)
+        .where(Notification.type_notification == TypeNotification.NOUVELLE_INSCRIPTION)
+        .where(Notification.lu == False)  # noqa: E712
+    ).all()
+
+    maintenant = __import__("datetime").datetime.utcnow()
+    for notification in notifications:
+        notification.lu = True
+        session.add(notification)
+
+    if notifications:
+        session.commit()
+
+    return RedirectResponse(request.headers.get("referer") or "/admin", status_code=303)
 
 
 @router.get("/admin/demandes-adhesion")
