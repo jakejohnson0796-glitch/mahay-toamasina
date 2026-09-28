@@ -84,8 +84,12 @@ OUTIL_QUIZ = {
                                 "type": "string",
                                 "description": "Courte explication (1-2 phrases) de la bonne reponse.",
                             },
+                            "notion": {
+                                "type": "string",
+                                "description": "Notion precise testee par la question, courte et exploitable pour un parcours personnalise (ex: Bilan comptable, Loi d'Ohm, Concordance des temps).",
+                            },
                         },
-                        "required": ["question", "choix", "index_bonne_reponse", "explication"],
+                        "required": ["question", "choix", "index_bonne_reponse", "explication", "notion"],
                     },
                 }
             },
@@ -121,6 +125,7 @@ OUTIL_VERIFICATION = {
                                 "description": "Index (base 0) du choix correct dans le tableau 'choix'.",
                             },
                             "explication": {"type": "string"},
+                            "notion": {"type": "string"},
                             "confiant": {
                                 "type": "boolean",
                                 "description": (
@@ -134,7 +139,7 @@ OUTIL_VERIFICATION = {
                                 ),
                             },
                         },
-                        "required": ["question", "choix", "index_bonne_reponse", "explication", "confiant"],
+                        "required": ["question", "choix", "index_bonne_reponse", "explication", "notion", "confiant"],
                     },
                 }
             },
@@ -240,6 +245,40 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
     return _extraire_questions(completion, expected_count=nb_questions)
 
 
+def generer_quiz_cible(matiere: str, niveau: str, notion: str, nb_questions: int = 5) -> List[Dict]:
+    """Genere un mini-quiz centre sur UNE notion identifiee comme faible."""
+    notion = (notion or "").strip()[:100]
+    if not notion:
+        return _quiz_erreur("Notion ciblee manquante.", "Aucune notion n'a ete fournie.")
+
+    try:
+        client = _obtenir_client()
+    except RuntimeError as erreur:
+        return _quiz_erreur("Generation de quiz IA non configuree.", str(erreur))
+
+    consigne_base = (
+        f"Tu es un professeur a l'Universite de Toamasina. Genere exactement "
+        f"{nb_questions} questions de revision en francais, niveau {niveau}, "
+        f"sur la matiere '{matiere}' et EXCLUSIVEMENT sur la notion '{notion}'. "
+        f"Concentre-toi sur la comprehension, l'application et les erreurs "
+        f"frequentes liees a cette notion. 4 choix plausibles, une seule "
+        f"bonne reponse, une explication courte et une notion courte et "
+        f"precise pour chaque question. Utilise l'outil fourni."
+    )
+    consigne_renforcee = (
+        f"{consigne_base}\n\nRappel : genere exactement {nb_questions} "
+        f"questions. N'elargis pas le sujet a une autre notion. Appelle "
+        f"'soumettre_quiz' directement."
+    )
+    completion, erreur = _generer_completion_avec_reessai(
+        client, [consigne_base, consigne_renforcee], max_completion_tokens=2048
+    )
+    if completion is None:
+        detail = f"Erreur API : {erreur}" if erreur else "Le modele n'a pas repondu au format attendu."
+        return _quiz_erreur("La generation du quiz cible a echoue.", detail)
+    return _extraire_questions(completion, expected_count=nb_questions)
+
+
 def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questions: int = 5) -> List[Dict]:
     """
     Genere un quiz a choix multiples directement a partir d'un theme choisi
@@ -259,7 +298,8 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
         f"{niveau}, avec une difficulte {difficulte}. Varie les niveaux "
         f"cognitifs (comprehension, application, pas seulement de la "
         f"restitution), 4 choix plausibles par question, une seule bonne "
-        f"reponse, et une explication courte pour chaque. Utilise l'outil "
+        f"reponse, une explication courte et surtout une notion pedagogique "
+        f"courte et precise pour chaque question. Utilise l'outil "
         f"fourni pour repondre."
     )
     consigne_renforcee = (
@@ -433,7 +473,12 @@ OUTIL_TUTEUR = {
 }
 
 
-def generer_reponse_tuteur(question: str) -> Dict[str, str]:
+def generer_reponse_tuteur(
+    question: str,
+    *,
+    notion: Optional[str] = None,
+    matiere: Optional[str] = None,
+) -> Dict[str, str]:
     """Genere une reponse structuree du tuteur IA (explication + exemple
     + exercice + correction) a une question libre posee par l'etudiant.
     En cas d'echec (API indisponible, format inattendu...), renvoie un
@@ -460,9 +505,14 @@ def generer_reponse_tuteur(question: str) -> Dict[str, str]:
                 "content": (
                     f"Tu es un tuteur pour des etudiants de l'Universite de "
                     f"Toamasina (Madagascar). Un etudiant te pose la question "
-                    f"suivante : « {question} ». Reponds en 4 parties bien "
-                    f"distinctes en francais, pedagogique et concret, adapte a "
-                    f"un niveau universitaire. Utilise l'outil fourni pour "
+                    f"suivante : « {question} ». "
+                    f"{'La notion a travailler en priorite est ' + repr(notion) + '. ' if notion else ''}"
+                    f"{'La matiere est ' + repr(matiere) + '. ' if matiere else ''}"
+                    f"Fais de cette reponse une etape de remediation : explique "
+                    f"l'origine probable de la difficulte, donne un exemple, "
+                    f"propose un exercice progressif puis une correction qui "
+                    f"insiste sur l'erreur a eviter. Reponds en francais, "
+                    f"pedagogique et concret. Utilise l'outil fourni pour "
                     f"structurer ta reponse."
                 ),
             }],

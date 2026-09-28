@@ -10,7 +10,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_premium_ou_redirection
-from ..models import Document, StatutDocument, TentativeQuiz
+from ..models import Document, StatutDocument, TentativeQuiz, ProgressionNotion
 from .. import quiz as quiz_module
 from .. import theme_service
 from ..rate_limit import limite_depassee
@@ -153,6 +153,46 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
     )
 
 
+@router.post("/quiz/cible")
+def generer_quiz_cible(
+    request: Request,
+    progression_id: int = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Genere un mini-quiz a partir d'une faiblesse deja identifiee."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    progression = session.get(ProgressionNotion, progression_id)
+    if not progression or progression.utilisateur_id != utilisateur.id or progression.nb_erreurs <= 0:
+        return RedirectResponse("/mes-revisions", status_code=303)
+
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
+        return RedirectResponse("/mes-revisions?erreur=trop_de_generations", status_code=303)
+
+    niveau = progression.niveau or utilisateur.niveau or "L1"
+    if niveau not in quiz_module.NIVEAUX:
+        niveau = "L1"
+
+    try:
+        tentative = quiz_module.creer_tentative_ciblee(
+            session,
+            utilisateur,
+            progression.matiere,
+            niveau,
+            progression.notion,
+            nb_questions=5,
+        )
+    except quiz_module.QuizValidationError:
+        return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
+
+    return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
+
+
 @router.post("/quiz/examen/generer")
 def generer_examen(request: Request, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     """Mode examen : matiere/niveau/difficulte tires au sort par le
@@ -235,14 +275,39 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
     if not tentative or tentative.date_soumission is None:
         return RedirectResponse("/quiz", status_code=303)
 
+    questions_resultat = quiz_module.questions(tentative)
+    reponses_resultat = quiz_module.reponses(tentative) or []
+    notions_detectees = []
+    vus = set()
+    for i, question in enumerate(questions_resultat):
+        correcte = i < len(reponses_resultat) and reponses_resultat[i] == question.get("index_bonne_reponse")
+        if correcte:
+            continue
+        notion = (question.get("notion") or "").strip() or f"Notions générales — {tentative.matiere}"
+        if notion in vus:
+            continue
+        vus.add(notion)
+        progression = session.exec(
+            select(ProgressionNotion).where(
+                ProgressionNotion.utilisateur_id == utilisateur.id,
+                ProgressionNotion.matiere == tentative.matiere,
+                ProgressionNotion.notion == notion,
+            )
+        ).first()
+        notions_detectees.append({
+            "notion": notion,
+            "progression_id": progression.id if progression else None,
+        })
+
     return templates.TemplateResponse(
         request,
         "quiz_resultat.html",
         {
             "utilisateur": utilisateur,
             "tentative": tentative,
-            "questions": quiz_module.questions(tentative),
-            "reponses": quiz_module.reponses(tentative),
+            "questions": questions_resultat,
+            "reponses": reponses_resultat,
+            "notions_detectees": notions_detectees,
         },
     )
 

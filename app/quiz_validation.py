@@ -5,6 +5,7 @@ from typing import Any
 MAX_QUESTION_CHARS = 800
 MAX_CHOIX_CHARS = 300
 MAX_EXPLICATION_CHARS = 800
+MAX_NOTION_CHARS = 100
 MAX_TOTAL_CHARS = 60_000
 
 
@@ -25,6 +26,7 @@ def valider_questions(questions: Any, expected_count: int | None = None) -> list
         texte = str(question.get("question", "")).strip()
         choix = question.get("choix")
         explication = str(question.get("explication", "")).strip()
+        notion = str(question.get("notion", "") or "").strip()
         index = question.get("index_bonne_reponse")
         if not texte or len(texte) > MAX_QUESTION_CHARS:
             raise QuizValidationError(f"Le texte de la question {numero} est invalide.")
@@ -34,6 +36,8 @@ def valider_questions(questions: Any, expected_count: int | None = None) -> list
             raise QuizValidationError(f"L'index de bonne reponse de la question {numero} est invalide.")
         if not explication or len(explication) > MAX_EXPLICATION_CHARS:
             raise QuizValidationError(f"L'explication de la question {numero} est invalide.")
+        if notion and len(notion) > MAX_NOTION_CHARS:
+            raise QuizValidationError(f"La notion de la question {numero} est trop longue.")
         choix_nettoyes = [str(c).strip() for c in choix]
         if any(not c or len(c) > MAX_CHOIX_CHARS for c in choix_nettoyes):
             raise QuizValidationError(f"Un choix de la question {numero} est invalide.")
@@ -48,5 +52,6 @@ def valider_questions(questions: Any, expected_count: int | None = None) -> list
             "choix": choix_nettoyes,
             "index_bonne_reponse": index,
             "explication": explication,
+            "notion": notion,
         })
     return result

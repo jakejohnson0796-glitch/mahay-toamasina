@@ -22,6 +22,7 @@ from .models import (
     Utilisateur,
 )
 from . import subscription
+from . import quiz as quiz_module
 
 NB_DOCUMENTS_RECENTS = 5
 NB_ACTIVITES_RECENTES = 5

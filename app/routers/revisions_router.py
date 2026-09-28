@@ -8,6 +8,7 @@ from ..database import get_session
 from ..models import ConsultationDocument, Document, SessionTuteur, TentativeQuiz, StatutDocument
 from ..templating import templates
 from .. import dashboard as dashboard_module
+from .. import quiz as quiz_module
 
 router = APIRouter()
 
@@ -43,6 +44,7 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
     ).all()
 
     progression = dashboard_module.progression_matieres(session, utilisateur)
+    notions_a_revoir = quiz_module.notions_a_revoir(session, utilisateur.id, limit=8)
 
     return templates.TemplateResponse(
         request,
@@ -53,6 +55,7 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
             "quiz": quiz,
             "sessions_tuteur": sessions_tuteur,
             "progression_matieres": progression,
+            "notions_a_revoir": notions_a_revoir,
             "nb_documents": len(consultations),
             "nb_quiz": len(quiz),
             "nb_sessions_tuteur": len(sessions_tuteur),

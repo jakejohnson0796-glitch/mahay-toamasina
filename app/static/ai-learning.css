@@ -1385,3 +1385,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Remédiation personnalisée */
+.ai-remediation-section{margin-top:1rem}
+.ai-remediation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem}
+.ai-remediation-card{padding:.85rem;border:1px solid var(--content-border);border-radius:14px;background:var(--content-surface);box-shadow:var(--refonte-shadow-sm)}
+.ai-remediation-card>span{color:var(--content-text-muted);font-size:.56rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.ai-remediation-card h3{margin:.35rem 0;font-size:.9rem}
+.ai-remediation-card p{margin:0;color:var(--content-text-muted);font-size:.61rem}
+.ai-remediation-actions{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.65rem}
+.ai-remediation-actions form{margin:0}
+.ai-remediation-result{margin-top:1rem}
+.ai-remediation-result-list{display:grid;gap:.45rem;margin-top:.6rem}
+.ai-remediation-result-item{display:flex;align-items:center;justify-content:space-between;gap:.7rem;padding:.7rem;border:1px solid rgba(189,77,69,.18);border-radius:12px;background:var(--content-surface)}
+.ai-remediation-result-item>div{min-width:0}
+.ai-remediation-result-item span{display:block;color:var(--refonte-danger);font-family:"IBM Plex Mono",monospace;font-size:.52rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.ai-remediation-result-item strong{display:block;margin-top:.18rem;font-size:.72rem;overflow:hidden;text-overflow:ellipsis}
+.ai-inline-action{display:inline-flex;margin:0}
+.ai-target-context{margin:.6rem 0 .8rem;padding:.7rem .8rem;border:1px solid rgba(47,143,137,.22);border-radius:13px;background:rgba(47,143,137,.055)}
+.ai-target-context strong{display:block;margin-top:.25rem;font-size:.95rem}
+.ai-target-context p{margin:.25rem 0 0;color:var(--content-text-muted);font-size:.62rem}
+@media (max-width:900px){.ai-remediation-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.ai-remediation-grid{grid-template-columns:1fr}.ai-remediation-result-item{align-items:flex-start;flex-direction:column}}

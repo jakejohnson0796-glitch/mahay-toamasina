@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 
 from sqlmodel import Session, select
 
-from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz
+from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz, ProgressionNotion
 from . import ai_quiz
 from .quiz_validation import QuizValidationError, valider_questions
 
@@ -105,6 +105,75 @@ def reponses(tentative: TentativeQuiz) -> Optional[List[Optional[int]]]:
     return json.loads(tentative.reponses_json)
 
 
+def mettre_a_jour_progression_notion(
+    session: Session,
+    tentative: TentativeQuiz,
+    questions_quiz: List[dict],
+    reponses_soumises: List[Optional[int]],
+) -> None:
+    """Met a jour la memoire d'apprentissage apres un quiz termine."""
+    maintenant = datetime.utcnow()
+    for index, question in enumerate(questions_quiz):
+        notion = (question.get("notion") or "").strip()
+        if not notion:
+            notion = f"Notions générales — {tentative.matiere}"
+        progression = session.exec(
+            select(ProgressionNotion).where(
+                ProgressionNotion.utilisateur_id == tentative.utilisateur_id,
+                ProgressionNotion.matiere == tentative.matiere,
+                ProgressionNotion.notion == notion,
+            )
+        ).first()
+        if progression is None:
+            progression = ProgressionNotion(
+                utilisateur_id=tentative.utilisateur_id,
+                matiere=tentative.matiere,
+                notion=notion,
+                niveau=tentative.niveau,
+            )
+        progression.niveau = tentative.niveau
+        progression.nb_questions += 1
+        correcte = (
+            index < len(reponses_soumises)
+            and reponses_soumises[index] is not None
+            and reponses_soumises[index] == question.get("index_bonne_reponse")
+        )
+        if correcte:
+            progression.nb_reussites += 1
+            progression.derniere_reussite_le = maintenant
+        else:
+            progression.nb_erreurs += 1
+            progression.derniere_erreur_le = maintenant
+        progression.date_maj = maintenant
+        session.add(progression)
+    session.commit()
+
+
+def notions_a_revoir(
+    session: Session,
+    utilisateur_id: int,
+    limit: int = 8,
+) -> List[ProgressionNotion]:
+    """Renvoie les notions les plus fragiles, priorisees par taux d'erreur."""
+    elements = session.exec(
+        select(ProgressionNotion)
+        .where(ProgressionNotion.utilisateur_id == utilisateur_id)
+    ).all()
+    elements = [
+        p for p in elements
+        if p.nb_questions > 0 and p.nb_erreurs > 0
+    ]
+    elements.sort(
+        key=lambda p: (
+            p.nb_erreurs / p.nb_questions if p.nb_questions else 0,
+            p.nb_erreurs,
+            p.date_maj,
+        ),
+        reverse=True,
+    )
+    return elements[:limit]
+
+
 def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List[Optional[int]]) -> TentativeQuiz:
     """Calcule le score en comparant les reponses soumises aux bonnes
     reponses, et fige la tentative (elle devient un resultat d'historique
@@ -123,6 +192,40 @@ def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List
     tentative.reponses_json = json.dumps(reponses_soumises)
     tentative.score = score
     tentative.date_soumission = datetime.utcnow()
+    session.add(tentative)
+    session.commit()
+    session.refresh(tentative)
+    mettre_a_jour_progression_notion(session, tentative, qs, reponses_soumises)
+    return tentative
+
+
+def creer_tentative_ciblee(
+    session: Session,
+    utilisateur: Utilisateur,
+    matiere: str,
+    niveau: str,
+    notion: str,
+    nb_questions: int = 5,
+) -> TentativeQuiz:
+    """Construit un quiz court centre sur une faiblesse detectee."""
+    matiere = valider_parametres(matiere, niveau, "Moyen", nb_questions)
+    notion = (notion or "").strip()[:100]
+    if not notion:
+        raise QuizValidationError("La notion ciblee est obligatoire.")
+    questions_ciblees = ai_quiz.generer_quiz_cible(matiere, niveau, notion, nb_questions)
+    questions_ciblees = valider_questions(questions_ciblees, expected_count=nb_questions)
+    questions_verifiees, _ = ai_quiz.verifier_et_corriger_questions(
+        questions_ciblees, matiere, niveau
+    )
+    questions_verifiees = valider_questions(questions_verifiees, expected_count=nb_questions)
+    tentative = TentativeQuiz(
+        utilisateur_id=utilisateur.id,
+        matiere=matiere,
+        niveau=niveau,
+        difficulte="Moyen",
+        nb_questions=len(questions_verifiees),
+        questions_json=json.dumps(questions_verifiees, ensure_ascii=False),
+    )
     session.add(tentative)
     session.commit()
     session.refresh(tentative)
