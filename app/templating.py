@@ -64,6 +64,16 @@ def _nb_notifications_admin_nouvelles(request) -> int:
 templates.env.globals["nb_notifications_admin_nouvelles"] = _nb_notifications_admin_nouvelles
 
 
+def _calculer_jours_inactivite(utilisateur, maintenant=None) -> int:
+    """Global Jinja non conflictuel avec les contextes qui exposent deja
+    un entier nomme jours_inactivite."""
+    from .auth import jours_inactivite as _fonction_jours_inactivite
+    return _fonction_jours_inactivite(utilisateur, maintenant)
+
+
+templates.env.globals["calculer_jours_inactivite"] = _calculer_jours_inactivite
+
+
 def _version_asset(chemin_relatif: str) -> str:
     """Global Jinja utilise dans base.html pour suffixer les fichiers
     statiques (style.css, navigation.js) d'un parametre ?v=<hash> —
