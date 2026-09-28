@@ -18,7 +18,7 @@ from sqlmodel import Session, select, func
 from .config import parametres
 from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
-from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router
+from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .seed_data import peupler_donnees_initiales
 from .seed_faq import peupler_faq_initiale
@@ -81,6 +81,8 @@ app.include_router(faq_router.router)
 app.include_router(feedback_router.router)
 app.include_router(academique_router.router)
 app.include_router(mode_emploi_router.router)
+app.include_router(notifications_router.router)
+app.include_router(revisions_router.router)
 
 
 def _masquer_mot_de_passe(url: str) -> str:
@@ -232,6 +234,8 @@ def robots(request: Request) -> Response:
             "Disallow: /admin",
             "Disallow: /securite",
             "Disallow: /dashboard",
+            "Disallow: /notifications",
+            "Disallow: /mes-revisions",
             "Disallow: /abonnement",
             "Disallow: /mot-de-passe-oublie",
             "Disallow: /connexion/2fa",
