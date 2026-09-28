@@ -473,7 +473,12 @@ OUTIL_TUTEUR = {
 }
 
 
-def generer_reponse_tuteur(question: str) -> Dict[str, str]:
+def generer_reponse_tuteur(
+    question: str,
+    *,
+    notion: Optional[str] = None,
+    matiere: Optional[str] = None,
+) -> Dict[str, str]:
     """Genere une reponse structuree du tuteur IA (explication + exemple
     + exercice + correction) a une question libre posee par l'etudiant.
     En cas d'echec (API indisponible, format inattendu...), renvoie un
@@ -500,9 +505,14 @@ def generer_reponse_tuteur(question: str) -> Dict[str, str]:
                 "content": (
                     f"Tu es un tuteur pour des etudiants de l'Universite de "
                     f"Toamasina (Madagascar). Un etudiant te pose la question "
-                    f"suivante : « {question} ». Reponds en 4 parties bien "
-                    f"distinctes en francais, pedagogique et concret, adapte a "
-                    f"un niveau universitaire. Utilise l'outil fourni pour "
+                    f"suivante : « {question} ». "
+                    f"{'La notion a travailler en priorite est ' + repr(notion) + '. ' if notion else ''}"
+                    f"{'La matiere est ' + repr(matiere) + '. ' if matiere else ''}"
+                    f"Fais de cette reponse une etape de remediation : explique "
+                    f"l'origine probable de la difficulte, donne un exemple, "
+                    f"propose un exercice progressif puis une correction qui "
+                    f"insiste sur l'erreur a eviter. Reponds en francais, "
+                    f"pedagogique et concret. Utilise l'outil fourni pour "
                     f"structurer ta reponse."
                 ),
             }],
