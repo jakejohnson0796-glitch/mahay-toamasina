@@ -31,6 +31,40 @@
     </div>
   </section>
 
+  {% if notions_a_revoir %}
+  <section class="ai-section ai-remediation-section" aria-labelledby="notions-faibles-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Ton parcours personnalisé</span>
+        <h2 id="notions-faibles-title">Commence par une notion qui te résiste</h2>
+        <p>Le Tuteur IA et le Quiz IA travaillent ici sur les mêmes difficultés détectées dans tes réponses.</p>
+      </div>
+    </div>
+    <div class="ai-remediation-grid">
+      {% for n in notions_a_revoir %}
+      {% set total_n = n.nb_questions if n.nb_questions else 1 %}
+      <article class="ai-remediation-card">
+        <span>{{ n.matiere }}</span>
+        <h3>{{ n.notion }}</h3>
+        <p>{{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} / {{ n.nb_questions }} questions</p>
+        <div class="ai-remediation-actions">
+          <form method="post" action="/tuteur/demander">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ n.id }}">
+            <input type="hidden" name="question" value="Explique-moi {{ n.notion }} en {{ n.matiere }} comme à un étudiant qui a déjà fait des erreurs sur cette notion. Donne-moi une méthode, un exemple et un exercice progressif.">
+            <button class="bouton bouton-secondaire" type="submit">Comprendre</button>
+          </form>
+          <form method="post" action="/quiz/cible">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ n.id }}">
+            <button class="bouton bouton-primaire" type="submit">S'entraîner</button>
+          </form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
   <section class="ai-section" id="question" aria-labelledby="question-title">
     <div class="ai-tuteur-layout">
       <main class="ai-tuteur-main">
