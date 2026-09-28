@@ -56,17 +56,15 @@ def upgrade() -> None:
 
     op.add_column("sessiontuteur", sa.Column("notion", sa.String(), nullable=True))
     op.add_column("sessiontuteur", sa.Column("progression_id", sa.Integer(), nullable=True))
-    op.create_foreign_key(
-        "fk_sessiontuteur_progression_notion",
+    op.create_index(
+        "ix_sessiontuteur_progression_id",
         "sessiontuteur",
-        "progressionnotion",
         ["progression_id"],
-        ["id"],
     )
 
 
 def downgrade() -> None:
-    op.drop_constraint("fk_sessiontuteur_progression_notion", "sessiontuteur", type_="foreignkey")
+    op.drop_index("ix_sessiontuteur_progression_id", table_name="sessiontuteur")
     op.drop_column("sessiontuteur", "progression_id")
     op.drop_column("sessiontuteur", "notion")
     op.drop_index("ix_progression_notion_utilisateur_score", table_name="progressionnotion")
