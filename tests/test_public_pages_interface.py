@@ -48,6 +48,6 @@ def test_faq_contient_recherche_categories_aide_et_avis():
 
 def test_faq_js_est_accessible_au_clavier():
     js = lire("app/static/js/faq.js")
-    assert 'event.key === "Escape"' in js
+    assert 'event.key !== "Escape"' in js
     assert 'event.key === "Enter"' in js
     assert 'event.key === " "' in js
