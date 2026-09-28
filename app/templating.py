@@ -24,6 +24,19 @@ from .auth import jours_inactivite as _jours_inactivite
 templates.env.globals["jours_inactivite"] = _jours_inactivite
 
 
+def _jours_depuis_creation(utilisateur, maintenant=None) -> int:
+    """Nombre de jours complets depuis la creation du compte."""
+    from datetime import datetime as _datetime
+
+    if not utilisateur or not utilisateur.date_creation:
+        return 0
+    maintenant = maintenant or _datetime.utcnow()
+    return max(0, (maintenant - utilisateur.date_creation).days)
+
+
+templates.env.globals["jours_depuis_creation"] = _jours_depuis_creation
+
+
 def _version_asset(chemin_relatif: str) -> str:
     """Global Jinja utilise dans base.html pour suffixer les fichiers
     statiques (style.css, navigation.js) d'un parametre ?v=<hash> —
