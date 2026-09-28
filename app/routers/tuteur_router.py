@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request, Depends, Form
+from typing import Optional
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
@@ -7,9 +8,10 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_premium_ou_redirection
-from ..models import SessionTuteur
+from ..models import SessionTuteur, ProgressionNotion
 from .. import ai_quiz
 from ..rate_limit import limite_depassee
+from .. import quiz as quiz_module
 
 router = APIRouter()
 
@@ -30,15 +32,27 @@ def page_tuteur(request: Request, session: Session = Depends(get_session)):
         .limit(NB_HISTORIQUE_AFFICHE)
     ).all()
 
+    notions = quiz_module.notions_a_revoir(session, utilisateur.id, limit=8)
+
     return templates.TemplateResponse(
         request,
         "tuteur.html",
-        {"utilisateur": utilisateur, "historique": historique},
+        {
+            "utilisateur": utilisateur,
+            "historique": historique,
+            "notions_a_revoir": notions,
+        },
     )
 
 
 @router.post("/tuteur/demander")
-def demander_tuteur(request: Request, question: str = Form(...), session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+def demander_tuteur(
+    request: Request,
+    question: str = Form(...),
+    progression_id: Optional[int] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
@@ -52,10 +66,22 @@ def demander_tuteur(request: Request, question: str = Form(...), session: Sessio
     if not question:
         return RedirectResponse("/tuteur?erreur=question_requise", status_code=303)
 
-    reponse = ai_quiz.generer_reponse_tuteur(question)
+    progression = None
+    if progression_id:
+        progression = session.get(ProgressionNotion, progression_id)
+        if not progression or progression.utilisateur_id != utilisateur.id or progression.nb_erreurs <= 0:
+            progression = None
+
+    reponse = ai_quiz.generer_reponse_tuteur(
+        question,
+        notion=progression.notion if progression else None,
+        matiere=progression.matiere if progression else None,
+    )
 
     session_tuteur = SessionTuteur(
         utilisateur_id=utilisateur.id,
+        notion=progression.notion if progression else None,
+        progression_id=progression.id if progression else None,
         question=question,
         explication=reponse["explication"],
         exemple=reponse["exemple"],
