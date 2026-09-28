@@ -170,7 +170,7 @@
         <span class="tb-sidebar-compte-identite">
           <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
           <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% else %}Mon compte{% endif %}</span>
-          {% set jours_compte = jours_inactivite(utilisateur) %}
+          {% set jours_compte = calculer_jours_inactivite(utilisateur) %}
           <span class="tb-sidebar-compte-activite">{{ jours_compte }} j. inactif</span>
         </span>
         {% endif %}
