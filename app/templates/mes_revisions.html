@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+{% block titre %}Mes révisions — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<div class="contenu-clair hub-page">
+  <section class="hub-hero">
+    <div>
+      <p class="eyebrow">Mon espace d'apprentissage</p>
+      <h1>Mes révisions</h1>
+      <p class="hub-hero-sous-titre">Une seule page pour voir ce que tu as étudié, tes résultats et les notions à revoir.</p>
+    </div>
+    <a class="bouton bouton-primaire" href="/quiz">Continuer avec un quiz →</a>
+  </section>
+
+  <section class="hub-kpis" aria-label="Résumé de mes révisions">
+    <div class="hub-kpi"><strong>{{ nb_documents }}</strong><span>documents consultés</span></div>
+    <div class="hub-kpi"><strong>{{ nb_quiz }}</strong><span>quiz récents</span></div>
+    <div class="hub-kpi"><strong>{{ nb_sessions_tuteur }}</strong><span>sessions Tuteur IA</span></div>
+    <div class="hub-kpi"><strong>{{ progression_matieres|length }}</strong><span>matières suivies</span></div>
+  </section>
+
+  <section class="hub-section">
+    <div class="hub-section-entete">
+      <div><p class="eyebrow">Comprendre tes résultats</p><h2>Progression par matière</h2></div>
+      <a href="/quiz">Faire un nouveau quiz →</a>
+    </div>
+    {% if progression_matieres %}
+    <div class="progression-grille">
+      {% for p in progression_matieres %}
+      <article class="progression-carte">
+        <div class="progression-entete">
+          <div>
+            <strong>{{ p.matiere }}</strong>
+            <span>{{ p.nb_quiz }} quiz · dernier le {{ p.dernier.strftime("%d/%m/%Y") }}</span>
+          </div>
+          <b>{{ p.moyenne }}%</b>
+        </div>
+        <div class="progression-barre"><span style="width: {{ p.moyenne }}%"></span></div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="hub-vide hub-vide-compact">
+      <h3>Pas encore assez de données</h3>
+      <p>Termine ton premier quiz pour voir apparaître ta progression par matière.</p>
+      <a class="bouton bouton-primaire" href="/quiz">Commencer un quiz</a>
+    </div>
+    {% endif %}
+  </section>
+
+  <div class="hub-deux-colonnes">
+    <section class="hub-section">
+      <div class="hub-section-entete"><div><p class="eyebrow">Historique</p><h2>Documents récents</h2></div><a href="/documents">Bibliothèque →</a></div>
+      {% if consultations %}
+      <div class="hub-liste">
+        {% for consultation, doc in consultations %}
+        <a class="hub-ligne" href="/documents/{{ doc.id }}/telecharger">
+          <span class="hub-ligne-icone">{{ icone("documents", 18) }}</span>
+          <span class="hub-ligne-texte"><strong>{{ doc.titre }}</strong><small>{{ doc.matiere }} · {{ doc.annee }}</small></span>
+          <time>{{ consultation.date_consultation.strftime("%d/%m %H:%M") }}</time>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="hub-vide hub-vide-compact"><p>Aucun document consulté.</p><a href="/documents">Explorer les documents →</a></div>
+      {% endif %}
+    </section>
+
+    <section class="hub-section">
+      <div class="hub-section-entete"><div><p class="eyebrow">Résultats</p><h2>Derniers quiz</h2></div><a href="/quiz">Quiz IA →</a></div>
+      {% if quiz %}
+      <div class="hub-liste">
+        {% for q in quiz[:10] %}
+        <div class="hub-ligne">
+          <span class="hub-ligne-icone">{{ icone("quiz", 18) }}</span>
+          <span class="hub-ligne-texte"><strong>{{ q.matiere }}</strong><small>{{ q.niveau }} · {{ q.nb_questions }} questions</small></span>
+          <b>{{ q.score }}/{{ q.nb_questions }}</b>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="hub-vide hub-vide-compact"><p>Aucun quiz terminé.</p><a href="/quiz">Commencer →</a></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="hub-section">
+    <div class="hub-section-entete"><div><p class="eyebrow">Mémoire d'apprentissage</p><h2>Dernières questions au Tuteur IA</h2></div><a href="/tuteur">Poser une question →</a></div>
+    {% if sessions_tuteur %}
+    <div class="hub-tuteur-grille">
+      {% for s in sessions_tuteur %}
+      <article class="hub-tuteur-carte">
+        <span>{{ s.date_creation.strftime("%d/%m/%Y %H:%M") }}</span>
+        <h3>{{ s.question[:140] }}{% if s.question|length > 140 %}…{% endif %}</h3>
+        <p>{{ s.exercice[:180] }}{% if s.exercice|length > 180 %}…{% endif %}</p>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="hub-vide hub-vide-compact"><p>Aucune session Tuteur IA pour le moment.</p></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
