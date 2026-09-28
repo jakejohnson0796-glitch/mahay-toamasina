@@ -24,6 +24,46 @@ from .auth import jours_inactivite as _jours_inactivite
 templates.env.globals["jours_inactivite"] = _jours_inactivite
 
 
+def _jours_depuis_creation(utilisateur, maintenant=None) -> int:
+    """Nombre de jours complets depuis la creation du compte."""
+    from datetime import datetime as _datetime
+
+    if not utilisateur or not utilisateur.date_creation:
+        return 0
+    maintenant = maintenant or _datetime.utcnow()
+    return max(0, (maintenant - utilisateur.date_creation).days)
+
+
+templates.env.globals["jours_depuis_creation"] = _jours_depuis_creation
+
+
+def _nb_notifications_admin_nouvelles(request) -> int:
+    """Compteur leger pour afficher l'alerte admin dans la navigation."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return 0
+
+    from .database import engine
+    from .models import Utilisateur, Notification, TypeNotification
+    from sqlmodel import select
+
+    with Session(engine) as session:
+        admin = session.get(Utilisateur, user_id)
+        if not admin or admin.role.value != "admin":
+            return 0
+        return len(
+            session.exec(
+                select(Notification.id)
+                .where(Notification.destinataire_id == admin.id)
+                .where(Notification.type_notification == TypeNotification.NOUVELLE_INSCRIPTION)
+                .where(Notification.lu == False)  # noqa: E712
+            ).all()
+        )
+
+
+templates.env.globals["nb_notifications_admin_nouvelles"] = _nb_notifications_admin_nouvelles
+
+
 def _version_asset(chemin_relatif: str) -> str:
     """Global Jinja utilise dans base.html pour suffixer les fichiers
     statiques (style.css, navigation.js) d'un parametre ?v=<hash> —
