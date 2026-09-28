@@ -758,6 +758,7 @@ class TypeNotification(str, Enum):
     MENTION = "mention"
     REPONSE_FEEDBACK = "reponse_feedback"
     INACTIVITE_3_JOURS = "inactivite_3_jours"
+    NOUVELLE_INSCRIPTION = "nouvelle_inscription"
 
 
 class Notification(SQLModel, table=True):
