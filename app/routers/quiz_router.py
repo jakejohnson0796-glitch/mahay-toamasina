@@ -275,14 +275,39 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
     if not tentative or tentative.date_soumission is None:
         return RedirectResponse("/quiz", status_code=303)
 
+    questions_resultat = quiz_module.questions(tentative)
+    reponses_resultat = quiz_module.reponses(tentative) or []
+    notions_detectees = []
+    vus = set()
+    for i, question in enumerate(questions_resultat):
+        correcte = i < len(reponses_resultat) and reponses_resultat[i] == question.get("index_bonne_reponse")
+        if correcte:
+            continue
+        notion = (question.get("notion") or "").strip() or f"Notions générales — {tentative.matiere}"
+        if notion in vus:
+            continue
+        vus.add(notion)
+        progression = session.exec(
+            select(ProgressionNotion).where(
+                ProgressionNotion.utilisateur_id == utilisateur.id,
+                ProgressionNotion.matiere == tentative.matiere,
+                ProgressionNotion.notion == notion,
+            )
+        ).first()
+        notions_detectees.append({
+            "notion": notion,
+            "progression_id": progression.id if progression else None,
+        })
+
     return templates.TemplateResponse(
         request,
         "quiz_resultat.html",
         {
             "utilisateur": utilisateur,
             "tentative": tentative,
-            "questions": quiz_module.questions(tentative),
-            "reponses": quiz_module.reponses(tentative),
+            "questions": questions_resultat,
+            "reponses": reponses_resultat,
+            "notions_detectees": notions_detectees,
         },
     )
 
