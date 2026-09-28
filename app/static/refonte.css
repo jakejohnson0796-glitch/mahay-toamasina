@@ -1888,3 +1888,117 @@ main h2 {
     overscroll-behavior: none;
   }
 }
+
+
+/* ---------- Administration : nouveaux arrivants ---------- */
+.ops-nav-alert {
+  position: relative;
+}
+
+.ops-nav-alert.is-alert {
+  border-color: rgba(228,125,85,.28);
+  background: rgba(228,125,85,.07);
+  color: var(--refonte-coral);
+}
+
+.ops-new-users {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid var(--content-border);
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 95% 10%, rgba(228,125,85,.10), transparent 14rem),
+    var(--content-surface);
+  box-shadow: var(--refonte-shadow-sm);
+}
+
+.ops-new-users-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:.8rem;
+  margin-bottom:.7rem;
+}
+
+.ops-new-users-head h2 {
+  margin:.2rem 0 .2rem;
+  font-size:1.15rem;
+}
+
+.ops-new-users-head p {
+  margin:0;
+  color:var(--content-text-muted);
+  font-size:.62rem;
+  line-height:1.45;
+}
+
+.ops-new-users-list {
+  display:grid;
+  gap:.5rem;
+}
+
+.ops-new-user {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:.8rem;
+  align-items:center;
+  padding:.7rem;
+  border:1px solid var(--content-border);
+  border-radius:12px;
+  background:var(--content-bg);
+}
+
+.ops-new-user-main {
+  min-width:0;
+}
+
+.ops-new-user-main strong {
+  display:block;
+  color:var(--content-text);
+  font-size:.74rem;
+}
+
+.ops-new-user-main span {
+  display:block;
+  margin-top:.13rem;
+  color:var(--content-text-muted);
+  font-size:.57rem;
+  line-height:1.4;
+}
+
+.ops-new-user-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:.35rem;
+}
+
+.ops-new-users-empty {
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  padding:.75rem;
+  border:1px dashed var(--content-border);
+  border-radius:11px;
+  background:var(--content-bg);
+  color:var(--content-text-muted);
+  font-size:.62rem;
+}
+
+.ops-new-users-empty strong {
+  color:var(--content-text);
+}
+
+@media (max-width: 700px) {
+  .ops-new-users-head,
+  .ops-new-user {
+    grid-template-columns:1fr;
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .ops-new-user-actions {
+    justify-content:flex-start;
+  }
+}
