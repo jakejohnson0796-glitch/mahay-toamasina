@@ -141,7 +141,6 @@ def marquer_notifications_nouvelles_inscriptions_lues(
         .where(Notification.lu == False)  # noqa: E712
     ).all()
 
-    maintenant = __import__("datetime").datetime.utcnow()
     for notification in notifications:
         notification.lu = True
         session.add(notification)
