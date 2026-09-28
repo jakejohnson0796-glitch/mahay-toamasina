@@ -349,6 +349,41 @@ class Document(SQLModel, table=True):
     cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id", index=True)
 
 
+class ProgressionNotion(SQLModel, table=True):
+    """Etat d'apprentissage d'une notion pour un etudiant.
+
+    Les compteurs sont mis a jour a chaque question d'un quiz termine.
+    Ils permettent de distinguer une faiblesse persistante d'une notion
+    deja consolidee, sans recalculer tout l'historique a chaque affichage.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    matiere: str = Field(index=True)
+    notion: str = Field(index=True)
+    niveau: Optional[str] = None
+    nb_questions: int = Field(default=0)
+    nb_reussites: int = Field(default=0)
+    nb_erreurs: int = Field(default=0)
+    derniere_erreur_le: Optional[datetime] = None
+    derniere_reussite_le: Optional[datetime] = None
+    date_maj: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "utilisateur_id",
+            "matiere",
+            "notion",
+            name="uq_progression_notion_utilisateur_matiere_notion",
+        ),
+        Index(
+            "ix_progression_notion_utilisateur_score",
+            "utilisateur_id",
+            "nb_erreurs",
+            "nb_reussites",
+        ),
+    )
+
+
 class TentativeQuiz(SQLModel, table=True):
     """Un quiz genere pour un etudiant : le meme enregistrement sert
     d'abord de 'quiz en cours' (questions generees, pas encore repondu),
@@ -824,6 +859,7 @@ class SessionTuteur(SQLModel, table=True):
     d'historique consultable plus tard."""
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    notion: Optional[str] = None
     question: str
     explication: str
     exemple: str
