@@ -195,6 +195,7 @@ def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List
     session.add(tentative)
     session.commit()
     session.refresh(tentative)
+    mettre_a_jour_progression_notion(session, tentative, qs, reponses_soumises)
     return tentative
 
 
