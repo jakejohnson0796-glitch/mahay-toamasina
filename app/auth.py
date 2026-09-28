@@ -96,6 +96,26 @@ def enregistrer_activite(
     return jours
 
 
+def notifier_nouvelle_inscription_aux_admins(utilisateur: Utilisateur, session: Session) -> int:
+    """Cree une notification interne pour chaque administrateur."""
+    administrateurs = session.exec(
+        select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)
+    ).all()
+    for administrateur in administrateurs:
+        session.add(
+            Notification(
+                destinataire_id=administrateur.id,
+                type_notification=TypeNotification.NOUVELLE_INSCRIPTION,
+                contenu=(
+                    f"Nouvelle inscription : {utilisateur.nom} "
+                    f"(compte cree le {utilisateur.date_creation.strftime('%d/%m/%Y')})."
+                ),
+                acteur_id=utilisateur.id,
+            )
+        )
+    return len(administrateurs)
+
+
 def creer_rappel_inactivite_si_necessaire(
     utilisateur: Utilisateur,
     session: Session,
