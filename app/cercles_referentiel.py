@@ -129,7 +129,13 @@ def assurer_cercles_pour_groupe_parcours(
                     # silencieusement dans ce cas, une decision humaine
                     # est necessaire (ou vont ces membres ?) — signale au
                     # lieu d'agir a leur place.
-                    logger.warning(
+                    # Le scan global de assurer_cercles_referentiel() produit deja
+                    # un resume limite aux premiers exemples. Cette branche est
+                    # appelee une fois par groupe de parcours : logger.warning()
+                    # ici recreait donc des centaines de lignes identiques au demarrage.
+                    # On garde le detail disponible en DEBUG pour diagnostic ponctuel,
+                    # sans polluer les logs de production.
+                    logger.debug(
                         "Cercle #%d (%s, niveau %s) perime mais compte %d membre(s) reel(s) — "
                         "laisse ACTIF, revue admin necessaire.",
                         cercle.id, cercle.nom, cercle.niveau, nb_membres_reels,
