@@ -5,7 +5,7 @@ le router orchestre la requete HTTP, ce module sait generer/corriger un
 quiz et calculer les statistiques.
 """
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from sqlmodel import Session, select
@@ -105,14 +105,57 @@ def reponses(tentative: TentativeQuiz) -> Optional[List[Optional[int]]]:
     return json.loads(tentative.reponses_json)
 
 
+def _score_maitrise_effectif(progression: ProgressionNotion) -> int:
+    """Retourne le score de maitrise, avec un repli compatible avec les
+    anciennes lignes creees avant l'introduction du score persistant."""
+    if progression.score_maitrise:
+        return max(0, min(100, progression.score_maitrise))
+    if progression.nb_questions:
+        return max(
+            0,
+            min(100, round(progression.nb_reussites * 100 / progression.nb_questions)),
+        )
+    return 0
+
+
+def revision_due(progression: ProgressionNotion, maintenant: Optional[datetime] = None) -> bool:
+    """Indique si une notion doit etre revisee maintenant."""
+    maintenant = maintenant or datetime.utcnow()
+    return progression.prochaine_revision_le is None or progression.prochaine_revision_le <= maintenant
+
+
+def _intervalle_revision_jours(
+    score_maitrise: int,
+    serie_reussites: int,
+    echec_pendant_revision: bool,
+) -> int:
+    """Calcule le prochain intervalle de revision selon la maitrise observee."""
+    if echec_pendant_revision or score_maitrise < 50:
+        return 1
+    if score_maitrise < 65:
+        return 2
+    if score_maitrise < 80:
+        return 4
+    if score_maitrise < 90:
+        return 7
+    if score_maitrise < 97:
+        return 14
+    # Une longue serie de reussites permet d'espacer jusqu'a 30 jours.
+    return 30 if serie_reussites >= 3 else 14
+
+
 def mettre_a_jour_progression_notion(
     session: Session,
     tentative: TentativeQuiz,
     questions_quiz: List[dict],
     reponses_soumises: List[Optional[int]],
 ) -> None:
-    """Met a jour la memoire d'apprentissage apres un quiz termine."""
+    """Met a jour la memoire d'apprentissage apres un quiz termine et
+    recalcule la prochaine revision de chaque notion rencontree."""
     maintenant = datetime.utcnow()
+    progressions_touchees: Dict[int, ProgressionNotion] = {}
+    echecs_pendant_revision = set()
+
     for index, question in enumerate(questions_quiz):
         notion = (question.get("notion") or "").strip()
         if not notion:
@@ -130,7 +173,11 @@ def mettre_a_jour_progression_notion(
                 matiere=tentative.matiere,
                 notion=notion,
                 niveau=tentative.niveau,
+                score_maitrise=50,
             )
+        elif not progression.score_maitrise and progression.nb_questions:
+            progression.score_maitrise = _score_maitrise_effectif(progression)
+
         progression.niveau = tentative.niveau
         progression.nb_questions += 1
         correcte = (
@@ -140,13 +187,73 @@ def mettre_a_jour_progression_notion(
         )
         if correcte:
             progression.nb_reussites += 1
+            progression.serie_reussites += 1
+            progression.score_maitrise = min(
+                100,
+                progression.score_maitrise
+                + max(4, round((100 - progression.score_maitrise) * 0.18)),
+            )
             progression.derniere_reussite_le = maintenant
         else:
             progression.nb_erreurs += 1
+            progression.serie_reussites = 0
+            progression.score_maitrise = max(
+                0,
+                progression.score_maitrise
+                - max(8, round(max(1, progression.score_maitrise) * 0.22)),
+            )
             progression.derniere_erreur_le = maintenant
+            echecs_pendant_revision.add(notion)
+
         progression.date_maj = maintenant
+        progressions_touchees[id(progression)] = progression
         session.add(progression)
+
+    for progression in progressions_touchees.values():
+        progression.nb_revisions += 1
+        progression.prochaine_revision_le = maintenant + timedelta(
+            days=_intervalle_revision_jours(
+                progression.score_maitrise,
+                progression.serie_reussites,
+                progression.notion in echecs_pendant_revision,
+            )
+        )
+        session.add(progression)
+
     session.commit()
+
+
+def plan_revision_du_jour(
+    session: Session,
+    utilisateur_id: int,
+    limit: int = 8,
+) -> List[ProgressionNotion]:
+    """Construit automatiquement le plan du jour.
+
+    Une notion est proposee si sa date de revision est echue ou si sa
+    maitrise reste sous 75 %. Les revisions echues passent avant les
+    notions faibles non echues, puis on priorise les scores les plus bas.
+    """
+    maintenant = datetime.utcnow()
+    elements = session.exec(
+        select(ProgressionNotion)
+        .where(ProgressionNotion.utilisateur_id == utilisateur_id)
+    ).all()
+
+    elements = [
+        p for p in elements
+        if p.nb_questions > 0
+        and (revision_due(p, maintenant) or _score_maitrise_effectif(p) < 75)
+    ]
+    elements.sort(
+        key=lambda p: (
+            0 if revision_due(p, maintenant) else 1,
+            _score_maitrise_effectif(p),
+            -(p.nb_erreurs),
+            p.date_maj,
+        )
+    )
+    return elements[:limit]
 
 
 def notions_a_revoir(
@@ -154,24 +261,9 @@ def notions_a_revoir(
     utilisateur_id: int,
     limit: int = 8,
 ) -> List[ProgressionNotion]:
-    """Renvoie les notions les plus fragiles, priorisees par taux d'erreur."""
-    elements = session.exec(
-        select(ProgressionNotion)
-        .where(ProgressionNotion.utilisateur_id == utilisateur_id)
-    ).all()
-    elements = [
-        p for p in elements
-        if p.nb_questions > 0 and p.nb_erreurs > 0
-    ]
-    elements.sort(
-        key=lambda p: (
-            p.nb_erreurs / p.nb_questions if p.nb_questions else 0,
-            p.nb_erreurs,
-            p.date_maj,
-        ),
-        reverse=True,
-    )
-    return elements[:limit]
+    """Compatibilite historique : les anciennes vues utilisent ce nom pour
+    afficher le plan de revision personnalise du jour."""
+    return plan_revision_du_jour(session, utilisateur_id, limit=limit)
 
 
 def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List[Optional[int]]) -> TentativeQuiz:
