@@ -392,6 +392,46 @@ class ProgressionNotion(SQLModel, table=True):
     )
 
 
+
+class ErreurIAEnsemble(SQLModel, table=True):
+    """Memoire persistante des signaux d'erreur detectes par l'ensemble IA.
+
+    On ne conserve pas le texte brut des critiques : seule une empreinte,
+    une categorie et des compteurs sont stockes. Cette memoire sert a
+    renforcer les prochaines generations sans journaliser le contenu
+    potentiellement sensible d'un etudiant ou d'un cours.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    type_interaction: str = Field(index=True)  # "quiz" ou "tuteur"
+    matiere: str = Field(default="", index=True)
+    niveau: str = Field(default="", index=True)
+    modele: str = Field(index=True)
+    categorie: str = Field(index=True)
+    signature: str = Field(index=True)
+    occurrences: int = Field(default=1)
+    premiere_detection_le: datetime = Field(default_factory=datetime.utcnow)
+    derniere_detection_le: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "type_interaction",
+            "matiere",
+            "niveau",
+            "modele",
+            "categorie",
+            "signature",
+            name="uq_erreur_ia_ensemble_signature",
+        ),
+        Index(
+            "ix_erreur_ia_ensemble_recurrence",
+            "type_interaction",
+            "matiere",
+            "niveau",
+            "occurrences",
+        ),
+    )
+
+
 class TentativeQuiz(SQLModel, table=True):
     """Un quiz genere pour un etudiant : le meme enregistrement sert
     d'abord de 'quiz en cours' (questions generees, pas encore repondu),
