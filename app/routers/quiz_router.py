@@ -1,7 +1,7 @@
 import random
 from typing import List, Optional
 
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Request, Depends, Form, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
@@ -48,6 +48,7 @@ def page_config_quiz(request: Request, session: Session = Depends(get_session)):
 @router.post("/quiz/generer")
 def generer_quiz(
     request: Request,
+    background_tasks: BackgroundTasks,
     matiere: Optional[str] = Form(None),
     matiere_libre: Optional[str] = Form(None),
     niveau: str = Form(...),
@@ -156,6 +157,7 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
 @router.post("/quiz/cible")
 def generer_quiz_cible(
     request: Request,
+    background_tasks: BackgroundTasks,
     progression_id: int = Form(...),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -194,11 +196,20 @@ def generer_quiz_cible(
     except quiz_module.QuizValidationError:
         return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
 
+    background_tasks.add_task(
+        quiz_module.verifier_tentative_en_arriere_plan,
+        tentative.id,
+    )
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
 @router.post("/quiz/examen/generer")
-def generer_examen(request: Request, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
+def generer_examen(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
     """Mode examen : matiere/niveau/difficulte tires au sort par le
     serveur (pas de formulaire a remplir), nombre de questions et duree
     fixes. Meme pipeline de generation/verification que le quiz normal."""
