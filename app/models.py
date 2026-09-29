@@ -1151,3 +1151,44 @@ class ReponseFeedback(SQLModel, table=True):
     reponse: str
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+
+
+class StatutTacheIA(str, Enum):
+    """Etat d'une tache IA durablee en base, traitee par le worker dedie."""
+    EN_ATTENTE = "en_attente"
+    EN_COURS = "en_cours"
+    TERMINEE = "terminee"
+    ECHOUEE = "echouee"
+
+
+class TacheIA(SQLModel, table=True):
+    """File durable pour les traitements IA hors chemin HTTP.
+
+    Le quiz est servi a l'etudiant avant cette tache. Le worker dedie prend
+    ensuite la relecture multi-modeles et la memoire IA depuis cette file.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    type_tache: str = Field(index=True)
+    tentative_quiz_id: int = Field(foreign_key="tentativequiz.id", index=True)
+    statut: StatutTacheIA = Field(default=StatutTacheIA.EN_ATTENTE, index=True)
+    nombre_essais: int = Field(default=0)
+    disponible_le: datetime = Field(default_factory=datetime.utcnow, index=True)
+    prise_en_charge_le: Optional[datetime] = None
+    terminee_le: Optional[datetime] = None
+    derniere_erreur: Optional[str] = None
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "type_tache",
+            "tentative_quiz_id",
+            name="uq_tache_ia_type_tentative",
+        ),
+        Index(
+            "ix_tache_ia_file",
+            "statut",
+            "disponible_le",
+            "id",
+        ),
+    )
