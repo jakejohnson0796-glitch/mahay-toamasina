@@ -56,9 +56,16 @@ def main() -> None:
             traiter_tache(tache)
             ai_queue.terminer_tache(tache.id)
         except Exception as erreur:
-            logger.exception("Erreur worker IA pour tache #%s.", getattr(tache, "id", None))
+            logger.exception(
+                "Erreur worker IA pour tache #%s.",
+                getattr(tache, "id", None),
+            )
             if tache is not None:
                 ai_queue.echouer_tache(tache.id, erreur)
+            else:
+                # DB/migration indisponible ou erreur transitoire :
+                # ralentit le polling pour ne pas remplir les logs.
+                time.sleep(10)
 
     logger.info("Worker IA arrete proprement.")
 
