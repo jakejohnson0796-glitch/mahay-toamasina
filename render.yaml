@@ -28,6 +28,16 @@ services:
         sync: false
       - key: GROQ_MODEL
         value: openai/gpt-oss-120b
+      - key: GROQ_CRITIC_MODEL
+        value: qwen/qwen3.8-27b
+      - key: AI_ENSEMBLE_ENABLED
+        value: "true"
+      - key: AI_ENSEMBLE_USE_GEMINI
+        value: "true"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
       # Compte administrateur initial : a renseigner dans Render.
       - key: ADMIN_PHONE
         sync: false
