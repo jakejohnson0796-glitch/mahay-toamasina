@@ -11,6 +11,7 @@ Comme pour la version precedente, on force une sortie structuree via le
 "tool calling" de l'API (schema JSON strict) plutot que de parser du texte
 libre : plus fiable qu'un json.loads() hasardeux.
 """
+import hashlib
 import json
 import logging
 from typing import Dict, List, Optional
@@ -25,6 +26,39 @@ from .config import parametres
 logger = logging.getLogger(__name__)
 
 _client: Optional[Groq] = None
+
+
+def _resume_audit_ensemble(audit: dict, confiant: bool) -> dict:
+    """Construit un resume de telemetry sans journaliser le contenu des reponses."""
+    critiques_resume = []
+    signatures = []
+    total_problemes = 0
+    for item in audit.get("critics") or []:
+        avis = item.get("avis") or {}
+        problemes = avis.get("problemes") or []
+        signatures_item = []
+        for probleme in problemes:
+            texte = " ".join(str(probleme).split()).lower()
+            if not texte:
+                continue
+            signature = hashlib.sha256(texte.encode("utf-8")).hexdigest()[:16]
+            signatures_item.append(signature)
+            signatures.append(signature)
+        total_problemes += len(problemes)
+        critiques_resume.append({
+            "model": item.get("model"),
+            "confiant": avis.get("confiant") is True,
+            "problemes": len(problemes),
+            "signatures": signatures_item[:5],
+        })
+    return {
+        "models": audit.get("models") or [],
+        "arbitration": audit.get("arbitration", "consensus"),
+        "confiant": bool(confiant),
+        "critics": critiques_resume,
+        "total_problemes": total_problemes,
+        "signatures": list(dict.fromkeys(signatures))[:10],
+    }
 
 
 def _obtenir_client() -> Groq:
@@ -373,10 +407,16 @@ def verifier_et_corriger_questions(questions: List[Dict], matiere: str, niveau: 
         logger.warning("Verification multi-modeles echouee: %s", erreur)
         return questions, False
 
+    resume_audit = _resume_audit_ensemble(audit, confiant)
     logger.info(
-        "Ensemble quiz: models=%s arbitration=%s",
-        audit.get("models"),
-        audit.get("arbitration", "consensus"),
+        "Ensemble audit quiz: models=%s arbitration=%s confiant=%s "
+        "critics=%s problemes=%s signatures=%s",
+        resume_audit["models"],
+        resume_audit["arbitration"],
+        resume_audit["confiant"],
+        resume_audit["critics"],
+        resume_audit["total_problemes"],
+        resume_audit["signatures"],
     )
     try:
         questions_finales = valider_questions(
@@ -491,17 +531,23 @@ def generer_reponse_tuteur(
     }
 
     try:
-        reponse_finale, _, audit = ai_ensemble.verifier_tuteur(
+        reponse_finale, confiant_tuteur, audit = ai_ensemble.verifier_tuteur(
             reponse=reponse_initiale,
             question=question,
             notion=notion,
             matiere=matiere,
             outil_tuteur=OUTIL_TUTEUR,
         )
+        resume_audit = _resume_audit_ensemble(audit, confiant_tuteur)
         logger.info(
-            "Ensemble tuteur: models=%s arbitration=%s",
-            audit.get("models"),
-            audit.get("arbitration", "consensus"),
+            "Ensemble audit tuteur: models=%s arbitration=%s confiant=%s "
+            "critics=%s problemes=%s signatures=%s",
+            resume_audit["models"],
+            resume_audit["arbitration"],
+            resume_audit["confiant"],
+            resume_audit["critics"],
+            resume_audit["total_problemes"],
+            resume_audit["signatures"],
         )
         return reponse_finale
     except Exception as erreur:
