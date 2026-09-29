@@ -65,12 +65,12 @@ def creer_tentative(
     difficulte: str,
     nb_questions: int,
 ) -> TentativeQuiz:
-    """Genere les questions via l'IA, les fait relire et auto-evaluer par
-    un second appel IA (voir _generer_quiz_confiant), puis cree la
-    tentative (pas encore repondue). Meme en cas d'echec de generation,
-    on cree quand meme la tentative avec le message d'erreur comme
-    unique 'question' — ca reste coherent avec le comportement existant,
-    et evite un ecran d'erreur brut."""
+    """Genere les questions via l'IA, valide localement puis cree la tentative.
+
+    La relecture multi-modeles n'est volontairement pas executee ici :
+    elle est declenchee en arriere-plan une fois la reponse HTTP envoyee,
+    afin que l'etudiant puisse commencer sans attendre les modeles critiques
+    et l'arbitre."""
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
     questions_verifiees = _generer_quiz_rapide(matiere, niveau, difficulte, nb_questions)
     if len(questions_verifiees) != nb_questions:
