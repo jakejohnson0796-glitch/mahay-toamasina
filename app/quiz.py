@@ -24,7 +24,6 @@ DIFFICULTES = ["Facile", "Moyen", "Difficile"]
 NB_QUESTIONS_POSSIBLES = [5, 10, 15, 20]
 
 
-ESSAIS_MAX_GENERATION = 1
 LONGUEUR_MAX_MATIERE = 120
 
 
@@ -428,11 +427,11 @@ NB_QUESTIONS_EXAMEN = 10
 
 
 def creer_tentative_examen(session: Session, utilisateur: Utilisateur, matiere: str, niveau: str, difficulte: str) -> TentativeQuiz:
-    """Cree une tentative en 'mode examen' : memes garanties de qualite
-    que creer_tentative() (verification IA, regeneration si pas confiant),
-    mais marquee avec un chronometre. La matiere/niveau/difficulte sont
-    deja tires au sort par l'appelant (voir quiz_router.py) — cette
-    fonction se contente de creer le quiz et d'activer le mode examen."""
+    """Cree une tentative en 'mode examen' : meme generation rapide et
+    validation locale que creer_tentative(), mais marquee avec un
+    chronometre. La relecture multi-modeles est placee ensuite dans la file
+    IA dediee par le router. La matiere/niveau/difficulte sont deja tires au
+    sort par l'appelant (voir quiz_router.py)."""
     tentative = creer_tentative(session, utilisateur, matiere, niveau, difficulte, NB_QUESTIONS_EXAMEN)
     tentative.mode_examen = True
     tentative.duree_secondes = NB_QUESTIONS_EXAMEN * SECONDES_PAR_QUESTION_EXAMEN
