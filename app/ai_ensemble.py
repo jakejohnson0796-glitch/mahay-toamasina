@@ -115,20 +115,24 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
     if time.time() < _GEMINI_COOLDOWN_UNTIL:
         return None
 
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{parametres.gemini_model}:generateContent"
-    )
+    # Gemini 3.8 Flash est toujours disponible via generateContent, mais
+    # Google recommande désormais l'Interactions API pour les nouveaux
+    # workflows, notamment les structured outputs. On utilise cette API
+    # ici pour éviter les incompatibilités de contrat entre anciennes et
+    # nouvelles configurations responseSchema/generationConfig.
+    url = "https://generativelanguage.googleapis.com/v1beta/interactions"
     payload = {
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.1,
-            "responseMimeType": "application/json",
-            "responseSchema": schema,
-        },
+        "model": parametres.gemini_model,
+        "input": prompt,
+        "store": False,
+        "response_format": [
+            {
+                "type": "text",
+                "mime_type": "application/json",
+                "schema": schema,
+            }
+        ],
     }
-    # Google recommande l'authentification via le header x-goog-api-key.
-    # Cela evite de faire apparaitre la cle dans l'URL et donc dans certains logs.
     headers = {
         "x-goog-api-key": parametres.gemini_api_key,
         "Content-Type": "application/json",
@@ -158,12 +162,19 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
                     data = response.json()
                     _GEMINI_TRANSIENT_FAILURES = 0
                     _GEMINI_COOLDOWN_UNTIL = 0.0
-                    text = (
-                        data.get("candidates", [{}])[0]
-                        .get("content", {})
-                        .get("parts", [{}])[0]
-                        .get("text", "")
-                    )
+
+                    text = data.get("output_text", "")
+                    if not text:
+                        for step in data.get("steps", []):
+                            if step.get("type") != "model_output":
+                                continue
+                            for item in step.get("content", []):
+                                if item.get("type") == "text" and item.get("text"):
+                                    text = item["text"]
+                                    break
+                            if text:
+                                break
+
                     return json.loads(text) if text else None
 
                 except httpx.RequestError as erreur:
@@ -180,6 +191,7 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
                         )
                         return None
                     time.sleep(min(1.5 * (2 ** (attempt - 1)), 8.0))
+
                 except httpx.HTTPStatusError as erreur:
                     status = erreur.response.status_code
                     if status in retryable_statuses:
@@ -193,10 +205,12 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
                             _GEMINI_COOLDOWN_SECONDS,
                         )
                     else:
+                        detail = (erreur.response.text or "").replace("\n", " ")[:500]
                         logger.warning(
-                            "Modele Gemini %s indisponible: HTTP %s.",
+                            "Modele Gemini %s indisponible: HTTP %s — %s",
                             parametres.gemini_model,
                             status,
+                            detail,
                         )
                     return None
     except Exception as erreur:
