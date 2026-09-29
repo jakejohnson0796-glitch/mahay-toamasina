@@ -321,6 +321,7 @@ def arbitrer_quiz(
         tool=outil_verification,
         tool_name="soumettre_verification",
         prompt=prompt,
+        max_completion_tokens=8192,
         reasoning_effort="high",
     )
 
@@ -539,6 +540,7 @@ def verifier_tuteur(
         tool=outil_tuteur,
         tool_name="repondre_tuteur",
         prompt=prompt,
+        max_completion_tokens=4096,
         reasoning_effort="high",
     )
     if not result:
