@@ -294,6 +294,7 @@ def assurer_cercles_referentiel(session: Session) -> int:
 
     total_crees = 0
     total_archives = 0
+    cercles_a_revoir = []
     for cercle in cercles_nationaux:
         representant = filieres_representantes.get(cercle.filiere_id)
         if not representant:
@@ -316,11 +317,7 @@ def assurer_cercles_referentiel(session: Session) -> int:
 
         nb_membres = membres_par_cercle.get(cercle.id, 0)
         if nb_membres:
-            logger.warning(
-                "Cercle #%d (%s, niveau %s) n'a plus d'offre universitaire active "
-                "correspondante mais compte %d membre(s) : laisse ACTIF pour revue admin.",
-                cercle.id, cercle.nom, cercle.niveau, nb_membres,
-            )
+            cercles_a_revoir.append((cercle.id, cercle.nom, cercle.niveau, nb_membres))
             continue
 
         cercle.statut = StatutCercle.ARCHIVE
@@ -329,6 +326,23 @@ def assurer_cercles_referentiel(session: Session) -> int:
 
     if total_archives:
         session.commit()
+
+    if cercles_a_revoir:
+        logger.warning(
+            "%d cercle(s) national/nationaux n'ont plus d'offre active correspondante "
+            "mais possedent des membres : laisses ACTIFS pour revue admin.",
+            len(cercles_a_revoir),
+        )
+        for cercle_id, nom, niveau, nb_membres in cercles_a_revoir[:10]:
+            logger.warning(
+                "  Revue a prevoir : cercle #%d (%s, niveau %s, %d membre(s)).",
+                cercle_id, nom, niveau, nb_membres,
+            )
+        if len(cercles_a_revoir) > 10:
+            logger.warning(
+                "  ... %d autre(s) cercle(s) similaires.",
+                len(cercles_a_revoir) - 10,
+            )
 
     for (mention_id, _nom_normalise), filieres_du_groupe in groupes.items():
         crees, archives = assurer_cercles_pour_groupe_parcours(session, mention_id, filieres_du_groupe, createur)
