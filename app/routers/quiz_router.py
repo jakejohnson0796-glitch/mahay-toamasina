@@ -80,6 +80,13 @@ def generer_quiz(
         tentative = quiz_module.creer_tentative(session, utilisateur, matiere_choisie, niveau, difficulte, nb_questions)
     except quiz_module.QuizValidationError:
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
+
+    # Le quiz est deja valide localement : la relecture multi-modeles est
+    # lancee apres la reponse pour ne pas faire attendre l'etudiant.
+    background_tasks.add_task(
+        quiz_module.verifier_tentative_en_arriere_plan,
+        tentative.id,
+    )
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
@@ -231,6 +238,11 @@ def generer_examen(
         tentative = quiz_module.creer_tentative_examen(session, utilisateur, matiere, niveau, difficulte)
     except quiz_module.QuizValidationError:
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
+
+    background_tasks.add_task(
+        quiz_module.verifier_tentative_en_arriere_plan,
+        tentative.id,
+    )
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
