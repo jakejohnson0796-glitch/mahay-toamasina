@@ -9,6 +9,7 @@ est temporairement indisponible.
 """
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
@@ -86,24 +87,67 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
             "responseSchema": schema,
         },
     }
+    # Google recommande l'authentification via le header x-goog-api-key.
+    # Cela evite de faire apparaitre la cle dans l'URL et donc dans certains logs.
+    headers = {
+        "x-goog-api-key": parametres.gemini_api_key,
+        "Content-Type": "application/json",
+    }
+    retryable_statuses = {429, 500, 502, 503, 504}
+
     try:
         with httpx.Client(timeout=45.0) as client:
-            response = client.post(
-                url,
-                params={"key": parametres.gemini_api_key},
-                json=payload,
-            )
-            response.raise_for_status()
-            data = response.json()
-        text = (
-            data.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "")
-        )
-        return json.loads(text) if text else None
+            for attempt in range(1, 4):
+                try:
+                    response = client.post(
+                        url,
+                        headers=headers,
+                        json=payload,
+                    )
+
+                    if response.status_code in retryable_statuses and attempt < 3:
+                        retry_after = response.headers.get("Retry-After")
+                        try:
+                            delay = float(retry_after) if retry_after else 1.5 * (2 ** (attempt - 1))
+                        except (TypeError, ValueError):
+                            delay = 1.5 * (2 ** (attempt - 1))
+                        time.sleep(min(max(delay, 0.5), 8.0))
+                        continue
+
+                    response.raise_for_status()
+                    data = response.json()
+                    text = (
+                        data.get("candidates", [{}])[0]
+                        .get("content", {})
+                        .get("parts", [{}])[0]
+                        .get("text", "")
+                    )
+                    return json.loads(text) if text else None
+
+                except httpx.RequestError as erreur:
+                    if attempt >= 3:
+                        logger.warning(
+                            "Modele Gemini %s indisponible apres %s tentatives (%s).",
+                            parametres.gemini_model,
+                            attempt,
+                            type(erreur).__name__,
+                        )
+                        return None
+                    time.sleep(min(1.5 * (2 ** (attempt - 1)), 8.0))
+                except httpx.HTTPStatusError as erreur:
+                    status = erreur.response.status_code
+                    logger.warning(
+                        "Modele Gemini %s indisponible: HTTP %s.",
+                        parametres.gemini_model,
+                        status,
+                    )
+                    return None
     except Exception as erreur:
-        logger.warning("Modele Gemini %s indisponible: %s", parametres.gemini_model, erreur)
+        logger.warning(
+            "Erreur inattendue Gemini %s: %s",
+            parametres.gemini_model,
+            type(erreur).__name__,
+        )
         return None
 
 
