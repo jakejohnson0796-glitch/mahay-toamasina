@@ -364,8 +364,16 @@ class ProgressionNotion(SQLModel, table=True):
     nb_questions: int = Field(default=0)
     nb_reussites: int = Field(default=0)
     nb_erreurs: int = Field(default=0)
+    # Score dynamique de maîtrise (0-100), mis à jour après chaque question.
+    score_maitrise: int = Field(default=0)
+    # Nombre de bonnes réponses consécutives sur cette notion.
+    serie_reussites: int = Field(default=0)
+    # Nombre de séances de révision ayant touché cette notion.
+    nb_revisions: int = Field(default=0)
     derniere_erreur_le: Optional[datetime] = None
     derniere_reussite_le: Optional[datetime] = None
+    # Prochaine date prévue par la révision espacée.
+    prochaine_revision_le: Optional[datetime] = None
     date_maj: datetime = Field(default_factory=datetime.utcnow)
 
     __table_args__ = (

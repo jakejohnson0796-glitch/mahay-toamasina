@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.models import ProgressionNotion, TentativeQuiz
 from app.quiz import (
     mettre_a_jour_progression_notion,
     notions_a_revoir,
+    plan_revision_du_jour,
 )
 from app.quiz_validation import valider_questions
 
@@ -86,6 +87,10 @@ def test_une_erreur_cree_une_progression_par_notion():
     assert progression.nb_reussites == 1
     assert progression.nb_erreurs == 1
     assert progression.derniere_erreur_le is not None
+    assert progression.score_maitrise == 46
+    assert progression.nb_revisions == 1
+    assert progression.prochaine_revision_le is not None
+    assert progression.prochaine_revision_le > datetime.utcnow() + timedelta(hours=23)
 
 
 def test_une_notion_fragile_est_priorisee():
@@ -116,5 +121,42 @@ def test_une_notion_fragile_est_priorisee():
     session.objects.extend([solide, faible])
 
     resultats = notions_a_revoir(session, 7, limit=2)
+
+    assert [p.id for p in resultats] == [1, 2]
+
+
+def test_plan_du_jour_priorise_une_revision_arrivee_a_echeance():
+    session = FakeSession()
+    maintenant = datetime.utcnow()
+    due = ProgressionNotion(
+        id=1,
+        utilisateur_id=7,
+        matiere="Mathématiques",
+        notion="Dérivées",
+        niveau="L1",
+        nb_questions=10,
+        nb_reussites=9,
+        nb_erreurs=1,
+        score_maitrise=88,
+        serie_reussites=3,
+        prochaine_revision_le=maintenant - timedelta(hours=1),
+        date_maj=maintenant - timedelta(days=10),
+    )
+    faible_mais_pas_due = ProgressionNotion(
+        id=2,
+        utilisateur_id=7,
+        matiere="Français",
+        notion="Concordance des temps",
+        niveau="L1",
+        nb_questions=10,
+        nb_reussites=4,
+        nb_erreurs=6,
+        score_maitrise=40,
+        prochaine_revision_le=maintenant + timedelta(days=2),
+        date_maj=maintenant,
+    )
+    session.objects.extend([faible_mais_pas_due, due])
+
+    resultats = plan_revision_du_jour(session, 7, limit=2)
 
     assert [p.id for p in resultats] == [1, 2]

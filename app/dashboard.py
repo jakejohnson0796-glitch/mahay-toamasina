@@ -360,4 +360,5 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
         "recommandations": recommandations(session, utilisateur),
         "echeances_a_venir": echeances_a_venir(session, utilisateur.id),
         "progression_matieres": progression_matieres(session, utilisateur),
+        "notions_a_revoir": quiz_module.plan_revision_du_jour(session, utilisateur.id, limit=6),
     }

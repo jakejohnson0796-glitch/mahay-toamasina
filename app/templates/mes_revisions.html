@@ -58,7 +58,7 @@
       </div>
       <a href="/tuteur">Ouvrir le Tuteur IA →</a>
     </div>
-    <p class="hub-section-intro">Ces notions ont généré des erreurs dans tes quiz. Gasy Mahay les remet en priorité dans ton parcours.</p>
+    <p class="hub-section-intro">Le système combine tes résultats et les dates de révision pour construire automatiquement les notions à travailler aujourd'hui.</p>
     <div class="hub-notions-grille">
       {% for n in notions_a_revoir %}
       {% set total_n = n.nb_questions if n.nb_questions else 1 %}
@@ -69,14 +69,17 @@
           <span class="hub-notion-score">{{ erreurs_pct }}% d'erreurs</span>
         </div>
         <h3>{{ n.notion }}</h3>
-        <p>{{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} sur {{ n.nb_questions }} question{{ "s" if n.nb_questions != 1 else "" }}</p>
+        <p>{{ n.score_maitrise }}% de maîtrise · {{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} sur {{ n.nb_questions }} question{{ "s" if n.nb_questions != 1 else "" }}</p>
+        {% if n.prochaine_revision_le %}<p>Révision prévue : {{ n.prochaine_revision_le.strftime("%d/%m/%Y") }}</p>{% endif %}
         <div class="hub-notion-actions">
+          {% if n.nb_erreurs > 0 %}
           <form method="post" action="/tuteur/demander">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
             <input type="hidden" name="progression_id" value="{{ n.id }}">
             <input type="hidden" name="question" value="Explique-moi {{ n.notion }} en {{ n.matiere }}, montre-moi l'erreur que je dois éviter et donne-moi une méthode simple pour réussir un exercice sur cette notion.">
             <button class="bouton bouton-secondaire" type="submit">Avec le Tuteur</button>
           </form>
+          {% endif %}
           <form method="post" action="/quiz/cible">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
             <input type="hidden" name="progression_id" value="{{ n.id }}">

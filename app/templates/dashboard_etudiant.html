@@ -172,15 +172,18 @@
       <div>
         <span>{{ n.matiere }}</span>
         <strong>{{ n.notion }}</strong>
-        <small>{{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} / {{ n.nb_questions }} questions</small>
+        <small>{{ n.score_maitrise }}% de maîtrise · {{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} / {{ n.nb_questions }} questions</small>
+        {% if n.prochaine_revision_le %}<small>Révision prévue : {{ n.prochaine_revision_le.strftime("%d/%m") }}</small>{% endif %}
       </div>
       <div class="tb-parcours-actions">
+        {% if n.nb_erreurs > 0 %}
         <form method="post" action="/tuteur/demander">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <input type="hidden" name="progression_id" value="{{ n.id }}">
           <input type="hidden" name="question" value="Explique-moi {{ n.notion }} et aide-moi à comprendre l'erreur que je fais sur cette notion.">
           <button class="bouton bouton-secondaire" type="submit">Tuteur</button>
         </form>
+        {% endif %}
         <form method="post" action="/quiz/cible">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <input type="hidden" name="progression_id" value="{{ n.id }}">
@@ -191,6 +194,7 @@
     {% endfor %}
   </div>
 </section>
+{% endif %}
 
 <div class="tb-grille-stats">
       <div class="tb-carte-stat tb-stat-vert">
