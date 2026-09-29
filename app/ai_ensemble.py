@@ -19,6 +19,12 @@ from .config import parametres
 
 logger = logging.getLogger(__name__)
 
+# Coupe-circuit court pour eviter de refaire plusieurs requetes Gemini
+# lorsque le fournisseur renvoie temporairement des 429/5xx.
+_GEMINI_COOLDOWN_UNTIL = 0.0
+_GEMINI_TRANSIENT_FAILURES = 0
+_GEMINI_COOLDOWN_SECONDS = 60.0
+
 
 def _groq_client() -> Optional[Groq]:
     if not parametres.groq_api_key:
@@ -102,7 +108,11 @@ def _groq_structured_tool(
 
 
 def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    global _GEMINI_COOLDOWN_UNTIL, _GEMINI_TRANSIENT_FAILURES
+
     if not _gemini_enabled():
+        return None
+    if time.time() < _GEMINI_COOLDOWN_UNTIL:
         return None
 
     url = (
@@ -146,6 +156,8 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
 
                     response.raise_for_status()
                     data = response.json()
+                    _GEMINI_TRANSIENT_FAILURES = 0
+                    _GEMINI_COOLDOWN_UNTIL = 0.0
                     text = (
                         data.get("candidates", [{}])[0]
                         .get("content", {})
@@ -156,21 +168,36 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
 
                 except httpx.RequestError as erreur:
                     if attempt >= 3:
+                        _GEMINI_TRANSIENT_FAILURES += 1
+                        _GEMINI_COOLDOWN_UNTIL = time.time() + _GEMINI_COOLDOWN_SECONDS
                         logger.warning(
-                            "Modele Gemini %s indisponible apres %s tentatives (%s).",
+                            "Modele Gemini %s indisponible apres %s tentatives (%s). "
+                            "Pause Gemini de %.0fs.",
                             parametres.gemini_model,
                             attempt,
                             type(erreur).__name__,
+                            _GEMINI_COOLDOWN_SECONDS,
                         )
                         return None
                     time.sleep(min(1.5 * (2 ** (attempt - 1)), 8.0))
                 except httpx.HTTPStatusError as erreur:
                     status = erreur.response.status_code
-                    logger.warning(
-                        "Modele Gemini %s indisponible: HTTP %s.",
-                        parametres.gemini_model,
-                        status,
-                    )
+                    if status in retryable_statuses:
+                        _GEMINI_TRANSIENT_FAILURES += 1
+                        _GEMINI_COOLDOWN_UNTIL = time.time() + _GEMINI_COOLDOWN_SECONDS
+                        logger.warning(
+                            "Modele Gemini %s indisponible: HTTP %s. "
+                            "Pause Gemini de %.0fs avant nouvelle tentative.",
+                            parametres.gemini_model,
+                            status,
+                            _GEMINI_COOLDOWN_SECONDS,
+                        )
+                    else:
+                        logger.warning(
+                            "Modele Gemini %s indisponible: HTTP %s.",
+                            parametres.gemini_model,
+                            status,
+                        )
                     return None
     except Exception as erreur:
         logger.warning(
