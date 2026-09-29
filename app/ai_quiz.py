@@ -17,7 +17,7 @@ import logging
 from typing import Dict, List, Optional
 
 from .quiz_validation import QuizValidationError, valider_questions
-from . import ai_ensemble
+from . import ai_ensemble, ai_memory
 
 from groq import Groq
 
@@ -292,6 +292,11 @@ def generer_quiz_cible(matiere: str, niveau: str, notion: str, nb_questions: int
     except RuntimeError as erreur:
         return _quiz_erreur("Generation de quiz IA non configuree.", str(erreur))
 
+    memoire = ai_memory.contexte_erreurs_recurrentes(
+        type_interaction="quiz",
+        matiere=matiere,
+        niveau=niveau,
+    )
     consigne_base = (
         f"Tu es un professeur a l'Universite de Toamasina. Genere exactement "
         f"{nb_questions} questions de revision en francais, niveau {niveau}, "
@@ -300,6 +305,7 @@ def generer_quiz_cible(matiere: str, niveau: str, notion: str, nb_questions: int
         f"frequentes liees a cette notion. 4 choix plausibles, une seule "
         f"bonne reponse, une explication courte et une notion courte et "
         f"precise pour chaque question. Utilise l'outil fourni."
+        f"{chr(10) + chr(10) + memoire if memoire else ''}"
     )
     consigne_renforcee = (
         f"{consigne_base}\n\nRappel : genere exactement {nb_questions} "
@@ -327,6 +333,11 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
     except RuntimeError as erreur:
         return _quiz_erreur("Generation de quiz IA non configuree.", str(erreur))
 
+    memoire = ai_memory.contexte_erreurs_recurrentes(
+        type_interaction="quiz",
+        matiere=matiere,
+        niveau=niveau,
+    )
     consigne_base = (
         f"Tu es un professeur a l'Universite de Toamasina (Madagascar). "
         f"Genere exactement {nb_questions} questions de revision a choix "
@@ -337,6 +348,7 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
         f"reponse, une explication courte et surtout une notion pedagogique "
         f"courte et precise pour chaque question. Utilise l'outil "
         f"fourni pour repondre."
+        f"{chr(10) + chr(10) + memoire if memoire else ''}"
     )
     consigne_renforcee = (
         f"{consigne_base}\n\nRappel important : le nombre de questions a "
@@ -408,6 +420,12 @@ def verifier_et_corriger_questions(questions: List[Dict], matiere: str, niveau: 
         return questions, False
 
     resume_audit = _resume_audit_ensemble(audit, confiant)
+    nb_signaux_memorises = ai_memory.enregistrer_audit_ensemble(
+        audit,
+        type_interaction="quiz",
+        matiere=matiere,
+        niveau=niveau,
+    )
     logger.info(
         "Ensemble audit quiz: models=%s arbitration=%s confiant=%s "
         "critics=%s problemes=%s signatures=%s",
@@ -417,6 +435,10 @@ def verifier_et_corriger_questions(questions: List[Dict], matiere: str, niveau: 
         resume_audit["critics"],
         resume_audit["total_problemes"],
         resume_audit["signatures"],
+    )
+    logger.info(
+        "Memoire ensemble quiz: %s signal(s) persiste(s)",
+        nb_signaux_memorises,
     )
     try:
         questions_finales = valider_questions(
@@ -489,6 +511,11 @@ def generer_reponse_tuteur(
     except RuntimeError as erreur:
         return _reponse_tuteur_erreur(f"Tuteur IA non configure : {erreur}")
 
+    memoire = ai_memory.contexte_erreurs_recurrentes(
+        type_interaction="tuteur",
+        matiere=matiere,
+        niveau=None,
+    )
     try:
         completion = client.chat.completions.create(
             model=parametres.groq_model,
@@ -509,6 +536,7 @@ def generer_reponse_tuteur(
                     f"insiste sur l'erreur a eviter. Reponds en francais, "
                     f"pedagogique et concret. Utilise l'outil fourni pour "
                     f"structurer ta reponse."
+                    f"{chr(10) + chr(10) + memoire if memoire else ''}"
                 ),
             }],
         )
@@ -539,6 +567,12 @@ def generer_reponse_tuteur(
             outil_tuteur=OUTIL_TUTEUR,
         )
         resume_audit = _resume_audit_ensemble(audit, confiant_tuteur)
+        nb_signaux_memorises = ai_memory.enregistrer_audit_ensemble(
+            audit,
+            type_interaction="tuteur",
+            matiere=matiere,
+            niveau=None,
+        )
         logger.info(
             "Ensemble audit tuteur: models=%s arbitration=%s confiant=%s "
             "critics=%s problemes=%s signatures=%s",
@@ -548,6 +582,10 @@ def generer_reponse_tuteur(
             resume_audit["critics"],
             resume_audit["total_problemes"],
             resume_audit["signatures"],
+        )
+        logger.info(
+            "Memoire ensemble tuteur: %s signal(s) persiste(s)",
+            nb_signaux_memorises,
         )
         return reponse_finale
     except Exception as erreur:
