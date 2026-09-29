@@ -76,6 +76,7 @@ OUTIL_QUIZ = {
                                 "items": {"type": "string"},
                                 "minItems": 3,
                                 "maxItems": 5,
+                                "uniqueItems": True,
                             },
                             "index_bonne_reponse": {
                                 "type": "integer",
