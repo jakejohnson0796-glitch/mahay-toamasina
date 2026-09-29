@@ -1,4 +1,4 @@
-from app import ai_ensemble
+from app import ai_ensemble, ai_quiz
 
 
 def _questions():
@@ -134,3 +134,28 @@ def test_tuteur_reste_une_reponse_unique(monkeypatch):
     assert result == base
     assert confiant is True
     assert len(audit["models"]) == 3
+
+
+
+def test_resume_audit_ne_journalise_pas_le_contenu_des_problemes():
+    audit = {
+        "models": ["openai/gpt-oss-120b", "qwen/qwen3.8-27b"],
+        "arbitration": "groq_arbiter",
+        "critics": [
+            {
+                "model": "qwen/qwen3.8-27b",
+                "avis": {
+                    "confiant": False,
+                    "problemes": ["La bonne reponse est ambiguë."],
+                },
+            }
+        ],
+    }
+
+    resume = ai_quiz._resume_audit_ensemble(audit, False)
+
+    assert resume["total_problemes"] == 1
+    assert resume["critics"][0]["problemes"] == 1
+    assert resume["signatures"]
+    assert "ambiguë" not in str(resume)
+    assert len(resume["signatures"][0]) == 16
