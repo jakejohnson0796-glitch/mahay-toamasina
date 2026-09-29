@@ -5,21 +5,26 @@ le router orchestre la requete HTTP, ce module sait generer/corriger un
 quiz et calculer les statistiques.
 """
 import json
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from sqlmodel import Session, select
 
+from .database import engine
 from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz, ProgressionNotion
 from . import ai_quiz
 from .quiz_validation import QuizValidationError, valider_questions
 
 from .referentiel import NIVEAUX  # centralise (voir app/referentiel.py) ; reexporte ici pour ne rien casser dans quiz_router.py qui importe quiz_module.NIVEAUX
+
+logger = logging.getLogger(__name__)
+
 DIFFICULTES = ["Facile", "Moyen", "Difficile"]
 NB_QUESTIONS_POSSIBLES = [5, 10, 15, 20]
 
 
-ESSAIS_MAX_GENERATION = 2
+ESSAIS_MAX_GENERATION = 1
 LONGUEUR_MAX_MATIERE = 120
 
 
@@ -36,30 +41,20 @@ def valider_parametres(matiere: str, niveau: str, difficulte: str, nb_questions:
     return matiere
 
 
-def _generer_quiz_confiant(matiere: str, niveau: str, difficulte: str, nb_questions: int) -> List[Dict]:
-    """Genere un quiz et le fait verifier par l'IA (voir
-    ai_quiz.verifier_et_corriger_questions). Si Groq n'est pas confiant
-    sur la totalite des questions, on retente une generation COMPLETE
-    depuis zero plutot que de livrer un quiz sur lequel l'IA elle-meme a
-    des doutes — jusqu'a ESSAIS_MAX_GENERATION tentatives, pour ne
-    jamais bloquer indefiniment l'etudiant. Si aucun essai n'aboutit a
-    une confiance totale, on livre quand meme le dernier resultat verifie
-    (un quiz relu vaut mieux qu'un quiz jamais livre)."""
-    dernieres_questions: List[Dict] = []
-    for _ in range(ESSAIS_MAX_GENERATION):
-        questions_generees = ai_quiz.generer_quiz_par_theme(matiere, niveau, difficulte, nb_questions)
-        try:
-            questions_generees = valider_questions(questions_generees, expected_count=nb_questions)
-        except QuizValidationError:
-            continue
-        questions_verifiees, confiant = ai_quiz.verifier_et_corriger_questions(questions_generees, matiere, niveau)
-        try:
-            dernieres_questions = valider_questions(questions_verifiees, expected_count=nb_questions)
-        except QuizValidationError:
-            continue
-        if confiant:
-            break
-    return dernieres_questions
+def _generer_quiz_rapide(matiere: str, niveau: str, difficulte: str, nb_questions: int) -> List[Dict]:
+    """Genere le quiz et ne fait sur le chemin utilisateur que la validation locale.
+
+    La relecture multi-modeles reste utile pour la qualite et la memoire de
+    l'ensemble, mais elle est lancee en arriere-plan apres l'envoi de la
+    reponse HTTP. Un etudiant ne doit jamais attendre Qwen + Gemini + arbitre
+    pour commencer son quiz."""
+    questions_generees = ai_quiz.generer_quiz_par_theme(
+        matiere,
+        niveau,
+        difficulte,
+        nb_questions,
+    )
+    return valider_questions(questions_generees, expected_count=nb_questions)
 
 
 def creer_tentative(
@@ -77,7 +72,7 @@ def creer_tentative(
     unique 'question' — ca reste coherent avec le comportement existant,
     et evite un ecran d'erreur brut."""
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
-    questions_verifiees = _generer_quiz_confiant(matiere, niveau, difficulte, nb_questions)
+    questions_verifiees = _generer_quiz_rapide(matiere, niveau, difficulte, nb_questions)
     if len(questions_verifiees) != nb_questions:
         raise QuizValidationError("Impossible de generer un quiz conforme apres plusieurs tentatives.")
 
@@ -305,11 +300,7 @@ def creer_tentative_ciblee(
     if not notion:
         raise QuizValidationError("La notion ciblee est obligatoire.")
     questions_ciblees = ai_quiz.generer_quiz_cible(matiere, niveau, notion, nb_questions)
-    questions_ciblees = valider_questions(questions_ciblees, expected_count=nb_questions)
-    questions_verifiees, _ = ai_quiz.verifier_et_corriger_questions(
-        questions_ciblees, matiere, niveau
-    )
-    questions_verifiees = valider_questions(questions_verifiees, expected_count=nb_questions)
+    questions_verifiees = valider_questions(questions_ciblees, expected_count=nb_questions)
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
         matiere=matiere,
@@ -322,6 +313,58 @@ def creer_tentative_ciblee(
     session.commit()
     session.refresh(tentative)
     return tentative
+
+
+def verifier_tentative_en_arriere_plan(tentative_id: int) -> None:
+    """Relit un quiz apres sa livraison, sans modifier le quiz affiche.
+
+    Cette tache conserve la securite du pipeline multi-modeles (critiques,
+    arbitrage si necessaire, memoire des erreurs) mais ne bloque plus la
+    requete HTTP qui doit seulement permettre a l'etudiant de commencer.
+    """
+    try:
+        from .models import TentativeQuiz as _TentativeQuiz
+
+        with Session(engine) as session:
+            tentative = session.get(_TentativeQuiz, tentative_id)
+            if not tentative:
+                return
+            try:
+                questions_tentative = questions(tentative)
+            except (ValueError, QuizValidationError):
+                logger.warning(
+                    "Verification arriere-plan ignoree pour le quiz #%s: questions invalides.",
+                    tentative_id,
+                )
+                return
+
+            questions_finales, confiant = ai_quiz.verifier_et_corriger_questions(
+                questions_tentative,
+                tentative.matiere,
+                tentative.niveau,
+            )
+            try:
+                valider_questions(
+                    questions_finales,
+                    expected_count=len(questions_tentative),
+                )
+            except QuizValidationError:
+                logger.warning(
+                    "Verification arriere-plan invalide pour le quiz #%s; quiz utilisateur conserve.",
+                    tentative_id,
+                )
+                return
+
+            logger.info(
+                "Verification arriere-plan quiz #%s terminee: confiant=%s.",
+                tentative_id,
+                confiant,
+            )
+    except Exception:
+        logger.exception(
+            "Erreur pendant la verification arriere-plan du quiz #%s.",
+            tentative_id,
+        )
 
 
 def historique(session: Session, utilisateur_id: int) -> List[TentativeQuiz]:
