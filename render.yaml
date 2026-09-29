@@ -60,3 +60,61 @@ services:
         sync: false
       - key: LIVEKIT_API_SECRET
         sync: false
+
+  # Worker IA dedie : traite Qwen/Gemini/GPT-OSS hors du processus HTTP.
+  # Render ne propose pas les background workers sur un plan compute Free ;
+  # ce service utilise donc le plus petit plan worker payant.
+  - type: worker
+    name: mahay-toamasina-ai-worker
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    startCommand: python -m app.ai_worker
+    envVars:
+      - key: ENVIRONNEMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: documents
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: GROQ_CRITIC_MODEL
+        value: qwen/qwen3.8-27b
+      - key: AI_ENSEMBLE_ENABLED
+        value: "true"
+      - key: AI_ENSEMBLE_USE_GEMINI
+        value: "true"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: ADMIN_PHONE
+        sync: false
+      - key: ADMIN_INITIAL_PASSWORD
+        sync: false
+      - key: SMTP_HOTE
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_UTILISATEUR
+        sync: false
+      - key: SMTP_MOT_DE_PASSE
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
