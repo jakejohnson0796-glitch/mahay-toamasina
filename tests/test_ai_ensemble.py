@@ -71,7 +71,7 @@ def test_deux_critiques_daccord_retourne_une_seule_sortie(monkeypatch):
 
     assert result == _questions()
     assert confiant is True
-    assert audit["arbitration"] if "arbitration" in audit else True
+    assert len(audit["critics"]) == 2
 
 
 def test_desaccord_des_critiques_passe_par_larbitre(monkeypatch):
