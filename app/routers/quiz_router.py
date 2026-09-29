@@ -231,10 +231,7 @@ def generer_examen(
     except quiz_module.QuizValidationError:
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
 
-    background_tasks.add_task(
-        quiz_module.verifier_tentative_en_arriere_plan,
-        tentative.id,
-    )
+    ai_queue.planifier_verification_quiz(tentative.id)
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
