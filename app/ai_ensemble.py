@@ -56,6 +56,7 @@ def _groq_structured_tool(
     kwargs: Dict[str, Any] = {
         "model": model,
         "max_completion_tokens": max_completion_tokens,
+        "temperature": 0.2,
         "tools": [tool],
         "tool_choice": {"type": "function", "function": {"name": tool_name}},
         "messages": [{"role": "user", "content": prompt}],
@@ -63,12 +64,41 @@ def _groq_structured_tool(
     if reasoning_effort and model.startswith("openai/gpt-oss"):
         kwargs["reasoning_effort"] = reasoning_effort
 
-    try:
-        completion = client.chat.completions.create(**kwargs)
-    except Exception as erreur:
-        logger.warning("Modele Groq %s indisponible: %s", model, erreur)
-        return None
-    return _extract_tool_json(completion)
+    for attempt in range(1, 3):
+        try:
+            if attempt == 2:
+                kwargs["temperature"] = 0.0
+                kwargs["messages"] = [{
+                    "role": "user",
+                    "content": (
+                        f"{prompt}\n\n"
+                        "IMPORTANT : ta sortie doit obligatoirement appeler l'outil "
+                        f"'{tool_name}' maintenant. Ne reponds pas en texte libre."
+                    ),
+                }]
+            completion = client.chat.completions.create(**kwargs)
+            parsed = _extract_tool_json(completion)
+            if parsed is not None:
+                return parsed
+            if attempt == 1:
+                time.sleep(0.3)
+                continue
+            logger.warning(
+                "Modele Groq %s n'a pas produit l'appel d'outil attendu.",
+                model,
+            )
+            return None
+        except Exception as erreur:
+            if attempt < 2:
+                time.sleep(0.5)
+                continue
+            logger.warning(
+                "Modele Groq %s indisponible apres %s tentatives: %s",
+                model,
+                attempt,
+                erreur,
+            )
+            return None
 
 
 def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]]:
