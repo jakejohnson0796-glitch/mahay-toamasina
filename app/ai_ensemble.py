@@ -222,7 +222,7 @@ OUTIL_CRITIQUE_QUIZ = {
                         "type": "object",
                         "properties": {
                             "question": {"type": "string"},
-                            "choix": {"type": "array", "items": {"type": "string"}},
+                            "choix": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 5, "uniqueItems": True},
                             "index_bonne_reponse": {"type": "integer"},
                             "explication": {"type": "string"},
                             "notion": {"type": "string"},
@@ -282,7 +282,7 @@ GEMINI_QUIZ_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "question": {"type": "string"},
-                    "choix": {"type": "array", "items": {"type": "string"}},
+                    "choix": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 5, "uniqueItems": True},
                     "index_bonne_reponse": {"type": "integer"},
                     "explication": {"type": "string"},
                     "notion": {"type": "string"},
