@@ -71,7 +71,22 @@ class Parametres:
     # --- Generation de quiz par IA (API Groq — gratuite) ---
     # Cle gratuite sur https://console.groq.com (aucune carte bancaire requise).
     groq_api_key: str = field(default_factory=lambda: os.getenv("GROQ_API_KEY", ""))
+    # Modele principal : generation + arbitrage final.
     groq_model: str = field(default_factory=lambda: os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"))
+    # Modele critique Groq : utilise la meme cle, mais un modele distinct.
+    groq_critic_model: str = field(default_factory=lambda: os.getenv("GROQ_CRITIC_MODEL", "qwen/qwen3.8-27b"))
+
+    # --- Ensemble multi-modeles ---
+    ai_ensemble_enabled: bool = field(
+        default_factory=lambda: os.getenv("AI_ENSEMBLE_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+    )
+    # Gemini est optionnel : sans cle, l'ensemble fonctionne deja avec deux
+    # modeles Groq (generateur + critique).
+    ai_ensemble_use_gemini: bool = field(
+        default_factory=lambda: os.getenv("AI_ENSEMBLE_USE_GEMINI", "true").lower() in {"1", "true", "yes", "on"}
+    )
+    gemini_api_key: str = field(default_factory=lambda: os.getenv("GEMINI_API_KEY", ""))
+    gemini_model: str = field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-3.8-flash"))
 
     # --- Email (SMTP) pour "mot de passe oublie" (voir app/email_utils.py
     # et /mot-de-passe-oublie dans auth_router.py) : GRATUIT, contrairement

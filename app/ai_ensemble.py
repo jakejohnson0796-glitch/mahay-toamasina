@@ -1,0 +1,487 @@
+"""Orchestrateur multi-modeles pour les fonctions pedagogiques de Gasy Mahay.
+
+Pipeline volontairement deterministe :
+    generateur -> critiques independantes -> arbitre -> sortie unique.
+
+Les fournisseurs secondaires restent optionnels. Le systeme continue avec
+Groq seul si GEMINI_API_KEY est absente ou si un fournisseur secondaire
+est temporairement indisponible.
+"""
+import json
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+
+import httpx
+from groq import Groq
+
+from .config import parametres
+
+logger = logging.getLogger(__name__)
+
+
+def _groq_client() -> Optional[Groq]:
+    if not parametres.groq_api_key:
+        return None
+    return Groq(api_key=parametres.groq_api_key)
+
+
+def _gemini_enabled() -> bool:
+    return bool(parametres.gemini_api_key and parametres.ai_ensemble_use_gemini)
+
+
+def _extract_tool_json(completion: Any) -> Optional[Dict[str, Any]]:
+    try:
+        calls = completion.choices[0].message.tool_calls
+        if not calls:
+            return None
+        return json.loads(calls[0].function.arguments)
+    except (AttributeError, IndexError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def _groq_structured_tool(
+    *,
+    model: str,
+    tool: Dict[str, Any],
+    tool_name: str,
+    prompt: str,
+    max_completion_tokens: int = 2048,
+    reasoning_effort: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    client = _groq_client()
+    if client is None:
+        return None
+
+    kwargs: Dict[str, Any] = {
+        "model": model,
+        "max_completion_tokens": max_completion_tokens,
+        "tools": [tool],
+        "tool_choice": {"type": "function", "function": {"name": tool_name}},
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    if reasoning_effort and model.startswith("openai/gpt-oss"):
+        kwargs["reasoning_effort"] = reasoning_effort
+
+    try:
+        completion = client.chat.completions.create(**kwargs)
+    except Exception as erreur:
+        logger.warning("Modele Groq %s indisponible: %s", model, erreur)
+        return None
+    return _extract_tool_json(completion)
+
+
+def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if not _gemini_enabled():
+        return None
+
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{parametres.gemini_model}:generateContent"
+    )
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.1,
+            "responseMimeType": "application/json",
+            "responseSchema": schema,
+        },
+    }
+    try:
+        with httpx.Client(timeout=45.0) as client:
+            response = client.post(
+                url,
+                params={"key": parametres.gemini_api_key},
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+        text = (
+            data.get("candidates", [{}])[0]
+            .get("content", {})
+            .get("parts", [{}])[0]
+            .get("text", "")
+        )
+        return json.loads(text) if text else None
+    except Exception as erreur:
+        logger.warning("Modele Gemini %s indisponible: %s", parametres.gemini_model, erreur)
+        return None
+
+
+OUTIL_CRITIQUE_QUIZ = {
+    "type": "function",
+    "function": {
+        "name": "critiquer_quiz",
+        "description": "Analyse un quiz existant et propose des corrections uniquement si necessaire.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "question": {"type": "string"},
+                            "choix": {"type": "array", "items": {"type": "string"}},
+                            "index_bonne_reponse": {"type": "integer"},
+                            "explication": {"type": "string"},
+                            "notion": {"type": "string"},
+                        },
+                        "required": [
+                            "question",
+                            "choix",
+                            "index_bonne_reponse",
+                            "explication",
+                            "notion",
+                        ],
+                    },
+                },
+                "confiant": {"type": "boolean"},
+                "problemes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": ["questions", "confiant", "problemes"],
+        },
+    },
+}
+
+
+def critiquer_quiz_groq(
+    questions: List[Dict[str, Any]],
+    matiere: str,
+    niveau: str,
+) -> Optional[Dict[str, Any]]:
+    prompt = (
+        "Tu es le deuxieme professeur-verificateur d'un moteur de quiz. "
+        "Ne genere pas un nouveau quiz. Analyse celui-ci question par question. "
+        "Cherche les erreurs factuelles, mathematiques ou grammaticales, "
+        "les questions ambiguës, plusieurs bonnes reponses possibles, les "
+        "choix dupliques et les explications fausses. Corrige seulement ce "
+        "qui doit l'etre. Garde exactement le meme nombre et le meme ordre. "
+        "Indique confiant=true seulement si tu ne vois aucun doute.\\n\\n"
+        f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
+        f"{json.dumps(questions, ensure_ascii=False)}"
+    )
+    return _groq_structured_tool(
+        model=parametres.groq_critic_model,
+        tool=OUTIL_CRITIQUE_QUIZ,
+        tool_name="critiquer_quiz",
+        prompt=prompt,
+        reasoning_effort="medium",
+    )
+
+
+GEMINI_QUIZ_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "questions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "question": {"type": "string"},
+                    "choix": {"type": "array", "items": {"type": "string"}},
+                    "index_bonne_reponse": {"type": "integer"},
+                    "explication": {"type": "string"},
+                    "notion": {"type": "string"},
+                },
+                "required": [
+                    "question",
+                    "choix",
+                    "index_bonne_reponse",
+                    "explication",
+                    "notion",
+                ],
+            },
+        },
+        "confiant": {"type": "boolean"},
+        "problemes": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["questions", "confiant", "problemes"],
+}
+
+
+def critiquer_quiz_gemini(
+    questions: List[Dict[str, Any]],
+    matiere: str,
+    niveau: str,
+) -> Optional[Dict[str, Any]]:
+    prompt = (
+        "Tu es un correcteur universitaire independant. Examine le quiz ci-dessous "
+        "sans inventer de source externe. Detecte uniquement les erreurs que tu "
+        "peux justifier par le contenu fourni et tes connaissances. Verifie la "
+        "bonne reponse, les distracteurs, l'explication, l'absence d'ambiguite "
+        "et la coherence pedagogique. Retourne le meme nombre de questions et "
+        "ne modifie rien si tout est correct.\\n\\n"
+        f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
+        f"{json.dumps(questions, ensure_ascii=False)}"
+    )
+    return _gemini_json(prompt, GEMINI_QUIZ_SCHEMA)
+
+
+def arbitrer_quiz(
+    original: List[Dict[str, Any]],
+    critiques: List[Dict[str, Any]],
+    matiere: str,
+    niveau: str,
+    outil_verification: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
+    synthese = json.dumps(critiques, ensure_ascii=False)
+    prompt = (
+        "Tu es l'arbitre final d'un systeme pedagogique multi-modeles. "
+        "Tu dois produire UNE version finale du quiz. Le quiz original est "
+        "la base. Deux correcteurs ont donne des avis independants. "
+        "Conserve toute question correcte. N'applique une correction que si "
+        "elle est justifiee. Si les correcteurs divergent, tranche en "
+        "t'appuyant sur la logique academique et le quiz original, sans "
+        "inventer. Garde exactement le meme nombre et le meme ordre. "
+        "Retourne le quiz final et confiant=true seulement quand les "
+        "questions restantes sont suffisamment fiables.\\n\\n"
+        f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
+        f"ORIGINAL:\\n{json.dumps(original, ensure_ascii=False)}\\n\\n"
+        f"CRITIQUES:\\n{synthese}"
+    )
+    return _groq_structured_tool(
+        model=parametres.groq_model,
+        tool=outil_verification,
+        tool_name="soumettre_verification",
+        prompt=prompt,
+        reasoning_effort="high",
+    )
+
+
+def ensemble_verification_quiz(
+    questions: List[Dict[str, Any]],
+    matiere: str,
+    niveau: str,
+    outil_verification: Dict[str, Any],
+    validate,
+) -> Tuple[List[Dict[str, Any]], bool, Dict[str, Any]]:
+    """Fait collaborer les verificateurs puis choisit une seule sortie."""
+    if not parametres.ai_ensemble_enabled or not questions:
+        return questions, False, {"models": [parametres.groq_model], "critics": []}
+
+    critiques: List[Dict[str, Any]] = []
+    qwen = critiquer_quiz_groq(questions, matiere, niveau)
+    if qwen:
+        critiques.append({"model": parametres.groq_critic_model, "avis": qwen})
+    gemini = critiquer_quiz_gemini(questions, matiere, niveau)
+    if gemini:
+        critiques.append({"model": parametres.gemini_model, "avis": gemini})
+
+    if not critiques:
+        return questions, False, {"models": [parametres.groq_model], "critics": []}
+
+    # Aucun correcteur n'a detecte de probleme : inutile de depenser un appel
+    # supplementaire d'arbitrage.
+    tous_confiants = all(item["avis"].get("confiant") is True for item in critiques)
+    problemes = [
+        p
+        for item in critiques
+        for p in (item["avis"].get("problemes") or [])
+    ]
+    if tous_confiants and not problemes:
+        return questions, True, {
+            "models": [parametres.groq_model] + [x["model"] for x in critiques],
+            "critics": critiques,
+        }
+
+    arbitre = arbitrer_quiz(
+        questions,
+        critiques,
+        matiere,
+        niveau,
+        outil_verification,
+    )
+    if not arbitre:
+        # Si l'arbitre est indisponible, on garde le resultat du premier
+        # critique seulement s'il respecte strictement le schema applicatif.
+        for critique in critiques:
+            candidat = critique["avis"].get("questions")
+            try:
+                candidat = validate(candidat, expected_count=len(questions))
+            except Exception:
+                continue
+            return candidat, critique["avis"].get("confiant") is True, {
+                "models": [parametres.groq_model] + [x["model"] for x in critiques],
+                "critics": critiques,
+                "arbitration": "fallback_critic",
+            }
+        return questions, False, {
+            "models": [parametres.groq_model] + [x["model"] for x in critiques],
+            "critics": critiques,
+            "arbitration": "original",
+        }
+
+    candidat = arbitre.get("questions")
+    try:
+        candidat = validate(candidat, expected_count=len(questions))
+    except Exception:
+        logger.warning("Arbitrage multi-modeles invalide, conservation du quiz original.")
+        return questions, False, {
+            "models": [parametres.groq_model] + [x["model"] for x in critiques],
+            "critics": critiques,
+            "arbitration": "invalid",
+        }
+
+    return candidat, arbitre.get("confiant") is True, {
+        "models": [parametres.groq_model] + [x["model"] for x in critiques],
+        "critics": critiques,
+        "arbitration": "groq_arbiter",
+    }
+
+
+OUTIL_TUTEUR_CRITIQUE = {
+    "type": "function",
+    "function": {
+        "name": "critiquer_tuteur",
+        "description": "Evalue une reponse de tuteur sans la remplacer.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "confiant": {"type": "boolean"},
+                "problemes": {"type": "array", "items": {"type": "string"}},
+                "ameliorations": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["confiant", "problemes", "ameliorations"],
+        },
+    },
+}
+
+
+def _critique_tuteur_groq(
+    reponse: Dict[str, str],
+    question: str,
+    notion: Optional[str],
+    matiere: Optional[str],
+) -> Optional[Dict[str, Any]]:
+    prompt = (
+        "Evalue la reponse d'un tuteur universitaire. Cherche seulement les "
+        "erreurs ou faiblesses justifiables : erreur de contenu, raisonnement "
+        "incorrect, correction qui ne correspond pas a l'exercice, contradiction "
+        "entre explication et correction, ou pedagogie confuse. Ne reecris pas "
+        "la reponse. Retourne des problemes courts et des ameliorations concretes. "
+        f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
+        f"REPONSE:\\n{json.dumps(reponse, ensure_ascii=False)}"
+    )
+    return _groq_structured_tool(
+        model=parametres.groq_critic_model,
+        tool=OUTIL_TUTEUR_CRITIQUE,
+        tool_name="critiquer_tuteur",
+        prompt=prompt,
+        reasoning_effort="medium",
+    )
+
+
+TUTEUR_GEMINI_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "confiant": {"type": "boolean"},
+        "problemes": {"type": "array", "items": {"type": "string"}},
+        "ameliorations": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["confiant", "problemes", "ameliorations"],
+}
+
+
+def _critique_tuteur_gemini(
+    reponse: Dict[str, str],
+    question: str,
+    notion: Optional[str],
+    matiere: Optional[str],
+) -> Optional[Dict[str, Any]]:
+    prompt = (
+        "Tu es un controleur pedagogique independant. Analyse cette reponse de "
+        "tuteur universitaire et signale uniquement les erreurs ou incoherences "
+        "que tu peux justifier. Verifie surtout que l'exercice et sa correction "
+        "correspondent, que le raisonnement est coherent et que l'explication "
+        "reste adaptee a un etudiant.\\n"
+        f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
+        f"{json.dumps(reponse, ensure_ascii=False)}"
+    )
+    return _gemini_json(prompt, TUTEUR_GEMINI_SCHEMA)
+
+
+def verifier_tuteur(
+    reponse: Dict[str, str],
+    question: str,
+    notion: Optional[str],
+    matiere: Optional[str],
+    outil_tuteur: Dict[str, Any],
+) -> Tuple[Dict[str, str], bool, Dict[str, Any]]:
+    """Valide une reponse de tuteur avec des critiques independantes.
+
+    L'arbitre reutilise le modele principal et le meme contrat structure que
+    la generation initiale.
+    """
+    if not parametres.ai_ensemble_enabled:
+        return reponse, False, {"models": [parametres.groq_model], "critics": []}
+
+    critiques: List[Dict[str, Any]] = []
+    qwen = _critique_tuteur_groq(reponse, question, notion, matiere)
+    if qwen:
+        critiques.append({"model": parametres.groq_critic_model, "avis": qwen})
+    gemini = _critique_tuteur_gemini(reponse, question, notion, matiere)
+    if gemini:
+        critiques.append({"model": parametres.gemini_model, "avis": gemini})
+
+    if not critiques:
+        return reponse, False, {"models": [parametres.groq_model], "critics": []}
+
+    problemes = [
+        p
+        for item in critiques
+        for p in (item["avis"].get("problemes") or [])
+    ]
+    tous_confiants = all(item["avis"].get("confiant") is True for item in critiques)
+    if tous_confiants and not problemes:
+        return reponse, True, {
+            "models": [parametres.groq_model] + [x["model"] for x in critiques],
+            "critics": critiques,
+        }
+
+    client = _groq_client()
+    if client is None:
+        return reponse, False, {
+            "models": [parametres.groq_model] + [x["model"] for x in critiques],
+            "critics": critiques,
+            "arbitration": "original",
+        }
+
+    prompt = (
+        "Tu es l'arbitre final du Tuteur IA. Ameliore UNE SEULE reponse a un "
+        "etudiant en tenant compte des critiques independantes. Ne change "
+        "que ce qui est justifie. La reponse finale doit conserver exactement "
+        "quatre parties : explication, exemple, exercice, correction. "
+        "La correction doit resoudre exactement l'exercice presente. "
+        "Reponds en francais, clair et pedagogique.\\n\\n"
+        f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
+        f"REPONSE INITIALE:\\n{json.dumps(reponse, ensure_ascii=False)}\\n\\n"
+        f"CRITIQUES:\\n{json.dumps(critiques, ensure_ascii=False)}"
+    )
+    result = _groq_structured_tool(
+        model=parametres.groq_model,
+        tool=outil_tuteur,
+        tool_name="repondre_tuteur",
+        prompt=prompt,
+        reasoning_effort="high",
+    )
+    if not result:
+        return reponse, False, {
+            "models": [parametres.groq_model] + [x["model"] for x in critiques],
+            "critics": critiques,
+            "arbitration": "original",
+        }
+
+    final = {
+        "explication": result.get("explication") or reponse.get("explication") or "—",
+        "exemple": result.get("exemple") or reponse.get("exemple") or "—",
+        "exercice": result.get("exercice") or reponse.get("exercice") or "—",
+        "correction": result.get("correction") or reponse.get("correction") or "—",
+    }
+    return final, True, {
+        "models": [parametres.groq_model] + [x["model"] for x in critiques],
+        "critics": critiques,
+        "arbitration": "groq_arbiter",
+    }
