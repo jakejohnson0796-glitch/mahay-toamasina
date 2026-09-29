@@ -1,7 +1,7 @@
 import random
 from typing import List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Request, Depends, Form, HTTPException
+from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
@@ -12,6 +12,7 @@ from ..auth import utilisateur_courant
 from ..dependencies import acces_premium_ou_redirection
 from ..models import Document, StatutDocument, TentativeQuiz, ProgressionNotion
 from .. import quiz as quiz_module
+from .. import ai_queue
 from .. import theme_service
 from ..rate_limit import limite_depassee
 
@@ -48,7 +49,6 @@ def page_config_quiz(request: Request, session: Session = Depends(get_session)):
 @router.post("/quiz/generer")
 def generer_quiz(
     request: Request,
-    background_tasks: BackgroundTasks,
     matiere: Optional[str] = Form(None),
     matiere_libre: Optional[str] = Form(None),
     niveau: str = Form(...),
@@ -81,12 +81,9 @@ def generer_quiz(
     except quiz_module.QuizValidationError:
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
 
-    # Le quiz est deja valide localement : la relecture multi-modeles est
-    # lancee apres la reponse pour ne pas faire attendre l'etudiant.
-    background_tasks.add_task(
-        quiz_module.verifier_tentative_en_arriere_plan,
-        tentative.id,
-    )
+    # La verification multi-modeles est durablement mise en file.
+    # Le worker Render dedie la traitera hors du processus HTTP.
+    ai_queue.planifier_verification_quiz(tentative.id)
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
@@ -164,7 +161,6 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
 @router.post("/quiz/cible")
 def generer_quiz_cible(
     request: Request,
-    background_tasks: BackgroundTasks,
     progression_id: int = Form(...),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -203,17 +199,13 @@ def generer_quiz_cible(
     except quiz_module.QuizValidationError:
         return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
 
-    background_tasks.add_task(
-        quiz_module.verifier_tentative_en_arriere_plan,
-        tentative.id,
-    )
+    ai_queue.planifier_verification_quiz(tentative.id)
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
 @router.post("/quiz/examen/generer")
 def generer_examen(
     request: Request,
-    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
