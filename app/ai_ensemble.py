@@ -159,12 +159,8 @@ def critiquer_quiz_groq(
         "les questions ambiguës, plusieurs bonnes reponses possibles, les "
         "choix dupliques et les explications fausses. Corrige seulement ce "
         "qui doit l'etre. Garde exactement le meme nombre et le meme ordre. "
-        "Indique confiant=true seulement si tu ne vois aucun doute.
-
-"
-        f"Matiere: {matiere}
-Niveau: {niveau}
-"
+        "Indique confiant=true seulement si tu ne vois aucun doute.\\n\\n"
+        f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
         f"{json.dumps(questions, ensure_ascii=False)}"
     )
     return _groq_structured_tool(
@@ -217,12 +213,8 @@ def critiquer_quiz_gemini(
         "peux justifier par le contenu fourni et tes connaissances. Verifie la "
         "bonne reponse, les distracteurs, l'explication, l'absence d'ambiguite "
         "et la coherence pedagogique. Retourne le meme nombre de questions et "
-        "ne modifie rien si tout est correct.
-
-"
-        f"Matiere: {matiere}
-Niveau: {niveau}
-"
+        "ne modifie rien si tout est correct.\\n\\n"
+        f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
         f"{json.dumps(questions, ensure_ascii=False)}"
     )
     return _gemini_json(prompt, GEMINI_QUIZ_SCHEMA)
@@ -245,18 +237,10 @@ def arbitrer_quiz(
         "t'appuyant sur la logique academique et le quiz original, sans "
         "inventer. Garde exactement le meme nombre et le meme ordre. "
         "Retourne le quiz final et confiant=true seulement quand les "
-        "questions restantes sont suffisamment fiables.
-
-"
-        f"Matiere: {matiere}
-Niveau: {niveau}
-"
-        f"ORIGINAL:
-{json.dumps(original, ensure_ascii=False)}
-
-"
-        f"CRITIQUES:
-{synthese}"
+        "questions restantes sont suffisamment fiables.\\n\\n"
+        f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
+        f"ORIGINAL:\\n{json.dumps(original, ensure_ascii=False)}\\n\\n"
+        f"CRITIQUES:\\n{synthese}"
     )
     return _groq_structured_tool(
         model=parametres.groq_model,
@@ -378,12 +362,8 @@ def _critique_tuteur_groq(
         "incorrect, correction qui ne correspond pas a l'exercice, contradiction "
         "entre explication et correction, ou pedagogie confuse. Ne reecris pas "
         "la reponse. Retourne des problemes courts et des ameliorations concretes. "
-        f"Question: {question}
-Notion: {notion or '-'}
-Matiere: {matiere or '-'}
-"
-        f"REPONSE:
-{json.dumps(reponse, ensure_ascii=False)}"
+        f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
+        f"REPONSE:\\n{json.dumps(reponse, ensure_ascii=False)}"
     )
     return _groq_structured_tool(
         model=parametres.groq_critic_model,
@@ -416,12 +396,8 @@ def _critique_tuteur_gemini(
         "tuteur universitaire et signale uniquement les erreurs ou incoherences "
         "que tu peux justifier. Verifie surtout que l'exercice et sa correction "
         "correspondent, que le raisonnement est coherent et que l'explication "
-        "reste adaptee a un etudiant.
-"
-        f"Question: {question}
-Notion: {notion or '-'}
-Matiere: {matiere or '-'}
-"
+        "reste adaptee a un etudiant.\\n"
+        f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"{json.dumps(reponse, ensure_ascii=False)}"
     )
     return _gemini_json(prompt, TUTEUR_GEMINI_SCHEMA)
@@ -479,19 +455,10 @@ def verifier_tuteur(
         "que ce qui est justifie. La reponse finale doit conserver exactement "
         "quatre parties : explication, exemple, exercice, correction. "
         "La correction doit resoudre exactement l'exercice presente. "
-        "Reponds en francais, clair et pedagogique.
-
-"
-        f"Question: {question}
-Notion: {notion or '-'}
-Matiere: {matiere or '-'}
-"
-        f"REPONSE INITIALE:
-{json.dumps(reponse, ensure_ascii=False)}
-
-"
-        f"CRITIQUES:
-{json.dumps(critiques, ensure_ascii=False)}"
+        "Reponds en francais, clair et pedagogique.\\n\\n"
+        f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
+        f"REPONSE INITIALE:\\n{json.dumps(reponse, ensure_ascii=False)}\\n\\n"
+        f"CRITIQUES:\\n{json.dumps(critiques, ensure_ascii=False)}"
     )
     result = _groq_structured_tool(
         model=parametres.groq_model,
