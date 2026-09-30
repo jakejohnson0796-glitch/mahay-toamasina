@@ -1,0 +1,10 @@
+.doc-empty-activation,.cercles-activation-vide{
+  padding:1rem;border:1px dashed rgba(47,143,137,.28);border-radius:15px;
+  background:rgba(47,143,137,.045)
+}
+.doc-empty-activation-actions,.cercles-activation-actions{
+  display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center;margin-top:.7rem
+}
+.cercles-activation-vide strong,.cercles-activation-vide span{display:block}
+.cercles-activation-vide strong{font-size:.75rem}
+.cercles-activation-vide span{margin-top:.2rem;color:var(--content-text-muted);font-size:.62rem;line-height:1.5}
