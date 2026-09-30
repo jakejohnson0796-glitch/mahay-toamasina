@@ -129,6 +129,41 @@ class TestSelectsVides(unittest.TestCase):
         self.assertIn("Etudier ensemble", rep.text)
         self.assertIn('lang="fr"', rep.text)
 
+    def test_traduction_globale_des_pages_internes(self):
+        client = TestClient(app)
+
+        csrf = _jeton_csrf(client, "/mode-emploi")
+        rep = client.post(
+            "/langue",
+            data={"langue": "en", "_csrf": csrf},
+            headers={"referer": "http://testserver/mode-emploi"},
+            follow_redirects=False,
+        )
+        self.assertEqual(rep.status_code, 303)
+
+        page = client.get("/mode-emploi")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Official guide", page.text)
+        self.assertIn("Start the guide", page.text)
+
+        page_aide = client.get("/aide-avis")
+        self.assertEqual(page_aide.status_code, 200)
+        self.assertIn("Help center", page_aide.text)
+
+        csrf = _jeton_csrf(client, "/mode-emploi")
+        rep = client.post(
+            "/langue",
+            data={"langue": "mg", "_csrf": csrf},
+            headers={"referer": "http://testserver/mode-emploi"},
+            follow_redirects=False,
+        )
+        self.assertEqual(rep.status_code, 303)
+
+        page = client.get("/mode-emploi")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Torolalana ofisialy", page.text)
+        self.assertIn("Hanomboka ny torolalana", page.text)
+
     def test_langue_inconnue_retombe_sur_francais(self):
         client = TestClient(app)
         csrf = _jeton_csrf(client, "/")
