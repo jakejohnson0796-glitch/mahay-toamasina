@@ -151,7 +151,14 @@ def donnees_onboarding(session: Session, utilisateur: Utilisateur) -> dict:
 
     plan = []
     for item in SEMAINE:
-        terminee = item["action"] in actions_noms
+        jour_debut = datetime.combine(
+            debut.date() + timedelta(days=item["jour"] - 1),
+            datetime.min.time(),
+        )
+        terminee = any(
+            action.action == item["action"] and action.date_creation >= jour_debut
+            for action in actions
+        )
         plan.append(
             {
                 **item,
