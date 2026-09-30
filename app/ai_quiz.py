@@ -14,10 +14,11 @@ libre : plus fiable qu'un json.loads() hasardeux.
 import hashlib
 import json
 import logging
+import time
 from typing import Dict, List, Optional
 
 from .quiz_validation import QuizValidationError, valider_questions
-from . import ai_ensemble, ai_memory
+from . import ai_ensemble, ai_memory, ai_metrics
 
 from groq import Groq
 
@@ -393,9 +394,13 @@ def _extraire_questions(completion, expected_count: int = 5) -> List[Dict]:
     )
 
 
-def verifier_et_corriger_questions(questions: List[Dict], matiere: str, niveau: str):
-    """Deuxieme passage multi-modeles : Groq/Qwen + Gemini si disponible,
-    puis arbitrage par le modele principal.
+def verifier_et_corriger_questions(
+    questions: List[Dict],
+    matiere: str,
+    niveau: str,
+    strategie: str = "standard",
+):
+    """Deuxieme passage multi-modeles avec routage adaptatif.
 
     Le contrat historique reste identique : (questions, toutes_confiantes).
     """
@@ -407,6 +412,7 @@ def verifier_et_corriger_questions(questions: List[Dict], matiere: str, niveau: 
     except QuizValidationError:
         return questions, False
 
+    debut = time.monotonic()
     try:
         questions_finales, confiant, audit = ai_ensemble.ensemble_verification_quiz(
             questions=questions,
@@ -414,12 +420,22 @@ def verifier_et_corriger_questions(questions: List[Dict], matiere: str, niveau: 
             niveau=niveau,
             outil_verification=OUTIL_VERIFICATION,
             validate=valider_questions,
+            strategie=strategie,
         )
     except Exception as erreur:
         logger.warning("Verification multi-modeles echouee: %s", erreur)
         return questions, False
 
+    duree_secondes = round(time.monotonic() - debut, 3)
     resume_audit = _resume_audit_ensemble(audit, confiant)
+    ai_metrics.enregistrer_audit(
+        audit,
+        type_interaction="quiz",
+        matiere=matiere,
+        niveau=niveau,
+        strategie=strategie,
+        duree_secondes=duree_secondes,
+    )
     nb_signaux_memorises = ai_memory.enregistrer_audit_ensemble(
         audit,
         type_interaction="quiz",
@@ -427,8 +443,10 @@ def verifier_et_corriger_questions(questions: List[Dict], matiere: str, niveau: 
         niveau=niveau,
     )
     logger.info(
-        "Ensemble audit quiz: models=%s arbitration=%s confiant=%s "
+        "Ensemble audit quiz: strategy=%s duree=%.3fs models=%s arbitration=%s confiant=%s "
         "critics=%s problemes=%s signatures=%s",
+        strategie,
+        duree_secondes,
         resume_audit["models"],
         resume_audit["arbitration"],
         resume_audit["confiant"],
