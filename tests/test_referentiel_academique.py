@@ -24,6 +24,8 @@ from app.referentiel_academique import (
     erreur_choix_academique,
     serialiser_profil_academique,
     type_cercle,
+    erreur_cercle_parcours,
+    parcours_cercle_offert,
 )
 
 
@@ -158,6 +160,84 @@ class TestCorrespondanceCercle(unittest.TestCase):
                              universite_id=self.universite_id, mention_id=self.mention_id,
                              filiere_id=self.autre_filiere_id, niveau="L3")
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
+
+    def test_cercle_parcours_refuse_un_niveau_non_offert(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L3"
+            session.add(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            self.assertFalse(parcours_cercle_offert(session, self.mention_id, self.filiere_id, "L2"))
+            self.assertIsNotNone(
+                erreur_cercle_parcours(
+                    session, self.mention_id, self.filiere_id, "L2"
+                )
+            )
+
+    def test_cercle_parcours_valide_si_offre_active_au_bon_niveau(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L3"
+            session.add(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            self.assertTrue(parcours_cercle_offert(session, self.mention_id, self.filiere_id, "L3"))
+            self.assertIsNone(
+                erreur_cercle_parcours(
+                    session, self.mention_id, self.filiere_id, "L3"
+                )
+            )
+
+    def test_offre_cross_universite_ne_rend_pas_un_parcours_toamasina_valide(self):
+        with Session(self.engine) as session:
+            autre_universite = Universite(nom="Universite Autre")
+            session.add(autre_universite)
+            session.commit()
+            session.refresh(autre_universite)
+
+            autre_faculte = Faculte(nom="Faculte Autre", universite_id=autre_universite.id)
+            session.add(autre_faculte)
+            session.commit()
+            session.refresh(autre_faculte)
+
+            autre_filiere = Filiere(
+                nom="Finance et Comptabilite",
+                faculte_id=autre_faculte.id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(autre_filiere)
+            session.commit()
+            session.refresh(autre_filiere)
+
+            # Le lien est volontairement coherent pour l'autre universite.
+            session.add(ProgrammeUniversitaire(
+                universite_id=autre_universite.id,
+                filiere_id=autre_filiere.id,
+                est_active=True,
+            ))
+            # Aucun programme Toamasina pour la filiere locale.
+            filiere_locale = session.get(Filiere, self.filiere_id)
+            filiere_locale.niveau = "L3"
+            session.add(filiere_locale)
+            session.commit()
+
+            self.assertFalse(
+                parcours_cercle_offert(
+                    session, self.mention_id, self.filiere_id, "L3"
+                )
+            )
 
     def test_cercles_incomplets_ne_sont_pas_des_cercles_libres(self):
         with Session(self.engine) as session:
