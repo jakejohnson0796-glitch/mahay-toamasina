@@ -63,9 +63,7 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
 
 def _jeton_csrf(client: TestClient, url: str) -> str:
     page = client.get(url)
-    token = re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
-    print("DEBUG_CSRF_GET", url, page.status_code, page.url, token[:10])
-    return token
+    return re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
 
 
 def _admin_post(client: TestClient, url: str, data: dict, **kwargs):
