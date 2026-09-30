@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, BackgroundTasks
 from typing import Optional
 from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 
 from ..database import get_session
@@ -50,6 +51,7 @@ def demander_tuteur(
     request: Request,
     question: str = Form(...),
     progression_id: Optional[int] = Form(None),
+    background_tasks: BackgroundTasks = None,
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -76,6 +78,7 @@ def demander_tuteur(
         question,
         notion=progression.notion if progression else None,
         matiere=progression.matiere if progression else None,
+        verifier=False,
     )
 
     session_tuteur = SessionTuteur(
@@ -92,7 +95,37 @@ def demander_tuteur(
     session.commit()
     session.refresh(session_tuteur)
 
+    # La premiere reponse est livree sans attendre Qwen + Gemini + arbitre.
+    # La verification multi-modeles continue apres la reponse HTTP.
+    if background_tasks is not None:
+        background_tasks.add_task(
+            ai_quiz.verifier_session_tuteur_en_arriere_plan,
+            session_tuteur.id,
+        )
+
     return RedirectResponse(f"/tuteur/{session_tuteur.id}", status_code=303)
+
+
+@router.get("/tuteur/{session_id}/statut")
+def statut_tuteur(request: Request, session_id: int, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return JSONResponse({"statut": "non_autorise"}, status_code=401)
+
+    session_tuteur = session.get(SessionTuteur, session_id)
+    if not session_tuteur or session_tuteur.utilisateur_id != utilisateur.id:
+        return JSONResponse({"statut": "introuvable"}, status_code=404)
+
+    return {
+        "statut": session_tuteur.statut_verification_ia,
+        "erreur": session_tuteur.erreur_verification_ia,
+        "date_verification": (
+            session_tuteur.date_verification_ia.isoformat()
+            if session_tuteur.date_verification_ia
+            else None
+        ),
+    }
 
 
 @router.get("/tuteur/{session_id}")
