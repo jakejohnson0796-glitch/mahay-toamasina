@@ -151,6 +151,74 @@
     demarrerChrono();
   }
 
+  function initialiserVerificationTuteur() {
+    const racine = document.querySelector("[data-tuteur-verification-session-id]");
+    if (!racine) return;
+
+    const sessionId = Number(racine.dataset.tuteurVerificationSessionId || 0);
+    const statusEl = racine.querySelector("[data-tuteur-verification-status]");
+    const labelEl = racine.querySelector("[data-tuteur-verification-label]");
+    if (!sessionId || !statusEl) return;
+
+    const fields = ["explication", "exemple", "exercice", "correction"];
+    let essais = 0;
+    const maxEssais = 10;
+
+    function appliquer(data) {
+      if (!data || !data.statut) return;
+      statusEl.className = "ai-verification-status is-" + data.statut;
+
+      if (labelEl) {
+        labelEl.textContent =
+          data.statut === "terminee"
+            ? "Vérification multi-modèles terminée"
+            : data.statut === "echouee"
+              ? "Réponse initiale conservée"
+              : "Réponse générée · vérification multi-modèles en cours";
+      }
+
+      if (data.statut === "terminee" && data.contenu) {
+        fields.forEach(function (champ) {
+          const cible = racine.querySelector('[data-tuteur-content="' + champ + '"]');
+          if (cible && data.contenu[champ]) {
+            cible.innerHTML = data.contenu[champ];
+          }
+        });
+      }
+    }
+
+    async function verifier() {
+      try {
+        const response = await fetch("/tuteur/" + sessionId + "/statut", {
+          headers: {"X-Requested-With": "XMLHttpRequest"}
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        appliquer(data);
+
+        if (
+          (data.statut === "en_attente" || data.statut === "en_cours") &&
+          essais < maxEssais
+        ) {
+          essais += 1;
+          window.setTimeout(verifier, 1800);
+        }
+      } catch (_) {
+        if (essais < maxEssais) {
+          essais += 1;
+          window.setTimeout(verifier, 2200);
+        }
+      }
+    }
+
+    if (
+      statusEl.classList.contains("is-en_attente") ||
+      statusEl.classList.contains("is-en_cours")
+    ) {
+      window.setTimeout(verifier, 700);
+    }
+  }
+
   function initialiserTuteur() {
     const textarea = document.querySelector("[data-tuteur-question]");
     const compteur = document.querySelector("[data-tuteur-count]");
@@ -192,6 +260,7 @@
     initialiserGenerationIA();
     initialiserQuiz();
     initialiserTuteur();
+    initialiserVerificationTuteur();
   }
 
   if (document.readyState === "loading") {
