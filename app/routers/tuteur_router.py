@@ -13,6 +13,7 @@ from ..models import SessionTuteur, ProgressionNotion
 from .. import ai_quiz
 from ..rate_limit import limite_depassee
 from .. import quiz as quiz_module
+from .. import gamification
 
 router = APIRouter()
 
@@ -92,6 +93,13 @@ def demander_tuteur(
         correction=reponse["correction"],
     )
     session.add(session_tuteur)
+    gamification.enregistrer_action(
+        session,
+        utilisateur.id,
+        "tuteur",
+        source_type="session_tuteur",
+        source_key=str(session_tuteur.id),
+    )
     session.commit()
     session.refresh(session_tuteur)
 
