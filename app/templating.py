@@ -227,17 +227,28 @@ def _version_asset(chemin_relatif: str) -> str:
 
 _VERSIONS_ASSETS = {
     "style.css": _version_asset("style.css"),
+    "ux.css": _version_asset("ux.css"),
+    "refonte.css": _version_asset("refonte.css"),
+    "csp-utilities.css": _version_asset("csp-utilities.css"),
+    "public-pages.css": _version_asset("public-pages.css"),
     "activite.css": _version_asset("activite.css"),
+    "ops.css": _version_asset("ops.css"),
+    "sidebar.css": _version_asset("sidebar.css"),
+    "student-hub.css": _version_asset("student-hub.css"),
+    "classe.css": _version_asset("classe.css"),
+    "auth.css": _version_asset("auth.css"),
+    "mode-emploi.css": _version_asset("mode-emploi.css"),
+    "ai-learning.css": _version_asset("ai-learning.css"),
+    "js/admin-confirmation.js": _version_asset("js/admin-confirmation.js"),
     "js/navigation.js": _version_asset("js/navigation.js"),
     "js/theme.js": _version_asset("js/theme.js"),
     "js/modale.js": _version_asset("js/modale.js"),
     "js/soumission.js": _version_asset("js/soumission.js"),
+    "js/security-ui.js": _version_asset("js/security-ui.js"),
+    "js/ai-learning.js": _version_asset("js/ai-learning.js"),
     "js/cascade-academique.js": _version_asset("js/cascade-academique.js"),
     "js/cercles-list.js": _version_asset("js/cercles-list.js"),
-    "ux.css": _version_asset("ux.css"),
-    "refonte.css": _version_asset("refonte.css"),
     "ux.js": _version_asset("ux.js"),
-    "student-hub.css": _version_asset("student-hub.css"),
 }
 templates.env.globals["version_asset"] = lambda chemin: _VERSIONS_ASSETS.get(chemin, "0")
 
