@@ -6,6 +6,7 @@ from ..database import get_session
 from ..templating import templates
 from ..auth import utilisateur_courant
 from .. import gamification
+from .. import onboarding
 
 router = APIRouter()
 
@@ -17,6 +18,7 @@ def page_defis(request: Request, session: Session = Depends(get_session)):
         return RedirectResponse("/connexion", status_code=303)
 
     donnees = gamification.donnees_defis(session, utilisateur)
+    donnees["parcours_demarrage"] = onboarding.donnees_onboarding(session, utilisateur)
     return templates.TemplateResponse(
         request,
         "defis.html",
