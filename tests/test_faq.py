@@ -61,8 +61,8 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
         configuration = client.post(
             "/admin/securite/mot-de-passe-confirmation",
             data={
-                "nouveau_mot_de_passe": "ConfirmationTest123!",
-                "confirmation_nouveau_mot_de_passe": "ConfirmationTest123!",
+                "nouveau_mot_de_passe": f"test-confirm-{telephone}",
+                "confirmation_nouveau_mot_de_passe": f"test-confirm-{telephone}",
                 "_csrf": jeton_confirmation,
             },
             follow_redirects=False,
