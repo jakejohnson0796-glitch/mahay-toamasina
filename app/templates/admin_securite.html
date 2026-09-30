@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block titre %}Sécurité administrateur — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-status-hero">
+    <div class="ops-status-main">
+      <span class="ops-kicker">Sécurité · administration</span>
+      <h1>Confirmer chaque action sensible</h1>
+      <p>
+        Configure un mot de passe de confirmation différent de ton mot de passe
+        de connexion. Il sera demandé avant chaque action d'administration.
+      </p>
+    </div>
+    <div class="ops-status-side">
+      {% if confirmation_configuree %}
+      <strong class="ops-badge is-success">Configuré</strong>
+      <span>confirmation active</span>
+      {% else %}
+      <strong class="ops-badge is-alert">À configurer</strong>
+      <span>actions admin protégées</span>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if erreur == "longueur" %}
+  <div class="ops-alert ops-alert-danger">Le mot de passe de confirmation doit contenir au moins 12 caractères.</div>
+  {% elif erreur == "confirmation" %}
+  <div class="ops-alert ops-alert-danger">Les deux nouveaux mots de passe ne correspondent pas.</div>
+  {% elif erreur == "reutilisation" %}
+  <div class="ops-alert ops-alert-danger">Utilise un secret différent de ton mot de passe de connexion.</div>
+  {% elif erreur == "actuel_incorrect" %}
+  <div class="ops-alert ops-alert-danger">Le mot de passe de confirmation actuel est incorrect.</div>
+  {% endif %}
+
+  {% if ok %}
+  <div class="ops-alert ops-alert-success">
+    Le mot de passe de confirmation administrateur a été enregistré.
+  </div>
+  {% endif %}
+
+  <section class="ops-admin-group">
+    <h2>{% if confirmation_configuree %}Modifier le secret de confirmation{% else %}Configurer le secret de confirmation{% endif %}</h2>
+    <p>
+      Il n'est jamais enregistré en clair. Après configuration, une action
+      administrative ne peut pas être exécutée sans fournir ce secret.
+    </p>
+
+    <form method="post" action="/admin/securite/mot-de-passe-confirmation" class="ops-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+      {% if confirmation_configuree %}
+      <label for="mot_de_passe_confirmation_actuel">Mot de passe de confirmation actuel</label>
+      <input
+        id="mot_de_passe_confirmation_actuel"
+        name="mot_de_passe_confirmation_actuel"
+        type="password"
+        minlength="12"
+        autocomplete="current-password"
+        required
+      >
+      {% endif %}
+
+      <label for="nouveau_mot_de_passe">Nouveau mot de passe de confirmation</label>
+      <input
+        id="nouveau_mot_de_passe"
+        name="nouveau_mot_de_passe"
+        type="password"
+        minlength="12"
+        autocomplete="new-password"
+        required
+      >
+
+      <label for="confirmation_nouveau_mot_de_passe">Confirmer le nouveau mot de passe</label>
+      <input
+        id="confirmation_nouveau_mot_de_passe"
+        name="confirmation_nouveau_mot_de_passe"
+        type="password"
+        minlength="12"
+        autocomplete="new-password"
+        required
+      >
+
+      <button class="bouton bouton-primaire" type="submit">
+        {% if confirmation_configuree %}Mettre à jour le secret{% else %}Activer la protection{% endif %}
+      </button>
+    </form>
+  </section>
+
+  <section class="ops-admin-group">
+    <h2>Ce qui sera protégé</h2>
+    <div class="ops-admin-items">
+      <div class="ops-admin-item"><span><strong>Utilisateurs</strong><span>rôle, bannissement, suppression et récupération de compte.</span></span></div>
+      <div class="ops-admin-item"><span><strong>Modération</strong><span>actions sur les messages, documents et signalements.</span></span></div>
+      <div class="ops-admin-item"><span><strong>Référentiel</strong><span>modification des mentions, filières, programmes et cercles.</span></span></div>
+      <div class="ops-admin-item"><span><strong>Cercles</strong><span>suppression administrative d'un cercle.</span></span></div>
+      <div class="ops-admin-item"><span><strong>Abonnements & sponsors</strong><span>validation et traitement des opérations administratives.</span></span></div>
+    </div>
+  </section>
+
+  <p><a class="bouton bouton-secondaire" href="/admin">Retour à l'administration</a></p>
+</div>
+{% endblock %}
