@@ -415,7 +415,7 @@
 </section>
 {% endif %}
 
-<div class="carte-formulaire carte-recherche-cercles" style="margin-bottom:2rem;">
+<div class="carte-formulaire carte-recherche-cercles" id="recherche-cercles" style="margin-bottom:2rem;">
   <div class="entete-recherche-cercles">
     <div>
       <p class="stat-label" style="margin:0;">Explorer</p>
@@ -492,7 +492,7 @@
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
   {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
 
-  <form method="post" action="/cercles/creer" id="formulaire-creation-cercle">
+  <form method="post" action="/cercles/creer" id="creer-cercle" data-formulaire-creation-cercle>
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="nom">Nom du cercle</label>
     <input type="text" id="nom" name="nom" required placeholder="ex: Revision Droit civil S3">
