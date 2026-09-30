@@ -217,7 +217,7 @@ TRADUCTIONS: Final[dict[str, dict[str, str]]] = {
         "matière avec ton meilleur résultat": "subject with your best result",
         "Utilise le Tuteur IA lorsqu'une notion reste difficile après une correction.": "Use AI Tutor when a concept remains difficult after a review.",
         "Revoir": "Review",
-        "Commence un premier entraînement pour construire ton historique et visualiser ta progression.": "Start your first practice session to build your history and track your progress."
+        "Commence un premier entraînement pour construire ton historique et visualiser ta progression.": "Start your first practice session to build your history and track your progress.",
         "Apprentissage assisté · Quiz IA": "Assisted learning · AI Quiz",
         "Transforme ton cours en entraînement.": "Turn your course into practice.",
         "Configure un quiz adapté à ton niveau, pratique immédiatement, puis analyse tes réponses. Le même espace rassemble génération, examen blanc, historique et réflexion.": "Configure a quiz for your level, practice immediately, then analyze your answers. This space brings together generation, mock exams, history, and reflection.",
