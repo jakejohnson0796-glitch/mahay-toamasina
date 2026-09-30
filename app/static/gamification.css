@@ -176,3 +176,31 @@
   .gam-mission{grid-template-columns:auto minmax(0,1fr)}
   .gam-mission-action{grid-column:2;justify-items:start}
 }
+
+
+.tb-gamification{
+  margin:0 0 1rem;
+  padding:1rem;
+  border:1px solid rgba(47,143,137,.2);
+  border-radius:17px;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(221,183,101,.08),transparent 14rem),
+    rgba(47,143,137,.045);
+}
+.tb-gamification-main{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem}
+.tb-gamification h2{margin:.2rem 0 .3rem;font-size:1.05rem}
+.tb-gamification p{margin:0;color:var(--content-text-muted);font-size:.62rem;line-height:1.5}
+.tb-gamification-stats{display:flex;flex-wrap:wrap;gap:.4rem}
+.tb-gamification-stats span{padding:.35rem .5rem;border:1px solid var(--content-border);border-radius:999px;background:var(--content-surface);font-size:.56rem}
+.tb-gamification-progress{height:.42rem;margin:.75rem 0;border-radius:999px;overflow:hidden;background:var(--content-border)}
+.tb-gamification-progress span{display:block;height:100%;border-radius:inherit;background:var(--refonte-teal)}
+.tb-gamification-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem}
+.tb-gamification-mission{
+  display:inline-flex;align-items:center;min-height:2rem;padding:.35rem .55rem;
+  border:1px solid var(--content-border);border-radius:9px;background:var(--content-surface);
+  color:var(--content-text);font-size:.55rem;font-weight:800;text-decoration:none
+}
+.tb-gamification-mission:hover{border-color:rgba(47,143,137,.35);text-decoration:none}
+@media(max-width:700px){
+  .tb-gamification-main{align-items:flex-start;flex-direction:column}
+}
