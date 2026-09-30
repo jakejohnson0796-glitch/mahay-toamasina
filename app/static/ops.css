@@ -107,3 +107,11 @@
 @media(max-width:740px){
   .page-ops .contenu-clair{padding:.75rem .75rem 2rem}
 }
+
+.ops-password-field{display:flex;align-items:stretch;gap:.4rem}
+.ops-password-field input{flex:1;min-width:0}
+.ops-password-toggle{flex:0 0 auto;min-width:5.5rem}
+@media(max-width:500px){
+  .ops-password-field{gap:.3rem}
+  .ops-password-toggle{min-width:5rem;padding-inline:.55rem}
+}
