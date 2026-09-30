@@ -52,9 +52,12 @@ LONGUEUR_MAX_NOM = 120
 def _rotation_session_authentifiee(request: Request) -> None:
     """Rotation de session apres authentification en conservant le jeton CSRF."""
     jeton_csrf = request.session.get("_csrf_token")
+    langue = request.session.get("langue")
     request.session.clear()
     if jeton_csrf:
         request.session["_csrf_token"] = jeton_csrf
+    if langue:
+        request.session["langue"] = langue
 
 
 
@@ -509,7 +512,10 @@ def verifier_code_reinitialisation(
 
 @router.post("/deconnexion")
 def deconnexion(request: Request, _csrf: None = Depends(verifier_csrf)):
+    langue = request.session.get("langue")
     request.session.clear()
+    if langue:
+        request.session["langue"] = langue
     return RedirectResponse("/", status_code=303)
 
 
