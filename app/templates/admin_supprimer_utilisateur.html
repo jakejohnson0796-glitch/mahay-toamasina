@@ -5,6 +5,11 @@
 <div class="contenu-clair">
 <p class="eyebrow"><a href="/admin/utilisateurs">&larr; Utilisateurs</a></p>
 <h2>Supprimer definitivement {{ cible.nom }}</h2>
+{% if request.query_params.get("erreur") == "reattribution_invalide" %}
+<div class="erreur">La reattribution selectionnee est invalide. Choisissez un compte existant et different de celui a supprimer.</div>
+{% elif request.query_params.get("erreur") == "reattribution_cours_invalide" %}
+<div class="erreur">Un cours ne peut etre reattribue qu'a un professeur ou a un administrateur.</div>
+{% endif %}
 
 <div class="erreur" style="margin-bottom:1.5rem;">
   <strong>Action irreversible.</strong> Le compte, ses messages postes chez
@@ -33,7 +38,7 @@
           Reattribuer a :
           <select data-reattribuer-target="reattrib-cercle-{{ info.cercle.id }}">
             <option value="">— choisir —</option>
-            {% for compte in comptes_possibles %}
+            {% for compte in comptes_possibles if compte.role.value in ["professeur", "admin"] %}
             <option value="{{ compte.id }}">{{ compte.nom }} ({{ compte.role.value }})</option>
             {% endfor %}
           </select>
