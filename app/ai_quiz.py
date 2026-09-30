@@ -597,6 +597,7 @@ def generer_reponse_tuteur(
     *,
     notion: Optional[str] = None,
     matiere: Optional[str] = None,
+    verifier: bool = True,
 ) -> Dict[str, str]:
     """Genere une reponse structuree du tuteur IA (explication + exemple
     + exercice + correction) a une question libre posee par l'etudiant.
