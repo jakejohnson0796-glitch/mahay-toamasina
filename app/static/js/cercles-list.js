@@ -119,6 +119,18 @@
 
     filtrerMentionsLocalement();
 
+    // Retour visuel immediat : la recherche est une navigation serveur, donc
+    // le navigateur peut sembler bloque pendant la reponse Render. Le libelle
+    // change tout de suite et empeche les doubles soumissions.
+    formulaire.addEventListener("submit", function () {
+      const bouton = formulaire.querySelector('button[type="submit"]');
+      if (!bouton) return;
+      bouton.disabled = true;
+      bouton.dataset.libelleInitial = bouton.textContent;
+      bouton.textContent = "Recherche…";
+      bouton.setAttribute("aria-busy", "true");
+    });
+
     // Restauration deterministe apres rendu serveur :
     // le serveur peut avoir derive Domaine depuis Mention.
     if (!domaine.value && domaineInitial) domaine.value = domaineInitial;
