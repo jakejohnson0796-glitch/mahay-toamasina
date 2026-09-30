@@ -65,6 +65,29 @@
       <p class="tb-routine-finale">Routine terminée aujourd’hui. Bravo pour la régularité — à demain pour la prochaine session.</p>
     </section>
 
+    {% if gamification is defined %}
+    <section class="tb-gamification" aria-labelledby="dashboard-gamification-title">
+      <div class="tb-gamification-main">
+        <div>
+          <p class="eyebrow">Défis &amp; récompenses</p>
+          <h2 id="dashboard-gamification-title">Niveau {{ gamification.niveau }} · {{ gamification.total_xp }} XP</h2>
+          <p>Transforme chaque session en progression : Tuteur, quiz, cercles et ressources partagées.</p>
+        </div>
+        <div class="tb-gamification-stats">
+          <span>🔥 <b>{{ gamification.streak }}</b> jour{{ "s" if gamification.streak != 1 else "" }}</span>
+          <span>🎯 <b>{{ gamification.missions | selectattr("terminee") | list | length }}/{{ gamification.missions|length }}</b> missions</span>
+        </div>
+      </div>
+      <div class="tb-gamification-progress"><span style="width: {{ (gamification.xp_dans_niveau * 100 // gamification.xp_prochain) }}%"></span></div>
+      <div class="tb-gamification-actions">
+        <a class="bouton bouton-primaire" href="/defis">Voir mes défis →</a>
+        {% for mission in gamification.missions if not mission.terminee %}
+        <a class="tb-gamification-mission" href="{{ mission.lien }}">+{{ mission.points }} XP · {{ mission.titre }}</a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
     <div class="tb-acces-rapide">
       <a href="/documents" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-vert">{{ icone("documents", 20) }}</span> Documents</a>
       <a href="/quiz" class="tb-acces-rapide-item"><span class="tb-acces-rapide-icone tb-acces-orange">{{ icone("quiz", 20) }}</span> Quiz IA</a>
