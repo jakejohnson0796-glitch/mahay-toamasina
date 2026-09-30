@@ -41,6 +41,20 @@ from .texte_normalise import normaliser as _normaliser
 
 STATUTS_PUBLICS = {"verifie", "confirme"}
 
+MENTIONS_CANONIQUES = {
+    "gestion": {"nom": "Gestion", "alias": {"gestion", "sciences de gestion"}},
+    "physique-chimie": {"nom": "Physique-Chimie", "alias": {"physique-chimie", "physique chimie"}},
+    "anthropologie sociale et culturelle": {
+        "nom": "Anthropologie Sociale et Culturelle",
+        "alias": {
+            "anthropologie",
+            "anthropologie sociale",
+            "anthropologie sociale et culturelle",
+            "anthropologie appliquee au developpement",
+        },
+    },
+}
+
 COMPOSANTES_CANONIQUES = {
     "faculte deg": {
         "nom": "Faculté DEG",
@@ -227,12 +241,19 @@ def _trouver_faculte_canonique(
 def _trouver_mention_canonique(
     session: Session, nom: str, domaine_id: int | None, rapport: Rapport
 ) -> Mention:
+    config = MENTIONS_CANONIQUES.get(normaliser(nom))
+    noms_equivalents = (
+        {normaliser(x) for x in config["alias"]}
+        if config
+        else {normaliser(nom)}
+    )
+    nom_canonique = config["nom"] if config else nom
     candidats = [
         m for m in session.exec(select(Mention)).all()
-        if normaliser(m.nom) == normaliser(nom)
+        if normaliser(m.nom) in noms_equivalents
     ]
     if not candidats:
-        mention = Mention(nom=nom, domaine_id=domaine_id)
+        mention = Mention(nom=nom_canonique, domaine_id=domaine_id)
         session.add(mention)
         session.commit()
         session.refresh(mention)
@@ -243,8 +264,8 @@ def _trouver_mention_canonique(
     for doublon in [m for m in candidats if m.id != cible.id]:
         _reassigner_mention(session, doublon.id, cible.id)
         session.delete(doublon)
-    if cible.nom != nom:
-        cible.nom = nom
+    if cible.nom != nom_canonique:
+        cible.nom = nom_canonique
     if cible.domaine_id is None and domaine_id is not None:
         cible.domaine_id = domaine_id
     cible.est_active = True
