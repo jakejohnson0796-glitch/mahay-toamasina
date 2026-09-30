@@ -41,6 +41,26 @@ def source_temporaire(formations):
     return Path(f.name)
 
 
+class TestSourceCanonique(unittest.TestCase):
+    def test_source_ne_contient_ni_cca_ni_doublon_exact(self):
+        path = Path(__file__).resolve().parents[1] / "mahay_toamasina_referentiel_source.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        self.assertFalse(
+            [x for x in data["formations"] if (x.get("parcours") or "").strip().upper().startswith("CCA")]
+        )
+        cles = [
+            (
+                (x.get("composante") or "").strip().casefold(),
+                (x.get("mention") or "").strip().casefold(),
+                (x.get("niveau") or "").strip().casefold(),
+                (x.get("type") or "").strip().casefold(),
+                (x.get("parcours") or "").strip().casefold(),
+            )
+            for x in data["formations"]
+        ]
+        self.assertEqual(len(cles), len(set(cles)))
+
+
 class TestReferentielReconciliation(unittest.TestCase):
     def test_fusionne_les_filieres_equivalentes_et_garde_une_offre(self):
         engine = nouvel_engine()
