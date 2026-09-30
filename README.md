@@ -1,40 +1,235 @@
 # Gasy Mahay — plateforme d'apprentissage pour les étudiants de Madagascar
 
-Prototype fonctionnel (V2) : les étudiants déposent et téléchargent
-gratuitement des annales/fiches/cours par filière, s'entraident dans des
-**cercles d'étude** en chat temps réel, et peuvent générer un **vrai quiz
-IA** à partir d'un document. Les sponsors et répétiteurs paient un
-abonnement mensuel pour être visibles auprès des étudiants — c'est ce
-deuxième côté du marché qui finance la plateforme, pas l'étudiant.
+Gasy Mahay est un projet éducatif numérique construit autour d'une idée simple :
 
-Identité visuelle : Gasy Mahay est une plateforme nationale. Chaque document
-reçoit une référence courte et neutre (par exemple `MG-DEG-2025-0147`) et un
-statut tamponné (approuvé / en attente / rejeté).
+> **Un étudiant ne devrait pas être obligé d'apprendre seul, ni perdre des heures à chercher la bonne ressource au mauvais endroit.**
 
-## Nouveau dans cette version
+La plateforme réunit dans un même écosystème les ressources académiques, l'entraide entre étudiants, les outils de pratique et l'accompagnement assisté par IA.
 
-- **Supabase** (optionnel) : base de données Postgres et stockage des
-  fichiers déposés peuvent basculer sur Supabase via `.env`, à la place de
-  SQLite/disque local. Utile dès qu'on déploie ailleurs qu'en local (le
-  disque d'un serveur comme Render/Railway est éphémère).
-- **Cercles d'étude** : salons de discussion en temps réel (WebSocket)
-  où les étudiants créent un groupe (par filière ou libre) et échangent
-  des messages, historisés en base.
-- **Quiz IA réel, sur une API gratuite** : `app/ai_quiz.py` appelle
-  désormais l'API **Groq** (clé gratuite, sans carte bancaire) avec le
-  texte extrait du document (`app/text_extraction.py`, PDF via
-  `pdfplumber`, OCR optionnel via `pytesseract`), et renvoie un vrai QCM
-  (4 choix, bonne réponse, explication).
-- **File IA event-driven compatible Render Free** : après livraison du quiz,
-  la vérification multi-modèles est inscrite durablement en PostgreSQL puis
-  notifiée dans **Render Key Value** (Redis/Valkey). Un worker IA leger tourne
-  dans un thread du Web Free et attend les IDs avec une lecture bloquante Redis ;
-  PostgreSQL reste le filet de sécurité si Redis est indisponible ou si une
-  notification est perdue. Aucun Background Worker Render payant n'est requis.
+Le projet est pensé pour **Madagascar** : le lancement initial a servi de point de départ, mais la vision est nationale.
+
+---
+
+## Notre histoire
+
+Gasy Mahay part d'un constat concret : dans la vie universitaire, une ressource utile peut se trouver dans un document, une conversation, un groupe d'étudiants ou auprès d'une personne qui connaît déjà la réponse.
+
+Le problème n'est donc pas seulement de produire plus de contenu. Il faut aussi pouvoir :
+
+- retrouver rapidement une ressource ;
+- pratiquer au lieu de seulement lire ;
+- demander une explication ;
+- travailler avec d'autres étudiants ;
+- identifier les notions qui restent difficiles ;
+- revenir dessus jusqu'à mieux les maîtriser.
+
+C'est cette logique qui guide l'évolution de Gasy Mahay.
+
+Le premier lancement avait une portée initiale. La plateforme évolue désormais avec une ambition plus large : **structurer progressivement un espace d'apprentissage numérique pour les étudiants de Madagascar**.
+
+---
+
+## Pourquoi Gasy Mahay existe
+
+Le projet cherche à rapprocher quatre éléments qui restent souvent séparés :
+
+1. **Le savoir** — documents, cours, annales, fiches et référentiel académique.
+2. **La pratique** — quiz, exercices, corrections et révisions.
+3. **L'humain** — cercles d'étude et collaboration entre étudiants.
+4. **L'accompagnement** — Tuteur IA et outils adaptatifs.
+
+L'objectif n'est pas de remplacer l'université, les enseignants ou le travail personnel.
+
+L'objectif est de créer **un outil d'appui** qui aide l'étudiant à mieux utiliser ce qu'il a déjà, à identifier ce qui lui manque et à continuer à progresser.
+
+---
+
+## Ce qui est actuellement construit
+
+### Parcours étudiant
+
+- Inscription et connexion
+- Parcours de démarrage guidé sur plusieurs jours
+- Tableau de bord étudiant
+- Notifications
+- Suivi des activités et de la progression
+- Révisions adaptatives
+- Gamification et défis
+
+### Ressources académiques
+
+- Bibliothèque de documents
+- Classement par université, mention, niveau et filière
+- Dépôt de ressources avec modération
+- Référentiel académique national en cours de structuration
+- Références documentaires neutres de type `MG-DEG-2025-0147`
+
+### Apprentissage assisté par IA
+
+- **Quiz IA** générés à partir des ressources
+- **Tuteur IA** pour expliquer, donner des exemples, proposer des exercices et corriger
+- Personnalisation à partir de la progression de l'étudiant
+- Révisions ciblées sur les notions faibles
+- Validation locale des sorties avant affichage
+- Vérification multi-modèles lorsque le scénario le demande
+
+### IA multi-modèles
+
+L'architecture actuelle peut faire intervenir plusieurs modèles autour d'une même réponse :
+
+```text
+Étudiant
+   ↓
+Génération principale
+   ↓
+Critique / vérification
+   ↓
+Analyse des désaccords et erreurs
+   ↓
+Arbitrage si nécessaire
+   ↓
+Une réponse finale pour l'étudiant
+```
+
+La logique est de faire travailler les modèles comme un ensemble coopératif plutôt que d'exposer l'utilisateur à plusieurs réponses contradictoires.
+
+La configuration actuelle prévoit notamment un modèle principal Groq, un modèle critique Qwen et un contrôle Gemini optionnel. Les modèles réellement utilisés dépendent de la configuration de l'environnement et de leur disponibilité.
+
+### Collaboration
+
+- Cercles d'étude
+- Chat temps réel WebSocket
+- Historisation des messages
+- Classe virtuelle avec vidéo, chat et tableau blanc
+- Espaces de travail pensés pour les usages étudiants
+
+---
+
+## L'expérience que nous voulons créer
+
+Le parcours cible est simple :
+
+```text
+Je cherche
+   ↓
+Je trouve
+   ↓
+Je pratique
+   ↓
+Je me trompe
+   ↓
+Je comprends
+   ↓
+Je révise
+   ↓
+Je progresse
+   ↓
+J'aide à mon tour
+```
+
+Une erreur ne doit pas être seulement enregistrée comme un mauvais résultat.
+
+Elle doit pouvoir devenir un signal pour la suite : une notion à revoir, une explication à demander, un exercice à refaire ou un quiz à cibler.
+
+---
+
+## Une plateforme pensée pour les étudiants, mais soutenue par un écosystème
+
+Le principe économique du projet est de chercher un équilibre entre **accessibilité pour les étudiants** et **soutien de partenaires**.
+
+Les sponsors et partenaires peuvent contribuer au développement de :
+
+- l'infrastructure ;
+- l'hébergement ;
+- les outils d'intelligence artificielle ;
+- la structuration et la modération des ressources ;
+- les fonctionnalités pédagogiques ;
+- l'accès et la qualité du service à mesure que la communauté grandit.
+
+L'ambition est de construire des partenariats utiles, avec une séparation claire entre le soutien au projet et l'expérience pédagogique proposée aux étudiants.
+
+---
+
+## Une ambition nationale
+
+Gasy Mahay est désormais pensé à l'échelle de Madagascar.
+
+La plateforme travaille autour d'un référentiel pouvant regrouper plusieurs universités publiques, leurs mentions, niveaux et filières, avec une intégration progressive des données pouvant être vérifiées et maintenues.
+
+L'approche est volontairement progressive :
+
+**structurer → vérifier → publier → mesurer → améliorer → élargir**
+
+Cette méthode permet de grandir sans transformer le site en simple catalogue de pages ou de données difficiles à maintenir.
+
+---
+
+## Architecture technique
+
+Le projet reste volontairement léger et principalement Python.
+
+### Backend
+
+- **FastAPI**
+- **SQLModel / SQLAlchemy**
+- **Jinja2**
+- Sessions serveur
+- WebSocket natif FastAPI
+- Services métier Python séparés par domaine
+
+### Données
+
+- **SQLite** pour un démarrage local simple
+- **PostgreSQL / Supabase** pour le déploiement
+- Stockage documentaire local ou Supabase Storage selon la configuration
+- File de tâches IA durable côté base de données
+
+### IA
+
+- Groq pour la génération
+- Modèle critique Qwen configurable
+- Gemini optionnel pour la vérification
+- Validation de schémas et contrôles locaux
+- Mémoire / télémétrie des erreurs du système IA
+- File de traitement IA et reprise en cas de notification perdue
+
+### Frontend
+
+- HTML rendu côté serveur
+- Jinja2
+- CSS maison
+- JavaScript vanilla lorsque nécessaire
+- PWA installable
+
+---
+
+## Stockage et file IA
+
+Le traitement IA long est séparé du chemin HTTP utilisateur autant que possible.
+
+Flux simplifié :
+
+```text
+Requête utilisateur
+       ↓
+PostgreSQL : tâche durable
+       ↓
+Redis / Valkey : notification
+       ↓
+Worker IA embarqué
+       ↓
+Traitement
+       ↓
+PostgreSQL : état final
+```
+
+La base de données reste la source durable : si une notification Redis est perdue, le système peut retrouver la tâche à traiter.
+
+---
 
 ## Démarrer en local (Windows / VS Code)
 
-```
+```powershell
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
@@ -42,160 +237,140 @@ copy .env.example .env
 uvicorn app.main:app --reload
 ```
 
-Par défaut (fichier `.env` vide), tout fonctionne exactement comme en V1 :
-SQLite (`mahay.db`) + dossier `uploads/` en local, facultés/filières
-pré-remplies (`app/seed_data.py`). Seule la génération de quiz nécessite
-une clé API pour fonctionner (voir plus bas) — sans elle, la page affiche
-un message clair au lieu de planter.
+Sans configuration distante, le projet peut fonctionner avec :
 
-Pour accéder au panneau `/moderation` (valider ou rejeter les documents
-déposés), il faut d'abord s'inscrire normalement sur le site, puis se
-promouvoir admin en ligne de commande :
+- SQLite
+- stockage local des fichiers
+- variables d'environnement locales
+- fonctionnalités IA activées seulement lorsque leurs clés sont configurées
 
-```
-python -m app.creer_admin 0341234567
-```
+---
 
-## Configurer Supabase (base de données + stockage)
+## Configurer Supabase
 
-1. Créez un projet sur [supabase.com](https://supabase.com) (gratuit pour
-   démarrer).
-2. **Base de données** : *Project Settings > Database > Connection
-   string > URI*. Collez cette valeur dans `DATABASE_URL` (fichier `.env`).
-   Choisissez le mode "Transaction pooler" si vous déployez sur un
-   hébergeur serverless (Render, Railway...), sinon la connexion directe
-   suffit. Au démarrage suivant, `creer_tables()` crée automatiquement
-   les tables sur Postgres — rien d'autre à migrer à la main.
-3. **Stockage des documents** : *Storage > New bucket* — créez un bucket
-   (ex: `documents`), public si vous voulez que le téléchargement
-   redirige directement vers un lien public (le cas normal ici, puisque
-   les documents approuvés sont déjà censés être publics). Renseignez
-   `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (Project Settings > API >
-   service_role, **jamais** la clé `anon` côté serveur) et
-   `SUPABASE_BUCKET` dans `.env`.
-4. Laissez ces variables vides pour continuer en local (SQLite + disque).
+1. Créer un projet Supabase.
+2. Renseigner `DATABASE_URL` avec l'URI PostgreSQL.
+3. Créer un bucket de stockage pour les documents si le stockage Supabase est utilisé.
+4. Renseigner `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` et `SUPABASE_BUCKET`.
+5. Redémarrer l'application.
 
-## File IA Redis / Render Key Value
+La clé `service_role` doit rester côté serveur et ne doit jamais être exposée au navigateur.
 
-Le déploiement Free utilise deux ressources Render : le Web Free et un Key Value
-Free. Render confirme que ces deux types de ressources sont disponibles sans
-frais, tandis que les Background Workers ne disposent pas d'un plan Free.
-Le Key Value Free dispose de 25 Mo et 50 connexions maximum.
-citeturn546403search0turn546403search1
+---
 
-Le worker IA est donc embarqué dans le processus Web dans un thread dédié. Il
-n'exécute pas les appels IA dans la boucle asyncio de FastAPI : le trafic HTTP
-reste ainsi séparé du traitement lent, dans la limite des ressources du petit
-plan Free.
+## Configurer l'IA
 
-Le flux est :
+La génération de quiz et les fonctions d'accompagnement IA utilisent les variables d'environnement prévues dans `.env.example`.
+
+Variables principales :
 
 ```text
-HTTP -> PostgreSQL (tache durable) -> Redis RPUSH -> thread worker du Web
-                                      |
-                                      +--> PostgreSQL = filet de securite
-                                           si Redis perd la notification
+GROQ_API_KEY=
+GROQ_MODEL=
+GROQ_CRITIC_MODEL=
+AI_ENSEMBLE_ENABLED=
+AI_ENSEMBLE_USE_GEMINI=
+GEMINI_API_KEY=
+GEMINI_MODEL=
 ```
 
-Le Key Value Render est Redis-compatible (Valkey) et sa `connectionString`
-peut être injectée automatiquement dans `REDIS_URL` avec `fromService` dans
-`render.yaml`. Les services doivent être dans la même région pour utiliser
-l'URL interne. citeturn253418search0turn253418search3
+Les modèles restent configurables afin de pouvoir faire évoluer l'architecture sans modifier le parcours étudiant.
 
-Le Key Value Free est **en mémoire seulement** : un redémarrage peut perdre les
-messages présents dans Redis. C'est précisément pourquoi PostgreSQL reste la
-source durable et que le worker effectue périodiquement un rattrapage SQL.
-citeturn546403search0
+---
 
-En local, laisse `REDIS_URL` vide pour conserver le fonctionnement SQL. Pour
-tester Redis localement, utilise par exemple `redis://localhost:6379/0`.
+## Modération et confiance
 
-## Configurer la génération de quiz IA (API gratuite Groq)
+Gasy Mahay cherche à construire un environnement utile sans sacrifier la confiance.
 
-1. Créez un compte sur [console.groq.com](https://console.groq.com) — pas
-   de carte bancaire requise. *API Keys > Create API Key*.
-2. Renseignez `GROQ_API_KEY` dans `.env`. `GROQ_MODEL` est réglé par
-   défaut sur `llama-3.3-70b-versatile`.
-3. Limites du palier gratuit (largement suffisantes pour un quiz généré
-   à la demande par les étudiants) : 30 requêtes/minute, 1000/jour sur ce
-   modèle. Si la plateforme grossit beaucoup, Groq propose un palier payant
-   (sans minimum) qui multiplie ces limites par 10.
-4. Pour les documents scannés (images, PDF sans texte sélectionnable),
-   l'OCR (`pytesseract` + `pdf2image`) nécessite en plus le binaire
-   Tesseract (`apt install tesseract-ocr tesseract-ocr-fra` sous Linux,
-   installeur officiel sous Windows) et `poppler` pour les PDF
-   (`apt install poppler-utils`). Sans ces binaires système, l'OCR est
-   simplement ignoré (pas de crash) et seuls les PDF avec texte
-   sélectionnable donnent un quiz.
+Les ressources passent par un flux de modération avant publication selon le type de contenu.
 
-## Cercles d'étude — comment ça marche techniquement
+Les documents et espaces étudiants sont séparés des outils administratifs, et les contrôles importants sont appliqués côté serveur.
 
-Chat en temps réel via **WebSocket FastAPI natif** (`app/ws_manager.py`,
-`app/routers/cercles_router.py`) — pas de service tiers, ça reste 100%
-Python, cohérent avec le reste du projet (voir plus bas, "pas de
-framework JS"). L'authentification du salon réutilise directement le
-cookie de session existant (Starlette applique `SessionMiddleware` aussi
-bien aux requêtes HTTP qu'aux WebSockets).
+Pour l'IA, la plateforme utilise également des validations locales et des mécanismes de suivi des erreurs afin de pouvoir améliorer la qualité dans le temps.
 
-**Limite connue** : le gestionnaire de connexions (`GestionnaireConnexions`)
-garde les connexions actives en mémoire, dans le process Python. Avec un
-seul worker `uvicorn` (le mode par défaut, largement suffisant pour ce
-public), c'est parfait. Si un jour vous scalez sur plusieurs workers ou
-plusieurs machines, il faudra un pub/sub partagé entre process pour
-diffuser les messages (Supabase Realtime en écoutant les insertions sur
-`message_cercle`, ou Redis).
+---
 
-## Ce qui est déjà fonctionnel (testé de bout en bout)
+## Feuille de route
 
-- Inscription / connexion (par numéro de téléphone + mot de passe)
-- Dépôt d'un document (PDF, image...) avec filière/matière/année/type,
-  vers Supabase Storage ou le disque local selon la config
-- File de modération (un admin approuve ou rejette avant publication)
-- Liste filtrable des documents publiés + téléchargement
-- Cercles d'étude : création, adhésion, chat temps réel persistant
-- Quiz généré par une vraie IA à partir du texte extrait du document
-- Page sponsoring avec choix du moyen de paiement (le paiement réel
-  n'est pas encore branché — voir "Prochaines étapes")
+### Maintenant
 
-## Ce qui reste à brancher (volontairement laissé en `TODO` dans le code)
+- consolider l'expérience étudiant ;
+- améliorer le parcours de démarrage ;
+- enrichir le référentiel académique national ;
+- continuer à améliorer les quiz, les révisions et le Tuteur IA ;
+- mesurer les usages réels et les points de friction.
 
-1. **Paiement mobile money réel** (`app/routers/sponsoring_router.py`) :
-   une passerelle comme PayBriq, Efaina ou Voaray unifie MVola/Orange
-   Money/Airtel Money derrière une seule API — ne créer l'abonnement en
-   statut `actif` qu'après confirmation par leur webhook.
-2. **Icônes PWA** : `app/static/manifest.json` a un tableau `icons` vide
-   — ajouter un PNG 192×192 et 512×512 pour que l'installation sur
-   Android affiche une vraie icône.
-3. ~~Limiter le quiz IA aux abonnés~~ **Fait** : `/documents/{id}/quiz` et
-   les cercles d'étude nécessitent maintenant un essai gratuit actif ou
-   un abonnement étudiant valide (`app/dependencies.py`, `app/subscription.py`).
-4. **Modération des cercles/messages** : pour l'instant, tout étudiant
-   connecté peut créer un cercle et y écrire sans limite de débit — un
-   garde-fou anti-spam plus poussé (limite de messages/minute, signalement)
-   serait à ajouter avant un déploiement à grande échelle.
+### Prochaine étape
 
-## Feuille de route suggérée
+- renforcer la communauté et les cercles d'étude ;
+- améliorer les outils de classe virtuelle ;
+- développer les partenariats et le sponsoring ;
+- renforcer la qualité et la traçabilité des ressources ;
+- poursuivre l'évolution de l'ensemble IA à partir des erreurs observées.
 
-- **Phase 1 (maintenant)** : lancer un groupe pilote d'étudiants malagasy,
-  mesurer l'activation et les usages, puis élargir progressivement aux autres
-  universités et parcours de Madagascar.
-- **Phase 2** : brancher le vrai paiement mobile money pour les sponsors.
-- **Phase 3** : limiter le quiz IA aux sponsors/abonnés comme argument de
-  vente ("visibilité + accès à l'outil pour vos élèves").
-- **Phase 4** : étendre aux autres facultés, puis éventuellement à un
-  espace petites annonces/petits boulots (mentionné dans l'idéation
-  initiale mais volontairement hors scope de cette V1/V2).
+### À plus long terme
 
-## Pourquoi ces choix techniques
+- couvrir progressivement davantage de parcours universitaires à Madagascar ;
+- renforcer les outils d'apprentissage personnalisé ;
+- développer des partenariats avec les acteurs de l'éducation et les entreprises qui souhaitent soutenir les étudiants ;
+- construire un écosystème durable autour de l'apprentissage et de l'entraide.
 
-- **FastAPI + SQLModel + SQLite (ou Postgres/Supabase)** : reste dans un
-  seul langage (Python), cohérent avec tes autres projets ; SQLModel/
-  SQLAlchemy abstraient le moteur donc le code métier ne change pas selon
-  la base utilisée.
-- **Jinja2 (rendu HTML côté serveur), pas de framework JS** : pas besoin
-  d'apprendre React/Vue pour livrer cette version ; même le chat temps
-  réel utilise du JavaScript vanilla minimal (WebSocket natif du
-  navigateur) plutôt qu'un framework ou une lib tierce.
-- **PWA (manifest + service worker) plutôt qu'une app Android native** :
-  un seul code sert le web ET le mobile (installable sur l'écran
-  d'accueil), sans avoir à apprendre Kotlin/Java.
+---
+
+## Pour les étudiants
+
+Gasy Mahay veut être un endroit où l'on peut commencer simplement :
+
+**une question, une ressource, un quiz, une erreur, une explication, puis un progrès.**
+
+La plateforme grandira avec ses utilisateurs.
+
+Chaque étudiant qui partage une ressource, participe à un cercle, signale un problème ou utilise régulièrement les outils contribue à rendre l'écosystème plus utile pour les suivants.
+
+---
+
+## Pour les sponsors et partenaires
+
+Le projet est ouvert aux partenariats qui peuvent contribuer de manière concrète à son développement.
+
+Un partenariat peut notamment soutenir :
+
+- l'infrastructure ;
+- les services IA ;
+- la mise à disposition de ressources ;
+- l'accompagnement de communautés étudiantes ;
+- des actions ou programmes pédagogiques ;
+- la croissance du service à l'échelle nationale.
+
+Le sponsoring n'est pas présenté comme une simple visibilité publicitaire : l'objectif est de relier le soutien du partenaire à une contribution identifiable au projet.
+
+Pour échanger avec l'équipe, utilisez la page **Contact** du site.
+
+---
+
+## Contribuer au projet
+
+Le projet évolue par itérations.
+
+Avant d'ajouter une fonctionnalité, il est utile de vérifier qu'elle répond à un besoin réel, qu'elle reste compatible avec l'expérience mobile et qu'elle ne fragilise pas les fonctions déjà disponibles.
+
+Les contributions peuvent porter sur :
+
+- l'UX et l'interface ;
+- les données et le référentiel ;
+- les parcours pédagogiques ;
+- la qualité des ressources ;
+- l'IA et sa validation ;
+- la performance ;
+- la sécurité ;
+- les partenariats et usages étudiants.
+
+---
+
+## Message central
+
+> **Gasy Mahay ne cherche pas seulement à mettre des documents en ligne.**
+>
+> **Le projet cherche à construire un environnement où les étudiants peuvent trouver, comprendre, pratiquer, s'entraider et progresser.**
+
+**Gasy Mahay — construire ensemble un espace d'apprentissage pour Madagascar.**
