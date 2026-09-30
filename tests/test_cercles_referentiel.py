@@ -18,6 +18,7 @@ from app.models import (
     RoleUtilisateur, StatutCercle, Universite, Utilisateur, ProgrammeUniversitaire,
 )
 from app.referentiel import NIVEAUX
+from app.referentiel_academique import filiere_canonique_pour_cercle
 
 
 def _nouvel_engine_sqlite():
@@ -51,6 +52,44 @@ class TestCerclesReferentiel(unittest.TestCase):
             mention = Mention(nom="Informatique")
             session.add(mention); session.commit(); session.refresh(mention)
             self.mention_id = mention.id
+
+    def test_parcours_equivalent_utilise_une_filiere_representante_unique(self):
+        with Session(self.engine) as session:
+            f1 = Filiere(
+                nom="Commerce International",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add(f1); session.commit(); session.refresh(f1)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=f1.id,
+                est_active=True,
+            ))
+
+            autre_univ = Universite(nom="Universite Autre")
+            session.add(autre_univ); session.commit(); session.refresh(autre_univ)
+            autre_fac = Faculte(nom="Sciences", universite_id=autre_univ.id)
+            session.add(autre_fac); session.commit(); session.refresh(autre_fac)
+            f2 = Filiere(
+                nom="Commerce International ",
+                faculte_id=autre_fac.id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add(f2); session.commit(); session.refresh(f2)
+            session.add(ProgrammeUniversitaire(
+                universite_id=autre_univ.id,
+                filiere_id=f2.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            canon1 = filiere_canonique_pour_cercle(session, f1)
+            canon2 = filiere_canonique_pour_cercle(session, f2)
+            self.assertEqual(canon1.id, canon2.id)
+            self.assertEqual(canon1.id, min(f1.id, f2.id))
 
     def test_cree_un_cercle_pour_le_niveau_verifie_dune_filiere(self):
         with Session(self.engine) as session:
