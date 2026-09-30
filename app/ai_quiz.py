@@ -620,12 +620,13 @@ def generer_reponse_tuteur(
         niveau=None,
     )
     try:
-        completion = client.chat.completions.create(
-            model=parametres.groq_model,
-            max_completion_tokens=2048,
-            tools=[OUTIL_TUTEUR],
-            tool_choice={"type": "function", "function": {"name": "repondre_tuteur"}},
-            messages=[{
+        kwargs = {
+            "model": parametres.groq_model,
+            "max_completion_tokens": 2048,
+            "temperature": 0.2,
+            "tools": [OUTIL_TUTEUR],
+            "tool_choice": {"type": "function", "function": {"name": "repondre_tuteur"}},
+            "messages": [{
                 "role": "user",
                 "content": (
                     f"Tu es un tuteur pour des etudiants de l'Universite de "
@@ -642,7 +643,12 @@ def generer_reponse_tuteur(
                     f"{chr(10) + chr(10) + memoire if memoire else ''}"
                 ),
             }],
-        )
+        }
+        if parametres.groq_model.startswith("openai/gpt-oss"):
+            kwargs["reasoning_effort"] = "low"
+            kwargs["include_reasoning"] = False
+
+        completion = client.chat.completions.create(**kwargs)
     except Exception as erreur:
         return _reponse_tuteur_erreur(f"La generation a echoue : {erreur}")
 
