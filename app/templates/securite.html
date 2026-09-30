@@ -273,7 +273,7 @@
           <div class="ops-card"><h3>Niveau</h3><p>{{ p.niveau or "Non renseigné" }}</p></div>
           <div class="ops-card"><h3>Actualisation</h3><p>La mention et le parcours se changent via une demande administrateur lorsque c'est requis.</p></div>
         </div>
-        {% if not universite %}
+        {% if not profil_academique.universite %}
         <form method="post" action="/securite/universite" class="ops-form ops-subsection">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <label for="universite_id">Choisir mon université</label>
