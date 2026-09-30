@@ -9,8 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import select as sa_select
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from .database import engine
 from .models import StatutTacheIA, TacheIA, TentativeQuiz
@@ -29,7 +28,7 @@ def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
     try:
         with Session(engine) as session:
             existante = session.exec(
-                sa_select(TacheIA)
+                select(TacheIA)
                 .where(
                     TacheIA.type_tache == TYPE_VERIFICATION_QUIZ,
                     TacheIA.tentative_quiz_id == tentative_id,
@@ -100,7 +99,7 @@ def _verrouiller_tache(session: Session) -> Optional[TacheIA]:
     """Prend une seule tache disponible, sans double execution entre workers."""
     dialecte = session.get_bind().dialect.name
     requete = (
-        sa_select(TacheIA)
+        select(TacheIA)
         .where(
             TacheIA.statut == StatutTacheIA.EN_ATTENTE,
             TacheIA.disponible_le <= datetime.utcnow(),
