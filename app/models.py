@@ -432,6 +432,45 @@ class ErreurIAEnsemble(SQLModel, table=True):
     )
 
 
+class PerformanceModeleIA(SQLModel, table=True):
+    """Metriques agregees des critiques IA pour piloter le routage adaptatif.
+
+    Les compteurs servent a mesurer le comportement reel de chaque modele ;
+    ils ne remplacent jamais une validation humaine pour les signalements.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    type_interaction: str = Field(index=True)
+    matiere: str = Field(default="", index=True)
+    niveau: str = Field(default="", index=True)
+    modele: str = Field(index=True)
+    strategie: str = Field(default="standard", index=True)
+    appels: int = Field(default=0)
+    confiants: int = Field(default=0)
+    problemes: int = Field(default=0)
+    arbitrages: int = Field(default=0)
+    derniere_duree_secondes: Optional[float] = None
+    duree_moyenne_secondes: float = Field(default=0.0)
+    premiere_utilisation_le: datetime = Field(default_factory=datetime.utcnow)
+    derniere_utilisation_le: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "type_interaction",
+            "matiere",
+            "niveau",
+            "modele",
+            "strategie",
+            name="uq_performance_modele_ia",
+        ),
+        Index(
+            "ix_performance_modele_ia_lookup",
+            "type_interaction",
+            "matiere",
+            "niveau",
+        ),
+    )
+
+
 class TentativeQuiz(SQLModel, table=True):
     """Un quiz genere pour un etudiant : le meme enregistrement sert
     d'abord de 'quiz en cours' (questions generees, pas encore repondu),
@@ -1172,6 +1211,8 @@ class TacheIA(SQLModel, table=True):
     type_tache: str = Field(index=True)
     tentative_quiz_id: int = Field(foreign_key="tentativequiz.id", index=True)
     statut: StatutTacheIA = Field(default=StatutTacheIA.EN_ATTENTE, index=True)
+    strategie_verification: str = Field(default="standard", index=True)
+    score_risque: int = Field(default=0)
     nombre_essais: int = Field(default=0)
     disponible_le: datetime = Field(default_factory=datetime.utcnow, index=True)
     prise_en_charge_le: Optional[datetime] = None
