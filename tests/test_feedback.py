@@ -244,9 +244,9 @@ class TestFeedback(unittest.TestCase):
             feedback_id = fb.id
 
         jeton = _jeton_csrf(self.admin, "/admin/feedback")
-        self.admin.post(f"/admin/feedback/{feedback_id}/repondre", data={"reponse": "Premiere reponse", "_csrf": jeton})
+        _admin_post(self.admin, f"/admin/feedback/{feedback_id}/repondre", {"reponse": "Premiere reponse", "_csrf": jeton})
         jeton2 = _jeton_csrf(self.admin, "/admin/feedback")
-        self.admin.post(f"/admin/feedback/{feedback_id}/repondre", data={"reponse": "Reponse corrigee", "_csrf": jeton2})
+        _admin_post(self.admin, f"/admin/feedback/{feedback_id}/repondre", {"reponse": "Reponse corrigee", "_csrf": jeton2})
 
         with Session(engine) as session:
             reponses = session.exec(select(ReponseFeedback).where(ReponseFeedback.feedback_id == feedback_id)).all()
@@ -281,7 +281,7 @@ class TestFeedback(unittest.TestCase):
             feedback_id = fb.id
 
         jeton = _jeton_csrf(self.admin, "/admin/feedback")
-        self.admin.post(f"/admin/feedback/{feedback_id}/masquer", data={"_csrf": jeton})
+        _admin_post(self.admin, f"/admin/feedback/{feedback_id}/masquer", {"_csrf": jeton})
 
         with Session(engine) as session:
             self.assertEqual(session.get(Feedback, feedback_id).statut, StatutFeedback.MASQUE)
