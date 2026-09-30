@@ -16,7 +16,7 @@
         <span class="ai-verification-dot"></span>
         <span data-tuteur-verification-label>
           {% if session_tuteur.statut_verification_ia == "terminee" %}
-          Réponse vérifiée par l'ensemble IA
+          Vérification multi-modèles terminée
           {% elif session_tuteur.statut_verification_ia == "echouee" %}
           Réponse initiale conservée
           {% else %}
@@ -92,7 +92,6 @@
     <a class="bouton bouton-secondaire" href="/quiz/reflexion">Ouvrir le thème de réflexion</a>
   </div>
 </div>
-{% endblock %}
 
 <script nonce="{{ csp_nonce(request) }}">
 (function () {
@@ -151,3 +150,5 @@
   }
 })();
 </script>
+
+{% endblock %}
