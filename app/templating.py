@@ -19,6 +19,114 @@ BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.globals["jeton_csrf"] = obtenir_jeton_csrf
 
+
+def _texte_ia_html(texte) -> "Markup":
+    """Rend le Markdown courant des reponses IA sans autoriser du HTML brut."""
+    import html
+    import re
+    from markupsafe import Markup
+
+    brut = "" if texte is None else str(texte)
+    lignes = brut.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    html_blocks = []
+    i = 0
+
+    def inline(valeur: str) -> str:
+        valeur = html.escape(valeur, quote=True)
+        valeur = re.sub(r"\x60([^\x60]+)\x60", r"<code>\1</code>", valeur)
+        valeur = re.sub(r"\*\*([^*\n]+?)\*\*", r"<strong>\1</strong>", valeur)
+        valeur = re.sub(r"(?<!\*)\*([^*\n]+?)\*(?!\*)", r"<em>\1</em>", valeur)
+        return valeur
+
+    def est_sep_tableau(ligne: str) -> bool:
+        morceaux = [m.strip() for m in ligne.strip().strip("|").split("|")]
+        return bool(morceaux) and all(
+            re.fullmatch(r":?-{3,}:?", morceau.replace(" ", "")) for morceau in morceaux
+        )
+
+    while i < len(lignes):
+        ligne = lignes[i].strip()
+        if not ligne:
+            i += 1
+            continue
+
+        if "|" in ligne and i + 1 < len(lignes) and est_sep_tableau(lignes[i + 1]):
+            def cellules(texte_ligne: str) -> list[str]:
+                return [inline(c.strip()) for c in texte_ligne.strip().strip("|").split("|")]
+
+            entetes = cellules(ligne)
+            i += 2
+            rows = []
+            while i < len(lignes) and lignes[i].strip() and "|" in lignes[i]:
+                rows.append(cellules(lignes[i]))
+                i += 1
+            html_blocks.append(
+                '<div class="ai-markdown-table-wrap"><table class="ai-markdown-table"><thead><tr>'
+                + "".join(f"<th>{c}</th>" for c in entetes)
+                + "</tr></thead><tbody>"
+                + "".join(
+                    "<tr>" + "".join(f"<td>{c}</td>" for c in row) + "</tr>"
+                    for row in rows
+                )
+                + "</tbody></table></div>"
+            )
+            continue
+
+        match_titre = re.match(r"^(#{1,3})\s+(.+)$", ligne)
+        if match_titre:
+            niveau = min(len(match_titre.group(1)) + 2, 5)
+            html_blocks.append(f"<h{niveau}>{inline(match_titre.group(2))}</h{niveau}>")
+            i += 1
+            continue
+
+        if re.match(r"^[-*]\s+", ligne):
+            items = []
+            while i < len(lignes):
+                courant = lignes[i].strip()
+                if not courant or not re.match(r"^[-*]\s+", courant):
+                    break
+                items.append(re.sub(r"^[-*]\s+", "", courant))
+                i += 1
+            html_blocks.append("<ul>" + "".join(f"<li>{inline(item)}</li>" for item in items) + "</ul>")
+            continue
+
+        if re.match(r"^\d+[.)]\s+", ligne):
+            items = []
+            while i < len(lignes):
+                courant = lignes[i].strip()
+                if not courant or not re.match(r"^\d+[.)]\s+", courant):
+                    break
+                items.append(re.sub(r"^\d+[.)]\s+", "", courant))
+                i += 1
+            html_blocks.append("<ol>" + "".join(f"<li>{inline(item)}</li>" for item in items) + "</ol>")
+            continue
+
+        if re.fullmatch(r"[-*_]{3,}", ligne):
+            i += 1
+            html_blocks.append("<hr>")
+            continue
+
+        paragraph = [ligne]
+        i += 1
+        while i < len(lignes) and lignes[i].strip():
+            prochain = lignes[i].strip()
+            if (
+                "|" in prochain
+                or re.match(r"^(#{1,3})\s+", prochain)
+                or re.match(r"^[-*]\s+", prochain)
+                or re.match(r"^\d+[.)]\s+", prochain)
+                or re.fullmatch(r"[-*_]{3,}", prochain)
+            ):
+                break
+            paragraph.append(prochain)
+            i += 1
+        html_blocks.append("<p>" + "<br>".join(inline(part) for part in paragraph) + "</p>")
+
+    return Markup("".join(html_blocks) or "<p>—</p>")
+
+
+templates.env.filters["texte_ia"] = _texte_ia_html
+
 from .auth import jours_inactivite as _jours_inactivite
 
 templates.env.globals["jours_inactivite"] = _jours_inactivite
