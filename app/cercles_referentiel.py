@@ -46,7 +46,7 @@ from typing import Optional
 from sqlmodel import Session, func, select
 
 from .models import (
-    CercleEtude, Faculte, Filiere, MembreCercle, ProgrammeUniversitaire, RoleMembreCercle, RoleUtilisateur,
+    CercleEtude, Faculte, Filiere, Mention, MembreCercle, ProgrammeUniversitaire, RoleMembreCercle, RoleUtilisateur,
     StatutCercle, Utilisateur,
 )
 from .referentiel import NIVEAUX, libelle_niveau
@@ -220,7 +220,90 @@ def assurer_cercles_pour_filiere(session: Session, filiere: Filiere, createur: U
     return assurer_cercles_pour_groupe_parcours(session, filiere.mention_id, filieres_du_groupe, createur)
 
 
-def assurer_cercles_referentiel(session: Session) -> int:
+def assurer_cercles_tronc_commun(
+    session: Session,
+    identites_tronc: set[tuple[int, str]],
+    createur: Utilisateur,
+) -> int:
+    """Garantit un seul cercle national par (mention, niveau) de tronc commun.
+
+    Les identites proviennent directement des lignes « Tronc commun » de la
+    source stricte Toamasina. On n'infère donc jamais un tronc commun à partir
+    d'une absence de parcours : cela évite de fabriquer des cercles dans une
+    offre incomplète ou ambiguë.
+    """
+    if not identites_tronc:
+        return 0
+
+    actifs_tronc = session.exec(
+        select(CercleEtude).where(
+            CercleEtude.statut == StatutCercle.ACTIF,
+            CercleEtude.mention_id.is_not(None),
+            CercleEtude.niveau.is_not(None),
+            CercleEtude.filiere_id.is_(None),
+        )
+    ).all()
+
+    # Archive un ancien tronc devenu absent du référentiel, sauf si des
+    # étudiants réels l'utilisent encore : dans ce cas on conserve le cercle
+    # pour une revue humaine plutôt que déplacer des membres silencieusement.
+    for cercle in actifs_tronc:
+        if (cercle.mention_id, cercle.niveau) in identites_tronc:
+            continue
+        nb_membres = session.exec(
+            select(func.count()).select_from(MembreCercle).where(
+                MembreCercle.cercle_id == cercle.id,
+                MembreCercle.utilisateur_id != createur.id,
+            )
+        ).one()
+        if not nb_membres:
+            cercle.statut = StatutCercle.ARCHIVE
+            session.add(cercle)
+
+    if actifs_tronc:
+        session.commit()
+
+    total_crees = 0
+    for mention_id, niveau in sorted(identites_tronc):
+        existe = session.exec(
+            select(CercleEtude).where(
+                CercleEtude.mention_id == mention_id,
+                CercleEtude.niveau == niveau,
+                CercleEtude.filiere_id.is_(None),
+                CercleEtude.statut == StatutCercle.ACTIF,
+            )
+        ).first()
+        if existe:
+            continue
+
+        mention = session.get(Mention, mention_id)
+        nom_mention = mention.nom if mention else f"Mention #{mention_id}"
+        cercle = CercleEtude(
+            nom=f"{nom_mention} — Tronc commun — {libelle_niveau(niveau)}",
+            mention_id=mention_id,
+            filiere_id=None,
+            niveau=niveau,
+            statut=StatutCercle.ACTIF,
+            createur_id=createur.id,
+        )
+        session.add(cercle)
+        session.commit()
+        session.refresh(cercle)
+        session.add(MembreCercle(
+            cercle_id=cercle.id,
+            utilisateur_id=createur.id,
+            role=RoleMembreCercle.CREATEUR,
+        ))
+        session.commit()
+        total_crees += 1
+
+    return total_crees
+
+
+def assurer_cercles_referentiel(
+    session: Session,
+    identites_tronc: set[tuple[int, str]] | None = None,
+) -> int:
     """Parcourt TOUTES les filieres deja rattachees a une mention,
     les regroupe par parcours national (mention_id + nom normalise —
     voir la docstring du module), et garantit qu'UN SEUL cercle existe
@@ -353,6 +436,12 @@ def assurer_cercles_referentiel(session: Session) -> int:
                 "  ... %d autre(s) cercle(s) similaires.",
                 len(cercles_a_revoir) - 10,
             )
+
+    # Les troncs communs sont alimentés uniquement par les lignes source
+    # explicites, puis regroupés en une identité nationale (mention+niveau).
+    # Le parcours/Filiere n'intervient jamais dans leur identité.
+    if identites_tronc:
+        total_crees += assurer_cercles_tronc_commun(session, identites_tronc, createur)
 
     for (mention_id, _nom_normalise), filieres_du_groupe in groupes.items():
         crees, archives = assurer_cercles_pour_groupe_parcours(session, mention_id, filieres_du_groupe, createur)
