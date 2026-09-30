@@ -1197,6 +1197,13 @@ def _traiter_acceptation_demande(session: Session, cercle: CercleEtude, demande:
     session.add(demande)
     if not _a_acces_cercle(session, cercle.id, demande.utilisateur_id):
         session.add(MembreCercle(cercle_id=cercle.id, utilisateur_id=demande.utilisateur_id))
+        gamification.enregistrer_action(
+            session,
+            demande.utilisateur_id,
+            "cercle_rejoint",
+            source_type="cercle",
+            source_key=str(cercle.id),
+        )
     session.commit()
     return None
 
