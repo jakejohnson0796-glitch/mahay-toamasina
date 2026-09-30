@@ -25,6 +25,7 @@ from .admin_security import AdminActionConfirmationMiddleware
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
+from .referentiel_reconciliation import reconcilier
 from scripts.dedupliquer_cercles_nationaux import deduplicquer as deduplicquer_cercles_nationaux
 from scripts.import_academic_data import importer as importer_referentiel_academique
 from .auth import utilisateur_courant
@@ -239,8 +240,39 @@ def _initialiser_donnees_apres_demarrage() -> None:
         assurer_compte_admin(session)
         # Apres assurer_compte_admin : un cercle genere automatiquement a
         # besoin d'un createur_id valide (voir cercles_referentiel.py).
-        identites_tronc = getattr(rapport_referentiel, "cercles_tronc_commun", set()) if "rapport_referentiel" in locals() else set()
-        nb_cercles_crees = assurer_cercles_referentiel(session, identites_tronc=identites_tronc)
+        # 1) Répare d'abord les doublons de cercles historiques afin que
+        # la fusion des Filiere ci-dessous ne puisse pas heurter l'index
+        # national unique.
+        rapport_dedup_avant = deduplicquer_cercles_nationaux(session)
+        if rapport_dedup_avant.groupes_fusionnes or rapport_dedup_avant.cercles_archives:
+            print(
+                "[DEBUG DATABASE] Pré-nettoyage cercles — "
+                f"{len(rapport_dedup_avant.groupes_fusionnes)} groupe(s) fusionne(s), "
+                f"{len(rapport_dedup_avant.cercles_archives)} cercle(s) archive(s)."
+            )
+
+        # 2) Réconciliation stricte de l'offre Toamasina avec la source
+        # canonique : fusion des Filiere équivalentes, désactivation des
+        # anciennes offres absentes et activation des seules lignes publiables.
+        rapport_reconciliation = reconcilier(
+            session,
+            str(chemin_referentiel),
+        )
+        print(
+            "[DEBUG ACADEMIQUE] Réconciliation Toamasina — "
+            f"{rapport_reconciliation.offres_activees} offre(s) activée(s), "
+            f"{rapport_reconciliation.offres_desactivees} désactivée(s), "
+            f"{rapport_reconciliation.filieres_supprimees} doublon(s) supprimé(s), "
+            f"{rapport_reconciliation.filieres_fusionnees} fusion(s) de filières."
+        )
+
+        # 3) Les identités de tronc commun viennent du référentiel
+        # canonique, pas d'une déduction heuristique.
+        identites_tronc = rapport_reconciliation.tronc_commun
+        nb_cercles_crees = assurer_cercles_referentiel(
+            session,
+            identites_tronc=identites_tronc,
+        )
         if nb_cercles_crees:
             print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
     
