@@ -338,7 +338,14 @@
         {% endfor %}
       </div>
       {% else %}
-      <div class="cercles-visibilite-vide">Tu n'as encore rejoint aucun cercle.</div>
+      <div class="cercles-visibilite-vide cercles-activation-vide">
+        <strong>Ton cercle d'étude t'attend.</strong>
+        <span>Rejoins le cercle de ta filière ou lance une discussion avec d'autres étudiants.</span>
+        <div class="cercles-activation-actions">
+          <a class="bouton bouton-primaire" href="#recherche-cercles">Trouver un cercle →</a>
+          <a class="bouton bouton-secondaire" href="#creer-cercle">Créer un cercle</a>
+        </div>
+      </div>
       {% endif %}
     </section>
 
