@@ -15,6 +15,7 @@ from ..models import Document, StatutDocument, TentativeQuiz, ProgressionNotion
 from .. import quiz as quiz_module
 from .. import ai_queue
 from .. import theme_service
+from .. import gamification
 from ..rate_limit import limite_depassee
 
 router = APIRouter()
@@ -308,6 +309,15 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
         quiz_module.corriger(session, tentative, reponses_soumises)
     except quiz_module.QuizValidationError as exc:
         raise HTTPException(status_code=400, detail="Reponses de quiz invalides.") from exc
+
+    gamification.enregistrer_action(
+        session,
+        utilisateur.id,
+        "quiz",
+        source_type="tentative_quiz",
+        source_key=str(tentative.id),
+    )
+    session.commit()
     return RedirectResponse(f"/quiz/{tentative.id}/resultat", status_code=303)
 
 
