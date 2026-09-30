@@ -16,6 +16,11 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false        # a remplir manuellement dans le dashboard Render (valeur secrete)
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mahay-toamasina-ai-queue
+          property: connectionString
       - key: SESSION_SECRET_KEY
         sync: false
       - key: SUPABASE_URL
@@ -76,6 +81,11 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mahay-toamasina-ai-queue
+          property: connectionString
       - key: SESSION_SECRET_KEY
         sync: false
       - key: SUPABASE_URL
@@ -118,3 +128,11 @@ services:
         sync: false
       - key: LIVEKIT_API_SECRET
         sync: false
+
+
+  # File rapide partagee par les services web et les workers IA.
+  # Render provisionne une instance Key Value (Valkey, compatible Redis).
+  - type: keyvalue
+    name: mahay-toamasina-ai-queue
+    plan: 256mb
+    region: frankfurt
