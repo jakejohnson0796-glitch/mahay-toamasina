@@ -26,6 +26,7 @@ from app.referentiel_academique import (
     type_cercle,
     erreur_cercle_parcours,
     parcours_cercle_offert,
+    offre_filiere_active_universite,
 )
 
 
@@ -227,15 +228,16 @@ class TestCorrespondanceCercle(unittest.TestCase):
                 filiere_id=autre_filiere.id,
                 est_active=True,
             ))
-            # Aucun programme Toamasina pour la filiere locale.
+            # Aucun programme Toamasina pour la filiere locale : ce lien distant
+            # ne doit pas fabriquer une offre Toamasina.
             filiere_locale = session.get(Filiere, self.filiere_id)
             filiere_locale.niveau = "L3"
             session.add(filiere_locale)
             session.commit()
 
             self.assertFalse(
-                parcours_cercle_offert(
-                    session, self.mention_id, self.filiere_id, "L3"
+                offre_filiere_active_universite(
+                    session, self.universite_id, self.filiere_id
                 )
             )
 
