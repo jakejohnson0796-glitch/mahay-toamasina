@@ -111,7 +111,6 @@ OUTIL_QUIZ = {
                                 "items": {"type": "string"},
                                 "minItems": 3,
                                 "maxItems": 5,
-                                "uniqueItems": True,
                             },
                             "index_bonne_reponse": {
                                 "type": "integer",
@@ -263,6 +262,32 @@ def _generer_completion_avec_reessai(
         )
 
         if message.tool_calls:
+            try:
+                arguments = json.loads(message.tool_calls[0].function.arguments)
+                questions = arguments.get("questions")
+                valider_questions(questions, expected_count=expected_count)
+            except (json.JSONDecodeError, AttributeError, TypeError, QuizValidationError) as validation_error:
+                derniere_erreur = validation_error
+                logger.warning(
+                    "Generation quiz IA: tool-call rejete par la validation locale "
+                    "essai=%s/%s: %s",
+                    numero_essai,
+                    len(messages_par_essai),
+                    validation_error,
+                )
+                # Le deuxieme essai reçoit un feedback explicite ci-dessous.
+                if numero_essai < len(messages_par_essai):
+                    messages_par_essai[numero_essai] = (
+                        f"{messages_par_essai[numero_essai]}\n\n"
+                        "CORRECTION OBLIGATOIRE DU DERNIER ESSAI : "
+                        f"le quiz precedent a echoue a la validation ({validation_error}). "
+                        f"Retourne EXACTEMENT {expected_count} questions. "
+                        "Dans chaque question, les choix doivent etre tous differents "
+                        "meme si deux distracteurs semblent similaires. "
+                        "N'invente pas de doublon orthographique. "
+                        "Conserve une seule bonne reponse et un index correspondant."
+                    )
+                continue
             return completion, None
 
         derniere_erreur = RuntimeError(
@@ -400,8 +425,8 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
         f"multiples en francais sur la matiere '{matiere}', pour un niveau "
         f"{niveau}, avec une difficulte {difficulte}. Varie les niveaux "
         f"cognitifs (comprehension, application, pas seulement de la "
-        f"restitution), 4 choix plausibles par question, une seule bonne "
-        f"reponse, une explication tres courte (1 phrase) et une notion "
+        f"restitution), 4 choix plausibles et DISTINCTS par question, "
+        f"une seule bonne reponse, une explication tres courte (1 phrase) et une notion "
         f"pedagogique tres courte (2 a 6 mots). Reste concis afin de produire "
         f"l'ensemble des questions dans un seul appel. Utilise l'outil "
         f"fourni pour repondre."
