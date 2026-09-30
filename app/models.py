@@ -211,6 +211,13 @@ class Utilisateur(SQLModel, table=True):
     # base de donnees.
     email: Optional[str] = None
     mot_de_passe_hash: str
+
+    # Secret distinct du mot de passe de connexion, demande avant chaque
+    # action d'administration sensible. Il est toujours stocke uniquement
+    # sous forme de hash bcrypt.
+    mot_de_passe_confirmation_admin_hash: Optional[str] = None
+    confirmation_admin_configuree_le: Optional[datetime] = None
+
     # True juste apres une reinitialisation par un admin (voir
     # /admin/utilisateurs/{id}/reinitialiser-mot-de-passe) ou par SMS
     # (voir /mot-de-passe-oublie) : affiche un rappel sur /securite tant
