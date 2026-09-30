@@ -369,9 +369,9 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/modale.js?v={{ version_asset('js/modale.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/soumission.js?v={{ version_asset('js/soumission.js') }}" defer></script>
-<script nonce="{{ csp_nonce(request) }}" src="/static/js/security-ui.js?v={{ version_asset('security-ui.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/security-ui.js?v={{ version_asset('js/security-ui.js') }}" defer></script>
 {% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") %}
-<script nonce="{{ csp_nonce(request) }}" src="/static/js/ai-learning.js?v={{ version_asset('ai-learning.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/ai-learning.js?v={{ version_asset('js/ai-learning.js') }}" defer></script>
 {% endif %}
 {% if request.url.path.startswith("/defis") or request.url.path == "/dashboard" %}
 <link rel="stylesheet" href="/static/gamification.css?v=2">
