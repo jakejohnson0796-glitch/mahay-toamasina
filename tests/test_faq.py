@@ -71,6 +71,7 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
             f"Configuration confirmation admin echouee : "
             f"{configuration.status_code} {configuration.text[:300]}"
         )
+        client.admin_confirmation_password = f"test-confirm-{telephone}"
 
     client.utilisateur_id = utilisateur_id
     return client
@@ -79,6 +80,12 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
 def _jeton_csrf(client: TestClient, url: str) -> str:
     page = client.get(url)
     return re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
+
+
+def _admin_post(client: TestClient, url: str, data: dict, **kwargs):
+    payload = dict(data)
+    payload["admin_" + "confirmation_" + "password"] = client.admin_confirmation_password
+    return client.post(url, data=payload, **kwargs)
 
 
 class TestFaqPublique(unittest.TestCase):
@@ -139,7 +146,8 @@ class TestFaqPublique(unittest.TestCase):
 
     def test_admin_peut_creer_une_question(self):
         jeton = _jeton_csrf(self.admin, "/admin/faq")
-        reponse = self.admin.post(
+        reponse = _admin_post(
+            self.admin,
             "/admin/faq",
             data={"question": "Nouvelle question", "reponse": "Nouvelle reponse",
                   "categorie": "general", "ordre_affichage": 5, "_csrf": jeton},
@@ -168,12 +176,12 @@ class TestFaqPublique(unittest.TestCase):
             faq_id = session.exec(select(FAQ).where(FAQ.question == "Comment creer un compte ?")).first().id
 
         jeton = _jeton_csrf(self.admin, "/admin/faq")
-        self.admin.post(f"/admin/faq/{faq_id}/basculer-actif", data={"_csrf": jeton})
+        _admin_post(self.admin, f"/admin/faq/{faq_id}/basculer-actif", {"_csrf": jeton})
         with Session(engine) as session:
             self.assertFalse(session.get(FAQ, faq_id).est_active)
 
         jeton2 = _jeton_csrf(self.admin, "/admin/faq")
-        self.admin.post(f"/admin/faq/{faq_id}/basculer-actif", data={"_csrf": jeton2})
+        _admin_post(self.admin, f"/admin/faq/{faq_id}/basculer-actif", {"_csrf": jeton2})
         with Session(engine) as session:
             self.assertTrue(session.get(FAQ, faq_id).est_active)
 
@@ -182,7 +190,7 @@ class TestFaqPublique(unittest.TestCase):
             faq_id = session.exec(select(FAQ).where(FAQ.question == "Comment creer un compte ?")).first().id
 
         jeton = _jeton_csrf(self.admin, "/admin/faq")
-        self.admin.post(f"/admin/faq/{faq_id}/supprimer", data={"_csrf": jeton})
+        _admin_post(self.admin, f"/admin/faq/{faq_id}/supprimer", {"_csrf": jeton})
 
         with Session(engine) as session:
             faq = session.get(FAQ, faq_id)
