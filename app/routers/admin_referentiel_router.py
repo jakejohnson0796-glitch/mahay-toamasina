@@ -363,6 +363,7 @@ def page_demandes_creation(request: Request, session: Session = Depends(get_sess
     filieres = {f.id: f for f in session.exec(select(Filiere)).all()}
     mentions = {m.id: m for m in session.exec(select(Mention)).all()}
     facultes = {f.id: f for f in session.exec(select(Faculte)).all()}
+    facultes = {f.id: f for f in session.exec(select(Faculte)).all()}
 
     return templates.TemplateResponse(
         request,
@@ -486,6 +487,13 @@ def rejeter_demande_creation(
 # /securite/niveau, /profil/academique) : seule la filiere, qui
 # determine l'appartenance aux cercles nationaux, passe par ici.
 # ============================================================
+
+
+
+@router.get("/admin/demandes-changement-filiere")
+def ancienne_page_demandes_changement_filiere():
+    """Compatibilite pour les anciens liens/bookmarks."""
+    return RedirectResponse("/admin/referentiel/demandes-filiere", status_code=303)
 
 @router.get("/admin/referentiel/demandes-filiere")
 def page_demandes_changement_filiere(request: Request, session: Session = Depends(get_session)):
