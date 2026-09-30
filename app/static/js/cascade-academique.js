@@ -172,5 +172,17 @@
     }
   }
 
-  document.querySelectorAll("[data-cascade-academique]").forEach(initialiser);
+  function demarrer() {
+    document.querySelectorAll("[data-cascade-academique]").forEach(initialiser);
+  }
+
+  // Le script est actuellement charge en bas des pages, mais rester
+  // compatible avec un déplacement futur dans <head> évite un second bug
+  // subtil : les selects resteraient désactivés simplement parce que le DOM
+  // n'était pas encore construit au moment de l'exécution.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", demarrer, { once: true });
+  } else {
+    demarrer();
+  }
 })();
