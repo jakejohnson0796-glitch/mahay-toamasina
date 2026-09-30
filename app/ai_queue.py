@@ -101,7 +101,11 @@ def notifier_tache(tache_id: int) -> bool:
         return False
 
     try:
-        client.rpush(CLE_FILE_REDIS, str(tache_id))
+        profondeur = client.rpush(CLE_FILE_REDIS, str(tache_id))
+        print(
+            f"[AI QUEUE] Redis RPUSH tache={tache_id} queue={CLE_FILE_REDIS} profondeur={profondeur}.",
+            flush=True,
+        )
         return True
     except redis.RedisError:
         logger.warning(
@@ -222,6 +226,12 @@ def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
             session.refresh(tache)
 
             publiee = notifier_tache(tache.id)
+            print(
+                f"[AI QUEUE] Tache creee id={tache.id} quiz={tentative_id} "
+                f"strategie={tache.strategie_verification} risque={tache.score_risque} "
+                f"redis_notifiee={publiee}.",
+                flush=True,
+            )
             logger.info(
                 "Tache IA %s planifiee pour quiz #%s: strategie=%s "
                 "score_risque=%s raisons=%s redis_notifiee=%s.",
@@ -233,7 +243,12 @@ def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
                 publiee,
             )
             return tache.id
-    except Exception:
+    except Exception as erreur:
+        print(
+            f"[AI QUEUE][ERREUR] planification quiz={tentative_id} "
+            f"type={type(erreur).__name__} detail={erreur}",
+            flush=True,
+        )
         logger.exception(
             "Impossible de planifier la verification IA du quiz #%s.",
             tentative_id,
@@ -278,6 +293,11 @@ def _verrouiller_tache(
     session.add(tache)
     session.commit()
     session.refresh(tache)
+    print(
+        f"[AI QUEUE] Tache claim id={tache.id} quiz={tache.tentative_quiz_id} "
+        f"essai={tache.nombre_essais}.",
+        flush=True,
+    )
     return tache
 
 
@@ -296,6 +316,18 @@ def terminer_tache(tache_id: int) -> None:
         tache.derniere_erreur = None
         session.add(tache)
         session.commit()
+        if tache.statut == StatutTacheIA.ECHOUEE:
+            print(
+                f"[AI QUEUE] Tache abandonnee id={tache_id} apres {tache.nombre_essais} essais.",
+                flush=True,
+            )
+        else:
+            print(
+                f"[AI QUEUE] Tache replanifiee id={tache_id} essai={tache.nombre_essais} "
+                f"disponible_le={tache.disponible_le.isoformat() if tache.disponible_le else None}.",
+                flush=True,
+            )
+        print(f"[AI QUEUE] Tache terminee id={tache_id}.", flush=True)
         logger.info("Tache IA %s terminee.", tache_id)
 
 
