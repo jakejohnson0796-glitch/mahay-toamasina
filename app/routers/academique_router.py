@@ -38,6 +38,10 @@ def lister_universites(session: Session = Depends(get_session)):
 
 @router.get("/universites/{universite_id}/composantes")
 def lister_composantes(universite_id: int, session: Session = Depends(get_session)):
+    universite = session.get(Universite, universite_id)
+    if not universite or not universite.est_active:
+        return []
+
     composantes = session.exec(
         select(Faculte).where(Faculte.universite_id == universite_id).order_by(Faculte.nom)
     ).all()
@@ -55,6 +59,10 @@ def lister_mentions(composante_id: int, session: Session = Depends(get_session))
     qui permettrait de les rattacher ici automatiquement)."""
     composante = session.get(Faculte, composante_id)
     if not composante or not composante.universite_id:
+        return []
+
+    universite = session.get(Universite, composante.universite_id)
+    if not universite or not universite.est_active:
         return []
 
     ids_mentions = session.exec(
@@ -91,6 +99,11 @@ def lister_filieres_par_mention_niveau(
     enrichies) : moins precises, mais toujours des choix valides."""
     composante = session.get(Faculte, composante_id)
     if not composante or not composante.universite_id:
+        return []
+
+    universite = session.get(Universite, composante.universite_id)
+    mention = session.get(Mention, mention_id)
+    if not universite or not universite.est_active or not mention or not mention.est_active:
         return []
 
     filieres = session.exec(
