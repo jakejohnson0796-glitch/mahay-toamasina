@@ -264,9 +264,14 @@ def _initialiser_donnees_apres_demarrage() -> None:
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    """Endpoint de liveness ultra-leger pour le health check Render."""
-    return {"status": "ok"}
+def health() -> dict:
+    """Endpoint de liveness avec etat statique du worker IA inline."""
+    thread = getattr(app.state, "ai_worker_thread", None)
+    return {
+        "status": "ok",
+        "ai_worker_configured": bool(parametres.redis_url),
+        "ai_worker_alive": bool(thread and thread.is_alive()),
+    }
 
 
 @app.get("/robots.txt", include_in_schema=False)
