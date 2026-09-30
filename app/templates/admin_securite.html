@@ -51,35 +51,44 @@
 
       {% if confirmation_configuree %}
       <label for="mot_de_passe_confirmation_actuel">Mot de passe de confirmation actuel</label>
-      <input
-        id="mot_de_passe_confirmation_actuel"
-        name="mot_de_passe_confirmation_actuel"
-        type="password"
-        minlength="12"
-        autocomplete="current-password"
-        required
-      >
+      <div class="ops-password-field">
+        <input
+          id="mot_de_passe_confirmation_actuel"
+          name="mot_de_passe_confirmation_actuel"
+          type="password"
+          minlength="12"
+          autocomplete="current-password"
+          required
+        >
+        <button type="button" class="bouton bouton-secondaire ops-password-toggle" data-password-toggle="mot_de_passe_confirmation_actuel" aria-controls="mot_de_passe_confirmation_actuel" aria-label="Afficher le mot de passe">Afficher</button>
+      </div>
       {% endif %}
 
       <label for="nouveau_mot_de_passe">Nouveau mot de passe de confirmation</label>
-      <input
-        id="nouveau_mot_de_passe"
-        name="nouveau_mot_de_passe"
-        type="password"
-        minlength="12"
-        autocomplete="new-password"
-        required
-      >
+      <div class="ops-password-field">
+        <input
+          id="nouveau_mot_de_passe"
+          name="nouveau_mot_de_passe"
+          type="password"
+          minlength="12"
+          autocomplete="new-password"
+          required
+        >
+        <button type="button" class="bouton bouton-secondaire ops-password-toggle" data-password-toggle="nouveau_mot_de_passe" aria-controls="nouveau_mot_de_passe" aria-label="Afficher le mot de passe">Afficher</button>
+      </div>
 
       <label for="confirmation_nouveau_mot_de_passe">Confirmer le nouveau mot de passe</label>
-      <input
-        id="confirmation_nouveau_mot_de_passe"
-        name="confirmation_nouveau_mot_de_passe"
-        type="password"
-        minlength="12"
-        autocomplete="new-password"
-        required
-      >
+      <div class="ops-password-field">
+        <input
+          id="confirmation_nouveau_mot_de_passe"
+          name="confirmation_nouveau_mot_de_passe"
+          type="password"
+          minlength="12"
+          autocomplete="new-password"
+          required
+        >
+        <button type="button" class="bouton bouton-secondaire ops-password-toggle" data-password-toggle="confirmation_nouveau_mot_de_passe" aria-controls="confirmation_nouveau_mot_de_passe" aria-label="Afficher le mot de passe">Afficher</button>
+      </div>
 
       <button class="bouton bouton-primaire" type="submit">
         {% if confirmation_configuree %}Mettre à jour le secret{% else %}Activer la protection{% endif %}
@@ -101,3 +110,27 @@
   <p><a class="bouton bouton-secondaire" href="/admin">Retour à l'administration</a></p>
 </div>
 {% endblock %}
+
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  function initialiserBoutonsMotDePasse() {
+    document.querySelectorAll("[data-password-toggle]").forEach(function (bouton) {
+      if (bouton.dataset.passwordToggleReady === "1") return;
+      bouton.dataset.passwordToggleReady = "1";
+      bouton.addEventListener("click", function () {
+        var input = document.getElementById(bouton.getAttribute("data-password-toggle"));
+        if (!input) return;
+        var afficher = input.type === "password";
+        input.type = afficher ? "text" : "password";
+        bouton.textContent = afficher ? "Masquer" : "Afficher";
+        bouton.setAttribute("aria-label", afficher ? "Masquer le mot de passe" : "Afficher le mot de passe");
+      });
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialiserBoutonsMotDePasse);
+  } else {
+    initialiserBoutonsMotDePasse();
+  }
+})();
+</script>
