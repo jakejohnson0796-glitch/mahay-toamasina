@@ -998,8 +998,8 @@
 
 .ai-answer-grid {
   display: grid;
-  grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr);
-  gap: .7rem;
+  grid-template-columns: minmax(0,1fr);
+  gap: .8rem;
 }
 
 .ai-answer-card {
@@ -1037,9 +1037,153 @@
 .ai-answer-card p {
   margin: 0;
   color: var(--content-text);
-  font-size: .72rem;
-  line-height: 1.7;
+  font-size: .88rem;
+  line-height: 1.78;
   white-space: pre-line;
+}
+
+.ai-markdown-content {
+  color: var(--content-text);
+  font-size: .88rem;
+  line-height: 1.78;
+  overflow-wrap: anywhere;
+}
+
+.ai-markdown-content p {
+  margin: 0 0 .75rem;
+}
+
+.ai-markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-markdown-content strong {
+  color: var(--content-text);
+  font-weight: 800;
+}
+
+.ai-markdown-content em {
+  color: var(--content-text);
+}
+
+.ai-markdown-content h3,
+.ai-markdown-content h4,
+.ai-markdown-content h5 {
+  margin: 1rem 0 .45rem;
+  color: var(--content-text);
+  font-family: "Fraunces", Georgia, serif;
+  line-height: 1.15;
+}
+
+.ai-markdown-content h3 { font-size: 1.05rem; }
+.ai-markdown-content h4 { font-size: .95rem; }
+.ai-markdown-content h5 { font-size: .88rem; }
+
+.ai-markdown-content ul,
+.ai-markdown-content ol {
+  margin: .35rem 0 .8rem;
+  padding-left: 1.35rem;
+}
+
+.ai-markdown-content li {
+  margin: .28rem 0;
+}
+
+.ai-markdown-content code {
+  padding: .12rem .3rem;
+  border-radius: 5px;
+  background: var(--content-bg);
+  border: 1px solid var(--content-border);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .82em;
+}
+
+.ai-markdown-content hr {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid var(--content-border);
+}
+
+.ai-markdown-table-wrap {
+  width: 100%;
+  margin: .7rem 0 .9rem;
+  overflow-x: auto;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+}
+
+.ai-markdown-table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: .78rem;
+}
+
+.ai-markdown-table th,
+.ai-markdown-table td {
+  padding: .52rem .62rem;
+  border-bottom: 1px solid var(--content-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ai-markdown-table th {
+  background: var(--content-bg);
+  color: var(--content-text);
+  font-weight: 800;
+}
+
+.ai-markdown-table td {
+  color: var(--content-text-muted);
+}
+
+.ai-markdown-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.ai-verification-status {
+  display: inline-flex;
+  align-items: center;
+  gap: .42rem;
+  margin-top: .55rem;
+  padding: .34rem .55rem;
+  border: 1px solid var(--content-border);
+  border-radius: 999px;
+  background: var(--content-bg);
+  color: var(--content-text-muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.ai-verification-dot {
+  width: .45rem;
+  height: .45rem;
+  border-radius: 50%;
+  background: var(--refonte-teal);
+  animation: ai-pulse 1.1s ease-in-out infinite;
+}
+
+.ai-verification-status.is-terminee .ai-verification-dot {
+  background: #2f8f59;
+  animation: none;
+}
+
+.ai-verification-status.is-terminee {
+  border-color: rgba(47,143,89,.22);
+  color: #28724a;
+}
+
+.ai-verification-status.is-echouee .ai-verification-dot {
+  background: #b64b43;
+  animation: none;
+}
+
+.ai-verification-status.is-echouee {
+  border-color: rgba(182,75,67,.22);
+  color: #9e4039;
 }
 
 .ai-answer-correction details {
