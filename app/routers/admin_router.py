@@ -73,6 +73,7 @@ def configurer_mot_de_passe_confirmation_admin(
     nouveau_mot_de_passe: str = Form(...),
     confirmation_nouveau_mot_de_passe: str = Form(...),
     mot_de_passe_confirmation_actuel: Optional[str] = Form(None),
+    retour: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -80,28 +81,29 @@ def configurer_mot_de_passe_confirmation_admin(
     if not admin:
         return RedirectResponse("/", status_code=303)
 
+    destination = "/securite" if retour == "/securite" else "/admin/securite"
+    erreur_suffixe = "" if destination == "/admin/securite" else "&retour=securite"
+
     nouveau = (nouveau_mot_de_passe or "").strip()
     confirmation = confirmation_nouveau_mot_de_passe or ""
     actuel = mot_de_passe_confirmation_actuel or ""
 
     if len(nouveau) < 12:
-        return RedirectResponse("/admin/securite?erreur=longueur", status_code=303)
+        return RedirectResponse(f"{destination}?erreur=longueur{erreur_suffixe}", status_code=303)
 
     if nouveau != confirmation:
-        return RedirectResponse("/admin/securite?erreur=confirmation", status_code=303)
+        return RedirectResponse(f"{destination}?erreur=confirmation{erreur_suffixe}", status_code=303)
 
-    # Le secret de confirmation est volontairement distinct du mot de passe
-    # de connexion : cela evite qu'une reutilisation transforme une seule
-    # compromission en acces complet aux actions critiques.
+    # Le secret de confirmation doit rester distinct du mot de passe principal.
     if verifier_mot_de_passe(nouveau, admin.mot_de_passe_hash):
-        return RedirectResponse("/admin/securite?erreur=reutilisation", status_code=303)
+        return RedirectResponse(f"{destination}?erreur=reutilisation{erreur_suffixe}", status_code=303)
 
     if admin.mot_de_passe_confirmation_admin_hash:
         if not actuel or not verifier_mot_de_passe(
             actuel,
             admin.mot_de_passe_confirmation_admin_hash,
         ):
-            return RedirectResponse("/admin/securite?erreur=actuel_incorrect", status_code=303)
+            return RedirectResponse(f"{destination}?erreur=actuel_incorrect{erreur_suffixe}", status_code=303)
 
     admin.mot_de_passe_confirmation_admin_hash = hacher_mot_de_passe(nouveau)
     admin.confirmation_admin_configuree_le = datetime.utcnow()
@@ -111,7 +113,7 @@ def configurer_mot_de_passe_confirmation_admin(
     request.session.pop("admin_confirmation_echecs", None)
     request.session.pop("admin_confirmation_dernier_echec", None)
 
-    return RedirectResponse("/admin/securite?ok=1", status_code=303)
+    return RedirectResponse(f"{destination}?ok=confirmation_admin_configuree", status_code=303)
 
 
 # Alphabet sans caracteres ambigus (0/O, 1/l/I) pour le mot de passe
