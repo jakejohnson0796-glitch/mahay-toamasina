@@ -31,12 +31,23 @@ DELAI_MINIMUM_ENTRE_CHANGEMENTS_NIVEAU = timedelta(days=14)
 def offre_filiere_active_universite(session: Session, universite_id: int, filiere_id: int) -> bool:
     """Vrai si le parcours est explicitement offert dans l'universite.
 
+    Une Filiere appartient a la Faculte de son universite. Un lien
+    ProgrammeUniversitaire croise ne doit donc jamais rendre ce parcours
+    valide dans une autre universite.
+
     Quand aucune offre n'est encore renseignee pour cette universite (cas
     des anciennes bases/tests), on conserve la compatibilite historique et
     la composante de la Filiere reste la source de rattachement locale.
     Des que des lignes ProgrammeUniversitaire existent pour l'universite,
     une offre active est obligatoire.
     """
+    filiere = session.get(Filiere, filiere_id)
+    if not filiere:
+        return False
+    faculte = session.get(Faculte, filiere.faculte_id)
+    if not faculte or faculte.universite_id != universite_id:
+        return False
+
     offres = session.exec(
         select(ProgrammeUniversitaire).where(
             ProgrammeUniversitaire.universite_id == universite_id,
@@ -64,17 +75,38 @@ def _mention_offerte_dans_faculte(session: Session, mention_id: int, faculte_id:
 
 def _specialisation_dans_faculte(session: Session, mention_id: int, faculte_id: int, niveau: str) -> bool:
     """Verifie qu'un parcours nomme est explicitement rattache a ce niveau.
-    Une ligne historique sans niveau reste une donnee a completer, pas une
-    preuve qu'elle couvre tous les niveaux."""
-    return session.exec(
-        select(Filiere.id)
-        .where(
+
+    Si l'universite dispose deja de lignes ProgrammeUniversitaire, seule une
+    offre active est une preuve de parcours actuellement propose. Tant qu'il
+    n'existe aucune offre normalisee pour cette universite, les lignes
+    historiques continuent de servir de preuve pour conserver la retrocompatibilite.
+    """
+    filieres = session.exec(
+        select(Filiere).where(
             Filiere.mention_id == mention_id,
             Filiere.faculte_id == faculte_id,
             Filiere.niveau == niveau,
         )
-        .limit(1)
-    ).first() is not None
+    ).all()
+    if not filieres:
+        return False
+
+    faculte = session.get(Faculte, faculte_id)
+    if not faculte:
+        return False
+
+    offres_universite = session.exec(
+        select(ProgrammeUniversitaire.id).where(
+            ProgrammeUniversitaire.universite_id == faculte.universite_id,
+        )
+    ).first()
+    if offres_universite is None:
+        return True
+
+    return any(
+        offre_filiere_active_universite(session, faculte.universite_id, filiere.id)
+        for filiere in filieres
+    )
 
 
 
@@ -338,12 +370,68 @@ def cercle_est_national(cercle: CercleEtude) -> bool:
     parcours specialise ou tronc commun."""
     return type_cercle(cercle) in {"tronc_commun", "parcours"}
 
+
+def parcours_cercle_offert(
+    session: Session,
+    mention_id: Optional[int],
+    filiere_id: Optional[int],
+    niveau: Optional[str],
+) -> bool:
+    """Vrai si un cercle de parcours correspond a une offre academique reelle."""
+    if not mention_id or not filiere_id or not niveau:
+        return False
+
+    filiere_reference = session.get(Filiere, filiere_id)
+    if not filiere_reference or filiere_reference.mention_id != mention_id:
+        return False
+
+    for filiere in _filieres_equivalentes(session, filiere_reference):
+        if filiere.mention_id != mention_id:
+            continue
+        if filiere.niveau is not None and filiere.niveau != niveau:
+            continue
+        faculte = session.get(Faculte, filiere.faculte_id)
+        if not faculte or not faculte.universite_id:
+            continue
+        if offre_filiere_active_universite(session, faculte.universite_id, filiere.id):
+            return True
+    return False
+
+
+def erreur_cercle_parcours(
+    session: Session,
+    mention_id: Optional[int],
+    filiere_id: Optional[int],
+    niveau: Optional[str],
+) -> Optional[str]:
+    """Valide un triplet Mention + Parcours + Niveau avant creation/approbation."""
+    if not (mention_id and filiere_id and niveau):
+        return "Mention, parcours et niveau sont obligatoires."
+    if niveau not in NIVEAUX:
+        return "Niveau invalide."
+
+    filiere = session.get(Filiere, filiere_id)
+    if not filiere:
+        return "Parcours introuvable."
+    if filiere.mention_id != mention_id:
+        return "Ce parcours ne correspond pas a la mention selectionnee."
+    if filiere.niveau is not None and filiere.niveau != niveau:
+        return "Ce parcours n'est pas propose a ce niveau."
+    if not parcours_cercle_offert(session, mention_id, filiere_id, niveau):
+        return "Ce parcours n'est pas actuellement propose a ce niveau."
+    return None
+
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
     """Test canonique d'eligibilite a un cercle."""
     nature = type_cercle(cercle)
     if nature == "libre":
         return True
     if nature == "incomplet":
+        return False
+
+    if nature == "parcours" and not parcours_cercle_offert(
+        session, cercle.mention_id, cercle.filiere_id, cercle.niveau
+    ):
         return False
 
     profil = contexte_profil_academique(utilisateur, session)
