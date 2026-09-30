@@ -131,6 +131,12 @@ def contexte_profil_academique(utilisateur: Utilisateur, session: Session) -> di
 
     universite = session.get(Universite, utilisateur.universite_id) if utilisateur.universite_id else None
     filiere = session.get(Filiere, utilisateur.filiere_id) if utilisateur.filiere_id else None
+    # Une ancienne base pouvait avoir matérialisé le tronc commun comme une
+    # Filiere technique. Pour le profil métier, cela reste un tronc commun :
+    # aucune identité de parcours ne doit être exposée ni utilisée pour les
+    # cercles de parcours.
+    if filiere and _normaliser_nom_parcours(filiere.nom) == "tronc commun":
+        filiere = None
     faculte = (
         session.get(Faculte, utilisateur.faculte_id)
         if utilisateur.faculte_id
