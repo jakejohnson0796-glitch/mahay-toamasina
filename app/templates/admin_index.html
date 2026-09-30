@@ -30,6 +30,14 @@
     </div>
   </section>
 
+  {% if not confirmation_admin_configuree %}
+  <div class="ops-alert ops-alert-warn">
+    <strong>Protection admin à configurer.</strong>
+    Les actions administratives sont bloquées tant que le mot de passe de confirmation n'est pas défini.
+    <a href="/admin/securite?configurer=1">Configurer maintenant</a>
+  </div>
+  {% endif %}
+
   <nav class="ops-nav" aria-label="Navigation administration">
     <a class="is-active" href="/admin">Vue d'ensemble</a>
     <a href="/admin/abonnements">Abonnements</a>
