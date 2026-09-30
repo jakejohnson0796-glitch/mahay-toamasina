@@ -85,7 +85,12 @@ class EnTetesSecuriteMiddleware(BaseHTTPMiddleware):
         reponse.headers["Cross-Origin-Opener-Policy"] = "same-origin"
         reponse.headers["Cross-Origin-Resource-Policy"] = "same-origin"
 
-        if request.session.get("user_id"):
+        if request.url.path.startswith("/static/"):
+            # Les assets sont références avec un hash via version_asset().
+            # Ils peuvent donc être mis en cache longtemps sans risque de
+            # conserver une ancienne version après un déploiement.
+            reponse.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif request.session.get("user_id"):
             reponse.headers["Cache-Control"] = "no-store, max-age=0"
             reponse.headers["Pragma"] = "no-cache"
 
