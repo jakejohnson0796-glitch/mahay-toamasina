@@ -80,6 +80,7 @@ python -m app.creer_admin 0341234567
 Le déploiement Free utilise deux ressources Render : le Web Free et un Key Value
 Free. Render confirme que ces deux types de ressources sont disponibles sans
 frais, tandis que les Background Workers ne disposent pas d'un plan Free.
+Le Key Value Free dispose de 25 Mo et 50 connexions maximum.
 citeturn546403search0turn546403search1
 
 Le worker IA est donc embarqué dans le processus Web dans un thread dédié. Il
