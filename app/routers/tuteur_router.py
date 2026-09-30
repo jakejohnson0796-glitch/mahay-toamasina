@@ -49,9 +49,9 @@ def page_tuteur(request: Request, session: Session = Depends(get_session)):
 @router.post("/tuteur/demander")
 def demander_tuteur(
     request: Request,
+    background_tasks: BackgroundTasks,
     question: str = Form(...),
     progression_id: Optional[int] = Form(None),
-    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
