@@ -945,8 +945,11 @@ def modifier_universite(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    if utilisateur.universite_id is not None:
+        return RedirectResponse("/profil/academique", status_code=303)
+
     universite = session.get(Universite, universite_id)
-    if not universite:
+    if not universite or not universite.est_active:
         return RedirectResponse("/securite?erreur=universite_invalide", status_code=303)
 
     utilisateur.universite_id = universite.id
@@ -971,6 +974,8 @@ def modifier_niveau(
     utilisateur = session.get(Utilisateur, request.session.get("user_id"))
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
+        return RedirectResponse("/securite", status_code=303)
 
     if niveau not in NIVEAUX:
         return RedirectResponse("/securite?erreur=niveau_invalide", status_code=303)
@@ -1131,4 +1136,4 @@ def marquer_notification_inactivite_lue(
             notification.lu = True
             session.add(notification)
             session.commit()
-    return RedirectResponse(request.headers.get("referer") or "/", status_code=303)
+    return RedirectResponse("/", status_code=303)
