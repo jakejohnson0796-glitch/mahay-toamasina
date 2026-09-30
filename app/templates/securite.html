@@ -145,6 +145,86 @@
         </form>
       </section>
 
+      {% if utilisateur.role == "admin" %}
+      <section class="ops-security-card">
+        <h2>Mot de passe de confirmation administrateur</h2>
+        <p class="ops-security-card-intro">
+          Ce mot de passe est distinct de ton mot de passe de connexion.
+          Il sera demandé avant chaque action administrative sensible.
+        </p>
+
+        {% if request.query_params.get("erreur") == "longueur" and request.query_params.get("retour") == "securite" %}
+        <div class="ops-alert ops-alert-danger">Le mot de passe de confirmation doit contenir au moins 12 caractères.</div>
+        {% elif request.query_params.get("erreur") == "confirmation" and request.query_params.get("retour") == "securite" %}
+        <div class="ops-alert ops-alert-danger">Les deux nouveaux mots de passe ne correspondent pas.</div>
+        {% elif request.query_params.get("erreur") == "reutilisation" and request.query_params.get("retour") == "securite" %}
+        <div class="ops-alert ops-alert-danger">Utilise un secret différent de ton mot de passe de connexion.</div>
+        {% elif request.query_params.get("erreur") == "actuel_incorrect" and request.query_params.get("retour") == "securite" %}
+        <div class="ops-alert ops-alert-danger">Le mot de passe de confirmation actuel est incorrect.</div>
+        {% elif request.query_params.get("ok") == "confirmation_admin_configuree" %}
+        <div class="ops-alert ops-alert-info">Le mot de passe de confirmation administrateur est bien configuré.</div>
+        {% endif %}
+
+        {% if utilisateur.mot_de_passe_confirmation_admin_hash %}
+        <div class="ops-security-status">
+          <span class="ops-security-dot is-on"></span>
+          <div>
+            <strong>Protection active</strong>
+            <span>Configurée{% if utilisateur.confirmation_admin_configuree_le %} le {{ utilisateur.confirmation_admin_configuree_le.strftime("%d/%m/%Y à %H:%M") }} UTC{% endif %}</span>
+          </div>
+        </div>
+        {% else %}
+        <div class="ops-alert ops-alert-warn">Aucun mot de passe de confirmation n'est encore configuré.</div>
+        {% endif %}
+
+        <form method="post" action="/admin/securite/mot-de-passe-confirmation" class="ops-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="retour" value="/securite">
+
+          {% if utilisateur.mot_de_passe_confirmation_admin_hash %}
+          <label for="mot_de_passe_confirmation_actuel">Mot de passe de confirmation actuel</label>
+          <input
+            type="password"
+            id="mot_de_passe_confirmation_actuel"
+            name="mot_de_passe_confirmation_actuel"
+            minlength="12"
+            autocomplete="current-password"
+            required
+          >
+          {% endif %}
+
+          <label for="nouveau_mot_de_passe_confirmation_admin">Nouveau mot de passe de confirmation</label>
+          <input
+            type="password"
+            id="nouveau_mot_de_passe_confirmation_admin"
+            name="nouveau_mot_de_passe"
+            minlength="12"
+            maxlength="72"
+            autocomplete="new-password"
+            required
+          >
+
+          <label for="confirmation_nouveau_mot_de_passe_confirmation_admin">Confirmer le nouveau mot de passe</label>
+          <input
+            type="password"
+            id="confirmation_nouveau_mot_de_passe_confirmation_admin"
+            name="confirmation_nouveau_mot_de_passe"
+            minlength="12"
+            maxlength="72"
+            autocomplete="new-password"
+            required
+          >
+
+          <div class="ops-form-actions">
+            <button class="bouton bouton-primaire" type="submit">
+              {% if utilisateur.mot_de_passe_confirmation_admin_hash %}Modifier le mot de passe de confirmation{% else %}Configurer le second mot de passe{% endif %}
+            </button>
+            <a class="bouton bouton-secondaire" href="/admin/securite">Sécurité admin détaillée</a>
+          </div>
+        </form>
+      </section>
+      {% endif %}
+
       <section class="ops-security-card">
         <h2>À propos de moi</h2>
         <p class="ops-security-card-intro">Une courte présentation affichée dans certains espaces collaboratifs.</p>
