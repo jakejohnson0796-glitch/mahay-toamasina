@@ -303,7 +303,7 @@ def marquer_notifications_nouvelles_inscriptions_lues(
     if notifications:
         session.commit()
 
-    return RedirectResponse(request.headers.get("referer") or "/admin", status_code=303)
+    return RedirectResponse("/admin", status_code=303)
 
 
 @router.get("/admin/demandes-adhesion")
