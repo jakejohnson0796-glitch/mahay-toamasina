@@ -743,13 +743,18 @@ def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
             "exercice": session_tuteur.exercice,
             "correction": session_tuteur.correction,
         }
+        matiere = None
+        if session_tuteur.progression_id:
+            progression = session.get(ProgressionNotion, session_tuteur.progression_id)
+            if progression:
+                matiere = progression.matiere
 
         try:
             finale = verifier_reponse_tuteur_structuree(
                 initiale,
                 question=session_tuteur.question,
                 notion=session_tuteur.notion,
-                matiere=None,
+                matiere=matiere,
             )
             session_tuteur.explication = finale.get("explication") or initiale["explication"]
             session_tuteur.exemple = finale.get("exemple") or initiale["exemple"]
