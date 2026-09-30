@@ -4,6 +4,7 @@ Le web service ne fait qu'inscrire une tache en base. Un background worker
 Render distinct la recupere, l'exécute et gere les retries. Cela évite que les
 appels Qwen/Gemini/GPT-OSS monopolisent le worker HTTP.
 """
+import json
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
@@ -12,7 +13,8 @@ from sqlalchemy import select as sa_select
 from sqlmodel import Session
 
 from .database import engine
-from .models import StatutTacheIA, TacheIA
+from .models import StatutTacheIA, TacheIA, TentativeQuiz
+from . import ai_memory, ai_risk
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +46,33 @@ def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
             if existante:
                 return existante.id
 
+            tentative = session.get(TentativeQuiz, tentative_id)
+            if not tentative:
+                return None
+
+            try:
+                questions = json.loads(tentative.questions_json)
+            except (TypeError, ValueError):
+                questions = []
+
+            risque = ai_risk.analyser_risque(
+                questions,
+                matiere=tentative.matiere,
+                niveau=tentative.niveau,
+                difficulte=tentative.difficulte,
+                signaux_recurrents=ai_memory.nb_signaux_recurrents(
+                    type_interaction="quiz",
+                    matiere=tentative.matiere,
+                    niveau=tentative.niveau,
+                ),
+            )
+
             tache = TacheIA(
                 type_tache=TYPE_VERIFICATION_QUIZ,
                 tentative_quiz_id=tentative_id,
                 statut=StatutTacheIA.EN_ATTENTE,
+                strategie_verification=risque["strategie"],
+                score_risque=risque["score"],
                 disponible_le=maintenant,
                 date_creation=maintenant,
             )
@@ -55,9 +80,12 @@ def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
             session.commit()
             session.refresh(tache)
             logger.info(
-                "Tache IA %s planifiee pour quiz #%s.",
+                "Tache IA %s planifiee pour quiz #%s: strategie=%s score_risque=%s raisons=%s.",
                 tache.id,
                 tentative_id,
+                tache.strategie_verification,
+                tache.score_risque,
+                risque["raisons"],
             )
             return tache.id
     except Exception:
