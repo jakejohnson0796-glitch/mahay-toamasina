@@ -367,7 +367,6 @@ def reconcilier(
         if cle_dom:
             dom = domaines.get(cle_dom)
             if dom is None:
-                from .models import Domaine
                 dom = Domaine(nom=ligne["domaine"])
                 session.add(dom)
                 session.commit()
