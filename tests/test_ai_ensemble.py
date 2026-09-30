@@ -188,3 +188,39 @@ def test_strategie_legere_n_appelle_pas_gemini(monkeypatch):
     assert confiant is True
     assert audit["strategy"] == "legere"
     assert len(audit["critics"]) == 1
+
+
+
+def test_strategie_renforcee_force_larbitrage(monkeypatch):
+    monkeypatch.setattr(ai_ensemble.parametres, "ai_ensemble_enabled", True)
+    monkeypatch.setattr(ai_ensemble, "critiquer_quiz_groq", lambda *a, **k: {
+        "questions": _questions(),
+        "confiant": True,
+        "problemes": [],
+    })
+    monkeypatch.setattr(ai_ensemble, "critiquer_quiz_gemini", lambda *a, **k: {
+        "questions": _questions(),
+        "confiant": True,
+        "problemes": [],
+    })
+    called = {"value": False}
+
+    def arbiter(*args, **kwargs):
+        called["value"] = True
+        return {"questions": _questions(), "confiant": True}
+
+    monkeypatch.setattr(ai_ensemble, "arbitrer_quiz", arbiter)
+
+    result, confiant, audit = ai_ensemble.ensemble_verification_quiz(
+        _questions(),
+        "Mathématiques",
+        "L3",
+        ai_ensemble.OUTIL_CRITIQUE_QUIZ,
+        _validate,
+        strategie="renforcee",
+    )
+
+    assert result == _questions()
+    assert confiant is True
+    assert audit["arbitration"] == "groq_arbiter"
+    assert called["value"] is True
