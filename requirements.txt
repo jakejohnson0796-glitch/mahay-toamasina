@@ -10,6 +10,7 @@ itsdangerous==2.2.0
 # --- Ajoute pour Supabase / IA / cercles d'etude ---
 python-dotenv==1.0.1
 psycopg2-binary==2.9.9      # driver Postgres, necessaire si DATABASE_URL pointe vers Supabase
+redis==8.1.0                 # file rapide partagee entre web et workers via Render Key Value
 supabase==2.31.0             # client Supabase (DB alternative + Storage)
 groq==1.6.0                  # generation de quiz par IA (API gratuite, console.groq.com)
 pdfplumber==0.11.4           # extraction de texte des PDF (pour le quiz IA)
