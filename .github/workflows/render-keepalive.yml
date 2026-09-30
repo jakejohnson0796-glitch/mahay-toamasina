@@ -1,0 +1,23 @@
+name: Maintenir Gasy Mahay eveille
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      SITE_URL: https://mahay-toamasina.onrender.com
+    steps:
+      - name: Ping du healthcheck Render
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Ping: ${SITE_URL}/health"
+          curl --fail --silent --show-error --max-time 15 \
+            --retry 2 --retry-delay 2 \
+            "${SITE_URL}/health"
+          echo
