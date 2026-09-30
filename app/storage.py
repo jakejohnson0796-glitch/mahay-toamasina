@@ -168,15 +168,18 @@ def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: 
     except ValueError as exc:
         raise FichierInvalide(str(exc)) from exc
 
-    # Supprime l'ancienne photo AVANT d'ecrire la nouvelle : si
-    # l'extension n'a pas change, ancien_chemin == le nom d'objet qu'on
-    # s'apprete a reecrire (aucun risque de supprimer la photo qu'on
-    # vient de deposer, l'ordre des operations le garantit).
-    if ancien_chemin:
-        supprimer_fichier(ancien_chemin)
+    # L'extension vient du nom valide du fichier et sert uniquement a
+    # construire la cle opaque de stockage. Elle doit etre calculee ici,
+    # apres validation, avant toute ecriture.
+    extension = Path(nom_original).suffix.lower()
 
     nom_objet = f"avatar_{utilisateur_id}{extension}"
 
+    # Ecrit la nouvelle photo AVANT de supprimer l'ancienne : en cas
+    # d'echec de l'upload/ecriture, l'utilisateur conserve ainsi au moins
+    # sa photo actuelle. Quand le nom reste identique, l'upsert/ecriture
+    # remplace simplement le contenu en place ; il ne faut donc surtout
+    # pas supprimer l'objet apres coup dans ce cas.
     if stockage_distant_actif():
         client = _obtenir_client_supabase()
         client.storage.from_(parametres.supabase_bucket).upload(
@@ -184,12 +187,17 @@ def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: 
             path=nom_objet,
             file_options={"content-type": mime_reel, "upsert": "true"},
         )
-        return nom_objet
+        nouveau_chemin = nom_objet
+    else:
+        chemin_local = DOSSIER_UPLOADS_LOCAL / nom_objet
+        chemin_local.parent.mkdir(parents=True, exist_ok=True)
+        chemin_local.write_bytes(contenu)
+        nouveau_chemin = str(chemin_local)
 
-    chemin_local = DOSSIER_UPLOADS_LOCAL / nom_objet
-    chemin_local.parent.mkdir(parents=True, exist_ok=True)
-    chemin_local.write_bytes(contenu)
-    return str(chemin_local)
+    if ancien_chemin and ancien_chemin != nouveau_chemin:
+        supprimer_fichier(ancien_chemin)
+
+    return nouveau_chemin
 
 
 def obtenir_url_telechargement(reference_fichier: str, expires_in: int = 60, telechargement: bool = True) -> str:
