@@ -22,6 +22,7 @@ LONGUEUR_MIN_CONFIRMATION_ADMIN = 12
 MAX_ECHECS_CONFIRMATION_ADMIN = 5
 FENETRE_ECHECS_CONFIRMATION_ADMIN = timedelta(minutes=10)
 BLOCAGE_ECHECS_CONFIRMATION_ADMIN = timedelta(minutes=5)
+TAILLE_MAX_FORMULAIRE_ADMIN = 512 * 1024
 
 
 def action_admin_protegee(path: str) -> bool:
@@ -147,7 +148,12 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
             # dependance CSRF de la route, executee ensuite, recevrait alors
             # un formulaire vide et repondrait 403. request.body() met le
             # contenu en cache, puis request.form() peut le relire normalement.
-            await request.body()
+            contenu_body = await request.body()
+            if len(contenu_body) > TAILLE_MAX_FORMULAIRE_ADMIN:
+                return JSONResponse(
+                    {"detail": "Formulaire administrateur trop volumineux."},
+                    status_code=413,
+                )
             formulaire = await request.form()
             mot_de_passe = formulaire.get("admin_confirmation_password")
 
