@@ -32,6 +32,12 @@ class Parametres:
     # l'hebergeur), jamais commitee.
     database_url: str = field(default_factory=lambda: os.getenv("DATABASE_URL") or "sqlite:///./mahay.db")
 
+    # --- File IA Redis / Render Key Value ---
+    # En production, Render injecte automatiquement l'URL interne de Key Value
+    # via render.yaml. En local, laissez vide pour conserver le fallback SQL.
+    redis_url: str = field(default_factory=lambda: os.getenv("REDIS_URL", ""))
+    ai_queue_redis_key: str = field(default_factory=lambda: os.getenv("AI_QUEUE_REDIS_KEY", "mahay:ai:queue"))
+
     # --- Session (cookies de connexion) ---
     session_secret_key: str = field(default_factory=lambda: os.getenv("SESSION_SECRET_KEY", "a-changer-en-production"))
 
