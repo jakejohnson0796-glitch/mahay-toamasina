@@ -176,9 +176,13 @@
     document.querySelectorAll("[data-tuteur-form]").forEach(function (formulaire) {
       formulaire.addEventListener("submit", function () {
         const bouton = formulaire.querySelector("[data-tuteur-submit]");
+        const chargement = formulaire.querySelector("[data-tuteur-loading]");
         if (bouton) {
           bouton.disabled = true;
-          bouton.textContent = "Le tuteur réfléchit…";
+          bouton.textContent = "Préparation…";
+        }
+        if (chargement) {
+          chargement.hidden = false;
         }
       });
     });
