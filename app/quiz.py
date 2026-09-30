@@ -314,7 +314,7 @@ def creer_tentative_ciblee(
     return tentative
 
 
-def verifier_tentative_en_arriere_plan(tentative_id: int) -> None:
+def verifier_tentative_en_arriere_plan(tentative_id: int, strategie: Optional[str] = None) -> None:
     """Relit un quiz apres sa livraison, sans modifier le quiz affiche.
 
     Cette tache conserve la securite du pipeline multi-modeles (critiques,
@@ -341,6 +341,7 @@ def verifier_tentative_en_arriere_plan(tentative_id: int) -> None:
                 questions_tentative,
                 tentative.matiere,
                 tentative.niveau,
+                strategie=strategie or "standard",
             )
             try:
                 valider_questions(
@@ -355,8 +356,9 @@ def verifier_tentative_en_arriere_plan(tentative_id: int) -> None:
                 return
 
             logger.info(
-                "Verification arriere-plan quiz #%s terminee: confiant=%s.",
+                "Verification arriere-plan quiz #%s terminee: strategie=%s confiant=%s.",
                 tentative_id,
+                strategie or "standard",
                 confiant,
             )
     except Exception:
