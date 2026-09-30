@@ -483,7 +483,6 @@ TRADUCTIONS: Final[dict[str, dict[str, str]]] = {
         "Parcours / Filière": "Làlam-pianarana / Filiera",
         "Créer mon compte": "Hamorona kaonty",
         "Déjà inscrit(e) ?": "Efa nisoratra anarana?",
-    },
         "Apprentissage assisté · Quiz IA": "Fianarana ampian'ny IA · Quiz IA",
         "Transforme ton cours en entraînement.": "Ovay ho fanazaran-tena ny lesonao.",
         "Configure un quiz adapté à ton niveau, pratique immédiatement, puis analyse tes réponses. Le même espace rassemble génération, examen blanc, historique et réflexion.": "Amboary ny quiz mifanaraka amin'ny ambaratonganao, manaova fanazaran-tena ary diniho ny valinteninao. Eto amin'ny toerana iray ny famoronana, fanadinana andrana, tantara ary fandinihana.",
