@@ -28,34 +28,56 @@ MAX_ESSAIS = 5
 # meme si le message Redis disparait, la tache reste durablement en PostgreSQL.
 CLE_FILE_REDIS = parametres.ai_queue_redis_key
 _TIMEOUT_CONNEXION_REDIS = 2
-_TIMEOUT_SOCKET_REDIS = 5
-_client_redis: Optional[redis.Redis] = None
+_TIMEOUT_PRODUCTEUR_REDIS = 1
+_TIMEOUT_ATTENTE_REDIS = 15
+_TIMEOUT_CONSOMMATEUR_REDIS = _TIMEOUT_ATTENTE_REDIS + 5
+_client_producteur_redis: Optional[redis.Redis] = None
+_client_consommateur_redis: Optional[redis.Redis] = None
 
 
-def _client_file_redis() -> Optional[redis.Redis]:
-    """Retourne un client Redis lazy, ou None si Redis n'est pas configure."""
-    global _client_redis
+def _creer_client_redis(socket_timeout: float) -> redis.Redis:
+    return redis.Redis.from_url(
+        parametres.redis_url,
+        decode_responses=True,
+        socket_connect_timeout=_TIMEOUT_CONNEXION_REDIS,
+        socket_timeout=socket_timeout,
+        health_check_interval=30,
+    )
+
+
+def _client_producteur() -> Optional[redis.Redis]:
+    """Client court pour ne jamais ralentir inutilement les requetes HTTP."""
+    global _client_producteur_redis
 
     if not parametres.redis_url:
         return None
 
-    if _client_redis is None:
-        _client_redis = redis.Redis.from_url(
-            parametres.redis_url,
-            decode_responses=True,
-            socket_connect_timeout=_TIMEOUT_CONNEXION_REDIS,
-            socket_timeout=_TIMEOUT_SOCKET_REDIS,
-            health_check_interval=30,
-        )
-    return _client_redis
+    if _client_producteur_redis is None:
+        _client_producteur_redis = _creer_client_redis(_TIMEOUT_PRODUCTEUR_REDIS)
+    return _client_producteur_redis
 
 
-def _invalider_client_redis() -> None:
-    global _client_redis
+def _client_consommateur() -> Optional[redis.Redis]:
+    """Client dedie au BRPOP, avec un timeout superieur au timeout Redis."""
+    global _client_consommateur_redis
 
-    client = _client_redis
-    _client_redis = None
-    if client is not None:
+    if not parametres.redis_url:
+        return None
+
+    if _client_consommateur_redis is None:
+        _client_consommateur_redis = _creer_client_redis(_TIMEOUT_CONSOMMATEUR_REDIS)
+    return _client_consommateur_redis
+
+
+def _invalider_clients_redis() -> None:
+    global _client_producteur_redis, _client_consommateur_redis
+
+    clients = (_client_producteur_redis, _client_consommateur_redis)
+    _client_producteur_redis = None
+    _client_consommateur_redis = None
+    for client in clients:
+        if client is None:
+            continue
         try:
             client.close()
         except Exception:
@@ -74,7 +96,7 @@ def notifier_tache(tache_id: int) -> bool:
     Dans ce cas, la tache reste quand meme en PostgreSQL et sera recuperable
     par le filet de securite du worker.
     """
-    client = _client_file_redis()
+    client = _client_producteur()
     if client is None:
         return False
 
@@ -88,7 +110,7 @@ def notifier_tache(tache_id: int) -> bool:
             tache_id,
             exc_info=True,
         )
-        _invalider_client_redis()
+        _invalider_clients_redis()
         return False
 
 
@@ -98,7 +120,7 @@ def attendre_tache(timeout: int = 15) -> Optional[int]:
     Aucune interrogation PostgreSQL n'est effectuee ici. Un timeout renvoie
     simplement None afin que le worker puisse lancer son controle de securite.
     """
-    client = _client_file_redis()
+    client = _client_consommateur()
     if client is None:
         return None
 
@@ -110,7 +132,7 @@ def attendre_tache(timeout: int = 15) -> Optional[int]:
             "sur le filet de securite PostgreSQL.",
             exc_info=True,
         )
-        _invalider_client_redis()
+        _invalider_clients_redis()
         return None
 
     if not resultat:
@@ -126,14 +148,14 @@ def attendre_tache(timeout: int = 15) -> Optional[int]:
 
 def longueur_file_redis() -> Optional[int]:
     """Retourne la profondeur Redis, ou None si Redis n'est pas disponible."""
-    client = _client_file_redis()
+    client = _client_producteur()
     if client is None:
         return None
 
     try:
         return int(client.llen(CLE_FILE_REDIS))
     except redis.RedisError:
-        _invalider_client_redis()
+        _invalider_clients_redis()
         return None
 
 
