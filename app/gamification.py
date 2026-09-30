@@ -217,9 +217,10 @@ def resume(session: Session, utilisateur: Utilisateur) -> dict:
             evenements.append(bonus)
             total_xp += bonus_mission
 
-    actions_total = len(evenements)
+    evenements_base = [e for e in evenements if e.action != "bonus_mission"]
+    actions_total = len(evenements_base)
     compte_actions = {}
-    for evenement in evenements:
+    for evenement in evenements_base:
         compte_actions[evenement.action] = compte_actions.get(evenement.action, 0) + 1
 
     jours = jours_actifs_consecutifs(session, utilisateur.id)
@@ -232,7 +233,7 @@ def resume(session: Session, utilisateur: Utilisateur) -> dict:
         elif badge["type"] == "streak":
             progression = jours
         else:
-            progression = min(actions_total, compte_actions.get("document", 0))
+            progression = min(actions_total, compte_actions.get("document", 0) * 4)
         progression_clamp = min(progression, badge["objectif"])
         badges.append(
             {
