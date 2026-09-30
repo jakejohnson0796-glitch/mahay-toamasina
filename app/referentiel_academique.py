@@ -89,6 +89,10 @@ def _specialisation_dans_faculte(session: Session, mention_id: int, faculte_id: 
             Filiere.niveau == niveau,
         )
     ).all()
+    filieres = [
+        f for f in filieres
+        if _normaliser_nom_parcours(f.nom) != "tronc commun"
+    ]
     if not filieres:
         return False
 
