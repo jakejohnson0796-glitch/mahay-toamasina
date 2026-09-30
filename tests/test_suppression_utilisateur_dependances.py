@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 
+from sqlalchemy import event
 from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import (
@@ -17,6 +18,7 @@ from app.models import (
     MessageMention,
     MessageReaction,
     Notification,
+    CercleEtude,
     ProgressionNotion,
     ReponseFeedback,
     RoleUtilisateur,
@@ -35,6 +37,11 @@ from app.routers import admin_router
 
 def test_suppression_utilisateur_nettoie_les_dependances_directes(monkeypatch):
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+
+    @event.listens_for(engine, "connect")
+    def _activer_fk(connexion_dbapi, _record):
+        connexion_dbapi.execute("PRAGMA foreign_keys=ON")
+
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
@@ -77,6 +84,12 @@ def test_suppression_utilisateur_nettoie_les_dependances_directes(monkeypatch):
             code_hash="hash-reset",
             expire_le=datetime.utcnow() + timedelta(minutes=15),
         ))
+        session.add(CercleEtude(
+            nom="Cercle de test",
+            createur_id=admin.id,
+        ))
+        session.commit()
+        cercle = session.exec(select(CercleEtude).where(CercleEtude.nom == "Cercle de test")).one()
 
         tentative = TentativeQuiz(
             utilisateur_id=cible.id,
@@ -96,7 +109,7 @@ def test_suppression_utilisateur_nettoie_les_dependances_directes(monkeypatch):
         session.add(tache)
 
         message_cible = MessageCercle(
-            cercle_id=1,
+            cercle_id=cercle.id,
             auteur_id=cible.id,
             contenu="secret a supprimer",
         )
