@@ -230,6 +230,8 @@ def inscription(
     session.commit()
 
     request.session["user_id"] = utilisateur.id
+    if utilisateur.role == RoleUtilisateur.ETUDIANT:
+        return RedirectResponse("/bienvenue", status_code=303)
     return RedirectResponse("/", status_code=303)
 
 
