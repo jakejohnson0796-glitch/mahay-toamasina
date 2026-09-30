@@ -603,6 +603,13 @@ class CercleEtude(SQLModel, table=True):
             sqlite_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NOT NULL AND niveau IS NOT NULL"),
             postgresql_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NOT NULL AND niveau IS NOT NULL"),
         ),
+        Index(
+            "ix_cercle_tronc_unique_actif",
+            "mention_id", "niveau",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NULL AND niveau IS NOT NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NULL AND niveau IS NOT NULL"),
+        ),
     )
 
 
