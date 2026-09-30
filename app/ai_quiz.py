@@ -197,7 +197,12 @@ def _quiz_erreur(message: str, detail: str) -> List[Dict]:
     }]
 
 
-def _generer_completion_avec_reessai(client: Groq, messages_par_essai: List[str], max_completion_tokens: int):
+def _generer_completion_avec_reessai(
+    client: Groq,
+    messages_par_essai: List[str],
+    max_completion_tokens: int,
+    expected_count: int = 5,
+):
     """Appelle Groq avec le tool-calling force, et reessaie UNE fois avec
     une consigne renforcee si le modele n'appelle pas l'outil du premier
     coup (deja observe : un modele peut, a tort, croire qu'une contrainte
@@ -205,21 +210,60 @@ def _generer_completion_avec_reessai(client: Groq, messages_par_essai: List[str]
     nombre de questions demande, et refuser d'appeler l'outil en
     expliquant pourquoi en texte libre au lieu de generer le quiz)."""
     derniere_erreur = None
-    for contenu in messages_par_essai:
+
+    # 2 048 tokens etaient suffisants pour des petits quiz, mais deviennent
+    # trop justes des qu'on demande 10 questions : le modele de raisonnement
+    # peut consommer une partie du budget avant meme d'emmettre le tool-call.
+    # Le budget est donc adapte au nombre de questions et le raisonnement est
+    # limite a "low" sur cette etape de generation structuree.
+    budget_adapte = max(
+        max_completion_tokens,
+        min(16_384, max(4_096, 1_024 + (700 * max(1, expected_count)))),
+    )
+
+    for numero_essai, contenu in enumerate(messages_par_essai, start=1):
         try:
             completion = client.chat.completions.create(
                 model=parametres.groq_model,
-                max_completion_tokens=max_completion_tokens,
+                max_completion_tokens=budget_adapte,
+                reasoning_effort="low",
                 tools=[OUTIL_QUIZ],
                 tool_choice={"type": "function", "function": {"name": "soumettre_quiz"}},
                 messages=[{"role": "user", "content": contenu}],
             )
         except Exception as erreur:
             derniere_erreur = erreur
+            logger.warning(
+                "Generation quiz IA: appel Groq echoue essai=%s/%s type=%s detail=%s",
+                numero_essai,
+                len(messages_par_essai),
+                type(erreur).__name__,
+                erreur,
+            )
             continue
 
-        if completion.choices[0].message.tool_calls:
+        message = completion.choices[0].message
+        nb_tool_calls = len(message.tool_calls or [])
+        logger.info(
+            "Generation quiz IA: essai=%s/%s modele=%s questions=%s budget=%s "
+            "finish_reason=%s tool_calls=%s contenu_present=%s.",
+            numero_essai,
+            len(messages_par_essai),
+            parametres.groq_model,
+            expected_count,
+            budget_adapte,
+            completion.choices[0].finish_reason,
+            nb_tool_calls,
+            bool(message.content),
+        )
+
+        if message.tool_calls:
             return completion, None
+
+        derniere_erreur = RuntimeError(
+            "Le modele a termine sans appeler l'outil soumettre_quiz "
+            f"(finish_reason={completion.choices[0].finish_reason})."
+        )
 
     return None, derniere_erreur
 
@@ -272,7 +316,10 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
     )
 
     completion, erreur = _generer_completion_avec_reessai(
-        client, [consigne_base, consigne_renforcee], max_completion_tokens=2048
+        client,
+        [consigne_base, consigne_renforcee],
+        max_completion_tokens=2048,
+        expected_count=nb_questions,
     )
 
     if completion is None:
@@ -314,7 +361,10 @@ def generer_quiz_cible(matiere: str, niveau: str, notion: str, nb_questions: int
         f"'soumettre_quiz' directement."
     )
     completion, erreur = _generer_completion_avec_reessai(
-        client, [consigne_base, consigne_renforcee], max_completion_tokens=2048
+        client,
+        [consigne_base, consigne_renforcee],
+        max_completion_tokens=2048,
+        expected_count=nb_questions,
     )
     if completion is None:
         detail = f"Erreur API : {erreur}" if erreur else "Le modele n'a pas repondu au format attendu."
