@@ -180,3 +180,50 @@
     transition:none !important;
   }
 }
+
+
+/* ---------- Choix de langue ---------- */
+.tb-language {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: .55rem;
+  margin: .15rem .45rem .7rem;
+  padding: .45rem .5rem;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,.035);
+}
+.tb-language label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .56rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #a9c5c1;
+}
+.tb-language select {
+  min-width: 0;
+  width: 100%;
+  min-height: 2rem;
+  padding: .35rem .5rem;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  background: rgba(3,25,27,.72);
+  color: #f2f7f6;
+  font: inherit;
+  font-size: .72rem;
+}
+.tb-language select:focus-visible {
+  outline: 2px solid #e8935a;
+  outline-offset: 1px;
+}
+@media (min-width:901px) {
+  body.sidebar-compact .tb-language {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  body.sidebar-compact .tb-language label {
+    display: none;
+  }
+}
