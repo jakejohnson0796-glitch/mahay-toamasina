@@ -374,13 +374,13 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/ai-learning.js?v={{ version_asset('js/ai-learning.js') }}" defer></script>
 {% endif %}
 {% if request.url.path.startswith("/defis") or request.url.path == "/dashboard" %}
-<link rel="stylesheet" href="/static/gamification.css?v=2">
+<link rel="stylesheet" href="/static/gamification.css?v={{ version_asset('gamification.css') }}">
 {% endif %}
 {% if request.url.path == "/bienvenue" or request.url.path == "/dashboard" %}
-<link rel="stylesheet" href="/static/onboarding.css?v=1">
+<link rel="stylesheet" href="/static/onboarding.css?v={{ version_asset('onboarding.css') }}">
 {% endif %}
 {% if request.url.path.startswith("/documents") or request.url.path.startswith("/cercles") %}
-<link rel="stylesheet" href="/static/activation.css?v=1">
+<link rel="stylesheet" href="/static/activation.css?v={{ version_asset('activation.css') }}">
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}">
