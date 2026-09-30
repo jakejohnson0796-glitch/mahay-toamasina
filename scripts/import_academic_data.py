@@ -58,6 +58,11 @@ from app.models import Domaine, Faculte, Filiere, Mention, ProgrammeUniversitair
 
 FICHIER_PAR_DEFAUT = "mahay_toamasina_referentiel_source.json"
 
+# Seuls ces statuts de preuve peuvent alimenter les choix visibles côté
+# étudiant. Les lignes « À compléter / vérifier » restent dans la source
+# versionnée pour traçabilité, mais ne deviennent jamais des offres actives.
+STATUTS_SOURCE_PUBLICS = {"verifie", "confirme"}
+
 PERIMETRE_UNIVERSITES_PUBLIQUES = {
     "universite d'antananarivo",
     "universite d'antsiranana",
@@ -104,6 +109,9 @@ class Rapport:
     programmes_crees: int = 0
     filieres_existantes_rattachees_domaine: list = field(default_factory=list)
     lignes_sans_correspondance: list = field(default_factory=list)
+    # Identités nationales des cercles de tronc commun explicitement
+    # confirmées par la source stricte Toamasina : (mention_id, niveau).
+    cercles_tronc_commun: set = field(default_factory=set)
 
     def imprimer(self) -> None:
         print("\n=== RAPPORT D'IMPORT ===\n")
@@ -127,6 +135,7 @@ class Rapport:
         print(f"Filieres existantes rattachees a un Domaine : {len(self.filieres_existantes_rattachees_domaine)}")
         for u, fil, dom in self.filieres_existantes_rattachees_domaine:
             print(f"   - [{u}] {fil} -> domaine {dom}")
+        print(f"Cercles de tronc commun confirmes : {len(self.cercles_tronc_commun)}")
         print(f"Lignes Excel SANS correspondance certaine (a revoir dans /admin/referentiel) : {len(self.lignes_sans_correspondance)}")
         for u, comp, dom, ment, parc in self.lignes_sans_correspondance:
             print(f"   - [{u} / {comp}] {dom} > {ment} > {parc}")
@@ -145,6 +154,7 @@ def lire_lignes_source(chemin: str) -> list[dict]:
                 "niveau": str(ligne.get("niveau") or "").strip(),
                 "type": str(ligne.get("type") or "").strip(),
                 "parcours": str(ligne.get("parcours") or "").strip(),
+                "statut": str(ligne.get("statut") or "").strip(),
             }
             for ligne in payload.get("formations", [])
         ]
@@ -167,6 +177,7 @@ def lire_lignes_source(chemin: str) -> list[dict]:
             "niveau": (d.get("Niveau") or "").strip(),
             "type": (d.get("Type") or "").strip(),
             "parcours": (d.get("Parcours/Filière") or d.get("Parcours / Filière") or "").strip(),
+            "statut": (d.get("Statut") or d.get("Statut de vérification") or "").strip(),
         })
     return lignes
 
@@ -212,6 +223,11 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             if normaliser(ligne["universite"]) not in PERIMETRE_UNIVERSITES_PUBLIQUES:
                 rapport.universites_hors_perimetre.add(ligne["universite"])
                 continue
+            # Une source stricte peut contenir des lignes encore à vérifier.
+            # Elles restent dans le JSON/XLSX, mais ne doivent jamais
+            # alimenter les sélecteurs étudiants ni les cercles nationaux.
+            if source_stricte and normaliser(ligne.get("statut")) not in STATUTS_SOURCE_PUBLICS:
+                continue
             lignes_retenues.append(ligne)
 
         for ligne in lignes_retenues:
@@ -244,6 +260,55 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                     session.refresh(ment)
                 mentions_par_nom[cle_mention].append(ment)
                 rapport.mentions_creees.append(ligne["mention"])
+
+        # Si une ancienne base avait déjà publié une ligne désormais
+        # marquée « À compléter / vérifier », désactive explicitement son
+        # offre exacte au lieu de la laisser survivre en production.
+        if source_stricte:
+            for ligne in lignes:
+                if normaliser(ligne.get("statut")) in STATUTS_SOURCE_PUBLICS:
+                    continue
+                universite = universites_par_nom.get(normaliser(ligne["universite"]))
+                if universite is None:
+                    continue
+                variantes_mention = mentions_par_nom.get(normaliser(ligne["mention"]), [])
+                ids_mentions = {m.id for m in variantes_mention if m.id is not None}
+                if not ids_mentions:
+                    continue
+                nom_composante_recherche = ALIASES_COMPOSANTES_TOAMASINA.get(
+                    normaliser(ligne["composante"]), ligne["composante"]
+                )
+                facultes_universite = session.exec(
+                    select(Faculte).where(Faculte.universite_id == universite.id)
+                ).all()
+                for faculte in facultes_universite:
+                    if normaliser(faculte.nom) not in {
+                        normaliser(nom_composante_recherche),
+                        normaliser(ligne["composante"]),
+                    }:
+                        continue
+                    candidats = session.exec(
+                        select(Filiere).where(
+                            Filiere.faculte_id == faculte.id,
+                            Filiere.niveau == (ligne.get("niveau") or None),
+                            Filiere.mention_id.in_(ids_mentions),
+                        )
+                    ).all()
+                    for filiere in candidats:
+                        if normaliser(filiere.nom) != normaliser(ligne["parcours"]):
+                            continue
+                        offres = session.exec(
+                            select(ProgrammeUniversitaire).where(
+                                ProgrammeUniversitaire.universite_id == universite.id,
+                                ProgrammeUniversitaire.filiere_id == filiere.id,
+                                ProgrammeUniversitaire.est_active == True,  # noqa: E712
+                            )
+                        ).all()
+                        for offre in offres:
+                            offre.est_active = False
+                            session.add(offre)
+                if not dry_run:
+                    session.commit()
 
         for cle_mention, textes_domaine in domaine_textes_par_mention.items():
             mentions_trouvees = mentions_par_nom[cle_mention]
@@ -293,6 +358,8 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                 # assurer_cercles_referentiel archivera ensuite le cercle
                 # devenu invalide (sauf membres reels a revoir manuellement).
                 if normaliser(ligne.get("type")) == normaliser("Tronc commun"):
+                    if mention is not None and ligne.get("niveau"):
+                        rapport.cercles_tronc_commun.add((mention.id, ligne["niveau"]))
                     nom_composante_source = ligne["composante"]
                     nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
                         normaliser(nom_composante_source),
