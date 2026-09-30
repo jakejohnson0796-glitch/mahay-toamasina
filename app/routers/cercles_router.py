@@ -314,6 +314,11 @@ def _supprimer_cercle_et_contenu(session: Session, cercle_id: int) -> bool:
     ).all():
         session.delete(membre)
 
+    # Les tables enfants doivent etre effectivement videes avant la suppression
+    # de CercleEtude. Cela est indispensable ici car la FK PostgreSQL
+    # MembreCercle.cercle_id n'est pas geree par une cascade ORM.
+    session.flush()
+
     session.delete(cercle)
     return True
 
