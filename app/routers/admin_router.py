@@ -187,6 +187,7 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             "nb_feedbacks_sans_reponse": nb_feedbacks_sans_reponse,
             "nb_nouveaux_arrivants": len(nouveaux_arrivants),
             "nouveaux_arrivants": nouveaux_arrivants,
+            "confirmation_admin_configuree": bool(admin.mot_de_passe_confirmation_admin_hash),
         },
     )
 
