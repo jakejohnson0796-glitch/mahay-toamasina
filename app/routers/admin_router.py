@@ -23,8 +23,10 @@ from ..models import (
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
     EvenementTableauBlanc, AutorisationEcritureTableau, Devoir, RenduDevoir,
     Feedback, ReponseFeedback, StatutFeedback, Notification, TypeNotification,
+    TacheIA, StatutTacheIA, PerformanceModeleIA,
 )
 from ..storage import supprimer_fichier
+from .. import ai_metrics
 # Logique d'acceptation/refus reutilisee telle quelle depuis cercles_router.py
 # (meme principe que _assurer_membres_admins deja importe dans
 # admin_referentiel_router.py) : on evite de dupliquer la reverification de
@@ -120,6 +122,90 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
             "nb_feedbacks_sans_reponse": nb_feedbacks_sans_reponse,
             "nb_nouveaux_arrivants": len(nouveaux_arrivants),
             "nouveaux_arrivants": nouveaux_arrivants,
+        },
+    )
+
+
+@router.get("/admin/ia")
+def page_admin_ia(request: Request, session: Session = Depends(get_session)):
+    """Supervision du worker IA, des strategies de risque et des modeles."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    statuts = {}
+    for statut in StatutTacheIA:
+        statuts[statut.value] = int(
+            session.exec(
+                select(func.count())
+                .select_from(TacheIA)
+                .where(TacheIA.statut == statut)
+            ).one()
+        )
+
+    strategies = {}
+    for strategie in ("legere", "standard", "renforcee"):
+        strategies[strategie] = int(
+            session.exec(
+                select(func.count())
+                .select_from(TacheIA)
+                .where(TacheIA.strategie_verification == strategie)
+            ).one()
+        )
+
+    risques = {
+        "faible": int(
+            session.exec(
+                select(func.count())
+                .select_from(TacheIA)
+                .where(TacheIA.score_risque <= 1)
+            ).one()
+        ),
+        "moyen": int(
+            session.exec(
+                select(func.count())
+                .select_from(TacheIA)
+                .where(TacheIA.score_risque.between(2, 3))
+            ).one()
+        ),
+        "eleve": int(
+            session.exec(
+                select(func.count())
+                .select_from(TacheIA)
+                .where(TacheIA.score_risque >= 4)
+            ).one()
+        ),
+    }
+
+    modeles = session.exec(
+        select(PerformanceModeleIA)
+        .order_by(
+            PerformanceModeleIA.appels.desc(),
+            PerformanceModeleIA.problemes.desc(),
+        )
+        .limit(20)
+    ).all()
+
+    taches_recentes = session.exec(
+        select(TacheIA, TentativeQuiz)
+        .where(TacheIA.tentative_quiz_id == TentativeQuiz.id)
+        .order_by(TacheIA.id.desc())
+        .limit(20)
+    ).all()
+
+    resume = ai_metrics.resume_global()
+
+    return templates.TemplateResponse(
+        request,
+        "admin_ia.html",
+        {
+            "utilisateur": admin,
+            "statuts_taches": statuts,
+            "strategies": strategies,
+            "risques": risques,
+            "modeles": modeles,
+            "taches_recentes": taches_recentes,
+            "resume_ia": resume,
         },
     )
 
