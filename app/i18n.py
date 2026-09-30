@@ -558,7 +558,7 @@ TRADUCTIONS: Final[dict[str, dict[str, str]]] = {
         "Tes dernières questions": "Ny fanontanianao farany",
         "Ouvre une ancienne session pour relire l'explication et continuer ton travail.": "Sokafy ny fivoriana taloha hamakiana indray ny fanazavana sy hanohizana ny asanao.",
         "Pas encore de question enregistrée.": "Tsy mbola misy fanontaniana voatahiry.",
-        "Poser ma première question": "Hametraka ny fanontaniako voalohany"
+        "Poser ma première question": "Hametraka ny fanontaniako voalohany",
         "Facile": "Mora",
         "Moyen": "Antonony",
         "Difficile": "Sarotra",
