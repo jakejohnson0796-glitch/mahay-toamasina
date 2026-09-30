@@ -143,7 +143,7 @@ async def au_demarrage() -> None:
     # est configure, la boucle IA tourne donc dans un thread interne au Web
     # service. Les appels IA restent hors de la boucle asyncio HTTP, tandis
     # que Redis absorbe les rafales et PostgreSQL reste le filet de securite.
-    if ai_queue_enabled := bool(parametres.redis_url):
+    if parametres.redis_url:
         arret_worker = threading.Event()
         worker_ia = threading.Thread(
             target=ai_worker.boucle_worker,
