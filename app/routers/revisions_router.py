@@ -1,4 +1,5 @@
 """Espace personnel « Mes révisions »."""
+from datetime import datetime
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
@@ -9,6 +10,7 @@ from ..models import ConsultationDocument, Document, SessionTuteur, TentativeQui
 from ..templating import templates
 from .. import dashboard as dashboard_module
 from .. import quiz as quiz_module
+from .. import gamification
 
 router = APIRouter()
 
@@ -18,6 +20,15 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+
+    gamification.enregistrer_action(
+        session,
+        utilisateur.id,
+        "revision",
+        source_type="visite_revisions",
+        source_key=datetime.utcnow().date().isoformat(),
+    )
+    session.commit()
 
     consultations = session.exec(
         select(ConsultationDocument, Document)
