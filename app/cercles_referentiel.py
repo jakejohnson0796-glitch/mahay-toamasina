@@ -246,43 +246,15 @@ def assurer_cercles_tronc_commun(
     identites_tronc: set[tuple[int, str]],
     createur: Utilisateur,
 ) -> int:
-    """Garantit un seul cercle national par (mention, niveau) de tronc commun.
+    """Garantit un seul cercle national par (mention, niveau) explicitement
+    confirmé par le référentiel Toamasina.
 
-    Les identites proviennent directement des lignes « Tronc commun » de la
-    source stricte Toamasina. On n'infère donc jamais un tronc commun à partir
-    d'une absence de parcours : cela évite de fabriquer des cercles dans une
-    offre incomplète ou ambiguë.
+    Cette fonction ne devine pas les autres troncs et n'archive pas les
+    cercles absents de cette source : les cercles devenus invalides sont
+    traités par l'audit national qui vérifie les offres actives réelles.
     """
     if not identites_tronc:
         return 0
-
-    actifs_tronc = session.exec(
-        select(CercleEtude).where(
-            CercleEtude.statut == StatutCercle.ACTIF,
-            CercleEtude.mention_id.is_not(None),
-            CercleEtude.niveau.is_not(None),
-            CercleEtude.filiere_id.is_(None),
-        )
-    ).all()
-
-    # Archive un ancien tronc devenu absent du référentiel, sauf si des
-    # étudiants réels l'utilisent encore : dans ce cas on conserve le cercle
-    # pour une revue humaine plutôt que déplacer des membres silencieusement.
-    for cercle in actifs_tronc:
-        if (cercle.mention_id, cercle.niveau) in identites_tronc:
-            continue
-        nb_membres = session.exec(
-            select(func.count()).select_from(MembreCercle).where(
-                MembreCercle.cercle_id == cercle.id,
-                MembreCercle.utilisateur_id != createur.id,
-            )
-        ).one()
-        if not nb_membres:
-            cercle.statut = StatutCercle.ARCHIVE
-            session.add(cercle)
-
-    if actifs_tronc:
-        session.commit()
 
     total_crees = 0
     for mention_id, niveau in sorted(identites_tronc):
@@ -310,11 +282,13 @@ def assurer_cercles_tronc_commun(
         session.add(cercle)
         session.commit()
         session.refresh(cercle)
-        session.add(MembreCercle(
-            cercle_id=cercle.id,
-            utilisateur_id=createur.id,
-            role=RoleMembreCercle.CREATEUR,
-        ))
+        session.add(
+            MembreCercle(
+                cercle_id=cercle.id,
+                utilisateur_id=createur.id,
+                role=RoleMembreCercle.CREATEUR,
+            )
+        )
         session.commit()
         total_crees += 1
 
