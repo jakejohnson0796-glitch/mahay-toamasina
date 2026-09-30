@@ -1279,6 +1279,7 @@
     if (!contenu || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ contenu: contenu, mentions: extraireMentionsPresentes(contenu, mentionsPrincipal) }));
     champMessage.value = "";
+    try { sessionStorage.removeItem("mahay-brouillon-cercle-" + cercleId); } catch (_) {}
     ajusterHauteurTextarea();
     mettreAJourCompteurMessage();
   });
