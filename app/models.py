@@ -953,6 +953,9 @@ class SessionTuteur(SQLModel, table=True):
     exemple: str
     exercice: str
     correction: str
+    statut_verification_ia: str = Field(default="en_attente", index=True)
+    date_verification_ia: Optional[datetime] = None
+    erreur_verification_ia: Optional[str] = None
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
