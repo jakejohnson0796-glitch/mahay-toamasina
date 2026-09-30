@@ -46,7 +46,7 @@ from typing import Optional
 from sqlmodel import Session, func, select
 
 from .models import (
-    CercleEtude, Filiere, MembreCercle, ProgrammeUniversitaire, RoleMembreCercle, RoleUtilisateur,
+    CercleEtude, Faculte, Filiere, MembreCercle, ProgrammeUniversitaire, RoleMembreCercle, RoleUtilisateur,
     StatutCercle, Utilisateur,
 )
 from .referentiel import NIVEAUX, libelle_niveau
@@ -203,9 +203,11 @@ def assurer_cercles_pour_filiere(session: Session, filiere: Filiere, createur: U
     filieres_du_groupe = session.exec(
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .where(
             Filiere.mention_id == filiere.mention_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            Faculte.universite_id == ProgrammeUniversitaire.universite_id,
         )
         .distinct()
     ).all()
@@ -244,9 +246,11 @@ def assurer_cercles_referentiel(session: Session) -> int:
     filieres = session.exec(
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .where(
             Filiere.mention_id.is_not(None),
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            Faculte.universite_id == ProgrammeUniversitaire.universite_id,
         )
         .distinct()
     ).all()
