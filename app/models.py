@@ -1196,6 +1196,27 @@ class ReponseFeedback(SQLModel, table=True):
 
 
 
+class ActionGamification(SQLModel, table=True):
+    """Evenement XP idempotent pour les actions d'apprentissage et de contribution."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    action: str = Field(index=True)
+    source_type: str = Field(default="", index=True)
+    source_key: str = Field(default="")
+    points: int
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "utilisateur_id",
+            "action",
+            "source_type",
+            "source_key",
+            name="uq_action_gamification_source",
+        ),
+    )
+
+
 class StatutTacheIA(str, Enum):
     """Etat d'une tache IA durablee en base, traitee par le worker dedie."""
     EN_ATTENTE = "en_attente"
