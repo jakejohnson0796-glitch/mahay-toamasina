@@ -150,6 +150,29 @@
     <div class="cercles-hero-stat"><strong>04</strong><span>Chat en direct</span></div>
   </div>
 </section>
+<style nonce="{{ csp_nonce(request) }}">
+.cercles-raccourcis{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:-.55rem 0 1.2rem}
+.cercles-raccourci{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .72rem;border:1px solid var(--content-border);border-radius:999px;background:var(--content-surface);color:var(--content-text);font-size:.75rem;text-decoration:none;box-shadow:var(--shadow-sm);transition:transform .16s var(--ease-fluide),border-color .16s var(--ease-fluide),background .16s var(--ease-fluide)}
+.cercles-raccourci:hover{transform:translateY(-1px);border-color:var(--content-link);background:var(--content-bg)}
+.cercles-raccourci-principal{background:var(--ink);color:var(--sidebar-text);border-color:var(--ink)}
+@media(max-width:640px){.cercles-raccourcis{overflow:auto;flex-wrap:nowrap;padding-bottom:.25rem}.cercles-raccourci{flex:0 0 auto}}
+</style>
+<div class="cercles-raccourcis" aria-label="Accès rapides">
+  <a class="cercles-raccourci cercles-raccourci-principal" href="#formulaire-recherche-cercles">🔎 Explorer</a>
+  <a class="cercles-raccourci" href="#resultats-cercles">🔥 Résultats</a>
+  {% if utilisateur %}
+  <a class="cercles-raccourci" href="#mes-cercles-directs">👥 Mes cercles</a>
+  {% endif %}
+  {% if cercles_profil_visibilite and cercles_profil_visibilite.mention_id %}
+  <a class="cercles-raccourci" href="#cercles-ma-mention">🎓 Ma mention</a>
+  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous ma mention</a>
+  {% endif %}
+  {% if cercles_profil_visibilite and cercles_profil_visibilite.domaine_id %}
+  <a class="cercles-raccourci" href="/cercles?domaine_id={{ cercles_profil_visibilite.domaine_id }}">🌐 Mon domaine</a>
+  {% endif %}
+  <a class="cercles-raccourci" href="#creer-cercle">➕ Créer</a>
+</div>
+
 <section class="cercles-inspiration" aria-label="Inspiration de travail">
   <div class="cercles-inspiration-texte">
     <p class="stat-label">Coin bibliothèque</p>
