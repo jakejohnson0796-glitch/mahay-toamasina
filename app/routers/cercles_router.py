@@ -944,6 +944,12 @@ def creer_cercle(
                 # /admin/referentiel pour l'assigner).
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
             mention_id_cible = filiere.mention_id
+
+            erreur_parcours = referentiel_academique.erreur_cercle_parcours(
+                session, mention_id_cible, filiere.id, niveau_nettoye
+            )
+            if erreur_parcours:
+                return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
         else:
             # Tronc commun (11/09/2026) : mention seule, aucun parcours
             # precis -- voir le rapport du 10/09/2026 sur Filiere.niveau.
