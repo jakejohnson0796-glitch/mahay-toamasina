@@ -293,6 +293,8 @@ class Utilisateur(SQLModel, table=True):
     # la derniere utilisation et a declencher un rappel apres au moins
     # 3 jours sans utilisation lors de la prochaine authentification.
     derniere_activite_le: Optional[datetime] = Field(default=None, index=True)
+    onboarding_commence_le: Optional[datetime] = Field(default=None, index=True)
+    onboarding_termine_le: Optional[datetime] = Field(default=None, index=True)
 
 
 class CodeSecours2FA(SQLModel, table=True):
