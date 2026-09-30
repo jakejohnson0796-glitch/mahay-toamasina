@@ -64,6 +64,11 @@ def _obtenir_prochaine_tache(
 
 def boucle_worker(arret: Optional[threading.Event] = None) -> None:
     """Boucle reutilisable en thread interne ou en processus separe."""
+    print(
+        f"[AI WORKER] Demarre redis_queue={ai_queue.redis_configure()} "
+        f"cle={ai_queue.CLE_FILE_REDIS}.",
+        flush=True,
+    )
     logger.info(
         "Worker IA demarre: redis_queue=%s cle=%s.",
         ai_queue.redis_configure(),
@@ -91,6 +96,12 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
                     arret.wait(delai)
                 continue
 
+            print(
+                f"[AI WORKER] Traitement tache={tache.id} quiz={tache.tentative_quiz_id} "
+                f"strategie={tache.strategie_verification} risque={tache.score_risque} "
+                f"essai={tache.nombre_essais}.",
+                flush=True,
+            )
             logger.info(
                 "Worker IA traite tache #%s type=%s quiz=%s strategie=%s risque=%s essai=%s.",
                 tache.id,
@@ -103,6 +114,11 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
             traiter_tache(tache)
             ai_queue.terminer_tache(tache.id)
         except Exception as erreur:
+            print(
+                f"[AI WORKER][ERREUR] tache={getattr(tache, 'id', None)} "
+                f"type={type(erreur).__name__} detail={erreur}",
+                flush=True,
+            )
             logger.exception(
                 "Erreur worker IA pour tache #%s.",
                 getattr(tache, "id", None),
@@ -115,6 +131,7 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
                 else:
                     arret.wait(5)
 
+    print("[AI WORKER] Arrete proprement.", flush=True)
     logger.info("Worker IA arrete proprement.")
 
 
