@@ -48,7 +48,7 @@
           <div class="auth-alert auth-alert-error" role="alert">{{ erreur }}</div>
           {% endif %}
           {% if request.query_params.get("ok") == "mot_de_passe_reinitialise" %}
-          <div class="auth-alert auth-alert-info" role="status">{{ t("{{ t("Mot de passe", request) }} réinitialisé. Vous pouvez maintenant vous connecter.", request) }}</div>
+          <div class="auth-alert auth-alert-info" role="status">{{ t("Mot de passe réinitialisé. Vous pouvez maintenant vous connecter.", request) }}</div>
           {% endif %}
 
           <form method="post" action="/connexion" class="auth-form">
