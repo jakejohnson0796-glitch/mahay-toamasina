@@ -385,8 +385,9 @@ def parcours_cercle_offert(
     if not filiere_reference or filiere_reference.mention_id != mention_id:
         return False
 
-    for filiere in _filieres_equivalentes(session, filiere_reference):
-        if filiere.mention_id != mention_id:
+    for filiere_id_equivalent in _filieres_equivalentes(session, filiere_reference):
+        filiere = session.get(Filiere, filiere_id_equivalent)
+        if not filiere or filiere.mention_id != mention_id:
             continue
         if filiere.niveau is not None and filiere.niveau != niveau:
             continue
