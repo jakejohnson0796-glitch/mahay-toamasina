@@ -16,7 +16,7 @@ from ..csrf import verifier_csrf
 from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
-from ..auth import hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
+from ..auth import utilisateur_courant, hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
 from ..rate_limit import limite_depassee
 from ..totp_2fa import generer_secret_totp, generer_qrcode_data_uri, verifier_code_totp, generer_codes_secours, hacher_code_secours, verifier_code_secours
 from ..telephone import normaliser_telephone, TelephoneInvalide
