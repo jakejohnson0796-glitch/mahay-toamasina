@@ -40,6 +40,7 @@ from ..web_utils import entier_ou_none
 from ..referentiel import NIVEAUX
 from ..recherche import clause_recherche_cercles
 from ..rate_limit import limite_depassee
+from .. import gamification
 
 router = APIRouter()
 
@@ -2082,6 +2083,15 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 session.add(message)
                 session.commit()
                 session.refresh(message)
+
+                gamification.enregistrer_action(
+                    session,
+                    user_id,
+                    "cercle",
+                    source_type="message_cercle",
+                    source_key=str(message.id),
+                )
+                session.commit()
 
                 # Mentions : ne garder que des IDs reellement membres de ce
                 # cercle (jamais confiance au client), sans doublon, sans
