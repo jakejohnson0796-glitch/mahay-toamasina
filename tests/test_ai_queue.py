@@ -92,3 +92,84 @@ def test_file_ia_prend_et_termine_une_tache(monkeypatch):
         assert final is not None
         assert final.statut == StatutTacheIA.TERMINEE
         assert final.terminee_le is not None
+
+def test_file_ia_notifie_redis_apres_planification(monkeypatch):
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    monkeypatch.setattr(ai_queue, "engine", engine)
+
+    notifications = []
+    monkeypatch.setattr(
+        ai_queue,
+        "notifier_tache",
+        lambda tache_id: notifications.append(tache_id) or True,
+    )
+
+    with Session(engine) as session:
+        utilisateur = Utilisateur(
+            nom="TestRedis",
+            telephone="690000002",
+            mot_de_passe_hash="hash",
+        )
+        session.add(utilisateur)
+        session.commit()
+        session.refresh(utilisateur)
+
+        tentative = TentativeQuiz(
+            utilisateur_id=utilisateur.id,
+            matiere="Informatique",
+            niveau="L1",
+            difficulte="Facile",
+            nb_questions=1,
+            questions_json="[]",
+        )
+        session.add(tentative)
+        session.commit()
+        session.refresh(tentative)
+
+    tache_id = ai_queue.planifier_verification_quiz(tentative.id)
+
+    assert tache_id is not None
+    assert notifications == [tache_id]
+
+
+def test_file_ia_prend_une_tache_par_id_redis(monkeypatch):
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    monkeypatch.setattr(ai_queue, "engine", engine)
+
+    with Session(engine) as session:
+        utilisateur = Utilisateur(
+            nom="TestRedisId",
+            telephone="690000003",
+            mot_de_passe_hash="hash",
+        )
+        session.add(utilisateur)
+        session.commit()
+        session.refresh(utilisateur)
+
+        tentative = TentativeQuiz(
+            utilisateur_id=utilisateur.id,
+            matiere="Chimie",
+            niveau="L1",
+            difficulte="Moyen",
+            nb_questions=1,
+            questions_json="[]",
+        )
+        session.add(tentative)
+        session.commit()
+        session.refresh(tentative)
+
+    tache_id = ai_queue.planifier_verification_quiz(tentative.id)
+    tache = ai_queue.prendre_tache(tache_id)
+
+    assert tache is not None
+    assert tache.id == tache_id
+    assert tache.statut == StatutTacheIA.EN_COURS
+
