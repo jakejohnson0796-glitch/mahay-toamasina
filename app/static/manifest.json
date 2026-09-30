@@ -1,7 +1,7 @@
 {
   "name": "Gasy Mahay",
   "short_name": "Gasy Mahay",
-  "description": "Hub de revision pour les etudiants de l'Universite de Madagascar",
+  "description": "Plateforme d'apprentissage pour les etudiants de Madagascar",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B1F42",
