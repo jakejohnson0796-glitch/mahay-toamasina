@@ -27,6 +27,7 @@ from app.referentiel_academique import (
     erreur_cercle_parcours,
     parcours_cercle_offert,
     offre_filiere_active_universite,
+    tronc_commun_offert,
 )
 
 
@@ -238,6 +239,42 @@ class TestCorrespondanceCercle(unittest.TestCase):
             self.assertFalse(
                 offre_filiere_active_universite(
                     session, self.universite_id, self.filiere_id
+                )
+            )
+
+    def test_tronc_commun_est_valide_si_aucun_parcours_n_est_offert_a_ce_niveau(self):
+        with Session(self.engine) as session:
+            # La mention existe dans la faculte, mais aucun parcours ne
+            # couvre L1 : c'est le cas attendu pour un vrai tronc commun.
+            self.assertTrue(
+                tronc_commun_offert(
+                    session,
+                    self.universite_id,
+                    self.faculte_id,
+                    self.mention_id,
+                    "L1",
+                )
+            )
+
+    def test_tronc_commun_est_refuse_si_un_parcours_actif_couvre_le_niveau(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L1"
+            session.add(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            self.assertFalse(
+                tronc_commun_offert(
+                    session,
+                    self.universite_id,
+                    self.faculte_id,
+                    self.mention_id,
+                    "L1",
                 )
             )
 
