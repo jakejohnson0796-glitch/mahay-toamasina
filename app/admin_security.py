@@ -142,6 +142,12 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
             ):
                 return await call_next(request)
 
+            # BaseHTTPMiddleware utilise un Request intermediaire. Lire
+            # request.form() directement ici consomme le flux body ; la
+            # dependance CSRF de la route, executee ensuite, recevrait alors
+            # un formulaire vide et repondrait 403. request.body() met le
+            # contenu en cache, puis request.form() peut le relire normalement.
+            await request.body()
             formulaire = await request.form()
             mot_de_passe = formulaire.get("admin_confirmation_password")
 
