@@ -162,8 +162,14 @@ def creer_programme_universitaire(
     if not uid or not fid:
         return RedirectResponse("/admin/referentiel?erreur=programme_champs_requis", status_code=303)
 
-    if not session.get(Universite, uid) or not session.get(Filiere, fid):
+    universite = session.get(Universite, uid)
+    filiere = session.get(Filiere, fid)
+    if not universite or not filiere:
         return RedirectResponse("/admin/referentiel?erreur=programme_reference_invalide", status_code=303)
+
+    faculte = session.get(Faculte, filiere.faculte_id)
+    if not faculte or faculte.universite_id != universite.id:
+        return RedirectResponse("/admin/referentiel?erreur=programme_universite_incoherent", status_code=303)
 
     annee = (annee_academique or "").strip() or None
     if annee and (len(annee) != 9 or annee[4] != "-" or not annee[:4].isdigit() or not annee[5:].isdigit()):
