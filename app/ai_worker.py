@@ -1,31 +1,26 @@
-"""Worker dedie aux traitements IA lents de Gasy Mahay.
+"""Traitement des taches IA.
 
-A lancer dans un service Render Background Worker distinct du web :
-    python -m app.ai_worker
+Le meme module sert de boucle interne au web Render Free et, si un jour un
+Background Worker payant est active, peut aussi etre lance comme processus
+separe.
 
 Le chemin normal est event-driven : le worker attend un ID dans Redis/Render
 Key Value avec BRPOP au lieu d'interroger PostgreSQL en boucle. PostgreSQL
-reste le journal durable et le filet de securite en cas de panne/perte d'un
-message Redis.
+reste le journal durable et le filet de securite en cas de perte d'un message.
 """
 import logging
 import signal
+import threading
 import time
+from typing import Optional
 
 from . import ai_queue, quiz
 
 logger = logging.getLogger(__name__)
 
-_ARRET = False
 TIMEOUT_ATTENTE_REDIS = 15
 INTERVALLE_FILET_SECURITE_DB = 30
 PAUSE_SANS_REDIS_SECONDES = 1.5
-
-
-def _arreter(_signal, _frame):
-    global _ARRET
-    _ARRET = True
-    logger.info("Arret demande au worker IA.")
 
 
 def traiter_tache(tache) -> None:
@@ -39,11 +34,13 @@ def traiter_tache(tache) -> None:
     raise RuntimeError(f"Type de tache IA inconnu: {tache.type_tache}")
 
 
-def _obtenir_prochaine_tache(dernier_controle_db: float) -> tuple[object | None, float]:
+def _obtenir_prochaine_tache(
+    dernier_controle_db: float,
+) -> tuple[object | None, float]:
     """Attend Redis puis utilise PostgreSQL seulement comme filet de securite."""
     maintenant = time.monotonic()
 
-    # En developpement/local sans Redis, on conserve exactement le comportement
+    # En developpement/local sans Redis, on conserve le comportement
     # historique de la file SQL.
     if not ai_queue.redis_configure():
         return ai_queue.prendre_tache(), maintenant
@@ -55,8 +52,8 @@ def _obtenir_prochaine_tache(dernier_controle_db: float) -> tuple[object | None,
         if tache is not None:
             return tache, maintenant
 
-    # Filet de securite volontairement lent : permet de rattraper une tache
-    # dont la notification Redis a ete perdue ou si Redis etait temporairement
+    # Filet de securite volontairement lent : rattrape une tache dont la
+    # notification Redis a ete perdue ou si Redis etait temporairement
     # indisponible. Ce n'est pas le chemin nominal.
     if maintenant - dernier_controle_db >= INTERVALLE_FILET_SECURITE_DB:
         return ai_queue.prendre_tache(), maintenant
@@ -64,14 +61,8 @@ def _obtenir_prochaine_tache(dernier_controle_db: float) -> tuple[object | None,
     return None, dernier_controle_db
 
 
-def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
-    signal.signal(signal.SIGTERM, _arreter)
-    signal.signal(signal.SIGINT, _arreter)
-
+def boucle_worker(arret: Optional[threading.Event] = None) -> None:
+    """Boucle reutilisable en thread interne ou en processus separe."""
     logger.info(
         "Worker IA demarre: redis_queue=%s cle=%s.",
         ai_queue.redis_configure(),
@@ -79,15 +70,20 @@ def main() -> None:
     )
 
     dernier_controle_db = 0.0
-    while not _ARRET:
+    while arret is None or not arret.is_set():
         tache = None
         try:
             tache, dernier_controle_db = _obtenir_prochaine_tache(
                 dernier_controle_db
             )
             if tache is None:
+                if arret is not None and arret.is_set():
+                    break
                 if not ai_queue.redis_configure():
-                    time.sleep(PAUSE_SANS_REDIS_SECONDES)
+                    if arret is None:
+                        time.sleep(PAUSE_SANS_REDIS_SECONDES)
+                    else:
+                        arret.wait(PAUSE_SANS_REDIS_SECONDES)
                 continue
 
             logger.info(
@@ -109,11 +105,31 @@ def main() -> None:
             if tache is not None:
                 ai_queue.echouer_tache(tache.id, erreur)
             else:
-                # DB/migration indisponible ou erreur transitoire hors prise
-                # de tache : ne pas boucler a haute frequence dans les logs.
-                time.sleep(5)
+                if arret is None:
+                    time.sleep(5)
+                else:
+                    arret.wait(5)
 
     logger.info("Worker IA arrete proprement.")
+
+
+def main() -> None:
+    """Point d'entree pour un processus dedie, utile si l'offre passe au payant."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+    arret = threading.Event()
+
+    def _arreter(_signal, _frame):
+        arret.set()
+        logger.info("Arret demande au worker IA.")
+
+    signal.signal(signal.SIGTERM, _arreter)
+    signal.signal(signal.SIGINT, _arreter)
+
+    boucle_worker(arret)
 
 
 if __name__ == "__main__":
