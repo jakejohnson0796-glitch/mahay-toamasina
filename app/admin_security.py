@@ -148,6 +148,17 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
             # dependance CSRF de la route, executee ensuite, recevrait alors
             # un formulaire vide et repondrait 403. request.body() met le
             # contenu en cache, puis request.form() peut le relire normalement.
+            longueur_annoncee = request.headers.get("content-length")
+            try:
+                longueur_annoncee = int(longueur_annoncee) if longueur_annoncee is not None else None
+            except ValueError:
+                longueur_annoncee = None
+            if longueur_annoncee is not None and longueur_annoncee > TAILLE_MAX_FORMULAIRE_ADMIN:
+                return JSONResponse(
+                    {"detail": "Formulaire administrateur trop volumineux."},
+                    status_code=413,
+                )
+
             contenu_body = await request.body()
             if len(contenu_body) > TAILLE_MAX_FORMULAIRE_ADMIN:
                 return JSONResponse(
