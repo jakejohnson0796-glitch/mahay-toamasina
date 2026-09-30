@@ -86,10 +86,14 @@ class EnTetesSecuriteMiddleware(BaseHTTPMiddleware):
         reponse.headers["Cross-Origin-Resource-Policy"] = "same-origin"
 
         if request.url.path.startswith("/static/"):
-            # Les assets sont références avec un hash via version_asset().
-            # Ils peuvent donc être mis en cache longtemps sans risque de
-            # conserver une ancienne version après un déploiement.
-            reponse.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            # Les CSS/JS versionnés avec ?v=<hash> peuvent rester en cache
+            # un an. Les fichiers statiques sans version (manifest, icônes,
+            # etc.) gardent un cache plus court pour éviter les versions
+            # bloquées après un déploiement.
+            if request.query_params.get("v"):
+                reponse.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            else:
+                reponse.headers["Cache-Control"] = "public, max-age=3600"
         elif request.session.get("user_id"):
             reponse.headers["Cache-Control"] = "no-store, max-age=0"
             reponse.headers["Pragma"] = "no-cache"
