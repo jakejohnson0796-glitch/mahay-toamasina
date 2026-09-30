@@ -71,7 +71,9 @@ def lister_mentions(composante_id: int, session: Session = Depends(get_session))
     if not ids_mentions:
         return []
     mentions = session.exec(
-        select(Mention).where(Mention.id.in_(ids_mentions)).order_by(Mention.nom)
+        select(Mention)
+        .where(Mention.id.in_(ids_mentions), Mention.est_active == True)  # noqa: E712
+        .order_by(Mention.nom)
     ).all()
     return [{"id": m.id, "nom": m.nom, "domaine_id": m.domaine_id} for m in mentions]
 
@@ -158,6 +160,10 @@ def lister_parcours_nationaux(
 
     Liste VIDE = tronc commun a ce niveau pour cette mention (aucun
     parcours a choisir), meme convention que pour l'inscription."""
+    mention = session.get(Mention, mention_id)
+    if not mention or not mention.est_active:
+        return []
+
     requete = (
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
