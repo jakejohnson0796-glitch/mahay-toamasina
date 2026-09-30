@@ -1,4 +1,4 @@
-# Gasy Mahay — hub de révision pour l'Université de Madagascar
+# Gasy Mahay — plateforme d'apprentissage pour les étudiants de Madagascar
 
 Prototype fonctionnel (V2) : les étudiants déposent et téléchargent
 gratuitement des annales/fiches/cours par filière, s'entraident dans des
@@ -7,9 +7,9 @@ IA** à partir d'un document. Les sponsors et répétiteurs paient un
 abonnement mensuel pour être visibles auprès des étudiants — c'est ce
 deuxième côté du marché qui finance la plateforme, pas l'étudiant.
 
-Identité visuelle : le fil conducteur est le port de Toamasina — chaque
-document reçoit une référence façon "manifeste de cargo" (`TOA-DEG-2025-0147`)
-et un statut tamponné (approuvé / en attente / rejeté).
+Identité visuelle : Gasy Mahay est une plateforme nationale. Chaque document
+reçoit une référence courte et neutre (par exemple `MG-DEG-2025-0147`) et un
+statut tamponné (approuvé / en attente / rejeté).
 
 ## Nouveau dans cette version
 
@@ -176,8 +176,9 @@ diffuser les messages (Supabase Realtime en écoutant les insertions sur
 
 ## Feuille de route suggérée
 
-- **Phase 1 (maintenant)** : valider la demande sur une seule faculté
-  (DEGMIA par ex.) avec un petit groupe d'étudiants réels avant d'élargir.
+- **Phase 1 (maintenant)** : lancer un groupe pilote d'étudiants malagasy,
+  mesurer l'activation et les usages, puis élargir progressivement aux autres
+  universités et parcours de Madagascar.
 - **Phase 2** : brancher le vrai paiement mobile money pour les sponsors.
 - **Phase 3** : limiter le quiz IA aux sponsors/abonnés comme argument de
   vente ("visibilité + accès à l'outil pour vos élèves").
