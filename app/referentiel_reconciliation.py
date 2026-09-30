@@ -158,8 +158,7 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
         ).first()
         if existe and programme.est_active:
             programme.est_active = False
-        else:
-            programme.filiere_id = nouveau_id
+        programme.filiere_id = nouveau_id
         session.add(programme)
 
     for utilisateur in session.exec(select(Utilisateur).where(Utilisateur.filiere_id == ancien_id)).all():
