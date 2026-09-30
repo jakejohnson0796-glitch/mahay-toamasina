@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block titre %}Connexion — Gasy Mahay{% endblock %}
+{% block titre %}{{ t("Connexion — Gasy Mahay", request) }}{% endblock %}
 {% block main_classe %}main-auth-page{% endblock %}
 {% block contenu %}
 <div class="auth-page-shell">
@@ -13,17 +13,17 @@
     </a>
 
     <div class="auth-showcase-copy">
-      <p class="auth-kicker">Ton espace d’apprentissage</p>
-      <h1>Retrouve ton rythme. Apprends avec les autres.</h1>
+      <p class="auth-kicker">{{ t("Ton espace d’apprentissage", request) }}</p>
+      <h1>{{ t("Retrouve ton rythme. Apprends avec les autres.", request) }}</h1>
       <p>
         Accède à tes documents, quiz, cercles d’étude et outils d’apprentissage
         depuis un espace pensé pour les étudiants malgaches.
       </p>
 
       <div class="auth-benefices" aria-label="Fonctionnalités principales">
-        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>Documents et ressources pour réviser plus efficacement.</span></div>
-        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>Quiz et accompagnement IA pour progresser étape par étape.</span></div>
-        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>Cercles d’étude et espaces de collaboration.</span></div>
+        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>{{ t("Documents et ressources pour réviser plus efficacement.", request) }}</span></div>
+        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>{{ t("Quiz et accompagnement IA pour progresser étape par étape.", request) }}</span></div>
+        <div class="auth-benefice"><span class="auth-benefice-icon">✓</span><span>{{ t("Cercles d’étude et espaces de collaboration.", request) }}</span></div>
       </div>
     </div>
 
@@ -37,25 +37,25 @@
     <div class="auth-form-shell">
       <div class="auth-card">
         <div class="auth-card-top">
-          <span class="auth-card-badge"><span class="auth-card-badge-dot" aria-hidden="true"></span> Espace membre</span>
+          <span class="auth-card-badge"><span class="auth-card-badge-dot" aria-hidden="true"></span> {{ t("Espace membre", request) }}</span>
         </div>
 
         <div class="auth-card-main">
-          <h2 id="titre-connexion">Bienvenue à nouveau.</h2>
-          <p class="auth-card-intro">Connectez-vous avec votre numéro de téléphone et votre mot de passe.</p>
+          <h2 id="titre-connexion">{{ t("Bienvenue à nouveau.", request) }}</h2>
+          <p class="auth-card-intro">{{ t("Connectez-vous avec votre numéro de téléphone et votre mot de passe.", request) }}</p>
 
           {% if erreur %}
           <div class="auth-alert auth-alert-error" role="alert">{{ erreur }}</div>
           {% endif %}
           {% if request.query_params.get("ok") == "mot_de_passe_reinitialise" %}
-          <div class="auth-alert auth-alert-info" role="status">Mot de passe réinitialisé. Vous pouvez maintenant vous connecter.</div>
+          <div class="auth-alert auth-alert-info" role="status">{{ t("{{ t("Mot de passe", request) }} réinitialisé. Vous pouvez maintenant vous connecter.", request) }}</div>
           {% endif %}
 
           <form method="post" action="/connexion" class="auth-form">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
 
             <div class="auth-field">
-              <label for="telephone_local">Numéro de téléphone <span class="auth-required" aria-hidden="true">*</span></label>
+              <label for="telephone_local">{{ t("Numéro de téléphone", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
               <div class="auth-phone-wrap">
                 <span class="auth-phone-prefix" aria-hidden="true">+261</span>
                 <input type="tel" id="telephone_local" data-telephone-local="telephone"
@@ -69,7 +69,7 @@
             </div>
 
             <div class="auth-field">
-              <label for="mot_de_passe">Mot de passe <span class="auth-required" aria-hidden="true">*</span></label>
+              <label for="mot_de_passe">{{ t("Mot de passe", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
               <div class="auth-input-wrap auth-password-wrap">
                 <input type="password" id="mot_de_passe" name="mot_de_passe"
                        required autocomplete="current-password"
@@ -83,14 +83,14 @@
             </div>
 
             <div class="auth-form-actions">
-              <a class="auth-link-principal" href="/mot-de-passe-oublie">Mot de passe oublié ?</a>
+              <a class="auth-link-principal" href="/mot-de-passe-oublie">{{ t("Mot de passe", request) }} oublié ?</a>
             </div>
 
-            <button class="bouton bouton-primaire auth-submit" type="submit">Se connecter</button>
-            <div class="auth-submit-meta"><span class="auth-submit-meta-dot" aria-hidden="true"></span><span>Protection anti-abus active</span></div>
+            <button class="bouton bouton-primaire auth-submit" type="submit">{{ t("Se connecter", request) }}</button>
+            <div class="auth-submit-meta"><span class="auth-submit-meta-dot" aria-hidden="true"></span><span>{{ t("Protection anti-abus active", request) }}</span></div>
           </form>
 
-          <p class="auth-switch">Pas encore de compte ? <a href="/inscription"><strong>Créer mon espace Gasy Mahay</strong></a></p>
+          <p class="auth-switch">{{ t("Pas encore de compte ?", request) }} <a href="/inscription"><strong>{{ t("Créer mon espace Gasy Mahay", request) }}</strong></a></p>
         </div>
       </div>
     </div>
