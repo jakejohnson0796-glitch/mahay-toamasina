@@ -184,6 +184,23 @@ class TestReferentielReconciliation(unittest.TestCase):
 
                 program = s.get(ProgrammeUniversitaire, program.id)
                 self.assertFalse(program.est_active)
+
+                technique = s.exec(
+                    select(Filiere).where(
+                        Filiere.mention_id == m.id,
+                        Filiere.faculte_id == f.id,
+                        Filiere.niveau == "L1",
+                        Filiere.nom == "Tronc commun",
+                    )
+                ).one()
+                offre_technique = s.exec(
+                    select(ProgrammeUniversitaire).where(
+                        ProgrammeUniversitaire.universite_id == u.id,
+                        ProgrammeUniversitaire.filiere_id == technique.id,
+                        ProgrammeUniversitaire.est_active == True,  # noqa: E712
+                    )
+                ).first()
+                self.assertIsNotNone(offre_technique)
                 self.assertIn((m.id, "L1"), rapport.tronc_commun)
         finally:
             path.unlink(missing_ok=True)
