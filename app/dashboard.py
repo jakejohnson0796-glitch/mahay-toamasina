@@ -24,6 +24,7 @@ from .models import (
 from . import subscription
 from . import quiz as quiz_module
 from . import gamification
+from . import onboarding
 
 NB_DOCUMENTS_RECENTS = 5
 NB_ACTIVITES_RECENTES = 5
@@ -338,8 +339,10 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
     streak_jours = jours_actifs_consecutifs(session, utilisateur.id, tentatives)
 
     gam = gamification.resume(session, utilisateur)
+    parcours_demarrage = onboarding.donnees_onboarding(session, utilisateur)
 
     return {
+        "parcours_demarrage": parcours_demarrage,
         "gamification": gam,
         "abonnement": abonnement,
         "acces_premium": subscription.acces_premium_valide(abonnement),
