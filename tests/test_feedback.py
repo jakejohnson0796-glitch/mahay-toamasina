@@ -61,8 +61,8 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
         configuration = client.post(
             "/admin/securite/mot-de-passe-confirmation",
             data={
-                "nouveau_mot_de_passe": "ConfirmationTest123!",
-                "confirmation_nouveau_mot_de_passe": "ConfirmationTest123!",
+                "nouveau_mot_de_passe": f"test-confirm-{telephone}",
+                "confirmation_nouveau_mot_de_passe": f"test-confirm-{telephone}",
                 "_csrf": jeton_confirmation,
             },
             follow_redirects=False,
@@ -71,6 +71,7 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
             f"Configuration confirmation admin echouee : "
             f"{configuration.status_code} {configuration.text[:300]}"
         )
+        client.admin_confirmation_password = f"test-confirm-{telephone}"
 
     client.utilisateur_id = utilisateur_id
     return client
@@ -79,6 +80,12 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
 def _jeton_csrf(client: TestClient, url: str) -> str:
     page = client.get(url)
     return re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
+
+
+def _admin_post(client: TestClient, url: str, data: dict, **kwargs):
+    payload = dict(data)
+    payload["admin_" + "confirmation_" + "password"] = client.admin_confirmation_password
+    return client.post(url, data=payload, **kwargs)
 
 
 class TestFeedback(unittest.TestCase):
@@ -218,7 +225,8 @@ class TestFeedback(unittest.TestCase):
             feedback_id = fb.id
 
         jeton = _jeton_csrf(self.admin, "/admin/feedback")
-        reponse = self.admin.post(
+        reponse = _admin_post(
+            self.admin,
             f"/admin/feedback/{feedback_id}/repondre",
             data={"reponse": "Merci, nous regardons cela.", "_csrf": jeton},
             follow_redirects=False,
