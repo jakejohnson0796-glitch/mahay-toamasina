@@ -9,9 +9,12 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import Request
+from fastapi.responses import JSONResponse
 from sqlmodel import Session
+from starlette.middleware.base import BaseHTTPMiddleware
 
-from .auth import verifier_mot_de_passe
+from .auth import session_utilisateur_valide, verifier_mot_de_passe
+from .database import engine
 from .models import RoleUtilisateur, Utilisateur
 
 
@@ -104,3 +107,55 @@ def verifier_confirmation_admin(
 
     reinitialiser_echecs_confirmation_admin(request)
     return True, ""
+
+
+class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
+    """Bloque les actions admin tant que le secret de confirmation n'est pas valide.
+
+    Le secret est fourni par le formulaire sous forme de champ cache rempli
+    par static/js/admin-confirmation.js. Cela donne une vraie enforcement
+    serveur : desactiver JavaScript ne permet pas de contourner la protection.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        if request.method.upper() != "POST" or not action_admin_protegee(request.url.path):
+            return await call_next(request)
+
+        user_id = request.session.get("user_id")
+        if not user_id:
+            return await call_next(request)
+
+        with Session(engine) as session:
+            utilisateur = session.get(Utilisateur, user_id)
+            if (
+                not utilisateur
+                or utilisateur.role != RoleUtilisateur.ADMIN
+                or not session_utilisateur_valide(request.session, utilisateur)
+            ):
+                return await call_next(request)
+
+            formulaire = await request.form()
+            mot_de_passe = formulaire.get("admin_confirmation_password")
+
+            if not confirmation_admin_configuree(utilisateur):
+                return JSONResponse(
+                    {
+                        "detail": "Configurez d'abord le mot de passe de confirmation administrateur.",
+                        "configuration_url": "/admin/securite?configurer=1",
+                    },
+                    status_code=428,
+                )
+
+            if confirmation_admin_bloquee(request):
+                return JSONResponse(
+                    {
+                        "detail": "Trop de tentatives incorrectes. Réessayez dans quelques minutes.",
+                    },
+                    status_code=429,
+                )
+
+            valide, detail = verifier_confirmation_admin(request, utilisateur, mot_de_passe)
+            if not valide:
+                return JSONResponse({"detail": detail}, status_code=403)
+
+        return await call_next(request)
