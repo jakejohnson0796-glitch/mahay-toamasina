@@ -670,40 +670,70 @@ _NŒUD_TEXTE_HTML = re.compile(r">([^<>]+)<")
 
 
 def traduire_html_interface(document: str, langue: str) -> str:
-    """Traduit les nœuds de texte statiques déjà rendus par Jinja.
+    """Traduit l'interface HTML rendue par Jinja.
 
-    Seuls les textes qui correspondent exactement à une clé du dictionnaire
-    sont remplacés. Les valeurs académiques dynamiques (ex. noms de filières)
-    ne sont donc pas altérées.
+    Seules les valeurs présentes dans les dictionnaires de traduction sont
+    modifiées. Les données académiques dynamiques restent donc intactes.
+
+    Les espaces autour des textes sont conservés et les attributs d'interface
+    courants (placeholder, title, aria-label, aria-description et
+    data-tooltip) sont également traduits.
     """
     langue = langue_valide(langue)
     if langue == LANGUE_DEFAUT:
         return document
-    dictionnaire = {}
+
+    dictionnaire: dict[str, str] = {}
     dictionnaire.update(TRADUCTIONS.get(langue, {}))
     dictionnaire.update(TRADUCTIONS_UI.get(langue, {}))
+    # Ce dictionnaire contient les ajouts récents de l'interface. Il doit
+    # être utilisé ici aussi, sinon ces textes restent en français lorsque
+    # l'utilisateur passe en anglais ou en malgache.
+    dictionnaire.update(TRADUCTIONS_UI_COMPLEMENT.get(langue, {}))
     if not dictionnaire:
         return document
 
+    def traduire_valeur(valeur: str) -> str:
+        correspondance = re.match(r"^(\s*)(.*?)(\s*)$", valeur, re.DOTALL)
+        if not correspondance:
+            return valeur
+        prefixe, coeur, suffixe = correspondance.groups()
+        texte = html.unescape(coeur)
+        traduit = dictionnaire.get(texte)
+        if traduit is None:
+            return valeur
+        return prefixe + html.escape(traduit, quote=False) + suffixe
+
     def traduire_segment(segment: str) -> str:
         def remplacer(match: re.Match[str]) -> str:
-            texte = html.unescape(match.group(1))
-            traduit = dictionnaire.get(texte)
-            if traduit is None:
-                return match.group(0)
-            return ">" + html.escape(traduit, quote=False) + "<"
+            return ">" + traduire_valeur(match.group(1)) + "<"
         return _NŒUD_TEXTE_HTML.sub(remplacer, segment)
 
-    morceaux = _BLOCS_NON_TRADUISIBLES.split(document)
-    # split() conserve uniquement les marqueurs de groupe, donc reconstruire
-    # par recherche directe est plus sûr que d'interpréter les balises script.
-    resultat = []
+    def traduire_attributs(segment: str) -> str:
+        # Ne traduire que les attributs d'interface. Les href/src/value et
+        # les données utilisateur ne doivent jamais être modifiés.
+        attributs = re.compile(
+            r'\b(placeholder|title|aria-label|aria-description|data-tooltip)=(["\'])(.*?)\2',
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        def remplacer(match: re.Match[str]) -> str:
+            nom, guillemet, valeur = match.groups()
+            traduit = traduire_valeur(valeur)
+            return f"{nom}={guillemet}{traduit}{guillemet}"
+
+        return attributs.sub(remplacer, segment)
+
+    resultat: list[str] = []
     position = 0
     for match in _BLOCS_NON_TRADUISIBLES.finditer(document):
-        resultat.append(traduire_segment(document[position:match.start()]))
+        segment = document[position:match.start()]
+        resultat.append(traduire_attributs(traduire_segment(segment)))
         resultat.append(match.group(0))
         position = match.end()
-    resultat.append(traduire_segment(document[position:]))
+
+    segment = document[position:]
+    resultat.append(traduire_attributs(traduire_segment(segment)))
     return "".join(resultat)
 
 
