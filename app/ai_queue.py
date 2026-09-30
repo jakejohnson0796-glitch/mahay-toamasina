@@ -143,6 +143,10 @@ def attendre_tache(timeout: int = 15) -> Optional[int]:
         return None
 
     _cle, valeur = resultat
+    print(
+        f"[AI QUEUE] Redis BRPOP recu tache={valeur} queue={CLE_FILE_REDIS}.",
+        flush=True,
+    )
     try:
         return int(valeur)
     except (TypeError, ValueError):
@@ -316,17 +320,6 @@ def terminer_tache(tache_id: int) -> None:
         tache.derniere_erreur = None
         session.add(tache)
         session.commit()
-        if tache.statut == StatutTacheIA.ECHOUEE:
-            print(
-                f"[AI QUEUE] Tache abandonnee id={tache_id} apres {tache.nombre_essais} essais.",
-                flush=True,
-            )
-        else:
-            print(
-                f"[AI QUEUE] Tache replanifiee id={tache_id} essai={tache.nombre_essais} "
-                f"disponible_le={tache.disponible_le.isoformat() if tache.disponible_le else None}.",
-                flush=True,
-            )
         print(f"[AI QUEUE] Tache terminee id={tache_id}.", flush=True)
         logger.info("Tache IA %s terminee.", tache_id)
 
@@ -363,3 +356,14 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
 
         session.add(tache)
         session.commit()
+        if tache.statut == StatutTacheIA.ECHOUEE:
+            print(
+                f"[AI QUEUE] Tache abandonnee id={tache_id} apres {tache.nombre_essais} essais.",
+                flush=True,
+            )
+        else:
+            print(
+                f"[AI QUEUE] Tache replanifiee id={tache_id} essai={tache.nombre_essais} "
+                f"disponible_le={tache.disponible_le.isoformat() if tache.disponible_le else None}.",
+                flush=True,
+            )
