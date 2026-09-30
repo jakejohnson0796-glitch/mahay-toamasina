@@ -1,0 +1,111 @@
+name: Synchroniser les traductions UI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/templates/**"
+      - "app/i18n.py"
+      - "scripts/sync_i18n_libretranslate.py"
+      - "app/libretranslate.py"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-i18n:
+    runs-on: ubuntu-latest
+
+    services:
+      libretranslate:
+        image: libretranslate/libretranslate:latest
+        ports:
+          - 5000:5000
+        options: >-
+          --health-cmd "./venv/bin/python scripts/healthcheck.py"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 20s
+
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Attendre LibreTranslate
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..90}; do
+            if curl -fsS http://127.0.0.1:5000/languages >/tmp/libretranslate-languages.json; then
+              echo "LibreTranslate est pret."
+              break
+            fi
+            if [ "$attempt" -eq 90 ]; then
+              echo "LibreTranslate n'est pas disponible apres 180 secondes."
+              exit 1
+            fi
+            sleep 2
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path("/tmp/libretranslate-languages.json").read_text())
+          codes = sorted(
+              item["code"]
+              for item in data
+              if isinstance(item, dict) and isinstance(item.get("code"), str)
+          )
+          print("Langues LibreTranslate disponibles :", ", ".join(codes))
+          if "fr" not in codes:
+              raise SystemExit("Le francais (fr) est requis comme langue source.")
+          PY
+
+      - name: Generer les traductions manquantes
+        env:
+          LIBRETRANSLATE_URL: http://127.0.0.1:5000
+        run: |
+          python scripts/sync_i18n_libretranslate.py \
+            --url "$LIBRETRANSLATE_URL" \
+            --source fr \
+            --targets en,mg \
+            --timeout 30 \
+            --write
+
+      - name: Verifier le catalogue genere
+        run: |
+          python -m compileall -q app
+          python - <<'PY'
+          from app.i18n import TRADUCTIONS_AUTOGEN
+
+          print("Traductions générées EN :", len(TRADUCTIONS_AUTOGEN.get("en", {})))
+          print("Traductions générées MG :", len(TRADUCTIONS_AUTOGEN.get("mg", {})))
+          PY
+
+      - name: Commit et pousser le catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add app/i18n_generated.py
+
+          if git diff --cached --quiet; then
+            echo "Aucune nouvelle traduction à enregistrer."
+            exit 0
+          fi
+
+          git commit -m "i18n: synchroniser les traductions UI"
+          git push
