@@ -25,11 +25,12 @@ et un statut tamponné (approuvé / en attente / rejeté).
   texte extrait du document (`app/text_extraction.py`, PDF via
   `pdfplumber`, OCR optionnel via `pytesseract`), et renvoie un vrai QCM
   (4 choix, bonne réponse, explication).
-- **File IA event-driven** : après livraison du quiz, la vérification multi-modèles
-  est inscrite durablement en PostgreSQL puis notifiée dans **Render Key Value**
-  (Redis/Valkey). Le worker attend les IDs avec une lecture bloquante Redis au
-  lieu de sonder PostgreSQL en boucle ; PostgreSQL reste le filet de sécurité
-  si Redis est indisponible ou si une notification est perdue.
+- **File IA event-driven compatible Render Free** : après livraison du quiz,
+  la vérification multi-modèles est inscrite durablement en PostgreSQL puis
+  notifiée dans **Render Key Value** (Redis/Valkey). Un worker IA leger tourne
+  dans un thread du Web Free et attend les IDs avec une lecture bloquante Redis ;
+  PostgreSQL reste le filet de sécurité si Redis est indisponible ou si une
+  notification est perdue. Aucun Background Worker Render payant n'est requis.
 
 ## Démarrer en local (Windows / VS Code)
 
@@ -76,26 +77,37 @@ python -m app.creer_admin 0341234567
 
 ## File IA Redis / Render Key Value
 
-En production sur Render, `render.yaml` crée une instance **Key Value** de
-256 Mo et injecte automatiquement son URL interne dans `REDIS_URL` pour le
-service web et le worker IA. L'URL interne est utilisée parce que les services
-sont dans la même region Render.
+Le déploiement Free utilise deux ressources Render : le Web Free et un Key Value
+Free. Render confirme que ces deux types de ressources sont disponibles sans
+frais, tandis que les Background Workers ne disposent pas d'un plan Free.
+citeturn546403search0turn546403search1
 
-Le flux est volontairement hybride :
+Le worker IA est donc embarqué dans le processus Web dans un thread dédié. Il
+n'exécute pas les appels IA dans la boucle asyncio de FastAPI : le trafic HTTP
+reste ainsi séparé du traitement lent, dans la limite des ressources du petit
+plan Free.
+
+Le flux est :
 
 ```text
-HTTP -> PostgreSQL (tache durable) -> Redis RPUSH -> Worker BRPOP
+HTTP -> PostgreSQL (tache durable) -> Redis RPUSH -> thread worker du Web
                                       |
-                                      +--> PostgreSQL reste la source de verite
-                                           pour le rattrapage
+                                      +--> PostgreSQL = filet de securite
+                                           si Redis perd la notification
 ```
 
-Cela permet d'absorber les rafales de quiz sans faire de polling PostgreSQL
-sur le chemin nominal. Une notification Redis perdue ne supprime pas la tache :
-le worker conserve un controle de securite PostgreSQL espace dans le temps.
+Le Key Value Render est Redis-compatible (Valkey) et sa `connectionString`
+peut être injectée automatiquement dans `REDIS_URL` avec `fromService` dans
+`render.yaml`. Les services doivent être dans la même région pour utiliser
+l'URL interne. citeturn253418search0turn253418search3
 
-En local, laisse `REDIS_URL` vide pour conserver le fonctionnement 100 % SQL.
-Pour tester Redis localement, utilise par exemple `redis://localhost:6379/0`.
+Le Key Value Free est **en mémoire seulement** : un redémarrage peut perdre les
+messages présents dans Redis. C'est précisément pourquoi PostgreSQL reste la
+source durable et que le worker effectue périodiquement un rattrapage SQL.
+citeturn546403search0
+
+En local, laisse `REDIS_URL` vide pour conserver le fonctionnement SQL. Pour
+tester Redis localement, utilise par exemple `redis://localhost:6379/0`.
 
 ## Configurer la génération de quiz IA (API gratuite Groq)
 
