@@ -1,85 +1,19 @@
 # Fichier de config Render — https://render.com/docs/blueprint-spec
-# Place ce fichier a la racine du projet (a cote du Dockerfile).
-# Sur render.com, choisis "New > Blueprint" et pointe vers ton repo Git
-# pour que Render lise ce fichier automatiquement.
+# Web Free + Render Key Value Free. Le worker IA tourne dans le processus Web
+# afin de rester compatible avec le plan Free (aucun Background Worker payant).
 
 services:
   - type: web
     name: mahay-toamasina
     runtime: docker
     plan: free
-    region: frankfurt  # region la plus proche de Madagascar disponible sur Render
+    region: frankfurt
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ENVIRONNEMENT
         value: production
       - key: DATABASE_URL
-        sync: false        # a remplir manuellement dans le dashboard Render (valeur secrete)
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: mahay-toamasina-ai-queue
-          property: connectionString
-      - key: SESSION_SECRET_KEY
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_KEY
-        sync: false
-      - key: SUPABASE_BUCKET
-        value: documents
-      - key: GROQ_API_KEY
-        sync: false
-      - key: GROQ_MODEL
-        value: openai/gpt-oss-120b
-      - key: GROQ_CRITIC_MODEL
-        value: qwen/qwen3.8-27b
-      - key: AI_ENSEMBLE_ENABLED
-        value: "true"
-      - key: AI_ENSEMBLE_USE_GEMINI
-        value: "true"
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_MODEL
-        value: gemini-3.8-flash
-      # Compte administrateur initial : a renseigner dans Render.
-      - key: ADMIN_PHONE
-        sync: false
-      - key: ADMIN_INITIAL_PASSWORD
-        sync: false
-      # Recuperation de mot de passe par email (optionnel mais recommande).
-      - key: SMTP_HOTE
-        sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_UTILISATEUR
-        sync: false
-      - key: SMTP_MOT_DE_PASSE
-        sync: false
-      - key: SMTP_FROM_EMAIL
-        sync: false
-      - key: LIVEKIT_URL
-        sync: false        # classe virtuelle (audio/video/partage d'ecran) — a remplir manuellement
-      - key: LIVEKIT_API_KEY
-        sync: false
-      - key: LIVEKIT_API_SECRET
-        sync: false
-
-  # Worker IA dedie : traite Qwen/Gemini/GPT-OSS hors du processus HTTP.
-  # Render ne propose pas les background workers sur un plan compute Free ;
-  # ce service utilise donc le plus petit plan worker payant.
-  - type: worker
-    name: mahay-toamasina-ai-worker
-    runtime: docker
-    plan: 0.5c-512mb
-    region: frankfurt
-    dockerfilePath: ./Dockerfile
-    startCommand: python -m app.ai_worker
-    envVars:
-      - key: ENVIRONNEMENT
-        value: production
-      - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
         fromService:
@@ -129,10 +63,10 @@ services:
       - key: LIVEKIT_API_SECRET
         sync: false
 
-
-  # File rapide partagee par les services web et les workers IA.
-  # Render provisionne une instance Key Value (Valkey, compatible Redis).
+  # File IA rapide. PostgreSQL reste la source durable des taches.
+  # noeviction evite que Redis supprime silencieusement une tache de la file.
   - type: keyvalue
     name: mahay-toamasina-ai-queue
     plan: 256mb
     region: frankfurt
+    maxmemoryPolicy: noeviction
