@@ -47,6 +47,17 @@ class Parametres:
     supabase_service_key: str = field(default_factory=lambda: os.getenv("SUPABASE_SERVICE_KEY", ""))
     supabase_bucket: str = field(default_factory=lambda: os.getenv("SUPABASE_BUCKET", "documents"))
 
+    # --- Traduction automatique LibreTranslate ---
+    # Optionnel : URL d'une instance LibreTranslate auto-hebergee.
+    # Sans URL, aucune requete externe n'est effectuee et le dictionnaire
+    # embarque reste la source de verite.
+    libretranslate_url: str = field(default_factory=lambda: os.getenv("LIBRETRANSLATE_URL", "").rstrip("/"))
+    libretranslate_api_key: str = field(default_factory=lambda: os.getenv("LIBRETRANSLATE_API_KEY", ""))
+    libretranslate_timeout: float = field(default_factory=lambda: float(os.getenv("LIBRETRANSLATE_TIMEOUT", "8")))
+    libretranslate_auto_fill: bool = field(
+        default_factory=lambda: os.getenv("LIBRETRANSLATE_AUTO_FILL", "false").lower() in {"1", "true", "yes", "on"}
+    )
+
     # --- Environnement (dev/production) ---
     # Determine notamment si les cookies de session doivent exiger HTTPS
     # (https_only) — voir SessionMiddleware dans main.py. Mets
