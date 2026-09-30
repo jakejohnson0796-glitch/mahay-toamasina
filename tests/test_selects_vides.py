@@ -92,6 +92,54 @@ class TestSelectsVides(unittest.TestCase):
         page = client.get("/profil/academique")
         self.assertEqual(page.status_code, 200, page.text[:300])
 
+    def test_langue_interface_fr_en_mg(self):
+        client = TestClient(app)
+
+        page_fr = client.get("/")
+        self.assertEqual(page_fr.status_code, 200)
+        self.assertIn("Etudier ensemble", page_fr.text)
+
+        csrf = _jeton_csrf(client, "/")
+        rep = client.post(
+            "/langue",
+            data={"langue": "en", "_csrf": csrf},
+            follow_redirects=True,
+        )
+        self.assertEqual(rep.status_code, 200)
+        self.assertIn("Study together", rep.text)
+        self.assertIn('lang="en"', rep.text)
+
+        csrf = _jeton_csrf(client, "/")
+        rep = client.post(
+            "/langue",
+            data={"langue": "mg", "_csrf": csrf},
+            follow_redirects=True,
+        )
+        self.assertEqual(rep.status_code, 200)
+        self.assertIn("Hiditra", rep.text)
+        self.assertIn('lang="mg"', rep.text)
+
+        csrf = _jeton_csrf(client, "/")
+        rep = client.post(
+            "/langue",
+            data={"langue": "fr", "_csrf": csrf},
+            follow_redirects=True,
+        )
+        self.assertEqual(rep.status_code, 200)
+        self.assertIn("Etudier ensemble", rep.text)
+        self.assertIn('lang="fr"', rep.text)
+
+    def test_langue_inconnue_retombe_sur_francais(self):
+        client = TestClient(app)
+        csrf = _jeton_csrf(client, "/")
+        rep = client.post(
+            "/langue",
+            data={"langue": "xx", "_csrf": csrf},
+            follow_redirects=True,
+        )
+        self.assertEqual(rep.status_code, 200)
+        self.assertIn('lang="fr"', rep.text)
+
     # --- Interface inscription : la cascade JS doit etre initialisee ---
     def test_inscription_charge_la_cascade_academique(self):
         client = TestClient(app)
