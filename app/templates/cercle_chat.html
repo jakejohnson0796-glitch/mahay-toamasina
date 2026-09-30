@@ -4,6 +4,41 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
+<style nonce="{{ csp_nonce(request) }}">
+/* UX Cercle v2 : interface compacte, rapide, tactile et riche. */
+.cercle-chat-outils{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin:.7rem 0 0}
+.cercle-chat-outils .outil-cercle{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--content-border);background:var(--content-surface);color:var(--content-text);border-radius:10px;padding:.45rem .62rem;cursor:pointer;font-size:.76rem}
+.cercle-chat-outils .outil-cercle:hover{border-color:var(--content-link);transform:translateY(-1px)}
+.cercle-chat-outils .outil-cercle.actif{background:var(--content-bg);border-color:var(--content-link)}
+.cercle-chat-indicateurs{display:flex;justify-content:space-between;gap:.6rem;margin:.45rem 0 0;color:var(--content-text-muted);font-size:.68rem}
+.cercle-chat-composer-wrap{position:relative;display:flex;align-items:flex-end;gap:.5rem;flex:1}
+.cercle-chat-textarea{width:100%;min-height:42px;max-height:140px;resize:none;line-height:1.45;padding:.65rem .75rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-surface);color:var(--content-text)}
+.cercle-chat-textarea:focus{outline:none;border-color:var(--content-link);box-shadow:0 0 0 3px rgba(30,122,52,.08)}
+.panneau-emojis-v2{width:min(360px,calc(100vw - 2rem));padding:.7rem;box-shadow:var(--shadow-lg);border:1px solid var(--content-border);border-radius:14px;background:var(--content-surface)}
+.emojis-barre{display:flex;gap:.35rem;margin:.45rem 0;overflow:auto;padding-bottom:.25rem}
+.emojis-onglet{border:0;background:transparent;padding:.38rem .5rem;border-radius:8px;cursor:pointer;white-space:nowrap}
+.emojis-onglet.actif{background:var(--content-bg)}
+.champ-recherche-emoji{width:100%;min-height:36px;padding:.45rem .6rem;border:1px solid var(--content-border);border-radius:9px;background:var(--content-surface);color:var(--content-text)}
+.grille-emojis-v2{display:grid;grid-template-columns:repeat(8,1fr);gap:.25rem;max-height:220px;overflow:auto;margin-top:.5rem}
+.bouton-emoji-v2{border:0;background:transparent;font-size:1.28rem;line-height:1;padding:.38rem;border-radius:8px;cursor:pointer}
+.bouton-emoji-v2:hover{background:var(--content-bg);transform:scale(1.08)}
+.emoji-recemment{display:flex;gap:.25rem;overflow:auto;margin-top:.35rem}
+.emoji-recemment button{border:0;background:transparent;font-size:1.15rem;cursor:pointer;padding:.25rem}
+.cercle-commandes{position:absolute;left:0;bottom:calc(100% + .45rem);width:min(330px,calc(100vw - 2rem));padding:.45rem;z-index:30;border:1px solid var(--content-border);border-radius:12px;background:var(--content-surface);box-shadow:var(--shadow-lg)}
+.cercle-commande{display:flex;width:100%;gap:.5rem;text-align:left;border:0;background:transparent;padding:.55rem .6rem;border-radius:8px;cursor:pointer;color:var(--content-text)}
+.cercle-commande:hover{background:var(--content-bg)}
+.cercle-mode-compact .message{margin-block:.25rem!important}
+.cercle-mode-compact .message-contenu{padding-block:.2rem!important}
+.cercle-mode-compact .barre-composition{padding-block:.45rem!important}
+.cercle-mode-focus .entete-cercle~*{opacity:.96}
+@media (max-width:640px){
+  .grille-emojis-v2{grid-template-columns:repeat(7,1fr)}
+  .cercle-chat-outils .outil-cercle span.texte-option{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cercle-chat-outils .outil-cercle,.bouton-emoji-v2{transform:none!important}
+}
+</style>
 <svg class="fond-anneaux" viewBox="0 0 240 240" aria-hidden="true">
   <circle cx="190" cy="30" r="40" fill="none" stroke="currentColor" stroke-width="1"/>
   <circle cx="190" cy="30" r="75" fill="none" stroke="currentColor" stroke-width="1"/>
@@ -132,26 +167,47 @@
 
       <div class="conteneur-emoji-picker">
         <button type="button" id="bouton-emoji-toggle" class="bouton-emoji-toggle" aria-label="Emojis" title="Emojis">{{ icone("emoji", taille=18) }}</button>
-        <div id="panneau-emojis" class="panneau-emojis" hidden>
+        <div id="panneau-emojis" class="panneau-emojis-v2" hidden>
           <div class="entete-panneau-emojis">
-            <span class="stat-label">Emojis</span>
-            <button type="button" id="bouton-emoji-fermer" class="bouton-emoji-fermer">✕ Fermer</button>
+            <strong>Emojis</strong>
+            <button type="button" id="bouton-emoji-fermer" class="bouton-emoji-fermer">✕</button>
           </div>
-          <div class="grille-emojis">
-            {% for e in ["😀","😂","🙂","😅","😭","🤔","😴","😎","👍","👏","🙏","🙌","💪","✌️","❤️","🔥","🎉","✅","❌","💡","📚","✏️","📖","🎓","⏰","☕","🧠","😢"] %}
-            <button type="button" class="bouton-emoji" data-emoji="{{ e }}">{{ e }}</button>
-            {% endfor %}
+          <input type="search" id="recherche-emoji" class="champ-recherche-emoji" placeholder="Rechercher un emoji…" autocomplete="off" aria-label="Rechercher un emoji">
+          <div class="emojis-barre" role="tablist" aria-label="Catégories d'emojis">
+            <button type="button" class="emojis-onglet actif" data-categorie-emoji="recents">🕘</button>
+            <button type="button" class="emojis-onglet" data-categorie-emoji="emotion">😀 Émotions</button>
+            <button type="button" class="emojis-onglet" data-categorie-emoji="reaction">👍 Réactions</button>
+            <button type="button" class="emojis-onglet" data-categorie-emoji="etude">📚 Études</button>
+            <button type="button" class="emojis-onglet" data-categorie-emoji="fete">🎉 Fun</button>
           </div>
+          <div id="emojis-recents" class="emoji-recemment"></div>
+          <div id="grille-emojis" class="grille-emojis-v2"></div>
         </div>
       </div>
 
       <form id="form-chat" class="form-chat">
         <div class="conteneur-mentions-suggestions">
-          <input type="text" id="champ-message" placeholder="Ecrire un message... (@ pour mentionner)" autocomplete="off" maxlength="2000">
+          <textarea id="champ-message" class="cercle-chat-textarea" placeholder="Écrire un message… (@ pour mentionner, / pour les raccourcis)" autocomplete="off" maxlength="2000" rows="1" aria-label="Message"></textarea>
           <div id="suggestions-mentions-principal" class="liste-suggestions-mentions" hidden></div>
         </div>
         <button class="bouton-envoyer-message" type="submit" aria-label="Envoyer le message" title="Envoyer">➤</button>
       </form>
+      <div class="cercle-chat-indicateurs">
+        <span>Entrée = envoyer · Maj+Entrée = nouvelle ligne</span>
+        <span id="compteur-message-cercle">0/2000</span>
+      </div>
+      <div class="cercle-chat-outils" aria-label="Outils du cercle">
+        <button type="button" class="outil-cercle" id="bouton-commande-cercle" title="Raccourcis">⚡ <span class="texte-option">Raccourcis</span></button>
+        <button type="button" class="outil-cercle" id="bouton-focus-cercle" title="Mode concentration">🎯 <span class="texte-option">Focus</span></button>
+        <button type="button" class="outil-cercle" id="bouton-compact-cercle" title="Mode compact">📐 <span class="texte-option">Compact</span></button>
+        <button type="button" class="outil-cercle" id="bouton-plein-ecran-cercle" title="Plein écran">⛶ <span class="texte-option">Plein écran</span></button>
+      </div>
+      <div id="commandes-cercle" class="cercle-commandes" hidden>
+        <button type="button" class="cercle-commande" data-commande="question">❓ <span><strong>Question</strong><br><small>Demander de l’aide au groupe</small></span></button>
+        <button type="button" class="cercle-commande" data-commande="revision">📚 <span><strong>Révision</strong><br><small>Lancer une session de révision</small></span></button>
+        <button type="button" class="cercle-commande" data-commande="idee">💡 <span><strong>Idée</strong><br><small>Partager une piste ou une méthode</small></span></button>
+        <button type="button" class="cercle-commande" data-commande="urgent">🚨 <span><strong>Important</strong><br><small>Attirer rapidement l’attention</small></span></button>
+      </div>
     </div>
   </div>
 
@@ -1223,6 +1279,67 @@
     if (!contenu || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ contenu: contenu, mentions: extraireMentionsPresentes(contenu, mentionsPrincipal) }));
     champMessage.value = "";
+    ajusterHauteurTextarea();
+    mettreAJourCompteurMessage();
+  });
+
+  if (textareaMessage) {
+    textareaMessage.addEventListener("input", function () {
+      ajusterHauteurTextarea();
+      mettreAJourCompteurMessage();
+      sessionStorage.setItem("mahay-brouillon-cercle-" + cercleId, textareaMessage.value);
+    });
+    textareaMessage.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        formulaire.requestSubmit();
+      }
+    });
+    const brouillonLocal = sessionStorage.getItem("mahay-brouillon-cercle-" + cercleId);
+    if (brouillonLocal) textareaMessage.value = brouillonLocal;
+    ajusterHauteurTextarea();
+    mettreAJourCompteurMessage();
+  }
+
+  if (boutonCommandeCercle && commandesCercle) {
+    boutonCommandeCercle.addEventListener("click", function (event) {
+      event.stopPropagation();
+      commandesCercle.hidden = !commandesCercle.hidden;
+    });
+    commandesCercle.querySelectorAll("[data-commande]").forEach(function (bouton) {
+      bouton.addEventListener("click", function () {
+        const prefixes = {question:"❓ ", revision:"📚 ", idee:"💡 ", urgent:"🚨 "};
+        const prefixe = prefixes[bouton.dataset.commande] || "";
+        if (textareaMessage) {
+          textareaMessage.value = prefixe + textareaMessage.value;
+          textareaMessage.focus();
+          ajusterHauteurTextarea();
+          mettreAJourCompteurMessage();
+        }
+        commandesCercle.hidden = true;
+      });
+    });
+  }
+
+  if (boutonFocusCercle) boutonFocusCercle.addEventListener("click", function () {
+    const actif = !document.body.classList.contains("cercle-mode-focus");
+    document.body.classList.toggle("cercle-mode-focus", actif);
+    localStorage.setItem("gasy-mahay-cercle-focus", actif ? "1" : "0");
+    boutonFocusCercle.classList.toggle("actif", actif);
+  });
+  if (boutonCompactCercle) boutonCompactCercle.addEventListener("click", function () {
+    const actif = !document.body.classList.contains("cercle-mode-compact");
+    document.body.classList.toggle("cercle-mode-compact", actif);
+    localStorage.setItem("gasy-mahay-cercle-compact", actif ? "1" : "0");
+    boutonCompactCercle.classList.toggle("actif", actif);
+  });
+  if (boutonPleinEcranCercle) boutonPleinEcranCercle.addEventListener("click", async function () {
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+    } catch (_) {
+      document.body.classList.toggle("cercle-mode-focus");
+    }
   });
 
   formReponseThread.addEventListener("submit", function (evenement) {
@@ -1238,16 +1355,107 @@
   });
 
   const boutonEmojiToggle = document.getElementById("bouton-emoji-toggle");
+  const rechercheEmoji = document.getElementById("recherche-emoji");
+  const grilleEmojis = document.getElementById("grille-emojis");
+  const emojisRecents = document.getElementById("emojis-recents");
+  const ongletsEmojis = document.querySelectorAll("[data-categorie-emoji]");
+  const boutonCommandeCercle = document.getElementById("bouton-commande-cercle");
+  const commandesCercle = document.getElementById("commandes-cercle");
+  const boutonFocusCercle = document.getElementById("bouton-focus-cercle");
+  const boutonCompactCercle = document.getElementById("bouton-compact-cercle");
+  const boutonPleinEcranCercle = document.getElementById("bouton-plein-ecran-cercle");
+  const textareaMessage = document.getElementById("champ-message");
+
+  const EMOJIS_CERCLE = {
+    emotion: ["😀","😃","😄","😁","😆","😅","😂","🤣","🙂","🙃","😉","😊","🥰","😍","😘","😎","🤓","🧐","🤔","😐","😶","🙄","😏","😢","😭","😤","😠","😡","🤬","😱","😴","🤯","🥳","🤗","🫶","❤️","🧡","💛","💚","💙","💜","🤍","🖤"],
+    reaction: ["👍","👎","👏","🙌","🙏","💪","🤝","✌️","👌","🤞","🤟","👀","🫡","💯","🔥","✨","✅","❌","⭐","💥","🎯","💡","🚀","❤️‍🔥"],
+    etude: ["📚","📖","📕","📗","📘","📙","📓","📔","📒","📝","✏️","🖊️","🖍️","📐","📏","🔬","🧪","🧠","🎓","🏫","🧮","📊","📈","💻","⌨️","🖥️","⏰","☕","🗓️","🔎","📌","📎"],
+    fete: ["🎉","🎊","🥳","🎂","🎁","🎈","🏆","🥇","🥳","🌟","🌈","🌞","🌍","🇲🇬","😂","🤣","😎","🔥","🎶","🎵","🍀","🌱"]
+  };
+  let categorieEmojiActive = "recents";
+
+  function lireEmojisRecents() {
+    try { return JSON.parse(localStorage.getItem("gasy-mahay-cercle-emojis") || "[]"); }
+    catch (_) { return []; }
+  }
+  function enregistrerEmojiRecent(emoji) {
+    const actuels = lireEmojisRecents().filter(function (e) { return e !== emoji; });
+    actuels.unshift(emoji);
+    try { localStorage.setItem("gasy-mahay-cercle-emojis", JSON.stringify(actuels.slice(0, 18))); } catch (_) {}
+  }
+  function afficherEmojis() {
+    if (!grilleEmojis) return;
+    const terme = (rechercheEmoji && rechercheEmoji.value || "").trim().toLowerCase();
+    let liste = categorieEmojiActive === "recents" ? lireEmojisRecents() : (EMOJIS_CERCLE[categorieEmojiActive] || []);
+    if (terme) liste = Object.values(EMOJIS_CERCLE).flat().filter(function (e, i, a) { return a.indexOf(e) === i; });
+    grilleEmojis.innerHTML = "";
+    const max = terme ? 160 : 80;
+    liste.slice(0, max).forEach(function (emoji) {
+      const bouton = document.createElement("button");
+      bouton.type = "button";
+      bouton.className = "bouton-emoji-v2";
+      bouton.textContent = emoji;
+      bouton.title = "Insérer " + emoji;
+      bouton.addEventListener("click", function () {
+        insererEmojiDansChamp(emoji);
+        enregistrerEmojiRecent(emoji);
+        afficherEmojis();
+      });
+      grilleEmojis.appendChild(bouton);
+    });
+    if (emojisRecents) {
+      emojisRecents.innerHTML = "";
+      lireEmojisRecents().slice(0, 10).forEach(function (emoji) {
+        const bouton = document.createElement("button");
+        bouton.type = "button"; bouton.textContent = emoji; bouton.title = "Réinsérer " + emoji;
+        bouton.addEventListener("click", function () { insererEmojiDansChamp(emoji); });
+        emojisRecents.appendChild(bouton);
+      });
+    }
+  }
+  function insererEmojiDansChamp(emoji) {
+    if (!textareaMessage) return;
+    const debut = textareaMessage.selectionStart ?? textareaMessage.value.length;
+    const fin = textareaMessage.selectionEnd ?? textareaMessage.value.length;
+    textareaMessage.value = textareaMessage.value.slice(0, debut) + emoji + textareaMessage.value.slice(fin);
+    textareaMessage.selectionStart = textareaMessage.selectionEnd = debut + emoji.length;
+    textareaMessage.focus();
+    ajusterHauteurTextarea();
+    mettreAJourCompteurMessage();
+  }
+  function ajusterHauteurTextarea() {
+    if (!textareaMessage) return;
+    textareaMessage.style.height = "auto";
+    textareaMessage.style.height = Math.min(textareaMessage.scrollHeight, 140) + "px";
+  }
+  function mettreAJourCompteurMessage() {
+    const compteur = document.getElementById("compteur-message-cercle");
+    if (compteur && textareaMessage) compteur.textContent = textareaMessage.value.length + "/2000";
+  }
+  function activerPreferencesCercle() {
+    if (!document.body) return;
+    const compact = localStorage.getItem("gasy-mahay-cercle-compact") === "1";
+    const focus = localStorage.getItem("gasy-mahay-cercle-focus") === "1";
+    document.body.classList.toggle("cercle-mode-compact", compact);
+    document.body.classList.toggle("cercle-mode-focus", focus);
+    if (boutonCompactCercle) boutonCompactCercle.classList.toggle("actif", compact);
+    if (boutonFocusCercle) boutonFocusCercle.classList.toggle("actif", focus);
+  }
+  activerPreferencesCercle();
   const panneauEmojis = document.getElementById("panneau-emojis");
   const boutonEmojiFermer = document.getElementById("bouton-emoji-fermer");
 
-  document.querySelectorAll(".bouton-emoji").forEach(function (bouton) {
-    bouton.addEventListener("click", function () {
-      champMessage.value += bouton.dataset.emoji;
-      champMessage.focus();
-      panneauEmojis.hidden = true;
+  ongletsEmojis.forEach(function (onglet) {
+    onglet.addEventListener("click", function () {
+      ongletsEmojis.forEach(function (item) { item.classList.remove("actif"); });
+      onglet.classList.add("actif");
+      categorieEmojiActive = onglet.dataset.categorieEmoji;
+      if (rechercheEmoji) rechercheEmoji.value = "";
+      afficherEmojis();
     });
   });
+  if (rechercheEmoji) rechercheEmoji.addEventListener("input", afficherEmojis);
+  afficherEmojis();
 
   boutonEmojiFermer.addEventListener("click", function (evenement) {
     evenement.stopPropagation();
@@ -1257,6 +1465,7 @@
   boutonEmojiToggle.addEventListener("click", function (evenement) {
     evenement.stopPropagation();
     panneauEmojis.hidden = !panneauEmojis.hidden;
+    if (!panneauEmojis.hidden) afficherEmojis();
   });
 
   document.addEventListener("click", function (evenement) {
