@@ -571,7 +571,7 @@ def _rendu_formulaire_profil_academique(
 
 @router.get("/profil/academique")
 def formulaire_actualisation_academique(request: Request, session: Session = Depends(get_session)):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
     return _rendu_formulaire_profil_academique(request, utilisateur, session)
@@ -599,7 +599,7 @@ def actualiser_profil_academique(
     sur la mention seule (ex: passage/retour au tronc commun a un
     niveau qui n'a pas de parcours nomme), sur la filiere seule, ou sur
     les deux ensemble."""
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
     if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
@@ -735,7 +735,7 @@ def _contexte_securite(
 
 @router.get("/securite")
 def page_securite(request: Request, session: Session = Depends(get_session)):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
@@ -759,7 +759,7 @@ def uploader_photo_profil(
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
@@ -785,7 +785,7 @@ def supprimer_photo_profil(
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
@@ -837,7 +837,7 @@ def modifier_bio(
     chat de cercle (voir GET /cercles/{id}/membres/{id}/profil dans
     cercles_router.py). Champ facultatif : une valeur vide efface la
     bio (redevient None), pas de chaine vide stockee en base."""
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
@@ -870,7 +870,7 @@ def modifier_email(
     : ce n'est qu'un canal de secours, pas l'identifiant de connexion
     (qui reste le telephone), pas besoin d'une verification par lien de
     confirmation pour ce niveau d'enjeu."""
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
@@ -909,7 +909,7 @@ def modifier_mot_de_passe(
     appareil partage suffise a elle seule a prendre le controle du
     compte. Efface doit_changer_mot_de_passe : c'est le point de sortie
     du rappel affiche apres une reinitialisation (admin ou email)."""
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
@@ -948,7 +948,7 @@ def modifier_universite(
     definie, ce formulaire disparait du profil (voir securite.html) —
     changer d'universite ensuite n'est pas encore prevu, contacter un
     admin le cas echeant."""
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
@@ -978,7 +978,7 @@ def modifier_niveau(
     jamais expose en modification directe dans ce formulaire — voir
     §11), mais au maximum une fois tous les 14 jours, verifie ici cote
     backend (jamais uniquement cote frontend)."""
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
     if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
@@ -1003,7 +1003,7 @@ def modifier_niveau(
 
 @router.post("/securite/2fa/demarrer")
 def demarrer_activation_2fa(request: Request, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
     if utilisateur.totp_active:
@@ -1020,7 +1020,7 @@ def demarrer_activation_2fa(request: Request, session: Session = Depends(get_ses
 
 @router.get("/securite/2fa/configurer")
 def page_configurer_2fa(request: Request, session: Session = Depends(get_session)):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
     secret = request.session.get("totp_secret_en_attente")
@@ -1041,7 +1041,7 @@ def confirmer_activation_2fa(
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
     secret = request.session.get("totp_secret_en_attente")
@@ -1081,7 +1081,7 @@ def desactiver_2fa(
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
@@ -1110,7 +1110,7 @@ def desactiver_2fa(
 
 @router.post("/securite/2fa/regenerer-codes-secours")
 def regenerer_codes_secours(request: Request, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
-    utilisateur = session.get(Utilisateur, request.session.get("user_id"))
+    utilisateur = utilisateur_courant(request, session)
     if not utilisateur or not utilisateur.totp_active:
         return RedirectResponse("/securite", status_code=303)
 
