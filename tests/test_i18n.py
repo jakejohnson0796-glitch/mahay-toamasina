@@ -9,7 +9,7 @@ def test_interface_uses_complement_dictionary():
 
 
 def test_interface_translates_ui_attributes():
-    html = '<input placeholder="Chercher une réponse" title="Voir le mode d'emploi" aria-label="Ouvrir le menu">'
+    html = """<input placeholder="Chercher une réponse" title="Voir le mode d'emploi" aria-label="Ouvrir le menu">"""
     translated = traduire_html_interface(html, "en")
     assert 'placeholder="Search for an answer"' in translated
     assert 'title="See the guide"' in translated
