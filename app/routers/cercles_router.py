@@ -1248,7 +1248,13 @@ def voir_demandes(request: Request, cercle_id: int, session: Session = Depends(g
     )
 
 
-def _traiter_acceptation_demande(session: Session, cercle: CercleEtude, demande: DemandeAdhesionCercle, traiteur: Utilisateur) -> Optional[str]:
+def _traiter_acceptation_demande(
+    session: Session,
+    cercle: CercleEtude,
+    demande: DemandeAdhesionCercle,
+    traiteur: Utilisateur,
+    force_admin: bool = False,
+) -> Optional[str]:
     """Logique d'acceptation d'une DemandeAdhesionCercle, partagee entre
     la page de gestion du cercle (createur/admin, cercles_router.py) et
     la liste globale admin (/admin/demandes-adhesion, admin_router.py) —
@@ -1271,7 +1277,11 @@ def _traiter_acceptation_demande(session: Session, cercle: CercleEtude, demande:
     # refaite ICI, pas seulement au moment de la demande. Si ca ne
     # correspond plus, on refuse au lieu d'accepter silencieusement dans
     # le mauvais cercle.
-    if demandeur and not referentiel_academique.profil_correspond_au_cercle(demandeur, cercle, session):
+    if (
+        demandeur
+        and not force_admin
+        and not referentiel_academique.profil_correspond_au_cercle(demandeur, cercle, session)
+    ):
         demande.statut = StatutDemandeAdhesion.REJETEE
         demande.date_traitement = datetime.utcnow()
         demande.traite_par_id = traiteur.id
