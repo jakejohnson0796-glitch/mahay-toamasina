@@ -436,6 +436,29 @@ def approuver_demande_creation(
                 "/admin/referentiel/demandes-creation?erreur=parcours_indisponible",
                 status_code=303,
             )
+    else:
+        demandeur = session.get(Utilisateur, demande.utilisateur_id)
+        if (
+            not demandeur
+            or demandeur.mention_id != demande.mention_id
+            or demandeur.niveau != demande.niveau
+            or not referentiel_academique.tronc_commun_offert(
+                session,
+                demandeur.universite_id,
+                demandeur.faculte_id,
+                demande.mention_id,
+                demande.niveau,
+            )
+        ):
+            demande.statut = StatutDemandeCreationCercle.REJETEE
+            demande.date_traitement = datetime.utcnow()
+            demande.traite_par_id = admin.id
+            session.add(demande)
+            session.commit()
+            return RedirectResponse(
+                "/admin/referentiel/demandes-creation?erreur=tronc_commun_indisponible",
+                status_code=303,
+            )
 
     doublon_requete = select(CercleEtude).where(
         CercleEtude.mention_id == demande.mention_id,
