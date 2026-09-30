@@ -23,6 +23,7 @@ from typing import Optional
 from sqlmodel import Session, and_, or_, select
 
 from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire, RoleUtilisateur, Utilisateur
+from .referentiel import NIVEAUX
 from .texte_normalise import normaliser as _normaliser_nom_parcours
 
 DELAI_MINIMUM_ENTRE_CHANGEMENTS_NIVEAU = timedelta(days=14)
@@ -420,7 +421,44 @@ def erreur_cercle_parcours(
         return "Ce parcours n'est pas propose a ce niveau."
     if not parcours_cercle_offert(session, mention_id, filiere_id, niveau):
         return "Ce parcours n'est pas actuellement propose a ce niveau."
-    return None
+    return Nonedef tronc_commun_offert(
+    session: Session,
+    universite_id: Optional[int],
+    faculte_id: Optional[int],
+    mention_id: Optional[int],
+    niveau: Optional[str],
+) -> bool:
+    """Vrai si la combinaison mention+niveau peut exister en tronc commun
+    dans la composante de l'universite.
+
+    Aucun niveau ne doit etre deduit. Le tronc commun est possible seulement
+    si la mention est active et presente dans la composante, et si aucun
+    parcours actuellement offert ne couvre deja ce niveau.
+    """
+    if not universite_id or not faculte_id or not mention_id or not niveau:
+        return False
+    if niveau not in NIVEAUX:
+        return False
+
+    universite = session.get(Universite, universite_id)
+    faculte = session.get(Faculte, faculte_id)
+    mention = session.get(Mention, mention_id)
+    if (
+        not universite
+        or not faculte
+        or faculte.universite_id != universite.id
+        or not mention
+        or not getattr(mention, "est_active", True)
+    ):
+        return False
+
+    if not _mention_offerte_dans_faculte(session, mention_id, faculte_id):
+        return False
+
+    return not _specialisation_dans_faculte(
+        session, mention_id, faculte_id, niveau
+    )
+
 
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
     """Test canonique d'eligibilite a un cercle."""
