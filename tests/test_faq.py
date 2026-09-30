@@ -33,6 +33,10 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
             nom=nom,
             telephone=telephone,
             mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
+            mot_de_passe_confirmation_admin_hash=(
+                hacher_mot_de_passe(f"test-confirm-{telephone}")
+                if role == RoleUtilisateur.ADMIN else None
+            ),
             role=role,
         )
         session.add(utilisateur)
@@ -51,26 +55,6 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
     assert reponse.status_code in (302, 303), f"Connexion echouee : {reponse.status_code} {reponse.text[:300]}"
 
     if role == RoleUtilisateur.ADMIN:
-        # Les POST /admin/* sont maintenant proteges par le second mot de
-        # passe de confirmation. La fixture doit donc suivre le vrai parcours
-        # admin avant de tester les actions metier.
-        page_securite = client.get("/admin/securite")
-        jeton_confirmation = re.search(
-            r'name="_csrf" value="([^"]+)"', page_securite.text
-        ).group(1)
-        configuration = client.post(
-            "/admin/securite/mot-de-passe-confirmation",
-            data={
-                "nouveau_mot_de_passe": f"test-confirm-{telephone}",
-                "confirmation_nouveau_mot_de_passe": f"test-confirm-{telephone}",
-                "_csrf": jeton_confirmation,
-            },
-            follow_redirects=False,
-        )
-        assert configuration.status_code in (302, 303), (
-            f"Configuration confirmation admin echouee : "
-            f"{configuration.status_code} {configuration.text[:300]}"
-        )
         client.admin_confirmation_password = f"test-confirm-{telephone}"
 
     client.utilisateur_id = utilisateur_id
@@ -86,7 +70,6 @@ def _admin_post(client: TestClient, url: str, data: dict, **kwargs):
     payload = dict(data)
     payload["admin_" + "confirmation_" + "password"] = client.admin_confirmation_password
     reponse = client.post(url, data=payload, **kwargs)
-    print("DEBUG_ADMIN_POST", reponse.status_code, reponse.text[:500])
     return reponse
 
 
