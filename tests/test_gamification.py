@@ -76,7 +76,8 @@ def test_resume_calcule_xp_missions_et_badges():
 
     resume = gamification.resume(session, utilisateur)
 
-    assert resume["total_xp"] == 100
+    assert resume["total_xp"] == 125  # 100 XP des 4 missions + 25 XP de bonus journalier
+    assert resume["bonus_mission"] == 25
     assert resume["mission_completee"] is True
     assert resume["niveau"] == 1
     assert resume["missions"]
