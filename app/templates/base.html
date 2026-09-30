@@ -109,7 +109,7 @@
 #}
 <div class="app-mise-en-page">
 
-  <button type="button" class="sidebar-bouton-mobile" id="bouton-menu-mobile" aria-expanded="false" aria-controls="nav-principale" aria-label="Ouvrir le menu">
+  <button type="button" class="sidebar-bouton-mobile" id="bouton-menu-mobile" aria-expanded="false" aria-controls="nav-principale" aria-label="{{ t('Ouvrir le menu', request) }}">
     <span></span><span></span><span></span>
   </button>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -198,39 +198,39 @@
       <div class="tb-menu-compte" id="menu-compte-utilisateur" hidden>
         <div class="tb-menu-compte-entete">
           <strong>{% if utilisateur is defined and utilisateur %}{{ utilisateur.nom }}{% else %}Mon compte{% endif %}</strong>
-          <span>Actions rapides</span>
+          <span>{{ t("Actions rapides", request) }}</span>
         </div>
 
-        <p class="tb-menu-compte-groupe">Mon espace</p>
-        <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord</span></a>
-        <a class="tb-menu-compte-item" href="/mes-revisions"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>Mes révisions</span></a>
+        <p class="tb-menu-compte-groupe">{{ t("Mon espace", request) }}</p>
+        <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>{{ t("Tableau de bord", request) }}</span></a>
+        <a class="tb-menu-compte-item" href="/mes-revisions"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>{{ t("Mes révisions", request) }}</span></a>
         <a class="tb-menu-compte-item" href="/notifications"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Notifications{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %} · {{ nb_notifs }} non lues{% endif %}</span></a>
-        <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Mon profil &amp; sécurité</span></a>
-        <a class="tb-menu-compte-item" href="/profil/academique"><span class="tb-menu-compte-icone">{{ icone("universites", 16) }}</span><span>Profil académique</span></a>
+        <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>{{ t("Mon profil &amp; sécurité", request) }}</span></a>
+        <a class="tb-menu-compte-item" href="/profil/academique"><span class="tb-menu-compte-icone">{{ icone("universites", 16) }}</span><span>{{ t("Profil académique", request) }}</span></a>
 
         <p class="tb-menu-compte-groupe">{{ t("Apprendre", request) }}</p>
-        <a class="tb-menu-compte-item" href="/documents"><span class="tb-menu-compte-icone">{{ icone("documents", 16) }}</span><span>Mes documents</span></a>
-        <a class="tb-menu-compte-item" href="/quiz"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>Quiz IA</span></a>
-        <a class="tb-menu-compte-item" href="/tuteur"><span class="tb-menu-compte-icone">{{ icone("tuteur", 16) }}</span><span>Tuteur IA</span></a>
+        <a class="tb-menu-compte-item" href="/documents"><span class="tb-menu-compte-icone">{{ icone("documents", 16) }}</span><span>{{ t("Mes documents", request) }}</span></a>
+        <a class="tb-menu-compte-item" href="/quiz"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>{{ t("Quiz IA", request) }}</span></a>
+        <a class="tb-menu-compte-item" href="/tuteur"><span class="tb-menu-compte-icone">{{ icone("tuteur", 16) }}</span><span>{{ t("Tuteur IA", request) }}</span></a>
 
         <p class="tb-menu-compte-groupe">{{ t("Collaborer", request) }}</p>
-        <a class="tb-menu-compte-item" href="/cercles"><span class="tb-menu-compte-icone">{{ icone("cercles", 16) }}</span><span>Mes cercles</span></a>
-        <a class="tb-menu-compte-item" href="/classe"><span class="tb-menu-compte-icone">{{ icone("classe", 16) }}</span><span>Classe virtuelle</span></a>
+        <a class="tb-menu-compte-item" href="/cercles"><span class="tb-menu-compte-icone">{{ icone("cercles", 16) }}</span><span>{{ t("Mes cercles", request) }}</span></a>
+        <a class="tb-menu-compte-item" href="/classe"><span class="tb-menu-compte-icone">{{ icone("classe", 16) }}</span><span>{{ t("Classe virtuelle", request) }}</span></a>
 
-        <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
-        <a class="tb-menu-compte-item" href="/abonnement"><span class="tb-menu-compte-icone">{{ icone("premium", 16) }}</span><span>Abonnement</span></a>
-        <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
-        <a class="tb-menu-compte-item" href="/mode-emploi"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Mode d'emploi</span></a>
+        <p class="tb-menu-compte-groupe">{{ t("Compte &amp; aide", request) }}</p>
+        <a class="tb-menu-compte-item" href="/abonnement"><span class="tb-menu-compte-icone">{{ icone("premium", 16) }}</span><span>{{ t("Abonnement", request) }}</span></a>
+        <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>{{ t("Aide & Avis", request) }}</span></a>
+        <a class="tb-menu-compte-item" href="/mode-emploi"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>{{ t("Mode d'emploi", request) }}</span></a>
 
         <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter Gasy Mahay</span></a>
         {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
-        <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %} · {{ nb_admin_notifs }} nouvelles{% endif %}</span></a>
+        <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>{{ t("Administration", request) }}{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %} · {{ nb_admin_notifs }} nouvelles{% endif %}</span></a>
         {% endif %}
 
         <div class="tb-menu-compte-separateur"></div>
         <form method="post" action="/deconnexion" class="tb-menu-compte-deconnexion">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button type="submit"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Se déconnecter</span></button>
+          <button type="submit"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>{{ t("Se déconnecter", request) }}</span></button>
         </form>
       </div>
     </div>
@@ -248,7 +248,7 @@
     {% else %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
       <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> {{ t("Documents", request) }}</a>
-      <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}><span class="tb-icone">{{ icone("cercles", 17) }}</span> Cercles d’étude</a>
+      <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}><span class="tb-icone">{{ icone("cercles", 17) }}</span> {{ t("Cercles d’étude", request) }}</a>
       <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> {{ t("A propos", request) }}</a>
       <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> {{ t("Universites", request) }}</a>
       <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> {{ t("Aide & Avis", request) }}</a>
@@ -256,8 +256,8 @@
       <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> {{ t("Mode d'emploi", request) }}</a>
 
       <p class="tb-sidebar-groupe">{{ t("Compte", request) }}</p>
-      <a href="/connexion" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/connexion' else '' }}" {{ 'aria-current="page"' if request.url.path == '/connexion' else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Connexion</a>
-      <a href="/inscription" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/inscription' else '' }}" {{ 'aria-current="page"' if request.url.path == '/inscription' else '' }}><span class="tb-icone">{{ icone("premium", 17) }}</span> Inscription</a>
+      <a href="/connexion" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/connexion' else '' }}" {{ 'aria-current="page"' if request.url.path == '/connexion' else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> {{ t("Connexion", request) }}</a>
+      <a href="/inscription" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/inscription' else '' }}" {{ 'aria-current="page"' if request.url.path == '/inscription' else '' }}><span class="tb-icone">{{ icone("premium", 17) }}</span> {{ t("Inscription", request) }}</a>
     </nav>
     {% endif %}
   </aside>
@@ -265,22 +265,22 @@
   {% if request.session.get("user_id") %}
   <nav class="navigation-mobile-fixe" aria-label="Navigation rapide mobile">
     <a href="/dashboard" class="navigation-mobile-lien{{ ' actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
-      {{ icone("dashboard", 20) }}<span>Accueil</span>
+      {{ icone("dashboard", 20) }}<span>{{ t("Accueil", request) }}</span>
     </a>
     <a href="/documents" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}>
-      {{ icone("documents", 20) }}<span>Documents</span>
+      {{ icone("documents", 20) }}<span>{{ t("Documents", request) }}</span>
     </a>
     <a href="/quiz" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}>
-      {{ icone("quiz", 20) }}<span>Quiz</span>
+      {{ icone("quiz", 20) }}<span>{{ t("Quiz", request) }}</span>
     </a>
     <a href="/cercles" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
-      {{ icone("cercles", 20) }}<span>Cercles</span>
+      {{ icone("cercles", 20) }}<span>{{ t("Cercles", request) }}</span>
     </a>
     <a href="/defis" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/defis') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/defis') else '' }}>
-      🏆<span>Défis</span>
+      🏆<span>{{ t("Défis", request) }}</span>
     </a>
     <a href="/securite" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}>
-      {{ icone("securite", 20) }}<span>Profil</span>
+      {{ icone("securite", 20) }}<span>{{ t("Profil", request) }}</span>
     </a>
   </nav>
   {% endif %}
@@ -295,7 +295,7 @@
       <a class="mobile-entete-app-notifications" href="/notifications" aria-label="Notifications">
         {{ icone("aide", 20) }}{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %}<span>{{ nb_notifs if nb_notifs < 10 else "9+" }}</span>{% endif %}
       </a>
-      <a class="mobile-entete-app-avatar" href="/securite" aria-label="Ouvrir mon profil">
+      <a class="mobile-entete-app-avatar" href="/securite" aria-label="{{ t('Ouvrir mon profil', request) }}">
         {{ avatar_utilisateur(utilisateur, taille=30) }}
         <span>{{ utilisateur.nom.split(" ")[0] }}</span>
       </a>
@@ -314,7 +314,7 @@
       <span class="notification-inactivite-icone" aria-hidden="true">!</span>
       <div class="notification-inactivite-contenu">
         <strong>{{ t("Bienvenue de retour", request) }}</strong>
-        <span>Tu n'as pas utilisé Gasy Mahay depuis {{ rappel_inactivite.jours }} jour{{ "s" if rappel_inactivite.jours != 1 else "" }}. Reprends ton apprentissage quand tu le souhaites.</span>
+        <span>{{ t("Tu n'as pas utilisé Gasy Mahay depuis", request) }} {{ rappel_inactivite.jours }} {{ t("jour" if rappel_inactivite.jours == 1 else "jours", request) }}. {{ t("Reprends ton apprentissage quand tu le souhaites.", request) }}</span>
       </div>
       <form method="post" action="/notifications/inactivite/lue">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -330,15 +330,15 @@
 
     <footer class="pied">
       <div class="pied-contact">
-        <span class="pied-contact-etiquette">Un mot a nous dire ?</span>
+        <span class="pied-contact-etiquette">{{ t("Un mot a nous dire ?", request) }}</span>
         <a class="pied-contact-lien" href="/contact">
-          <span class="pied-contact-icone">☎</span> Nous contacter
+          <span class="pied-contact-icone">☎</span> {{ t("Nous contacter", request) }}
         </a>
         <a class="pied-contact-lien pied-contact-whatsapp" href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site." target="_blank" rel="noopener">
           <span class="pied-contact-icone">💬</span> WhatsApp · +261 33 75 817 32
         </a>
       </div>
-      <p>Gasy Mahay — un hub de revision imagine pour les étudiants à Madagascar.</p>
+      <p>{{ t("Gasy Mahay — un hub de revision imagine pour les étudiants à Madagascar.", request) }}</p>
       <p class="pied-liens"><a href="/faq">FAQ</a> · <a href="/feedback">{{ t("Donner mon avis", request) }}</a></p>
     </footer>
   </div>
