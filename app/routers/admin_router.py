@@ -348,7 +348,7 @@ def accepter_demande_adhesion_admin(
     if not demande or not cercle:
         return RedirectResponse("/admin/demandes-adhesion", status_code=303)
 
-    resultat = _traiter_acceptation_demande(session, cercle, demande, admin)
+    resultat = _traiter_acceptation_demande(session, cercle, demande, admin, force_admin=True)
     if resultat == "profil_change":
         return RedirectResponse(f"/admin/demandes-adhesion?erreur=profil_change&demande={demande_id}", status_code=303)
 
