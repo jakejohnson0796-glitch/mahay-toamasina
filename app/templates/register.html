@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block titre %}Inscription — Gasy Mahay{% endblock %}
+{% block titre %}{{ t("Inscription — Gasy Mahay", request) }}{% endblock %}
 {% block main_classe %}main-auth-page{% endblock %}
 {% block contenu %}
 <div class="auth-page-shell">
@@ -13,8 +13,8 @@
     </a>
 
     <div class="auth-showcase-copy">
-      <p class="auth-kicker">Créer ton espace d’étude</p>
-      <h1>Un seul espace pour apprendre, réviser et collaborer.</h1>
+      <p class="auth-kicker">{{ t("Créer ton espace d’étude", request) }}</p>
+      <h1>{{ t("Un seul espace pour apprendre, réviser et collaborer.", request) }}</h1>
       <p>
         Crée ton compte en quelques étapes. Ton profil académique aide ensuite
         à organiser les ressources et les cercles autour de ton parcours.
@@ -37,17 +37,17 @@
     <div class="auth-form-shell">
       <div class="auth-card">
         <div class="auth-card-top">
-          <span class="auth-card-badge"><span class="auth-card-badge-dot" aria-hidden="true"></span> Création de compte</span>
+          <span class="auth-card-badge"><span class="auth-card-badge-dot" aria-hidden="true"></span> {{ t("Création de compte", request) }}</span>
         </div>
 
         <div class="auth-card-main">
-          <h2 id="titre-inscription">Créer votre espace.</h2>
-          <p class="auth-card-intro">Quelques informations pour préparer votre compte et votre parcours.</p>
+          <h2 id="titre-inscription">{{ t("Créer votre espace.", request) }}</h2>
+          <p class="auth-card-intro">{{ t("Quelques informations pour préparer votre compte et votre parcours.", request) }}</p>
 
           <div class="auth-progress" data-auth-progress aria-label="Progression de l’inscription">
-            <div class="auth-step is-active" data-step="1"><span class="auth-step-num">01</span><span class="auth-step-label">Compte</span></div>
-            <div class="auth-step" data-step="2"><span class="auth-step-num">02</span><span class="auth-step-label">Parcours</span></div>
-            <div class="auth-step" data-step="3"><span class="auth-step-num">03</span><span class="auth-step-label">Finaliser</span></div>
+            <div class="auth-step is-active" data-step="1"><span class="auth-step-num">01</span><span class="auth-step-label">{{ t("Compte", request) }}</span></div>
+            <div class="auth-step" data-step="2"><span class="auth-step-num">02</span><span class="auth-step-label">{{ t("Parcours", request) }}</span></div>
+            <div class="auth-step" data-step="3"><span class="auth-step-num">03</span><span class="auth-step-label">{{ t("Finaliser", request) }}</span></div>
           </div>
 
           {% if erreur %}
@@ -73,7 +73,7 @@
               </div>
 
               <div class="auth-field">
-                <label for="nom">Nom complet <span class="auth-required" aria-hidden="true">*</span></label>
+                <label for="nom">{{ t("Nom complet", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
                 <div class="auth-input-wrap">
                   <input type="text" id="nom" name="nom" required maxlength="120" autocomplete="name" placeholder="Ex. Rakoto Jean" aria-describedby="nom-aide">
                 </div>
@@ -81,7 +81,7 @@
               </div>
 
               <div class="auth-field">
-                <label for="telephone_local">Numéro de téléphone <span class="auth-required" aria-hidden="true">*</span></label>
+                <label for="telephone_local">{{ t("Numéro de téléphone", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
                 <div class="auth-phone-wrap">
                   <span class="auth-phone-prefix" aria-hidden="true">+261</span>
                   <input type="tel" id="telephone_local" data-telephone-local="telephone"
@@ -95,7 +95,7 @@
               </div>
 
               <div class="auth-field">
-                <label for="mot_de_passe">Mot de passe <span class="auth-required" aria-hidden="true">*</span></label>
+                <label for="mot_de_passe">{{ t("Mot de passe", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
                 <div class="auth-input-wrap auth-password-wrap">
                   <input type="password" id="mot_de_passe" name="mot_de_passe"
                          required minlength="8" maxlength="72" autocomplete="new-password"
@@ -113,11 +113,11 @@
               </div>
 
               <div class="auth-field">
-                <label for="role">Vous êtes <span class="auth-required" aria-hidden="true">*</span></label>
+                <label for="role">{{ t("Vous êtes", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
                 <div class="auth-input-wrap">
                   <select id="role" name="role">
-                    <option value="etudiant" selected>Étudiant(e)</option>
-                    <option value="sponsor">Répétiteur / sponsor</option>
+                    <option value="etudiant" selected>{{ t("Étudiant(e)", request) }}</option>
+                    <option value="sponsor">{{ t("Répétiteur / sponsor", request) }}</option>
                   </select>
                 </div>
                 <div class="auth-role-note">Les étudiants renseignent leur parcours académique. Les répétiteurs / sponsors créent un compte sans ces informations.</div>
@@ -127,14 +127,14 @@
             <div id="bloc-academique" class="auth-section auth-academic" data-academic-section>
               <div class="auth-section-head">
                 <div>
-                  <p class="auth-section-title">2. Votre parcours académique</p>
+                  <p class="auth-section-title">2. {{ t("Votre parcours académique", request) }}</p>
                   <p class="auth-section-caption">Ces informations organisent les ressources et les cercles proposés.</p>
                 </div>
               </div>
 
               <div class="auth-academic-grid">
                 <div class="auth-field">
-                  <label for="universite_id">Université <span class="auth-required" aria-hidden="true">*</span></label>
+                  <label for="universite_id">{{ t("Université", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
                   <div class="auth-input-wrap">
                     <select id="universite_id" name="universite_id" required>
                       <option value="">— Choisissez votre université —</option>
@@ -146,7 +146,7 @@
                 </div>
 
                 <div class="auth-field">
-                  <label for="composante_id">Composante / établissement <span class="auth-required" aria-hidden="true">*</span></label>
+                  <label for="composante_id">{{ t("Composante / établissement", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
                   <div class="auth-input-wrap">
                     <select id="composante_id" name="composante_id" required disabled>
                       <option value="">— Choisissez d’abord votre université —</option>
@@ -155,7 +155,7 @@
                 </div>
 
                 <div class="auth-field">
-                  <label for="mention_id">Mention <span class="auth-required" aria-hidden="true">*</span></label>
+                  <label for="mention_id">{{ t("Mention", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
                   <div class="auth-input-wrap">
                     <select id="mention_id" name="mention_id" required disabled>
                       <option value="">— Choisissez d’abord votre composante —</option>
@@ -164,7 +164,7 @@
                 </div>
 
                 <div class="auth-field">
-                  <label for="niveau">Niveau <span class="auth-required" aria-hidden="true">*</span></label>
+                  <label for="niveau">{{ t("Niveau", request) }} <span class="auth-required" aria-hidden="true">*</span></label>
                   <div class="auth-input-wrap">
                     <select id="niveau" name="niveau" required disabled>
                       <option value="">— Choisissez d’abord votre mention —</option>
@@ -176,7 +176,7 @@
                 </div>
 
                 <div class="auth-field">
-                  <label for="filiere_id">Parcours / Filière</label>
+                  <label for="filiere_id">{{ t("Parcours", request) }} / Filière</label>
                   <div class="auth-input-wrap">
                     <select id="filiere_id" name="filiere_id" disabled>
                       <option value="">— Choisissez d’abord votre niveau —</option>
@@ -187,12 +187,12 @@
               </div>
             </div>
 
-            <button class="bouton bouton-primaire auth-submit" type="submit">Créer mon compte</button>
-            <div class="auth-submit-meta"><span class="auth-submit-meta-dot" aria-hidden="true"></span><span>Création protégée contre les abus automatisés</span></div>
+            <button class="bouton bouton-primaire auth-submit" type="submit">{{ t("Créer mon compte", request) }}</button>
+            <div class="auth-submit-meta"><span class="auth-submit-meta-dot" aria-hidden="true"></span><span>{{ t("Création protégée contre les abus automatisés", request) }}</span></div>
           </form>
 
-          <p class="auth-switch">Déjà inscrit(e) ? <a href="/connexion"><strong>Se connecter</strong></a></p>
-          <p class="auth-footer-note">Les champs du parcours académique sont nécessaires uniquement pour les étudiants.</p>
+          <p class="auth-switch">{{ t("Déjà inscrit(e) ?", request) }} <a href="/connexion"><strong>{{ t("Se connecter", request) }}</strong></a></p>
+          <p class="auth-footer-note">{{ t("Les champs du parcours académique sont nécessaires uniquement pour les étudiants.", request) }}</p>
         </div>
       </div>
     </div>
