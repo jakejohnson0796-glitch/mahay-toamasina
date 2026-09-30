@@ -284,10 +284,63 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             )
 
             if source_stricte:
-                # Pour la source Toamasina exacte, on ne depend pas du statut
-                # historique "curatee" : chaque triplet Mention + Niveau +
-                # Parcours doit exister et son offre doit etre active.
+                # Pour la source Toamasina exacte, le Type "Tronc commun"
+                # est une instruction forte : le parcours porte uniquement
+                # la mention + le niveau et ne doit pas rester une Filiere
+                # active historique. On desactive donc toute ancienne offre
+                # qui aurait ete materialisee comme parcours avant la
+                # nouvelle source stricte ; le prochain passage de
+                # assurer_cercles_referentiel archivera ensuite le cercle
+                # devenu invalide (sauf membres reels a revoir manuellement).
                 if normaliser(ligne.get("type")) == normaliser("Tronc commun"):
+                    nom_composante_source = ligne["composante"]
+                    nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
+                        normaliser(nom_composante_source),
+                        nom_composante_source,
+                    )
+                    facultes_universite = session.exec(
+                        select(Faculte).where(Faculte.universite_id == universite.id)
+                    ).all()
+                    faculte_tronc = next(
+                        (
+                            fac for fac in facultes_universite
+                            if normaliser(fac.nom) == normaliser(nom_composante_cible)
+                        ),
+                        None,
+                    )
+                    if faculte_tronc is None:
+                        faculte_tronc = next(
+                            (
+                                fac for fac in facultes_universite
+                                if normaliser(fac.nom) == normaliser(nom_composante_source)
+                            ),
+                            None,
+                        )
+                    if faculte_tronc is not None and mention is not None:
+                        candidats_tronc = session.exec(
+                            select(Filiere).where(
+                                Filiere.faculte_id == faculte_tronc.id,
+                                Filiere.mention_id == mention.id,
+                                Filiere.niveau == (ligne.get("niveau") or None),
+                            )
+                        ).all()
+                        candidats_tronc = [
+                            fil for fil in candidats_tronc
+                            if normaliser(fil.nom) == normaliser(ligne["parcours"])
+                        ]
+                        for filiere_tronc in candidats_tronc:
+                            offres_tronc = session.exec(
+                                select(ProgrammeUniversitaire).where(
+                                    ProgrammeUniversitaire.universite_id == universite.id,
+                                    ProgrammeUniversitaire.filiere_id == filiere_tronc.id,
+                                    ProgrammeUniversitaire.est_active == True,  # noqa: E712
+                                )
+                            ).all()
+                            for offre_tronc in offres_tronc:
+                                offre_tronc.est_active = False
+                                if not dry_run:
+                                    session.add(offre_tronc)
+                                    session.commit()
                     continue
 
                 nom_composante_source = ligne["composante"]
