@@ -306,6 +306,33 @@
 
 .ai-loading.is-visible { display: flex; }
 
+.ai-tuteur-loading {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin-top: .65rem;
+  padding: .78rem .82rem;
+  border: 1px solid rgba(47,143,137,.20);
+  border-radius: 13px;
+  background: rgba(47,143,137,.055);
+  color: var(--content-text-muted);
+}
+
+.ai-tuteur-loading[hidden] { display: none; }
+
+.ai-tuteur-loading strong {
+  display: block;
+  color: var(--content-text);
+  font-size: .68rem;
+}
+
+.ai-tuteur-loading div > span {
+  display: block;
+  margin-top: .16rem;
+  font-size: .59rem;
+  line-height: 1.5;
+}
+
 .ai-loading-dot {
   width: .48rem;
   height: .48rem;
