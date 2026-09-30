@@ -119,7 +119,23 @@ def lister_filieres_par_mention_niveau(
         .distinct()
         .order_by(Filiere.nom)
     ).all()
-    return [{"id": f.id, "nom": f.nom} for f in filieres]
+    resultat = []
+    for f in filieres:
+        # Libellé court d'aide à la lecture uniquement : l'identité reste
+        # l'id Filiere et le nom canonique officiel en base. Cela rend
+        # immédiatement visible « Commerce International » dans le cas
+        # officiel L3 « Entreprises agro-industrielles et Commerce International »
+        # sans créer une seconde filière ni un second cercle.
+        nom_affichage = f.nom
+        if (
+            niveau == "L3"
+            and _normaliser_nom_parcours(f.nom) == _normaliser_nom_parcours(
+                "Entreprises agro-industrielles et Commerce International"
+            )
+        ):
+            nom_affichage = "Commerce International — Entreprises agro-industrielles"
+        resultat.append({"id": f.id, "nom": nom_affichage, "nom_officiel": f.nom})
+    return resultat
 
 
 @router.get("/domaines")
