@@ -14,11 +14,15 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func
 
 from .csrf import obtenir_jeton_csrf
+from .i18n import LANGUES, langue_session, t
 
 BASE_DIR = Path(__file__).resolve().parent
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.globals["jeton_csrf"] = obtenir_jeton_csrf
+templates.env.globals["t"] = lambda cle, request=None: t(cle, langue_session(request) if request is not None else "fr")
+templates.env.globals["langue_courante"] = langue_session
+templates.env.globals["langues_disponibles"] = LANGUES
 
 
 def _texte_ia_html(texte) -> "Markup":
