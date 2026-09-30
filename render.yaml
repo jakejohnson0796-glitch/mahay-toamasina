@@ -67,6 +67,7 @@ services:
   # noeviction evite que Redis supprime silencieusement une tache de la file.
   - type: keyvalue
     name: mahay-toamasina-ai-queue
-    plan: 256mb
+    plan: free
     region: frankfurt
+    ipAllowList: []
     maxmemoryPolicy: noeviction
