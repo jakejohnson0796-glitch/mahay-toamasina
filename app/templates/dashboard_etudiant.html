@@ -9,6 +9,17 @@
 {% if request.query_params.get("ok") == "demande_filiere_envoyee" %}<div class="info">Demande de changement de parcours envoyee — un administrateur doit la valider.</div>{% endif %}
   <div class="tb-contenu contenu-clair">
 
+    {% if parcours_demarrage is defined and not parcours_demarrage.onboarding_termine %}
+    <section class="tb-onboarding-banner" aria-labelledby="tb-onboarding-title">
+      <div>
+        <p class="eyebrow">Nouveau sur Gasy Mahay</p>
+        <h2 id="tb-onboarding-title">Ton démarrage est à {{ parcours_demarrage.etapes_terminees }}/3.</h2>
+        <p>Découvre le Tuteur IA, fais un quiz et rejoins ton cercle. En quelques minutes, tu auras déjà commencé ton parcours.</p>
+      </div>
+      <a class="bouton bouton-primaire" href="/bienvenue">Continuer mon parcours →</a>
+    </section>
+    {% endif %}
+
     <section class="tb-hero">
       <div class="tb-hero-texte">
         <p class="eyebrow">Bonjour, {{ utilisateur.nom.split(" ")[0] }} <span aria-hidden="true">👋</span></p>
