@@ -6,6 +6,7 @@ Lancer avec :  uvicorn app.main:app --reload
 """
 import asyncio
 import threading
+import time
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -43,10 +44,14 @@ class TraductionInterfaceMiddleware(BaseHTTPMiddleware):
     valeurs académiques dynamiques qui ne figurent pas dans le dictionnaire."""
 
     async def dispatch(self, request: Request, call_next):
+        debut = time.perf_counter()
         response = await call_next(request)
         langue = langue_session(request)
         content_type = response.headers.get("content-type", "")
         if langue == "fr" or "text/html" not in content_type:
+            duree = time.perf_counter() - debut
+            if duree >= 0.75 and request.url.path != "/health":
+                print(f"[PERF] {request.method} {request.url.path} {duree:.3f}s status={response.status_code}")
             return response
 
         try:
@@ -55,6 +60,10 @@ class TraductionInterfaceMiddleware(BaseHTTPMiddleware):
             html_traduit = traduire_html_interface(html_rendu, langue)
         except (UnicodeDecodeError, AttributeError):
             return response
+
+        duree = time.perf_counter() - debut
+        if duree >= 0.75 and request.url.path != "/health":
+            print(f"[PERF] {request.method} {request.url.path} {duree:.3f}s status={response.status_code} langue={langue}")
 
         entetes = {
             cle: valeur
