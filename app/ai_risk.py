@@ -63,7 +63,10 @@ def analyser_risque(
         score += 1
         raisons.append("contexte_incomplet")
 
-    if score <= 1:
+    # Le niveau "moyen" ajoute deja un point de risque : il doit donc
+    # passer au controle standard, tandis que seul un quiz sans signal
+    # de risque reste en verification legere.
+    if score == 0:
         strategie = STRATEGIE_LEGERE
     elif score <= 3:
         strategie = STRATEGIE_STANDARD
