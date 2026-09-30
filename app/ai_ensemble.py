@@ -373,21 +373,33 @@ def ensemble_verification_quiz(
     niveau: str,
     outil_verification: Dict[str, Any],
     validate,
+    strategie: str = "standard",
 ) -> Tuple[List[Dict[str, Any]], bool, Dict[str, Any]]:
-    """Fait collaborer les verificateurs puis choisit une seule sortie."""
+    """Fait collaborer les verificateurs avec un niveau de controle adaptatif.
+
+    legere = Qwen seul ; standard/renforcee = Qwen + Gemini.
+    L'arbitre n'est appele que lorsqu'un des critiques detecte un probleme
+    ou manque de confiance.
+    """
     if not parametres.ai_ensemble_enabled or not questions:
-        return questions, False, {"models": [parametres.groq_model], "critics": []}
+        return questions, False, {
+            "models": [parametres.groq_model],
+            "critics": [],
+            "strategy": strategie,
+        }
 
     critiques: List[Dict[str, Any]] = []
     qwen = critiquer_quiz_groq(questions, matiere, niveau)
     if qwen:
         critiques.append({"model": parametres.groq_critic_model, "avis": qwen})
-    gemini = critiquer_quiz_gemini(questions, matiere, niveau)
-    if gemini:
-        critiques.append({"model": parametres.gemini_model, "avis": gemini})
+
+    if strategie != "legere":
+        gemini = critiquer_quiz_gemini(questions, matiere, niveau)
+        if gemini:
+            critiques.append({"model": parametres.gemini_model, "avis": gemini})
 
     if not critiques:
-        return questions, False, {"models": [parametres.groq_model], "critics": []}
+        return questions, False, {"models": [parametres.groq_model], "critics": [], "strategy": strategie}
 
     # Aucun correcteur n'a detecte de probleme : inutile de depenser un appel
     # supplementaire d'arbitrage.
@@ -401,6 +413,7 @@ def ensemble_verification_quiz(
         return questions, True, {
             "models": [parametres.groq_model] + [x["model"] for x in critiques],
             "critics": critiques,
+            "strategy": strategie,
         }
 
     arbitre = arbitrer_quiz(
@@ -423,11 +436,13 @@ def ensemble_verification_quiz(
                 "models": [parametres.groq_model] + [x["model"] for x in critiques],
                 "critics": critiques,
                 "arbitration": "fallback_critic",
+                "strategy": strategie,
             }
         return questions, False, {
             "models": [parametres.groq_model] + [x["model"] for x in critiques],
             "critics": critiques,
             "arbitration": "original",
+            "strategy": strategie,
         }
 
     candidat = arbitre.get("questions")
@@ -439,12 +454,14 @@ def ensemble_verification_quiz(
             "models": [parametres.groq_model] + [x["model"] for x in critiques],
             "critics": critiques,
             "arbitration": "invalid",
+            "strategy": strategie,
         }
 
     return candidat, arbitre.get("confiant") is True, {
         "models": [parametres.groq_model] + [x["model"] for x in critiques],
         "critics": critiques,
         "arbitration": "groq_arbiter",
+        "strategy": strategie,
     }
 
 
