@@ -201,6 +201,18 @@ TRADUCTIONS: Final[dict[str, dict[str, str]]] = {
         "Parcours / Filière": "Program / field of study",
         "Créer mon compte": "Create my account",
         "Déjà inscrit(e) ?": "Already registered?",
+        "Facile": "Easy",
+        "Moyen": "Medium",
+        "Difficile": "Hard",
+        "Très facile": "Very easy",
+        "Très difficile": "Very hard",
+        "Quiz IA · ma progression": "AI Quiz · my progress",
+        "quiz terminés": "completed quizzes",
+        "score moyen": "average score",
+        "matière avec ton meilleur résultat": "subject with your best result",
+        "Utilise le Tuteur IA lorsqu'une notion reste difficile après une correction.": "Use AI Tutor when a concept remains difficult after a review.",
+        "Revoir": "Review",
+        "Commence un premier entraînement pour construire ton historique et visualiser ta progression.": "Start your first practice session to build your history and track your progress."
     },
         "Apprentissage assisté · Quiz IA": "Assisted learning · AI Quiz",
         "Transforme ton cours en entraînement.": "Turn your course into practice.",
@@ -547,9 +559,20 @@ TRADUCTIONS: Final[dict[str, dict[str, str]]] = {
         "Ouvre une ancienne session pour relire l'explication et continuer ton travail.": "Sokafy ny fivoriana taloha hamakiana indray ny fanazavana sy hanohizana ny asanao.",
         "Pas encore de question enregistrée.": "Tsy mbola misy fanontaniana voatahiry.",
         "Poser ma première question": "Hametraka ny fanontaniako voalohany"
-
+        "Facile": "Mora",
+        "Moyen": "Antonony",
+        "Difficile": "Sarotra",
+        "Très facile": "Mora be",
+        "Très difficile": "Tena sarotra",
+        "Quiz IA · ma progression": "Quiz IA · ny fandrosoako",
+        "quiz terminés": "quiz vita",
+        "score moyen": "naoty salan'isa",
+        "matière avec ton meilleur résultat": "taranja nahazoanao vokatra tsara indrindra",
+        "Utilise le Tuteur IA lorsqu'une notion reste difficile après une correction.": "Ampiasao ny Mpanazatra IA rehefa mbola sarotra aminao ny hevitra iray aorian'ny fanitsiana.",
+        "Revoir": "Hijery indray",
+        "Commence un premier entraînement pour construire ton historique et visualiser ta progression.": "Atombohy ny fanazaran-tena voalohany mba hananganana ny tantaranao sy hijerena ny fandrosoanao."
+    },
 }
-
 
 # Libellés complémentaires pour les pages internes. Les valeurs académiques
 # dynamiques ne sont volontairement pas incluses : elles restent officielles.
