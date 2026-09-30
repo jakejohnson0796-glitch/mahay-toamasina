@@ -104,7 +104,7 @@ def configurer_mot_de_passe_confirmation_admin(
             return RedirectResponse("/admin/securite?erreur=actuel_incorrect", status_code=303)
 
     admin.mot_de_passe_confirmation_admin_hash = hacher_mot_de_passe(nouveau)
-    admin.confirmation_admin_configuree_le = __import__("datetime").datetime.utcnow()
+    admin.confirmation_admin_configuree_le = datetime.utcnow()
     session.add(admin)
     session.commit()
 
