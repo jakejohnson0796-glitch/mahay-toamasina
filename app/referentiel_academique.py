@@ -330,6 +330,37 @@ def jours_avant_prochain_changement_niveau(utilisateur: Utilisateur) -> int:
     return max(1, int((restant.total_seconds() + 86399) // 86400))
 
 
+def filiere_canonique_pour_cercle(session: Session, filiere: Filiere) -> Filiere:
+    """Choisit une seule Filiere représentante pour l'identité nationale.
+
+    Deux universités peuvent avoir des IDs Filiere différents tout en
+    proposant exactement le même parcours. Tous les nouveaux cercles
+    nationaux sont rabattus sur la représentation active de plus petit ID,
+    afin que l'index SQL (mention_id, filiere_id, niveau) puisse également
+    empêcher les doublons concurrents.
+    """
+    if not filiere.mention_id:
+        return filiere
+
+    nom_normalise = _normaliser_nom_parcours(filiere.nom)
+    candidates = []
+    for candidate in session.exec(
+        select(Filiere).where(Filiere.mention_id == filiere.mention_id)
+    ).all():
+        if candidate.niveau is not None and filiere.niveau is not None and candidate.niveau != filiere.niveau:
+            continue
+        if _normaliser_nom_parcours(candidate.nom) != nom_normalise:
+            continue
+        faculte = session.get(Faculte, candidate.faculte_id)
+        if not faculte or not faculte.universite_id:
+            continue
+        if not offre_filiere_active_universite(session, faculte.universite_id, candidate.id):
+            continue
+        candidates.append(candidate)
+
+    return min(candidates, key=lambda f: f.id) if candidates else filiere
+
+
 def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
     """Renvoie les id de TOUTES les Filiere qui representent le meme
     parcours national que `filiere` — meme mention_id + meme nom une
