@@ -36,10 +36,10 @@ SOURCE = Path(__file__).resolve().parent.parent / "mahay_toamasina_referentiel_s
 SOURCE_SHA256 = "fefcd0e5b0886ec181f74d568378afca87c7f1fd54e0b1a30790b249d89ca2ed"
 
 FACULTES_SOURCE_VERS_BASE = {
-    "faculte deg": "droit, economie, gestion, mathematiques et informatique (degmia)",
-    "faculte des sciences et technologie": "sciences et technologies",
-    "ecole normale superieure": "ecole normale superieure (ens)",
-    "faculte des lettres et sciences humaines": "lettres et sciences humaines",
+    "faculte deg": "faculte deg",
+    "faculte des sciences et technologie": "faculte des sciences et technologie",
+    "ecole normale superieure": "ecole normale superieure",
+    "faculte des lettres et sciences humaines": "faculte des lettres et sciences humaines",
 }
 
 
