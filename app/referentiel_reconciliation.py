@@ -27,6 +27,7 @@ from sqlmodel import Session, select
 from .models import (
     CercleEtude,
     DemandeChangementFiliere,
+    Domaine,
     DemandeCreationCercle,
     Faculte,
     Filiere,
@@ -331,9 +332,9 @@ def reconcilier(
         return rapport
 
     # Domaines : réutilise le domaine homonyme existant, sans créer de variantes.
-    domaines = {normaliser(d.nom): d for d in session.exec(select(__import__("app.models", fromlist=["Domaine"]).Domaine)).all()}
+    domaines = {normaliser(d.nom): d for d in session.exec(select(Domaine)).all()}
 
-    cles_desirees: set[tuple[int, int, int, str]] = set()
+    cles_desirees: set[tuple[int, int | None, str | None, str]] = set()
     cles_tronc: set[tuple[int, str]] = set()
     facultes_scope: set[int] = set()
 
@@ -382,12 +383,6 @@ def reconcilier(
         filiere = _filiere_canonique(
             session, faculte.id, mention.id, niveau, ligne["parcours"], rapport
         )
-        cles_desirees.add((faculte.id, mention.id, int(niveau in {"L1","L2","L3","M1","M2"}) and 0 or 0, normaliser(filiere.nom)))
-        # The third component above is deliberately not used below; keep
-        # exact level in a second canonical key to avoid accidental
-        # cross-level merging.
-        cle_exacte = (faculte.id, mention.id, niveau, normaliser(filiere.nom))
-        cles_desirees.discard((faculte.id, mention.id, 0, normaliser(filiere.nom)))
         cles_desirees.add((faculte.id, mention.id, niveau, normaliser(filiere.nom)))
 
         offres = session.exec(
