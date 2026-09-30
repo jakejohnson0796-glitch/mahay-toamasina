@@ -45,7 +45,7 @@ def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
     """Reference unique sans charger/compter toute la table des documents."""
     prefixe = "".join(c for c in filiere.nom.upper() if c.isalpha())[:3] or "DOC"
     jeton = secrets.token_hex(4).upper()
-    return f"TOA-{prefixe}-{annee}-{jeton}"
+    return f"MG-{prefixe}-{annee}-{jeton}"
 
 
 @router.get("/documents")
