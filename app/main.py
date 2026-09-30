@@ -424,23 +424,42 @@ def sitemap(request: Request) -> Response:
 
 @app.get("/")
 def accueil(request: Request, session: Session = Depends(get_session)):
-    facultes = session.exec(select(Faculte)).all()
     derniers_documents = session.exec(
         select(Document).where(Document.statut == StatutDocument.APPROUVE)
         .order_by(Document.date_upload.desc()).limit(5)
     ).all()
 
-    # Section 9 du brief "Le Phare" : hero a 4 stats (documents,
-    # universites, cercles actifs, quiz completes) au lieu de 2.
-    nb_universites = session.exec(
-        select(func.count()).select_from(Universite).where(Universite.est_active == True)  # noqa: E712
+    # Les quatre compteurs sont récupérés dans une seule requête SQL afin
+    # de limiter les allers-retours réseau vers PostgreSQL/Supabase.
+    nb_documents_sql = (
+        select(func.count()).select_from(Document)
+        .where(Document.statut == StatutDocument.APPROUVE)
+        .scalar_subquery()
+    )
+    nb_universites_sql = (
+        select(func.count()).select_from(Universite)
+        .where(Universite.est_active == True)  # noqa: E712
+        .scalar_subquery()
+    )
+    nb_cercles_actifs_sql = (
+        select(func.count()).select_from(CercleEtude)
+        .where(CercleEtude.statut == StatutCercle.ACTIF)
+        .scalar_subquery()
+    )
+    nb_quiz_completes_sql = (
+        select(func.count()).select_from(TentativeQuiz)
+        .where(TentativeQuiz.date_soumission.is_not(None))
+        .scalar_subquery()
+    )
+    compteurs = session.exec(
+        select(
+            nb_documents_sql,
+            nb_universites_sql,
+            nb_cercles_actifs_sql,
+            nb_quiz_completes_sql,
+        )
     ).one()
-    nb_cercles_actifs = session.exec(
-        select(func.count()).select_from(CercleEtude).where(CercleEtude.statut == StatutCercle.ACTIF)
-    ).one()
-    nb_quiz_completes = session.exec(
-        select(func.count()).select_from(TentativeQuiz).where(TentativeQuiz.date_soumission.is_not(None))
-    ).one()
+    nb_documents, nb_universites, nb_cercles_actifs, nb_quiz_completes = compteurs
 
     return templates.TemplateResponse(
         request,
