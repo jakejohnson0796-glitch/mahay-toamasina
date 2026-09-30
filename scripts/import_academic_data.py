@@ -335,6 +335,31 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                     normaliser(ligne["parcours"]),
                 )
                 filiere = filieres_exactes_par_faculte.get(faculte.id, {}).get(cle_exacte)
+
+                # Une migration historique peut avoir rattache un parcours
+                # au mauvais ID de Mention tout en gardant le bon nom, niveau
+                # et composante. Pour la source stricte, ce triplet (niveau +
+                # parcours + composante) constitue alors une correspondance
+                # certaine si UNE seule Filiere candidate existe. On corrige
+                # son mention_id vers la mention exacte de la source au lieu
+                # de creer un doublon artificiel.
+                if filiere is None:
+                    candidates = {
+                        candidate.id: candidate
+                        for (mention_id_historique, niveau_historique, nom_historique), candidate
+                        in filieres_exactes_par_faculte.get(faculte.id, {}).items()
+                        if niveau_historique == normaliser(ligne.get("niveau"))
+                        and nom_historique == normaliser(ligne["parcours"])
+                    }
+                    if len(candidates) == 1:
+                        filiere = next(iter(candidates.values()))
+                        if mention is not None and filiere.mention_id != mention.id:
+                            filiere.mention_id = mention.id
+                            if not dry_run:
+                                session.add(filiere)
+                                session.commit()
+                        filieres_exactes_par_faculte[faculte.id][cle_exacte] = filiere
+
                 if filiere is None:
                     filiere = Filiere(
                         nom=ligne["parcours"],
