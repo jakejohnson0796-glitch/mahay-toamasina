@@ -369,8 +369,8 @@
 {% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/ai-learning.js?v={{ version_asset('ai-learning.js') }}" defer></script>
 {% endif %}
-{% if request.url.path.startswith("/defis") %}
-<link rel="stylesheet" href="/static/gamification.css?v=1">
+{% if request.url.path.startswith("/defis") or request.url.path == "/dashboard" %}
+<link rel="stylesheet" href="/static/gamification.css?v=2">
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}">
