@@ -9,6 +9,7 @@
   "use strict";
 
   function actionProtegee(form) {
+    if (document.body.dataset.adminSession !== "1") return false;
     if (!form || (form.method || "get").toLowerCase() !== "post") return false;
 
     var url;
