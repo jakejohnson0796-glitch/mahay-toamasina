@@ -200,9 +200,13 @@ def _initialiser_donnees_apres_demarrage() -> None:
         # lancement et a chaque redemarrage si la source versionnee est presente.
         # Cela vaut aussi pour SQLite local : un nouveau lancement doit partir
         # directement sur la couverture nationale.
+        # Le JSON versionne est la source exacte et reproductible du
+        # referentiel Toamasina (utilisee aussi par le smoke test PostgreSQL).
+        # Le classeur XLSX reste un fallback pour les environnements qui
+        # n'ont pas encore le fichier JSON.
         candidats_referentiel = [
-            BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx",
             BASE_DIR.parent / "mahay_toamasina_referentiel_source.json",
+            BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx",
         ]
         chemin_referentiel = next(
             (chemin for chemin in candidats_referentiel if chemin.exists()),
