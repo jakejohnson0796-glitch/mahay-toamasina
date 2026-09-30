@@ -648,13 +648,21 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
 
 <div class="cercles-source-note"><span>Illustrations d’étude intégrées localement dans Gasy Mahay : aucune dépendance à un service d’images externe.</span></div>
 
-{% if total_pages > 1 %}
+{% if (recherche_textuelle_active and (page > 1 or has_next_page)) or ((not recherche_textuelle_active) and total_pages > 1) %}
 <nav class="pagination" aria-label="Pagination des cercles" style="display:flex; gap:1rem; align-items:center; justify-content:center; margin-top:1.5rem;">
   {% if page > 1 %}
   <a href="/cercles?{{ querystring }}{{ '&' if querystring else '' }}page={{ page - 1 }}">&larr; Précédent</a>
   {% endif %}
+  {% if recherche_textuelle_active %}
+  <span class="stat-label">
+    Page {{ page }}{% if has_next_page %} · plus de {{ page * 30 }} résultats disponibles{% endif %}
+  </span>
+  {% else %}
   <span class="stat-label">Page {{ page }} / {{ total_pages }} · {{ total_cercles }} cercles</span>
-  {% if page < total_pages %}
+  {% endif %}
+  {% if has_next_page %}
+  <a href="/cercles?{{ querystring }}{{ '&' if querystring else '' }}page={{ page + 1 }}">Suivant &rarr;</a>
+  {% elif (not recherche_textuelle_active) and page < total_pages %}
   <a href="/cercles?{{ querystring }}{{ '&' if querystring else '' }}page={{ page + 1 }}">Suivant &rarr;</a>
   {% endif %}
 </nav>
