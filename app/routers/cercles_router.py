@@ -1263,14 +1263,20 @@ def _traiter_acceptation_demande(
 
     Retourne :
     - None si la demande a ete acceptee (membre ajoute) ;
-    - "profil_change" si elle a ete rejetee a la place car le profil du
-      demandeur ne correspond plus au cercle (voir §32 du brief) ;
+    - "profil_change" si elle a ete rejetee par un createur/moderateur non-admin
+      car le profil du demandeur ne correspond plus au cercle ;
+      un administrateur qui clique explicitement sur Accepter peut outrepasser
+      ce contrôle, afin que sa decision reste effective ;
     - "deja_traitee" si elle n'etait plus EN_ATTENTE (double-clic / action
       concurrente) — ne fait rien dans ce cas.
     """
     if demande.statut != StatutDemandeAdhesion.EN_ATTENTE:
         return "deja_traitee"
 
+    # Le bypass n'est possible que pour une action explicitement effectuée
+    # par un compte administrateur. Un créateur/modérateur de cercle garde
+    # le contrôle de cohérence du profil au moment de l'acceptation.
+    force_admin = force_admin and traiteur.role == RoleUtilisateur.ADMIN
     demandeur = session.get(Utilisateur, demande.utilisateur_id)
     # §32 du brief : le niveau (ou la filiere) du demandeur a pu changer
     # entre la demande et son traitement — la verification doit etre
