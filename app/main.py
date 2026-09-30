@@ -1,5 +1,5 @@
 """
-Point d'entree de Gasy Mahay Toamasina.
+Point d'entree de Gasy Mahay.
 
 Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
@@ -21,7 +21,6 @@ from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router
 from .security_headers import EnTetesSecuriteMiddleware
-from .seed_data import peupler_donnees_initiales
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
@@ -192,8 +191,8 @@ def _initialiser_donnees_apres_demarrage() -> None:
     with Session(engine) as session:
         # Le referentiel academique national est synchronise a chaque premier
         # lancement et a chaque redemarrage si la source versionnee est presente.
-        # Cela vaut aussi pour SQLite local : un nouveau lancement ne doit plus
-        # amorcer une experience Toamasina-only, mais la couverture nationale.
+        # Cela vaut aussi pour SQLite local : un nouveau lancement doit partir
+        # directement sur la couverture nationale.
         candidats_referentiel = [
             BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx",
             BASE_DIR.parent / "mahay_toamasina_referentiel_source.json",
@@ -367,7 +366,7 @@ def universites(request: Request, session: Session = Depends(get_session)):
     # Donnees reelles deja en base — aucune universite, faculte ou
     # filiere n'est inventee pour cette page. Reflete le referentiel
     # academique national (Universite -> Faculte -> Filiere -> Mention),
-    # pas seulement Toamasina.
+    # a l'echelle de Madagascar.
     toutes_universites = session.exec(select(Universite).where(Universite.est_active == True)).all()  # noqa: E712
     toutes_facultes = session.exec(select(Faculte)).all()
     toutes_filieres = session.exec(select(Filiere)).all()
