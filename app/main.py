@@ -21,6 +21,7 @@ from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router
 from .security_headers import EnTetesSecuriteMiddleware
+from .admin_security import AdminActionConfirmationMiddleware
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
@@ -46,6 +47,12 @@ if parametres.environnement == "production" and parametres.session_secret_key ==
         "\"import secrets; print(secrets.token_hex(32))\") et definis-la "
         "dans les variables d'environnement de l'hebergeur avant de redeployer."
     )
+
+# La protection des actions admin doit s'executer APRES SessionMiddleware
+# afin de pouvoir lire request.session. Comme Starlette execute les middlewares
+# ajoutes en dernier en premier, on enregistre donc AdminActionConfirmation
+# avant SessionMiddleware.
+app.add_middleware(AdminActionConfirmationMiddleware)
 
 # Cle de session : lue depuis SESSION_SECRET_KEY (.env) si presente, sinon
 # retombe sur la valeur de demo. A REMPLACER avant toute mise en ligne
