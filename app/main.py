@@ -239,7 +239,8 @@ def _initialiser_donnees_apres_demarrage() -> None:
         assurer_compte_admin(session)
         # Apres assurer_compte_admin : un cercle genere automatiquement a
         # besoin d'un createur_id valide (voir cercles_referentiel.py).
-        nb_cercles_crees = assurer_cercles_referentiel(session)
+        identites_tronc = getattr(rapport_referentiel, "cercles_tronc_commun", set()) if "rapport_referentiel" in locals() else set()
+        nb_cercles_crees = assurer_cercles_referentiel(session, identites_tronc=identites_tronc)
         if nb_cercles_crees:
             print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
     
