@@ -70,6 +70,39 @@
         </div>
       </section>
 
+      {% if parcours_demarrage is defined %}
+      <section class="gam-panel">
+        <div class="gam-panel-head">
+          <div>
+            <span class="gam-kicker">Parcours</span>
+            <h2>Tes 7 premiers jours</h2>
+            <p>Jour {{ parcours_demarrage.jour }}/7 · chaque étape t'emmène vers une fonctionnalité différente.</p>
+          </div>
+          <a class="gam-counter" href="/bienvenue">Ouvrir le parcours →</a>
+        </div>
+        <div class="gam-week">
+          {% for item in parcours_demarrage.plan_7_jours %}
+          <article class="gam-week-row {% if item.actif %}is-active{% endif %} {% if item.terminee %}is-done{% endif %}">
+            <span class="gam-week-day">J{{ item.jour }}</span>
+            <div>
+              <strong>{{ item.titre }}</strong>
+              <span>{{ item.description }}</span>
+            </div>
+            <div>
+              {% if item.terminee %}
+              <small>✓ Fait</small>
+              {% elif item.accessible %}
+              <a href="{{ item.lien }}">{{ item.label }} →</a>
+              {% else %}
+              <small>À venir</small>
+              {% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
       <section class="gam-panel">
         <div class="gam-panel-head">
           <div>
