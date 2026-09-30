@@ -20,6 +20,7 @@ from ..text_extraction import extraire_texte
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
 from ..dependencies import acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
+from .. import gamification
 from ..rate_limit import limite_depassee
 
 router = APIRouter()
@@ -179,6 +180,15 @@ def upload_document(
         statut=StatutDocument.EN_ATTENTE,  # visible seulement apres validation par un moderateur
     )
     session.add(document)
+    session.commit()
+
+    gamification.enregistrer_action(
+        session,
+        utilisateur.id,
+        "document",
+        source_type="document",
+        source_key=str(document.id),
+    )
     session.commit()
 
     if cercle_id:
