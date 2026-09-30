@@ -15,7 +15,7 @@ from sqlmodel import Session, select, func
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..auth import utilisateur_courant
+from ..auth import utilisateur_courant, verifier_mot_de_passe
 from ..models import (
     Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, RoleMembreCercle, MessageCercle, SignalementMessage,
     DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
@@ -47,6 +47,71 @@ def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return None
     return utilisateur
+
+
+@router.get("/admin/securite")
+def page_securite_admin(request: Request, session: Session = Depends(get_session)):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    return templates.TemplateResponse(
+        request,
+        "admin_securite.html",
+        {
+            "utilisateur": admin,
+            "confirmation_configuree": bool(admin.mot_de_passe_confirmation_admin_hash),
+            "erreur": request.query_params.get("erreur"),
+            "ok": request.query_params.get("ok"),
+        },
+    )
+
+
+@router.post("/admin/securite/mot-de-passe-confirmation")
+def configurer_mot_de_passe_confirmation_admin(
+    request: Request,
+    nouveau_mot_de_passe: str = Form(...),
+    confirmation_nouveau_mot_de_passe: str = Form(...),
+    mot_de_passe_confirmation_actuel: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    nouveau = (nouveau_mot_de_passe or "").strip()
+    confirmation = confirmation_nouveau_mot_de_passe or ""
+    actuel = mot_de_passe_confirmation_actuel or ""
+
+    if len(nouveau) < 12:
+        return RedirectResponse("/admin/securite?erreur=longueur", status_code=303)
+
+    if nouveau != confirmation:
+        return RedirectResponse("/admin/securite?erreur=confirmation", status_code=303)
+
+    # Le secret de confirmation est volontairement distinct du mot de passe
+    # de connexion : cela evite qu'une reutilisation transforme une seule
+    # compromission en acces complet aux actions critiques.
+    if verifier_mot_de_passe(nouveau, admin.mot_de_passe_hash):
+        return RedirectResponse("/admin/securite?erreur=reutilisation", status_code=303)
+
+    if admin.mot_de_passe_confirmation_admin_hash:
+        if not actuel or not verifier_mot_de_passe(
+            actuel,
+            admin.mot_de_passe_confirmation_admin_hash,
+        ):
+            return RedirectResponse("/admin/securite?erreur=actuel_incorrect", status_code=303)
+
+    admin.mot_de_passe_confirmation_admin_hash = hacher_mot_de_passe(nouveau)
+    admin.confirmation_admin_configuree_le = __import__("datetime").datetime.utcnow()
+    session.add(admin)
+    session.commit()
+
+    request.session.pop("admin_confirmation_echecs", None)
+    request.session.pop("admin_confirmation_dernier_echec", None)
+
+    return RedirectResponse("/admin/securite?ok=1", status_code=303)
 
 
 # Alphabet sans caracteres ambigus (0/O, 1/l/I) pour le mot de passe
