@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+
+{% block titre %}Défis & Récompenses — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
+{% block contenu %}
+<div class="gamification-page">
+  <section class="gam-hero">
+    <div class="gam-hero-copy">
+      <span class="gam-kicker">Ton moteur de progression</span>
+      <h1>Apprends, participe, gagne des points.</h1>
+      <p>
+        Chaque action utile sur Gasy Mahay fait avancer ton parcours :
+        Tuteur IA, quiz, cercles et partage de ressources.
+      </p>
+      <div class="gam-hero-actions">
+        <a class="bouton bouton-primaire" href="/tuteur">🧠 Poser une question</a>
+        <a class="bouton bouton-secondaire" href="/quiz">🎯 Faire un quiz</a>
+        <a class="bouton bouton-secondaire" href="/cercles">👥 Ouvrir mes cercles</a>
+      </div>
+    </div>
+
+    <div class="gam-level-card">
+      <div class="gam-avatar">{{ utilisateur.nom[:1].upper() }}</div>
+      <div>
+        <span class="gam-label">Niveau {{ gamification.niveau }}</span>
+        <strong>{{ gamification.total_xp }} XP</strong>
+        <span class="gam-muted">{{ gamification.xp_dans_niveau }} / {{ gamification.xp_prochain }} XP vers le prochain niveau</span>
+      </div>
+      <div class="gam-progress"><span style="width: {{ (gamification.xp_dans_niveau * 100 // gamification.xp_prochain) }}%"></span></div>
+      <div class="gam-streak">🔥 {{ gamification.streak }} jour{{ "s" if gamification.streak != 1 else "" }} consécutif{{ "s" if gamification.streak != 1 else "" }}</div>
+    </div>
+  </section>
+
+  <section class="gam-layout">
+    <main>
+      <section class="gam-panel">
+        <div class="gam-panel-head">
+          <div>
+            <span class="gam-kicker">Objectif du jour</span>
+            <h2>Mission du jour</h2>
+            <p>Quatre petites actions pour découvrir toute la plateforme.</p>
+          </div>
+          {% if gamification.mission_completee %}
+          <span class="gam-complete">✓ Mission terminée · +25 XP</span>
+          {% else %}
+          <span class="gam-counter">{{ gamification.missions | selectattr("terminee") | list | length }}/{{ gamification.missions|length }}</span>
+          {% endif %}
+        </div>
+
+        <div class="gam-missions">
+          {% for mission in gamification.missions %}
+          <article class="gam-mission {% if mission.terminee %}is-done{% endif %}">
+            <div class="gam-mission-check">{% if mission.terminee %}✓{% else %}{{ loop.index }}{% endif %}</div>
+            <div class="gam-mission-body">
+              <strong>{{ mission.titre }}</strong>
+              <span>{{ mission.description }}</span>
+            </div>
+            <div class="gam-mission-action">
+              <b>+{{ mission.points }} XP</b>
+              {% if mission.terminee %}
+              <span class="gam-done-label">Fait</span>
+              {% else %}
+              <a href="{{ mission.lien }}">{{ mission.bouton }} →</a>
+              {% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="gam-panel">
+        <div class="gam-panel-head">
+          <div>
+            <span class="gam-kicker">Collection</span>
+            <h2>Tes badges</h2>
+            <p>Les badges récompensent les habitudes que tu construis.</p>
+          </div>
+        </div>
+
+        <div class="gam-badges">
+          {% for badge in gamification.badges %}
+          <article class="gam-badge {% if badge.obtenu %}is-earned{% endif %}">
+            <div class="gam-badge-icon">{{ badge.icone }}</div>
+            <div class="gam-badge-body">
+              <strong>{{ badge.nom }}</strong>
+              <span>{{ badge.description }}</span>
+              <div class="gam-badge-progress"><span style="width: {{ badge.pourcentage }}%"></span></div>
+              <small>{{ badge.progression }} / {{ badge.objectif }}</small>
+            </div>
+            {% if badge.obtenu %}
+            <span class="gam-badge-status">Obtenu</span>
+            {% else %}
+            <span class="gam-badge-status">À débloquer</span>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="gam-panel">
+        <div class="gam-panel-head">
+          <div>
+            <span class="gam-kicker">Habitudes</span>
+            <h2>Comment gagner des XP</h2>
+          </div>
+        </div>
+        <div class="gam-actions-grid">
+          <a href="/tuteur"><strong>🧠 Tuteur IA</strong><span>+15 XP par question</span></a>
+          <a href="/quiz"><strong>🎯 Quiz terminé</strong><span>+25 XP par quiz</span></a>
+          <a href="/cercles"><strong>💬 Cercle d'étude</strong><span>+20 XP par participation</span></a>
+          <a href="/documents/upload"><strong>📚 Ressource partagée</strong><span>+40 XP par dépôt</span></a>
+        </div>
+      </section>
+    </main>
+
+    <aside>
+      <section class="gam-panel gam-ranking">
+        <div class="gam-panel-head">
+          <div>
+            <span class="gam-kicker">Communauté</span>
+            <h2>Classement</h2>
+            <p>{{ classement.contexte }}.</p>
+          </div>
+        </div>
+
+        <div class="gam-ranking-me">
+          <span>Ta position</span>
+          <strong>#{{ classement.rang }}</strong>
+          <b>{{ classement.xp_utilisateur }} XP</b>
+        </div>
+
+        {% if classement.top %}
+        <div class="gam-ranking-list">
+          {% for item in classement.top %}
+          <div class="gam-rank-row {% if item.utilisateur_id == utilisateur.id %}is-me{% endif %}">
+            <span class="gam-rank-num">{{ item.rang }}</span>
+            <div>
+              <strong>{{ item.nom }}</strong>
+              {% if item.utilisateur_id == utilisateur.id %}<small>Toi</small>{% endif %}
+            </div>
+            <b>{{ item.xp }} XP</b>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="gam-empty">Le classement commence avec toi. 🚀</div>
+        {% endif %}
+      </section>
+
+      <section class="gam-panel gam-next">
+        <span class="gam-kicker">Prochaine étape</span>
+        {% if not gamification.mission_completee %}
+        <h3>Complète ta mission du jour.</h3>
+        <p>En quelques minutes, tu découvriras les quatre fonctions qui rendent Gasy Mahay utile au quotidien.</p>
+        {% else %}
+        <h3>Mission terminée 🎉</h3>
+        <p>Reviens demain pour construire ta série et continuer à faire progresser ton niveau.</p>
+        {% endif %}
+        <a class="bouton bouton-primaire" href="/dashboard">Retour au tableau de bord</a>
+      </section>
+    </aside>
+  </section>
+</div>
+{% endblock %}
