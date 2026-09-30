@@ -50,10 +50,12 @@ def main() -> None:
                 continue
 
             logger.info(
-                "Worker IA traite tache #%s type=%s quiz=%s essai=%s.",
+                "Worker IA traite tache #%s type=%s quiz=%s strategie=%s risque=%s essai=%s.",
                 tache.id,
                 tache.type_tache,
                 tache.tentative_quiz_id,
+                tache.strategie_verification,
+                tache.score_risque,
                 tache.nombre_essais,
             )
             traiter_tache(tache)
