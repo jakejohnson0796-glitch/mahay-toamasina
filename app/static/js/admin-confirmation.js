@@ -24,11 +24,18 @@
     var path = url.pathname;
     if (path === "/admin/securite/mot-de-passe-confirmation") return false;
 
+    var actionCercleProtegee =
+      /^\/cercles\/\d+\/supprimer$/.test(path) ||
+      /^\/cercles\/\d+\/membres\/ajouter$/.test(path) ||
+      /^\/cercles\/\d+\/membres\/\d+\/retirer$/.test(path) ||
+      /^\/cercles\/\d+\/demandes\/\d+\/(accepter|refuser)$/.test(path) ||
+      /^\/cercles\/\d+\/messages\/\d+\/(epingler|desepingler)$/.test(path);
+
     return (
       path === "/admin" ||
       path.indexOf("/admin/") === 0 ||
       path.indexOf("/moderation") === 0 ||
-      /^\/cercles\/\d+\/supprimer$/.test(path)
+      actionCercleProtegee
     );
   }
 
