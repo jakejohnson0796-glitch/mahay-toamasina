@@ -5,6 +5,7 @@ Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
 """
 import asyncio
+import threading
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -27,6 +28,7 @@ from .cercles_referentiel import assurer_cercles_referentiel
 from scripts.dedupliquer_cercles_nationaux import deduplicquer as deduplicquer_cercles_nationaux
 from scripts.import_academic_data import importer as importer_referentiel_academique
 from .auth import utilisateur_courant
+from . import ai_worker
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -136,8 +138,52 @@ async def au_demarrage() -> None:
     print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
     initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
     app.state.initialisation_donnees = initialisation
+
+    # Render Free ne fournit pas de Background Worker gratuit. Lorsque Redis
+    # est configure, la boucle IA tourne donc dans un thread interne au Web
+    # service. Les appels IA restent hors de la boucle asyncio HTTP, tandis
+    # que Redis absorbe les rafales et PostgreSQL reste le filet de securite.
+    if ai_queue_enabled := bool(parametres.redis_url):
+        arret_worker = threading.Event()
+        worker_ia = threading.Thread(
+            target=ai_worker.boucle_worker,
+            args=(arret_worker,),
+            name="ai-worker-inline",
+            daemon=True,
+        )
+        worker_ia.start()
+        app.state.ai_worker_stop = arret_worker
+        app.state.ai_worker_thread = worker_ia
+        print(
+            "[DEBUG AI QUEUE] Worker IA integre au Web demarre — "
+            f"redis=True cle={ai_worker.ai_queue.CLE_FILE_REDIS}."
+        )
+    else:
+        app.state.ai_worker_stop = None
+        app.state.ai_worker_thread = None
+        print(
+            "[DEBUG AI QUEUE] Redis absent — worker IA integre desactive "
+            "(fallback SQL disponible uniquement si lance manuellement)."
+        )
+
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
     print("[DEBUG DATABASE] Demarrage HTTP pret.")
+
+@app.on_event("shutdown")
+async def arreter_worker_ia() -> None:
+    """Arrete proprement le worker IA embarque avant l'extinction du Web."""
+    arret_worker = getattr(app.state, "ai_worker_stop", None)
+    if arret_worker is not None:
+        arret_worker.set()
+
+    thread = getattr(app.state, "ai_worker_thread", None)
+    if thread is not None and thread.is_alive():
+        await asyncio.to_thread(thread.join, 20)
+        if thread.is_alive():
+            print("[DEBUG AI QUEUE] Worker IA encore actif apres 20s; arret du Web.")
+        else:
+            print("[DEBUG AI QUEUE] Worker IA arrete proprement.")
+
 
 def _initialiser_donnees_apres_demarrage() -> None:
     print("[DEBUG DATABASE] Verification des donnees initiales...")
