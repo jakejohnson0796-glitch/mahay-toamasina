@@ -51,7 +51,7 @@ def demander_tuteur(
     request: Request,
     question: str = Form(...),
     progression_id: Optional[int] = Form(None),
-    background_tasks: BackgroundTasks = None,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -97,11 +97,10 @@ def demander_tuteur(
 
     # La premiere reponse est livree sans attendre Qwen + Gemini + arbitre.
     # La verification multi-modeles continue apres la reponse HTTP.
-    if background_tasks is not None:
-        background_tasks.add_task(
-            ai_quiz.verifier_session_tuteur_en_arriere_plan,
-            session_tuteur.id,
-        )
+    background_tasks.add_task(
+        ai_quiz.verifier_session_tuteur_en_arriere_plan,
+        session_tuteur.id,
+    )
 
     return RedirectResponse(f"/tuteur/{session_tuteur.id}", status_code=303)
 
@@ -117,6 +116,12 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
     if not session_tuteur or session_tuteur.utilisateur_id != utilisateur.id:
         return JSONResponse({"statut": "introuvable"}, status_code=404)
 
+    from ..templating import templates as _templates
+
+    def rendu(champ: str) -> str:
+        filtre = _templates.env.filters["texte_ia"]
+        return str(filtre(getattr(session_tuteur, champ)))
+
     return {
         "statut": session_tuteur.statut_verification_ia,
         "erreur": session_tuteur.erreur_verification_ia,
@@ -125,6 +130,12 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
             if session_tuteur.date_verification_ia
             else None
         ),
+        "contenu": {
+            "explication": rendu("explication"),
+            "exemple": rendu("exemple"),
+            "exercice": rendu("exercice"),
+            "correction": rendu("correction"),
+        },
     }
 
 
