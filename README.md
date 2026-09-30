@@ -25,6 +25,11 @@ et un statut tamponné (approuvé / en attente / rejeté).
   texte extrait du document (`app/text_extraction.py`, PDF via
   `pdfplumber`, OCR optionnel via `pytesseract`), et renvoie un vrai QCM
   (4 choix, bonne réponse, explication).
+- **File IA event-driven** : après livraison du quiz, la vérification multi-modèles
+  est inscrite durablement en PostgreSQL puis notifiée dans **Render Key Value**
+  (Redis/Valkey). Le worker attend les IDs avec une lecture bloquante Redis au
+  lieu de sonder PostgreSQL en boucle ; PostgreSQL reste le filet de sécurité
+  si Redis est indisponible ou si une notification est perdue.
 
 ## Démarrer en local (Windows / VS Code)
 
@@ -68,6 +73,29 @@ python -m app.creer_admin 0341234567
    service_role, **jamais** la clé `anon` côté serveur) et
    `SUPABASE_BUCKET` dans `.env`.
 4. Laissez ces variables vides pour continuer en local (SQLite + disque).
+
+## File IA Redis / Render Key Value
+
+En production sur Render, `render.yaml` crée une instance **Key Value** de
+256 Mo et injecte automatiquement son URL interne dans `REDIS_URL` pour le
+service web et le worker IA. L'URL interne est utilisée parce que les services
+sont dans la même region Render.
+
+Le flux est volontairement hybride :
+
+```text
+HTTP -> PostgreSQL (tache durable) -> Redis RPUSH -> Worker BRPOP
+                                      |
+                                      +--> PostgreSQL reste la source de verite
+                                           pour le rattrapage
+```
+
+Cela permet d'absorber les rafales de quiz sans faire de polling PostgreSQL
+sur le chemin nominal. Une notification Redis perdue ne supprime pas la tache :
+le worker conserve un controle de securite PostgreSQL espace dans le temps.
+
+En local, laisse `REDIS_URL` vide pour conserver le fonctionnement 100 % SQL.
+Pour tester Redis localement, utilise par exemple `redis://localhost:6379/0`.
 
 ## Configurer la génération de quiz IA (API gratuite Groq)
 
