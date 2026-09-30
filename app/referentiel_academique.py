@@ -421,7 +421,10 @@ def erreur_cercle_parcours(
         return "Ce parcours n'est pas propose a ce niveau."
     if not parcours_cercle_offert(session, mention_id, filiere_id, niveau):
         return "Ce parcours n'est pas actuellement propose a ce niveau."
-    return Nonedef tronc_commun_offert(
+    return None
+
+
+def tronc_commun_offert(
     session: Session,
     universite_id: Optional[int],
     faculte_id: Optional[int],
