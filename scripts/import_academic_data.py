@@ -317,16 +317,21 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                             None,
                         )
                     if faculte_tronc is not None and mention is not None:
+                        mentions_tronc = mentions_par_nom.get(
+                            normaliser(ligne["mention"]),
+                            [mention],
+                        )
+                        ids_mentions_tronc = {m.id for m in mentions_tronc if m.id is not None}
                         candidats_tronc = session.exec(
                             select(Filiere).where(
                                 Filiere.faculte_id == faculte_tronc.id,
-                                Filiere.mention_id == mention.id,
                                 Filiere.niveau == (ligne.get("niveau") or None),
                             )
                         ).all()
                         candidats_tronc = [
                             fil for fil in candidats_tronc
-                            if normaliser(fil.nom) == normaliser(ligne["parcours"])
+                            if fil.mention_id in ids_mentions_tronc
+                            and normaliser(fil.nom) == normaliser(ligne["parcours"])
                         ]
                         for filiere_tronc in candidats_tronc:
                             offres_tronc = session.exec(
