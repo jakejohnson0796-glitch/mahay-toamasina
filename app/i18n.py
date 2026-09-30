@@ -13,6 +13,11 @@ from __future__ import annotations
 
 from typing import Final
 
+try:
+    from .i18n_generated import TRADUCTIONS_AUTOGEN
+except ImportError:  # fichier optionnel avant la première synchronisation LibreTranslate
+    TRADUCTIONS_AUTOGEN: dict[str, dict[str, str]] = {"en": {}, "mg": {}}
+
 LANGUES: Final[dict[str, str]] = {
     "fr": "Français",
     "en": "English",
@@ -890,6 +895,7 @@ def traduire_html_interface(document: str, langue: str) -> str:
     # être utilisé ici aussi, sinon ces textes restent en français lorsque
     # l'utilisateur passe en anglais ou en malgache.
     dictionnaire.update(TRADUCTIONS_UI_COMPLEMENT.get(langue, {}))
+    dictionnaire.update(TRADUCTIONS_AUTOGEN.get(langue, {}))
     if not dictionnaire:
         return document
 
@@ -1150,7 +1156,10 @@ def t(cle: str, langue: str = LANGUE_DEFAUT) -> str:
         cle,
         TRADUCTIONS_UI.get(langue, {}).get(
             cle,
-            TRADUCTIONS_UI_COMPLEMENT.get(langue, {}).get(cle, cle),
+            TRADUCTIONS_UI_COMPLEMENT.get(langue, {}).get(
+                cle,
+                TRADUCTIONS_AUTOGEN.get(langue, {}).get(cle, cle),
+            ),
         ),
     )
 
