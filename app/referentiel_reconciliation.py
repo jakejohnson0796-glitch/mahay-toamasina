@@ -360,22 +360,36 @@ def reconcilier(
 
         if normaliser(ligne.get("type")) == normaliser("Tronc commun"):
             cles_tronc.add((mention.id, niveau))
-            # Aucun parcours technique ne doit être publié pour un niveau
-            # explicitement déclaré en tronc commun.
-            for programme in session.exec(
-                select(ProgrammeUniversitaire)
-                .join(Filiere, Filiere.id == ProgrammeUniversitaire.filiere_id)
-                .where(
+            # Représentation technique de l'offre mention+niveau. Elle ne
+            # devient jamais un cercle de parcours et est masquée du select
+            # des parcours, mais elle permet à l'API de savoir que la mention
+            # est bien offerte dans cette composante.
+            filiere = _filiere_canonique(
+                session, faculte.id, mention.id, niveau, "Tronc commun", rapport
+            )
+            cles_desirees.add((faculte.id, mention.id, niveau, normaliser(filiere.nom)))
+            offres = session.exec(
+                select(ProgrammeUniversitaire).where(
                     ProgrammeUniversitaire.universite_id == universite.id,
-                    ProgrammeUniversitaire.est_active == True,  # noqa: E712
-                    Filiere.faculte_id == faculte.id,
-                    Filiere.mention_id == mention.id,
-                    Filiere.niveau == niveau,
+                    ProgrammeUniversitaire.filiere_id == filiere.id,
                 )
-            ).all():
-                programme.est_active = False
-                session.add(programme)
-                rapport.offres_desactivees += 1
+            ).all()
+            actif = next((o for o in offres if o.est_active), None)
+            if actif is None:
+                if offres:
+                    cible = min(offres, key=lambda o: o.id)
+                    cible.est_active = True
+                    session.add(cible)
+                else:
+                    session.add(
+                        ProgrammeUniversitaire(
+                            universite_id=universite.id,
+                            filiere_id=filiere.id,
+                            est_active=True,
+                        )
+                    )
+                session.commit()
+                rapport.offres_activees += 1
             rapport.tronc_commun.add((mention.id, niveau))
             continue
 
