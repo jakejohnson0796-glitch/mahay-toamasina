@@ -87,6 +87,7 @@
         <div class="tb-gamification-stats">
           <span>🔥 <b>{{ gamification.streak }}</b> jour{{ "s" if gamification.streak != 1 else "" }}</span>
           <span>🎯 <b>{{ gamification.missions | selectattr("terminee") | list | length }}/{{ gamification.missions|length }}</b> missions</span>
+          {% if parcours_demarrage is defined %}<span>📅 <b>J{{ parcours_demarrage.jour }}/7</b> parcours</span>{% endif %}
         </div>
       </div>
       <div class="tb-gamification-progress"><span style="width: {{ (gamification.xp_dans_niveau * 100 // gamification.xp_prochain) }}%"></span></div>
