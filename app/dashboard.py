@@ -23,6 +23,7 @@ from .models import (
 )
 from . import subscription
 from . import quiz as quiz_module
+from . import gamification
 
 NB_DOCUMENTS_RECENTS = 5
 NB_ACTIVITES_RECENTES = 5
@@ -336,7 +337,10 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
     score_moyen_quiz = round(sum(scores_valides) / len(scores_valides)) if scores_valides else 0
     streak_jours = jours_actifs_consecutifs(session, utilisateur.id, tentatives)
 
+    gam = gamification.resume(session, utilisateur)
+
     return {
+        "gamification": gam,
         "abonnement": abonnement,
         "acces_premium": subscription.acces_premium_valide(abonnement),
         "jours_restants": subscription.jours_restants(abonnement),
