@@ -63,6 +63,7 @@ def test_onboarding_se_termine_apres_trois_actions():
 def test_onboarding_semaine_marque_les_actions_realisees():
     _, session = _session()
     utilisateur = _user(session)
+    onboarding.assurer_demarrage(session, utilisateur)
 
     session.add(
         ActionGamification(
