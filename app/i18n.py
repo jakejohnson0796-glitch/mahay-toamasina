@@ -614,6 +614,51 @@ TRADUCTIONS_UI: Final[dict[str, dict[str, str]]] = {
 }
 
 
+import html
+import re
+
+_BLOCS_NON_TRADUISIBLES = re.compile(r"<(script|style|pre|code)\\b[^>]*>.*?</\\1\\s*>", re.IGNORECASE | re.DOTALL)
+_NŒUD_TEXTE_HTML = re.compile(r">([^<>]+)<")
+
+
+def traduire_html_interface(document: str, langue: str) -> str:
+    """Traduit les nœuds de texte statiques déjà rendus par Jinja.
+
+    Seuls les textes qui correspondent exactement à une clé du dictionnaire
+    sont remplacés. Les valeurs académiques dynamiques (ex. noms de filières)
+    ne sont donc pas altérées.
+    """
+    langue = langue_valide(langue)
+    if langue == LANGUE_DEFAUT:
+        return document
+    dictionnaire = {}
+    dictionnaire.update(TRADUCTIONS.get(langue, {}))
+    dictionnaire.update(TRADUCTIONS_UI.get(langue, {}))
+    if not dictionnaire:
+        return document
+
+    def traduire_segment(segment: str) -> str:
+        def remplacer(match: re.Match[str]) -> str:
+            texte = html.unescape(match.group(1))
+            traduit = dictionnaire.get(texte)
+            if traduit is None:
+                return match.group(0)
+            return ">" + html.escape(traduit, quote=False) + "<"
+        return _NŒUD_TEXTE_HTML.sub(remplacer, segment)
+
+    morceaux = _BLOCS_NON_TRADUISIBLES.split(document)
+    # split() conserve uniquement les marqueurs de groupe, donc reconstruire
+    # par recherche directe est plus sûr que d'interpréter les balises script.
+    resultat = []
+    position = 0
+    for match in _BLOCS_NON_TRADUISIBLES.finditer(document):
+        resultat.append(traduire_segment(document[position:match.start()]))
+        resultat.append(match.group(0))
+        position = match.end()
+    resultat.append(traduire_segment(document[position:]))
+    return "".join(resultat)
+
+
 def langue_valide(code: str | None) -> str:
     return code if code in LANGUES else LANGUE_DEFAUT
 
