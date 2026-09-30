@@ -119,6 +119,10 @@ def lister_filieres_par_mention_niveau(
         .distinct()
         .order_by(Filiere.nom)
     ).all()
+    filieres = [
+        f for f in filieres
+        if _normaliser_nom_parcours(f.nom) != "tronc commun"
+    ]
     resultat = []
     for f in filieres:
         # Libellé court d'aide à la lecture uniquement : l'identité reste
@@ -204,6 +208,10 @@ def lister_parcours_nationaux(
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
     filieres = session.exec(requete.distinct()).all()
+    filieres = [
+        f for f in filieres
+        if _normaliser_nom_parcours(f.nom) != "tronc commun"
+    ]
 
     vus: dict[str, dict] = {}
     for f in filieres:
