@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block titre %}IA — Supervision{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="ia-title">
+    <div>
+      <span class="ops-kicker">Intelligence artificielle · Supervision</span>
+      <h1 id="ia-title">Contrôle du worker IA</h1>
+      <p>
+        La génération reste instantanée côté étudiant. Cette page montre ce que
+        le worker vérifie ensuite, quelle stratégie il choisit et les signaux
+        observés sur les modèles.
+      </p>
+      <div class="ops-hero-actions">
+        <a href="/admin">Administration</a>
+        <a href="/admin/moderation-quiz">Signalements quiz</a>
+      </div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ statuts_taches.get("en_attente", 0) }}</strong><span>en attente</span></div>
+      <div class="ops-stat"><strong>{{ statuts_taches.get("en_cours", 0) }}</strong><span>en cours</span></div>
+      <div class="ops-stat"><strong>{{ statuts_taches.get("terminee", 0) }}</strong><span>terminées</span></div>
+      <div class="ops-stat"><strong>{{ statuts_taches.get("echouee", 0) }}</strong><span>échecs</span></div>
+      <div class="ops-stat"><strong>{{ resume_ia.appels }}</strong><span>appels de critique</span></div>
+    </div>
+  </section>
+
+  <nav class="ops-nav" aria-label="Navigation IA">
+    <a href="/admin">Administration</a>
+    <a class="is-active" href="/admin/ia">IA</a>
+    <a href="/admin/moderation-quiz">Quiz IA</a>
+  </nav>
+
+  <div class="ops-admin-groups">
+    <section class="ops-admin-group">
+      <h2>Routage adaptatif</h2>
+      <div class="ops-admin-items">
+        <div class="ops-admin-item">
+          <span><strong>Vérification légère</strong><span>Qwen seul pour les quiz à faible risque.</span></span>
+          <span class="ops-badge">{{ strategies.get("legere", 0) }}</span>
+        </div>
+        <div class="ops-admin-item">
+          <span><strong>Vérification standard</strong><span>Qwen + Gemini lorsque le risque est intermédiaire.</span></span>
+          <span class="ops-badge">{{ strategies.get("standard", 0) }}</span>
+        </div>
+        <div class="ops-admin-item">
+          <span><strong>Vérification renforcée</strong><span>Deux critiques et arbitre si nécessaire.</span></span>
+          <span class="ops-badge is-alert">{{ strategies.get("renforcee", 0) }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="ops-admin-group">
+      <h2>Répartition du risque</h2>
+      <div class="ops-admin-items">
+        <div class="ops-admin-item"><span><strong>Faible</strong><span>Score de risque 0–1.</span></span><span class="ops-badge is-success">{{ risques.faible }}</span></div>
+        <div class="ops-admin-item"><span><strong>Moyen</strong><span>Score de risque 2–3.</span></span><span class="ops-badge">{{ risques.moyen }}</span></div>
+        <div class="ops-admin-item"><span><strong>Élevé</strong><span>Score de risque ≥ 4.</span></span><span class="ops-badge is-alert">{{ risques.eleve }}</span></div>
+      </div>
+    </section>
+
+    <section class="ops-admin-group">
+      <h2>Performance agrégée</h2>
+      <div class="ops-admin-items">
+        <div class="ops-admin-item"><span><strong>Problèmes détectés</strong><span>Signaux remontés par les critiques.</span></span><span class="ops-badge">{{ resume_ia.problemes }}</span></div>
+        <div class="ops-admin-item"><span><strong>Arbitrages</strong><span>Corrections ayant nécessité l'arbitre.</span></span><span class="ops-badge">{{ resume_ia.arbitrages }}</span></div>
+        <div class="ops-admin-item"><span><strong>Durée moyenne</strong><span>Temps moyen des vérifications.</span></span><span class="ops-badge">{{ resume_ia.duree_moyenne }} s</span></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="ops-new-users" aria-labelledby="ia-modeles-title">
+    <div class="ops-new-users-head">
+      <div>
+        <span class="ops-kicker">Télémétrie</span>
+        <h2 id="ia-modeles-title">Modèles observés</h2>
+        <p>Les compteurs sont séparés par matière, niveau et stratégie.</p>
+      </div>
+    </div>
+
+    {% if modeles %}
+    <div style="overflow:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:.65rem;">Modèle</th>
+            <th style="text-align:left;padding:.65rem;">Stratégie</th>
+            <th style="text-align:right;padding:.65rem;">Appels</th>
+            <th style="text-align:right;padding:.65rem;">Confiants</th>
+            <th style="text-align:right;padding:.65rem;">Problèmes</th>
+            <th style="text-align:right;padding:.65rem;">Arbitrages</th>
+            <th style="text-align:right;padding:.65rem;">Durée moy.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ligne in modeles %}
+          <tr>
+            <td style="padding:.65rem;"><strong>{{ ligne.modele }}</strong><br><small>{{ ligne.matiere or "—" }} · {{ ligne.niveau or "—" }}</small></td>
+            <td style="padding:.65rem;">{{ ligne.strategie }}</td>
+            <td style="padding:.65rem;text-align:right;">{{ ligne.appels }}</td>
+            <td style="padding:.65rem;text-align:right;">{{ ligne.confiants }}</td>
+            <td style="padding:.65rem;text-align:right;">{{ ligne.problemes }}</td>
+            <td style="padding:.65rem;text-align:right;">{{ ligne.arbitrages }}</td>
+            <td style="padding:.65rem;text-align:right;">{{ "%.2f"|format(ligne.duree_moyenne_secondes) }} s</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="ops-new-users-empty">
+      <strong>Aucune métrique disponible.</strong>
+      <span>Les prochaines vérifications alimenteront automatiquement ce tableau.</span>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="ops-new-users" aria-labelledby="ia-taches-title" style="margin-top:1rem;">
+    <div class="ops-new-users-head">
+      <div>
+        <span class="ops-kicker">File IA</span>
+        <h2 id="ia-taches-title">20 dernières tâches</h2>
+      </div>
+    </div>
+    {% if taches_recentes %}
+    <div class="ops-new-users-list">
+      {% for tache, quiz in taches_recentes %}
+      <article class="ops-new-user">
+        <div class="ops-new-user-main">
+          <strong>Tâche #{{ tache.id }} · Quiz #{{ quiz.id }}</strong>
+          <span>{{ quiz.matiere }} · {{ quiz.niveau }} · {{ quiz.difficulte }}</span>
+          <span>Stratégie {{ tache.strategie_verification }} · risque {{ tache.score_risque }} · essai {{ tache.nombre_essais }}</span>
+        </div>
+        <div class="ops-new-user-actions">
+          <span class="ops-badge{% if tache.statut.value == 'echouee' %} is-alert{% elif tache.statut.value == 'terminee' %} is-success{% endif %}">{{ tache.statut.value }}</span>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="ops-new-users-empty">
+      <strong>La file IA est vide.</strong>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
