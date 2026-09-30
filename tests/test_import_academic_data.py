@@ -1,5 +1,6 @@
 """Regression sur le basculement des anciens parcours Tronc commun."""
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -49,7 +50,9 @@ class TestImportStrictToamasina(unittest.TestCase):
             session.add(offre)
             session.commit()
 
-        source = Path(tempfile.mkstemp(suffix=".json")[1])
+        fd, source_name = tempfile.mkstemp(suffix=".json")
+        os.close(fd)
+        source = Path(source_name)
         try:
             source.write_text(
                 json.dumps(
