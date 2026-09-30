@@ -12,6 +12,18 @@
       <span class="ai-kicker">Tuteur IA · session d'apprentissage</span>
       <h1>Ta réponse pédagogique</h1>
       <p class="ai-answer-question">{{ session_tuteur.question }}</p>
+      <div class="ai-verification-status is-{{ session_tuteur.statut_verification_ia }}" data-tuteur-verification-status>
+        <span class="ai-verification-dot"></span>
+        <span data-tuteur-verification-label>
+          {% if session_tuteur.statut_verification_ia == "terminee" %}
+          Réponse vérifiée par l'ensemble IA
+          {% elif session_tuteur.statut_verification_ia == "echouee" %}
+          Réponse initiale conservée
+          {% else %}
+          Réponse générée · vérification multi-modèles en cours
+          {% endif %}
+        </span>
+      </div>
     </div>
     <a class="ai-answer-back" href="/tuteur">Nouvelle question</a>
   </div>
@@ -22,7 +34,7 @@
         <span class="ai-answer-card-icon">{{ icone("tuteur", 16) }}</span>
         <h2>Explication</h2>
       </div>
-      <p>{{ session_tuteur.explication }}</p>
+      <div class="ai-markdown-content" data-tuteur-content="explication">{{ session_tuteur.explication | texte_ia }}</div>
     </article>
 
     {% if session_tuteur.exemple %}
@@ -31,7 +43,7 @@
         <span class="ai-answer-card-icon">{{ icone("documents", 16) }}</span>
         <h2>Exemple</h2>
       </div>
-      <p>{{ session_tuteur.exemple }}</p>
+      <div class="ai-markdown-content" data-tuteur-content="exemple">{{ session_tuteur.exemple | texte_ia }}</div>
     </article>
     {% endif %}
 
@@ -41,7 +53,7 @@
         <span class="ai-answer-card-icon">{{ icone("quiz", 16) }}</span>
         <h2>Exercice pour pratiquer</h2>
       </div>
-      <p>{{ session_tuteur.exercice }}</p>
+      <div class="ai-markdown-content" data-tuteur-content="exercice">{{ session_tuteur.exercice | texte_ia }}</div>
     </article>
     {% endif %}
 
@@ -53,7 +65,7 @@
       </div>
       <details>
         <summary>Afficher la correction</summary>
-        <div class="ai-answer-correction-body">{{ session_tuteur.correction }}</div>
+        <div class="ai-answer-correction-body ai-markdown-content" data-tuteur-content="correction">{{ session_tuteur.correction | texte_ia }}</div>
       </details>
     </article>
     {% endif %}
@@ -81,3 +93,61 @@
   </div>
 </div>
 {% endblock %}
+
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  const sessionId = {{ session_tuteur.id }};
+  const statusEl = document.querySelector("[data-tuteur-verification-status]");
+  const labelEl = document.querySelector("[data-tuteur-verification-label]");
+  const fields = ["explication", "exemple", "exercice", "correction"];
+
+  function appliquer(data) {
+    if (!data || !data.statut) return;
+    if (statusEl) {
+      statusEl.className = "ai-verification-status is-" + data.statut;
+    }
+    if (labelEl) {
+      labelEl.textContent =
+        data.statut === "terminee"
+          ? "Réponse vérifiée par l'ensemble IA"
+          : data.statut === "echouee"
+            ? "Réponse initiale conservée"
+            : "Réponse générée · vérification multi-modèles en cours";
+    }
+
+    if (data.statut === "terminee" && data.contenu) {
+      fields.forEach(function (champ) {
+        const cible = document.querySelector('[data-tuteur-content="' + champ + '"]');
+        if (cible && data.contenu[champ]) cible.innerHTML = data.contenu[champ];
+      });
+    }
+  }
+
+  let essais = 0;
+  const maxEssais = 10;
+
+  async function verifier() {
+    try {
+      const response = await fetch("/tuteur/" + sessionId + "/statut", {
+        headers: {"X-Requested-With": "XMLHttpRequest"}
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      appliquer(data);
+      if ((data.statut === "en_attente" || data.statut === "en_cours") && essais < maxEssais) {
+        essais += 1;
+        window.setTimeout(verifier, 1800);
+      }
+    } catch (_) {
+      if (essais < maxEssais) {
+        essais += 1;
+        window.setTimeout(verifier, 2200);
+      }
+    }
+  }
+
+  if (statusEl && (statusEl.classList.contains("is-en_attente") || statusEl.classList.contains("is-en_cours"))) {
+    window.setTimeout(verifier, 700);
+  }
+})();
+</script>
