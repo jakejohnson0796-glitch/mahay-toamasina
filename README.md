@@ -276,6 +276,33 @@ GEMINI_MODEL=
 
 Les modèles restent configurables afin de pouvoir faire évoluer l'architecture sans modifier le parcours étudiant.
 
+
+### Traductions de l'interface
+
+La traduction des textes statiques de l'interface est pré-générée par **LibreTranslate** dans GitHub Actions.
+
+Le fonctionnement est volontairement séparé du site en production :
+
+```text
+GitHub
+  ↓
+GitHub Actions
+  ↓
+Conteneur LibreTranslate temporaire
+  ↓
+app/i18n_generated.py
+  ↓
+commit automatique dans GitHub
+  ↓
+Render déploie le dépôt
+```
+
+L'application déployée ne contacte donc pas LibreTranslate à chaque page. Les traductions déjà générées sont embarquées dans le dépôt et les traductions manuelles restent prioritaires.
+
+Le workflow se déclenche automatiquement lorsque les templates ou le système i18n changent. Il peut également être lancé manuellement depuis **GitHub → Actions → Synchroniser les traductions UI**.
+
+Le moteur essaie de compléter les traductions **français → anglais** et **français → malagasy**. Lorsqu'une langue n'est pas disponible dans l'installation LibreTranslate utilisée par le workflow, les traductions manuelles existantes sont conservées et aucun texte dynamique utilisateur n'est envoyé au service.
+
 ---
 
 ## Modération et confiance
