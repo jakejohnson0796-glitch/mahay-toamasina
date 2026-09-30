@@ -204,3 +204,23 @@
 @media(max-width:700px){
   .tb-gamification-main{align-items:flex-start;flex-direction:column}
 }
+
+
+.gam-week{display:grid;gap:.45rem}
+.gam-week-row{
+  display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:.55rem;
+  padding:.62rem;border:1px solid var(--content-border);border-radius:11px;background:var(--content-bg)
+}
+.gam-week-row.is-active{border-color:rgba(47,143,137,.32);background:rgba(47,143,137,.045)}
+.gam-week-row.is-done{border-color:rgba(47,143,89,.2)}
+.gam-week-day{font-family:"IBM Plex Mono",monospace;font-size:.55rem;font-weight:900;color:var(--content-text-muted)}
+.gam-week-row strong,.gam-week-row span{display:block}
+.gam-week-row strong{font-size:.63rem}
+.gam-week-row div:nth-child(2) span{margin-top:.1rem;color:var(--content-text-muted);font-size:.55rem;line-height:1.4}
+.gam-week-row a,.gam-week-row small{font-size:.53rem;font-weight:800}
+.gam-week-row a{color:var(--refonte-teal);text-decoration:none}
+.gam-week-row small{color:var(--content-text-muted)}
+@media(max-width:700px){
+  .gam-week-row{grid-template-columns:30px minmax(0,1fr)}
+  .gam-week-row>div:last-child{grid-column:2}
+}
