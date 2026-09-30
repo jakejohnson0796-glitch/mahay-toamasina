@@ -17,7 +17,7 @@ import re
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
-from sqlalchemy import case
+from sqlalchemy import case, update
 from sqlmodel import Session, select, or_, func
 
 from ..database import get_session, engine
@@ -270,13 +270,27 @@ def _supprimer_cercle_et_contenu(session: Session, cercle_id: int) -> bool:
         theme_jour.cercle_id = None
         session.add(theme_jour)
 
-    # Suppression des messages : les reponses sont effacees avant les parents
-    # pour eviter toute violation de la FK auto-referencee parent_message_id.
+    # Les messages ont une FK auto-referencee parent_message_id.
+    # Avant de les supprimer tous, on detache TOUS les enfants de leur parent.
+    # Cette etape est volontairement faite en SQLAlchemy/SQL avant les DELETE :
+    # ainsi PostgreSQL ne peut pas refuser la suppression d'un parent encore
+    # reference, meme si l'historique contient plusieurs niveaux de reponses.
+    session.exec(
+        update(MessageCercle)
+        .where(
+            MessageCercle.cercle_id == cercle_id,
+            MessageCercle.parent_message_id.is_not(None),
+        )
+        .values(parent_message_id=None)
+    )
+    session.flush()
+
+    # Les dependances propres aux messages ayant deja ete supprimees plus haut,
+    # on peut maintenant supprimer tous les messages sans ordre particulier.
     messages = session.exec(
         select(MessageCercle).where(MessageCercle.cercle_id == cercle_id)
     ).all()
-    messages_tries = sorted(messages, key=lambda m: 1 if m.parent_message_id else 0)
-    for message in messages_tries:
+    for message in messages:
         if message.piece_jointe_chemin:
             try:
                 supprimer_fichier(message.piece_jointe_chemin)
@@ -285,6 +299,10 @@ def _supprimer_cercle_et_contenu(session: Session, cercle_id: int) -> bool:
                 # la suppression logique du cercle en base.
                 pass
         session.delete(message)
+
+    # Le flush qui suit garantit que tous les messages sont retires avant
+    # de supprimer le cercle lui-meme.
+    session.flush()
 
     for demande in session.exec(
         select(DemandeAdhesionCercle).where(DemandeAdhesionCercle.cercle_id == cercle_id)
