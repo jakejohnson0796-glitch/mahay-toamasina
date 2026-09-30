@@ -128,7 +128,7 @@
       <form method="post" action="/langue" class="tb-language" aria-label="{{ t('Changer de langue', request) }}">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         <label for="select-langue">{{ t("Langue", request) }}</label>
-        <select id="select-langue" name="langue" onchange="this.form.submit()">
+        <select id="select-langue" name="langue">
           {% for code, nom in langues_disponibles.items() %}
           <option value="{{ code }}" {% if langue_courante(request) == code %}selected{% endif %}>{{ t(nom, request) }}</option>
           {% endfor %}
@@ -376,6 +376,7 @@
 </div>
 
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/navigation.js?v={{ version_asset('js/navigation.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/langue.js?v={{ version_asset('js/langue.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/modale.js?v={{ version_asset('js/modale.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/soumission.js?v={{ version_asset('js/soumission.js') }}" defer></script>
