@@ -86,6 +86,19 @@ class TestSelectsVides(unittest.TestCase):
             session.add(cercle); session.commit(); session.refresh(cercle)
             cls.cercle_id = cercle.id
 
+    # --- Interface inscription : la cascade JS doit etre initialisee ---
+    def test_inscription_charge_la_cascade_academique(self):
+        client = TestClient(app)
+        page = client.get("/inscription")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn('data-cascade-academique', page.text)
+        self.assertIn('static/js/cascade-academique.js', page.text)
+        self.assertIn('id="universite_id"', page.text)
+        self.assertIn('id="composante_id"', page.text)
+        self.assertIn('id="mention_id"', page.text)
+        self.assertIn('id="niveau"', page.text)
+        self.assertIn('id="filiere_id"', page.text)
+
     # --- 1. GET /cercles?filiere_id= ---
     def test_liste_cercles_filiere_id_vide(self):
         client = TestClient(app)
