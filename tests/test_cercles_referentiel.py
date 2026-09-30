@@ -74,6 +74,81 @@ class TestCerclesReferentiel(unittest.TestCase):
                 self.assertEqual(c.filiere_id, filiere.id)
                 self.assertEqual(c.statut, StatutCercle.ACTIF)
 
+    def test_deux_filieres_equivalentes_ne_creent_quun_cercle_national(self):
+        with Session(self.engine) as session:
+            autre_universite = Universite(nom="Universite de Test 2")
+            session.add(autre_universite); session.commit(); session.refresh(autre_universite)
+            autre_faculte = Faculte(nom="Sciences 2", universite_id=autre_universite.id)
+            session.add(autre_faculte); session.commit(); session.refresh(autre_faculte)
+
+            f1 = Filiere(
+                nom="Genie Informatique",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            f2 = Filiere(
+                nom="Génie Informatique",
+                faculte_id=autre_faculte.id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add(f1); session.add(f2); session.commit()
+            session.refresh(f1); session.refresh(f2)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=f1.id,
+                est_active=True,
+            ))
+            session.add(ProgrammeUniversitaire(
+                universite_id=autre_universite.id,
+                filiere_id=f2.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            total = assurer_cercles_referentiel(session)
+            cercles = session.exec(
+                select(CercleEtude).where(
+                    CercleEtude.mention_id == self.mention_id,
+                    CercleEtude.niveau == "M1",
+                    CercleEtude.statut == StatutCercle.ACTIF,
+                )
+            ).all()
+            self.assertEqual(total, 1)
+            self.assertEqual(len(cercles), 1)
+            self.assertIn(cercles[0].filiere_id, {f1.id, f2.id})
+
+    def test_tronc_commun_source_cree_un_seul_cercle_par_mention_niveau(self):
+        with Session(self.engine) as session:
+            f = Filiere(
+                nom="Informatique Parcours M1",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add(f); session.commit(); session.refresh(f)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=f.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            total = assurer_cercles_referentiel(
+                session,
+                identites_tronc={(self.mention_id, "L1"), (self.mention_id, "L2")},
+            )
+            self.assertEqual(total, 3)
+            troncs = session.exec(
+                select(CercleEtude).where(
+                    CercleEtude.mention_id == self.mention_id,
+                    CercleEtude.filiere_id.is_(None),
+                    CercleEtude.statut == StatutCercle.ACTIF,
+                )
+            ).all()
+            self.assertEqual({c.niveau for c in troncs}, {"L1", "L2"})
+
     def test_filiere_sans_mention_ignoree(self):
         with Session(self.engine) as session:
             session.add(Filiere(nom="Sans mention", faculte_id=self.faculte_id))
