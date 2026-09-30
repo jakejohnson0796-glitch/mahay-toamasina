@@ -665,7 +665,7 @@ TRADUCTIONS_UI: Final[dict[str, dict[str, str]]] = {
 import html
 import re
 
-_BLOCS_NON_TRADUISIBLES = re.compile(r"<(script|style|pre|code)\\b[^>]*>.*?</\\1\\s*>", re.IGNORECASE | re.DOTALL)
+_BLOCS_NON_TRADUISIBLES = re.compile(r"<(script|style|pre|code)\b[^>]*>.*?</\1\s*>", re.IGNORECASE | re.DOTALL)
 _NŒUD_TEXTE_HTML = re.compile(r">([^<>]+)<")
 
 
