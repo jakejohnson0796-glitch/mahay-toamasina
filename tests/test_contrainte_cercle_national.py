@@ -68,6 +68,28 @@ class TestContrainteCercleNational(unittest.TestCase):
             with self.assertRaises(IntegrityError):
                 session.commit()
 
+    def test_deux_troncs_identiques_mention_niveau_sont_rejetes(self):
+        with Session(self.engine) as session:
+            session.add(CercleEtude(
+                nom="Tronc Gestion L1 A",
+                createur_id=self.utilisateur_id,
+                mention_id=self.mention_id,
+                filiere_id=None,
+                niveau="L1",
+            ))
+            session.commit()
+
+        with Session(self.engine) as session:
+            session.add(CercleEtude(
+                nom="Tronc Gestion L1 B (doublon)",
+                createur_id=self.utilisateur_id,
+                mention_id=self.mention_id,
+                filiere_id=None,
+                niveau="L1",
+            ))
+            with self.assertRaises(IntegrityError):
+                session.commit()
+
     def test_meme_filiere_niveau_different_est_autorise(self):
         with Session(self.engine) as session:
             session.add(CercleEtude(
