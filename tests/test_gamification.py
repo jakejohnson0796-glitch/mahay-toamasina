@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, select
 
 from app import gamification
 from app.models import ActionGamification, Utilisateur
@@ -49,7 +49,7 @@ def test_enregistrer_action_est_idempotent():
     )
     session.commit()
 
-    actions = session.query(ActionGamification).all()
+    actions = session.exec(select(ActionGamification)).all()
     assert premiere.id == deuxieme.id
     assert len(actions) == 1
     assert actions[0].points == 25
