@@ -667,6 +667,25 @@ def generer_reponse_tuteur(
         "correction": arguments.get("correction") or "—",
     }
 
+    if not verifier:
+        return reponse_initiale
+
+    return verifier_reponse_tuteur_structuree(
+        reponse_initiale,
+        question=question,
+        notion=notion,
+        matiere=matiere,
+    )
+
+
+def verifier_reponse_tuteur_structuree(
+    reponse_initiale: Dict[str, str],
+    *,
+    question: str,
+    notion: Optional[str] = None,
+    matiere: Optional[str] = None,
+) -> Dict[str, str]:
+    """Passe une reponse dans l'ensemble de verification multi-modeles."""
     try:
         reponse_finale, confiant_tuteur, audit = ai_ensemble.verifier_tuteur(
             reponse=reponse_initiale,
@@ -700,6 +719,57 @@ def generer_reponse_tuteur(
     except Exception as erreur:
         logger.warning("Verification multi-modeles du tuteur echouee: %s", erreur)
         return reponse_initiale
+
+
+def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
+    """Verifie une session deja livree et remplace son contenu si necessaire."""
+    from sqlmodel import Session
+    from .database import engine
+    from .models import SessionTuteur
+
+    with Session(engine) as session:
+        session_tuteur = session.get(SessionTuteur, session_id)
+        if not session_tuteur:
+            return
+
+        session_tuteur.statut_verification_ia = "en_cours"
+        session_tuteur.erreur_verification_ia = None
+        session.add(session_tuteur)
+        session.commit()
+
+        initiale = {
+            "explication": session_tuteur.explication,
+            "exemple": session_tuteur.exemple,
+            "exercice": session_tuteur.exercice,
+            "correction": session_tuteur.correction,
+        }
+
+        try:
+            finale = verifier_reponse_tuteur_structuree(
+                initiale,
+                question=session_tuteur.question,
+                notion=session_tuteur.notion,
+                matiere=None,
+            )
+            session_tuteur.explication = finale.get("explication") or initiale["explication"]
+            session_tuteur.exemple = finale.get("exemple") or initiale["exemple"]
+            session_tuteur.exercice = finale.get("exercice") or initiale["exercice"]
+            session_tuteur.correction = finale.get("correction") or initiale["correction"]
+            session_tuteur.statut_verification_ia = "terminee"
+            session_tuteur.date_verification_ia = datetime.utcnow()
+            session_tuteur.erreur_verification_ia = None
+        except Exception as erreur:
+            session_tuteur.statut_verification_ia = "echouee"
+            session_tuteur.date_verification_ia = datetime.utcnow()
+            session_tuteur.erreur_verification_ia = f"{type(erreur).__name__}: {erreur}"[:1000]
+            logger.warning(
+                "Verification arriere-plan Tuteur #%s echouee: %s",
+                session_id,
+                erreur,
+            )
+
+        session.add(session_tuteur)
+        session.commit()
 
 
 def _reponse_tuteur_erreur(message: str) -> Dict[str, str]:
