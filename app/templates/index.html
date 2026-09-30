@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block titre %}Gasy Mahay — Le reseau academique des etudiants malagasy{% endblock %}
+{% block titre %}{{ t("Gasy Mahay — Le reseau academique des etudiants malagasy", request) }}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
 
 <section class="hero hero-phare">
-  <p class="eyebrow">Gasy Mahay — plateforme academique nationale</p>
-  <h1>Etudier ensemble,<br><em>ou que vous soyez</em> a Madagascar.</h1>
+  <p class="eyebrow">{{ t("Gasy Mahay — plateforme academique nationale", request) }}</p>
+  <h1>{{ t("Etudier ensemble,<br><em>ou que vous soyez</em> a Madagascar.", request)|safe }}</h1>
   <p class="sous-titre">
     Documents, cercles d'etude et tuteur IA — pour les etudiants de toutes
     les universites publiques de Madagascar, reunis dans une seule communaute
     academique nationale.
   </p>
   <div class="cta-groupe">
-    <a class="bouton bouton-primaire" href="/documents">Explorer les documents</a>
-    <a class="bouton bouton-secondaire" href="/cercles">Decouvrir les cercles</a>
+    <a class="bouton bouton-primaire" href="/documents">{{ t("Explorer les documents", request) }}</a>
+    <a class="bouton bouton-secondaire" href="/cercles">{{ t("Decouvrir les cercles", request) }}</a>
   </div>
 
   <svg class="hero-ciel" viewBox="0 0 800 200" preserveAspectRatio="none" aria-hidden="true">
@@ -40,27 +40,27 @@
 <section class="stats stats-4">
   <div class="stat">
     <span class="stat-nombre">{{ nb_documents }}</span>
-    <span class="stat-label">documents valides</span>
+    <span class="stat-label">{{ t("documents valides", request) }}</span>
   </div>
   <div class="stat">
     <span class="stat-nombre">{{ nb_universites }}</span>
-    <span class="stat-label">universites partenaires</span>
+    <span class="stat-label">{{ t("universites partenaires", request) }}</span>
   </div>
   <div class="stat">
     <span class="stat-nombre">{{ nb_cercles_actifs }}</span>
-    <span class="stat-label">cercles actifs</span>
+    <span class="stat-label">{{ t("cercles actifs", request) }}</span>
   </div>
   <div class="stat">
     <span class="stat-nombre">{{ nb_quiz_completes }}</span>
-    <span class="stat-label">quiz completes</span>
+    <span class="stat-label">{{ t("quiz completes", request) }}</span>
   </div>
 </section>
 
 <section class="derniers">
-  <h2>Dernieres entrees au registre</h2>
+  <h2>{{ t("Dernieres entrees au registre", request) }}</h2>
   <table class="table-manifeste">
     <thead>
-      <tr><th>Reference</th><th>Titre</th><th>Matiere</th><th>Annee</th></tr>
+      <tr><th>{{ t("Reference", request) }}</th><th>{{ t("Titre", request) }}</th><th>{{ t("Matiere", request) }}</th><th>{{ t("Annee", request) }}</th></tr>
     </thead>
     <tbody>
       {% for doc in derniers_documents %}
@@ -71,7 +71,7 @@
         <td>{{ doc.annee }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="4">Le registre est encore vide — soyez les premiers a deposer un document.</td></tr>
+      <tr><td colspan="4">{{ t("Le registre est encore vide — soyez les premiers a deposer un document.", request) }}</td></tr>
       {% endfor %}
     </tbody>
   </table>
