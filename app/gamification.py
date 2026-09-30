@@ -14,6 +14,8 @@ POINTS_ACTION = {
     "cercle": 20,
     "document": 40,
     "cercle_rejoint": 10,
+    "revision": 10,
+    "classe": 10,
 }
 
 MISSIONS = [
