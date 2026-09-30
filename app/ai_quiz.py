@@ -222,11 +222,16 @@ def _generer_completion_avec_reessai(
     )
 
     for numero_essai, contenu in enumerate(messages_par_essai, start=1):
+        budget_essai = budget_adapte if numero_essai == 1 else min(
+            32_768,
+            budget_adapte * 2,
+        )
         try:
             completion = client.chat.completions.create(
                 model=parametres.groq_model,
-                max_completion_tokens=budget_adapte,
+                max_completion_tokens=budget_essai,
                 reasoning_effort="low",
+                include_reasoning=False,
                 tools=[OUTIL_QUIZ],
                 tool_choice={"type": "function", "function": {"name": "soumettre_quiz"}},
                 messages=[{"role": "user", "content": contenu}],
@@ -251,7 +256,7 @@ def _generer_completion_avec_reessai(
             len(messages_par_essai),
             parametres.groq_model,
             expected_count,
-            budget_adapte,
+            budget_essai,
             completion.choices[0].finish_reason,
             nb_tool_calls,
             bool(message.content),
