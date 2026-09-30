@@ -85,7 +85,9 @@ def _jeton_csrf(client: TestClient, url: str) -> str:
 def _admin_post(client: TestClient, url: str, data: dict, **kwargs):
     payload = dict(data)
     payload["admin_" + "confirmation_" + "password"] = client.admin_confirmation_password
-    return client.post(url, data=payload, **kwargs)
+    reponse = client.post(url, data=payload, **kwargs)
+    print("DEBUG_ADMIN_POST", reponse.status_code, reponse.text[:500])
+    return reponse
 
 
 class TestFaqPublique(unittest.TestCase):
