@@ -102,13 +102,34 @@ def assurer_cercles_pour_groupe_parcours(
     # réel de ce parcours. Aucun Cercle national ne doit être inventé dans ce
     # cas : il sera provisionné dès qu'un niveau vérifié apparaîtra.
 
-    cercles_du_groupe = session.exec(
+    # Ne limite pas la recherche aux IDs actuellement offerts : un cercle
+    # ancien peut encore pointer vers une Filiere historique équivalente. On
+    # compare donc le nom normalisé du parcours pour reconnaître ce cercle
+    # comme la même identité nationale et éviter sa recréation.
+    cercles_candidats = session.exec(
         select(CercleEtude).where(
             CercleEtude.mention_id == mention_id,
-            CercleEtude.filiere_id.in_(filiere_ids_du_groupe),
+            CercleEtude.filiere_id.is_not(None),
+            CercleEtude.niveau.is_not(None),
             CercleEtude.statut == StatutCercle.ACTIF,
         )
     ).all()
+    filieres_representants = {
+        f.id: f
+        for f in session.exec(
+            select(Filiere).where(
+                Filiere.id.in_([c.filiere_id for c in cercles_candidats if c.filiere_id])
+            )
+        ).all()
+    }
+    nom_groupe = _normaliser_nom_parcours(filieres_du_groupe[0].nom)
+    cercles_du_groupe = [
+        cercle for cercle in cercles_candidats
+        if (
+            filieres_representants.get(cercle.filiere_id)
+            and _normaliser_nom_parcours(filieres_representants[cercle.filiere_id].nom) == nom_groupe
+        )
+    ]
     niveaux_existants = {c.niveau for c in cercles_du_groupe}
 
     nb_archives = 0
