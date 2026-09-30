@@ -62,14 +62,6 @@ services:
         sync: false
       - key: LIVEKIT_API_SECRET
         sync: false
-      - key: LIBRETRANSLATE_URL
-        sync: false
-      - key: LIBRETRANSLATE_API_KEY
-        sync: false
-      - key: LIBRETRANSLATE_TIMEOUT
-        value: "8"
-      - key: LIBRETRANSLATE_AUTO_FILL
-        value: "false"
 
   # File IA rapide. PostgreSQL reste la source durable des taches.
   # noeviction evite que Redis supprime silencieusement une tache de la file.
