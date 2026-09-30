@@ -152,8 +152,12 @@ templates.env.globals["jours_depuis_creation"] = _jours_depuis_creation
 
 def _nb_notifications_admin_nouvelles(request) -> int:
     """Compteur leger pour afficher l'alerte admin dans la navigation."""
+    cached = getattr(request.state, "_nb_notifications_admin_nouvelles", None)
+    if cached is not None:
+        return cached
     user_id = request.session.get("user_id")
     if not user_id:
+        request.state._nb_notifications_admin_nouvelles = 0
         return 0
 
     from .database import engine
@@ -164,7 +168,7 @@ def _nb_notifications_admin_nouvelles(request) -> int:
         admin = session.get(Utilisateur, user_id)
         if not admin or admin.role.value != "admin":
             return 0
-        return len(
+        valeur = len(
             session.exec(
                 select(Notification.id)
                 .where(Notification.destinataire_id == admin.id)
@@ -172,6 +176,8 @@ def _nb_notifications_admin_nouvelles(request) -> int:
                 .where(Notification.lu == False)  # noqa: E712
             ).all()
         )
+    request.state._nb_notifications_admin_nouvelles = valeur
+    return valeur
 
 
 templates.env.globals["nb_notifications_admin_nouvelles"] = _nb_notifications_admin_nouvelles
@@ -179,18 +185,24 @@ templates.env.globals["nb_notifications_admin_nouvelles"] = _nb_notifications_ad
 
 def _compter_notifications_non_lues(request) -> int:
     """Compteur des notifications non lues de l'utilisateur courant."""
+    cached = getattr(request.state, "_nb_notifications_non_lues", None)
+    if cached is not None:
+        return cached
     user_id = request.session.get("user_id")
     if not user_id:
+        request.state._nb_notifications_non_lues = 0
         return 0
     from .database import engine
     from .models import Notification
     with Session(engine) as session:
-        return int(session.exec(
+        valeur = int(session.exec(
             select(func.count())
             .select_from(Notification)
             .where(Notification.destinataire_id == user_id)
             .where(Notification.lu == False)  # noqa: E712
         ).one())
+    request.state._nb_notifications_non_lues = valeur
+    return valeur
 
 
 templates.env.globals["compter_notifications_non_lues"] = _compter_notifications_non_lues
@@ -263,8 +275,12 @@ def _profil_academique_a_actualiser(request) -> bool:
     tres tot par de nombreux routers, avant que database/models n'aient
     forcement fini de s'initialiser dans tous les contextes.
     """
+    cached = getattr(request.state, "_profil_academique_a_actualiser", None)
+    if cached is not None:
+        return cached
     user_id = request.session.get("user_id")
     if not user_id:
+        request.state._profil_academique_a_actualiser = False
         return False
 
     from .database import engine
@@ -274,8 +290,11 @@ def _profil_academique_a_actualiser(request) -> bool:
     with Session(engine) as session:
         utilisateur = session.get(Utilisateur, user_id)
         if not utilisateur:
+            request.state._profil_academique_a_actualiser = False
             return False
-        return referentiel_academique.profil_academique_incomplet(utilisateur, session)
+        valeur = referentiel_academique.profil_academique_incomplet(utilisateur, session)
+    request.state._profil_academique_a_actualiser = valeur
+    return valeur
 
 
 templates.env.globals["profil_academique_a_actualiser"] = _profil_academique_a_actualiser
