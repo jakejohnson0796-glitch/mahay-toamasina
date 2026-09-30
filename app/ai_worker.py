@@ -23,7 +23,10 @@ def _arreter(_signal, _frame):
 
 def traiter_tache(tache) -> None:
     if tache.type_tache == ai_queue.TYPE_VERIFICATION_QUIZ:
-        quiz.verifier_tentative_en_arriere_plan(tache.tentative_quiz_id)
+        quiz.verifier_tentative_en_arriere_plan(
+            tache.tentative_quiz_id,
+            strategie=tache.strategie_verification,
+        )
         return
 
     raise RuntimeError(f"Type de tache IA inconnu: {tache.type_tache}")
