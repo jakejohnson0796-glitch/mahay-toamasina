@@ -159,3 +159,32 @@ def test_resume_audit_ne_journalise_pas_le_contenu_des_problemes():
     assert resume["signatures"]
     assert "ambiguë" not in str(resume)
     assert len(resume["signatures"][0]) == 16
+
+
+
+def test_strategie_legere_n_appelle_pas_gemini(monkeypatch):
+    monkeypatch.setattr(ai_ensemble.parametres, "ai_ensemble_enabled", True)
+    monkeypatch.setattr(ai_ensemble, "critiquer_quiz_groq", lambda *a, **k: {
+        "questions": _questions(),
+        "confiant": True,
+        "problemes": [],
+    })
+
+    def fail_gemini(*args, **kwargs):
+        raise AssertionError("Gemini ne doit pas etre appele en strategie legere")
+
+    monkeypatch.setattr(ai_ensemble, "critiquer_quiz_gemini", fail_gemini)
+
+    result, confiant, audit = ai_ensemble.ensemble_verification_quiz(
+        _questions(),
+        "Histoire",
+        "L1",
+        ai_ensemble.OUTIL_CRITIQUE_QUIZ,
+        _validate,
+        strategie="legere",
+    )
+
+    assert result == _questions()
+    assert confiant is True
+    assert audit["strategy"] == "legere"
+    assert len(audit["critics"]) == 1
