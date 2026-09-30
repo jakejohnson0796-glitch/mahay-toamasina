@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+
+{% block titre %}Bienvenue sur Gasy Mahay — ton parcours{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
+{% block contenu %}
+<div class="onboarding-page">
+  <section class="onboarding-hero">
+    <div class="onboarding-hero-copy">
+      <span class="onboarding-kicker">Ton premier pas</span>
+      <h1>Bienvenue{% if utilisateur.nom %}, {{ utilisateur.nom.split(" ")[0] }}{% endif %} 👋</h1>
+      <p>Tu n'as pas besoin d'attendre qu'il y ait beaucoup de documents. Commence à apprendre maintenant, puis aide ta promotion à construire la bibliothèque.</p>
+      {% if onboarding_termine %}
+      <div class="onboarding-success">✓ Ton parcours de démarrage est terminé. Continue avec le défi du jour.</div>
+      {% endif %}
+    </div>
+    <div class="onboarding-score">
+      <span>Progression de démarrage</span>
+      <strong>{{ etapes_terminees }}/{{ etapes|length }}</strong>
+      <div><span style="width: {{ etapes_terminees * 100 // etapes|length }}%"></span></div>
+      <small>3 actions pour découvrir l'essentiel de la plateforme.</small>
+    </div>
+  </section>
+
+  <section class="onboarding-section">
+    <div class="onboarding-heading">
+      <div>
+        <span class="onboarding-kicker">À faire en premier</span>
+        <h2>Ton parcours en 3 étapes</h2>
+      </div>
+      {% if not onboarding_termine %}<span class="onboarding-counter">{{ etapes_terminees }}/3</span>{% endif %}
+    </div>
+
+    <div class="onboarding-steps">
+      {% for etape in etapes %}
+      <article class="onboarding-step {% if etape.terminee %}is-done{% endif %}">
+        <div class="onboarding-step-index">{% if etape.terminee %}✓{% else %}{{ loop.index }}{% endif %}</div>
+        <div class="onboarding-step-body">
+          <strong>{{ etape.titre }}</strong>
+          <span>{{ etape.description }}</span>
+        </div>
+        {% if etape.terminee %}
+        <span class="onboarding-done">Terminé</span>
+        {% else %}
+        <a href="{{ etape.lien }}" class="bouton bouton-primaire">{{ etape.bouton }} →</a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="onboarding-section">
+    <div class="onboarding-heading">
+      <div>
+        <span class="onboarding-kicker">Les 7 premiers jours</span>
+        <h2>Construis ton habitude</h2>
+        <p>Chaque jour propose une petite action utile. Tu peux avancer à ton rythme.</p>
+      </div>
+      <span class="onboarding-day">Jour {{ jour }}/7</span>
+    </div>
+
+    <div class="onboarding-days">
+      {% for item in plan_7_jours %}
+      <article class="onboarding-day-card {% if item.actif %}is-active{% endif %} {% if item.terminee %}is-done{% endif %} {% if not item.accessible %}is-locked{% endif %}">
+        <div class="onboarding-day-number">J{{ item.jour }}</div>
+        <div class="onboarding-day-body">
+          <strong>{{ item.titre }}</strong>
+          <span>{{ item.description }}</span>
+        </div>
+        <div class="onboarding-day-action">
+          <b>+{{ item.points }} XP</b>
+          {% if item.terminee %}
+          <small>✓ Fait</small>
+          {% elif item.accessible %}
+          <a href="{{ item.lien }}">{{ item.label }} →</a>
+          {% else %}
+          <small>À venir</small>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="onboarding-bridge">
+    <div>
+      <span class="onboarding-kicker">Après ton démarrage</span>
+      <h2>Tu peux ensuite faire vivre la plateforme.</h2>
+      <p>Partager une ressource autorisée, répondre dans un cercle, revoir une notion ou simplement refaire un quiz fait progresser ton niveau et aide les autres étudiants.</p>
+    </div>
+    <div class="onboarding-bridge-actions">
+      <a class="bouton bouton-primaire" href="/defis">Voir mes défis</a>
+      <a class="bouton bouton-secondaire" href="/dashboard">Retour au tableau de bord</a>
+    </div>
+  </section>
+</div>
+{% endblock %}
