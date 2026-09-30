@@ -54,10 +54,9 @@ class StatutAbonnementEtudiant(str, Enum):
 
 class Universite(SQLModel, table=True):
     """Niveau le plus haut du referentiel academique national (§2-3 du
-    brief refonte academique). Une seule ligne existe au depart :
-    'Universite de Toamasina', vers laquelle toutes les Faculte
-    actuelles sont rattachees par la migration — aucune donnee
-    existante n'est perdue ou renumerotee."""
+    brief refonte academique). Le référentiel peut contenir plusieurs universités publiques de Madagascar.
+    Les migrations historiques conservent leurs données d'origine sans
+    renumérotation ni perte."""
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str = Field(index=True, unique=True)
     ville: Optional[str] = None
@@ -330,7 +329,7 @@ class CodeReinitialisationMotDePasse(SQLModel, table=True):
 
 class Document(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    # Reference style "manifeste de cargo portuaire" : TOA-DEG-2024-0147
+    # Référence nationale, par exemple : MG-DEG-2024-0147
     reference: str = Field(index=True, unique=True)
     titre: str
     matiere: str
