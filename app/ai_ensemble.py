@@ -409,7 +409,7 @@ def ensemble_verification_quiz(
         for item in critiques
         for p in (item["avis"].get("problemes") or [])
     ]
-    if tous_confiants and not problemes:
+    if tous_confiants and not problemes and strategie != "renforcee":
         return questions, True, {
             "models": [parametres.groq_model] + [x["model"] for x in critiques],
             "critics": critiques,
