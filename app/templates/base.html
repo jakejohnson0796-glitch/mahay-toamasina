@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ langue_courante(request) }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,13 +15,13 @@
     document.documentElement.setAttribute("data-theme", theme);
   })();
 </script>
-<title>{% block titre %}Gasy Mahay — Madagascar{% endblock %}</title>
+<title>{{ t(self.titre(), request) }}</title>
 <link rel="manifest" href="/static/manifest.json">
 <link rel="icon" href="/static/favicon.ico">
 <link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
 <meta name="theme-color" content="#0A3538">
 <meta name="description" content="Gasy Mahay — plateforme publique d’apprentissage et de collaboration pour les étudiants malagasy. Documents, cercles d’étude, universités et outils d’apprentissage à Madagascar.">
-<meta property="og:title" content="Gasy Mahay — Madagascar">
+<meta property="og:title" content="{{ t('Gasy Mahay — Madagascar', request) }}">
 <meta property="og:description" content="Apprendre, réviser et collaborer entre étudiants malagasy.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{{ request.url }}">
@@ -125,43 +125,53 @@
       </button>
     </div>
 
+      <form method="post" action="/langue" class="tb-language" aria-label="{{ t('Changer de langue', request) }}">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="select-langue">{{ t("Langue", request) }}</label>
+        <select id="select-langue" name="langue" onchange="this.form.submit()">
+          {% for code, nom in langues_disponibles.items() %}
+          <option value="{{ code }}" {% if langue_courante(request) == code %}selected{% endif %}>{{ t(nom, request) }}</option>
+          {% endfor %}
+        </select>
+      </form>
+
     {% if request.session.get("user_id") %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
       <a href="/dashboard" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
-        <span class="tb-icone">{{ icone("dashboard", 17) }}</span> Tableau de bord
+        <span class="tb-icone">{{ icone("dashboard", 17) }}</span> {{ t("Tableau de bord", request) }}
       </a>
 
-      <p class="tb-sidebar-groupe">Apprendre</p>
-      <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
-      <a href="/quiz" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Quiz IA</a>
-      <a href="/tuteur" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/tuteur') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/tuteur') else '' }}><span class="tb-icone">{{ icone("tuteur", 17) }}</span> Tuteur IA</a>
+      <p class="tb-sidebar-groupe">{{ t("Apprendre", request) }}</p>
+      <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> {{ t("Documents", request) }}</a>
+      <a href="/quiz" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> {{ t("Quiz IA", request) }}</a>
+      <a href="/tuteur" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/tuteur') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/tuteur') else '' }}><span class="tb-icone">{{ icone("tuteur", 17) }}</span> {{ t("Tuteur IA", request) }}</a>
 
-      <p class="tb-sidebar-groupe">Collaborer</p>
+      <p class="tb-sidebar-groupe">{{ t("Collaborer", request) }}</p>
       <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
-        <span class="tb-icone">{{ icone("cercles", 17) }}</span> Mes cercles
+        <span class="tb-icone">{{ icone("cercles", 17) }}</span> {{ t("Mes cercles", request) }}
         {% if nb_cercles_rejoints %}<span class="tb-sidebar-badge">{{ nb_cercles_rejoints }}</span>{% endif %}
       </a>
-      <a href="/classe" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}><span class="tb-icone">{{ icone("classe", 17) }}</span> Classe virtuelle</a>
+      <a href="/classe" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}><span class="tb-icone">{{ icone("classe", 17) }}</span> {{ t("Classe virtuelle", request) }}</a>
 
-      <p class="tb-sidebar-groupe">Compte</p>
-      <a href="/notifications" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/notifications') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/notifications') else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Notifications{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %}<span class="tb-sidebar-badge">{{ nb_notifs if nb_notifs < 100 else "99+" }}</span>{% endif %}</a>
-      <a href="/mes-revisions" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/mes-revisions') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/mes-revisions') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Mes révisions</a>
-      <a href="/defis" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/defis') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/defis') else '' }}><span class="tb-icone">🏆</span> Défis &amp; récompenses</a>
-      <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Securite</a>
+      <p class="tb-sidebar-groupe">{{ t("Compte", request) }}</p>
+      <a href="/notifications" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/notifications') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/notifications') else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> {{ t("Notifications", request) }}{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %}<span class="tb-sidebar-badge">{{ nb_notifs if nb_notifs < 100 else "99+" }}</span>{% endif %}</a>
+      <a href="/mes-revisions" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/mes-revisions') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/mes-revisions') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> {{ t("Mes révisions", request) }}</a>
+      <a href="/defis" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/defis') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/defis') else '' }}><span class="tb-icone">🏆</span> {{ t("Défis & récompenses", request) }}</a>
+      <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> {{ t("Securite", request) }}</a>
       {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
-      <a href="/admin" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin') else '' }}><span class="tb-icone">{{ icone("admin", 17) }}</span> Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %}<span class="tb-sidebar-badge">{{ nb_admin_notifs }}</span>{% endif %}</a>
+      <a href="/admin" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin') else '' }}><span class="tb-icone">{{ icone("admin", 17) }}</span> {{ t("Administration", request) }}{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %}<span class="tb-sidebar-badge">{{ nb_admin_notifs }}</span>{% endif %}</a>
       {% endif %}
 
-      <p class="tb-sidebar-groupe">Premium</p>
-      <a href="/abonnement" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/abonnement') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/abonnement') else '' }}><span class="tb-icone">{{ icone("premium", 17) }}</span> Abonnement</a>
-      <a href="/sponsoring" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/sponsoring') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/sponsoring') else '' }}><span class="tb-icone">{{ icone("sponsoring", 17) }}</span> Sponsoring</a>
+      <p class="tb-sidebar-groupe">{{ t("Premium", request) }}</p>
+      <a href="/abonnement" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/abonnement') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/abonnement') else '' }}><span class="tb-icone">{{ icone("premium", 17) }}</span> {{ t("Abonnement", request) }}</a>
+      <a href="/sponsoring" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/sponsoring') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/sponsoring') else '' }}><span class="tb-icone">{{ icone("sponsoring", 17) }}</span> {{ t("Sponsoring", request) }}</a>
 
-      <p class="tb-sidebar-groupe">Ressources</p>
-      <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
-      <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Mode d'emploi</a>
-      <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
-      <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
-      <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> Contact</a>
+      <p class="tb-sidebar-groupe">{{ t("Ressources", request) }}</p>
+      <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> {{ t("Aide & Avis", request) }}</a>
+      <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> {{ t("Mode d'emploi", request) }}</a>
+      <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> {{ t("Universites", request) }}</a>
+      <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> {{ t("A propos", request) }}</a>
+      <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> {{ t("Contact", request) }}</a>
     </nav>
 
     <div class="tb-sidebar-compte-zone">
@@ -198,12 +208,12 @@
         <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Mon profil &amp; sécurité</span></a>
         <a class="tb-menu-compte-item" href="/profil/academique"><span class="tb-menu-compte-icone">{{ icone("universites", 16) }}</span><span>Profil académique</span></a>
 
-        <p class="tb-menu-compte-groupe">Apprendre</p>
+        <p class="tb-menu-compte-groupe">{{ t("Apprendre", request) }}</p>
         <a class="tb-menu-compte-item" href="/documents"><span class="tb-menu-compte-icone">{{ icone("documents", 16) }}</span><span>Mes documents</span></a>
         <a class="tb-menu-compte-item" href="/quiz"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>Quiz IA</span></a>
         <a class="tb-menu-compte-item" href="/tuteur"><span class="tb-menu-compte-icone">{{ icone("tuteur", 16) }}</span><span>Tuteur IA</span></a>
 
-        <p class="tb-menu-compte-groupe">Collaborer</p>
+        <p class="tb-menu-compte-groupe">{{ t("Collaborer", request) }}</p>
         <a class="tb-menu-compte-item" href="/cercles"><span class="tb-menu-compte-icone">{{ icone("cercles", 16) }}</span><span>Mes cercles</span></a>
         <a class="tb-menu-compte-item" href="/classe"><span class="tb-menu-compte-icone">{{ icone("classe", 16) }}</span><span>Classe virtuelle</span></a>
 
@@ -226,8 +236,8 @@
     </div>
     <button type="button" id="bouton-theme" class="tb-toggle-theme" aria-label="Changer d'apparence" title="Changer d'apparence" aria-pressed="false">
       <span class="tb-toggle-theme-label">
-        <span class="tb-toggle-theme-label-title">Apparence</span>
-        <span class="tb-toggle-theme-label-state" data-theme-label>Clair</span>
+        <span class="tb-toggle-theme-label-title">{{ t("Apparence", request) }}</span>
+        <span class="tb-toggle-theme-label-state" data-theme-label>{{ t("Clair", request) }}</span>
       </span>
       <span class="tb-toggle-theme-switch" aria-hidden="true">
         <span class="tb-toggle-theme-switch-icon tb-toggle-theme-switch-icon-lune">{{ icone("jours_restants", 13) }}</span>
@@ -237,15 +247,15 @@
     </button>
     {% else %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
-      <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
+      <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> {{ t("Documents", request) }}</a>
       <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}><span class="tb-icone">{{ icone("cercles", 17) }}</span> Cercles d’étude</a>
-      <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
-      <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
-      <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
-      <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> Contact</a>
-      <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Mode d'emploi</a>
+      <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> {{ t("A propos", request) }}</a>
+      <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> {{ t("Universites", request) }}</a>
+      <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> {{ t("Aide & Avis", request) }}</a>
+      <a href="/contact" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/contact' else '' }}" {{ 'aria-current="page"' if request.url.path == '/contact' else '' }}><span class="tb-icone">{{ icone("contact", 17) }}</span> {{ t("Contact", request) }}</a>
+      <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> {{ t("Mode d'emploi", request) }}</a>
 
-      <p class="tb-sidebar-groupe">Compte</p>
+      <p class="tb-sidebar-groupe">{{ t("Compte", request) }}</p>
       <a href="/connexion" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/connexion' else '' }}" {{ 'aria-current="page"' if request.url.path == '/connexion' else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Connexion</a>
       <a href="/inscription" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/inscription' else '' }}" {{ 'aria-current="page"' if request.url.path == '/inscription' else '' }}><span class="tb-icone">{{ icone("premium", 17) }}</span> Inscription</a>
     </nav>
@@ -294,7 +304,7 @@
     {% if profil_academique_a_actualiser(request) %}
     <div class="info info-profil-academique">
       Votre profil academique doit etre actualise pour utiliser correctement les cercles d'etudes.
-      <a href="/profil/academique">Actualiser maintenant</a>
+      <a href="/profil/academique">{{ t("Actualiser maintenant", request) }}</a>
     </div>
     {% endif %}
 
@@ -303,12 +313,12 @@
     <aside class="notification-inactivite" aria-live="polite">
       <span class="notification-inactivite-icone" aria-hidden="true">!</span>
       <div class="notification-inactivite-contenu">
-        <strong>Bienvenue de retour</strong>
+        <strong>{{ t("Bienvenue de retour", request) }}</strong>
         <span>Tu n'as pas utilisé Gasy Mahay depuis {{ rappel_inactivite.jours }} jour{{ "s" if rappel_inactivite.jours != 1 else "" }}. Reprends ton apprentissage quand tu le souhaites.</span>
       </div>
       <form method="post" action="/notifications/inactivite/lue">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-        <button class="notification-inactivite-fermer" type="submit">J'ai compris</button>
+        <button class="notification-inactivite-fermer" type="submit">{{ t("J'ai compris", request) }}</button>
       </form>
     </aside>
     {% endif %}
@@ -329,7 +339,7 @@
         </a>
       </div>
       <p>Gasy Mahay — un hub de revision imagine pour les étudiants à Madagascar.</p>
-      <p class="pied-liens"><a href="/faq">FAQ</a> · <a href="/feedback">Donner mon avis</a></p>
+      <p class="pied-liens"><a href="/faq">FAQ</a> · <a href="/feedback">{{ t("Donner mon avis", request) }}</a></p>
     </footer>
   </div>
 </div>
@@ -338,13 +348,13 @@
   <div class="pwa-installation-corps">
     <span class="pwa-installation-icone" aria-hidden="true">{{ icone("premium", 18) }}</span>
     <div class="pwa-installation-texte">
-      <strong>Installer Gasy Mahay</strong>
-      <span>Un accès plus rapide depuis l’écran d’accueil de ton téléphone.</span>
+      <strong>{{ t("Installer Gasy Mahay", request) }}</strong>
+      <span>{{ t("Un accès plus rapide depuis l’écran d’accueil de ton téléphone.", request) }}</span>
     </div>
   </div>
   <div class="pwa-installation-actions">
-    <button type="button" class="pwa-fermer">Plus tard</button>
-    <button type="button" class="pwa-installer">Installer</button>
+    <button type="button" class="pwa-fermer">{{ t("Plus tard", request) }}</button>
+    <button type="button" class="pwa-installer">{{ t("Installer", request) }}</button>
   </div>
 </div>
 
@@ -356,10 +366,10 @@
    par mahayConfirm(). #}
 <div class="mahay-modale-fond" id="mahay-modale-fond" hidden>
   <div class="mahay-modale" role="alertdialog" aria-modal="true" aria-labelledby="mahay-modale-titre" aria-describedby="mahay-modale-message">
-    <h2 class="mahay-modale-titre" id="mahay-modale-titre">Confirmer</h2>
+    <h2 class="mahay-modale-titre" id="mahay-modale-titre">{{ t("Confirmer", request) }}</h2>
     <p class="mahay-modale-message" id="mahay-modale-message"></p>
     <div class="mahay-modale-actions">
-      <button type="button" class="bouton bouton-secondaire" id="mahay-modale-annuler">Annuler</button>
+      <button type="button" class="bouton bouton-secondaire" id="mahay-modale-annuler">{{ t("Annuler", request) }}</button>
       <button type="button" class="bouton bouton-danger" id="mahay-modale-confirmer">Confirmer</button>
     </div>
   </div>
