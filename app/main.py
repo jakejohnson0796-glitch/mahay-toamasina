@@ -32,7 +32,7 @@ from . import ai_worker
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="Gasy Mahay Toamasina")
+app = FastAPI(title="Gasy Mahay — Madagascar")
 
 # --- Garde-fou : refuse de demarrer en production avec la cle de demo ---
 # Un secret par defaut connu de tous (present dans .env.example, donc
@@ -201,8 +201,9 @@ def _initialiser_donnees_apres_demarrage() -> None:
         # rattachement Domaine existant. SQLite/tests continuent de
         # fonctionner comme avant.
         if not parametres.database_url.startswith("sqlite"):
-            # Source prioritaire : le referentiel Toamasina exact fourni avec le projet.
-            # Le fichier national historique reste un fallback de compatibilite.
+            # Source prioritaire : le referentiel academique national fourni avec le projet.
+            # Les noms de fichiers historiques sont conserves pour compatibilite,
+            # mais leur contenu est traite comme un referentiel national.
             candidats_referentiel = [
                 BASE_DIR.parent / "mahay_toamasina_referentiel_source.json",
                 BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx",
