@@ -38,6 +38,125 @@
 @media (prefers-reduced-motion:reduce){
   .cercle-chat-outils .outil-cercle,.bouton-emoji-v2{transform:none!important}
 }
+/* Correction finale de la composition : les outils et indicateurs
+   doivent rester sous la zone de saisie, pas devenir des colonnes du champ. */
+.barre-composition{
+  position:relative;
+  display:grid!important;
+  grid-template-columns:auto auto auto minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:.45rem;
+  row-gap:.3rem;
+  width:100%;
+  border-radius:18px!important;
+  padding:.55rem .65rem .6rem!important;
+  box-sizing:border-box;
+}
+.barre-composition form#form-fichier,
+.barre-composition form#form-chat{display:contents!important}
+.barre-composition #form-fichier > label{
+  grid-column:1;
+  grid-row:1;
+}
+.barre-composition #form-fichier > .bouton-envoyer-fichier{
+  grid-column:2;
+  grid-row:1;
+  white-space:nowrap;
+}
+.barre-composition .conteneur-emoji-picker{
+  grid-column:3;
+  grid-row:1;
+}
+.barre-composition #form-chat > .conteneur-mentions-suggestions{
+  grid-column:4;
+  grid-row:1;
+  min-width:0;
+  width:100%;
+}
+.barre-composition #form-chat > .bouton-envoyer-message{
+  grid-column:5;
+  grid-row:1;
+}
+.barre-composition #champ-message{
+  display:block;
+  width:100%;
+  min-height:42px;
+  max-height:140px;
+  box-sizing:border-box;
+  padding:.68rem .2rem;
+  line-height:1.4;
+}
+.cercle-chat-indicateurs{
+  grid-column:1 / -1;
+  grid-row:2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+  width:100%;
+  margin:0;
+  padding:.1rem .15rem 0;
+  font-size:.68rem;
+  color:var(--content-text-muted);
+}
+.cercle-chat-outils{
+  grid-column:1 / -1;
+  grid-row:3;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:.4rem;
+  width:100%;
+  margin:.05rem 0 0;
+}
+.cercle-chat-outils .outil-cercle{
+  min-height:34px;
+  white-space:nowrap;
+}
+.cercle-commandes{
+  left:.55rem;
+  bottom:calc(100% - 1.2rem);
+}
+@media(max-width:700px){
+  .barre-composition{
+    grid-template-columns:auto auto auto minmax(0,1fr) auto;
+    border-radius:16px!important;
+    padding:.5rem!important;
+  }
+  .barre-composition #form-fichier > .bouton-envoyer-fichier{
+    font-size:.64rem;
+  }
+  .cercle-chat-outils{
+    justify-content:flex-start;
+    overflow-x:auto;
+    scrollbar-width:none;
+    padding-bottom:.05rem;
+  }
+  .cercle-chat-outils::-webkit-scrollbar{display:none}
+  .cercle-chat-indicateurs{
+    font-size:.63rem;
+  }
+}
+@media(max-width:520px){
+  .barre-composition{
+    grid-template-columns:auto auto auto minmax(0,1fr) auto;
+  }
+  .barre-composition #form-fichier > .bouton-envoyer-fichier{
+    display:none;
+  }
+  .barre-composition #champ-message{
+    min-height:40px;
+    font-size:.88rem;
+  }
+  .cercle-chat-indicateurs span:first-child{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .cercle-chat-outils .outil-cercle{
+    padding:.42rem .58rem;
+  }
+}
 </style>
 <svg class="fond-anneaux" viewBox="0 0 240 240" aria-hidden="true">
   <circle cx="190" cy="30" r="40" fill="none" stroke="currentColor" stroke-width="1"/>
