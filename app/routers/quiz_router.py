@@ -101,8 +101,12 @@ def generer_quiz(
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
 
     # La verification multi-modeles est durablement mise en file.
-    # Le worker Render dedie la traitera hors du processus HTTP.
-    ai_queue.planifier_verification_quiz(tentative.id)
+    # Sur Render Free, le worker tourne dans le Web et consomme Redis.
+    tache_ia_id = ai_queue.planifier_verification_quiz(tentative.id)
+    print(
+        f"[AI QUEUE] Route /quiz/generer quiz={tentative.id} tache_ia={tache_ia_id}.",
+        flush=True,
+    )
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
@@ -218,7 +222,11 @@ def generer_quiz_cible(
     except quiz_module.QuizValidationError:
         return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
 
-    ai_queue.planifier_verification_quiz(tentative.id)
+    tache_ia_id = ai_queue.planifier_verification_quiz(tentative.id)
+    print(
+        f"[AI QUEUE] Route /quiz/cible quiz={tentative.id} tache_ia={tache_ia_id}.",
+        flush=True,
+    )
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
@@ -250,7 +258,11 @@ def generer_examen(
     except quiz_module.QuizValidationError:
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
 
-    ai_queue.planifier_verification_quiz(tentative.id)
+    tache_ia_id = ai_queue.planifier_verification_quiz(tentative.id)
+    print(
+        f"[AI QUEUE] Route /quiz/examen/generer quiz={tentative.id} tache_ia={tache_ia_id}.",
+        flush=True,
+    )
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
