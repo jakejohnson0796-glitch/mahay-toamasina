@@ -86,6 +86,12 @@ class TestSelectsVides(unittest.TestCase):
             session.add(cercle); session.commit(); session.refresh(cercle)
             cls.cercle_id = cercle.id
 
+    def test_profil_academique_charge_apres_connexion(self):
+        client = TestClient(app)
+        _connecter(client, "0340000002")
+        page = client.get("/profil/academique")
+        self.assertEqual(page.status_code, 200, page.text[:300])
+
     # --- Interface inscription : la cascade JS doit etre initialisee ---
     def test_inscription_charge_la_cascade_academique(self):
         client = TestClient(app)
