@@ -853,6 +853,36 @@ async def supprimer_utilisateur(
     formulaire = await request.form()
     donnees = formulaire
 
+    # Valider toutes les reattributions AVANT de modifier quoi que ce soit :
+    # cela evite une suppression partielle suivie d'une 500 si un formulaire
+    # forge contient un ID inexistant ou un etudiant choisi comme nouveau
+    # professeur de cours.
+    for cercle in session.exec(select(CercleEtude).where(CercleEtude.createur_id == utilisateur_id)).all():
+        choix = str(donnees.get(f"cercle_{cercle.id}", "supprimer"))
+        if choix.startswith("reattribuer:"):
+            try:
+                nouveau_id = int(choix.split(":", 1)[1])
+            except (TypeError, ValueError):
+                return RedirectResponse("/admin/utilisateurs?erreur=reattribution_invalide", status_code=303)
+            nouveau = session.get(Utilisateur, nouveau_id)
+            if not nouveau or nouveau.id == utilisateur_id:
+                return RedirectResponse("/admin/utilisateurs?erreur=reattribution_invalide", status_code=303)
+
+    for cours in session.exec(select(Cours).where(Cours.professeur_id == utilisateur_id)).all():
+        choix = str(donnees.get(f"cours_{cours.id}", "supprimer"))
+        if choix.startswith("reattribuer:"):
+            try:
+                nouveau_id = int(choix.split(":", 1)[1])
+            except (TypeError, ValueError):
+                return RedirectResponse("/admin/utilisateurs?erreur=reattribution_invalide", status_code=303)
+            nouveau = session.get(Utilisateur, nouveau_id)
+            if (
+                not nouveau
+                or nouveau.id == utilisateur_id
+                or nouveau.role not in (RoleUtilisateur.PROFESSEUR, RoleUtilisateur.ADMIN)
+            ):
+                return RedirectResponse("/admin/utilisateurs?erreur=reattribution_cours_invalide", status_code=303)
+
     # --- 1. Cercles possedes : reattribution ou suppression, au choix ---
     for cercle in session.exec(select(CercleEtude).where(CercleEtude.createur_id == utilisateur_id)).all():
         choix = donnees.get(f"cercle_{cercle.id}", "supprimer")
@@ -1134,7 +1164,9 @@ async def supprimer_utilisateur(
         document.uploader_id = admin.id
         session.add(document)
 
-    session.commit()
+    # Verifie explicitement qu'aucune FK directe vers le compte ne reste
+    # avant de supprimer la ligne Utilisateur.
+    session.flush()
 
     # --- 4. La ligne Utilisateur elle-meme, en tout dernier ---
     session.delete(cible)
