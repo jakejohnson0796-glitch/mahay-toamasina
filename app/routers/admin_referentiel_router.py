@@ -427,10 +427,6 @@ def approuver_demande_creation(
             session, demande.mention_id, filiere_demandee.id, demande.niveau
         )
         if erreur_parcours:
-            filiere_demandee = referentiel_academique.filiere_canonique_pour_cercle(
-                session, filiere_demandee
-            )
-            demande.filiere_id = filiere_demandee.id
             demande.statut = StatutDemandeCreationCercle.REJETEE
             demande.date_traitement = datetime.utcnow()
             demande.traite_par_id = admin.id
@@ -440,6 +436,10 @@ def approuver_demande_creation(
                 "/admin/referentiel/demandes-creation?erreur=parcours_indisponible",
                 status_code=303,
             )
+        filiere_demandee = referentiel_academique.filiere_canonique_pour_cercle(
+            session, filiere_demandee
+        )
+        demande.filiere_id = filiere_demandee.id
     else:
         demandeur = session.get(Utilisateur, demande.utilisateur_id)
         if (
