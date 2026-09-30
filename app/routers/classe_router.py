@@ -31,6 +31,7 @@ from ..config import parametres
 from ..ws_manager import gestionnaire
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
 from ..rate_limit import limite_depassee
+from .. import gamification
 
 router = APIRouter()
 
@@ -132,6 +133,15 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
             .order_by(Cours.date_creation.desc())
         ).all()
         cours_visibles = lignes
+
+    gamification.enregistrer_action(
+        session,
+        utilisateur.id,
+        "classe",
+        source_type="visite_classe",
+        source_key=datetime.utcnow().date().isoformat(),
+    )
+    session.commit()
 
     return templates.TemplateResponse(
         request,
