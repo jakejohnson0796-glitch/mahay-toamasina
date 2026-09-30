@@ -172,10 +172,24 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
                 (mid, _normaliser(ligne["niveau"]), _normaliser(ligne["parcours"]), fac_key)
                 for mid in mention_ids
             }
-            assert filiere_keys & key_found, (
-                "Parcours source absent de Filiere : "
-                f"{ligne['mention']} / {ligne['niveau']} / {ligne['parcours']}"
-            )
+            if not (filiere_keys & key_found):
+                candidats = [
+                    (
+                        fil.id,
+                        fil.mention_id,
+                        fil.niveau,
+                        fil.nom,
+                        fac_source_nom_par_id.get(fil.faculte_id, ""),
+                    )
+                    for fil in filieres
+                    if fil.mention_id in mention_ids
+                    and fac_source_nom_par_id.get(fil.faculte_id, "") == fac_key
+                ]
+                raise AssertionError(
+                    "Parcours source absent de Filiere : "
+                    f"{ligne['mention']} / {ligne['niveau']} / {ligne['parcours']} "
+                    f"| candidats={candidats[:30]}"
+                )
             expected_keys.update(key_found)
 
         expected_filiere_ids = {
