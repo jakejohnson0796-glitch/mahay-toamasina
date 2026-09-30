@@ -1,3 +1,4 @@
+import logging
 import random
 from typing import List, Optional
 
@@ -17,6 +18,7 @@ from .. import theme_service
 from ..rate_limit import limite_depassee
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _matieres_disponibles(session: Session) -> List[str]:
@@ -77,8 +79,25 @@ def generer_quiz(
         return RedirectResponse("/quiz?erreur=parametres_invalides", status_code=303)
 
     try:
-        tentative = quiz_module.creer_tentative(session, utilisateur, matiere_choisie, niveau, difficulte, nb_questions)
-    except quiz_module.QuizValidationError:
+        tentative = quiz_module.creer_tentative(
+            session,
+            utilisateur,
+            matiere_choisie,
+            niveau,
+            difficulte,
+            nb_questions,
+        )
+    except quiz_module.QuizValidationError as erreur:
+        logger.warning(
+            "Generation quiz invalide: user=%s matiere=%s niveau=%s difficulte=%s "
+            "nb_questions=%s erreur=%s",
+            utilisateur.id,
+            matiere_choisie,
+            niveau,
+            difficulte,
+            nb_questions,
+            erreur,
+        )
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
 
     # La verification multi-modeles est durablement mise en file.
