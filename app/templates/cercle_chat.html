@@ -1273,6 +1273,18 @@
     }
   })();
 
+  const boutonEmojiToggle = document.getElementById("bouton-emoji-toggle");
+  const rechercheEmoji = document.getElementById("recherche-emoji");
+  const grilleEmojis = document.getElementById("grille-emojis");
+  const emojisRecents = document.getElementById("emojis-recents");
+  const ongletsEmojis = document.querySelectorAll("[data-categorie-emoji]");
+  const boutonCommandeCercle = document.getElementById("bouton-commande-cercle");
+  const commandesCercle = document.getElementById("commandes-cercle");
+  const boutonFocusCercle = document.getElementById("bouton-focus-cercle");
+  const boutonCompactCercle = document.getElementById("bouton-compact-cercle");
+  const boutonPleinEcranCercle = document.getElementById("bouton-plein-ecran-cercle");
+  const textareaMessage = document.getElementById("champ-message");
+
   formulaire.addEventListener("submit", function (evenement) {
     evenement.preventDefault();
     const contenu = champMessage.value.trim();
@@ -1355,17 +1367,6 @@
     champReponseThread.value = "";
   });
 
-  const boutonEmojiToggle = document.getElementById("bouton-emoji-toggle");
-  const rechercheEmoji = document.getElementById("recherche-emoji");
-  const grilleEmojis = document.getElementById("grille-emojis");
-  const emojisRecents = document.getElementById("emojis-recents");
-  const ongletsEmojis = document.querySelectorAll("[data-categorie-emoji]");
-  const boutonCommandeCercle = document.getElementById("bouton-commande-cercle");
-  const commandesCercle = document.getElementById("commandes-cercle");
-  const boutonFocusCercle = document.getElementById("bouton-focus-cercle");
-  const boutonCompactCercle = document.getElementById("bouton-compact-cercle");
-  const boutonPleinEcranCercle = document.getElementById("bouton-plein-ecran-cercle");
-  const textareaMessage = document.getElementById("champ-message");
 
   const EMOJIS_CERCLE = {
     emotion: ["😀","😃","😄","😁","😆","😅","😂","🤣","🙂","🙃","😉","😊","🥰","😍","😘","😎","🤓","🧐","🤔","😐","😶","🙄","😏","😢","😭","😤","😠","😡","🤬","😱","😴","🤯","🥳","🤗","🫶","❤️","🧡","💛","💚","💙","💜","🤍","🖤"],
