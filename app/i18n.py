@@ -309,8 +309,8 @@ TRADUCTIONS: Final[dict[str, dict[str, str]]] = {
         "Ouvre une ancienne session pour relire l'explication et continuer ton travail.": "Open an old session to reread the explanation and continue your work.",
         "Pas encore de question enregistrée.": "No question saved yet.",
         "Commence avec une question de cours, une difficulté d'exercice ou une demande d'explication.": "Start with a course question, an exercise difficulty, or a request for an explanation.",
-        "Poser ma première question": "Ask my first question"
-
+        "Poser ma première question": "Ask my first question",
+    },
     "mg": {
         "Actions rapides": "Hetsika haingana",
         "Mon espace": "Ny toerako",
