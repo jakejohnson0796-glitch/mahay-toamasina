@@ -602,6 +602,8 @@ def actualiser_profil_academique(
     utilisateur = session.get(Utilisateur, request.session.get("user_id"))
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
+        return RedirectResponse("/securite", status_code=303)
 
     def _contexte(message_erreur: str):
         return _rendu_formulaire_profil_academique(request, utilisateur, session, message_erreur)
@@ -627,10 +629,15 @@ def actualiser_profil_academique(
     if erreur_academique:
         return _contexte(erreur_academique)
 
-    # Universite + niveau : modifiables librement. Le cooldown ne
-    # demarre que si le niveau CHANGE reellement ; re-soumettre le meme
-    # niveau ne doit pas prolonger artificiellement l'attente de 14 jours.
+    # Universite reste modifiable ; le niveau suit la MEME regle de
+    # cooldown de 14 jours que /securite/niveau. Cela empeche ce formulaire
+    # de servir de contournement en changeant le niveau depuis un autre ecran.
     ancien_niveau = utilisateur.niveau
+    if niveau != ancien_niveau and not referentiel_academique.peut_modifier_niveau_maintenant(utilisateur):
+        return _contexte(
+            "Vous avez recemment modifie votre niveau. Attendez la fin du delai de 14 jours avant de le changer a nouveau."
+        )
+
     utilisateur.universite_id = universite_id_nettoye
     utilisateur.niveau = niveau
     if niveau != ancien_niveau:
