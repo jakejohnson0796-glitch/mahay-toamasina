@@ -54,7 +54,14 @@
           <div class="auth-alert auth-alert-error" role="alert">{{ erreur }}</div>
           {% endif %}
 
-          <form method="post" action="/inscription" id="formulaire-inscription" class="auth-form">
+          <form method="post" action="/inscription" id="formulaire-inscription" class="auth-form"
+                data-cascade-academique
+                data-universite-id="universite_id"
+                data-composante-id="composante_id"
+                data-mention-id="mention_id"
+                data-niveau-id="niveau"
+                data-filiere-id="filiere_id"
+                data-info-tronc-id="info-tronc-commun">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
 
             <div class="auth-section">
