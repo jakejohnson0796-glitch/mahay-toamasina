@@ -951,12 +951,25 @@ def creer_cercle(
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
         else:
-            # Tronc commun (11/09/2026) : mention seule, aucun parcours
-            # precis -- voir le rapport du 10/09/2026 sur Filiere.niveau.
+            # Tronc commun : il depend de la combinaison reelle
+            # universite + composante + mention + niveau du demandeur.
+            # Une mention qui existe ailleurs ne suffit pas.
             mention = session.get(Mention, mention_id_nettoye)
             if not mention:
                 return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
             mention_id_cible = mention.id
+            if (
+                utilisateur.mention_id != mention_id_cible
+                or utilisateur.niveau != niveau_nettoye
+                or not referentiel_academique.tronc_commun_offert(
+                    session,
+                    utilisateur.universite_id,
+                    utilisateur.faculte_id,
+                    mention_id_cible,
+                    niveau_nettoye,
+                )
+            ):
+                return RedirectResponse("/cercles?erreur=tronc_commun_indisponible", status_code=303)
 
         raison_nettoyee = (raison or "").strip()
         if not raison_nettoyee:
