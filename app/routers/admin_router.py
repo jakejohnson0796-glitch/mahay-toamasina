@@ -24,7 +24,9 @@ from ..models import (
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
     EvenementTableauBlanc, AutorisationEcritureTableau, Devoir, RenduDevoir,
     Feedback, ReponseFeedback, StatutFeedback, Notification, TypeNotification,
-    TacheIA, StatutTacheIA, PerformanceModeleIA,
+    TacheIA, StatutTacheIA, PerformanceModeleIA, ProgressionNotion,
+    CodeReinitialisationMotDePasse, DemandeCreationCercle, DemandeChangementFiliere,
+    MessageReaction, MessageMention, FAQ, ActionGamification,
 )
 from ..storage import supprimer_fichier
 from .. import ai_metrics
@@ -888,6 +890,149 @@ async def supprimer_utilisateur(
     session.commit()
 
     # --- 3. Contenu personnel de la cible dans les espaces des AUTRES ---
+
+    # Demandes administratives creees par le compte : elles n'ont plus de
+    # sens apres la suppression du demandeur. Les decisions historiques des
+    # autres utilisateurs restent conservees, mais la reference vers le
+    # compte supprime est retiree.
+    for demande_creation in session.exec(
+        select(DemandeCreationCercle).where(DemandeCreationCercle.utilisateur_id == utilisateur_id)
+    ).all():
+        session.delete(demande_creation)
+    for demande_creation_traitee in session.exec(
+        select(DemandeCreationCercle).where(DemandeCreationCercle.traite_par_id == utilisateur_id)
+    ).all():
+        demande_creation_traitee.traite_par_id = None
+        session.add(demande_creation_traitee)
+
+    for demande_filiere in session.exec(
+        select(DemandeChangementFiliere).where(DemandeChangementFiliere.utilisateur_id == utilisateur_id)
+    ).all():
+        session.delete(demande_filiere)
+    for demande_filiere_traitee in session.exec(
+        select(DemandeChangementFiliere).where(DemandeChangementFiliere.traite_par_id == utilisateur_id)
+    ).all():
+        demande_filiere_traitee.traite_par_id = None
+        session.add(demande_filiere_traitee)
+
+    # Donnees academiques personnelles et codes de recuperation.
+    for progression in session.exec(
+        select(ProgressionNotion).where(ProgressionNotion.utilisateur_id == utilisateur_id)
+    ).all():
+        session.delete(progression)
+    for code_reset in session.exec(
+        select(CodeReinitialisationMotDePasse).where(CodeReinitialisationMotDePasse.utilisateur_id == utilisateur_id)
+    ).all():
+        session.delete(code_reset)
+    for action_xp in session.exec(
+        select(ActionGamification).where(ActionGamification.utilisateur_id == utilisateur_id)
+    ).all():
+        session.delete(action_xp)
+
+    # --- Messagerie : retirer les dependances avant le traitement des messages ---
+    for reaction in session.exec(
+        select(MessageReaction).where(MessageReaction.utilisateur_id == utilisateur_id)
+    ).all():
+        session.delete(reaction)
+    for mention in session.exec(
+        select(MessageMention).where(MessageMention.utilisateur_mentionne_id == utilisateur_id)
+    ).all():
+        session.delete(mention)
+
+    ids_messages_cibles = [
+        m.id for m in session.exec(
+            select(MessageCercle).where(MessageCercle.auteur_id == utilisateur_id)
+        ).all()
+    ]
+    if ids_messages_cibles:
+        for signalement in session.exec(
+            select(SignalementMessage).where(SignalementMessage.message_id.in_(ids_messages_cibles))
+        ).all():
+            session.delete(signalement)
+        for reaction in session.exec(
+            select(MessageReaction).where(MessageReaction.message_id.in_(ids_messages_cibles))
+        ).all():
+            session.delete(reaction)
+        for mention in session.exec(
+            select(MessageMention).where(MessageMention.message_id.in_(ids_messages_cibles))
+        ).all():
+            session.delete(mention)
+        for notification in session.exec(
+            select(Notification).where(Notification.message_id.in_(ids_messages_cibles))
+        ).all():
+            notification.message_id = None
+            session.add(notification)
+
+        # Un message peut etre le parent de reponses d'autres personnes.
+        # On ne casse jamais leur historique : le message du compte supprime
+        # est anonymise/masque au lieu d'etre physiquement efface.
+        for message in session.exec(
+            select(MessageCercle).where(MessageCercle.id.in_(ids_messages_cibles))
+        ).all():
+            if message.piece_jointe_chemin:
+                supprimer_fichier(message.piece_jointe_chemin)
+            message.piece_jointe_chemin = None
+            message.piece_jointe_nom = None
+            message.contenu = "Message supprimé"
+            message.supprime = True
+            message.auteur_id = admin.id
+            message.epingle = False
+            message.epingle_par_id = None
+            session.add(message)
+
+    # Si le compte supprimé avait épinglé les messages d'autres personnes,
+    # l'historique des messages reste intact mais le pointeur vers cet admin
+    # disparu est retiré.
+    for message_epingle in session.exec(
+        select(MessageCercle).where(MessageCercle.epingle_par_id == utilisateur_id)
+    ).all():
+        message_epingle.epingle_par_id = None
+        message_epingle.date_epinglage = None
+        message_epingle.epingle = False
+        session.add(message_epingle)
+
+    # Notifications : celles du compte disparaissent avec lui ; lorsqu'il
+    # n'etait qu'acteur d'une notification d'un autre utilisateur, on garde
+    # la notification mais sans reference vers le compte supprime.
+    for notification in session.exec(
+        select(Notification).where(Notification.destinataire_id == utilisateur_id)
+    ).all():
+        session.delete(notification)
+    for notification in session.exec(
+        select(Notification).where(Notification.acteur_id == utilisateur_id)
+    ).all():
+        notification.acteur_id = None
+        session.add(notification)
+
+    # Feedbacks ecrits par le compte : supprimer d'abord la reponse liee,
+    # puis le feedback. Les reponses admin restantes qui etaient ecrites par
+    # la cible sont reattribuees a l'admin courant pour conserver l'historique.
+    feedbacks_cibles = session.exec(
+        select(Feedback).where(Feedback.utilisateur_id == utilisateur_id)
+    ).all()
+    feedback_ids_cibles = [f.id for f in feedbacks_cibles]
+    if feedback_ids_cibles:
+        for reponse in session.exec(
+            select(ReponseFeedback).where(ReponseFeedback.feedback_id.in_(feedback_ids_cibles))
+        ).all():
+            session.delete(reponse)
+        for feedback in feedbacks_cibles:
+            session.delete(feedback)
+    for reponse_admin_cible in session.exec(
+        select(ReponseFeedback).where(ReponseFeedback.admin_id == utilisateur_id)
+    ).all():
+        reponse_admin_cible.admin_id = admin.id
+        session.add(reponse_admin_cible)
+
+    # Les FAQ conservent leur contenu ; seule l'identite du createur disparait.
+    for faq in session.exec(
+        select(FAQ).where(FAQ.cree_par_id == utilisateur_id)
+    ).all():
+        faq.cree_par_id = None
+        session.add(faq)
+
+    # Le reste du bloc historique existant supprime les appartenances,
+    # signalements emis, inscriptions de cours, etc.
     for membre in session.exec(select(MembreCercle).where(MembreCercle.utilisateur_id == utilisateur_id)).all():
         session.delete(membre)
     for demande in session.exec(
@@ -903,18 +1048,8 @@ async def supprimer_utilisateur(
         demande_traitee.traite_par_id = None
         session.add(demande_traitee)
 
-    ids_messages_restants = [
-        m.id for m in session.exec(select(MessageCercle).where(MessageCercle.auteur_id == utilisateur_id)).all()
-    ]
-    if ids_messages_restants:
-        for signalement in session.exec(
-            select(SignalementMessage).where(SignalementMessage.message_id.in_(ids_messages_restants))
-        ).all():
-            session.delete(signalement)
-    for message in session.exec(select(MessageCercle).where(MessageCercle.auteur_id == utilisateur_id)).all():
-        if message.piece_jointe_chemin:
-            supprimer_fichier(message.piece_jointe_chemin)
-        session.delete(message)
+    # Les messages du compte ont ete traites plus haut par anonymisation
+    # afin de ne pas casser les threads des autres participants.
     for signalement_envoye in session.exec(
         select(SignalementMessage).where(SignalementMessage.signale_par_id == utilisateur_id)
     ).all():
@@ -949,6 +1084,11 @@ async def supprimer_utilisateur(
             select(SignalementQuestionQuiz).where(SignalementQuestionQuiz.tentative_id.in_(ids_tentatives))
         ).all():
             session.delete(signalement_quiz)
+    if ids_tentatives:
+        for tache in session.exec(
+            select(TacheIA).where(TacheIA.tentative_quiz_id.in_(ids_tentatives))
+        ).all():
+            session.delete(tache)
     for tentative in session.exec(select(TentativeQuiz).where(TentativeQuiz.utilisateur_id == utilisateur_id)).all():
         session.delete(tentative)
     for signalement_quiz_envoye in session.exec(
