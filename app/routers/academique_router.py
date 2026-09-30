@@ -36,6 +36,68 @@ def lister_universites(session: Session = Depends(get_session)):
     return [{"id": u.id, "nom": u.nom, "ville": u.ville} for u in universites]
 
 
+@router.get("/universites/{universite_id}/cascade")
+def charger_cascade_inscription(universite_id: int, session: Session = Depends(get_session)):
+    """Charge en une seule requête la hiérarchie nécessaire à l'inscription :
+    composante -> mention -> parcours/niveau.
+
+    L'ancien frontend effectuait plusieurs appels réseau successifs. Sur
+    Supabase, la latence de chaque aller-retour pouvait rendre les selects
+    inactifs plusieurs secondes. Ce endpoint prépare tout le catalogue de
+    l'université en un seul aller-retour ; le navigateur filtre ensuite
+    instantanément selon la composante, la mention et le niveau choisis.
+    """
+    universite = session.get(Universite, universite_id)
+    if not universite or not universite.est_active:
+        return {"composantes": []}
+
+    lignes = session.exec(
+        select(Faculte, Filiere, Mention)
+        .join(Filiere, Filiere.faculte_id == Faculte.id)
+        .join(Mention, Mention.id == Filiere.mention_id)
+        .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .where(
+            Faculte.universite_id == universite_id,
+            Mention.est_active == True,  # noqa: E712
+            ProgrammeUniversitaire.universite_id == universite_id,
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+        )
+        .order_by(Faculte.nom, Mention.nom, Filiere.nom)
+    ).all()
+
+    composantes: dict[int, dict] = {}
+    mentions_par_composante: dict[tuple[int, int], dict] = {}
+
+    for faculte, filiere, mention in lignes:
+        composante = composantes.setdefault(
+            faculte.id,
+            {"id": faculte.id, "nom": faculte.nom, "mentions": []},
+        )
+        cle_mention = (faculte.id, mention.id)
+        entree_mention = mentions_par_composante.get(cle_mention)
+        if entree_mention is None:
+            entree_mention = {
+                "id": mention.id,
+                "nom": mention.nom,
+                "domaine_id": mention.domaine_id,
+                "filieres": [],
+            }
+            mentions_par_composante[cle_mention] = entree_mention
+            composante["mentions"].append(entree_mention)
+
+        if _normaliser_nom_parcours(filiere.nom) == "tronc commun":
+            continue
+
+        entree_mention["filieres"].append({
+            "id": filiere.id,
+            "nom": filiere.nom,
+            "nom_officiel": filiere.nom,
+            "niveau": filiere.niveau,
+        })
+
+    return {"composantes": list(composantes.values())}
+
+
 @router.get("/universites/{universite_id}/composantes")
 def lister_composantes(universite_id: int, session: Session = Depends(get_session)):
     universite = session.get(Universite, universite_id)
