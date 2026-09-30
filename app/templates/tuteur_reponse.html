@@ -5,7 +5,7 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 
 {% block contenu %}
-<div class="ai-learning-page">
+<div class="ai-learning-page" data-tuteur-verification-session-id="{{ session_tuteur.id }}">
   <div class="ai-answer-header">
     <span class="ai-chat-avatar" aria-hidden="true">IA</span>
     <div>
@@ -93,62 +93,5 @@
   </div>
 </div>
 
-<script nonce="{{ csp_nonce(request) }}">
-(function () {
-  const sessionId = {{ session_tuteur.id }};
-  const statusEl = document.querySelector("[data-tuteur-verification-status]");
-  const labelEl = document.querySelector("[data-tuteur-verification-label]");
-  const fields = ["explication", "exemple", "exercice", "correction"];
-
-  function appliquer(data) {
-    if (!data || !data.statut) return;
-    if (statusEl) {
-      statusEl.className = "ai-verification-status is-" + data.statut;
-    }
-    if (labelEl) {
-      labelEl.textContent =
-        data.statut === "terminee"
-          ? "Vérification multi-modèles terminée"
-          : data.statut === "echouee"
-            ? "Réponse initiale conservée"
-            : "Réponse générée · vérification multi-modèles en cours";
-    }
-
-    if (data.statut === "terminee" && data.contenu) {
-      fields.forEach(function (champ) {
-        const cible = document.querySelector('[data-tuteur-content="' + champ + '"]');
-        if (cible && data.contenu[champ]) cible.innerHTML = data.contenu[champ];
-      });
-    }
-  }
-
-  let essais = 0;
-  const maxEssais = 10;
-
-  async function verifier() {
-    try {
-      const response = await fetch("/tuteur/" + sessionId + "/statut", {
-        headers: {"X-Requested-With": "XMLHttpRequest"}
-      });
-      if (!response.ok) return;
-      const data = await response.json();
-      appliquer(data);
-      if ((data.statut === "en_attente" || data.statut === "en_cours") && essais < maxEssais) {
-        essais += 1;
-        window.setTimeout(verifier, 1800);
-      }
-    } catch (_) {
-      if (essais < maxEssais) {
-        essais += 1;
-        window.setTimeout(verifier, 2200);
-      }
-    }
-  }
-
-  if (statusEl && (statusEl.classList.contains("is-en_attente") || statusEl.classList.contains("is-en_cours"))) {
-    window.setTimeout(verifier, 700);
-  }
-})();
-</script>
 
 {% endblock %}
