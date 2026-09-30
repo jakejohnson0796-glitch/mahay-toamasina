@@ -80,10 +80,18 @@ session dediee, avec sa propre verification desktop+mobile.
   {% endfor %}
 </div>
 {% else %}
-{{ etat_vide_constellation(
-  titre="Aucun document ne correspond a ce filtre",
-  texte="Essayez une autre filiere, matiere ou type.",
-) }}
+<div class="doc-empty-activation">
+  {{ etat_vide_constellation(
+    titre="Aucune ressource ici pour le moment",
+    texte="La bibliothèque se construit avec les étudiants. Tu peux être le premier à partager une ressource que tu as le droit de diffuser.",
+  ) }}
+  {% if utilisateur %}
+  <div class="doc-empty-activation-actions">
+    <a class="bouton bouton-primaire" href="/documents/upload">+ Déposer un document</a>
+    <a class="bouton bouton-secondaire" href="/tuteur">Poser une question au Tuteur</a>
+  </div>
+  {% endif %}
+</div>
 {% endif %}
 </div>
 
