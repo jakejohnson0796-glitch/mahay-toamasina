@@ -11,8 +11,10 @@ from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import PlainTextResponse, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
+from .i18n import langue_session, traduire_html_interface
 from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session, select, func
 
@@ -32,6 +34,35 @@ from .auth import utilisateur_courant
 from . import ai_worker
 
 BASE_DIR = Path(__file__).resolve().parent
+
+
+
+class TraductionInterfaceMiddleware(BaseHTTPMiddleware):
+    """Traduit les textes d'interface déjà rendus, sans toucher aux
+    valeurs académiques dynamiques qui ne figurent pas dans le dictionnaire."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        langue = langue_session(request)
+        content_type = response.headers.get("content-type", "")
+        if langue == "fr" or "text/html" not in content_type:
+            return response
+
+        try:
+            corps = b"".join([morceau async for morceau in response.body_iterator])
+            html_rendu = corps.decode("utf-8")
+            html_traduit = traduire_html_interface(html_rendu, langue)
+        except (UnicodeDecodeError, AttributeError):
+            return response
+
+        nouveaux = Response(
+            content=html_traduit.encode("utf-8"),
+            status_code=response.status_code,
+            headers=dict(response.headers),
+            media_type="text/html",
+        )
+        nouveaux.headers.pop("content-length", None)
+        return nouveaux
 
 app = FastAPI(title="Gasy Mahay — Madagascar")
 
@@ -54,6 +85,7 @@ if parametres.environnement == "production" and parametres.session_secret_key ==
 # ajoutes en dernier en premier, on enregistre donc AdminActionConfirmation
 # avant SessionMiddleware.
 app.add_middleware(AdminActionConfirmationMiddleware)
+app.add_middleware(TraductionInterfaceMiddleware)
 
 # Cle de session : lue depuis SESSION_SECRET_KEY (.env) si presente, sinon
 # retombe sur la valeur de demo. A REMPLACER avant toute mise en ligne
