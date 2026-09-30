@@ -341,7 +341,17 @@ def assigner_cercle(
     # Verification anti-doublon (defense en profondeur — la migration
     # pose deja un index unique partiel cote base pour le meme cas).
     if cercle.mention_id and cercle.filiere_id and cercle.niveau:
-        filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere) if filiere else [cercle.filiere_id]
+        filiere_canonique = (
+            referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            if filiere
+            else filiere
+        )
+        if filiere_canonique:
+            filiere = filiere_canonique
+            cercle.filiere_id = filiere.id
+        filieres_equivalentes = referentiel_academique._filieres_equivalentes(
+            session, filiere
+        ) if filiere else [cercle.filiere_id]
         doublon = session.exec(
             select(CercleEtude).where(
                 CercleEtude.id != cercle.id,
