@@ -404,6 +404,27 @@ def liste_cercles(
     afficher_disponibles_seulement = disponibles == "1"
     page_nettoyee = max(1, page)
 
+    # Fast path pour la recherche textuelle : le classement PostgreSQL
+    # (websearch_to_tsquery + ts_rank_cd) est la partie la plus couteuse.
+    # Dans ce mode, on ne calcule pas un COUNT(*) complet juste pour afficher
+    # une pagination exacte : on demande une ligne de plus et on affiche
+    # simplement s'il existe une page suivante.
+    recherche_textuelle_active = bool(q_pour_recherche)
+
+    # Les sections "Mes cercles / Ma mention / Mon domaine" ne sont visibles
+    # dans le template que sans filtre. Ne les recalculons donc pas pendant
+    # une recherche : cela supprime plusieurs requetes SQL inutiles sur
+    # chaque recherche.
+    filtres_recherche_actifs = bool(
+        q_nettoye
+        or domaine_id_nettoye
+        or mention_id_nettoye
+        or filiere_id_nettoye
+        or recherche_tronc_commun
+        or niveau_nettoye
+        or afficher_disponibles_seulement
+    )
+
     # Legacy compatibility : avant l'introduction de
     # CercleEtude.mention_id, certains cercles stockaient uniquement
     # filiere_id. La source de verite de la mention reste alors
@@ -485,22 +506,37 @@ def liste_cercles(
         )
         requete = requete.where(condition_disponibilite)
 
-    total_cercles = session.exec(
-        select(func.count()).select_from(requete.subquery())
-    ).one()
-    total_pages = max(1, (total_cercles + TAILLE_PAGE - 1) // TAILLE_PAGE)
-    page_nettoyee = min(page_nettoyee, total_pages)
-
     ordre = [CercleEtude.date_creation.desc(), CercleEtude.id.desc()]
     if pertinence_recherche is not None:
         ordre = [pertinence_recherche.desc()] + ordre
 
-    cercles = session.exec(
-        requete
-        .order_by(*ordre)
-        .offset((page_nettoyee - 1) * TAILLE_PAGE)
-        .limit(TAILLE_PAGE)
-    ).all()
+    if recherche_textuelle_active:
+        # +1 permet de savoir s'il existe une page suivante sans effectuer
+        # le COUNT(*) complet sur toute la requete FTS.
+        cercles = session.exec(
+            requete
+            .order_by(*ordre)
+            .offset((page_nettoyee - 1) * TAILLE_PAGE)
+            .limit(TAILLE_PAGE + 1)
+        ).all()
+        has_next_page = len(cercles) > TAILLE_PAGE
+        cercles = cercles[:TAILLE_PAGE]
+        total_cercles = None
+        total_pages = page_nettoyee + (1 if has_next_page else 0)
+    else:
+        total_cercles = session.exec(
+            select(func.count()).select_from(requete.subquery())
+        ).one()
+        total_pages = max(1, (total_cercles + TAILLE_PAGE - 1) // TAILLE_PAGE)
+        page_nettoyee = min(page_nettoyee, total_pages)
+        has_next_page = page_nettoyee < total_pages
+
+        cercles = session.exec(
+            requete
+            .order_by(*ordre)
+            .offset((page_nettoyee - 1) * TAILLE_PAGE)
+            .limit(TAILLE_PAGE)
+        ).all()
     cercle_ids = [c.id for c in cercles]
 
     # Le formulaire suit la hierarchie nationale : Domaine -> Mention.
@@ -682,9 +718,12 @@ def liste_cercles(
             })
         return resultat
 
-    if utilisateur:
+    if utilisateur and not filtres_recherche_actifs:
         # Toujours afficher les cercles déjà rejoints, même si le profil
-        # académique doit encore être complété.
+        # académique doit encore être complété. En revanche, pendant une
+        # recherche/filtrage, ces blocs sont masqués côté template : ne pas
+        # lancer leurs requêtes SQL permet de garder le chemin de recherche
+        # nettement plus court.
         cercles_profil_visibilite["mes"] = _charger_cercles_resume(
             select(CercleEtude)
             .join(MembreCercle, MembreCercle.cercle_id == CercleEtude.id)
@@ -695,7 +734,12 @@ def liste_cercles(
             limite=8,
         )
 
-    if utilisateur and profil_academique_recherche and profil_academique_recherche.get("coherent"):
+    if (
+        utilisateur
+        and not filtres_recherche_actifs
+        and profil_academique_recherche
+        and profil_academique_recherche.get("coherent")
+    ):
         mention_profil = profil_academique_recherche.get("mention") or {}
         domaine_profil = profil_academique_recherche.get("domaine") or {}
         mention_profil_id = mention_profil.get("id")
@@ -765,6 +809,8 @@ def liste_cercles(
             "page": page_nettoyee,
             "total_pages": total_pages,
             "total_cercles": total_cercles,
+            "has_next_page": has_next_page,
+            "recherche_textuelle_active": recherche_textuelle_active,
             "querystring": querystring,
         },
     )
