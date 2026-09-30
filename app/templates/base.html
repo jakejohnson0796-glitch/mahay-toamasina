@@ -375,6 +375,9 @@
 {% if request.url.path == "/bienvenue" or request.url.path == "/dashboard" %}
 <link rel="stylesheet" href="/static/onboarding.css?v=1">
 {% endif %}
+{% if request.url.path.startswith("/documents") or request.url.path.startswith("/cercles") %}
+<link rel="stylesheet" href="/static/activation.css?v=1">
+{% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}">
   if ('serviceWorker' in navigator) {
