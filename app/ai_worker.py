@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 TIMEOUT_ATTENTE_REDIS = 15
 INTERVALLE_FILET_SECURITE_DB = 30
 PAUSE_SANS_REDIS_SECONDES = 1.5
+PAUSE_APRES_FILE_VIDE_SECONDES = 0.5
 
 
 def traiter_tache(tache) -> None:
@@ -79,11 +80,15 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
             if tache is None:
                 if arret is not None and arret.is_set():
                     break
-                if not ai_queue.redis_configure():
-                    if arret is None:
-                        time.sleep(PAUSE_SANS_REDIS_SECONDES)
-                    else:
-                        arret.wait(PAUSE_SANS_REDIS_SECONDES)
+                delai = (
+                    PAUSE_SANS_REDIS_SECONDES
+                    if not ai_queue.redis_configure()
+                    else PAUSE_APRES_FILE_VIDE_SECONDES
+                )
+                if arret is None:
+                    time.sleep(delai)
+                else:
+                    arret.wait(delai)
                 continue
 
             logger.info(
