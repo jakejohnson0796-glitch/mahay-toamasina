@@ -206,6 +206,7 @@ TRADUCTIONS: Final[dict[str, dict[str, str]]] = {
         "Parcours / Filière": "Program / field of study",
         "Créer mon compte": "Create my account",
         "Déjà inscrit(e) ?": "Already registered?",
+,
         "Facile": "Easy",
         "Moyen": "Medium",
         "Difficile": "Hard",
