@@ -322,6 +322,16 @@ def assigner_cercle(
 
     cercle.niveau = niveau_nettoye
 
+    if cercle.mention_id and cercle.filiere_id and cercle.niveau:
+        erreur_parcours = referentiel_academique.erreur_cercle_parcours(
+            session, cercle.mention_id, cercle.filiere_id, cercle.niveau
+        )
+        if erreur_parcours:
+            return RedirectResponse(
+                "/admin/referentiel/cercles?erreur=parcours_indisponible",
+                status_code=303,
+            )
+
     # Verification anti-doublon (defense en profondeur — la migration
     # pose deja un index unique partiel cote base pour le meme cas).
     if cercle.mention_id and cercle.filiere_id and cercle.niveau:
@@ -405,6 +415,21 @@ def approuver_demande_creation(
         session.add(demande)
         session.commit()
         return RedirectResponse("/admin/referentiel/demandes-creation?erreur=incoherence_mention_filiere", status_code=303)
+
+    if filiere_demandee:
+        erreur_parcours = referentiel_academique.erreur_cercle_parcours(
+            session, demande.mention_id, filiere_demandee.id, demande.niveau
+        )
+        if erreur_parcours:
+            demande.statut = StatutDemandeCreationCercle.REJETEE
+            demande.date_traitement = datetime.utcnow()
+            demande.traite_par_id = admin.id
+            session.add(demande)
+            session.commit()
+            return RedirectResponse(
+                "/admin/referentiel/demandes-creation?erreur=parcours_indisponible",
+                status_code=303,
+            )
 
     doublon_requete = select(CercleEtude).where(
         CercleEtude.mention_id == demande.mention_id,
