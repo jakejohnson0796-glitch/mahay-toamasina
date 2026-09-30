@@ -36,6 +36,10 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
             nom=nom,
             telephone=telephone,
             mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
+            mot_de_passe_confirmation_admin_hash=(
+                hacher_mot_de_passe(f"test-confirm-{telephone}")
+                if role == RoleUtilisateur.ADMIN else None
+            ),
             role=role,
         )
         session.add(utilisateur)
@@ -54,23 +58,6 @@ def _creer_client_connecte(telephone: str, nom: str, role: RoleUtilisateur = Rol
     assert reponse.status_code in (302, 303), f"Connexion echouee : {reponse.status_code} {reponse.text[:300]}"
 
     if role == RoleUtilisateur.ADMIN:
-        page_securite = client.get("/admin/securite")
-        jeton_confirmation = re.search(
-            r'name="_csrf" value="([^"]+)"', page_securite.text
-        ).group(1)
-        configuration = client.post(
-            "/admin/securite/mot-de-passe-confirmation",
-            data={
-                "nouveau_mot_de_passe": f"test-confirm-{telephone}",
-                "confirmation_nouveau_mot_de_passe": f"test-confirm-{telephone}",
-                "_csrf": jeton_confirmation,
-            },
-            follow_redirects=False,
-        )
-        assert configuration.status_code in (302, 303), (
-            f"Configuration confirmation admin echouee : "
-            f"{configuration.status_code} {configuration.text[:300]}"
-        )
         client.admin_confirmation_password = f"test-confirm-{telephone}"
 
     client.utilisateur_id = utilisateur_id
