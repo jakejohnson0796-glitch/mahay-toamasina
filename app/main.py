@@ -194,7 +194,19 @@ async def au_demarrage() -> None:
     # puisse atteindre le serveur et valider son health check sans attendre
     # l'import du referentiel, le seed et la maintenance des cercles.
     print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
-    initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
+    async def _initialiser_donnees_differees() -> None:
+        # Laisser Render servir les premières requêtes avant la maintenance
+        # lourde du référentiel après un redémarrage.
+        await asyncio.sleep(12)
+        try:
+            await asyncio.to_thread(_initialiser_donnees_apres_demarrage)
+        except Exception as erreur:
+            print(
+                "[ERREUR INITIALISATION DONNEES] "
+                f"{type(erreur).__name__}: {erreur}"
+            )
+
+    initialisation = asyncio.create_task(_initialiser_donnees_differees())
     app.state.initialisation_donnees = initialisation
 
     # Render Free ne fournit pas de Background Worker gratuit. Lorsque Redis
