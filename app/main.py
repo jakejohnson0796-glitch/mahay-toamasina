@@ -55,13 +55,16 @@ class TraductionInterfaceMiddleware(BaseHTTPMiddleware):
         except (UnicodeDecodeError, AttributeError):
             return response
 
+        entetes = {
+            cle: valeur
+            for cle, valeur in response.headers.items()
+            if cle.lower() not in {"content-length", "content-encoding"}
+        }
         nouveaux = Response(
             content=html_traduit.encode("utf-8"),
             status_code=response.status_code,
-            headers=dict(response.headers),
-            media_type="text/html",
+            headers=entetes,
         )
-        nouveaux.headers.pop("content-length", None)
         return nouveaux
 
 app = FastAPI(title="Gasy Mahay — Madagascar")
