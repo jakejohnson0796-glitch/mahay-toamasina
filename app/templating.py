@@ -223,7 +223,16 @@ def _version_asset(chemin_relatif: str) -> str:
     try:
         contenu = chemin_absolu.read_bytes()
     except FileNotFoundError:
-        return "0"
+        # Compatibilite avec les appels historiques qui passent simplement
+        # "ai-learning.js", "security-ui.js", etc. : les scripts vivent sous
+        # static/js/. Le fallback garde un seul contrat de cache-busting.
+        if "/" not in chemin_relatif:
+            try:
+                contenu = (BASE_DIR / "static" / "js" / chemin_relatif).read_bytes()
+            except FileNotFoundError:
+                return "0"
+        else:
+            return "0"
     return hashlib.md5(contenu).hexdigest()[:8]
 
 
