@@ -12,6 +12,7 @@ from urllib.parse import urlsplit, urlunsplit
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import PlainTextResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
 from .i18n import langue_session, traduire_html_interface
@@ -107,6 +108,9 @@ app.add_middleware(
     session_cookie="__Host-session" if parametres.environnement == "production" else "session",
 )
 app.add_middleware(EnTetesSecuriteMiddleware, https_actif=parametres.environnement == "production")
+# Compression HTTP : reduit le poids des pages HTML/JSON/CSS/JS suffisamment volumineuses.
+# Les petits corps restent inchanges (minimum_size) pour ne pas ajouter de cout inutile.
+app.add_middleware(GZipMiddleware, minimum_size=700, compresslevel=5)
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
