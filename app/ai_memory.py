@@ -109,6 +109,27 @@ def enregistrer_audit_ensemble(
     return total
 
 
+def nb_signaux_recurrents(
+    *,
+    type_interaction: str,
+    matiere: Optional[str] = None,
+    niveau: Optional[str] = None,
+) -> int:
+    """Retourne le volume cumule de signaux memorises pour un contexte."""
+    try:
+        with Session(engine) as session:
+            elements = session.exec(
+                select(ErreurIAEnsemble).where(
+                    ErreurIAEnsemble.type_interaction == type_interaction,
+                    ErreurIAEnsemble.matiere == (matiere or "").strip(),
+                    ErreurIAEnsemble.niveau == (niveau or "").strip(),
+                )
+            ).all()
+            return sum(max(0, int(x.occurrences)) for x in elements)
+    except Exception:
+        return 0
+
+
 def contexte_erreurs_recurrentes(
     *,
     type_interaction: str,
