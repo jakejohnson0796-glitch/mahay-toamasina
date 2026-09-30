@@ -401,8 +401,9 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
         f"{niveau}, avec une difficulte {difficulte}. Varie les niveaux "
         f"cognitifs (comprehension, application, pas seulement de la "
         f"restitution), 4 choix plausibles par question, une seule bonne "
-        f"reponse, une explication courte et surtout une notion pedagogique "
-        f"courte et precise pour chaque question. Utilise l'outil "
+        f"reponse, une explication tres courte (1 phrase) et une notion "
+        f"pedagogique tres courte (2 a 6 mots). Reste concis afin de produire "
+        f"l'ensemble des questions dans un seul appel. Utilise l'outil "
         f"fourni pour repondre."
         f"{chr(10) + chr(10) + memoire if memoire else ''}"
     )
@@ -417,7 +418,10 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
     )
 
     completion, erreur = _generer_completion_avec_reessai(
-        client, [consigne_base, consigne_renforcee], max_completion_tokens=2048
+        client,
+        [consigne_base, consigne_renforcee],
+        max_completion_tokens=2048,
+        expected_count=nb_questions,
     )
 
     if completion is None:
