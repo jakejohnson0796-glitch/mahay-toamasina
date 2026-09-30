@@ -961,6 +961,13 @@ def creer_cercle(
         utilisateur_id=utilisateur.id,
         role=RoleMembreCercle.CREATEUR,
     ))
+    gamification.enregistrer_action(
+        session,
+        utilisateur.id,
+        "cercle_rejoint",
+        source_type="cercle",
+        source_key=str(cercle.id),
+    )
     session.commit()
 
     return RedirectResponse(f"/cercles/{cercle.id}", status_code=303)
@@ -1014,6 +1021,13 @@ def demander_adhesion(
     if referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session):
         # Chemin 1 : son propre cercle national -> adhesion immediate.
         session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=utilisateur.id, role=RoleMembreCercle.MEMBRE))
+        gamification.enregistrer_action(
+            session,
+            utilisateur.id,
+            "cercle_rejoint",
+            source_type="cercle",
+            source_key=str(cercle_id),
+        )
         session.commit()
         return RedirectResponse(f"/cercles/{cercle_id}?ok=rejoint", status_code=303)
 
