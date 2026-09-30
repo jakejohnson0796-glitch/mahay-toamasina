@@ -203,10 +203,11 @@ class TestFaqPublique(unittest.TestCase):
 
     def test_creation_rejette_question_vide(self):
         jeton = _jeton_csrf(self.admin, "/admin/faq")
-        reponse = self.admin.post(
+        reponse = _admin_post(
+            self.admin,
             "/admin/faq",
-            data={"question": "   ", "reponse": "reponse", "categorie": "general",
-                  "ordre_affichage": 0, "_csrf": jeton},
+            {"question": "   ", "reponse": "reponse", "categorie": "general",
+             "ordre_affichage": 0, "_csrf": jeton},
             follow_redirects=False,
         )
         self.assertIn(reponse.status_code, (302, 303))
