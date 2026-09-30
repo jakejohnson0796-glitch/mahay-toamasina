@@ -93,6 +93,7 @@ def demander_tuteur(
         correction=reponse["correction"],
     )
     session.add(session_tuteur)
+    session.flush()
     gamification.enregistrer_action(
         session,
         utilisateur.id,
