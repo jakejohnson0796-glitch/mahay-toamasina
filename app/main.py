@@ -190,52 +190,41 @@ async def arreter_worker_ia() -> None:
 def _initialiser_donnees_apres_demarrage() -> None:
     print("[DEBUG DATABASE] Verification des donnees initiales...")
     with Session(engine) as session:
-        # Le referentiel national (dont les Domaines) est fourni dans le
-        # classeur versionne du projet. La migration b8f4d1c6a2e7 cree la
-        # structure SQL mais, historiquement, l'importeur etait seulement
-        # documente comme une commande manuelle. Sur Render/Supabase aucun
-        # shell post-deploiement n'etait disponible : la table Domaine
-        # restait donc vide et le filtre des Cercles ne pouvait afficher
-        # que "Tous les domaines". On rejoue ici l'importeur, uniquement
-        # sur Postgres, car il est idempotent et n'ecrase jamais un
-        # rattachement Domaine existant. SQLite/tests continuent de
-        # fonctionner comme avant.
-        if not parametres.database_url.startswith("sqlite"):
-            # Source prioritaire : le referentiel academique national fourni avec le projet.
-            # Les noms de fichiers historiques sont conserves pour compatibilite,
-            # mais leur contenu est traite comme un referentiel national.
-            candidats_referentiel = [
-                BASE_DIR.parent / "mahay_toamasina_referentiel_source.json",
-                BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx",
-            ]
-            chemin_referentiel = next(
-                (chemin for chemin in candidats_referentiel if chemin.exists()),
-                None,
-            )
-            if chemin_referentiel is not None:
-                try:
-                    rapport_referentiel = importer_referentiel_academique(str(chemin_referentiel))
-                    print(
-                        "[DEBUG ACADEMIQUE] Referentiel synchronise — "
-                        f"source={chemin_referentiel.name}, "
-                        f"{len(rapport_referentiel.domaines_crees)} domaine(s), "
-                        f"{len(rapport_referentiel.mentions_domaine_rattache)} rattachement(s) "
-                        f"Mention→Domaine, "
-                        f"{len(rapport_referentiel.mentions_domaine_ambigu)} mention(s) ambigue(s), "
-                        f"{len(rapport_referentiel.filieres_creees)} filiere(s) creee(s), "
-                        f"{rapport_referentiel.programmes_crees} offre(s) creee(s)."
-                    )
-                except Exception as erreur_referentiel:
-                    print(
-                        "[ERREUR ACADEMIQUE] Synchronisation du referentiel "
-                        f"impossible : {type(erreur_referentiel).__name__}: {erreur_referentiel}"
-                    )
-            else:
+        # Le referentiel academique national est synchronise a chaque premier
+        # lancement et a chaque redemarrage si la source versionnee est presente.
+        # Cela vaut aussi pour SQLite local : un nouveau lancement ne doit plus
+        # amorcer une experience Toamasina-only, mais la couverture nationale.
+        candidats_referentiel = [
+            BASE_DIR.parent / "mahay_universites_mentions_filieres_recensement.xlsx",
+            BASE_DIR.parent / "mahay_toamasina_referentiel_source.json",
+        ]
+        chemin_referentiel = next(
+            (chemin for chemin in candidats_referentiel if chemin.exists()),
+            None,
+        )
+        if chemin_referentiel is not None:
+            try:
+                rapport_referentiel = importer_referentiel_academique(str(chemin_referentiel))
                 print(
-                    "[DEBUG ACADEMIQUE] Source du referentiel absente — "
-                    "synchronisation ignoree."
+                    "[DEBUG ACADEMIQUE] Referentiel national synchronise — "
+                    f"source={chemin_referentiel.name}, "
+                    f"{len(rapport_referentiel.domaines_crees)} domaine(s), "
+                    f"{len(rapport_referentiel.mentions_domaine_rattache)} rattachement(s) "
+                    f"Mention→Domaine, "
+                    f"{len(rapport_referentiel.mentions_domaine_ambigu)} mention(s) ambigue(s), "
+                    f"{len(rapport_referentiel.filieres_creees)} filiere(s) creee(s), "
+                    f"{rapport_referentiel.programmes_crees} offre(s) creee(s)."
                 )
-        peupler_donnees_initiales(session)
+            except Exception as erreur_referentiel:
+                print(
+                    "[ERREUR ACADEMIQUE] Synchronisation du referentiel national "
+                    f"impossible : {type(erreur_referentiel).__name__}: {erreur_referentiel}"
+                )
+        else:
+            print(
+                "[DEBUG ACADEMIQUE] Source du referentiel national absente — "
+                "synchronisation ignoree."
+            )
         peupler_faq_initiale(session)
         assurer_compte_admin(session)
         # Apres assurer_compte_admin : un cercle genere automatiquement a
