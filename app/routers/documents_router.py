@@ -9,6 +9,7 @@ import secrets
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse
 from sqlmodel import Session, select
+from sqlalchemy import update
 
 from ..database import get_session
 from ..templating import templates
@@ -221,9 +222,13 @@ def telecharger_document(request: Request, document_id: int, session: Session = 
     elif limite_depassee(f"telechargement-document:ip:{host}", 60, 300):
         return RedirectResponse("/documents?erreur=trop_de_telechargements", status_code=303)
 
-    document.nb_telechargements += 1
-    session.add(document)
+    session.exec(
+        update(Document)
+        .where(Document.id == document.id)
+        .values(nb_telechargements=Document.nb_telechargements + 1)
+    )
     session.commit()
+    session.refresh(document)
 
     if utilisateur:
         session.add(ConsultationDocument(utilisateur_id=utilisateur.id, document_id=document.id))
