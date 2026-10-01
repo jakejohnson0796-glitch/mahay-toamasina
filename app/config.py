@@ -110,6 +110,7 @@ class Parametres:
     smtp_utilisateur: str = field(default_factory=lambda: os.getenv("SMTP_UTILISATEUR", ""))
     smtp_mot_de_passe: str = field(default_factory=lambda: os.getenv("SMTP_MOT_DE_PASSE", ""))
     smtp_from_email: str = field(default_factory=lambda: os.getenv("SMTP_FROM_EMAIL", ""))
+    timezone: str = field(default_factory=lambda: os.getenv("APP_TIMEZONE", "Indian/Antananarivo"))
 
 
 parametres = Parametres()
