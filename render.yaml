@@ -54,6 +54,10 @@ services:
         sync: false
       - key: SMTP_FROM_EMAIL
         sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: APP_TIMEZONE
+        value: Indian/Antananarivo
       - key: LIVEKIT_URL
         sync: false        # classe virtuelle (audio/video/partage d'ecran) — a remplir manuellement
       - key: LIVEKIT_API_KEY

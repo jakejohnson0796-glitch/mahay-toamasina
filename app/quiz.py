@@ -381,12 +381,25 @@ def verifier_tentative_en_arriere_plan(tentative_id: int) -> None:
         )
 
 
-def historique(session: Session, utilisateur_id: int) -> List[TentativeQuiz]:
-    """Tentatives terminees, les plus recentes d'abord."""
+def historique(
+    session: Session,
+    utilisateur_id: int,
+    *,
+    limit: int = 200,
+    offset: int = 0,
+) -> List[TentativeQuiz]:
+    """Historique borne pour eviter de charger une table complete en memoire."""
+    limit = max(1, min(limit, 200))
+    offset = max(0, offset)
     return session.exec(
         select(TentativeQuiz)
-        .where(TentativeQuiz.utilisateur_id == utilisateur_id, TentativeQuiz.date_soumission.is_not(None))
+        .where(
+            TentativeQuiz.utilisateur_id == utilisateur_id,
+            TentativeQuiz.date_soumission.is_not(None),
+        )
         .order_by(TentativeQuiz.date_soumission.desc())
+        .offset(offset)
+        .limit(limit)
     ).all()
 
 

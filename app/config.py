@@ -35,6 +35,9 @@ class Parametres:
     # --- Session (cookies de connexion) ---
     session_secret_key: str = field(default_factory=lambda: os.getenv("SESSION_SECRET_KEY", "a-changer-en-production"))
 
+    # Redis partage pour les rate-limits multi-process/replicas.
+    redis_url: str = field(default_factory=lambda: os.getenv("REDIS_URL", ""))
+
     # --- Stockage des fichiers deposes (Supabase Storage) ---
     # Si les deux sont vides => fallback sur le disque local (dossier uploads/).
     supabase_url: str = field(default_factory=lambda: os.getenv("SUPABASE_URL", ""))
@@ -104,6 +107,9 @@ class Parametres:
     smtp_utilisateur: str = field(default_factory=lambda: os.getenv("SMTP_UTILISATEUR", ""))
     smtp_mot_de_passe: str = field(default_factory=lambda: os.getenv("SMTP_MOT_DE_PASSE", ""))
     smtp_from_email: str = field(default_factory=lambda: os.getenv("SMTP_FROM_EMAIL", ""))
+
+    # Fuseau local des champs datetime-local.
+    timezone: str = field(default_factory=lambda: os.getenv("APP_TIMEZONE", "Indian/Antananarivo"))
 
 
 parametres = Parametres()

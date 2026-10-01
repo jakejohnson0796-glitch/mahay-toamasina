@@ -138,10 +138,30 @@ async def au_demarrage() -> None:
     # puisse atteindre le serveur et valider son health check sans attendre
     # l'import du referentiel, le seed et la maintenance des cercles.
     print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
-    initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
+    initialisation = asyncio.create_task(_initialisation_donnees_surveillee())
     app.state.initialisation_donnees = initialisation
+    app.state.initialisation_donnees_ok = False
+    app.state.initialisation_donnees_erreur = None
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
     print("[DEBUG DATABASE] Demarrage HTTP pret.")
+
+async def _initialisation_donnees_surveillee() -> None:
+    """Surveille la tache d'initialisation et journalise toute exception."""
+    try:
+        await asyncio.to_thread(_initialiser_donnees_apres_demarrage)
+    except Exception as erreur:
+        app.state.initialisation_donnees_ok = False
+        app.state.initialisation_donnees_erreur = f"{type(erreur).__name__}: {erreur}"
+        print(
+            "[ERREUR DATABASE] Initialisation post-demarrage echouee : "
+            f"{type(erreur).__name__}: {erreur}",
+            flush=True,
+        )
+        return
+    app.state.initialisation_donnees_ok = True
+    app.state.initialisation_donnees_erreur = None
+    print("[DEBUG DATABASE] Initialisation post-demarrage terminee avec succes.", flush=True)
+
 
 def _initialiser_donnees_apres_demarrage() -> None:
     print("[DEBUG DATABASE] Verification des donnees initiales...")
@@ -222,9 +242,24 @@ def _initialiser_donnees_apres_demarrage() -> None:
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    """Endpoint de liveness ultra-leger pour le health check Render."""
-    return {"status": "ok"}
+def health() -> dict[str, object]:
+    """Healthcheck HTTP : expose l'etat de l'initialisation sans bloquer Render."""
+    initialisation = getattr(app.state, "initialisation_donnees", None)
+    ok = getattr(app.state, "initialisation_donnees_ok", False)
+    erreur = getattr(app.state, "initialisation_donnees_erreur", None)
+    if erreur:
+        etat = "degraded"
+    elif ok:
+        etat = "ok"
+    elif initialisation is not None and not initialisation.done():
+        etat = "starting"
+    else:
+        etat = "degraded"
+    return {
+        "status": etat,
+        "initialisation_donnees_ok": ok,
+        "initialisation_donnees_erreur": erreur,
+    }
 
 
 @app.get("/robots.txt", include_in_schema=False)
