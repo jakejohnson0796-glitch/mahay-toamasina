@@ -99,3 +99,32 @@ def test_document_de_cercle_ne_peut_pas_etre_telecharge_par_un_non_membre(monkey
     assert response.status_code == 303
     assert response.headers["location"] == "/cercles/99"
     assert document.nb_telechargements == 0
+
+
+
+def test_document_de_cercle_ne_peut_pas_generer_un_quiz_par_un_non_membre(monkeypatch):
+    document = SimpleNamespace(
+        statut=StatutDocument.APPROUVE,
+        cercle_id=99,
+        chemin_fichier="/tmp/document-prive.pdf",
+        id=42,
+    )
+    utilisateur = SimpleNamespace(id=17)
+
+    class FakeSession:
+        def get(self, model, identifier):
+            return document if identifier == 42 else None
+
+    monkeypatch.setattr(documents_router, "utilisateur_courant", lambda request, session: utilisateur)
+    monkeypatch.setattr(documents_router, "acces_premium_ou_redirection", lambda utilisateur, session: None)
+    monkeypatch.setattr(documents_router, "_est_membre_cercle", lambda session, cercle_id, utilisateur_id: False)
+    monkeypatch.setattr(documents_router, "limite_depassee", lambda *args, **kwargs: False)
+
+    response = documents_router.quiz_document(
+        SimpleNamespace(),
+        42,
+        FakeSession(),
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/cercles/99"

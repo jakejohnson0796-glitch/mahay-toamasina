@@ -124,7 +124,11 @@ def inscription(
             request, "register.html",
             _contexte_formulaire_inscription(session, f"Le nom est obligatoire et limite a {LONGUEUR_MAX_NOM} caracteres."),
         )
-    if len(mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE or len(mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE:
+    if (
+        len(mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE
+        or len(mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE
+        or len(mot_de_passe.encode("utf-8")) > 72
+    ):
         return templates.TemplateResponse(
             request, "register.html",
             _contexte_formulaire_inscription(session, f"Le mot de passe doit contenir entre {LONGUEUR_MIN_MOT_DE_PASSE} et {LONGUEUR_MAX_MOT_DE_PASSE} caracteres."),
@@ -229,7 +233,11 @@ def inscription(
     notifier_nouvelle_inscription_aux_admins(utilisateur, session)
     session.commit()
 
+    # Meme ouverture de session que le flux de connexion : le fingerprint
+    # est indispensable a utilisateur_courant().
+    _rotation_session_authentifiee(request)
     request.session["user_id"] = utilisateur.id
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     return RedirectResponse("/", status_code=303)
 
 
@@ -472,7 +480,11 @@ def verifier_code_reinitialisation(
     if not user_id:
         return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
 
-    if len(nouveau_mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE or len(nouveau_mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE:
+    if (
+        len(nouveau_mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE
+        or len(nouveau_mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE
+        or len(nouveau_mot_de_passe.encode("utf-8")) > 72
+    ):
         return templates.TemplateResponse(
             request, "mot_de_passe_oublie_code.html",
             {"erreur": f"Le nouveau mot de passe doit faire au moins {LONGUEUR_MIN_MOT_DE_PASSE} caracteres."},
@@ -494,7 +506,24 @@ def verifier_code_reinitialisation(
         return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
 
     utilisateur = session.get(Utilisateur, user_id)
-    entree_correspondante.utilise = True
+    if not utilisateur:
+        request.session.pop("en_attente_reinit_user_id", None)
+        return templates.TemplateResponse(
+            request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique}
+        )
+
+    # Un succes de reinitialisation invalide tous les autres codes encore actifs
+    # de ce compte afin qu'une ancienne copie ne reste utilisable.
+    codes_a_revoquer = session.exec(
+        select(CodeReinitialisationMotDePasse).where(
+            CodeReinitialisationMotDePasse.utilisateur_id == user_id,
+            CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
+        )
+    ).all()
+    for code_a_revoquer in codes_a_revoquer:
+        code_a_revoquer.utilise = True
+        session.add(code_a_revoquer)
+
     utilisateur.mot_de_passe_hash = hacher_mot_de_passe(nouveau_mot_de_passe)
     utilisateur.doit_changer_mot_de_passe = False
     session.add(entree_correspondante)

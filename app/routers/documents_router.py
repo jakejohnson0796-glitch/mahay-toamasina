@@ -146,8 +146,10 @@ def upload_document(
     # document_upload.html) : on revalide quand meme l'appartenance
     # cote serveur, un utilisateur ne pouvant pas fabriquer une requete
     # avec un cercle_id arbitraire auquel il n'appartient pas.
-    if cercle_id is not None and not _est_membre_cercle(session, cercle_id, utilisateur.id):
-        cercle_id = None
+    if cercle_id is not None:
+        cercle = session.get(CercleEtude, cercle_id)
+        if not cercle or not _est_membre_cercle(session, cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     filiere = session.get(Filiere, filiere_id)
     reference = generer_reference(filiere, annee, session)
@@ -237,6 +239,29 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
+
+    # Le quiz ne doit jamais devenir une route secondaire permettant de
+    # lire le contenu d'un document prive de cercle.
+    if document.cercle_id is not None:
+        if not utilisateur or not _est_membre_cercle(
+            session, document.cercle_id, utilisateur.id
+        ):
+            return RedirectResponse(
+                f"/cercles/{document.cercle_id}",
+                status_code=303,
+            )
+
+    # Extraction PDF/OCR + appel IA = chemin couteux. Une limite dediee
+    # evite qu'un meme document soit transforme en endpoint d'épuisement
+    # de ressources.
+    if (
+        limite_depassee(f"quiz-document:user:{utilisateur.id}", 6, 3600)
+        or limite_depassee(f"quiz-document:document:{document.id}", 20, 3600)
+    ):
+        return RedirectResponse(
+            "/documents?erreur=trop_de_quiz_document",
+            status_code=303,
+        )
 
     with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
         texte = extraire_texte(str(chemin_local))

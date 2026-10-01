@@ -38,13 +38,17 @@ app = FastAPI(title="Gasy Mahay Toamasina")
 # session valide pour n'importe quel compte, y compris admin, s'il etait
 # oublie tel quel sur un vrai deploiement. On echoue bruyamment plutot
 # que de demarrer silencieusement dans un etat dangereux.
-if parametres.environnement == "production" and parametres.session_secret_key == "a-changer-en-production":
-    raise RuntimeError(
-        "SESSION_SECRET_KEY est encore la valeur de demo alors que "
-        "ENVIRONNEMENT=production. Genere une vraie valeur (python -c "
-        "\"import secrets; print(secrets.token_hex(32))\") et definis-la "
-        "dans les variables d'environnement de l'hebergeur avant de redeployer."
-    )
+if parametres.environnement == "production":
+    secret = parametres.session_secret_key
+    if not secret or secret == "a-changer-en-production" or len(secret) < 64:
+        raise RuntimeError(
+            "SESSION_SECRET_KEY doit etre une cle aleatoire d'au moins 64 caracteres en production."
+        )
+    if not (parametres.supabase_url and parametres.supabase_service_key):
+        raise RuntimeError(
+            "SUPABASE_URL et SUPABASE_SERVICE_KEY sont obligatoires en production : "
+            "le stockage local serait ephemere."
+        )
 
 # Cle de session : lue depuis SESSION_SECRET_KEY (.env) si presente, sinon
 # retombe sur la valeur de demo. A REMPLACER avant toute mise en ligne
