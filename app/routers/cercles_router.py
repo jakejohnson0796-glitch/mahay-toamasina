@@ -10,6 +10,7 @@ existant (SessionMiddleware, deja installe dans main.py) : pas besoin de
 mecanisme separe, Starlette applique cette middleware aussi bien aux
 requetes HTTP classiques qu'aux connexions WebSocket.
 """
+from urllib.parse import urlsplit
 from typing import Optional
 from datetime import datetime
 from urllib.parse import urlencode
@@ -2100,6 +2101,21 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
 
 @router.websocket("/cercles/{cercle_id}/ws")
 async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
+    # Defense CSWSH : un navigateur tiers ne doit pas pouvoir ouvrir une
+    # socket vers cette route avec les cookies de la victime. Les clients
+    # natifs peuvent omettre Origin ; dans ce cas on conserve le controle
+    # d'authentification ci-dessous.
+    origin = websocket.headers.get("origin")
+    host = websocket.headers.get("host")
+    if origin:
+        try:
+            origine = urlsplit(origin)
+            if not host or origine.netloc != host or origine.scheme not in {"http", "https"}:
+                await websocket.close(code=4403)
+                return
+        except ValueError:
+            await websocket.close(code=4403)
+            return
     user_id = websocket.session.get("user_id")
     if not user_id:
         # Refuse la connexion avant meme le handshake WebSocket si personne
