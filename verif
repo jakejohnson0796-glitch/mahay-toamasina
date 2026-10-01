@@ -30,7 +30,19 @@ resultat = load_dotenv(chemin_trouve or ".env", verbose=True, override=True)
 print("load_dotenv() a reussi      :", resultat)
 
 print("-" * 60)
-print("DATABASE_URL lu par Python  :", repr(os.getenv("DATABASE_URL")))
-print("SUPABASE_URL lu par Python  :", repr(os.getenv("SUPABASE_URL")))
-print("GROQ_API_KEY lu par Python  :", repr(os.getenv("GROQ_API_KEY")))
+def _masquer_secret(valeur: str | None) -> str:
+    if not valeur:
+        return "<absent>"
+    if valeur.startswith(("postgresql://", "postgres://")):
+        from urllib.parse import urlsplit, urlunsplit
+        morceaux = urlsplit(valeur)
+        if morceaux.password:
+            identifiants = f"{morceaux.username}:****" if morceaux.username else "****"
+            hote = f"{morceaux.hostname}:{morceaux.port}" if morceaux.port else (morceaux.hostname or "")
+            return urlunsplit((morceaux.scheme, f"{identifiants}@{hote}", morceaux.path, morceaux.query, morceaux.fragment))
+    return valeur[:4] + "****" if len(valeur) > 4 else "****"
+
+print("DATABASE_URL lu par Python  :", _masquer_secret(os.getenv("DATABASE_URL")))
+print("SUPABASE_URL lu par Python  :", _masquer_secret(os.getenv("SUPABASE_URL")))
+print("GROQ_API_KEY lu par Python  :", _masquer_secret(os.getenv("GROQ_API_KEY")))
 print("=" * 60)
