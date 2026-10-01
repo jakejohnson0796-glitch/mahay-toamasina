@@ -41,13 +41,12 @@ app = FastAPI(title="Gasy Mahay — Madagascar")
 # session valide pour n'importe quel compte, y compris admin, s'il etait
 # oublie tel quel sur un vrai deploiement. On echoue bruyamment plutot
 # que de demarrer silencieusement dans un etat dangereux.
-if parametres.environnement == "production" and parametres.session_secret_key == "a-changer-en-production":
-    raise RuntimeError(
-        "SESSION_SECRET_KEY est encore la valeur de demo alors que "
-        "ENVIRONNEMENT=production. Genere une vraie valeur (python -c "
-        "\"import secrets; print(secrets.token_hex(32))\") et definis-la "
-        "dans les variables d'environnement de l'hebergeur avant de redeployer."
-    )
+if parametres.environnement == "production":
+    secret = parametres.session_secret_key
+    if not secret or secret == "a-changer-en-production" or len(secret) < 64:
+        raise RuntimeError("SESSION_SECRET_KEY doit etre une cle aleatoire d'au moins 64 caracteres en production.")
+    if not (parametres.supabase_url and parametres.supabase_service_key):
+        raise RuntimeError("SUPABASE_URL et SUPABASE_SERVICE_KEY sont obligatoires en production : le stockage local serait ephemere.")
 
 # La protection des actions admin doit s'executer APRES SessionMiddleware
 # afin de pouvoir lire request.session. Comme Starlette execute les middlewares
@@ -145,8 +144,10 @@ async def au_demarrage() -> None:
     # puisse atteindre le serveur et valider son health check sans attendre
     # l'import du referentiel, le seed et la maintenance des cercles.
     print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
-    initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
+    initialisation = asyncio.create_task(_initialisation_donnees_surveillee())
     app.state.initialisation_donnees = initialisation
+    app.state.initialisation_donnees_ok = False
+    app.state.initialisation_donnees_erreur = None
 
     # Render Free ne fournit pas de Background Worker gratuit. Lorsque Redis
     # est configure, la boucle IA tourne donc dans un thread interne au Web
@@ -192,6 +193,18 @@ async def arreter_worker_ia() -> None:
             print("[DEBUG AI QUEUE] Worker IA encore actif apres 20s; arret du Web.")
         else:
             print("[DEBUG AI QUEUE] Worker IA arrete proprement.")
+
+
+async def _initialisation_donnees_surveillee() -> None:
+    try:
+        await asyncio.to_thread(_initialiser_donnees_apres_demarrage)
+    except Exception as erreur:
+        app.state.initialisation_donnees_ok = False
+        app.state.initialisation_donnees_erreur = f"{type(erreur).__name__}: {erreur}"
+        print(f"[ERREUR DATABASE] Initialisation post-demarrage echouee : {type(erreur).__name__}: {erreur}", flush=True)
+        return
+    app.state.initialisation_donnees_ok = True
+    app.state.initialisation_donnees_erreur = None
 
 
 def _initialiser_donnees_apres_demarrage() -> None:
@@ -300,13 +313,13 @@ def _initialiser_donnees_apres_demarrage() -> None:
 
 @app.get("/health")
 def health() -> dict:
-    """Endpoint de liveness avec etat statique du worker IA inline."""
+    """Expose le liveness et l'etat de l'initialisation des donnees."""
     thread = getattr(app.state, "ai_worker_thread", None)
-    return {
-        "status": "ok",
-        "ai_worker_configured": bool(parametres.redis_url),
-        "ai_worker_alive": bool(thread and thread.is_alive()),
-    }
+    initialisation = getattr(app.state, "initialisation_donnees", None)
+    ok = getattr(app.state, "initialisation_donnees_ok", False)
+    erreur = getattr(app.state, "initialisation_donnees_erreur", None)
+    statut = "degraded" if erreur else "ok" if ok else "starting" if initialisation and not initialisation.done() else "degraded"
+    return {"status": statut, "ai_worker_configured": bool(parametres.redis_url), "ai_worker_alive": bool(thread and thread.is_alive()), "initialisation_donnees_ok": ok, "initialisation_donnees_erreur": erreur}
 
 
 @app.get("/robots.txt", include_in_schema=False)
