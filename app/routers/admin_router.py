@@ -920,7 +920,9 @@ async def supprimer_utilisateur(
                 ))
         else:
             _cascade_supprimer_cercle(session, cercle.id)
-    session.commit()
+    # Pas de commit intermediaire : la suppression/reattribution des
+    # cercles reste dans la meme transaction DB que la suppression du compte.
+    session.flush()
 
     # --- 2. Cours possedes : reattribution ou suppression, au choix ---
     for cours in session.exec(select(Cours).where(Cours.professeur_id == utilisateur_id)).all():
@@ -930,7 +932,7 @@ async def supprimer_utilisateur(
             session.add(cours)
         else:
             _cascade_supprimer_cours(session, cours.id)
-    session.commit()
+    session.flush()
 
     # --- 3. Contenu personnel de la cible dans les espaces des AUTRES ---
 
