@@ -173,3 +173,46 @@ def test_file_ia_prend_une_tache_par_id_redis(monkeypatch):
     assert tache.id == tache_id
     assert tache.statut == StatutTacheIA.EN_COURS
 
+
+
+
+def test_file_ia_tuteur_idempotente(monkeypatch):
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    monkeypatch.setattr(ai_queue, "engine", engine)
+
+    from app.models import SessionTuteur
+
+    with Session(engine) as session:
+        utilisateur = Utilisateur(
+            nom="TuteurTest",
+            telephone="690000004",
+            mot_de_passe_hash="hash",
+        )
+        session.add(utilisateur)
+        session.commit()
+        session.refresh(utilisateur)
+
+        session_tuteur = SessionTuteur(
+            utilisateur_id=utilisateur.id,
+            question="Explique la comptabilite generale.",
+            explication="Explication",
+            exemple="Exemple",
+            exercice="Exercice",
+            correction="Correction",
+        )
+        session.add(session_tuteur)
+        session.commit()
+        session.refresh(session_tuteur)
+
+        first = ai_queue.planifier_verification_tuteur(session_tuteur.id)
+        second = ai_queue.planifier_verification_tuteur(session_tuteur.id)
+
+        assert first == second
+        tache = session.get(TacheIA, first)
+        assert tache is not None
+        assert tache.session_tuteur_id == session_tuteur.id
+        assert tache.tentative_quiz_id is None
