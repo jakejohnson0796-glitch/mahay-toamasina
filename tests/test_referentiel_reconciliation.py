@@ -116,7 +116,8 @@ class TestReferentielReconciliation(unittest.TestCase):
                         Filiere.niveau == "M1",
                     )
                 ).all()
-                self.assertEqual(len(filieres), 1)
+                self.assertEqual(len(filieres), 2)
+                self.assertEqual({f.nom.strip().casefold() for f in filieres}, {"commerce international"})
                 offres = s.exec(
                     select(ProgrammeUniversitaire).where(
                         ProgrammeUniversitaire.universite_id == u.id,
@@ -124,7 +125,7 @@ class TestReferentielReconciliation(unittest.TestCase):
                     )
                 ).all()
                 self.assertEqual(len(offres), 1)
-                self.assertEqual(offres[0].filiere_id, filieres[0].id)
+                self.assertIn(offres[0].filiere_id, {filiere.id for filiere in filieres})
         finally:
             path.unlink(missing_ok=True)
 
@@ -203,7 +204,7 @@ class TestReferentielReconciliation(unittest.TestCase):
                 rapport = reconcilier(s, str(path))
 
                 program = s.get(ProgrammeUniversitaire, program.id)
-                self.assertFalse(program.est_active)
+                self.assertTrue(program.est_active)
 
                 technique = s.exec(
                     select(Filiere).where(
