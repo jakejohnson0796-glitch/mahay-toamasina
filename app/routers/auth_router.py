@@ -124,7 +124,11 @@ def inscription(
             request, "register.html",
             _contexte_formulaire_inscription(session, f"Le nom est obligatoire et limite a {LONGUEUR_MAX_NOM} caracteres."),
         )
-    if len(mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE or len(mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE:
+    if (
+        len(mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE
+        or len(mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE
+        or len(mot_de_passe.encode("utf-8")) > 72
+    ):
         return templates.TemplateResponse(
             request, "register.html",
             _contexte_formulaire_inscription(session, f"Le mot de passe doit contenir entre {LONGUEUR_MIN_MOT_DE_PASSE} et {LONGUEUR_MAX_MOT_DE_PASSE} caracteres."),
@@ -229,7 +233,9 @@ def inscription(
     notifier_nouvelle_inscription_aux_admins(utilisateur, session)
     session.commit()
 
+    _rotation_session_authentifiee(request)
     request.session["user_id"] = utilisateur.id
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         return RedirectResponse("/bienvenue", status_code=303)
     return RedirectResponse("/", status_code=303)
@@ -474,7 +480,11 @@ def verifier_code_reinitialisation(
     if not user_id:
         return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
 
-    if len(nouveau_mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE or len(nouveau_mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE:
+    if (
+        len(nouveau_mot_de_passe) < LONGUEUR_MIN_MOT_DE_PASSE
+        or len(nouveau_mot_de_passe) > LONGUEUR_MAX_MOT_DE_PASSE
+        or len(nouveau_mot_de_passe.encode("utf-8")) > 72
+    ):
         return templates.TemplateResponse(
             request, "mot_de_passe_oublie_code.html",
             {"erreur": f"Le nouveau mot de passe doit faire au moins {LONGUEUR_MIN_MOT_DE_PASSE} caracteres."},
