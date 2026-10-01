@@ -111,5 +111,8 @@ class Parametres:
     smtp_mot_de_passe: str = field(default_factory=lambda: os.getenv("SMTP_MOT_DE_PASSE", ""))
     smtp_from_email: str = field(default_factory=lambda: os.getenv("SMTP_FROM_EMAIL", ""))
 
+    # Fuseau local pour les champs datetime-local. Les dates persistantes sont converties en UTC avant stockage.
+    timezone: str = field(default_factory=lambda: os.getenv("APP_TIMEZONE", "Indian/Antananarivo"))
+
 
 parametres = Parametres()
