@@ -52,3 +52,32 @@ def test_rejects_missing_explanation():
     data[0]["explication"] = ""
     with pytest.raises(QuizValidationError):
         valider_questions(data, expected_count=1)
+
+def test_corriger_refuse_une_tentative_deja_soumise():
+    from datetime import datetime
+    tentative = TentativeQuiz(
+        id=12,
+        utilisateur_id=1,
+        matiere="Maths",
+        niveau="L1",
+        difficulte="Facile",
+        nb_questions=1,
+        questions_json=json.dumps(_questions()),
+        date_soumission=datetime.utcnow(),
+    )
+
+    class SessionDejaSoumise:
+        def get_bind(self):
+            class Dialect:
+                name = "sqlite"
+            class Bind:
+                dialect = Dialect()
+            return Bind()
+        def exec(self, _query):
+            class Result:
+                def first(self):
+                    return tentative
+            return Result()
+
+    with pytest.raises(QuizValidationError, match="deja ete soumise"):
+        corriger(SessionDejaSoumise(), tentative, [1])
