@@ -24,5 +24,6 @@ qrcode==7.4.2                 # QR code d'activation 2FA (aucun service externe)
 
 pytest==8.3.5
 httpx==0.28.1
+redis==8.1.0                # rate-limiting partage entre instances (REDIS_URL)
 
 snowballstemmer==3.1.1        # racines morphologiques françaises pour le fallback SQLite/dev
