@@ -25,7 +25,29 @@ from starlette.responses import Response
 #   base.html.
 STYLE_ATTR_HASHES = "'sha256-a4tj1WXEmGqOxBANAF3uzawGDJwaj6X3GnmrjTUzhuc=' 'sha256-Ughnv5r8tK3/oHB3p8YQZ+vF725quB1RPhCqKGS/KTQ=' 'sha256-Tl6ZzXZTB/MAx8vGpiV6YbVR9OAUW+8yizzHJpJSSjw=' 'sha256-voJlexhB0IHK5kpJNt+JEr/9VVuMFBi2jDWsQEncIQw=' 'sha256-keBQY9zgQt16YPxO1OK2jYKUlePIU46VUoBwh/6Ip8o=' 'sha256-g6wc7vdud1aSmTLcpHjWXR0Wfvqff5mhy00lnnvIu5c=' 'sha256-jHI4GIJKbnQmioE+3fs6bBjltegdPExljL8+MHRxezo=' 'sha256-iDEby3cN6+r/ONIYfwy6Vk9669LI3j90zW2aW2ZmIzM=' 'sha256-mwyReBrBoNNQC0S1A8H2a2KaJVdunFXahDAA6xEWGCs=' 'sha256-4S4hNIn3R4fXu51NbtGixVbuBtMyv/xuWa9dnJ/K1zY=' 'sha256-kzZGHxlHI4lsz7h7xxPRFS01Nt/zW+V4fwP/Vkc46Fo=' 'sha256-GrOBwjKCuRTKrpFmQB5wym96MqxClFE3CjLoHbfUBBM=' 'sha256-9i5NxKLKkwjpZqOXGv7/Spp3mnWvN3DpF9402n0BcD0=' 'sha256-SdF6c8hZUCcetlafgmoE09DHKtasJgGYY6CWnA4DRC8=' 'sha256-02ObSVUox8Jemge0oiQ9C1xwK2uZrOMeqo8pLzcnFpU=' 'sha256-t0ERT1oxM/9A3taCws2P0LClidnwfvk0GCUBPAmPWIg=' 'sha256-IPHRyIwrUqeimQx4teFsDisoJYpGW/pLBhVCd3aHuLQ=' 'sha256-0+tUz0tLThbIy58eHWpQ9JBb/WTbkv/CyQn6FHjsmsU=' 'sha256-ELp1PPOc4V6fxTRIKOBfchPkiEl8kTmMfzr5gcHusYQ=' 'sha256-EO4NFfc7Iaif2gfVTFQER5m59dxVaWmkttwJ1GBAj3E=' 'sha256-EpRRn8UTeRTYku6zLrvPMbhfG04OfGpeku3jtDP/CLc=' 'sha256-UnTLbZnilmadVpG538KvvXqGulNXBnUb4zJoVjh8e7s=' 'sha256-+YerF4rXCYbDgnnRMoQBkNGzV2l6M6PROF3pqAxVkjY=' 'sha256-+rJRgHVNkSfEMpN4X3iKvVgfgAc6gOGutYmhxw79pSo=' 'sha256-vGaYnAV+FUX0rc8iCzhw19uXSfIwOSTd9hSi2z3p+cE=' 'sha256-nFJ+3/yrhOnSCrBolwPAUiQEtW1aoa7C2PTPVOP3MZ4=' 'sha256-pZrZ2Hlmv9UF15OvXYYmmoYFezxI9b1g1mJ5jAmb4sw=' 'sha256-YlOHamSaY0ai4QEZYjD+9Mf+UG1KI007SUtO6nnQNKQ=' 'sha256-dUjjlVOE1OUypKdELrQGXTant6MMiHSxEgfb1O+L0Eg=' 'sha256-BFxzLteMCPy4uHerpLQ7LxjbcaQ3xmZbltWeONHJBcs=' 'sha256-8Aq9Gk0LmikIIN68sxw+TSnnz9vYLLSwC5b/p18ytlk=' 'sha256-OJZfmxjKcyB8jYAH0fsVx8gg9uQT/wo70OhSWBGrI2Y=' 'sha256-aCJ6kSmQKVey0qNHti04Dz6Y8tyggd41eWs9T3+Ivic=' 'sha256-m3XTiIF20AAl/JoLbhZCLpVDCCo+QhhIqpqq9SZ30Dk=' 'sha256-ZMe51dTDf5Kw4XJzW6Q5d9fHG0n1Gp6cjO2Fdefr6bU=' 'sha256-ZNXnT2QfUqVf08oeFA6ruXeuOClPGEdNRaLrbwL/pYY=' 'sha256-BxfTixbzWASTwa9U70ecq+3c7G9Kka/BOPGy+5yUsro=' 'sha256-zncCahfL9QsEBrV4VD2l8O7sCCVPJT8+NepxD5sKeyI=' 'sha256-x/vT5vgUfR8TXmeXIl13BnqPFkTq9NwtO5NMNFGyJPU=' 'sha256-8l1h+HyFO2w7AFGmcX/h/LKG0bGH1PBa5QThd/kzTHk=' 'sha256-0EZqoz+oBhx7gF4nvY2bSqoGyy4zLjNF+SDQXGp/ZrY=' 'sha256-RNZBzkfVG/aVUvmwKQU7S1mZPIi8wfrAEiYo8A/P4KU=' 'sha256-z+1notcFA5+aTqTNLqSfIJI/ZTVrqbGnhnG68JlUJkQ=' 'sha256-fStU1NpIX5UjQN6fmHPDuLpaXG1BWyVT0hLkGeml/3I=' 'sha256-O6lUOwqJC7VnZwEb/ywPLwTjhK59NwOSnR4OAP7c92A=' 'sha256-O0r7xEOHIDP+4tsRViXednAQJXB15GGVC9+hZMTHQbk=' 'sha256-aeK9Qu/HK2d3ha2s3E6WFhUsvUUw5y29B7+k5s3+7Zs=' 'sha256-RCsCPlU52CtIRNNS7jAHKQnZEcAOjjd8Oeo0MPekLSw=' 'sha256-xrueQXnNjuluIBugmE2gl2YH0SBs74mx0xrgOC1otsY=' 'sha256-lxxbj+uRNOp6YC3gUGJeYbIeZvpgr8rLmyIdAe1lKx0=' 'sha256-SO72E1ozudjPIbowJR6fCBNOkyQHbVKMe9GxoQykopA=' 'sha256-Juw/UkSCVa2Xb3LM4V6l/FOy1AwhNJH3yYb+qpUQBqA=' 'sha256-YHAhTw3V41AYTax+5Uqi/wrp10QhgK3x5cvrusJcObY=' 'sha256-fKO2R0JtjzsXY0/57kxLN21RbYfs+fJZwkx6030/BN4=' 'sha256-mDadwrEfiIpWEKgqPnbUR6iErjFtn6c4DpzE1wAdXgg=' 'sha256-wCGyS/En2s9v9SKpNV47cV8z2c21aGL6TjI/x7xKY5I=' 'sha256-yf2CHWERaOiGm6dmAI8XtYKK7HszIriflsI/ZCviwxI=' 'sha256-NXTqLL8/I59UmOnV7tNjFWxURPt85KaZpa7nT1w/lDE=' 'sha256-5LQYgeq6PKXbnsnp014mEf3owoJ7zfTNBvW39+lX98M=' 'sha256-NeVcGVDZiJwdBoIlkevgcp0HS4lFJwtycjt8t5R67pQ=' 'sha256-qFxhV3M2fLROpszOq8NePWwYh7whaaBxJhWiEQG+bhY=' 'sha256-j3eICw/WNfqJ2hNHuLsS3Fx+BaUnvHVqHtk7+8P3WJ8=' 'sha256-c0rKpHyNBKv6WMmSdvxfaFk8BpUkrl21bObZ9eSzvsc=' 'sha256-lUYCxiUFsaokE8PelRF2iPVAtvYcACNao0xnW04g1n0=' 'sha256-SBwPDxqm+Uda71AJSTiMArAvBrup4PN6a0nyC/eKLjU=' 'sha256-jPVtngIzoWkjJVP2byeK3/iiFlTVNiI0RB7nS5Wucyo=' 'sha256-vfMrP+9ENatXjfOvPnjF44QawYxXd7oWPvQmM84orkM=' 'sha256-OmHwQWeD520xkkbNnz/eslKrrEaO5V+VBNHQvfzy5iE='"
 
+def _origine(url: str) -> str:
+    if not url:
+        return ""
+    try:
+        morceaux = urlsplit(url)
+        if morceaux.scheme and morceaux.netloc:
+            return f"{morceaux.scheme}://{morceaux.netloc}"
+    except ValueError:
+        pass
+    return ""
+
+
 def _construire_csp(nonce: str) -> str:
+    supabase_origin = _origine(parametres.supabase_url)
+    livekit_origin = _origine(parametres.livekit_url)
+
+    connect_origins = " ".join(
+        origine for origine in (supabase_origin, livekit_origin) if origine
+    )
+    img_origins = " ".join(
+        origine for origine in (supabase_origin,) if origine
+    )
+
     return (
         "default-src 'self'; "
         "script-src 'self' 'nonce-" + nonce + "' 'strict-dynamic' https://cdn.jsdelivr.net; "
@@ -33,12 +55,8 @@ def _construire_csp(nonce: str) -> str:
         "style-src 'self' 'nonce-" + nonce + "' https://fonts.googleapis.com " + STYLE_ATTR_HASHES + "; "
         "style-src-attr 'unsafe-hashes' " + STYLE_ATTR_HASHES + "; "
         "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data: https://*.supabase.co; "
-        "connect-src 'self' " +
-        ("https://*.supabase.co " if parametres.supabase_url else "") +
-        ((urlsplit(parametres.livekit_url).scheme + "://" + urlsplit(parametres.livekit_url).netloc + " ")
-            if parametres.livekit_url else "") +
-        "; "
+        "img-src 'self' data: " + img_origins + "; "
+        "connect-src 'self' " + connect_origins + "; "
         "worker-src 'self' blob:; "
         "media-src 'self' blob:; "
         "object-src 'none'; "
