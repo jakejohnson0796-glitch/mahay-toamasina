@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Request, Depends, Form
 from typing import Optional
 from fastapi.responses import RedirectResponse
@@ -16,6 +17,7 @@ from .. import quiz as quiz_module
 from .. import gamification, ai_queue
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 NB_HISTORIQUE_AFFICHE = 10
 
