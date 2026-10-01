@@ -12,7 +12,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import base64
 import hashlib
 import secrets
+from urllib.parse import urlsplit
 from starlette.requests import Request
+from .config import parametres
 from starlette.responses import Response
 
 # Content-Security-Policy stricte : nonce par requete pour les scripts/styles
@@ -32,7 +34,11 @@ def _construire_csp(nonce: str) -> str:
         "style-src-attr 'unsafe-hashes' " + STYLE_ATTR_HASHES + "; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https://*.supabase.co; "
-        "connect-src 'self' ws: wss: https://*.supabase.co; "
+        "connect-src 'self' " +
+        ("https://*.supabase.co " if parametres.supabase_url else "") +
+        ((urlsplit(parametres.livekit_url).scheme + "://" + urlsplit(parametres.livekit_url).netloc + " ")
+            if parametres.livekit_url else "") +
+        "; "
         "worker-src 'self' blob:; "
         "media-src 'self' blob:; "
         "object-src 'none'; "
