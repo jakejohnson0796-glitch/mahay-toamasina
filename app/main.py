@@ -153,8 +153,10 @@ async def au_demarrage() -> None:
     # puisse atteindre le serveur et valider son health check sans attendre
     # l'import du referentiel, le seed et la maintenance des cercles.
     print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
-    initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
+    initialisation = asyncio.create_task(_initialisation_donnees_surveillee())
     app.state.initialisation_donnees = initialisation
+    app.state.initialisation_donnees_ok = False
+    app.state.initialisation_donnees_erreur = None
 
     # Render Free ne fournit pas de Background Worker gratuit. Lorsque Redis
     # est configure, la boucle IA tourne donc dans un thread interne au Web
@@ -308,12 +310,14 @@ def _initialiser_donnees_apres_demarrage() -> None:
 
 @app.get("/health")
 def health() -> dict:
-    """Endpoint de liveness avec etat statique du worker IA inline."""
+    """Endpoint de liveness + etat de l'initialisation post-demarrage."""
     thread = getattr(app.state, "ai_worker_thread", None)
     return {
         "status": "ok",
         "ai_worker_configured": bool(parametres.redis_url),
         "ai_worker_alive": bool(thread and thread.is_alive()),
+        "initialisation_donnees_ok": getattr(app.state, "initialisation_donnees_ok", False),
+        "initialisation_donnees_erreur": getattr(app.state, "initialisation_donnees_erreur", None),
     }
 
 
