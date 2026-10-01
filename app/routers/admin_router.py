@@ -91,7 +91,7 @@ def configurer_mot_de_passe_confirmation_admin(
     confirmation = confirmation_nouveau_mot_de_passe or ""
     actuel = mot_de_passe_confirmation_actuel or ""
 
-    if len(nouveau) < 12:
+    if len(nouveau) < 12 or len(nouveau.encode("utf-8")) > 72:
         return RedirectResponse(f"{destination}?erreur=longueur{erreur_suffixe}", status_code=303)
 
     if nouveau != confirmation:
