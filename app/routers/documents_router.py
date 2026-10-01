@@ -248,6 +248,17 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
 
+    # Un document rattache a un cercle reste prive meme pour un utilisateur
+    # Premium. Le quiz doit respecter la meme frontiere que le telechargement.
+    if document.cercle_id is not None:
+        if not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+
+    if limite_depassee(f"quiz-document:user:{utilisateur.id}", 6, 3600) or limite_depassee(
+        f"quiz-document:document:{document.id}", 20, 3600
+    ):
+        return RedirectResponse("/documents?erreur=trop_de_quiz_document", status_code=303)
+
     with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
         texte = extraire_texte(str(chemin_local))
 
