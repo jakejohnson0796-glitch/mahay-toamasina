@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from app import onboarding
@@ -63,7 +65,7 @@ def test_onboarding_se_termine_apres_trois_actions():
 def test_onboarding_semaine_marque_les_actions_realisees():
     _, session = _session()
     utilisateur = _user(session)
-    onboarding.assurer_demarrage(session, utilisateur)
+    debut = onboarding.assurer_demarrage(session, utilisateur)
 
     session.add(
         ActionGamification(
@@ -72,6 +74,7 @@ def test_onboarding_semaine_marque_les_actions_realisees():
             source_type="test",
             source_key="quiz-1",
             points=25,
+            date_creation=debut + timedelta(days=1, minutes=1),
         )
     )
     session.commit()
