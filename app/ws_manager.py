@@ -13,6 +13,7 @@ pub/sub partage entre process pour diffuser les messages — par exemple
 Supabase Realtime en ecoutant les insertions sur la table message_cercle
 (deja postgres si DATABASE_URL pointe vers Supabase), ou Redis pub/sub.
 """
+import asyncio
 from collections import defaultdict
 from typing import Dict, List
 
@@ -45,14 +46,22 @@ class GestionnaireConnexions:
         return [{"utilisateur_id": uid, "nom": nom} for uid, nom in vus.items()]
 
     async def diffuser(self, cercle_id: int, donnees: dict) -> None:
-        connexions_mortes = []
-        for connexion in list(self.connexions_par_cercle.get(cercle_id, {}).keys()):
+        connexions = list(self.connexions_par_cercle.get(cercle_id, {}).keys())
+
+        async def envoyer(connexion: WebSocket):
             try:
-                await connexion.send_json(donnees)
+                await asyncio.wait_for(connexion.send_json(donnees), timeout=2.0)
             except Exception:
-                connexions_mortes.append(connexion)
-        for connexion in connexions_mortes:
-            self.deconnecter(cercle_id, connexion)
+                return connexion
+            return None
+
+        resultats = await asyncio.gather(
+            *(envoyer(connexion) for connexion in connexions),
+            return_exceptions=False,
+        )
+        for connexion in resultats:
+            if connexion is not None:
+                self.deconnecter(cercle_id, connexion)
 
     async def diffuser_presence(self, cercle_id: int) -> None:
         """A appeler apres chaque connexion/deconnexion : renvoie la liste
