@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Form, BackgroundTasks
+from fastapi import APIRouter, Request, Depends, Form
 from typing import Optional
 from fastapi.responses import RedirectResponse
 from fastapi.responses import JSONResponse
@@ -13,7 +13,7 @@ from ..models import SessionTuteur, ProgressionNotion
 from .. import ai_quiz
 from ..rate_limit import limite_depassee
 from .. import quiz as quiz_module
-from .. import gamification
+from .. import gamification, ai_queue
 
 router = APIRouter()
 
@@ -50,7 +50,6 @@ def page_tuteur(request: Request, session: Session = Depends(get_session)):
 @router.post("/tuteur/demander")
 def demander_tuteur(
     request: Request,
-    background_tasks: BackgroundTasks,
     question: str = Form(...),
     progression_id: Optional[int] = Form(None),
     session: Session = Depends(get_session),
@@ -106,9 +105,11 @@ def demander_tuteur(
 
     # La premiere reponse est livree sans attendre Qwen + Gemini + arbitre.
     # La verification multi-modeles continue apres la reponse HTTP.
-    background_tasks.add_task(
-        ai_quiz.verifier_session_tuteur_en_arriere_plan,
+    tache_ia_id = ai_queue.planifier_verification_tuteur(session_tuteur.id)
+    logger.info(
+        "Route /tuteur/demander session=%s tache_ia=%s.",
         session_tuteur.id,
+        tache_ia_id,
     )
 
     return RedirectResponse(f"/tuteur/{session_tuteur.id}", status_code=303)
