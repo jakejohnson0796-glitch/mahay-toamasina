@@ -993,7 +993,11 @@
       corps.reponses.forEach(function (m) { corpsPanneauThread.appendChild(creerBulleThread(m)); });
       appliquerPointsPresence();
     } catch (erreur) {
-      corpsPanneauThread.innerHTML = '<p class="erreur">' + erreur.message + "</p>";
+      corpsPanneauThread.textContent = "";
+      const messageErreur = document.createElement("p");
+      messageErreur.className = "erreur";
+      messageErreur.textContent = erreur.message || "Une erreur est survenue.";
+      corpsPanneauThread.appendChild(messageErreur);
     }
   }
 
@@ -1109,7 +1113,11 @@
         corpsPanneauProfil.appendChild(boutonMentionner);
       }
     } catch (erreur) {
-      corpsPanneauProfil.innerHTML = '<p class="erreur">' + erreur.message + "</p>";
+      corpsPanneauProfil.textContent = "";
+      const messageErreur = document.createElement("p");
+      messageErreur.className = "erreur";
+      messageErreur.textContent = erreur.message || "Une erreur est survenue.";
+      corpsPanneauProfil.appendChild(messageErreur);
     }
   }
 
