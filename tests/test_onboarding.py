@@ -72,6 +72,7 @@ def test_onboarding_semaine_marque_les_actions_realisees():
             source_type="test",
             source_key="quiz-1",
             points=25,
+            date_creation=utilisateur.onboarding_commence_le + __import__("datetime").timedelta(days=1),
         )
     )
     session.commit()
