@@ -386,6 +386,12 @@ def signaler_question_quiz(
     if not tentative or tentative.date_soumission is None:
         return RedirectResponse("/quiz", status_code=303)
 
+    try:
+        questions = quiz_module.questions(tentative)
+    except (ValueError, quiz_module.QuizValidationError) as exc:
+        raise HTTPException(status_code=500, detail="Quiz stocke invalide.") from exc
+    if not 0 <= index_question < len(questions):
+        raise HTTPException(status_code=400, detail="Question invalide.")
     quiz_module.signaler_question(session, tentative_id, index_question, utilisateur.id, motif)
 
     return RedirectResponse(f"/quiz/{tentative_id}/resultat?signale=1", status_code=303)
