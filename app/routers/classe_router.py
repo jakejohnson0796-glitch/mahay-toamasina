@@ -14,12 +14,14 @@ prochaine etape explicitement separee de celle-ci.
 import secrets
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 from sqlmodel import Session, select
+from sqlalchemy import update
 
 from ..database import get_session, engine
 from ..templating import templates
@@ -385,7 +387,11 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    seance = session.get(Seance, seance_id)
+    dialecte = session.get_bind().dialect.name
+    requete_seance = select(Seance).where(Seance.id == seance_id)
+    if dialecte == "postgresql":
+        requete_seance = requete_seance.with_for_update()
+    seance = session.exec(requete_seance).first()
     if not seance:
         return RedirectResponse("/classe", status_code=303)
     cours = session.get(Cours, seance.cours_id)
@@ -402,8 +408,16 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     # Nouvelle ligne de presence a chaque "rejoindre" (permet de mesurer
     # plusieurs allers-retours dans la meme seance) — voir terminer_seance
     # et quitter_seance pour la fermeture/le cumul de duree.
-    session.add(PresenceSeance(seance_id=seance_id, utilisateur_id=utilisateur.id))
-    session.commit()
+    presence_ouverte = session.exec(
+        select(PresenceSeance)
+        .where(PresenceSeance.seance_id == seance_id)
+        .where(PresenceSeance.utilisateur_id == utilisateur.id)
+        .where(PresenceSeance.heure_sortie == None)  # noqa: E711
+        .order_by(PresenceSeance.heure_entree.desc())
+    ).first()
+    if not presence_ouverte:
+        session.add(PresenceSeance(seance_id=seance_id, utilisateur_id=utilisateur.id))
+        session.commit()
 
     return RedirectResponse(f"/classe/seances/{seance_id}/salle", status_code=303)
 
@@ -921,8 +935,12 @@ def creer_devoir(
     date_limite_parsee = None
     if date_limite:
         try:
-            date_limite_parsee = datetime.fromisoformat(date_limite)
-        except ValueError:
+            date_locale = datetime.fromisoformat(date_limite)
+            fuseau = ZoneInfo(parametres.timezone)
+            date_limite_parsee = date_locale.replace(tzinfo=fuseau).astimezone(
+                ZoneInfo("UTC")
+            ).replace(tzinfo=None)
+        except (ValueError, KeyError):
             date_limite_parsee = None
 
     devoir = Devoir(cours_id=cours_id, titre=titre, description=description or None, date_limite=date_limite_parsee)
@@ -1024,6 +1042,7 @@ def rendre_devoir(
         select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id, RenduDevoir.utilisateur_id == utilisateur.id)
     ).first()
     if rendu_existant:
+        ancien_chemin = rendu_existant.chemin_fichier
         rendu_existant.chemin_fichier = chemin_stocke
         rendu_existant.nom_fichier_original = fichier.filename or "rendu"
         rendu_existant.commentaire = commentaire or None
@@ -1038,6 +1057,12 @@ def rendre_devoir(
             nom_fichier_original=fichier.filename or "rendu", commentaire=commentaire or None,
         ))
     session.commit()
+
+    if rendu_existant and ancien_chemin and ancien_chemin != chemin_stocke:
+        # Le nouvel upload est deja durablement reference en base avant de
+        # supprimer l'ancien objet : en cas d'echec d'upload, l'ancien reste
+        # intact ; apres succes, il ne sert plus a rien.
+        supprimer_fichier(ancien_chemin)
 
     return RedirectResponse(f"/classe/devoirs/{devoir_id}?rendu=1", status_code=303)
 
