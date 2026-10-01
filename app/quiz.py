@@ -143,6 +143,8 @@ def mettre_a_jour_progression_notion(
     tentative: TentativeQuiz,
     questions_quiz: List[dict],
     reponses_soumises: List[Optional[int]],
+    *,
+    commit: bool = True,
 ) -> None:
     """Met a jour la memoire d'apprentissage apres un quiz termine et
     recalcule la prochaine revision de chaque notion rencontree."""
@@ -214,7 +216,8 @@ def mettre_a_jour_progression_notion(
         )
         session.add(progression)
 
-    session.commit()
+    if commit:
+        session.commit()
 
 
 def plan_revision_du_jour(
@@ -261,9 +264,22 @@ def notions_a_revoir(
 
 
 def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List[Optional[int]]) -> TentativeQuiz:
-    """Calcule le score en comparant les reponses soumises aux bonnes
-    reponses, et fige la tentative (elle devient un resultat d'historique
-    consultable, plus modifiable)."""
+    """Corrige une tentative une seule fois, meme sous double soumission.
+    
+    PostgreSQL verrouille la ligne pendant la correction. SQLite reste
+    protege par la verification d'etat dans la transaction, mais le chemin
+    de production est PostgreSQL.
+    """
+    dialecte = session.get_bind().dialect.name
+    requete = select(TentativeQuiz).where(TentativeQuiz.id == tentative.id)
+    if dialecte == "postgresql":
+        requete = requete.with_for_update()
+    tentative = session.exec(requete).first()
+    if tentative is None:
+        raise QuizValidationError("Tentative introuvable.")
+    if tentative.date_soumission is not None:
+        raise QuizValidationError("Cette tentative a deja ete soumise.")
+
     qs = questions(tentative)
     if len(reponses_soumises) != len(qs):
         raise QuizValidationError("Le nombre de reponses ne correspond pas au quiz.")
@@ -279,9 +295,12 @@ def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List
     tentative.score = score
     tentative.date_soumission = datetime.utcnow()
     session.add(tentative)
+    # La progression est mise a jour dans la meme transaction logique.
+    mettre_a_jour_progression_notion(
+        session, tentative, qs, reponses_soumises, commit=False
+    )
     session.commit()
     session.refresh(tentative)
-    mettre_a_jour_progression_notion(session, tentative, qs, reponses_soumises)
     return tentative
 
 
