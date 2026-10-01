@@ -229,8 +229,14 @@ class TestCorrespondanceCercle(unittest.TestCase):
                 filiere_id=autre_filiere.id,
                 est_active=True,
             ))
-            # Aucun programme Toamasina pour la filiere locale : ce lien distant
-            # ne doit pas fabriquer une offre Toamasina.
+            # Il existe une offre Toamasina pour un autre parcours :
+            # cela force le referentiel local a exiger une offre explicite
+            # pour la filiere testee. Le lien distant ne doit pas la creer.
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=self.autre_filiere_id,
+                est_active=True,
+            ))
             filiere_locale = session.get(Filiere, self.filiere_id)
             filiere_locale.niveau = "L3"
             session.add(filiere_locale)
