@@ -3,6 +3,7 @@ Coeur de l'application : consulter, deposer, telecharger des documents,
 et les valider (moderation) avant qu'ils soient publics.
 """
 from pathlib import Path
+from datetime import datetime
 from typing import Optional
 import secrets
 
@@ -148,10 +149,16 @@ def upload_document(
     # document_upload.html) : on revalide quand meme l'appartenance
     # cote serveur, un utilisateur ne pouvant pas fabriquer une requete
     # avec un cercle_id arbitraire auquel il n'appartient pas.
-    if cercle_id is not None and not _est_membre_cercle(session, cercle_id, utilisateur.id):
-        cercle_id = None
+    if cercle_id is not None:
+        cercle = session.get(CercleEtude, cercle_id)
+        if not cercle or not _est_membre_cercle(session, cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     filiere = session.get(Filiere, filiere_id)
+    if not filiere:
+        return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
+    if annee < 1900 or annee > datetime.utcnow().year + 1:
+        return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
     reference = generer_reference(filiere, annee, session)
     # sauvegarder_fichier() choisit local ou Supabase Storage selon la
     # config (.env) — voir app/storage.py. Elle rejette aussi les types de
