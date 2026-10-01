@@ -1248,7 +1248,8 @@ class TacheIA(SQLModel, table=True):
     """
     id: Optional[int] = Field(default=None, primary_key=True)
     type_tache: str = Field(index=True)
-    tentative_quiz_id: int = Field(foreign_key="tentativequiz.id", index=True)
+    tentative_quiz_id: Optional[int] = Field(default=None, foreign_key="tentativequiz.id", index=True)
+    session_tuteur_id: Optional[int] = Field(default=None, foreign_key="sessiontuteur.id", index=True)
     statut: StatutTacheIA = Field(default=StatutTacheIA.EN_ATTENTE, index=True)
     strategie_verification: str = Field(default="standard", index=True)
     score_risque: int = Field(default=0)
@@ -1264,6 +1265,11 @@ class TacheIA(SQLModel, table=True):
             "type_tache",
             "tentative_quiz_id",
             name="uq_tache_ia_type_tentative",
+        ),
+        UniqueConstraint(
+            "type_tache",
+            "session_tuteur_id",
+            name="uq_tache_ia_type_tuteur",
         ),
         Index(
             "ix_tache_ia_file",
