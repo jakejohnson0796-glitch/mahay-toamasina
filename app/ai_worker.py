@@ -14,7 +14,7 @@ import threading
 import time
 from typing import Optional
 
-from . import ai_queue, quiz
+from . import ai_queue, quiz, ai_quiz
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +26,18 @@ PAUSE_APRES_FILE_VIDE_SECONDES = 0.5
 
 def traiter_tache(tache) -> None:
     if tache.type_tache == ai_queue.TYPE_VERIFICATION_QUIZ:
+        if tache.tentative_quiz_id is None:
+            raise RuntimeError("Tache quiz sans tentative_quiz_id.")
         quiz.verifier_tentative_en_arriere_plan(
             tache.tentative_quiz_id,
             strategie=tache.strategie_verification,
         )
+        return
+
+    if tache.type_tache == ai_queue.TYPE_VERIFICATION_TUTEUR:
+        if tache.session_tuteur_id is None:
+            raise RuntimeError("Tache Tuteur sans session_tuteur_id.")
+        ai_quiz.verifier_session_tuteur_en_arriere_plan(tache.session_tuteur_id)
         return
 
     raise RuntimeError(f"Type de tache IA inconnu: {tache.type_tache}")
@@ -97,16 +105,18 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
                 continue
 
             print(
-                f"[AI WORKER] Traitement tache={tache.id} quiz={tache.tentative_quiz_id} "
+                f"[AI WORKER] Traitement tache={tache.id} type={tache.type_tache} "
+f"quiz={tache.tentative_quiz_id} tuteur={tache.session_tuteur_id} "
                 f"strategie={tache.strategie_verification} risque={tache.score_risque} "
                 f"essai={tache.nombre_essais}.",
                 flush=True,
             )
             logger.info(
-                "Worker IA traite tache #%s type=%s quiz=%s strategie=%s risque=%s essai=%s.",
+                "Worker IA traite tache #%s type=%s quiz=%s tuteur=%s strategie=%s risque=%s essai=%s.",
                 tache.id,
                 tache.type_tache,
                 tache.tentative_quiz_id,
+                tache.session_tuteur_id,
                 tache.strategie_verification,
                 tache.score_risque,
                 tache.nombre_essais,
