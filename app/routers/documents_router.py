@@ -188,7 +188,13 @@ def upload_document(
         statut=StatutDocument.EN_ATTENTE,  # visible seulement apres validation par un moderateur
     )
     session.add(document)
-    session.commit()
+    try:
+        session.commit()
+    except Exception:
+        # Le stockage a deja recu le fichier, mais la ligne DB n'a pas pu
+        # etre creee : supprimer le nouveau fichier evite un objet orphelin.
+        supprimer_fichier(chemin_stocke)
+        raise
 
     gamification.enregistrer_action(
         session,
