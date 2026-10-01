@@ -9,6 +9,7 @@ import secrets
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse
 from sqlmodel import Session, select
+from sqlalchemy import update
 
 from ..database import get_session
 from ..templating import templates
@@ -147,8 +148,10 @@ def upload_document(
     # document_upload.html) : on revalide quand meme l'appartenance
     # cote serveur, un utilisateur ne pouvant pas fabriquer une requete
     # avec un cercle_id arbitraire auquel il n'appartient pas.
-    if cercle_id is not None and not _est_membre_cercle(session, cercle_id, utilisateur.id):
-        cercle_id = None
+    if cercle_id is not None:
+        cercle = session.get(CercleEtude, cercle_id)
+        if not cercle or not _est_membre_cercle(session, cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     filiere = session.get(Filiere, filiere_id)
     reference = generer_reference(filiere, annee, session)
@@ -221,9 +224,13 @@ def telecharger_document(request: Request, document_id: int, session: Session = 
     elif limite_depassee(f"telechargement-document:ip:{host}", 60, 300):
         return RedirectResponse("/documents?erreur=trop_de_telechargements", status_code=303)
 
-    document.nb_telechargements += 1
-    session.add(document)
+    session.exec(
+        update(Document)
+        .where(Document.id == document.id)
+        .values(nb_telechargements=Document.nb_telechargements + 1)
+    )
     session.commit()
+    session.refresh(document)
 
     if utilisateur:
         session.add(ConsultationDocument(utilisateur_id=utilisateur.id, document_id=document.id))
@@ -247,6 +254,14 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
+
+    if document.cercle_id is not None:
+        if not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+    if limite_depassee(f"quiz-document:user:{utilisateur.id}", 6, 3600) or limite_depassee(
+        f"quiz-document:document:{document.id}", 20, 3600
+    ):
+        return RedirectResponse("/documents?erreur=trop_de_quiz_document", status_code=303)
 
     with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
         texte = extraire_texte(str(chemin_local))
