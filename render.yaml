@@ -56,6 +56,8 @@ services:
         sync: false
       - key: SMTP_FROM_EMAIL
         sync: false
+      - key: APP_TIMEZONE
+        value: Indian/Antananarivo
       - key: LIVEKIT_URL
         sync: false
       - key: LIVEKIT_API_KEY
