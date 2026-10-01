@@ -52,6 +52,13 @@ def test_telechargement_document_general_utilise_un_compte_courant(monkeypatch):
         def add(self, objet):
             pass
 
+        def exec(self, requete):
+            document.nb_telechargements += 1
+            return None
+
+        def refresh(self, objet):
+            pass
+
         def commit(self):
             pass
 
