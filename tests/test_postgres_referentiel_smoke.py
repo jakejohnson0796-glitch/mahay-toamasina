@@ -236,7 +236,7 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
     with TestClient(app) as client:
         page = client.get("/cercles", params={"q": "Droit privé M1"})
         assert page.status_code == 200
-        assert "Smoke PostgreSQL — CCA M1 Toamasina" in page.text
+        assert "Smoke PostgreSQL — Droit privé M1 Toamasina" in page.text
 
     assert nb_domaines >= len(domaines_source)
     assert nb_mentions >= len(mentions_par_nom)
