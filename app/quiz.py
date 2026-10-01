@@ -143,6 +143,8 @@ def mettre_a_jour_progression_notion(
     tentative: TentativeQuiz,
     questions_quiz: List[dict],
     reponses_soumises: List[Optional[int]],
+    *,
+    commit: bool = True,
 ) -> None:
     """Met a jour la memoire d'apprentissage apres un quiz termine et
     recalcule la prochaine revision de chaque notion rencontree."""
@@ -214,7 +216,8 @@ def mettre_a_jour_progression_notion(
         )
         session.add(progression)
 
-    session.commit()
+    if commit:
+        session.commit()
 
 
 def plan_revision_du_jour(
@@ -261,9 +264,16 @@ def notions_a_revoir(
 
 
 def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List[Optional[int]]) -> TentativeQuiz:
-    """Calcule le score en comparant les reponses soumises aux bonnes
-    reponses, et fige la tentative (elle devient un resultat d'historique
-    consultable, plus modifiable)."""
+    """Corrige une tentative une seule fois, meme sous double soumission."""
+    requete = select(TentativeQuiz).where(TentativeQuiz.id == tentative.id)
+    if session.get_bind().dialect.name == "postgresql":
+        requete = requete.with_for_update()
+    tentative_verrouillee = session.exec(requete).first()
+    if tentative_verrouillee is None:
+        raise QuizValidationError("Tentative introuvable.")
+    if tentative_verrouillee.date_soumission is not None:
+        raise QuizValidationError("Cette tentative a deja ete soumise.")
+    tentative = tentative_verrouillee
     qs = questions(tentative)
     if len(reponses_soumises) != len(qs):
         raise QuizValidationError("Le nombre de reponses ne correspond pas au quiz.")
@@ -279,9 +289,11 @@ def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List
     tentative.score = score
     tentative.date_soumission = datetime.utcnow()
     session.add(tentative)
+    mettre_a_jour_progression_notion(
+        session, tentative, qs, reponses_soumises, commit=False
+    )
     session.commit()
     session.refresh(tentative)
-    mettre_a_jour_progression_notion(session, tentative, qs, reponses_soumises)
     return tentative
 
 
@@ -401,6 +413,16 @@ def statistiques(tentatives_terminees: List[TentativeQuiz]) -> dict:
 def signaler_question(
     session: Session, tentative_id: int, index_question: int, signale_par_id: int, motif: Optional[str] = None
 ) -> None:
+    tentative = session.get(TentativeQuiz, tentative_id)
+    if tentative is None:
+        raise QuizValidationError("Tentative introuvable.")
+    try:
+        nb_questions = len(questions(tentative))
+    except (ValueError, QuizValidationError) as exc:
+        raise QuizValidationError("Quiz stocke invalide.") from exc
+    if not 0 <= index_question < nb_questions:
+        raise QuizValidationError("Question invalide.")
+
     """Enregistre le signalement d'une question par un etudiant. Evite
     les doublons : un signalement non-traite deja existant de ce meme
     etudiant sur cette meme question n'est pas duplique."""
