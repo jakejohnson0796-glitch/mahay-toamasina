@@ -1,12 +1,16 @@
-"""Rate limiting en memoire borne et a fenetre glissante.
-Compatible avec une instance unique. Le stockage est borne pour eviter
-qu'un attaquant distribue des milliers de cles et provoque une croissance
-sans fin du dictionnaire.
+"""Rate limiting borne avec Redis partage si configure, sinon fallback memoire.
+
+Redis permet aux limites de rester coherentes entre plusieurs processus/instances.
+Le fallback local reste utile pour les tests et le developpement sans Redis.
 """
 import time
 from collections import OrderedDict, deque
 from threading import Lock
-from typing import Deque
+from typing import Deque, Optional
+
+import redis
+
+from .config import parametres
 
 MAX_CLES = 10_000
 _NETTOYAGE_INTERVALLE = 30.0
@@ -14,6 +18,48 @@ _NETTOYAGE_INTERVALLE = 30.0
 _tentatives: "OrderedDict[str, Deque[float]]" = OrderedDict()
 _verrou = Lock()
 _dernier_nettoyage = 0.0
+_client_redis: Optional[redis.Redis] = None
+
+_SCRIPT_RATE_LIMIT = """
+local n = redis.call('INCR', KEYS[1])
+if n == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return n
+"""
+
+
+def _client_distribue() -> Optional[redis.Redis]:
+    global _client_redis
+    if not parametres.redis_url:
+        return None
+    if _client_redis is None:
+        _client_redis = redis.Redis.from_url(
+            parametres.redis_url,
+            decode_responses=True,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+            health_check_interval=30,
+        )
+    return _client_redis
+
+
+def _limite_redis(cle: str, max_tentatives: int, fenetre_secondes: int) -> Optional[bool]:
+    client = _client_distribue()
+    if client is None:
+        return None
+    try:
+        compteur = int(
+            client.eval(
+                _SCRIPT_RATE_LIMIT,
+                1,
+                f"mahay:rate:{cle}",
+                fenetre_secondes,
+            )
+        )
+        return compteur > max_tentatives
+    except redis.RedisError:
+        return None
 
 
 def _purger_expirees(maintenant: float) -> None:
@@ -22,10 +68,7 @@ def _purger_expirees(maintenant: float) -> None:
             _tentatives.pop(cle, None)
 
 
-def limite_depassee(cle: str, max_tentatives: int, fenetre_secondes: int) -> bool:
-    if not cle or max_tentatives <= 0 or fenetre_secondes <= 0:
-        raise ValueError("Parametres de rate-limit invalides.")
-
+def _limite_locale(cle: str, max_tentatives: int, fenetre_secondes: int) -> bool:
     global _dernier_nettoyage
     maintenant = time.monotonic()
     with _verrou:
@@ -51,3 +94,16 @@ def limite_depassee(cle: str, max_tentatives: int, fenetre_secondes: int) -> boo
             _tentatives.popitem(last=False)
 
         return deja_trop
+
+
+def limite_depassee(cle: str, max_tentatives: int, fenetre_secondes: int) -> bool:
+    if not cle or max_tentatives <= 0 or fenetre_secondes <= 0:
+        raise ValueError("Parametres de rate-limit invalides.")
+
+    # Redis est partage entre processus et entre replicas. En cas de panne
+    # Redis, on repasse immediatement au compteur local plutot que de casser
+    # une fonctionnalite utilisateur.
+    resultat_distribue = _limite_redis(cle, max_tentatives, fenetre_secondes)
+    if resultat_distribue is not None:
+        return resultat_distribue
+    return _limite_locale(cle, max_tentatives, fenetre_secondes)
