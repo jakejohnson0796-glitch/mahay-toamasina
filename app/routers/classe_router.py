@@ -405,9 +405,9 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     if seance.statut != StatutSeance.EN_COURS:
         return RedirectResponse(f"/classe/{cours.id}?erreur=seance_non_demarree", status_code=303)
 
-    # Nouvelle ligne de presence a chaque "rejoindre" (permet de mesurer
-    # plusieurs allers-retours dans la meme seance) — voir terminer_seance
-    # et quitter_seance pour la fermeture/le cumul de duree.
+    # Une seule presence ouverte par utilisateur/seance. Les allers-retours
+    # restent mesures via la meme ligne ; quitter_seance la ferme avant un
+    # prochain rejoindre.
     presence_ouverte = session.exec(
         select(PresenceSeance)
         .where(PresenceSeance.seance_id == seance_id)
@@ -1056,7 +1056,13 @@ def rendre_devoir(
             devoir_id=devoir_id, utilisateur_id=utilisateur.id, chemin_fichier=chemin_stocke,
             nom_fichier_original=fichier.filename or "rendu", commentaire=commentaire or None,
         ))
-    session.commit()
+    try:
+        session.commit()
+    except Exception:
+        # Si la base refuse la nouvelle version, ne laissons pas le nouveau
+        # fichier physique orphelin alors que l'ancien rendu reste en base.
+        supprimer_fichier(chemin_stocke)
+        raise
 
     if rendu_existant and ancien_chemin and ancien_chemin != chemin_stocke:
         # Le nouvel upload est deja durablement reference en base avant de
