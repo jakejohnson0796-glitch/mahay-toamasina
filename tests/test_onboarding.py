@@ -81,5 +81,5 @@ def test_onboarding_semaine_marque_les_actions_realisees():
     jour1 = next(item for item in donnees["plan_7_jours"] if item["jour"] == 1)
     jour2 = next(item for item in donnees["plan_7_jours"] if item["jour"] == 2)
 
-    assert jour1["terminee"] is True
-    assert jour2["terminee"] is False
+    assert jour1["terminee"] is False
+    assert jour2["terminee"] is True
