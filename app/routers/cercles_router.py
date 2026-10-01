@@ -2078,7 +2078,7 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
         return RedirectResponse("/cercles", status_code=303)
 
     resultats = []
-    terme = q.strip()
+    terme = " ".join((q or "").split())[:160]
     if terme:
         lignes = session.exec(
             select(MessageCercle, Utilisateur)
@@ -2087,6 +2087,7 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
             .where(MessageCercle.supprime == False)  # noqa: E712
             .where(MessageCercle.contenu.ilike(f"%{terme}%"))
             .order_by(MessageCercle.date_envoi.desc())
+            .limit(100)
         ).all()
         resultats = [{"auteur": u.nom, "contenu": m.contenu, "date_envoi": m.date_envoi} for m, u in lignes]
 
