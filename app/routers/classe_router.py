@@ -14,6 +14,7 @@ prochaine etape explicitement separee de celle-ci.
 import secrets
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Optional
 
@@ -29,7 +30,7 @@ from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
 from ..ws_manager import gestionnaire
-from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
+from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide, supprimer_fichier
 from ..rate_limit import limite_depassee
 from .. import gamification
 
@@ -402,8 +403,16 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     # Nouvelle ligne de presence a chaque "rejoindre" (permet de mesurer
     # plusieurs allers-retours dans la meme seance) — voir terminer_seance
     # et quitter_seance pour la fermeture/le cumul de duree.
-    session.add(PresenceSeance(seance_id=seance_id, utilisateur_id=utilisateur.id))
-    session.commit()
+    presence_ouverte = session.exec(
+        select(PresenceSeance)
+        .where(PresenceSeance.seance_id == seance_id)
+        .where(PresenceSeance.utilisateur_id == utilisateur.id)
+        .where(PresenceSeance.heure_sortie == None)  # noqa: E711
+        .order_by(PresenceSeance.heure_entree.desc())
+    ).first()
+    if presence_ouverte is None:
+        session.add(PresenceSeance(seance_id=seance_id, utilisateur_id=utilisateur.id))
+        session.commit()
 
     return RedirectResponse(f"/classe/seances/{seance_id}/salle", status_code=303)
 
@@ -921,8 +930,11 @@ def creer_devoir(
     date_limite_parsee = None
     if date_limite:
         try:
-            date_limite_parsee = datetime.fromisoformat(date_limite)
-        except ValueError:
+            date_locale = datetime.fromisoformat(date_limite)
+            date_limite_parsee = date_locale.replace(
+                tzinfo=ZoneInfo(parametres.timezone)
+            ).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        except (ValueError, KeyError):
             date_limite_parsee = None
 
     devoir = Devoir(cours_id=cours_id, titre=titre, description=description or None, date_limite=date_limite_parsee)
@@ -1023,6 +1035,7 @@ def rendre_devoir(
     rendu_existant = session.exec(
         select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id, RenduDevoir.utilisateur_id == utilisateur.id)
     ).first()
+    ancien_chemin = rendu_existant.chemin_fichier if rendu_existant else None
     if rendu_existant:
         rendu_existant.chemin_fichier = chemin_stocke
         rendu_existant.nom_fichier_original = fichier.filename or "rendu"
@@ -1037,7 +1050,13 @@ def rendre_devoir(
             devoir_id=devoir_id, utilisateur_id=utilisateur.id, chemin_fichier=chemin_stocke,
             nom_fichier_original=fichier.filename or "rendu", commentaire=commentaire or None,
         ))
-    session.commit()
+    try:
+        session.commit()
+    except Exception:
+        supprimer_fichier(chemin_stocke)
+        raise
+    if ancien_chemin and ancien_chemin != chemin_stocke:
+        supprimer_fichier(ancien_chemin)
 
     return RedirectResponse(f"/classe/devoirs/{devoir_id}?rendu=1", status_code=303)
 
