@@ -322,12 +322,24 @@ def _initialiser_donnees_apres_demarrage() -> None:
 def health() -> dict:
     """Endpoint de liveness + etat de l'initialisation post-demarrage."""
     thread = getattr(app.state, "ai_worker_thread", None)
+    initialisation_ok = getattr(app.state, "initialisation_donnees_ok", False)
+    initialisation_erreur = getattr(app.state, "initialisation_donnees_erreur", None)
+    initialisation_tache = getattr(app.state, "initialisation_donnees", None)
+    if initialisation_erreur:
+        etat = "degraded"
+    elif initialisation_ok:
+        etat = "ok"
+    elif initialisation_tache is not None and not initialisation_tache.done():
+        etat = "starting"
+    else:
+        etat = "degraded"
+
     return {
-        "status": "ok",
+        "status": etat,
         "ai_worker_configured": bool(parametres.redis_url),
         "ai_worker_alive": bool(thread and thread.is_alive()),
-        "initialisation_donnees_ok": getattr(app.state, "initialisation_donnees_ok", False),
-        "initialisation_donnees_erreur": getattr(app.state, "initialisation_donnees_erreur", None),
+        "initialisation_donnees_ok": initialisation_ok,
+        "initialisation_donnees_erreur": initialisation_erreur,
     }
 
 
