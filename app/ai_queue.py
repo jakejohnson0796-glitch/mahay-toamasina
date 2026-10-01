@@ -15,12 +15,13 @@ from sqlmodel import Session, select
 
 from .config import parametres
 from .database import engine
-from .models import StatutTacheIA, TacheIA, TentativeQuiz
+from .models import StatutTacheIA, TacheIA, TentativeQuiz, SessionTuteur
 from . import ai_memory, ai_risk
 
 logger = logging.getLogger(__name__)
 
 TYPE_VERIFICATION_QUIZ = "verification_quiz"
+TYPE_VERIFICATION_TUTEUR = "verification_tuteur"
 DELAIS_REESSAI = (5, 15, 30, 60)
 MAX_ESSAIS = 5
 
@@ -256,6 +257,57 @@ def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
         logger.exception(
             "Impossible de planifier la verification IA du quiz #%s.",
             tentative_id,
+        )
+        return None
+
+
+def planifier_verification_tuteur(session_tuteur_id: int) -> Optional[int]:
+    """Met en file une verification Tuteur durable et idempotente."""
+    maintenant = datetime.utcnow()
+    try:
+        with Session(engine) as session:
+            existante = session.exec(
+                select(TacheIA)
+                .where(
+                    TacheIA.type_tache == TYPE_VERIFICATION_TUTEUR,
+                    TacheIA.session_tuteur_id == session_tuteur_id,
+                )
+                .limit(1)
+            ).first()
+            if existante:
+                if existante.statut == StatutTacheIA.EN_ATTENTE:
+                    notifier_tache(existante.id)
+                return existante.id
+
+            session_tuteur = session.get(SessionTuteur, session_tuteur_id)
+            if not session_tuteur:
+                return None
+
+            tache = TacheIA(
+                type_tache=TYPE_VERIFICATION_TUTEUR,
+                tentative_quiz_id=None,
+                session_tuteur_id=session_tuteur_id,
+                statut=StatutTacheIA.EN_ATTENTE,
+                strategie_verification="standard",
+                score_risque=0,
+                disponible_le=maintenant,
+                date_creation=maintenant,
+            )
+            session.add(tache)
+            session.commit()
+            session.refresh(tache)
+            publiee = notifier_tache(tache.id)
+            logger.info(
+                "Tache IA %s planifiee pour Tuteur #%s; redis_notifiee=%s.",
+                tache.id,
+                session_tuteur_id,
+                publiee,
+            )
+            return tache.id
+    except Exception:
+        logger.exception(
+            "Impossible de planifier la verification du Tuteur #%s.",
+            session_tuteur_id,
         )
         return None
 
