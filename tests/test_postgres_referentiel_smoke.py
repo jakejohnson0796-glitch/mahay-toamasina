@@ -203,11 +203,11 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
 
         cca = next(
             fil for fil in filieres
-            if _normaliser(fil.nom) == _normaliser("CCA — Comptabilité, Contrôle, Audit")
+            if _normaliser(fil.nom) == _normaliser("Droit privé")
             and _normaliser(fil.niveau) == "m1"
         )
         smoke = CercleEtude(
-            nom="Smoke PostgreSQL — CCA M1 Toamasina",
+            nom="Smoke PostgreSQL — Droit privé M1 Toamasina",
             createur_id=createur.id,
             mention_id=cca.mention_id,
             filiere_id=cca.id,
@@ -234,7 +234,7 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         assert "application/pdf" in bucket[2]
 
     with TestClient(app) as client:
-        page = client.get("/cercles", params={"q": "CCA M1"})
+        page = client.get("/cercles", params={"q": "Droit privé M1"})
         assert page.status_code == 200
         assert "Smoke PostgreSQL — CCA M1 Toamasina" in page.text
 
