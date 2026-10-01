@@ -128,6 +128,23 @@ def _texte_ia_html(texte) -> "Markup":
 
 templates.env.filters["texte_ia"] = _texte_ia_html
 
+
+def _datetime_locale(valeur, format="%d/%m/%Y %H:%M"):
+    """Convertit les datetimes UTC naifs persistants vers le fuseau local."""
+    from datetime import timezone
+    from zoneinfo import ZoneInfo
+    if valeur is None:
+        return ""
+    try:
+        utc = valeur.replace(tzinfo=timezone.utc)
+        return utc.astimezone(ZoneInfo(parametres.timezone)).strftime(format)
+    except (AttributeError, KeyError, ValueError):
+        return str(valeur)
+
+
+from .config import parametres
+templates.env.filters["datetime_locale"] = _datetime_locale
+
 from .auth import jours_inactivite as _jours_inactivite
 
 templates.env.globals["jours_inactivite"] = _jours_inactivite
