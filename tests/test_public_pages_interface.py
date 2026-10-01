@@ -24,7 +24,7 @@ def test_a_propos_contient_les_sections_principales():
     page = lire("app/templates/a_propos.html")
     for terme in (
         "Pourquoi ce projet peut compter pour un étudiant",
-        "Le parcours du projet",
+        "Notre histoire",
         "Notre manière de construire",
         "L'écosystème Gasy Mahay",
         "Ce que Gasy Mahay ne remplace pas",
