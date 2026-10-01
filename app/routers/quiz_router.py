@@ -386,6 +386,11 @@ def signaler_question_quiz(
     if not tentative or tentative.date_soumission is None:
         return RedirectResponse("/quiz", status_code=303)
 
-    quiz_module.signaler_question(session, tentative_id, index_question, utilisateur.id, motif)
+    try:
+        quiz_module.signaler_question(
+            session, tentative_id, index_question, utilisateur.id, motif
+        )
+    except quiz_module.QuizValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return RedirectResponse(f"/quiz/{tentative_id}/resultat?signale=1", status_code=303)
