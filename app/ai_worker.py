@@ -106,7 +106,7 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
 
             print(
                 f"[AI WORKER] Traitement tache={tache.id} type={tache.type_tache} "
-f"quiz={tache.tentative_quiz_id} tuteur={tache.session_tuteur_id} "
+                f"quiz={tache.tentative_quiz_id} tuteur={tache.session_tuteur_id} "
                 f"strategie={tache.strategie_verification} risque={tache.score_risque} "
                 f"essai={tache.nombre_essais}.",
                 flush=True,
