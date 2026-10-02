@@ -348,8 +348,13 @@ def _filiere_canonique(
     doublons = [f for f in candidats if f.id != cible.id]
     for doublon in doublons:
         _reassigner_filiere(session, doublon.id, cible.id)
+        # Les FK des programmes/circles/demandes ont ete reassignees vers
+        # la cible. Flush avant de verifier les references pour que le test
+        # soit identique sur SQLite et PostgreSQL.
+        session.flush()
         if _filiere_sans_reference(session, doublon.id):
             session.delete(doublon)
+            session.flush()
             rapport.filieres_supprimees += 1
         else:
             rapport.anciennes_filieres_conservees += 1
