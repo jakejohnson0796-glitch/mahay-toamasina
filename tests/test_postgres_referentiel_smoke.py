@@ -68,7 +68,7 @@ def _source() -> dict:
         "Sciences de l’éducation",
         "Arts, Lettres et Sciences Humaines",
     }
-    assert len({ligne["mention"] for ligne in payload["formations"]}) == 21
+    assert len({ligne["mention"] for ligne in payload["formations"]}) == 22
     return payload
 
 
