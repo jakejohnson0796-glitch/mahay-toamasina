@@ -88,11 +88,4 @@ def downgrade() -> None:
     ):
         if name in indexes:
             op.drop_index(name, table_name="actiongamification")
-    uniques = inspector.get_unique_constraints("actiongamification")
-    if any(u.get("name") == "uq_action_gamification_source" for u in uniques):
-        op.drop_constraint(
-            "uq_action_gamification_source",
-            "actiongamification",
-            type_="unique",
-        )
     op.drop_table("actiongamification")
