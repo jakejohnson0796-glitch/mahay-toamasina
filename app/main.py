@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import PlainTextResponse, Response
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -22,6 +22,7 @@ from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCe
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .admin_security import AdminActionConfirmationMiddleware
+from .production_guard import valider_configuration_production
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
@@ -116,6 +117,10 @@ def _masquer_mot_de_passe(url: str) -> str:
 
 @app.on_event("startup")
 async def au_demarrage() -> None:
+    # En production, bloque explicitement les configurations qui perdraient
+    # les donnees ou qui permettraient de forger les sessions.
+    valider_configuration_production(parametres)
+
     # --- DEBUG : affiche clairement quelle base de donnees est utilisee ---
     url_affichee = _masquer_mot_de_passe(parametres.database_url)
 
@@ -145,8 +150,26 @@ async def au_demarrage() -> None:
     # puisse atteindre le serveur et valider son health check sans attendre
     # l'import du referentiel, le seed et la maintenance des cercles.
     print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
+    app.state.initialisation_etat = "en_cours"
     initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
     app.state.initialisation_donnees = initialisation
+
+    def _notifier_fin_initialisation(tache: asyncio.Task) -> None:
+        try:
+            tache.result()
+        except asyncio.CancelledError:
+            app.state.initialisation_etat = "annulee"
+        except Exception as erreur_initialisation:
+            app.state.initialisation_etat = "erreur"
+            print(
+                "[ERREUR DATABASE] Initialisation des donnees en arriere-plan "
+                f"echouee : {type(erreur_initialisation).__name__}: {erreur_initialisation}"
+            )
+        else:
+            app.state.initialisation_etat = "ok"
+            print("[DEBUG DATABASE] Initialisation des donnees terminee.")
+
+    initialisation.add_done_callback(_notifier_fin_initialisation)
 
     # Render Free ne fournit pas de Background Worker gratuit. Lorsque Redis
     # est configure, la boucle IA tourne donc dans un thread interne au Web
@@ -300,13 +323,61 @@ def _initialiser_donnees_apres_demarrage() -> None:
 
 @app.get("/health")
 def health() -> dict:
-    """Endpoint de liveness avec etat statique du worker IA inline."""
+    """Endpoint de liveness rapide : le processus HTTP est vivant."""
     thread = getattr(app.state, "ai_worker_thread", None)
     return {
         "status": "ok",
         "ai_worker_configured": bool(parametres.redis_url),
         "ai_worker_alive": bool(thread and thread.is_alive()),
     }
+
+
+@app.get("/ready")
+def readiness() -> Response:
+    """Readiness : schema DB migre et initialisation des donnees terminee."""
+    etat_initialisation = getattr(app.state, "initialisation_etat", "inconnu")
+
+    try:
+        with engine.connect() as connexion:
+            connexion.exec_driver_sql("SELECT 1")
+    except Exception as erreur:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "reason": "database_unavailable",
+                "initialisation_etat": etat_initialisation,
+                "detail": type(erreur).__name__,
+            },
+        )
+
+    if etat_initialisation == "erreur":
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "reason": "initialisation_failed",
+                "initialisation_etat": etat_initialisation,
+            },
+        )
+
+    if etat_initialisation != "ok":
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "reason": "initialisation_in_progress",
+                "initialisation_etat": etat_initialisation,
+            },
+        )
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "ready",
+            "initialisation_etat": etat_initialisation,
+        },
+    )
 
 
 @app.get("/robots.txt", include_in_schema=False)

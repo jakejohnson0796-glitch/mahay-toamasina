@@ -57,6 +57,13 @@ def _rotation_session_authentifiee(request: Request) -> None:
         request.session["_csrf_token"] = jeton_csrf
 
 
+def _ouvrir_session_authentifiee(request: Request, utilisateur: Utilisateur) -> None:
+    """Finalise une authentification reussie avec une nouvelle session propre."""
+    _rotation_session_authentifiee(request)
+    request.session["user_id"] = utilisateur.id
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
+
+
 
 def _preparer_rappel_inactivite_apres_connexion(
     request: Request,
@@ -229,7 +236,7 @@ def inscription(
     notifier_nouvelle_inscription_aux_admins(utilisateur, session)
     session.commit()
 
-    request.session["user_id"] = utilisateur.id
+    _ouvrir_session_authentifiee(request, utilisateur)
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         return RedirectResponse("/bienvenue", status_code=303)
     return RedirectResponse("/", status_code=303)
@@ -295,9 +302,7 @@ def connexion(
         request.session["en_attente_2fa_user_id"] = utilisateur.id
         return RedirectResponse("/connexion/2fa", status_code=303)
 
-    _rotation_session_authentifiee(request)
-    request.session["user_id"] = utilisateur.id
-    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
+    _ouvrir_session_authentifiee(request, utilisateur)
     _preparer_rappel_inactivite_apres_connexion(request, session, utilisateur)
     return _redirection_apres_connexion(utilisateur)
 
@@ -359,9 +364,7 @@ def verifier_2fa(
             request, "connexion_2fa.html", {"erreur": "Code invalide."}
         )
 
-    _rotation_session_authentifiee(request)
-    request.session["user_id"] = utilisateur.id
-    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
+    _ouvrir_session_authentifiee(request, utilisateur)
     _preparer_rappel_inactivite_apres_connexion(request, session, utilisateur)
     return _redirection_apres_connexion(utilisateur)
 

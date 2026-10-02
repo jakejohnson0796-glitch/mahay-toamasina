@@ -631,7 +631,7 @@
     fichierMeta: document.getElementById("resume-fichier-meta")
   };
 
-  const MAX_FILE_BYTES = 10 * 1024 * 1024;
+  const MAX_FILE_BYTES = 20 * 1024 * 1024;
   const EXTENSIONS = new Set(["pdf","doc","docx","ppt","pptx","jpg","jpeg","png"]);
   const LABELS = {
     annale: "Annale (sujet d'examen)",
@@ -671,7 +671,7 @@
         erreurs.push("le format du fichier n'est pas accepté");
       }
       if (fichier.size > MAX_FILE_BYTES) {
-        erreurs.push("le fichier dépasse 10 Mo");
+        erreurs.push("le fichier dépasse 20 Mo");
       }
     }
 

@@ -27,14 +27,18 @@ jobs:
           cache: pip
       - name: Installer les dependances
         run: python -m pip install -r requirements.txt
+      - name: Verifier le graphe des migrations Alembic
+        run: python scripts/verify_migrations.py
       - name: Verifier la compilation
         run: python -m compileall -q app tests
+      - name: Verifier le contrat de deploiement Render
+        run: python scripts/verify_deployment_contract.py
       - name: Lancer les tests (un module par processus)
         run: |
           set -e
           for test_file in tests/test_*.py; do
             echo "===== $test_file ====="
-            pytest -q "$test_file"
+            timeout 300s pytest -q "$test_file"
           done
 
   postgres-smoke:
@@ -96,7 +100,13 @@ jobs:
           cur.close()
           conn.close()
           PY
+      - name: Verifier le graphe des migrations Alembic
+        run: python scripts/verify_migrations.py
       - name: Appliquer toutes les migrations PostgreSQL
         run: alembic upgrade head
+      - name: Rejouer les migrations pour verifier l'idempotence
+        run: alembic upgrade head
+      - name: Verifier la revision courante
+        run: alembic current
       - name: Tester le démarrage réel et le référentiel Excel sur PostgreSQL
         run: pytest -q tests/test_postgres_referentiel_smoke.py

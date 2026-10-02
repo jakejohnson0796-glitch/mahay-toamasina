@@ -104,10 +104,10 @@ def test_source_sans_variantes_d_ecriture_cachees() -> None:
 
 def test_repetitions_multi_niveaux_sont_permises_et_explicitement_attendues() -> None:
     lignes = charger_source()
-    cca = [
+    banques_finances = [
         ligne
         for ligne in lignes
         if normaliser(ligne.get("mention")) == "gestion"
-        and normaliser(ligne.get("parcours")) == "cca — comptabilite, controle, audit"
+        and normaliser(ligne.get("parcours")) == "banques et finances"
     ]
-    assert {ligne["niveau"] for ligne in cca} == {"M1", "M2"}
+    assert {ligne["niveau"] for ligne in banques_finances} == {"M1", "M2"}

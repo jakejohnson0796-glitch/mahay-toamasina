@@ -227,14 +227,4 @@ def downgrade() -> None:
             if nom_index in indexes:
                 op.drop_index(nom_index, table_name="progressionnotion")
 
-        uniques = inspector.get_unique_constraints("progressionnotion")
-        for unique in uniques:
-            if unique.get("name") == "uq_progression_notion_utilisateur_matiere_notion":
-                op.drop_constraint(
-                    "uq_progression_notion_utilisateur_matiere_notion",
-                    "progressionnotion",
-                    type_="unique",
-                )
-                break
-
         op.drop_table("progressionnotion")

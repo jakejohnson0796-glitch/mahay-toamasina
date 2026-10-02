@@ -22,6 +22,7 @@ import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from .models import (
@@ -61,6 +62,7 @@ COMPOSANTES_CANONIQUES = {
         "alias": {
             "faculte deg",
             "droit economie gestion mathematiques et informatique (degmia)",
+            "droit, economie, gestion, mathematiques et informatique (degmia)",
             "droit economie gestion mathematiques et informatique degmia",
             "faculte de droit, de sciences economiques de gestion et de mathematiques, informatique et applications (fac degmia)",
             "faculte de droit, de sciences economiques, de gestion et de mathematiques, informatique et applications (fac degmia)",
@@ -157,34 +159,65 @@ def _reassigner_faculte(session: Session, ancien_id: int, nouveau_id: int) -> No
 
 
 def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> None:
-    for programme in session.exec(
-        select(ProgrammeUniversitaire).where(ProgrammeUniversitaire.filiere_id == ancien_id)
-    ).all():
-        # Une seule offre active par (universite, filiere). Si l'offre
-        # canonique existe déjà sur le survivant, l'ancienne ligne est
-        # simplement désactivée au lieu de créer une collision d'index.
-        existe = session.exec(
+    """Réattribue les références d'une filière supprimée vers sa survivante.
+
+    ProgrammeUniversitaire possède une contrainte UNIQUE sur
+    (universite_id, filiere_id). Lorsqu'une offre existe déjà sur la
+    filière survivante, on la conserve et on supprime la ligne redondante
+    de l'ancienne filière au lieu de provoquer une collision SQL.
+    """
+    programmes_source = session.exec(
+        select(ProgrammeUniversitaire).where(
+            ProgrammeUniversitaire.filiere_id == ancien_id
+        )
+    ).all()
+
+    for programme in programmes_source:
+        cible = session.exec(
             select(ProgrammeUniversitaire).where(
                 ProgrammeUniversitaire.universite_id == programme.universite_id,
                 ProgrammeUniversitaire.filiere_id == nouveau_id,
-                ProgrammeUniversitaire.est_active == True,  # noqa: E712
             )
         ).first()
-        if existe and programme.est_active:
-            programme.est_active = False
-        programme.filiere_id = nouveau_id
-        session.add(programme)
 
-    for utilisateur in session.exec(select(Utilisateur).where(Utilisateur.filiere_id == ancien_id)).all():
+        if cible is not None:
+            # Si l'offre historique supprimée était active alors que
+            # l'offre survivante ne l'était pas, conserve l'information
+            # « active » sur la ligne survivante.
+            if programme.est_active and not cible.est_active:
+                cible.est_active = True
+                session.add(cible)
+            session.delete(programme)
+        else:
+            programme.filiere_id = nouveau_id
+            session.add(programme)
+
+    session.flush()
+
+    for utilisateur in session.exec(
+        select(Utilisateur).where(Utilisateur.filiere_id == ancien_id)
+    ).all():
         utilisateur.filiere_id = nouveau_id
         session.add(utilisateur)
 
-    for cercle in session.exec(select(CercleEtude).where(CercleEtude.filiere_id == ancien_id)).all():
+    # Les documents sont également liés directement à la Filiere.
+    from .models import Document
+    for document in session.exec(
+        select(Document).where(Document.filiere_id == ancien_id)
+    ).all():
+        document.filiere_id = nouveau_id
+        session.add(document)
+
+    for cercle in session.exec(
+        select(CercleEtude).where(CercleEtude.filiere_id == ancien_id)
+    ).all():
         cercle.filiere_id = nouveau_id
         session.add(cercle)
 
     for demande in session.exec(
-        select(DemandeCreationCercle).where(DemandeCreationCercle.filiere_id == ancien_id)
+        select(DemandeCreationCercle).where(
+            DemandeCreationCercle.filiere_id == ancien_id
+        )
     ).all():
         demande.filiere_id = nouveau_id
         session.add(demande)
@@ -248,6 +281,19 @@ def _trouver_mention_canonique(
         else {normaliser(nom)}
     )
     nom_canonique = config["nom"] if config else nom
+    # L'index unique ix_mention_nom est sensible au texte exact.
+    # Utilise d'abord la valeur canonique exacte, puis les alias normalises.
+    exact = session.exec(
+        select(Mention).where(Mention.nom == nom_canonique)
+    ).first()
+    if exact is not None:
+        if exact.domaine_id is None and domaine_id is not None:
+            exact.domaine_id = domaine_id
+        exact.est_active = True
+        session.add(exact)
+        session.commit()
+        return exact
+
     candidats = [
         m for m in session.exec(select(Mention)).all()
         if normaliser(m.nom) in noms_equivalents
@@ -255,7 +301,23 @@ def _trouver_mention_canonique(
     if not candidats:
         mention = Mention(nom=nom_canonique, domaine_id=domaine_id)
         session.add(mention)
-        session.commit()
+        try:
+            session.commit()
+        except IntegrityError:
+            # Une autre initialisation peut avoir créé la même mention
+            # juste avant notre commit. Reprendre la ligne existante.
+            session.rollback()
+            mention = session.exec(
+                select(Mention).where(Mention.nom == nom_canonique)
+            ).first()
+            if mention is None:
+                raise
+            if mention.domaine_id is None and domaine_id is not None:
+                mention.domaine_id = domaine_id
+            mention.est_active = True
+            session.add(mention)
+            session.commit()
+            return mention
         session.refresh(mention)
         rapport.mentions_creees += 1
         return mention
@@ -318,11 +380,11 @@ def _filiere_canonique(
     doublons = [f for f in candidats if f.id != cible.id]
     for doublon in doublons:
         _reassigner_filiere(session, doublon.id, cible.id)
-        if _filiere_sans_reference(session, doublon.id):
-            session.delete(doublon)
-            rapport.filieres_supprimees += 1
-        else:
-            rapport.anciennes_filieres_conservees += 1
+        # Toutes les references connues sont maintenant portees par la cible.
+        session.flush()
+        session.delete(doublon)
+        session.flush()
+        rapport.filieres_supprimees += 1
         rapport.filieres_fusionnees += 1
 
     if cible.nom != nom:
@@ -330,6 +392,40 @@ def _filiere_canonique(
         session.add(cible)
     session.commit()
     return cible
+
+
+def _fusionner_doublons_scope(
+    session: Session,
+    facultes_scope: set[int],
+    rapport: Rapport,
+) -> None:
+    """Consolide les filieres equivalentes restantes dans les composantes traitees."""
+    if not facultes_scope:
+        return
+
+    groupes: dict[tuple[int, int | None, str | None, str], list[Filiere]] = {}
+    for filiere in session.exec(
+        select(Filiere).where(Filiere.faculte_id.in_(facultes_scope))
+    ).all():
+        cle = (
+            filiere.faculte_id,
+            filiere.mention_id,
+            filiere.niveau,
+            normaliser(filiere.nom),
+        )
+        groupes.setdefault(cle, []).append(filiere)
+
+    for _, candidats in groupes.items():
+        if len(candidats) <= 1:
+            continue
+        cible = min(candidats, key=lambda item: item.id)
+        for doublon in sorted((item for item in candidats if item.id != cible.id), key=lambda item: item.id):
+            _reassigner_filiere(session, doublon.id, cible.id)
+            session.flush()
+            session.delete(doublon)
+            session.flush()
+            rapport.filieres_supprimees += 1
+            rapport.filieres_fusionnees += 1
 
 
 def reconcilier(
@@ -444,6 +540,10 @@ def reconcilier(
             if actif is not None and extra.id != actif.id and extra.est_active:
                 extra.est_active = False
                 session.add(extra)
+
+    # Dernier filet de securite : consolide les doublons historiques qui
+    # ont la meme composante, mention, niveau et nom normalise.
+    _fusionner_doublons_scope(session, facultes_scope, rapport)
 
     # Désactive toute offre encore active dans les composantes canonisées qui
     # ne figure plus dans la source publique canonique.

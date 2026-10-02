@@ -106,11 +106,4 @@ def downgrade() -> None:
     ):
         if name in indexes:
             op.drop_index(name, table_name="erreuriaensemble")
-    uniques = inspector.get_unique_constraints("erreuriaensemble")
-    if any(u.get("name") == "uq_erreur_ia_ensemble_signature" for u in uniques):
-        op.drop_constraint(
-            "uq_erreur_ia_ensemble_signature",
-            "erreuriaensemble",
-            type_="unique",
-        )
     op.drop_table("erreuriaensemble")

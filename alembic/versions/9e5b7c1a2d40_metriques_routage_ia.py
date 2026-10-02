@@ -138,13 +138,6 @@ def downgrade() -> None:
         ):
             if name in indexes:
                 op.drop_index(name, table_name="performancemodeleia")
-        uniques = inspector.get_unique_constraints("performancemodeleia")
-        if any(u.get("name") == "uq_performance_modele_ia" for u in uniques):
-            op.drop_constraint(
-                "uq_performance_modele_ia",
-                "performancemodeleia",
-                type_="unique",
-            )
         op.drop_table("performancemodeleia")
 
     inspector = sa.inspect(bind)

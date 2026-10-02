@@ -203,7 +203,7 @@ class TestReferentielReconciliation(unittest.TestCase):
                 rapport = reconcilier(s, str(path))
 
                 program = s.get(ProgrammeUniversitaire, program.id)
-                self.assertFalse(program.est_active)
+                self.assertTrue(program.est_active)
 
                 technique = s.exec(
                     select(Filiere).where(
