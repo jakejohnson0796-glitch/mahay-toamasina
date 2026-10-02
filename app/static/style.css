@@ -3991,3 +3991,58 @@ button:focus-visible,
     transition:none;
   }
 }
+
+
+/* CHAT CONTRASTE V5 — priorité à la lisibilité du texte dans le composer. */
+.contenu-clair .barre-composition{
+  background:var(--content-surface)!important;
+  color:var(--content-text)!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+.contenu-clair .barre-composition #champ-message,
+.contenu-clair .barre-composition #champ-message:focus{
+  color:var(--content-text)!important;
+  caret-color:var(--content-text)!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  -webkit-text-fill-color:var(--content-text)!important;
+}
+.contenu-clair .barre-composition #champ-message::placeholder{
+  color:var(--content-text-muted)!important;
+  opacity:1!important;
+  -webkit-text-fill-color:var(--content-text-muted)!important;
+}
+.contenu-clair .barre-composition .cercle-chat-indicateurs{
+  color:var(--content-text-muted)!important;
+  opacity:1!important;
+}
+.contenu-clair .barre-composition .cercle-chat-outils .outil-cercle{
+  color:var(--content-text)!important;
+  opacity:1!important;
+  background:var(--content-bg)!important;
+  border-color:var(--content-border)!important;
+  text-shadow:none!important;
+}
+.contenu-clair .barre-composition .bouton-envoyer-fichier{
+  color:var(--content-text)!important;
+  opacity:1!important;
+}
+.contenu-clair .barre-composition .bouton-emoji-toggle,
+.contenu-clair .barre-composition #form-fichier > label{
+  color:var(--content-text)!important;
+  opacity:1!important;
+}
+.contenu-clair .barre-composition .bouton-envoyer-message{
+  color:#fff!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+@media (max-width:520px){
+  .contenu-clair .barre-composition #champ-message{
+    font-size:.92rem!important;
+    min-height:44px!important;
+  }
+}
