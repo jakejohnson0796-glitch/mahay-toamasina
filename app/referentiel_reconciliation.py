@@ -22,6 +22,7 @@ import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from .models import (
@@ -248,6 +249,19 @@ def _trouver_mention_canonique(
         else {normaliser(nom)}
     )
     nom_canonique = config["nom"] if config else nom
+    # L'index unique ix_mention_nom est sensible au texte exact.
+    # Utilise d'abord la valeur canonique exacte, puis les alias normalises.
+    exact = session.exec(
+        select(Mention).where(Mention.nom == nom_canonique)
+    ).first()
+    if exact is not None:
+        if exact.domaine_id is None and domaine_id is not None:
+            exact.domaine_id = domaine_id
+        exact.est_active = True
+        session.add(exact)
+        session.commit()
+        return exact
+
     candidats = [
         m for m in session.exec(select(Mention)).all()
         if normaliser(m.nom) in noms_equivalents
@@ -255,7 +269,23 @@ def _trouver_mention_canonique(
     if not candidats:
         mention = Mention(nom=nom_canonique, domaine_id=domaine_id)
         session.add(mention)
-        session.commit()
+        try:
+            session.commit()
+        except IntegrityError:
+            # Une autre initialisation peut avoir créé la même mention
+            # juste avant notre commit. Reprendre la ligne existante.
+            session.rollback()
+            mention = session.exec(
+                select(Mention).where(Mention.nom == nom_canonique)
+            ).first()
+            if mention is None:
+                raise
+            if mention.domaine_id is None and domaine_id is not None:
+                mention.domaine_id = domaine_id
+            mention.est_active = True
+            session.add(mention)
+            session.commit()
+            return mention
         session.refresh(mention)
         rapport.mentions_creees += 1
         return mention
