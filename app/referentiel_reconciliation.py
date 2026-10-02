@@ -62,6 +62,7 @@ COMPOSANTES_CANONIQUES = {
         "alias": {
             "faculte deg",
             "droit economie gestion mathematiques et informatique (degmia)",
+            "droit, economie, gestion, mathematiques et informatique (degmia)",
             "droit economie gestion mathematiques et informatique degmia",
             "faculte de droit, de sciences economiques de gestion et de mathematiques, informatique et applications (fac degmia)",
             "faculte de droit, de sciences economiques, de gestion et de mathematiques, informatique et applications (fac degmia)",
