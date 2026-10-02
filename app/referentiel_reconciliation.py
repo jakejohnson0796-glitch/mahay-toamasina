@@ -180,6 +180,12 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
         utilisateur.filiere_id = nouveau_id
         session.add(utilisateur)
 
+    # Les documents sont egalement lies directement a la Filiere.
+    from .models import Document
+    for document in session.exec(select(Document).where(Document.filiere_id == ancien_id)).all():
+        document.filiere_id = nouveau_id
+        session.add(document)
+
     for cercle in session.exec(select(CercleEtude).where(CercleEtude.filiere_id == ancien_id)).all():
         cercle.filiere_id = nouveau_id
         session.add(cercle)
@@ -348,16 +354,11 @@ def _filiere_canonique(
     doublons = [f for f in candidats if f.id != cible.id]
     for doublon in doublons:
         _reassigner_filiere(session, doublon.id, cible.id)
-        # Les FK des programmes/circles/demandes ont ete reassignees vers
-        # la cible. Flush avant de verifier les references pour que le test
-        # soit identique sur SQLite et PostgreSQL.
+        # Toutes les references connues sont maintenant portees par la cible.
         session.flush()
-        if _filiere_sans_reference(session, doublon.id):
-            session.delete(doublon)
-            session.flush()
-            rapport.filieres_supprimees += 1
-        else:
-            rapport.anciennes_filieres_conservees += 1
+        session.delete(doublon)
+        session.flush()
+        rapport.filieres_supprimees += 1
         rapport.filieres_fusionnees += 1
 
     if cible.nom != nom:
@@ -395,12 +396,9 @@ def _fusionner_doublons_scope(
         for doublon in sorted((item for item in candidats if item.id != cible.id), key=lambda item: item.id):
             _reassigner_filiere(session, doublon.id, cible.id)
             session.flush()
-            if _filiere_sans_reference(session, doublon.id):
-                session.delete(doublon)
-                session.flush()
-                rapport.filieres_supprimees += 1
-            else:
-                rapport.anciennes_filieres_conservees += 1
+            session.delete(doublon)
+            session.flush()
+            rapport.filieres_supprimees += 1
             rapport.filieres_fusionnees += 1
 
 
