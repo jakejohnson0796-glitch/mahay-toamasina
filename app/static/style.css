@@ -3908,23 +3908,17 @@ button:focus-visible,
 }
 .contenu-clair .panneau-emojis-v2{
   border-radius:20px;
-  background:rgba(255,255,255,.82);
+  background:var(--content-surface);
   backdrop-filter:blur(16px);
   -webkit-backdrop-filter:blur(16px);
   box-shadow:0 18px 40px rgba(0,0,0,.13);
 }
 .contenu-clair .cercle-commandes{
   border-radius:18px;
-  background:rgba(255,255,255,.9);
+  background:var(--content-surface);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
   box-shadow:0 18px 38px rgba(0,0,0,.13);
-}
-@media (prefers-color-scheme: dark){
-  .contenu-clair .panneau-emojis-v2,
-  .contenu-clair .cercle-commandes{
-    background:rgba(30,30,30,.88);
-  }
 }
 @media (max-width: 768px){
   .contenu-clair .entete-cercle{
