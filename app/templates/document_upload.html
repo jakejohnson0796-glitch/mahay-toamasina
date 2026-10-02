@@ -312,6 +312,99 @@
   filter:saturate(1.04);
 }
 .document-upload-submit:active{transform:translateY(0);}
+
+.document-upload-preview{
+  margin-top:1rem;
+  padding:.9rem;
+  border:1px solid var(--content-border);
+  border-radius:16px;
+  background:linear-gradient(145deg,rgba(184,84,58,.05),var(--content-bg));
+}
+.document-upload-preview-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.7rem;
+  margin-bottom:.65rem;
+}
+.document-upload-preview-head strong{
+  font-size:.75rem;
+  color:var(--content-text);
+}
+.document-upload-preview-state{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  min-height:24px;
+  padding:.25rem .45rem;
+  border-radius:999px;
+  background:var(--content-surface);
+  border:1px solid var(--content-border);
+  color:var(--content-text-muted);
+  font-size:.58rem;
+  font-weight:700;
+}
+.document-upload-preview-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.55rem;
+}
+.document-upload-preview-item{
+  min-width:0;
+  padding:.55rem .6rem;
+  border:1px solid var(--content-border);
+  border-radius:11px;
+  background:var(--content-surface);
+}
+.document-upload-preview-item small{
+  display:block;
+  margin-bottom:.18rem;
+  color:var(--content-text-muted);
+  font-size:.58rem;
+}
+.document-upload-preview-item strong{
+  display:block;
+  color:var(--content-text);
+  font-size:.7rem;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.document-upload-file-meta{
+  margin-top:.2rem;
+  font-size:.6rem!important;
+  color:var(--content-text-muted)!important;
+  font-weight:600;
+}
+.document-upload-submit[disabled]{
+  opacity:.48;
+  cursor:not-allowed;
+  filter:none;
+  transform:none!important;
+  box-shadow:none;
+}
+.document-upload-validation{
+  display:none;
+  margin-top:.65rem;
+  padding:.6rem .7rem;
+  border-radius:11px;
+  border:1px solid rgba(189,78,45,.24);
+  background:rgba(189,78,45,.07);
+  color:var(--color-danger-clair);
+  font-size:.67rem;
+  line-height:1.45;
+}
+.document-upload-validation.visible{display:block;}
+.document-upload-preview-empty{
+  color:var(--content-text-muted);
+  font-size:.68rem;
+  line-height:1.45;
+}
+@media(max-width:640px){
+  .document-upload-preview-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
 @media(max-width:900px){
   .document-upload-layout{grid-template-columns:1fr;}
   .document-upload-sidebar{
@@ -447,12 +540,47 @@
             </div>
           </div>
 
+          <div class="document-upload-preview" aria-live="polite" aria-labelledby="resume-document-titre">
+            <div class="document-upload-preview-head">
+              <strong id="resume-document-titre">Aperçu avant envoi</strong>
+              <span class="document-upload-preview-state" id="etat-document">À compléter</span>
+            </div>
+            <div class="document-upload-preview-grid">
+              <div class="document-upload-preview-item">
+                <small>Titre</small>
+                <strong id="resume-titre">—</strong>
+              </div>
+              <div class="document-upload-preview-item">
+                <small>Matière</small>
+                <strong id="resume-matiere">—</strong>
+              </div>
+              <div class="document-upload-preview-item">
+                <small>Type</small>
+                <strong id="resume-type">—</strong>
+              </div>
+              <div class="document-upload-preview-item">
+                <small>Année</small>
+                <strong id="resume-annee">—</strong>
+              </div>
+              <div class="document-upload-preview-item">
+                <small>Filière</small>
+                <strong id="resume-filiere">—</strong>
+              </div>
+              <div class="document-upload-preview-item">
+                <small>Fichier</small>
+                <strong id="resume-fichier">Aucun fichier</strong>
+                <span class="document-upload-file-meta" id="resume-fichier-meta">Choisissez un fichier</span>
+              </div>
+            </div>
+            <div class="document-upload-validation" id="validation-document" role="alert"></div>
+          </div>
+
           <div class="document-upload-footer">
             <div class="document-upload-footer-note">
               Votre dépôt sera d'abord contrôlé avant sa publication.<br>
               Merci de transmettre uniquement des documents que vous êtes autorisé à partager.
             </div>
-            <button class="document-upload-submit" type="submit">Publier pour validation →</button>
+            <button class="document-upload-submit" id="bouton-document-submit" type="submit" disabled>Publier pour validation →</button>
           </div>
         </form>
       </div>
@@ -477,40 +605,174 @@
 
 <script nonce="{{ csp_nonce(request) }}">
 (function () {
+  const form = document.getElementById("form-document-upload");
   const input = document.getElementById("fichier");
   const nom = document.getElementById("nom-fichier");
   const zone = document.getElementById("zone-fichier");
-  if (!input || !nom || !zone) return;
+  const submit = document.getElementById("bouton-document-submit");
+  const validation = document.getElementById("validation-document");
+  const etat = document.getElementById("etat-document");
 
-  function afficherNomFichier() {
-    const fichier = input.files && input.files[0];
-    nom.textContent = fichier ? fichier.name : "Aucun fichier sélectionné";
+  const fields = {
+    titre: document.getElementById("titre"),
+    matiere: document.getElementById("matiere"),
+    type: document.getElementById("type_document"),
+    annee: document.getElementById("annee"),
+    filiere: document.getElementById("filiere_id")
+  };
+
+  const resume = {
+    titre: document.getElementById("resume-titre"),
+    matiere: document.getElementById("resume-matiere"),
+    type: document.getElementById("resume-type"),
+    annee: document.getElementById("resume-annee"),
+    filiere: document.getElementById("resume-filiere"),
+    fichier: document.getElementById("resume-fichier"),
+    fichierMeta: document.getElementById("resume-fichier-meta")
+  };
+
+  const MAX_FILE_BYTES = 10 * 1024 * 1024;
+  const EXTENSIONS = new Set(["pdf","doc","docx","ppt","pptx","jpg","jpeg","png"]);
+  const LABELS = {
+    annale: "Annale (sujet d'examen)",
+    corrige: "Corrigé",
+    fiche: "Fiche de révision",
+    cours: "Support de cours"
+  };
+
+  function formatTaille(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "";
+    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " Ko";
+    return (bytes / (1024 * 1024)).toFixed(1).replace(".", ",") + " Mo";
   }
 
-  input.addEventListener("change", afficherNomFichier);
+  function valeur(el) {
+    return (el && el.value || "").trim();
+  }
 
-  ["dragenter", "dragover"].forEach(function (eventName) {
-    zone.addEventListener(eventName, function (event) {
-      event.preventDefault();
-      zone.classList.add("dragover");
-    });
-  });
+  function messageErreur() {
+    const erreurs = [];
 
-  ["dragleave", "drop"].forEach(function (eventName) {
-    zone.addEventListener(eventName, function () {
-      zone.classList.remove("dragover");
-    });
-  });
+    if (!valeur(fields.titre)) erreurs.push("ajoutez un titre");
+    if (!valeur(fields.matiere)) erreurs.push("indiquez la matière");
+    if (!valeur(fields.annee)) erreurs.push("indiquez l'année");
+    if (!valeur(fields.filiere)) erreurs.push("choisissez une filière");
 
-  zone.addEventListener("drop", function (event) {
-    event.preventDefault();
-    if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
-      try {
-        input.files = event.dataTransfer.files;
-        afficherNomFichier();
-      } catch (_) {}
+    const fichier = input && input.files && input.files[0];
+    if (!fichier) {
+      erreurs.push("sélectionnez un fichier");
+    } else {
+      const nomFichier = fichier.name || "";
+      const extension = nomFichier.includes(".")
+        ? nomFichier.split(".").pop().toLowerCase()
+        : "";
+
+      if (!EXTENSIONS.has(extension)) {
+        erreurs.push("le format du fichier n'est pas accepté");
+      }
+      if (fichier.size > MAX_FILE_BYTES) {
+        erreurs.push("le fichier dépasse 10 Mo");
+      }
     }
+
+    return erreurs;
+  }
+
+  function mettreAJourResume() {
+    resume.titre.textContent = valeur(fields.titre) || "—";
+    resume.matiere.textContent = valeur(fields.matiere) || "—";
+    resume.type.textContent = LABELS[fields.type.value] || "—";
+    resume.annee.textContent = valeur(fields.annee) || "—";
+
+    const optionFiliere = fields.filiere && fields.filiere.selectedOptions
+      ? fields.filiere.selectedOptions[0]
+      : null;
+    resume.filiere.textContent = optionFiliere ? optionFiliere.textContent : "—";
+
+    const fichier = input && input.files && input.files[0];
+    if (!fichier) {
+      nom.textContent = "Aucun fichier sélectionné";
+      resume.fichier.textContent = "Aucun fichier";
+      resume.fichierMeta.textContent = "Choisissez un fichier";
+      return;
+    }
+
+    nom.textContent = fichier.name;
+    resume.fichier.textContent = fichier.name;
+    resume.fichierMeta.textContent = formatTaille(fichier.size);
+  }
+
+  function valider() {
+    const erreurs = messageErreur();
+    const ok = erreurs.length === 0;
+
+    submit.disabled = !ok;
+
+    if (ok) {
+      etat.textContent = "Prêt à envoyer";
+      etat.style.color = "var(--color-success-clair)";
+      validation.classList.remove("visible");
+      validation.textContent = "";
+    } else {
+      etat.textContent = "À compléter";
+      etat.style.color = "";
+      validation.classList.add("visible");
+      validation.textContent = "Avant l'envoi : " + erreurs.join(" · ") + ".";
+    }
+
+    return ok;
+  }
+
+  function maj() {
+    mettreAJourResume();
+    valider();
+  }
+
+  Object.values(fields).forEach(function (field) {
+    if (!field) return;
+    field.addEventListener("input", maj);
+    field.addEventListener("change", maj);
   });
+
+  if (input && nom && zone) {
+    input.addEventListener("change", maj);
+
+    ["dragenter", "dragover"].forEach(function (eventName) {
+      zone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        zone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(function (eventName) {
+      zone.addEventListener(eventName, function () {
+        zone.classList.remove("dragover");
+      });
+    });
+
+    zone.addEventListener("drop", function (event) {
+      event.preventDefault();
+      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
+        try {
+          input.files = event.dataTransfer.files;
+        } catch (_) {}
+        maj();
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      if (!valider()) {
+        event.preventDefault();
+        return;
+      }
+      submit.disabled = true;
+      submit.textContent = "Envoi en cours…";
+    });
+  }
+
+  maj();
 })();
 </script>
 </div>
