@@ -13,12 +13,17 @@ La CI execute ces commandes sur PostgreSQL 16. Le second `upgrade head` est
 volontaire : une release ne doit pas casser lorsque le serveur redemarre ou
 rejoue la commande de migration.
 
-## 2. Demarrage
+## 2. Configuration et demarrage
 
+- En production, `SESSION_SECRET_KEY` est un secret aleatoire d'au moins 32 caracteres.
+- `DATABASE_URL` pointe vers PostgreSQL ; SQLite n'est pas accepte pour le deploiement public.
+- `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` sont configures pour rendre les uploads durables.
+- Si LiveKit est active, les trois variables `LIVEKIT_*` sont presentes.
 - `/health` doit repondre `200` ; `/ready` doit passer a `200` apres l'initialisation des donnees.
 - Les migrations sont executees avant de servir l'application.
 - La maintenance lourde du referentiel est lancee en arriere-plan afin de ne
   pas bloquer le health check.
+- Le serveur refuse maintenant de demarrer si un prerequis de production obligatoire manque.
 
 ## 3. Parcours critiques
 
@@ -39,7 +44,7 @@ Verifier au minimum en production-like :
 - vraie `SESSION_SECRET_KEY` en production ;
 - HTTPS actif ;
 - cookies `__Host-session`, `Secure`, `SameSite=Lax` ;
-- CSP sans `unsafe-inline` ;
+- CSP avec nonce, sans `unsafe-inline` ;
 - autorisations admin cote serveur ;
 - validation des uploads ;
 - limitation de debit sur les actions sensibles ;
