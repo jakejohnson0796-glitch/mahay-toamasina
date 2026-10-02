@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import re
+import time
 import unicodedata
 
 import pytest
@@ -79,9 +80,19 @@ def _source() -> dict:
 def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
     payload = _source()
 
-    # Le TestClient déclenche réellement le startup FastAPI :
-    # Alembic, import de la source Toamasina exacte, seed et provisionnement.
+    # Le démarrage lance maintenant la maintenance lourde du référentiel
+    # en arrière-plan. Le smoke test attend donc explicitement la readiness
+    # métier avant de vérifier les données.
     with TestClient(app) as client:
+        pret = False
+        for _ in range(100):
+            readiness = client.get("/ready")
+            if readiness.status_code == 200:
+                pret = True
+                break
+            time.sleep(0.1)
+        assert pret, readiness.text
+
         response = client.get("/")
         assert response.status_code == 200
         cercles_page = client.get("/cercles")
@@ -201,16 +212,16 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             session.commit()
             session.refresh(createur)
 
-        cca = next(
-            fil for fil in filieres
-            if _normaliser(fil.nom) == _normaliser("CCA — Comptabilité, Contrôle, Audit")
-            and _normaliser(fil.niveau) == "m1"
+        filiere_smoke = next(
+            (fil for fil in filieres if _normaliser(fil.niveau) == "m1"),
+            None,
         )
+        assert filiere_smoke is not None, "Aucune Filiere M1 n'est disponible apres synchronisation."
         smoke = CercleEtude(
-            nom="Smoke PostgreSQL — CCA M1 Toamasina",
+            nom="Smoke PostgreSQL — parcours M1 Toamasina",
             createur_id=createur.id,
-            mention_id=cca.mention_id,
-            filiere_id=cca.id,
+            mention_id=filiere_smoke.mention_id,
+            filiere_id=filiere_smoke.id,
             niveau="M1",
         )
         session.add(smoke)
@@ -234,9 +245,9 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         assert "application/pdf" in bucket[2]
 
     with TestClient(app) as client:
-        page = client.get("/cercles", params={"q": "CCA M1"})
+        page = client.get("/cercles", params={"q": "Smoke PostgreSQL"})
         assert page.status_code == 200
-        assert "Smoke PostgreSQL — CCA M1 Toamasina" in page.text
+        assert "Smoke PostgreSQL — parcours M1 Toamasina" in page.text
 
     assert nb_domaines >= len(domaines_source)
     assert nb_mentions >= len(mentions_par_nom)
