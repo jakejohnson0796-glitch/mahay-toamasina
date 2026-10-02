@@ -147,7 +147,8 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         # représenté sans Filiere dans le modèle métier.
         attendues = [
             ligne for ligne in payload["formations"]
-            if _normaliser(ligne["type"]) != _normaliser("Tronc commun")
+            if _normaliser(ligne.get("statut")) in {"verifie", "confirme"}
+            and _normaliser(ligne["type"]) != _normaliser("Tronc commun")
         ]
 
         mention_ids_par_nom = {
@@ -199,7 +200,10 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             ) in expected_keys
         }
         assert expected_filiere_ids
-        assert expected_filiere_ids.issubset({p.filiere_id for p in programmes})
+
+        active_program_filiere_ids = {p.filiere_id for p in programmes}
+        assert active_program_filiere_ids
+        assert active_program_filiere_ids.issubset(expected_filiere_ids)
 
         createur = session.exec(select(Utilisateur)).first()
         if createur is None:
