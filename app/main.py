@@ -22,6 +22,7 @@ from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCe
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .admin_security import AdminActionConfirmationMiddleware
+from .production_guard import valider_configuration_production
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
@@ -116,6 +117,10 @@ def _masquer_mot_de_passe(url: str) -> str:
 
 @app.on_event("startup")
 async def au_demarrage() -> None:
+    # En production, bloque explicitement les configurations qui perdraient
+    # les donnees ou qui permettraient de forger les sessions.
+    valider_configuration_production(parametres)
+
     # --- DEBUG : affiche clairement quelle base de donnees est utilisee ---
     url_affichee = _masquer_mot_de_passe(parametres.database_url)
 
