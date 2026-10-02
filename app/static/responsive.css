@@ -604,3 +604,204 @@ main {
     scroll-behavior: auto;
   }
 }
+
+
+/* =========================================================================
+   MOBILE V8 — contenu de page prioritaire
+   Certains templates contiennent leur propre <style> après les feuilles
+   du <head>. Ces règles utilisent donc !important uniquement pour neutraliser
+   les dimensions mobiles qui sinon passent devant la couche responsive.
+   ========================================================================= */
+
+@media (max-width: 640px) {
+  /* Le hero Cercles ne doit jamais être enfermé dans une hauteur fixe. */
+  .cercles-hero-visuel {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: start !important;
+    border-radius: clamp(.8rem, 3vw, 1.05rem) !important;
+  }
+
+  .cercles-hero-contenu {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: clamp(.9rem, 4vw, 1.25rem) !important;
+  }
+
+  .cercles-hero-kicker {
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: .32rem .55rem !important;
+    font-size: clamp(.47rem, 1.95vw, .62rem) !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .cercles-hero-titre {
+    max-width: 100% !important;
+    margin: .65rem 0 .5rem !important;
+    font-size: clamp(1.45rem, 7.6vw, 2rem) !important;
+    line-height: 1.04 !important;
+    letter-spacing: -.04em !important;
+  }
+
+  .cercles-hero-sous-titre {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    font-size: clamp(.72rem, 2.8vw, .9rem) !important;
+    line-height: 1.48 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .cercles-hero-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: .8rem !important;
+    gap: .45rem !important;
+  }
+
+  .cercles-hero-actions .bouton {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: clamp(2.45rem, 11vw, 2.75rem) !important;
+    padding: .5rem .62rem !important;
+    font-size: clamp(.66rem, 2.8vw, .8rem) !important;
+    line-height: 1.15 !important;
+  }
+
+  .cercles-hero-stats {
+    width: auto !important;
+    max-width: calc(100% - 1.2rem) !important;
+    min-width: 0 !important;
+    margin: .2rem .6rem .6rem !important;
+    padding: .58rem .7rem !important;
+    gap: .35rem !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .cercles-hero-stat {
+    min-width: 0 !important;
+  }
+
+  .cercles-hero-stat strong {
+    font-size: clamp(.82rem, 3.5vw, 1rem) !important;
+  }
+
+  .cercles-hero-stat span {
+    min-width: 0 !important;
+    font-size: clamp(.5rem, 2.15vw, .64rem) !important;
+    line-height: 1.25 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Le bandeau illustré global prend moins de hauteur sur les écrans courts. */
+  main > .visuel-page-global {
+    margin-top: clamp(.35rem, 1.8vw, .7rem) !important;
+    margin-bottom: clamp(.55rem, 2.2vw, .9rem) !important;
+  }
+
+  .visuel-page-global-illustration,
+  .visuel-page-global-illustration img {
+    min-height: clamp(72px, 25vw, 108px) !important;
+    height: clamp(72px, 25vw, 108px) !important;
+    max-height: 108px !important;
+  }
+
+  .visuel-page-global-texte {
+    min-width: 0 !important;
+    padding: clamp(.65rem, 3vw, .9rem) !important;
+  }
+
+  .visuel-page-global-texte span {
+    max-width: 100% !important;
+    font-size: clamp(.82rem, 3.6vw, 1rem) !important;
+    line-height: 1.15 !important;
+  }
+
+  .visuel-page-global-texte small {
+    max-width: 100% !important;
+    margin-top: .18rem !important;
+    font-size: clamp(.58rem, 2.35vw, .72rem) !important;
+    line-height: 1.32 !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .cercles-hero-contenu {
+    padding: .82rem !important;
+  }
+
+  .cercles-hero-titre {
+    font-size: clamp(1.35rem, 7.15vw, 1.8rem) !important;
+  }
+
+  .cercles-hero-sous-titre {
+    font-size: clamp(.69rem, 2.65vw, .82rem) !important;
+  }
+
+  .cercles-hero-actions .bouton {
+    min-height: 2.35rem !important;
+    font-size: clamp(.62rem, 2.6vw, .74rem) !important;
+  }
+
+  .cercles-hero-stats {
+    padding: .5rem .55rem !important;
+  }
+
+  .cercles-hero-stat span {
+    font-size: clamp(.47rem, 2.05vw, .58rem) !important;
+  }
+}
+
+@media (max-width: 300px) {
+  /* Très petits téléphones : on garde le contenu utile sans l'écraser. */
+  .app-page > main,
+  main.main-clair,
+  main.main-clair-pleine-largeur {
+    padding-inline: .42rem !important;
+  }
+
+  .mobile-entete-app {
+    padding-left: 2.9rem !important;
+    padding-right: .5rem !important;
+  }
+
+  .sidebar-bouton-mobile {
+    width: 2.35rem !important;
+    height: 2.35rem !important;
+  }
+
+  .navigation-mobile-lien {
+    min-height: 3rem !important;
+    font-size: .41rem !important;
+  }
+
+  .navigation-mobile-lien svg {
+    width: .88rem !important;
+    height: .88rem !important;
+  }
+
+  .cercles-hero-kicker {
+    font-size: .44rem !important;
+  }
+
+  .cercles-hero-titre {
+    font-size: 1.28rem !important;
+  }
+
+  .cercles-hero-sous-titre {
+    font-size: .67rem !important;
+  }
+
+  .cercles-hero-actions .bouton {
+    min-height: 2.25rem !important;
+    font-size: .59rem !important;
+  }
+}
