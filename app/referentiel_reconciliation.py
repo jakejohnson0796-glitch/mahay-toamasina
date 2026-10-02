@@ -367,6 +367,43 @@ def _filiere_canonique(
     return cible
 
 
+def _fusionner_doublons_scope(
+    session: Session,
+    facultes_scope: set[int],
+    rapport: Rapport,
+) -> None:
+    """Consolide les filieres equivalentes restantes dans les composantes traitees."""
+    if not facultes_scope:
+        return
+
+    groupes: dict[tuple[int, int | None, str | None, str], list[Filiere]] = {}
+    for filiere in session.exec(
+        select(Filiere).where(Filiere.faculte_id.in_(facultes_scope))
+    ).all():
+        cle = (
+            filiere.faculte_id,
+            filiere.mention_id,
+            filiere.niveau,
+            normaliser(filiere.nom),
+        )
+        groupes.setdefault(cle, []).append(filiere)
+
+    for _, candidats in groupes.items():
+        if len(candidats) <= 1:
+            continue
+        cible = min(candidats, key=lambda item: item.id)
+        for doublon in sorted((item for item in candidats if item.id != cible.id), key=lambda item: item.id):
+            _reassigner_filiere(session, doublon.id, cible.id)
+            session.flush()
+            if _filiere_sans_reference(session, doublon.id):
+                session.delete(doublon)
+                session.flush()
+                rapport.filieres_supprimees += 1
+            else:
+                rapport.anciennes_filieres_conservees += 1
+            rapport.filieres_fusionnees += 1
+
+
 def reconcilier(
     session: Session,
     chemin_source: str,
@@ -479,6 +516,10 @@ def reconcilier(
             if actif is not None and extra.id != actif.id and extra.est_active:
                 extra.est_active = False
                 session.add(extra)
+
+    # Dernier filet de securite : consolide les doublons historiques qui
+    # ont la meme composante, mention, niveau et nom normalise.
+    _fusionner_doublons_scope(session, facultes_scope, rapport)
 
     # Désactive toute offre encore active dans les composantes canonisées qui
     # ne figure plus dans la source publique canonique.
