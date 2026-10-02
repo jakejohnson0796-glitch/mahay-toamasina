@@ -929,3 +929,268 @@ textarea {
     transition:none!important;
   }
 }
+
+
+/* =========================================================================
+   MOBILE V5 — structure téléphone : header, largeur utile, navigation et chat.
+   ========================================================================= */
+@media (max-width: 768px) {
+  /* Le contenu utilise réellement la largeur disponible du téléphone. */
+  .app-page > main,
+  .app-page > .contenu-clair,
+  main.main-clair {
+    width:100%;
+    max-width:none;
+    min-width:0;
+    box-sizing:border-box;
+  }
+
+  .app-page > main {
+    padding-left:12px;
+    padding-right:12px;
+  }
+
+  .contenu-clair {
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    box-sizing:border-box;
+  }
+
+  /* Header : le bouton hamburger fixe ne doit plus recouvrir la marque. */
+  .mobile-entete-app {
+    min-height:3.35rem;
+    padding-left:4rem;
+    padding-right:.7rem;
+    gap:.4rem;
+  }
+
+  .mobile-entete-app > a:first-child {
+    min-width:0;
+    max-width:52%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .mobile-entete-app-marque {
+    font-size:.98rem;
+  }
+
+  .mobile-entete-app-sous-marque {
+    display:none;
+  }
+
+  .mobile-entete-app-notifications {
+    margin-left:auto;
+  }
+
+  .mobile-entete-app-avatar span {
+    max-width:4.2rem;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* Navigation rapide : six items sur UNE seule ligne. */
+  .navigation-mobile-fixe {
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:.12rem!important;
+    min-height:4.15rem;
+    padding-top:.28rem!important;
+    padding-bottom:max(.28rem,env(safe-area-inset-bottom))!important;
+  }
+
+  .navigation-mobile-lien {
+    min-width:0;
+    min-height:3.55rem;
+    padding:.25rem .08rem;
+    border-radius:.7rem;
+    font-size:.54rem;
+    line-height:1.05;
+  }
+
+  .navigation-mobile-lien svg {
+    width:1.18rem;
+    height:1.18rem;
+  }
+
+  .navigation-mobile-lien span {
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* L'écran ne doit jamais passer derrière la navigation fixe. */
+  .app-page {
+    padding-bottom:calc(4.6rem + env(safe-area-inset-bottom))!important;
+  }
+
+  /* Le chat devient une vraie colonne mobile : pas de largeur forcée. */
+  .contenu-clair .disposition-chat,
+  .contenu-clair .colonne-conversation {
+    width:100%;
+    max-width:none;
+    min-width:0;
+  }
+
+  .contenu-clair .fenetre-chat {
+    width:100%;
+    max-width:none;
+    box-sizing:border-box;
+    height:calc(100dvh - 13.4rem);
+    min-height:20rem;
+    max-height:none;
+    padding:.72rem .55rem .9rem;
+    border-radius:18px;
+  }
+
+  /* Composer : icônes + champ + envoi sur une ligne, puis aides dessous. */
+  .contenu-clair .barre-composition {
+    grid-template-columns:2.35rem 2.35rem minmax(0,1fr) 2.45rem!important;
+    grid-template-rows:auto auto auto!important;
+    column-gap:.28rem!important;
+    row-gap:.2rem!important;
+    padding:.42rem!important;
+    border-radius:17px!important;
+  }
+
+  .contenu-clair .barre-composition #form-fichier > label {
+    grid-column:1!important;
+    grid-row:1!important;
+    width:2.2rem!important;
+    height:2.2rem!important;
+  }
+
+  .contenu-clair .barre-composition #form-fichier > .bouton-envoyer-fichier {
+    display:none!important;
+  }
+
+  .contenu-clair .barre-composition .conteneur-emoji-picker {
+    grid-column:2!important;
+    grid-row:1!important;
+  }
+
+  .contenu-clair .barre-composition #form-chat > .conteneur-mentions-suggestions {
+    grid-column:3!important;
+    grid-row:1!important;
+    min-width:0!important;
+  }
+
+  .contenu-clair .barre-composition #form-chat > .bouton-envoyer-message {
+    grid-column:4!important;
+    grid-row:1!important;
+  }
+
+  .contenu-clair .barre-composition #champ-message {
+    min-width:0!important;
+    width:100%!important;
+    min-height:2.75rem!important;
+    max-height:7rem!important;
+    padding:.62rem .22rem!important;
+    font-size:.86rem!important;
+    line-height:1.35!important;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-indicateurs {
+    grid-column:1 / -1!important;
+    grid-row:2!important;
+    font-size:.57rem!important;
+    gap:.35rem!important;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-indicateurs span:first-child {
+    max-width:75%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-outils {
+    grid-column:1 / -1!important;
+    grid-row:3!important;
+    max-width:100%;
+    overflow-x:auto;
+    overflow-y:hidden;
+    flex-wrap:nowrap!important;
+    justify-content:flex-start!important;
+    scrollbar-width:none;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-outils::-webkit-scrollbar {
+    display:none;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-outils .outil-cercle {
+    flex:0 0 auto;
+    min-height:28px!important;
+    padding:.28rem .48rem!important;
+    font-size:.58rem!important;
+    white-space:nowrap;
+  }
+
+  /* Le panneau emoji reste contenu dans l'écran. */
+  .contenu-clair .panneau-emojis-v2 {
+    width:min(340px,calc(100vw - 22px))!important;
+    max-width:calc(100vw - 22px)!important;
+    left:0!important;
+    right:auto!important;
+  }
+
+  /* Les messages utilisent presque toute la largeur utile. */
+  .contenu-clair .message {
+    width:94%;
+    max-width:94%;
+  }
+
+  .contenu-clair .message-corps {
+    max-width:100%;
+  }
+
+  /* Les panneaux de thread/profil deviennent des panneaux plein écran
+     internes au viewport plutôt qu'une colonne étroite. */
+  .contenu-clair .panneau-thread {
+    position:fixed!important;
+    left:10px!important;
+    right:10px!important;
+    bottom:calc(4.75rem + env(safe-area-inset-bottom))!important;
+    top:4.4rem!important;
+    width:auto!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:calc(100dvh - 9.2rem)!important;
+    z-index:60!important;
+    border-radius:18px!important;
+  }
+}
+
+@media (max-width: 390px) {
+  .mobile-entete-app {
+    padding-left:3.7rem;
+  }
+
+  .navigation-mobile-lien {
+    font-size:.50rem;
+  }
+
+  .navigation-mobile-lien svg {
+    width:1.08rem;
+    height:1.08rem;
+  }
+
+  .contenu-clair .fenetre-chat {
+    height:calc(100dvh - 13.0rem);
+  }
+
+  .contenu-clair .barre-composition {
+    grid-template-columns:2.2rem 2.2rem minmax(0,1fr) 2.3rem!important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navigation-mobile-lien,
+  .mobile-entete-app {
+    transition:none!important;
+  }
+}
