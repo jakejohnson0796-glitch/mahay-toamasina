@@ -1194,3 +1194,267 @@ textarea {
     transition:none!important;
   }
 }
+
+
+/* =========================================================================
+   RESPONSIVE FLUID V6 — adaptation continue à la largeur/hauteur disponible.
+   Pas de dimension liée à un modèle précis de téléphone.
+   ========================================================================= */
+@media (max-width: 1024px) {
+  .app-mise-en-page,
+  .app-page,
+  .app-page > main,
+  .app-page > main > .contenu-clair {
+    min-width:0;
+    width:100%;
+    box-sizing:border-box;
+  }
+}
+
+@media (max-width: 768px) {
+  :root{
+    --mobile-gutter-fluid:clamp(.55rem,3vw,1rem);
+    --mobile-gap-fluid:clamp(.35rem,2vw,.75rem);
+    --mobile-nav-fluid:clamp(3.9rem,14vw,4.6rem);
+  }
+
+  html{
+    width:100%;
+    min-width:0;
+    overflow-x:hidden;
+  }
+
+  body{
+    width:100%;
+    min-width:0;
+    max-width:100vw;
+    overflow-x:hidden;
+    overscroll-behavior-x:none;
+  }
+
+  .app-mise-en-page{
+    width:100%;
+    min-width:0;
+    max-width:100vw;
+    display:block;
+  }
+
+  .app-page{
+    width:100%;
+    max-width:100vw;
+    min-width:0;
+    overflow-x:clip;
+    padding-top:clamp(3.45rem,11vw,4rem);
+    padding-bottom:calc(var(--mobile-nav-fluid) + env(safe-area-inset-bottom) + .45rem)!important;
+  }
+
+  .app-page > main,
+  main.main-clair,
+  main.main-clair-pleine-largeur{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    padding-left:var(--mobile-gutter-fluid)!important;
+    padding-right:var(--mobile-gutter-fluid)!important;
+    box-sizing:border-box;
+  }
+
+  .contenu-clair,
+  .contenu-clair > *{
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  /* Header et hamburger dimensionnés proportionnellement. */
+  .sidebar-bouton-mobile{
+    top:max(.55rem,env(safe-area-inset-top));
+    left:max(.55rem,env(safe-area-inset-left));
+    width:clamp(2.35rem,10vw,2.9rem);
+    height:clamp(2.35rem,10vw,2.9rem);
+  }
+
+  .mobile-entete-app{
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    min-height:clamp(3rem,12vw,3.45rem);
+    padding-left:clamp(3.35rem,15vw,4rem);
+    padding-right:var(--mobile-gutter-fluid);
+    gap:var(--mobile-gap-fluid);
+  }
+
+  .mobile-entete-app-marque{
+    font-size:clamp(.9rem,4vw,1.02rem);
+  }
+
+  .mobile-entete-app-avatar span{
+    max-width:clamp(2.5rem,15vw,4.2rem);
+    font-size:clamp(.62rem,2.7vw,.76rem);
+  }
+
+  /* Navigation basse : taille fluide sans retour à la ligne. */
+  .navigation-mobile-fixe{
+    left:0;
+    right:0;
+    width:100%;
+    max-width:100vw;
+    box-sizing:border-box;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    min-height:var(--mobile-nav-fluid);
+    gap:clamp(.04rem,.6vw,.18rem)!important;
+    padding-left:max(.25rem,env(safe-area-inset-left))!important;
+    padding-right:max(.25rem,env(safe-area-inset-right))!important;
+    padding-top:clamp(.18rem,1.2vw,.35rem)!important;
+    padding-bottom:max(.2rem,env(safe-area-inset-bottom))!important;
+  }
+
+  .navigation-mobile-lien{
+    min-width:0;
+    min-height:clamp(3.1rem,11vw,3.55rem);
+    padding:clamp(.16rem,.8vw,.28rem) .05rem;
+    gap:clamp(.12rem,.55vw,.2rem);
+    font-size:clamp(.48rem,1.8vw,.58rem);
+  }
+
+  .navigation-mobile-lien svg{
+    width:clamp(1rem,4.5vw,1.2rem);
+    height:clamp(1rem,4.5vw,1.2rem);
+    flex:0 0 auto;
+  }
+
+  .navigation-mobile-lien span{
+    min-width:0;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* Toutes les grandes cartes s'ajustent sans créer de largeur minimale. */
+  .contenu-clair .carte-formulaire,
+  .contenu-clair .carte-claire,
+  .contenu-clair .document-upload-card,
+  .contenu-clair .document-upload-side-card,
+  .contenu-clair .entete-cercle,
+  .contenu-clair .fenetre-chat,
+  .contenu-clair .barre-composition{
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  /* Chat : hauteur fluide selon la hauteur réelle de l'écran. */
+  .contenu-clair .fenetre-chat{
+    height:clamp(
+      19rem,
+      calc(100dvh - var(--mobile-nav-fluid) - clamp(8rem,22vw,10.5rem)),
+      72dvh
+    );
+    min-height:19rem;
+  }
+
+  .contenu-clair .message{
+    width:clamp(90%,94%,96%);
+    max-width:96%;
+  }
+
+  /* Composer : les boutons suivent eux aussi la largeur disponible. */
+  .contenu-clair .barre-composition{
+    grid-template-columns:
+      clamp(2.05rem,9vw,2.35rem)
+      clamp(2.05rem,9vw,2.35rem)
+      minmax(0,1fr)
+      clamp(2.25rem,10vw,2.5rem)!important;
+    column-gap:clamp(.18rem,1vw,.3rem)!important;
+  }
+
+  .contenu-clair .barre-composition #champ-message{
+    font-size:clamp(.8rem,3.5vw,.92rem)!important;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-outils .outil-cercle{
+    font-size:clamp(.52rem,2.1vw,.64rem)!important;
+    padding-inline:clamp(.38rem,1.6vw,.56rem)!important;
+  }
+
+  .contenu-clair .panneau-emojis-v2{
+    width:min(clamp(300px,calc(100vw - 20px),390px),calc(100vw - 20px))!important;
+    max-width:calc(100vw - 20px)!important;
+  }
+
+  /* Upload document et autres formulaires : passage fluide en une colonne. */
+  .document-upload-shell{
+    width:100%;
+    max-width:none;
+    box-sizing:border-box;
+    padding-inline:0;
+  }
+
+  /* Évite qu'une grande chaîne (titre, nom de fichier, URL) étire la page. */
+  h1,h2,h3,h4,p,a,button,label,span,input,select,textarea{
+    max-width:100%;
+  }
+
+  img,svg,video,canvas{
+    max-width:100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .app-page > main,
+  main.main-clair,
+  main.main-clair-pleine-largeur{
+    padding-left:clamp(.45rem,2.6vw,.72rem)!important;
+    padding-right:clamp(.45rem,2.6vw,.72rem)!important;
+  }
+
+  .mobile-entete-app > a:first-child{
+    max-width:48%;
+  }
+
+  .navigation-mobile-lien{
+    font-size:clamp(.46rem,1.72vw,.53rem);
+  }
+
+  .navigation-mobile-lien svg{
+    width:clamp(.95rem,4.2vw,1.1rem);
+    height:clamp(.95rem,4.2vw,1.1rem);
+  }
+
+  .contenu-clair .message{
+    width:95%;
+    max-width:95%;
+  }
+
+  .contenu-clair .barre-composition{
+    padding:clamp(.3rem,1.5vw,.42rem)!important;
+  }
+}
+
+@media (max-width:340px) {
+  /* Appareils très étroits : on privilégie les icônes et le champ de texte.
+     Aucun élément essentiel ne dépasse du viewport. */
+  .mobile-entete-app{
+    padding-left:3.35rem;
+  }
+
+  .mobile-entete-app-notifications{
+    display:none;
+  }
+
+  .navigation-mobile-lien span{
+    font-size:.44rem;
+  }
+
+  .contenu-clair .barre-composition{
+    grid-template-columns:2rem 2rem minmax(0,1fr) 2.2rem!important;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-indicateurs span:first-child{
+    max-width:62%;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-outils .outil-cercle{
+    padding-inline:.34rem!important;
+  }
+}
