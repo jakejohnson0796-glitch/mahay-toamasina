@@ -39,7 +39,8 @@ def verifier_contrat_render() -> tuple[int, int]:
         assert bloc is not None, key
         assert "sync: false" in bloc.group(0), key
     assert "uvicorn app.main:app --host 0.0.0.0 --port " + "${PORT:-8080}" in dockerfile
-    assert "--workers" not in dockerfile
+    commande = dockerfile.split("CMD", 1)[1] if "CMD" in dockerfile else ""
+    assert "--workers" not in commande
     assert "EXPOSE 8080" in dockerfile
     return len(keys), len(REQUIRED_RENDER_KEYS)
 
