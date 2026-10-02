@@ -1,4 +1,8 @@
-"""Score de maitrise et revision espacee par notion."""
+"""Score de maitrise et revision espacee par notion.
+
+Migration rendue idempotente pour les bases ou une partie du schema a deja
+ete creee avant l'enregistrement de la revision Alembic.
+"""
 from typing import Sequence, Union
 
 from alembic import op
@@ -11,27 +15,54 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def _noms_colonnes(inspector, table: str) -> set[str]:
+    return {col["name"] for col in inspector.get_columns(table)}
+
+
 def upgrade() -> None:
-    op.add_column(
-        "progressionnotion",
-        sa.Column("score_maitrise", sa.Integer(), nullable=False, server_default="0"),
-    )
-    op.add_column(
-        "progressionnotion",
-        sa.Column("serie_reussites", sa.Integer(), nullable=False, server_default="0"),
-    )
-    op.add_column(
-        "progressionnotion",
-        sa.Column("nb_revisions", sa.Integer(), nullable=False, server_default="0"),
-    )
-    op.add_column(
-        "progressionnotion",
-        sa.Column("prochaine_revision_le", sa.DateTime(), nullable=True),
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    if not inspector.has_table("progressionnotion"):
+        raise RuntimeError(
+            "La table 'progressionnotion' est absente alors que la migration "
+            "e4b7c2d9f1a3 doit lui ajouter les champs de maitrise."
+        )
+
+    colonnes = _noms_colonnes(inspector, "progressionnotion")
+
+    a_ajouter = {
+        "score_maitrise": sa.Column(
+            "score_maitrise",
+            sa.Integer(),
+            nullable=False,
+            server_default="0",
+        ),
+        "serie_reussites": sa.Column(
+            "serie_reussites",
+            sa.Integer(),
+            nullable=False,
+            server_default="0",
+        ),
+        "nb_revisions": sa.Column(
+            "nb_revisions",
+            sa.Integer(),
+            nullable=False,
+            server_default="0",
+        ),
+        "prochaine_revision_le": sa.Column(
+            "prochaine_revision_le",
+            sa.DateTime(),
+            nullable=True,
+        ),
+    }
+
+    for nom, colonne in a_ajouter.items():
+        if nom not in colonnes:
+            op.add_column("progressionnotion", colonne)
 
     # Reconstitue une premiere estimation a partir de l'historique deja
-    # disponible, afin que les comptes existants beneficient immediatement
-    # du plan adaptatif sans devoir refaire tous leurs anciens quiz.
+    # disponible. Le calcul est sans effet sur les autres colonnes.
     op.execute(
         sa.text(
             """
@@ -47,7 +78,19 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column("progressionnotion", "prochaine_revision_le")
-    op.drop_column("progressionnotion", "nb_revisions")
-    op.drop_column("progressionnotion", "serie_reussites")
-    op.drop_column("progressionnotion", "score_maitrise")
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    if not inspector.has_table("progressionnotion"):
+        return
+
+    colonnes = _noms_colonnes(inspector, "progressionnotion")
+
+    for nom in (
+        "prochaine_revision_le",
+        "nb_revisions",
+        "serie_reussites",
+        "score_maitrise",
+    ):
+        if nom in colonnes:
+            op.drop_column("progressionnotion", nom)
