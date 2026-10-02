@@ -15,7 +15,7 @@ rejoue la commande de migration.
 
 ## 2. Demarrage
 
-- `/health` doit repondre `200`.
+- `/health` doit repondre `200` ; `/ready` doit passer a `200` apres l'initialisation des donnees.
 - Les migrations sont executees avant de servir l'application.
 - La maintenance lourde du referentiel est lancee en arriere-plan afin de ne
   pas bloquer le health check.
