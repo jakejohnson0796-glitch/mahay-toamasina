@@ -27,7 +27,7 @@ def test_sauvegarder_avatar_valide_et_remplace_ancien_fichier(monkeypatch, tmp_p
     assert (tmp_path / "avatar_42.png").read_bytes() == _png_bytes()
 
     remplacement = UploadFile(file=io.BytesIO(_png_bytes((20, 80, 200))), filename="profil.png")
-    chemin2 = storage.sauvegarder_avatar(replacement, 42, ancien_chemin=chemin)
+    chemin2 = storage.sauvegarder_avatar(remplacement, 42, ancien_chemin=chemin)
 
     assert chemin2 == chemin
     assert (tmp_path / "avatar_42.png").read_bytes() == _png_bytes((20, 80, 200))
