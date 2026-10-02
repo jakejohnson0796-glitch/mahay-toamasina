@@ -151,6 +151,11 @@ def upload_document(
         cercle_id = None
 
     filiere = session.get(Filiere, filiere_id)
+    if not filiere:
+        return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
+    if annee < 2000 or annee > 2100:
+        return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
+
     reference = generer_reference(filiere, annee, session)
     # sauvegarder_fichier() choisit local ou Supabase Storage selon la
     # config (.env) — voir app/storage.py. Elle rejette aussi les types de
