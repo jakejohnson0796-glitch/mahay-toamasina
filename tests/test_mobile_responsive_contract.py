@@ -29,3 +29,19 @@ def test_responsive_contract_is_fluid_and_safe():
     ]
     for token in required:
         assert token in css, token
+
+
+def test_ultra_small_circle_overrides_neutralize_inline_mobile_heights():
+    css = RESPONSIVE.read_text(encoding="utf-8")
+    required = [
+        ".cercles-hero-visuel {",
+        "min-height: 0 !important;",
+        "height: auto !important;",
+        ".cercles-hero-contenu {",
+        "max-width: none !important;",
+        ".cercles-hero-titre {",
+        "font-size: clamp(1.45rem, 7.6vw, 2rem) !important;",
+        "@media (max-width: 300px)",
+    ]
+    for token in required:
+        assert token in css, token
