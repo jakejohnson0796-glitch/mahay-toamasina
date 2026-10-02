@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import PlainTextResponse, Response
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -145,8 +145,26 @@ async def au_demarrage() -> None:
     # puisse atteindre le serveur et valider son health check sans attendre
     # l'import du referentiel, le seed et la maintenance des cercles.
     print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
+    app.state.initialisation_etat = "en_cours"
     initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
     app.state.initialisation_donnees = initialisation
+
+    def _notifier_fin_initialisation(tache: asyncio.Task) -> None:
+        try:
+            tache.result()
+        except asyncio.CancelledError:
+            app.state.initialisation_etat = "annulee"
+        except Exception as erreur_initialisation:
+            app.state.initialisation_etat = "erreur"
+            print(
+                "[ERREUR DATABASE] Initialisation des donnees en arriere-plan "
+                f"echouee : {type(erreur_initialisation).__name__}: {erreur_initialisation}"
+            )
+        else:
+            app.state.initialisation_etat = "ok"
+            print("[DEBUG DATABASE] Initialisation des donnees terminee.")
+
+    initialisation.add_done_callback(_notifier_fin_initialisation)
 
     # Render Free ne fournit pas de Background Worker gratuit. Lorsque Redis
     # est configure, la boucle IA tourne donc dans un thread interne au Web
@@ -300,13 +318,61 @@ def _initialiser_donnees_apres_demarrage() -> None:
 
 @app.get("/health")
 def health() -> dict:
-    """Endpoint de liveness avec etat statique du worker IA inline."""
+    """Endpoint de liveness rapide : le processus HTTP est vivant."""
     thread = getattr(app.state, "ai_worker_thread", None)
     return {
         "status": "ok",
         "ai_worker_configured": bool(parametres.redis_url),
         "ai_worker_alive": bool(thread and thread.is_alive()),
     }
+
+
+@app.get("/ready")
+def readiness() -> Response:
+    """Readiness : schema DB migre et initialisation des donnees terminee."""
+    etat_initialisation = getattr(app.state, "initialisation_etat", "inconnu")
+
+    try:
+        with engine.connect() as connexion:
+            connexion.exec_driver_sql("SELECT 1")
+    except Exception as erreur:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "reason": "database_unavailable",
+                "initialisation_etat": etat_initialisation,
+                "detail": type(erreur).__name__,
+            },
+        )
+
+    if etat_initialisation == "erreur":
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "reason": "initialisation_failed",
+                "initialisation_etat": etat_initialisation,
+            },
+        )
+
+    if etat_initialisation != "ok":
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "reason": "initialisation_in_progress",
+                "initialisation_etat": etat_initialisation,
+            },
+        )
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "ready",
+            "initialisation_etat": etat_initialisation,
+        },
+    )
 
 
 @app.get("/robots.txt", include_in_schema=False)
