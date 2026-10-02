@@ -213,20 +213,13 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.commit()
             session.refresh(autre_faculte)
 
-            autre_filiere = Filiere(
-                nom="Finance et Comptabilite",
-                faculte_id=autre_faculte.id,
-                mention_id=self.mention_id,
-                niveau="L3",
-            )
-            session.add(autre_filiere)
-            session.commit()
-            session.refresh(autre_filiere)
-
-            # Le lien est volontairement coherent pour l'autre universite.
+            # Le lien est volontairement croise : la Filiere locale de
+            # Toamasina est referencee par une offre d'une autre universite.
+            # Cette incoherence historique doit rester invalide pour Toamasina
+            # tant qu'aucune offre active locale n'existe.
             session.add(ProgrammeUniversitaire(
                 universite_id=autre_universite.id,
-                filiere_id=autre_filiere.id,
+                filiere_id=self.filiere_id,
                 est_active=True,
             ))
             # Aucun programme Toamasina pour la filiere locale : ce lien distant
