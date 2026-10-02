@@ -159,40 +159,71 @@ def _reassigner_faculte(session: Session, ancien_id: int, nouveau_id: int) -> No
 
 
 def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> None:
-    for programme in session.exec(
-        select(ProgrammeUniversitaire).where(ProgrammeUniversitaire.filiere_id == ancien_id)
-    ).all():
-        # Une seule offre active par (universite, filiere). Si l'offre
-        # canonique existe déjà sur le survivant, l'ancienne ligne est
-        # simplement désactivée au lieu de créer une collision d'index.
-        existe = session.exec(
-            select(ProgrammeUniversitaire).where(
-                ProgrammeUniversitaire.universite_id == programme.universite_id,
-                ProgrammeUniversitaire.filiere_id == nouveau_id,
-                ProgrammeUniversitaire.est_active == True,  # noqa: E712
-            )
-        ).first()
-        if existe and programme.est_active:
-            programme.est_active = False
+    """Réattribue toutes les références et garantit une seule offre active
+    par couple (universite_id, filiere_id) après fusion.
+    """
+    programmes_source = session.exec(
+        select(ProgrammeUniversitaire).where(
+            ProgrammeUniversitaire.filiere_id == ancien_id
+        )
+    ).all()
+
+    # Déplace d'abord toutes les offres vers la filière survivante.
+    for programme in programmes_source:
         programme.filiere_id = nouveau_id
         session.add(programme)
 
-    for utilisateur in session.exec(select(Utilisateur).where(Utilisateur.filiere_id == ancien_id)).all():
+    session.flush()
+
+    # Une fois toutes les lignes réunies, normalise l'état actif par université.
+    programmes_cibles = session.exec(
+        select(ProgrammeUniversitaire).where(
+            ProgrammeUniversitaire.filiere_id == nouveau_id
+        )
+    ).all()
+
+    par_universite: dict[int, list[ProgrammeUniversitaire]] = {}
+    for programme in programmes_cibles:
+        par_universite.setdefault(programme.universite_id, []).append(programme)
+
+    for programmes in par_universite.values():
+        actifs = [programme for programme in programmes if programme.est_active]
+        if not actifs:
+            continue
+
+        survivant = min(actifs, key=lambda programme: programme.id)
+        for programme in programmes:
+            nouvel_etat = programme.id == survivant.id
+            if programme.est_active != nouvel_etat:
+                programme.est_active = nouvel_etat
+                session.add(programme)
+
+    session.flush()
+
+    for utilisateur in session.exec(
+        select(Utilisateur).where(Utilisateur.filiere_id == ancien_id)
+    ).all():
         utilisateur.filiere_id = nouveau_id
         session.add(utilisateur)
 
-    # Les documents sont egalement lies directement a la Filiere.
+    # Les documents sont également liés directement à la Filiere.
     from .models import Document
-    for document in session.exec(select(Document).where(Document.filiere_id == ancien_id)).all():
+    for document in session.exec(
+        select(Document).where(Document.filiere_id == ancien_id)
+    ).all():
         document.filiere_id = nouveau_id
         session.add(document)
 
-    for cercle in session.exec(select(CercleEtude).where(CercleEtude.filiere_id == ancien_id)).all():
+    for cercle in session.exec(
+        select(CercleEtude).where(CercleEtude.filiere_id == ancien_id)
+    ).all():
         cercle.filiere_id = nouveau_id
         session.add(cercle)
 
     for demande in session.exec(
-        select(DemandeCreationCercle).where(DemandeCreationCercle.filiere_id == ancien_id)
+        select(DemandeCreationCercle).where(
+            DemandeCreationCercle.filiere_id == ancien_id
+        )
     ).all():
         demande.filiere_id = nouveau_id
         session.add(demande)
