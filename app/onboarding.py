@@ -156,7 +156,7 @@ def donnees_onboarding(session: Session, utilisateur: Utilisateur) -> dict:
             datetime.min.time(),
         )
         terminee = any(
-            action.action == item["action"] and action.date_creation >= jour_debut
+            action.action == item["action"] and action.date_creation >= debut
             for action in actions
         )
         plan.append(
