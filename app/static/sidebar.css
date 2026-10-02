@@ -10,10 +10,10 @@
   overflow:visible;
   padding:.9rem .75rem .8rem !important;
   background:
-    radial-gradient(circle at 100% 0%, rgba(228,125,85,.16), transparent 15rem),
-    linear-gradient(180deg,#0a3538 0%,#062b2e 100%) !important;
-  border-right-color:rgba(255,255,255,.09) !important;
-  box-shadow:12px 0 35px rgba(4,31,34,.12) !important;
+    radial-gradient(circle at 100% 0%, rgba(184,84,58,.14), transparent 15rem),
+    linear-gradient(180deg,#08383A 0%,#062D2F 100%) !important;
+  border-right-color:rgba(246,241,231,.10) !important;
+  box-shadow:12px 0 35px rgba(4,25,27,.16) !important;
 }
 
 .tb-sidebar-marque {
@@ -47,7 +47,7 @@
   border:1px solid rgba(255,255,255,.10);
   border-radius:9px;
   background:rgba(255,255,255,.045);
-  color:#b7ceca;
+  color:#C3D2CD;
   cursor:pointer;
   transition:transform .18s var(--ease-fluide),background .18s var(--ease-fluide);
 }
