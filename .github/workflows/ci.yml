@@ -36,7 +36,7 @@ jobs:
           set -e
           for test_file in tests/test_*.py; do
             echo "===== $test_file ====="
-            pytest -q "$test_file"
+            timeout 300s pytest -q "$test_file"
           done
 
   postgres-smoke:
