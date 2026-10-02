@@ -143,6 +143,13 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         ).all()
 
         # Le référentiel publié est réconcilié strictement par l'application.
+        # Seules les lignes vérifiées/confirmées de la source sont publiables.
+        attendues = [
+            ligne for ligne in payload["formations"]
+            if _normaliser(ligne.get("statut")) in {"verifie", "confirme"}
+            and _normaliser(ligne["type"]) != _normaliser("Tronc commun")
+        ]
+
         # Le smoke test vérifie ici le contrat opérationnel : il existe des
         # offres actives pour Toamasina et chaque offre pointe vers une Filiere
         # réellement rattachée à une composante de cette université.
