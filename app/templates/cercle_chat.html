@@ -27,10 +27,81 @@
 .cercle-commandes{position:absolute;left:0;bottom:calc(100% + .45rem);width:min(330px,calc(100vw - 2rem));padding:.45rem;z-index:30;border:1px solid var(--content-border);border-radius:12px;background:var(--content-surface);box-shadow:var(--shadow-lg)}
 .cercle-commande{display:flex;width:100%;gap:.5rem;text-align:left;border:0;background:transparent;padding:.55rem .6rem;border-radius:8px;cursor:pointer;color:var(--content-text)}
 .cercle-commande:hover{background:var(--content-bg)}
-.cercle-mode-compact .message{margin-block:.25rem!important}
-.cercle-mode-compact .message-contenu{padding-block:.2rem!important}
-.cercle-mode-compact .barre-composition{padding-block:.45rem!important}
-.cercle-mode-focus .entete-cercle~*{opacity:.96}
+.cercle-mode-compact .contenu-clair .fenetre-chat{
+  gap:.28rem!important;
+  padding:.7rem .75rem .85rem!important;
+}
+.cercle-mode-compact .contenu-clair .message{
+  max-width:78%;
+  margin-block:.08rem!important;
+}
+.cercle-mode-compact .contenu-clair .message-corps{
+  padding:.38rem .68rem .36rem!important;
+  border-radius:14px 14px 14px 5px!important;
+}
+.cercle-mode-compact .contenu-clair .message-moi .message-corps{
+  border-radius:14px 14px 5px 14px!important;
+}
+.cercle-mode-compact .contenu-clair .message-avatar{
+  width:1.75rem!important;
+  height:1.75rem!important;
+  font-size:.68rem!important;
+}
+.cercle-mode-compact .contenu-clair .message-entete{
+  margin-bottom:.05rem!important;
+}
+.cercle-mode-compact .contenu-clair .message-contenu{
+  font-size:.84rem!important;
+  line-height:1.34!important;
+}
+.cercle-mode-compact .contenu-clair .reactions-du-message{
+  margin-top:.2rem!important;
+}
+.cercle-mode-compact .contenu-clair .barre-composition{
+  padding-block:.42rem!important;
+}
+
+/* Focus : agrandit réellement l'espace de conversation et réduit les distractions. */
+.cercle-mode-focus .contenu-clair .entete-cercle{
+  margin-bottom:.5rem!important;
+  padding:.45rem .55rem!important;
+  opacity:.72;
+}
+.cercle-mode-focus .contenu-clair .entete-cercle-icone{
+  width:2.35rem!important;
+  height:2.35rem!important;
+}
+.cercle-mode-focus .contenu-clair .entete-cercle-sous-titre{
+  font-size:.68rem!important;
+}
+.cercle-mode-focus .contenu-clair .fenetre-chat{
+  height:min(76vh,820px)!important;
+  min-height:28rem!important;
+}
+.cercle-mode-focus .contenu-clair .entete-cercle-actions{
+  opacity:.72;
+}
+.cercle-mode-focus .contenu-clair .message{
+  max-width:min(88%,820px);
+}
+.cercle-mode-focus .contenu-clair .cercle-chat-outils{
+  max-height:0;
+  overflow:hidden;
+  opacity:0;
+  margin:0!important;
+  padding:0!important;
+  transform:translateY(4px);
+  transition:max-height .2s ease,opacity .2s ease,transform .2s ease;
+}
+.cercle-mode-focus .contenu-clair .cercle-chat-indicateurs{
+  opacity:.6;
+}
+.cercle-mode-focus .contenu-clair .barre-composition{
+  position:sticky!important;
+  bottom:.5rem;
+  box-shadow:0 18px 42px rgba(0,0,0,.16),0 0 0 3px rgba(184,84,58,.05)!important;
+}
+
 @media (max-width:640px){
   .grille-emojis-v2{grid-template-columns:repeat(7,1fr)}
   .cercle-chat-outils .outil-cercle span.texte-option{display:none}
@@ -500,8 +571,8 @@
       </div>
       <div class="cercle-chat-outils" aria-label="Outils du cercle">
         <button type="button" class="outil-cercle" id="bouton-commande-cercle" title="Raccourcis">⚡ <span class="texte-option">Raccourcis</span></button>
-        <button type="button" class="outil-cercle" id="bouton-focus-cercle" title="Mode concentration">🎯 <span class="texte-option">Focus</span></button>
-        <button type="button" class="outil-cercle" id="bouton-compact-cercle" title="Mode compact">📐 <span class="texte-option">Compact</span></button>
+        <button type="button" class="outil-cercle" id="bouton-focus-cercle" title="Activer le mode Focus" aria-pressed="false">🎯 <span class="texte-option">Focus</span></button>
+        <button type="button" class="outil-cercle" id="bouton-compact-cercle" title="Activer le mode Compact" aria-pressed="false">📐 <span class="texte-option">Compact</span></button>
         <button type="button" class="outil-cercle" id="bouton-plein-ecran-cercle" title="Plein écran">⛶ <span class="texte-option">Plein écran</span></button>
       </div>
       <div id="commandes-cercle" class="cercle-commandes" hidden>
@@ -1652,17 +1723,47 @@
     });
   }
 
+  function synchroniserBoutonMode(bouton, actif, libelle, titreActif, titreInactif) {
+    if (!bouton) return;
+    bouton.classList.toggle("actif", actif);
+    bouton.setAttribute("aria-pressed", actif ? "true" : "false");
+    bouton.title = actif ? titreActif : titreInactif;
+    const texte = bouton.querySelector(".texte-option");
+    if (texte) texte.textContent = actif ? (libelle + " activé") : libelle;
+  }
+
+  function appliquerModesCercle() {
+    const focus = document.body.classList.contains("cercle-mode-focus");
+    const compact = document.body.classList.contains("cercle-mode-compact");
+
+    synchroniserBoutonMode(
+      boutonFocusCercle,
+      focus,
+      "Focus",
+      "Désactiver le mode Focus",
+      "Activer le mode Focus"
+    );
+    synchroniserBoutonMode(
+      boutonCompactCercle,
+      compact,
+      "Compact",
+      "Désactiver le mode Compact",
+      "Activer le mode Compact"
+    );
+  }
+
   if (boutonFocusCercle) boutonFocusCercle.addEventListener("click", function () {
     const actif = !document.body.classList.contains("cercle-mode-focus");
     document.body.classList.toggle("cercle-mode-focus", actif);
     localStorage.setItem("gasy-mahay-cercle-focus", actif ? "1" : "0");
-    boutonFocusCercle.classList.toggle("actif", actif);
+    appliquerModesCercle();
   });
+
   if (boutonCompactCercle) boutonCompactCercle.addEventListener("click", function () {
     const actif = !document.body.classList.contains("cercle-mode-compact");
     document.body.classList.toggle("cercle-mode-compact", actif);
     localStorage.setItem("gasy-mahay-cercle-compact", actif ? "1" : "0");
-    boutonCompactCercle.classList.toggle("actif", actif);
+    appliquerModesCercle();
   });
   if (boutonPleinEcranCercle) boutonPleinEcranCercle.addEventListener("click", async function () {
     try {
@@ -1758,8 +1859,7 @@
     const focus = localStorage.getItem("gasy-mahay-cercle-focus") === "1";
     document.body.classList.toggle("cercle-mode-compact", compact);
     document.body.classList.toggle("cercle-mode-focus", focus);
-    if (boutonCompactCercle) boutonCompactCercle.classList.toggle("actif", compact);
-    if (boutonFocusCercle) boutonFocusCercle.classList.toggle("actif", focus);
+    appliquerModesCercle();
   }
   activerPreferencesCercle();
   const panneauEmojis = document.getElementById("panneau-emojis");
