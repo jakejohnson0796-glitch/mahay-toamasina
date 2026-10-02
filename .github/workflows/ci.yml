@@ -27,6 +27,8 @@ jobs:
           cache: pip
       - name: Installer les dependances
         run: python -m pip install -r requirements.txt
+      - name: Verifier le graphe des migrations Alembic
+        run: python scripts/verify_migrations.py
       - name: Verifier la compilation
         run: python -m compileall -q app tests
       - name: Lancer les tests (un module par processus)
@@ -96,7 +98,13 @@ jobs:
           cur.close()
           conn.close()
           PY
+      - name: Verifier le graphe des migrations Alembic
+        run: python scripts/verify_migrations.py
       - name: Appliquer toutes les migrations PostgreSQL
         run: alembic upgrade head
+      - name: Rejouer les migrations pour verifier l'idempotence
+        run: alembic upgrade head
+      - name: Verifier la revision courante
+        run: alembic current
       - name: Tester le démarrage réel et le référentiel Excel sur PostgreSQL
         run: pytest -q tests/test_postgres_referentiel_smoke.py
