@@ -57,10 +57,16 @@ def offre_filiere_active_universite(session: Session, universite_id: int, filier
     if not offres_toutes_universites:
         return True
 
-    return any(
-        offre.universite_id == universite_id and offre.est_active
-        for offre in offres_toutes_universites
-    )
+    offre_locale = session.exec(
+        select(ProgrammeUniversitaire)
+        .where(
+            ProgrammeUniversitaire.universite_id == universite_id,
+            ProgrammeUniversitaire.filiere_id == filiere_id,
+            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+        )
+        .limit(1)
+    ).first()
+    return offre_locale is not None
 
 
 def _mention_offerte_dans_faculte(session: Session, mention_id: int, faculte_id: int) -> bool:
