@@ -159,8 +159,12 @@ def _reassigner_faculte(session: Session, ancien_id: int, nouveau_id: int) -> No
 
 
 def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> None:
-    """Réattribue toutes les références et garantit une seule offre active
-    par couple (universite_id, filiere_id) après fusion.
+    """Réattribue les références d'une filière supprimée vers sa survivante.
+
+    ProgrammeUniversitaire possède une contrainte UNIQUE sur
+    (universite_id, filiere_id). Lorsqu'une offre existe déjà sur la
+    filière survivante, on la conserve et on supprime la ligne redondante
+    de l'ancienne filière au lieu de provoquer une collision SQL.
     """
     programmes_source = session.exec(
         select(ProgrammeUniversitaire).where(
@@ -168,35 +172,25 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
         )
     ).all()
 
-    # Déplace d'abord toutes les offres vers la filière survivante.
     for programme in programmes_source:
-        programme.filiere_id = nouveau_id
-        session.add(programme)
+        cible = session.exec(
+            select(ProgrammeUniversitaire).where(
+                ProgrammeUniversitaire.universite_id == programme.universite_id,
+                ProgrammeUniversitaire.filiere_id == nouveau_id,
+            )
+        ).first()
 
-    session.flush()
-
-    # Une fois toutes les lignes réunies, normalise l'état actif par université.
-    programmes_cibles = session.exec(
-        select(ProgrammeUniversitaire).where(
-            ProgrammeUniversitaire.filiere_id == nouveau_id
-        )
-    ).all()
-
-    par_universite: dict[int, list[ProgrammeUniversitaire]] = {}
-    for programme in programmes_cibles:
-        par_universite.setdefault(programme.universite_id, []).append(programme)
-
-    for programmes in par_universite.values():
-        actifs = [programme for programme in programmes if programme.est_active]
-        if not actifs:
-            continue
-
-        survivant = min(actifs, key=lambda programme: programme.id)
-        for programme in programmes:
-            nouvel_etat = programme.id == survivant.id
-            if programme.est_active != nouvel_etat:
-                programme.est_active = nouvel_etat
-                session.add(programme)
+        if cible is not None:
+            # Si l'offre historique supprimée était active alors que
+            # l'offre survivante ne l'était pas, conserve l'information
+            # « active » sur la ligne survivante.
+            if programme.est_active and not cible.est_active:
+                cible.est_active = True
+                session.add(cible)
+            session.delete(programme)
+        else:
+            programme.filiere_id = nouveau_id
+            session.add(programme)
 
     session.flush()
 
