@@ -141,6 +141,30 @@
   color:var(--content-text-muted);
   opacity:.75;
 }
+
+/* Correctif select : la feuille de style globale du site masque la flèche
+   native des <select>. Ici on préfère le contrôle natif, stable sur desktop
+   comme sur Android/iOS, plutôt qu'un SVG qui peut être dupliqué par une
+   cascade de background shorthand. */
+.document-upload-field select{
+  appearance:auto!important;
+  -webkit-appearance:menulist!important;
+  background-image:none!important;
+  background-color:var(--content-bg)!important;
+  color:var(--content-text)!important;
+  padding-right:.75rem!important;
+  text-overflow:ellipsis;
+}
+.document-upload-field select:focus{
+  appearance:auto!important;
+  -webkit-appearance:menulist!important;
+  background-image:none!important;
+  background-color:var(--content-surface)!important;
+}
+.document-upload-field select option{
+  background:var(--content-surface);
+  color:var(--content-text);
+}
 .document-upload-file{
   position:relative;
   display:flex;
