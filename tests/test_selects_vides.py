@@ -71,7 +71,9 @@ class TestSelectsVides(unittest.TestCase):
 
             admin = Utilisateur(
                 nom="Admin Test", telephone="0340000001",
-                mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"), role=RoleUtilisateur.ADMIN,
+                mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
+                mot_de_passe_confirmation_admin_hash=hacher_mot_de_passe("ConfirmationAdmin123!"),
+                role=RoleUtilisateur.ADMIN,
             )
             session.add(admin); session.commit(); session.refresh(admin)
             cls.admin_id = admin.id
@@ -159,7 +161,11 @@ class TestSelectsVides(unittest.TestCase):
         jeton = _jeton_csrf(client, "/admin/referentiel")
         reponse = client.post(
             f"/admin/referentiel/filieres/{self.filiere_id}/assigner-mention",
-            data={"mention_id": "", "_csrf": jeton},
+            data={
+                "mention_id": "",
+                "admin_confirmation_password": "ConfirmationAdmin123!",
+                "_csrf": jeton,
+            },
             follow_redirects=False,
         )
         self.assertEqual(reponse.status_code, 303, reponse.text[:300])
@@ -177,7 +183,12 @@ class TestSelectsVides(unittest.TestCase):
         jeton = _jeton_csrf(client, "/admin/referentiel/cercles")
         reponse = client.post(
             f"/admin/referentiel/cercles/{self.cercle_id}/assigner",
-            data={"mention_id": "", "niveau": "", "_csrf": jeton},
+            data={
+                "mention_id": "",
+                "niveau": "",
+                "admin_confirmation_password": "ConfirmationAdmin123!",
+                "_csrf": jeton,
+            },
             follow_redirects=False,
         )
         self.assertEqual(reponse.status_code, 303, reponse.text[:300])
