@@ -120,7 +120,18 @@ def normaliser_math_texte(texte: str) -> str:
     )
 
     # Certains retours JSON/Markdown doublent les antislashs TeX.
-    texte = re.sub(r"\\\\+([A-Za-z]+)", r"\\\1", texte)
+    # Ne jamais appliquer cette reduction a une separation de ligne de matrice
+    # (par ex. "\\\\ c"), sinon elle devient a tort la commande "\\c".
+    commandes_tex = (
+        r"(?:begin|end|frac|sqrt|mathbf|mathrm|times|cdot|pm|leq|le|geq|neq|"
+        r"approx|infty|pi|alpha|beta|gamma|Delta|lambda|mu|sigma|theta|"
+        r"rightarrow|to|Rightarrow|Leftrightarrow|iff|det|ker)"
+    )
+    texte = re.sub(
+        rf"\\+(?={commandes_tex}\b)",
+        r"\\",
+        texte,
+    )
 
     # Matrices brutes : on les conserve en TeX pour le renderer.
     texte = re.sub(
@@ -234,26 +245,53 @@ def rendre_math_html(texte: str):
 
     def _rendre_expression(raw: str) -> str:
         raw = raw.strip()
-        matrix = _re.fullmatch(
-            r"\\begin\{(pmatrix|bmatrix|vmatrix|matrix)\}(.*?)\\end\{\1\}",
-            raw,
-            flags=_re.S,
-        )
-        if matrix:
-            contenu = matrix.group(2).strip()
-            contenu = re.sub(r"\\\\\s*", "\n", contenu)
-            lignes = [x for x in contenu.split("\n") if x.strip()]
+        matrices = {}
+
+        def matrice_html(match):
+            contenu = match.group(2).strip()
+            # Les modeles peuvent produire plusieurs antislashs pour une
+            # separation de ligne de matrice.
+            contenu = _re.sub(r"\\{2,}\s*", "\n", contenu)
+            lignes = [x.strip() for x in contenu.split("\n") if x.strip()]
             rows = []
             for ligne in lignes:
-                cellules = [c.strip() for c in ligne.split("&")]
+                cellules = [c.strip().rstrip("\\").strip() for c in ligne.split("&")]
                 rows.append(
                     "<tr>" + "".join(
                         f"<td>{_html.escape(cell, quote=True)}</td>" for cell in cellules
                     ) + "</tr>"
                 )
-            return '<span class="math-matrix-wrap" aria-label="Matrice"><table class="math-matrix"><tbody>' + "".join(rows) + "</tbody></table></span>"
+            return (
+                '<span class="math-matrix-wrap" aria-label="Matrice"><table class="math-matrix"><tbody>'
+                + "".join(rows)
+                + "</tbody></table></span>"
+            )
+
+        def extraire_matrice(match):
+            cle = f"__MATRIX_{len(matrices)}__"
+            matrices[cle] = matrice_html(match)
+            return cle
+
+        # Extraire les matrices avant html.escape : le separateur de colonnes
+        # '&' deviendrait '&amp;' sinon et la matrice serait mal decoupee.
+        raw = _re.sub(
+            r"\\begin\{(pmatrix|bmatrix|vmatrix|matrix)\}(.*?)\\end\{\1\}",
+            extraire_matrice,
+            raw,
+            flags=_re.S,
+        )
 
         safe = _html.escape(raw, quote=True)
+        safe = _re.sub(
+            r"\\mathbf\{([^{}]+)\}",
+            r"<strong>\1</strong>",
+            safe,
+        )
+        safe = _re.sub(
+            r"\\mathrm\{([^{}]+)\}",
+            r'<span class="math-rm">\1</span>',
+            safe,
+        )
         safe = _re.sub(
             r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
             r'<span class="math-frac"><span class="math-num">\1</span><span class="math-den">\2</span></span>',
@@ -268,8 +306,10 @@ def rendre_math_html(texte: str):
         safe = _re.sub(r"_\{([^{}]+)\}", r"<sub>\1</sub>", safe)
         for motif, remplacement in symbol_map:
             safe = _re.sub(motif, remplacement, safe)
-        safe = safe.replace(r"\,", " ")
+        safe = safe.replace(r"\\,", " ")
         safe = _re.sub(r"\\([A-Za-z]+)", r"\1", safe)
+        for cle, rendu in matrices.items():
+            safe = safe.replace(cle, rendu)
         return safe
 
     morceaux = []
