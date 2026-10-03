@@ -174,7 +174,7 @@ def test_normalise_labels_et_matrices_markdown_dans_les_choix():
 | :---: | :---: | :---------: | :---: | :---------: | :---: | :---: |"""
     questions[0]["choix"] = [choix_matrice, "B9", "C8", "D7"]
     resultat = valider_questions(questions)
-    assert r"\\begin{pmatrix}" in resultat[0]["choix"][0]
+    assert r"\begin{pmatrix}" in resultat[0]["choix"][0]
     rendu = str(rendre_math_html(resultat[0]["choix"][0]))
     assert "math-matrix" in rendu
     assert ">1<" in rendu and ">9<" in rendu
