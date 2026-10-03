@@ -58,8 +58,18 @@ def normaliser_math_texte(texte: str) -> str:
                     valeurs.extend(parties or [cellule])
                 etendues.append(valeurs)
 
-            if len(etendues) == 1 and len(etendues[0]) == 4:
-                etendues = [etendues[0][:2], etendues[0][2:]]
+            # Une matrice peut etre aplatie dans une seule ligne du
+            # tableau Markdown. Reconstruit les matrices carrees (2x2, 3x3,
+            # 4x4, ...) quand le nombre total de cellules est un carre parfait.
+            if len(etendues) == 1 and etendues[0]:
+                total_cellules = len(etendues[0])
+                taille = int(total_cellules ** 0.5)
+                if taille >= 2 and taille * taille == total_cellules:
+                    flat = etendues[0]
+                    etendues = [
+                        flat[index:index + taille]
+                        for index in range(0, total_cellules, taille)
+                    ]
 
             if (
                 len(etendues) >= 2
