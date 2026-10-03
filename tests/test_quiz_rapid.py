@@ -169,11 +169,9 @@ def test_normalise_labels_et_matrices_markdown_dans_les_choix():
     resultat = valider_questions(questions)
     assert resultat[0]["choix"] == ["-2", "2", "10", "14"]
 
-    choix_matrice = (
-        "A\\n"
-        "| **1** | **2** | **3\\\\ 4** | **5** | **6\\\\ 7** | **8** | **9** |\\n"
-        "| :---: | :---: | :---------: | :---: | :---------: | :---: | :---: |"
-    )
+    choix_matrice = """A
+| **1** | **2** | **3\\ 4** | **5** | **6\\ 7** | **8** | **9** |
+| :---: | :---: | :---------: | :---: | :---------: | :---: | :---: |"""
     questions[0]["choix"] = [choix_matrice, "B9", "C8", "D7"]
     resultat = valider_questions(questions)
     assert r"\\begin{pmatrix}" in resultat[0]["choix"][0]
