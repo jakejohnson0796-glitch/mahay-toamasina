@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block titre %}Consulter un document — Modération{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair moderation-preview-page">
+  <div class="moderation-preview-head">
+    <div>
+      <p class="eyebrow">Administration · Vérification avant décision</p>
+      <h1>Consulter le document</h1>
+      <p class="moderation-preview-subtitle">
+        Vérifiez le contenu réel avant d'approuver, rejeter ou supprimer le document.
+      </p>
+    </div>
+    <a class="bouton bouton-secondaire" href="/moderation">← Retour à la modération</a>
+  </div>
+
+  <section class="moderation-preview-meta">
+    <div><small>Référence</small><strong>{{ document.reference }}</strong></div>
+    <div><small>Titre</small><strong>{{ document.titre }}</strong></div>
+    <div><small>Matière</small><strong>{{ document.matiere }}</strong></div>
+    <div><small>Année</small><strong>{{ document.annee }}</strong></div>
+    <div><small>Type</small><strong>{{ document.type_document.value }}</strong></div>
+    <div><small>Statut</small><strong>{{ document.statut.value }}</strong></div>
+  </section>
+
+  <section class="moderation-preview-viewer">
+    <div class="moderation-preview-viewer-head">
+      <div>
+        <strong>Aperçu du contenu</strong>
+        <span>Le fichier original reste protégé par le contrôle administrateur.</span>
+      </div>
+      <a class="bouton bouton-primaire" href="/moderation/{{ document.id }}/fichier" target="_blank" rel="noopener">Ouvrir le fichier</a>
+    </div>
+
+    {% if erreur_apercu %}
+    <div class="info" role="status">{{ erreur_apercu }}</div>
+    {% endif %}
+
+    {% if type_mime == "application/pdf" %}
+      <iframe class="moderation-preview-frame" src="/moderation/{{ document.id }}/fichier" title="Aperçu PDF de {{ document.titre }}"></iframe>
+    {% elif type_mime in ["image/jpeg", "image/png"] %}
+      <div class="moderation-preview-image-wrap">
+        <img class="moderation-preview-image" src="/moderation/{{ document.id }}/fichier" alt="Aperçu de {{ document.titre }}">
+      </div>
+    {% elif texte_apercu %}
+      <pre class="moderation-preview-text">{{ texte_apercu }}</pre>
+    {% else %}
+      <div class="hub-vide">
+        <h2>Aperçu direct indisponible</h2>
+        <p>Ce format ne peut pas être affiché directement dans le navigateur. Utilisez « Ouvrir le fichier » pour le consulter avec le logiciel adapté.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="moderation-preview-actions">
+    <a class="bouton bouton-secondaire" href="/moderation">Retour</a>
+    {% if document.statut.value != "approuve" %}
+    <form method="post" action="/moderation/{{ document.id }}/approuver">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-primaire" type="submit">Approuver</button>
+    </form>
+    {% endif %}
+    {% if document.statut.value != "rejete" %}
+    <form method="post" action="/moderation/{{ document.id }}/rejeter"
+          data-confirm-message="Rejeter ce document ? Il ne sera pas visible dans la bibliothèque publique.">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-secondaire" type="submit">Rejeter</button>
+    </form>
+    {% endif %}
+    <form method="post" action="/moderation/{{ document.id }}/supprimer"
+          data-confirm-message="Supprimer définitivement ce document et son fichier ? Cette action est irréversible.">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-danger" type="submit">Supprimer</button>
+    </form>
+  </section>
+</div>
+
+<style nonce="{{ csp_nonce(request) }}">
+  .moderation-preview-page{max-width:1400px;margin:0 auto;padding:1rem 1.25rem 3rem}
+  .moderation-preview-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.1rem}
+  .moderation-preview-head h1{margin:.1rem 0 .35rem;color:var(--content-text);font-size:clamp(1.8rem,3.4vw,2.5rem)}
+  .moderation-preview-subtitle{margin:0;color:var(--content-text-muted)}
+  .moderation-preview-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;margin-bottom:1rem}
+  .moderation-preview-meta div{min-width:0;padding:.72rem .8rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-surface)}
+  .moderation-preview-meta small{display:block;color:var(--content-text-muted);font-size:.62rem;margin-bottom:.18rem}
+  .moderation-preview-meta strong{display:block;color:var(--content-text);font-size:.78rem;overflow-wrap:anywhere}
+  .moderation-preview-viewer{border:1px solid var(--content-border);border-radius:18px;background:var(--content-surface);overflow:hidden}
+  .moderation-preview-viewer-head{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.85rem 1rem;border-bottom:1px solid var(--content-border)}
+  .moderation-preview-viewer-head strong{display:block;color:var(--content-text);font-size:.8rem}
+  .moderation-preview-viewer-head span{display:block;margin-top:.15rem;color:var(--content-text-muted);font-size:.65rem}
+  .moderation-preview-frame{display:block;width:100%;height:min(76vh,900px);border:0;background:#fff}
+  .moderation-preview-image-wrap{padding:1rem;background:var(--content-bg);text-align:center}
+  .moderation-preview-image{max-width:100%;max-height:78vh;object-fit:contain}
+  .moderation-preview-text{margin:0;padding:1rem;max-height:72vh;overflow:auto;white-space:pre-wrap;word-break:break-word;color:var(--content-text);background:var(--content-bg);font:500 .78rem/1.6 "IBM Plex Mono",monospace}
+  .moderation-preview-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:1rem}
+  .moderation-preview-actions form{margin:0}
+  @media(max-width:760px){
+    .moderation-preview-head{flex-direction:column}
+    .moderation-preview-meta{grid-template-columns:1fr 1fr}
+    .moderation-preview-viewer-head{align-items:stretch;flex-direction:column}
+  }
+  @media(max-width:520px){
+    .moderation-preview-meta{grid-template-columns:1fr}
+    .moderation-preview-page{padding:.8rem .6rem 2rem}
+  }
+</style>
+{% endblock %}

@@ -5,6 +5,7 @@ et les valider (moderation) avant qu'ils soient publics.
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
+import mimetypes
 import secrets
 import tempfile
 
@@ -417,6 +418,88 @@ def telecharger_document(request: Request, document_id: int, session: Session = 
     if stockage_distant_actif():
         return RedirectResponse(obtenir_url_telechargement(document.chemin_fichier))
     return FileResponse(document.chemin_fichier, filename=Path(document.chemin_fichier).name)
+
+
+@router.get("/moderation/{document_id}/consulter")
+def consulter_document_moderation(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_session),
+):
+    """Ouvre une page de consultation sécurisée pour un administrateur.
+
+    Le document n'a pas besoin d'être approuvé : l'administrateur doit pouvoir
+    lire un document EN_ATTENTE ou REJETE avant de décider de son statut.
+    """
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document:
+        return _rediriger_moderation("introuvable")
+
+    type_mime = mimetypes.guess_type(document.chemin_fichier)[0] or ""
+    apercu_integrable = type_mime in {"application/pdf", "image/jpeg", "image/png"}
+
+    texte_apercu = ""
+    erreur_apercu = ""
+    try:
+        with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
+            if not apercu_integrable:
+                texte_apercu = (extraire_texte(str(chemin_local)) or "")[:18000]
+            elif type_mime == "application/pdf":
+                texte_apercu = ""
+    except Exception:
+        erreur_apercu = "Le contenu textuel n'a pas pu être extrait, mais le fichier peut encore être ouvert."
+
+    return templates.TemplateResponse(
+        request,
+        "moderation_document_preview.html",
+        {
+            "utilisateur": utilisateur,
+            "document": document,
+            "type_mime": type_mime,
+            "apercu_integrable": apercu_integrable,
+            "texte_apercu": texte_apercu,
+            "erreur_apercu": erreur_apercu,
+        },
+    )
+
+
+@router.get("/moderation/{document_id}/fichier")
+def fichier_document_moderation(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_session),
+):
+    """Sert temporairement le fichier à un administrateur uniquement."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document:
+        return _rediriger_moderation("introuvable")
+
+    nom = Path(document.chemin_fichier).name
+    mime = mimetypes.guess_type(nom)[0] or "application/octet-stream"
+
+    if stockage_distant_actif():
+        return RedirectResponse(
+            obtenir_url_telechargement(
+                document.chemin_fichier,
+                expires_in=120,
+                telechargement=False,
+            )
+        )
+
+    return FileResponse(
+        document.chemin_fichier,
+        filename=nom,
+        media_type=mime,
+        headers={"Content-Disposition": f'inline; filename="{nom}"'},
+    )
 
 
 @router.get("/documents/{document_id}/quiz")

@@ -47,6 +47,7 @@
             <td>{{ doc.annee }}</td>
             <td>{{ doc.type_document.value }}</td>
             <td class="moderation-actions">
+              <a class="bouton bouton-secondaire moderation-consulter" href="/moderation/{{ doc.id }}/consulter">Consulter</a>
               <form method="post" action="/moderation/{{ doc.id }}/approuver">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
                 <button class="bouton bouton-primaire" type="submit">Approuver</button>
@@ -94,6 +95,7 @@
             <td>{{ doc.matiere }}</td>
             <td>{{ doc.annee }}</td>
             <td class="moderation-actions">
+              <a class="bouton bouton-secondaire moderation-consulter" href="/moderation/{{ doc.id }}/consulter">Consulter</a>
               <form method="post" action="/moderation/{{ doc.id }}/rejeter"
                     data-confirm-message="Retirer ce document de la bibliothèque publique et le passer en rejeté ?">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -137,6 +139,7 @@
             <td>{{ doc.matiere }}</td>
             <td>{{ doc.annee }}</td>
             <td class="moderation-actions">
+              <a class="bouton bouton-secondaire moderation-consulter" href="/moderation/{{ doc.id }}/consulter">Consulter</a>
               <form method="post" action="/moderation/{{ doc.id }}/approuver">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
                 <button class="bouton bouton-primaire" type="submit">Approuver</button>
@@ -172,6 +175,7 @@
   }
   .moderation-actions .bouton {
     min-width: 7.2rem;
+
     padding: .42rem .72rem;
     font-size: .82rem;
   }
@@ -215,11 +219,11 @@
   }
   .moderation-documents-table-pending th:nth-child(6),
   .moderation-documents-table-pending td:nth-child(6) {
-    width: 270px;
+    width: 360px;
   }
   .moderation-documents-table-resultat th:nth-child(5),
   .moderation-documents-table-resultat td:nth-child(5) {
-    width: 270px;
+    width: 360px;
   }
   .moderation-documents .table-manifeste td.ref {
     white-space: nowrap;

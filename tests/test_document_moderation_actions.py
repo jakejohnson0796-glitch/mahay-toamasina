@@ -159,3 +159,16 @@ def test_rejet_cree_une_notification_pour_le_deposant(monkeypatch):
     ]
     assert len(notifications) == 1
     assert notifications[0].destinataire_id == 42
+
+
+def test_moderation_expose_une_action_consulter():
+    from pathlib import Path
+    template = Path(__file__).resolve().parents[1] / "app" / "templates" / "moderation.html"
+    contenu = template.read_text(encoding="utf-8")
+    assert 'href="/moderation/{{ doc.id }}/consulter"' in contenu
+
+
+def test_routes_de_consultation_sont_exposees():
+    from app.routers.documents_router import consulter_document_moderation, fichier_document_moderation
+    assert consulter_document_moderation.__annotations__["document_id"] is int
+    assert fichier_document_moderation.__annotations__["document_id"] is int
