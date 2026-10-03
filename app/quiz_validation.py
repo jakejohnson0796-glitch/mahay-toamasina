@@ -129,7 +129,37 @@ def normaliser_math_texte(texte: str) -> str:
     )
 
     texte = re.sub(r"[ \t]+", " ", texte)
-    texte = re.sub(r"\s+([,.;:!?])", r"\1", texte)
+    # Symboles mathematiques courants : normalises des le stockage
+    # pour eviter que certains navigateurs ou templates affichent les
+    # commandes TeX brutes.
+    symboles = [
+        (r"\\times\\b", "×"),
+        (r"\\cdot\\b", "·"),
+        (r"\\pm\\b", "±"),
+        (r"\\leq\\b|\\le\\b", "≤"),
+        (r"\\geq\\b|\\ge\\b", "≥"),
+        (r"\\neq\\b", "≠"),
+        (r"\\approx\\b", "≈"),
+        (r"\\infty\\b", "∞"),
+        (r"\\pi\\b", "π"),
+        (r"\\alpha\\b", "α"),
+        (r"\\beta\\b", "β"),
+        (r"\\gamma\\b", "γ"),
+        (r"\\Delta\\b", "Δ"),
+        (r"\\lambda\\b", "λ"),
+        (r"\\mu\\b", "μ"),
+        (r"\\sigma\\b", "σ"),
+        (r"\\theta\\b", "θ"),
+        (r"\\rightarrow\\b|\\to\\b", "→"),
+        (r"\\Rightarrow\\b", "⇒"),
+        (r"\\Leftrightarrow\\b|\\iff\\b", "⇔"),
+        (r"\\det\\b", "det"),
+        (r"\\ker\\b", "ker"),
+    ]
+    for motif, remplacement in symboles:
+        texte = re.sub(motif, remplacement, texte)
+
+    texte = re.sub(r"\s+([,.;:])", r"\1", texte)
     return texte.strip()
 
 
@@ -265,13 +295,7 @@ class QuizValidationError(ValueError):
 
 
 def _normaliser_choix(choix: Any, index: int) -> str:
-    """Normalise un choix et retire uniquement un prefixe A/B/C... parasite.
-    
-    On ne retire pas une lettre seule par defaut : une reponse mathematique
-    legitime peut commencer par A ou B (ex. AB = BA). Le retrait est limite
-    aux formes typiques generees par l'IA : AA..., A-2, BSi..., CLa...,
-    D\\lambda..., etc.
-    """
+    """Normalise un choix QCM et retire un prefixe A/B/C... evident."""
     texte = normaliser_math_texte(choix)
     if not texte:
         return ""
@@ -285,10 +309,13 @@ def _normaliser_choix(choix: Any, index: int) -> str:
         return suite
 
     if re.match(
-        r"^(?:[=+\\-×*/()\\[\\]\\{\\}]|\\d|\\\\|"
-        r"Il\\b|La\\b|Le\\b|Les\\b|Une\\b|Un\\b|Si\\b|"
-        r"Pour\\b|Dans\\b|Ce\\b|Cette\\b|Tout\\b|Toute\\b|"
-        r"Aucun\\b|Aucune\\b|Existe\\b)",
+        r"^(?:[=+\-×*/()\[\]\{\}]|\d|\\|"
+        r"[A-F](?=\s|[=+\-×*/^<>()])|"
+        r"[A-ZÀ-ÖØ-Ý](?=\s|[=+\-×*/^<>()])|"
+        r"[a-zà-öø-ÿ]+\b|"
+        r"Il\b|La\b|Le\b|Les\b|Une\b|Un\b|Si\b|"
+        r"Pour\b|Dans\b|Ce\b|Cette\b|Tout\b|Toute\b|"
+        r"Aucun\b|Aucune\b|Existe\b)",
         suite,
         flags=re.IGNORECASE,
     ):
@@ -297,12 +324,32 @@ def _normaliser_choix(choix: Any, index: int) -> str:
     return texte
 
 
-def rendre_choix_math_html(choix: str, index: int):
-    """Rend un choix QCM en appliquant aussi le nettoyage de son label."""
-    from markupsafe import Markup
+def _normaliser_choix_liste(choix: list[Any]) -> list[str]:
+    """Nettoie aussi les anciens quizzes dont chaque choix contient A/B/C/D.
 
-    nettoye = _normaliser_choix(choix, index)
-    return Markup(rendre_math_html(nettoye))
+    Le retrait collectif n'est applique que si tous les choix portent le
+    label attendu et que le resultat ne ressemble pas a une liste de
+    formules coupees apres un operateur.
+    """
+    textes = [normaliser_math_texte(c) for c in choix]
+    labels = "ABCDEF"
+    if not textes or len(textes) > len(labels):
+        return textes
+
+    prefixes = all(
+        len(t) >= 2 and t[0] == labels[i]
+        for i, t in enumerate(textes)
+    )
+    if not prefixes:
+        return [_normaliser_choix(t, i) for i, t in enumerate(textes)]
+
+    retires = [t[1:] for t in textes]
+    operateurs_debut = tuple("=+×*/<([{")
+    mauvais = sum(1 for t in retires if not t or t.startswith(operateurs_debut))
+    if mauvais > len(retires) / 2:
+        return [_normaliser_choix(t, i) for i, t in enumerate(textes)]
+
+    return retires
 
 
 def valider_questions(questions: Any, expected_count: int | None = None) -> list[dict]:
@@ -330,7 +377,7 @@ def valider_questions(questions: Any, expected_count: int | None = None) -> list
             raise QuizValidationError(f"L'explication de la question {numero} est invalide.")
         if notion and len(notion) > MAX_NOTION_CHARS:
             raise QuizValidationError(f"La notion de la question {numero} est trop longue.")
-        choix_nettoyes = [_normaliser_choix(c, i) for i, c in enumerate(choix)]
+        choix_nettoyes = _normaliser_choix_liste(choix)
         if any(not c or len(c) > MAX_CHOIX_CHARS for c in choix_nettoyes):
             raise QuizValidationError(f"Un choix de la question {numero} est invalide.")
         signatures = [re.sub(r"\s+", " ", c).casefold() for c in choix_nettoyes]
