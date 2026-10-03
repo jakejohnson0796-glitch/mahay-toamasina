@@ -5,7 +5,7 @@ from app.models import Filiere
 def test_matiere_depuis_nom_fichier_quand_ia_recopie_une_phrase(monkeypatch):
     monkeypatch.setattr(
         "app.document_classifier._classification_ia",
-        lambda **kwargs: {
+        lambda *args, **kwargs: {
             "titre": "algèbre",
             "matiere": "1) Si deux rangées (ou deux colonnes) d’un déterminant sont permutées",
             "type_document": "cours",
