@@ -101,6 +101,27 @@ def _type_local(texte: str) -> Optional[TypeDocument]:
     return None
 
 
+def _matiere_auto_valide(texte: str) -> Optional[str]:
+    """Accepte seulement une matière courte et plausible, pas une phrase de cours."""
+    valeur = _nettoyer_titre(texte)
+    if not valeur:
+        return None
+
+    normalise = _normaliser(valeur)
+    mots = normalise.split()
+    if len(mots) < 2 and len(normalise) < 4:
+        return None
+    if len(mots) > 8 or len(valeur) > 80:
+        return None
+    if re.match(r"^(?:\d+|[a-z]\)|\([a-z0-9]+\))\s", valeur, flags=re.I):
+        return None
+    if re.search(r"[.!?;:][\s$]", valeur):
+        return None
+    if re.search(r"\b(?:si|alors|donc|est|sont|vaut|soit|pour|lorsque|ainsi)\b", normalise) and len(mots) >= 5:
+        return None
+    return valeur
+
+
 def _matiere_locale(texte: str) -> Optional[str]:
     motifs = (
         r"(?:mati[eè]re|module|unit[eé] d['’]enseignement|ue)\s*[:=-]\s*([^\n|]{3,100})",
@@ -249,7 +270,12 @@ def classifier_document(
     confiance_ia = max(0.0, min(1.0, confiance_ia))
 
     titre = _nettoyer_titre(resultat_ia.get("titre") or "") or titre_local or _nettoyer_titre(titre_fourni)
-    matiere = _nettoyer_titre(resultat_ia.get("matiere") or "") or matiere_local or _nettoyer_titre(matiere_fourni)
+
+    # L'IA peut parfois recopier une phrase du cours comme "matière".
+    # On refuse ces sorties trop longues/phrastiques et on utilise le nom
+    # du fichier comme signal de secours (ex. "Cours-algèbre.pdf" -> "algèbre").
+    matiere_ia = _matiere_auto_valide(resultat_ia.get("matiere") or "")
+    matiere = matiere_ia or _matiere_locale(texte_reference) or _matiere_auto_valide(titre_local or "") or _nettoyer_titre(matiere_fourni)
 
     type_auto = None
     try:
@@ -294,7 +320,7 @@ def classifier_document(
     # agressive du choix utilisateur pour les champs ambigus.
     if resultat_ia and confiance_ia < 0.55:
         titre = _nettoyer_titre(titre_fourni) or titre_local
-        matiere = _nettoyer_titre(matiere_fourni) or matiere_local
+        matiere = _nettoyer_titre(matiere_fourni) or _matiere_locale(texte_reference) or _matiere_auto_valide(titre_local or "")
         type_document = type_fourni or type_local
         annee = annee_fournie or annee_local
         filiere_id = filiere_id_fournie
