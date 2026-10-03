@@ -73,6 +73,30 @@ def _admin_post(client: TestClient, url: str, data: dict, **kwargs):
     return reponse
 
 
+class TestFaqContenu(unittest.TestCase):
+
+    def test_seed_faq_reflète_les_fonctionnalites_actuelles(self):
+        from app.seed_faq import FAQ_INITIALE
+
+        par_question = {item["question"]: item["reponse"] for item in FAQ_INITIALE}
+        reset = par_question["Que faire si j'oublie mon mot de passe ?"]
+        essai = par_question["Combien de temps dure l'essai gratuit étudiant ?"]
+
+        self.assertIn("/mot-de-passe-oublie", reset)
+        self.assertIn("60 jours", essai)
+        self.assertNotIn("pas encore disponible", reset)
+
+    def test_faq_supporte_la_progressive_enhancement(self):
+        from pathlib import Path
+
+        racine = Path(__file__).resolve().parents[1]
+        template = (racine / "app" / "templates" / "aide_avis.html").read_text(encoding="utf-8")
+        script = (racine / "app" / "static" / "js" / "faq.js").read_text(encoding="utf-8")
+
+        self.assertNotIn('class="faq-answer" id="faq-answer-{{ item.id }}" role="region" aria-labelledby="faq-question-{{ item.id }}" hidden', template)
+        self.assertIn("panneau.hidden = bouton.getAttribute(\"aria-expanded\") !== \"true\";", script)
+
+
 class TestFaqPublique(unittest.TestCase):
 
     @classmethod
