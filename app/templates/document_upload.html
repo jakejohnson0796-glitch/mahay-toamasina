@@ -642,6 +642,99 @@
   }
 }
 
+/* Option de détection hors de la grille des champs : elle ne peut plus
+   hériter des dimensions ou de l'alignement d'un .document-upload-field. */
+.document-upload-page .document-upload-auto-option{
+  display:grid !important;
+  grid-template-columns:1.15rem minmax(0,1fr) !important;
+  align-items:start !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:auto !important;
+  min-height:0 !important;
+  margin:0 0 .85rem !important;
+  padding:.8rem .9rem !important;
+  box-sizing:border-box !important;
+  gap:.7rem !important;
+  border:1px solid rgba(184,84,58,.2);
+  border-radius:13px;
+  background:linear-gradient(135deg,rgba(184,84,58,.06),transparent 70%);
+  overflow:visible !important;
+}
+.document-upload-page .document-upload-auto-option input#classification_auto{
+  grid-column:1 !important;
+  grid-row:1 !important;
+  width:1.1rem !important;
+  min-width:1.1rem !important;
+  max-width:1.1rem !important;
+  height:1.1rem !important;
+  min-height:1.1rem !important;
+  max-height:1.1rem !important;
+  margin:.12rem 0 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  flex:none !important;
+  accent-color:var(--upload-accent) !important;
+}
+.document-upload-page .document-upload-auto-option .document-upload-auto-copy{
+  grid-column:2 !important;
+  grid-row:1 !important;
+  display:block !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  text-align:left !important;
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  writing-mode:horizontal-tb !important;
+}
+.document-upload-page .document-upload-auto-option .document-upload-auto-copy strong,
+.document-upload-page .document-upload-auto-option .document-upload-auto-copy span{
+  display:block !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  text-align:left !important;
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  writing-mode:horizontal-tb !important;
+}
+.document-upload-page .document-upload-auto-option .document-upload-auto-copy strong{
+  font-size:.78rem !important;
+  line-height:1.25 !important;
+}
+.document-upload-page .document-upload-auto-option .document-upload-auto-copy span{
+  margin-top:.18rem !important;
+  font-size:.66rem !important;
+  line-height:1.4 !important;
+  color:var(--content-text-muted) !important;
+}
+@media(max-width:640px){
+  .document-upload-page .document-upload-auto-option{
+    grid-template-columns:1rem minmax(0,1fr) !important;
+    gap:.55rem !important;
+    padding:.7rem !important;
+  }
+  .document-upload-page .document-upload-auto-option input#classification_auto{
+    width:1rem !important;
+    min-width:1rem !important;
+    max-width:1rem !important;
+    height:1rem !important;
+    min-height:1rem !important;
+    max-height:1rem !important;
+  }
+}
+
 </style>
 
 <div class="document-upload-shell">
@@ -678,6 +771,14 @@
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           {% if cercle %}<input type="hidden" name="cercle_id" value="{{ cercle.id }}">{% endif %}
 
+          <div class="document-upload-auto-option" role="group" aria-labelledby="classification_auto_titre">
+            <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
+            <label class="document-upload-auto-copy" for="classification_auto" id="classification_auto_titre">
+              <strong>Détection automatique</strong>
+              <span>Détecte le titre, la matière, le type, l’année et la filière à partir du fichier. Si une clé IA est configurée, seul un extrait borné sert à l’analyse.</span>
+            </label>
+          </div>
+
           <div class="document-upload-grid">
             <div class="document-upload-field full">
               <label for="titre">Titre <span>Obligatoire</span></label>
@@ -711,16 +812,6 @@
                 <option value="{{ filiere.id }}">{{ filiere.nom }}</option>
                 {% endfor %}
               </select>
-            </div>
-
-            <div class="document-upload-field full">
-              <div class="document-upload-auto-box">
-                <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
-                <label class="document-upload-auto-copy" for="classification_auto">
-                  <strong>Détection automatique</strong>
-                  <span>Détecte le titre, la matière, le type, l’année et la filière à partir du fichier. Si une clé IA est configurée, seul un extrait borné sert à l’analyse.</span>
-                </label>
-              </div>
             </div>
 
             <div class="document-upload-field full">
@@ -955,12 +1046,25 @@
     field.addEventListener("change", maj);
   });
 
+  document.addEventListener("dragover", function (event) {
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+    event.preventDefault();
+  });
+
+  document.addEventListener("drop", function (event) {
+    if (!zone.contains(event.target)) {
+      event.preventDefault();
+    }
+  });
+
   if (input && nom && zone) {
     input.addEventListener("change", maj);
 
     ["dragenter", "dragover"].forEach(function (eventName) {
       zone.addEventListener(eventName, function (event) {
         event.preventDefault();
+        event.stopPropagation();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
         zone.classList.add("dragover");
       });
     });
@@ -971,14 +1075,33 @@
       });
     });
 
+    function definirFichiersDeposes(fileList) {
+      if (!fileList || !fileList.length) return false;
+
+      try {
+        const transfert = new DataTransfer();
+        Array.from(fileList).forEach(function (file) {
+          transfert.items.add(file);
+        });
+        input.files = transfert.files;
+      } catch (_) {
+        try {
+          input.files = fileList;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      maj();
+      return Boolean(input.files && input.files.length);
+    }
+
     zone.addEventListener("drop", function (event) {
       event.preventDefault();
-      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
-        try {
-          input.files = event.dataTransfer.files;
-        } catch (_) {}
-        maj();
-      }
+      event.stopPropagation();
+      zone.classList.remove("dragover");
+      definirFichiersDeposes(event.dataTransfer && event.dataTransfer.files);
     });
   }
 
