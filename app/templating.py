@@ -14,7 +14,12 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func
 
 from .csrf import obtenir_jeton_csrf
-from .quiz_validation import rendre_math_html, rendre_choix_math_html, normaliser_choix_liste
+from .quiz_validation import (
+    rendre_math_html,
+    rendre_choix_math_html,
+    normaliser_choix_liste,
+    normaliser_math_texte,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -54,7 +59,6 @@ def _texte_ia_html(texte) -> "Markup":
         # Les reponses du Tuteur peuvent aussi contenir des commandes
         # mathematiques sans delimiters. La normalisation transforme les
         # commandes usuelles en symboles lisibles avant l'echappement HTML.
-        from .quiz_validation import normaliser_math_texte
         valeur = normaliser_math_texte(valeur)
         math_pattern = re.compile(
             r"(\$\$(?:.|\n)*?\$\$|\\\[(?:.|\n)*?\\\]|\\\((?:.|\n)*?\\\)"
@@ -68,6 +72,9 @@ def _texte_ia_html(texte) -> "Markup":
             return cle
 
         valeur = math_pattern.sub(garder_math, valeur)
+        # Une commande \\mathbf hors d'un delimitateur mathematique doit
+        # rester lisible plutot que d'etre affichee comme du LaTeX brut.
+        valeur = re.sub(r"\\mathbf\{([^{}]+)\}", r"**\1**", valeur)
         valeur = html.escape(valeur, quote=True)
         valeur = re.sub(r"\x60([^\x60]+)\x60", r"<code>\1</code>", valeur)
         valeur = re.sub(r"\*\*([^*\n]+?)\*\*", r"<strong>\1</strong>", valeur)
