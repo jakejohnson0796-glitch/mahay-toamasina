@@ -82,7 +82,8 @@ class TestFaqContenu(unittest.TestCase):
         reset = par_question["Que faire si j'oublie mon mot de passe ?"]
         essai = par_question["Combien de temps dure l'essai gratuit étudiant ?"]
 
-        self.assertIn("/mot-de-passe-oublie", reset)
+        self.assertIn("Mot de passe oublié", reset)
+        self.assertIn("nouveau mot de passe", reset)
         self.assertIn("60 jours", essai)
         self.assertNotIn("pas encore disponible", reset)
 
