@@ -44,7 +44,7 @@ def test_classification_conserve_les_valeurs_fournies_quand_aucun_signal_fort(mo
         filiere_id_fournie=7,
     )
 
-    assert resultat.titre == "document"
+    assert resultat.titre == "Mon cours"
     assert resultat.matiere == "Économie générale"
     assert resultat.type_document == TypeDocument.COURS
     assert resultat.annee == 2026
