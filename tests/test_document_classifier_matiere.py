@@ -1,5 +1,5 @@
 from app.document_classifier import classifier_document
-from app.models import Filiere
+from app.models import Filiere, TypeDocument
 
 
 def test_matiere_depuis_nom_fichier_quand_ia_recopie_une_phrase(monkeypatch):
