@@ -118,8 +118,9 @@ def test_moderation_template_expose_les_trois_actions():
     assert "documents_rejetes" in contenu
 
 
-def test_actions_de_moderation_creent_les_notifications_du_deposant(monkeypatch):
-    _admin(monkeypatch)
+def test_actions_de_moderation_creent_une_notification_dapprobation(monkeypatch):
+    admin = SimpleNamespace(role=RoleUtilisateur.ADMIN, id=1)
+    monkeypatch.setattr(documents_router, "utilisateur_courant", lambda request, session: admin)
     document = SimpleNamespace(
         statut=StatutDocument.EN_ATTENTE,
         uploader_id=42,
@@ -134,7 +135,9 @@ def test_actions_de_moderation_creent_les_notifications_du_deposant(monkeypatch)
         item for item in session.added
         if getattr(item, "type_notification", None) == documents_router.TypeNotification.DOCUMENT_APPROUVE
     ]
-    assert notifications == []
+    assert len(notifications) == 1
+    assert notifications[0].destinataire_id == 42
+    assert notifications[0].acteur_id == 1
 
 
 def test_rejet_cree_une_notification_pour_le_deposant(monkeypatch):
