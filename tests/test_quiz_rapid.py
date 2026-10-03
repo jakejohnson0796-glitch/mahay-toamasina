@@ -262,8 +262,6 @@ def test_quality_gate_utilise_la_version_corrigee_avant_stockage(monkeypatch):
     original = _questions()[0].copy()
     corrected = _questions()[0].copy()
     corrected["choix"] = ["3", "4", "5"]
-    corrected["index_bonne_reponse"] = 2
-    corrected["explication"] = "2 + 2 vaut 4."  # volontairement corrigé ensuite par le mock
     corrected["choix"] = ["3", "4", "5"]
     corrected["index_bonne_reponse"] = 1
     corrected["explication"] = "2 + 2 vaut 4."
