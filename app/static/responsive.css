@@ -805,3 +805,152 @@ main {
     font-size: .59rem !important;
   }
 }
+
+
+/* =========================================================================
+   MOBILE V9 — sélecteur d'emojis compact
+   Le picker doit rester utilisable sans couvrir presque tout l'écran.
+   Les règles sont prioritaires afin de neutraliser les dimensions desktop
+   définies par le template du salon.
+   ========================================================================= */
+
+@media (max-width: 640px) {
+  .contenu-clair .panneau-emojis-v2 {
+    width: min(300px, calc(100vw - 16px)) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: min(255px, calc(100dvh - 92px)) !important;
+    padding: .5rem !important;
+    border-radius: 14px !important;
+    left: 0 !important;
+    bottom: calc(100% + 7px) !important;
+    box-shadow: 0 14px 30px rgba(0,0,0,.18) !important;
+  }
+
+  .contenu-clair .entete-panneau-emojis {
+    min-height: 24px !important;
+    margin-bottom: .35rem !important;
+    padding-bottom: .3rem !important;
+  }
+
+  .contenu-clair .entete-panneau-emojis strong {
+    font-size: .68rem !important;
+  }
+
+  .contenu-clair .bouton-emoji-fermer {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 7px !important;
+  }
+
+  .contenu-clair .champ-recherche-emoji {
+    min-height: 30px !important;
+    padding: .35rem .5rem !important;
+    border-radius: 8px !important;
+    font-size: .72rem !important;
+  }
+
+  .contenu-clair .emojis-barre {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: .18rem !important;
+    margin: .35rem 0 .25rem !important;
+  }
+
+  .contenu-clair .emojis-onglet {
+    min-height: 25px !important;
+    padding: .2rem .18rem !important;
+    border-radius: 7px !important;
+    font-size: .48rem !important;
+  }
+
+  .contenu-clair .emoji-recemment {
+    min-height: 23px !important;
+    max-height: 25px !important;
+    margin: .05rem 0 .22rem !important;
+    padding: .08rem .16rem !important;
+  }
+
+  .contenu-clair .emoji-recemment button {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: .8rem !important;
+  }
+
+  .contenu-clair .grille-emojis-v2 {
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: .1rem !important;
+    max-height: 118px !important;
+    margin-top: .2rem !important;
+  }
+
+  .contenu-clair .bouton-emoji-v2 {
+    min-height: 26px !important;
+    border-radius: 7px !important;
+    font-size: .92rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .contenu-clair .panneau-emojis-v2 {
+    width: min(270px, calc(100vw - 12px)) !important;
+    max-width: calc(100vw - 12px) !important;
+    max-height: min(225px, calc(100dvh - 88px)) !important;
+    padding: .42rem !important;
+  }
+
+  .contenu-clair .champ-recherche-emoji {
+    min-height: 28px !important;
+    font-size: .68rem !important;
+  }
+
+  .contenu-clair .emojis-onglet {
+    font-size: .44rem !important;
+  }
+
+  .contenu-clair .grille-emojis-v2 {
+    max-height: 100px !important;
+  }
+
+  .contenu-clair .bouton-emoji-v2 {
+    min-height: 24px !important;
+    font-size: .84rem !important;
+  }
+}
+
+@media (max-width: 300px) {
+  .contenu-clair .panneau-emojis-v2 {
+    width: min(246px, calc(100vw - 10px)) !important;
+    max-width: calc(100vw - 10px) !important;
+    max-height: min(205px, calc(100dvh - 82px)) !important;
+    left: -.05rem !important;
+    padding: .36rem !important;
+  }
+
+  .contenu-clair .entete-panneau-emojis strong {
+    font-size: .62rem !important;
+  }
+
+  .contenu-clair .champ-recherche-emoji {
+    min-height: 26px !important;
+    font-size: .64rem !important;
+  }
+
+  .contenu-clair .emojis-barre {
+    gap: .12rem !important;
+    margin-block: .22rem !important;
+  }
+
+  .contenu-clair .emojis-onglet {
+    min-height: 23px !important;
+    padding-inline: .12rem !important;
+    font-size: .39rem !important;
+  }
+
+  .contenu-clair .grille-emojis-v2 {
+    max-height: 88px !important;
+  }
+
+  .contenu-clair .bouton-emoji-v2 {
+    min-height: 21px !important;
+    font-size: .76rem !important;
+  }
+}
