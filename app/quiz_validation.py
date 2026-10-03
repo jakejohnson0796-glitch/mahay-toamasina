@@ -340,7 +340,11 @@ def _suffixe_est_un_label_qcm(suite: str) -> bool:
         return True
 
     # Un mot francais naturel (ex. « Échange », « Toutes », « est »).
-    if re.match(r"^[A-ZÀ-ÖØ-Þ](?:[a-zà-öø-ÿ]{1,}(?:\b|\s)|\s)", suite):
+    if re.match(r"^[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]{1,}(?:\b|\s)", suite):
+        return True
+
+    # Une lettre seule suivie d'un mot français (ex. « C est », « A et B »).
+    if re.match(r"^[A-ZÀ-ÖØ-Þ]\s+(?:est|et|sont|dans|pour|avec|ou|sur|par|du|de|des|la|le|les|une|un)\b", suite, flags=re.IGNORECASE):
         return True
 
     # Commandes TeX / groupes mathématiques structurés.
