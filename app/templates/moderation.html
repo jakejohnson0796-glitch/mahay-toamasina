@@ -2,63 +2,195 @@
 {% block titre %}Moderation — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-<h2>Documents en attente</h2>
-<table class="table-manifeste">
-  <thead>
-    <tr><th>Reference</th><th>Titre</th><th>Matiere</th><th>Annee</th><th></th></tr>
-  </thead>
-  <tbody>
-    {% for doc in documents %}
-    <tr>
-      <td class="ref">{{ doc.reference }}</td>
-      <td>{{ doc.titre }}</td>
-      <td>{{ doc.matiere }}</td>
-      <td>{{ doc.annee }}</td>
-      <td>
-        <form method="post" action="/moderation/{{ doc.id }}/approuver" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-primaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Approuver</button>
-        </form>
-        <form method="post" action="/moderation/{{ doc.id }}/rejeter" style="display:inline">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-secondaire" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Rejeter</button>
-        </form>
-        <form method="post" action="/moderation/{{ doc.id }}/supprimer" style="display:inline" data-confirm-message="Supprimer definitivement ce document (fichier compris) ?">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-danger" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Supprimer</button>
-        </form>
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="5">Rien en attente pour le moment.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="contenu-clair moderation-documents">
+  <div class="tb-panneau-entete">
+    <div>
+      <p class="eyebrow">Administration</p>
+      <h2>Modération des documents</h2>
+      <p class="stat-label">Approuver rend le document public, rejeter le masque de la bibliothèque, supprimer retire définitivement le document et son fichier.</p>
+    </div>
+  </div>
 
-<h2 style="margin-top:2.5rem;">Documents publics</h2>
-<table class="table-manifeste">
-  <thead>
-    <tr><th>Reference</th><th>Titre</th><th>Matiere</th><th>Annee</th><th></th></tr>
-  </thead>
-  <tbody>
-    {% for doc in documents_approuves %}
-    <tr>
-      <td class="ref">{{ doc.reference }}</td>
-      <td>{{ doc.titre }}</td>
-      <td>{{ doc.matiere }}</td>
-      <td>{{ doc.annee }}</td>
-      <td>
-        <form method="post" action="/moderation/{{ doc.id }}/supprimer" style="display:inline" data-confirm-message="Supprimer definitivement ce document (fichier compris) ?">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <button class="bouton bouton-danger" type="submit" style="padding:0.4rem 0.8rem;font-size:0.85rem;">Supprimer</button>
-        </form>
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="5">Aucun document public pour le moment.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+  {% set resultat = request.query_params.get("resultat") %}
+  {% if resultat == "approuve" %}
+  <div class="info" role="status">Document approuvé et maintenant visible dans la bibliothèque.</div>
+  {% elif resultat == "rejete" %}
+  <div class="info" role="status">Document rejeté. Il n'est plus visible dans la bibliothèque publique.</div>
+  {% elif resultat == "supprime" %}
+  <div class="info" role="status">Document supprimé définitivement, avec son fichier et ses consultations.</div>
+  {% elif resultat == "introuvable" %}
+  <div class="info" role="status">Ce document n'existe plus ou a déjà été supprimé.</div>
+  {% endif %}
+
+  <section class="moderation-documents-section">
+    <div class="tb-panneau-entete">
+      <h3>Documents en attente <span class="doc-type-label">{{ documents|length }}</span></h3>
+    </div>
+    <div class="table-manifeste-wrap">
+      <table class="table-manifeste">
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Titre</th>
+            <th>Matière</th>
+            <th>Année</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in documents %}
+          <tr>
+            <td class="ref">{{ doc.reference }}</td>
+            <td>{{ doc.titre }}</td>
+            <td>{{ doc.matiere }}</td>
+            <td>{{ doc.annee }}</td>
+            <td>{{ doc.type_document.value }}</td>
+            <td class="moderation-actions">
+              <form method="post" action="/moderation/{{ doc.id }}/approuver">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-primaire" type="submit">Approuver</button>
+              </form>
+              <form method="post" action="/moderation/{{ doc.id }}/rejeter"
+                    data-confirm-message="Rejeter ce document ? Il ne sera pas visible dans la bibliothèque publique.">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Rejeter</button>
+              </form>
+              <form method="post" action="/moderation/{{ doc.id }}/supprimer"
+                    data-confirm-message="Supprimer définitivement ce document et son fichier ? Cette action est irréversible.">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-danger" type="submit">Supprimer</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6">Rien en attente pour le moment.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="moderation-documents-section">
+    <div class="tb-panneau-entete">
+      <h3>Documents publics <span class="doc-type-label">{{ documents_approuves|length }}</span></h3>
+    </div>
+    <div class="table-manifeste-wrap">
+      <table class="table-manifeste">
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Titre</th>
+            <th>Matière</th>
+            <th>Année</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in documents_approuves %}
+          <tr>
+            <td class="ref">{{ doc.reference }}</td>
+            <td>{{ doc.titre }}</td>
+            <td>{{ doc.matiere }}</td>
+            <td>{{ doc.annee }}</td>
+            <td class="moderation-actions">
+              <form method="post" action="/moderation/{{ doc.id }}/rejeter"
+                    data-confirm-message="Retirer ce document de la bibliothèque publique et le passer en rejeté ?">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Rejeter</button>
+              </form>
+              <form method="post" action="/moderation/{{ doc.id }}/supprimer"
+                    data-confirm-message="Supprimer définitivement ce document et son fichier ? Cette action est irréversible.">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-danger" type="submit">Supprimer</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">Aucun document public pour le moment.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="moderation-documents-section">
+    <div class="tb-panneau-entete">
+      <h3>Documents rejetés <span class="doc-type-label">{{ documents_rejetes|length }}</span></h3>
+    </div>
+    <div class="table-manifeste-wrap">
+      <table class="table-manifeste">
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Titre</th>
+            <th>Matière</th>
+            <th>Année</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in documents_rejetes %}
+          <tr>
+            <td class="ref">{{ doc.reference }}</td>
+            <td>{{ doc.titre }}</td>
+            <td>{{ doc.matiere }}</td>
+            <td>{{ doc.annee }}</td>
+            <td class="moderation-actions">
+              <form method="post" action="/moderation/{{ doc.id }}/approuver">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-primaire" type="submit">Approuver</button>
+              </form>
+              <form method="post" action="/moderation/{{ doc.id }}/supprimer"
+                    data-confirm-message="Supprimer définitivement ce document et son fichier ? Cette action est irréversible.">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-danger" type="submit">Supprimer</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">Aucun document rejeté pour le moment.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>
+
+<style nonce="{{ csp_nonce(request) }}">
+  .moderation-documents-section {
+    margin-top: 1.75rem;
+  }
+  .moderation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    align-items: center;
+  }
+  .moderation-actions form {
+    margin: 0;
+  }
+  .moderation-actions .bouton {
+    min-width: 7.2rem;
+    padding: .42rem .72rem;
+    font-size: .82rem;
+  }
+  .table-manifeste-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (max-width: 680px) {
+    .moderation-actions {
+      align-items: stretch;
+    }
+    .moderation-actions form,
+    .moderation-actions .bouton {
+      width: 100%;
+    }
+    .moderation-actions .bouton {
+      min-width: 0;
+    }
+  }
+</style>
 {% endblock %}
