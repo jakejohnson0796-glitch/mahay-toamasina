@@ -167,8 +167,8 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
     if not tentative:
         return RedirectResponse("/quiz", status_code=303)
 
-    if tentative.date_soumission is not None:
-        return RedirectResponse(f"/quiz/{tentative.id}/resultat", status_code=303)
+    questions = quiz_module.questions(tentative)
+    correction_visible = tentative.date_soumission is not None
 
     return templates.TemplateResponse(
         request,
@@ -176,7 +176,9 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
         {
             "utilisateur": utilisateur,
             "tentative": tentative,
-            "questions": quiz_module.questions(tentative),
+            "questions": questions,
+            "reponses": quiz_module.reponses(tentative) or [],
+            "correction_visible": correction_visible,
             "secondes_restantes": quiz_module.secondes_restantes_examen(tentative),
         },
     )
@@ -279,7 +281,7 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
         return RedirectResponse("/quiz", status_code=303)
 
     if tentative.date_soumission is not None:
-        return RedirectResponse(f"/quiz/{tentative.id}/resultat", status_code=303)
+        return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
     try:
         questions = quiz_module.questions(tentative)

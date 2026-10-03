@@ -85,3 +85,23 @@ class _FakeContext:
         return self.chemin
     def __exit__(self, exc_type, exc, tb):
         return False
+
+
+def test_quiz_document_cree_une_tentative_interactive():
+    from app.routers import documents_router
+    code = documents_router.quiz_document.__code__
+    assert "TentativeQuiz" in code.co_names
+
+
+def test_correction_question_sur_la_meme_page():
+    from pathlib import Path
+    contenu = Path(__file__).resolve().parents[1].joinpath("app","templates","quiz_passer.html").read_text(encoding="utf-8")
+    assert "correction_visible" in contenu
+    assert "Bonne réponse" in contenu
+    assert "Explication" in contenu
+
+
+def test_soumission_reste_sur_la_page_quiz():
+    from pathlib import Path
+    contenu = Path(__file__).resolve().parents[1].joinpath("app","routers","quiz_router.py").read_text(encoding="utf-8")
+    assert 'return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)' in contenu

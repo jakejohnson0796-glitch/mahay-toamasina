@@ -4,6 +4,7 @@ et les valider (moderation) avant qu'ils soient publics.
 """
 from pathlib import Path
 from datetime import datetime
+import json
 from typing import Optional
 import mimetypes
 import secrets
@@ -16,7 +17,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification
+from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
@@ -24,8 +25,10 @@ from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fi
 from ..dependencies import acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
 from .. import gamification
+from .. import ai_queue
 from ..rate_limit import limite_depassee
 from ..document_classifier import classifier_document
+from ..quiz_validation import QuizValidationError, valider_questions
 
 router = APIRouter()
 
@@ -512,13 +515,35 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
 
-    with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
-        texte = extraire_texte(str(chemin_local))
+    try:
+        with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
+            texte = extraire_texte(str(chemin_local))
+        questions_generees = generer_quiz_depuis_texte(texte, nb_questions=5)
+        questions_verifiees = valider_questions(questions_generees, expected_count=5)
+    except (QuizValidationError, ValueError):
+        return RedirectResponse("/documents?erreur=generation_quiz", status_code=303)
+    except Exception:
+        return RedirectResponse("/documents?erreur=generation_quiz", status_code=303)
 
-    quiz = generer_quiz_depuis_texte(texte)
-    return templates.TemplateResponse(
-        "quiz.html", {"request": request, "document": document, "quiz": quiz}
+    niveau = getattr(utilisateur, "niveau", None) or "L1"
+    tentative = TentativeQuiz(
+        utilisateur_id=utilisateur.id,
+        matiere=(document.matiere or document.titre or "Document").strip()[:120],
+        niveau=niveau,
+        difficulte="Moyen",
+        nb_questions=len(questions_verifiees),
+        questions_json=json.dumps(questions_verifiees, ensure_ascii=False),
     )
+    session.add(tentative)
+    session.commit()
+    session.refresh(tentative)
+
+    try:
+        ai_queue.planifier_verification_quiz(tentative.id)
+    except Exception:
+        pass
+
+    return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
 @router.get("/moderation")

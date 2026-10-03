@@ -10,17 +10,76 @@
     <main class="quiz-run-main" aria-labelledby="quiz-run-title">
       <div class="quiz-run-topbar">
         <div>
-          <span class="ai-kicker">Quiz en cours{% if tentative.mode_examen %} · Mode examen{% endif %}</span>
+          <span class="ai-kicker">
+            {% if correction_visible %}Correction du quiz{% else %}Quiz en cours{% if tentative.mode_examen %} · Mode examen{% endif %}{% endif %}
+          </span>
           <h1 id="quiz-run-title" class="quiz-run-title">{{ tentative.matiere }}</h1>
+          <p class="quiz-run-subtitle">
+            {% if correction_visible %}
+              Questions et correction sont affichées ensemble : ta réponse, la bonne réponse et l'explication.
+            {% else %}
+              Réponds aux questions puis valide pour afficher la correction sur cette même page.
+            {% endif %}
+          </p>
         </div>
-        <div class="quiz-run-meta" aria-label="Paramètres du quiz">
+        <div class="quiz-run-meta">
           <span class="quiz-chip quiz-chip-primary">{{ tentative.niveau }}</span>
           <span class="quiz-chip">{{ tentative.difficulte }}</span>
           <span class="quiz-chip">{{ questions|length }} questions</span>
         </div>
       </div>
 
-      <div class="quiz-progress-card" aria-live="polite">
+      {% if correction_visible %}
+      {% set score = tentative.score or 0 %}
+      {% set pct = (score / tentative.nb_questions * 100) if tentative.nb_questions else 0 %}
+      <div class="quiz-correction-summary">
+        <div>
+          <span class="ai-kicker">Résultat</span>
+          <strong>{{ score }}/{{ tentative.nb_questions }}</strong>
+          <span>{{ "%.0f"|format(pct) }}% de bonnes réponses</span>
+        </div>
+        <a class="bouton bouton-secondaire" href="/quiz/{{ tentative.id }}/resultat">Détails supplémentaires</a>
+      </div>
+
+      <section class="quiz-correction-stack" aria-label="Questions et corrections">
+        {% for item in questions %}
+        {% set q = loop.index0 %}
+        {% set rep = reponses[q] if q < reponses|length else none %}
+        {% set ok = rep == item.index_bonne_reponse %}
+        <article class="quiz-question-card quiz-question-correction {{ 'is-correct' if ok else 'is-wrong' }}">
+          <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
+          <h2 class="quiz-question-title">{{ item.question }}</h2>
+          <div class="quiz-choice-grid quiz-choice-grid-correction">
+            {% for choix in item.choix %}
+            <div class="quiz-choice quiz-choice-readonly {{ 'is-correct-choice' if loop.index0 == item.index_bonne_reponse else '' }} {{ 'is-selected-choice' if loop.index0 == rep else '' }}">
+              <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
+              <span class="quiz-choice-text">{{ choix }}</span>
+              <span class="quiz-choice-mark">
+                {% if loop.index0 == item.index_bonne_reponse %}✓ Bonne réponse{% endif %}
+                {% if loop.index0 == rep and loop.index0 != item.index_bonne_reponse %}✗ Ta réponse{% endif %}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="quiz-correction-answer">
+            <strong>{% if ok %}✅ Correcte{% elif rep is none %}⚠️ Sans réponse{% else %}❌ Incorrecte{% endif %}</strong>
+            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. {{ item.choix[item.index_bonne_reponse] }}</span>
+          </div>
+          {% if item.explication %}
+          <div class="quiz-correction-explanation">
+            <strong>Explication</strong>
+            <p>{{ item.explication }}</p>
+          </div>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </section>
+      <div class="quiz-submit-bar">
+        <a class="bouton bouton-primaire" href="/quiz">Nouveau quiz</a>
+      </div>
+
+      {% else %}
+      <div class="quiz-progress-card">
         <div class="quiz-progress-head">
           <span data-quiz-progress-text>0 / {{ questions|length }} répondues</span>
           <span data-quiz-progress-percent>0%</span>
@@ -28,65 +87,77 @@
         <progress class="quiz-progress-native" data-quiz-progress-fill value="0" max="{{ questions|length }}">0 / {{ questions|length }}</progress>
       </div>
 
-      <form
-        id="form-quiz"
-        method="post"
-        action="/quiz/{{ tentative.id }}/soumettre"
-        data-quiz-form
-        data-examen-secondes="{{ secondes_restantes if tentative.mode_examen else 0 }}"
-      >
+      <form id="form-quiz" method="post" action="/quiz/{{ tentative.id }}/soumettre" data-quiz-form data-examen-secondes="{{ secondes_restantes if tentative.mode_examen else 0 }}">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-
         {% for item in questions %}
-        {% set q_index = loop.index0 %}
-        <article class="quiz-question-card" data-quiz-question data-quiz-index="{{ q_index }}" id="question-{{ q_index }}" tabindex="-1">
+        {% set q = loop.index0 %}
+        <article class="quiz-question-card" data-quiz-question data-quiz-index="{{ q }}" id="question-{{ q }}">
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
           <h2 class="quiz-question-title">{{ item.question }}</h2>
-
-          {% if item.choix and item.choix|length > 1 %}
           <div class="quiz-choice-grid" role="radiogroup" aria-label="Réponses à la question {{ loop.index }}">
             {% for choix in item.choix %}
             <label class="quiz-choice">
-              <input type="radio" name="question_{{ q_index }}" value="{{ loop.index0 }}" {{ "required" if loop.first }}>
+              <input type="radio" name="question_{{ q }}" value="{{ loop.index0 }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
               <span class="quiz-choice-text">{{ choix }}</span>
             </label>
             {% endfor %}
           </div>
-          <p class="quiz-answer-state">Clique sur une réponse pour la sélectionner. Utilise les numéros du panneau pour te déplacer.</p>
-          {% else %}
-          <p class="quiz-answer-state">{{ item.choix[0] if item.choix else "Cette question ne contient pas de choix exploitables." }}</p>
-          {% endif %}
         </article>
         {% endfor %}
-
         <div class="quiz-submit-bar">
-          <span class="quiz-submit-help">Tu peux revoir tes réponses avant de valider. En mode examen, le temps restant est prioritaire.</span>
-          <button id="bouton-valider-quiz" class="bouton bouton-primaire" type="submit" data-quiz-submit>
-            {{ "Terminer l'examen" if tentative.mode_examen else "Valider mes réponses" }}
-          </button>
+          <span class="quiz-submit-help">Après validation, la correction apparaîtra directement sous chaque question.</span>
+          <button id="bouton-valider-quiz" class="bouton bouton-primaire" type="submit" data-quiz-submit>{{ "Terminer l'examen" if tentative.mode_examen else "Valider mes réponses" }}</button>
         </div>
       </form>
+      {% endif %}
     </main>
 
+    {% if not correction_visible %}
     <aside class="quiz-run-sidebar" aria-label="Navigation du quiz">
       <div class="quiz-nav-card">
         <p class="quiz-nav-title">Navigation</p>
         <div class="quiz-nav-grid" data-quiz-nav></div>
       </div>
-
       {% if tentative.mode_examen %}
       <div class="quiz-chrono-card" data-quiz-timer-card>
         <span class="quiz-chrono-label">Temps restant</span>
         <div class="quiz-chrono-value" data-quiz-timer>--:--</div>
       </div>
       {% endif %}
-
       <div class="quiz-side-actions">
         <a class="bouton bouton-secondaire" href="/quiz">Quitter le quiz</a>
-        <span class="ai-field-help">Les réponses non soumises ne sont pas enregistrées comme tentative terminée.</span>
       </div>
     </aside>
+    {% endif %}
   </div>
 </div>
+
+<style nonce="{{ csp_nonce(request) }}">
+  .quiz-run-subtitle{margin:.35rem 0 0;color:var(--content-text-muted);font-size:.8rem}
+  .quiz-correction-summary{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface)}
+  .quiz-correction-summary strong{display:block;font-size:2rem;line-height:1.05;color:var(--content-text)}
+  .quiz-correction-summary span{color:var(--content-text-muted);font-size:.72rem}
+  .quiz-correction-stack{display:grid;gap:1rem}
+  .quiz-question-correction.is-correct{border-color:rgba(58,146,90,.4)}
+  .quiz-question-correction.is-wrong{border-color:rgba(189,78,45,.4)}
+  .quiz-choice-grid-correction{pointer-events:none}
+  .quiz-choice-readonly{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.55rem}
+  .quiz-choice-readonly.is-correct-choice{border-color:rgba(58,146,90,.45);background:rgba(58,146,90,.08)}
+  .quiz-choice-readonly.is-selected-choice:not(.is-correct-choice){border-color:rgba(189,78,45,.45);background:rgba(189,78,45,.07)}
+  .quiz-choice-mark{font-size:.65rem;font-weight:700;white-space:nowrap;color:var(--content-text-muted)}
+  .quiz-choice-readonly.is-correct-choice .quiz-choice-mark{color:var(--color-success-clair)}
+  .quiz-choice-readonly.is-selected-choice:not(.is-correct-choice) .quiz-choice-mark{color:var(--color-danger-clair)}
+  .quiz-correction-answer{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem;padding:.7rem .8rem;border-radius:12px;background:var(--content-bg);font-size:.76rem}
+  .quiz-correction-answer strong{color:var(--content-text)}
+  .quiz-correction-answer span{color:var(--content-text-muted)}
+  .quiz-correction-explanation{margin-top:.7rem;padding:.8rem;border-left:3px solid var(--accent-primary);border-radius:0 10px 10px 0;background:rgba(72,118,134,.07)}
+  .quiz-correction-explanation strong{display:block;margin-bottom:.2rem}
+  .quiz-correction-explanation p{margin:0;color:var(--content-text-muted);line-height:1.55}
+  @media(max-width:760px){
+    .quiz-correction-summary{flex-direction:column;align-items:stretch}
+    .quiz-choice-readonly{grid-template-columns:auto 1fr}
+    .quiz-choice-mark{grid-column:2}
+  }
+</style>
 {% endblock %}
