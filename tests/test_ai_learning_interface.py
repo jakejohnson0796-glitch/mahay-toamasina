@@ -86,3 +86,23 @@ def test_route_tuteur_persiste_le_statut_de_verification():
     route = lire("app/routers/tuteur_router.py")
     assert 'statut_verification = reponse.pop("_statut_verification", "terminee")' in route
     assert 'statut_verification_ia=statut_verification' in route
+
+
+def test_filtre_texte_ia_rend_une_matrice_embarquee_dans_une_formule():
+    from app.templating import templates
+
+    filtre = templates.env.filters["texte_ia"]
+    rendu = str(
+        filtre(
+            r"Pour une matrice \\[A=\\begin{pmatrix}a & b\\\\ c & d\\end{pmatrix}\\], "
+            r"les vecteurs sont \\(\\mathbf{u}=(a,c)\\) et \\(\\mathbf{v}=(b,d)\\)."
+        )
+    )
+    assert "math-matrix" in rendu
+    assert "<td>a</td>" in rendu
+    assert "<td>d</td>" in rendu
+    assert "<strong>u</strong>" in rendu
+    assert "A=" in rendu
+    assert "begin{pmatrix}" not in rendu
+    assert "end{pmatrix}" not in rendu
+    assert "\\times" not in rendu
