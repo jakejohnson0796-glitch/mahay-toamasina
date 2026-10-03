@@ -37,10 +37,14 @@
     {% endif %}
 
     {% if type_mime == "application/pdf" %}
-      <iframe class="moderation-preview-frame" src="/moderation/{{ document.id }}/fichier" title="Aperçu PDF de {{ document.titre }}"></iframe>
+      <div class="moderation-preview-loading" id="preview-pdf-loading">Chargement de l'aperçu PDF…</div>
+      <iframe class="moderation-preview-frame" id="preview-pdf" title="Aperçu PDF de {{ document.titre }}"></iframe>
+      <div class="moderation-preview-error" id="preview-pdf-error" hidden>L'aperçu intégré n'a pas pu être chargé. Utilisez « Ouvrir le fichier ».</div>
     {% elif type_mime in ["image/jpeg", "image/png"] %}
       <div class="moderation-preview-image-wrap">
-        <img class="moderation-preview-image" src="/moderation/{{ document.id }}/fichier" alt="Aperçu de {{ document.titre }}">
+        <div class="moderation-preview-loading" id="preview-image-loading">Chargement de l'aperçu…</div>
+        <img class="moderation-preview-image" id="preview-image" alt="Aperçu de {{ document.titre }}">
+        <div class="moderation-preview-error" id="preview-image-error" hidden>L'aperçu n'a pas pu être chargé. Utilisez « Ouvrir le fichier ».</div>
       </div>
     {% elif texte_apercu %}
       <pre class="moderation-preview-text">{{ texte_apercu }}</pre>
@@ -103,5 +107,54 @@
     .moderation-preview-meta{grid-template-columns:1fr}
     .moderation-preview-page{padding:.8rem .6rem 2rem}
   }
+  .moderation-preview-loading{padding:1rem;text-align:center;color:var(--content-text-muted);font-size:.72rem;background:var(--content-bg)}
+  .moderation-preview-error{padding:.9rem;text-align:center;color:var(--color-danger-clair);font-size:.72rem;background:rgba(189,78,45,.06)}
 </style>
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  const fileUrl = "/moderation/{{ document.id }}/fichier";
+  const pdf = document.getElementById("preview-pdf");
+  const pdfLoading = document.getElementById("preview-pdf-loading");
+  const pdfError = document.getElementById("preview-pdf-error");
+  const image = document.getElementById("preview-image");
+  const imageLoading = document.getElementById("preview-image-loading");
+  const imageError = document.getElementById("preview-image-error");
+
+  async function loadPreview() {
+    try {
+      const response = await fetch(fileUrl, {
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (pdf) {
+        pdf.src = url;
+        if (pdfLoading) pdfLoading.hidden = true;
+        window.addEventListener("beforeunload", function () { URL.revokeObjectURL(url); }, {once:true});
+      }
+      if (image) {
+        image.onload = function () {
+          if (imageLoading) imageLoading.hidden = true;
+          URL.revokeObjectURL(url);
+        };
+        image.onerror = function () {
+          if (imageLoading) imageLoading.hidden = true;
+          if (imageError) imageError.hidden = false;
+          URL.revokeObjectURL(url);
+        };
+        image.src = url;
+      }
+    } catch (error) {
+      if (pdfLoading) pdfLoading.hidden = true;
+      if (pdfError) pdfError.hidden = false;
+      if (imageLoading) imageLoading.hidden = true;
+      if (imageError) imageError.hidden = false;
+    }
+  }
+  loadPreview();
+})();
+</script>
 {% endblock %}

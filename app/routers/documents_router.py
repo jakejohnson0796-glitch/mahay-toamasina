@@ -485,18 +485,14 @@ def fichier_document_moderation(
     nom = Path(document.chemin_fichier).name
     mime = mimetypes.guess_type(nom)[0] or "application/octet-stream"
 
-    if stockage_distant_actif():
-        return RedirectResponse(
-            obtenir_url_telechargement(
-                document.chemin_fichier,
-                expires_in=120,
-                telechargement=False,
-            )
-        )
+    try:
+        with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
+            contenu = Path(chemin_local).read_bytes()
+    except Exception:
+        return _rediriger_moderation("fichier_indisponible")
 
-    return FileResponse(
-        document.chemin_fichier,
-        filename=nom,
+    return Response(
+        content=contenu,
         media_type=mime,
         headers={"Content-Disposition": f'inline; filename="{nom}"'},
     )

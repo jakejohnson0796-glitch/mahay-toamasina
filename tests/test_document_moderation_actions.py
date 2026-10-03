@@ -172,3 +172,22 @@ def test_routes_de_consultation_sont_exposees():
     from app.routers.documents_router import consulter_document_moderation, fichier_document_moderation
     assert consulter_document_moderation.__annotations__["document_id"] is int
     assert fichier_document_moderation.__annotations__["document_id"] is int
+
+
+def test_apercu_moderation_est_charge_en_blob_same_origin():
+    from pathlib import Path
+    template = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "templates"
+        / "moderation_document_preview.html"
+    ).read_text(encoding="utf-8")
+    assert 'fetch(fileUrl' in template
+    assert 'URL.createObjectURL(blob)' in template
+
+
+def test_route_fichier_moderation_proxy_les_octets():
+    from app.routers.documents_router import fichier_document_moderation
+    code = fichier_document_moderation.__code__
+    assert "Response" in code.co_names
+    assert "ouvrir_fichier_local" in code.co_names
