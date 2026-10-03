@@ -133,6 +133,12 @@ def normaliser_math_texte(texte: str) -> str:
         texte,
     )
 
+    # Certaines sorties IA perdent les antislashs sur quelques commandes
+    # simples. Nettoie ces variantes pour conserver une notation lisible.
+    texte = re.sub(r"\\?mathbf\{([^{}]+)\}", r"\1", texte)
+    texte = re.sub(r"\\?mathrm\{([^{}]+)\}", r"\1", texte)
+    texte = re.sub(r"(?<=\d)\s*times\s*(?=[+\-]?\d)", "×", texte, flags=re.IGNORECASE)
+
     # Matrices brutes : on les conserve en TeX pour le renderer.
     texte = re.sub(
         r"\[\s*([^\[\]\n;]+(?:;\s*[^\[\]\n;]+)+)\s*\]",
