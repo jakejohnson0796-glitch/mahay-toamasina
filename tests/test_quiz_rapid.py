@@ -48,3 +48,11 @@ def test_rendre_math_html_echappe_le_html_du_contenu():
     rendu = str(rendre_math_html(r"Question <script>alert(1)</script> et \(a+b\)"))
     assert "<script>" not in rendu
     assert "a+b" in rendu
+
+
+def test_normalise_les_matrices_entre_doubles_crochets():
+    from app.quiz_validation import normaliser_math_texte
+    resultat = normaliser_math_texte("A = [[1,2],[3,4]]")
+    assert r"\begin{pmatrix}" in resultat
+    assert "1&2" in resultat
+    assert "3&4" in resultat

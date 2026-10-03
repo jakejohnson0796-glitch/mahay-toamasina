@@ -608,8 +608,26 @@
 
 .quiz-choice-grid {
   display: grid;
-  gap: .48rem;
+  grid-template-columns: 1fr;
+  gap: .62rem;
 }
+
+.quiz-choice {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.quiz-choice-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.quiz-choice-grid-correction {
+  grid-template-columns: 1fr;
+}
+
+
 
 .quiz-choice {
   display: grid;

@@ -99,7 +99,7 @@
             <label class="quiz-choice">
               <input type="radio" name="question_{{ q }}" value="{{ loop.index0 }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
-              <span class="quiz-choice-text">{{ choix }}</span>
+              <span class="quiz-choice-text">{{ rendre_math_html(choix) }}</span>
             </label>
             {% endfor %}
           </div>

@@ -22,6 +22,24 @@ def normaliser_math_texte(texte: str) -> str:
     texte = re.sub(r"\*\*([^*\n]+?)\*\*", r"\1", texte)
     texte = re.sub(r"__([^_\n]+?)__", r"\1", texte)
 
+    # Matrices JSON/Python: [[1,2],[3,4]] -> \\[\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\]
+    def matrice_liste(match):
+        lignes_brutes = re.findall(r"\[([^\[\]]+)\]", match.group(1))
+        lignes = []
+        for ligne in lignes_brutes:
+            cellules = [c.strip() for c in ligne.split(",")]
+            if cellules:
+                lignes.append("&".join(cellules))
+        if len(lignes) >= 2:
+            return r"\[" + r"\begin{pmatrix}" + r"\\ ".join(lignes) + r"\end{pmatrix}" + r"\]"
+        return match.group(0)
+
+    texte = re.sub(
+        r"(\[\s*\[[^\]]+\](?:\s*,\s*\[[^\]]+\])+\s*\])",
+        matrice_liste,
+        texte,
+    )
+
     # Matrices brutes : on les conserve en TeX pour le renderer.
     texte = re.sub(
         r"\[\s*([^\[\]\n;]+(?:;\s*[^\[\]\n;]+)+)\s*\]",
