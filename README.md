@@ -98,7 +98,7 @@ Le projet inclut également :
 - révisions adaptatives ;
 - historique des quiz et activités.
 
-Les nouveaux comptes étudiants disposent d'un **essai gratuit de 60 jours** pour les fonctionnalités Premium prévues par le projet.
+Les nouveaux comptes étudiants disposent d'un **essai gratuit de 60 jours** pour les fonctionnalités Premium prévues par le projet. Le **Quiz IA** et le **Tuteur IA** sont accessibles gratuitement pendant les **14 premiers jours** de cet essai ; les autres fonctionnalités Premium restent accessibles pendant les 60 jours. Un abonnement payant actif rétablit l'accès aux fonctions IA pendant sa période de validité.
 
 ---
 
