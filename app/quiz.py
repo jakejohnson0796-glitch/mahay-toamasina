@@ -56,6 +56,50 @@ def _generer_quiz_rapide(matiere: str, niveau: str, difficulte: str, nb_question
     return valider_questions(questions_generees, expected_count=nb_questions)
 
 
+def _verifier_questions_avant_stockage(
+    questions: List[Dict],
+    matiere: str,
+    niveau: str,
+) -> List[Dict]:
+    """Applique une relecture multi-modeles avant de livrer le quiz.
+
+    La verification en arriere-plan reste utile pour l'audit et la memoire,
+    mais une correction qui change la bonne reponse après que l'etudiant a
+    commencé le quiz est interdite. Le contrôle qualité doit donc avoir lieu
+    avant le commit de la tentative.
+    """
+    questions = valider_questions(questions, expected_count=len(questions))
+    try:
+        questions_finales, confiant = ai_quiz.verifier_et_corriger_questions(
+            questions,
+            matiere,
+            niveau,
+            strategie="standard",
+        )
+        questions_finales = valider_questions(
+            questions_finales,
+            expected_count=len(questions),
+        )
+        logger.info(
+            "Quality gate quiz: matiere=%s niveau=%s questions=%s confiant=%s.",
+            matiere,
+            niveau,
+            len(questions_finales),
+            confiant,
+        )
+        return questions_finales
+    except Exception as erreur:
+        # Le quiz local est déjà soumis à la validation structurelle et au
+        # contrôle des contradictions explicites. Si le service de relecture
+        # est indisponible, on conserve donc une version cohérente plutôt que
+        # de faire échouer toute la génération.
+        logger.warning(
+            "Quality gate quiz indisponible; conservation de la version locale: %s",
+            erreur,
+        )
+        return questions
+
+
 def creer_tentative(
     session: Session,
     utilisateur: Utilisateur,
@@ -71,7 +115,12 @@ def creer_tentative(
     afin que l'etudiant puisse commencer sans attendre les modeles critiques
     et l'arbitre."""
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
-    questions_verifiees = _generer_quiz_rapide(matiere, niveau, difficulte, nb_questions)
+    questions_generees = _generer_quiz_rapide(matiere, niveau, difficulte, nb_questions)
+    questions_verifiees = _verifier_questions_avant_stockage(
+        questions_generees,
+        matiere,
+        niveau,
+    )
     if len(questions_verifiees) != nb_questions:
         raise QuizValidationError("Impossible de generer un quiz conforme apres plusieurs tentatives.")
 
@@ -299,7 +348,12 @@ def creer_tentative_ciblee(
     if not notion:
         raise QuizValidationError("La notion ciblee est obligatoire.")
     questions_ciblees = ai_quiz.generer_quiz_cible(matiere, niveau, notion, nb_questions)
-    questions_verifiees = valider_questions(questions_ciblees, expected_count=nb_questions)
+    questions_ciblees = valider_questions(questions_ciblees, expected_count=nb_questions)
+    questions_verifiees = _verifier_questions_avant_stockage(
+        questions_ciblees,
+        matiere,
+        niveau,
+    )
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
         matiere=matiere,
