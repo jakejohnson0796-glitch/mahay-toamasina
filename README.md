@@ -1,376 +1,437 @@
 # Gasy Mahay — plateforme d'apprentissage pour les étudiants de Madagascar
 
-Gasy Mahay est un projet éducatif numérique construit autour d'une idée simple :
+Gasy Mahay est une plateforme web d'apprentissage et d'entraide conçue pour les étudiants de Madagascar.
 
-> **Un étudiant ne devrait pas être obligé d'apprendre seul, ni perdre des heures à chercher la bonne ressource au mauvais endroit.**
+Elle rassemble dans un même espace :
 
-La plateforme réunit dans un même écosystème les ressources académiques, l'entraide entre étudiants, les outils de pratique et l'accompagnement assisté par IA.
+- les ressources académiques et documents de révision ;
+- les quiz et révisions assistés par IA ;
+- le Tuteur IA ;
+- les cercles d'étude et la messagerie ;
+- la classe virtuelle ;
+- le suivi des activités, notifications et progression ;
+- un référentiel académique structuré par université, composante, mention, filière et niveau.
 
-Le projet est pensé pour **Madagascar** : le lancement initial a servi de point de départ, mais la vision est nationale.
-
----
-
-## Notre histoire
-
-Gasy Mahay part d'un constat concret : dans la vie universitaire, une ressource utile peut se trouver dans un document, une conversation, un groupe d'étudiants ou auprès d'une personne qui connaît déjà la réponse.
-
-Le problème n'est donc pas seulement de produire plus de contenu. Il faut aussi pouvoir :
-
-- retrouver rapidement une ressource ;
-- pratiquer au lieu de seulement lire ;
-- demander une explication ;
-- travailler avec d'autres étudiants ;
-- identifier les notions qui restent difficiles ;
-- revenir dessus jusqu'à mieux les maîtriser.
-
-C'est cette logique qui guide l'évolution de Gasy Mahay.
-
-Le premier lancement avait une portée initiale. La plateforme évolue désormais avec une ambition plus large : **structurer progressivement un espace d'apprentissage numérique pour les étudiants de Madagascar**.
+> **Idée centrale :** aider un étudiant à passer de « je cherche » à « je comprends », puis à « je pratique » et « je progresse ».
 
 ---
 
-## Pourquoi Gasy Mahay existe
-
-Le projet cherche à rapprocher quatre éléments qui restent souvent séparés :
-
-1. **Le savoir** — documents, cours, annales, fiches et référentiel académique.
-2. **La pratique** — quiz, exercices, corrections et révisions.
-3. **L'humain** — cercles d'étude et collaboration entre étudiants.
-4. **L'accompagnement** — Tuteur IA et outils adaptatifs.
-
-L'objectif n'est pas de remplacer l'université, les enseignants ou le travail personnel.
-
-L'objectif est de créer **un outil d'appui** qui aide l'étudiant à mieux utiliser ce qu'il a déjà, à identifier ce qui lui manque et à continuer à progresser.
-
----
-
-## Ce qui est actuellement construit
-
-### Parcours étudiant
-
-- Inscription et connexion
-- Parcours de démarrage guidé sur plusieurs jours
-- Tableau de bord étudiant
-- Notifications
-- Suivi des activités et de la progression
-- Révisions adaptatives
-- Gamification et défis
+## 1. Ce que Gasy Mahay apporte
 
 ### Ressources académiques
 
-- Bibliothèque de documents
-- Classement par université, mention, niveau et filière
-- Dépôt de ressources avec modération
-- Référentiel académique national en cours de structuration
-- Références documentaires neutres de type `MG-DEG-2025-0147`
+La bibliothèque permet de retrouver des annales, corrigés, fiches et cours classés selon le référentiel académique.
 
-### Apprentissage assisté par IA
+Le dépôt d'un document passe par un processus de validation avant sa publication. Le système peut également analyser le document déposé afin d'aider à identifier automatiquement son type et sa matière.
 
-- **Quiz IA** générés à partir des ressources
-- **Tuteur IA** pour expliquer, donner des exemples, proposer des exercices et corriger
-- Personnalisation à partir de la progression de l'étudiant
-- Révisions ciblées sur les notions faibles
-- Validation locale des sorties avant affichage
-- Vérification multi-modèles lorsque le scénario le demande
+### Apprentissage actif
 
-### IA multi-modèles
+Le projet ne se limite pas à afficher des documents. Les ressources peuvent servir de point de départ pour :
 
-L'architecture actuelle peut faire intervenir plusieurs modèles autour d'une même réponse :
+- créer ou passer des quiz ;
+- revoir les résultats et les erreurs ;
+- cibler les notions difficiles ;
+- demander une explication ;
+- refaire un exercice ;
+- travailler avec d'autres étudiants.
 
-```text
-Étudiant
-   ↓
-Génération principale
-   ↓
-Critique / vérification
-   ↓
-Analyse des désaccords et erreurs
-   ↓
-Arbitrage si nécessaire
-   ↓
-Une réponse finale pour l'étudiant
-```
+### Tuteur IA
 
-La logique est de faire travailler les modèles comme un ensemble coopératif plutôt que d'exposer l'utilisateur à plusieurs réponses contradictoires.
+Le Tuteur IA structure ses réponses autour de quatre éléments pédagogiques :
 
-La configuration actuelle prévoit notamment un modèle principal Groq, un modèle critique Qwen et un contrôle Gemini optionnel. Les modèles réellement utilisés dépendent de la configuration de l'environnement et de leur disponibilité.
+1. explication ;
+2. exemple ;
+3. exercice ;
+4. correction.
+
+Les sorties importantes font l'objet de contrôles locaux et, selon le scénario, d'une vérification multi-modèles avant leur affichage.
+
+L'IA reste un outil d'accompagnement : une réponse générée peut nécessiter une vérification avec le cours, l'enseignant ou une source officielle.
+
+### Quiz IA
+
+Le système peut générer des quiz à partir de ressources ou d'un contexte d'apprentissage. Les tentatives sont conservées pour permettre le suivi des résultats.
+
+Une partie de la validation des quiz vérifie notamment la cohérence des choix, des explications et des résultats mathématiques ou techniques.
 
 ### Collaboration
 
-- Cercles d'étude
-- Chat temps réel WebSocket
-- Historisation des messages
-- Classe virtuelle avec vidéo, chat et tableau blanc
-- Espaces de travail pensés pour les usages étudiants
+Les fonctionnalités collaboratives comprennent :
+
+- cercles d'étude ;
+- recherche et adhésion aux cercles ;
+- messages en temps réel par WebSocket ;
+- réponses et discussions autour des messages ;
+- réactions, mentions et notifications ;
+- classe virtuelle avec vidéo, chat, tableau blanc et devoirs.
 
 ---
 
-## L'expérience que nous voulons créer
+## 2. Parcours étudiant
 
-Le parcours cible est simple :
+Le parcours général est pensé comme une boucle :
 
-```text
-Je cherche
+~~~text
+Chercher
    ↓
-Je trouve
+Trouver
    ↓
-Je pratique
+Pratiquer
    ↓
-Je me trompe
+Se tromper
    ↓
-Je comprends
+Comprendre
    ↓
-Je révise
+Réviser
    ↓
-Je progresse
+Progresser
    ↓
-J'aide à mon tour
-```
+Partager à son tour
+~~~
 
-Une erreur ne doit pas être seulement enregistrée comme un mauvais résultat.
+Le projet inclut également :
 
-Elle doit pouvoir devenir un signal pour la suite : une notion à revoir, une explication à demander, un exercice à refaire ou un quiz à cibler.
+- notifications internes ;
+- rappel d'inactivité après plusieurs jours sans utilisation ;
+- suivi de progression ;
+- défis et gamification ;
+- révisions adaptatives ;
+- historique des quiz et activités.
+
+Les nouveaux comptes étudiants disposent d'un **essai gratuit de 60 jours** pour les fonctionnalités Premium prévues par le projet.
 
 ---
 
-## Une plateforme pensée pour les étudiants, mais soutenue par un écosystème
-
-Le principe économique du projet est de chercher un équilibre entre **accessibilité pour les étudiants** et **soutien de partenaires**.
-
-Les sponsors et partenaires peuvent contribuer au développement de :
-
-- l'infrastructure ;
-- l'hébergement ;
-- les outils d'intelligence artificielle ;
-- la structuration et la modération des ressources ;
-- les fonctionnalités pédagogiques ;
-- l'accès et la qualité du service à mesure que la communauté grandit.
-
-L'ambition est de construire des partenariats utiles, avec une séparation claire entre le soutien au projet et l'expérience pédagogique proposée aux étudiants.
-
----
-
-## Une ambition nationale
-
-Gasy Mahay est désormais pensé à l'échelle de Madagascar.
-
-La plateforme travaille autour d'un référentiel pouvant regrouper plusieurs universités publiques, leurs mentions, niveaux et filières, avec une intégration progressive des données pouvant être vérifiées et maintenues.
-
-L'approche est volontairement progressive :
-
-**structurer → vérifier → publier → mesurer → améliorer → élargir**
-
-Cette méthode permet de grandir sans transformer le site en simple catalogue de pages ou de données difficiles à maintenir.
-
----
-
-## Architecture technique
-
-Le projet reste volontairement léger et principalement Python.
+## 3. Architecture technique
 
 ### Backend
 
-- **FastAPI**
-- **SQLModel / SQLAlchemy**
-- **Jinja2**
-- Sessions serveur
+- Python 3.12
+- FastAPI
+- SQLModel / SQLAlchemy
+- Jinja2
+- sessions serveur signées par cookie
 - WebSocket natif FastAPI
-- Services métier Python séparés par domaine
+- services métier séparés par domaine
 
-### Données
+### Base de données
 
-- **SQLite** pour un démarrage local simple
-- **PostgreSQL / Supabase** pour le déploiement
-- Stockage documentaire local ou Supabase Storage selon la configuration
-- File de tâches IA durable côté base de données
+Le projet peut fonctionner avec :
 
-### IA
+- SQLite en local ;
+- PostgreSQL en environnement de déploiement ;
+- Supabase pour la base PostgreSQL et le stockage documentaire selon la configuration.
 
-- Groq pour la génération
-- Modèle critique Qwen configurable
-- Gemini optionnel pour la vérification
-- Validation de schémas et contrôles locaux
-- Mémoire / télémétrie des erreurs du système IA
-- File de traitement IA et reprise en cas de notification perdue
+Les migrations sont gérées avec Alembic et leur graphe est contrôlé dans la CI.
+
+### File de tâches IA
+
+Les traitements IA longs sont conçus autour d'une file durable :
+
+~~~text
+Requête
+   ↓
+PostgreSQL : tâche durable
+   ↓
+Redis / Render Key Value : notification rapide
+   ↓
+Worker IA intégré au service Web
+   ↓
+Vérification / traitement
+   ↓
+PostgreSQL : état final
+~~~
+
+PostgreSQL reste la source durable. Redis accélère la distribution des tâches mais n'est pas le stockage de vérité.
 
 ### Frontend
 
-- HTML rendu côté serveur
-- Jinja2
-- CSS maison
-- JavaScript vanilla lorsque nécessaire
-- PWA installable
+- Jinja2 et HTML rendu côté serveur ;
+- CSS du projet ;
+- JavaScript ciblé et sans framework obligatoire ;
+- PWA ;
+- interfaces responsive pour ordinateur et mobile.
 
 ---
 
-## Stockage et file IA
+## 4. IA multi-modèles
 
-Le traitement IA long est séparé du chemin HTTP utilisateur autant que possible.
+L'ensemble IA est conçu pour que les modèles coopèrent autour d'une réponse commune :
 
-Flux simplifié :
+~~~text
+                 ┌─────────────────┐
+                 │  Génération     │
+                 │  principale     │
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │ Critique /      │
+                 │ vérification    │
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │ Arbitrage /     │
+                 │ contrôle final  │
+                 └────────┬────────┘
+                          ↓
+                    Réponse unique
+~~~
 
-```text
-Requête utilisateur
-       ↓
-PostgreSQL : tâche durable
-       ↓
-Redis / Valkey : notification
-       ↓
-Worker IA embarqué
-       ↓
-Traitement
-       ↓
-PostgreSQL : état final
-```
+Les fournisseurs et modèles sont configurables par variables d'environnement. La configuration actuelle prévoit notamment Groq, un modèle critique configurable et Gemini en option.
 
-La base de données reste la source durable : si une notification Redis est perdue, le système peut retrouver la tâche à traiter.
+Le système conserve aussi des informations sur certaines erreurs et interactions de l'ensemble IA afin d'améliorer progressivement les contrôles.
 
 ---
 
-## Démarrer en local (Windows / VS Code)
+## 5. Sécurité et confidentialité
 
-```powershell
+Le projet intègre plusieurs protections côté serveur :
+
+- mots de passe hachés ;
+- rotation de session après authentification ;
+- empreinte de session invalidée après changement critique du compte ;
+- cookie de session sécurisé en production ;
+- protection CSRF sur les opérations d'état ;
+- limitation anti-brute-force et anti-spam ;
+- double authentification TOTP ;
+- codes de secours 2FA hachés ;
+- validation du type réel des fichiers déposés ;
+- contrôles contre certains chemins dangereux dans les archives ;
+- contrôles d'autorisation côté serveur pour les documents, cercles et fonctions d'administration ;
+- politique CSP stricte basée sur nonce et hashes ;
+- en-têtes HTTP de sécurité ;
+- séparation des secrets serveur et du navigateur.
+
+Les clés de service Supabase, secrets LiveKit, clés IA, SMTP et clé de session doivent rester dans l'environnement serveur.
+
+---
+
+## 6. Mot de passe oublié
+
+Le parcours de récupération du mot de passe existe.
+
+Le principe est :
+
+1. saisir le numéro utilisé pour le compte ;
+2. recevoir un code par email lorsque le compte dispose d'une adresse et que le SMTP est configuré ;
+3. saisir le code temporaire ;
+4. choisir un nouveau mot de passe.
+
+Les codes sont temporaires et protégés par une limitation des tentatives.
+
+La récupération dépend donc d'une adresse email enregistrée sur le compte et d'une configuration SMTP fonctionnelle.
+
+---
+
+## 7. Référentiel académique
+
+Le référentiel structure progressivement :
+
+~~~text
+Université
+   ↓
+Composante / Faculté
+   ↓
+Mention
+   ↓
+Filière / parcours
+   ↓
+Niveau
+~~~
+
+Le projet évite autant que possible de déduire automatiquement une classification académique lorsqu'elle est ambiguë.
+
+La source de données est synchronisée au démarrage lorsque le référentiel versionné est présent. Les anciennes données peuvent être réconciliées et les doublons historiques traités de manière idempotente.
+
+---
+
+## 8. Démarrer en local
+
+### Pré-requis
+
+- Python 3.12 ;
+- Git ;
+- un environnement virtuel Python ;
+- SQLite pour un démarrage simple.
+
+### Installation Windows / VS Code
+
+~~~powershell
 python -m venv venv
 venv\Scripts\activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 copy .env.example .env
 uvicorn app.main:app --reload
-```
+~~~
 
-Sans configuration distante, le projet peut fonctionner avec :
+Puis ouvrir :
 
-- SQLite
-- stockage local des fichiers
-- variables d'environnement locales
-- fonctionnalités IA activées seulement lorsque leurs clés sont configurées
+~~~text
+http://127.0.0.1:8000
+~~~
 
----
-
-## Configurer Supabase
-
-1. Créer un projet Supabase.
-2. Renseigner `DATABASE_URL` avec l'URI PostgreSQL.
-3. Créer un bucket de stockage pour les documents si le stockage Supabase est utilisé.
-4. Renseigner `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` et `SUPABASE_BUCKET`.
-5. Redémarrer l'application.
-
-La clé `service_role` doit rester côté serveur et ne doit jamais être exposée au navigateur.
+Sans services externes, le projet peut fonctionner avec SQLite et les fonctionnalités optionnelles restent désactivées lorsque leurs variables d'environnement ne sont pas configurées.
 
 ---
 
-## Configurer l'IA
+## 9. Variables d'environnement
 
-La génération de quiz et les fonctions d'accompagnement IA utilisent les variables d'environnement prévues dans `.env.example`.
+Le fichier .env.example documente les principaux paramètres.
 
-Variables principales :
+### Base et session
 
-```text
+~~~text
+DATABASE_URL=
+SESSION_SECRET_KEY=
+ENVIRONNEMENT=developpement
+~~~
+
+### Stockage documentaire
+
+~~~text
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+SUPABASE_BUCKET=documents
+~~~
+
+### File IA
+
+~~~text
+REDIS_URL=
+AI_QUEUE_REDIS_KEY=mahay:ai:queue
+~~~
+
+### IA
+
+~~~text
 GROQ_API_KEY=
 GROQ_MODEL=
 GROQ_CRITIC_MODEL=
-AI_ENSEMBLE_ENABLED=
-AI_ENSEMBLE_USE_GEMINI=
+AI_ENSEMBLE_ENABLED=true
+AI_ENSEMBLE_USE_GEMINI=true
 GEMINI_API_KEY=
 GEMINI_MODEL=
-```
+~~~
 
-Les modèles restent configurables afin de pouvoir faire évoluer l'architecture sans modifier le parcours étudiant.
+### Classe virtuelle
 
----
+~~~text
+LIVEKIT_URL=
+LIVEKIT_API_KEY=
+LIVEKIT_API_SECRET=
+~~~
 
-## Modération et confiance
+### Mot de passe oublié
 
-Gasy Mahay cherche à construire un environnement utile sans sacrifier la confiance.
+~~~text
+SMTP_HOTE=
+SMTP_PORT=587
+SMTP_UTILISATEUR=
+SMTP_MOT_DE_PASSE=
+SMTP_FROM_EMAIL=
+~~~
 
-Les ressources passent par un flux de modération avant publication selon le type de contenu.
+### Administration
 
-Les documents et espaces étudiants sont séparés des outils administratifs, et les contrôles importants sont appliqués côté serveur.
+~~~text
+ADMIN_PHONE=
+ADMIN_INITIAL_PASSWORD=
+~~~
 
-Pour l'IA, la plateforme utilise également des validations locales et des mécanismes de suivi des erreurs afin de pouvoir améliorer la qualité dans le temps.
-
----
-
-## Feuille de route
-
-### Maintenant
-
-- consolider l'expérience étudiant ;
-- améliorer le parcours de démarrage ;
-- enrichir le référentiel académique national ;
-- continuer à améliorer les quiz, les révisions et le Tuteur IA ;
-- mesurer les usages réels et les points de friction.
-
-### Prochaine étape
-
-- renforcer la communauté et les cercles d'étude ;
-- améliorer les outils de classe virtuelle ;
-- développer les partenariats et le sponsoring ;
-- renforcer la qualité et la traçabilité des ressources ;
-- poursuivre l'évolution de l'ensemble IA à partir des erreurs observées.
-
-### À plus long terme
-
-- couvrir progressivement davantage de parcours universitaires à Madagascar ;
-- renforcer les outils d'apprentissage personnalisé ;
-- développer des partenariats avec les acteurs de l'éducation et les entreprises qui souhaitent soutenir les étudiants ;
-- construire un écosystème durable autour de l'apprentissage et de l'entraide.
+Ne committez jamais un fichier .env réel ou un secret.
 
 ---
 
-## Pour les étudiants
+## 10. Tests et qualité
 
-Gasy Mahay veut être un endroit où l'on peut commencer simplement :
+La CI du projet contrôle plusieurs niveaux de qualité :
 
-**une question, une ressource, un quiz, une erreur, une explication, puis un progrès.**
+1. validation du graphe Alembic ;
+2. compilation Python de l'application et des tests ;
+3. vérification du contrat de déploiement Render ;
+4. exécution des tests automatisés ;
+5. smoke test PostgreSQL avec migrations et démarrage réel.
 
-La plateforme grandira avec ses utilisateurs.
+Pour reproduire les contrôles localement :
 
-Chaque étudiant qui partage une ressource, participe à un cercle, signale un problème ou utilise régulièrement les outils contribue à rendre l'écosystème plus utile pour les suivants.
+~~~powershell
+python scripts/verify_migrations.py
+python -m compileall -q app tests
+python scripts/verify_deployment_contract.py
+pytest -q
+~~~
 
----
-
-## Pour les sponsors et partenaires
-
-Le projet est ouvert aux partenariats qui peuvent contribuer de manière concrète à son développement.
-
-Un partenariat peut notamment soutenir :
-
-- l'infrastructure ;
-- les services IA ;
-- la mise à disposition de ressources ;
-- l'accompagnement de communautés étudiantes ;
-- des actions ou programmes pédagogiques ;
-- la croissance du service à l'échelle nationale.
-
-Le sponsoring n'est pas présenté comme une simple visibilité publicitaire : l'objectif est de relier le soutien du partenaire à une contribution identifiable au projet.
-
-Pour échanger avec l'équipe, utilisez la page **Contact** du site.
+Pour une vérification proche de la CI, exécutez aussi les tests PostgreSQL avec une base de test dédiée.
 
 ---
 
-## Contribuer au projet
+## 11. Déploiement
 
-Le projet évolue par itérations.
+Le dépôt contient un Dockerfile et un render.yaml.
 
-Avant d'ajouter une fonctionnalité, il est utile de vérifier qu'elle répond à un besoin réel, qu'elle reste compatible avec l'expérience mobile et qu'elle ne fragilise pas les fonctions déjà disponibles.
+Le service Web utilise :
 
-Les contributions peuvent porter sur :
+- FastAPI / Uvicorn ;
+- PostgreSQL pour les données ;
+- Render Key Value pour l'accélération de la file IA ;
+- /health comme endpoint de liveness ;
+- /ready comme endpoint de readiness applicative.
 
-- l'UX et l'interface ;
-- les données et le référentiel ;
-- les parcours pédagogiques ;
-- la qualité des ressources ;
-- l'IA et sa validation ;
-- la performance ;
-- la sécurité ;
-- les partenariats et usages étudiants.
+Le worker IA est intégré au processus Web afin de rester compatible avec le modèle de déploiement retenu pour le service.
 
 ---
 
-## Message central
+## 12. Principes de conception
 
-> **Gasy Mahay ne cherche pas seulement à mettre des documents en ligne.**
->
-> **Le projet cherche à construire un environnement où les étudiants peuvent trouver, comprendre, pratiquer, s'entraider et progresser.**
+### Côté pédagogique
+
+Gasy Mahay cherche à aider l'étudiant à comprendre et pratiquer plutôt qu'à simplement consommer du contenu.
+
+### Côté confiance
+
+Une ressource déposée n'est pas automatiquement publiée. Les contrôles serveur et la modération restent centraux.
+
+### Côté IA
+
+L'IA peut expliquer, générer et vérifier, mais elle ne doit pas être présentée comme une autorité infaillible.
+
+### Côté sécurité
+
+Les décisions d'autorisation sont prises côté serveur. Le frontend sert d'interface, pas de frontière de sécurité.
+
+### Côté évolution
+
+Les migrations et les tests doivent rester idempotents et compatibles avec les environnements SQLite et PostgreSQL utilisés par le projet.
+
+---
+
+## 13. Contribuer
+
+Avant de proposer une modification :
+
+1. comprendre le domaine concerné ;
+2. vérifier les dépendances entre routes, modèles, templates et migrations ;
+3. ajouter ou mettre à jour les tests concernés ;
+4. vérifier la compilation ;
+5. vérifier les migrations si le schéma change ;
+6. vérifier le comportement mobile si l'interface est modifiée.
+
+Une fonctionnalité n'est considérée comme terminée que lorsqu'elle est cohérente avec le reste du parcours.
+
+---
+
+## 14. Vision
+
+Gasy Mahay veut progressivement devenir un espace numérique dans lequel un étudiant peut :
+
+- trouver une ressource fiable ;
+- pratiquer ;
+- comprendre ses erreurs ;
+- demander de l'aide ;
+- travailler avec d'autres ;
+- suivre sa progression ;
+- contribuer à la communauté.
+
+> **Trouver. Comprendre. Pratiquer. Progresser. Partager.**
 
 **Gasy Mahay — construire ensemble un espace d'apprentissage pour Madagascar.**

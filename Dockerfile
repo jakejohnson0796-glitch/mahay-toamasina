@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Fly.io route le trafic vers le port interne declare dans fly.toml (8080 ici)
+# Render transmet le trafic au port interne expose par le service (8080 par défaut).
 EXPOSE 8080
 
 # Un seul worker : necessaire car le chat des cercles d'etude garde les

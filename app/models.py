@@ -927,7 +927,7 @@ class Notification(SQLModel, table=True):
 
 class AbonnementEtudiant(SQLModel, table=True):
     """Acces Premium d'un etudiant : demarre automatiquement en essai
-    gratuit de 14 jours a l'inscription, puis (optionnellement) en
+    gratuit de 60 jours a l'inscription, puis (optionnellement) en
     abonnement paye de 5 000 Ar/mois valide manuellement par un admin sur
     preuve de paiement hors-ligne (Mobile Money / virement).
 

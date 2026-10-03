@@ -24,10 +24,10 @@ def test_a_propos_contient_les_sections_principales():
     page = lire("app/templates/a_propos.html")
     for terme in (
         "Pourquoi Gasy Mahay existe",
-        "Le parcours du projet",
+        "Une histoire construite autour d'un besoin concret",
+        "Notre approche de l'intelligence artificielle",
         "Notre manière de construire",
-        "L'écosystème Gasy Mahay",
-        "Ce que Gasy Mahay ne remplace pas",
+        "Ce que la plateforme ne remplace pas",
     ):
         assert terme in page
 

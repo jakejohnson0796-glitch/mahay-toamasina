@@ -9,13 +9,11 @@
   <section class="public-hero" aria-labelledby="about-title">
     <div>
       <span class="public-kicker">À propos · Gasy Mahay</span>
-      <h1 id="about-title">Un espace malagasy pour apprendre, pratiquer et avancer ensemble.</h1>
+      <h1 id="about-title">Une plateforme malgache pour apprendre, pratiquer et avancer ensemble.</h1>
       <p>
-        Gasy Mahay est né d'une idée simple : un étudiant ne devrait pas avoir
-        à chercher seul, pendant des heures, une ressource, une explication ou
-        un groupe avec lequel réviser. La plateforme rassemble les ressources
-        académiques, l'entraide et des outils d'apprentissage assistés par IA
-        dans un même espace pensé pour les étudiants de Madagascar.
+        Gasy Mahay rassemble ressources académiques, entraînement, entraide,
+        accompagnement par IA et classe virtuelle dans un même environnement
+        pensé pour les étudiants de Madagascar.
       </p>
       <div class="public-actions">
         <a class="bouton bouton-primaire" href="/inscription">Créer un compte</a>
@@ -26,10 +24,10 @@
 
     <aside class="public-hero-panel" aria-label="Repères Gasy Mahay">
       <div class="public-metric-grid">
-        <div class="public-metric"><strong>{{ nb_universites }}</strong><span>université{{ "s" if nb_universites != 1 else "" }} actuellement référencée{{ "s" if nb_universites != 1 else "" }}</span></div>
-        <div class="public-metric"><strong>06</strong><span>grands espaces d'apprentissage et de collaboration</span></div>
-        <div class="public-metric"><strong>IA</strong><span>quiz et accompagnement pédagogique assistés par intelligence artificielle</span></div>
-        <div class="public-metric"><strong>LIVE</strong><span>classe virtuelle avec vidéo, chat et tableau blanc</span></div>
+        <div class="public-metric"><strong>{{ nb_universites }}</strong><span>université{{ "s" if nb_universites != 1 else "" }} active{{ "s" if nb_universites != 1 else "" }} dans le référentiel</span></div>
+        <div class="public-metric"><strong>06</strong><span>espaces principaux : documents, quiz, Tuteur IA, cercles, classe et référentiel</span></div>
+        <div class="public-metric"><strong>IA</strong><span>génération, explication et vérification assistées par plusieurs contrôles</span></div>
+        <div class="public-metric"><strong>60 J</strong><span>essai gratuit Premium pour les nouveaux comptes étudiants</span></div>
       </div>
     </aside>
   </section>
@@ -37,8 +35,35 @@
   <section class="public-section">
     <div class="public-section-head">
       <div>
-        <h2>Le parcours du projet</h2>
-        <p>Une histoire qui commence avec une réalité simple : apprendre est plus facile quand on n'est pas seul.</p>
+        <h2>Pourquoi Gasy Mahay existe</h2>
+        <p>Le problème n'est pas seulement de trouver plus de contenu. Il faut aussi pouvoir l'utiliser, le comprendre et revenir dessus.</p>
+      </div>
+    </div>
+
+    <div class="public-grid-3">
+      <article class="public-card">
+        <span class="public-card-icon">{{ icone("documents", 18) }}</span>
+        <h3>Trouver</h3>
+        <p>Des ressources organisées pour réduire le temps perdu à chercher un cours, une annale, un corrigé ou une fiche.</p>
+      </article>
+      <article class="public-card">
+        <span class="public-card-icon">{{ icone("quiz", 18) }}</span>
+        <h3>Pratiquer</h3>
+        <p>Des quiz, exercices et révisions pour transformer une lecture passive en entraînement réel.</p>
+      </article>
+      <article class="public-card">
+        <span class="public-card-icon">{{ icone("cercles", 18) }}</span>
+        <h3>S'entraider</h3>
+        <p>Des cercles, messages et classes virtuelles pour apprendre avec d'autres étudiants.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="public-section">
+    <div class="public-section-head">
+      <div>
+        <h2>Une histoire construite autour d'un besoin concret</h2>
+        <p>Rapprocher ce que l'étudiant cherche déjà : une ressource, une explication, un exercice ou quelqu'un avec qui travailler.</p>
       </div>
     </div>
 
@@ -46,97 +71,79 @@
       <div class="public-story">
         <span class="public-story-marker">01</span>
         <div>
-          <h3>Une question toute simple : pourquoi chercher seul ?</h3>
-          <p>
-            Entre un cours, une annale, une correction, une discussion de groupe
-            et une explication à comprendre avant un examen, les ressources
-            utiles peuvent être éparpillées. Gasy Mahay est imaginé pour remettre
-            de l'ordre dans ce parcours et rapprocher les étudiants de ce dont
-            ils ont réellement besoin pour travailler.
-          </p>
+          <h3>Réduire la dispersion</h3>
+          <p>Les ressources académiques peuvent être réparties entre fichiers, discussions, groupes et appareils différents. Gasy Mahay cherche à les structurer dans un espace cohérent.</p>
         </div>
       </div>
 
       <div class="public-story">
         <span class="public-story-marker">02</span>
         <div>
-          <h3>Transformer les ressources en possibilités</h3>
-          <p>
-            Une plateforme d'apprentissage ne doit pas seulement stocker des
-            documents. Elle doit aider à les utiliser : rechercher une ressource,
-            pratiquer avec un quiz, demander une explication, rejoindre un cercle
-            d'étude et continuer à apprendre après une erreur.
-          </p>
+          <h3>Transformer une ressource en apprentissage</h3>
+          <p>Un document peut devenir un quiz, une question peut devenir une explication, et une erreur peut devenir une nouvelle séance de révision.</p>
         </div>
       </div>
 
       <div class="public-story">
         <span class="public-story-marker">03</span>
         <div>
-          <h3>Faire de l'entraide une force</h3>
-          <p>
-            La réussite académique ne repose pas uniquement sur la technologie.
-            Elle repose aussi sur les étudiants qui partagent une méthode, une
-            ressource, une question ou quelques minutes pour aider quelqu'un à
-            comprendre. Gasy Mahay cherche donc à renforcer l'entraide, pas à la
-            remplacer.
-          </p>
+          <h3>Renforcer l'entraide</h3>
+          <p>La technologie ne remplace pas une communauté. Les cercles d'étude et la classe virtuelle sont là pour faciliter le travail collectif.</p>
         </div>
       </div>
 
       <div class="public-story">
         <span class="public-story-marker">04</span>
         <div>
-          <h3>Passer d'un premier lancement à une ambition nationale</h3>
-          <p>
-            Le projet a commencé comme un lancement initial avant d'élargir sa
-            vision : construire progressivement un référentiel académique et des
-            outils utiles aux étudiants de Madagascar, tout en gardant une
-            exigence de qualité sur les informations intégrées à la plateforme.
-          </p>
+          <h3>Grandir progressivement à Madagascar</h3>
+          <p>Le projet élargit progressivement son référentiel et ses usages, tout en conservant des contrôles sur les données intégrées et les ressources publiées.</p>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div class="public-story">
-        <span class="public-story-marker">05</span>
+  <section class="public-section">
+    <div class="public-section-head">
+      <div>
+        <h2>Comment fonctionne l'écosystème</h2>
+        <p>Chaque espace correspond à une étape différente du parcours d'étude.</p>
+      </div>
+    </div>
+
+    <div class="public-panel public-ecosystem">
+      <div class="public-ecosystem-core">
         <div>
-          <h3>Construire avec patience, mesurer et améliorer</h3>
-          <p>
-            Chaque fonctionnalité a vocation à répondre à un usage concret :
-            onboarding étudiant, révisions adaptatives, quiz IA, Tuteur IA,
-            cercles d'étude, classe virtuelle et amélioration continue des
-            réponses produites par les modèles. L'objectif est de construire
-            une plateforme qui devient plus utile à mesure qu'elle apprend des
-            besoins réels de sa communauté.
-          </p>
+          <strong>Gasy Mahay</strong>
+          <span>Trouver · pratiquer · comprendre · collaborer · progresser</span>
         </div>
       </div>
+      <div class="public-ecosystem-items">
+        <div class="public-ecosystem-item"><strong>Documents</strong><span>Ressources approuvées, classées par contexte académique.</span></div>
+        <div class="public-ecosystem-item"><strong>Quiz IA</strong><span>Entraînement et suivi des tentatives.</span></div>
+        <div class="public-ecosystem-item"><strong>Tuteur IA</strong><span>Explication, exemple, exercice et correction.</span></div>
+        <div class="public-ecosystem-item"><strong>Cercles d'étude</strong><span>Discussion et travail entre membres.</span></div>
+        <div class="public-ecosystem-item"><strong>Classe virtuelle</strong><span>Vidéo, chat, tableau blanc et devoirs.</span></div>
+        <div class="public-ecosystem-item"><strong>Référentiel académique</strong><span>Universités, composantes, mentions, filières et niveaux structurés.</span></div>
+      </div>
     </div>
   </section>
 
   <section class="public-section">
     <div class="public-section-head">
       <div>
-        <h2>Pourquoi Gasy Mahay existe</h2>
-        <p>Parce qu'une difficulté académique peut parfois commencer par une toute petite chose : ne pas savoir où chercher.</p>
+        <h2>Notre approche de l'intelligence artificielle</h2>
+        <p>L'IA est un outil pédagogique, pas une autorité absolue.</p>
       </div>
     </div>
 
-    <div class="public-grid-3">
-      <article class="public-card">
-        <span class="public-card-icon">{{ icone("documents", 18) }}</span>
-        <h3>Trouver plus vite</h3>
-        <p>Des ressources académiques organisées pour réduire le temps perdu à fouiller plusieurs espaces ou conversations.</p>
+    <div class="public-grid-2">
+      <article class="public-card public-card-soft">
+        <h3>Faire travailler les modèles ensemble</h3>
+        <p>La génération peut être suivie par des critiques, des validations locales et un arbitrage avant la réponse finale. L'objectif est de réduire les contradictions et les erreurs visibles.</p>
       </article>
-      <article class="public-card">
-        <span class="public-card-icon">{{ icone("cercles", 18) }}</span>
-        <h3>Ne plus apprendre seul</h3>
-        <p>Des cercles d'étude pour poser une question, partager une méthode et progresser avec d'autres étudiants.</p>
-      </article>
-      <article class="public-card">
-        <span class="public-card-icon">{{ icone("classe", 18) }}</span>
-        <h3>Transformer l'erreur en progrès</h3>
-        <p>Des quiz, des révisions et un tuteur IA pour pratiquer, comprendre les erreurs et revenir sur les notions difficiles.</p>
+      <article class="public-card public-card-soft">
+        <h3>Garder l'humain dans la boucle</h3>
+        <p>Pour un sujet important, il faut comparer avec le cours, l'enseignant ou une source officielle. Une réponse IA doit aider à apprendre, pas remplacer le jugement pédagogique.</p>
       </article>
     </div>
   </section>
@@ -144,90 +151,60 @@
   <section class="public-section">
     <div class="public-section-head">
       <div>
-        <h2>Notre vision pour Madagascar</h2>
-        <p>Construire un environnement numérique où les étudiants peuvent apprendre, s'entraider et progresser sans que leur parcours dépende uniquement de la chance de trouver la bonne ressource au bon moment.</p>
+        <h2>Confiance, sécurité et modération</h2>
+        <p>La qualité d'une plateforme d'apprentissage dépend aussi de la confiance qu'elle inspire.</p>
       </div>
     </div>
 
-    <div class="public-panel">
-      <div class="public-grid-2">
-        <article class="public-card public-card-soft">
-          <h3>Une ambition nationale</h3>
-          <p>Relier progressivement davantage d'universités, de mentions, de niveaux, de filières, de ressources et de communautés étudiantes au sein d'un même écosystème.</p>
-        </article>
-        <article class="public-card public-card-soft">
-          <h3>Une construction progressive</h3>
-          <p>Grandir sans sacrifier la qualité : données vérifiables, modération, amélioration des outils et évolution de la plateforme à partir des usages réels.</p>
-        </article>
-      </div>
+    <div class="public-principles">
+      <div class="public-principle"><strong>Comptes protégés</strong><span>Mots de passe hachés, sessions sécurisées, 2FA et limitation des tentatives abusives.</span></div>
+      <div class="public-principle"><strong>Actions sensibles côté serveur</strong><span>Les droits d'accès ne reposent pas uniquement sur le frontend.</span></div>
+      <div class="public-principle"><strong>Documents modérés</strong><span>Un dépôt doit passer par le flux de validation avant publication.</span></div>
+      <div class="public-principle"><strong>IA vérifiée</strong><span>Des contrôles sont appliqués aux réponses avant leur utilisation selon les fonctionnalités.</span></div>
+      <div class="public-principle"><strong>Confidentialité</strong><span>Les informations privées et secrets techniques restent côté serveur.</span></div>
     </div>
   </section>
 
   <section class="public-section">
     <div class="public-section-head">
       <div>
-        <h2>Pourquoi soutenir Gasy Mahay</h2>
-        <p>Un partenaire ne soutient pas seulement un site : il contribue à créer un outil d'apprentissage plus accessible aux étudiants.</p>
+        <h2>Ce que la plateforme ne remplace pas</h2>
+        <p>Gasy Mahay est un outil d'appui à l'apprentissage.</p>
       </div>
     </div>
 
-    <div class="public-panel">
-      <div class="public-grid-2">
-        <article class="public-card">
-          <h3>Pour les étudiants</h3>
-          <p>
-            Un soutien peut aider à maintenir l'infrastructure, améliorer les
-            outils pédagogiques, développer les ressources et rendre le service
-            plus solide à mesure que la communauté grandit.
-          </p>
-        </article>
-        <article class="public-card">
-          <h3>Pour les partenaires et sponsors</h3>
-          <p>
-            Gasy Mahay offre un espace où une marque, une structure ou un acteur
-            de l'éducation peut soutenir concrètement l'apprentissage, la
-            collaboration et l'accès à des outils numériques pour les étudiants.
-          </p>
-        </article>
-      </div>
-
-      <div class="public-principles">
-        <div class="public-principle"><strong>Impact visible</strong><span>Associer le soutien à des actions concrètes : infrastructure, ressources, accompagnement ou fonctionnalités.</span></div>
-        <div class="public-principle"><strong>Responsabilité</strong><span>Préserver la confiance des étudiants en séparant clairement l'aide au projet de l'expérience pédagogique.</span></div>
-        <div class="public-principle"><strong>Vision long terme</strong><span>Construire un service national qui gagne en utilité au lieu de multiplier des fonctionnalités sans usage.</span></div>
-      </div>
-
-      <div class="public-final-actions">
-        <a class="bouton bouton-primaire" href="/sponsoring">Découvrir le sponsoring</a>
-        <a class="bouton bouton-secondaire" href="/contact">Parler avec l'équipe</a>
-      </div>
+    <div class="public-grid-2">
+      <article class="public-card public-card-soft">
+        <h3>Les enseignants et les supports officiels</h3>
+        <p>Les contenus générés par IA ne remplacent pas un cours officiel, un enseignant ou les règles de l'établissement.</p>
+      </article>
+      <article class="public-card public-card-soft">
+        <h3>Le travail personnel</h3>
+        <p>Une réponse, un quiz ou une correction n'ont de valeur pédagogique que s'ils servent à comprendre et à pratiquer.</p>
+      </article>
     </div>
   </section>
 
   <section class="public-section">
     <div class="public-section-head">
       <div>
-        <h2>Ce que nous voulons construire avec la communauté</h2>
-        <p>La prochaine étape n'est pas seulement technique : elle est humaine.</p>
+        <h2>Construire avec la communauté</h2>
+        <p>Les améliorations sont guidées par les usages et les retours du terrain.</p>
       </div>
     </div>
 
     <div class="public-panel">
       <div class="public-story">
         <span class="public-story-marker">→</span>
-        <div><h3>Pour l'étudiant qui doute</h3><p>Donner un point de départ clair, une ressource, un exercice ou une personne avec qui avancer.</p></div>
+        <div><h3>Étudiant</h3><p>Utiliser, signaler un problème, proposer une amélioration ou partager une ressource utile.</p></div>
       </div>
       <div class="public-story">
         <span class="public-story-marker">→</span>
-        <div><h3>Pour l'étudiant qui partage</h3><p>Transformer une fiche, une explication ou une expérience en ressource utile pour d'autres.</p></div>
+        <div><h3>Enseignant</h3><p>Apporter un cadre pédagogique, animer une classe virtuelle et contribuer à la qualité des ressources.</p></div>
       </div>
       <div class="public-story">
         <span class="public-story-marker">→</span>
-        <div><h3>Pour l'enseignant et les acteurs académiques</h3><p>Créer progressivement un environnement numérique plus structuré autour des parcours et des ressources d'apprentissage.</p></div>
-      </div>
-      <div class="public-story">
-        <span class="public-story-marker">→</span>
-        <div><h3>Pour les partenaires</h3><p>Participer à un projet qui place l'accès au savoir, l'accompagnement et la progression des étudiants au centre.</p></div>
+        <div><h3>Partenaire</h3><p>Soutenir l'infrastructure, les outils, les ressources ou les programmes utiles aux étudiants.</p></div>
       </div>
     </div>
   </section>
@@ -236,68 +213,22 @@
     <div class="public-section-head">
       <div>
         <h2>Notre manière de construire</h2>
-        <p>Quelques principes simples guident les choix de la plateforme.</p>
+        <p>Quelques principes guident les choix du projet.</p>
       </div>
     </div>
     <div class="public-principles">
-      <div class="public-principle"><strong>Accessibilité</strong><span>Garder un socle utile aux étudiants et une interface compréhensible sur mobile comme sur ordinateur.</span></div>
-      <div class="public-principle"><strong>Collaboration</strong><span>Faciliter le travail à plusieurs plutôt que remplacer l'entraide humaine.</span></div>
-      <div class="public-principle"><strong>Utilité de l'IA</strong><span>Employer l'IA pour expliquer, entraîner, corriger et personnaliser, pas comme une fin en soi.</span></div>
-      <div class="public-principle"><strong>Sécurité</strong><span>Protéger comptes, sessions, documents et espaces privés par des contrôles côté serveur.</span></div>
-      <div class="public-principle"><strong>Progressivité</strong><span>Ajouter des fonctionnalités après validation plutôt que multiplier les écrans incomplets.</span></div>
-    </div>
-  </section>
-
-  <section class="public-section">
-    <div class="public-section-head">
-      <div>
-        <h2>L'écosystème Gasy Mahay</h2>
-        <p>Chaque espace a un rôle précis dans le parcours d'étude.</p>
-      </div>
-    </div>
-    <div class="public-panel public-ecosystem">
-      <div class="public-ecosystem-core">
-        <div>
-          <strong>Gasy Mahay</strong>
-          <span>un même espace pour découvrir, pratiquer, collaborer et suivre ses activités académiques</span>
-        </div>
-      </div>
-      <div class="public-ecosystem-items">
-        <div class="public-ecosystem-item"><strong>Documents</strong><span>Bibliothèque de ressources approuvées et classées.</span></div>
-        <div class="public-ecosystem-item"><strong>Quiz IA</strong><span>Entraînement, correction et suivi des tentatives.</span></div>
-        <div class="public-ecosystem-item"><strong>Tuteur IA</strong><span>Explication, exemple, exercice et correction.</span></div>
-        <div class="public-ecosystem-item"><strong>Cercles d'étude</strong><span>Discussion, partage et travail entre membres.</span></div>
-        <div class="public-ecosystem-item"><strong>Classe virtuelle</strong><span>Vidéo, chat, tableau blanc et devoirs.</span></div>
-        <div class="public-ecosystem-item"><strong>Référentiel universitaire</strong><span>Universités, mentions, niveaux et filières structurés.</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="public-section">
-    <div class="public-panel">
-      <div class="public-section-head">
-        <div>
-          <h2>Ce que Gasy Mahay ne remplace pas</h2>
-          <p>La plateforme est un outil d'appui à l'apprentissage.</p>
-        </div>
-      </div>
-      <div class="public-grid-2">
-        <article class="public-card public-card-soft">
-          <h3>Les enseignants et les cours</h3>
-          <p>Les explications générées par IA ne remplacent pas les supports officiels, les enseignants ou les règles de l'établissement.</p>
-        </article>
-        <article class="public-card public-card-soft">
-          <h3>Le travail personnel</h3>
-          <p>Un quiz ou une réponse du tuteur ne garantit pas à lui seul la compréhension : l'objectif reste de pratiquer, vérifier et progresser.</p>
-        </article>
-      </div>
+      <div class="public-principle"><strong>Utilité</strong><span>Une fonctionnalité doit répondre à un usage réel.</span></div>
+      <div class="public-principle"><strong>Accessibilité</strong><span>Le parcours doit rester utilisable sur mobile comme sur ordinateur.</span></div>
+      <div class="public-principle"><strong>Progressivité</strong><span>Déployer, mesurer, corriger puis élargir.</span></div>
+      <div class="public-principle"><strong>Transparence</strong><span>Dire clairement ce que l'IA, le site et l'équipe peuvent ou ne peuvent pas garantir.</span></div>
+      <div class="public-principle"><strong>Sécurité</strong><span>Protéger comptes, sessions, documents et espaces privés.</span></div>
     </div>
   </section>
 
   <section class="public-section public-final">
     <div>
-      <h2>Une plateforme se construit. Une communauté lui donne un sens.</h2>
-      <p>Étudiant, enseignant, partenaire ou sponsor : chaque contribution utile peut aider à faire grandir l'écosystème d'apprentissage de demain.</p>
+      <h2>Une plateforme se construit. Une communauté lui donne son utilité.</h2>
+      <p>Notre objectif est simple : rendre plus facile le passage entre une question, une ressource, une pratique, une explication et un progrès.</p>
     </div>
     <div class="public-final-actions">
       <a class="bouton bouton-primaire" href="/inscription">Rejoindre Gasy Mahay</a>
