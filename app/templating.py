@@ -37,10 +37,26 @@ def _texte_ia_html(texte) -> "Markup":
     i = 0
 
     def inline(valeur: str) -> str:
+        # Reserve les fragments mathematiques avant l'echappement Markdown,
+        # sinon \\[...\\] et \\( ... \\) apparaissent comme du texte brut.
+        math_pattern = re.compile(
+            r"(\\\\\[(?:.|\\n)*?\\\\\]|\\\\\((?:.|\\n)*?\\\\\)"
+            r"|\\\\begin\\{(?:pmatrix|bmatrix|vmatrix|matrix)\\}(?:.|\\n)*?\\\\end\\{(?:pmatrix|bmatrix|vmatrix|matrix)\\})"
+        )
+        placeholders = {}
+
+        def garder_math(match):
+            cle = f"__MATH_{len(placeholders)}__"
+            placeholders[cle] = str(rendre_math_html(match.group(0)))
+            return cle
+
+        valeur = math_pattern.sub(garder_math, valeur)
         valeur = html.escape(valeur, quote=True)
         valeur = re.sub(r"\x60([^\x60]+)\x60", r"<code>\1</code>", valeur)
         valeur = re.sub(r"\*\*([^*\n]+?)\*\*", r"<strong>\1</strong>", valeur)
         valeur = re.sub(r"(?<!\*)\*([^*\n]+?)\*(?!\*)", r"<em>\1</em>", valeur)
+        for cle, rendu in placeholders.items():
+            valeur = valeur.replace(cle, rendu)
         return valeur
 
     def est_sep_tableau(ligne: str) -> bool:
