@@ -54,7 +54,7 @@ def normaliser_math_texte(texte: str) -> str:
                 for cellule in ligne:
                     # Exemple courant produit par les modèles :
                     # "| 3 | 6\\\\ 9 | 12 |" -> [["3", "6"], ["9", "12"]]
-                    parties = [p.strip() for p in re.split(r"\\\\\\s*|\\\\\\s+", cellule) if p.strip()]
+                    parties = [p.strip() for p in re.split(r"\\\\\s*|\\\s+", cellule) if p.strip()]
                     valeurs.extend(parties or [cellule])
                 etendues.append(valeurs)
 
