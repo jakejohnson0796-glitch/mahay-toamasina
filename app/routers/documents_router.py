@@ -3,6 +3,7 @@ Coeur de l'application : consulter, deposer, telecharger des documents,
 et les valider (moderation) avant qu'ils soient publics.
 """
 from pathlib import Path
+from datetime import datetime
 from typing import Optional
 import secrets
 
@@ -164,7 +165,7 @@ def upload_document(
         return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
 
     filiere_reference = filiere_depart or filieres_disponibles[0]
-    annee_reference = annee or __import__("datetime").datetime.utcnow().year
+    annee_reference = annee or datetime.utcnow().year
     reference_stockage = generer_reference(filiere_reference, annee_reference, session)
     nom_fichier_original = fichier.filename or "document"
 
