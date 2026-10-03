@@ -50,7 +50,8 @@
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
           <h2 class="quiz-question-title">{{ rendre_math_html(item.question) }}</h2>
           <div class="quiz-choice-grid quiz-choice-grid-correction">
-            {% for choix in item.choix %}
+            {% set choix_nettoyes = normaliser_choix_liste(item.choix) %}
+            {% for choix in choix_nettoyes %}
             <div class="quiz-choice quiz-choice-readonly {{ 'is-correct-choice' if loop.index0 == item.index_bonne_reponse else '' }} {{ 'is-selected-choice' if loop.index0 == rep else '' }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
               <span class="quiz-choice-text">{{ rendre_choix_math_html(choix, loop.index0) }}</span>
@@ -63,7 +64,7 @@
           </div>
           <div class="quiz-correction-answer">
             <strong>{% if ok %}✅ Correcte{% elif rep is none %}⚠️ Sans réponse{% else %}❌ Incorrecte{% endif %}</strong>
-            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. {{ rendre_math_html(item.choix[item.index_bonne_reponse]) }}</span>
+            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. {{ rendre_math_html(choix_nettoyes[item.index_bonne_reponse]) }}</span>
           </div>
           {% if item.explication %}
           <div class="quiz-correction-explanation">
@@ -95,7 +96,8 @@
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
           <h2 class="quiz-question-title">{{ rendre_math_html(item.question) }}</h2>
           <div class="quiz-choice-grid" role="radiogroup" aria-label="Réponses à la question {{ loop.index }}">
-            {% for choix in item.choix %}
+            {% set choix_nettoyes = normaliser_choix_liste(item.choix) %}
+            {% for choix in choix_nettoyes %}
             <label class="quiz-choice">
               <input type="radio" name="question_{{ q }}" value="{{ loop.index0 }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
