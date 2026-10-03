@@ -82,3 +82,21 @@ def test_document_auto_detection_uses_an_isolated_label_structure():
     assert '<label class="document-upload-auto-box"' not in template
     assert '.document-upload-field .document-upload-auto-copy' in template
     assert 'writing-mode:horizontal-tb !important;' in template
+
+
+def test_document_auto_detection_overrides_generic_checkbox_and_label_rules():
+    template = (ROOT / "app" / "templates" / "document_upload.html").read_text(encoding="utf-8")
+    required = [
+        ".document-upload-page .document-upload-auto-box{",
+        "grid-template-columns:1.15rem minmax(0,1fr) !important;",
+        ".document-upload-page .document-upload-auto-box input#classification_auto{",
+        "width:1.1rem !important;",
+        "min-height:1.1rem !important;",
+        "padding:0 !important;",
+        ".document-upload-page .document-upload-auto-box > .document-upload-auto-copy{",
+        "width:100% !important;",
+        "word-break:normal !important;",
+        "writing-mode:horizontal-tb !important;",
+    ]
+    for token in required:
+        assert token in template, token
