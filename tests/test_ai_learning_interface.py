@@ -69,3 +69,20 @@ def test_filtre_texte_ia_rend_les_formules_mathematiques():
 def test_page_tuteur_indique_une_verification_avant_enregistrement():
     tuteur = lire("app/templates/tuteur.html")
     assert "vérifiée par plusieurs modèles avant d'être enregistrée" in tuteur
+
+
+def test_filtre_texte_ia_gere_aussi_le_latex_doublement_echappe():
+    from app.templating import templates
+
+    filtre = templates.env.filters["texte_ia"]
+    rendu = str(filtre(r"Formule : \\[x^2 + 1\\] et \\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}."))
+    assert "x^2 + 1" in rendu
+    assert "math-matrix" in rendu
+    assert r"\\[" not in rendu
+    assert r"\\begin{pmatrix}" not in rendu
+
+
+def test_route_tuteur_persiste_le_statut_de_verification():
+    route = lire("app/routers/tuteur_router.py")
+    assert 'statut_verification = reponse.pop("_statut_verification", "terminee")' in route
+    assert 'statut_verification_ia=statut_verification' in route
