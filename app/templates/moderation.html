@@ -27,7 +27,7 @@
       <h3>Documents en attente <span class="doc-type-label">{{ documents|length }}</span></h3>
     </div>
     <div class="table-manifeste-wrap">
-      <table class="table-manifeste moderation-documents-table">
+      <table class="table-manifeste moderation-documents-table moderation-documents-table-pending">
         <thead>
           <tr>
             <th>Référence</th>
@@ -76,7 +76,7 @@
       <h3>Documents publics <span class="doc-type-label">{{ documents_approuves|length }}</span></h3>
     </div>
     <div class="table-manifeste-wrap">
-      <table class="table-manifeste moderation-documents-table">
+      <table class="table-manifeste moderation-documents-table moderation-documents-table-resultat">
         <thead>
           <tr>
             <th>Référence</th>
@@ -119,7 +119,7 @@
       <h3>Documents rejetés <span class="doc-type-label">{{ documents_rejetes|length }}</span></h3>
     </div>
     <div class="table-manifeste-wrap">
-      <table class="table-manifeste moderation-documents-table">
+      <table class="table-manifeste moderation-documents-table moderation-documents-table-resultat">
         <thead>
           <tr>
             <th>Référence</th>
@@ -208,13 +208,17 @@
     width: 80px;
     white-space: nowrap;
   }
-  .moderation-documents .table-manifeste th:nth-child(5),
-  .moderation-documents .table-manifeste td:nth-child(5) {
+  .moderation-documents-table-pending th:nth-child(5),
+  .moderation-documents-table-pending td:nth-child(5) {
     width: 120px;
     white-space: nowrap;
   }
-  .moderation-documents .table-manifeste th:nth-child(6),
-  .moderation-documents .table-manifeste td:nth-child(6) {
+  .moderation-documents-table-pending th:nth-child(6),
+  .moderation-documents-table-pending td:nth-child(6) {
+    width: 270px;
+  }
+  .moderation-documents-table-resultat th:nth-child(5),
+  .moderation-documents-table-resultat td:nth-child(5) {
     width: 270px;
   }
   .moderation-documents .table-manifeste td.ref {
