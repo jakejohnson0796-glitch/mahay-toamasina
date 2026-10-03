@@ -135,4 +135,4 @@ def test_normalise_un_quiz_avec_labels_consecutifs():
         "notion": "Algèbre",
     }]
     resultat = valider_questions(questions)
-    assert resultat[0]["choix"] == ["A+B = B+A", "A+B = B+A", "A+B = B+A", "λ(AB) = A(λB)"]
+    assert resultat[0]["choix"] == ["A+B = B+A", "A+B = B-A", "A+B = A-B", "λ(AB) = A(λB)"]
