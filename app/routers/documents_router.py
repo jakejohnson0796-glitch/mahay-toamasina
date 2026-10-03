@@ -320,66 +320,100 @@ def panneau_moderation(request: Request, session: Session = Depends(get_session)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return RedirectResponse("/", status_code=303)
-    en_attente = session.exec(select(Document).where(Document.statut == StatutDocument.EN_ATTENTE)).all()
-    # Documents deja publics : l'admin doit aussi pouvoir en supprimer un
-    # apres coup (contenu signale/problematique decouvert apres
-    # approbation), pas seulement filtrer ceux encore en attente.
-    approuves = session.exec(
-        select(Document).where(Document.statut == StatutDocument.APPROUVE).order_by(Document.date_upload.desc())
+
+    en_attente = session.exec(
+        select(Document)
+        .where(Document.statut == StatutDocument.EN_ATTENTE)
+        .order_by(Document.date_upload.desc())
     ).all()
+    approuves = session.exec(
+        select(Document)
+        .where(Document.statut == StatutDocument.APPROUVE)
+        .order_by(Document.date_upload.desc())
+    ).all()
+    rejetes = session.exec(
+        select(Document)
+        .where(Document.statut == StatutDocument.REJETE)
+        .order_by(Document.date_upload.desc())
+    ).all()
+
     return templates.TemplateResponse(
-        "moderation.html", {"request": request, "documents": en_attente, "documents_approuves": approuves}
+        "moderation.html",
+        {
+            "request": request,
+            "documents": en_attente,
+            "documents_approuves": approuves,
+            "documents_rejetes": rejetes,
+            "utilisateur": utilisateur,
+        },
     )
 
 
+def _rediriger_moderation(resultat: str) -> RedirectResponse:
+    return RedirectResponse(f"/moderation?resultat={resultat}", status_code=303)
+
+
 @router.post("/moderation/{document_id}/approuver")
-def approuver_document(request: Request, document_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
-    utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return RedirectResponse("/", status_code=303)
-    document = session.get(Document, document_id)
-    if document:
-        document.statut = StatutDocument.APPROUVE
-        session.add(document)
-        session.commit()
-    return RedirectResponse("/moderation", status_code=303)
-
-
-@router.post("/moderation/{document_id}/rejeter")
-def rejeter_document(request: Request, document_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
-    utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return RedirectResponse("/", status_code=303)
-    document = session.get(Document, document_id)
-    if document:
-        document.statut = StatutDocument.REJETE
-        session.add(document)
-        session.commit()
-    return RedirectResponse("/moderation", status_code=303)
-
-
-@router.post("/moderation/{document_id}/supprimer")
-def supprimer_document(request: Request, document_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
-    """Suppression DEFINITIVE d'un document par un administrateur (retrait
-    de contenu problematique/signale, pas un simple rejet de moderation).
-    Reservee a l'admin — un utilisateur normal, meme uploader du document,
-    ne peut jamais appeler cette route (verifie ici, pas seulement masque
-    cote frontend).
-
-    Nettoyage complet, dans cet ordre :
-      1. lignes ConsultationDocument qui referencent ce document (evite
-         une cle etrangere orpheline vers un Document supprime) ;
-      2. fichier physique/objet distant (voir storage.supprimer_fichier) ;
-      3. l'enregistrement Document lui-meme.
-    Le fichier n'est jamais laisse orphelin sur le disque/bucket alors
-    que son enregistrement en base a disparu, et inversement."""
+def approuver_document(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
     if not document:
-        return RedirectResponse("/moderation", status_code=303)
+        return _rediriger_moderation("introuvable")
+
+    document.statut = StatutDocument.APPROUVE
+    session.add(document)
+    session.commit()
+    return _rediriger_moderation("approuve")
+
+
+@router.post("/moderation/{document_id}/rejeter")
+def rejeter_document(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document:
+        return _rediriger_moderation("introuvable")
+
+    document.statut = StatutDocument.REJETE
+    session.add(document)
+    session.commit()
+    return _rediriger_moderation("rejete")
+
+
+@router.post("/moderation/{document_id}/supprimer")
+def supprimer_document(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Suppression définitive d'un document par un administrateur.
+
+    Elle retire aussi les consultations et le fichier physique/objet distant
+    avant de supprimer l'enregistrement Document.
+    """
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document:
+        return _rediriger_moderation("introuvable")
 
     for consultation in session.exec(
         select(ConsultationDocument).where(ConsultationDocument.document_id == document_id)
@@ -392,4 +426,5 @@ def supprimer_document(request: Request, document_id: int, session: Session = De
     session.delete(document)
     session.commit()
 
-    return RedirectResponse("/moderation?supprime=1", status_code=303)
+    return _rediriger_moderation("supprime")
+
