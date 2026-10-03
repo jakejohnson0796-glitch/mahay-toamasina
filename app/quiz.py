@@ -68,7 +68,7 @@ def _verifier_questions_avant_stockage(
     commencé le quiz est interdite. Le contrôle qualité doit donc avoir lieu
     avant le commit de la tentative.
     """
-    questions = valider_questions(questions, expected_count=len(questions))
+    questions = valider_questions(questions, expected_count=len(questions), strict_coherence=True)
     try:
         questions_finales, confiant = ai_quiz.verifier_et_corriger_questions(
             questions,
@@ -79,6 +79,7 @@ def _verifier_questions_avant_stockage(
         questions_finales = valider_questions(
             questions_finales,
             expected_count=len(questions),
+            strict_coherence=True,
         )
         logger.info(
             "Quality gate quiz: matiere=%s niveau=%s questions=%s confiant=%s.",
