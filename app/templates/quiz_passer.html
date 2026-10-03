@@ -93,7 +93,7 @@
         {% set q = loop.index0 %}
         <article class="quiz-question-card" data-quiz-question data-quiz-index="{{ q }}" id="question-{{ q }}">
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
-          <h2 class="quiz-question-title">{{ item.question }}</h2>
+          <h2 class="quiz-question-title">{{ rendre_math_html(item.question) }}</h2>
           <div class="quiz-choice-grid" role="radiogroup" aria-label="Réponses à la question {{ loop.index }}">
             {% for choix in item.choix %}
             <label class="quiz-choice">
