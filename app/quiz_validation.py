@@ -254,7 +254,7 @@ def rendre_math_html(texte: str):
             lignes = [x.strip() for x in contenu.split("\n") if x.strip()]
             rows = []
             for ligne in lignes:
-                cellules = [c.strip() for c in ligne.split("&")]
+                cellules = [c.strip().rstrip("\\").strip() for c in ligne.split("&")]
                 rows.append(
                     "<tr>" + "".join(
                         f"<td>{_html.escape(cell, quote=True)}</td>" for cell in cellules
