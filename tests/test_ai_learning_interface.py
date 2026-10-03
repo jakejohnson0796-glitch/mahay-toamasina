@@ -106,3 +106,35 @@ def test_filtre_texte_ia_rend_une_matrice_embarquee_dans_une_formule():
     assert "begin{pmatrix}" not in rendu
     assert "end{pmatrix}" not in rendu
     assert "\\times" not in rendu
+
+
+def test_filtre_texte_ia_convertit_un_tableau_markdown_en_matrice():
+    from app.templating import templates
+
+    filtre = templates.env.filters["texte_ia"]
+    rendu = str(
+        filtre(
+            r"""Pour une matrice
+| a | b |
+| - | - |
+| c | d |
+
+et det(B)=1\\times4 - 2\\times3 = -2."""
+        )
+    )
+    assert "math-matrix" in rendu
+    assert "<td>a</td>" in rendu
+    assert "<td>b</td>" in rendu
+    assert "<td>c</td>" in rendu
+    assert "<td>d</td>" in rendu
+    assert "ai-markdown-table" not in rendu
+    assert "1×4" in rendu
+
+
+def test_filtre_texte_ia_nettoie_les_commandes_latex_sans_delimiters():
+    from app.templating import templates
+
+    filtre = templates.env.filters["texte_ia"]
+    rendu = str(filtre(r"Les vecteurs sont \\mathbf{u}=(a,c) et \\mathbf{v}=(b,d)."))
+    assert "\\mathbf" not in rendu
+    assert "<strong>u</strong>" not in rendu or "u" in rendu
