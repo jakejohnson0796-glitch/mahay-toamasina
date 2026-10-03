@@ -44,3 +44,25 @@ def acces_premium_ou_redirection(
         return RedirectResponse("/abonnement?premium_requis=1", status_code=303)
 
     return None
+
+
+def acces_ia_ou_redirection(
+    utilisateur: Optional[Utilisateur], session: Session
+) -> Optional[RedirectResponse]:
+    """Protège spécifiquement le Quiz IA et le Tuteur IA.
+
+    Le Premium général reste ouvert pendant 60 jours d'essai, tandis que les
+    fonctionnalités IA sont limitées aux 14 premiers jours de l'essai, puis
+    restent disponibles avec un abonnement payant actif.
+    """
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    abonnement = subscription.obtenir_abonnement(session, utilisateur.id)
+    if abonnement:
+        abonnement = subscription.synchroniser_expiration(session, abonnement)
+
+    if not subscription.acces_ia_valide(abonnement):
+        return RedirectResponse("/abonnement?ia_requis=1", status_code=303)
+
+    return None
