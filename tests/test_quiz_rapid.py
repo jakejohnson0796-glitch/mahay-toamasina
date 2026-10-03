@@ -111,3 +111,19 @@ def test_retirer_labels_qcm_parasites_sans_casser_ab_egal_ba():
     }]
     resultat_formule = valider_questions(formule)
     assert resultat_formule[0]["choix"][0] == "AB = BA"
+
+
+def test_normalise_les_entetes_markdown_dans_les_questions():
+    from app.quiz_validation import normaliser_math_texte
+    assert normaliser_math_texte("## Quelle propriete ?") == "Quelle propriete ?"
+
+
+def test_rend_un_choix_ancien_avec_label_et_matrice():
+    from app.quiz_validation import rendre_choix_math_html
+    texte = "| **6** | **21\\\\ 24** | **3** |\\n| :---: | :-----------: | :---: |"
+    rendu = str(rendre_choix_math_html("A" + texte, 0))
+    assert "math-matrix" in rendu
+    assert ">6<" in rendu
+    assert "21" in rendu
+    assert "24" in rendu
+    assert ">A<" not in rendu
