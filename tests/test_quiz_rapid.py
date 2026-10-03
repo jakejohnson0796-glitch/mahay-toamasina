@@ -182,6 +182,59 @@ def test_normalise_labels_et_matrices_markdown_dans_les_choix():
     assert ">1<" in rendu and ">9<" in rendu
 
 
+
+def test_normalise_les_choix_qcm_des_questions_3_et_4():
+    from app.quiz_validation import valider_questions
+
+    questions = [{
+        "question": "Quelle opération élémentaire ?",
+        "choix": [
+            "AÉchange des lignes 1 et 2",
+            "BMultiplication de la ligne 1 par 0",
+            "CAddition de la ligne 3 à la ligne 2",
+            "DPermutation circulaire des lignes",
+        ],
+        "index_bonne_reponse": 0,
+        "explication": "Échanger deux lignes est une opération élémentaire.",
+        "notion": "Matrices",
+    }, {
+        "question": "Si A et B sont de type (m,n), alors la distributivité vaut si :",
+        "choix": [
+            "AC est une matrice de type (n,p)",
+            "BC est une matrice carrée",
+            "CA et B sont symétriques",
+            "Dm = n",
+        ],
+        "index_bonne_reponse": 0,
+        "explication": "Le produit AC doit être défini.",
+        "notion": "Produit matriciel",
+    }]
+
+    resultat = valider_questions(questions)
+    assert resultat[0]["choix"] == [
+        "Échange des lignes 1 et 2",
+        "Multiplication de la ligne 1 par 0",
+        "Addition de la ligne 3 à la ligne 2",
+        "Permutation circulaire des lignes",
+    ]
+    assert resultat[1]["choix"] == [
+        "C est une matrice de type (n,p)",
+        "C est une matrice carrée",
+        "A et B sont symétriques",
+        "m = n",
+    ]
+
+
+def test_rend_une_matrice_3x3_avec_trois_lignes_html():
+    from app.quiz_validation import rendre_math_html
+
+    texte = r"\[\begin{pmatrix}1&2&3\\ 4&5&6\\ 7&8&9\end{pmatrix}\]"
+    rendu = str(rendre_math_html(texte))
+    assert rendu.count("<tr>") == 3
+    assert rendu.count("<td>") == 9
+    assert ">7<" in rendu and ">9<" in rendu
+
+
 def test_normalise_un_quiz_avec_labels_consecutifs():
     from app.quiz_validation import valider_questions
     questions = [{
