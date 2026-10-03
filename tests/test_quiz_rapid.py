@@ -233,6 +233,56 @@ def test_rend_une_matrice_3x3_avec_trois_lignes_html():
     assert ">7<" in rendu and ">9<" in rendu
 
 
+
+def test_controle_strict_refuse_une_explication_sans_bonne_option():
+    from app.quiz_validation import QuizValidationError, valider_questions
+
+    questions = [{
+        "question": "Soit A = [2 3; 1 4]. Quel est le déterminant ?",
+        "choix": ["-2", "2", "10", "14"],
+        "index_bonne_reponse": 1,
+        "explication": (
+            "det(A) = 2×4 − 3×1 = 5 ; aucune des réponses proposées ne correspond, "
+            "la bonne réponse est 5."
+        ),
+        "notion": "Déterminant",
+    }]
+
+    try:
+        valider_questions(questions, strict_coherence=True)
+    except QuizValidationError:
+        pass
+    else:
+        raise AssertionError("Une incohérence explicite ne doit pas franchir le contrôle qualité.")
+
+
+def test_quality_gate_utilise_la_version_corrigee_avant_stockage(monkeypatch):
+    from app import quiz
+
+    original = _questions()[0].copy()
+    corrected = _questions()[0].copy()
+    corrected["choix"] = ["3", "4", "5"]
+    corrected["index_bonne_reponse"] = 2
+    corrected["explication"] = "2 + 2 vaut 4."  # volontairement corrigé ensuite par le mock
+    corrected["choix"] = ["3", "4", "5"]
+    corrected["index_bonne_reponse"] = 1
+    corrected["explication"] = "2 + 2 vaut 4."
+
+    monkeypatch.setattr(
+        quiz.ai_quiz,
+        "verifier_et_corriger_questions",
+        lambda *args, **kwargs: ([corrected], True),
+    )
+
+    resultat = quiz._verifier_questions_avant_stockage(
+        [original],
+        "Mathématiques",
+        "L1",
+    )
+
+    assert resultat == [corrected]
+
+
 def test_normalise_un_quiz_avec_labels_consecutifs():
     from app.quiz_validation import valider_questions
     questions = [{
