@@ -265,7 +265,7 @@ def _generer_completion_avec_reessai(
             try:
                 arguments = json.loads(message.tool_calls[0].function.arguments)
                 questions = arguments.get("questions")
-                valider_questions(questions, expected_count=expected_count)
+                valider_questions(questions, expected_count=expected_count, strict_coherence=True)
             except (json.JSONDecodeError, AttributeError, TypeError, QuizValidationError) as validation_error:
                 derniere_erreur = validation_error
                 logger.warning(
@@ -474,7 +474,7 @@ def _extraire_questions(completion, expected_count: int = 5) -> List[Dict]:
             questions = arguments.get("questions") or []
             if questions:
                 try:
-                    return valider_questions(questions, expected_count=expected_count)
+                    return valider_questions(questions, expected_count=expected_count, strict_coherence=True)
                 except QuizValidationError as exc:
                     logger.warning("Reponse quiz IA invalide: %s", exc)
         except (json.JSONDecodeError, AttributeError):
