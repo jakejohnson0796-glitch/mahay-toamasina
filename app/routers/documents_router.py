@@ -22,6 +22,7 @@ from ..dependencies import acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
 from .. import gamification
 from ..rate_limit import limite_depassee
+from ..document_classifier import classifier_document
 
 router = APIRouter()
 
@@ -131,6 +132,7 @@ def upload_document(
     annee: int = Form(...),
     filiere_id: int = Form(...),
     cercle_id: Optional[int] = Form(default=None),
+    classification_auto: bool = Form(default=False),
     fichier: UploadFile = File(...),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -165,6 +167,38 @@ def upload_document(
     try:
         chemin_stocke = sauvegarder_fichier(fichier, reference)
     except FichierInvalide as erreur:
+
+    # Option "détection automatique" : on réutilise l'extracteur existant
+    # pour détecter titre, matière, type, année et filière. Le fichier est
+    # déjà validé et stocké à ce stade, donc l'analyse porte exactement sur
+    # le contenu qui sera conservé. En cas d'absence d'IA ou de doute, les
+    # valeurs saisies par l'utilisateur restent les valeurs de secours.
+    classification = None
+    if classification_auto:
+        try:
+            filieres_disponibles = session.exec(select(Filiere)).all()
+            with ouvrir_fichier_local(chemin_stocke) as chemin_local:
+                texte_document = extraire_texte(str(chemin_local))
+            classification = classifier_document(
+                nom_fichier=fichier.filename or "",
+                texte=texte_document,
+                filieres=filieres_disponibles,
+                titre_fourni=titre,
+                matiere_fourni=matiere,
+                type_fourni=type_document,
+                annee_fournie=annee,
+                filiere_id_fournie=filiere_id,
+            )
+            titre = classification.titre or titre
+            matiere = classification.matiere or matiere
+            type_document = classification.type_document or type_document
+            annee = classification.annee or annee
+            filiere_id = classification.filiere_id or filiere_id
+        except Exception:
+            # La détection est une aide : elle ne doit jamais rendre un
+            # dépôt impossible si l'extraction/OCR/IA échoue.
+            classification = None
+
         filieres = session.exec(select(Filiere)).all()
         cercle = session.get(CercleEtude, cercle_id) if cercle_id else None
         return templates.TemplateResponse(
@@ -172,7 +206,7 @@ def upload_document(
             {"request": request, "filieres": filieres, "cercle": cercle, "erreur": str(erreur)},
         )
 
-    document = Document(
+    # Les garde-fous serveur sont rejoués après classification automatique.\n    filiere = session.get(Filiere, filiere_id)\n    if not filiere:\n        return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)\n    if annee < 2000 or annee > 2100:\n        return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)\n\n    document = Document(
         reference=reference,
         titre=titre,
         matiere=matiere,
