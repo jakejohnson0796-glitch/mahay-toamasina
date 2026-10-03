@@ -56,3 +56,18 @@ def test_normalise_les_matrices_entre_doubles_crochets():
     assert r"\begin{pmatrix}" in resultat
     assert "1&2" in resultat
     assert "3&4" in resultat
+
+
+def test_normalise_un_tableau_markdown_en_matrice():
+    from app.quiz_validation import normaliser_math_texte
+    texte = "| **3** | **6\\\\ 9** | **12** |\\n| :---: | :---------: | :----: |"
+    resultat = normaliser_math_texte(texte)
+    assert r"\\begin{pmatrix}" in resultat
+    assert "3&6" in resultat
+    assert "9&12" in resultat
+
+
+def test_supprime_un_prefixe_de_choix_sans_casser_une_formule():
+    from app.quiz_validation import normaliser_math_texte
+    assert normaliser_math_texte("AIl existe B tel que AB = I") == "Il existe B tel que AB = I"
+    assert normaliser_math_texte("A+B = B+A") == "A+B = B+A"
