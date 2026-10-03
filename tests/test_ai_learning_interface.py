@@ -137,11 +137,11 @@ def test_filtre_texte_ia_reconstruit_une_matrice_brute_sur_plusieurs_lignes():
     filtre = templates.env.filters["texte_ia"]
     rendu = str(
         filtre(
-            "Pour une matrice\\n"
-            "A=\\n"
-            "a b\\n"
-            "c d\\n"
-            ",\\n"
+            "Pour une matrice\n"
+            "A=\n"
+            "a b\n"
+            "c d\n"
+            ",\n"
             "les colonnes sont les vecteurs u=(a,c) et v=(b,d)."
         )
     )
