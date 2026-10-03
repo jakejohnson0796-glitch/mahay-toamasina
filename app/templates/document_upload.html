@@ -785,9 +785,9 @@
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           {% if cercle %}<input type="hidden" name="cercle_id" value="{{ cercle.id }}">{% endif %}
 
-          <div class="document-upload-auto-box"><div class="document-upload-auto-option" role="group" aria-labelledby="classification_auto_titre">
+          <div class="document-upload-auto-box"><div class="document-upload-auto-option" role="group" aria-label="Détection automatique">
             <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
-            <label class="document-upload-auto-copy" for="classification_auto" id="classification_auto_titre">
+            <label class="document-upload-auto-copy" for="classification_auto">
               <strong>Détection automatique</strong>
               <span>Détecte le titre, la matière, le type, l’année et la filière à partir du fichier. Si une clé IA est configurée, seul un extrait borné sert à l’analyse.</span>
             </label>
