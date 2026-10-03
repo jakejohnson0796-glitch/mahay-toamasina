@@ -480,6 +480,20 @@
   line-height:1.45;
 }
 .document-upload-validation.visible{display:block;}
+.document-upload-detection{
+  display:none;
+  margin-top:.65rem;
+  padding:.6rem .7rem;
+  border-radius:11px;
+  border:1px solid rgba(72,118,134,.24);
+  background:rgba(72,118,134,.07);
+  color:var(--content-text-muted);
+  font-size:.67rem;
+  line-height:1.45;
+}
+.document-upload-detection.visible{display:block;}
+.document-upload-detection.success{border-color:rgba(56,133,88,.28);}
+.document-upload-detection.warning{border-color:rgba(189,78,45,.28);}
 .document-upload-preview-empty{
   color:var(--content-text-muted);
   font-size:.68rem;
@@ -772,6 +786,7 @@
               </div>
             </div>
             <div class="document-upload-validation" id="validation-document" role="alert"></div>
+            <div class="document-upload-detection" id="detection-document" role="status" aria-live="polite"></div>
           </div>
 
           <div class="document-upload-footer">
@@ -811,8 +826,10 @@
   const zone = document.getElementById("zone-fichier");
   const submit = document.getElementById("bouton-document-submit");
   const validation = document.getElementById("validation-document");
+  const detectionBox = document.getElementById("detection-document");
   const etat = document.getElementById("etat-document");
   const classificationAuto = document.getElementById("classification_auto");
+  const csrf = form ? form.querySelector('input[name="_csrf"]') : null;
 
   const fields = {
     titre: document.getElementById("titre"),
@@ -841,58 +858,51 @@
     cours: "Support de cours"
   };
 
+  let detectionEnCours = false;
+  let detectionVersion = 0;
+
   function formatTaille(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) return "";
     if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " Ko";
     return (bytes / (1024 * 1024)).toFixed(1).replace(".", ",") + " Mo";
   }
-
-  function valeur(el) {
-    return (el && el.value || "").trim();
+  function valeur(el) { return (el && el.value || "").trim(); }
+  function setDetection(message, tone) {
+    if (!detectionBox) return;
+    detectionBox.textContent = message || "";
+    detectionBox.classList.toggle("visible", Boolean(message));
+    detectionBox.classList.toggle("success", tone === "success");
+    detectionBox.classList.toggle("warning", tone === "warning");
   }
-
   function messageErreur() {
     const erreurs = [];
-
-    const detectionAuto = Boolean(classificationAuto && classificationAuto.checked);
-    if (!detectionAuto) {
+    const auto = Boolean(classificationAuto && classificationAuto.checked);
+    if (!auto) {
       if (!valeur(fields.titre)) erreurs.push("ajoutez un titre");
       if (!valeur(fields.matiere)) erreurs.push("indiquez la matière");
       if (!valeur(fields.annee)) erreurs.push("indiquez l'année");
       if (!valeur(fields.type)) erreurs.push("choisissez le type de document");
       if (!valeur(fields.filiere)) erreurs.push("choisissez une filière");
+    } else if (detectionEnCours) {
+      erreurs.push("attendez la fin de la détection automatique");
     }
 
     const fichier = input && input.files && input.files[0];
-    if (!fichier) {
-      erreurs.push("sélectionnez un fichier");
-    } else {
-      const nomFichier = fichier.name || "";
-      const extension = nomFichier.includes(".")
-        ? nomFichier.split(".").pop().toLowerCase()
-        : "";
-
-      if (!EXTENSIONS.has(extension)) {
-        erreurs.push("le format du fichier n'est pas accepté");
-      }
-      if (fichier.size > MAX_FILE_BYTES) {
-        erreurs.push("le fichier dépasse 20 Mo");
-      }
+    if (!fichier) erreurs.push("sélectionnez un fichier");
+    else {
+      const ext = (fichier.name || "").split(".").pop().toLowerCase();
+      if (!EXTENSIONS.has(ext)) erreurs.push("le format du fichier n'est pas accepté");
+      if (fichier.size > MAX_FILE_BYTES) erreurs.push("le fichier dépasse 20 Mo");
     }
-
     return erreurs;
   }
-
   function mettreAJourResume() {
     resume.titre.textContent = valeur(fields.titre) || "—";
     resume.matiere.textContent = valeur(fields.matiere) || "—";
     resume.type.textContent = LABELS[fields.type.value] || "—";
     resume.annee.textContent = valeur(fields.annee) || "—";
-
-    const optionFiliere = fields.filiere && fields.filiere.selectedOptions
-      ? fields.filiere.selectedOptions[0]
-      : null;
-    resume.filiere.textContent = optionFiliere ? optionFiliere.textContent : "—";
+    const option = fields.filiere && fields.filiere.selectedOptions ? fields.filiere.selectedOptions[0] : null;
+    resume.filiere.textContent = option && valeur(fields.filiere) ? option.textContent : "—";
 
     const fichier = input && input.files && input.files[0];
     if (!fichier) {
@@ -901,90 +911,139 @@
       resume.fichierMeta.textContent = "Choisissez un fichier";
       return;
     }
-
     nom.textContent = fichier.name;
     resume.fichier.textContent = fichier.name;
     resume.fichierMeta.textContent = formatTaille(fichier.size);
   }
-
   function valider() {
     const erreurs = messageErreur();
     const ok = erreurs.length === 0;
-
     submit.disabled = !ok;
-
     if (ok) {
-      etat.textContent = "Prêt à envoyer";
-      etat.style.color = "var(--color-success-clair)";
+      if (!detectionEnCours) {
+        etat.textContent = "Prêt à envoyer";
+        etat.style.color = "var(--color-success-clair)";
+      }
       validation.classList.remove("visible");
       validation.textContent = "";
     } else {
-      etat.textContent = "À compléter";
-      etat.style.color = "";
+      if (!detectionEnCours) {
+        etat.textContent = "À compléter";
+        etat.style.color = "";
+      }
       validation.classList.add("visible");
       validation.textContent = "Avant l'envoi : " + erreurs.join(" · ") + ".";
     }
-
     return ok;
   }
-
   function appliquerModeDetectionAuto() {
     const auto = Boolean(classificationAuto && classificationAuto.checked);
-    [fields.titre, fields.matiere, fields.annee, fields.filiere].forEach(function (field) {
+    [fields.titre, fields.matiere, fields.annee, fields.type, fields.filiere].forEach(function (field) {
       if (!field) return;
       if (auto) field.removeAttribute("required");
       else field.setAttribute("required", "required");
     });
-    if (classificationAuto) {
-      classificationAuto.setAttribute("aria-checked", String(auto));
+    if (classificationAuto) classificationAuto.setAttribute("aria-checked", String(auto));
+  }
+  function remplirDetection(d) {
+    if (d.titre) fields.titre.value = d.titre;
+    if (d.matiere) fields.matiere.value = d.matiere;
+    if (d.type_document && LABELS[d.type_document]) fields.type.value = d.type_document;
+    if (d.annee) fields.annee.value = d.annee;
+    if (d.filiere_id) fields.filiere.value = String(d.filiere_id);
+    mettreAJourResume();
+  }
+  async function detecterFichier() {
+    const version = ++detectionVersion;
+    const fichier = input && input.files && input.files[0];
+    if (!classificationAuto || !classificationAuto.checked || !fichier) {
+      detectionEnCours = false;
+      setDetection("", "");
+      maj();
+      return;
+    }
+    const ext = (fichier.name || "").split(".").pop().toLowerCase();
+    if (!EXTENSIONS.has(ext) || fichier.size > MAX_FILE_BYTES) {
+      detectionEnCours = false;
+      setDetection("Le fichier ne peut pas être analysé automatiquement.", "warning");
+      maj();
+      return;
+    }
+
+    detectionEnCours = true;
+    setDetection("Détection automatique en cours : lecture du document et classement…", "");
+    etat.textContent = "Détection en cours…";
+    etat.style.color = "var(--content-text-muted)";
+    submit.disabled = true;
+
+    const data = new FormData();
+    data.append("_csrf", csrf ? csrf.value : "");
+    data.append("fichier", fichier, fichier.name);
+
+    try {
+      const response = await fetch("/documents/detect", {
+        method: "POST",
+        body: data,
+        credentials: "same-origin",
+        headers: {"Accept": "application/json"}
+      });
+      const payload = await response.json().catch(function(){ return {}; });
+      if (version !== detectionVersion) return;
+      if (!response.ok || !payload.ok) throw new Error(payload.erreur || "La détection automatique a échoué.");
+
+      remplirDetection(payload.detection || {});
+      const d = payload.detection || {};
+      const confiance = Number(d.confiance || 0);
+      let message = "Métadonnées détectées depuis le fichier.";
+      if (d.filiere_nom) message += " Filière : " + d.filiere_nom + ".";
+      if (confiance > 0) message += " Confiance : " + Math.round(confiance * 100) + "%.";
+      setDetection(message, "success");
+    } catch (error) {
+      if (version !== detectionVersion) return;
+      setDetection((error && error.message ? error.message : "Détection indisponible.") + " Vous pouvez compléter les champs manuellement.", "warning");
+    } finally {
+      if (version === detectionVersion) {
+        detectionEnCours = false;
+        maj();
+      }
     }
   }
-
-  function maj() {
-    mettreAJourResume();
-    valider();
-  }
+  function maj() { mettreAJourResume(); valider(); }
 
   if (classificationAuto) {
     classificationAuto.addEventListener("change", function () {
+      detectionVersion++;
       appliquerModeDetectionAuto();
-      maj();
+      if (classificationAuto.checked) detecterFichier();
+      else {
+        detectionEnCours = false;
+        setDetection("", "");
+        maj();
+      }
     });
   }
-
   Object.values(fields).forEach(function (field) {
     if (!field) return;
     field.addEventListener("input", maj);
     field.addEventListener("change", maj);
   });
-
   if (input && nom && zone) {
-    input.addEventListener("change", maj);
-
-    ["dragenter", "dragover"].forEach(function (eventName) {
-      zone.addEventListener(eventName, function (event) {
-        event.preventDefault();
-        zone.classList.add("dragover");
-      });
+    input.addEventListener("change", function () { maj(); detecterFichier(); });
+    ["dragenter", "dragover"].forEach(function (name) {
+      zone.addEventListener(name, function (event) { event.preventDefault(); zone.classList.add("dragover"); });
     });
-
-    ["dragleave", "drop"].forEach(function (eventName) {
-      zone.addEventListener(eventName, function () {
-        zone.classList.remove("dragover");
-      });
+    ["dragleave", "drop"].forEach(function (name) {
+      zone.addEventListener(name, function () { zone.classList.remove("dragover"); });
     });
-
     zone.addEventListener("drop", function (event) {
       event.preventDefault();
       if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
-        try {
-          input.files = event.dataTransfer.files;
-        } catch (_) {}
+        try { input.files = event.dataTransfer.files; } catch (_) {}
         maj();
+        detecterFichier();
       }
     });
   }
-
   if (form) {
     form.addEventListener("submit", function (event) {
       if (!valider()) {
@@ -997,7 +1056,6 @@
         : "Envoi en cours…";
     });
   }
-
   appliquerModeDetectionAuto();
   maj();
 })();

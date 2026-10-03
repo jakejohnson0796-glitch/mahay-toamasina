@@ -77,7 +77,7 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
 
     # Les marqueurs de type ne font pas partie de la matière.
     stem = re.sub(
-        r"^(?:cours|support|annale|corrig[ée]|corrige|fiche|td|tp)\s*[-_: ]\s*",
+        r"^(?:cours|support|annale|corrig[ée]|corrige|fiche|td|tp|examen|épreuve|epreuve|partiel|devoir)\s*[-_: ]*",
         "",
         stem,
         flags=re.I,
@@ -108,7 +108,7 @@ def _type_local(texte: str) -> Optional[TypeDocument]:
     )):
         return TypeDocument.CORRIGE
     if any(x in normalise for x in (
-        "annale", "ancien examen", "sujet examen", "epreuve", "partiel",
+        "annale", "examen", "ancien examen", "sujet examen", "epreuve", "partiel",
         "examen session", "session normale", "session rattrapage",
     )):
         return TypeDocument.ANNALE

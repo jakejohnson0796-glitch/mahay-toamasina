@@ -6,9 +6,10 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 import secrets
+import tempfile
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
-from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 from sqlmodel import Session, select
 
 from ..database import get_session
@@ -122,6 +123,84 @@ def formulaire_upload(request: Request, cercle_id: Optional[int] = None, session
         "document_upload.html",
         {"request": request, "filieres": filieres, "cercle": cercle, "utilisateur": utilisateur},
     )
+
+
+@router.post("/documents/detect")
+async def detect_document_automatique(
+    request: Request,
+    fichier: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Analyse le fichier sans le publier ni le conserver."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return JSONResponse({"ok": False, "erreur": "Connexion requise."}, status_code=401)
+
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"detect-document:user:{utilisateur.id}", 30, 3600) or limite_depassee(
+        f"detect-document:ip:{host}", 60, 3600
+    ):
+        return JSONResponse({"ok": False, "erreur": "Trop de détections. Réessayez plus tard."}, status_code=429)
+
+    nom_fichier = fichier.filename or "document"
+    suffixe = Path(nom_fichier).suffix.lower()
+    extensions = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png"}
+    if suffixe not in extensions:
+        return JSONResponse({"ok": False, "erreur": "Format de fichier non pris en charge."}, status_code=400)
+
+    contenu = await fichier.read()
+    if not contenu:
+        return JSONResponse({"ok": False, "erreur": "Le fichier est vide."}, status_code=400)
+    if len(contenu) > 20 * 1024 * 1024:
+        return JSONResponse({"ok": False, "erreur": "Le fichier dépasse 20 Mo."}, status_code=413)
+
+    filieres = session.exec(select(Filiere)).all()
+    if not filieres:
+        return JSONResponse({"ok": False, "erreur": "Aucune filière disponible pour la détection."}, status_code=503)
+
+    chemin_temp = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffixe) as tmp:
+            tmp.write(contenu)
+            chemin_temp = Path(tmp.name)
+
+        texte = extraire_texte(str(chemin_temp))
+        classification = classifier_document(
+            nom_fichier=nom_fichier,
+            texte=texte,
+            filieres=filieres,
+        )
+
+        filiere_nom = ""
+        if classification.filiere_id is not None:
+            filiere = session.get(Filiere, classification.filiere_id)
+            filiere_nom = filiere.nom if filiere else ""
+
+        return JSONResponse({
+            "ok": True,
+            "detection": {
+                "titre": classification.titre or "",
+                "matiere": classification.matiere or "",
+                "type_document": classification.type_document.value if classification.type_document else "",
+                "annee": classification.annee or "",
+                "filiere_id": classification.filiere_id or "",
+                "filiere_nom": filiere_nom,
+                "confiance": round(float(classification.confiance or 0.0), 3),
+                "source": classification.source,
+            },
+        })
+    except Exception:
+        return JSONResponse(
+            {"ok": False, "erreur": "La détection automatique n'a pas pu analyser ce fichier."},
+            status_code=422,
+        )
+    finally:
+        if chemin_temp is not None:
+            try:
+                chemin_temp.unlink(missing_ok=True)
+            except Exception:
+                pass
 
 
 @router.post("/documents/upload")
