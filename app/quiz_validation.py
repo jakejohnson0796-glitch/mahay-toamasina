@@ -336,7 +336,7 @@ def _suffixe_est_un_label_qcm(suite: str) -> bool:
 
     # Punctuation, nombres et tableau Markdown sont des debuts d'intitules,
     # pas des suites plausibles d'un identifiant matriciel comme AB = BA.
-    if re.match(r"^(?:\||\d|[=+\-×*/()\[\]{}<>])", suite):
+    if re.match(r"^(?:\||[+\-]?\d|[\[\]{}()<>])", suite):
         return True
 
     # Un mot francais naturel (ex. « Échange », « Toutes », « est »).
