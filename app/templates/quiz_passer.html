@@ -53,7 +53,7 @@
             {% for choix in item.choix %}
             <div class="quiz-choice quiz-choice-readonly {{ 'is-correct-choice' if loop.index0 == item.index_bonne_reponse else '' }} {{ 'is-selected-choice' if loop.index0 == rep else '' }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
-              <span class="quiz-choice-text">{{ rendre_math_html(choix) }}</span>
+              <span class="quiz-choice-text">{{ rendre_choix_math_html(choix, loop.index0) }}</span>
               <span class="quiz-choice-mark">
                 {% if loop.index0 == item.index_bonne_reponse %}✓ Bonne réponse{% endif %}
                 {% if loop.index0 == rep and loop.index0 != item.index_bonne_reponse %}✗ Ta réponse{% endif %}
