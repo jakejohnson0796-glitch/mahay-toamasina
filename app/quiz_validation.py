@@ -241,7 +241,7 @@ def rendre_math_html(texte: str):
         )
         if matrix:
             contenu = matrix.group(2).strip()
-            contenu = contenu.replace(r"\\\\", "\n")
+            contenu = re.sub(r"\\\\\s*", "\n", contenu)
             lignes = [x for x in contenu.split("\n") if x.strip()]
             rows = []
             for ligne in lignes:
