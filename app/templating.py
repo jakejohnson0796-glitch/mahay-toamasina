@@ -131,7 +131,43 @@ def _texte_ia_html(texte) -> "Markup":
 
     while i < len(lignes):
         ligne = lignes[i].strip()
-        # Certaines sorties du Tuteur perdent les délimiteurs LaTeX et laissent\n        # simplement:\n        #   A=\n        #   a b\n        #   c d\n        # Reconstruit ce bloc en vraie matrice HTML au lieu d'afficher les\n        # lignes et une virgule isolée comme du texte ordinaire.\n        match_matrice_brute = re.fullmatch(r"([A-Za-z])\s*=", ligne)\n        if match_matrice_brute and i + 2 < len(lignes):\n            premieres_lignes = []\n            j = i + 1\n            while j < len(lignes):\n                cellules = _ligne_matrice_brute(lignes[j])\n                if cellules is None:\n                    break\n                premieres_lignes.append(cellules)\n                j += 1\n            if len(premieres_lignes) >= 2:\n                largeur = len(premieres_lignes[0])\n                if all(len(row) == largeur for row in premieres_lignes):\n                    lignes_tex = ["&".join(row) for row in premieres_lignes]\n                    bloc = (\n                        r"\\["\n                        + match_matrice_brute.group(1).upper() + "="\n                        + r"\\begin{pmatrix}"\n                        + r"\\\\ ".join(lignes_tex)\n                        + r"\\end{pmatrix}\\]"\n                    )\n                    suffixe = ""\n                    if j < len(lignes) and re.fullmatch(r"[,.;:]", lignes[j].strip()):\n                        suffixe = html.escape(lignes[j].strip())\n                        j += 1\n                    html_blocks.append("<p>" + str(rendre_math_html(bloc)) + suffixe + "</p>")\n                    i = j\n                    continue\n\n        if not ligne:
+        # Certaines sorties du Tuteur perdent les délimiteurs LaTeX et laissent
+        # simplement:
+        #   A=
+        #   a b
+        #   c d
+        # Reconstruit ce bloc en vraie matrice HTML au lieu d'afficher les
+        # lignes et une virgule isolée comme du texte ordinaire.
+        match_matrice_brute = re.fullmatch(r"([A-Za-z])\s*=", ligne)
+        if match_matrice_brute and i + 2 < len(lignes):
+            premieres_lignes = []
+            j = i + 1
+            while j < len(lignes):
+                cellules = _ligne_matrice_brute(lignes[j])
+                if cellules is None:
+                    break
+                premieres_lignes.append(cellules)
+                j += 1
+            if len(premieres_lignes) >= 2:
+                largeur = len(premieres_lignes[0])
+                if all(len(row) == largeur for row in premieres_lignes):
+                    lignes_tex = ["&".join(row) for row in premieres_lignes]
+                    bloc = (
+                        r"\["
+                        + match_matrice_brute.group(1).upper() + "="
+                        + r"\begin{pmatrix}"
+                        + r"\\ ".join(lignes_tex)
+                        + r"\end{pmatrix}\]"
+                    )
+                    suffixe = ""
+                    if j < len(lignes) and re.fullmatch(r"[,.;:]", lignes[j].strip()):
+                        suffixe = html.escape(lignes[j].strip())
+                        j += 1
+                    html_blocks.append("<p>" + str(rendre_math_html(bloc)) + suffixe + "</p>")
+                    i = j
+                    continue
+
+        if not ligne:
             i += 1
             continue
 
