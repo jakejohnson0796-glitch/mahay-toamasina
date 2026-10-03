@@ -885,10 +885,11 @@ class MessageMention(SQLModel, table=True):
 
 
 class TypeNotification(str, Enum):
-    """Types geres par la premiere version du systeme de notification
-    (§11 du brief). Volontairement limite aux evenements de la
-    messagerie pour cette session — FAQ/Feedback reutiliseront ce meme
-    modele avec de nouveaux types plutot qu'un systeme parallele."""
+    """Types d'evenements du centre de notifications.
+    
+    La colonne SQL historique stocke ces valeurs comme texte : ajouter un
+    nouveau type ne necessite donc pas de migration de donnees.
+    """
     REPONSE_MESSAGE = "reponse_message"
     REPONSE_THREAD = "reponse_thread"
     REACTION = "reaction"
@@ -896,6 +897,10 @@ class TypeNotification(str, Enum):
     REPONSE_FEEDBACK = "reponse_feedback"
     INACTIVITE_3_JOURS = "inactivite_3_jours"
     NOUVELLE_INSCRIPTION = "nouvelle_inscription"
+    NOUVEAU_DOCUMENT = "nouveau_document"
+    DOCUMENT_APPROUVE = "document_approuve"
+    DOCUMENT_REJETE = "document_rejete"
+    DOCUMENT_SUPPRIME = "document_supprime"
 
 
 class Notification(SQLModel, table=True):

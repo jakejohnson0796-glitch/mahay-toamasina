@@ -15,7 +15,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle
+from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
@@ -49,6 +49,52 @@ def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
     prefixe = "".join(c for c in filiere.nom.upper() if c.isalpha())[:3] or "DOC"
     jeton = secrets.token_hex(4).upper()
     return f"MG-{prefixe}-{annee}-{jeton}"
+
+
+def _notifier_admins_nouveau_document(session: Session, document: Document, uploader: Utilisateur) -> int:
+    """Alerte chaque admin lorsqu'un document entre en moderation."""
+    administrateurs = session.exec(
+        select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)
+    ).all()
+    total = 0
+    for administrateur in administrateurs:
+        if administrateur.id == uploader.id:
+            continue
+        session.add(
+            Notification(
+                destinataire_id=administrateur.id,
+                type_notification=TypeNotification.NOUVEAU_DOCUMENT,
+                contenu=(
+                    f"Nouveau document à modérer : {document.titre} "
+                    f"({document.reference}), déposé par {uploader.nom}."
+                ),
+                acteur_id=uploader.id,
+            )
+        )
+        total += 1
+    return total
+
+
+def _notifier_uploader_document(
+    session: Session,
+    document: Document,
+    type_notification: TypeNotification,
+    contenu: str,
+    acteur_id: Optional[int] = None,
+) -> None:
+    """Informe l'auteur du résultat de la modération de son document."""
+    if not document.uploader_id:
+        return
+    if acteur_id is not None and document.uploader_id == acteur_id:
+        return
+    session.add(
+        Notification(
+            destinataire_id=document.uploader_id,
+            type_notification=type_notification,
+            contenu=contenu,
+            acteur_id=acteur_id,
+        )
+    )
 
 
 @router.get("/documents")
@@ -318,6 +364,8 @@ def upload_document(
     session.add(document)
     session.commit()
 
+    _notifier_admins_nouveau_document(session, document, utilisateur)
+
     gamification.enregistrer_action(
         session,
         utilisateur.id,
@@ -449,6 +497,13 @@ def approuver_document(
 
     document.statut = StatutDocument.APPROUVE
     session.add(document)
+    _notifier_uploader_document(
+        session,
+        document,
+        TypeNotification.DOCUMENT_APPROUVE,
+        f"Ton document « {document.titre} » ({document.reference}) a été approuvé et est maintenant visible dans la bibliothèque.",
+        acteur_id=utilisateur.id,
+    )
     session.commit()
     return _rediriger_moderation("approuve")
 
@@ -470,6 +525,13 @@ def rejeter_document(
 
     document.statut = StatutDocument.REJETE
     session.add(document)
+    _notifier_uploader_document(
+        session,
+        document,
+        TypeNotification.DOCUMENT_REJETE,
+        f"Ton document « {document.titre} » ({document.reference}) a été rejeté et retiré de la bibliothèque publique.",
+        acteur_id=utilisateur.id,
+    )
     session.commit()
     return _rediriger_moderation("rejete")
 
@@ -499,6 +561,14 @@ def supprimer_document(
     ).all():
         session.delete(consultation)
     session.commit()
+
+    _notifier_uploader_document(
+        session,
+        document,
+        TypeNotification.DOCUMENT_SUPPRIME,
+        f"Ton document « {document.titre} » ({document.reference}) a été supprimé définitivement par un administrateur.",
+        acteur_id=utilisateur.id,
+    )
 
     supprimer_fichier(document.chemin_fichier)
 

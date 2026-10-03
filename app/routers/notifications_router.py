@@ -20,6 +20,10 @@ def _notification_vue(notification: Notification) -> dict:
         lien = f"/cercles/{notification.cercle_id}"
     elif notification.type_notification.value == "nouvelle_inscription":
         lien = "/admin/utilisateurs"
+    elif notification.type_notification.value == "nouveau_document":
+        lien = "/moderation"
+    elif notification.type_notification.value in {"document_approuve", "document_rejete", "document_supprime"}:
+        lien = "/documents"
     return {"notification": notification, "lien": lien}
 
 
