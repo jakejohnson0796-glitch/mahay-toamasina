@@ -119,6 +119,9 @@ def normaliser_math_texte(texte: str) -> str:
         flags=re.IGNORECASE,
     )
 
+    # Certains retours JSON/Markdown doublent les antislashs TeX.
+    texte = re.sub(r"\\\\+([A-Za-z]+)", r"\\\1", texte)
+
     # Matrices brutes : on les conserve en TeX pour le renderer.
     texte = re.sub(
         r"\[\s*([^\[\]\n;]+(?:;\s*[^\[\]\n;]+)+)\s*\]",
