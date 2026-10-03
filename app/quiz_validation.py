@@ -23,55 +23,60 @@ def normaliser_math_texte(texte: str) -> str:
     texte = re.sub(r"__([^_\n]+?)__", r"\1", texte)
 
     # Les sorties IA peuvent parfois encapsuler une matrice dans un tableau
-    # Markdown. Ce format est mauvais pour l'affichage du quiz : on le
-    # convertit en vrai bloc matriciel avant le rendu HTML.
-    def tableau_markdown_vers_matrice(match):
-        bloc = match.group(0)
-        lignes = []
-        for ligne in bloc.splitlines():
-            ligne = ligne.strip()
-            if not ligne or re.fullmatch(r"\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?", ligne):
+    # Markdown. On les transforme en vrai bloc matriciel avant stockage.
+    lignes_source = texte.splitlines()
+    lignes_nettoyees = []
+    i = 0
+
+    def est_separateur_tableau(ligne: str) -> bool:
+        morceaux = [c.strip().replace(":", "") for c in ligne.strip().strip("|").split("|")]
+        return len(morceaux) >= 2 and all(morceau and set(morceau) <= {"-"} and len(morceau) >= 3 for morceau in morceaux)
+
+    def cellules_tableau(ligne: str) -> list[str]:
+        morceaux = [c.strip() for c in ligne.strip().strip("|").split("|")]
+        return [re.sub(r"\*\*([^*]+?)\*\*", r"\1", c) for c in morceaux]
+
+    while i < len(lignes_source):
+        courant = lignes_source[i].strip()
+        if "|" in courant and i + 1 < len(lignes_source) and est_separateur_tableau(lignes_source[i + 1]):
+            lignes_tableau = [cellules_tableau(courant)]
+            j = i + 2
+            while j < len(lignes_source):
+                suivant = lignes_source[j].strip()
+                if not suivant or "|" not in suivant:
+                    break
+                lignes_tableau.append(cellules_tableau(suivant))
+                j += 1
+
+            etendues = []
+            for ligne in lignes_tableau:
+                valeurs = []
+                for cellule in ligne:
+                    # Exemple courant produit par les modèles :
+                    # "| 3 | 6\\\\ 9 | 12 |" -> [["3", "6"], ["9", "12"]]
+                    parties = [p.strip() for p in re.split(r"\\\\\\s*|\\\\\\s+", cellule) if p.strip()]
+                    valeurs.extend(parties or [cellule])
+                etendues.append(valeurs)
+
+            if len(etendues) == 1 and len(etendues[0]) == 4:
+                etendues = [etendues[0][:2], etendues[0][2:]]
+
+            if (
+                len(etendues) >= 2
+                and etendues[0]
+                and all(len(ligne) == len(etendues[0]) for ligne in etendues)
+            ):
+                lignes_tex = ["&".join(ligne) for ligne in etendues]
+                lignes_nettoyees.append(
+                    r"\[" + r"\begin{pmatrix}" + r"\\ ".join(lignes_tex) + r"\end{pmatrix}" + r"\]"
+                )
+                i = j
                 continue
-            morceaux = [c.strip() for c in ligne.strip().strip("|").split("|")]
-            morceaux = [re.sub(r"\*\*([^*]+?)\*\*", r"\\1", c) for c in morceaux]
-            lignes.append(morceaux)
 
-        if not lignes:
-            return bloc
+        lignes_nettoyees.append(lignes_source[i])
+        i += 1
 
-        # Certains modèles représentent les lignes d'une matrice avec
-        # une double barre oblique à l'intérieur d'une cellule :
-        # | 3 | 6\\ 9 | 12 |  ->  3 6 / 9 12.
-        cellules = []
-        for ligne in lignes:
-            ligne_etendue = []
-            for cellule in ligne:
-                parts = re.split(r"\\\\\\s*|\\\\\s+", cellule)
-                parts = [p.strip() for p in parts if p.strip()]
-                ligne_etendue.extend(parts or [cellule])
-            cellules.append(ligne_etendue)
-
-        # Si une seule ligne contient 4 cellules, l'intention la plus
-        # probable dans un QCM de calcul matriciel est une matrice 2x2.
-        if len(cellules) == 1 and len(cellules[0]) == 4:
-            cellules = [cellules[0][:2], cellules[0][2:]]
-
-        if len(cellules) < 2 or any(not ligne for ligne in cellules):
-            return bloc
-
-        # Egalite du nombre de colonnes = vraie matrice.
-        nb_colonnes = len(cellules[0])
-        if any(len(ligne) != nb_colonnes for ligne in cellules):
-            return bloc
-
-        lignes_tex = ["&".join(ligne) for ligne in cellules]
-        return r"\[" + r"\begin{pmatrix}" + r"\\ ".join(lignes_tex) + r"\end{pmatrix}" + r"\]"
-
-    texte = re.sub(
-        r"(?ms)(?m)^\s*\|[^\n]+\|\s*\n\s*\|?(?::?[- ]{3,}:?\|?)+\s*\n(?:\s*\|[^\n]+\|\s*\n?)+",
-        tableau_markdown_vers_matrice,
-        texte,
-    )
+    texte = "\n".join(lignes_nettoyees)
 
     # Matrices JSON/Python: [[1,2],[3,4]] -> \\[\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\]
     def matrice_liste(match):
@@ -130,7 +135,9 @@ def rendre_math_html(texte: str):
     import re as _re
     from markupsafe import Markup
 
-    brut = str(texte or "").strip()
+    # Reapplique la normalisation au moment du rendu pour que les anciens
+    # quizzes stockes avant la correction profitent eux aussi du formatage.
+    brut = normaliser_math_texte(texte)
     if not brut:
         return Markup("")
 
