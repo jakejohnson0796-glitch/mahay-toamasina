@@ -70,7 +70,7 @@ FAQ_INITIALE: list[dict] = [
         "question": "Comment me connecter ?",
         "reponse": (
             "Utilisez le même numéro de téléphone et le mot de passe associés "
-            "à votre compte. Certaines comptes peuvent demander une étape "
+            "à votre compte. Certains comptes peuvent demander une étape "
             "supplémentaire avec la double authentification (2FA)."
         ),
         "categorie": CategorieFAQ.COMPTE,
