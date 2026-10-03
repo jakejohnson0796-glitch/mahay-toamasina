@@ -22,6 +22,57 @@ def normaliser_math_texte(texte: str) -> str:
     texte = re.sub(r"\*\*([^*\n]+?)\*\*", r"\1", texte)
     texte = re.sub(r"__([^_\n]+?)__", r"\1", texte)
 
+    # Les sorties IA peuvent parfois encapsuler une matrice dans un tableau
+    # Markdown. Ce format est mauvais pour l'affichage du quiz : on le
+    # convertit en vrai bloc matriciel avant le rendu HTML.
+    def tableau_markdown_vers_matrice(match):
+        bloc = match.group(0)
+        lignes = []
+        for ligne in bloc.splitlines():
+            ligne = ligne.strip()
+            if not ligne or re.fullmatch(r"\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?", ligne):
+                continue
+            morceaux = [c.strip() for c in ligne.strip().strip("|").split("|")]
+            morceaux = [re.sub(r"\*\*([^*]+?)\*\*", r"\\1", c) for c in morceaux]
+            lignes.append(morceaux)
+
+        if not lignes:
+            return bloc
+
+        # Certains modèles représentent les lignes d'une matrice avec
+        # une double barre oblique à l'intérieur d'une cellule :
+        # | 3 | 6\\ 9 | 12 |  ->  3 6 / 9 12.
+        cellules = []
+        for ligne in lignes:
+            ligne_etendue = []
+            for cellule in ligne:
+                parts = re.split(r"\\\\\\s*|\\\\\s+", cellule)
+                parts = [p.strip() for p in parts if p.strip()]
+                ligne_etendue.extend(parts or [cellule])
+            cellules.append(ligne_etendue)
+
+        # Si une seule ligne contient 4 cellules, l'intention la plus
+        # probable dans un QCM de calcul matriciel est une matrice 2x2.
+        if len(cellules) == 1 and len(cellules[0]) == 4:
+            cellules = [cellules[0][:2], cellules[0][2:]]
+
+        if len(cellules) < 2 or any(not ligne for ligne in cellules):
+            return bloc
+
+        # Egalite du nombre de colonnes = vraie matrice.
+        nb_colonnes = len(cellules[0])
+        if any(len(ligne) != nb_colonnes for ligne in cellules):
+            return bloc
+
+        lignes_tex = ["&".join(ligne) for ligne in cellules]
+        return r"\[" + r"\begin{pmatrix}" + r"\\ ".join(lignes_tex) + r"\end{pmatrix}" + r"\]"
+
+    texte = re.sub(
+        r"(?ms)(?m)^\s*\|[^\n]+\|\s*\n\s*\|?(?::?[- ]{3,}:?\|?)+\s*\n(?:\s*\|[^\n]+\|\s*\n?)+",
+        tableau_markdown_vers_matrice,
+        texte,
+    )
+
     # Matrices JSON/Python: [[1,2],[3,4]] -> \\[\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\]
     def matrice_liste(match):
         lignes_brutes = re.findall(r"\[([^\[\]]+)\]", match.group(1))
@@ -38,6 +89,18 @@ def normaliser_math_texte(texte: str) -> str:
         r"(\[\s*\[[^\]]+\](?:\s*,\s*\[[^\]]+\])+\s*\])",
         matrice_liste,
         texte,
+    )
+
+    # Les choix peuvent arriver avec leur propre préfixe A./B./C./D.
+    # alors que le template affiche déjà la lettre. On retire uniquement
+    # les préfixes clairement identificables, sans toucher aux expressions
+    # comme A+B ou A=B.
+    texte = re.sub(r"^\s*[A-F][.)\-:]\s+", "", texte)
+    texte = re.sub(
+        r"^\s*[A-F](?=(?:Il\b|La\b|Le\b|Les\b|Une\b|Un\b|Ce\b|Cette\b|Tout\b|Toute\b|Aucun\b|Aucune\b|Existe\b|Pour\b|Soit\b|Si\b|On\b))",
+        "",
+        texte,
+        flags=re.IGNORECASE,
     )
 
     # Matrices brutes : on les conserve en TeX pour le renderer.
