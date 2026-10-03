@@ -30,7 +30,7 @@ def normaliser_math_texte(texte: str) -> str:
 
     def est_separateur_tableau(ligne: str) -> bool:
         morceaux = [c.strip().replace(":", "") for c in ligne.strip().strip("|").split("|")]
-        return len(morceaux) >= 2 and all(morceau and set(morceau) <= {"-"} and len(morceau) >= 3 for morceau in morceaux)
+        return len(morceaux) >= 2 and all(morceau and set(morceau) <= {"-"} for morceau in morceaux)
 
     def cellules_tableau(ligne: str) -> list[str]:
         morceaux = [c.strip() for c in ligne.strip().strip("|").split("|")]
@@ -54,7 +54,7 @@ def normaliser_math_texte(texte: str) -> str:
                 for cellule in ligne:
                     # Exemple courant produit par les modèles :
                     # "| 3 | 6\\\\ 9 | 12 |" -> [["3", "6"], ["9", "12"]]
-                    parties = [p.strip() for p in re.split(r"\\\\\s*|\\\s+", cellule) if p.strip()]
+                    parties = [p.strip() for p in re.split(r"\\+\s*", cellule) if p.strip()]
                     valeurs.extend(parties or [cellule])
                 etendues.append(valeurs)
 
