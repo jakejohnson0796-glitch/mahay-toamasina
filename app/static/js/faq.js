@@ -15,7 +15,15 @@
     panneau.hidden = !ouvrir;
   }
 
+  // Progressive enhancement : les réponses restent visibles si JavaScript
+  // est désactivé. Une fois le script chargé, on active le comportement
+  // accordéon.
   boutons.forEach(function (bouton) {
+    const panneau = document.getElementById(bouton.getAttribute("aria-controls"));
+    if (panneau) {
+      panneau.hidden = bouton.getAttribute("aria-expanded") !== "true";
+    }
+
     bouton.addEventListener("click", function () {
       basculer(bouton);
     });
