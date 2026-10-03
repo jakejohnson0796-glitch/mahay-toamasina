@@ -309,7 +309,7 @@ def _normaliser_choix(choix: Any, index: int) -> str:
         return suite
 
     if re.match(
-        r"^(?:[=+\-×*/()\[\]\{\}]|\d|\\|"
+        r"^(?:[=+\-×*/()\[\]\{\}|]|\d|\\|"
         r"[A-F](?=\s|[=+\-×*/^<>()])|"
         r"[A-ZÀ-ÖØ-Ý](?=\s|[=+\-×*/^<>()])|"
         r"[a-zà-öø-ÿ]+\b|"
