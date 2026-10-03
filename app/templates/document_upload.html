@@ -540,6 +540,108 @@
     transition:none;
   }
 }
+/* CASCADE FINAL — le contrôle automatique ne doit pas hériter des règles
+   génériques des champs du formulaire. */
+.document-upload-page .document-upload-auto-box{
+  display:grid !important;
+  grid-template-columns:1.15rem minmax(0,1fr) !important;
+  grid-template-rows:auto !important;
+  align-items:start !important;
+  justify-items:stretch !important;
+  justify-content:stretch !important;
+  align-content:start !important;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  box-sizing:border-box !important;
+  gap:.7rem !important;
+  padding:.8rem .9rem !important;
+  margin:0 !important;
+  overflow:visible !important;
+}
+.document-upload-page .document-upload-auto-box input#classification_auto{
+  display:block !important;
+  grid-column:1 !important;
+  grid-row:1 !important;
+  width:1.1rem !important;
+  min-width:1.1rem !important;
+  max-width:1.1rem !important;
+  height:1.1rem !important;
+  min-height:1.1rem !important;
+  max-height:1.1rem !important;
+  margin:.12rem 0 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  flex:none !important;
+  accent-color:var(--upload-accent) !important;
+}
+.document-upload-page .document-upload-auto-box > .document-upload-auto-copy{
+  display:block !important;
+  grid-column:2 !important;
+  grid-row:1 !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  text-align:left !important;
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  writing-mode:horizontal-tb !important;
+}
+.document-upload-page .document-upload-auto-box > .document-upload-auto-copy strong,
+.document-upload-page .document-upload-auto-box > .document-upload-auto-copy span{
+  display:block !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  text-align:left !important;
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  writing-mode:horizontal-tb !important;
+}
+.document-upload-page .document-upload-auto-box > .document-upload-auto-copy strong{
+  font-size:.78rem !important;
+  line-height:1.25 !important;
+}
+.document-upload-page .document-upload-auto-box > .document-upload-auto-copy span{
+  margin-top:.18rem !important;
+  font-size:.66rem !important;
+  line-height:1.4 !important;
+  color:var(--content-text-muted) !important;
+}
+@media(max-width:640px){
+  .document-upload-page .document-upload-auto-box{
+    grid-template-columns:1.05rem minmax(0,1fr) !important;
+    gap:.55rem !important;
+    padding:.7rem !important;
+  }
+  .document-upload-page .document-upload-auto-box input#classification_auto{
+    width:1rem !important;
+    min-width:1rem !important;
+    max-width:1rem !important;
+    height:1rem !important;
+    min-height:1rem !important;
+    max-height:1rem !important;
+  }
+  .document-upload-page .document-upload-auto-box > .document-upload-auto-copy strong{
+    font-size:.72rem !important;
+  }
+  .document-upload-page .document-upload-auto-box > .document-upload-auto-copy span{
+    font-size:.59rem !important;
+  }
+}
+
 </style>
 
 <div class="document-upload-shell">
