@@ -131,6 +131,30 @@ et det(B)=1\\times4 - 2\\times3 = -2."""
     assert "1×4" in rendu
 
 
+def test_filtre_texte_ia_reconstruit_une_matrice_brute_sur_plusieurs_lignes():
+    from app.templating import templates
+
+    filtre = templates.env.filters["texte_ia"]
+    rendu = str(
+        filtre(
+            "Pour une matrice\n"
+            "A=\n"
+            "a b\n"
+            "c d\n"
+            ",\n"
+            "les colonnes sont les vecteurs u=(a,c) et v=(b,d)."
+        )
+    )
+    assert "math-matrix" in rendu
+    assert "<td>a</td>" in rendu
+    assert "<td>b</td>" in rendu
+    assert "<td>c</td>" in rendu
+    assert "<td>d</td>" in rendu
+    assert "A=" in rendu
+    assert "<p>,</p>" not in rendu
+    assert "begin{pmatrix}" not in rendu
+
+
 def test_filtre_texte_ia_nettoie_les_commandes_latex_sans_delimiters():
     from app.templating import templates
 

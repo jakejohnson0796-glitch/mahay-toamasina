@@ -119,8 +119,54 @@ def _texte_ia_html(texte) -> "Markup":
             re.fullmatch(r":?-{1,}:?", morceau.replace(" ", "")) for morceau in morceaux
         )
 
+    def _ligne_matrice_brute(ligne: str) -> list[str] | None:
+        """Reconnaît une ligne de matrice écrite avec des cellules séparées par des espaces."""
+        cellules = [c for c in re.split(r"\s+", ligne.strip()) if c]
+        if len(cellules) < 2 or len(cellules) > 8:
+            return None
+        motif = r"(?:[A-Za-z0-9α-ωΑ-Ω]+|[-+]?[0-9]+(?:[.,][0-9]+)?|[A-Za-z][A-Za-z0-9_]*)(?:[.,])?"
+        if not all(re.fullmatch(motif, cellule) for cellule in cellules):
+            return None
+        return cellules
+
     while i < len(lignes):
         ligne = lignes[i].strip()
+        # Certaines sorties du Tuteur perdent les délimiteurs LaTeX et laissent
+        # simplement:
+        #   A=
+        #   a b
+        #   c d
+        # Reconstruit ce bloc en vraie matrice HTML au lieu d'afficher les
+        # lignes et une virgule isolée comme du texte ordinaire.
+        match_matrice_brute = re.fullmatch(r"([A-Za-z])\s*=", ligne)
+        if match_matrice_brute and i + 2 < len(lignes):
+            premieres_lignes = []
+            j = i + 1
+            while j < len(lignes):
+                cellules = _ligne_matrice_brute(lignes[j])
+                if cellules is None:
+                    break
+                premieres_lignes.append(cellules)
+                j += 1
+            if len(premieres_lignes) >= 2:
+                largeur = len(premieres_lignes[0])
+                if all(len(row) == largeur for row in premieres_lignes):
+                    lignes_tex = ["&".join(row) for row in premieres_lignes]
+                    bloc = (
+                        r"\["
+                        + match_matrice_brute.group(1).upper() + "="
+                        + r"\begin{pmatrix}"
+                        + r"\\ ".join(lignes_tex)
+                        + r"\end{pmatrix}\]"
+                    )
+                    suffixe = ""
+                    if j < len(lignes) and re.fullmatch(r"[,.;:]", lignes[j].strip()):
+                        suffixe = html.escape(lignes[j].strip())
+                        j += 1
+                    html_blocks.append("<p>" + str(rendre_math_html(bloc)) + suffixe + "</p>")
+                    i = j
+                    continue
+
         if not ligne:
             i += 1
             continue
@@ -200,6 +246,7 @@ def _texte_ia_html(texte) -> "Markup":
                 or re.match(r"^[-*]\s+", prochain)
                 or re.match(r"^\d+[.)]\s+", prochain)
                 or re.fullmatch(r"[-*_]{3,}", prochain)
+                or re.fullmatch(r"[A-Za-z]\s*=", prochain)
             ):
                 break
             paragraph.append(prochain)
