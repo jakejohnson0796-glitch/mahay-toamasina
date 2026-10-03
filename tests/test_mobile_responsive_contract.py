@@ -45,3 +45,18 @@ def test_ultra_small_circle_overrides_neutralize_inline_mobile_heights():
     ]
     for token in required:
         assert token in css, token
+
+
+def test_mobile_emoji_picker_is_compact():
+    css = RESPONSIVE.read_text(encoding="utf-8")
+    required = [
+        ".contenu-clair .panneau-emojis-v2 {",
+        "max-height: min(255px, calc(100dvh - 92px)) !important;",
+        "width: min(300px, calc(100vw - 16px)) !important;",
+        "max-height: min(225px, calc(100dvh - 88px)) !important;",
+        "max-height: min(205px, calc(100dvh - 82px)) !important;",
+        ".contenu-clair .grille-emojis-v2 {",
+        "max-height: 118px !important;",
+    ]
+    for token in required:
+        assert token in css, token
