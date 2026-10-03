@@ -48,12 +48,12 @@
         {% set ok = rep == item.index_bonne_reponse %}
         <article class="quiz-question-card quiz-question-correction {{ 'is-correct' if ok else 'is-wrong' }}">
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
-          <h2 class="quiz-question-title">{{ item.question }}</h2>
+          <h2 class="quiz-question-title">{{ rendre_math_html(item.question) }}</h2>
           <div class="quiz-choice-grid quiz-choice-grid-correction">
             {% for choix in item.choix %}
             <div class="quiz-choice quiz-choice-readonly {{ 'is-correct-choice' if loop.index0 == item.index_bonne_reponse else '' }} {{ 'is-selected-choice' if loop.index0 == rep else '' }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
-              <span class="quiz-choice-text">{{ choix }}</span>
+              <span class="quiz-choice-text">{{ rendre_math_html(choix) }}</span>
               <span class="quiz-choice-mark">
                 {% if loop.index0 == item.index_bonne_reponse %}✓ Bonne réponse{% endif %}
                 {% if loop.index0 == rep and loop.index0 != item.index_bonne_reponse %}✗ Ta réponse{% endif %}
@@ -63,12 +63,12 @@
           </div>
           <div class="quiz-correction-answer">
             <strong>{% if ok %}✅ Correcte{% elif rep is none %}⚠️ Sans réponse{% else %}❌ Incorrecte{% endif %}</strong>
-            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. {{ item.choix[item.index_bonne_reponse] }}</span>
+            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. {{ rendre_math_html(item.choix[item.index_bonne_reponse]) }}</span>
           </div>
           {% if item.explication %}
           <div class="quiz-correction-explanation">
             <strong>Explication</strong>
-            <p>{{ item.explication }}</p>
+            <p>{{ rendre_math_html(item.explication) }}</p>
           </div>
           {% endif %}
         </article>
@@ -134,6 +134,20 @@
 </div>
 
 <style nonce="{{ csp_nonce(request) }}">
+  .math-inline{display:inline-flex;align-items:center;vertical-align:middle;font-family:"Times New Roman",serif;font-size:1.03em}
+  .math-display{display:block;margin:.6rem 0;text-align:center;font-family:"Times New Roman",serif;font-size:1.08em;overflow-x:auto}
+  .math-matrix-wrap{display:inline-block;vertical-align:middle}
+  .math-matrix{border-collapse:collapse;display:inline-table}
+  .math-matrix td{padding:.06rem .42rem;text-align:center;min-width:1.3rem}
+  .math-matrix td:first-child{border-left:2px solid currentColor}
+  .math-matrix td:last-child{border-right:2px solid currentColor}
+  .math-matrix tr:first-child td{border-top:2px solid currentColor}
+  .math-matrix tr:last-child td{border-bottom:2px solid currentColor}
+  .math-frac{display:inline-grid;grid-template-rows:auto auto;vertical-align:middle;text-align:center;line-height:1.05;margin:0 .15em}
+  .math-num{padding:0 .18em;border-bottom:1px solid currentColor}
+  .math-den{padding:0 .18em}
+  .math-root{display:inline-flex;align-items:flex-start;vertical-align:middle}
+  .math-root-body{border-top:1px solid currentColor;padding:.04em .12em 0}
   .quiz-run-subtitle{margin:.35rem 0 0;color:var(--content-text-muted);font-size:.8rem}
   .quiz-correction-summary{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface)}
   .quiz-correction-summary strong{display:block;font-size:2rem;line-height:1.05;color:var(--content-text)}

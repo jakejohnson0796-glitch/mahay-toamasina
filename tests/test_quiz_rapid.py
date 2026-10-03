@@ -33,11 +33,18 @@ def test_normalise_les_formules_latex_dans_les_questions_et_reponses():
 
     matrice = r"\begin{pmatrix}1&0&0\\0&3&0\\0&0&1\end{pmatrix}"
     resultat = normaliser_math_texte(matrice)
-    assert "[ " in resultat
-    assert "1  0  0" in resultat
-    assert "0  3  0" in resultat
+    assert "\\begin{pmatrix}" in resultat
+    assert "1&0&0" in resultat
+    assert "0&3&0" in resultat
 
 
 def test_normalise_markdown_et_symboles_mathematiques():
     from app.quiz_validation import normaliser_math_texte
     assert normaliser_math_texte("**det(A)** = a \\times d - b \\times c") == "det(A) = a × d - b × c"
+
+
+def test_rendre_math_html_echappe_le_html_du_contenu():
+    from app.quiz_validation import rendre_math_html
+    rendu = str(rendre_math_html(r"Question <script>alert(1)</script> et \(a+b\)"))
+    assert "<script>" not in rendu
+    assert "a+b" in rendu

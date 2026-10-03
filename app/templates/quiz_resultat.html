@@ -5,6 +5,22 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 
 {% block contenu %}
+<style nonce="{{ csp_nonce(request) }}">
+  .math-inline{display:inline-flex;align-items:center;vertical-align:middle;font-family:"Times New Roman",serif;font-size:1.03em}
+  .math-display{display:block;margin:.6rem 0;text-align:center;font-family:"Times New Roman",serif;font-size:1.08em;overflow-x:auto}
+  .math-matrix-wrap{display:inline-block;vertical-align:middle}
+  .math-matrix{border-collapse:collapse;display:inline-table}
+  .math-matrix td{padding:.06rem .42rem;text-align:center;min-width:1.3rem}
+  .math-matrix td:first-child{border-left:2px solid currentColor}
+  .math-matrix td:last-child{border-right:2px solid currentColor}
+  .math-matrix tr:first-child td{border-top:2px solid currentColor}
+  .math-matrix tr:last-child td{border-bottom:2px solid currentColor}
+  .math-frac{display:inline-grid;grid-template-rows:auto auto;vertical-align:middle;text-align:center;line-height:1.05;margin:0 .15em}
+  .math-num{padding:0 .18em;border-bottom:1px solid currentColor}
+  .math-den{padding:0 .18em}
+  .math-root{display:inline-flex;align-items:flex-start;vertical-align:middle}
+  .math-root-body{border-top:1px solid currentColor;padding:.04em .12em 0}
+</style>
 <div class="ai-learning-page">
   {% if request.query_params.get("signale") %}
   <div class="info" role="status">Question signalée. Merci : elle sera vérifiée par un administrateur.</div>
