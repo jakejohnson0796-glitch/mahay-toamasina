@@ -69,6 +69,29 @@ def _titre_depuis_nom(nom_fichier: str) -> Optional[str]:
     return _nettoyer_titre(stem)
 
 
+def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
+    """Extrait une matière courte et plausible depuis le nom du fichier."""
+    stem = Path(nom_fichier or "").stem
+    if not stem:
+        return None
+
+    # Les marqueurs de type ne font pas partie de la matière.
+    stem = re.sub(
+        r"^(?:cours|support|annale|corrig[ée]|corrige|fiche|td|tp)\s*[-_: ]\s*",
+        "",
+        stem,
+        flags=re.I,
+    )
+    stem = re.sub(r"\b(?:19|20)\d{2}\b", " ", stem)
+    stem = re.sub(r"\b(?:s[1-9]|l[1-3]|m[1-2])\b", " ", stem, flags=re.I)
+    stem = stem.replace("_", " ").replace("-", " ")
+    stem = re.sub(r"\s+", " ", stem).strip(" .:-_")
+
+    if not stem:
+        return None
+    return _matiere_auto_valide(stem)
+
+
 def _annee_depuis_texte(*sources: str) -> Optional[int]:
     for source in sources:
         for valeur in re.findall(r"\b(?:19|20)\d{2}\b", source or ""):
@@ -113,7 +136,7 @@ def _matiere_auto_valide(texte: str) -> Optional[str]:
         return None
     if len(mots) > 8 or len(valeur) > 80:
         return None
-    if re.match(r"^(?:\d+|[a-z]\)|\([a-z0-9]+\))\s", valeur, flags=re.I):
+    if re.match(r"^(?:[•\-*]\s+|\d{1,3}[.)]\s+|[a-z][.)]\s+|\([a-z0-9]+[.)]?\)\s+)", valeur, flags=re.I):
         return None
     if re.search(r"[.!?;:][\s$]", valeur):
         return None
@@ -257,7 +280,10 @@ def classifier_document(
     texte_reference = f"{nom_fichier}\n{texte or ''}"
     titre_local = _titre_depuis_nom(nom_fichier)
     matiere_local = _matiere_locale(texte_reference)
-    type_local = _type_local(texte_reference)
+    matiere_local_nom = _matiere_depuis_nom_fichier(nom_fichier)
+    type_local_nom = _type_local(nom_fichier)
+    type_local_texte = _type_local(texte)
+    type_local = type_local_nom or type_local_texte
     annee_local = _annee_depuis_texte(nom_fichier, texte)
 
     candidats = _candidats_filieres(texte_reference, filieres)
@@ -275,7 +301,13 @@ def classifier_document(
     # On refuse ces sorties trop longues/phrastiques et on utilise le nom
     # du fichier comme signal de secours (ex. "Cours-algèbre.pdf" -> "algèbre").
     matiere_ia = _matiere_auto_valide(resultat_ia.get("matiere") or "")
-    matiere = matiere_ia or _matiere_locale(texte_reference) or _matiere_auto_valide(titre_local or "") or _nettoyer_titre(matiere_fourni)
+    matiere = (
+        matiere_local_nom
+        or matiere_ia
+        or matiere_local
+        or _matiere_auto_valide(titre_local or "")
+        or _nettoyer_titre(matiere_fourni)
+    )
 
     type_auto = None
     try:
@@ -284,7 +316,7 @@ def classifier_document(
     except (ValueError, TypeError):
         type_auto = None
 
-    type_document = type_auto or type_local or type_fourni
+    type_document = type_local_nom or type_local_texte or type_auto or type_fourni
 
     annee = None
     try:
@@ -293,7 +325,7 @@ def classifier_document(
             annee = valeur_annee
     except (ValueError, TypeError):
         annee = None
-    annee = annee or annee_local or annee_fournie
+    annee = annee_local or annee or annee_fournie
 
     filiere_id = filiere_id_fournie
     nom_ia = _normaliser(str(resultat_ia.get("filiere_nom") or ""))
@@ -320,9 +352,14 @@ def classifier_document(
     # agressive du choix utilisateur pour les champs ambigus.
     if resultat_ia and confiance_ia < 0.55:
         titre = _nettoyer_titre(titre_fourni) or titre_local
-        matiere = _nettoyer_titre(matiere_fourni) or _matiere_locale(texte_reference) or _matiere_auto_valide(titre_local or "")
-        type_document = type_fourni or type_local
-        annee = annee_fournie or annee_local
+        matiere = (
+            _nettoyer_titre(matiere_fourni)
+            or matiere_local_nom
+            or matiere_local
+            or _matiere_auto_valide(titre_local or "")
+        )
+        type_document = type_local_nom or type_local_texte or type_fourni
+        annee = annee_local or annee_fournie
         filiere_id = filiere_id_fournie
 
     return ClassificationDocument(
