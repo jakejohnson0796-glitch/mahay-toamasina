@@ -52,3 +52,20 @@ def test_interface_tuteur_contient_suggestions_et_compteur():
 def test_css_et_js_dedies_exist():
     assert (ROOT / "app/static/ai-learning.css").exists()
     assert (ROOT / "app/static/js/ai-learning.js").exists()
+
+
+def test_filtre_texte_ia_rend_les_formules_mathematiques():
+    from app.templating import templates
+
+    filtre = templates.env.filters["texte_ia"]
+    rendu = str(filtre(r"Explique : \\(x^2 + 1\\) puis la matrice \\[\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\]."))
+    assert "x^2 + 1" in rendu
+    assert "math-matrix" in rendu
+    assert "<table" in rendu
+    assert r"\\begin{pmatrix}" not in rendu
+    assert r"\\[" not in rendu
+
+
+def test_page_tuteur_indique_une_verification_avant_enregistrement():
+    tuteur = lire("app/templates/tuteur.html")
+    assert "vérifiée par plusieurs modèles avant d'être enregistrée" in tuteur
