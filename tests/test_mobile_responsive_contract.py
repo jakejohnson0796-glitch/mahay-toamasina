@@ -73,3 +73,12 @@ def test_document_auto_detection_box_stays_horizontal_and_full_width():
     ]
     for token in required:
         assert token in template, token
+
+
+def test_document_auto_detection_uses_an_isolated_label_structure():
+    template = (ROOT / "app" / "templates" / "document_upload.html").read_text(encoding="utf-8")
+    assert '<div class="document-upload-auto-box">' in template
+    assert '<label class="document-upload-auto-copy" for="classification_auto">' in template
+    assert '<label class="document-upload-auto-box"' not in template
+    assert '.document-upload-field .document-upload-auto-copy' in template
+    assert 'writing-mode:horizontal-tb !important;' in template

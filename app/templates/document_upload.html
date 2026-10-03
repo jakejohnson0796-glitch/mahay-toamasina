@@ -110,6 +110,24 @@
   margin:.1rem 0 0;
   accent-color:var(--upload-accent);
 }
+/* Le texte est un label autonome : il ne doit pas hériter de la géométrie
+   générique des labels du formulaire. */
+.document-upload-field .document-upload-auto-copy{
+  display:grid !important;
+  flex:1 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+  align-items:start !important;
+  justify-content:start !important;
+  text-align:left !important;
+  line-height:normal !important;
+  writing-mode:horizontal-tb !important;
+  white-space:normal !important;
+}
+
 .document-upload-auto-copy{
   display:grid !important;
   grid-template-columns:minmax(0,1fr);
@@ -594,13 +612,13 @@
             </div>
 
             <div class="document-upload-field full">
-              <label class="document-upload-auto-box" for="classification_auto">
+              <div class="document-upload-auto-box">
                 <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
-                <span class="document-upload-auto-copy">
+                <label class="document-upload-auto-copy" for="classification_auto">
                   <strong>Détection automatique</strong>
                   <span>Détecte le titre, la matière, le type, l’année et la filière à partir du fichier. Si une clé IA est configurée, seul un extrait borné sert à l’analyse.</span>
-                </span>
-              </label>
+                </label>
+              </div>
             </div>
 
             <div class="document-upload-field full">
