@@ -60,3 +60,16 @@ def test_mobile_emoji_picker_is_compact():
     ]
     for token in required:
         assert token in css, token
+
+
+def test_document_auto_detection_box_stays_horizontal_and_full_width():
+    template = (ROOT / "app" / "templates" / "document_upload.html").read_text(encoding="utf-8")
+    required = [
+        ".document-upload-field.full:has(.document-upload-auto-box)",
+        "width:100% !important;",
+        "flex-direction:row !important;",
+        "writing-mode:horizontal-tb !important;",
+        "overflow-wrap:anywhere !important;",
+    ]
+    for token in required:
+        assert token in template, token
