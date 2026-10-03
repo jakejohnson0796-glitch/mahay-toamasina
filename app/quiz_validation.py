@@ -133,6 +133,12 @@ def normaliser_math_texte(texte: str) -> str:
         texte,
     )
 
+    # Certaines sorties IA perdent ou doublent les antislashs sur des
+    # commandes usuelles. Les variantes de \times doivent rester lisibles
+    # meme lorsqu'un chiffre suit directement la commande.
+    texte = re.sub(r"\\+times", "×", texte, flags=re.IGNORECASE)
+    texte = re.sub(r"(?<=\d)\s*times\s*(?=[+\-]?\d)", "×", texte, flags=re.IGNORECASE)
+
     # Matrices brutes : on les conserve en TeX pour le renderer.
     texte = re.sub(
         r"\[\s*([^\[\]\n;]+(?:;\s*[^\[\]\n;]+)+)\s*\]",
