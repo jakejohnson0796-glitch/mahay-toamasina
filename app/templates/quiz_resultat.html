@@ -98,7 +98,7 @@
           </span>
         </div>
 
-        <h3 class="ai-correction-question">{{ item.question }}</h3>
+        <h3 class="ai-correction-question">{{ rendre_math_html(item.question) }}</h3>
 
         {% if item.choix and item.choix|length > 1 %}
         <div class="ai-correction-options">
@@ -106,19 +106,19 @@
           <div class="ai-correction-option
               {{ 'is-correct' if loop.index0 == item.index_bonne_reponse else '' }}
               {{ 'is-selected-bad' if loop.index0 == reponse_donnee and not correcte else '' }}">
-            <strong>{{ ["A","B","C","D","E","F"][loop.index0] }}.</strong> {{ choix }}
+            <strong>{{ ["A","B","C","D","E","F"][loop.index0] }}.</strong> {{ rendre_choix_math_html(choix, loop.index0) }}
             {% if loop.index0 == item.index_bonne_reponse %} · bonne réponse{% endif %}
             {% if loop.index0 == reponse_donnee and not correcte %} · ta réponse{% endif %}
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <div class="ai-correction-explanation">{{ item.choix[0] if item.choix else "" }}</div>
+        <div class="ai-correction-explanation">{{ rendre_math_html(item.choix[0] if item.choix else "") }}</div>
         {% endif %}
 
         {% if item.explication %}
         <div class="ai-correction-explanation">
-          <strong>Pourquoi ?</strong><br>{{ item.explication }}
+          <strong>Pourquoi ?</strong><br>{{ rendre_math_html(item.explication) }}
         </div>
         {% endif %}
 
