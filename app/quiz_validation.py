@@ -120,7 +120,18 @@ def normaliser_math_texte(texte: str) -> str:
     )
 
     # Certains retours JSON/Markdown doublent les antislashs TeX.
-    texte = re.sub(r"\\\\+([A-Za-z]+)", r"\\\1", texte)
+    # Ne jamais appliquer cette reduction a une separation de ligne de matrice
+    # (par ex. "\\\\ c"), sinon elle devient a tort la commande "\\c".
+    commandes_tex = (
+        r"(?:begin|end|frac|sqrt|mathbf|mathrm|times|cdot|pm|leq|le|geq|neq|"
+        r"approx|infty|pi|alpha|beta|gamma|Delta|lambda|mu|sigma|theta|"
+        r"rightarrow|to|Rightarrow|Leftrightarrow|iff|det|ker)"
+    )
+    texte = re.sub(
+        rf"\\+(?={commandes_tex}\\b)",
+        r"\\",
+        texte,
+    )
 
     # Matrices brutes : on les conserve en TeX pour le renderer.
     texte = re.sub(
