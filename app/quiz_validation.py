@@ -297,6 +297,73 @@ class QuizValidationError(ValueError):
     pass
 
 
+def _verifier_coherence_explicative(
+    choix_nettoyes: list[str],
+    index_bonne_reponse: int,
+    explication: str,
+) -> None:
+    """Bloque les contradictions explicites entre correction et QCM."""
+    texte = normaliser_math_texte(explication).casefold()
+    if not texte:
+        return
+
+    # Un QCM ne peut pas être publié si son explication reconnait elle-même
+    # qu'aucune option ne répond à la question.
+    contradictions = (
+        r"aucun(?:e)?\s+des\s+(?:réponses|choix|options)",
+        r"aucun(?:e)?\s+(?:réponse|choix|option)\s+(?:ne\s+)?(?:correspond|convient|est\s+correct)",
+        r"aucun(?:e)?\s+des\s+(?:réponses|choix|options)\s+(?:proposé|proposées|fournis|fournies)",
+        r"(?:il\s+faut|on\s+doit)\s+(?:corriger|ajouter|inclure|modifier)\b.*\b(?:choix|réponse)",
+    )
+    if any(re.search(motif, texte, flags=re.IGNORECASE) for motif in contradictions):
+        raise QuizValidationError(
+            "L'explication indique que les choix proposés ne contiennent pas la bonne réponse."
+        )
+
+    # Contrôle explicite d'un label : « la bonne réponse est B ».
+    match_label = re.search(
+        r"\b(?:la\s+)?bonne\s+r[ée]ponse\s*(?:est|:)\s*([A-F])\b",
+        texte,
+        flags=re.IGNORECASE,
+    )
+    if match_label:
+        lettre = match_label.group(1).upper()
+        attendu = "ABCDEF".index(lettre)
+        if attendu != index_bonne_reponse:
+            raise QuizValidationError(
+                f"L'explication désigne {lettre} comme bonne réponse alors que l'index pointe vers "
+                f"{'ABCDEF'[index_bonne_reponse]}."
+            )
+
+    # Contrôle simple d'une valeur courte : « la bonne réponse est 5 ».
+    # On ne force la comparaison que si la valeur est courte et figure
+    # clairement comme un choix autonome.
+    match_valeur = re.search(
+        r"\b(?:la\s+)?bonne\s+r[ée]ponse\s*(?:est|:)\s*([^,.;\n]{1,40})",
+        texte,
+        flags=re.IGNORECASE,
+    )
+    if match_valeur:
+        valeur = normaliser_math_texte(match_valeur.group(1)).strip(" .:;")
+        if valeur and len(valeur) <= 20:
+            normalises = {
+                re.sub(r"\s+", " ", c.casefold()).strip(" .")
+                for c in choix_nettoyes
+            }
+            valeur_norm = re.sub(r"\s+", " ", valeur.casefold()).strip(" .")
+            correspondants = [
+                i for i, c in enumerate(normalises)
+                if c == valeur_norm
+            ]
+            # Seulement lorsque l'expression correspond exactement à un
+            # choix existant : cela évite les faux positifs sur des phrases
+            # longues comme « la bonne réponse est la propriété... ».
+            if correspondants and correspondants != [index_bonne_reponse]:
+                raise QuizValidationError(
+                    "L'explication désigne un choix différent de l'index de bonne réponse."
+                )
+
+
 def _normaliser_choix(choix: Any, index: int) -> str:
     """Normalise un choix QCM et retire seulement un prefixe evident."""
     texte = normaliser_math_texte(choix)
@@ -419,6 +486,11 @@ def valider_questions(questions: Any, expected_count: int | None = None) -> list
         if notion and len(notion) > MAX_NOTION_CHARS:
             raise QuizValidationError(f"La notion de la question {numero} est trop longue.")
         choix_nettoyes = _normaliser_choix_liste(choix)
+        _verifier_coherence_explicative(
+            choix_nettoyes,
+            index,
+            explication,
+        )
         if any(not c or len(c) > MAX_CHOIX_CHARS for c in choix_nettoyes):
             raise QuizValidationError(f"Un choix de la question {numero} est invalide.")
         signatures = [re.sub(r"\s+", " ", c).casefold() for c in choix_nettoyes]
