@@ -771,7 +771,7 @@
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           {% if cercle %}<input type="hidden" name="cercle_id" value="{{ cercle.id }}">{% endif %}
 
-          <div class="document-upload-auto-option" role="group" aria-labelledby="classification_auto_titre">
+          <div class="document-upload-auto-box document-upload-auto-option" role="group" aria-labelledby="classification_auto_titre">
             <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
             <label class="document-upload-auto-copy" for="classification_auto" id="classification_auto_titre">
               <strong>Détection automatique</strong>
