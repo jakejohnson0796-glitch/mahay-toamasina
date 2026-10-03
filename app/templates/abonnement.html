@@ -11,7 +11,8 @@
       <div class="ops-hero-actions"><a href="/mode-emploi">Mode d'emploi</a><a href="/securite">Sécurité du compte</a></div>
     </div>
     <div class="ops-stat-grid">
-      <div class="ops-stat"><strong>{{ jours_restants }}</strong><span>jour{{ "s" if jours_restants > 1 else "" }} restant{{ "s" if jours_restants > 1 else "" }}</span></div>
+      <div class="ops-stat"><strong>{{ jours_restants }}</strong><span>jour{{ "s" if jours_restants > 1 else "" }} Premium restant{{ "s" if jours_restants > 1 else "" }}</span></div>
+      <div class="ops-stat"><strong>{{ jours_restants_ia }}</strong><span>jour{{ "s" if jours_restants_ia > 1 else "" }} d'IA restant{{ "s" if jours_restants_ia > 1 else "" }}</span></div>
       <div class="ops-stat"><strong>{{ "PREMIUM" if acces_premium else "LIBRE" }}</strong><span>état actuel de l'accès</span></div>
     </div>
   </section>
@@ -22,6 +23,9 @@
   {% if request.query_params.get("premium_requis") %}
   <div class="ops-alert ops-alert-warn">Cette fonctionnalité nécessite Premium. Vérifie ton abonnement ou envoie une demande ci-dessous.</div>
   {% endif %}
+  {% if request.query_params.get("ia_requis") %}
+  <div class="ops-alert ops-alert-warn">Le Quiz IA et le Tuteur IA sont inclus pendant les {{ duree_essai_ia }} premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant {{ duree_essai_general }} jours.</div>
+  {% endif %}
 
   {% if abonnement %}
   <section class="ops-section">
@@ -30,13 +34,13 @@
         <span class="ops-kicker">État de ton compte</span>
         {% if abonnement.statut == StatutAbonnementEtudiant.ESSAI %}
         <h2>Essai gratuit{% if not acces_premium %} terminé{% endif %}</h2>
-        <p>{% if acces_premium %}Il te reste <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong> d'accès complet.{% else %}Ton essai est terminé. Tu peux souscrire ci-dessous.{% endif %}</p>
+        <p>{% if acces_premium %}Il te reste <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong> d'accès Premium. {% if acces_ia %}Le Quiz IA et le Tuteur IA sont encore disponibles pendant <strong>{{ jours_restants_ia }} jour{{ "s" if jours_restants_ia > 1 else "" }}</strong>.{% else %}La période d'essai IA est terminée ; les autres fonctionnalités Premium restent accessibles pendant l'essai de 60 jours.{% endif %}{% else %}Ton essai est terminé. Tu peux souscrire ci-dessous.{% endif %}</p>
         {% elif abonnement.statut == StatutAbonnementEtudiant.EN_ATTENTE %}
         <h2>Demande en cours de vérification</h2>
-        <p>La demande a bien été reçue. {% if acces_premium %}Ton essai reste actif pendant la vérification ({{ jours_restants }} jours).{% endif %}</p>
+        <p>La demande a bien été reçue. {% if acces_premium %}Ton accès Premium reste actif pendant la vérification ({{ jours_restants }} jours). {% if acces_ia %}L'accès IA reste ouvert pendant {{ jours_restants_ia }} jours.{% endif %}{% endif %}</p>
         {% elif abonnement.statut == StatutAbonnementEtudiant.ACTIF %}
         <h2>Premium actif</h2>
-        <p>Ton accès Premium est actif pour encore <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.</p>
+        <p>Ton accès Premium est actif pour encore <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>, y compris le Quiz IA et le Tuteur IA.</p>
         {% elif abonnement.statut == StatutAbonnementEtudiant.EXPIRE %}
         <h2>Abonnement expiré</h2><p>Ton accès Premium peut être réactivé avec une nouvelle demande.</p>
         {% elif abonnement.statut == StatutAbonnementEtudiant.REFUSE %}
