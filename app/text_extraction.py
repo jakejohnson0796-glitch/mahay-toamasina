@@ -38,6 +38,12 @@ def extraire_texte(chemin_fichier: str) -> str:
             return texte
         return _extraire_texte_pdf_par_ocr(chemin) or texte
 
+    if suffixe in (".docx",):
+        return _extraire_texte_docx(chemin)
+
+    if suffixe in (".pptx",):
+        return _extraire_texte_pptx(chemin)
+
     if suffixe in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"):
         return _extraire_texte_image(chemin)
 
@@ -91,5 +97,40 @@ def _extraire_texte_image(chemin: Path) -> str:
         return ""
     try:
         return pytesseract.image_to_string(Image.open(chemin), lang="fra")[:MAX_TEXTE_EXTRAIT]
+    except Exception:
+        return ""
+
+
+def _extraire_texte_docx(chemin: Path) -> str:
+    try:
+        from docx import Document as DocxDocument
+    except ImportError:
+        return ""
+    try:
+        document = DocxDocument(str(chemin))
+        paragraphes = [p.text for p in document.paragraphs if p.text.strip()]
+        return "\n".join(paragraphes)[:MAX_TEXTE_EXTRAIT]
+    except Exception:
+        return ""
+
+
+def _extraire_texte_pptx(chemin: Path) -> str:
+    try:
+        from pptx import Presentation
+    except ImportError:
+        return ""
+    try:
+        presentation = Presentation(str(chemin))
+        morceaux = []
+        total = 0
+        for slide in presentation.slides:
+            for shape in slide.shapes:
+                texte = getattr(shape, "text", "") or ""
+                if texte.strip():
+                    morceaux.append(texte)
+                    total += len(texte)
+                    if total >= MAX_TEXTE_EXTRAIT:
+                        return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
+        return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
     except Exception:
         return ""
