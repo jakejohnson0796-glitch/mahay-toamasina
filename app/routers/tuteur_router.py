@@ -81,6 +81,8 @@ def demander_tuteur(
         matiere=progression.matiere if progression else None,
         verifier=True,
     )
+    statut_verification = reponse.pop("_statut_verification", "terminee")
+    erreur_verification = reponse.pop("_erreur_verification", None)
 
     session_tuteur = SessionTuteur(
         utilisateur_id=utilisateur.id,
@@ -91,6 +93,8 @@ def demander_tuteur(
         exemple=reponse["exemple"],
         exercice=reponse["exercice"],
         correction=reponse["correction"],
+        statut_verification_ia=statut_verification,
+        erreur_verification_ia=erreur_verification,
     )
     session.add(session_tuteur)
     session.flush()
