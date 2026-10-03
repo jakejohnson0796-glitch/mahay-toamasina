@@ -263,6 +263,39 @@ class QuizValidationError(ValueError):
     pass
 
 
+def _normaliser_choix(choix: Any, index: int) -> str:
+    """Normalise un choix et retire uniquement un prefixe A/B/C... parasite.
+    
+    On ne retire pas une lettre seule par defaut : une reponse mathematique
+    legitime peut commencer par A ou B (ex. AB = BA). Le retrait est limite
+    aux formes typiques generees par l'IA : AA..., A-2, BSi..., CLa...,
+    D\\lambda..., etc.
+    """
+    texte = normaliser_math_texte(choix)
+    if not texte:
+        return ""
+
+    label = "ABCDEF"[index] if 0 <= index < 6 else ""
+    if not label or not texte.startswith(label) or len(texte) == 1:
+        return texte
+
+    suite = texte[1:]
+    if suite.startswith(label):
+        return suite
+
+    if re.match(
+        r"^(?:[=+\\-×*/()\\[\\]\\{\\}]|\\d|\\\\|"
+        r"Il\\b|La\\b|Le\\b|Les\\b|Une\\b|Un\\b|Si\\b|"
+        r"Pour\\b|Dans\\b|Ce\\b|Cette\\b|Tout\\b|Toute\\b|"
+        r"Aucun\\b|Aucune\\b|Existe\\b)",
+        suite,
+        flags=re.IGNORECASE,
+    ):
+        return suite
+
+    return texte
+
+
 def valider_questions(questions: Any, expected_count: int | None = None) -> list[dict]:
     if not isinstance(questions, list):
         raise QuizValidationError("Le quiz doit etre une liste de questions.")
@@ -288,7 +321,7 @@ def valider_questions(questions: Any, expected_count: int | None = None) -> list
             raise QuizValidationError(f"L'explication de la question {numero} est invalide.")
         if notion and len(notion) > MAX_NOTION_CHARS:
             raise QuizValidationError(f"La notion de la question {numero} est trop longue.")
-        choix_nettoyes = [normaliser_math_texte(c) for c in choix]
+        choix_nettoyes = [_normaliser_choix(c, i) for i, c in enumerate(choix)]
         if any(not c or len(c) > MAX_CHOIX_CHARS for c in choix_nettoyes):
             raise QuizValidationError(f"Un choix de la question {numero} est invalide.")
         signatures = [re.sub(r"\s+", " ", c).casefold() for c in choix_nettoyes]
