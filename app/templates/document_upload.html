@@ -566,7 +566,7 @@
                 <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
                 <span class="document-upload-auto-copy">
                   <strong>Détection automatique</strong>
-                  <span>Détecte le titre, la matière, le type, l’année et la filière à partir du fichier. L’IA n’écrase pas une information lorsqu’elle n’est pas suffisamment sûre.</span>
+                  <span>Détecte le titre, la matière, le type, l’année et la filière à partir du fichier. Si une clé IA est configurée, seul un extrait borné sert à l’analyse.</span>
                 </span>
               </label>
             </div>
@@ -837,7 +837,9 @@
         return;
       }
       submit.disabled = true;
-      submit.textContent = "Envoi en cours…";
+      submit.textContent = classificationAuto && classificationAuto.checked
+        ? "Analyse et classement en cours…"
+        : "Envoi en cours…";
     });
   }
 
