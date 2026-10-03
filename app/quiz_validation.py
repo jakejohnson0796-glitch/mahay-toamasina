@@ -328,8 +328,30 @@ def _normaliser_choix(choix: Any, index: int) -> str:
     return texte
 
 
+def _suffixe_est_un_label_qcm(suite: str) -> bool:
+    """Heuristique prudente pour reconnaitre un label A/B/C... colle au texte."""
+    suite = suite.lstrip()
+    if not suite:
+        return False
+
+    # Punctuation, nombres et tableau Markdown sont des debuts d'intitules,
+    # pas des suites plausibles d'un identifiant matriciel comme AB = BA.
+    if re.match(r"^(?:\||\d|[=+\-×*/()\[\]{}<>])", suite):
+        return True
+
+    # Un mot francais naturel (ex. « Échange », « Toutes », « est »).
+    if re.match(r"^[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]{1,}(?:\b|\s)", suite):
+        return True
+
+    # Commandes TeX / groupes mathématiques structurés.
+    if re.match(r"^(?:\\(?:begin|frac|sqrt|lambda)\b|\[|\()", suite):
+        return True
+
+    return False
+
+
 def _normaliser_choix_liste(choix: list[Any]) -> list[str]:
-    """Nettoie un ensemble de choix, notamment les vieux prefixes A/B/C/D."""
+    """Nettoie un ensemble de choix et retire les labels QCM concatenes."""
     textes = [normaliser_math_texte(c) for c in choix]
     labels = "ABCDEF"
     if not textes or len(textes) > len(labels):
@@ -339,14 +361,17 @@ def _normaliser_choix_liste(choix: list[Any]) -> list[str]:
     if not prefixes:
         return [_normaliser_choix(t, i) for i, t in enumerate(textes)]
 
-    # Quand au moins un choix contient deux fois son label (AA..., BB...),
-    # il s'agit d'un prefixe QCM injecte par le modele, pas d'une formule.
+    # Les IA collent parfois le label au contenu : « AÉchange », « B2 »,
+    # « C| ...tableau... » ou « AA+B... ». Lorsque le debut qui suit le label
+    # ressemble clairement a une reponse (au moins une option), on retire
+    # exactement un label de chaque choix de la serie.
     prefixe_obvie = any(
         len(t) >= 2 and t[:2] == labels[i] * 2
+        or _suffixe_est_un_label_qcm(t[1:])
         for i, t in enumerate(textes)
     )
     if prefixe_obvie:
-        return [t[1:] for t in textes]
+        return [normaliser_math_texte(t[1:]) for t in textes]
 
     return [_normaliser_choix(t, i) for i, t in enumerate(textes)]
 
