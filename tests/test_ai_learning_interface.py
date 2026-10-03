@@ -137,4 +137,4 @@ def test_filtre_texte_ia_nettoie_les_commandes_latex_sans_delimiters():
     filtre = templates.env.filters["texte_ia"]
     rendu = str(filtre(r"Les vecteurs sont \\mathbf{u}=(a,c) et \\mathbf{v}=(b,d)."))
     assert "mathbf" not in rendu
-    assert "u=(a,c)" in rendu
+    assert "<strong>u</strong>=(a,c)" in rendu
