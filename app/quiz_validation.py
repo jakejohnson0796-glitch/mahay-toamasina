@@ -352,6 +352,13 @@ def _normaliser_choix_liste(choix: list[Any]) -> list[str]:
     return retires
 
 
+def rendre_choix_math_html(choix: str, index: int):
+    """Rend un choix QCM en appliquant son nettoyage de label avant le rendu."""
+    from markupsafe import Markup
+
+    nettoye = _normaliser_choix(choix, index)
+    return Markup(rendre_math_html(nettoye))
+
 def valider_questions(questions: Any, expected_count: int | None = None) -> list[dict]:
     if not isinstance(questions, list):
         raise QuizValidationError("Le quiz doit etre une liste de questions.")
