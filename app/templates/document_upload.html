@@ -658,6 +658,7 @@
   const submit = document.getElementById("bouton-document-submit");
   const validation = document.getElementById("validation-document");
   const etat = document.getElementById("etat-document");
+  const classificationAuto = document.getElementById("classification_auto");
 
   const fields = {
     titre: document.getElementById("titre"),
@@ -699,10 +700,13 @@
   function messageErreur() {
     const erreurs = [];
 
-    if (!valeur(fields.titre)) erreurs.push("ajoutez un titre");
-    if (!valeur(fields.matiere)) erreurs.push("indiquez la matière");
-    if (!valeur(fields.annee)) erreurs.push("indiquez l'année");
-    if (!valeur(fields.filiere)) erreurs.push("choisissez une filière");
+    const detectionAuto = Boolean(classificationAuto && classificationAuto.checked);
+    if (!detectionAuto) {
+      if (!valeur(fields.titre)) erreurs.push("ajoutez un titre");
+      if (!valeur(fields.matiere)) erreurs.push("indiquez la matière");
+      if (!valeur(fields.annee)) erreurs.push("indiquez l'année");
+      if (!valeur(fields.filiere)) erreurs.push("choisissez une filière");
+    }
 
     const fichier = input && input.files && input.files[0];
     if (!fichier) {
@@ -769,9 +773,28 @@
     return ok;
   }
 
+  function appliquerModeDetectionAuto() {
+    const auto = Boolean(classificationAuto && classificationAuto.checked);
+    [fields.titre, fields.matiere, fields.annee, fields.filiere].forEach(function (field) {
+      if (!field) return;
+      if (auto) field.removeAttribute("required");
+      else field.setAttribute("required", "required");
+    });
+    if (classificationAuto) {
+      classificationAuto.setAttribute("aria-checked", String(auto));
+    }
+  }
+
   function maj() {
     mettreAJourResume();
     valider();
+  }
+
+  if (classificationAuto) {
+    classificationAuto.addEventListener("change", function () {
+      appliquerModeDetectionAuto();
+      maj();
+    });
   }
 
   Object.values(fields).forEach(function (field) {
@@ -818,6 +841,7 @@
     });
   }
 
+  appliquerModeDetectionAuto();
   maj();
 })();
 </script>
