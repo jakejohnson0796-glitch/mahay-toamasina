@@ -237,9 +237,10 @@ def rendre_math_html(texte: str):
 
         def matrice_html(match):
             contenu = match.group(2).strip()
-            # Les modeles peuvent produire \\, \\\\ ou \\\\\\ pour les separations de lignes.
-            contenu = _re.sub(r"\\\\{2,}\\s*", "\\n", contenu)
-            lignes = [x.strip() for x in contenu.split("\\n") if x.strip()]
+            # Les modeles peuvent produire plusieurs antislashs pour une
+            # separation de ligne de matrice.
+            contenu = _re.sub(r"\\\\{2,}\\s*", "\n", contenu)
+            lignes = [x.strip() for x in contenu.split("\n") if x.strip()]
             rows = []
             for ligne in lignes:
                 cellules = [c.strip() for c in ligne.split("&")]
@@ -258,41 +259,39 @@ def rendre_math_html(texte: str):
 
         # Une matrice peut etre integree dans une expression plus longue,
         # par exemple "\\[A=\\begin{pmatrix}...\\end{pmatrix}\\]".
-        # Il faut donc la remplacer meme si l'expression ne se limite pas
-        # a l'environnement matriciel.
         safe = _re.sub(
-            r"\\begin\\{(pmatrix|bmatrix|vmatrix|matrix)\\}(.*?)\\end\\{\\1\\}",
+            r"\\begin\{(pmatrix|bmatrix|vmatrix|matrix)\}(.*?)\\end\{\1\}",
             matrice_html,
             safe,
             flags=_re.S,
         )
 
         safe = _re.sub(
-            r"\\mathbf\\{([^{}]+)\\}",
-            r"<strong>\\1</strong>",
+            r"\\mathbf\{([^{}]+)\}",
+            r"<strong>\1</strong>",
             safe,
         )
         safe = _re.sub(
-            r"\\mathrm\\{([^{}]+)\\}",
-            r"<span class="math-rm">\\1</span>",
+            r"\\mathrm\{([^{}]+)\}",
+            r'<span class="math-rm">\1</span>',
             safe,
         )
         safe = _re.sub(
-            r"\\frac\\{([^{}]+)\\}\\{([^{}]+)\\}",
-            r'<span class="math-frac"><span class="math-num">\\1</span><span class="math-den">\\2</span></span>',
+            r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
+            r'<span class="math-frac"><span class="math-num">\1</span><span class="math-den">\2</span></span>',
             safe,
         )
         safe = _re.sub(
-            r"\\sqrt\\{([^{}]+)\\}",
-            r'<span class="math-root">√<span class="math-root-body">\\1</span></span>',
+            r"\\sqrt\{([^{}]+)\}",
+            r'<span class="math-root">√<span class="math-root-body">\1</span></span>',
             safe,
         )
-        safe = _re.sub(r"\^\\{([^{}]+)\\}", r"<sup>\\1</sup>", safe)
-        safe = _re.sub(r"_\\{([^{}]+)\\}", r"<sub>\\1</sub>", safe)
+        safe = _re.sub(r"\^\{([^{}]+)\}", r"<sup>\1</sup>", safe)
+        safe = _re.sub(r"_\{([^{}]+)\}", r"<sub>\1</sub>", safe)
         for motif, remplacement in symbol_map:
             safe = _re.sub(motif, remplacement, safe)
         safe = safe.replace(r"\\,", " ")
-        safe = _re.sub(r"\\([A-Za-z]+)", r"\\1", safe)
+        safe = _re.sub(r"\\([A-Za-z]+)", r"\1", safe)
         return safe
 
     morceaux = []
