@@ -508,11 +508,18 @@ def _critique_tuteur_groq(
     matiere: Optional[str],
 ) -> Optional[Dict[str, Any]]:
     prompt = (
-        "Evalue la reponse d'un tuteur universitaire. Cherche seulement les "
-        "erreurs ou faiblesses justifiables : erreur de contenu, raisonnement "
-        "incorrect, correction qui ne correspond pas a l'exercice, contradiction "
-        "entre explication et correction, ou pedagogie confuse. Ne reecris pas "
-        "la reponse. Retourne des problemes courts et des ameliorations concretes. "
+        "Evalue la reponse d'un tuteur universitaire comme un correcteur "
+        "independant. Recalcule ou rederive les exemples et l'exercice avant de "
+        "declarer la reponse correcte. Verifie obligatoirement que l'explication "
+        "est exacte, que l'exemple est exact, que l'exercice est solvable, et que "
+        "la correction resout exactement l'exercice donne sans changer les donnees. "
+        "Pour les mathematiques et la physique, verifie calculs, signes, unites, "
+        "dimensions, conversions, matrices, fractions, equations et ordre de grandeur. "
+        "Pour l'informatique, verifie syntaxe, semantique, resultat du code et "
+        "complexite quand elle est pertinente. Pour les autres matieres, verifie "
+        "faits, logique et coherence interne. Signale aussi toute contradiction "
+        "entre les quatre parties. Ne reecris pas la reponse. Retourne des "
+        "problemes courts et des ameliorations concretes. "
         f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"REPONSE:\\n{json.dumps(reponse, ensure_ascii=False)}"
     )
@@ -543,11 +550,13 @@ def _critique_tuteur_gemini(
     matiere: Optional[str],
 ) -> Optional[Dict[str, Any]]:
     prompt = (
-        "Tu es un controleur pedagogique independant. Analyse cette reponse de "
-        "tuteur universitaire et signale uniquement les erreurs ou incoherences "
-        "que tu peux justifier. Verifie surtout que l'exercice et sa correction "
-        "correspondent, que le raisonnement est coherent et que l'explication "
-        "reste adaptee a un etudiant.\\n"
+        "Tu es un controleur pedagogique independant. Recalcule les passages "
+        "quantitatifs et verifie chaque etape avant de declarer cette reponse correcte. "
+        "Controle la coherence exacte entre explication, exemple, exercice et correction. "
+        "Pour les maths/physique, verifie notamment signes, unites, dimensions, "
+        "conversions, matrices, equations et resultats numeriques ; pour l'informatique, "
+        "verifie syntaxe, semantique et sortie du code ; sinon verifie faits et logique. "
+        "Signale toute erreur ou incoherence justifiable.\\n"
         f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"{json.dumps(reponse, ensure_ascii=False)}"
     )
@@ -601,11 +610,16 @@ def verifier_tuteur(
         }
 
     prompt = (
-        "Tu es l'arbitre final du Tuteur IA. Ameliore UNE SEULE reponse a un "
-        "etudiant en tenant compte des critiques independantes. Ne change "
-        "que ce qui est justifie. La reponse finale doit conserver exactement "
-        "quatre parties : explication, exemple, exercice, correction. "
-        "La correction doit resoudre exactement l'exercice presente. "
+        "Tu es l'arbitre final du Tuteur IA. Produis UNE SEULE reponse fiable "
+        "en tenant compte des critiques independantes et en refaisant toi-meme les "
+        "calculs necessaires. La reponse finale doit conserver exactement quatre "
+        "parties : explication, exemple, exercice, correction. La correction doit "
+        "resoudre exactement l'exercice presente, avec les memes donnees, sans "
+        "inventer une autre question. Verifie une derniere fois les calculs, signes, "
+        "unites, dimensions, conversions, matrices, equations et resultats numeriques "
+        "en maths/physique, ainsi que syntaxe/semantique/resultat du code en informatique. "
+        "Ne laisse jamais une affirmation du type « aucune solution », « resultat "
+        "impossible » ou « corrige l'enonce » sans expliquer et reparer l'incoherence. "
         "Reponds en francais, clair et pedagogique.\\n\\n"
         f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"REPONSE INITIALE:\\n{json.dumps(reponse, ensure_ascii=False)}\\n\\n"
