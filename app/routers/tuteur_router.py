@@ -79,7 +79,7 @@ def demander_tuteur(
         question,
         notion=progression.notion if progression else None,
         matiere=progression.matiere if progression else None,
-        verifier=False,
+        verifier=True,
     )
 
     session_tuteur = SessionTuteur(
@@ -104,12 +104,8 @@ def demander_tuteur(
     session.commit()
     session.refresh(session_tuteur)
 
-    # La premiere reponse est livree sans attendre Qwen + Gemini + arbitre.
-    # La verification multi-modeles continue apres la reponse HTTP.
-    background_tasks.add_task(
-        ai_quiz.verifier_session_tuteur_en_arriere_plan,
-        session_tuteur.id,
-    )
+    # La reponse est verifiee par l'ensemble multi-modeles avant
+    # son enregistrement et son affichage a l'etudiant.
 
     return RedirectResponse(f"/tuteur/{session_tuteur.id}", status_code=303)
 
