@@ -60,7 +60,7 @@ def test_normalise_les_matrices_entre_doubles_crochets():
 
 def test_normalise_un_tableau_markdown_en_matrice():
     from app.quiz_validation import normaliser_math_texte
-    texte = "| **3** | **6\\\\ 9** | **12** |\\n| :---: | :---------: | :----: |"
+    texte = "| **3** | **6\\\\ 9** | **12** |\n| :---: | :---------: | :----: |"
     resultat = normaliser_math_texte(texte)
     assert r"\\begin{pmatrix}" in resultat
     assert "3&6" in resultat
@@ -120,10 +120,23 @@ def test_normalise_les_entetes_markdown_dans_les_questions():
 
 def test_rend_un_choix_ancien_avec_label_et_matrice():
     from app.quiz_validation import rendre_choix_math_html
-    texte = "| **6** | **21\\\\ 24** | **3** |\\n| :---: | :-----------: | :---: |"
+    texte = "| **6** | **21\\\\ 24** | **3** |\n| :---: | :-----------: | :---: |"
     rendu = str(rendre_choix_math_html("A" + texte, 0))
     assert "math-matrix" in rendu
     assert ">6<" in rendu
     assert "21" in rendu
     assert "24" in rendu
     assert ">A<" not in rendu
+
+
+def test_normalise_un_quiz_avec_labels_consecutifs():
+    from app.quiz_validation import valider_questions
+    questions = [{
+        "question": "Choisir.",
+        "choix": ["AA+B = B+A", "BA+B = B+A", "CA+B = B+A", r"D\\lambda(AB) = A(\\lambda B)"],
+        "index_bonne_reponse": 0,
+        "explication": "Exemple.",
+        "notion": "Algèbre",
+    }]
+    resultat = valider_questions(questions)
+    assert resultat[0]["choix"] == ["A+B = B+A", "A+B = B+A", "A+B = B+A", "λ(AB) = A(λB)"]
