@@ -65,6 +65,20 @@
     <a class="faq-topic" href="/contact"><strong>Assistance</strong><span>Quand la FAQ ne suffit pas.</span></a>
   </nav>
 
+  <section class="faq-help-paths" aria-labelledby="faq-help-paths-title">
+    <div>
+      <p class="public-kicker">Choisis ton chemin</p>
+      <h2 id="faq-help-paths-title">Besoin d'aide maintenant ?</h2>
+      <p>Commence par le parcours qui correspond à ton problème. Tu arriveras plus vite à la bonne page.</p>
+    </div>
+    <div class="faq-help-grid">
+      <a href="/mot-de-passe-oublie"><strong>Je n'arrive plus à me connecter</strong><span>Récupération du mot de passe et compte.</span><b>Ouvrir →</b></a>
+      <a href="/mode-emploi#apprendre"><strong>Je ne sais pas utiliser l'IA</strong><span>Différence entre Quiz IA et Tuteur IA.</span><b>Apprendre →</b></a>
+      <a href="/mode-emploi#documents"><strong>Je cherche une ressource</strong><span>Documents, filtres et dépôt.</span><b>Voir le guide →</b></a>
+      <a href="/contact"><strong>Je pense avoir trouvé un bug</strong><span>Donne le contexte avant de contacter l'équipe.</span><b>Contacter →</b></a>
+    </div>
+  </section>
+
   <div class="faq-layout">
 
     <section class="faq-panel" id="faq-recherche" aria-labelledby="faq-panel-title">
@@ -156,6 +170,12 @@
         <a class="bouton bouton-primaire" href="/contact">Contacter Gasy Mahay</a>
       </div>
 
+      <div class="faq-side-card faq-ai-trial-card">
+        <strong>À propos de l'accès IA</strong>
+        <span>Pour un nouvel étudiant, le Quiz IA et le Tuteur IA sont disponibles pendant <b>14 jours</b> d'essai. Les autres fonctionnalités Premium restent accessibles pendant <b>60 jours</b>.</span>
+        <a class="bouton bouton-secondaire" href="/abonnement">Voir mon abonnement</a>
+      </div>
+
       <div class="faq-side-card">
         <strong>Conseil pour les outils IA</strong>
         <span>Utilise le Quiz IA pour pratiquer et le Tuteur IA pour comprendre une difficulté. Vérifie toujours les notions importantes avec ton cours.</span>
@@ -199,6 +219,10 @@
       {% if utilisateur %}
       <details class="faq-form">
         <summary>Donner mon avis</summary>
+        <div class="faq-feedback-guidance">
+          <strong>Pour un retour utile</strong>
+          <span>Décris ce que tu faisais, ce que tu attendais et ce qui s'est réellement passé. Pour un bug, indique la page concernée et, si possible, les étapes pour reproduire le problème.</span>
+        </div>
         <form id="formulaire-feedback" method="post" action="/feedback">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <label>Ta note</label>

@@ -24,6 +24,12 @@ def test_mode_emploi_contient_les_parcours_principaux():
         'id="depannage"',
     ):
         assert identifiant in template
+    assert 'class="mode-emploi-quickstart"' in template
+    assert 'class="mode-emploi-ai-access' in template
+    assert "14 jours" in template
+    assert "60 jours" in template
+    assert "34 37 795 52" not in template
+
 
 
 def test_onglet_mode_emploi_visible_dans_la_navigation():
