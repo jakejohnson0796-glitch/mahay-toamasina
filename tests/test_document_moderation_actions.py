@@ -40,7 +40,11 @@ def _admin(monkeypatch):
 
 def test_approuver_document_change_le_statut_et_redirige(monkeypatch):
     _admin(monkeypatch)
-    document = SimpleNamespace(statut=StatutDocument.EN_ATTENTE)
+    document = SimpleNamespace(
+        statut=StatutDocument.EN_ATTENTE,
+        titre="Algèbre",
+        reference="MG-INF-2026-TEST",
+    )
     session = FakeSession(document)
 
     response = documents_router.approuver_document(
@@ -55,7 +59,11 @@ def test_approuver_document_change_le_statut_et_redirige(monkeypatch):
 
 def test_rejeter_document_change_le_statut_et_redirige(monkeypatch):
     _admin(monkeypatch)
-    document = SimpleNamespace(statut=StatutDocument.EN_ATTENTE)
+    document = SimpleNamespace(
+        statut=StatutDocument.EN_ATTENTE,
+        titre="Algèbre",
+        reference="MG-INF-2026-TEST",
+    )
     session = FakeSession(document)
 
     response = documents_router.rejeter_document(
@@ -72,6 +80,8 @@ def test_supprimer_document_supprime_le_fichier_et_la_ligne(monkeypatch):
     document = SimpleNamespace(
         statut=StatutDocument.REJETE,
         chemin_fichier="documents/test.pdf",
+        titre="Algèbre",
+        reference="MG-INF-2026-TEST",
     )
     session = FakeSession(document)
     supprime = []
