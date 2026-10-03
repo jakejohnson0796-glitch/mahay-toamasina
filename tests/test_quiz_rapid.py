@@ -60,12 +60,12 @@ def test_normalise_les_matrices_entre_doubles_crochets():
 
 def test_normalise_un_tableau_markdown_en_matrice():
     from app.quiz_validation import normaliser_math_texte
-    texte = "| **3** | **6\\\\ 9** | **12** |\n| :---: | :---------: | :----: |"
+    texte = """| **3** | **6\\ 9** | **12** |
+| :---: | :---------: | :----: |"""
     resultat = normaliser_math_texte(texte)
-    assert r"\\begin{pmatrix}" in resultat
+    assert r"\begin{pmatrix}" in resultat
     assert "3&6" in resultat
     assert "9&12" in resultat
-
 
 def test_supprime_un_prefixe_de_choix_sans_casser_une_formule():
     from app.quiz_validation import normaliser_math_texte
@@ -75,17 +75,13 @@ def test_supprime_un_prefixe_de_choix_sans_casser_une_formule():
 
 def test_reconstruit_une_matrice_3x3_aplatie_dans_un_tableau():
     from app.quiz_validation import normaliser_math_texte
-    texte = (
-        "| **0** | **1** | **0\\\\ 1** | **0** | "
-        "**0\\\\ 0** | **0** | **1** |\\n"
-        "| :---: | :---: | :---------: | :---: | :---------: | :---: | :---: |"
-    )
+    texte = """| **0** | **1** | **0\\ 1** | **0** | **0\\ 0** | **0** | **1** |
+| :---: | :---: | :---------: | :---: | :---------: | :---: | :---: |"""
     resultat = normaliser_math_texte(texte)
-    assert r"\\begin{pmatrix}" in resultat
+    assert r"\begin{pmatrix}" in resultat
     assert "0&1&0" in resultat
     assert "1&0&0" in resultat
     assert "0&0&1" in resultat
-
 
 def test_retirer_labels_qcm_parasites_sans_casser_ab_egal_ba():
     from app.quiz_validation import valider_questions
@@ -133,7 +129,7 @@ def test_normalise_un_quiz_avec_labels_consecutifs():
     from app.quiz_validation import valider_questions
     questions = [{
         "question": "Choisir.",
-        "choix": ["AA+B = B+A", "BA+B = B+A", "CA+B = B+A", r"D\\lambda(AB) = A(\\lambda B)"],
+        "choix": ["AA+B = B+A", "BA+B = B-A", "CA+B = A-B", r"D\\lambda(AB) = A(\\lambda B)"],
         "index_bonne_reponse": 0,
         "explication": "Exemple.",
         "notion": "Algèbre",
