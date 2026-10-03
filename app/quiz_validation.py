@@ -21,6 +21,7 @@ def normaliser_math_texte(texte: str) -> str:
     texte = texte.replace(r"\\[", r"\[").replace(r"\\]", r"\]")
     texte = re.sub(r"\*\*([^*\n]+?)\*\*", r"\1", texte)
     texte = re.sub(r"__([^_\n]+?)__", r"\1", texte)
+    texte = re.sub(r"^\s*#{1,6}\s+", "", texte, flags=re.MULTILINE)
 
     # Les sorties IA peuvent parfois encapsuler une matrice dans un tableau
     # Markdown. On les transforme en vrai bloc matriciel avant stockage.
@@ -294,6 +295,14 @@ def _normaliser_choix(choix: Any, index: int) -> str:
         return suite
 
     return texte
+
+
+def rendre_choix_math_html(choix: str, index: int):
+    """Rend un choix QCM en appliquant aussi le nettoyage de son label."""
+    from markupsafe import Markup
+
+    nettoye = _normaliser_choix(choix, index)
+    return Markup(rendre_math_html(nettoye))
 
 
 def valider_questions(questions: Any, expected_count: int | None = None) -> list[dict]:
