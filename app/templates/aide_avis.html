@@ -111,7 +111,7 @@
               <span class="faq-chevron" aria-hidden="true">⌄</span>
             </button>
           </h3>
-          <div class="faq-answer" id="faq-answer-{{ item.id }}" role="region" aria-labelledby="faq-question-{{ item.id }}" hidden>
+          <div class="faq-answer" id="faq-answer-{{ item.id }}" role="region" aria-labelledby="faq-question-{{ item.id }}">
             <p>{{ item.reponse }}</p>
           </div>
         </article>
@@ -137,8 +137,11 @@
     <aside class="faq-side-stack" aria-label="Aide complémentaire">
       <div class="faq-side-card">
         <strong>Un problème avec ton compte ?</strong>
-        <span>Utilise la récupération du mot de passe ou consulte la page Sécurité pour les réglages du compte.</span>
-        <a class="bouton bouton-secondaire" href="/securite">Ouvrir Sécurité</a>
+        <span>Utilise directement la récupération du mot de passe ou ouvre la page Sécurité pour les réglages du compte.</span>
+        <div class="public-actions">
+          <a class="bouton bouton-primaire" href="/mot-de-passe-oublie">Mot de passe oublié</a>
+          <a class="bouton bouton-secondaire" href="/securite">Ouvrir Sécurité</a>
+        </div>
       </div>
 
       <div class="faq-side-card">
