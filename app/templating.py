@@ -51,6 +51,11 @@ def _texte_ia_html(texte) -> "Markup":
             .replace(r"\\begin", r"\begin")
             .replace(r"\\end", r"\end")
         )
+        # Les reponses du Tuteur peuvent aussi contenir des commandes
+        # mathematiques sans delimiters. La normalisation transforme les
+        # commandes usuelles en symboles lisibles avant l'echappement HTML.
+        from .quiz_validation import normaliser_math_texte
+        valeur = normaliser_math_texte(valeur)
         math_pattern = re.compile(
             r"(\$\$(?:.|\n)*?\$\$|\\\[(?:.|\n)*?\\\]|\\\((?:.|\n)*?\\\)"
             r"|\\begin\{(?:pmatrix|bmatrix|vmatrix|matrix)\}(?:.|\n)*?\\end\{(?:pmatrix|bmatrix|vmatrix|matrix)\})"
@@ -70,6 +75,36 @@ def _texte_ia_html(texte) -> "Markup":
         for cle, rendu in placeholders.items():
             valeur = valeur.replace(cle, rendu)
         return valeur
+
+    def _tableau_est_matrice(entetes: list[str], rows: list[list[str]]) -> bool:
+        """Reconnaît un tableau Markdown carré qui représente une matrice."""
+        toutes = [cellule.strip() for ligne in [entetes] + rows for cellule in ligne]
+        if len(entetes) < 2 or len(entetes) != len(rows) + 1:
+            return False
+        taille = len(entetes)
+        if taille < 2:
+            return False
+
+        def cellule_math(cellule: str) -> bool:
+            valeur = normaliser_math_texte(cellule).strip()
+            if not valeur or len(valeur) > 40:
+                return False
+            # Une cellule de matrice doit ressembler à une expression
+            # mathématique, pas à un libellé de tableau (« Nom », « Note »...).
+            if re.fullmatch(r"[A-Za-zα-ωΑ-Ω]", valeur):
+                return True
+            return bool(
+                re.search(r"\\frac|\\sqrt|[0-9]|[+\\-*/=^_×·≤≥≠≈()]", valeur)
+                and re.fullmatch(r"[A-Za-z0-9α-ωΑ-Ω_+\\-*/=^_{}().×·≤≥≠≈ ]+", valeur)
+            )
+
+        return all(cellule_math(cellule) for cellule in toutes)
+
+    def rendre_tableau_matrice(entetes: list[str], rows: list[list[str]]) -> str:
+        valeurs = [entetes] + rows
+        lignes_tex = ["&".join(normaliser_math_texte(cellule).strip() for cellule in ligne) for ligne in valeurs]
+        bloc = r"\[" + r"\begin{pmatrix}" + r"\\ ".join(lignes_tex) + r"\end{pmatrix}" + r"\]"
+        return str(rendre_math_html(bloc))
 
     def est_sep_tableau(ligne: str) -> bool:
         morceaux = [m.strip() for m in ligne.strip().strip("|").split("|")]
@@ -93,6 +128,15 @@ def _texte_ia_html(texte) -> "Markup":
             while i < len(lignes) and lignes[i].strip() and "|" in lignes[i]:
                 rows.append(cellules(lignes[i]))
                 i += 1
+
+            if (
+                rows
+                and all(len(row) == len(entetes) for row in rows)
+                and _tableau_est_matrice(entetes, rows)
+            ):
+                html_blocks.append(rendre_tableau_matrice(entetes, rows))
+                continue
+
             html_blocks.append(
                 '<div class="ai-markdown-table-wrap"><table class="ai-markdown-table"><thead><tr>'
                 + "".join(f"<th>{c}</th>" for c in entetes)
