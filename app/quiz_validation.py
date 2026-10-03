@@ -295,7 +295,7 @@ class QuizValidationError(ValueError):
 
 
 def _normaliser_choix(choix: Any, index: int) -> str:
-    """Normalise un choix QCM et retire un prefixe A/B/C... evident."""
+    """Normalise un choix QCM et retire seulement un prefixe evident."""
     texte = normaliser_math_texte(choix)
     if not texte:
         return ""
@@ -308,11 +308,12 @@ def _normaliser_choix(choix: Any, index: int) -> str:
     if suite.startswith(label):
         return suite
 
+    if suite.startswith("|"):
+        return suite
+
     if re.match(
-        r"^(?:[=+\-×*/()\[\]\{\}|]|\d|\\|"
-        r"[A-F](?=\s|[=+\-×*/^<>()])|"
-        r"[A-ZÀ-ÖØ-Ý](?=\s|[=+\-×*/^<>()])|"
-        r"[a-zà-öø-ÿ]+\b|"
+        r"^(?:[=+\-×*/()\[\]\{\}]|\d|\\|"
+        r"[α-ωΑ-Ω]|"
         r"Il\b|La\b|Le\b|Les\b|Une\b|Un\b|Si\b|"
         r"Pour\b|Dans\b|Ce\b|Cette\b|Tout\b|Toute\b|"
         r"Aucun\b|Aucune\b|Existe\b)",
@@ -325,39 +326,40 @@ def _normaliser_choix(choix: Any, index: int) -> str:
 
 
 def _normaliser_choix_liste(choix: list[Any]) -> list[str]:
-    """Nettoie aussi les anciens quizzes dont chaque choix contient A/B/C/D.
-
-    Le retrait collectif n'est applique que si tous les choix portent le
-    label attendu et que le resultat ne ressemble pas a une liste de
-    formules coupees apres un operateur.
-    """
+    """Nettoie un ensemble de choix, notamment les vieux prefixes A/B/C/D."""
     textes = [normaliser_math_texte(c) for c in choix]
     labels = "ABCDEF"
     if not textes or len(textes) > len(labels):
         return textes
 
-    prefixes = all(
-        len(t) >= 2 and t[0] == labels[i]
-        for i, t in enumerate(textes)
-    )
+    prefixes = all(len(t) >= 2 and t[0] == labels[i] for i, t in enumerate(textes))
     if not prefixes:
         return [_normaliser_choix(t, i) for i, t in enumerate(textes)]
 
-    retires = [t[1:] for t in textes]
-    operateurs_debut = tuple("=+×*/<([{")
-    mauvais = sum(1 for t in retires if not t or t.startswith(operateurs_debut))
-    if mauvais > len(retires) / 2:
-        return [_normaliser_choix(t, i) for i, t in enumerate(textes)]
+    # Quand au moins un choix contient deux fois son label (AA..., BB...),
+    # il s'agit d'un prefixe QCM injecte par le modele, pas d'une formule.
+    prefixe_obvie = any(
+        len(t) >= 2 and t[:2] == labels[i] * 2
+        for i, t in enumerate(textes)
+    )
+    if prefixe_obvie:
+        return [t[1:] for t in textes]
 
-    return retires
+    return [_normaliser_choix(t, i) for i, t in enumerate(textes)]
+
+
+def normaliser_choix_liste(choix: list[Any]) -> list[str]:
+    """API publique pour nettoyer les choix avant rendu d'un quiz."""
+    return _normaliser_choix_liste(choix)
 
 
 def rendre_choix_math_html(choix: str, index: int):
-    """Rend un choix QCM en appliquant son nettoyage de label avant le rendu."""
+    """Compatibilite : rend un choix individuel avec son index."""
     from markupsafe import Markup
 
     nettoye = _normaliser_choix(choix, index)
     return Markup(rendre_math_html(nettoye))
+
 
 def valider_questions(questions: Any, expected_count: int | None = None) -> list[dict]:
     if not isinstance(questions, list):
