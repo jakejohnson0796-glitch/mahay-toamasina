@@ -460,7 +460,7 @@ def rendre_choix_math_html(choix: str, index: int):
     return Markup(rendre_math_html(nettoye))
 
 
-def valider_questions(questions: Any, expected_count: int | None = None) -> list[dict]:
+def valider_questions(questions: Any, expected_count: int | None = None, strict_coherence: bool = False) -> list[dict]:
     if not isinstance(questions, list):
         raise QuizValidationError("Le quiz doit etre une liste de questions.")
     if expected_count is not None and len(questions) != expected_count:
@@ -486,11 +486,12 @@ def valider_questions(questions: Any, expected_count: int | None = None) -> list
         if notion and len(notion) > MAX_NOTION_CHARS:
             raise QuizValidationError(f"La notion de la question {numero} est trop longue.")
         choix_nettoyes = _normaliser_choix_liste(choix)
-        _verifier_coherence_explicative(
-            choix_nettoyes,
-            index,
-            explication,
-        )
+        if strict_coherence:
+            _verifier_coherence_explicative(
+                choix_nettoyes,
+                index,
+                explication,
+            )
         if any(not c or len(c) > MAX_CHOIX_CHARS for c in choix_nettoyes):
             raise QuizValidationError(f"Un choix de la question {numero} est invalide.")
         signatures = [re.sub(r"\s+", " ", c).casefold() for c in choix_nettoyes]
