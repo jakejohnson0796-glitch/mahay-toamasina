@@ -126,11 +126,11 @@ def formulaire_upload(request: Request, cercle_id: Optional[int] = None, session
 @router.post("/documents/upload")
 def upload_document(
     request: Request,
-    titre: str = Form(...),
-    matiere: str = Form(...),
-    type_document: TypeDocument = Form(...),
-    annee: int = Form(...),
-    filiere_id: int = Form(...),
+    titre: Optional[str] = Form(default=""),
+    matiere: Optional[str] = Form(default=""),
+    type_document: Optional[TypeDocument] = Form(default=None),
+    annee: Optional[int] = Form(default=None),
+    filiere_id: Optional[int] = Form(default=None),
     cercle_id: Optional[int] = Form(default=None),
     classification_auto: bool = Form(default=False),
     fichier: UploadFile = File(...),
@@ -152,11 +152,15 @@ def upload_document(
     if cercle_id is not None and not _est_membre_cercle(session, cercle_id, utilisateur.id):
         cercle_id = None
 
-    filiere = session.get(Filiere, filiere_id)
+    filiere = session.get(Filiere, filiere_id) if filiere_id is not None else None
     if not filiere:
         return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
-    if annee < 2000 or annee > 2100:
+    if annee is None or annee < 2000 or annee > 2100:
         return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
+
+    if not classification_auto:
+        if not titre.strip() or not matiere.strip() or type_document is None or annee is None or filiere_id is None:
+            return RedirectResponse("/documents?erreur=metadonnees_manquantes", status_code=303)
 
     reference = generer_reference(filiere, annee, session)
     # sauvegarder_fichier() choisit local ou Supabase Storage selon la
