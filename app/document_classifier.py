@@ -223,7 +223,7 @@ def classifier_document(
     texte: str,
     filieres: Sequence[Filiere],
     titre_fourni: str = "",
-    matiere_fournie: str = "",
+    matiere_fourni: str = "",
     type_fourni: Optional[TypeDocument] = None,
     annee_fournie: Optional[int] = None,
     filiere_id_fournie: Optional[int] = None,
