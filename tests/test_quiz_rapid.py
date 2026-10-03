@@ -71,3 +71,43 @@ def test_supprime_un_prefixe_de_choix_sans_casser_une_formule():
     from app.quiz_validation import normaliser_math_texte
     assert normaliser_math_texte("AIl existe B tel que AB = I") == "Il existe B tel que AB = I"
     assert normaliser_math_texte("A+B = B+A") == "A+B = B+A"
+
+
+def test_reconstruit_une_matrice_3x3_aplatie_dans_un_tableau():
+    from app.quiz_validation import normaliser_math_texte
+    texte = (
+        "| **0** | **1** | **0\\\\ 1** | **0** | "
+        "**0\\\\ 0** | **0** | **1** |\\n"
+        "| :---: | :---: | :---------: | :---: | :---------: | :---: | :---: |"
+    )
+    resultat = normaliser_math_texte(texte)
+    assert r"\\begin{pmatrix}" in resultat
+    assert "0&1&0" in resultat
+    assert "1&0&0" in resultat
+    assert "0&0&1" in resultat
+
+
+def test_retirer_labels_qcm_parasites_sans_casser_ab_egal_ba():
+    from app.quiz_validation import valider_questions
+    questions = [{
+        "question": "Quelle propriete ?",
+        "choix": ["AA+B = BA", "BSi AB = O", "CLe produit existe", r"D\\lambda(AB) = A(\\lambda B)"],
+        "index_bonne_reponse": 0,
+        "explication": "La somme est commutative.",
+        "notion": "Matrices",
+    }]
+    resultat = valider_questions(questions)
+    assert resultat[0]["choix"][0] == "A+B = BA"
+    assert resultat[0]["choix"][1] == "Si AB = O"
+    assert resultat[0]["choix"][2] == "Le produit existe"
+    assert "lambda" in resultat[0]["choix"][3] or "λ" in resultat[0]["choix"][3]
+
+    formule = [{
+        "question": "Identite.",
+        "choix": ["AB = BA", "B = A", "C = D"],
+        "index_bonne_reponse": 0,
+        "explication": "Exemple.",
+        "notion": "Algebre",
+    }]
+    resultat_formule = valider_questions(formule)
+    assert resultat_formule[0]["choix"][0] == "AB = BA"
