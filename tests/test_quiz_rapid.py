@@ -125,6 +125,63 @@ def test_rend_un_choix_ancien_avec_label_et_matrice():
     assert ">A<" not in rendu
 
 
+
+def test_normalise_labels_qcm_colles_aux_reponses_reelles():
+    from app.quiz_validation import valider_questions
+
+    questions = [{
+        "question": "Quelle propriété caractérise la matrice unité I parmi les matrices carrées d'ordre n ?",
+        "choix": [
+            "AIA = AI = A pour toute matrice carrée A de même ordre",
+            "BI est la matrice nulle",
+            "CToutes les entrées de I sont égales à 0",
+            "DI commute seulement avec les matrices diagonales",
+        ],
+        "index_bonne_reponse": 0,
+        "explication": "L'identité vérifie IA = AI = A.",
+        "notion": "Matrice unité",
+    }]
+
+    resultat = valider_questions(questions)
+    assert resultat[0]["choix"] == [
+        "IA = AI = A pour toute matrice carrée A de même ordre",
+        "I est la matrice nulle",
+        "Toutes les entrées de I sont égales à 0",
+        "I commute seulement avec les matrices diagonales",
+    ]
+
+
+def test_normalise_labels_et_matrices_markdown_dans_les_choix():
+    from app.quiz_validation import valider_questions, rendre_math_html
+
+    questions = [{
+        "question": "Soit A = | 2 | 3\\\\ 1 | 4 |. Quel est le déterminant ?",
+        "choix": [
+            "A-2",
+            "B2",
+            "C10",
+            "D14",
+        ],
+        "index_bonne_reponse": 1,
+        "explication": "det(A)=8-3=5.",
+        "notion": "Déterminant",
+    }]
+    resultat = valider_questions(questions)
+    assert resultat[0]["choix"] == ["-2", "2", "10", "14"]
+
+    choix_matrice = (
+        "A\\n"
+        "| **1** | **2** | **3\\\\ 4** | **5** | **6\\\\ 7** | **8** | **9** |\\n"
+        "| :---: | :---: | :---------: | :---: | :---------: | :---: | :---: |"
+    )
+    questions[0]["choix"] = [choix_matrice, "B9", "C8", "D7"]
+    resultat = valider_questions(questions)
+    assert r"\\begin{pmatrix}" in resultat[0]["choix"][0]
+    rendu = str(rendre_math_html(resultat[0]["choix"][0]))
+    assert "math-matrix" in rendu
+    assert ">1<" in rendu and ">9<" in rendu
+
+
 def test_normalise_un_quiz_avec_labels_consecutifs():
     from app.quiz_validation import valider_questions
     questions = [{
@@ -135,4 +192,4 @@ def test_normalise_un_quiz_avec_labels_consecutifs():
         "notion": "Algèbre",
     }]
     resultat = valider_questions(questions)
-    assert resultat[0]["choix"] == ["A+B = B+A", "A+B = B-A", "A+B = A-B", "λ(AB) = A(λB)"]
+    assert resultat[0]["choix"] == ["A+B = B+A", "A+B = B-A", "A+B = A-B", "λ(AB) = A(λ B)"]
