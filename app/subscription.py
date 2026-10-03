@@ -14,6 +14,7 @@ from sqlmodel import Session, select
 from .models import AbonnementEtudiant, StatutAbonnementEtudiant, Utilisateur
 
 DUREE_ESSAI_JOURS = 60
+DUREE_ESSAI_IA_JOURS = 14
 PRIX_ABONNEMENT_ETUDIANT_ARIARY = 5_000
 DUREE_PROLONGATION_JOURS = 30
 
@@ -74,6 +75,22 @@ def synchroniser_expiration(session: Session, abonnement: AbonnementEtudiant) ->
     return abonnement
 
 
+def date_fin_essai_ia(abonnement: Optional[AbonnementEtudiant]) -> Optional[datetime]:
+    """Date de fin du droit aux fonctionnalités IA pendant l'essai gratuit.
+
+    L'essai global reste de 60 jours, mais le Quiz IA et le Tuteur IA sont
+    utilisables gratuitement pendant les 14 premiers jours. Une fois un
+    abonnement payant actif, les fonctionnalités IA redeviennent disponibles
+    jusqu'à la date de fin de cet abonnement.
+    """
+    if abonnement is None:
+        return None
+    return min(
+        abonnement.date_fin_essai,
+        abonnement.date_debut_essai + timedelta(days=DUREE_ESSAI_IA_JOURS),
+    )
+
+
 def acces_premium_valide(abonnement: Optional[AbonnementEtudiant]) -> bool:
     """True si l'etudiant a acces aux fonctionnalites Premium en ce moment.
     Suppose que synchroniser_expiration() a deja ete appele sur cet
@@ -94,6 +111,25 @@ def acces_premium_valide(abonnement: Optional[AbonnementEtudiant]) -> bool:
     return False
 
 
+def acces_ia_valide(abonnement: Optional[AbonnementEtudiant]) -> bool:
+    """Indique si le Quiz IA et le Tuteur IA sont accessibles.
+
+    Pendant l'essai, l'accès IA est limité aux 14 premiers jours. Un
+    abonnement payant ACTIF donne accès aux fonctions IA pendant toute sa
+    durée, comme le reste des fonctionnalités Premium.
+    """
+    if abonnement is None:
+        return False
+
+    maintenant = datetime.utcnow()
+
+    if abonnement.statut == StatutAbonnementEtudiant.ACTIF:
+        return bool(abonnement.date_fin_abonnement) and maintenant <= abonnement.date_fin_abonnement
+
+    date_limite_essai_ia = date_fin_essai_ia(abonnement)
+    return date_limite_essai_ia is not None and maintenant <= date_limite_essai_ia
+
+
 def jours_restants(abonnement: Optional[AbonnementEtudiant]) -> int:
     """Nombre de jours restants avant expiration (0 si deja expire/absent).
     Utilise pour l'affichage ('Essai : 12 jours restants') sur le tableau
@@ -102,6 +138,22 @@ def jours_restants(abonnement: Optional[AbonnementEtudiant]) -> int:
         return 0
     delta = _date_fin_effective(abonnement) - datetime.utcnow()
     return max(delta.days, 0)
+
+
+def jours_restants_ia(abonnement: Optional[AbonnementEtudiant]) -> int:
+    """Nombre de jours restants pour les fonctionnalités IA."""
+    if abonnement is None or not acces_ia_valide(abonnement):
+        return 0
+
+    maintenant = datetime.utcnow()
+    if abonnement.statut == StatutAbonnementEtudiant.ACTIF:
+        date_fin = abonnement.date_fin_abonnement
+    else:
+        date_fin = date_fin_essai_ia(abonnement)
+
+    if date_fin is None:
+        return 0
+    return max((date_fin - maintenant).days, 0)
 
 
 def soumettre_demande_abonnement(

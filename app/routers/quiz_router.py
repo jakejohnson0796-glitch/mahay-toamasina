@@ -10,7 +10,7 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..dependencies import acces_premium_ou_redirection
+from ..dependencies import acces_ia_ou_redirection
 from ..models import Document, StatutDocument, TentativeQuiz, ProgressionNotion
 from .. import quiz as quiz_module
 from .. import ai_queue
@@ -32,7 +32,7 @@ def _matieres_disponibles(session: Session) -> List[str]:
 @router.get("/quiz")
 def page_config_quiz(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -61,7 +61,7 @@ def generer_quiz(
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -114,7 +114,7 @@ def generer_quiz(
 @router.get("/quiz/historique")
 def page_historique(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -131,7 +131,7 @@ def page_historique(request: Request, session: Session = Depends(get_session)):
 @router.get("/quiz/reflexion")
 def page_reflexion(request: Request, matiere: Optional[str] = None, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -159,7 +159,7 @@ def _tentative_du_proprietaire(session: Session, tentative_id: int, utilisateur_
 @router.get("/quiz/{tentative_id}")
 def page_passer_quiz(request: Request, tentative_id: int, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -193,7 +193,7 @@ def generer_quiz_cible(
 ):
     """Genere un mini-quiz a partir d'une faiblesse deja identifiee."""
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -243,7 +243,7 @@ def generer_examen(
     serveur (pas de formulaire a remplir), nombre de questions et duree
     fixes. Meme pipeline de generation/verification que le quiz normal."""
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -272,7 +272,7 @@ def generer_examen(
 @router.post("/quiz/{tentative_id}/soumettre")
 async def soumettre_quiz(request: Request, tentative_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -326,7 +326,7 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
 @router.get("/quiz/{tentative_id}/resultat")
 def page_resultat_quiz(request: Request, tentative_id: int, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_premium_ou_redirection(utilisateur, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
 
@@ -381,8 +381,10 @@ def signaler_question_quiz(
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
 
     tentative = _tentative_du_proprietaire(session, tentative_id, utilisateur.id)
     if not tentative or tentative.date_soumission is None:

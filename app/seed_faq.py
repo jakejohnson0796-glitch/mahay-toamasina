@@ -99,7 +99,10 @@ FAQ_INITIALE: list[dict] = [
         "question": "Combien de temps dure l'essai gratuit étudiant ?",
         "reponse": (
             "Un nouvel étudiant reçoit un essai gratuit de 60 jours pour les "
-            "fonctionnalités Premium prévues par le projet."
+            "fonctionnalités Premium prévues par le projet. Le Quiz IA et le "
+            "Tuteur IA sont inclus gratuitement pendant les 14 premiers jours "
+            "de cet essai ; le reste des fonctionnalités Premium reste "
+            "accessible pendant les 60 jours."
         ),
         "categorie": CategorieFAQ.COMPTE,
     },
@@ -166,6 +169,17 @@ FAQ_INITIALE: list[dict] = [
     },
 
     # --- Quiz ---
+    {
+        "question": "Combien de temps puis-je utiliser le Quiz IA et le Tuteur IA gratuitement ?",
+        "reponse": (
+            "Le Quiz IA et le Tuteur IA sont accessibles pendant les 14 "
+            "premiers jours de l'essai gratuit. Les autres fonctionnalités "
+            "Premium prévues par le projet restent accessibles pendant 60 "
+            "jours. Un abonnement payant actif redonne l'accès aux "
+            "fonctionnalités IA pendant sa période de validité."
+        ),
+        "categorie": CategorieFAQ.QUIZ,
+    },
     {
         "question": "Comment fonctionne un quiz IA ?",
         "reponse": (
