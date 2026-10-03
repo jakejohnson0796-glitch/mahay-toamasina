@@ -16,6 +16,9 @@
 
 {% if request.query_params.get("envoye") %}
 <div class="info">Document envoye — il sera visible ici une fois valide par un moderateur.</div>
+{% if request.query_params.get("classe") == "auto" %}
+<div class="info">Détection automatique appliquée : titre, matière, type, année et filière ont été analysés à partir du fichier. Le modérateur garde le dernier mot avant publication.</div>
+{% endif %}
 {% endif %}
 
 <form class="filtres" method="get" action="/documents">

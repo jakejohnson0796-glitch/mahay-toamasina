@@ -3,6 +3,7 @@ Coeur de l'application : consulter, deposer, telecharger des documents,
 et les valider (moderation) avant qu'ils soient publics.
 """
 from pathlib import Path
+from datetime import datetime
 from typing import Optional
 import secrets
 
@@ -22,6 +23,7 @@ from ..dependencies import acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
 from .. import gamification
 from ..rate_limit import limite_depassee
+from ..document_classifier import classifier_document
 
 router = APIRouter()
 
@@ -125,12 +127,13 @@ def formulaire_upload(request: Request, cercle_id: Optional[int] = None, session
 @router.post("/documents/upload")
 def upload_document(
     request: Request,
-    titre: str = Form(...),
-    matiere: str = Form(...),
-    type_document: TypeDocument = Form(...),
-    annee: int = Form(...),
-    filiere_id: int = Form(...),
+    titre: Optional[str] = Form(default=""),
+    matiere: Optional[str] = Form(default=""),
+    type_document: Optional[TypeDocument] = Form(default=None),
+    annee: Optional[int] = Form(default=None),
+    filiere_id: Optional[int] = Form(default=None),
     cercle_id: Optional[int] = Form(default=None),
+    classification_auto: bool = Form(default=False),
     fichier: UploadFile = File(...),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -143,46 +146,95 @@ def upload_document(
     if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(f"upload-document:ip:{host}", 40, 3600):
         return RedirectResponse("/documents?erreur=trop_de_depots", status_code=303)
 
-    # cercle_id vient d'un champ cache du formulaire (voir
-    # document_upload.html) : on revalide quand meme l'appartenance
-    # cote serveur, un utilisateur ne pouvant pas fabriquer une requete
-    # avec un cercle_id arbitraire auquel il n'appartient pas.
     if cercle_id is not None and not _est_membre_cercle(session, cercle_id, utilisateur.id):
         cercle_id = None
 
-    filiere = session.get(Filiere, filiere_id)
-    if not filiere:
-        return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
-    if annee < 2000 or annee > 2100:
-        return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
+    # Sans détection automatique, les métadonnées restent obligatoires.
+    if not classification_auto:
+        if not (titre or "").strip() or not (matiere or "").strip() or type_document is None or annee is None or filiere_id is None:
+            return RedirectResponse("/documents?erreur=metadonnees_manquantes", status_code=303)
+        if annee < 2000 or annee > 2100:
+            return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
 
-    reference = generer_reference(filiere, annee, session)
-    # sauvegarder_fichier() choisit local ou Supabase Storage selon la
-    # config (.env) — voir app/storage.py. Elle rejette aussi les types de
-    # fichier non autorises et les fichiers trop volumineux (voir
-    # FichierInvalide) : on rattrape l'erreur ici pour la montrer a
-    # l'utilisateur plutot que de planter avec une 500.
+    # La référence utilisée pour le stockage peut être provisoire : en mode
+    # automatique, la filière/année définitives ne sont connues qu'après
+    # analyse du fichier.
+    filiere_depart = session.get(Filiere, filiere_id) if filiere_id is not None else None
+    filieres_disponibles = session.exec(select(Filiere)).all()
+    if not filieres_disponibles:
+        return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
+
+    filiere_reference = filiere_depart or filieres_disponibles[0]
+    annee_reference = annee or datetime.utcnow().year
+    reference_stockage = generer_reference(filiere_reference, annee_reference, session)
+    nom_fichier_original = fichier.filename or "document"
+
     try:
-        chemin_stocke = sauvegarder_fichier(fichier, reference)
+        chemin_stocke = sauvegarder_fichier(fichier, reference_stockage)
     except FichierInvalide as erreur:
-        filieres = session.exec(select(Filiere)).all()
         cercle = session.get(CercleEtude, cercle_id) if cercle_id else None
         return templates.TemplateResponse(
             "document_upload.html",
-            {"request": request, "filieres": filieres, "cercle": cercle, "erreur": str(erreur)},
+            {
+                "request": request,
+                "filieres": filieres_disponibles,
+                "cercle": cercle,
+                "erreur": str(erreur),
+                "utilisateur": utilisateur,
+            },
         )
 
+    # Détection automatique : extraction locale puis IA facultative.
+    # En cas d'échec, le dépôt ne doit jamais devenir une 500.
+    if classification_auto:
+        try:
+            with ouvrir_fichier_local(chemin_stocke) as chemin_local:
+                texte_document = extraire_texte(str(chemin_local))
+
+            classification = classifier_document(
+                nom_fichier=nom_fichier_original,
+                texte=texte_document,
+                filieres=filieres_disponibles,
+                titre_fourni=titre or "",
+                matiere_fourni=matiere or "",
+                type_fourni=type_document,
+                annee_fournie=annee,
+                filiere_id_fournie=filiere_id,
+            )
+            titre = classification.titre or titre or ""
+            matiere = classification.matiere or matiere or ""
+            type_document = classification.type_document or type_document
+            annee = classification.annee or annee
+            filiere_id = classification.filiere_id or filiere_id
+        except Exception as erreur:
+            # On garde les valeurs saisies comme secours et on nettoie les
+            # détails : le contenu du document ne doit pas apparaître dans
+            # les logs de classification.
+            pass
+
+    filiere = session.get(Filiere, filiere_id) if filiere_id is not None else None
+    if not filiere:
+        supprimer_fichier(chemin_stocke)
+        return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
+    if annee is None or annee < 2000 or annee > 2100:
+        supprimer_fichier(chemin_stocke)
+        return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
+    if not (titre or "").strip() or not (matiere or "").strip() or type_document is None:
+        supprimer_fichier(chemin_stocke)
+        return RedirectResponse("/documents?erreur=metadonnees_manquantes", status_code=303)
+
+    reference = generer_reference(filiere, annee, session)
     document = Document(
         reference=reference,
-        titre=titre,
-        matiere=matiere,
+        titre=titre.strip(),
+        matiere=matiere.strip(),
         type_document=type_document,
         annee=annee,
         filiere_id=filiere_id,
         cercle_id=cercle_id,
         uploader_id=utilisateur.id,
         chemin_fichier=chemin_stocke,
-        statut=StatutDocument.EN_ATTENTE,  # visible seulement apres validation par un moderateur
+        statut=StatutDocument.EN_ATTENTE,
     )
     session.add(document)
     session.commit()
@@ -196,9 +248,10 @@ def upload_document(
     )
     session.commit()
 
+    suffixe = "&classe=auto" if classification_auto else ""
     if cercle_id:
-        return RedirectResponse(f"/documents?cercle_id={cercle_id}&envoye=1", status_code=303)
-    return RedirectResponse("/documents?envoye=1", status_code=303)
+        return RedirectResponse(f"/documents?cercle_id={cercle_id}&envoye=1{suffixe}", status_code=303)
+    return RedirectResponse(f"/documents?envoye=1{suffixe}", status_code=303)
 
 
 @router.get("/documents/{document_id}/telecharger")
