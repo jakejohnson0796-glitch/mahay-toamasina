@@ -731,10 +731,15 @@ def verifier_reponse_tuteur_structuree(
             "Memoire ensemble tuteur: %s signal(s) persiste(s)",
             nb_signaux_memorises,
         )
+        reponse_finale["_statut_verification"] = "terminee"
+        reponse_finale["_erreur_verification"] = None
         return reponse_finale
     except Exception as erreur:
         logger.warning("Verification multi-modeles du tuteur echouee: %s", erreur)
-        return reponse_initiale
+        reponse_secours = dict(reponse_initiale)
+        reponse_secours["_statut_verification"] = "echouee"
+        reponse_secours["_erreur_verification"] = str(erreur)[:500]
+        return reponse_secours
 
 
 def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
