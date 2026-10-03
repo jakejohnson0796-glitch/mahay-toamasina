@@ -246,6 +246,7 @@ def _texte_ia_html(texte) -> "Markup":
                 or re.match(r"^[-*]\s+", prochain)
                 or re.match(r"^\d+[.)]\s+", prochain)
                 or re.fullmatch(r"[-*_]{3,}", prochain)
+                or re.fullmatch(r"[A-Za-z]\s*=", prochain)
             ):
                 break
             paragraph.append(prochain)
