@@ -245,6 +245,7 @@ def rendre_math_html(texte: str):
 
     def _rendre_expression(raw: str) -> str:
         raw = raw.strip()
+        matrices = {}
 
         def matrice_html(match):
             contenu = match.group(2).strip()
@@ -266,17 +267,21 @@ def rendre_math_html(texte: str):
                 + "</tbody></table></span>"
             )
 
-        safe = _html.escape(raw, quote=True)
+        def extraire_matrice(match):
+            cle = f"__MATRIX_{len(matrices)}__"
+            matrices[cle] = matrice_html(match)
+            return cle
 
-        # Une matrice peut etre integree dans une expression plus longue,
-        # par exemple "\\[A=\\begin{pmatrix}...\\end{pmatrix}\\]".
-        safe = _re.sub(
+        # Extraire les matrices avant html.escape : le separateur de colonnes
+        # '&' deviendrait '&amp;' sinon et la matrice serait mal decoupee.
+        raw = _re.sub(
             r"\\begin\{(pmatrix|bmatrix|vmatrix|matrix)\}(.*?)\\end\{\1\}",
-            matrice_html,
-            safe,
+            extraire_matrice,
+            raw,
             flags=_re.S,
         )
 
+        safe = _html.escape(raw, quote=True)
         safe = _re.sub(
             r"\\mathbf\{([^{}]+)\}",
             r"<strong>\1</strong>",
@@ -303,6 +308,8 @@ def rendre_math_html(texte: str):
             safe = _re.sub(motif, remplacement, safe)
         safe = safe.replace(r"\\,", " ")
         safe = _re.sub(r"\\([A-Za-z]+)", r"\1", safe)
+        for cle, rendu in matrices.items():
+            safe = safe.replace(cle, rendu)
         return safe
 
     morceaux = []
