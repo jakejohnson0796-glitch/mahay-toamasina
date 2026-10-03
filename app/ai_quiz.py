@@ -554,6 +554,7 @@ def verifier_et_corriger_questions(
         questions_finales = valider_questions(
             questions_finales,
             expected_count=len(questions),
+            strict_coherence=True,
         )
     except QuizValidationError as erreur:
         logger.warning("Sortie ensemble quiz invalide: %s", erreur)
