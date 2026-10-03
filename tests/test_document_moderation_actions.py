@@ -44,6 +44,7 @@ def test_approuver_document_change_le_statut_et_redirige(monkeypatch):
         statut=StatutDocument.EN_ATTENTE,
         titre="Algèbre",
         reference="MG-INF-2026-TEST",
+        uploader_id=42,
     )
     session = FakeSession(document)
 
@@ -63,6 +64,7 @@ def test_rejeter_document_change_le_statut_et_redirige(monkeypatch):
         statut=StatutDocument.EN_ATTENTE,
         titre="Algèbre",
         reference="MG-INF-2026-TEST",
+        uploader_id=42,
     )
     session = FakeSession(document)
 
@@ -82,6 +84,7 @@ def test_supprimer_document_supprime_le_fichier_et_la_ligne(monkeypatch):
         chemin_fichier="documents/test.pdf",
         titre="Algèbre",
         reference="MG-INF-2026-TEST",
+        uploader_id=42,
     )
     session = FakeSession(document)
     supprime = []
