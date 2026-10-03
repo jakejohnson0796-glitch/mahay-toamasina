@@ -100,7 +100,6 @@ def test_filtre_texte_ia_rend_une_matrice_embarquee_dans_une_formule():
     )
     assert "math-matrix" in rendu
     assert "<td>a</td>" in rendu
-    print("TUTEUR_RENDER_DEBUG=", repr(rendu))
     assert "<td>d</td>" in rendu
     assert "<strong>u</strong>" in rendu
     assert "A=" in rendu
