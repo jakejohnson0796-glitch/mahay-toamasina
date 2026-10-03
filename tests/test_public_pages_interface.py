@@ -30,6 +30,11 @@ def test_a_propos_contient_les_sections_principales():
         "Ce que la plateforme ne remplace pas",
     ):
         assert terme in page
+    assert "14 J" in page
+    assert "60 J" in page
+    assert 'class="public-timeline"' in page
+    assert 'class="public-card-emphasis"' in page
+
 
 
 def test_faq_contient_recherche_categories_aide_et_avis():
@@ -44,6 +49,10 @@ def test_faq_contient_recherche_categories_aide_et_avis():
         "/contact",
     ):
         assert terme in page
+    assert 'class="faq-help-paths"' in page
+    assert 'class="faq-ai-trial-card"' in page
+    assert "Pour un retour utile" in page
+
 
 
 def test_faq_js_est_accessible_au_clavier():
