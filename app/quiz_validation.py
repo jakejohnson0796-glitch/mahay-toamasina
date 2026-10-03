@@ -239,7 +239,7 @@ def rendre_math_html(texte: str):
             contenu = match.group(2).strip()
             # Les modeles peuvent produire plusieurs antislashs pour une
             # separation de ligne de matrice.
-            contenu = _re.sub(r"\\\\{2,}\\s*", "\n", contenu)
+            contenu = _re.sub(r"\\{2,}\s*", "\n", contenu)
             lignes = [x.strip() for x in contenu.split("\n") if x.strip()]
             rows = []
             for ligne in lignes:
