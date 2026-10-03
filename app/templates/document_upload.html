@@ -77,6 +77,41 @@
   border-bottom:1px solid var(--content-border);
   background:linear-gradient(135deg,rgba(184,84,58,.07),transparent 60%);
 }
+.document-upload-auto-box{
+  display:flex;
+  align-items:flex-start;
+  gap:.7rem;
+  padding:.8rem .9rem;
+  border:1px solid rgba(184,84,58,.2);
+  border-radius:13px;
+  background:linear-gradient(135deg,rgba(184,84,58,.06),transparent 70%);
+  cursor:pointer;
+}
+.document-upload-auto-box input{
+  flex:0 0 auto;
+  width:1.05rem;
+  height:1.05rem;
+  margin:.1rem 0 0;
+  accent-color:var(--upload-accent);
+}
+.document-upload-auto-copy{
+  display:grid;
+  gap:.12rem;
+}
+.document-upload-auto-copy strong{
+  color:var(--content-text);
+  font-size:.76rem;
+}
+.document-upload-auto-copy span{
+  color:var(--content-text-muted);
+  font-size:.63rem;
+  line-height:1.45;
+}
+@media(max-width:640px){
+  .document-upload-auto-box{padding:.7rem}
+  .document-upload-auto-copy span{font-size:.59rem}
+}
+
 .document-upload-card-header strong{
   display:block;
   color:var(--content-text);
@@ -527,6 +562,16 @@
             </div>
 
             <div class="document-upload-field full">
+              <label class="document-upload-auto-box" for="classification_auto">
+                <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
+                <span class="document-upload-auto-copy">
+                  <strong>Détection automatique</strong>
+                  <span>Détecte le titre, la matière, le type, l’année et la filière à partir du fichier. L’IA n’écrase pas une information lorsqu’elle n’est pas suffisamment sûre.</span>
+                </span>
+              </label>
+            </div>
+
+            <div class="document-upload-field full">
               <label for="fichier">Fichier <span>PDF · Word · PowerPoint · JPG · PNG</span></label>
               <label class="document-upload-file" id="zone-fichier" for="fichier">
                 <span class="document-upload-file-icon" aria-hidden="true">📎</span>
@@ -578,6 +623,7 @@
           <div class="document-upload-footer">
             <div class="document-upload-footer-note">
               Votre dépôt sera d'abord contrôlé avant sa publication.<br>
+              Avec la détection automatique, les métadonnées peuvent être complétées à partir du document.<br>
               Merci de transmettre uniquement des documents que vous êtes autorisé à partager.
             </div>
             <button class="document-upload-submit" id="bouton-document-submit" type="submit" disabled>Publier pour validation →</button>
