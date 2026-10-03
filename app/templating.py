@@ -39,9 +39,21 @@ def _texte_ia_html(texte) -> "Markup":
     def inline(valeur: str) -> str:
         # Reserve les fragments mathematiques avant l'echappement Markdown,
         # sinon \\[...\\] et \\( ... \\) apparaissent comme du texte brut.
+        # Les modeles peuvent livrer LaTeX avec un ou deux antislashs selon
+        # le passage JSON/outil. Normalise d'abord les formes doublement echappees,
+        # puis capture les formes usuelles de mathematiques.
+        valeur = (
+            valeur
+            .replace(r"\\[", r"\[")
+            .replace(r"\\]", r"\]")
+            .replace(r"\\(", r"\(")
+            .replace(r"\\)", r"\)")
+            .replace(r"\\begin", r"\begin")
+            .replace(r"\\end", r"\end")
+        )
         math_pattern = re.compile(
-            r"(\\\\\[(?:.|\\n)*?\\\\\]|\\\\\((?:.|\\n)*?\\\\\)"
-            r"|\\\\begin\\{(?:pmatrix|bmatrix|vmatrix|matrix)\\}(?:.|\\n)*?\\\\end\\{(?:pmatrix|bmatrix|vmatrix|matrix)\\})"
+            r"(\$\$(?:.|\n)*?\$\$|\\\[(?:.|\n)*?\\\]|\\\((?:.|\n)*?\\\)"
+            r"|\\begin\{(?:pmatrix|bmatrix|vmatrix|matrix)\}(?:.|\n)*?\\end\{(?:pmatrix|bmatrix|vmatrix|matrix)\})"
         )
         placeholders = {}
 
