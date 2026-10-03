@@ -109,7 +109,7 @@ def _texte_ia_html(texte) -> "Markup":
     def est_sep_tableau(ligne: str) -> bool:
         morceaux = [m.strip() for m in ligne.strip().strip("|").split("|")]
         return bool(morceaux) and all(
-            re.fullmatch(r":?-{3,}:?", morceau.replace(" ", "")) for morceau in morceaux
+            re.fullmatch(r":?-{1,}:?", morceau.replace(" ", "")) for morceau in morceaux
         )
 
     while i < len(lignes):
