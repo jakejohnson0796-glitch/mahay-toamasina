@@ -234,15 +234,12 @@ def rendre_math_html(texte: str):
 
     def _rendre_expression(raw: str) -> str:
         raw = raw.strip()
-        matrix = _re.fullmatch(
-            r"\\begin\{(pmatrix|bmatrix|vmatrix|matrix)\}(.*?)\\end\{\1\}",
-            raw,
-            flags=_re.S,
-        )
-        if matrix:
-            contenu = matrix.group(2).strip()
-            contenu = re.sub(r"\\\\\s*", "\n", contenu)
-            lignes = [x for x in contenu.split("\n") if x.strip()]
+
+        def matrice_html(match):
+            contenu = match.group(2).strip()
+            # Les modeles peuvent produire \\, \\\\ ou \\\\\\ pour les separations de lignes.
+            contenu = _re.sub(r"\\\\{2,}\\s*", "\\n", contenu)
+            lignes = [x.strip() for x in contenu.split("\\n") if x.strip()]
             rows = []
             for ligne in lignes:
                 cellules = [c.strip() for c in ligne.split("&")]
@@ -251,25 +248,51 @@ def rendre_math_html(texte: str):
                         f"<td>{_html.escape(cell, quote=True)}</td>" for cell in cellules
                     ) + "</tr>"
                 )
-            return '<span class="math-matrix-wrap" aria-label="Matrice"><table class="math-matrix"><tbody>' + "".join(rows) + "</tbody></table></span>"
+            return (
+                '<span class="math-matrix-wrap" aria-label="Matrice"><table class="math-matrix"><tbody>'
+                + "".join(rows)
+                + "</tbody></table></span>"
+            )
 
         safe = _html.escape(raw, quote=True)
+
+        # Une matrice peut etre integree dans une expression plus longue,
+        # par exemple "\\[A=\\begin{pmatrix}...\\end{pmatrix}\\]".
+        # Il faut donc la remplacer meme si l'expression ne se limite pas
+        # a l'environnement matriciel.
         safe = _re.sub(
-            r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
-            r'<span class="math-frac"><span class="math-num">\1</span><span class="math-den">\2</span></span>',
+            r"\\begin\\{(pmatrix|bmatrix|vmatrix|matrix)\\}(.*?)\\end\\{\\1\\}",
+            matrice_html,
+            safe,
+            flags=_re.S,
+        )
+
+        safe = _re.sub(
+            r"\\mathbf\\{([^{}]+)\\}",
+            r"<strong>\\1</strong>",
             safe,
         )
         safe = _re.sub(
-            r"\\sqrt\{([^{}]+)\}",
-            r'<span class="math-root">√<span class="math-root-body">\1</span></span>',
+            r"\\mathrm\\{([^{}]+)\\}",
+            r"<span class="math-rm">\\1</span>",
             safe,
         )
-        safe = _re.sub(r"\^\{([^{}]+)\}", r"<sup>\1</sup>", safe)
-        safe = _re.sub(r"_\{([^{}]+)\}", r"<sub>\1</sub>", safe)
+        safe = _re.sub(
+            r"\\frac\\{([^{}]+)\\}\\{([^{}]+)\\}",
+            r'<span class="math-frac"><span class="math-num">\\1</span><span class="math-den">\\2</span></span>',
+            safe,
+        )
+        safe = _re.sub(
+            r"\\sqrt\\{([^{}]+)\\}",
+            r'<span class="math-root">√<span class="math-root-body">\\1</span></span>',
+            safe,
+        )
+        safe = _re.sub(r"\^\\{([^{}]+)\\}", r"<sup>\\1</sup>", safe)
+        safe = _re.sub(r"_\\{([^{}]+)\\}", r"<sub>\\1</sub>", safe)
         for motif, remplacement in symbol_map:
             safe = _re.sub(motif, remplacement, safe)
-        safe = safe.replace(r"\,", " ")
-        safe = _re.sub(r"\\([A-Za-z]+)", r"\1", safe)
+        safe = safe.replace(r"\\,", " ")
+        safe = _re.sub(r"\\([A-Za-z]+)", r"\\1", safe)
         return safe
 
     morceaux = []
