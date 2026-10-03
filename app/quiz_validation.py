@@ -128,7 +128,7 @@ def normaliser_math_texte(texte: str) -> str:
         r"rightarrow|to|Rightarrow|Leftrightarrow|iff|det|ker)"
     )
     texte = re.sub(
-        rf"\\+(?={commandes_tex}\\b)",
+        rf"\\+(?={commandes_tex}\b)",
         r"\\",
         texte,
     )
