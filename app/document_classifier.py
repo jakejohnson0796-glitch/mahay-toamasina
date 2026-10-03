@@ -56,6 +56,8 @@ def _nettoyer_titre(texte: str) -> Optional[str]:
     valeur = re.sub(r"^(document|cours|support|scan|scanne)\s*[:_-]?\s*", "", valeur, flags=re.I)
     if not valeur:
         return None
+    if _normaliser(valeur) in {"document", "fichier", "scan", "scanne", "cours"}:
+        return None
     if len(valeur) > MAX_TITRE:
         valeur = valeur[: MAX_TITRE - 1].rsplit(" ", 1)[0] + "…"
     return valeur.strip(" .:-") or None
