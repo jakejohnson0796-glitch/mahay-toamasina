@@ -57,3 +57,10 @@ def test_renderer_protege_les_blocs_latex_avant_markdown():
     assert "E000GMATH_" in js
     assert "protection.source" in js
     assert "restaurerMath(fragment, protection.math)" in js
+
+
+def test_quiz_en_cours_rend_aussi_le_texte_de_la_question():
+    # MODIF : la question du quiz actif doit passer par le même renderer que
+    # les choix, sinon son LaTeX reste brut.
+    page = (ROOT / "app/templates/quiz_passer.html").read_text(encoding="utf-8")
+    assert '<h2 class="quiz-question-title" data-rendu>{{ item.question }}</h2>' in page
