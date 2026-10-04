@@ -70,7 +70,12 @@
           (match.indexOf("$") === 0 && !estDollarDisplay);
 
         if (estDisplay || estInline) {
-          const longueurDelimiteur = estDisplay ? 2 : 1;
+          const longueurDelimiteur =
+            match.indexOf("\\[") === 0 ||
+            match.indexOf("\\(") === 0 ||
+            estDollarDisplay
+              ? 2
+              : 1;
           const contenu = match.slice(longueurDelimiteur, -longueurDelimiteur);
           const index = math.push({
             display: estDisplay,
