@@ -56,11 +56,6 @@ Comptabilité :
 
 _client: Optional[Groq] = None
 
-def _budget_completion_quiz(nb_questions: int) -> int:
-    """Adapte le budget de sortie au nombre de questions."""
-    return min(8192, max(4096, 2048 + int(nb_questions) * 350))
-
-
 def _question_utilisateur_non_fiable(question: str) -> str:
     """Isole la question utilisateur des instructions système/prompt."""
     return (
@@ -415,7 +410,7 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
     completion, erreur = _generer_completion_avec_reessai(
         client,
         [consigne_base, consigne_renforcee],
-        max_completion_tokens=_budget_completion_quiz(nb_questions),
+        max_completion_tokens=2048,
         expected_count=nb_questions,
     )
 
