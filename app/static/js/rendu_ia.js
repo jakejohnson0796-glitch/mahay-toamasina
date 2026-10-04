@@ -8,20 +8,27 @@
 
   const SELECTEUR_RENDU = "[data-rendu]";
 
+  function etatDependances() {
+    return {
+      marked: Boolean(window.marked),
+      purify: Boolean(window.DOMPurify),
+      katex: Boolean(window.katex && typeof window.katex.render === "function"),
+    };
+  }
+
   function verifierDependances() {
-    const dependances = [
-      ["marked", Boolean(window.marked)],
-      ["DOMPurify", Boolean(window.DOMPurify)],
-      ["KaTeX", Boolean(window.katex && typeof window.katex.render === "function")],
-    ];
-
-    const manquantes = dependances
-      .filter(function (item) { return !item[1]; })
-      .map(function (item) { return item[0]; });
-
-    if (manquantes.length) {
-      throw new Error("Rendu IA indisponible : " + manquantes.join(", "));
+    const etat = etatDependances();
+    if (!etat.marked || !etat.purify || !etat.katex) {
+      console.warn(
+        "[Gasy Mahay] rendu IA en mode dégradé :",
+        {
+          marked: etat.marked,
+          DOMPurify: etat.purify,
+          KaTeX: etat.katex,
+        }
+      );
     }
+    return etat;
   }
 
   // MODIF : Marked considère \\[ et \\( comme des échappements Markdown et
@@ -84,22 +91,23 @@
           const cible = racine.createElement("span");
           cible.className = item.display ? "gm-katex gm-katex-display" : "gm-katex";
           try {
-            window.katex.render(item.contenu, cible, {
-              displayMode: Boolean(item.display),
-              throwOnError: false,
-              trust: false,
-              strict: "ignore",
-            });
-            morceaux.push(cible);
+            if (window.katex && typeof window.katex.render === "function") {
+              window.katex.render(item.contenu, cible, {
+                displayMode: Boolean(item.display),
+                throwOnError: false,
+                trust: false,
+                strict: "ignore",
+              });
+              morceaux.push(cible);
+            } else {
+              // Même sans CDN KaTeX, les marqueurs [[MATH]]/[[DISPLAY]]
+              // ne doivent jamais rester visibles.
+              morceaux.push(racine.createTextNode(item.contenu));
+            }
           } catch (erreur) {
-            // Conserve le contenu lisible plutôt que de casser tout le bloc.
-            morceaux.push(
-              racine.createTextNode(
-                item.display
-                  ? "\\[" + item.contenu + "\\]"
-                  : "\\(" + item.contenu + "\\)"
-              )
-            );
+            // Conserve la formule sans marqueur plutôt que du contenu
+            // cassé ou l'affichage de [[DISPLAY]].
+            morceaux.push(racine.createTextNode(item.contenu));
             console.warn("[Gasy Mahay] formule KaTeX invalide :", erreur);
           }
         }
@@ -119,21 +127,35 @@
 
   function parserMarkdown(brut, enLigne) {
     const texte = String(brut == null ? "" : brut);
-    if (enLigne && typeof window.marked.parseInline === "function") {
-      return window.marked.parseInline(texte);
+    if (!window.marked) {
+      return { html: false, contenu: texte };
     }
-    return window.marked.parse(texte, {
-      gfm: true,
-      breaks: true,
-      headerIds: false,
-      mangle: false,
-    });
+    if (enLigne && typeof window.marked.parseInline === "function") {
+      return { html: true, contenu: window.marked.parseInline(texte) };
+    }
+    return {
+      html: true,
+      contenu: window.marked.parse(texte, {
+        gfm: true,
+        breaks: true,
+        headerIds: false,
+        mangle: false,
+      }),
+    };
   }
 
-  function fragmentSanitise(html) {
-    // MODIF : DOMPurify retourne directement un fragment DOM ; le contenu IA
-    // n'est donc jamais injecté brut avec innerHTML par ce module.
-    return window.DOMPurify.sanitize(html, {
+  function fragmentSanitise(resultat) {
+    if (!resultat.html || !window.DOMPurify) {
+      // Mode dégradé : le texte source reste du texte, jamais du HTML.
+      // Les tokens mathématiques sont ensuite restaurés par KaTeX.
+      const fragment = document.createDocumentFragment();
+      fragment.appendChild(document.createTextNode(resultat.contenu));
+      return fragment;
+    }
+
+    // Mode normal : DOMPurify retourne directement un fragment DOM ; le
+    // contenu IA n'est donc jamais injecté brut avec innerHTML.
+    return window.DOMPurify.sanitize(resultat.contenu, {
       RETURN_DOM_FRAGMENT: true,
       USE_PROFILES: { html: true },
       FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "template"],
@@ -237,11 +259,11 @@
       throw new Error("rendreReponseIA : élément cible manquant.");
     }
 
-    verifierDependances();
+    const dependances = verifierDependances();
 
     const protection = protegerMath(String(brut == null ? "" : brut));
-    const html = parserMarkdown(protection.source, configuration.enLigne);
-    const fragment = fragmentSanitise(html);
+    const resultatMarkdown = parserMarkdown(protection.source, configuration.enLigne);
+    const fragment = fragmentSanitise(resultatMarkdown);
     restaurerMath(fragment, protection.math);
 
     // MODIF : replaceChildren remplace entièrement le contenu sans écrire la
@@ -274,19 +296,21 @@
       return;
     }
 
+    const etat = etatDependances();
+    // Le renderer fonctionne immédiatement même si Marked/DOMPurify/KaTeX
+    // n'est pas encore disponible : aucun marqueur de transport ne reste
+    // visible. On repasse automatiquement en rendu riche dès que les CDN
+    // sont disponibles, jusqu'à 15 secondes après le chargement.
     try {
-      verifierDependances();
       rendreTous(document);
     } catch (erreur) {
-      // MODIF : les scripts CDN sont defer ; en cas de chargement retardé,
-      // on retente brièvement au lieu de laisser le Markdown/LaTeX brut.
-      if (numeroTentative < 20) {
-        window.setTimeout(function () {
-          initialiser(numeroTentative + 1);
-        }, 150);
-        return;
-      }
-      console.error("[Gasy Mahay] impossible d'initialiser le rendu IA :", erreur);
+      console.warn("[Gasy Mahay] rendu IA partiel :", erreur);
+    }
+
+    if ((!etat.marked || !etat.purify || !etat.katex) && numeroTentative < 100) {
+      window.setTimeout(function () {
+        initialiser(numeroTentative + 1);
+      }, 150);
     }
   }
 
