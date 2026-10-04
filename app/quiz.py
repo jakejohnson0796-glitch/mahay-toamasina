@@ -15,6 +15,7 @@ from .database import engine
 from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz, ProgressionNotion
 from . import ai_quiz
 from .quiz_validation import QuizValidationError, valider_questions
+from .ia_transport import normaliser_structure_quiz
 
 from .referentiel import NIVEAUX  # centralise (voir app/referentiel.py) ; reexporte ici pour ne rien casser dans quiz_router.py qui importe quiz_module.NIVEAUX
 
@@ -140,9 +141,9 @@ def creer_tentative(
 
 
 def questions(tentative: TentativeQuiz) -> List[dict]:
-    # MODIF : compatibilité avec les tentatives créées par une version qui
-    # stockait encore [[MATH]] / [[DISPLAY]] au lieu du LaTeX final.
-    donnees = ai_quiz._normaliser_quiz_transport(json.loads(tentative.questions_json))
+    # MODIF : compatibilité durable avec les anciennes tentatives et avec toute
+    # réponse historique qui aurait conservé les marqueurs de transport math.
+    donnees = normaliser_structure_quiz(json.loads(tentative.questions_json))
     return valider_questions(donnees, expected_count=tentative.nb_questions)
 
 
