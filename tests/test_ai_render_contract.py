@@ -10,7 +10,9 @@ def test_renderer_ia_contient_les_garde_fous():
     assert "DOMPurify.sanitize" in js
     assert "trust: false" in js
     assert "replaceChildren" in js
-    assert "innerHTML" not in js.replace("innerHTML", "innerHTML") or True
+    # MODIF : aucun chemin applicatif du renderer ne doit appeler innerHTML.
+    assert "cible.innerHTML" not in js
+    assert "element.innerHTML" not in js
     assert "renderMathInElement" in js
     assert "data-rendu" in js
 
