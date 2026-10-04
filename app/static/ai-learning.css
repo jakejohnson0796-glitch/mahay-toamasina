@@ -1630,3 +1630,76 @@
   color: var(--accent-primary);
 }
 
+
+
+/* MODIF V2 : finition commune des contenus IA, maths, tableaux et chimie. */
+.ai-markdown-content,
+.quiz-question-title,
+.quiz-choice-text,
+.ai-correction-question,
+.ai-correction-option {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ai-markdown-content .katex-display,
+.quiz-question-title .katex-display,
+.quiz-choice-text .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.ai-markdown-content .katex,
+.quiz-question-title .katex,
+.quiz-choice-text .katex {
+  font-size: 1em;
+}
+
+.ai-markdown-content table,
+.quiz-correction-explanation table,
+.ai-correction-option table {
+  width: 100%;
+  margin: .65rem 0;
+  border-collapse: collapse;
+  font-size: .72rem;
+}
+
+.ai-markdown-content th,
+.ai-markdown-content td,
+.quiz-correction-explanation th,
+.quiz-correction-explanation td {
+  padding: .45rem .55rem;
+  border: 1px solid var(--content-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ai-markdown-content th,
+.quiz-correction-explanation th {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--content-bg) 80%, var(--accent-primary));
+}
+
+.gm-latex-fallback {
+  display: inline-block;
+  max-width: 100%;
+}
+
+[data-rendu][data-rendu-traite="1"] {
+  text-wrap: pretty;
+}
+
+@media (max-width: 700px) {
+  .ai-markdown-content table,
+  .quiz-correction-explanation table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .quiz-choice-text {
+    line-height: 1.45;
+  }
+}

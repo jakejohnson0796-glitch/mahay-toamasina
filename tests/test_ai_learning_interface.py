@@ -86,7 +86,9 @@ def test_tuteur_api_ne_prepare_plus_de_html():
     # MODIF : l'endpoint de statut doit renvoyer le texte brut.
     route = lire("app/routers/tuteur_router.py")
     assert 'filters["texte_ia"]' not in route
-    assert 'return "" if valeur is None else str(valeur)' in route
+    assert 'normaliser_structure_tuteur' in route
+    assert '"explication": rendu("explication")' in route
+    assert '"correction": rendu("correction")' in route
 
 
 def test_route_tuteur_persiste_le_statut_de_verification():

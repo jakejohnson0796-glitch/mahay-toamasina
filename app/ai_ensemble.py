@@ -17,6 +17,11 @@ from groq import Groq
 
 from .config import parametres
 from .json_latex import charger_json_ia
+from .ia_transport import (
+    PROMPT_TRANSPORT_SANS_ANTISLASH,
+    normaliser_structure_quiz,
+    normaliser_structure_tuteur,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,21 +49,8 @@ Comptabilité :
 # MODIF : suffixe commun ajouté à chaque prompt de critique/arbitrage.
 def _suffixe_format_prompt(quiz: bool = False) -> str:
     if quiz:
-        # MODIF : le tool-call quiz doit rester du JSON valide. Les formules
-        # sont transportees via des marqueurs sans antislash puis reconverties
-        # en LaTeX par app.ai_quiz avant validation/enregistrement.
-        return r"""
-TRANSPORT JSON DU QUIZ — OBLIGATOIRE :
-- Le caractère backslash (\\) est INTERDIT dans toutes les valeurs texte du JSON.
-- Ne génère JAMAIS le caractère \\ dans une valeur de chaîne du JSON.
-- Formule courte : [[MATH]]...[[/MATH]].
-- Formule en bloc : [[DISPLAY]]...[[/DISPLAY]].
-- Dans ces marqueurs : det(A)=ad-bc, x^2, a/b, [a b ; c d], x <= y.
-- Matrices : utilise exclusivement [a b ; c d].
-- Ne mets jamais \(...\), \[...\], \\det, \\frac ou \\begin dans le JSON.
-- Le serveur reconvertira les marqueurs en LaTeX après lecture du JSON.
-"""
-    return "\n\n" + REGLES_FORMAT + "\nConserve exactement tous les antislashs LaTeX ; aucune étape de vérification ne doit les réécrire ou les supprimer."
+        return PROMPT_TRANSPORT_SANS_ANTISLASH
+    return "\n\n" + PROMPT_TRANSPORT_SANS_ANTISLASH
 
 # Coupe-circuit court pour eviter de refaire plusieurs requetes Gemini
 # lorsque le fournisseur renvoie temporairement des 429/5xx.
@@ -489,7 +481,7 @@ def ensemble_verification_quiz(
         # Si l'arbitre est indisponible, on garde le resultat du premier
         # critique seulement s'il respecte strictement le schema applicatif.
         for critique in critiques:
-            candidat = critique["avis"].get("questions")
+            candidat = normaliser_structure_quiz(critique["avis"].get("questions") or [])
             try:
                 candidat = validate(candidat, expected_count=len(questions))
             except Exception:
@@ -507,7 +499,7 @@ def ensemble_verification_quiz(
             "strategy": strategie,
         }
 
-    candidat = arbitre.get("questions")
+    candidat = normaliser_structure_quiz(arbitre.get("questions") or [])
     try:
         candidat = validate(candidat, expected_count=len(questions))
     except Exception:
@@ -687,12 +679,12 @@ def verifier_tuteur(
             "arbitration": "original",
         }
 
-    final = {
+    final = normaliser_structure_tuteur({
         "explication": result.get("explication") or reponse.get("explication") or "—",
         "exemple": result.get("exemple") or reponse.get("exemple") or "—",
         "exercice": result.get("exercice") or reponse.get("exercice") or "—",
         "correction": result.get("correction") or reponse.get("correction") or "—",
-    }
+    })
     return final, True, {
         "models": [parametres.groq_model] + [x["model"] for x in critiques],
         "critics": critiques,

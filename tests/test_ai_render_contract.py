@@ -17,6 +17,10 @@ def test_renderer_ia_contient_les_garde_fous():
     assert "window.renderMathInElement(element" in js
     assert "window.katex.renderMathInElement" not in js
     assert "data-rendu" in js
+    assert "function convertirMarqueursTransport" in js
+    assert "\\[\\[DISPLAY\\]\\]" in js
+    assert "\\[\\[MATH\\]\\]" in js
+    assert "[\\s\\S]*?" in js
 
 
 def test_base_charge_katex_auto_render():
@@ -74,46 +78,3 @@ def test_renderer_contient_un_filet_latex_nu():
     assert "function rendreLatexNu" in js
     assert "window.katex.render" in js
     assert "rendreLatexNu(cible)" in js
-
-
-def test_quiz_ia_utilise_un_transport_json_sans_backslash():
-    # MODIF : le provider doit pouvoir parser le tool-call même lorsque le modèle
-    # produit des formules mathématiques.
-    code = (ROOT / "app/ai_quiz.py").read_text(encoding="utf-8")
-    ensemble = (ROOT / "app/ai_ensemble.py").read_text(encoding="utf-8")
-    assert "TRANSPORT JSON DU QUIZ" in code
-    assert "Le caractère backslash" in code
-    assert "QUIZ_MATH_INLINE_OPEN" in code
-    assert "_normaliser_quiz_transport" in code
-    assert "TRANSPORT JSON DU QUIZ" in ensemble
-
-
-def test_quiz_transport_convertit_les_marqueurs_sans_casser_le_json():
-    code = (ROOT / "app/ai_quiz.py").read_text(encoding="utf-8")
-    assert "QUIZ_MATH_INLINE_OPEN = \"[[MATH]]\"" in code
-    assert "QUIZ_MATH_DISPLAY_OPEN = \"[[DISPLAY]]\"" in code
-    assert "def _convertir_math_transport_texte" in code
-    assert "def _normaliser_quiz_transport" in code
-    assert 'return r"\\[" + contenu + r"\\]"' in code
-    assert 'return r"\\(" + contenu + r"\\)"' in code
-
-
-def test_quiz_normalise_aussi_la_sortie_des_correcteurs():
-    code = (ROOT / "app/ai_quiz.py").read_text(encoding="utf-8")
-    assert "questions_finales = _normaliser_quiz_transport(questions_finales)" in code
-
-
-def test_quiz_normalise_les_anciennes_tentatives_a_la_lecture():
-    code = (ROOT / "app/quiz.py").read_text(encoding="utf-8")
-    assert "ai_quiz._normaliser_quiz_transport" in code
-
-
-def test_quiz_marker_regex_matches_real_transport_markers():
-    from app.ai_quiz import _convertir_math_transport_texte
-
-    inline = _convertir_math_transport_texte("[[MATH]]det(A)=ad-bc[[/MATH]]")
-    display = _convertir_math_transport_texte("[[DISPLAY]][a b ; c d][[/DISPLAY]]")
-    assert inline.startswith(r"\(") and inline.endswith(r"\)")
-    assert r"\det(A)" in inline
-    assert display.startswith(r"\[") and display.endswith(r"\]")
-    assert r"\begin{pmatrix}" in display
