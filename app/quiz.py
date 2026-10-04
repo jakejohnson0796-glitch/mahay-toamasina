@@ -140,7 +140,10 @@ def creer_tentative(
 
 
 def questions(tentative: TentativeQuiz) -> List[dict]:
-    return valider_questions(json.loads(tentative.questions_json), expected_count=tentative.nb_questions)
+    # MODIF : compatibilité avec les tentatives créées par une version qui
+    # stockait encore [[MATH]] / [[DISPLAY]] au lieu du LaTeX final.
+    donnees = ai_quiz._normaliser_quiz_transport(json.loads(tentative.questions_json))
+    return valider_questions(donnees, expected_count=tentative.nb_questions)
 
 
 def reponses(tentative: TentativeQuiz) -> Optional[List[Optional[int]]]:
