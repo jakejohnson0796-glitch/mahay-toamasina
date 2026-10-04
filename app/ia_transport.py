@@ -127,7 +127,7 @@ def convertir_math_transport_texte(valeur: Any) -> str:
     )
     texte = re.sub(
         r"\[\[CHEM\]\](.*?)\[\[/CHEM\]\]",
-        lambda match: r"\(\\ce{" + match.group(1).strip() + r"}\)",
+        lambda match: r"\(\ce{" + match.group(1).strip() + r"}\)",
         texte,
         flags=re.DOTALL,
     )
