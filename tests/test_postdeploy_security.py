@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 os.environ["DATABASE_URL"] = f"sqlite:///{tempfile.NamedTemporaryFile(suffix='.db', delete=False).name}"
 os.environ.setdefault("SESSION_SECRET_KEY", "cle-de-test-uniquement-jamais-en-production")
+os.environ.setdefault("GIT_COMMIT", "ci-test-release-123456")
 
 from starlette.testclient import TestClient
 
@@ -101,3 +102,19 @@ def test_document_de_cercle_ne_peut_pas_etre_telecharge_par_un_non_membre(monkey
     assert response.status_code == 303
     assert response.headers["location"] == "/cercles/99"
     assert document.nb_telechargements == 0
+
+
+def test_health_expose_la_release_et_le_renderer():
+    client = TestClient(app)
+    response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["release"] == os.environ["GIT_COMMIT"]
+    assert data["renderer"] == "direct-katex-v3"
+
+
+def test_page_expose_la_release():
+    client = TestClient(app)
+    response = client.get("/connexion")
+    assert response.status_code == 200
+    assert f'data-release="{os.environ["GIT_COMMIT"][:12]}"' in response.text
