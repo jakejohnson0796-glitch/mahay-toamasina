@@ -20,8 +20,6 @@ BASE_DIR = Path(__file__).resolve().parent
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.globals["jeton_csrf"] = obtenir_jeton_csrf
-templates.env.globals["rendre_math_html"] = rendre_math_html
-templates.env.globals["rendre_choix_math_html"] = rendre_choix_math_html
 templates.env.globals["normaliser_choix_liste"] = normaliser_choix_liste
 
 
