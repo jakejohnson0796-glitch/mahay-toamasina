@@ -773,12 +773,26 @@ def generer_reponse_tuteur(
     if not verifier:
         return reponse_initiale
 
-    return verifier_reponse_tuteur_structuree(
+    reponse_finale = verifier_reponse_tuteur_structuree(
         reponse_initiale,
         question=question,
         notion=notion,
         matiere=matiere,
     )
+    verification_ok = reponse_finale.pop("_verification_ok", True)
+    if parametres.ai_ensemble_enabled and not verification_ok:
+        echec = _reponse_tuteur_erreur(
+            "La réponse n'a pas pu être confirmée de façon fiable. "
+            "Aucune correction incertaine n'est publiée. Réessaie dans un instant."
+        )
+        echec["_verification_ok"] = False
+        echec["_statut_verification"] = "echouee"
+        echec["_erreur_verification"] = (
+            reponse_finale.get("_erreur_verification")
+            or "Verification multi-modeles insuffisante."
+        )
+        return echec
+    return reponse_finale
 
 
 def verifier_reponse_tuteur_structuree(
