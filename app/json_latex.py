@@ -57,6 +57,14 @@ def _reparer_antislashs_latex(texte: str) -> str:
 
         suivant = texte[i + 1] if i + 1 < len(texte) else ""
 
+        if suivant.isalpha():
+            match = re.match(r"[A-Za-z]+", texte[i + 1:])
+            commande = match.group(0) if match else ""
+            if commande in _COMMANDES_LATEX_AUTORISEES:
+                sortie.extend(["\\", "\\", commande])
+                i += 1 + len(commande)
+                continue
+
         if suivant in '"\\/bfnrt':
             sortie.extend(["\\", suivant])
             i += 2
@@ -75,14 +83,6 @@ def _reparer_antislashs_latex(texte: str) -> str:
             sortie.extend(["\\", "\\", suivant])
             i += 2
             continue
-
-        if suivant.isalpha():
-            match = re.match(r"[A-Za-z]+", texte[i + 1:])
-            commande = match.group(0) if match else ""
-            if commande in _COMMANDES_LATEX_AUTORISEES:
-                sortie.extend(["\\", "\\", commande])
-                i += 1 + len(commande)
-                continue
 
         # Séquence inconnue : ne pas l'inventer comme LaTeX.
         sortie.append("\\")
