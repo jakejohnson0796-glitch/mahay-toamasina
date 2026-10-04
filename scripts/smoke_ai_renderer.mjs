@@ -14,7 +14,8 @@ const { window } = dom;
 globalThis.document = window.document;
 globalThis.NodeFilter = window.NodeFilter;
 window.marked = marked;
-window.DOMPurify = createDOMPurify(window);
+const purifyInstance = createDOMPurify(window);
+window.DOMPurify = purifyInstance;
 window.katex = katex;
 window.hljs = null;
 const context = {
@@ -65,7 +66,7 @@ if (host.querySelectorAll(".katex").length < 2) {
 
 // Réactivation : le renderer doit retrouver la même source et repasser en rendu riche.
 window.marked = marked;
-window.DOMPurify = DOMPurify;
+window.DOMPurify = purifyInstance;
 host.replaceChildren();
 window.rendreReponseIA(sample, host);
 if (host.querySelectorAll(".katex").length < 2) {
