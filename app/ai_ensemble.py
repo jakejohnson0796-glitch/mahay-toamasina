@@ -180,7 +180,7 @@ class AICostQualityController:
             return True
         if kind == "quiz":
             return self._risk_quiz(content) >= 35
-        return self._risk_text(str(content)) >= 45
+        return self._risk_text(str(content)) >= 35
 
 
 cost_controller = AICostQualityController()
