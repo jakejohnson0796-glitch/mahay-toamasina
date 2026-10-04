@@ -105,14 +105,16 @@ def charger_json_ia(texte_brut: str | bytes | bytearray | Any) -> Any:
     try:
         return json.loads(texte)
     except json.JSONDecodeError as erreur_stricte:
-        pass
+        # Conserver l'exception hors du bloc except : Python détruit la variable
+        # d'exception à la sortie du bloc pour éviter un cycle de références.
+        erreur_json = erreur_stricte
 
     # Étape B/C : récupération uniquement parce que le JSON est réellement invalide.
     repare = _reparer_antislashs_latex(texte)
     if repare == texte:
-        raise erreur_stricte
+        raise erreur_json
 
     try:
         return json.loads(repare)
     except json.JSONDecodeError:
-        raise erreur_stricte
+        raise erreur_json
