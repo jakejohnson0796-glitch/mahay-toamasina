@@ -115,3 +115,11 @@ def test_tuteur_bloque_une_reponse_non_confirmee_avec_ensemble_actif():
     code = lire("app/ai_quiz.py")
     assert 'if parametres.ai_ensemble_enabled and not verification_ok:' in code
     assert "Aucune correction incertaine n'est publiée" in code
+
+
+def test_tuteur_ne_devient_pas_vide_quand_la_verification_echoue():
+    code = lire("app/ai_quiz.py")
+    assert "La panne de vérification ne doit jamais devenir une panne du Tuteur." in code
+    template = lire("app/templates/tuteur_reponse.html")
+    assert "Réponse disponible · vérification à confirmer" in template
+    assert "Réponse disponible · vérification momentanément indisponible" in template
