@@ -47,3 +47,13 @@ def test_pages_ia_exposent_le_texte_brut_au_renderer():
         page = (ROOT / path).read_text(encoding="utf-8")
         assert "data-rendu" in page
         assert "| texte_ia" not in page
+
+
+def test_renderer_protege_les_blocs_latex_avant_markdown():
+    # MODIF : \\[ et \\( doivent survivre au parsing CommonMark de Marked.
+    js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
+    assert "function protegerMath" in js
+    assert "function restaurerMath" in js
+    assert "E000GMATH_" in js
+    assert "protection.source" in js
+    assert "restaurerMath(fragment, protection.math)" in js
