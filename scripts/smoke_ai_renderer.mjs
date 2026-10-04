@@ -73,4 +73,63 @@ if (host.querySelectorAll(".katex").length < 2) {
   throw new Error("Renderer did not recover after dependencies became available");
 }
 
-console.log(JSON.stringify({ ok: true, katex_nodes: host.querySelectorAll('.katex').length }));
+
+// Régressions supplémentaires : code, contexte inline, tableau, XSS, idempotence.
+const codeHost = window.document.createElement('div');
+window.document.body.appendChild(codeHost);
+const fence = String.fromCharCode(96).repeat(3);
+const codeSource = [
+  'Code :',
+  fence + 'python',
+  'print("Total:\\nAriary")',
+  'print(r"\\\\frac{a}{b}")',
+  'print(r"\\\\(\\\\d+\\\\)")',
+  fence
+].join('\\n');
+window.rendreReponseIA(codeSource, codeHost);
+const code = codeHost.querySelector('pre code');
+if (!code || code.textContent !== 'print("Total:\nAriary")\nprint(r"\\frac{a}{b}")\nprint(r"\\(\\d+\\)")\n') {
+  throw new Error('Code block was modified by the math pipeline');
+}
+if (code.querySelector('.katex')) {
+  throw new Error('KaTeX rendered inside code');
+}
+
+const headingHost = window.document.createElement('div');
+window.document.body.appendChild(headingHost);
+const heading = window.document.createElement('h2');
+heading.dataset.rendu = '';
+heading.textContent = '2*3*4 = 24';
+headingHost.appendChild(heading);
+window.rendreTous(headingHost);
+if (heading.querySelector('p, table')) {
+  throw new Error('Block HTML inserted inside heading context');
+}
+if (heading.textContent !== '2*3*4 = 24') {
+  throw new Error('Arithmetic text altered');
+}
+
+const tableHost = window.document.createElement('div');
+window.document.body.appendChild(tableHost);
+window.rendreReponseIA('| Expression | Valeur |\\n| --- | --- |\\n| \\( |x| \\) | 2 |', tableHost);
+if (!tableHost.querySelector('table')) {
+  throw new Error('Markdown table missing');
+}
+if (!tableHost.querySelector('table .katex')) {
+  throw new Error('Math inside table was not rendered');
+}
+
+const xssHost = window.document.createElement('div');
+window.document.body.appendChild(xssHost);
+window.rendreReponseIA('<script>alert(1)</script><img src=x onerror=alert(1)>', xssHost);
+if (xssHost.querySelector('script, [onerror]')) {
+  throw new Error('XSS payload survived DOMPurify');
+}
+
+const before = host.innerHTML;
+window.rendreTous(window.document);
+if (before !== host.innerHTML) {
+  throw new Error('Renderer is not idempotent with stable dependencies');
+}
+
+console.log(JSON.stringify({ ok: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
