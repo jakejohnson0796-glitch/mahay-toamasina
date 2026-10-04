@@ -50,17 +50,33 @@ if (visibleText.includes('\\lambda') || visibleText.includes('\\det')) {
   throw new Error('Raw LaTeX command remains outside rendered KaTeX nodes');
 }
 
-// Régression quiz : les anciens délimiteurs $...$ et $...$ doivent eux aussi
-// être convertis avant le passage Markdown.
+// Régression quiz : les anciens délimiteurs $...$ et $$...$$ doivent être
+// convertis avant le passage Markdown.
 const dollarHost = window.document.createElement('div');
 window.document.body.appendChild(dollarHost);
-const dollarSample = 'Quel est le rang ? $A=\\begin{pmatrix}1 & 0 \\\\ 0 & 1\\end{pmatrix}$ et $\\det(A)=1$';
+const dollarSample = 'Quel est le rang ? $A=\\begin{pmatrix}1 & 0 \\\\ 0 & 1\\end{pmatrix}$ et $$\\det(A)=1$$';
 window.rendreReponseIA(dollarSample, dollarHost);
 if (dollarHost.querySelectorAll('.katex').length < 2) {
   throw new Error('Legacy dollar delimiters were not rendered');
 }
-if ((dollarHost.textContent || '').includes(' : Marked et DOMPurify indisponibles, les formules doivent
-// toujours disparaître des marqueurs de transport.
+if ((dollarHost.textContent || '').includes('$')) {
+  throw new Error('Dollar math delimiters remain visible');
+}
+
+// Régression exacte du quiz : un "$$" orphelin avant une formule $...$
+// ne doit pas rester affiché à côté de la question.
+const quizLikeHost = window.document.createElement('div');
+window.document.body.appendChild(quizLikeHost);
+const quizLikeSource = [
+  "Quel est le rang de l'endomorphisme $$ dont la matrice dans la base canonique est",
+  "$A=\\begin{pmatrix}-8 & -4\\\\5 & -3\\\\1 & 0\\end{pmatrix}$ ?"
+].join(' ');
+window.rendreReponseIA(quizLikeSource, quizLikeHost);
+if (!quizLikeHost.querySelector('.katex') || (quizLikeHost.textContent || '').includes('$')) {
+  throw new Error('Quiz-like dollar LaTeX was not fully normalized');
+}
+
+// Mode dégradé
 window.marked = null;
 window.DOMPurify = null;
 host.replaceChildren();
