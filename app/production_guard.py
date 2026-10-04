@@ -27,6 +27,11 @@ def erreurs_configuration_production(config: Parametres) -> list[str]:
     if config.environnement != "production":
         return erreurs
 
+    if not config.release_commit or config.release_commit == "unknown":
+        erreurs.append(
+            "RENDER_GIT_COMMIT/GIT_COMMIT est obligatoire en production pour identifier la release réellement servie."
+        )
+
     secret = config.session_secret_key.strip()
     if secret == "a-changer-en-production" or len(secret) < 32:
         erreurs.append("SESSION_SECRET_KEY doit etre un secret aleatoire d'au moins 32 caracteres.")
