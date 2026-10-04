@@ -32,8 +32,8 @@
   const TOKEN_MATH = "\uE000GMATH_";
   function convertirMarqueursTransport(source) {
     return String(source || "")
-      .replace(/\[\[DISPLAY\]\]([\\s\\S]*?)\[\[\\/DISPLAY\]\]/g, "\\[$1\\]")
-      .replace(/\[\[MATH\]\]([\\s\\S]*?)\[\[\\/MATH\]\]/g, "\\($1\\)");
+      .replace(/\[\[DISPLAY\]\]([\s\S]*?)\[\[\/DISPLAY\]\]/g, "\\[$1\\]")
+      .replace(/\[\[MATH\]\]([\s\S]*?)\[\[\/MATH\]\]/g, "\\($1\\)");
   }
 
   function protegerMath(brut) {
