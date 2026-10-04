@@ -56,12 +56,13 @@
     const protection = source.replace(
       /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$/g,
       function (match) {
+        const estDollarDisplay = match.indexOf("$") === 0;
         const estDisplay =
           match.indexOf("\\[") === 0 ||
-          match.indexOf("$") === 0;
+          estDollarDisplay;
         const estInline =
           match.indexOf("\\(") === 0 ||
-          (match.indexOf("$") === 0 && match.indexOf("$") !== 0);
+          (match.indexOf("$") === 0 && !estDollarDisplay);
 
         if (estDisplay || estInline) {
           const longueurDelimiteur = estDisplay ? 2 : 1;
