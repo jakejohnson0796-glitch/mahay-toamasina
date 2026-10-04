@@ -20,7 +20,7 @@ from typing import Dict, List, Optional
 from .quiz_validation import QuizValidationError, valider_questions
 from .json_latex import charger_json_ia
 from .ia_transport import (
-    PROMPT_TRANSPORT_SANS_ANTISLASH,
+    REGLES_FORMAT,
     normaliser_structure_quiz,
     normaliser_structure_tuteur,
 )
@@ -31,9 +31,6 @@ from groq import Groq
 from .config import parametres
 
 logger = logging.getLogger(__name__)
-
-# MODIF : contrat de format commun à toutes les sorties Tuteur/Quiz.
-REGLES_FORMAT = PROMPT_TRANSPORT_SANS_ANTISLASH
 
 _client: Optional[Groq] = None
 
@@ -231,21 +228,10 @@ def _generer_completion_avec_reessai(
     expliquant pourquoi en texte libre au lieu de generer le quiz)."""
     derniere_erreur = None
 
-    # MODIF : toutes les étapes de génération de quiz reçoivent le même contrat
-    # de format. Les antislashs ne doivent jamais être réécrits pendant une reprise.
-    suffixe_format = r"""
-TRANSPORT JSON DU QUIZ — OBLIGATOIRE :
-- Le caractère backslash (\\) est INTERDIT dans toutes les valeurs texte du tool-call JSON.
-- Ne génère JAMAIS le caractère \\ dans une valeur de chaîne du JSON.
-- Pour une formule courte, utilise [[MATH]]...[[/MATH]].
-- Pour une formule en bloc, utilise [[DISPLAY]]...[[/DISPLAY]].
-- A l'intérieur des marqueurs : uniquement une notation sans backslash, par exemple det(A)=ad-bc, x^2, a/b, [a b ; c d], x <= y.
-- Pour les matrices, utilise exclusivement [a b ; c d] dans un marqueur.
-- Les marqueurs seront transformés en LaTeX après lecture du JSON par le serveur.
-- N'utilise ni \(...\), ni \[...\], ni \\det, \\frac, \\begin, \\sqrt dans le JSON.
-- Le JSON doit rester parseable tel quel par un parseur JSON standard.
-"""
-    messages_par_essai = [message + suffixe_format for message in messages_par_essai]
+    # Toutes les générations utilisent le contrat LaTeX/JSON unique.
+    messages_par_essai = [
+        message + "\n\n" + REGLES_FORMAT for message in messages_par_essai
+    ]
 
     # 2 048 tokens etaient suffisants pour des petits quiz, mais deviennent
     # trop justes des qu'on demande 10 questions : le modele de raisonnement
@@ -368,9 +354,9 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
         f"les niveaux (comprehension, application, pas seulement de la "
         f"restitution litterale du texte), 4 choix plausibles par "
         f"question, une seule bonne reponse, et une explication courte. "
-        f"Pour les mathematiques, utilise une notation lisible et structuree. "
-        f"Pour une matrice, utilise exclusivement [a b ; c d] dans [[MATH]] "
-        f"ou [[DISPLAY]] ; n'utilise JAMAIS de tableau Markdown avec des barres | "
+        f"Pour les mathématiques et la physique, utilise le vrai LaTeX conformément au contrat de formatage. "
+        f"Pour une matrice, utilise un environnement LaTeX comme \begin{pmatrix}. "
+        f" N'utilise JAMAIS de tableau Markdown avec des barres | "
         f"pour représenter une matrice. "
         f"Dans 'choix', mets uniquement le contenu de la reponse : ne mets jamais "
         f"les prefixes A, B, C, D ou E. Utilise l'outil fourni pour repondre. "
@@ -694,15 +680,15 @@ def generer_reponse_tuteur(
                 f"matiere. Ne donne jamais une correction qui contredit "
                 f"l'exercice, l'exemple ou l'explication. Pour les maths et "
                 f"la physique, utilise une notation lisible et structurée "
-                f"([[MATH]]...[[/MATH]] ou [[DISPLAY]]...[[/DISPLAY]]) et "
-                f"utilise [a b ; c d] pour les matrices, jamais un tableau Markdown "
+                f"avec \( ... \) en inline et \[ ... \] en bloc, "
+                f"utilise \begin{pmatrix}...\end{pmatrix} pour les matrices, jamais un tableau Markdown "
                 f"pour une matrice. "
                 f"Reponds en francais, pedagogique et concret. Utilise l'outil "
                 f"fourni pour structurer ta reponse."
                 f"{chr(10) + chr(10) + memoire if memoire else ''}"
                 + "\n\n"
                 + "\n\n"
-                + PROMPT_TRANSPORT_SANS_ANTISLASH
+                + REGLES_FORMAT
                 + _question_utilisateur_non_fiable(question)
             ),
         }],
