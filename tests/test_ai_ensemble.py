@@ -55,6 +55,11 @@ def test_deux_critiques_daccord_retourne_une_seule_sortie(monkeypatch):
         "confiant": True,
         "problemes": [],
     })
+    monkeypatch.setattr(
+        ai_ensemble.cost_controller,
+        "secondary_reviewer_needed",
+        lambda *a, **k: True,
+    )
 
     def fail_arbiter(*args, **kwargs):
         raise AssertionError("pas besoin d'arbitre quand les deux critiques sont d'accord")
@@ -67,7 +72,6 @@ def test_deux_critiques_daccord_retourne_une_seule_sortie(monkeypatch):
         "L1",
         ai_ensemble.OUTIL_CRITIQUE_QUIZ,
         _validate,
-        strategie="renforcee",
     )
 
     assert result == _questions()
