@@ -230,6 +230,18 @@ def _generer_completion_avec_reessai(
     expliquant pourquoi en texte libre au lieu de generer le quiz)."""
     derniere_erreur = None
 
+    # MODIF : toutes les étapes de génération de quiz reçoivent le même contrat
+    # de format. Les antislashs ne doivent jamais être réécrits pendant une reprise.
+    suffixe_format = (
+        "\\n\\n"
+        + REGLES_FORMAT
+        + "\\n"
+        + "Réponds avec un JSON valide ; dans le JSON, double chaque antislash "
+        + "des formules (écris \\\\frac et non \\frac). "
+        + "Ne réécris ni ne supprime aucun antislash d'une formule."
+    )
+    messages_par_essai = [message + suffixe_format for message in messages_par_essai]
+
     # 2 048 tokens etaient suffisants pour des petits quiz, mais deviennent
     # trop justes des qu'on demande 10 questions : le modele de raisonnement
     # peut consommer une partie du budget avant meme d'emmettre le tool-call.
@@ -677,6 +689,9 @@ def generer_reponse_tuteur(
                     f"Reponds en francais, pedagogique et concret. Utilise l'outil "
                     f"fourni pour structurer ta reponse."
                     f"{chr(10) + chr(10) + memoire if memoire else ''}"
+                    + "\\n\\n"
+                    + REGLES_FORMAT
+                    + "\\nNe réécris ni ne supprime aucun antislash des formules."
                 ),
             }],
         }
