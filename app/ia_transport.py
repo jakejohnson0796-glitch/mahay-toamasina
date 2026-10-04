@@ -11,20 +11,53 @@ MARKER_INLINE = "[[MATH]]"
 MARKER_INLINE_END = "[[/MATH]]"
 MARKER_DISPLAY = "[[DISPLAY]]"
 MARKER_DISPLAY_END = "[[/DISPLAY]]"
+MARKER_CHEM = "[[CHEM]]"
+MARKER_CHEM_END = "[[/CHEM]]"
 
 PROMPT_TRANSPORT_SANS_ANTISLASH = r"""
-TRANSPORT JSON SÛR — OBLIGATOIRE :
-- Le caractère antislash est interdit dans les valeurs texte du tool-call JSON.
-- Pour une formule courte, utilise [[MATH]]...[[/MATH]].
-- Pour une formule en bloc, utilise [[DISPLAY]]...[[/DISPLAY]].
-- Dans ces marqueurs, utilise une notation mathématique sans antislash :
-  det(A)=ad-bc, x^2, a/b, x<=y, x>=y, [a b ; c d], 2 x 3.
+CONTRAT UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
+
+1. STRUCTURE
+- Réponds en Markdown clair et pédagogique.
+- Utilise des titres, listes et paragraphes normalement.
+- Le code doit être dans un bloc Markdown de type ```python, ```sql, ```bash, etc.
+- Les tableaux doivent rester de vrais tableaux Markdown avec des barres verticales.
+
+2. MATHÉMATIQUES ET PHYSIQUE
+- Le caractère antislash est interdit dans toutes les valeurs texte du tool-call JSON.
+- Formule courte : [[MATH]]...[[/MATH]].
+- Formule en bloc : [[DISPLAY]]...[[/DISPLAY]].
+- Dans ces marqueurs, utilise uniquement une notation sans antislash :
+  det(A)=ad-bc, x^2, a/b, x<=y, x>=y, 2 x 3, v=d/t.
 - Pour une matrice, utilise toujours [a b ; c d] dans un marqueur.
-- Ne mets jamais de balises Markdown de formule, de commande LaTeX ou de
-  caractère antislash dans le JSON.
-- Le serveur transforme automatiquement les marqueurs en vrai LaTeX après
-  le parsing JSON. Le rendu final utilisera KaTeX.
-- Le reste du texte peut rester en français et en Markdown simple.
+- Pour plusieurs étapes, utilise un bloc [[DISPLAY]] avec des lignes séparées
+  par ; entre les lignes matricielles ou par des expressions simples.
+- N'utilise jamais le caractère antislash, ni une commande LaTeX, ni les
+  délimiteurs LaTeX directement dans le JSON.
+- Le serveur transformera les marqueurs en LaTeX après le parsing JSON.
+
+3. CHIMIE
+- Utilise [[CHEM]]...[[/CHEM]] pour les équations chimiques.
+- Exemple : [[CHEM]]2H2 + O2 -> 2H2O[[/CHEM]]
+- Exemple : [[CHEM]]Fe3+ + 3OH- -> Fe(OH)3[[/CHEM]]
+- N'écris jamais une commande mhchem ou LaTeX dans le JSON.
+
+4. QUALITÉ PÉDAGOGIQUE
+- Vérifie les calculs, signes, unités, dimensions et résultats.
+- Le Tuteur doit conserver une cohérence exacte entre explication, exemple,
+  exercice et correction.
+- Le Quiz doit avoir une seule bonne réponse et une explication qui démontre
+  précisément cette réponse.
+- Pour une matrice, ne crée jamais un tableau Markdown pour représenter les
+  éléments de la matrice.
+- Ne signale pas une question comme correcte si aucune option n'est correcte.
+
+5. AUTRES DOMAINES
+- Informatique : code complet dans des blocs de code.
+- Comptabilité : montants avec espace pour les milliers, virgule décimale et
+  unité Ar ; écritures et bilans en tableaux Markdown.
+- Physique : équations en [[MATH]] ou [[DISPLAY]] et unités lisibles en texte
+  mathématique simple.
 """
 
 _COMMANDES_SANS_ANTISLASH = {
@@ -89,6 +122,12 @@ def convertir_math_transport_texte(valeur: Any) -> str:
     texte = re.sub(
         r"\[\[MATH\]\](.*?)\[\[/MATH\]\]",
         inline,
+        texte,
+        flags=re.DOTALL,
+    )
+    texte = re.sub(
+        r"\[\[CHEM\]\](.*?)\[\[/CHEM\]\]",
+        lambda match: r"\(\\ce{" + match.group(1).strip() + r"}\)",
         texte,
         flags=re.DOTALL,
     )
