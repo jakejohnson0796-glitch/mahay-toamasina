@@ -24,7 +24,7 @@ CONTRAT UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 - Les tableaux doivent rester de vrais tableaux Markdown avec des barres verticales.
 
 2. MATHÉMATIQUES ET PHYSIQUE
-- Le caractère antislash est interdit dans toutes les valeurs texte du tool-call JSON.
+- Le caractère antislash est interdit DANS LES FORMULES ET LE MARKUP MATH du tool-call JSON.
 - Formule courte : [[MATH]]...[[/MATH]].
 - Formule en bloc : [[DISPLAY]]...[[/DISPLAY]].
 - Dans ces marqueurs, utilise uniquement une notation sans antislash :
@@ -32,8 +32,10 @@ CONTRAT UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 - Pour une matrice, utilise toujours [a b ; c d] dans un marqueur.
 - Pour plusieurs étapes, utilise un bloc [[DISPLAY]] avec des lignes séparées
   par ; entre les lignes matricielles ou par des expressions simples.
-- N'utilise jamais le caractère antislash, ni une commande LaTeX, ni les
-  délimiteurs LaTeX directement dans le JSON.
+- N'utilise jamais le caractère antislash, une commande LaTeX ou un
+  délimiteur LaTeX pour les mathématiques dans le JSON. Dans les blocs de
+  code, utilise du code normal et laisse le serveur traiter le code comme du
+  code, pas comme des mathématiques.
 - Le serveur transformera les marqueurs en LaTeX après le parsing JSON.
 
 3. CHIMIE
