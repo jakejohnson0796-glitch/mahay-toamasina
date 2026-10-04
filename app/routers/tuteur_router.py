@@ -84,6 +84,7 @@ def demander_tuteur(
     )
     statut_verification = reponse.pop("_statut_verification", "terminee")
     erreur_verification = reponse.pop("_erreur_verification", None)
+    reponse.pop("_verification_ok", None)
 
     # MODIF : canonisation finale avant tout stockage, même en cas de secours
     # ou d'arbitrage multi-modèles partiel.
