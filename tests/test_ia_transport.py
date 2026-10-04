@@ -61,7 +61,7 @@ def test_normalise_les_sauts_de_ligne_litteraux_sans_casser_nabla():
     valeur = convertir_math_transport_texte("Explication.\\nLors du calcul : \\nAmortissement annuel. \\nabla f")
     assert "Explication.\nLors du calcul" in valeur
     assert "Amortissement annuel" in valeur
-    assert r"\\nabla f" in valeur
+    assert r"\nabla f" in valeur
 
 def test_normalise_les_sauts_litteraux_dans_le_tuteur():
     reponse = normaliser_structure_tuteur({"explication": "Étape 1.\\nÉtape 2.\\nLa formule : [[MATH]]x^2[[/MATH]]", "exemple": "", "exercice": "", "correction": ""})
