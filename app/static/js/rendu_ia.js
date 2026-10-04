@@ -12,7 +12,7 @@
     const dependances = [
       ["marked", Boolean(window.marked)],
       ["DOMPurify", Boolean(window.DOMPurify)],
-      ["KaTeX auto-render", typeof window.renderMathInElement === "function"],
+      ["KaTeX", Boolean(window.katex && typeof window.katex.render === "function")],
     ];
 
     const manquantes = dependances
@@ -70,6 +70,7 @@
 
       const parent = texte.parentNode;
       if (!parent) return;
+
       const morceaux = [];
       let dernier = 0;
       let correspondance;
@@ -77,21 +78,38 @@
         if (correspondance.index > dernier) {
           morceaux.push(racine.createTextNode(valeur.slice(dernier, correspondance.index)));
         }
+
         const item = math[Number(correspondance[1])];
         if (item) {
-          morceaux.push(
-            racine.createTextNode(
-              item.display
-                ? "\\[" + item.contenu + "\\]"
-                : "\\(" + item.contenu + "\\)"
-            )
-          );
+          const cible = racine.createElement("span");
+          cible.className = item.display ? "gm-katex gm-katex-display" : "gm-katex";
+          try {
+            window.katex.render(item.contenu, cible, {
+              displayMode: Boolean(item.display),
+              throwOnError: false,
+              trust: false,
+              strict: "ignore",
+            });
+            morceaux.push(cible);
+          } catch (erreur) {
+            // Conserve le contenu lisible plutôt que de casser tout le bloc.
+            morceaux.push(
+              racine.createTextNode(
+                item.display
+                  ? "\\[" + item.contenu + "\\]"
+                  : "\\(" + item.contenu + "\\)"
+              )
+            );
+            console.warn("[Gasy Mahay] formule KaTeX invalide :", erreur);
+          }
         }
         dernier = motif.lastIndex;
       }
+
       if (dernier < valeur.length) {
         morceaux.push(racine.createTextNode(valeur.slice(dernier)));
       }
+
       morceaux.forEach(function (morceau) {
         parent.insertBefore(morceau, texte);
       });
@@ -121,21 +139,6 @@
       FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "template"],
       FORBID_ATTR: ["srcdoc"],
       ALLOW_DATA_ATTR: false,
-    });
-  }
-
-  function rendreMath(element) {
-    // MODIF : trust=false empêche KaTeX d'interpréter des commandes dangereuses
-    // comme des extensions HTML/URL ; throwOnError=false évite qu'une formule
-    // imparfaite fasse disparaître toute la réponse.
-    window.renderMathInElement(element, {
-      delimiters: [
-        { left: "\\[", right: "\\]", display: true },
-        { left: "\\(", right: "\\)", display: false },
-      ],
-      throwOnError: false,
-      trust: false,
-      strict: "ignore",
     });
   }
 
@@ -244,14 +247,6 @@
     // MODIF : replaceChildren remplace entièrement le contenu sans écrire la
     // chaîne IA brute dans innerHTML.
     cible.replaceChildren(fragment);
-
-    try {
-      rendreMath(cible);
-    } catch (erreur) {
-      // MODIF : KaTeX ne doit jamais empêcher l'affichage du Markdown déjà
-      // sécurisé si une formule isolée est invalide.
-      console.warn("[Gasy Mahay] rendu KaTeX partiel :", erreur);
-    }
 
     // MODIF : dernier filet de sécurité pour le LaTeX nu produit par un
     // modèle malgré le contrat de format.
