@@ -34,25 +34,6 @@ logger = logging.getLogger(__name__)
 
 # MODIF : contrat de format commun à toutes les sorties Tuteur/Quiz.
 REGLES_FORMAT = PROMPT_TRANSPORT_SANS_ANTISLASH
-Réponds en Markdown. Formules :
-- En ligne : \( ... \)   En bloc : \[ ... \]   (jamais d'autre notation).
-- OBLIGATOIRE : aucune commande LaTeX ne doit apparaître seule dans le texte. Toute séquence \det, \frac, \sqrt, \begin{...}, \mathrm, etc. doit être placée entre \( ... \) ou \[ ... \].
-- Exemple correct : « La formule est \(\\det(A)=ad-bc\). » ou « \[\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}\] ».
-- Ne produis jamais « La formule est \\det(A)=... » sans délimiteur.
-- Plusieurs lignes : \[ \begin{aligned} ... \end{aligned} \].
-- Chimie : \ce{2H2 + O2 -> 2H2O}, \ce{Fe^{3+}}, \ce{CH3COOH <=> CH3COO- + H+}.
-- Physique : unités en \mathrm{m\,s^{-2}}, vecteurs en \vec{F}. N'utilise pas siunitx (\SI, \si).
-- N'utilise ni TikZ, ni chemfig, ni \usepackage, ni \newcommand.
-- Informatique : tout code dans un bloc ```langage (python, c, sql, bash...).
-- Tableaux : syntaxe Markdown avec |.
-Comptabilité :
-- Montants : espace pour les milliers, virgule décimale, unité après le montant (1 250 000,50 Ar).
-- Écritures : tableau Markdown | Date | Compte | Libellé | Débit | Crédit | avec la ligne de séparation |---|---|---|---:|---:| (montants alignés à droite). Compte débité d'abord, puis compte crédité avec « à » devant le libellé. Total en gras.
-- Bilan et compte de résultat : tableaux Markdown (Actif | Montant | Passif | Montant).
-- Compte en T : bloc ```text (Débit à gauche, Crédit à droite) ou tableau à 2 colonnes.
-- Formules (amortissement, TVA, ratios, CAF, FRNG) en LaTeX : \text{...} pour les mots, \, pour les milliers, {,} pour la virgule décimale, \% pour les pourcentages.
-- Utilise les numéros de comptes du plan comptable en vigueur à Madagascar.
-"""
 
 _client: Optional[Groq] = None
 
