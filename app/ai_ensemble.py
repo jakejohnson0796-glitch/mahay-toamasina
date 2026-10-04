@@ -45,9 +45,16 @@ Comptabilité :
 def _suffixe_format_prompt(quiz: bool = False) -> str:
     suffixe = "\n\n" + REGLES_FORMAT + "\nConserve exactement tous les antislashs LaTeX ; aucune étape de vérification ne doit les réécrire ou les supprimer."
     if quiz:
-        # MODIF : consigne JSON explicite avec les antislashs LaTeX préservés.
+        # MODIF : pendant les tool-calls de quiz, les backslashes sont interdits
+        # pour éviter que le fournisseur rejette les arguments JSON mal échappés.
         suffixe += r"""
-Réponds avec un JSON valide ; dans le JSON, double chaque antislash des formules (écris \\frac et non \frac).
+TRANSPORT JSON DU QUIZ — OBLIGATOIRE :
+- Le caractère backslash (\\) est INTERDIT dans toutes les valeurs texte du JSON.
+- N'écris jamais \\det, \\frac, \\begin, \\( ou \\[ dans le tool-call.
+- Utilise [[MATH]]...[[/MATH]] ou [[DISPLAY]]...[[/DISPLAY]].
+- Dans ces marqueurs, utilise seulement det(A)=ad-bc, x^2, a/b ou [a b ; c d].
+- Le serveur reconvertira ensuite ces marqueurs en LaTeX.
+
 """
 
     return suffixe
