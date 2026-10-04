@@ -80,12 +80,12 @@ def _convertir_notation_math_sure(contenu: str) -> str:
 
     texte = texte.replace("×", r"\times ")
     texte = texte.replace("->", r"\to ")
-    texte = re.sub(r"(?<![A-Za-z])(det)(?=\s*\()", _COMMANDES_SANS_ANTISLASH["det"], texte)
-    texte = re.sub(r"(?<![A-Za-z])(sin)(?=\s*\()", _COMMANDES_SANS_ANTISLASH["sin"], texte)
-    texte = re.sub(r"(?<![A-Za-z])(cos)(?=\s*\()", _COMMANDES_SANS_ANTISLASH["cos"], texte)
-    texte = re.sub(r"(?<![A-Za-z])(tan)(?=\s*\()", _COMMANDES_SANS_ANTISLASH["tan"], texte)
-    texte = re.sub(r"(?<![A-Za-z])(ln)(?=\s*\()", _COMMANDES_SANS_ANTISLASH["ln"], texte)
-    texte = re.sub(r"(?<![A-Za-z])(log)(?=\s*\()", _COMMANDES_SANS_ANTISLASH["log"], texte)
+    texte = re.sub(r"(?<![A-Za-z])(det)(?=\s*\()", lambda _match: _COMMANDES_SANS_ANTISLASH["det"], texte)
+    texte = re.sub(r"(?<![A-Za-z])(sin)(?=\s*\()", lambda _match: _COMMANDES_SANS_ANTISLASH["sin"], texte)
+    texte = re.sub(r"(?<![A-Za-z])(cos)(?=\s*\()", lambda _match: _COMMANDES_SANS_ANTISLASH["cos"], texte)
+    texte = re.sub(r"(?<![A-Za-z])(tan)(?=\s*\()", lambda _match: _COMMANDES_SANS_ANTISLASH["tan"], texte)
+    texte = re.sub(r"(?<![A-Za-z])(ln)(?=\s*\()", lambda _match: _COMMANDES_SANS_ANTISLASH["ln"], texte)
+    texte = re.sub(r"(?<![A-Za-z])(log)(?=\s*\()", lambda _match: _COMMANDES_SANS_ANTISLASH["log"], texte)
 
     # Matrice transport : [a b ; c d] -> pmatrix KaTeX.
     match = re.fullmatch(
