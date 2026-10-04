@@ -64,3 +64,13 @@ def test_quiz_en_cours_rend_aussi_le_texte_de_la_question():
     # les choix, sinon son LaTeX reste brut.
     page = (ROOT / "app/templates/quiz_passer.html").read_text(encoding="utf-8")
     assert '<h2 class="quiz-question-title" data-rendu>{{ item.question }}</h2>' in page
+
+
+def test_renderer_contient_un_filet_latex_nu():
+    # MODIF : même si un modèle oublie les délimiteurs, le navigateur doit
+    # pouvoir rendre les commandes LaTeX usuelles au lieu d'afficher du brut.
+    js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
+    assert "COMMANDES_LATEX_NUES" in js
+    assert "function rendreLatexNu" in js
+    assert "window.katex.render" in js
+    assert "rendreLatexNu(cible)" in js
