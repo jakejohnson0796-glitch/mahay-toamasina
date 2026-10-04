@@ -94,3 +94,12 @@ def test_separe_correctement_une_formule_nue_dune_phrase_suivante():
     valeur = convertir_math_transport_texte(brut)
     assert "\\(\\det(A)=ad-bc\\)." in valeur
     assert "Ensuite, on verifie le resultat." in valeur
+
+
+def test_normalise_une_formule_nue_de_quiz_avec_lambda():
+    valeur = convertir_math_transport_texte(
+        r"\lambda A + \beta B = \gamma C + \delta D"
+    )
+    assert valeur.startswith(r"\(")
+    assert r"\lambda A + \beta B" in valeur
+    assert valeur.endswith(r"\)")
