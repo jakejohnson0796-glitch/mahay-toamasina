@@ -67,7 +67,7 @@
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/rendu_ia.js?v={{ version_asset('js/rendu_ia.js') }}"></script>
 {% endif %}
 </head>
-<body
+<body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
   {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}data-admin-session="1"{% endif %}
 >

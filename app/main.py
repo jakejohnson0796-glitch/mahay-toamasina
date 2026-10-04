@@ -327,6 +327,8 @@ def health() -> dict:
     thread = getattr(app.state, "ai_worker_thread", None)
     return {
         "status": "ok",
+        "release": parametres.release_commit,
+        "renderer": "direct-katex-v3",
         "ai_worker_configured": bool(parametres.redis_url),
         "ai_worker_alive": bool(thread and thread.is_alive()),
     }
@@ -375,6 +377,8 @@ def readiness() -> Response:
         status_code=200,
         content={
             "status": "ready",
+            "release": parametres.release_commit,
+            "renderer": "direct-katex-v3",
             "initialisation_etat": etat_initialisation,
         },
     )

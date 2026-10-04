@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func
 
 from .csrf import obtenir_jeton_csrf
+from .config import parametres
 from .quiz_validation import normaliser_choix_liste
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -132,10 +133,13 @@ def _version_asset(chemin_relatif: str) -> str:
                 return "0"
         else:
             return "0"
-    return hashlib.md5(contenu).hexdigest()[:8]
+    contenu_hash = hashlib.md5(contenu).hexdigest()[:8]
+    release = parametres.release_commit[:12] if parametres.release_commit else "unknown"
+    return f"{contenu_hash}-{release}"
 
 
 templates.env.globals["version_asset"] = _version_asset
+templates.env.globals["release_version"] = lambda: parametres.release_commit[:12]
 
 
 def _profil_academique_a_actualiser(request) -> bool:

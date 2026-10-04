@@ -63,3 +63,9 @@ def test_csp_production_n_utilise_pas_unsafe_inline_hors_style_attr() -> None:
     assert "frame-ancestors 'none'" in csp
     assert "object-src 'none'" in csp
     assert "'nonce-nonce-test'" in csp
+
+
+def test_configuration_production_refuse_une_release_non_identifiee() -> None:
+    config = replace(_production_complete(), release_commit="unknown")
+    erreurs = erreurs_configuration_production(config)
+    assert any("release" in erreur.lower() for erreur in erreurs)

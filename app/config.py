@@ -53,6 +53,13 @@ class Parametres:
     # ENVIRONNEMENT=production dans les variables d'env de l'hebergeur
     # (deja fait dans render.yaml).
     environnement: str = field(default_factory=lambda: os.getenv("ENVIRONNEMENT", "developpement"))
+    # Identité immuable de la release. Render fournit RENDER_GIT_COMMIT ;
+    # le CI/local peut fournir GIT_COMMIT.
+    release_commit: str = field(
+        default_factory=lambda: os.getenv("RENDER_GIT_COMMIT")
+        or os.getenv("GIT_COMMIT")
+        or "unknown"
+    )
 
     # --- Compte admin auto-initialise (voir app/admin_init.py) ---
     # ADMIN_PHONE absent => aucune initialisation automatique (comportement
