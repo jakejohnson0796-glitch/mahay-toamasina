@@ -43,19 +43,15 @@ def test_json_valide_preserve_retour_chariot():
 
 
 def test_json_valide_preserve_doubles_backslashes_latex():
-    texte = r'''{"texte":"\\[
-\\begin{aligned}
-a &= b \\\\
-c &= d
-\\end{aligned}
-\\]"}'''
-    resultat = charger_json_ia(texte)
-    assert resultat["texte"] == r"""\[
+    attendu = r"""\[
 \begin{aligned}
 a &= b \\
 c &= d
 \end{aligned}
 \]"""
+    texte = json.dumps({"texte": attendu})
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == attendu
 
 
 def test_json_invalide_recupere_uniquement_une_commande_latex_blanche():
