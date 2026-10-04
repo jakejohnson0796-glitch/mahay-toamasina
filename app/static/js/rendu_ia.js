@@ -50,13 +50,25 @@
   function protegerMath(brut) {
     const math = [];
     const source = convertirMarqueursTransport(String(brut == null ? "" : brut));
+    // Compatibilité renforcée : beaucoup de sorties legacy du Quiz IA utilisent
+    // encore $...$ ou $...$. Elles doivent être protégées avant Marked,
+    // exactement comme \\( ... \\) et \\[ ... \\].
     const protection = source.replace(
-      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)/g,
+      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$/g,
       function (match) {
-        if (match.indexOf("\\[") === 0 || match.indexOf("\\(") === 0) {
-          const display = match.indexOf("\\[") === 0;
+        const estDisplay =
+          match.indexOf("\\[") === 0 ||
+          match.indexOf("$") === 0;
+        const estInline =
+          match.indexOf("\\(") === 0 ||
+          (match.indexOf("$") === 0 && match.indexOf("$") !== 0);
+
+        if (estDisplay || estInline) {
           const contenu = match.slice(2, -2);
-          const index = math.push({ display: display, contenu: contenu }) - 1;
+          const index = math.push({
+            display: estDisplay,
+            contenu: contenu,
+          }) - 1;
           return TOKEN_MATH + index + "\uE001";
         }
         return match;
