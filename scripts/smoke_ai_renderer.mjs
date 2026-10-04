@@ -42,7 +42,10 @@ if (raw.includes('[[DISPLAY]]') || raw.includes('[[MATH]]')) {
 if (host.querySelectorAll('.katex').length < 2) {
   throw new Error('Expected KaTeX nodes were not generated');
 }
-if (raw.includes('\\lambda') || raw.includes('\\det')) {
-  throw new Error('Raw LaTeX command remains visible in text');
+const visibleClone = host.cloneNode(true);
+visibleClone.querySelectorAll('.katex').forEach((node) => node.remove());
+const visibleText = visibleClone.textContent || '';
+if (visibleText.includes('\\lambda') || visibleText.includes('\\det')) {
+  throw new Error('Raw LaTeX command remains outside rendered KaTeX nodes');
 }
 console.log(JSON.stringify({ ok: true, katex_nodes: host.querySelectorAll('.katex').length }));
