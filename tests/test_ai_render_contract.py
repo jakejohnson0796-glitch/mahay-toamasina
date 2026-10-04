@@ -96,3 +96,13 @@ def test_quiz_transport_convertit_les_marqueurs_sans_casser_le_json():
     assert "def _normaliser_quiz_transport" in code
     assert 'return r"\\[" + contenu + r"\\]"' in code
     assert 'return r"\\(" + contenu + r"\\)"' in code
+
+
+def test_quiz_normalise_aussi_la_sortie_des_correcteurs():
+    code = (ROOT / "app/ai_quiz.py").read_text(encoding="utf-8")
+    assert "questions_finales = _normaliser_quiz_transport(questions_finales)" in code
+
+
+def test_quiz_normalise_les_anciennes_tentatives_a_la_lecture():
+    code = (ROOT / "app/quiz.py").read_text(encoding="utf-8")
+    assert "ai_quiz._normaliser_quiz_transport" in code
