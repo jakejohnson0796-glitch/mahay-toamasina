@@ -1703,3 +1703,77 @@
     line-height: 1.45;
   }
 }
+
+
+/* Rendu IA commun : Marked produit des éléments HTML natifs, donc les règles
+   de rendu doivent s'appliquer au conteneur réel plutôt qu'à un nom de classe
+   que Marked n'ajoute jamais. */
+.ai-rendered-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ai-rendered-content table {
+  width: 100%;
+  margin: .7rem 0 .9rem;
+  border-collapse: collapse;
+  font-size: .78rem;
+}
+
+.ai-rendered-content th,
+.ai-rendered-content td {
+  padding: .52rem .62rem;
+  border-bottom: 1px solid var(--content-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ai-rendered-content th {
+  background: var(--content-bg);
+  color: var(--content-text);
+  font-weight: 800;
+}
+
+.ai-rendered-content td {
+  color: var(--content-text-muted);
+}
+
+.ai-rendered-content th[align="right"],
+.ai-rendered-content td[align="right"] {
+  text-align: right;
+}
+
+.ai-rendered-content pre {
+  max-width: 100%;
+  margin: .7rem 0;
+  padding: .75rem;
+  overflow-x: auto;
+  border: 1px solid var(--content-border);
+  border-radius: 10px;
+  background: var(--content-bg);
+}
+
+.ai-rendered-content pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.ai-rendered-content blockquote {
+  margin: .7rem 0;
+  padding: .55rem .8rem;
+  border-left: 3px solid var(--refonte-teal);
+  background: var(--content-bg);
+}
+
+.ai-rendered-content ul,
+.ai-rendered-content ol {
+  margin: .35rem 0 .8rem;
+  padding-left: 1.35rem;
+}
+
+.ai-rendered-content .gm-katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .2rem 0;
+}
