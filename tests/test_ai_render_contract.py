@@ -79,11 +79,11 @@ def test_renderer_contient_un_filet_latex_nu():
     assert "rendreLatexNu(cible)" in js
 
 
-def test_contrat_renderer_n_utilise_que_les_delimiteurs_valides():
+def test_contrat_renderer_n_utilise_plus_auto_render_ni_delimiters_dollar():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
-    assert r'{ left: "\\[", right: "\\]", display: true }' in js
-    assert r'{ left: "\\(", right: "\\)", display: false }' in js
+    assert "renderMathInElement" not in js
     assert '{ left: "$", right: "$"' not in js
+    assert "window.katex.render(item.contenu" in js
 
 
 def test_renderer_ne_depend_plus_de_auto_render():
