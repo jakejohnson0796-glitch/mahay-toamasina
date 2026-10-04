@@ -30,9 +30,15 @@
   // sanitization. Ainsi \\frac, \\begin, indices et underscores ne sont
   // pas interprétés comme du Markdown.
   const TOKEN_MATH = "\uE000GMATH_";
+  function convertirMarqueursTransport(source) {
+    return String(source || "")
+      .replace(/\[\[DISPLAY\]\]([\\s\\S]*?)\[\[\\/DISPLAY\]\]/g, "\\[$1\\]")
+      .replace(/\[\[MATH\]\]([\\s\\S]*?)\[\[\\/MATH\]\]/g, "\\($1\\)");
+  }
+
   function protegerMath(brut) {
     const math = [];
-    let source = String(brut == null ? "" : brut);
+    let source = convertirMarqueursTransport(String(brut == null ? "" : brut));
 
     source = source.replace(/\\\[((?:.|\\n)*?)\\\]/gs, function (_, contenu) {
       const index = math.push({ display: true, contenu: contenu }) - 1;
