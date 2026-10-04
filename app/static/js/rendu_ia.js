@@ -259,6 +259,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
+    cible.dataset.renduVersion = "2";
     return cible;
   }
 
