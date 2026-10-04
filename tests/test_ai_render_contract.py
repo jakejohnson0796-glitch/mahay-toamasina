@@ -86,3 +86,13 @@ def test_quiz_ia_utilise_un_transport_json_sans_backslash():
     assert "QUIZ_MATH_INLINE_OPEN" in code
     assert "_normaliser_quiz_transport" in code
     assert "TRANSPORT JSON DU QUIZ" in ensemble
+
+
+def test_quiz_transport_convertit_les_marqueurs_sans_casser_le_json():
+    code = (ROOT / "app/ai_quiz.py").read_text(encoding="utf-8")
+    assert "QUIZ_MATH_INLINE_OPEN = \"[[MATH]]\"" in code
+    assert "QUIZ_MATH_DISPLAY_OPEN = \"[[DISPLAY]]\"" in code
+    assert "def _convertir_math_transport_texte" in code
+    assert "def _normaliser_quiz_transport" in code
+    assert 'return r"\\[" + contenu + r"\\]"' in code
+    assert 'return r"\\(" + contenu + r"\\)"' in code
