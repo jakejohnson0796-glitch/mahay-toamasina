@@ -125,6 +125,8 @@
       delimiters: [
         { left: "\\[", right: "\\]", display: true },
         { left: "\\(", right: "\\)", display: false },
+        { left: "$", right: "$", display: true },
+        { left: "$", right: "$", display: false },
       ],
       throwOnError: false,
       trust: false,
@@ -146,7 +148,7 @@
 
   function estCommandeLatexNue(valeur) {
     return COMMANDES_LATEX_NUES.some(function (commande) {
-      return valeur.indexOf("\\\\" + commande) !== -1;
+      return new RegExp("\\\\" + commande + "\\b").test(valeur);
     }) || /\\begin\\{[A-Za-z*]+\\}/.test(valeur);
   }
 
@@ -164,7 +166,7 @@
       const valeur = texte.nodeValue || "";
       if (!estCommandeLatexNue(valeur)) return;
 
-      const motif = /\\\\(?:det|frac|dfrac|tfrac|sqrt|sum|prod|int|lim|ln|log|sin|cos|tan|cot|exp|partial|nabla|vec|mathbf|mathbb|mathrm|text|times|cdot|pm|leq|geq|neq|approx|in|infty|alpha|beta|gamma|delta|theta|lambda|mu|pi|sigma)\\b|\\\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/g;
+      const motif = /\\(?:det|frac|dfrac|tfrac|sqrt|sum|prod|int|lim|ln|log|sin|cos|tan|cot|exp|partial|nabla|vec|mathbf|mathbb|mathrm|text|times|cdot|pm|leq|geq|neq|approx|in|infty|alpha|beta|gamma|delta|theta|lambda|mu|pi|sigma)\\b|\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/g;
       const match = motif.exec(valeur);
       if (!match) return;
 
@@ -172,7 +174,7 @@
       const avant = valeur.slice(0, debut);
       const reste = valeur.slice(debut);
       const finMatch = reste.search(/[.!?;](?:\\s|$)/);
-      const fin = finMatch > 0 ? finMatch + 1 : reste.length;
+      const fin = finMatch > 0 ? finMatch : reste.length;
       const formule = reste.slice(0, fin).trim();
 
       if (!formule || !estCommandeLatexNue(formule)) return;
@@ -184,7 +186,7 @@
       cible.className = "gm-latex-fallback";
       try {
         window.katex.render(formule, cible, {
-          displayMode: /\\\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/.test(formule),
+          displayMode: /\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/.test(formule),
           throwOnError: false,
           trust: false,
           strict: "ignore"
