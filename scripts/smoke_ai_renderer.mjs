@@ -11,6 +11,8 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   runScripts: 'outside-only',
 });
 const { window } = dom;
+globalThis.document = window.document;
+globalThis.NodeFilter = window.NodeFilter;
 window.marked = marked;
 window.DOMPurify = createDOMPurify(window);
 window.katex = katex;
