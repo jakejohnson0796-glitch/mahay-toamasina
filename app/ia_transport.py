@@ -118,9 +118,11 @@ def _normaliser_latex_nu(texte: str) -> str:
         zones.append(match.group(0))
         return f"__GMATHZONE_{index}__"
 
+    # Les zones de code sont prioritaires : un code inline peut lui-même
+    # contenir des délimiteurs LaTeX et ne doit jamais être extrait comme math.
     source = re.sub(r"(?s)\x60\x60\x60.*?\x60\x60\x60", masquer, source)
-    source = re.sub(r"(?s)\\\[.*?\\\]|\\\(.*?\\\)", masquer, source)
     source = re.sub(r"\x60[^\x60\n]*\x60", masquer, source)
+    source = re.sub(r"(?s)\\\[.*?\\\]|\\\(.*?\\\)", masquer, source)
 
     resultat = []
     for ligne in source.splitlines():
