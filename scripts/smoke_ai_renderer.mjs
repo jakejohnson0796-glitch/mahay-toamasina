@@ -163,7 +163,7 @@ if (before !== host.innerHTML) {
   throw new Error('Renderer is not idempotent with stable dependencies');
 }
 
-console.log(JSON.stringify({ ok: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));)) {
+console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));)) {
   throw new Error('Dollar math delimiters remain visible');
 }
 
