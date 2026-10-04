@@ -18,9 +18,9 @@
           {% if session_tuteur.statut_verification_ia == "terminee" %}
           Vérification multi-modèles terminée
           {% elif session_tuteur.statut_verification_ia == "a_revoir" %}
-          Réponse générée · confiance insuffisante, à revoir
+          Réponse disponible · vérification à confirmer
           {% elif session_tuteur.statut_verification_ia == "echouee" %}
-          Vérification indisponible · réponse non confirmée
+          Réponse disponible · vérification momentanément indisponible
           {% else %}
           Réponse générée · vérification multi-modèles en cours
           {% endif %}

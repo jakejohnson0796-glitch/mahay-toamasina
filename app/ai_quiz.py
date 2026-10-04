@@ -760,19 +760,24 @@ def generer_reponse_tuteur(
         notion=notion,
         matiere=matiere,
     )
-    verification_ok = reponse_finale.pop("_verification_ok", True)
+    verification_ok = bool(reponse_finale.pop("_verification_ok", True))
     if parametres.ai_ensemble_enabled and not verification_ok:
-        echec = _reponse_tuteur_erreur(
-            "La réponse n'a pas pu être confirmée de façon fiable. "
-            "Aucune correction incertaine n'est publiée. Réessaie dans un instant."
+        # MODIF : le Tuteur doit rester utilisable même si la couche de
+        # vérification multi-modèles est indisponible. On conserve la réponse
+        # initiale structurée, mais on la marque clairement comme non confirmée.
+        # Une panne de vérification ne doit jamais devenir une panne du Tuteur.
+        reponse_finale["_verification_ok"] = False
+        reponse_finale["_statut_verification"] = (
+            "a_revoir"
+            if reponse_finale.get("_statut_verification") != "echouee"
+            else "echouee"
         )
-        echec["_verification_ok"] = False
-        echec["_statut_verification"] = "echouee"
-        echec["_erreur_verification"] = (
+        reponse_finale["_erreur_verification"] = (
             reponse_finale.get("_erreur_verification")
-            or "Verification multi-modeles insuffisante."
+            or "La vérification multi-modèles est momentanément indisponible."
         )
-        return echec
+    else:
+        reponse_finale["_verification_ok"] = verification_ok
     return reponse_finale
 
 
