@@ -64,7 +64,8 @@
           (match.indexOf("$") === 0 && match.indexOf("$") !== 0);
 
         if (estDisplay || estInline) {
-          const contenu = match.slice(2, -2);
+          const longueurDelimiteur = estDisplay ? 2 : 1;
+          const contenu = match.slice(longueurDelimiteur, -longueurDelimiteur);
           const index = math.push({
             display: estDisplay,
             contenu: contenu,
