@@ -73,14 +73,17 @@ def _convertir_math_transport_texte(valeur: object) -> str:
         return r"\(" + contenu + r"\)"
 
     # DISPLAY d'abord pour éviter qu'un segment imbriqué soit traité deux fois.
+    # MODIF : utiliser des littéraux regex explicites. L'ancienne écriture
+    # \[[]...[]] ne reconnaissait pas réellement les marqueurs [[DISPLAY]]
+    # / [[MATH]], qui pouvaient donc rester visibles dans le quiz.
     texte = re.sub(
-        r"\[[]DISPLAY[]](.*?)\[[]/DISPLAY[]]",
+        r"\[\[DISPLAY\]\](.*?)\[\[/DISPLAY\]\]",
         display,
         texte,
         flags=re.DOTALL,
     )
     texte = re.sub(
-        r"\[[]MATH[]](.*?)\[[]/MATH[]]",
+        r"\[\[MATH\]\](.*?)\[\[/MATH\]\]",
         inline,
         texte,
         flags=re.DOTALL,
