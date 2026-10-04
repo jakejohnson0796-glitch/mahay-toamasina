@@ -104,8 +104,24 @@ def _convertir_notation_math_sure(contenu: str) -> str:
     return texte
 
 
+def _normaliser_sauts_de_ligne_litteraux(texte: str) -> str:
+    """Convertit les \n littéraux produits par certains modèles en vrais retours.
+
+    On cible uniquement \n suivis d'une majuscule, d'un espace ou d'un
+    antislash suivi d'une majuscule. Cela évite de transformer des commandes
+    LaTeX valides comme \nabla.
+    """
+    texte = re.sub(r"\\n(?=[A-ZÀ-ÖØ-Þ])", "\n", texte)
+    texte = re.sub(r"\\n(?=\\[A-ZÀ-ÖØ-Þ])", "\n", texte)
+    texte = re.sub(r"\\n(?=\\s)", "\n", texte)
+    return texte
+
+
 def convertir_math_transport_texte(valeur: Any) -> str:
     texte = "" if valeur is None else str(valeur)
+    # MODIF : corrige les réponses Tuteur/Quiz qui transportent encore des
+    # retours à la ligne sous forme littérale \\n.
+    texte = _normaliser_sauts_de_ligne_litteraux(texte)
 
     def display(match: re.Match[str]) -> str:
         return r"\[" + _convertir_notation_math_sure(match.group(1)) + r"\]"
