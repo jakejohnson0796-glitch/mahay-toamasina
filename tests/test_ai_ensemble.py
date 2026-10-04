@@ -55,6 +55,11 @@ def test_deux_critiques_daccord_retourne_une_seule_sortie(monkeypatch):
         "confiant": True,
         "problemes": [],
     })
+    monkeypatch.setattr(
+        ai_ensemble.cost_controller,
+        "secondary_reviewer_needed",
+        lambda *a, **k: True,
+    )
 
     def fail_arbiter(*args, **kwargs):
         raise AssertionError("pas besoin d'arbitre quand les deux critiques sont d'accord")
@@ -108,32 +113,83 @@ def test_desaccord_des_critiques_passe_par_larbitre(monkeypatch):
     assert audit["arbitration"] == "groq_arbiter"
 
 
-def test_tuteur_reste_une_reponse_unique(monkeypatch):
+def test_tuteur_simple_ne_depense_pas_un_second_relecteur(monkeypatch):
     monkeypatch.setattr(ai_ensemble.parametres, "ai_ensemble_enabled", True)
     base = {
-        "explication": "Explication",
-        "exemple": "Exemple",
-        "exercice": "Exercice",
-        "correction": "Correction",
+        "explication": "Explication simple",
+        "exemple": "Exemple simple",
+        "exercice": "Exercice simple",
+        "correction": "Correction simple",
     }
     monkeypatch.setattr(ai_ensemble, "_critique_tuteur_groq", lambda *a, **k: {
         "confiant": True, "problemes": [], "ameliorations": []
     })
-    monkeypatch.setattr(ai_ensemble, "_critique_tuteur_gemini", lambda *a, **k: {
-        "confiant": True, "problemes": [], "ameliorations": []
-    })
+
+    def fail_gemini(*args, **kwargs):
+        raise AssertionError("Gemini ne doit pas etre appele sur une reponse simple et confiante")
+
+    monkeypatch.setattr(ai_ensemble, "_critique_tuteur_gemini", fail_gemini)
 
     result, confiant, audit = ai_ensemble.verifier_tuteur(
         base,
-        "Explique les dérivées",
-        "Dérivées",
-        "Mathématiques",
+        "Explique les derivees",
+        "Derivees",
+        "Mathematiques",
         {},
     )
 
     assert result == base
     assert confiant is True
+    assert audit["arbitration"] if "arbitration" in audit else True
+    assert len(audit["models"]) == 2
+
+
+def test_tuteur_complexe_demande_une_seconde_relecture(monkeypatch):
+    monkeypatch.setattr(ai_ensemble.parametres, "ai_ensemble_enabled", True)
+    base = {
+        "explication": "Etude d'une matrice 3x3 avec determinant et systeme.",
+        "exemple": r"\(\det(A) = 3\)",
+        "exercice": "Calculer le determinant puis resoudre le systeme.",
+        "correction": r"\(x=2\)",
+    }
+    called = {"gemini": False}
+    monkeypatch.setattr(ai_ensemble, "_critique_tuteur_groq", lambda *a, **k: {
+        "confiant": True, "problemes": [], "ameliorations": []
+    })
+
+    def gemini(*args, **kwargs):
+        called["gemini"] = True
+        return {"confiant": True, "problemes": [], "ameliorations": []}
+
+    monkeypatch.setattr(ai_ensemble, "_critique_tuteur_gemini", gemini)
+
+    result, confiant, audit = ai_ensemble.verifier_tuteur(
+        base,
+        "Explique ce calcul de determinant et le systeme associe ?",
+        "Determinant et systemes",
+        "Mathematiques",
+        {},
+    )
+
+    assert result == base
+    assert confiant is True
+    assert called["gemini"] is True
     assert len(audit["models"]) == 3
+
+
+def test_controller_refuse_retry_apres_429(monkeypatch):
+    ai_ensemble.cost_controller._cooldowns.clear()
+    class RateLimitError(Exception):
+        status_code = 429
+
+    err = RateLimitError("rate limit; try again in 2m")
+    delay = ai_ensemble.cost_controller.record_failure("groq", err)
+
+    assert delay >= 120
+    assert not ai_ensemble.cost_controller.available("groq")
+
+    ai_ensemble.cost_controller.clear_failure("groq")
+    assert ai_ensemble.cost_controller.available("groq")
 
 
 

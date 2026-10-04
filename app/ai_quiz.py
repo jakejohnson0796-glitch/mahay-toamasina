@@ -249,15 +249,22 @@ def _generer_completion_avec_reessai(
             budget_adapte * 2,
         )
         try:
-            completion = client.chat.completions.create(
-                model=parametres.groq_model,
-                max_completion_tokens=budget_essai,
-                reasoning_effort="low",
-                include_reasoning=False,
-                tools=[OUTIL_QUIZ],
-                tool_choice={"type": "function", "function": {"name": "soumettre_quiz"}},
-                messages=[{"role": "user", "content": contenu}],
+            completion = ai_ensemble.cost_controller.call(
+                "groq",
+                lambda: client.chat.completions.create(
+                    model=parametres.groq_model,
+                    max_completion_tokens=budget_essai,
+                    reasoning_effort="low",
+                    include_reasoning=False,
+                    tools=[OUTIL_QUIZ],
+                    tool_choice={"type": "function", "function": {"name": "soumettre_quiz"}},
+                    messages=[{"role": "user", "content": contenu}],
+                ),
             )
+        except ai_ensemble.ProviderCooldown as erreur:
+            derniere_erreur = erreur
+            logger.warning("Generation quiz suspendue: %s", erreur)
+            break
         except Exception as erreur:
             derniere_erreur = erreur
             logger.warning(
@@ -709,7 +716,10 @@ def generer_reponse_tuteur(
                           "repondre_tuteur avec un JSON strict et aucun texte libre."
                     ),
                 }]
-            completion = client.chat.completions.create(**kwargs)
+            completion = ai_ensemble.cost_controller.call(
+                "groq",
+                lambda: client.chat.completions.create(**kwargs),
+            )
             if not completion.choices[0].message.tool_calls:
                 derniere_erreur = ValueError("Aucun tool-call Tuteur recu.")
                 continue
@@ -721,12 +731,27 @@ def generer_reponse_tuteur(
                 derniere_erreur = erreur
                 continue
             break
+        except ai_ensemble.ProviderCooldown as erreur:
+            derniere_erreur = erreur
+            # Fallback fournisseur uniquement quand Groq est indisponible.
+            fallback = ai_ensemble._gemini_json(
+                kwargs["messages"][0]["content"],
+                ai_ensemble.TUTEUR_GEMINI_SCHEMA,
+            )
+            if fallback:
+                arguments = fallback
+                break
+            logger.warning("Tuteur suspendu: %s", erreur)
+            return _reponse_tuteur_erreur(
+                "Le Tuteur IA est temporairement tres sollicite. "
+                "Ta question n'est pas perdue; reessaie dans quelques instants."
+            )
         except Exception as erreur:
             derniere_erreur = erreur
     else:
         return _reponse_tuteur_erreur(
-            "La génération du Tuteur a échoué après plusieurs tentatives."
-            + (f" ({type(derniere_erreur).__name__})" if derniere_erreur else "")
+            "Le Tuteur IA est temporairement tres sollicite. "
+            "Ta question n'est pas perdue; reessaie dans quelques instants."
         )
 
     reponse_initiale = normaliser_structure_tuteur({
