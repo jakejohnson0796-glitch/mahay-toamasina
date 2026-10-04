@@ -24,6 +24,74 @@
     }
   }
 
+  // MODIF : Marked considère \\[ et \\( comme des échappements Markdown et
+  // supprime donc le premier antislash. On protège les blocs mathématiques
+  // ENTIEREMENT avant Markdown, puis on restaure leurs délimiteurs après
+  // sanitization. Ainsi \\frac, \\begin, indices et underscores ne sont
+  // pas interprétés comme du Markdown.
+  const TOKEN_MATH = "\uE000GMATH_";
+  function protegerMath(brut) {
+    const math = [];
+    let source = String(brut == null ? "" : brut);
+
+    source = source.replace(/\\\[((?:.|\\n)*?)\\\]/gs, function (_, contenu) {
+      const index = math.push({ display: true, contenu: contenu }) - 1;
+      return TOKEN_MATH + index + "\uE001";
+    });
+    source = source.replace(/\\\(((?:.|\\n)*?)\\\)/gs, function (_, contenu) {
+      const index = math.push({ display: false, contenu: contenu }) - 1;
+      return TOKEN_MATH + index + "\uE001";
+    });
+
+    return { source: source, math: math };
+  }
+
+  function restaurerMath(fragment, math) {
+    if (!math.length) return;
+
+    const racine = fragment.ownerDocument || document;
+    const walker = racine.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
+    const noeuds = [];
+    let noeud;
+    while ((noeud = walker.nextNode())) noeuds.push(noeud);
+
+    noeuds.forEach(function (texte) {
+      const valeur = texte.nodeValue || "";
+      const motif = /\uE000GMATH_(\d+)\uE001/g;
+      if (!motif.test(valeur)) return;
+      motif.lastIndex = 0;
+
+      const parent = texte.parentNode;
+      if (!parent) return;
+      const morceaux = [];
+      let dernier = 0;
+      let correspondance;
+      while ((correspondance = motif.exec(valeur))) {
+        if (correspondance.index > dernier) {
+          morceaux.push(racine.createTextNode(valeur.slice(dernier, correspondance.index)));
+        }
+        const item = math[Number(correspondance[1])];
+        if (item) {
+          morceaux.push(
+            racine.createTextNode(
+              item.display
+                ? "\\[" + item.contenu + "\\]"
+                : "\\(" + item.contenu + "\\)"
+            )
+          );
+        }
+        dernier = motif.lastIndex;
+      }
+      if (dernier < valeur.length) {
+        morceaux.push(racine.createTextNode(valeur.slice(dernier)));
+      }
+      morceaux.forEach(function (morceau) {
+        parent.insertBefore(morceau, texte);
+      });
+      parent.removeChild(texte);
+    });
+  }
+
   function parserMarkdown(brut, enLigne) {
     const texte = String(brut == null ? "" : brut);
     if (enLigne && typeof window.marked.parseInline === "function") {
@@ -90,9 +158,10 @@
 
     verifierDependances();
 
-    const texte = String(brut == null ? "" : brut);
-    const html = parserMarkdown(texte, configuration.enLigne);
+    const protection = protegerMath(String(brut == null ? "" : brut));
+    const html = parserMarkdown(protection.source, configuration.enLigne);
     const fragment = fragmentSanitise(html);
+    restaurerMath(fragment, protection.math);
 
     // MODIF : replaceChildren remplace entièrement le contenu sans écrire la
     // chaîne IA brute dans innerHTML.
