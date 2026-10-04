@@ -19,6 +19,7 @@ jobs:
       ENVIRONNEMENT: developpement
       SESSION_SECRET_KEY: ci-only-not-for-production
       DATABASE_URL: sqlite:///./ci.db
+      GIT_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,6 +34,14 @@ jobs:
         run: python -m compileall -q app tests
       - name: Verifier le contrat de deploiement Render
         run: python scripts/verify_deployment_contract.py
+      - name: Vérifier l'identité de release et le renderer IA
+        run: python scripts/verify_release_identity.py
+
+      - name: Smoke browser du renderer IA
+        run: |
+          npm init -y >/tmp/mahay-render-smoke-package.json
+          npm install --no-save jsdom@24 marked@12 dompurify@3.1.6 katex@0.16.11
+          node scripts/smoke_ai_renderer.mjs
       - name: Lancer les tests (un module par processus)
         run: |
           set -e
@@ -48,6 +57,7 @@ jobs:
       SESSION_SECRET_KEY: ci-only-not-for-production
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mahay_ci
       SUPABASE_BUCKET: documents
+      GIT_COMMIT: ${{ github.sha }}
     services:
       postgres:
         image: postgres:16
