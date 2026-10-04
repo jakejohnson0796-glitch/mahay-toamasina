@@ -633,6 +633,11 @@ def verifier_et_corriger_questions(
         logger.warning("Verification multi-modeles echouee: %s", erreur)
         return questions, False
 
+    # MODIF : les correcteurs/arbitres peuvent eux aussi retourner les marqueurs
+    # [[MATH]] / [[DISPLAY]]. On normalise leur sortie avant toute validation et
+    # avant stockage, sinon ces marqueurs peuvent être affichés littéralement.
+    questions_finales = _normaliser_quiz_transport(questions_finales)
+
     duree_secondes = round(time.monotonic() - debut, 3)
     resume_audit = _resume_audit_ensemble(audit, confiant)
     ai_metrics.enregistrer_audit(
