@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 REGLES_FORMAT = r"""
 Réponds en Markdown. Formules :
 - En ligne : \( ... \)   En bloc : \[ ... \]   (jamais d'autre notation).
+- OBLIGATOIRE : aucune commande LaTeX ne doit apparaître seule dans le texte. Toute séquence \det, \frac, \sqrt, \begin{...}, \mathrm, etc. doit être placée entre \( ... \) ou \[ ... \].
+- Exemple correct : « La formule est \(\\det(A)=ad-bc\). » ou « \[\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}\] ».
+- Ne produis jamais « La formule est \\det(A)=... » sans délimiteur.
 - Plusieurs lignes : \[ \begin{aligned} ... \end{aligned} \].
 - Chimie : \ce{2H2 + O2 -> 2H2O}, \ce{Fe^{3+}}, \ce{CH3COOH <=> CH3COO- + H+}.
 - Physique : unités en \mathrm{m\,s^{-2}}, vecteurs en \vec{F}. N'utilise pas siunitx (\SI, \si).

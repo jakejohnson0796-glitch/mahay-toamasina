@@ -125,10 +125,83 @@
       delimiters: [
         { left: "\\[", right: "\\]", display: true },
         { left: "\\(", right: "\\)", display: false },
+        { left: "$", right: "$", display: true },
+        { left: "$", right: "$", display: false },
       ],
       throwOnError: false,
       trust: false,
       strict: "ignore",
+    });
+  }
+
+  // MODIF : filet de sécurité pour les réponses IA qui contiennent encore
+  // une commande LaTeX nue (`\\det`, `\\frac`, `\\begin{...}`, etc.) sans
+  // délimiteur. Le contrat IA reste prioritaire ; ce fallback évite qu'une
+  // réponse imparfaitement formatée redevienne du texte brut.
+  const COMMANDES_LATEX_NUES = [
+    "det", "frac", "dfrac", "tfrac", "sqrt", "sum", "prod", "int", "lim",
+    "ln", "log", "sin", "cos", "tan", "cot", "exp", "partial", "nabla",
+    "vec", "mathbf", "mathbb", "mathrm", "text", "times", "cdot", "pm",
+    "leq", "geq", "neq", "approx", "in", "infty", "alpha", "beta", "gamma",
+    "delta", "theta", "lambda", "mu", "pi", "sigma"
+  ];
+
+  function estCommandeLatexNue(valeur) {
+    return COMMANDES_LATEX_NUES.some(function (commande) {
+      return new RegExp("\\\\" + commande + "\\b").test(valeur);
+    }) || /\\begin\\{[A-Za-z*]+\\}/.test(valeur);
+  }
+
+  function rendreLatexNu(element) {
+    const racine = element.ownerDocument || document;
+    const walker = racine.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const noeuds = [];
+    let noeud;
+    while ((noeud = walker.nextNode())) {
+      if (noeud.parentElement && /^(CODE|PRE)$/.test(noeud.parentElement.tagName)) continue;
+      noeuds.push(noeud);
+    }
+
+    noeuds.forEach(function (texte) {
+      const valeur = texte.nodeValue || "";
+      if (!estCommandeLatexNue(valeur)) return;
+
+      const motif = /\\(?:det|frac|dfrac|tfrac|sqrt|sum|prod|int|lim|ln|log|sin|cos|tan|cot|exp|partial|nabla|vec|mathbf|mathbb|mathrm|text|times|cdot|pm|leq|geq|neq|approx|in|infty|alpha|beta|gamma|delta|theta|lambda|mu|pi|sigma)\\b|\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/g;
+      const match = motif.exec(valeur);
+      if (!match) return;
+
+      const debut = match.index;
+      const avant = valeur.slice(0, debut);
+      const reste = valeur.slice(debut);
+      const finMatch = reste.search(/[.!?;](?:\\s|$)/);
+      const fin = finMatch > 0 ? finMatch : reste.length;
+      const formule = reste.slice(0, fin).trim();
+
+      if (!formule || !estCommandeLatexNue(formule)) return;
+
+      const morceaux = [];
+      if (avant) morceaux.push(racine.createTextNode(avant));
+
+      const cible = racine.createElement("span");
+      cible.className = "gm-latex-fallback";
+      try {
+        window.katex.render(formule, cible, {
+          displayMode: /\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/.test(formule),
+          throwOnError: false,
+          trust: false,
+          strict: "ignore"
+        });
+        morceaux.push(cible);
+      } catch (erreur) {
+        return;
+      }
+
+      const apres = reste.slice(fin);
+      if (apres) morceaux.push(racine.createTextNode(apres));
+      morceaux.forEach(function (morceau) {
+        texte.parentNode.insertBefore(morceau, texte);
+      });
+      texte.parentNode.removeChild(texte);
     });
   }
 
@@ -175,6 +248,9 @@
       console.warn("[Gasy Mahay] rendu KaTeX partiel :", erreur);
     }
 
+    // MODIF : dernier filet de sécurité pour le LaTeX nu produit par un
+    // modèle malgré le contrat de format.
+    rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
     return cible;
