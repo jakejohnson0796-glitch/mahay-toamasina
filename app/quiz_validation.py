@@ -2,6 +2,8 @@
 import re
 from typing import Any
 
+from .ia_transport import convertir_math_transport_texte
+
 MAX_QUESTION_CHARS = 800
 MAX_CHOIX_CHARS = 300
 MAX_EXPLICATION_CHARS = 800
@@ -11,7 +13,7 @@ MAX_TOTAL_CHARS = 60_000
 
 def normaliser_math_texte(texte: str) -> str:
     """Nettoie Markdown sans détruire la notation mathématique structurée."""
-    texte = str(texte or "").strip()
+    texte = convertir_math_transport_texte(str(texte or "").strip())
     if not texte:
         return ""
 
