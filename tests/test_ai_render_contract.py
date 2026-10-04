@@ -17,6 +17,14 @@ def test_renderer_ia_contient_les_garde_fous():
     assert "data-rendu" in js
 
 
+def test_base_charge_katex_auto_render():
+    # MODIF : katex.min.js ne fournit pas renderMathInElement ; l'extension
+    # auto-render doit être chargée avant le renderer IA.
+    page = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
+    assert "katex@0.16.11/dist/contrib/auto-render.min.js" in page
+    assert "rendu_ia.js" in page
+
+
 def test_security_csp_autorise_les_assets_katex_sans_ouvrir_script_src():
     # MODIF : contrôle statique supplémentaire sur la politique CSP.
     code = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
