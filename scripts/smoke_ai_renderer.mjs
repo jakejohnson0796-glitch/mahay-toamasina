@@ -116,7 +116,7 @@ const tableSource = [
   '| Expression | Valeur |',
   '| --- | --- |',
   '| \\(x^2\\) | 4 |'
-].join('\\n');
+].join('\n');
 window.rendreReponseIA(tableSource, tableHost);
 if (!tableHost.querySelector('table')) {
   throw new Error('Markdown table missing');
