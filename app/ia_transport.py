@@ -164,10 +164,13 @@ def _normaliser_latex_nu(texte: str) -> str:
         resultat_texte = resultat_texte.replace(f"__GMATHZONE_{index}__", zone)
     return resultat_texte
 
-PROMPT_TRANSPORT_SANS_ANTISLASH = REGLES_FORMAT\n\n\ndef convertir_math_transport_texte(valeur: Any) -> str:
+PROMPT_TRANSPORT_SANS_ANTISLASH = REGLES_FORMAT
+
+
+def convertir_math_transport_texte(valeur: Any) -> str:
     texte = "" if valeur is None else str(valeur)
-    # MODIF : corrige les réponses Tuteur/Quiz qui transportent encore des
-    # retours à la ligne sous forme littérale \\n.
+    # Les chaînes JSON valides ont déjà été décodées par json.loads().
+    # Aucune normalisation des sauts de ligne n'est appliquée ici.
     texte = _normaliser_latex_nu(texte)
 
     def display(match: re.Match[str]) -> str:
