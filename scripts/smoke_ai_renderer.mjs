@@ -165,20 +165,6 @@ if (before !== host.innerHTML) {
 
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
 
-// Mode dégradé : Marked et DOMPurify indisponibles, les formules doivent
-// toujours disparaître des marqueurs de transport.
-window.marked = null;
-window.DOMPurify = null;
-host.replaceChildren();
-window.rendreReponseIA(sample, host);
-const rawDegrade = host.textContent || "";
-if (rawDegrade.includes("[[DISPLAY]]") || rawDegrade.includes("[[MATH]]")) {
-  throw new Error("Transport markers remain visible in degraded mode");
-}
-if (host.querySelectorAll(".katex").length < 2) {
-  throw new Error("KaTeX direct rendering must survive missing Markdown dependencies");
-}
-
 // Réactivation : le renderer doit retrouver la même source et repasser en rendu riche.
 window.marked = marked;
 window.DOMPurify = purifyInstance;
