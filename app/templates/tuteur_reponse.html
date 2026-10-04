@@ -17,8 +17,10 @@
         <span data-tuteur-verification-label>
           {% if session_tuteur.statut_verification_ia == "terminee" %}
           Vérification multi-modèles terminée
+          {% elif session_tuteur.statut_verification_ia == "a_revoir" %}
+          Réponse générée · confiance insuffisante, à revoir
           {% elif session_tuteur.statut_verification_ia == "echouee" %}
-          Réponse initiale conservée
+          Vérification indisponible · réponse non confirmée
           {% else %}
           Réponse générée · vérification multi-modèles en cours
           {% endif %}
