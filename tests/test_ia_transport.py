@@ -67,3 +67,24 @@ def test_normalise_les_sauts_litteraux_dans_le_tuteur():
     reponse = normaliser_structure_tuteur({"explication": "Étape 1.\\nÉtape 2.\\nLa formule : [[MATH]]x^2[[/MATH]]", "exemple": "", "exercice": "", "correction": ""})
     assert "\\nÉtape" not in reponse["explication"]
     assert "\\nLa formule" not in reponse["explication"]
+
+def test_normalise_le_latex_nu_exact_du_tuteur():
+    brut = (
+        "Calculs\n"
+        "\\det = a*d - b*c; = (-4)*(-2) - 6*1; = 8 - 6; = 2"
+    )
+    valeur = convertir_math_transport_texte(brut)
+    assert "\\(" in valeur
+    assert "\\det = a*d - b*c; = (-4)*(-2) - 6*1; = 8 - 6; = 2\\)" in valeur
+
+def test_normalise_un_begin_matrix_nu_en_bloc():
+    brut = "\\begin{bmatrix} -4 & 6 \\\\ 1 & -2 \\end{bmatrix}"
+    valeur = convertir_math_transport_texte(brut)
+    assert "\\[" in valeur
+    assert "\\begin{bmatrix}" in valeur
+    assert "\\]" in valeur
+
+def test_ne_wrappe_pas_le_code_avec_une_commande_latex():
+    brut = "```text\n\\det = a*d - b*c\n```"
+    valeur = convertir_math_transport_texte(brut)
+    assert valeur == brut
