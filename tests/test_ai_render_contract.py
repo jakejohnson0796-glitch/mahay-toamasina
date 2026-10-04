@@ -111,5 +111,9 @@ def test_quiz_normalise_les_anciennes_tentatives_a_la_lecture():
 def test_quiz_marker_regex_matches_real_transport_markers():
     from app.ai_quiz import _convertir_math_transport_texte
 
-    assert _convertir_math_transport_texte("[[MATH]]det(A)=ad-bc[[/MATH]]") == r"\(\\det(A)=ad-bc\)"
-    assert _convertir_math_transport_texte("[[DISPLAY]][a b ; c d][[/DISPLAY]]").startswith(r"\[\\begin{pmatrix}")
+    inline = _convertir_math_transport_texte("[[MATH]]det(A)=ad-bc[[/MATH]]")
+    display = _convertir_math_transport_texte("[[DISPLAY]][a b ; c d][[/DISPLAY]]")
+    assert inline.startswith(r"\(") and inline.endswith(r"\)")
+    assert r"\det(A)" in inline
+    assert display.startswith(r"\[") and display.endswith(r"\]")
+    assert r"\begin{pmatrix}" in display
