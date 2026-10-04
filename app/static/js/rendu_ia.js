@@ -31,26 +31,32 @@
   // pas interprétés comme du Markdown.
   const TOKEN_MATH = "\uE000GMATH_";
   function convertirMarqueursTransport(source) {
-    return String(source || "")
-      .replace(/\[\[DISPLAY\]\]([\s\S]*?)\[\[\/DISPLAY\]\]/g, "\\[$1\\]")
-      .replace(/\[\[MATH\]\]([\s\S]*?)\[\[\/MATH\]\]/g, "\\($1\\)")
-      .replace(/\[\[CHEM\]\]([\s\S]*?)\[\[\/CHEM\]\]/g, "\\(\\ce{$1}\\)");
+    const texte = String(source || "");
+    return texte.replace(/\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\[\[DISPLAY\]\]([\s\S]*?)\[\[\/DISPLAY\]\]|\[\[MATH\]\]([\s\S]*?)\[\[\/MATH\]\]|\[\[CHEM\]\]([\s\S]*?)\[\[\/CHEM\]\]/g,
+      function (match, display, inline, chem) {
+        if (display === undefined && inline === undefined && chem === undefined) return match;
+        if (display !== undefined) return "\\[" + display + "\\]";
+        if (inline !== undefined) return "\\(" + inline + "\\)";
+        return "\\(\\ce{" + chem + "}\\)";
+      });
   }
 
   function protegerMath(brut) {
     const math = [];
-    let source = convertirMarqueursTransport(String(brut == null ? "" : brut));
-
-    source = source.replace(/\\\[((?:.|\\n)*?)\\\]/gs, function (_, contenu) {
-      const index = math.push({ display: true, contenu: contenu }) - 1;
-      return TOKEN_MATH + index + "\uE001";
-    });
-    source = source.replace(/\\\(((?:.|\\n)*?)\\\)/gs, function (_, contenu) {
-      const index = math.push({ display: false, contenu: contenu }) - 1;
-      return TOKEN_MATH + index + "\uE001";
-    });
-
-    return { source: source, math: math };
+    const source = convertirMarqueursTransport(String(brut == null ? "" : brut));
+    const protection = source.replace(
+      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)/g,
+      function (match) {
+        if (match.indexOf("\\[") === 0 || match.indexOf("\\(") === 0) {
+          const display = match.indexOf("\\[") === 0;
+          const contenu = match.slice(2, -2);
+          const index = math.push({ display: display, contenu: contenu }) - 1;
+          return TOKEN_MATH + index + "\uE001";
+        }
+        return match;
+      }
+    );
+    return { source: protection, math: math };
   }
 
   function restaurerMath(fragment, math) {
@@ -118,7 +124,12 @@
   }
 
   function parserMarkdown(brut, enLigne) {
-    const texte = String(brut == null ? "" : brut);
+    let texte = String(brut == null ? "" : brut);
+
+    if (enLigne) {
+      texte = texte.replace(/(\d)\*(?=\d)/g, "$1\\*");
+    }
+
     if (enLigne && typeof window.marked.parseInline === "function") {
       return window.marked.parseInline(texte);
     }
@@ -229,39 +240,51 @@
     });
   }
 
+  function contexteEnLigne(element, configuration) {
+    if (configuration.enLigne) return true;
+    if (!element || !element.tagName) return false;
+    return /^(H1|H2|H3|H4|H5|H6|P|SPAN|STRONG|EM|LABEL|BUTTON|SMALL)$/.test(element.tagName);
+  }
+
   function rendreReponseIA(brut, element, options) {
     const cible = element;
-    const configuration = Object.assign({ enLigne: false }, options || {});
+    const configuration = Object.assign({ enLigne: false, force: false }, options || {});
 
     if (!cible) {
       throw new Error("rendreReponseIA : élément cible manquant.");
     }
 
+    if ((cible.tagName === "CODE" || cible.tagName === "PRE") && !configuration.force) {
+      return cible;
+    }
+
+    if (cible.dataset.renduTraite === "1" && !configuration.force) {
+      return cible;
+    }
+
     verifierDependances();
 
     const protection = protegerMath(String(brut == null ? "" : brut));
-    const html = parserMarkdown(protection.source, configuration.enLigne);
+    const html = parserMarkdown(
+      protection.source,
+      contexteEnLigne(cible, configuration)
+    );
     const fragment = fragmentSanitise(html);
     restaurerMath(fragment, protection.math);
 
-    // MODIF : replaceChildren remplace entièrement le contenu sans écrire la
-    // chaîne IA brute dans innerHTML.
     cible.replaceChildren(fragment);
 
-    // MODIF : dernier filet de sécurité pour le LaTeX nu produit par un
-    // modèle malgré le contrat de format.
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "2";
+    cible.dataset.renduVersion = "3";
     return cible;
   }
 
   function rendreTous(parent) {
     const racine = parent || document;
     racine.querySelectorAll(SELECTEUR_RENDU).forEach(function (element) {
-      // MODIF : data-rendu-ligne active automatiquement le mode inline pour
-      // les choix courts des QCM, sans paragraphes parasites.
+      if (element.dataset.renduTraite === "1") return;
       const enLigne = element.hasAttribute("data-rendu-ligne");
       const source = element.textContent || "";
       rendreReponseIA(source, element, { enLigne: enLigne });
