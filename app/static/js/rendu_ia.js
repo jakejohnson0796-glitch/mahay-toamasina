@@ -12,7 +12,7 @@
     const dependances = [
       ["marked", Boolean(window.marked)],
       ["DOMPurify", Boolean(window.DOMPurify)],
-      ["KaTeX auto-render", Boolean(window.katex && typeof window.katex.renderMathInElement === "function")],
+      ["KaTeX auto-render", typeof window.renderMathInElement === "function"],
     ];
 
     const manquantes = dependances
@@ -53,7 +53,7 @@
     // MODIF : trust=false empêche KaTeX d'interpréter des commandes dangereuses
     // comme des extensions HTML/URL ; throwOnError=false évite qu'une formule
     // imparfaite fasse disparaître toute la réponse.
-    window.katex.renderMathInElement(element, {
+    window.renderMathInElement(element, {
       delimiters: [
         { left: "\\[", right: "\\]", display: true },
         { left: "\\(", right: "\\)", display: false },
@@ -122,14 +122,24 @@
     });
   }
 
-  function initialiser() {
+  function initialiser(tentative) {
+    const numeroTentative = Number(tentative || 0);
     if (!document.querySelector(SELECTEUR_RENDU)) {
       return;
     }
 
     try {
+      verifierDependances();
       rendreTous(document);
     } catch (erreur) {
+      // MODIF : les scripts CDN sont defer ; en cas de chargement retardé,
+      // on retente brièvement au lieu de laisser le Markdown/LaTeX brut.
+      if (numeroTentative < 20) {
+        window.setTimeout(function () {
+          initialiser(numeroTentative + 1);
+        }, 150);
+        return;
+      }
       console.error("[Gasy Mahay] impossible d'initialiser le rendu IA :", erreur);
     }
   }

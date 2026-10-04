@@ -14,6 +14,8 @@ def test_renderer_ia_contient_les_garde_fous():
     assert "cible.innerHTML" not in js
     assert "element.innerHTML" not in js
     assert "renderMathInElement" in js
+    assert "window.renderMathInElement(element" in js
+    assert "window.katex.renderMathInElement" not in js
     assert "data-rendu" in js
 
 
