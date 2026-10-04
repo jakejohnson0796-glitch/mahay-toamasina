@@ -9,6 +9,8 @@ est temporairement indisponible.
 """
 import json
 import logging
+import re
+import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -38,6 +40,150 @@ def _suffixe_format_prompt(quiz: bool = False) -> str:
 _GEMINI_COOLDOWN_UNTIL = 0.0
 _GEMINI_TRANSIENT_FAILURES = 0
 _GEMINI_COOLDOWN_SECONDS = 60.0
+
+
+class ProviderCooldown(Exception):
+    """Provider temporairement indisponible; evite les retries immediats."""
+
+
+class AICostQualityController:
+    """Coupe les retries 429 et choisit une verification adaptative."""
+
+    def __init__(self) -> None:
+        self._cooldowns: Dict[str, float] = {}
+        self._lock = threading.Lock()
+
+    def _retry_after(self, error: BaseException) -> Optional[float]:
+        response = getattr(error, "response", None)
+        for obj in (error, response):
+            if obj is None:
+                continue
+            value = getattr(obj, "retry_after", None)
+            if value is not None:
+                try:
+                    return float(value)
+                except (TypeError, ValueError):
+                    pass
+            headers = getattr(obj, "headers", None)
+            if isinstance(headers, dict):
+                for key in ("retry-after", "Retry-After"):
+                    if headers.get(key) is not None:
+                        try:
+                            return float(headers[key])
+                        except (TypeError, ValueError):
+                            pass
+
+        match = re.search(
+            r"try again in\\s+(?:(\\d+)m)?(?:(\\d+(?:\\.\\d+)?)s)?",
+            str(error),
+            re.IGNORECASE,
+        )
+        if not match:
+            return None
+        return float(match.group(1) or 0) * 60.0 + float(match.group(2) or 0)
+
+    def is_rate_limited(self, error: BaseException) -> bool:
+        if getattr(error, "status_code", None) == 429:
+            return True
+        response = getattr(error, "response", None)
+        if response is not None and getattr(response, "status_code", None) == 429:
+            return True
+        name = type(error).__name__.lower().replace("_", "")
+        text = str(error).lower()
+        return "ratelimit" in name or ("429" in text and "rate" in text)
+
+    def cooldown_seconds(self, error: BaseException) -> float:
+        delay = self._retry_after(error)
+        if delay is None:
+            delay = 60.0
+        return max(15.0, min(float(delay), 900.0))
+
+    def available(self, provider: str) -> bool:
+        with self._lock:
+            return time.time() >= self._cooldowns.get(provider, 0.0)
+
+    def record_failure(self, provider: str, error: BaseException) -> float:
+        delay = self.cooldown_seconds(error)
+        with self._lock:
+            self._cooldowns[provider] = max(
+                self._cooldowns.get(provider, 0.0),
+                time.time() + delay,
+            )
+        return delay
+
+    def clear_failure(self, provider: str) -> None:
+        with self._lock:
+            self._cooldowns.pop(provider, None)
+
+    def call(self, provider: str, operation):
+        if not self.available(provider):
+            raise ProviderCooldown(f"{provider} cooldown actif")
+        try:
+            result = operation()
+        except Exception as error:
+            if self.is_rate_limited(error):
+                delay = self.record_failure(provider, error)
+                raise ProviderCooldown(
+                    f"{provider} limite; prochaine tentative dans environ {delay:.0f}s"
+                ) from error
+            raise
+        self.clear_failure(provider)
+        return result
+
+    def _risk_text(self, text: str) -> int:
+        value = str(text or "")
+        lower = value.lower()
+        score = 0
+        if len(value) > 900:
+            score += 20
+        if len(value) > 1800:
+            score += 20
+        if any(
+            word in lower
+            for word in (
+                "preuve", "demontr", "matrice", "determinant", "equation",
+                "conversion", "unite", "dimension", "code", "algorithme",
+            )
+        ):
+            score += 20
+        if any(
+            marker in value
+            for marker in ("\\\\(", "\\\\)", "\\\\[", "\\\\]", "\\\\begin{", "\\\\frac", "\\\\sqrt")
+        ):
+            score += 20
+        if lower.count("?") >= 2:
+            score += 10
+        return min(score, 100)
+
+    def _risk_quiz(self, questions: List[Dict[str, Any]]) -> int:
+        parts: List[str] = []
+        for question in questions or []:
+            parts.append(str(question.get("question", "")))
+            parts.extend(str(x) for x in question.get("choix", []) or [])
+            parts.append(str(question.get("explication", "")))
+        return self._risk_text("\\n".join(parts))
+
+    def secondary_reviewer_needed(
+        self,
+        kind: str,
+        content,
+        strategy: str,
+        primary: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        if strategy == "legere":
+            return False
+        if strategy == "renforcee":
+            return True
+        if primary is None:
+            return True
+        if primary.get("confiant") is not True or primary.get("problemes"):
+            return True
+        if kind == "quiz":
+            return self._risk_quiz(content) >= 35
+        return self._risk_text(str(content)) >= 45
+
+
+cost_controller = AICostQualityController()
 
 
 def _groq_client() -> Optional[Groq]:
@@ -96,7 +242,10 @@ def _groq_structured_tool(
                         f"'{tool_name}' maintenant. Ne reponds pas en texte libre."
                     ),
                 }]
-            completion = client.chat.completions.create(**kwargs)
+            completion = cost_controller.call(
+                "groq",
+                lambda: client.chat.completions.create(**kwargs),
+            )
             parsed = _extract_tool_json(completion)
             if parsed is not None:
                 return parsed
@@ -107,6 +256,9 @@ def _groq_structured_tool(
                 "Modele Groq %s n'a pas produit l'appel d'outil attendu.",
                 model,
             )
+            return None
+        except ProviderCooldown as erreur:
+            logger.warning("Groq en cooldown: %s", erreur)
             return None
         except Exception as erreur:
             if attempt < 2:
@@ -126,7 +278,7 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
 
     if not _gemini_enabled():
         return None
-    if time.time() < _GEMINI_COOLDOWN_UNTIL:
+    if time.time() < _GEMINI_COOLDOWN_UNTIL or not cost_controller.available("gemini"):
         return None
 
     # Gemini 3.8 Flash est toujours disponible via generateContent, mais
@@ -157,10 +309,13 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
         with httpx.Client(timeout=45.0) as client:
             for attempt in range(1, 4):
                 try:
-                    response = client.post(
-                        url,
-                        headers=headers,
-                        json=payload,
+                    response = cost_controller.call(
+                        "gemini",
+                        lambda: client.post(
+                            url,
+                            headers=headers,
+                            json=payload,
+                        ),
                     )
 
                     if response.status_code in retryable_statuses and attempt < 3:
@@ -190,6 +345,10 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
                                 break
 
                     return charger_json_ia(text) if text else None
+
+                except ProviderCooldown as erreur:
+                    logger.warning("Gemini en cooldown: %s", erreur)
+                    return None
 
                 except httpx.RequestError as erreur:
                     if attempt >= 3:
@@ -428,7 +587,12 @@ def ensemble_verification_quiz(
     if qwen:
         critiques.append({"model": parametres.groq_critic_model, "avis": qwen})
 
-    if strategie != "legere":
+    if strategie != "legere" and cost_controller.secondary_reviewer_needed(
+        "quiz",
+        questions,
+        strategie,
+        qwen,
+    ):
         gemini = critiquer_quiz_gemini(questions, matiere, niveau)
         if gemini:
             critiques.append({"model": parametres.gemini_model, "avis": gemini})
@@ -601,9 +765,27 @@ def verifier_tuteur(
     qwen = _critique_tuteur_groq(reponse, question, notion, matiere)
     if qwen:
         critiques.append({"model": parametres.groq_critic_model, "avis": qwen})
-    gemini = _critique_tuteur_gemini(reponse, question, notion, matiere)
-    if gemini:
-        critiques.append({"model": parametres.gemini_model, "avis": gemini})
+
+    contenu_risque = "\\n".join(
+        [
+            question,
+            notion or "",
+            matiere or "",
+            reponse.get("explication", ""),
+            reponse.get("exemple", ""),
+            reponse.get("exercice", ""),
+            reponse.get("correction", ""),
+        ]
+    )
+    if cost_controller.secondary_reviewer_needed(
+        "tuteur",
+        contenu_risque,
+        "standard",
+        qwen,
+    ):
+        gemini = _critique_tuteur_gemini(reponse, question, notion, matiere)
+        if gemini:
+            critiques.append({"model": parametres.gemini_model, "avis": gemini})
 
     if not critiques:
         return reponse, False, {"models": [parametres.groq_model], "critics": []}
