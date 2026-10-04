@@ -14,6 +14,7 @@ libre : plus fiable qu'un json.loads() hasardeux.
 import hashlib
 import json
 import logging
+import re
 import time
 from typing import Dict, List, Optional
 
@@ -48,6 +49,81 @@ Comptabilité :
 - Formules (amortissement, TVA, ratios, CAF, FRNG) en LaTeX : \text{...} pour les mots, \, pour les milliers, {,} pour la virgule décimale, \% pour les pourcentages.
 - Utilise les numéros de comptes du plan comptable en vigueur à Madagascar.
 """
+
+# MODIF : transport JSON sans antislash pour les quiz IA. Les modèles peuvent
+# casser le tool-call JSON en émettant directement \\det, \\(...\\) ou
+# \\begin{...}. On demande donc des marqueurs ASCII sûrs puis on recrée
+# les délimiteurs LaTeX côté serveur après le parsing JSON.
+QUIZ_MATH_INLINE_OPEN = "[[MATH]]"
+QUIZ_MATH_INLINE_CLOSE = "[[/MATH]]"
+QUIZ_MATH_DISPLAY_OPEN = "[[DISPLAY]]"
+QUIZ_MATH_DISPLAY_CLOSE = "[[/DISPLAY]]"
+
+def _convertir_math_transport_texte(valeur: object) -> str:
+    texte = "" if valeur is None else str(valeur)
+
+    def display(match: re.Match) -> str:
+        contenu = match.group(1).strip()
+        contenu = _convertir_notation_math_sure(contenu)
+        return r"\[" + contenu + r"\]"
+
+    def inline(match: re.Match) -> str:
+        contenu = match.group(1).strip()
+        contenu = _convertir_notation_math_sure(contenu)
+        return r"\(" + contenu + r"\)"
+
+    # DISPLAY d'abord pour éviter qu'un segment imbriqué soit traité deux fois.
+    texte = re.sub(
+        r"\[[]DISPLAY[]](.*?)\[[]/DISPLAY[]]",
+        display,
+        texte,
+        flags=re.DOTALL,
+    )
+    texte = re.sub(
+        r"\[[]MATH[]](.*?)\[[]/MATH[]]",
+        inline,
+        texte,
+        flags=re.DOTALL,
+    )
+    return texte
+
+def _convertir_notation_math_sure(contenu: str) -> str:
+    """Convertit uniquement quelques formes sans antislash produites en transport sûr."""
+    resultat = contenu.replace("×", r"\times ")
+    resultat = re.sub(r"(?<![A-Za-z])det(?=\s*\()", lambda _: r"\det", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])sin(?=\s*\()", lambda _: r"\sin", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])cos(?=\s*\()", lambda _: r"\cos", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])tan(?=\s*\()", lambda _: r"\tan", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])ln(?=\s*\()", lambda _: r"\ln", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])log(?=\s*\()", lambda _: r"\log", resultat)
+
+    # Matrices simples du type [a b ; c d] -> pmatrix KaTeX.
+    motif_matrice = re.fullmatch(r"\[([A-Za-z0-9+\-*/.,= ]+(?:;[A-Za-z0-9+\-*/.,= ]+)+)\]", resultat)
+    if motif_matrice:
+        lignes = [ligne.strip() for ligne in motif_matrice.group(1).split(";")]
+        lignes_katex = []
+        for ligne in lignes:
+            cellules = [cellule for cellule in re.split(r"\s+", ligne.strip()) if cellule]
+            if cellules:
+                lignes_katex.append(" & ".join(cellules))
+        if len(lignes_katex) >= 2:
+            return r"\begin{pmatrix}" + r" \\ ".join(lignes_katex) + r"\end{pmatrix}"
+
+    return resultat
+
+def _normaliser_quiz_transport(questions: List[Dict]) -> List[Dict]:
+    """Rend les marqueurs de math du transport JSON en Markdown/LaTeX standard."""
+    normalisees = []
+    for question in questions or []:
+        item = dict(question)
+        item["question"] = _convertir_math_transport_texte(item.get("question", ""))
+        item["choix"] = [
+            _convertir_math_transport_texte(choix)
+            for choix in (item.get("choix") or [])
+        ]
+        item["explication"] = _convertir_math_transport_texte(item.get("explication", ""))
+        normalisees.append(item)
+    return normalisees
 
 _client: Optional[Groq] = None
 
@@ -235,14 +311,18 @@ def _generer_completion_avec_reessai(
 
     # MODIF : toutes les étapes de génération de quiz reçoivent le même contrat
     # de format. Les antislashs ne doivent jamais être réécrits pendant une reprise.
-    suffixe_format = (
-        "\n\n"
-        + REGLES_FORMAT
-        + r"""
-Réponds avec un JSON valide ; dans le JSON, double chaque antislash des formules (écris \\frac et non \frac).
-Ne réécris ni ne supprime aucun antislash d'une formule.
+    suffixe_format = r"""
+TRANSPORT JSON DU QUIZ — OBLIGATOIRE :
+- Le caractère backslash (\\) est INTERDIT dans toutes les valeurs texte du tool-call JSON.
+- Ne génère JAMAIS le caractère \\ dans une valeur de chaîne du JSON.
+- Pour une formule courte, utilise [[MATH]]...[[/MATH]].
+- Pour une formule en bloc, utilise [[DISPLAY]]...[[/DISPLAY]].
+- A l'intérieur des marqueurs : uniquement une notation sans backslash, par exemple det(A)=ad-bc, x^2, a/b, [a b ; c d], x <= y.
+- Pour les matrices, utilise exclusivement [a b ; c d] dans un marqueur.
+- Les marqueurs seront transformés en LaTeX après lecture du JSON par le serveur.
+- N'utilise ni \(...\), ni \[...\], ni \\det, \\frac, \\begin, \\sqrt dans le JSON.
+- Le JSON doit rester parseable tel quel par un parseur JSON standard.
 """
-    )
     messages_par_essai = [message + suffixe_format for message in messages_par_essai]
 
     # 2 048 tokens etaient suffisants pour des petits quiz, mais deviennent
@@ -299,7 +379,7 @@ Ne réécris ni ne supprime aucun antislash d'une formule.
         if message.tool_calls:
             try:
                 arguments = charger_json_ia(message.tool_calls[0].function.arguments)
-                questions = arguments.get("questions")
+                questions = _normaliser_quiz_transport(arguments.get("questions") or [])
                 valider_questions(questions, expected_count=expected_count, strict_coherence=True)
             except (json.JSONDecodeError, AttributeError, TypeError, QuizValidationError) as validation_error:
                 derniere_erreur = validation_error
@@ -506,7 +586,7 @@ def _extraire_questions(completion, expected_count: int = 5) -> List[Dict]:
     if message.tool_calls:
         try:
             arguments = charger_json_ia(message.tool_calls[0].function.arguments)
-            questions = arguments.get("questions") or []
+            questions = _normaliser_quiz_transport(arguments.get("questions") or [])
             if questions:
                 try:
                     return valider_questions(questions, expected_count=expected_count, strict_coherence=True)
