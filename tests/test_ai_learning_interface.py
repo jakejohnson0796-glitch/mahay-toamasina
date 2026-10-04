@@ -109,3 +109,9 @@ def test_contrat_tuteur_contient_un_retry_structure():
     code = lire("app/ai_quiz.py")
     assert "for tentative in range(2)" in code
     assert "RAPPEL DE RETRY" in code
+
+
+def test_tuteur_bloque_une_reponse_non_confirmee_avec_ensemble_actif():
+    code = lire("app/ai_quiz.py")
+    assert 'if parametres.ai_ensemble_enabled and not verification_ok:' in code
+    assert "Aucune correction incertaine n'est publiée" in code
