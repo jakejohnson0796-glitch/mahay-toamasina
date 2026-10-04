@@ -14,7 +14,8 @@ const { window } = dom;
 globalThis.document = window.document;
 globalThis.NodeFilter = window.NodeFilter;
 window.marked = marked;
-window.DOMPurify = createDOMPurify(window);
+const purifyInstance = createDOMPurify(window);
+window.DOMPurify = purifyInstance;
 window.katex = katex;
 window.hljs = null;
 const context = {
@@ -48,4 +49,28 @@ const visibleText = visibleClone.textContent || '';
 if (visibleText.includes('\\lambda') || visibleText.includes('\\det')) {
   throw new Error('Raw LaTeX command remains outside rendered KaTeX nodes');
 }
+
+// Mode dégradé : Marked et DOMPurify indisponibles, les formules doivent
+// toujours disparaître des marqueurs de transport.
+window.marked = null;
+window.DOMPurify = null;
+host.replaceChildren();
+window.rendreReponseIA(sample, host);
+const rawDegrade = host.textContent || "";
+if (rawDegrade.includes("[[DISPLAY]]") || rawDegrade.includes("[[MATH]]")) {
+  throw new Error("Transport markers remain visible in degraded mode");
+}
+if (host.querySelectorAll(".katex").length < 2) {
+  throw new Error("KaTeX direct rendering must survive missing Markdown dependencies");
+}
+
+// Réactivation : le renderer doit retrouver la même source et repasser en rendu riche.
+window.marked = marked;
+window.DOMPurify = purifyInstance;
+host.replaceChildren();
+window.rendreReponseIA(sample, host);
+if (host.querySelectorAll(".katex").length < 2) {
+  throw new Error("Renderer did not recover after dependencies became available");
+}
+
 console.log(JSON.stringify({ ok: true, katex_nodes: host.querySelectorAll('.katex').length }));
