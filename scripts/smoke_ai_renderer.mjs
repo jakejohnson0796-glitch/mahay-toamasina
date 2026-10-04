@@ -85,7 +85,7 @@ const codeSource = [
   'print(r"\\\\frac{a}{b}")',
   'print(r"\\\\(\\\\d+\\\\)")',
   fence
-].join('\\n');
+].join('\n');
 window.rendreReponseIA(codeSource, codeHost);
 const code = codeHost.querySelector('pre code');
 const expectedCode = [
@@ -93,7 +93,7 @@ const expectedCode = [
   'print(r"\\\\frac{a}{b}")',
   'print(r"\\\\(\\\\d+)")',
   ''
-].join('\\n');
+].join('\n');
 if (!code || code.textContent !== expectedCode) {
   throw new Error('Code block was modified by the math pipeline');
 }
