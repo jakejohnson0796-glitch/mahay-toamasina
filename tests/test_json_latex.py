@@ -22,3 +22,49 @@ def test_preserve_les_delimiteurs_et_commandes_chimiques():
     resultat = charger_json_ia(texte)
     assert resultat["math"] == r"\[\begin{aligned}x&=1\\y&=2\end{aligned}\]"
     assert resultat["chimie"] == r"\ce{H2O}"
+
+
+def test_json_valide_preserve_saut_de_ligne():
+    texte = '{"texte":"Etape 1\\nsoit x = 2"}'
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == "Etape 1\nsoit x = 2"
+
+
+def test_json_valide_preserve_tabulation():
+    texte = '{"texte":"Total\\t10000"}'
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == "Total\t10000"
+
+
+def test_json_valide_preserve_retour_chariot():
+    texte = '{"texte":"ligne 1\\r\\nligne 2"}'
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == "ligne 1\r\nligne 2"
+
+
+def test_json_valide_preserve_doubles_backslashes_latex():
+    texte = r'''{"texte":"\\[
+\\begin{aligned}
+a &= b \\\\
+c &= d
+\\end{aligned}
+\\]"}'''
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == r"""\[
+\begin{aligned}
+a &= b \\
+c &= d
+\end{aligned}
+\]"""
+
+
+def test_json_invalide_recupere_uniquement_une_commande_latex_blanche():
+    texte = '{"explication":"\\frac{d}{dx} = 1"}'
+    resultat = charger_json_ia(texte)
+    assert resultat["explication"] == r"\frac{d}{dx} = 1"
+
+
+def test_json_valide_nabla_reste_un_texte_decodé_exact():
+    texte = r'''{"texte":"\\nabla f"}'''
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == r"\nabla f"
