@@ -88,7 +88,13 @@ const codeSource = [
 ].join('\\n');
 window.rendreReponseIA(codeSource, codeHost);
 const code = codeHost.querySelector('pre code');
-if (!code || code.textContent !== 'print("Total:\nAriary")\nprint(r"\\frac{a}{b}")\nprint(r"\\(\\d+\\)")\n') {
+const expectedCode = [
+  'print("Total:\\nAriary")',
+  'print(r"\\\\frac{a}{b}")',
+  'print(r"\\\\(\\\\d+)")',
+  ''
+].join('\\n');
+if (!code || code.textContent !== expectedCode) {
   throw new Error('Code block was modified by the math pipeline');
 }
 if (code.querySelector('.katex')) {
