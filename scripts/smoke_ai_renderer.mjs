@@ -112,7 +112,12 @@ if (heading.textContent !== '2*3*4 = 24') {
 
 const tableHost = window.document.createElement('div');
 window.document.body.appendChild(tableHost);
-window.rendreReponseIA('| Expression | Valeur |\\n| --- | --- |\\n| \\( |x| \\) | 2 |', tableHost);
+const tableSource = [
+  '| Expression | Valeur |',
+  '| --- | --- |',
+  '| \\(x^2\\) | 4 |'
+].join('\\n');
+window.rendreReponseIA(tableSource, tableHost);
 if (!tableHost.querySelector('table')) {
   throw new Error('Markdown table missing');
 }
