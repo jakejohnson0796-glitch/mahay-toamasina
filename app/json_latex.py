@@ -1,4 +1,4 @@
-"""Lecture robuste du JSON produit par les modèles IA quand le contenu contient du LaTeX.
+r"""Lecture robuste du JSON produit par les modèles IA quand le contenu contient du LaTeX.
 
 Le modèle peut parfois produire "\\frac" correctement échappé ou, plus rarement,
 un JSON apparent contenant "\frac" directement. Le second cas est invalide/ambigu
@@ -69,6 +69,15 @@ def _reparer_antislashs_latex(texte: str) -> str:
         # JSON usuels. Ainsi \frac, \mathbb, \begin, \ce, \mathrm, \nu...
         # deviennent \\frac, \\mathbb, etc. dans le JSON source, puis
         # json.loads() restitue une seule barre dans la donnée métier.
+        # MODIF : \uXXXX est un escape JSON valide et doit être conservé
+        # avant de tester les commandes LaTeX alphabétiques.
+        if suivant == "u" and i + 6 < longueur:
+            quatre = texte[i + 2:i + 6]
+            if re.fullmatch(r"[0-9A-Fa-f]{4}", quatre):
+                sortie.extend(["\\", "u", quatre])
+                i += 6
+                continue
+
         if suivant.isalpha():
             match = _COMMAND_RE.match(texte, i + 1)
             mot = match.group(0) if match else ""
@@ -111,14 +120,16 @@ def charger_json_ia(texte_brut: str | bytes | bytearray | Any) -> Any:
     else:
         texte = str(texte_brut)
 
-    # MODIF : première tentative directe pour les sorties correctement JSON.
+    # MODIF : on répare d'abord les commandes LaTeX ambiguës, puis on lit le
+    # JSON. Cela évite qu'un \frac soit interprété par json.loads() comme
+    # l'escape JSON \f avant que nous ayons pu le préserver.
+    repare = _reparer_antislashs_latex(texte)
     try:
-        return json.loads(texte)
-    except json.JSONDecodeError as erreur_directe:
-        # MODIF : deuxième tentative avec réparation ciblée des antislashs
-        # LaTeX. Aucun texte métier n'est normalisé dans cette étape.
-        repare = _reparer_antislashs_latex(texte)
+        return json.loads(repare)
+    except json.JSONDecodeError as erreur_repare:
+        # MODIF : repli strict sur la lecture directe pour les JSON non concernés
+        # par le problème LaTeX ; aucune donnée métier n'est normalisée.
         try:
-            return json.loads(repare)
+            return json.loads(texte)
         except json.JSONDecodeError:
-            raise erreur_directe
+            raise erreur_repare
