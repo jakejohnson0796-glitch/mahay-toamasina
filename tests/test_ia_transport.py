@@ -49,3 +49,9 @@ def test_normalise_structure_tuteur_sur_les_quatre_sections():
     })
     assert all("[[MATH]]" not in valeur and "[[DISPLAY]]" not in valeur for valeur in reponse.values())
     assert all(valeur for valeur in reponse.values())
+
+
+def test_convertit_chimie_en_mhchem():
+    valeur = convertir_math_transport_texte("[[CHEM]]2H2 + O2 -> 2H2O[[/CHEM]]")
+    assert r"\\ce{2H2 + O2" in valeur
+    assert "[[CHEM]]" not in valeur
