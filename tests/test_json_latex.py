@@ -11,14 +11,55 @@ def test_charge_un_json_avec_latex_correctement_echappe():
 
 
 def test_repare_un_json_ia_avec_un_antislash_latex_non_double():
-    # MODIF : le cas historiquement problématique \frac est réparé avant json.loads.
-    texte = '{"explication":"\\frac{d}{dx}"}'
+    # \\sqrt n'est pas un escape JSON valide : la récupération ciblée
+    # peut réintroduire le double antislash nécessaire avant json.loads.
+    texte = '{"explication":"\\sqrt{x}"}'
     resultat = charger_json_ia(texte)
-    assert resultat["explication"] == r"\frac{d}{dx}"
-
+    assert resultat["explication"] == r"\sqrt{x}"
 
 def test_preserve_les_delimiteurs_et_commandes_chimiques():
     texte = r'''{"math":"\\[\\begin{aligned}x&=1\\\\y&=2\\end{aligned}\\]","chimie":"\\ce{H2O}"}'''
     resultat = charger_json_ia(texte)
     assert resultat["math"] == r"\[\begin{aligned}x&=1\\y&=2\end{aligned}\]"
     assert resultat["chimie"] == r"\ce{H2O}"
+
+
+def test_json_valide_preserve_saut_de_ligne():
+    texte = '{"texte":"Etape 1\\nsoit x = 2"}'
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == "Etape 1\nsoit x = 2"
+
+
+def test_json_valide_preserve_tabulation():
+    texte = '{"texte":"Total\\t10000"}'
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == "Total\t10000"
+
+
+def test_json_valide_preserve_retour_chariot():
+    texte = '{"texte":"ligne 1\\r\\nligne 2"}'
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == "ligne 1\r\nligne 2"
+
+
+def test_json_valide_preserve_doubles_backslashes_latex():
+    attendu = r"""\[
+\begin{aligned}
+a &= b \\
+c &= d
+\end{aligned}
+\]"""
+    texte = json.dumps({"texte": attendu})
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == attendu
+
+
+def test_json_invalide_recupere_uniquement_une_commande_latex_blanche():
+    texte = '{"explication":"\\sqrt{x} = 1"}'
+    resultat = charger_json_ia(texte)
+    assert resultat["explication"] == r"\sqrt{x} = 1"
+
+def test_json_valide_nabla_reste_un_texte_decodé_exact():
+    texte = r'''{"texte":"\\nabla f"}'''
+    resultat = charger_json_ia(texte)
+    assert resultat["texte"] == r"\nabla f"
