@@ -16,6 +16,7 @@ from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz, Progres
 from . import ai_quiz
 from .quiz_validation import QuizValidationError, valider_questions
 from .ia_transport import normaliser_structure_quiz
+from .config import parametres
 
 from .referentiel import NIVEAUX  # centralise (voir app/referentiel.py) ; reexporte ici pour ne rien casser dans quiz_router.py qui importe quiz_module.NIVEAUX
 
@@ -89,14 +90,23 @@ def _verifier_questions_avant_stockage(
             len(questions_finales),
             confiant,
         )
+        if parametres.ai_ensemble_enabled and not confiant:
+            raise QuizValidationError(
+                "La vérification multi-modèles n'a pas confirmé le quiz."
+            )
         return questions_finales
     except Exception as erreur:
-        # Le quiz local est déjà soumis à la validation structurelle et au
-        # contrôle des contradictions explicites. Si le service de relecture
-        # est indisponible, on conserve donc une version cohérente plutôt que
-        # de faire échouer toute la génération.
+        if parametres.ai_ensemble_enabled:
+            logger.warning(
+                "Quality gate quiz bloqué: le quiz ne sera pas publié: %s",
+                erreur,
+            )
+            raise QuizValidationError(
+                "La vérification qualité du quiz n'a pas pu être confirmée."
+            ) from erreur
+
         logger.warning(
-            "Quality gate quiz indisponible; conservation de la version locale: %s",
+            "Quality gate quiz indisponible en mode sans ensemble; conservation locale: %s",
             erreur,
         )
         return questions
@@ -117,14 +127,39 @@ def creer_tentative(
     afin que l'etudiant puisse commencer sans attendre les modeles critiques
     et l'arbitre."""
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
-    questions_generees = _generer_quiz_rapide(matiere, niveau, difficulte, nb_questions)
-    questions_verifiees = _verifier_questions_avant_stockage(
-        questions_generees,
-        matiere,
-        niveau,
-    )
-    if len(questions_verifiees) != nb_questions:
-        raise QuizValidationError("Impossible de generer un quiz conforme apres plusieurs tentatives.")
+    derniere_erreur = None
+    questions_verifiees = None
+
+    for essai in range(2):
+        try:
+            questions_generees = _generer_quiz_rapide(
+                matiere,
+                niveau,
+                difficulte,
+                nb_questions,
+            )
+            questions_verifiees = _verifier_questions_avant_stockage(
+                questions_generees,
+                matiere,
+                niveau,
+            )
+            if len(questions_verifiees) != nb_questions:
+                raise QuizValidationError(
+                    "Le nombre de questions générées est incorrect."
+                )
+            break
+        except QuizValidationError as erreur:
+            derniere_erreur = erreur
+            logger.warning(
+                "Generation/quality gate quiz échoué (essai %s/2): %s",
+                essai + 1,
+                erreur,
+            )
+
+    if questions_verifiees is None:
+        raise QuizValidationError(
+            "Impossible de générer un quiz confirmé après deux tentatives."
+        ) from derniere_erreur
 
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
