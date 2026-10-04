@@ -51,8 +51,8 @@
           <!-- MODIF : question brute rendue par rendu_ia.js. -->
           <h2 class="quiz-question-title" data-rendu>{{ item.question }}</h2>
           <div class="quiz-choice-grid quiz-choice-grid-correction">
-            {% set choix_nettoyes = normaliser_choix_liste(item.choix) %}
-            {% for choix in choix_nettoyes %}
+            <!-- MODIF : les choix transmis au navigateur restent exactement ceux stockés en base. -->
+            {% for choix in item.choix %}
             <div class="quiz-choice quiz-choice-readonly {{ 'is-correct-choice' if loop.index0 == item.index_bonne_reponse else '' }} {{ 'is-selected-choice' if loop.index0 == rep else '' }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
               <!-- MODIF : choix brut ; la correction continue d'utiliser l'index. -->
@@ -67,7 +67,7 @@
           <div class="quiz-correction-answer">
             <strong>{% if ok %}✅ Correcte{% elif rep is none %}⚠️ Sans réponse{% else %}❌ Incorrecte{% endif %}</strong>
             <!-- MODIF : le texte affiché ne participe jamais au calcul de la bonne réponse. -->
-            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. <span data-rendu data-rendu-ligne>{{ choix_nettoyes[item.index_bonne_reponse] }}</span></span>
+            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. <span data-rendu data-rendu-ligne>{{ item.choix[item.index_bonne_reponse] }}</span></span>
           </div>
           {% if item.explication %}
           <div class="quiz-correction-explanation">
@@ -98,14 +98,15 @@
         {% set q = loop.index0 %}
         <article class="quiz-question-card" data-quiz-question data-quiz-index="{{ q }}" id="question-{{ q }}">
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
-          <h2 class="quiz-question-title">{{ rendre_math_html(item.question) }}</h2>
+          <h2 class="quiz-question-title">{{ item.question }}</h2>
           <div class="quiz-choice-grid" role="radiogroup" aria-label="Réponses à la question {{ loop.index }}">
-            {% set choix_nettoyes = normaliser_choix_liste(item.choix) %}
-            {% for choix in choix_nettoyes %}
+            <!-- MODIF : le quiz en cours affiche les choix bruts ; la valeur du radio reste l'index. -->
+            {% for choix in item.choix %}
             <label class="quiz-choice">
               <input type="radio" name="question_{{ q }}" value="{{ loop.index0 }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
-              <span class="quiz-choice-text">{{ rendre_math_html(choix) }}</span>
+              <!-- MODIF : choix brut rendu par KaTeX dans le navigateur. -->
+              <span class="quiz-choice-text" data-rendu data-rendu-ligne>{{ choix }}</span>
             </label>
             {% endfor %}
           </div>
