@@ -1596,3 +1596,37 @@
 .ai-target-context p{margin:.25rem 0 0;color:var(--content-text-muted);font-size:.62rem}
 @media (max-width:900px){.ai-remediation-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.ai-remediation-grid{grid-template-columns:1fr}.ai-remediation-result-item{align-items:flex-start;flex-direction:column}}
+
+/* MODIF : styles d'intégration du nouveau renderer KaTeX/highlight.js. */
+.ai-markdown-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .15rem 0;
+}
+
+.ai-markdown-content pre {
+  margin: .7rem 0;
+  overflow-x: auto;
+  padding: .9rem 1rem;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+  background: var(--content-bg);
+}
+
+.ai-markdown-content pre code.hljs {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.ai-markdown-content .hljs-keyword,
+.ai-markdown-content .hljs-built_in,
+.ai-markdown-content .hljs-title,
+.ai-markdown-content .hljs-type,
+.ai-markdown-content .hljs-string,
+.ai-markdown-content .hljs-number,
+.ai-markdown-content .hljs-comment {
+  color: var(--accent-primary);
+}
+
