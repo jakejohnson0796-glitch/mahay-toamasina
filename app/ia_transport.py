@@ -117,11 +117,68 @@ def _normaliser_sauts_de_ligne_litteraux(texte: str) -> str:
     return texte
 
 
+_COMMANDES_LATEX_NUES_RE = re.compile(
+    r"\\(?:det|frac|dfrac|tfrac|sqrt|sum|prod|int|lim|ln|log|sin|cos|tan|cot|exp|partial|nabla|vec|mathbf|mathbb|mathrm|text|times|cdot|pm|leq|geq|neq|approx|infty|alpha|beta|gamma|delta|theta|lambda|mu|pi|sigma)\\b"
+    r"|\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}"
+)
+
+def _normaliser_latex_nu(texte: str) -> str:
+    """Encapsule les commandes LaTeX nues dans des délimiteurs valides."""
+    lignes = str(texte or "").splitlines()
+    resultat = []
+    dans_code = False
+
+    for ligne in lignes:
+        if ligne.strip().startswith("```"):
+            dans_code = not dans_code
+            resultat.append(ligne)
+            continue
+        if dans_code or not ligne.strip():
+            resultat.append(ligne)
+            continue
+        if "\\(" in ligne or "\\[" in ligne or "[[MATH]]" in ligne or "[[DISPLAY]]" in ligne:
+            resultat.append(ligne)
+            continue
+
+        match = _COMMANDES_LATEX_NUES_RE.search(ligne)
+        if not match:
+            resultat.append(ligne)
+            continue
+
+        avant = ligne[:match.start()]
+        formule_et_suite = ligne[match.start():].strip()
+        fin = re.search(r"[.!?](?=\\s+[A-ZÀ-ÖØ-Þ]|$)", formule_et_suite)
+        suffixe = ""
+        if fin:
+            indice_fin = fin.end()
+            suffixe = formule_et_suite[indice_fin:]
+            formule_et_suite = formule_et_suite[:indice_fin]
+
+        formule = formule_et_suite.strip()
+        if formule.endswith((".", "!", "?")):
+            ponctuation = formule[-1]
+            formule = formule[:-1].rstrip()
+            suffixe = ponctuation + suffixe
+
+        if not formule:
+            resultat.append(ligne)
+            continue
+
+        affichage = (
+            r"\[" + formule + r"\]"
+            if "\\begin{" in formule
+            else r"\(" + formule + r"\)"
+        )
+        resultat.append(avant + affichage + suffixe)
+
+    return "\n".join(resultat)
+
 def convertir_math_transport_texte(valeur: Any) -> str:
     texte = "" if valeur is None else str(valeur)
     # MODIF : corrige les réponses Tuteur/Quiz qui transportent encore des
     # retours à la ligne sous forme littérale \\n.
     texte = _normaliser_sauts_de_ligne_litteraux(texte)
+    texte = _normaliser_latex_nu(texte)
 
     def display(match: re.Match[str]) -> str:
         return r"\[" + _convertir_notation_math_sure(match.group(1)) + r"\]"
