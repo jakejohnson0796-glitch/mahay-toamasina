@@ -33,7 +33,7 @@ from .config import parametres
 logger = logging.getLogger(__name__)
 
 # MODIF : contrat de format commun à toutes les sorties Tuteur/Quiz.
-REGLES_FORMAT = r"""
+REGLES_FORMAT = PROMPT_TRANSPORT_SANS_ANTISLASH
 Réponds en Markdown. Formules :
 - En ligne : \( ... \)   En bloc : \[ ... \]   (jamais d'autre notation).
 - OBLIGATOIRE : aucune commande LaTeX ne doit apparaître seule dans le texte. Toute séquence \det, \frac, \sqrt, \begin{...}, \mathrm, etc. doit être placée entre \( ... \) ou \[ ... \].
