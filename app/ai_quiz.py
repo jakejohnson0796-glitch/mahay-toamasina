@@ -355,7 +355,7 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
         f"restitution litterale du texte), 4 choix plausibles par "
         f"question, une seule bonne reponse, et une explication courte. "
         f"Pour les mathématiques et la physique, utilise le vrai LaTeX conformément au contrat de formatage. "
-        f"Pour une matrice, utilise un environnement LaTeX comme \begin{pmatrix}. "
+        f"Pour une matrice, utilise un environnement LaTeX de type pmatrix. "
         f" N'utilise JAMAIS de tableau Markdown avec des barres | "
         f"pour représenter une matrice. "
         f"Dans 'choix', mets uniquement le contenu de la reponse : ne mets jamais "
