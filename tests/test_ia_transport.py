@@ -88,3 +88,9 @@ def test_ne_wrappe_pas_le_code_avec_une_commande_latex():
     brut = "```text\n\\det = a*d - b*c\n```"
     valeur = convertir_math_transport_texte(brut)
     assert valeur == brut
+
+def test_separe_correctement_une_formule_nue_dune_phrase_suivante():
+    brut = "\\det(A)=ad-bc. Ensuite, on verifie le resultat."
+    valeur = convertir_math_transport_texte(brut)
+    assert "\\(\\det(A)=ad-bc\\)." in valeur
+    assert "Ensuite, on verifie le resultat." in valeur

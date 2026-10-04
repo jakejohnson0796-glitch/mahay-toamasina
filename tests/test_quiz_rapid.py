@@ -255,3 +255,23 @@ def test_normalise_un_quiz_avec_labels_consecutifs():
     resultat = valider_questions(questions)
     # MODIF : aucune normalisation LaTeX/label n'est persistée.
     assert resultat[0]["choix"] == questions[0]["choix"]
+
+
+def test_quality_gate_refuse_un_quiz_non_confirme_quand_ensemble_est_actif(monkeypatch):
+    monkeypatch.setattr(quiz.parametres, "ai_ensemble_enabled", True)
+    monkeypatch.setattr(
+        quiz.ai_quiz,
+        "verifier_et_corriger_questions",
+        lambda *args, **kwargs: (_questions(), False),
+    )
+    from app.quiz_validation import QuizValidationError
+    try:
+        quiz._verifier_questions_avant_stockage(
+            _questions(),
+            "Mathématiques",
+            "L1",
+        )
+    except QuizValidationError:
+        pass
+    else:
+        raise AssertionError("Un quiz non confirmé ne doit pas être publié avec l'ensemble actif.")

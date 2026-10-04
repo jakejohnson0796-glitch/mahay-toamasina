@@ -95,3 +95,23 @@ def test_route_tuteur_persiste_le_statut_de_verification():
     route = lire("app/routers/tuteur_router.py")
     assert 'statut_verification = reponse.pop("_statut_verification", "terminee")' in route
     assert 'statut_verification_ia=statut_verification' in route
+
+
+def test_tuteur_ne_declare_pas_une_reponse_a_revoir_comme_terminee():
+    route = lire("app/routers/tuteur_router.py")
+    assert '"_verification_ok"' in lire("app/ai_quiz.py")
+    assert '"a_revoir" if' not in route
+    template = lire("app/templates/tuteur_reponse.html")
+    assert 'statut_verification_ia == "a_revoir"' in template
+
+
+def test_contrat_tuteur_contient_un_retry_structure():
+    code = lire("app/ai_quiz.py")
+    assert "for tentative in range(2)" in code
+    assert "RAPPEL DE RETRY" in code
+
+
+def test_tuteur_bloque_une_reponse_non_confirmee_avec_ensemble_actif():
+    code = lire("app/ai_quiz.py")
+    assert 'if parametres.ai_ensemble_enabled and not verification_ok:' in code
+    assert "Aucune correction incertaine n'est publiée" in code

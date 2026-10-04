@@ -147,7 +147,7 @@ def _normaliser_latex_nu(texte: str) -> str:
 
         avant = ligne[:match.start()]
         formule_et_suite = ligne[match.start():].strip()
-        fin = re.search(r"[.!?](?=\\s+[A-ZÀ-ÖØ-Þ]|$)", formule_et_suite)
+        fin = re.search(r"[.!?](?=\s+[A-ZÀ-ÖØ-Þ]|$)", formule_et_suite)
         suffixe = ""
         if fin:
             indice_fin = fin.end()
