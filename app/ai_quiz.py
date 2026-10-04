@@ -742,7 +742,10 @@ def generer_reponse_tuteur(
                 arguments = fallback
                 break
             logger.warning("Tuteur suspendu: %s", erreur)
-            break
+            return _reponse_tuteur_erreur(
+                "Le Tuteur IA est temporairement tres sollicite. "
+                "Ta question n'est pas perdue; reessaie dans quelques instants."
+            )
         except Exception as erreur:
             derniere_erreur = erreur
     else:
