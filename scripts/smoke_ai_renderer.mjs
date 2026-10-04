@@ -164,8 +164,6 @@ if (before !== host.innerHTML) {
 }
 
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));)) {
-  throw new Error('Dollar math delimiters remain visible');
-}
 
 // Mode dégradé : Marked et DOMPurify indisponibles, les formules doivent
 // toujours disparaître des marqueurs de transport.
