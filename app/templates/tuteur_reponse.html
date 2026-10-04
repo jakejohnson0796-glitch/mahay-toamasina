@@ -34,7 +34,8 @@
         <span class="ai-answer-card-icon">{{ icone("tuteur", 16) }}</span>
         <h2>Explication</h2>
       </div>
-      <div class="ai-markdown-content" data-tuteur-content="explication">{{ session_tuteur.explication | texte_ia }}</div>
+      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
+      <div class="ai-markdown-content" data-tuteur-content="explication" data-rendu>{{ session_tuteur.explication }}</div>
     </article>
 
     {% if session_tuteur.exemple %}
@@ -43,7 +44,8 @@
         <span class="ai-answer-card-icon">{{ icone("documents", 16) }}</span>
         <h2>Exemple</h2>
       </div>
-      <div class="ai-markdown-content" data-tuteur-content="exemple">{{ session_tuteur.exemple | texte_ia }}</div>
+      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
+      <div class="ai-markdown-content" data-tuteur-content="exemple" data-rendu>{{ session_tuteur.exemple }}</div>
     </article>
     {% endif %}
 
@@ -53,7 +55,8 @@
         <span class="ai-answer-card-icon">{{ icone("quiz", 16) }}</span>
         <h2>Exercice pour pratiquer</h2>
       </div>
-      <div class="ai-markdown-content" data-tuteur-content="exercice">{{ session_tuteur.exercice | texte_ia }}</div>
+      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
+      <div class="ai-markdown-content" data-tuteur-content="exercice" data-rendu>{{ session_tuteur.exercice }}</div>
     </article>
     {% endif %}
 
@@ -65,7 +68,8 @@
       </div>
       <details>
         <summary>Afficher la correction</summary>
-        <div class="ai-answer-correction-body ai-markdown-content" data-tuteur-content="correction">{{ session_tuteur.correction | texte_ia }}</div>
+        <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
+        <div class="ai-answer-correction-body ai-markdown-content" data-tuteur-content="correction" data-rendu>{{ session_tuteur.correction }}</div>
       </details>
     </article>
     {% endif %}
