@@ -89,13 +89,13 @@ def _convertir_math_transport_texte(valeur: object) -> str:
 
 def _convertir_notation_math_sure(contenu: str) -> str:
     """Convertit uniquement quelques formes sans antislash produites en transport sûr."""
-    resultat = contenu.replace("×", r"\\times ")
-    resultat = re.sub(r"(?<![A-Za-z])det(?=\\s*\\()", r"\\det", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])sin(?=\\s*\\()", r"\\sin", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])cos(?=\\s*\\()", r"\\cos", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])tan(?=\\s*\\()", r"\\tan", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])ln(?=\\s*\\()", r"\\ln", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])log(?=\\s*\\()", r"\\log", resultat)
+    resultat = contenu.replace("×", r"\times ")
+    resultat = re.sub(r"(?<![A-Za-z])det(?=\s*\()", lambda _: r"\det", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])sin(?=\s*\()", lambda _: r"\sin", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])cos(?=\s*\()", lambda _: r"\cos", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])tan(?=\s*\()", lambda _: r"\tan", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])ln(?=\s*\()", lambda _: r"\ln", resultat)
+    resultat = re.sub(r"(?<![A-Za-z])log(?=\s*\()", lambda _: r"\log", resultat)
 
     # Matrices simples du type [a b ; c d] -> pmatrix KaTeX.
     motif_matrice = re.fullmatch(r"\[([A-Za-z0-9+\-*/.,= ]+(?:;[A-Za-z0-9+\-*/.,= ]+)+)\]", resultat)
@@ -103,11 +103,11 @@ def _convertir_notation_math_sure(contenu: str) -> str:
         lignes = [ligne.strip() for ligne in motif_matrice.group(1).split(";")]
         lignes_katex = []
         for ligne in lignes:
-            cellules = [cellule for cellule in re.split(r"\\s+", ligne.strip()) if cellule]
+            cellules = [cellule for cellule in re.split(r"\s+", ligne.strip()) if cellule]
             if cellules:
                 lignes_katex.append(" & ".join(cellules))
         if len(lignes_katex) >= 2:
-            return r"\\begin{pmatrix}" + r" \\\\ ".join(lignes_katex) + r"\\end{pmatrix}"
+            return r"\begin{pmatrix}" + r" \\ ".join(lignes_katex) + r"\end{pmatrix}"
 
     return resultat
 
@@ -311,20 +311,18 @@ def _generer_completion_avec_reessai(
 
     # MODIF : toutes les étapes de génération de quiz reçoivent le même contrat
     # de format. Les antislashs ne doivent jamais être réécrits pendant une reprise.
-    suffixe_format = (
-        "\n\n"
-        + REGLES_FORMAT
-        + r"""
+    suffixe_format = r"""
 TRANSPORT JSON DU QUIZ — OBLIGATOIRE :
 - Le caractère backslash (\\) est INTERDIT dans toutes les valeurs texte du tool-call JSON.
-- N'écris donc jamais \\det, \\frac, \\begin, \\(, \\[ ou tout autre LaTeX avec backslash dans le JSON.
+- Ne génère JAMAIS le caractère \\ dans une valeur de chaîne du JSON.
 - Pour une formule courte, utilise [[MATH]]...[[/MATH]].
 - Pour une formule en bloc, utilise [[DISPLAY]]...[[/DISPLAY]].
-- A l'intérieur des marqueurs, utilise une notation sans backslash : det(A)=ad-bc, x^2, a/b, [a b ; c d], x <= y.
+- A l'intérieur des marqueurs : uniquement une notation sans backslash, par exemple det(A)=ad-bc, x^2, a/b, [a b ; c d], x <= y.
 - Pour les matrices, utilise exclusivement [a b ; c d] dans un marqueur.
-- Ces marqueurs seront transformés en vrai LaTeX après lecture du JSON par le serveur.
+- Les marqueurs seront transformés en LaTeX après lecture du JSON par le serveur.
+- N'utilise ni \(...\), ni \[...\], ni \\det, \\frac, \\begin, \\sqrt dans le JSON.
+- Le JSON doit rester parseable tel quel par un parseur JSON standard.
 """
-    )
     messages_par_essai = [message + suffixe_format for message in messages_par_essai]
 
     # 2 048 tokens etaient suffisants pour des petits quiz, mais deviennent
