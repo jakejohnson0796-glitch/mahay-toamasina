@@ -50,13 +50,37 @@
   function protegerMath(brut) {
     const math = [];
     const source = convertirMarqueursTransport(String(brut == null ? "" : brut));
+    // Compatibilité renforcée : beaucoup de sorties legacy du Quiz IA utilisent
+    // encore $...$ ou $...$. Elles doivent être protégées avant Marked,
+    // exactement comme \\( ... \\) et \\[ ... \\].
     const protection = source.replace(
-      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)/g,
+      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$|\$\$/g,
       function (match) {
-        if (match.indexOf("\\[") === 0 || match.indexOf("\\(") === 0) {
-          const display = match.indexOf("\\[") === 0;
-          const contenu = match.slice(2, -2);
-          const index = math.push({ display: display, contenu: contenu }) - 1;
+        // Un délimiteur $$ orphelin doit disparaître plutôt que devenir du
+        // texte visible dans le quiz. Les blocs de code sont capturés avant
+        // cette règle et restent donc intacts.
+        if (match === "$$") return "";
+
+        const estDollarDisplay = match.indexOf("$$") === 0;
+        const estDisplay =
+          match.indexOf("\\[") === 0 ||
+          estDollarDisplay;
+        const estInline =
+          match.indexOf("\\(") === 0 ||
+          (match.indexOf("$") === 0 && !estDollarDisplay);
+
+        if (estDisplay || estInline) {
+          const longueurDelimiteur =
+            match.indexOf("\\[") === 0 ||
+            match.indexOf("\\(") === 0 ||
+            estDollarDisplay
+              ? 2
+              : 1;
+          const contenu = match.slice(longueurDelimiteur, -longueurDelimiteur);
+          const index = math.push({
+            display: estDisplay,
+            contenu: contenu,
+          }) - 1;
           return TOKEN_MATH + index + "\uE001";
         }
         return match;

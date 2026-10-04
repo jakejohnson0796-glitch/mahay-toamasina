@@ -50,8 +50,33 @@ if (visibleText.includes('\\lambda') || visibleText.includes('\\det')) {
   throw new Error('Raw LaTeX command remains outside rendered KaTeX nodes');
 }
 
-// Mode dégradé : Marked et DOMPurify indisponibles, les formules doivent
-// toujours disparaître des marqueurs de transport.
+// Régression quiz : les anciens délimiteurs $...$ et $$...$$ doivent être
+// convertis avant le passage Markdown.
+const dollarHost = window.document.createElement('div');
+window.document.body.appendChild(dollarHost);
+const dollarSample = 'Quel est le rang ? $A=\\begin{pmatrix}1 & 0 \\\\ 0 & 1\\end{pmatrix}$ et $$\\det(A)=1$$';
+window.rendreReponseIA(dollarSample, dollarHost);
+if (dollarHost.querySelectorAll('.katex').length < 2) {
+  throw new Error('Legacy dollar delimiters were not rendered');
+}
+if ((dollarHost.textContent || '').includes('$')) {
+  throw new Error('Dollar math delimiters remain visible');
+}
+
+// Régression exacte du quiz : un "$$" orphelin avant une formule $...$
+// ne doit pas rester affiché à côté de la question.
+const quizLikeHost = window.document.createElement('div');
+window.document.body.appendChild(quizLikeHost);
+const quizLikeSource = [
+  "Quel est le rang de l'endomorphisme $$ dont la matrice dans la base canonique est",
+  "$A=\\begin{pmatrix}-8 & -4\\\\5 & -3\\\\1 & 0\\end{pmatrix}$ ?"
+].join(' ');
+window.rendreReponseIA(quizLikeSource, quizLikeHost);
+if (!quizLikeHost.querySelector('.katex') || (quizLikeHost.textContent || '').includes('$')) {
+  throw new Error('Quiz-like dollar LaTeX was not fully normalized');
+}
+
+// Mode dégradé
 window.marked = null;
 window.DOMPurify = null;
 host.replaceChildren();
@@ -138,4 +163,4 @@ if (before !== host.innerHTML) {
   throw new Error('Renderer is not idempotent with stable dependencies');
 }
 
-console.log(JSON.stringify({ ok: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
+console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
