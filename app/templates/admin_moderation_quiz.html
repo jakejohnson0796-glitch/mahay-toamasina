@@ -14,9 +14,11 @@
     <tr>
       <td>{{ s.tentative.matiere }}<br><span class="stat-label">{{ s.tentative.niveau }} — {{ s.tentative.difficulte }}</span></td>
       {% if s.question %}
-      <td>{{ s.question.question }}</td>
-      <td>{{ s.question.choix[s.question.index_bonne_reponse] if s.question.choix and s.question.index_bonne_reponse < s.question.choix|length else "—" }}</td>
-      <td>{{ s.question.explication or "—" }}</td>
+      <!-- MODIF : question IA brute rendue par le pipeline commun. -->
+      <td><span data-rendu data-rendu-ligne>{{ s.question.question }}</span></td>
+      <!-- MODIF : choix correct affiché par index, puis rendu mathématique côté navigateur. -->
+      <td><span data-rendu data-rendu-ligne>{{ s.question.choix[s.question.index_bonne_reponse] if s.question.choix and s.question.index_bonne_reponse < s.question.choix|length else "—" }}</span></td>
+      <td><span data-rendu>{{ s.question.explication or "—" }}</span></td>
       {% else %}
       <td colspan="3">Question introuvable (tentative modifiee ou supprimee).</td>
       {% endif %}

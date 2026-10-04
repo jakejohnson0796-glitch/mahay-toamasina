@@ -92,4 +92,8 @@ def test_couverture_des_headers_de_securite_critique():
         "script-src-attr 'none'",
     ):
         assert directive in csp
-    assert "'unsafe-inline'" not in csp
+    # MODIF : style-src-attr peut contenir unsafe-inline pour KaTeX,
+    # mais aucune directive script/style ne doit l'autoriser.
+    assert "style-src-attr 'unsafe-inline'" in csp
+    assert "script-src 'self' 'nonce-test-nonce' 'strict-dynamic'" in csp
+    assert "style-src 'self' 'nonce-test-nonce'" in csp

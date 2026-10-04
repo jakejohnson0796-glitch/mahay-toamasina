@@ -164,6 +164,8 @@
     let essais = 0;
     const maxEssais = 10;
 
+    // MODIF : applique maintenant le texte brut reçu par l'API via le renderer
+    // sécurisé du navigateur ; aucun HTML IA n'est injecté directement.
     function appliquer(data) {
       if (!data || !data.statut) return;
       statusEl.className = "ai-verification-status is-" + data.statut;
@@ -180,9 +182,9 @@
       if (data.statut === "terminee" && data.contenu) {
         fields.forEach(function (champ) {
           const cible = racine.querySelector('[data-tuteur-content="' + champ + '"]');
-          if (cible && data.contenu[champ]) {
-            cible.innerHTML = data.contenu[champ];
-          }
+          if (!cible || data.contenu[champ] == null) return;
+          if (typeof window.rendreReponseIA !== "function") return;
+          window.rendreReponseIA(data.contenu[champ], cible, { enLigne: false });
         });
       }
     }

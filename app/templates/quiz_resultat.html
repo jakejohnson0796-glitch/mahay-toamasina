@@ -5,22 +5,8 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 
 {% block contenu %}
-<style nonce="{{ csp_nonce(request) }}">
-  .math-inline{display:inline-flex;align-items:center;vertical-align:middle;font-family:"Times New Roman",serif;font-size:1.03em}
-  .math-display{display:block;margin:.6rem 0;text-align:center;font-family:"Times New Roman",serif;font-size:1.08em;overflow-x:auto}
-  .math-matrix-wrap{display:inline-block;vertical-align:middle}
-  .math-matrix{border-collapse:collapse;display:inline-table}
-  .math-matrix td{padding:.06rem .42rem;text-align:center;min-width:1.3rem}
-  .math-matrix td:first-child{border-left:2px solid currentColor}
-  .math-matrix td:last-child{border-right:2px solid currentColor}
-  .math-matrix tr:first-child td{border-top:2px solid currentColor}
-  .math-matrix tr:last-child td{border-bottom:2px solid currentColor}
-  .math-frac{display:inline-grid;grid-template-rows:auto auto;vertical-align:middle;text-align:center;line-height:1.05;margin:0 .15em}
-  .math-num{padding:0 .18em;border-bottom:1px solid currentColor}
-  .math-den{padding:0 .18em}
-  .math-root{display:inline-flex;align-items:flex-start;vertical-align:middle}
-  .math-root-body{border-top:1px solid currentColor;padding:.04em .12em 0}
-</style>
+<!-- MODIF : ancien CSS mathématique retiré ; KaTeX fournit le rendu. -->
+
 <div class="ai-learning-page">
   {% if request.query_params.get("signale") %}
   <div class="info" role="status">Question signalée. Merci : elle sera vérifiée par un administrateur.</div>
@@ -98,7 +84,8 @@
           </span>
         </div>
 
-        <h3 class="ai-correction-question">{{ rendre_math_html(item.question) }}</h3>
+        <!-- MODIF : question brute rendue côté navigateur. -->
+        <h3 class="ai-correction-question" data-rendu>{{ item.question }}</h3>
 
         {% if item.choix and item.choix|length > 1 %}
         <div class="ai-correction-options">
@@ -106,19 +93,24 @@
           <div class="ai-correction-option
               {{ 'is-correct' if loop.index0 == item.index_bonne_reponse else '' }}
               {{ 'is-selected-bad' if loop.index0 == reponse_donnee and not correcte else '' }}">
-            <strong>{{ ["A","B","C","D","E","F"][loop.index0] }}.</strong> {{ rendre_choix_math_html(choix, loop.index0) }}
+            <strong>{{ ["A","B","C","D","E","F"][loop.index0] }}.</strong>
+            <!-- MODIF : choix brut ; la bonne réponse est toujours déterminée par l'index. -->
+            <span data-rendu data-rendu-ligne>{{ choix }}</span>
             {% if loop.index0 == item.index_bonne_reponse %} · bonne réponse{% endif %}
             {% if loop.index0 == reponse_donnee and not correcte %} · ta réponse{% endif %}
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <div class="ai-correction-explanation">{{ rendre_math_html(item.choix[0] if item.choix else "") }}</div>
+        <!-- MODIF : réponse courte rendue sans paragraphe parasite. -->
+        <div class="ai-correction-explanation" data-rendu data-rendu-ligne>{{ item.choix[0] if item.choix else "" }}</div>
         {% endif %}
 
         {% if item.explication %}
         <div class="ai-correction-explanation">
-          <strong>Pourquoi ?</strong><br>{{ rendre_math_html(item.explication) }}
+          <strong>Pourquoi ?</strong>
+          <!-- MODIF : explication brute rendue par Marked + KaTeX. -->
+          <span data-rendu>{{ item.explication }}</span>
         </div>
         {% endif %}
 

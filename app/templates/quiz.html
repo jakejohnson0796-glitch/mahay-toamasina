@@ -43,24 +43,30 @@
           <span class="ai-correction-status">Lecture</span>
         </div>
 
-        <h3 class="ai-correction-question">{{ item.question }}</h3>
+        <!-- MODIF : question IA brute rendue par Marked + KaTeX dans le navigateur. -->
+        <h3 class="ai-correction-question" data-rendu>{{ item.question }}</h3>
 
         {% if item.choix and item.choix|length > 1 %}
         <div class="ai-correction-options">
           {% for choix in item.choix %}
           <div class="ai-correction-option {{ 'is-correct' if loop.index0 == item.index_bonne_reponse else '' }}">
-            <strong>{{ ["A","B","C","D","E","F"][loop.index0] }}.</strong> {{ choix }}
+            <strong>{{ ["A","B","C","D","E","F"][loop.index0] }}.</strong>
+            <!-- MODIF : choix IA brut ; le mode ligne évite un paragraphe parasite. -->
+            <span data-rendu data-rendu-ligne>{{ choix }}</span>
             {% if loop.index0 == item.index_bonne_reponse %} · bonne réponse{% endif %}
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <div class="ai-correction-explanation">{{ item.choix[0] if item.choix else "" }}</div>
+        <!-- MODIF : réponse courte rendue via le même pipeline sécurisé. -->
+        <div class="ai-correction-explanation" data-rendu data-rendu-ligne>{{ item.choix[0] if item.choix else "" }}</div>
         {% endif %}
 
         {% if item.explication %}
         <div class="ai-correction-explanation">
-          <strong>Explication</strong><br>{{ item.explication }}
+          <strong>Explication</strong>
+          <!-- MODIF : explication IA brute ; aucun HTML serveur n'est injecté. -->
+          <span data-rendu>{{ item.explication }}</span>
         </div>
         {% endif %}
       </article>

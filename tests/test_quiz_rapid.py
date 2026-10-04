@@ -43,12 +43,6 @@ def test_normalise_markdown_et_symboles_mathematiques():
     assert normaliser_math_texte("**det(A)** = a \\times d - b \\times c") == "det(A) = a × d - b × c"
 
 
-def test_rendre_math_html_echappe_le_html_du_contenu():
-    from app.quiz_validation import rendre_math_html
-    rendu = str(rendre_math_html(r"Question <script>alert(1)</script> et \(a+b\)"))
-    assert "<script>" not in rendu
-    assert "a+b" in rendu
-
 
 def test_normalise_les_matrices_entre_doubles_crochets():
     from app.quiz_validation import normaliser_math_texte
@@ -92,11 +86,12 @@ def test_retirer_labels_qcm_parasites_sans_casser_ab_egal_ba():
         "explication": "La somme est commutative.",
         "notion": "Matrices",
     }]
+    # MODIF : la validation peut normaliser une copie interne mais doit
+    # restituer exactement le texte brut pour stockage/transmission.
+    brut = questions[0]["choix"][0]
     resultat = valider_questions(questions)
-    assert resultat[0]["choix"][0] == "A+B = BA"
-    assert resultat[0]["choix"][1] == "Si AB = O"
-    assert resultat[0]["choix"][2] == "Le produit existe"
-    assert "lambda" in resultat[0]["choix"][3] or "λ" in resultat[0]["choix"][3]
+    assert resultat[0]["choix"][0] == brut
+    assert resultat[0]["choix"] == questions[0]["choix"]
 
     formule = [{
         "question": "Identite.",
@@ -106,24 +101,12 @@ def test_retirer_labels_qcm_parasites_sans_casser_ab_egal_ba():
         "notion": "Algebre",
     }]
     resultat_formule = valider_questions(formule)
-    assert resultat_formule[0]["choix"][0] == "AB = BA"
+    assert resultat_formule[0]["choix"] == formule[0]["choix"]
 
 
 def test_normalise_les_entetes_markdown_dans_les_questions():
     from app.quiz_validation import normaliser_math_texte
     assert normaliser_math_texte("## Quelle propriete ?") == "Quelle propriete ?"
-
-
-def test_rend_un_choix_ancien_avec_label_et_matrice():
-    from app.quiz_validation import rendre_choix_math_html
-    texte = "| **6** | **21\\\\ 24** | **3** |\n| :---: | :-----------: | :---: |"
-    rendu = str(rendre_choix_math_html("A" + texte, 0))
-    assert "math-matrix" in rendu
-    assert ">6<" in rendu
-    assert "21" in rendu
-    assert "24" in rendu
-    assert ">A<" not in rendu
-
 
 
 def test_normalise_labels_qcm_colles_aux_reponses_reelles():
@@ -142,17 +125,15 @@ def test_normalise_labels_qcm_colles_aux_reponses_reelles():
         "notion": "Matrice unité",
     }]
 
+    # MODIF : les labels collés peuvent rester dans la donnée brute ; leur
+    # nettoyage n'est plus une transformation de stockage.
+    brut = list(questions[0]["choix"])
     resultat = valider_questions(questions)
-    assert resultat[0]["choix"] == [
-        "IA = AI = A pour toute matrice carrée A de même ordre",
-        "I est la matrice nulle",
-        "Toutes les entrées de I sont égales à 0",
-        "I commute seulement avec les matrices diagonales",
-    ]
+    assert resultat[0]["choix"] == brut
 
 
 def test_normalise_labels_et_matrices_markdown_dans_les_choix():
-    from app.quiz_validation import valider_questions, rendre_math_html
+    from app.quiz_validation import valider_questions
 
     questions = [{
         "question": "Soit A = | 2 | 3\\\\ 1 | 4 |. Quel est le déterminant ?",
@@ -166,18 +147,19 @@ def test_normalise_labels_et_matrices_markdown_dans_les_choix():
         "explication": "det(A)=8-3=5.",
         "notion": "Déterminant",
     }]
+    # MODIF : vérifie la conservation stricte du brut.
+    brut = list(questions[0]["choix"])
     resultat = valider_questions(questions)
-    assert resultat[0]["choix"] == ["-2", "2", "10", "14"]
+    assert resultat[0]["choix"] == brut
 
     choix_matrice = """A
 | **1** | **2** | **3\\ 4** | **5** | **6\\ 7** | **8** | **9** |
 | :---: | :---: | :---------: | :---: | :---------: | :---: | :---: |"""
     questions[0]["choix"] = [choix_matrice, "B9", "C8", "D7"]
+    brut_matrice = choix_matrice
     resultat = valider_questions(questions)
-    assert r"\begin{pmatrix}" in resultat[0]["choix"][0]
-    rendu = str(rendre_math_html(resultat[0]["choix"][0]))
-    assert "math-matrix" in rendu
-    assert ">1<" in rendu and ">9<" in rendu
+    # MODIF : le texte Markdown/LaTeX reste inchangé et sera rendu côté navigateur.
+    assert resultat[0]["choix"][0] == brut_matrice
 
 
 
@@ -209,29 +191,9 @@ def test_normalise_les_choix_qcm_des_questions_3_et_4():
     }]
 
     resultat = valider_questions(questions)
-    assert resultat[0]["choix"] == [
-        "Échange des lignes 1 et 2",
-        "Multiplication de la ligne 1 par 0",
-        "Addition de la ligne 3 à la ligne 2",
-        "Permutation circulaire des lignes",
-    ]
-    assert resultat[1]["choix"] == [
-        "C est une matrice de type (n,p)",
-        "C est une matrice carrée",
-        "A et B sont symétriques",
-        "m = n",
-    ]
-
-
-def test_rend_une_matrice_3x3_avec_trois_lignes_html():
-    from app.quiz_validation import rendre_math_html
-
-    texte = r"\[\begin{pmatrix}1&2&3\\ 4&5&6\\ 7&8&9\end{pmatrix}\]"
-    rendu = str(rendre_math_html(texte))
-    assert rendu.count("<tr>") == 3
-    assert rendu.count("<td>") == 9
-    assert ">7<" in rendu and ">9<" in rendu
-
+    # MODIF : les choix sont conservés bruts.
+    assert resultat[0]["choix"] == questions[0]["choix"]
+    assert resultat[1]["choix"] == questions[1]["choix"]
 
 
 def test_controle_strict_refuse_une_explication_sans_bonne_option():
@@ -291,4 +253,5 @@ def test_normalise_un_quiz_avec_labels_consecutifs():
         "notion": "Algèbre",
     }]
     resultat = valider_questions(questions)
-    assert resultat[0]["choix"] == ["A+B = B+A", "A+B = B-A", "A+B = A-B", "λ(AB) = A(λ B)"]
+    # MODIF : aucune normalisation LaTeX/label n'est persistée.
+    assert resultat[0]["choix"] == questions[0]["choix"]

@@ -16,8 +16,38 @@ import httpx
 from groq import Groq
 
 from .config import parametres
+from .json_latex import charger_json_ia
 
 logger = logging.getLogger(__name__)
+
+# MODIF : contrat commun de rendu LaTeX/Markdown pour tous les modèles de contrôle.
+REGLES_FORMAT = r"""
+Réponds en Markdown. Formules :
+- En ligne : \( ... \)   En bloc : \[ ... \]   (jamais d'autre notation).
+- Plusieurs lignes : \[ \begin{aligned} ... \end{aligned} \].
+- Chimie : \ce{2H2 + O2 -> 2H2O}, \ce{Fe^{3+}}, \ce{CH3COOH <=> CH3COO- + H+}.
+- Physique : unités en \mathrm{m\,s^{-2}}, vecteurs en \vec{F}. N'utilise pas siunitx (\SI, \si).
+- N'utilise ni TikZ, ni chemfig, ni \usepackage, ni \newcommand.
+- Informatique : tout code dans un bloc ```langage (python, c, sql, bash...).
+- Tableaux : syntaxe Markdown avec |.
+Comptabilité :
+- Montants : espace pour les milliers, virgule décimale, unité après le montant (1 250 000,50 Ar).
+- Écritures : tableau Markdown | Date | Compte | Libellé | Débit | Crédit | avec la ligne de séparation |---|---|---|---:|---:| (montants alignés à droite). Compte débité d'abord, puis compte crédité avec « à » devant le libellé. Total en gras.
+- Bilan et compte de résultat : tableaux Markdown (Actif | Montant | Passif | Montant).
+- Compte en T : bloc ```text (Débit à gauche, Crédit à droite) ou tableau à 2 colonnes.
+- Formules (amortissement, TVA, ratios, CAF, FRNG) en LaTeX : \text{...} pour les mots, \, pour les milliers, {,} pour la virgule décimale, \% pour les pourcentages.
+- Utilise les numéros de comptes du plan comptable en vigueur à Madagascar.
+"""
+# MODIF : suffixe commun ajouté à chaque prompt de critique/arbitrage.
+def _suffixe_format_prompt(quiz: bool = False) -> str:
+    suffixe = "\n\n" + REGLES_FORMAT + "\nConserve exactement tous les antislashs LaTeX ; aucune étape de vérification ne doit les réécrire ou les supprimer."
+    if quiz:
+        # MODIF : consigne JSON explicite avec les antislashs LaTeX préservés.
+        suffixe += r"""
+Réponds avec un JSON valide ; dans le JSON, double chaque antislash des formules (écris \\frac et non \frac).
+"""
+
+    return suffixe
 
 # Coupe-circuit court pour eviter de refaire plusieurs requetes Gemini
 # lorsque le fournisseur renvoie temporairement des 429/5xx.
@@ -41,7 +71,7 @@ def _extract_tool_json(completion: Any) -> Optional[Dict[str, Any]]:
         calls = completion.choices[0].message.tool_calls
         if not calls:
             return None
-        return json.loads(calls[0].function.arguments)
+        return charger_json_ia(calls[0].function.arguments)
     except (AttributeError, IndexError, TypeError, json.JSONDecodeError):
         return None
 
@@ -175,7 +205,7 @@ def _gemini_json(prompt: str, schema: Dict[str, Any]) -> Optional[Dict[str, Any]
                             if text:
                                 break
 
-                    return json.loads(text) if text else None
+                    return charger_json_ia(text) if text else None
 
                 except httpx.RequestError as erreur:
                     if attempt >= 3:
@@ -287,6 +317,7 @@ def critiquer_quiz_groq(
         f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
         f"{json.dumps(questions, ensure_ascii=False)}"
     )
+    prompt += _suffixe_format_prompt(quiz=True)
     return _groq_structured_tool(
         model=parametres.groq_critic_model,
         tool=OUTIL_CRITIQUE_QUIZ,
@@ -345,6 +376,7 @@ def critiquer_quiz_gemini(
         f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
         f"{json.dumps(questions, ensure_ascii=False)}"
     )
+    prompt += _suffixe_format_prompt(quiz=True)
     return _gemini_json(prompt, GEMINI_QUIZ_SCHEMA)
 
 
@@ -375,6 +407,7 @@ def arbitrer_quiz(
         f"ORIGINAL:\\n{json.dumps(original, ensure_ascii=False)}\\n\\n"
         f"CRITIQUES:\\n{synthese}"
     )
+    prompt += _suffixe_format_prompt(quiz=True)
     return _groq_structured_tool(
         model=parametres.groq_model,
         tool=outil_verification,
@@ -523,6 +556,7 @@ def _critique_tuteur_groq(
         f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"REPONSE:\\n{json.dumps(reponse, ensure_ascii=False)}"
     )
+    prompt += _suffixe_format_prompt(quiz=False)
     return _groq_structured_tool(
         model=parametres.groq_critic_model,
         tool=OUTIL_TUTEUR_CRITIQUE,
@@ -560,6 +594,7 @@ def _critique_tuteur_gemini(
         f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"{json.dumps(reponse, ensure_ascii=False)}"
     )
+    prompt += _suffixe_format_prompt(quiz=False)
     return _gemini_json(prompt, TUTEUR_GEMINI_SCHEMA)
 
 
@@ -625,6 +660,7 @@ def verifier_tuteur(
         f"REPONSE INITIALE:\\n{json.dumps(reponse, ensure_ascii=False)}\\n\\n"
         f"CRITIQUES:\\n{json.dumps(critiques, ensure_ascii=False)}"
     )
+    prompt += _suffixe_format_prompt(quiz=False)
     result = _groq_structured_tool(
         model=parametres.groq_model,
         tool=outil_tuteur,

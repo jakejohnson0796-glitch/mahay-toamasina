@@ -125,11 +125,11 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
     if not session_tuteur or session_tuteur.utilisateur_id != utilisateur.id:
         return JSONResponse({"statut": "introuvable"}, status_code=404)
 
-    from ..templating import templates as _templates
-
+    # MODIF : l'API transmet désormais uniquement le texte brut de la
+    # réponse IA ; le rendu Markdown/KaTeX est réalisé dans le navigateur.
     def rendu(champ: str) -> str:
-        filtre = _templates.env.filters["texte_ia"]
-        return str(filtre(getattr(session_tuteur, champ)))
+        valeur = getattr(session_tuteur, champ)
+        return "" if valeur is None else str(valeur)
 
     return {
         "statut": session_tuteur.statut_verification_ia,

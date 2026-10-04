@@ -18,6 +18,7 @@ import time
 from typing import Dict, List, Optional
 
 from .quiz_validation import QuizValidationError, valider_questions
+from .json_latex import charger_json_ia
 from . import ai_ensemble, ai_memory, ai_metrics
 
 from groq import Groq
@@ -25,6 +26,25 @@ from groq import Groq
 from .config import parametres
 
 logger = logging.getLogger(__name__)
+
+# MODIF : contrat de format commun à toutes les sorties Tuteur/Quiz.
+REGLES_FORMAT = r"""
+Réponds en Markdown. Formules :
+- En ligne : \( ... \)   En bloc : \[ ... \]   (jamais d'autre notation).
+- Plusieurs lignes : \[ \begin{aligned} ... \end{aligned} \].
+- Chimie : \ce{2H2 + O2 -> 2H2O}, \ce{Fe^{3+}}, \ce{CH3COOH <=> CH3COO- + H+}.
+- Physique : unités en \mathrm{m\,s^{-2}}, vecteurs en \vec{F}. N'utilise pas siunitx (\SI, \si).
+- N'utilise ni TikZ, ni chemfig, ni \usepackage, ni \newcommand.
+- Informatique : tout code dans un bloc ```langage (python, c, sql, bash...).
+- Tableaux : syntaxe Markdown avec |.
+Comptabilité :
+- Montants : espace pour les milliers, virgule décimale, unité après le montant (1 250 000,50 Ar).
+- Écritures : tableau Markdown | Date | Compte | Libellé | Débit | Crédit | avec la ligne de séparation |---|---|---|---:|---:| (montants alignés à droite). Compte débité d'abord, puis compte crédité avec « à » devant le libellé. Total en gras.
+- Bilan et compte de résultat : tableaux Markdown (Actif | Montant | Passif | Montant).
+- Compte en T : bloc ```text (Débit à gauche, Crédit à droite) ou tableau à 2 colonnes.
+- Formules (amortissement, TVA, ratios, CAF, FRNG) en LaTeX : \text{...} pour les mots, \, pour les milliers, {,} pour la virgule décimale, \% pour les pourcentages.
+- Utilise les numéros de comptes du plan comptable en vigueur à Madagascar.
+"""
 
 _client: Optional[Groq] = None
 
@@ -210,6 +230,18 @@ def _generer_completion_avec_reessai(
     expliquant pourquoi en texte libre au lieu de generer le quiz)."""
     derniere_erreur = None
 
+    # MODIF : toutes les étapes de génération de quiz reçoivent le même contrat
+    # de format. Les antislashs ne doivent jamais être réécrits pendant une reprise.
+    suffixe_format = (
+        "\n\n"
+        + REGLES_FORMAT
+        + r"""
+Réponds avec un JSON valide ; dans le JSON, double chaque antislash des formules (écris \\frac et non \frac).
+Ne réécris ni ne supprime aucun antislash d'une formule.
+"""
+    )
+    messages_par_essai = [message + suffixe_format for message in messages_par_essai]
+
     # 2 048 tokens etaient suffisants pour des petits quiz, mais deviennent
     # trop justes des qu'on demande 10 questions : le modele de raisonnement
     # peut consommer une partie du budget avant meme d'emmettre le tool-call.
@@ -263,7 +295,7 @@ def _generer_completion_avec_reessai(
 
         if message.tool_calls:
             try:
-                arguments = json.loads(message.tool_calls[0].function.arguments)
+                arguments = charger_json_ia(message.tool_calls[0].function.arguments)
                 questions = arguments.get("questions")
                 valider_questions(questions, expected_count=expected_count, strict_coherence=True)
             except (json.JSONDecodeError, AttributeError, TypeError, QuizValidationError) as validation_error:
@@ -470,7 +502,7 @@ def _extraire_questions(completion, expected_count: int = 5) -> List[Dict]:
     message = completion.choices[0].message
     if message.tool_calls:
         try:
-            arguments = json.loads(message.tool_calls[0].function.arguments)
+            arguments = charger_json_ia(message.tool_calls[0].function.arguments)
             questions = arguments.get("questions") or []
             if questions:
                 try:
@@ -657,6 +689,9 @@ def generer_reponse_tuteur(
                     f"Reponds en francais, pedagogique et concret. Utilise l'outil "
                     f"fourni pour structurer ta reponse."
                     f"{chr(10) + chr(10) + memoire if memoire else ''}"
+                    + "\n\n"
+                    + REGLES_FORMAT
+                    + "\nNe réécris ni ne supprime aucun antislash des formules."
                 ),
             }],
         }
@@ -672,7 +707,7 @@ def generer_reponse_tuteur(
         return _reponse_tuteur_erreur("Aucune reponse structuree recue — reessayez dans un instant.")
 
     try:
-        arguments = json.loads(completion.choices[0].message.tool_calls[0].function.arguments)
+        arguments = charger_json_ia(completion.choices[0].message.tool_calls[0].function.arguments)
     except (json.JSONDecodeError, AttributeError):
         return _reponse_tuteur_erreur("Reponse recue dans un format inattendu — reessayez.")
 

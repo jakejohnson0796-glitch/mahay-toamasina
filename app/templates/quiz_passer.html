@@ -48,13 +48,15 @@
         {% set ok = rep == item.index_bonne_reponse %}
         <article class="quiz-question-card quiz-question-correction {{ 'is-correct' if ok else 'is-wrong' }}">
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
-          <h2 class="quiz-question-title">{{ rendre_math_html(item.question) }}</h2>
+          <!-- MODIF : question brute rendue par rendu_ia.js. -->
+          <h2 class="quiz-question-title" data-rendu>{{ item.question }}</h2>
           <div class="quiz-choice-grid quiz-choice-grid-correction">
-            {% set choix_nettoyes = normaliser_choix_liste(item.choix) %}
-            {% for choix in choix_nettoyes %}
+            <!-- MODIF : les choix transmis au navigateur restent exactement ceux stockés en base. -->
+            {% for choix in item.choix %}
             <div class="quiz-choice quiz-choice-readonly {{ 'is-correct-choice' if loop.index0 == item.index_bonne_reponse else '' }} {{ 'is-selected-choice' if loop.index0 == rep else '' }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
-              <span class="quiz-choice-text">{{ rendre_choix_math_html(choix, loop.index0) }}</span>
+              <!-- MODIF : choix brut ; la correction continue d'utiliser l'index. -->
+              <span class="quiz-choice-text" data-rendu data-rendu-ligne>{{ choix }}</span>
               <span class="quiz-choice-mark">
                 {% if loop.index0 == item.index_bonne_reponse %}✓ Bonne réponse{% endif %}
                 {% if loop.index0 == rep and loop.index0 != item.index_bonne_reponse %}✗ Ta réponse{% endif %}
@@ -64,12 +66,14 @@
           </div>
           <div class="quiz-correction-answer">
             <strong>{% if ok %}✅ Correcte{% elif rep is none %}⚠️ Sans réponse{% else %}❌ Incorrecte{% endif %}</strong>
-            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. {{ rendre_math_html(choix_nettoyes[item.index_bonne_reponse]) }}</span>
+            <!-- MODIF : le texte affiché ne participe jamais au calcul de la bonne réponse. -->
+            <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. <span data-rendu data-rendu-ligne>{{ item.choix[item.index_bonne_reponse] }}</span></span>
           </div>
           {% if item.explication %}
           <div class="quiz-correction-explanation">
             <strong>Explication</strong>
-            <p>{{ rendre_math_html(item.explication) }}</p>
+            <!-- MODIF : explication brute rendue côté navigateur. -->
+            <div data-rendu>{{ item.explication }}</div>
           </div>
           {% endif %}
         </article>
@@ -94,14 +98,15 @@
         {% set q = loop.index0 %}
         <article class="quiz-question-card" data-quiz-question data-quiz-index="{{ q }}" id="question-{{ q }}">
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
-          <h2 class="quiz-question-title">{{ rendre_math_html(item.question) }}</h2>
+          <h2 class="quiz-question-title">{{ item.question }}</h2>
           <div class="quiz-choice-grid" role="radiogroup" aria-label="Réponses à la question {{ loop.index }}">
-            {% set choix_nettoyes = normaliser_choix_liste(item.choix) %}
-            {% for choix in choix_nettoyes %}
+            <!-- MODIF : le quiz en cours affiche les choix bruts ; la valeur du radio reste l'index. -->
+            {% for choix in item.choix %}
             <label class="quiz-choice">
               <input type="radio" name="question_{{ q }}" value="{{ loop.index0 }}">
               <span class="quiz-choice-letter">{{ ["A","B","C","D","E","F"][loop.index0] }}</span>
-              <span class="quiz-choice-text">{{ rendre_math_html(choix) }}</span>
+              <!-- MODIF : choix brut rendu par KaTeX dans le navigateur. -->
+              <span class="quiz-choice-text" data-rendu data-rendu-ligne>{{ choix }}</span>
             </label>
             {% endfor %}
           </div>
@@ -135,45 +140,6 @@
   </div>
 </div>
 
-<style nonce="{{ csp_nonce(request) }}">
-  .math-inline{display:inline-flex;align-items:center;vertical-align:middle;font-family:"Times New Roman",serif;font-size:1.03em}
-  .math-display{display:block;margin:.6rem 0;text-align:center;font-family:"Times New Roman",serif;font-size:1.08em;overflow-x:auto}
-  .math-matrix-wrap{display:inline-block;vertical-align:middle}
-  .math-matrix{border-collapse:collapse;display:inline-table}
-  .math-matrix td{padding:.06rem .42rem;text-align:center;min-width:1.3rem}
-  .math-matrix td:first-child{border-left:2px solid currentColor}
-  .math-matrix td:last-child{border-right:2px solid currentColor}
-  .math-matrix tr:first-child td{border-top:2px solid currentColor}
-  .math-matrix tr:last-child td{border-bottom:2px solid currentColor}
-  .math-frac{display:inline-grid;grid-template-rows:auto auto;vertical-align:middle;text-align:center;line-height:1.05;margin:0 .15em}
-  .math-num{padding:0 .18em;border-bottom:1px solid currentColor}
-  .math-den{padding:0 .18em}
-  .math-root{display:inline-flex;align-items:flex-start;vertical-align:middle}
-  .math-root-body{border-top:1px solid currentColor;padding:.04em .12em 0}
-  .quiz-run-subtitle{margin:.35rem 0 0;color:var(--content-text-muted);font-size:.8rem}
-  .quiz-correction-summary{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface)}
-  .quiz-correction-summary strong{display:block;font-size:2rem;line-height:1.05;color:var(--content-text)}
-  .quiz-correction-summary span{color:var(--content-text-muted);font-size:.72rem}
-  .quiz-correction-stack{display:grid;gap:1rem}
-  .quiz-question-correction.is-correct{border-color:rgba(58,146,90,.4)}
-  .quiz-question-correction.is-wrong{border-color:rgba(189,78,45,.4)}
-  .quiz-choice-grid-correction{pointer-events:none}
-  .quiz-choice-readonly{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.55rem}
-  .quiz-choice-readonly.is-correct-choice{border-color:rgba(58,146,90,.45);background:rgba(58,146,90,.08)}
-  .quiz-choice-readonly.is-selected-choice:not(.is-correct-choice){border-color:rgba(189,78,45,.45);background:rgba(189,78,45,.07)}
-  .quiz-choice-mark{font-size:.65rem;font-weight:700;white-space:nowrap;color:var(--content-text-muted)}
-  .quiz-choice-readonly.is-correct-choice .quiz-choice-mark{color:var(--color-success-clair)}
-  .quiz-choice-readonly.is-selected-choice:not(.is-correct-choice) .quiz-choice-mark{color:var(--color-danger-clair)}
-  .quiz-correction-answer{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem;padding:.7rem .8rem;border-radius:12px;background:var(--content-bg);font-size:.76rem}
-  .quiz-correction-answer strong{color:var(--content-text)}
-  .quiz-correction-answer span{color:var(--content-text-muted)}
-  .quiz-correction-explanation{margin-top:.7rem;padding:.8rem;border-left:3px solid var(--accent-primary);border-radius:0 10px 10px 0;background:rgba(72,118,134,.07)}
-  .quiz-correction-explanation strong{display:block;margin-bottom:.2rem}
-  .quiz-correction-explanation p{margin:0;color:var(--content-text-muted);line-height:1.55}
-  @media(max-width:760px){
-    .quiz-correction-summary{flex-direction:column;align-items:stretch}
-    .quiz-choice-readonly{grid-template-columns:auto 1fr}
-    .quiz-choice-mark{grid-column:2}
-  }
-</style>
+<!-- MODIF : ancien CSS de rendu mathématique retiré ; KaTeX fournit maintenant le rendu. -->
+
 {% endblock %}

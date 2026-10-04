@@ -48,10 +48,14 @@ if __name__ == "__main__":
     unittest.main()
 
 
-def test_strict_csp_has_no_unsafe_inline():
+def test_strict_csp_garde_unsafe_inline_uniquement_pour_les_attributs_style():
     from app.security_headers import _construire_csp
     csp = _construire_csp("nonce-test-123")
-    assert "unsafe-inline" not in csp
+    # MODIF : le compromis demandé autorise unsafe-inline uniquement dans
+    # style-src-attr pour KaTeX ; script-src et style-src restent protégés.
     assert "nonce-nonce-test-123" in csp
     assert "script-src-attr 'none'" in csp
-    assert "style-src-attr 'unsafe-hashes'" in csp
+    assert "style-src-attr 'unsafe-inline' 'unsafe-hashes'" in csp
+    assert "script-src 'self' 'nonce-nonce-test-123' 'strict-dynamic'" in csp
+    assert "style-src 'self' 'nonce-nonce-test-123'" in csp
+    assert "https://cdn.jsdelivr.net" in csp

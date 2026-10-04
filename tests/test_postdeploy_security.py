@@ -20,9 +20,11 @@ def test_csp_reelle_sur_reponse_http():
 
     assert response.status_code == 200
     csp = response.headers["content-security-policy"]
-    assert "unsafe-inline" not in csp
+    # MODIF : unsafe-inline est toléré uniquement dans style-src-attr pour KaTeX.
     assert "script-src-attr 'none'" in csp
-    assert "style-src-attr 'unsafe-hashes'" in csp
+    assert "style-src-attr 'unsafe-inline' 'unsafe-hashes'" in csp
+    assert "strict-dynamic" in csp
+    assert "https://cdn.jsdelivr.net" in csp
     assert "strict-dynamic" in csp
 
     match = re.search(r"script-src[^;]*'nonce-([^']+)'", csp)
