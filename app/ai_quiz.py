@@ -502,7 +502,7 @@ def _extraire_questions(completion, expected_count: int = 5) -> List[Dict]:
     message = completion.choices[0].message
     if message.tool_calls:
         try:
-            arguments = json.loads(message.tool_calls[0].function.arguments)
+            arguments = charger_json_ia(message.tool_calls[0].function.arguments)
             questions = arguments.get("questions") or []
             if questions:
                 try:
@@ -689,9 +689,9 @@ def generer_reponse_tuteur(
                     f"Reponds en francais, pedagogique et concret. Utilise l'outil "
                     f"fourni pour structurer ta reponse."
                     f"{chr(10) + chr(10) + memoire if memoire else ''}"
-                    + "\\n\\n"
+                    + "\n\n"
                     + REGLES_FORMAT
-                    + "\\nNe réécris ni ne supprime aucun antislash des formules."
+                    + "\nNe réécris ni ne supprime aucun antislash des formules."
                 ),
             }],
         }
@@ -707,7 +707,7 @@ def generer_reponse_tuteur(
         return _reponse_tuteur_erreur("Aucune reponse structuree recue — reessayez dans un instant.")
 
     try:
-        arguments = json.loads(completion.choices[0].message.tool_calls[0].function.arguments)
+        arguments = charger_json_ia(completion.choices[0].message.tool_calls[0].function.arguments)
     except (json.JSONDecodeError, AttributeError):
         return _reponse_tuteur_erreur("Reponse recue dans un format inattendu — reessayez.")
 
