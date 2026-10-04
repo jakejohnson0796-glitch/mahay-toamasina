@@ -233,12 +233,12 @@ def _generer_completion_avec_reessai(
     # MODIF : toutes les étapes de génération de quiz reçoivent le même contrat
     # de format. Les antislashs ne doivent jamais être réécrits pendant une reprise.
     suffixe_format = (
-        "\\n\\n"
+        "\n\n"
         + REGLES_FORMAT
-        + "\\n"
-        + "Réponds avec un JSON valide ; dans le JSON, double chaque antislash "
-        + "des formules (écris \\\\frac et non \\frac). "
-        + "Ne réécris ni ne supprime aucun antislash d'une formule."
+        + r"""
+Réponds avec un JSON valide ; dans le JSON, double chaque antislash des formules (écris \\frac et non \frac).
+Ne réécris ni ne supprime aucun antislash d'une formule.
+"""
     )
     messages_par_essai = [message + suffixe_format for message in messages_par_essai]
 
