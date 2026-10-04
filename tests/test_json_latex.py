@@ -11,11 +11,11 @@ def test_charge_un_json_avec_latex_correctement_echappe():
 
 
 def test_repare_un_json_ia_avec_un_antislash_latex_non_double():
-    # MODIF : le cas historiquement problématique \frac est réparé avant json.loads.
-    texte = '{"explication":"\\frac{d}{dx}"}'
+    # \\sqrt n'est pas un escape JSON valide : la récupération ciblée
+    # peut réintroduire le double antislash nécessaire avant json.loads.
+    texte = '{"explication":"\\sqrt{x}"}'
     resultat = charger_json_ia(texte)
-    assert resultat["explication"] == r"\frac{d}{dx}"
-
+    assert resultat["explication"] == r"\sqrt{x}"
 
 def test_preserve_les_delimiteurs_et_commandes_chimiques():
     texte = r'''{"math":"\\[\\begin{aligned}x&=1\\\\y&=2\\end{aligned}\\]","chimie":"\\ce{H2O}"}'''
@@ -59,10 +59,9 @@ c &= d
 
 
 def test_json_invalide_recupere_uniquement_une_commande_latex_blanche():
-    texte = '{"explication":"\\frac{d}{dx} = 1"}'
+    texte = '{"explication":"\\sqrt{x} = 1"}'
     resultat = charger_json_ia(texte)
-    assert resultat["explication"] == r"\frac{d}{dx} = 1"
-
+    assert resultat["explication"] == r"\sqrt{x} = 1"
 
 def test_json_valide_nabla_reste_un_texte_decodé_exact():
     texte = r'''{"texte":"\\nabla f"}'''
