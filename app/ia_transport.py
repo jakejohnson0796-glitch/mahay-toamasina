@@ -14,52 +14,34 @@ MARKER_DISPLAY_END = "[[/DISPLAY]]"
 MARKER_CHEM = "[[CHEM]]"
 MARKER_CHEM_END = "[[/CHEM]]"
 
-PROMPT_TRANSPORT_SANS_ANTISLASH = r"""
-CONTRAT UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
+REGLES_FORMAT = r"""
+CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 
-1. STRUCTURE
-- Réponds en Markdown clair et pédagogique.
-- Utilise des titres, listes et paragraphes normalement.
-- Le code doit être dans un bloc Markdown de type ```python, ```sql, ```bash, etc.
-- Les tableaux doivent rester de vrais tableaux Markdown avec des barres verticales.
-
-2. MATHÉMATIQUES ET PHYSIQUE
-- Le caractère antislash est interdit DANS LES FORMULES ET LE MARKUP MATH du tool-call JSON.
-- Formule courte : [[MATH]]...[[/MATH]].
-- Formule en bloc : [[DISPLAY]]...[[/DISPLAY]].
-- Dans ces marqueurs, utilise uniquement une notation sans antislash :
-  det(A)=ad-bc, x^2, a/b, x<=y, x>=y, 2 x 3, v=d/t.
-- Pour une matrice, utilise toujours [a b ; c d] dans un marqueur.
-- Pour plusieurs étapes, utilise un bloc [[DISPLAY]] avec des lignes séparées
-  par ; entre les lignes matricielles ou par des expressions simples.
-- N'utilise jamais le caractère antislash, une commande LaTeX ou un
-  délimiteur LaTeX pour les mathématiques dans le JSON. Dans les blocs de
-  code, utilise du code normal et laisse le serveur traiter le code comme du
-  code, pas comme des mathématiques.
-- Le serveur transformera les marqueurs en LaTeX après le parsing JSON.
-
-3. CHIMIE
-- Utilise [[CHEM]]...[[/CHEM]] pour les équations chimiques.
-- Exemple : [[CHEM]]2H2 + O2 -> 2H2O[[/CHEM]]
-- Exemple : [[CHEM]]Fe3+ + 3OH- -> Fe(OH)3[[/CHEM]]
-- N'écris jamais une commande mhchem ou LaTeX dans le JSON.
-
-4. QUALITÉ PÉDAGOGIQUE
-- Vérifie les calculs, signes, unités, dimensions et résultats.
-- Le Tuteur doit conserver une cohérence exacte entre explication, exemple,
-  exercice et correction.
-- Le Quiz doit avoir une seule bonne réponse et une explication qui démontre
-  précisément cette réponse.
-- Pour une matrice, ne crée jamais un tableau Markdown pour représenter les
-  éléments de la matrice.
-- Ne signale pas une question comme correcte si aucune option n'est correcte.
-
-5. AUTRES DOMAINES
-- Informatique : code complet dans des blocs de code.
-- Comptabilité : montants avec espace pour les milliers, virgule décimale et
-  unité Ar ; écritures et bilans en tableaux Markdown.
-- Physique : équations en [[MATH]] ou [[DISPLAY]] et unités lisibles en texte
-  mathématique simple.
+- Réponds en français et en Markdown clair et pédagogique.
+- Le code informatique reste dans des blocs Markdown clôturés.
+- Les tableaux Markdown servent aux données tabulaires, jamais à représenter une matrice.
+- MATHS/PHYSIQUE : utilise le vrai LaTeX avec délimiteurs :
+  inline : \( ... \)
+  bloc : \[ ... \]
+  et les commandes \frac{}, \sqrt{}, \sum, \int, \begin{aligned}, \begin{pmatrix},
+  \begin{cases}, \mathrm{}, \vec{}, \nabla, \le, \ge, \neq, \times, \cdot, etc.
+- CHIMIE : utilise mhchem uniquement dans un délimiteur mathématique :
+  \( \ce{H2O} \)
+  \( \ce{2H2 + O2 -> 2H2O} \)
+  \( \ce{Fe^{3+}} \)
+  Ne produis jamais \ce{...} nu hors délimiteur.
+- Ne remplace jamais le vrai LaTeX par sqrt(...), sum(...), int(...), <= ou >=
+  lorsqu'une expression doit être rendue comme une formule.
+- Ne modifie pas les antislashs, accolades ou doubles antislashs d'un LaTeX valide.
+  En particulier, les \\ entre lignes d'un environnement aligned/matrix doivent rester \\.
+- La sortie est transportée dans un tool-call JSON strict : le JSON doit être valide.
+  Les antislashs du contenu doivent donc être échappés selon JSON afin qu'après
+  json.loads() la chaîne métier contienne le vrai LaTeX.
+- Conserve fidèlement les sauts de ligne, tabulations et retours chariot.
+- N'utilise pas les anciens marqueurs [[MATH]], [[DISPLAY]] ou [[CHEM]].
+- Vérifie calculs, signes, unités, dimensions, indices et résultats.
+- Pour un QCM, une seule réponse doit être correcte et les choix ne contiennent
+  aucun préfixe A/B/C/D/E.
 """
 
 _COMMANDES_SANS_ANTISLASH = {
@@ -123,20 +105,26 @@ _COMMANDES_LATEX_NUES_RE = re.compile(
 )
 
 def _normaliser_latex_nu(texte: str) -> str:
-    """Encapsule les commandes LaTeX nues dans des délimiteurs valides."""
-    lignes = str(texte or "").splitlines()
-    resultat = []
-    dans_code = False
+    """Compatibilité conservatrice pour un LaTeX nu mal formé.
 
-    for ligne in lignes:
-        if ligne.strip().startswith("```"):
-            dans_code = not dans_code
-            resultat.append(ligne)
-            continue
-        if dans_code or not ligne.strip():
-            resultat.append(ligne)
-            continue
-        if "\\(" in ligne or "\\[" in ligne or "[[MATH]]" in ligne or "[[DISPLAY]]" in ligne:
+    Les zones déjà délimitées et les zones de code sont masquées avant tout
+    traitement : un bloc LaTeX multiligne est donc toujours atomique.
+    """
+    source = str(texte or "")
+    zones: list[str] = []
+
+    def masquer(match: re.Match[str]) -> str:
+        index = len(zones)
+        zones.append(match.group(0))
+        return f"__GMATHZONE_{index}__"
+
+    source = re.sub(r"(?s)\x60\x60\x60.*?\x60\x60\x60", masquer, source)
+    source = re.sub(r"(?s)\\\[.*?\\\]|\\\(.*?\\\)", masquer, source)
+    source = re.sub(r"\x60[^\x60\n]*\x60", masquer, source)
+
+    resultat = []
+    for ligne in source.splitlines():
+        if not ligne.strip():
             resultat.append(ligne)
             continue
 
@@ -166,18 +154,23 @@ def _normaliser_latex_nu(texte: str) -> str:
 
         affichage = (
             r"\[" + formule + r"\]"
-            if "\\begin{" in formule
+            if r"\begin{" in formule
             else r"\(" + formule + r"\)"
         )
         resultat.append(avant + affichage + suffixe)
 
-    return "\n".join(resultat)
+    resultat_texte = "\n".join(resultat)
+    for index, zone in enumerate(zones):
+        resultat_texte = resultat_texte.replace(f"__GMATHZONE_{index}__", zone)
+    return resultat_texte
+
+PROMPT_TRANSPORT_SANS_ANTISLASH = REGLES_FORMAT
+
 
 def convertir_math_transport_texte(valeur: Any) -> str:
     texte = "" if valeur is None else str(valeur)
-    # MODIF : corrige les réponses Tuteur/Quiz qui transportent encore des
-    # retours à la ligne sous forme littérale \\n.
-    texte = _normaliser_sauts_de_ligne_litteraux(texte)
+    # Les chaînes JSON valides ont déjà été décodées par json.loads().
+    # Aucune normalisation des sauts de ligne n'est appliquée ici.
     texte = _normaliser_latex_nu(texte)
 
     def display(match: re.Match[str]) -> str:
