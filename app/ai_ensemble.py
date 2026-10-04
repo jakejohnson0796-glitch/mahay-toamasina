@@ -43,21 +43,22 @@ Comptabilité :
 """
 # MODIF : suffixe commun ajouté à chaque prompt de critique/arbitrage.
 def _suffixe_format_prompt(quiz: bool = False) -> str:
-    suffixe = "\n\n" + REGLES_FORMAT + "\nConserve exactement tous les antislashs LaTeX ; aucune étape de vérification ne doit les réécrire ou les supprimer."
     if quiz:
-        # MODIF : pendant les tool-calls de quiz, les backslashes sont interdits
-        # pour éviter que le fournisseur rejette les arguments JSON mal échappés.
-        suffixe += r"""
+        # MODIF : le tool-call quiz doit rester du JSON valide. Les formules
+        # sont transportees via des marqueurs sans antislash puis reconverties
+        # en LaTeX par app.ai_quiz avant validation/enregistrement.
+        return r"""
 TRANSPORT JSON DU QUIZ — OBLIGATOIRE :
 - Le caractère backslash (\\) est INTERDIT dans toutes les valeurs texte du JSON.
-- N'écris jamais \\det, \\frac, \\begin, \\( ou \\[ dans le tool-call.
-- Utilise [[MATH]]...[[/MATH]] ou [[DISPLAY]]...[[/DISPLAY]].
-- Dans ces marqueurs, utilise seulement det(A)=ad-bc, x^2, a/b ou [a b ; c d].
-- Le serveur reconvertira ensuite ces marqueurs en LaTeX.
-
+- Ne génère JAMAIS le caractère \\ dans une valeur de chaîne du JSON.
+- Formule courte : [[MATH]]...[[/MATH]].
+- Formule en bloc : [[DISPLAY]]...[[/DISPLAY]].
+- Dans ces marqueurs : det(A)=ad-bc, x^2, a/b, [a b ; c d], x <= y.
+- Matrices : utilise exclusivement [a b ; c d].
+- Ne mets jamais \(...\), \[...\], \\det, \\frac ou \\begin dans le JSON.
+- Le serveur reconvertira les marqueurs en LaTeX après lecture du JSON.
 """
-
-    return suffixe
+    return "\n\n" + REGLES_FORMAT + "\nConserve exactement tous les antislashs LaTeX ; aucune étape de vérification ne doit les réécrire ou les supprimer."
 
 # Coupe-circuit court pour eviter de refaire plusieurs requetes Gemini
 # lorsque le fournisseur renvoie temporairement des 429/5xx.
