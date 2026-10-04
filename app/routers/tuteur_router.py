@@ -10,6 +10,7 @@ from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
 from ..models import SessionTuteur, ProgressionNotion
+from ..ia_transport import normaliser_structure_tuteur
 from .. import ai_quiz
 from ..rate_limit import limite_depassee
 from .. import quiz as quiz_module
@@ -127,9 +128,15 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
 
     # MODIF : l'API transmet désormais uniquement le texte brut de la
     # réponse IA ; le rendu Markdown/KaTeX est réalisé dans le navigateur.
+    contenu = normaliser_structure_tuteur({
+        "explication": session_tuteur.explication,
+        "exemple": session_tuteur.exemple,
+        "exercice": session_tuteur.exercice,
+        "correction": session_tuteur.correction,
+    })
+
     def rendu(champ: str) -> str:
-        valeur = getattr(session_tuteur, champ)
-        return "" if valeur is None else str(valeur)
+        return contenu.get(champ, "")
 
     return {
         "statut": session_tuteur.statut_verification_ia,
@@ -159,8 +166,20 @@ def page_reponse_tuteur(request: Request, session_id: int, session: Session = De
     if not session_tuteur or session_tuteur.utilisateur_id != utilisateur.id:
         return RedirectResponse("/tuteur", status_code=303)
 
+    # MODIF : le template reçoit aussi les contenus canonisés pour éviter
+    # que les anciennes sessions affichent des marqueurs de transport.
+    session_vue = dict(
+        utilisateur=utilisateur,
+        session_tuteur=session_tuteur,
+        contenu_tuteur=normaliser_structure_tuteur({
+            "explication": session_tuteur.explication,
+            "exemple": session_tuteur.exemple,
+            "exercice": session_tuteur.exercice,
+            "correction": session_tuteur.correction,
+        }),
+    )
     return templates.TemplateResponse(
         request,
         "tuteur_reponse.html",
-        {"utilisateur": utilisateur, "session_tuteur": session_tuteur},
+        session_vue,
     )
