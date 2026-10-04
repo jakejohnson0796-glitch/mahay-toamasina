@@ -30,6 +30,7 @@
   // sanitization. Ainsi \\frac, \\begin, indices et underscores ne sont
   // pas interprétés comme du Markdown.
   const TOKEN_MATH = "\uE000GMATH_";
+  const SOURCES_ORIGINALES = new WeakMap();
   function convertirMarqueursTransport(source) {
     return String(source || "")
       .replace(/\[\[DISPLAY\]\]([\s\S]*?)\[\[\/DISPLAY\]\]/g, "\\[$1\\]")
@@ -263,7 +264,7 @@
       // MODIF : data-rendu-ligne active automatiquement le mode inline pour
       // les choix courts des QCM, sans paragraphes parasites.
       const enLigne = element.hasAttribute("data-rendu-ligne");
-      const source = element.textContent || "";
+      const source = SOURCES_ORIGINALES.get(element) || element.textContent || "";
       rendreReponseIA(source, element, { enLigne: enLigne });
     });
   }
