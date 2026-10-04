@@ -67,6 +67,7 @@ def test_deux_critiques_daccord_retourne_une_seule_sortie(monkeypatch):
         "L1",
         ai_ensemble.OUTIL_CRITIQUE_QUIZ,
         _validate,
+        strategie="renforcee",
     )
 
     assert result == _questions()
