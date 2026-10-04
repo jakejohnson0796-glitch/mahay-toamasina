@@ -20,6 +20,7 @@ def test_renderer_ia_contient_les_garde_fous():
     assert "function convertirMarqueursTransport" in js
     assert "[[DISPLAY]]" in js
     assert "[[MATH]]" in js
+    assert "[\\s\\S]*?" in js
 
 
 def test_base_charge_katex_auto_render():
