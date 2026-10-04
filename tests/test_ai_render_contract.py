@@ -106,3 +106,10 @@ def test_quiz_normalise_aussi_la_sortie_des_correcteurs():
 def test_quiz_normalise_les_anciennes_tentatives_a_la_lecture():
     code = (ROOT / "app/quiz.py").read_text(encoding="utf-8")
     assert "ai_quiz._normaliser_quiz_transport" in code
+
+
+def test_quiz_marker_regex_matches_real_transport_markers():
+    from app.ai_quiz import _convertir_math_transport_texte
+
+    assert _convertir_math_transport_texte("[[MATH]]det(A)=ad-bc[[/MATH]]") == r"\(\\det(A)=ad-bc\)"
+    assert _convertir_math_transport_texte("[[DISPLAY]][a b ; c d][[/DISPLAY]]").startswith(r"\[\\begin{pmatrix}")
