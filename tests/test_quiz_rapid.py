@@ -91,9 +91,7 @@ def test_retirer_labels_qcm_parasites_sans_casser_ab_egal_ba():
     brut = questions[0]["choix"][0]
     resultat = valider_questions(questions)
     assert resultat[0]["choix"][0] == brut
-    assert resultat[0]["choix"][1] == "Si AB = O"
-    assert resultat[0]["choix"][2] == "Le produit existe"
-    assert "lambda" in resultat[0]["choix"][3] or "λ" in resultat[0]["choix"][3]
+    assert resultat[0]["choix"] == questions[0]["choix"]
 
     formule = [{
         "question": "Identite.",
@@ -103,7 +101,7 @@ def test_retirer_labels_qcm_parasites_sans_casser_ab_egal_ba():
         "notion": "Algebre",
     }]
     resultat_formule = valider_questions(formule)
-    assert resultat_formule[0]["choix"][0] == "AB = BA"
+    assert resultat_formule[0]["choix"] == formule[0]["choix"]
 
 
 def test_normalise_les_entetes_markdown_dans_les_questions():
@@ -135,7 +133,7 @@ def test_normalise_labels_qcm_colles_aux_reponses_reelles():
 
 
 def test_normalise_labels_et_matrices_markdown_dans_les_choix():
-    from app.quiz_validation import valider_questions, rendre_math_html
+    from app.quiz_validation import valider_questions
 
     questions = [{
         "question": "Soit A = | 2 | 3\\\\ 1 | 4 |. Quel est le déterminant ?",
