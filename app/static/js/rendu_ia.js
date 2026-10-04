@@ -29,18 +29,18 @@
   // ENTIEREMENT avant Markdown, puis on restaure leurs délimiteurs après
   // sanitization. Ainsi \\frac, \\begin, indices et underscores ne sont
   // pas interprétés comme du Markdown.
-  const TOKEN_MATH = "\\uE000GMATH_";
+  const TOKEN_MATH = "\uE000GMATH_";
   function protegerMath(brut) {
     const math = [];
     let source = String(brut == null ? "" : brut);
 
     source = source.replace(/\\\[((?:.|\\n)*?)\\\]/gs, function (_, contenu) {
       const index = math.push({ display: true, contenu: contenu }) - 1;
-      return TOKEN_MATH + index + "\\uE001";
+      return TOKEN_MATH + index + "\uE001";
     });
     source = source.replace(/\\\(((?:.|\\n)*?)\\\)/gs, function (_, contenu) {
       const index = math.push({ display: false, contenu: contenu }) - 1;
-      return TOKEN_MATH + index + "\\uE001";
+      return TOKEN_MATH + index + "\uE001";
     });
 
     return { source: source, math: math };
@@ -57,7 +57,7 @@
 
     noeuds.forEach(function (texte) {
       const valeur = texte.nodeValue || "";
-      const motif = /\\uE000GMATH_(\\d+)\\uE001/g;
+      const motif = /\uE000GMATH_(\d+)\uE001/g;
       if (!motif.test(valeur)) return;
       motif.lastIndex = 0;
 
@@ -75,8 +75,8 @@
           morceaux.push(
             racine.createTextNode(
               item.display
-                ? "\\\\[" + item.contenu + "\\\\]"
-                : "\\\\(" + item.contenu + "\\\\)"
+                ? "\\[" + item.contenu + "\\]"
+                : "\\(" + item.contenu + "\\)"
             )
           );
         }
