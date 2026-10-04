@@ -88,7 +88,7 @@ def test_contrat_renderer_n_utilise_plus_auto_render_ni_delimiters_dollar():
 
 def test_renderer_ne_depend_plus_de_auto_render():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
-    assert '["KaTeX", Boolean(window.katex && typeof window.katex.render === "function")]' in js
+    assert "function etatDependances" in js
     assert "function restaurerMath" in js
     assert "window.katex.render(item.contenu" in js
     assert "renderMathInElement" not in js
@@ -97,6 +97,7 @@ def test_renderer_ne_depend_plus_de_auto_render():
 def test_renderer_les_formules_sont_rendues_dans_le_fragment_avant_remplacement():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
     assert "const protection = protegerMath" in js
-    assert "const fragment = fragmentSanitise(html)" in js
+    assert "const resultatMarkdown = parserMarkdown" in js
+    assert "const fragment = fragmentSanitise(resultatMarkdown)" in js
     assert "restaurerMath(fragment, protection.math)" in js
     assert "cible.replaceChildren(fragment)" in js
