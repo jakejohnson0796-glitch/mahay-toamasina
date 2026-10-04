@@ -13,8 +13,8 @@ def test_renderer_ia_contient_les_garde_fous():
     # MODIF : aucun chemin applicatif du renderer ne doit appeler innerHTML.
     assert "cible.innerHTML" not in js
     assert "element.innerHTML" not in js
-    assert "renderMathInElement" in js
-    assert "window.renderMathInElement(element" in js
+    assert "katex.render" in js
+    assert "renderMathInElement" not in js
     assert "window.katex.renderMathInElement" not in js
     assert "data-rendu" in js
     assert "function convertirMarqueursTransport" in js
@@ -23,11 +23,10 @@ def test_renderer_ia_contient_les_garde_fous():
     assert "[\\s\\S]*?" in js
 
 
-def test_base_charge_katex_auto_render():
-    # MODIF : katex.min.js ne fournit pas renderMathInElement ; l'extension
-    # auto-render doit être chargée avant le renderer IA.
+def test_base_charge_katex_core_sans_auto_render_obligatoire():
     page = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
-    assert "katex@0.16.11/dist/contrib/auto-render.min.js" in page
+    assert "katex@0.16.11/dist/katex.min.js" in page
+    assert "auto-render.min.js" not in page
     assert "rendu_ia.js" in page
 
 
@@ -85,3 +84,19 @@ def test_contrat_renderer_n_utilise_que_les_delimiteurs_valides():
     assert r'{ left: "\\[", right: "\\]", display: true }' in js
     assert r'{ left: "\\(", right: "\\)", display: false }' in js
     assert '{ left: "$", right: "$"' not in js
+
+
+def test_renderer_ne_depend_plus_de_auto_render():
+    js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
+    assert '["KaTeX", Boolean(window.katex && typeof window.katex.render === "function")]' in js
+    assert "function restaurerMath" in js
+    assert "window.katex.render(item.contenu" in js
+    assert "renderMathInElement" not in js
+
+
+def test_renderer_les_formules_sont_rendues_dans_le_fragment_avant_remplacement():
+    js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
+    assert "const protection = protegerMath" in js
+    assert "const fragment = fragmentSanitise(html)" in js
+    assert "restaurerMath(fragment, protection.math)" in js
+    assert "cible.replaceChildren(fragment)" in js
