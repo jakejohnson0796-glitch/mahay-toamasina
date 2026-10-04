@@ -131,7 +131,7 @@ def test_ne_modifie_pas_le_code_multiligne():
 
 
 def test_ne_modifie_pas_le_code_inline():
-    brut = r"\x60\(\d+\)\x60 et du texte"
+    brut = "\x60\\(\\d+\\)\x60 et du texte"
     assert convertir_math_transport_texte(brut) == brut
 
 
