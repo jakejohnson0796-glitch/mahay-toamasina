@@ -17,6 +17,9 @@ def test_renderer_ia_contient_les_garde_fous():
     assert "window.renderMathInElement(element" in js
     assert "window.katex.renderMathInElement" not in js
     assert "data-rendu" in js
+    assert "function convertirMarqueursTransport" in js
+    assert "[[DISPLAY]]" in js
+    assert "[[MATH]]" in js
 
 
 def test_base_charge_katex_auto_render():
@@ -117,3 +120,10 @@ def test_quiz_marker_regex_matches_real_transport_markers():
     assert r"\det(A)" in inline
     assert display.startswith(r"\[") and display.endswith(r"\]")
     assert r"\begin{pmatrix}" in display
+
+
+def test_tuteur_utilise_le_contenu_canonise():
+    page = (ROOT / "app/templates/tuteur_reponse.html").read_text(encoding="utf-8")
+    router = (ROOT / "app/routers/tuteur_router.py").read_text(encoding="utf-8")
+    assert "contenu_tuteur['explication']" in page
+    assert "normaliser_structure_tuteur" in router
