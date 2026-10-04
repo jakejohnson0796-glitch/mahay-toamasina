@@ -103,3 +103,51 @@ def test_normalise_une_formule_nue_de_quiz_avec_lambda():
     assert valeur.startswith(r"\(")
     assert r"\lambda A + \beta B" in valeur
     assert valeur.endswith(r"\)")
+
+
+def test_preserve_un_bloc_latex_multiligne_intact():
+    brut = r"""\[
+\begin{aligned}
+a &= b \\
+c &= d
+\end{aligned}
+\]"""
+    assert convertir_math_transport_texte(brut) == brut
+
+
+def test_preserve_un_bloc_matrice_multiligne_intact():
+    brut = r"""\[
+\begin{pmatrix}
+1 & 2 \\
+3 & 4
+\end{pmatrix}
+\]"""
+    assert convertir_math_transport_texte(brut) == brut
+
+
+def test_ne_modifie_pas_le_code_multiligne():
+    brut = "\x60\x60\x60python\nprint(\"Total:\\nAriary\")\nprint(r\"\\frac{a}{b}\")\n\x60\x60\x60"
+    assert convertir_math_transport_texte(brut) == brut
+
+
+def test_ne_modifie_pas_le_code_inline():
+    brut = r"\x60\(\d+\)\x60 et du texte"
+    assert convertir_math_transport_texte(brut) == brut
+
+
+def test_preserve_les_formules_physique_et_chimie_delimitees():
+    valeurs = [
+        r"\( \mathrm{m\,s^{-2}} \)",
+        r"\( \vec{F} \)",
+        r"\( \nabla \times \vec{E} \)",
+        r"\( \ce{H2O} \)",
+        r"\( \ce{2H2 + O2 -> 2H2O} \)",
+        r"\( \ce{Fe^{3+}} \)",
+    ]
+    for valeur in valeurs:
+        assert convertir_math_transport_texte(valeur) == valeur
+
+
+def test_ne_convertit_plus_les_sauts_litteraux_arbitrairement():
+    brut = r"Etape 1\nsoit x = 2"
+    assert convertir_math_transport_texte(brut) == brut
