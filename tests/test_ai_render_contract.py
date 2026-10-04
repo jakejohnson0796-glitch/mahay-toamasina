@@ -82,6 +82,6 @@ def test_renderer_contient_un_filet_latex_nu():
 
 def test_contrat_renderer_n_utilise_que_les_delimiteurs_valides():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
-    assert '{ left: "\\[", right: "\\]", display: true }' in js
-    assert '{ left: "\\(", right: "\\)", display: false }' in js
+    assert r'{ left: "\\[", right: "\\]", display: true }' in js
+    assert r'{ left: "\\(", right: "\\)", display: false }' in js
     assert '{ left: "$", right: "$"' not in js
