@@ -882,9 +882,14 @@ def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
             session_tuteur.exemple = finale.get("exemple") or initiale["exemple"]
             session_tuteur.exercice = finale.get("exercice") or initiale["exercice"]
             session_tuteur.correction = finale.get("correction") or initiale["correction"]
-            session_tuteur.statut_verification_ia = "terminee"
+            session_tuteur.statut_verification_ia = finale.get(
+                "_statut_verification",
+                "terminee",
+            )
             session_tuteur.date_verification_ia = datetime.utcnow()
-            session_tuteur.erreur_verification_ia = None
+            session_tuteur.erreur_verification_ia = finale.get(
+                "_erreur_verification"
+            )
         except Exception as erreur:
             session_tuteur.statut_verification_ia = "echouee"
             session_tuteur.date_verification_ia = datetime.utcnow()
