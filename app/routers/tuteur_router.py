@@ -85,6 +85,10 @@ def demander_tuteur(
     statut_verification = reponse.pop("_statut_verification", "terminee")
     erreur_verification = reponse.pop("_erreur_verification", None)
 
+    # MODIF : canonisation finale avant tout stockage, même en cas de secours
+    # ou d'arbitrage multi-modèles partiel.
+    reponse = normaliser_structure_tuteur(reponse)
+
     session_tuteur = SessionTuteur(
         utilisateur_id=utilisateur.id,
         notion=progression.notion if progression else None,
