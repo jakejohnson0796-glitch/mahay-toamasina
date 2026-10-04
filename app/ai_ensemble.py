@@ -74,7 +74,7 @@ class AICostQualityController:
                             pass
 
         match = re.search(
-            r"try again in\\s+(?:(\\d+)m)?(?:(\\d+(?:\\.\\d+)?)s)?",
+            r"try again in\s+(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?",
             str(error),
             re.IGNORECASE,
         )
@@ -148,7 +148,7 @@ class AICostQualityController:
             score += 20
         if any(
             marker in value
-            for marker in ("\\\\(", "\\\\)", "\\\\[", "\\\\]", "\\\\begin{", "\\\\frac", "\\\\sqrt")
+            for marker in (r"\(", r"\)", r"\[", r"\]", r"\begin{", r"\frac", r"\sqrt")
         ):
             score += 20
         if lower.count("?") >= 2:
@@ -161,7 +161,7 @@ class AICostQualityController:
             parts.append(str(question.get("question", "")))
             parts.extend(str(x) for x in question.get("choix", []) or [])
             parts.append(str(question.get("explication", "")))
-        return self._risk_text("\\n".join(parts))
+        return self._risk_text("\n".join(parts))
 
     def secondary_reviewer_needed(
         self,
