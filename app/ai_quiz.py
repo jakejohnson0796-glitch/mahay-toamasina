@@ -14,12 +14,16 @@ libre : plus fiable qu'un json.loads() hasardeux.
 import hashlib
 import json
 import logging
-import re
 import time
 from typing import Dict, List, Optional
 
 from .quiz_validation import QuizValidationError, valider_questions
 from .json_latex import charger_json_ia
+from .ia_transport import (
+    PROMPT_TRANSPORT_SANS_ANTISLASH,
+    normaliser_structure_quiz,
+    normaliser_structure_tuteur,
+)
 from . import ai_ensemble, ai_memory, ai_metrics
 
 from groq import Groq
@@ -49,84 +53,6 @@ Comptabilité :
 - Formules (amortissement, TVA, ratios, CAF, FRNG) en LaTeX : \text{...} pour les mots, \, pour les milliers, {,} pour la virgule décimale, \% pour les pourcentages.
 - Utilise les numéros de comptes du plan comptable en vigueur à Madagascar.
 """
-
-# MODIF : transport JSON sans antislash pour les quiz IA. Les modèles peuvent
-# casser le tool-call JSON en émettant directement \\det, \\(...\\) ou
-# \\begin{...}. On demande donc des marqueurs ASCII sûrs puis on recrée
-# les délimiteurs LaTeX côté serveur après le parsing JSON.
-QUIZ_MATH_INLINE_OPEN = "[[MATH]]"
-QUIZ_MATH_INLINE_CLOSE = "[[/MATH]]"
-QUIZ_MATH_DISPLAY_OPEN = "[[DISPLAY]]"
-QUIZ_MATH_DISPLAY_CLOSE = "[[/DISPLAY]]"
-
-def _convertir_math_transport_texte(valeur: object) -> str:
-    texte = "" if valeur is None else str(valeur)
-
-    def display(match: re.Match) -> str:
-        contenu = match.group(1).strip()
-        contenu = _convertir_notation_math_sure(contenu)
-        return r"\[" + contenu + r"\]"
-
-    def inline(match: re.Match) -> str:
-        contenu = match.group(1).strip()
-        contenu = _convertir_notation_math_sure(contenu)
-        return r"\(" + contenu + r"\)"
-
-    # DISPLAY d'abord pour éviter qu'un segment imbriqué soit traité deux fois.
-    # MODIF : utiliser des littéraux regex explicites. L'ancienne écriture
-    # \[[]...[]] ne reconnaissait pas réellement les marqueurs [[DISPLAY]]
-    # / [[MATH]], qui pouvaient donc rester visibles dans le quiz.
-    texte = re.sub(
-        r"\[\[DISPLAY\]\](.*?)\[\[/DISPLAY\]\]",
-        display,
-        texte,
-        flags=re.DOTALL,
-    )
-    texte = re.sub(
-        r"\[\[MATH\]\](.*?)\[\[/MATH\]\]",
-        inline,
-        texte,
-        flags=re.DOTALL,
-    )
-    return texte
-
-def _convertir_notation_math_sure(contenu: str) -> str:
-    """Convertit uniquement quelques formes sans antislash produites en transport sûr."""
-    resultat = contenu.replace("×", r"\times ")
-    resultat = re.sub(r"(?<![A-Za-z])det(?=\s*\()", lambda _: r"\det", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])sin(?=\s*\()", lambda _: r"\sin", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])cos(?=\s*\()", lambda _: r"\cos", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])tan(?=\s*\()", lambda _: r"\tan", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])ln(?=\s*\()", lambda _: r"\ln", resultat)
-    resultat = re.sub(r"(?<![A-Za-z])log(?=\s*\()", lambda _: r"\log", resultat)
-
-    # Matrices simples du type [a b ; c d] -> pmatrix KaTeX.
-    motif_matrice = re.fullmatch(r"\[([A-Za-z0-9+\-*/.,= ]+(?:;[A-Za-z0-9+\-*/.,= ]+)+)\]", resultat)
-    if motif_matrice:
-        lignes = [ligne.strip() for ligne in motif_matrice.group(1).split(";")]
-        lignes_katex = []
-        for ligne in lignes:
-            cellules = [cellule for cellule in re.split(r"\s+", ligne.strip()) if cellule]
-            if cellules:
-                lignes_katex.append(" & ".join(cellules))
-        if len(lignes_katex) >= 2:
-            return r"\begin{pmatrix}" + r" \\ ".join(lignes_katex) + r"\end{pmatrix}"
-
-    return resultat
-
-def _normaliser_quiz_transport(questions: List[Dict]) -> List[Dict]:
-    """Rend les marqueurs de math du transport JSON en Markdown/LaTeX standard."""
-    normalisees = []
-    for question in questions or []:
-        item = dict(question)
-        item["question"] = _convertir_math_transport_texte(item.get("question", ""))
-        item["choix"] = [
-            _convertir_math_transport_texte(choix)
-            for choix in (item.get("choix") or [])
-        ]
-        item["explication"] = _convertir_math_transport_texte(item.get("explication", ""))
-        normalisees.append(item)
-    return normalisees
 
 _client: Optional[Groq] = None
 
@@ -382,7 +308,7 @@ TRANSPORT JSON DU QUIZ — OBLIGATOIRE :
         if message.tool_calls:
             try:
                 arguments = charger_json_ia(message.tool_calls[0].function.arguments)
-                questions = _normaliser_quiz_transport(arguments.get("questions") or [])
+                questions = normaliser_structure_quiz(arguments.get("questions") or [])
                 valider_questions(questions, expected_count=expected_count, strict_coherence=True)
             except (json.JSONDecodeError, AttributeError, TypeError, QuizValidationError) as validation_error:
                 derniere_erreur = validation_error
@@ -589,7 +515,7 @@ def _extraire_questions(completion, expected_count: int = 5) -> List[Dict]:
     if message.tool_calls:
         try:
             arguments = charger_json_ia(message.tool_calls[0].function.arguments)
-            questions = _normaliser_quiz_transport(arguments.get("questions") or [])
+            questions = normaliser_structure_quiz(arguments.get("questions") or [])
             if questions:
                 try:
                     return valider_questions(questions, expected_count=expected_count, strict_coherence=True)
@@ -639,7 +565,7 @@ def verifier_et_corriger_questions(
     # MODIF : les correcteurs/arbitres peuvent eux aussi retourner les marqueurs
     # [[MATH]] / [[DISPLAY]]. On normalise leur sortie avant toute validation et
     # avant stockage, sinon ces marqueurs peuvent être affichés littéralement.
-    questions_finales = _normaliser_quiz_transport(questions_finales)
+    questions_finales = normaliser_structure_quiz(questions_finales)
 
     duree_secondes = round(time.monotonic() - debut, 3)
     resume_audit = _resume_audit_ensemble(audit, confiant)
@@ -781,8 +707,8 @@ def generer_reponse_tuteur(
                     f"fourni pour structurer ta reponse."
                     f"{chr(10) + chr(10) + memoire if memoire else ''}"
                     + "\n\n"
-                    + REGLES_FORMAT
-                    + "\nNe réécris ni ne supprime aucun antislash des formules."
+                    + "\n\n"
+                    + PROMPT_TRANSPORT_SANS_ANTISLASH
                 ),
             }],
         }
@@ -802,12 +728,12 @@ def generer_reponse_tuteur(
     except (json.JSONDecodeError, AttributeError):
         return _reponse_tuteur_erreur("Reponse recue dans un format inattendu — reessayez.")
 
-    reponse_initiale = {
+    reponse_initiale = normaliser_structure_tuteur({
         "explication": arguments.get("explication") or "—",
         "exemple": arguments.get("exemple") or "—",
         "exercice": arguments.get("exercice") or "—",
         "correction": arguments.get("correction") or "—",
-    }
+    })
 
     if not verifier:
         return reponse_initiale
