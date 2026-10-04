@@ -12,7 +12,7 @@
     const dependances = [
       ["marked", Boolean(window.marked)],
       ["DOMPurify", Boolean(window.DOMPurify)],
-      ["KaTeX", Boolean(window.katex)],
+      ["KaTeX auto-render", Boolean(window.katex && typeof window.katex.renderMathInElement === "function")],
     ];
 
     const manquantes = dependances
