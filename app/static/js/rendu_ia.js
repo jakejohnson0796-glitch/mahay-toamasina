@@ -54,9 +54,14 @@
     // encore $...$ ou $...$. Elles doivent être protégées avant Marked,
     // exactement comme \\( ... \\) et \\[ ... \\].
     const protection = source.replace(
-      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$/g,
+      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$|\$\$/g,
       function (match) {
-        const estDollarDisplay = match.indexOf("$") === 0;
+        // Un délimiteur $$ orphelin doit disparaître plutôt que devenir du
+        // texte visible dans le quiz. Les blocs de code sont capturés avant
+        // cette règle et restent donc intacts.
+        if (match === "$$") return "";
+
+        const estDollarDisplay = match.indexOf("$$") === 0;
         const estDisplay =
           match.indexOf("\\[") === 0 ||
           estDollarDisplay;
@@ -75,8 +80,7 @@
         }
         return match;
       }
-    );
-    return { source: protection, math: math };
+    );    return { source: protection, math: math };
   }
 
   function restaurerMath(fragment, math) {
