@@ -273,6 +273,7 @@
     restaurerMath(fragment, protection.math);
 
     cible.replaceChildren(fragment);
+    cible.classList.add("ai-rendered-content");
 
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
