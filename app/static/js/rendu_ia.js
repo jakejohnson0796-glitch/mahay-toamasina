@@ -80,7 +80,8 @@
         }
         return match;
       }
-    );    return { source: protection, math: math };
+    );
+    return { source: protection, math: math };
   }
 
   function restaurerMath(fragment, math) {
