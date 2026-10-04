@@ -8,6 +8,8 @@ services:
     runtime: docker
     plan: free
     region: frankfurt
+    # MODIF : Render ne doit déployer qu'après le passage de toutes les checks CI.
+    autoDeployTrigger: checksPass
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
