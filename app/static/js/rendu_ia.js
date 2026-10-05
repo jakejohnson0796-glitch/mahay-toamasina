@@ -115,7 +115,7 @@
         }
       }
 
-      if (source.slice(i, i + 2) === "\\[) {
+      if (source.slice(i, i + 2) === "\\[") {
         const fin = trouverFinDelimiteur(source, i + 2, "\\]");
         if (fin >= 0) {
           ajouterMath(source.slice(i + 2, fin), true, fin + 2 - i);
@@ -123,7 +123,7 @@
         }
       }
 
-      if (source.slice(i, i + 2) === "\\() {
+      if (source.slice(i, i + 2) === "\\(") {
         const fin = trouverFinDelimiteur(source, i + 2, "\\)");
         if (fin >= 0) {
           ajouterMath(source.slice(i + 2, fin), false, fin + 2 - i);
