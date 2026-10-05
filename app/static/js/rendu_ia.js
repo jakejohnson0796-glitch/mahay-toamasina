@@ -115,16 +115,16 @@
         }
       }
 
-      if (source.slice(i, i + 2) === "\\\\[") {
-        const fin = trouverFinDelimiteur(source, i + 2, "\\\\]");
+      if (source.slice(i, i + 2) === "\\[) {
+        const fin = trouverFinDelimiteur(source, i + 2, "\\]");
         if (fin >= 0) {
           ajouterMath(source.slice(i + 2, fin), true, fin + 2 - i);
           continue;
         }
       }
 
-      if (source.slice(i, i + 2) === "\\\\(") {
-        const fin = trouverFinDelimiteur(source, i + 2, "\\\\)");
+      if (source.slice(i, i + 2) === "\\() {
+        const fin = trouverFinDelimiteur(source, i + 2, "\\)");
         if (fin >= 0) {
           ajouterMath(source.slice(i + 2, fin), false, fin + 2 - i);
           continue;
@@ -156,14 +156,14 @@
 
       // Compatibilité avec les sorties historiques contenant un environnement
       // LaTeX nu sans \[...\].
-      if (source.slice(i, i + 7) === "\\\\begin{") {
+      if (source.slice(i, i + 7) === "\\begin{") {
         const finNom = source.indexOf("}", i + 7);
         if (finNom > 0) {
           const env = source.slice(i + 7, finNom);
           if (ENVIRONNEMENTS_MATH.has(env)) {
-            const finEnv = trouverFinDelimiteur(source, finNom + 1, "\\\\end{" + env + "}");
+            const finEnv = trouverFinDelimiteur(source, finNom + 1, "\\end{ + env + "}");
             if (finEnv >= 0) {
-              const limite = finEnv + ("\\\\end{" + env + "}").length;
+              const limite = finEnv + ("\\end{ + env + "}").length;
               ajouterMath(source.slice(i, limite), true, limite - i);
               continue;
             }
