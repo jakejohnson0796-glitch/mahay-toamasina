@@ -122,7 +122,7 @@ await new Promise((resolve) => setTimeout(resolve, 0));
 const historyVisible = historyElement.textContent || '';
 for (const brut of ['\\text', '\\cdot', '\\begin', '\\end', '$']) {
   if (historyVisible.includes(brut)) {
-    throw new Error(\`Raw history formatting remains visible: \${brut}\`);
+    throw new Error(`Raw history formatting remains visible: ${brut}`);
   }
 }
 if (!historyVisible.includes('L=6') || !historyVisible.includes('kN')) {
