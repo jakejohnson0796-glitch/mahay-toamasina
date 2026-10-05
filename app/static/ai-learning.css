@@ -971,36 +971,94 @@
 
 .ai-tuteur-history {
   display: grid;
-  gap: .4rem;
-  margin-top: .55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+  margin-top: .75rem;
 }
 
-.ai-tuteur-history a {
+.ai-tuteur-history-card {
+  position: relative;
   display: grid;
-  gap: .15rem;
-  padding: .55rem .6rem;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 8.4rem;
+  gap: .45rem;
+  padding: .8rem .85rem .72rem;
   border: 1px solid var(--content-border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--content-bg);
   color: var(--content-text);
   text-decoration: none;
+  cursor: pointer;
+  box-shadow: var(--refonte-shadow-sm);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
 }
 
-.ai-tuteur-history a:hover {
-  border-color: rgba(47,143,137,.35);
+.ai-tuteur-history-card:hover {
+  border-color: rgba(47,143,137,.55);
   text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: var(--refonte-shadow-md);
 }
 
-.ai-tuteur-history strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: .61rem;
+.ai-tuteur-history-card:focus-visible {
+  outline: 2px solid var(--refonte-teal);
+  outline-offset: 2px;
 }
 
-.ai-tuteur-history span {
+.ai-tuteur-history-date {
+  display: block;
   color: var(--content-text-muted);
-  font-size: .52rem;
+  font-size: .66rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.ai-tuteur-history-question {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--content-text);
+  font-size: .82rem;
+  line-height: 1.48;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.ai-tuteur-history-question.ai-rendered-content {
+  white-space: normal;
+}
+
+.ai-tuteur-history-question .katex,
+.ai-tuteur-history-question .gm-katex,
+.ai-tuteur-history-question .gm-latex-fallback {
+  font-size: 1em;
+}
+
+.ai-tuteur-history-open {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding-top: .35rem;
+  border-top: 1px solid var(--content-border);
+  color: var(--refonte-teal);
+  font-size: .68rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.ai-tuteur-history-open > span {
+  font-size: .9rem;
+}
+
+@media (max-width: 760px) {
+  .ai-tuteur-history {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-tuteur-history-card {
+    min-height: 7.6rem;
+  }
 }
 
 .ai-answer-header {
