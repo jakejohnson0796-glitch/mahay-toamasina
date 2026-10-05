@@ -221,6 +221,74 @@
     }
   }
 
+  function resumeIAPlain(texteBrut) {
+    let texte = String(texteBrut || "");
+    const fence = String.fromCharCode(96);
+
+    texte = texte
+      .replace(new RegExp(fence + fence + fence + "[\\s\\S]*?" + fence + fence + fence, "g"), " ")
+      .replace(/\\[\\[\\/?(?:DISPLAY|MATH|CHEM)\\]\\]/g, " ")
+      .replace(/\\$\\$[\\s\\S]*?\\$\\$/g, function (match) {
+        return match.slice(2, -2) + " ";
+      })
+      .replace(/\\$([^\\$\\n]+)\\$/g, function (_, formule) {
+        return formule + " ";
+      })
+      .replace(/\\\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}([\\s\\S]*?)\\\\end\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/g, function (_, contenu) {
+        return contenu.replace(/\\\\/g, " ; ").replace(/&/g, " ") + " ";
+      });
+
+    const remplacements = [
+      [/\\\\text\\{([^{}]*)\\}/g, "$1"],
+      [/\\\\mathrm\\{([^{}]*)\\}/g, "$1"],
+      [/\\\\mathbf\\{([^{}]*)\\}/g, "$1"],
+      [/\\\\mathbb\\{([^{}]*)\\}/g, "$1"],
+      [/\\\\mathcal\\{([^{}]*)\\}/g, "$1"],
+      [/\\\\operatorname\\{([^{}]*)\\}/g, "$1"],
+      [/\\\\frac\\{([^{}]*)\\}\\{([^{}]*)\\}/g, "$1/$2"],
+      [/\\\\dfrac\\{([^{}]*)\\}\\{([^{}]*)\\}/g, "$1/$2"],
+      [/\\\\sqrt\\{([^{}]*)\\}/g, "√($1)"],
+      [/\\\\cdot/g, " · "],
+      [/\\\\times/g, " × "],
+      [/\\\\leq|\\\\le/g, " ≤ "],
+      [/\\\\geq|\\\\ge/g, " ≥ "],
+      [/\\\\neq/g, " ≠ "],
+      [/\\\\approx/g, " ≈ "],
+      [/\\\\pm/g, " ± "],
+      [/\\\\rightarrow|\\\\to/g, " → "],
+      [/\\\\infty/g, "∞"],
+      [/\\\\alpha/g, "α"], [/\\\\beta/g, "β"], [/\\\\gamma/g, "γ"],
+      [/\\\\delta/g, "δ"], [/\\\\theta/g, "θ"], [/\\\\lambda/g, "λ"],
+      [/\\\\mu/g, "μ"], [/\\\\pi/g, "π"], [/\\\\sigma/g, "σ"],
+      [/\\\\phi/g, "φ"], [/\\\\omega/g, "ω"],
+    ];
+
+    remplacements.forEach(function (pair) {
+      texte = texte.replace(pair[0], pair[1]);
+    });
+
+    texte = texte
+      .replace(/\\\\/g, " ; ")
+      .replace(/\\[A-Za-z]+/g, " ")
+      .replace(/[{}]/g, "")
+      .replace(/[*_#~]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (texte.length > 300) {
+      texte = texte.slice(0, 297).replace(/\s+\S*$/, "") + "…";
+    }
+    return texte;
+  }
+
+  function initialiserResumeHistoriqueTuteur() {
+    document.querySelectorAll("[data-ai-resume]").forEach(function (element) {
+      const brut = element.getAttribute("data-ai-resume") || "";
+      element.textContent = resumeIAPlain(brut);
+      element.dataset.resumePret = "1";
+    });
+  }
+
   function initialiserTuteur() {
     const textarea = document.querySelector("[data-tuteur-question]");
     const compteur = document.querySelector("[data-tuteur-count]");
