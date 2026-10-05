@@ -115,7 +115,7 @@ const historyElement = historyDom.window.document.querySelector('[data-ai-resume
 historyElement.setAttribute(
   'data-ai-resume',
   String.raw`Explique-moi Continuité des rotations : L=6\,\text{m}, 0\le x\le 3\,\text{m}, M_1(x)=5\,\text{kN}\cdot\text{m}.
-Matrice : \begin{pmatrix}1 & 0\\2 & 1\end{pmatrix}\`
+Matrice : \begin{pmatrix}1 & 0\\2 & 1\end{pmatrix}`
 );
 vm.runInNewContext(aiLearningSource, historyContext, { filename: 'ai-learning.js' });
 await new Promise((resolve) => setTimeout(resolve, 0));
