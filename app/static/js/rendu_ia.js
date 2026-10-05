@@ -73,12 +73,18 @@
 
         if (estDisplay || estInline) {
           const longueurDelimiteur =
-            match.indexOf("\\[") === 0 ||
-            match.indexOf("\\(") === 0 ||
-            estDollarDisplay
-              ? 2
-              : 1;
-          const contenu = match.slice(longueurDelimiteur, -longueurDelimiteur);
+            estMatriceDisplay
+              ? 0
+              : (
+                  match.indexOf("\\[") === 0 ||
+                  match.indexOf("\\(") === 0 ||
+                  estDollarDisplay
+                )
+                ? 2
+                : 1;
+          const contenu = estMatriceDisplay
+            ? match
+            : match.slice(longueurDelimiteur, -longueurDelimiteur);
           const index = math.push({
             display: estDisplay,
             contenu: contenu,
