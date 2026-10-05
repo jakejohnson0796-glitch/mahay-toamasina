@@ -54,7 +54,7 @@
     // encore $...$ ou $...$. Elles doivent être protégées avant Marked,
     // exactement comme \\( ... \\) et \\[ ... \\].
     const protection = source.replace(
-      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$|\$\$/g,
+      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$|\$\$|\\begin\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}[\s\S]*?\\end\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}/g,
       function (match) {
         // Un délimiteur $$ orphelin doit disparaître plutôt que devenir du
         // texte visible dans le quiz. Les blocs de code sont capturés avant
@@ -62,21 +62,29 @@
         if (match === "$$") return "";
 
         const estDollarDisplay = match.indexOf("$$") === 0;
+        const estMatriceDisplay = match.indexOf("\\begin{") === 0;
         const estDisplay =
           match.indexOf("\\[") === 0 ||
-          estDollarDisplay;
+          estDollarDisplay ||
+          estMatriceDisplay;
         const estInline =
           match.indexOf("\\(") === 0 ||
           (match.indexOf("$") === 0 && !estDollarDisplay);
 
         if (estDisplay || estInline) {
           const longueurDelimiteur =
-            match.indexOf("\\[") === 0 ||
-            match.indexOf("\\(") === 0 ||
-            estDollarDisplay
-              ? 2
-              : 1;
-          const contenu = match.slice(longueurDelimiteur, -longueurDelimiteur);
+            estMatriceDisplay
+              ? 0
+              : (
+                  match.indexOf("\\[") === 0 ||
+                  match.indexOf("\\(") === 0 ||
+                  estDollarDisplay
+                )
+                ? 2
+                : 1;
+          const contenu = estMatriceDisplay
+            ? match
+            : match.slice(longueurDelimiteur, -longueurDelimiteur);
           const index = math.push({
             display: estDisplay,
             contenu: contenu,
@@ -196,6 +204,47 @@
     }) || /\\begin\\{[A-Za-z*]+\\}/.test(valeur);
   }
 
+  const MOTIFS_LATEX_NUS = [
+    /\\begin\{(bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}[\s\S]*?\\end\{\1\}/g,
+    /\\(?:frac|dfrac|tfrac)\{[^{}\n]*\}\{[^{}\n]*\}/g,
+    /\\sqrt(?:\[[^\]\n]*\])?\{[^{}\n]*\}/g,
+    /\\(?:text|mathrm|mathbf|mathbb|mathcal|operatorname|vec)\{[^{}\n]*\}/g,
+    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
+    /[A-Za-z](?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)/g,
+    /\\(?:cdot|times|pm|leq|geq|neq|approx|infty|to|rightarrow|left|right|,|:|;|!)/g
+  ];
+
+  function trouverPremierLatexNu(valeur) {
+    let meilleur = null;
+
+    MOTIFS_LATEX_NUS.forEach(function (motif) {
+      motif.lastIndex = 0;
+      const match = motif.exec(valeur);
+      if (!match) return;
+      if (!meilleur || match.index < meilleur.index) {
+        meilleur = { index: match.index, texte: match[0] };
+      }
+    });
+
+    return meilleur;
+  }
+
+  function creerNoeudLatex(racine, formule, displayMode) {
+    const cible = racine.createElement("span");
+    cible.className = displayMode ? "gm-latex-fallback gm-latex-display" : "gm-latex-fallback";
+    try {
+      window.katex.render(formule, cible, {
+        displayMode: Boolean(displayMode),
+        throwOnError: false,
+        trust: false,
+        strict: "ignore"
+      });
+      return cible;
+    } catch (erreur) {
+      return null;
+    }
+  }
+
   function rendreLatexNu(element) {
     const racine = element.ownerDocument || document;
     const walker = racine.createTreeWalker(element, NodeFilter.SHOW_TEXT);
@@ -210,38 +259,36 @@
       const valeur = texte.nodeValue || "";
       if (!estCommandeLatexNue(valeur)) return;
 
-      const motif = /\\(?:det|frac|dfrac|tfrac|sqrt|sum|prod|int|lim|ln|log|sin|cos|tan|cot|exp|partial|nabla|vec|mathbf|mathbb|mathrm|text|times|cdot|pm|leq|geq|neq|approx|in|infty|alpha|beta|gamma|delta|theta|lambda|mu|pi|sigma)\\b|\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/g;
-      const match = motif.exec(valeur);
-      if (!match) return;
-
-      const debut = match.index;
-      const avant = valeur.slice(0, debut);
-      const reste = valeur.slice(debut);
-      const finMatch = reste.search(/[.!?;](?:\\s|$)/);
-      const fin = finMatch > 0 ? finMatch : reste.length;
-      const formule = reste.slice(0, fin).trim();
-
-      if (!formule || !estCommandeLatexNue(formule)) return;
-
+      let position = 0;
+      let modifie = false;
       const morceaux = [];
-      if (avant) morceaux.push(racine.createTextNode(avant));
 
-      const cible = racine.createElement("span");
-      cible.className = "gm-latex-fallback";
-      try {
-        window.katex.render(formule, cible, {
-          displayMode: /\\begin\\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\\}/.test(formule),
-          throwOnError: false,
-          trust: false,
-          strict: "ignore"
-        });
-        morceaux.push(cible);
-      } catch (erreur) {
-        return;
+      while (position < valeur.length) {
+        const reste = valeur.slice(position);
+        const match = trouverPremierLatexNu(reste);
+        if (!match) break;
+
+        const debut = position + match.index;
+        const fin = debut + match.texte.length;
+        if (debut > position) morceaux.push(racine.createTextNode(valeur.slice(position, debut)));
+
+        const displayMode = /^\\begin\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}/.test(match.texte);
+        const noeudLatex = creerNoeudLatex(racine, match.texte, displayMode);
+
+        if (!noeudLatex) {
+          morceaux.length = 0;
+          modifie = false;
+          break;
+        }
+
+        morceaux.push(noeudLatex);
+        position = fin;
+        modifie = true;
       }
 
-      const apres = reste.slice(fin);
-      if (apres) morceaux.push(racine.createTextNode(apres));
+      if (!modifie) return;
+      if (position < valeur.length) morceaux.push(racine.createTextNode(valeur.slice(position)));
+
       morceaux.forEach(function (morceau) {
         texte.parentNode.insertBefore(morceau, texte);
       });

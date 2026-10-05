@@ -8,9 +8,9 @@
   <section class="ai-section" aria-labelledby="reflexion-title">
     <div class="ai-reflexion-card">
       <span class="ai-reflexion-date">Muscler l'intellect · thème du jour · {{ theme.date_affichee }}</span>
-      <h1 id="reflexion-title" class="ai-reflexion-theme">{{ theme.theme }}</h1>
+      <h1 id="reflexion-title" class="ai-reflexion-theme" data-rendu>{{ theme.theme }}</h1>
       {% if theme.amorce %}
-      <p class="ai-reflexion-amorce">{{ theme.amorce }}</p>
+      <p class="ai-reflexion-amorce" data-rendu>{{ theme.amorce }}</p>
       {% endif %}
 
       <div class="ai-feature-strip">

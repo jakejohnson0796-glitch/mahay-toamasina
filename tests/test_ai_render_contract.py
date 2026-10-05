@@ -77,6 +77,9 @@ def test_renderer_contient_un_filet_latex_nu():
     assert "function rendreLatexNu" in js
     assert "window.katex.render" in js
     assert "rendreLatexNu(cible)" in js
+    assert "MOTIFS_LATEX_NUS" in js
+    assert "trouverPremierLatexNu" in js
+    assert "gm-latex-fallback" in js
 
 
 def test_contrat_renderer_n_utilise_plus_auto_render_ni_delimiters_dollar():

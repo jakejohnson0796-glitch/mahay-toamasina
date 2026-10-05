@@ -76,6 +76,26 @@ if (!quizLikeHost.querySelector('.katex') || (quizLikeHost.textContent || '').in
   throw new Error('Quiz-like dollar LaTeX was not fully normalized');
 }
 
+// Régression Tuteur : du LaTeX nu mélangé au texte doit être rendu sans
+// laisser les commandes visibles, notamment pour les exercices/historiques.
+const tuteurHost = window.document.createElement('div');
+window.document.body.appendChild(tuteurHost);
+const tuteurSample = String.raw`Une poutre continue de longueur totale L=6\,\text{m} est constituée de deux segments.
+Moment M_1(x)=5\,\text{kN}\cdot\text{m}.
+\begin{pmatrix}1 & 0\\2 & 1\end{pmatrix}`;
+window.rendreReponseIA(tuteurSample, tuteurHost);
+const tuteurTexteSansKaTeX = tuteurHost.cloneNode(true);
+tuteurTexteSansKaTeX.querySelectorAll('.katex').forEach((node) => node.remove());
+const tuteurVisible = tuteurTexteSansKaTeX.textContent || '';
+for (const commande of ['\\text', '\\cdot', '\\begin', '\\end']) {
+  if (tuteurVisible.includes(commande)) {
+    throw new Error(`Raw LaTeX command remains in Tuteur content: ${commande}`);
+  }
+}
+if (tuteurHost.querySelectorAll('.katex').length < 3) {
+  throw new Error('Naked Tuteur LaTeX was not rendered into KaTeX');
+}
+
 // Mode dégradé
 window.marked = null;
 window.DOMPurify = null;
