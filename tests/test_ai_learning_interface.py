@@ -49,6 +49,9 @@ def test_pages_quiz_et_tuteur_utilisent_data_rendu_et_n_injectent_pas_de_html_ia
 
     assert "data-rendu" in lire("app/templates/quiz_passer.html")
     assert "data-rendu" in lire("app/templates/tuteur_reponse.html")
+    assert '<p class="ai-answer-question" data-rendu>{{ session_tuteur.question }}</p>' in lire("app/templates/tuteur_reponse.html")
+    assert '<strong data-rendu data-rendu-ligne>{{ s.question }}</strong>' in lire("app/templates/tuteur.html")
+    assert 'class="ai-reflexion-theme" data-rendu' in lire("app/templates/quiz_reflexion.html")
 
 
 def test_interface_quiz_contient_navigation_et_progression():
