@@ -492,7 +492,7 @@ print("Bonjour Gasy Mahay")
   // On re-rend uniquement les nouveaux sous-arbres, sans toucher à la source
   // brute mémorisée dans SOURCES_ORIGINALES.
   if (window.MutationObserver) {
-    const observer = new MutationObserver(function (mutations) {
+    const observer = new window.MutationObserver(function (mutations) {
       mutations.forEach(function (mutation) {
         Array.from(mutation.addedNodes || []).forEach(function (node) {
           if (node.nodeType === 1) {
