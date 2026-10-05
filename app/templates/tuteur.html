@@ -160,9 +160,14 @@
     {% if historique %}
     <div class="ai-tuteur-history">
       {% for s in historique %}
-      <a href="/tuteur/{{ s.id }}">
-        <strong data-rendu data-rendu-ligne>{{ s.question }}</strong>
-        <span>{{ s.date_creation.strftime("%d/%m/%Y %H:%M") }}</span>
+      <a
+        class="ai-tuteur-history-card"
+        href="/tuteur/{{ s.id }}"
+        aria-label="Ouvrir la session du {{ s.date_creation.strftime("%d/%m/%Y à %H:%M") }}"
+      >
+        <span class="ai-tuteur-history-date">{{ s.date_creation.strftime("%d/%m/%Y %H:%M") }}</span>
+        <div class="ai-tuteur-history-question" data-rendu>{{ s.question }}</div>
+        <span class="ai-tuteur-history-open" aria-hidden="true">Ouvrir la session <span>→</span></span>
       </a>
       {% endfor %}
     </div>

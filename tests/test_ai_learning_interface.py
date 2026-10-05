@@ -50,8 +50,22 @@ def test_pages_quiz_et_tuteur_utilisent_data_rendu_et_n_injectent_pas_de_html_ia
     assert "data-rendu" in lire("app/templates/quiz_passer.html")
     assert "data-rendu" in lire("app/templates/tuteur_reponse.html")
     assert '<p class="ai-answer-question" data-rendu>{{ session_tuteur.question }}</p>' in lire("app/templates/tuteur_reponse.html")
-    assert '<strong data-rendu data-rendu-ligne>{{ s.question }}</strong>' in lire("app/templates/tuteur.html")
+    tuteur = lire("app/templates/tuteur.html")
+    assert 'class="ai-tuteur-history-card"' in tuteur
+    assert 'class="ai-tuteur-history-question" data-rendu' in tuteur
+    assert 'class="ai-tuteur-history-date"' in tuteur
+    assert 'Ouvrir la session' in tuteur
     assert 'class="ai-reflexion-theme" data-rendu' in lire("app/templates/quiz_reflexion.html")
+
+
+def test_historique_tuteur_est_cliquable_et_lisible():
+    css = lire("app/static/ai-learning.css")
+    assert ".ai-tuteur-history-card" in css
+    assert "cursor: pointer" in css
+    assert ".ai-tuteur-history-date" in css
+    assert ".ai-tuteur-history-question" in css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in css
+    assert "@media (max-width: 760px)" in css
 
 
 def test_interface_quiz_contient_navigation_et_progression():
