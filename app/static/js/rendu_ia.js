@@ -161,9 +161,9 @@
         if (finNom > 0) {
           const env = source.slice(i + 7, finNom);
           if (ENVIRONNEMENTS_MATH.has(env)) {
-            const finEnv = trouverFinDelimiteur(source, finNom + 1, "\\end{ + env + "}");
+            const finEnv = trouverFinDelimiteur(source, finNom + 1, "\\end{" + env + "}");
             if (finEnv >= 0) {
-              const limite = finEnv + ("\\end{ + env + "}").length;
+              const limite = finEnv + ("\\end{" + env + "}").length;
               ajouterMath(source.slice(i, limite), true, limite - i);
               continue;
             }
