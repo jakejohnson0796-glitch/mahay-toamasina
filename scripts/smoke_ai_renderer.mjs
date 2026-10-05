@@ -6,6 +6,7 @@ import katex from 'katex';
 import createDOMPurify from 'dompurify';
 
 const source = fs.readFileSync('app/static/js/rendu_ia.js', 'utf8');
+const aiLearningSource = fs.readFileSync('app/static/js/ai-learning.js', 'utf8');
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   url: 'http://localhost/',
   runScripts: 'outside-only',
@@ -94,6 +95,36 @@ for (const commande of ['\\text', '\\cdot', '\\begin', '\\end']) {
 }
 if (tuteurHost.querySelectorAll('.katex').length < 3) {
   throw new Error('Naked Tuteur LaTeX was not rendered into KaTeX');
+}
+
+// Régression historique Tuteur : la carte compacte ne doit plus afficher
+// de LaTeX/Markdown brut. On valide le résumé directement dans le DOM.
+const historyDom = new JSDOM('<!doctype html><html><body><div class="ai-tuteur-history-question" data-ai-resume></div></body></html>', {
+  url: 'http://localhost/',
+  runScripts: 'outside-only',
+});
+const historyContext = {
+  window: historyDom.window,
+  document: historyDom.window.document,
+  NodeFilter: historyDom.window.NodeFilter,
+  console,
+  setTimeout,
+  clearTimeout,
+};
+const historyElement = historyDom.window.document.querySelector('[data-ai-resume]');
+historyElement.setAttribute(
+  'data-ai-resume',
+  String.raw`Explique-moi Continuité des rotations : L=6\,\text{m}, 0\le x\le 3\,\text{m}, M_1(x)=5\,\text{kN}\cdot\text{m}.
+Matrice : \begin{pmatrix}1 & 0\\2 & 1\end{pmatrix}`
+);
+vm.runInNewContext(aiLearningSource, historyContext, { filename: 'ai-learning.js' });
+await new Promise((resolve) => setTimeout(resolve, 0));
+const historyVisible = historyElement.textContent || '';
+if (/\\\\/.test(historyVisible) || historyVisible.includes('$')) {
+  throw new Error('Raw LaTeX or math delimiters remain visible in history summary');
+}
+if (!historyVisible.includes('L=6') || !historyVisible.includes('kN')) {
+  throw new Error('History summary lost the useful mathematical context');
 }
 
 // Mode dégradé
