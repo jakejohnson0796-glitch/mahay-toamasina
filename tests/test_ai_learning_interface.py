@@ -52,7 +52,9 @@ def test_pages_quiz_et_tuteur_utilisent_data_rendu_et_n_injectent_pas_de_html_ia
     assert '<p class="ai-answer-question" data-rendu>{{ session_tuteur.question }}</p>' in lire("app/templates/tuteur_reponse.html")
     tuteur = lire("app/templates/tuteur.html")
     assert 'class="ai-tuteur-history-card"' in tuteur
-    assert 'class="ai-tuteur-history-question" data-rendu' in tuteur
+    assert 'class="ai-tuteur-history-question" data-ai-resume=' in tuteur
+    assert "function resumeIAPlain" in lire("app/static/js/ai-learning.js")
+    assert "initialiserResumeHistoriqueTuteur" in lire("app/static/js/ai-learning.js")
     assert 'class="ai-tuteur-history-date"' in tuteur
     assert 'Ouvrir la session' in tuteur
     assert 'class="ai-reflexion-theme" data-rendu' in lire("app/templates/quiz_reflexion.html")
