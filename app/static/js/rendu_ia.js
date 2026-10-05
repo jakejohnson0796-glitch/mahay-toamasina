@@ -61,7 +61,7 @@
         // cette règle et restent donc intacts.
         if (match === "$$") return "";
 
-        const estDollarDisplay = match.indexOf("$") === 0;
+        const estDollarDisplay = match.indexOf("$$") === 0;
         const estMatriceDisplay = match.indexOf("\\begin{") === 0;
         const estDisplay =
           match.indexOf("\\[") === 0 ||
