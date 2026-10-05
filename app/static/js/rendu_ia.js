@@ -54,17 +54,19 @@
     // encore $...$ ou $...$. Elles doivent être protégées avant Marked,
     // exactement comme \\( ... \\) et \\[ ... \\].
     const protection = source.replace(
-      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$|\$\$/g,
+      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\begin\{(bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}[\s\S]*?\\end\{\1\}|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$|\$\$/g,
       function (match) {
         // Un délimiteur $$ orphelin doit disparaître plutôt que devenir du
         // texte visible dans le quiz. Les blocs de code sont capturés avant
         // cette règle et restent donc intacts.
         if (match === "$$") return "";
 
-        const estDollarDisplay = match.indexOf("$$") === 0;
+        const estDollarDisplay = match.indexOf("$") === 0;
+        const estMatriceDisplay = match.indexOf("\\begin{") === 0;
         const estDisplay =
           match.indexOf("\\[") === 0 ||
-          estDollarDisplay;
+          estDollarDisplay ||
+          estMatriceDisplay;
         const estInline =
           match.indexOf("\\(") === 0 ||
           (match.indexOf("$") === 0 && !estDollarDisplay);
