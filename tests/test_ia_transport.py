@@ -50,7 +50,7 @@ def test_normalise_structure_tuteur_ne_modifie_aucune_section():
         "exercice": r"Résous \frac{1}{2}x=3.",
         "correction": r"\(x=6\)",
     }
-    resultat = normalise_structure_tuteur(reponse) if False else normaliser_structure_tuteur(reponse)
+    resultat = normaliser_structure_tuteur(reponse)
     assert resultat == reponse
 
 
