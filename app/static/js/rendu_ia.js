@@ -217,7 +217,7 @@
               // déjà présente dans la même formule.
               const commandes = /\\(?:frac|dfrac|tfrac|sqrt|begin|end|mathrm|text|det|sum|prod|int|cdot|times|mathbb|mathbf)\b/;
               if (!commandes.test(formule) && /\\\\(?:frac|dfrac|tfrac|sqrt|begin|end|mathrm|text|det|sum|prod|int|cdot|times|mathbb|mathbf)\b/.test(formule)) {
-                formule = formule.replace(/\\\\(?=[A-Za-z])/g, "\\\\");
+                formule = formule.replace(/\\\\(?=[A-Za-z])/g, "\\");
               }
               formule = formule.replace(/\\label\{[^{}]*\}/g, "");
               window.katex.render(formule, cible, {
