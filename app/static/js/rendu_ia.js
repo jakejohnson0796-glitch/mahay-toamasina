@@ -444,7 +444,14 @@
   }
   function rendreTous(parent) {
     const racine = parent || document;
+    const elements = [];
+    if (racine.nodeType === 1 && racine.matches && racine.matches(SELECTEUR_RENDU)) {
+      elements.push(racine);
+    }
     racine.querySelectorAll(SELECTEUR_RENDU).forEach(function (element) {
+      if (!elements.includes(element)) elements.push(element);
+    });
+    elements.forEach(function (element) {
       const enLigne = element.hasAttribute("data-rendu-ligne");
       const source = SOURCES_ORIGINALES.get(element) || element.textContent || "";
       rendreReponseIA(source, element, { enLigne: enLigne });
