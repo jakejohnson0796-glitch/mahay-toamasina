@@ -120,10 +120,8 @@ Matrice : \begin{pmatrix}1 & 0\\2 & 1\end{pmatrix}`
 vm.runInNewContext(aiLearningSource, historyContext, { filename: 'ai-learning.js' });
 await new Promise((resolve) => setTimeout(resolve, 0));
 const historyVisible = historyElement.textContent || '';
-for (const brut of ['\\text', '\\cdot', '\\begin', '\\end', '\\,', '\\quad', '
-  if (historyVisible.includes(brut)) {
-    throw new Error(`Raw history formatting remains visible: ${brut}`);
-  }
+if (/\\\\/.test(historyVisible) || historyVisible.includes('$')) {
+  throw new Error('Raw LaTeX or math delimiters remain visible in history summary');
 }
 if (!historyVisible.includes('L=6') || !historyVisible.includes('kN')) {
   throw new Error('History summary lost the useful mathematical context');
