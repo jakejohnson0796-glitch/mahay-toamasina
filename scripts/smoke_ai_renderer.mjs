@@ -114,16 +114,23 @@ const historyContext = {
 const historyElement = historyDom.window.document.querySelector('[data-ai-resume]');
 historyElement.setAttribute(
   'data-ai-resume',
-  String.raw`Explique-moi Continuité des rotations : L=6\\,\\text{m}, 0\\le x\\le 3\\,\\text{m}, M_1(x)=5\\,\\text{kN}\\cdot\\text{m}.
-Matrice : \\begin{pmatrix}1 & 0\\\\2 & 1\\end{pmatrix}`
+  String.raw\`Explique-moi Continuité des rotations : L=6\,\text{m}, 0\le x\le 3\,\text{m}, M_1(x)=5\,\text{kN}\cdot\text{m}.
+Matrice : \begin{pmatrix}1 & 0\\2 & 1\end{pmatrix}\`
 );
 vm.runInNewContext(aiLearningSource, historyContext, { filename: 'ai-learning.js' });
-historyElement.dispatchEvent(new historyDom.window.Event('DOMContentLoaded', { bubbles: true }));
-// L'initialisation peut être déclenchée au DOMContentLoaded par le script.
 await new Promise((resolve) => setTimeout(resolve, 0));
 const historyVisible = historyElement.textContent || '';
-for (const brut of ['\\text', '\\cdot', '\\begin', '\\end', '
-window.marked = null;
+for (const brut of ['\\text', '\\cdot', '\\begin', '\\end', '$']) {
+  if (historyVisible.includes(brut)) {
+    throw new Error(\`Raw history formatting remains visible: \${brut}\`);
+  }
+}
+if (!historyVisible.includes('L=6') || !historyVisible.includes('kN')) {
+  throw new Error('History summary lost the useful mathematical context');
+}
+
+// Mode dégradé
+
 window.DOMPurify = null;
 host.replaceChildren();
 window.rendreReponseIA(sample, host);
