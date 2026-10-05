@@ -329,6 +329,7 @@
   function initialiser() {
     initialiserGenerationIA();
     initialiserQuiz();
+    initialiserResumeHistoriqueTuteur();
     initialiserTuteur();
     initialiserVerificationTuteur();
   }
