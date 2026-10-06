@@ -29,14 +29,11 @@
 .hub-ligne:first-child{border-top:0}.hub-ligne-icone{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:var(--content-bg);color:var(--content-text);border:1px solid var(--content-border)}
 .hub-ligne-texte{min-width:0;flex:1}.hub-ligne-texte strong,.hub-ligne-texte small{display:block;overflow:hidden;text-overflow:ellipsis}.hub-ligne-texte strong{color:var(--content-text)}.hub-ligne-texte small{margin-top:3px;color:var(--content-text-muted)}
 .hub-ligne time{color:var(--content-text-muted);font-size:.8rem;white-space:nowrap}
-.hub-tuteur-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.hub-tuteur-carte{padding:16px;border:1px solid var(--content-border);border-radius:14px;background:var(--content-bg);color:var(--content-text)}
-.hub-tuteur-carte>span{color:var(--content-text-muted);font-size:.8rem}.hub-tuteur-carte h3{margin:8px 0;font-size:1rem;color:var(--content-text)}.hub-tuteur-carte p{margin:0;color:var(--content-text-muted);line-height:1.5}
 .mobile-entete-app{position:relative}
 .mobile-entete-app-notifications{position:absolute;right:56px;top:50%;transform:translateY(-50%);color:inherit;text-decoration:none;display:grid;place-items:center}
 .mobile-entete-app-notifications>span{position:absolute;top:-6px;right:-7px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--primary);color:var(--content-surface);font-size:10px;line-height:16px;text-align:center}
 @media (max-width:760px){.hub-page{padding-top:12px}.hub-hero{display:block}.hub-hero .bouton{display:inline-flex;margin-top:16px}.hub-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
-.hub-deux-colonnes,.hub-tuteur-grille{grid-template-columns:1fr}.notification-meta{display:block}.notification-meta time{display:block;margin-top:4px}.hub-section-entete{align-items:flex-start;flex-direction:column}.hub-section-entete a{white-space:normal}
+.hub-deux-colonnes.notification-meta{display:block}.notification-meta time{display:block;margin-top:4px}.hub-section-entete{align-items:flex-start;flex-direction:column}.hub-section-entete a{white-space:normal}
 }
 
 /* Parcours personnalise */
