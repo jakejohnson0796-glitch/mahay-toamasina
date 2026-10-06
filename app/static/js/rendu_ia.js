@@ -47,53 +47,134 @@
       });
   }
 
+  function normaliserSourceRendu(source) {
+    let texte = String(source == null ? "" : source);
+    try { texte = texte.normalize("NFC"); } catch (_) {}
+    // Reprise du principe du moteur riche : supprimer uniquement les marqueurs
+    // invisibles connus qui peuvent perturber les délimiteurs sans modifier
+    // les caractères pédagogiques visibles.
+    texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
+    return texte.replace(/\r\n?/g, "\n");
+  }
+
+  function antislashEchappe(texte, index) {
+    let nombre = 0;
+    for (let i = index - 1; i >= 0 && texte[i] === "\\\\"; i -= 1) nombre += 1;
+    return (nombre % 2) === 1;
+  }
+
+  function trouverFinDelimiteur(texte, debut, delimiteur) {
+    for (let i = debut; i <= texte.length - delimiteur.length; i += 1) {
+      if (texte.slice(i, i + delimiteur.length) === delimiteur && !antislashEchappe(texte, i)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  const ENVIRONNEMENTS_MATH = new Set([
+    "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix",
+    "cases", "aligned", "alignedat", "gathered", "smallmatrix", "array",
+    "align", "align*", "gather", "gather*", "equation", "equation*", "split"
+  ]);
+
   function protegerMath(brut) {
     const math = [];
-    const source = convertirMarqueursTransport(String(brut == null ? "" : brut));
-    // Compatibilité renforcée : beaucoup de sorties legacy du Quiz IA utilisent
-    // encore $...$ ou $...$. Elles doivent être protégées avant Marked,
-    // exactement comme \\( ... \\) et \\[ ... \\].
-    const protection = source.replace(
-      /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+?\$|\$\$|\\begin\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}[\s\S]*?\\end\{(?:bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}/g,
-      function (match) {
-        // Un délimiteur $$ orphelin doit disparaître plutôt que devenir du
-        // texte visible dans le quiz. Les blocs de code sont capturés avant
-        // cette règle et restent donc intacts.
-        if (match === "$$") return "";
+    const source = normaliserSourceRendu(convertirMarqueursTransport(brut));
+    let protection = "";
+    let i = 0;
 
-        const estDollarDisplay = match.indexOf("$$") === 0;
-        const estMatriceDisplay = match.indexOf("\\begin{") === 0;
-        const estDisplay =
-          match.indexOf("\\[") === 0 ||
-          estDollarDisplay ||
-          estMatriceDisplay;
-        const estInline =
-          match.indexOf("\\(") === 0 ||
-          (match.indexOf("$") === 0 && !estDollarDisplay);
+    function ajouterMath(contenu, display, longueur) {
+      const index = math.push({ display: Boolean(display), contenu: contenu }) - 1;
+      protection += TOKEN_MATH + index + "\uE001";
+      i += longueur;
+    }
 
-        if (estDisplay || estInline) {
-          const longueurDelimiteur =
-            estMatriceDisplay
-              ? 0
-              : (
-                  match.indexOf("\\[") === 0 ||
-                  match.indexOf("\\(") === 0 ||
-                  estDollarDisplay
-                )
-                ? 2
-                : 1;
-          const contenu = estMatriceDisplay
-            ? match
-            : match.slice(longueurDelimiteur, -longueurDelimiteur);
-          const index = math.push({
-            display: estDisplay,
-            contenu: contenu,
-          }) - 1;
-          return TOKEN_MATH + index + "\uE001";
+    while (i < source.length) {
+      // Les blocs de code sont prioritaires : une formule contenue dans du code
+      // reste du code, jamais une formule rendue.
+      if (source.slice(i, i + 3) === "\x60\x60\x60") {
+        const fin = source.indexOf("\x60\x60\x60", i + 3);
+        if (fin < 0) {
+          protection += source.slice(i);
+          break;
         }
-        return match;
+        const limite = fin + 3;
+        protection += source.slice(i, limite);
+        i = limite;
+        continue;
       }
-    );
+
+      if (source[i] === "\x60") {
+        const fin = trouverFinDelimiteur(source, i + 1, "\x60");
+        if (fin >= 0) {
+          const limite = fin + 1;
+          protection += source.slice(i, limite);
+          i = limite;
+          continue;
+        }
+      }
+
+      if (source.slice(i, i + 2) === "\\[") {
+        const fin = trouverFinDelimiteur(source, i + 2, "\\]");
+        if (fin >= 0) {
+          ajouterMath(source.slice(i + 2, fin), true, fin + 2 - i);
+          continue;
+        }
+      }
+
+      if (source.slice(i, i + 2) === "\\(") {
+        const fin = trouverFinDelimiteur(source, i + 2, "\\)");
+        if (fin >= 0) {
+          ajouterMath(source.slice(i + 2, fin), false, fin + 2 - i);
+          continue;
+        }
+      }
+
+      if (source.slice(i, i + 2) === "$$") {
+        const fin = trouverFinDelimiteur(source, i + 2, "$$");
+        if (fin >= 0) {
+          ajouterMath(source.slice(i + 2, fin), true, fin + 2 - i);
+          continue;
+        }
+        // Cas observé dans le Quiz : un $$ isolé ne doit jamais rester visible.
+        i += 2;
+        continue;
+      }
+
+      if (source[i] === "$" && source[i + 1] !== "$" && !antislashEchappe(source, i)) {
+        const fin = trouverFinDelimiteur(source, i + 1, "$");
+        if (fin > i + 1) {
+          const contenu = source.slice(i + 1, fin);
+          // Un montant monétaire pur ne devient pas une formule.
+          if (!/^\s*[\d,.]+\s*$/.test(contenu)) {
+            ajouterMath(contenu, false, fin + 1 - i);
+            continue;
+          }
+        }
+      }
+
+      // Compatibilité avec les sorties historiques contenant un environnement
+      // LaTeX nu sans \[...\].
+      if (source.slice(i, i + 7) === "\\begin{") {
+        const finNom = source.indexOf("}", i + 7);
+        if (finNom > 0) {
+          const env = source.slice(i + 7, finNom);
+          if (ENVIRONNEMENTS_MATH.has(env)) {
+            const finEnv = trouverFinDelimiteur(source, finNom + 1, "\\end{" + env + "}");
+            if (finEnv >= 0) {
+              const limite = finEnv + ("\\end{" + env + "}").length;
+              ajouterMath(source.slice(i, limite), true, limite - i);
+              continue;
+            }
+          }
+        }
+      }
+
+      protection += source[i];
+      i += 1;
+    }
+
     return { source: protection, math: math };
   }
 
@@ -129,11 +210,24 @@
           cible.className = item.display ? "gm-katex gm-katex-display" : "gm-katex";
           try {
             if (window.katex && typeof window.katex.render === "function") {
-              window.katex.render(item.contenu, cible, {
+              let formule = String(item.contenu == null ? "" : item.contenu);
+              formule = formule.replace(/\u00A0|\u202F/g, " ");
+              // Répare uniquement un double échappement typique du transport
+              // JSON/tool lorsqu'aucune commande correctement échappée n'est
+              // déjà présente dans la même formule.
+              const commandes = /\\(?:frac|dfrac|tfrac|sqrt|begin|end|mathrm|text|det|sum|prod|int|cdot|times|mathbb|mathbf)\b/;
+              if (!commandes.test(formule) && /\\\\(?:frac|dfrac|tfrac|sqrt|begin|end|mathrm|text|det|sum|prod|int|cdot|times|mathbb|mathbf)\b/.test(formule)) {
+                formule = formule.replace(/\\\\(?=[A-Za-z])/g, "\\");
+              }
+              formule = formule.replace(/\\label\{[^{}]*\}/g, "");
+              window.katex.render(formule, cible, {
                 displayMode: Boolean(item.display),
                 throwOnError: false,
                 trust: false,
                 strict: "ignore",
+                maxExpand: 1000,
+                maxSize: 30,
+                output: "htmlAndMathml",
               });
               morceaux.push(cible);
             } else {
@@ -350,7 +444,14 @@
   }
   function rendreTous(parent) {
     const racine = parent || document;
+    const elements = [];
+    if (racine.nodeType === 1 && racine.matches && racine.matches(SELECTEUR_RENDU)) {
+      elements.push(racine);
+    }
     racine.querySelectorAll(SELECTEUR_RENDU).forEach(function (element) {
+      if (!elements.includes(element)) elements.push(element);
+    });
+    elements.forEach(function (element) {
       const enLigne = element.hasAttribute("data-rendu-ligne");
       const source = SOURCES_ORIGINALES.get(element) || element.textContent || "";
       rendreReponseIA(source, element, { enLigne: enLigne });
@@ -393,6 +494,29 @@ print("Bonjour Gasy Mahay")
   // MODIF : API publique demandée par les pages et les tests console.
   window.rendreReponseIA = rendreReponseIA;
   window.rendreTous = rendreTous;
+
+  // Les contenus IA peuvent être remplacés après un fetch/AJAX/WebSocket.
+  // On re-rend uniquement les nouveaux sous-arbres, sans toucher à la source
+  // brute mémorisée dans SOURCES_ORIGINALES.
+  if (window.MutationObserver) {
+    const observer = new window.MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        Array.from(mutation.addedNodes || []).forEach(function (node) {
+          if (node.nodeType === 1) {
+            try { rendreTous(node); } catch (_) {}
+          }
+        });
+      });
+    });
+    const demarrerObserver = function () {
+      if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", demarrerObserver, { once: true });
+    } else {
+      demarrerObserver();
+    }
+  }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initialiser, { once: true });

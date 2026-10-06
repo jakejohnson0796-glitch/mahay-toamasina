@@ -1839,3 +1839,21 @@
   overflow-y: hidden;
   padding: .2rem 0;
 }
+
+
+/* Rendu mathématique robuste : le texte hérite toujours du thème de la page.
+   Les formules longues restent défilables sur mobile sans déborder du quiz. */
+.ai-rendered-content .katex {
+  color: inherit;
+}
+
+.ai-rendered-content .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .25rem .05rem;
+}
+
+.ai-rendered-content .katex-display > .katex {
+  max-width: max-content;
+}
