@@ -53,7 +53,7 @@
 {% if request.url.path == "/mode-emploi" %}
 <link rel="stylesheet" href="/static/mode-emploi.css?v={{ version_asset('mode-emploi.css') }}">
 {% endif %}
-{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path == "/admin/moderation-quiz" %}
+{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path in ["/mes-revisions", "/admin/moderation-quiz"] %}
 <link rel="stylesheet" href="/static/ai-learning.css?v={{ version_asset('ai-learning.css') }}">
 <!-- MODIF : charge KaTeX et ses dépendances dans un ordre figé pour tout contenu IA. -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
