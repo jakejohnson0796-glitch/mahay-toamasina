@@ -68,6 +68,5 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
             "notions_a_revoir": notions_a_revoir,
             "nb_documents": len(consultations),
             "nb_quiz": len(quiz),
-            "nb_sessions_tuteur": len(sessions_tuteur),
         },
     )
