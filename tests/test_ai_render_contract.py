@@ -113,3 +113,10 @@ def test_mes_revisions_rend_les_champs_ia_de_l_historique_tuteur():
     page = (ROOT / "app/templates/mes_revisions.html").read_text(encoding="utf-8")
     assert '<h3 data-rendu data-rendu-ligne>{{ s.question[:140] }}' in page
     assert '<p data-rendu>{{ s.exercice[:180] }}' in page
+
+
+def test_base_charge_le_renderer_sur_mes_revisions():
+    page = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
+    bloc = page.split('{% if request.url.path.startswith("/quiz")', 1)[1].split("{% endif %}", 1)[0]
+    assert '"/mes-revisions"' in bloc
+    assert 'src="/static/js/rendu_ia.js' in bloc
