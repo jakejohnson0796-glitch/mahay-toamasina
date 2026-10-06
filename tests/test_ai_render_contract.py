@@ -112,3 +112,9 @@ def test_mes_revisions_ne_contient_plus_l_historique_tuteur():
     page = (ROOT / "app/templates/mes_revisions.html").read_text(encoding="utf-8")
     assert "Dernières questions au Tuteur IA" not in page
     assert "hub-tuteur-grille" not in page
+
+
+def test_mes_revisions_ne_reference_plus_ancienne_liste_tuteur():
+    source = (ROOT / "app/routers/revisions_router.py").read_text(encoding="utf-8")
+    assert '"nb_sessions_tuteur": nb_sessions_tuteur' in source
+    assert 'len(sessions_tuteur)' not in source
