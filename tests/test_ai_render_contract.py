@@ -94,7 +94,8 @@ def test_renderer_ne_depend_plus_de_auto_render():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
     assert "function etatDependances" in js
     assert "function restaurerMath" in js
-    assert "window.katex.render(item.contenu" in js
+    assert "let formule = String(item.contenu" in js
+    assert "window.katex.render(formule" in js
     assert "renderMathInElement" not in js
 
 
