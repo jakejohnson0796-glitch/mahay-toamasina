@@ -185,7 +185,7 @@
       <div class="hub-section-entete"><div><p class="eyebrow">Résultats</p><h2>Derniers quiz</h2></div><a href="/quiz">Quiz IA →</a></div>
       {% if quiz %}
       <div class="hub-liste">
-        {% for q in quiz[:10] %}
+        {% for q in quiz[:6] %}
         <div class="hub-ligne">
           <span class="hub-ligne-icone">{{ icone("quiz", 18) }}</span>
           <span class="hub-ligne-texte"><strong>{{ q.matiere }}</strong><small>{{ q.niveau }} · {{ q.nb_questions }} questions</small></span>
