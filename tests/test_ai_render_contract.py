@@ -45,8 +45,7 @@ def test_pages_ia_exposent_le_texte_brut_au_renderer():
         "app/templates/quiz.html",
         "app/templates/quiz_passer.html",
         "app/templates/quiz_resultat.html",
-        "app/templates/admin_moderation_quiz.html",
-        "app/templates/mes_revisions.html",
+        "app/templates/admin_moderation_quiz.html"
     ):
         page = (ROOT / path).read_text(encoding="utf-8")
         assert "data-rendu" in page
@@ -109,7 +108,7 @@ def test_renderer_les_formules_sont_rendues_dans_le_fragment_avant_remplacement(
     assert "cible.replaceChildren(fragment)" in js
 
 
-def test_mes_revisions_rend_les_champs_ia_de_l_historique_tuteur():
+def test_mes_revisions_ne_contient_plus_l_historique_tuteur():
     page = (ROOT / "app/templates/mes_revisions.html").read_text(encoding="utf-8")
-    assert '<h3 data-rendu data-rendu-ligne>{{ s.question[:140] }}' in page
-    assert '<p data-rendu>{{ s.exercice[:180] }}' in page
+    assert "Dernières questions au Tuteur IA" not in page
+    assert "hub-tuteur-grille" not in page
