@@ -61,3 +61,105 @@
 .tb-parcours-actions{display:flex;gap:.4rem;flex-wrap:wrap}
 .tb-parcours-actions form{margin:0}
 @media(max-width:700px){.tb-parcours-item{align-items:flex-start;flex-direction:column}.tb-parcours-actions{width:100%}.tb-parcours-actions .bouton{flex:1 1 8rem;text-align:center}}
+
+/* -------------------------------------------------------------------------
+   Mes révisions — couche UI 2026
+   Objectif : rendre la page plus lisible, orientée décision et moins longue
+   sans modifier les données métier ni les parcours existants.
+   ------------------------------------------------------------------------- */
+.hub-hero-revisions{position:relative;overflow:hidden;padding:28px 0 26px;border-bottom:0;align-items:stretch}
+.hub-hero-revisions::after{content:"";position:absolute;left:0;right:34%;bottom:0;height:1px;background:var(--content-border)}
+.hub-hero-copy{min-width:0;position:relative;z-index:1;padding:4px 0 6px}
+.hub-hero-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--content-border);border-radius:999px;background:color-mix(in srgb,var(--content-surface) 88%,var(--accent) 12%);font-size:.75rem;font-weight:750;color:var(--content-text)}
+.hub-hero-badge-icon{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:var(--content-bg);color:var(--accent)}
+.hub-hero-sous-titre strong{color:var(--content-text)}
+.hub-hero-side{width:min(360px,38%);display:grid;gap:8px;align-content:center;padding:18px 20px;border:1px solid var(--content-border);border-radius:18px;background:linear-gradient(135deg,color-mix(in srgb,var(--content-surface) 92%,var(--accent) 8%),var(--content-surface));box-shadow:var(--shadow-sm);position:relative;z-index:1}
+.hub-hero-side-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hub-hero-side-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;color:var(--content-text-muted)}
+.hub-hero-side-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:var(--content-bg);color:var(--accent)}
+.hub-hero-side strong{font-size:1.1rem;color:var(--content-text)}
+.hub-hero-side>span:not(.hub-hero-side-icon){font-size:.82rem;line-height:1.45;color:var(--content-text-muted)}
+.bouton-compact{width:max-content;font-size:.78rem;padding:9px 13px;margin-top:4px}
+
+.hub-kpis-revisions{margin:18px 0 6px}
+.hub-kpis-revisions .hub-kpi{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"icon value" "icon label";align-items:center;column-gap:12px;padding:15px 16px;border-radius:16px;min-height:76px}
+.hub-kpi-icone{grid-area:icon;display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:var(--content-bg);border:1px solid var(--content-border);color:var(--accent)}
+.hub-kpi-icone--quiz{color:var(--refonte-orange,var(--accent))}
+.hub-kpi-icone--tuteur{color:var(--color-accent)}
+.hub-kpi-icone--matieres{color:var(--color-info)}
+.hub-kpi-valeur{grid-area:value;font-size:1.35rem;font-weight:850;line-height:1;color:var(--content-text)}
+.hub-kpi-label{grid-area:label;font-size:.75rem;color:var(--content-text-muted);line-height:1.2}
+
+.hub-progression-section{margin-top:20px}
+.hub-section-sous-titre{margin:6px 0 0;max-width:680px;font-size:.83rem;line-height:1.5;color:var(--content-text-muted)}
+.hub-section-entete-action{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;text-decoration:none}
+.hub-section-entete-action:hover{background:var(--content-bg)}
+.hub-progression-legend{display:flex;flex-wrap:wrap;gap:12px;margin:-4px 0 16px;font-size:.72rem;color:var(--content-text-muted)}
+.hub-progression-legend>span{display:inline-flex;align-items:center;gap:6px}
+.niveau-dot{width:8px;height:8px;border-radius:999px;display:inline-block}
+.niveau-dot--solide{background:var(--color-success)}
+.niveau-dot--encours{background:var(--accent)}
+.niveau-dot--renforcer{background:var(--refonte-danger)}
+.progression-grille-amelioree{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.progression-carte{position:relative;display:grid;grid-template-columns:4px minmax(0,1fr);padding:0;border:1px solid var(--content-border);border-radius:15px;background:var(--content-bg);overflow:hidden;transition:transform .18s var(--ease-fluide),border-color .18s ease,box-shadow .18s ease}
+.progression-carte:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--content-border) 55%,var(--accent) 45%);box-shadow:var(--shadow-sm)}
+.progression-carte:first-child{padding-top:0;border-top:1px solid var(--content-border)}
+.progression-carte-rail{background:var(--accent)}
+.progression-carte--solide .progression-carte-rail{background:var(--color-success)}
+.progression-carte--renforcer .progression-carte-rail{background:var(--refonte-danger)}
+.progression-carte-corps{min-width:0;padding:15px 16px 12px}
+.progression-identite{display:flex;align-items:center;gap:10px;min-width:0}
+.progression-identite>div{min-width:0}
+.progression-rang{display:grid;place-items:center;flex:0 0 auto;width:30px;height:30px;border-radius:10px;background:var(--content-surface);border:1px solid var(--content-border);font-size:.72rem;font-weight:850;color:var(--content-text-muted)}
+.progression-score{display:flex;align-items:flex-end;gap:8px;flex:0 0 auto}
+.progression-score b{font-size:1.08rem;line-height:1;color:var(--content-text)}
+.progression-niveau{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;font-size:.61rem;font-weight:800;white-space:nowrap;background:var(--content-surface);color:var(--content-text-muted);border:1px solid var(--content-border)}
+.progression-niveau--solide{color:var(--color-success);border-color:color-mix(in srgb,var(--color-success) 42%,var(--content-border))}
+.progression-niveau--encours{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 38%,var(--content-border))}
+.progression-niveau--renforcer{color:var(--refonte-danger);border-color:color-mix(in srgb,var(--refonte-danger) 38%,var(--content-border))}
+.progression-barre-amelioree{height:8px;margin-top:13px;background:var(--content-surface);border:1px solid var(--content-border)}
+.progression-carte--solide .progression-barre-amelioree span{background:var(--color-success)}
+.progression-carte--encours .progression-barre-amelioree span{background:var(--accent)}
+.progression-carte--renforcer .progression-barre-amelioree span{background:var(--refonte-danger)}
+.progression-pied{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:9px;font-size:.69rem;color:var(--content-text-muted)}
+.progression-pied a{font-weight:800;text-decoration:none;color:var(--content-text)}
+.progression-pied a:hover{text-decoration:underline}
+
+.hub-focus-section{scroll-margin-top:20px}
+.hub-focus-entete{align-items:flex-start}
+.hub-focus-cta{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border-radius:10px;text-decoration:none;white-space:nowrap}
+.hub-focus-cta:hover{background:var(--content-bg)}
+.hub-notions-grille{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.hub-notion-carte{padding:16px;border-radius:15px;transition:transform .18s var(--ease-fluide),box-shadow .18s ease,border-color .18s ease}
+.hub-notion-carte:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.hub-notion-top{margin-bottom:2px}
+.hub-notion-score{padding:4px 7px;border:1px solid color-mix(in srgb,var(--refonte-danger) 28%,var(--content-border));border-radius:999px;background:var(--content-surface);font-size:.6rem;font-weight:800}
+.hub-notion-carte h3{font-size:1rem;line-height:1.35}
+.hub-notion-metrics{display:flex;flex-wrap:wrap;gap:7px;margin:11px 0 8px}
+.hub-notion-metrics>span{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border:1px solid var(--content-border);border-radius:9px;background:var(--content-surface);font-size:.64rem;color:var(--content-text-muted)}
+.hub-notion-metrics strong{color:var(--content-text)}
+.hub-notion-date{font-size:.71rem!important;color:var(--content-text-muted)!important}
+.hub-notion-actions{margin-top:12px}
+
+@media (max-width:920px){
+  .hub-hero-revisions{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,34%);align-items:stretch}
+  .hub-hero-revisions::after{right:0}
+  .progression-grille-amelioree,.hub-notions-grille{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .hub-hero-revisions{display:block;padding-top:14px}
+  .hub-hero-revisions::after{display:none}
+  .hub-hero-side{width:auto;margin-top:16px}
+  .hub-kpis-revisions{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .hub-kpis-revisions .hub-kpi{min-height:70px;padding:13px}
+  .hub-kpi-icone{width:32px;height:32px}
+  .hub-kpi-valeur{font-size:1.18rem}
+  .hub-kpi-label{font-size:.68rem}
+  .hub-progression-legend{gap:9px}
+  .progression-score{align-items:center}
+  .progression-pied{align-items:flex-start;flex-direction:column;gap:6px}
+}
+@media (max-width:420px){
+  .hub-kpis-revisions{grid-template-columns:1fr}
+  .hub-hero-side{padding:16px}
+}
