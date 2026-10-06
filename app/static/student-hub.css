@@ -163,3 +163,12 @@
   .hub-kpis-revisions{grid-template-columns:1fr}
   .hub-hero-side{padding:16px}
 }
+
+/* Compaction — Mes révisions : éviter les cartes étirées et réduire la hauteur inutile. */
+.hub-deux-colonnes{align-items:start}
+.hub-deux-colonnes>.hub-section{margin-top:0;align-self:start;height:max-content;min-height:0}
+.hub-deux-colonnes .hub-ligne{padding:9px 0;gap:10px}
+.hub-deux-colonnes .hub-ligne-icone{width:30px;height:30px;border-radius:9px}
+.hub-deux-colonnes .hub-ligne-texte strong{font-size:.82rem;line-height:1.25}
+.hub-deux-colonnes .hub-ligne-texte small{font-size:.68rem;margin-top:2px}
+.hub-deux-colonnes .hub-ligne time,.hub-deux-colonnes .hub-ligne>b{font-size:.68rem}
