@@ -2,7 +2,7 @@
 from datetime import datetime
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 
 from ..auth import utilisateur_courant
 from ..database import get_session
@@ -47,12 +47,11 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
         .limit(20)
     ).all()
 
-    sessions_tuteur = session.exec(
-        select(SessionTuteur)
+    nb_sessions_tuteur = int(session.exec(
+        select(func.count())
+        .select_from(SessionTuteur)
         .where(SessionTuteur.utilisateur_id == utilisateur.id)
-        .order_by(SessionTuteur.date_creation.desc())
-        .limit(10)
-    ).all()
+    ).one() or 0)
 
     progression = dashboard_module.progression_matieres(session, utilisateur)
     notions_a_revoir = quiz_module.notions_a_revoir(session, utilisateur.id, limit=8)
@@ -64,7 +63,7 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
             "utilisateur": utilisateur,
             "consultations": consultations,
             "quiz": quiz,
-            "sessions_tuteur": sessions_tuteur,
+            "nb_sessions_tuteur": nb_sessions_tuteur,
             "progression_matieres": progression,
             "notions_a_revoir": notions_a_revoir,
             "nb_documents": len(consultations),

@@ -199,21 +199,5 @@
     </section>
   </div>
 
-  <section class="hub-section">
-    <div class="hub-section-entete"><div><p class="eyebrow">Mémoire d'apprentissage</p><h2>Dernières questions au Tuteur IA</h2></div><a href="/tuteur">Poser une question →</a></div>
-    {% if sessions_tuteur %}
-    <div class="hub-tuteur-grille">
-      {% for s in sessions_tuteur %}
-      <article class="hub-tuteur-carte">
-        <span>{{ s.date_creation.strftime("%d/%m/%Y %H:%M") }}</span>
-        <h3 data-rendu data-rendu-ligne>{{ s.question[:140] }}{% if s.question|length > 140 %}…{% endif %}</h3>
-        <p data-rendu>{{ s.exercice[:180] }}{% if s.exercice|length > 180 %}…{% endif %}</p>
-      </article>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="hub-vide hub-vide-compact"><p>Aucune session Tuteur IA pour le moment.</p></div>
-    {% endif %}
-  </section>
 </div>
 {% endblock %}
