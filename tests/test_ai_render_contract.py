@@ -86,7 +86,8 @@ def test_contrat_renderer_n_utilise_plus_auto_render_ni_delimiters_dollar():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
     assert "renderMathInElement" not in js
     assert '{ left: "$", right: "$"' not in js
-    assert "window.katex.render(item.contenu" in js
+    assert "let formule = String(item.contenu" in js
+    assert "window.katex.render(formule" in js
 
 
 def test_renderer_ne_depend_plus_de_auto_render():
