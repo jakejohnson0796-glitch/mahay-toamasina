@@ -422,13 +422,17 @@ def valider_questions(questions: Any, expected_count: int | None = None, strict_
 
         # MODIF : aucune formule n'est normalisée ici. La structure retournée
         # contient exactement les chaînes brutes reçues du modèle.
-        result.append({
+        item_resultat = {
             "question": question_brut,
             "choix": list(choix_bruts),
             "index_bonne_reponse": index,
             "explication": explication_brute,
             "notion": notion_brute,
-        })
+        }
+        difficulte = question.get("difficulte")
+        if difficulte in {"Facile", "Moyen", "Difficile"}:
+            item_resultat["difficulte"] = difficulte
+        result.append(item_resultat)
 
     return result
 

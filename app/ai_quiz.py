@@ -139,6 +139,11 @@ OUTIL_QUIZ = {
                                 "type": "string",
                                 "description": "Courte explication (1-2 phrases) de la bonne reponse.",
                             },
+                            "difficulte": {
+                                "type": "string",
+                                "enum": ["Facile", "Moyen", "Difficile"],
+                                "description": "Difficulte pedagogique propre a CETTE question. Pour un quiz adaptatif, respecte exactement la difficulte demandee pour chaque question.",
+                            },
                             "notion": {
                                 "type": "string",
                                 "description": "Notion precise testee par la question, courte et exploitable pour un parcours personnalise (ex: Bilan comptable, Loi d'Ohm, Concordance des temps).",
@@ -181,6 +186,10 @@ OUTIL_VERIFICATION = {
                             },
                             "explication": {"type": "string"},
                             "notion": {"type": "string"},
+                            "difficulte": {
+                                "type": "string",
+                                "enum": ["Facile", "Moyen", "Difficile"],
+                            },
                             "confiant": {
                                 "type": "boolean",
                                 "description": (
@@ -396,6 +405,17 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
     return _extraire_questions(completion, expected_count=nb_questions)
 
 
+def _sequence_difficultes_adaptatives(nb_questions: int, difficulte_base: str) -> List[str]:
+    """Prépare un mélange de difficultés pour que le serveur puisse adapter la suite."""
+    profils = {
+        "Facile": ["Facile", "Facile", "Moyen", "Moyen", "Difficile"],
+        "Moyen": ["Facile", "Moyen", "Moyen", "Difficile", "Difficile"],
+        "Difficile": ["Moyen", "Moyen", "Difficile", "Difficile", "Difficile"],
+    }
+    profil = profils.get(difficulte_base, profils["Moyen"])
+    return [profil[i % len(profil)] for i in range(max(1, nb_questions))]
+
+
 def generer_quiz_cible(
     matiere: str,
     niveau: str,
@@ -418,15 +438,20 @@ def generer_quiz_cible(
         matiere=matiere,
         niveau=niveau,
     )
+    difficultes = _sequence_difficultes_adaptatives(nb_questions, difficulte)
+    calendrier_difficulte = ", ".join(
+        f"Q{i + 1}={niveau_q}" for i, niveau_q in enumerate(difficultes)
+    )
     consigne_base = (
         f"Tu es un professeur a l'Universite de Toamasina. Genere exactement "
         f"{nb_questions} questions de revision en francais, niveau {niveau}, "
-        f"sur la matiere '{matiere}' et EXCLUSIVEMENT sur la notion '{notion}', "
-        f"avec une difficulte {difficulte}. "
+        f"sur la matiere '{matiere}' et EXCLUSIVEMENT sur la notion '{notion}'. "
+        f"Le quiz est adaptatif : respecte exactement la difficulte individuelle "
+        f"de chaque question selon cet ordre : {calendrier_difficulte}. "
         f"Concentre-toi sur la comprehension, l'application et les erreurs "
         f"frequentes liees a cette notion. 4 choix plausibles, une seule "
-        f"bonne reponse, une explication courte et une notion courte et "
-        f"precise pour chaque question. Utilise l'outil fourni."
+        f"bonne reponse, une explication courte, une notion courte et precise "
+        f"et le champ 'difficulte' correct pour chaque question. Utilise l'outil fourni."
         f"{chr(10) + chr(10) + memoire if memoire else ''}"
     )
     consigne_renforcee = (

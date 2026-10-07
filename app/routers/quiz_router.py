@@ -3,7 +3,7 @@ import random
 from typing import List, Optional
 
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlmodel import Session, select
 
 from ..database import get_session
@@ -179,9 +179,48 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
             "questions": questions,
             "reponses": quiz_module.reponses(tentative) or [],
             "correction_visible": correction_visible,
+            "adaptatif": quiz_module.est_quiz_adaptatif(tentative),
+            "adaptatif_etat": quiz_module.etat_adaptatif(tentative) if quiz_module.est_quiz_adaptatif(tentative) else None,
             "secondes_restantes": quiz_module.secondes_restantes_examen(tentative),
         },
     )
+
+
+@router.post("/quiz/{tentative_id}/repondre")
+async def repondre_question_adaptative(
+    request: Request,
+    tentative_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Enregistre une réponse adaptative et choisit la question suivante."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return JSONResponse({"erreur": "acces_refuse"}, status_code=401)
+
+    tentative = _tentative_du_proprietaire(session, tentative_id, utilisateur.id)
+    if not tentative or not quiz_module.est_quiz_adaptatif(tentative):
+        return JSONResponse({"erreur": "quiz_adaptatif_introuvable"}, status_code=404)
+
+    formulaire = await request.form()
+    try:
+        index_question = int(str(formulaire.get("question_index")))
+        reponse = int(str(formulaire.get("reponse")))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Réponse adaptative invalide.") from exc
+
+    try:
+        resultat = quiz_module.enregistrer_reponse_adaptative(
+            session,
+            tentative,
+            index_question,
+            reponse,
+        )
+    except quiz_module.QuizValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return JSONResponse(resultat)
 
 
 @router.post("/quiz/cible")

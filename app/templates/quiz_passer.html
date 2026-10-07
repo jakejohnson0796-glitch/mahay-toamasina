@@ -84,6 +84,16 @@
       </div>
 
       {% else %}
+      {% if adaptatif %}
+      <div class="ai-exam-next-step" aria-live="polite">
+        <div>
+          <span class="ai-kicker">Quiz adaptatif</span>
+          <strong>La difficulté évolue après chaque réponse.</strong>
+          <span>Deux bonnes réponses consécutives font monter le niveau ; une erreur fait redescendre la difficulté.</span>
+        </div>
+      </div>
+      {% endif %}
+
       <div class="quiz-progress-card">
         <div class="quiz-progress-head">
           <span data-quiz-progress-text>0 / {{ questions|length }} répondues</span>
@@ -92,7 +102,11 @@
         <progress class="quiz-progress-native" data-quiz-progress-fill value="0" max="{{ questions|length }}">0 / {{ questions|length }}</progress>
       </div>
 
-      <form id="form-quiz" method="post" action="/quiz/{{ tentative.id }}/soumettre" data-quiz-form data-examen-secondes="{{ secondes_restantes if tentative.mode_examen else 0 }}">
+      <form id="form-quiz" method="post" action="/quiz/{{ tentative.id }}/soumettre"
+      data-quiz-form
+      data-quiz-tentative-id="{{ tentative.id }}"
+      data-quiz-adaptatif="{{ '1' if adaptatif else '0' }}"
+      data-examen-secondes="{{ secondes_restantes if tentative.mode_examen else 0 }}">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         {% for item in questions %}
         {% set q = loop.index0 %}
