@@ -30,6 +30,22 @@
     <a class="ai-answer-back" href="/tuteur">Nouvelle question</a>
   </div>
 
+  {% if progression_tuteur %}
+  <section class="ai-target-context ai-target-context-memory" aria-label="Mémoire d'apprentissage">
+    <span class="ai-kicker">Mémoire d'apprentissage</span>
+    <strong>{{ progression_tuteur.notion }}</strong>
+    <div class="ai-target-context-stats">
+      <span><b>{{ progression_tuteur.score_maitrise }}%</b> maîtrise</span>
+      <span><b>{{ progression_tuteur.nb_erreurs }}</b> erreur{{ "s" if progression_tuteur.nb_erreurs != 1 else "" }}</span>
+      <span><b>{{ progression_tuteur.nb_questions }}</b> question{{ "s" if progression_tuteur.nb_questions != 1 else "" }}</span>
+      {% if progression_tuteur.prochaine_revision_le %}
+      <span>révision · {{ progression_tuteur.prochaine_revision_le.strftime("%d/%m/%Y") }}</span>
+      {% endif %}
+    </div>
+    <p>Le Tuteur adapte cette séance à ton historique sur cette notion pour éviter de recommencer exactement au même point.</p>
+  </section>
+  {% endif %}
+
   <div class="ai-answer-grid">
     <article class="ai-answer-card">
       <div class="ai-answer-card-head">
