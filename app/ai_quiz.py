@@ -866,6 +866,7 @@ def reparer_verifications_tuteur_en_attente(max_sessions: int = 3, age_minimum_s
     ne touche qu'aux sessions encore en attente depuis assez longtemps pour
     éviter de lancer une seconde vérification pendant une requête normale.
     """
+    from datetime import datetime, timedelta
     from sqlmodel import Session, select
     from .database import engine
     from .models import SessionTuteur
