@@ -172,3 +172,55 @@ def test_difficulte_de_revision_s_adapte_a_la_maitrise():
     assert difficulte_revision_adaptative(moyenne) == "Moyen"
     assert difficulte_revision_adaptative(solide) == "Difficile"
     assert difficulte_revision_adaptative(None) == "Moyen"
+
+
+def test_diagnostic_examen_donne_un_bilan_actionnable():
+    from app.quiz import diagnostic_examen
+
+    maintenant = datetime.utcnow()
+    tentative = TentativeQuiz(
+        utilisateur_id=7,
+        matiere="Mathématiques",
+        niveau="L1",
+        difficulte="Moyen",
+        nb_questions=10,
+        questions_json="[]",
+        score=6,
+        mode_examen=True,
+        duree_secondes=900,
+        date_creation=maintenant - timedelta(minutes=8, seconds=20),
+        date_soumission=maintenant,
+    )
+
+    diagnostic = diagnostic_examen(tentative, nb_erreurs=4, nb_notions_faibles=2)
+
+    assert diagnostic["pourcentage"] == 60
+    assert diagnostic["niveau"] == "en_consolidation"
+    assert diagnostic["nb_erreurs"] == 4
+    assert diagnostic["nb_notions_faibles"] == 2
+    assert diagnostic["temps_utilise_secondes"] == 500
+    assert diagnostic["temps_affiche"] == "8 min 20 s"
+    assert diagnostic["temps_moyen_question_secondes"] == 50
+
+
+def test_diagnostic_examen_borne_le_temps_a_la_duree():
+    from app.quiz import diagnostic_examen
+
+    maintenant = datetime.utcnow()
+    tentative = TentativeQuiz(
+        utilisateur_id=7,
+        matiere="Droit",
+        niveau="L1",
+        difficulte="Moyen",
+        nb_questions=10,
+        questions_json="[]",
+        score=9,
+        mode_examen=True,
+        duree_secondes=900,
+        date_creation=maintenant - timedelta(minutes=30),
+        date_soumission=maintenant,
+    )
+
+    diagnostic = diagnostic_examen(tentative, nb_erreurs=1, nb_notions_faibles=1)
+
+    assert diagnostic["temps_utilise_secondes"] == 900

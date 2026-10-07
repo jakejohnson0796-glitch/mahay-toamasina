@@ -195,3 +195,14 @@ def test_revision_due_peut_desormais_ouvrir_le_tuteur_sans_erreur():
     route = lire("app/routers/tuteur_router.py")
     assert "or quiz_module.revision_due(candidat_progression)" in route
     assert "candidat_progression.nb_erreurs > 0" in route
+
+
+def test_resultat_examen_affiche_un_diagnostic_et_une_action():
+    template = lire("app/templates/quiz_resultat.html")
+    assert "Diagnostic examen" in template
+    assert "Prochaine action recommandée" in template
+    assert 'action="/quiz/cible"' in template
+    assert 'action="/quiz/examen/generer"' in template
+    css = lire("app/static/ai-learning.css")
+    assert ".ai-exam-diagnostic" in css
+    assert ".ai-exam-next-step" in css

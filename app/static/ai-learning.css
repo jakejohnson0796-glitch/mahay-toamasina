@@ -1857,3 +1857,43 @@
 .ai-rendered-content .katex-display > .katex {
   max-width: max-content;
 }
+
+
+.ai-exam-diagnostic {
+  padding: 1rem 0;
+}
+
+.ai-exam-next-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .9rem;
+  margin-top: .7rem;
+  padding: .85rem;
+  border: 1px solid rgba(47,143,137,.22);
+  border-radius: 14px;
+  background: rgba(47,143,137,.055);
+}
+
+.ai-exam-next-step > div:first-child {
+  display: grid;
+  gap: .18rem;
+}
+
+.ai-exam-next-step strong {
+  color: var(--content-text);
+  font-size: .78rem;
+}
+
+.ai-exam-next-step > div:first-child > span:last-child {
+  color: var(--content-text-muted);
+  font-size: .62rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .ai-exam-next-step {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

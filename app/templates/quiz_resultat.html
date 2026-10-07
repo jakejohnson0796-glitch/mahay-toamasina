@@ -32,6 +32,71 @@
     </div>
   </section>
 
+  {% if diagnostic_examen %}
+  <section class="ai-section ai-exam-diagnostic" aria-labelledby="exam-diagnostic-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Diagnostic examen</span>
+        <h2 id="exam-diagnostic-title">Ton bilan après l'examen blanc</h2>
+        <p>{{ diagnostic_examen.message }}</p>
+      </div>
+      <span class="ai-badge">
+        {% if diagnostic_examen.niveau == "solide" %}Niveau solide{% elif diagnostic_examen.niveau == "en_consolidation" %}À consolider{% else %}Priorité de révision{% endif %}
+      </span>
+    </div>
+    <div class="ai-feature-strip">
+      <div class="ai-feature">
+        <strong>{{ diagnostic_examen.pourcentage }}%</strong>
+        <span>score obtenu</span>
+      </div>
+      <div class="ai-feature">
+        <strong>{{ diagnostic_examen.nb_erreurs }}</strong>
+        <span>erreur{{ "s" if diagnostic_examen.nb_erreurs != 1 else "" }}</span>
+      </div>
+      <div class="ai-feature">
+        <strong>{{ diagnostic_examen.temps_affiche }}</strong>
+        <span>temps utilisé · {{ diagnostic_examen.temps_moyen_question_secondes }} s/question en moyenne</span>
+      </div>
+    </div>
+    {% if notions_detectees %}
+    <div class="ai-exam-next-step">
+      <div>
+        <span class="ai-kicker">Première action recommandée</span>
+        <strong>Travaille d'abord {{ notions_detectees[0].notion }}</strong>
+        <span>Le parcours ci-dessous te permet ensuite de passer par le Tuteur et le Quiz ciblé.</span>
+      </div>
+      {% if notions_detectees[0].progression_id %}
+      <div class="ai-inline-actions">
+        <form method="post" action="/tuteur/demander" class="ai-inline-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="progression_id" value="{{ notions_detectees[0].progression_id }}">
+          <input type="hidden" name="question" value="Aide-moi à consolider {{ notions_detectees[0].notion }} après mon examen blanc {{ tentative.matiere }}. Explique mon point faible puis donne-moi un exercice progressif.">
+          <button class="bouton bouton-secondaire" type="submit">Avec le Tuteur</button>
+        </form>
+        <form method="post" action="/quiz/cible" class="ai-inline-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="progression_id" value="{{ notions_detectees[0].progression_id }}">
+          <button class="bouton bouton-primaire" type="submit">Quiz ciblé</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="ai-exam-next-step">
+      <div>
+        <span class="ai-kicker">Prochaine étape</span>
+        <strong>Tu n'as aucune notion faible détectée.</strong>
+        <span>Refais un examen plus difficile pour vérifier que le niveau tient dans la durée.</span>
+      </div>
+      <form method="post" action="/quiz/examen/generer" class="ai-inline-action">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <button class="bouton bouton-primaire" type="submit">Refaire un examen</button>
+      </form>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {% if notions_detectees %}
   <section class="ai-section ai-remediation-result" aria-labelledby="remediation-result-title">
     <div class="ai-section-head">
