@@ -87,6 +87,25 @@ def test_interface_tuteur_contient_suggestions_et_compteur():
     assert "data-tuteur-form" in tuteur
 
 
+def test_resultat_quiz_propose_une_remediation_exacte_pour_chaque_erreur():
+    route = lire("app/routers/quiz_router.py")
+    template = lire("app/templates/quiz_resultat.html")
+    assert '"progressions_par_question": progressions_par_question' in route
+    assert 'name="progression_id"' in template
+    assert 'name="question"' in template
+    assert "Comprendre cette erreur avec le Tuteur" in template
+    assert "Ma réponse :" in template
+    assert "Bonne réponse :" in template
+
+
+def test_dashboard_expose_la_prochaine_revision_adaptative():
+    code = lire("app/dashboard.py")
+    template = lire("app/templates/dashboard_etudiant.html")
+    assert '"prochaine_revision": prochaine_revision' in code
+    assert "Prochaine action recommandée" in template
+    assert 'action="/quiz/cible"' in template
+
+
 def test_css_et_js_dedies_exist():
     assert (ROOT / "app/static/ai-learning.css").exists()
     assert (ROOT / "app/static/js/ai-learning.js").exists()
