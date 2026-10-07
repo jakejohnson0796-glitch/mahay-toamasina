@@ -501,6 +501,37 @@ def fichier_document_moderation(
     )
 
 
+@router.get("/documents/{document_id}/apprendre")
+def parcours_document(request: Request, document_id: int, session: Session = Depends(get_session)):
+    """Hub d'apprentissage d'un document approuvé.
+
+    Il ne remplace aucun flux existant : il ajoute un point d'entrée qui
+    relie lecture, quiz et Tuteur contextualisé autour de la même ressource.
+    """
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    document = session.get(Document, document_id)
+    if not document or document.statut != StatutDocument.APPROUVE:
+        return RedirectResponse("/documents", status_code=303)
+
+    if document.cercle_id is not None and (
+        not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id)
+    ):
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+
+    return templates.TemplateResponse(
+        "document_parcours.html",
+        {
+            "request": request,
+            "utilisateur": utilisateur,
+            "document": document,
+        },
+    )
+
+
 @router.get("/documents/{document_id}/quiz")
 def quiz_document(request: Request, document_id: int, session: Session = Depends(get_session)):
     """Quiz genere par une vraie IA (API Groq, gratuite) a partir du texte
