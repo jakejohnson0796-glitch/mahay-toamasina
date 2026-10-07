@@ -437,7 +437,7 @@ def generer_quiz_cible(
     completion, erreur = _generer_completion_avec_reessai(
         client,
         [consigne_base, consigne_renforcee],
-        max_completion_tokens=_budget_completion_quiz(nb_questions),
+        max_completion_tokens=2048,
         expected_count=nb_questions,
     )
     if completion is None:
