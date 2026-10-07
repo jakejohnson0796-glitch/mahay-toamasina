@@ -22,7 +22,7 @@ from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
-from ..dependencies import acces_premium_ou_redirection
+from ..dependencies import acces_ia_ou_redirection, acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
 from .. import gamification
 from .. import ai_queue
