@@ -561,6 +561,54 @@ def creer_tentative_examen(session: Session, utilisateur: Utilisateur, matiere: 
     return tentative
 
 
+def temps_utilise_examen(tentative: TentativeQuiz) -> int:
+    """Retourne le temps écoulé entre le début et la soumission d'un examen."""
+    if not tentative.mode_examen:
+        return 0
+    fin = tentative.date_soumission or datetime.utcnow()
+    debut = tentative.date_creation
+    duree = max(0, int((fin - debut).total_seconds()))
+    if tentative.duree_secondes:
+        return min(duree, tentative.duree_secondes)
+    return duree
+
+
+def diagnostic_examen(
+    tentative: TentativeQuiz,
+    nb_erreurs: int,
+    nb_notions_faibles: int,
+) -> dict:
+    """Produit un diagnostic simple et actionnable après un examen blanc."""
+    pourcentage = round(
+        tentative.score * 100 / tentative.nb_questions
+    ) if tentative.nb_questions else 0
+    if pourcentage >= 80:
+        niveau = "solide"
+        message = "Très bon niveau. Utilise maintenant les notions faibles pour gagner encore en précision."
+    elif pourcentage >= 60:
+        niveau = "en_consolidation"
+        message = "Les bases sont là, mais certaines notions doivent encore être consolidées avant un examen réel."
+    else:
+        niveau = "priorite"
+        message = "Le plus rentable est de travailler d'abord tes notions les plus faibles avant de refaire un examen complet."
+
+    temps = temps_utilise_examen(tentative)
+    minutes, secondes = divmod(temps, 60)
+    temps_affiche = f"{minutes} min" if secondes == 0 else f"{minutes} min {secondes:02d} s"
+    moyenne = round(temps / tentative.nb_questions) if tentative.nb_questions else 0
+
+    return {
+        "pourcentage": pourcentage,
+        "niveau": niveau,
+        "message": message,
+        "nb_erreurs": nb_erreurs,
+        "nb_notions_faibles": nb_notions_faibles,
+        "temps_utilise_secondes": temps,
+        "temps_affiche": temps_affiche,
+        "temps_moyen_question_secondes": moyenne,
+    }
+
+
 def secondes_restantes_examen(tentative: TentativeQuiz) -> int:
     """Temps restant (en secondes, jamais negatif) avant la fin du
     chronometre d'un quiz en mode examen. Calcule cote serveur (pas
