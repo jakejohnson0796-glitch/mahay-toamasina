@@ -181,7 +181,6 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
             "correction_visible": correction_visible,
             "adaptatif": quiz_module.est_quiz_adaptatif(tentative),
             "adaptatif_etat": quiz_module.etat_adaptatif(tentative) if quiz_module.est_quiz_adaptatif(tentative) else None,
-            "correction_visible": correction_visible,
             "secondes_restantes": quiz_module.secondes_restantes_examen(tentative),
         },
     )
