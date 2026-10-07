@@ -395,8 +395,14 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
     return _extraire_questions(completion, expected_count=nb_questions)
 
 
-def generer_quiz_cible(matiere: str, niveau: str, notion: str, nb_questions: int = 5) -> List[Dict]:
-    """Genere un mini-quiz centre sur UNE notion identifiee comme faible."""
+def generer_quiz_cible(
+    matiere: str,
+    niveau: str,
+    notion: str,
+    nb_questions: int = 5,
+    difficulte: str = "Moyen",
+) -> List[Dict]:
+    """Genere un mini-quiz centre sur UNE notion avec une difficulte adaptee."""
     notion = (notion or "").strip()[:100]
     if not notion:
         return _quiz_erreur("Notion ciblee manquante.", "Aucune notion n'a ete fournie.")
@@ -414,7 +420,8 @@ def generer_quiz_cible(matiere: str, niveau: str, notion: str, nb_questions: int
     consigne_base = (
         f"Tu es un professeur a l'Universite de Toamasina. Genere exactement "
         f"{nb_questions} questions de revision en francais, niveau {niveau}, "
-        f"sur la matiere '{matiere}' et EXCLUSIVEMENT sur la notion '{notion}'. "
+        f"sur la matiere '{matiere}' et EXCLUSIVEMENT sur la notion '{notion}', "
+        f"avec une difficulte {difficulte}. "
         f"Concentre-toi sur la comprehension, l'application et les erreurs "
         f"frequentes liees a cette notion. 4 choix plausibles, une seule "
         f"bonne reponse, une explication courte et une notion courte et "
@@ -423,7 +430,8 @@ def generer_quiz_cible(matiere: str, niveau: str, notion: str, nb_questions: int
     )
     consigne_renforcee = (
         f"{consigne_base}\n\nRappel : genere exactement {nb_questions} "
-        f"questions. N'elargis pas le sujet a une autre notion. Appelle "
+        f"questions. Respecte la difficulte {difficulte}. N'elargis pas le "
+        f"sujet a une autre notion. Appelle "
         f"'soumettre_quiz' directement."
     )
     completion, erreur = _generer_completion_avec_reessai(

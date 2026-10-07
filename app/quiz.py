@@ -370,6 +370,23 @@ def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List
     return tentative
 
 
+def difficulte_revision_adaptative(progression: Optional[ProgressionNotion]) -> str:
+    """Choisit une difficulté de révision selon la maîtrise actuelle.
+
+    Fragile -> facile pour reconstruire les bases, intermédiaire -> moyen,
+    solide -> difficile pour éviter de plafonner à une suite d'exercices trop
+    simples.
+    """
+    if progression is None:
+        return "Moyen"
+    score = _score_maitrise_effectif(progression)
+    if score < 50:
+        return "Facile"
+    if score < 75:
+        return "Moyen"
+    return "Difficile"
+
+
 def creer_tentative_ciblee(
     session: Session,
     utilisateur: Utilisateur,
@@ -377,13 +394,25 @@ def creer_tentative_ciblee(
     niveau: str,
     notion: str,
     nb_questions: int = 5,
+    progression: Optional[ProgressionNotion] = None,
 ) -> TentativeQuiz:
-    """Construit un quiz court centre sur une faiblesse detectee."""
-    matiere = valider_parametres(matiere, niveau, "Moyen", nb_questions)
+    """Construit un quiz court centre sur une faiblesse avec difficulté adaptative."""
+    if progression is not None and progression.utilisateur_id != utilisateur.id:
+        progression = None
+
+    difficulte_ciblee = difficulte_revision_adaptative(progression)
+
+    matiere = valider_parametres(matiere, niveau, difficulte_ciblee, nb_questions)
     notion = (notion or "").strip()[:100]
     if not notion:
         raise QuizValidationError("La notion ciblee est obligatoire.")
-    questions_ciblees = ai_quiz.generer_quiz_cible(matiere, niveau, notion, nb_questions)
+    questions_ciblees = ai_quiz.generer_quiz_cible(
+        matiere,
+        niveau,
+        notion,
+        nb_questions,
+        difficulte=difficulte_ciblee,
+    )
     questions_ciblees = valider_questions(
         questions_ciblees,
         expected_count=nb_questions,
@@ -393,7 +422,7 @@ def creer_tentative_ciblee(
         utilisateur_id=utilisateur.id,
         matiere=matiere,
         niveau=niveau,
-        difficulte="Moyen",
+        difficulte=difficulte_ciblee,
         nb_questions=len(questions_ciblees),
         questions_json=json.dumps(questions_ciblees, ensure_ascii=False),
     )

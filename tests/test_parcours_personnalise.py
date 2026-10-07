@@ -5,6 +5,7 @@ from app.quiz import (
     mettre_a_jour_progression_notion,
     notions_a_revoir,
     plan_revision_du_jour,
+    difficulte_revision_adaptative,
 )
 from app.quiz_validation import valider_questions
 
@@ -160,3 +161,14 @@ def test_plan_du_jour_priorise_une_revision_arrivee_a_echeance():
     resultats = plan_revision_du_jour(session, 7, limit=2)
 
     assert [p.id for p in resultats] == [1, 2]
+
+
+def test_difficulte_de_revision_s_adapte_a_la_maitrise():
+    fragile = ProgressionNotion(score_maitrise=35)
+    moyenne = ProgressionNotion(score_maitrise=62)
+    solide = ProgressionNotion(score_maitrise=86)
+
+    assert difficulte_revision_adaptative(fragile) == "Facile"
+    assert difficulte_revision_adaptative(moyenne) == "Moyen"
+    assert difficulte_revision_adaptative(solide) == "Difficile"
+    assert difficulte_revision_adaptative(None) == "Moyen"
