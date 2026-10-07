@@ -106,7 +106,9 @@ const historyElement = historyHost.querySelector('[data-rendu]');
 const historySample = String.raw`Explique-moi Continuité des rotations : L=6\\,\\text{m}, 0\\le x\\le 3\\,\\text{m}, M_1(x)=5\\,\\text{kN}\\cdot\\text{m}. Matrice : \\begin{pmatrix}1 & 0\\\\2 & 1\\end{pmatrix}`;
 window.rendreReponseIA(historySample, historyElement, { enLigne: true });
 const historyClone = historyElement.cloneNode(true);
-historyClone.querySelectorAll('.katex').forEach((node) => node.remove());
+historyClone
+  .querySelectorAll('.katex, .gm-katex, .gm-latex-fallback')
+  .forEach((node) => node.remove());
 const historyVisible = historyClone.textContent || '';
 for (const commande of ['\\\\text', '\\\\cdot', '\\\\begin', '\\\\end']) {
   if (historyVisible.includes(commande)) {
