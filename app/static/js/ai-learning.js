@@ -29,8 +29,11 @@
     const chronoCarte = document.querySelector("[data-quiz-timer-card]");
     const chrono = document.querySelector("[data-quiz-timer]");
     const secondesInitiales = Number(formulaire.dataset.examenSecondes || 0);
+    const adaptatif = formulaire.dataset.quizAdaptatif === "1";
+    const tentativeId = Number(formulaire.dataset.quizTentativeId || 0);
     let secondes = secondesInitiales;
     let timer = null;
+    let envoiAdaptatif = false;
 
     function reponsesCount() {
       return questions.reduce(function (totalCourant, question) {
@@ -58,10 +61,12 @@
     function afficherQuestion(index) {
       const cible = questions[index];
       if (!cible) return;
-      cible.scrollIntoView({ behavior: "smooth", block: "start" });
       questions.forEach(function (question) {
-        question.classList.toggle("is-current", question === cible);
+        const active = question === cible;
+        question.classList.toggle("is-current", active);
+        if (adaptatif) question.hidden = !active;
       });
+      cible.scrollIntoView({ behavior: "smooth", block: "start" });
       if (nav) {
         nav.querySelectorAll("[data-nav-index]").forEach(function (item) {
           item.classList.toggle("is-current", Number(item.dataset.navIndex) === index);
@@ -78,6 +83,10 @@
         bouton.textContent = String(index + 1);
         bouton.setAttribute("aria-label", "Aller à la question " + (index + 1));
         bouton.addEventListener("click", function () {
+          if (adaptatif && !question.querySelector("input[type=radio]:checked") &&
+              !question.classList.contains("is-current")) {
+            return;
+          }
           afficherQuestion(index);
         });
         nav.appendChild(bouton);
@@ -86,9 +95,71 @@
 
     formulaire.addEventListener("change", function () {
       majProgression();
+      if (!adaptatif || envoiAdaptatif) return;
+      const question = questions.find(function (item) {
+        return item.classList.contains("is-current");
+      });
+      if (question) {
+        window.setTimeout(function () {
+          envoyerReponseAdaptative(question);
+        }, 120);
+      }
     });
 
-    formulaire.addEventListener("submit", function () {
+    async function envoyerReponseAdaptative(question) {
+      if (!adaptatif || !tentativeId || envoiAdaptatif) return;
+      const input = question.querySelector("input[type=radio]:checked");
+      if (!input) return;
+
+      envoiAdaptatif = true;
+      question.querySelectorAll("input[type=radio]").forEach(function (radio) {
+        radio.disabled = true;
+      });
+
+      try {
+        const body = new URLSearchParams();
+        body.set("_csrf", document.querySelector('#form-quiz input[name="_csrf"]')?.value || "");
+        body.set("question_index", question.dataset.quizIndex);
+        body.set("reponse", input.value);
+
+        const response = await fetch("/quiz/" + tentativeId + "/repondre", {
+          method: "POST",
+          headers: {"X-Requested-With": "XMLHttpRequest"},
+          body: body,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "La réponse adaptative n'a pas pu être enregistrée.");
+
+        majProgression();
+        if (data.termine) {
+          const bouton = document.querySelector("[data-quiz-submit]");
+          if (bouton) {
+            bouton.disabled = true;
+            bouton.textContent = "Validation…";
+          }
+          formulaire.requestSubmit();
+          return;
+        }
+
+        if (typeof data.prochaine_question === "number") {
+          afficherQuestion(data.prochaine_question);
+        }
+      } catch (erreur) {
+        question.querySelectorAll("input[type=radio]").forEach(function (radio) {
+          radio.disabled = false;
+        });
+        const aide = document.querySelector(".quiz-submit-help");
+        if (aide) aide.textContent = erreur.message || "Impossible d'enregistrer la réponse. Réessaie.";
+      } finally {
+        envoiAdaptatif = false;
+      }
+    }
+
+    formulaire.addEventListener("submit", function (event) {
+      if (adaptatif && reponsesCount() < total) {
+        event.preventDefault();
+        return;
+      }
       const bouton = document.querySelector("[data-quiz-submit]");
       if (bouton && !bouton.disabled) {
         bouton.disabled = true;
@@ -147,7 +218,14 @@
     });
 
     majProgression();
-    afficherQuestion(0);
+    if (adaptatif) {
+      const premierNonRepondu = questions.findIndex(function (question) {
+        return !question.querySelector("input[type=radio]:checked");
+      });
+      afficherQuestion(premierNonRepondu >= 0 ? premierNonRepondu : 0);
+    } else {
+      afficherQuestion(0);
+    }
     demarrerChrono();
   }
 
