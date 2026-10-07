@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 """
 Generation de quiz par IA a partir du texte d'un document, via l'API Groq.
 
