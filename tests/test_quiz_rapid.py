@@ -288,7 +288,6 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
     session.commit = Mock()
     session.refresh = Mock()
 
-    quiz.valider_parametres = lambda matiere, niveau, difficulte, nb: matiere
     original = quiz._generer_quiz_rapide
     original_validator = quiz.valider_questions
     try:
