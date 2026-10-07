@@ -97,34 +97,33 @@ if (tuteurHost.querySelectorAll('.katex').length < 3) {
   throw new Error('Naked Tuteur LaTeX was not rendered into KaTeX');
 }
 
-// Régression historique Tuteur : la carte compacte ne doit plus afficher
-// de LaTeX/Markdown brut. On valide le résumé directement dans le DOM.
-const historyDom = new JSDOM('<!doctype html><html><body><div class="ai-tuteur-history-question" data-ai-resume></div></body></html>', {
-  url: 'http://localhost/',
-  runScripts: 'outside-only',
-});
-const historyContext = {
-  window: historyDom.window,
-  document: historyDom.window.document,
-  NodeFilter: historyDom.window.NodeFilter,
-  console,
-  setTimeout,
-  clearTimeout,
-};
-const historyElement = historyDom.window.document.querySelector('[data-ai-resume]');
-historyElement.setAttribute(
-  'data-ai-resume',
-  String.raw`Explique-moi Continuité des rotations : L=6\,\text{m}, 0\le x\le 3\,\text{m}, M_1(x)=5\,\text{kN}\cdot\text{m}.
-Matrice : \begin{pmatrix}1 & 0\\2 & 1\end{pmatrix}`
-);
-vm.runInNewContext(aiLearningSource, historyContext, { filename: 'ai-learning.js' });
-await new Promise((resolve) => setTimeout(resolve, 0));
-const historyVisible = historyElement.textContent || '';
-if (/\\\\/.test(historyVisible) || historyVisible.includes('$')) {
-  throw new Error('Raw LaTeX or math delimiters remain visible in history summary');
+// Régression historique Tuteur : la carte utilise maintenant le renderer
+// commun, exactement comme la réponse complète.
+const historyHost = window.document.createElement('div');
+historyHost.innerHTML = '<div class="ai-tuteur-history-question" data-rendu data-rendu-ligne></div>';
+window.document.body.appendChild(historyHost);
+const historyElement = historyHost.querySelector('[data-rendu]');
+const historySample = String.raw`Explique-moi Continuité des rotations : L=6\\,\\text{m}, 0\\le x\\le 3\\,\\text{m}, M_1(x)=5\\,\\text{kN}\\cdot\\text{m}. Matrice : \\begin{pmatrix}1 & 0\\\\2 & 1\\end{pmatrix}`;
+window.rendreReponseIA(historySample, historyElement, { enLigne: true });
+const historyClone = historyElement.cloneNode(true);
+historyClone
+  .querySelectorAll('.katex, .gm-katex, .gm-latex-fallback')
+  .forEach((node) => node.remove());
+const historyVisible = historyClone.textContent || '';
+for (const commande of ['\\\\text', '\\\\cdot', '\\\\begin', '\\\\end']) {
+  if (historyVisible.includes(commande)) {
+    throw new Error(`Raw LaTeX command remains in Tutor history: ${commande}`);
+  }
 }
-if (!historyVisible.includes('L=6') || !historyVisible.includes('kN')) {
-  throw new Error('History summary lost the useful mathematical context');
+if (historyElement.querySelectorAll('.katex').length < 3) {
+  throw new Error('Tutor history LaTeX was not rendered');
+}
+
+// Régression anti-double-rendu : l'annotation LaTeX de KaTeX ne doit pas
+// être retraitée par le filet de sécurité naked-LaTeX.
+const nested = historyElement.querySelectorAll('.katex .gm-latex-fallback, .katex .gm-katex');
+if (nested.length) {
+  throw new Error('Renderer reprocessed KaTeX output');
 }
 
 // Mode dégradé
@@ -166,7 +165,10 @@ window.rendreReponseIA(codeSource, codeHost);
 const code = codeHost.querySelector('pre code');
 const expectedCode = codeSource.split('\n').slice(2, 5).join('\n') + '\n';
 if (!code || code.textContent !== expectedCode) {
-  throw new Error('Code block was modified by the math pipeline');
+  throw new Error(
+    'Code block was modified by the math pipeline: ' +
+    JSON.stringify({ expected: expectedCode, got: code ? code.textContent : null })
+  );
 }
 if (code.querySelector('.katex')) {
   throw new Error('KaTeX rendered inside code');

@@ -45,7 +45,7 @@ def test_pages_ia_exposent_le_texte_brut_au_renderer():
         "app/templates/quiz.html",
         "app/templates/quiz_passer.html",
         "app/templates/quiz_resultat.html",
-        "app/templates/admin_moderation_quiz.html"
+        "app/templates/admin_moderation_quiz.html",
     ):
         page = (ROOT / path).read_text(encoding="utf-8")
         assert "data-rendu" in page
@@ -118,3 +118,24 @@ def test_mes_revisions_ne_reference_plus_ancienne_liste_tuteur():
     source = (ROOT / "app/routers/revisions_router.py").read_text(encoding="utf-8")
     assert '"nb_sessions_tuteur": nb_sessions_tuteur' in source
     assert 'len(sessions_tuteur)' not in source
+
+
+def test_tuteur_historique_utilise_le_renderer_commun():
+    page = (ROOT / "app/templates/tuteur.html").read_text(encoding="utf-8")
+    assert 'class="ai-tuteur-history-question" data-rendu data-rendu-ligne' in page
+    assert "data-ai-resume" not in page
+
+
+def test_interactions_ia_n_ont_plus_de_renderer_texte_legacy():
+    js = (ROOT / "app/static/js/ai-learning.js").read_text(encoding="utf-8")
+    assert "resumeIAPlain" not in js
+    assert "initialiserResumeHistoriqueTuteur" not in js
+
+
+def test_renderer_protege_le_dom_katex_contre_un_second_passage():
+    js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
+    assert '".katex, .gm-katex, .gm-latex-fallback, math, annotation, CODE, PRE"' not in js
+    assert 'ancetre.classList.contains("katex")' in js
+    assert 'ancetre.classList.contains("gm-katex")' in js
+    assert 'ancetre.classList.contains("gm-latex-fallback")' in js
+    assert 'cible.dataset.renduVersion = "5"' in js

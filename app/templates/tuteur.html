@@ -166,7 +166,7 @@
         aria-label="Ouvrir la session du {{ s.date_creation.strftime("%d/%m/%Y à %H:%M") }}"
       >
         <span class="ai-tuteur-history-date">{{ s.date_creation.strftime("%d/%m/%Y %H:%M") }}</span>
-        <div class="ai-tuteur-history-question" data-ai-resume="{{ s.question }}"></div>
+        <div class="ai-tuteur-history-question" data-rendu data-rendu-ligne>{{ s.question[:300] }}{% if s.question|length > 300 %}…{% endif %}</div>
         <span class="ai-tuteur-history-open" aria-hidden="true">Ouvrir la session <span>→</span></span>
       </a>
       {% endfor %}
