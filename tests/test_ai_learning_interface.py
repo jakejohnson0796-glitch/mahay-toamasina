@@ -145,3 +145,18 @@ def test_tuteur_ne_devient_pas_vide_quand_la_verification_echoue():
     template = lire("app/templates/tuteur_reponse.html")
     assert "Réponse disponible · vérification à confirmer" in template
     assert "Réponse disponible · vérification momentanément indisponible" in template
+
+
+def test_tuteur_livre_la_reponse_avant_la_verification():
+    route = lire("app/routers/tuteur_router.py")
+    assert "verifier=False" in route
+    assert "background_tasks.add_task(" in route
+    assert "verifier_session_tuteur_en_arriere_plan" in route
+
+
+def test_verification_tuteur_background_peut_etre_legere():
+    code = lire("app/ai_quiz.py")
+    ensemble = lire("app/ai_ensemble.py")
+    assert 'strategie="legere"' in code
+    assert 'strategie: str = "standard"' in ensemble
+    assert 'secondary_reviewer_needed(' in ensemble
