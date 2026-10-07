@@ -134,5 +134,8 @@ def test_interactions_ia_n_ont_plus_de_renderer_texte_legacy():
 
 def test_renderer_protege_le_dom_katex_contre_un_second_passage():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
-    assert ".katex, .gm-katex, .gm-latex-fallback" in js
+    assert '".katex, .gm-katex, .gm-latex-fallback, math, annotation, CODE, PRE"' not in js
+    assert 'ancetre.classList.contains("katex")' in js
+    assert 'ancetre.classList.contains("gm-katex")' in js
+    assert 'ancetre.classList.contains("gm-latex-fallback")' in js
     assert 'cible.dataset.renduVersion = "5"' in js
