@@ -345,16 +345,24 @@
     const noeuds = [];
     let noeud;
     while ((noeud = walker.nextNode())) {
-      const parent = noeud.parentElement;
-      if (!parent) continue;
-      // Ne jamais repasser sur le DOM produit par KaTeX : son annotation
-      // contient volontairement la source LaTeX et ne doit pas être traitée
-      // comme un nouveau texte IA.
-      if (
-        parent.closest(
-          ".katex, .gm-katex, .gm-latex-fallback, math, annotation, CODE, PRE"
-        )
-      ) continue;
+      let ancetre = noeud.parentElement;
+      let protege = false;
+      while (ancetre) {
+        // Ne jamais repasser sur le DOM produit par KaTeX ni sur un bloc de
+        // code. On marche toute la chaîne d'ancêtres car certains parseurs
+        // peuvent ajouter un wrapper intermédiaire autour du texte.
+        if (
+          /^(CODE|PRE|MATH|ANNOTATION)$/i.test(ancetre.tagName) ||
+          ancetre.classList.contains("katex") ||
+          ancetre.classList.contains("gm-katex") ||
+          ancetre.classList.contains("gm-latex-fallback")
+        ) {
+          protege = true;
+          break;
+        }
+        ancetre = ancetre.parentElement;
+      }
+      if (protege) continue;
       noeuds.push(noeud);
     }
 
