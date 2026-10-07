@@ -22,7 +22,7 @@ from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
-from ..dependencies import acces_premium_ou_redirection
+from ..dependencies import acces_ia_ou_redirection, acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
 from .. import gamification
 from .. import ai_queue
@@ -498,6 +498,37 @@ def fichier_document_moderation(
         content=contenu,
         media_type=mime,
         headers={"Content-Disposition": f'inline; filename="{nom}"'},
+    )
+
+
+@router.get("/documents/{document_id}/apprendre")
+def parcours_document(request: Request, document_id: int, session: Session = Depends(get_session)):
+    """Hub d'apprentissage d'un document approuvé.
+
+    Il ne remplace aucun flux existant : il ajoute un point d'entrée qui
+    relie lecture, quiz et Tuteur contextualisé autour de la même ressource.
+    """
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    document = session.get(Document, document_id)
+    if not document or document.statut != StatutDocument.APPROUVE:
+        return RedirectResponse("/documents", status_code=303)
+
+    if document.cercle_id is not None and (
+        not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id)
+    ):
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+
+    return templates.TemplateResponse(
+        "document_parcours.html",
+        {
+            "request": request,
+            "utilisateur": utilisateur,
+            "document": document,
+        },
     )
 
 

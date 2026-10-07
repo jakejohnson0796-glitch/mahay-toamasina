@@ -77,7 +77,10 @@ session dediee, avec sa propre verification desktop+mobile.
     <p class="doc-ref">{{ doc.reference }}</p>
     <div class="doc-actions">
       <a class="bouton bouton-secondaire doc-bouton" href="/documents/{{ doc.id }}/telecharger">Telecharger</a>
-      {% if utilisateur %}<a class="doc-lien-quiz" href="/documents/{{ doc.id }}/quiz">Quiz IA &rarr;</a>{% endif %}
+      {% if utilisateur %}
+      <a class="doc-lien-quiz" href="/documents/{{ doc.id }}/quiz">Quiz IA &rarr;</a>
+      <a class="doc-lien-quiz" href="/documents/{{ doc.id }}/apprendre">Parcours &rarr;</a>
+      {% endif %}
     </div>
   </div>
   {% endfor %}
