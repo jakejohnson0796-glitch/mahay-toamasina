@@ -12,7 +12,7 @@ def test_reparation_tuteur_reprend_une_session_trop_longtemps_en_attente(monkeyp
         connect_args={"check_same_thread": False},
     )
     SQLModel.metadata.create_all(engine)
-    monkeypatch.setattr(ai_quiz, "engine", engine)
+    monkeypatch.setattr("app.database.engine", engine)
 
     with Session(engine) as session:
         utilisateur = Utilisateur(
