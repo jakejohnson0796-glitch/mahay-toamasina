@@ -120,15 +120,14 @@ def creer_tentative(
     difficulte: str,
     nb_questions: int,
 ) -> TentativeQuiz:
-    """Genere les questions via l'IA, valide localement puis cree la tentative.
+    """Genere et publie rapidement un quiz après validation locale.
 
-    La relecture multi-modeles n'est volontairement pas executee ici :
-    elle est declenchee en arriere-plan une fois la reponse HTTP envoyee,
-    afin que l'etudiant puisse commencer sans attendre les modeles critiques
-    et l'arbitre."""
+    La vérification multi-modèles est volontairement hors du chemin HTTP :
+    la route met ensuite la tentative en file via ai_queue. Cela évite de
+    faire attendre l'étudiant pendant les critiques/arbitrages Gemini/Groq.
+    """
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
     derniere_erreur = None
-    questions_verifiees = None
 
     for essai in range(2):
         try:
@@ -138,42 +137,39 @@ def creer_tentative(
                 difficulte,
                 nb_questions,
             )
-            questions_verifiees = _verifier_questions_avant_stockage(
+            questions_validees = valider_questions(
                 questions_generees,
-                matiere,
-                niveau,
+                expected_count=nb_questions,
+                strict_coherence=True,
             )
-            if len(questions_verifiees) != nb_questions:
+            if len(questions_validees) != nb_questions:
                 raise QuizValidationError(
                     "Le nombre de questions générées est incorrect."
                 )
-            break
+
+            tentative = TentativeQuiz(
+                utilisateur_id=utilisateur.id,
+                matiere=matiere,
+                niveau=niveau,
+                difficulte=difficulte,
+                nb_questions=len(questions_validees),
+                questions_json=json.dumps(questions_validees, ensure_ascii=False),
+            )
+            session.add(tentative)
+            session.commit()
+            session.refresh(tentative)
+            return tentative
         except QuizValidationError as erreur:
             derniere_erreur = erreur
             logger.warning(
-                "Generation/quality gate quiz échoué (essai %s/2): %s",
+                "Generation quiz rapide invalide (essai %s/2): %s",
                 essai + 1,
                 erreur,
             )
 
-    if questions_verifiees is None:
-        raise QuizValidationError(
-            "Impossible de générer un quiz confirmé après deux tentatives."
-        ) from derniere_erreur
-
-    tentative = TentativeQuiz(
-        utilisateur_id=utilisateur.id,
-        matiere=matiere,
-        niveau=niveau,
-        difficulte=difficulte,
-        nb_questions=len(questions_verifiees),
-        questions_json=json.dumps(questions_verifiees, ensure_ascii=False),
-    )
-    session.add(tentative)
-    session.commit()
-    session.refresh(tentative)
-    return tentative
-
+    raise QuizValidationError(
+        "Impossible de générer un quiz conforme après deux tentatives."
+    ) from derniere_erreur
 
 def questions(tentative: TentativeQuiz) -> List[dict]:
     # MODIF : compatibilité durable avec les anciennes tentatives et avec toute
@@ -388,19 +384,18 @@ def creer_tentative_ciblee(
     if not notion:
         raise QuizValidationError("La notion ciblee est obligatoire.")
     questions_ciblees = ai_quiz.generer_quiz_cible(matiere, niveau, notion, nb_questions)
-    questions_ciblees = valider_questions(questions_ciblees, expected_count=nb_questions)
-    questions_verifiees = _verifier_questions_avant_stockage(
+    questions_ciblees = valider_questions(
         questions_ciblees,
-        matiere,
-        niveau,
+        expected_count=nb_questions,
+        strict_coherence=True,
     )
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
         matiere=matiere,
         niveau=niveau,
         difficulte="Moyen",
-        nb_questions=len(questions_verifiees),
-        questions_json=json.dumps(questions_verifiees, ensure_ascii=False),
+        nb_questions=len(questions_ciblees),
+        questions_json=json.dumps(questions_ciblees, ensure_ascii=False),
     )
     session.add(tentative)
     session.commit()
