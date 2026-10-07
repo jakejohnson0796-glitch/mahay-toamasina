@@ -141,6 +141,12 @@
           <span><strong>{{ n.nb_erreurs }}</strong> erreur{{ "s" if n.nb_erreurs != 1 else "" }}</span>
           <span><strong>{{ n.nb_questions }}</strong> question{{ "s" if n.nb_questions != 1 else "" }}</span>
         </div>
+        <p class="hub-notion-date">
+          Niveau du prochain entraînement ·
+          <strong>
+            {% if n.score_maitrise < 50 %}Facile{% elif n.score_maitrise < 75 %}Moyen{% else %}Difficile{% endif %}
+          </strong>
+        </p>
         {% if n.prochaine_revision_le %}<p class="hub-notion-date">Prochaine révision · {{ n.prochaine_revision_le.strftime("%d/%m/%Y") }}</p>{% endif %}
         <div class="hub-notion-actions">
           {% if n.nb_erreurs > 0 %}
