@@ -114,6 +114,23 @@
         </div>
         {% endif %}
 
+        {% if not correcte %}
+        <div class="ai-error-recovery">
+          <form method="post" action="/tuteur/demander" class="ai-inline-action">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            {% if progressions_par_question[q_index] %}
+            <input type="hidden" name="progression_id" value="{{ progressions_par_question[q_index] }}">
+            {% endif %}
+            <input
+              type="hidden"
+              name="question"
+              value="J'ai fait cette erreur dans un quiz de {{ tentative.matiere }} (niveau {{ tentative.niveau }}). Aide-moi à comprendre précisément mon erreur et à la corriger. Question : {{ item.question }}. Ma réponse : {{ item.choix[reponse_donnee] if reponse_donnee is not none and item.choix and reponse_donnee < item.choix|length else 'sans réponse' }}. Bonne réponse : {{ item.choix[item.index_bonne_reponse] if item.choix and item.index_bonne_reponse < item.choix|length else 'non précisée' }}. Explication du quiz : {{ item.explication or 'non précisée' }}. Commence par m'expliquer l'erreur, puis donne-moi un mini-exercice analogue sans révéler sa réponse immédiatement."
+            >
+            <button class="bouton bouton-secondaire" type="submit">Comprendre cette erreur avec le Tuteur</button>
+          </form>
+        </div>
+        {% endif %}
+
         <form method="post" action="/quiz/{{ tentative.id }}/questions/{{ q_index }}/signaler" class="ai-flag-form">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button type="submit">Signaler cette question si la réponse ou l'explication semble incorrecte</button>
