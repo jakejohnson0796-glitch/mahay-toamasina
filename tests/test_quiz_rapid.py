@@ -291,7 +291,8 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
     original = quiz._generer_quiz_rapide
     original_validator = quiz.valider_questions
     try:
-        quiz._generer_quiz_rapide = lambda *args, **kwargs: _questions()
+        questions_cinq = _questions() * 5
+        quiz._generer_quiz_rapide = lambda *args, **kwargs: questions_cinq
         quiz.valider_questions = lambda questions, **kwargs: questions
 
         resultat = quiz.creer_tentative(
@@ -300,9 +301,9 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
             "Mathématiques",
             "L1",
             "Moyen",
-            1,
+            5,
         )
-        assert resultat.nb_questions == 1
+        assert resultat.nb_questions == 5
         assert json.loads(resultat.questions_json)[0]["question"] == "2 + 2 = ?"
     finally:
         quiz._generer_quiz_rapide = original
