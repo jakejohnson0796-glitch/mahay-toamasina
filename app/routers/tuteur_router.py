@@ -36,6 +36,27 @@ def _utilisateur_membre_cercle(session: Session, cercle_id: Optional[int], utili
     ).first() is not None
 
 
+def _contexte_progression_tuteur(progression: ProgressionNotion) -> str:
+    """Construit un contexte pédagogique compact à partir de la mémoire de la notion."""
+    score = max(0, min(100, int(progression.score_maitrise or 0)))
+    prochaine = (
+        progression.prochaine_revision_le.strftime("%d/%m/%Y")
+        if progression.prochaine_revision_le
+        else "dès maintenant"
+    )
+    statut = "fragile" if score < 50 else ("en cours d'acquisition" if score < 75 else "plutôt maîtrisée")
+    return (
+        "MEMOIRE D'APPRENTISSAGE — cette notion a déjà été travaillée par cet étudiant. "
+        f"Notion={progression.notion}; matière={progression.matiere}; niveau={progression.niveau or 'non précisé'}; "
+        f"maîtrise={score}%; questions={progression.nb_questions}; réussites={progression.nb_reussites}; "
+        f"erreurs={progression.nb_erreurs}; série actuelle={progression.serie_reussites}; "
+        f"statut={statut}; prochaine révision={prochaine}. "
+        "Adapte la pédagogie à cet historique : rappelle les erreurs à éviter, "
+        "ne redonne pas mécaniquement la même explication, et termine par un exercice "
+        "court permettant de vérifier la compréhension."
+    )
+
+
 def _extrait_document_pertinent(document: Document, question: str) -> str:
     """Extrait localement quelques passages d'un document approuvé.
 
@@ -126,9 +147,16 @@ def demander_tuteur(
 
     progression = None
     if progression_id:
-        progression = session.get(ProgressionNotion, progression_id)
-        if not progression or progression.utilisateur_id != utilisateur.id or progression.nb_erreurs <= 0:
-            progression = None
+        candidat_progression = session.get(ProgressionNotion, progression_id)
+        if (
+            candidat_progression
+            and candidat_progression.utilisateur_id == utilisateur.id
+            and (
+                candidat_progression.nb_erreurs > 0
+                or quiz_module.revision_due(candidat_progression)
+            )
+        ):
+            progression = candidat_progression
 
     document_source = None
     if document_id:
@@ -142,6 +170,13 @@ def demander_tuteur(
 
     question_pour_ia = question
     matiere_pour_ia = progression.matiere if progression else None
+
+    if progression:
+        question_pour_ia = (
+            f"{question}\n\n"
+            f"{_contexte_progression_tuteur(progression)}"
+        )
+
     if document_source:
         extrait = _extrait_document_pertinent(document_source, question)
         matiere_pour_ia = matiere_pour_ia or document_source.matiere
@@ -155,6 +190,13 @@ def demander_tuteur(
                 "Si l'extrait est insuffisant, indique-le clairement.\n\n"
                 f"EXTRAIT :\n{extrait}"
             )
+
+    if document_source and progression:
+        question_pour_ia = (
+            f"{question_pour_ia}\n\n"
+            "Le contexte documentaire et la mémoire d'apprentissage sont complémentaires : "
+            "utilise le document comme source de contenu et l'historique comme source de personnalisation."
+        )
 
     reponse = ai_quiz.generer_reponse_tuteur(
         question_pour_ia,
@@ -258,9 +300,16 @@ def page_reponse_tuteur(request: Request, session_id: int, session: Session = De
 
     # MODIF : le template reçoit aussi les contenus canonisés pour éviter
     # que les anciennes sessions affichent des marqueurs de transport.
+    progression = (
+        session.get(ProgressionNotion, session_tuteur.progression_id)
+        if session_tuteur.progression_id
+        else None
+    )
+
     session_vue = dict(
         utilisateur=utilisateur,
         session_tuteur=session_tuteur,
+        progression_tuteur=progression,
         contenu_tuteur=normaliser_structure_tuteur({
             "explication": session_tuteur.explication,
             "exemple": session_tuteur.exemple,

@@ -179,3 +179,19 @@ def test_verification_tuteur_background_peut_etre_legere():
     assert 'strategie="legere"' in code
     assert 'strategie: str = "standard"' in ensemble
     assert 'secondary_reviewer_needed(' in ensemble
+
+
+def test_tuteur_utilise_la_memoire_de_progression():
+    route = lire("app/routers/tuteur_router.py")
+    template = lire("app/templates/tuteur_reponse.html")
+    assert "_contexte_progression_tuteur" in route
+    assert "score_maitrise" in route
+    assert "nb_erreurs" in route
+    assert "MEMOIRE D'APPRENTISSAGE" in route
+    assert "Mémoire d'apprentissage" in template
+
+
+def test_revision_due_peut_desormais_ouvrir_le_tuteur_sans_erreur():
+    route = lire("app/routers/tuteur_router.py")
+    assert "or quiz_module.revision_due(candidat_progression)" in route
+    assert "candidat_progression.nb_erreurs > 0" in route
