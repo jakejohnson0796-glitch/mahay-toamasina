@@ -76,6 +76,40 @@
       <p class="tb-routine-finale">Routine terminée aujourd’hui. Bravo pour la régularité — à demain pour la prochaine session.</p>
     </section>
 
+    {% if prochaine_revision %}
+    {% set prochaine_notion = prochaine_revision[0] %}
+    <section class="tb-carte-reprendre tb-carte-reprendre-adaptatif" aria-labelledby="prochaine-action-title">
+      <p class="tb-etiquette-carte">Prochaine action recommandée</p>
+      <div class="tb-reprendre-corps">
+        <span class="tb-reprendre-icone">{{ icone("tuteur", 22) }}</span>
+        <div class="tb-reprendre-infos">
+          <h2 class="tb-reprendre-titre" id="prochaine-action-title">{{ prochaine_notion.notion }}</h2>
+          <p class="tb-reprendre-meta">{{ prochaine_notion.matiere }}{% if prochaine_notion.niveau %} · {{ prochaine_notion.niveau }}{% endif %} · maîtrise {{ prochaine_notion.score_maitrise }}%</p>
+          <p class="tb-reprendre-delai">
+            {% if prochaine_notion.nb_erreurs > 0 %}
+            Cette notion a encore {{ prochaine_notion.nb_erreurs }} erreur{{ "s" if prochaine_notion.nb_erreurs != 1 else "" }} à consolider.
+            {% else %}
+            Cette notion arrive à son échéance de révision espacée.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div class="tb-gamification-actions">
+        <form method="post" action="/tuteur/demander" class="tb-adaptatif-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="progression_id" value="{{ prochaine_notion.id }}">
+          <input type="hidden" name="question" value="Aide-moi à réviser {{ prochaine_notion.notion }} en {{ prochaine_notion.matiere }}. Pars de mes erreurs récentes et propose une explication puis un exercice progressif.">
+          <button class="bouton bouton-primaire" type="submit">Comprendre</button>
+        </form>
+        <form method="post" action="/quiz/cible" class="tb-adaptatif-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="progression_id" value="{{ prochaine_notion.id }}">
+          <button class="bouton bouton-secondaire" type="submit">M'entraîner</button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+
     {% if gamification is defined %}
     <section class="tb-gamification" aria-labelledby="dashboard-gamification-title">
       <div class="tb-gamification-main">
