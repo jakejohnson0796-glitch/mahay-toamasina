@@ -88,7 +88,10 @@
         <strong>Tu n'as aucune notion faible détectée.</strong>
         <span>Refais un examen plus difficile pour vérifier que le niveau tient dans la durée.</span>
       </div>
-      <a class="bouton bouton-primaire" href="/quiz/examen/generer">Refaire un examen</a>
+      <form method="post" action="/quiz/examen/generer" class="ai-inline-action">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <button class="bouton bouton-primaire" type="submit">Refaire un examen</button>
+      </form>
     </div>
     {% endif %}
   </section>
