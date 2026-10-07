@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 """
 Generation de quiz par IA a partir du texte d'un document, via l'API Groq.
 
@@ -856,6 +857,48 @@ def verifier_reponse_tuteur_structuree(
         reponse_secours["_statut_verification"] = "echouee"
         reponse_secours["_erreur_verification"] = str(erreur)[:500]
         return reponse_secours
+
+
+def reparer_verifications_tuteur_en_attente(max_sessions: int = 3, age_minimum_secondes: int = 60) -> int:
+    """Récupère les réponses Tuteur restées en attente après un redémarrage.
+
+    Le chemin normal passe par BackgroundTasks. Cette sécurité supplémentaire
+    ne touche qu'aux sessions encore en attente depuis assez longtemps pour
+    éviter de lancer une seconde vérification pendant une requête normale.
+    """
+    from datetime import datetime, timedelta
+    from sqlmodel import Session, select
+    from .database import engine
+    from .models import SessionTuteur
+
+    seuil = datetime.utcnow() - timedelta(seconds=max(1, age_minimum_secondes))
+    with Session(engine) as session:
+        sessions = session.exec(
+            select(SessionTuteur)
+            .where(
+                SessionTuteur.statut_verification_ia == "en_attente",
+                SessionTuteur.date_creation <= seuil,
+            )
+            .order_by(SessionTuteur.date_creation)
+            .limit(max(1, max_sessions))
+        ).all()
+        ids = [session_tuteur.id for session_tuteur in sessions if session_tuteur.id]
+
+    for session_id in ids:
+        try:
+            verifier_session_tuteur_en_arriere_plan(session_id)
+        except Exception:
+            logger.exception(
+                "Récupération de la vérification Tuteur #%s impossible.",
+                session_id,
+            )
+
+    if ids:
+        logger.info(
+            "Récupération Tuteur: %s session(s) relancée(s) après attente prolongée.",
+            len(ids),
+        )
+    return len(ids)
 
 
 def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
