@@ -80,7 +80,7 @@ def demander_tuteur(
         question,
         notion=progression.notion if progression else None,
         matiere=progression.matiere if progression else None,
-        verifier=True,
+        verifier=False,
     )
     statut_verification = reponse.pop("_statut_verification", "terminee")
     erreur_verification = reponse.pop("_erreur_verification", None)
@@ -114,8 +114,13 @@ def demander_tuteur(
     session.commit()
     session.refresh(session_tuteur)
 
-    # La reponse est verifiee par l'ensemble multi-modeles avant
-    # son enregistrement et son affichage a l'etudiant.
+    # La réponse initiale est livrée immédiatement. La vérification
+    # multi-modèles s'exécute après l'envoi HTTP et mettra à jour la session ;
+    # la page de réponse la récupère via son polling existant.
+    background_tasks.add_task(
+        ai_quiz.verifier_session_tuteur_en_arriere_plan,
+        session_tuteur.id,
+    )
 
     return RedirectResponse(f"/tuteur/{session_tuteur.id}", status_code=303)
 
