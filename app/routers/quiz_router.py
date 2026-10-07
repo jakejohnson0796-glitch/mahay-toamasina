@@ -337,15 +337,14 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
     questions_resultat = quiz_module.questions(tentative)
     reponses_resultat = quiz_module.reponses(tentative) or []
     notions_detectees = []
+    progressions_par_question = []
     vus = set()
     for i, question in enumerate(questions_resultat):
         correcte = i < len(reponses_resultat) and reponses_resultat[i] == question.get("index_bonne_reponse")
         if correcte:
+            progressions_par_question.append(None)
             continue
         notion = (question.get("notion") or "").strip() or f"Notions générales — {tentative.matiere}"
-        if notion in vus:
-            continue
-        vus.add(notion)
         progression = session.exec(
             select(ProgressionNotion).where(
                 ProgressionNotion.utilisateur_id == utilisateur.id,
@@ -353,6 +352,10 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
                 ProgressionNotion.notion == notion,
             )
         ).first()
+        progressions_par_question.append(progression.id if progression else None)
+        if notion in vus:
+            continue
+        vus.add(notion)
         notions_detectees.append({
             "notion": notion,
             "progression_id": progression.id if progression else None,
@@ -367,6 +370,7 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
             "questions": questions_resultat,
             "reponses": reponses_resultat,
             "notions_detectees": notions_detectees,
+            "progressions_par_question": progressions_par_question,
         },
     )
 
