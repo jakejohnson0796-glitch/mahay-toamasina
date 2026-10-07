@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, Depends, Form, BackgroundTasks
 from typing import Optional
+import re
 from fastapi.responses import RedirectResponse
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
@@ -9,7 +10,9 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
-from ..models import SessionTuteur, ProgressionNotion
+from ..models import Document, MembreCercle, SessionTuteur, ProgressionNotion, StatutDocument
+from ..storage import ouvrir_fichier_local
+from ..text_extraction import extraire_texte
 from ..ia_transport import normaliser_structure_tuteur
 from .. import ai_quiz
 from ..rate_limit import limite_depassee
@@ -19,6 +22,56 @@ from .. import gamification
 router = APIRouter()
 
 NB_HISTORIQUE_AFFICHE = 10
+MAX_EXTRAIT_DOCUMENT = 6000
+
+
+def _utilisateur_membre_cercle(session: Session, cercle_id: Optional[int], utilisateur_id: int) -> bool:
+    if cercle_id is None:
+        return True
+    return session.exec(
+        select(MembreCercle).where(
+            MembreCercle.cercle_id == cercle_id,
+            MembreCercle.utilisateur_id == utilisateur_id,
+        )
+    ).first() is not None
+
+
+def _extrait_document_pertinent(document: Document, question: str) -> str:
+    """Extrait localement quelques passages d'un document approuvé.
+
+    On privilégie les blocs contenant des termes significatifs de la question,
+    puis on limite fortement la taille envoyée au modèle afin de préserver la
+    latence. Le texte reste une source de contexte : le Tuteur doit signaler
+    lorsqu'il ne trouve pas l'information plutôt que l'inventer.
+    """
+    try:
+        with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
+            texte = extraire_texte(str(chemin_local)) or ""
+    except Exception:
+        return ""
+
+    texte = re.sub(r"\s+", " ", texte).strip()
+    if not texte:
+        return ""
+
+    blocs = [texte[i:i + 1800] for i in range(0, min(len(texte), 18000), 1800)]
+    termes = {
+        mot.lower()
+        for mot in re.findall(r"[A-Za-zÀ-ÿ0-9]{4,}", question or "")
+        if mot.lower() not in {"avec", "pour", "dans", "cette", "comme", "donne", "aide-moi"}
+    }
+
+    def score(bloc: str) -> int:
+        bas = bloc.lower()
+        return sum(bas.count(mot) for mot in termes)
+
+    blocs_scores = sorted(enumerate(blocs), key=lambda item: (score(item[1]), -item[0]), reverse=True)
+    selection = [bloc for _, bloc in blocs_scores[:3] if score(bloc) > 0]
+    if not selection:
+        selection = blocs[:3]
+
+    extrait = "\n\n".join(selection)
+    return extrait[:MAX_EXTRAIT_DOCUMENT]
 
 
 @router.get("/tuteur")
@@ -54,6 +107,7 @@ def demander_tuteur(
     background_tasks: BackgroundTasks,
     question: str = Form(...),
     progression_id: Optional[int] = Form(None),
+    document_id: Optional[int] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -76,10 +130,36 @@ def demander_tuteur(
         if not progression or progression.utilisateur_id != utilisateur.id or progression.nb_erreurs <= 0:
             progression = None
 
+    document_source = None
+    if document_id:
+        candidat = session.get(Document, document_id)
+        if (
+            candidat
+            and candidat.statut == StatutDocument.APPROUVE
+            and _utilisateur_membre_cercle(session, candidat.cercle_id, utilisateur.id)
+        ):
+            document_source = candidat
+
+    question_pour_ia = question
+    matiere_pour_ia = progression.matiere if progression else None
+    if document_source:
+        extrait = _extrait_document_pertinent(document_source, question)
+        matiere_pour_ia = matiere_pour_ia or document_source.matiere
+        if extrait:
+            question_pour_ia = (
+                f"{question}\n\n"
+                f"SOURCE DOCUMENTAIRE — {document_source.titre} "
+                f"({document_source.matiere}, {document_source.annee})\n"
+                "Utilise prioritairement cet extrait comme source de contexte. "
+                "Ne présente pas une information comme provenant du document si elle n'y figure pas. "
+                "Si l'extrait est insuffisant, indique-le clairement.\n\n"
+                f"EXTRAIT :\n{extrait}"
+            )
+
     reponse = ai_quiz.generer_reponse_tuteur(
-        question,
+        question_pour_ia,
         notion=progression.notion if progression else None,
-        matiere=progression.matiere if progression else None,
+        matiere=matiere_pour_ia,
         verifier=False,
     )
     statut_verification = reponse.pop("_statut_verification", "terminee")
