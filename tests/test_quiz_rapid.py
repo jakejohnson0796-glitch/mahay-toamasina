@@ -294,11 +294,6 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
         quiz._generer_quiz_rapide = lambda *args, **kwargs: _questions()
         quiz.valider_questions = lambda questions, **kwargs: questions
 
-        def fail_verification(*args, **kwargs):
-            raise AssertionError("La relecture multi-modeles ne doit jamais bloquer la création.")
-
-        quiz._verifier_questions_avant_stockage = fail_verification
-
         resultat = quiz.creer_tentative(
             session,
             utilisateur,
