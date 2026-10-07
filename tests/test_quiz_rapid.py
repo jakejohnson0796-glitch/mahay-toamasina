@@ -275,3 +275,36 @@ def test_quality_gate_refuse_un_quiz_non_confirme_quand_ensemble_est_actif(monke
         pass
     else:
         raise AssertionError("Un quiz non confirmé ne doit pas être publié avec l'ensemble actif.")
+
+
+def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
+    import json
+    from unittest.mock import Mock
+    from app import quiz
+
+    utilisateur = Mock(id=23)
+    session = Mock()
+    session.add = Mock()
+    session.commit = Mock()
+    session.refresh = Mock()
+
+    original = quiz._generer_quiz_rapide
+    original_validator = quiz.valider_questions
+    try:
+        questions_cinq = _questions() * 5
+        quiz._generer_quiz_rapide = lambda *args, **kwargs: questions_cinq
+        quiz.valider_questions = lambda questions, **kwargs: questions
+
+        resultat = quiz.creer_tentative(
+            session,
+            utilisateur,
+            "Mathématiques",
+            "L1",
+            "Moyen",
+            5,
+        )
+        assert resultat.nb_questions == 5
+        assert json.loads(resultat.questions_json)[0]["question"] == "2 + 2 = ?"
+    finally:
+        quiz._generer_quiz_rapide = original
+        quiz.valider_questions = original_validator

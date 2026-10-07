@@ -797,6 +797,7 @@ def verifier_reponse_tuteur_structuree(
     question: str,
     notion: Optional[str] = None,
     matiere: Optional[str] = None,
+    strategie: str = "standard",
 ) -> Dict[str, str]:
     """Passe une reponse dans l'ensemble de verification multi-modeles."""
     try:
@@ -806,6 +807,7 @@ def verifier_reponse_tuteur_structuree(
             notion=notion,
             matiere=matiere,
             outil_tuteur=OUTIL_TUTEUR,
+            strategie=strategie,
         )
         resume_audit = _resume_audit_ensemble(audit, confiant_tuteur)
         nb_signaux_memorises = ai_memory.enregistrer_audit_ensemble(
@@ -882,6 +884,7 @@ def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
                 question=session_tuteur.question,
                 notion=session_tuteur.notion,
                 matiere=matiere,
+                strategie="legere",
             )
             session_tuteur.explication = finale.get("explication") or initiale["explication"]
             session_tuteur.exemple = finale.get("exemple") or initiale["exemple"]

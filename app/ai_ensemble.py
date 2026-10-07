@@ -752,6 +752,7 @@ def verifier_tuteur(
     notion: Optional[str],
     matiere: Optional[str],
     outil_tuteur: Dict[str, Any],
+    strategie: str = "standard",
 ) -> Tuple[Dict[str, str], bool, Dict[str, Any]]:
     """Valide une reponse de tuteur avec des critiques independantes.
 
@@ -780,7 +781,7 @@ def verifier_tuteur(
     if cost_controller.secondary_reviewer_needed(
         "tuteur",
         contenu_risque,
-        "standard",
+        strategie,
         qwen,
     ):
         gemini = _critique_tuteur_gemini(reponse, question, notion, matiere)
