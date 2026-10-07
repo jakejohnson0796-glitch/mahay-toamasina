@@ -171,17 +171,162 @@ def creer_tentative(
         "Impossible de générer un quiz conforme après deux tentatives."
     ) from derniere_erreur
 
+def _questions_brutes(tentative: TentativeQuiz) -> tuple[List[dict], bool]:
+    """Lit les deux formats de stockage : liste historique ou paquet adaptatif."""
+    donnees = json.loads(tentative.questions_json)
+    if isinstance(donnees, dict):
+        return list(donnees.get("questions") or []), bool(donnees.get("adaptatif"))
+    return list(donnees or []), False
+
+
+def est_quiz_adaptatif(tentative: TentativeQuiz) -> bool:
+    """Indique si une tentative utilise la navigation adaptative question par question."""
+    _, adaptatif = _questions_brutes(tentative)
+    return adaptatif
+
+
 def questions(tentative: TentativeQuiz) -> List[dict]:
     # MODIF : compatibilité durable avec les anciennes tentatives et avec toute
     # réponse historique qui aurait conservé les marqueurs de transport math.
-    donnees = normaliser_structure_quiz(json.loads(tentative.questions_json))
+    donnees, _ = _questions_brutes(tentative)
+    donnees = normaliser_structure_quiz(donnees)
     return valider_questions(donnees, expected_count=tentative.nb_questions)
+
+
+def _profil_difficultes_adaptatives(nb_questions: int, difficulte_base: str) -> List[str]:
+    profils = {
+        "Facile": ["Facile", "Facile", "Moyen", "Moyen", "Difficile"],
+        "Moyen": ["Facile", "Moyen", "Moyen", "Difficile", "Difficile"],
+        "Difficile": ["Moyen", "Moyen", "Difficile", "Difficile", "Difficile"],
+    }
+    profil = profils.get(difficulte_base, profils["Moyen"])
+    return [profil[i % len(profil)] for i in range(max(1, nb_questions))]
+
+
+def preparer_questions_adaptatives(
+    questions_quiz: List[dict],
+    difficulte_base: str,
+) -> List[dict]:
+    """Garantit un niveau individuel par question, sans modifier le contenu pédagogique."""
+    niveaux = _profil_difficultes_adaptatives(len(questions_quiz), difficulte_base)
+    resultat = []
+    for index, question in enumerate(questions_quiz):
+        item = dict(question)
+        niveau = item.get("difficulte")
+        if niveau not in DIFFICULTES:
+            niveau = niveaux[index]
+        item["difficulte"] = niveau
+        resultat.append(item)
+    return resultat
 
 
 def reponses(tentative: TentativeQuiz) -> Optional[List[Optional[int]]]:
     if not tentative.reponses_json:
         return None
-    return json.loads(tentative.reponses_json)
+    donnees = json.loads(tentative.reponses_json)
+    if isinstance(donnees, dict):
+        return list(donnees.get("reponses") or [])
+    return donnees
+
+
+def etat_adaptatif(tentative: TentativeQuiz) -> dict:
+    """Retourne l'état progressif sans casser les anciennes réponses en liste."""
+    nb = tentative.nb_questions
+    reponses_existantes = [None] * nb
+    ordre: List[int] = []
+    serie_reussites = 0
+    if tentative.reponses_json:
+        donnees = json.loads(tentative.reponses_json)
+        if isinstance(donnees, dict):
+            reponses_existantes[:nb] = list(donnees.get("reponses") or [])[:nb]
+            ordre = [int(i) for i in (donnees.get("ordre") or [])]
+            serie_reussites = int(donnees.get("serie_reussites") or 0)
+        elif isinstance(donnees, list):
+            reponses_existantes[:nb] = donnees[:nb]
+    return {
+        "reponses": reponses_existantes,
+        "ordre": ordre,
+        "serie_reussites": max(0, serie_reussites),
+    }
+
+
+def enregistrer_reponse_adaptative(
+    session: Session,
+    tentative: TentativeQuiz,
+    index_question: int,
+    reponse: Optional[int],
+) -> dict:
+    """Enregistre une réponse et choisit immédiatement la prochaine difficulté."""
+    if not est_quiz_adaptatif(tentative):
+        raise QuizValidationError("Cette tentative n'est pas adaptative.")
+    if tentative.date_soumission is not None:
+        raise QuizValidationError("Le quiz est déjà terminé.")
+
+    questions_quiz = questions(tentative)
+    if not 0 <= index_question < len(questions_quiz):
+        raise QuizValidationError("Index de question invalide.")
+    choix = questions_quiz[index_question].get("choix") or []
+    if reponse is None or isinstance(reponse, bool) or not isinstance(reponse, int) or not 0 <= reponse < len(choix):
+        raise QuizValidationError("Réponse adaptative invalide.")
+
+    etat = etat_adaptatif(tentative)
+    if etat["reponses"][index_question] is not None:
+        raise QuizValidationError("Cette question a déjà été répondue.")
+
+    etat["reponses"][index_question] = reponse
+    etat["ordre"].append(index_question)
+
+    correcte = reponse == questions_quiz[index_question].get("index_bonne_reponse")
+    if correcte:
+        etat["serie_reussites"] += 1
+    else:
+        etat["serie_reussites"] = 0
+
+    niveau_courant = questions_quiz[index_question].get("difficulte", tentative.difficulte)
+    niveau_courant = niveau_courant if niveau_courant in DIFFICULTES else "Moyen"
+    index_niveau = DIFFICULTES.index(niveau_courant)
+
+    if correcte and etat["serie_reussites"] >= 2:
+        niveau_cible = min(len(DIFFICULTES) - 1, index_niveau + 1)
+    elif not correcte:
+        niveau_cible = max(0, index_niveau - 1)
+    else:
+        niveau_cible = index_niveau
+
+    candidats = [
+        i for i, rep in enumerate(etat["reponses"])
+        if rep is None
+    ]
+    suivante = None
+    if candidats:
+        def cle(index: int):
+            niveau = questions_quiz[index].get("difficulte", "Moyen")
+            rang = DIFFICULTES.index(niveau) if niveau in DIFFICULTES else 1
+            direction = -rang if niveau_cible > index_niveau else rang
+            return (abs(rang - niveau_cible), direction, index)
+        suivante = min(candidats, key=cle)
+
+    tentative.reponses_json = json.dumps({
+        "reponses": etat["reponses"],
+        "ordre": etat["ordre"],
+        "serie_reussites": etat["serie_reussites"],
+    })
+    session.add(tentative)
+    session.commit()
+    session.refresh(tentative)
+
+    return {
+        "correcte": correcte,
+        "prochaine_question": suivante,
+        "termine": suivante is None,
+        "difficulte_suivante": (
+            questions_quiz[suivante].get("difficulte", "Moyen")
+            if suivante is not None else None
+        ),
+        "serie_reussites": etat["serie_reussites"],
+        "repondues": sum(rep is not None for rep in etat["reponses"]),
+        "total": len(questions_quiz),
+    }
 
 
 def _score_maitrise_effectif(progression: ProgressionNotion) -> int:
@@ -418,13 +563,20 @@ def creer_tentative_ciblee(
         expected_count=nb_questions,
         strict_coherence=True,
     )
+    questions_ciblees = preparer_questions_adaptatives(
+        questions_ciblees,
+        difficulte_ciblee,
+    )
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
         matiere=matiere,
         niveau=niveau,
         difficulte=difficulte_ciblee,
         nb_questions=len(questions_ciblees),
-        questions_json=json.dumps(questions_ciblees, ensure_ascii=False),
+        questions_json=json.dumps(
+            {"questions": questions_ciblees, "adaptatif": True},
+            ensure_ascii=False,
+        ),
     )
     session.add(tentative)
     session.commit()
