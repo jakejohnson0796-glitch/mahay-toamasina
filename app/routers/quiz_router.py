@@ -221,6 +221,7 @@ def generer_quiz_cible(
             niveau,
             progression.notion,
             nb_questions=5,
+            progression=progression,
         )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
