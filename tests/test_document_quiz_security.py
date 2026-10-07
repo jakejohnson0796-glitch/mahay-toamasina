@@ -105,3 +105,29 @@ def test_soumission_reste_sur_la_page_quiz():
     from pathlib import Path
     contenu = Path(__file__).resolve().parents[1].joinpath("app","routers","quiz_router.py").read_text(encoding="utf-8")
     assert 'return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)' in contenu
+
+
+def test_parcours_document_refuse_un_document_non_approuve(monkeypatch):
+    from types import SimpleNamespace
+    document = SimpleNamespace(statut=StatutDocument.EN_ATTENTE)
+
+    class FakeSession:
+        def get(self, model, identifier):
+            return document
+
+    utilisateur = SimpleNamespace(id=7)
+    monkeypatch.setattr(documents_router, "utilisateur_courant", lambda request, session: utilisateur)
+    monkeypatch.setattr(documents_router, "acces_ia_ou_redirection", lambda utilisateur, session: None)
+
+    response = documents_router.parcours_document(SimpleNamespace(session={}), 42, FakeSession())
+    assert response.status_code == 303
+    assert response.headers["location"] == "/documents"
+
+
+def test_tuteur_peut_recevoir_un_document_source():
+    from pathlib import Path
+    route = Path(__file__).resolve().parents[1].joinpath("app", "routers", "tuteur_router.py").read_text(encoding="utf-8")
+    assert "document_id: Optional[int] = Form(None)" in route
+    assert "StatutDocument.APPROUVE" in route
+    assert "_extrait_document_pertinent" in route
+    assert "SOURCE DOCUMENTAIRE" in route
