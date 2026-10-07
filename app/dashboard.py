@@ -340,6 +340,7 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
 
     gam = gamification.resume(session, utilisateur)
     parcours_demarrage = onboarding.donnees_onboarding(session, utilisateur)
+    prochaine_revision = quiz_module.plan_revision_du_jour(session, utilisateur.id, limit=1)
 
     return {
         "parcours_demarrage": parcours_demarrage,
@@ -368,4 +369,5 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
         "echeances_a_venir": echeances_a_venir(session, utilisateur.id),
         "progression_matieres": progression_matieres(session, utilisateur),
         "notions_a_revoir": quiz_module.plan_revision_du_jour(session, utilisateur.id, limit=6),
+        "prochaine_revision": prochaine_revision,
     }
