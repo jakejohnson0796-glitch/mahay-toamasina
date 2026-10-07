@@ -362,6 +362,21 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
             "progression_id": progression.id if progression else None,
         })
 
+    diagnostic_examen = None
+    if tentative.mode_examen:
+        diagnostic_examen = quiz_module.diagnostic_examen(
+            tentative,
+            nb_erreurs=sum(
+                1
+                for i, question in enumerate(questions_resultat)
+                if not (
+                    i < len(reponses_resultat)
+                    and reponses_resultat[i] == question.get("index_bonne_reponse")
+                )
+            ),
+            nb_notions_faibles=len(notions_detectees),
+        )
+
     return templates.TemplateResponse(
         request,
         "quiz_resultat.html",
@@ -372,6 +387,7 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
             "reponses": reponses_resultat,
             "notions_detectees": notions_detectees,
             "progressions_par_question": progressions_par_question,
+            "diagnostic_examen": diagnostic_examen,
         },
     )
 
