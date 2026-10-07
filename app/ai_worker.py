@@ -14,7 +14,7 @@ import threading
 import time
 from typing import Optional
 
-from . import ai_queue, quiz
+from . import ai_queue, ai_quiz, quiz
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +85,18 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
             if tache is None:
                 if arret is not None and arret.is_set():
                     break
+
+                # Récupère les vérifications Tuteur restées en attente après
+                # un redémarrage du processus web. Une session déjà passée
+                # en "en_cours" n'est pas reprise ici, pour éviter un doublon.
+                try:
+                    ai_quiz.reparer_verifications_tuteur_en_attente(
+                        max_sessions=1,
+                        age_minimum_secondes=60,
+                    )
+                except Exception:
+                    logger.exception("Impossible de récupérer les vérifications Tuteur en attente.")
+
                 delai = (
                     PAUSE_SANS_REDIS_SECONDES
                     if not ai_queue.redis_configure()
