@@ -345,7 +345,16 @@
     const noeuds = [];
     let noeud;
     while ((noeud = walker.nextNode())) {
-      if (noeud.parentElement && /^(CODE|PRE)$/.test(noeud.parentElement.tagName)) continue;
+      const parent = noeud.parentElement;
+      if (!parent) continue;
+      // Ne jamais repasser sur le DOM produit par KaTeX : son annotation
+      // contient volontairement la source LaTeX et ne doit pas être traitée
+      // comme un nouveau texte IA.
+      if (
+        parent.closest(
+          ".katex, .gm-katex, .gm-latex-fallback, math, annotation, CODE, PRE"
+        )
+      ) continue;
       noeuds.push(noeud);
     }
 
@@ -438,7 +447,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "4";
+    cible.dataset.renduVersion = "5";
     cible.dataset.renduDeps = signature;
     return cible;
   }
