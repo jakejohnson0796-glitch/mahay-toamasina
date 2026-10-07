@@ -308,3 +308,46 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
     finally:
         quiz._generer_quiz_rapide = original
         quiz.valider_questions = original_validator
+
+
+def test_quiz_cible_n_utilise_pas_un_budget_inexistant(monkeypatch):
+    from app import ai_quiz
+
+    monkeypatch.setattr(ai_quiz, "_obtenir_client", lambda: object())
+    monkeypatch.setattr(
+        ai_quiz.ai_memory,
+        "contexte_erreurs_recurrentes",
+        lambda **kwargs: "",
+    )
+    captured = {}
+
+    class _Message:
+        tool_calls = []
+
+    class _Choice:
+        message = _Message()
+
+    class _Completion:
+        choices = [_Choice()]
+
+    def fake_completion(client, messages, max_completion_tokens, expected_count):
+        captured["max_completion_tokens"] = max_completion_tokens
+        captured["expected_count"] = expected_count
+        return _Completion(), None
+
+    monkeypatch.setattr(ai_quiz, "_generer_completion_avec_reessai", fake_completion)
+    monkeypatch.setattr(
+        ai_quiz,
+        "_extraire_questions",
+        lambda completion, expected_count=5: _questions()[:expected_count],
+    )
+
+    result = ai_quiz.generer_quiz_cible(
+        "Mathématiques",
+        "L1",
+        "Déterminant d'ordre 2",
+        5,
+    )
+
+    assert result == _questions()[:5]
+    assert captured == {"max_completion_tokens": 2048, "expected_count": 5}
