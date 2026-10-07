@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+
+{% block titre %}Parcours — {{ document.titre }} — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
+{% block contenu %}
+<div class="ai-learning-page">
+  <section class="ai-hero" aria-labelledby="document-parcours-title">
+    <div>
+      <span class="ai-kicker">Mahay Learn · document source</span>
+      <h1 id="document-parcours-title">{{ document.titre }}</h1>
+      <p>
+        Transforme cette ressource en séance d'apprentissage : consulte-la,
+        teste-toi avec un quiz, puis demande au Tuteur IA de t'expliquer les points
+        difficiles en s'appuyant sur le document approuvé.
+      </p>
+      <div class="ai-hero-actions">
+        <a href="/documents/{{ document.id }}/telecharger">Consulter le document</a>
+        <a href="/documents/{{ document.id }}/quiz">Créer un quiz</a>
+      </div>
+    </div>
+
+    <div class="ai-hero-side" aria-label="Informations sur le document">
+      <div class="ai-stat-grid">
+        <div class="ai-stat-card"><strong>{{ document.matiere }}</strong><span>matière</span></div>
+        <div class="ai-stat-card"><strong>{{ document.annee }}</strong><span>année</span></div>
+        <div class="ai-stat-card"><strong>{{ document.type_document.value }}</strong><span>type</span></div>
+        <div class="ai-stat-card"><strong>{{ document.reference }}</strong><span>référence</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ai-section" aria-labelledby="document-parcours-actions">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Parcours recommandé</span>
+        <h2 id="document-parcours-actions">Apprendre à partir de cette ressource</h2>
+        <p>Chaque étape conserve les fonctionnalités existantes et ajoute simplement un chemin plus direct.</p>
+      </div>
+    </div>
+
+    <div class="ai-generation-grid">
+      <article class="ai-panel ai-form-card">
+        <div class="ai-form-header">
+          <div>
+            <h3>1. Consulter</h3>
+            <p>Commence par lire les passages utiles du cours, de la fiche ou de l'annale.</p>
+          </div>
+        </div>
+        <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/telecharger">Ouvrir le document</a>
+      </article>
+
+      <article class="ai-panel ai-form-card">
+        <div class="ai-form-header">
+          <div>
+            <h3>2. Pratiquer</h3>
+            <p>Le quiz existant est conservé et reste généré à partir du texte réel du document.</p>
+          </div>
+        </div>
+        <a class="bouton bouton-primaire" href="/documents/{{ document.id }}/quiz">Lancer le Quiz IA</a>
+      </article>
+
+      <article class="ai-panel ai-form-card">
+        <div class="ai-form-header">
+          <div>
+            <h3>3. Comprendre</h3>
+            <p>Pose une question : le Tuteur reçoit un extrait pertinent du document comme contexte.</p>
+          </div>
+        </div>
+        <form method="post" action="/tuteur/demander" class="ai-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="document_id" value="{{ document.id }}">
+          <textarea name="question" rows="5" maxlength="4000" required placeholder="Ex. Explique-moi les idées essentielles de ce document et montre-moi ce que je dois retenir pour un examen."></textarea>
+          <button class="bouton bouton-primaire" type="submit">Demander au Tuteur IA</button>
+        </form>
+      </article>
+    </div>
+  </section>
+
+  <section class="ai-section">
+    <div class="ai-section-head">
+      <div>
+        <h2>La boucle Mahay</h2>
+        <p><strong>Lire → pratiquer → se tromper → comprendre → refaire.</strong></p>
+      </div>
+    </div>
+    <div class="ai-feature-strip">
+      <div class="ai-feature"><strong>Source approuvée</strong><span>Le document reste soumis à la modération existante.</span></div>
+      <div class="ai-feature"><strong>Quiz IA</strong><span>La génération existante continue d'utiliser le contenu du fichier.</span></div>
+      <div class="ai-feature"><strong>Tuteur contextualisé</strong><span>Le Tuteur reçoit seulement des extraits courts et pertinents pour limiter la latence.</span></div>
+    </div>
+  </section>
+</div>
+{% endblock %}
