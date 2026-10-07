@@ -370,6 +370,23 @@ def corriger(session: Session, tentative: TentativeQuiz, reponses_soumises: List
     return tentative
 
 
+def difficulte_revision_adaptative(progression: Optional[ProgressionNotion]) -> str:
+    """Choisit une difficulté de révision selon la maîtrise actuelle.
+
+    Fragile -> facile pour reconstruire les bases, intermédiaire -> moyen,
+    solide -> difficile pour éviter de plafonner à une suite d'exercices trop
+    simples.
+    """
+    if progression is None:
+        return "Moyen"
+    score = _score_maitrise_effectif(progression)
+    if score < 50:
+        return "Facile"
+    if score < 75:
+        return "Moyen"
+    return "Difficile"
+
+
 def creer_tentative_ciblee(
     session: Session,
     utilisateur: Utilisateur,
@@ -383,13 +400,7 @@ def creer_tentative_ciblee(
     if progression is not None and progression.utilisateur_id != utilisateur.id:
         progression = None
 
-    score = _score_maitrise_effectif(progression) if progression else 50
-    if score < 50:
-        difficulte_ciblee = "Facile"
-    elif score < 75:
-        difficulte_ciblee = "Moyen"
-    else:
-        difficulte_ciblee = "Difficile"
+    difficulte_ciblee = difficulte_revision_adaptative(progression)
 
     matiere = valider_parametres(matiere, niveau, difficulte_ciblee, nb_questions)
     notion = (notion or "").strip()[:100]
