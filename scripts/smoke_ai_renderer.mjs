@@ -165,7 +165,10 @@ window.rendreReponseIA(codeSource, codeHost);
 const code = codeHost.querySelector('pre code');
 const expectedCode = codeSource.split('\n').slice(2, 5).join('\n') + '\n';
 if (!code || code.textContent !== expectedCode) {
-  throw new Error('Code block was modified by the math pipeline');
+  throw new Error(
+    'Code block was modified by the math pipeline: ' +
+    JSON.stringify({ expected: expectedCode, got: code ? code.textContent : null })
+  );
 }
 if (code.querySelector('.katex')) {
   throw new Error('KaTeX rendered inside code');
