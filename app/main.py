@@ -321,6 +321,20 @@ def _initialiser_donnees_apres_demarrage() -> None:
 
 
 
+@app.get("/sw.js", include_in_schema=False)
+def service_worker() -> Response:
+    """Sert le worker à la racine pour lui permettre de contrôler toute l'application."""
+    contenu = (BASE_DIR / "static" / "sw.js").read_text(encoding="utf-8")
+    return PlainTextResponse(
+        contenu,
+        media_type="application/javascript",
+        headers={
+            "Cache-Control": "no-cache",
+            "Service-Worker-Allowed": "/",
+        },
+    )
+
+
 @app.get("/health")
 def health() -> dict:
     """Endpoint de liveness rapide : le processus HTTP est vivant."""
