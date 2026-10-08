@@ -252,8 +252,43 @@
     });
   }
 
+  function normaliserTexteMarkdownLegacy(texte) {
+    let resultat = String(texte == null ? "" : texte);
+    const codes = [];
+
+    // Les blocs/spans de code sont intouchables : une séquence \\n ou
+    // \\textit dans du code doit rester du code.
+    resultat = resultat.replace(/\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60/g, function (match) {
+      const index = codes.push(match) - 1;
+      return "__GASY_AI_CODE_" + index + "__";
+    });
+
+    // Certaines réponses IA arrivent encore avec les deux caractères
+    // « \\n » au lieu d'un vrai saut de ligne. On les décode uniquement
+    // lorsqu'ils introduisent une structure Markdown évidente (liste,
+    // numérotation ou section), pour ne jamais casser une commande LaTeX
+    // légitime comme \\nabla.
+    resultat = resultat
+      .replace(/\\n(?=\\s*[-*•]\\s+)/g, "\n")
+      .replace(/\\n(?=\\s*\\d+[.)]\\s+)/g, "\n")
+      .replace(/\\n(?=\\s*(?:Correction|Exercice|Réponse|Solution|Notion)\\s*:)/gi, "\n")
+      .replace(/\\n\\s*\\n(?=\\s*[A-ZÀ-ÖØ-Þ][^\\n]{0,80}:)/g, "\n\n");
+
+    // Les anciens modèles produisent parfois \\textit{...}/\\emph{...}
+    // hors d'un délimiteur mathématique. Dans Markdown, l'équivalent sûr
+    // est l'italique texte ; on le convertit avant le parsing Marked.
+    resultat = resultat
+      .replace(/\\(?:textit|emph)\\{([^{}]*)\\}/g, "*$1*")
+      .replace(/\\textbf\\{([^{}]*)\\}/g, "**$1**");
+
+    resultat = resultat.replace(/__GASY_AI_CODE_(\d+)__/g, function (_match, index) {
+      return codes[Number(index)] || "";
+    });
+    return resultat;
+  }
+
   function parserMarkdown(brut, enLigne) {
-    let texte = String(brut == null ? "" : brut);
+    let texte = normaliserTexteMarkdownLegacy(brut);
 
     if (enLigne) texte = texte.replace(/(\d)\*(?=\d)/g, "$1\\*");
     if (!window.marked) return { html: false, contenu: texte };
