@@ -117,6 +117,17 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
     while arret is None or not arret.is_set():
         tache = None
         try:
+            # Le lease est surveille independamment de l'activite Redis :
+            # une tache abandonnee par un worker doit pouvoir etre reprise
+            # meme si la file continue de recevoir d'autres messages.
+            maintenant = time.monotonic()
+            if maintenant - dernier_controle_db >= INTERVALLE_FILET_SECURITE_DB:
+                ai_queue.reparer_taches_en_cours_orphelines(
+                    max_taches=5,
+                    age_secondes=600,
+                )
+                dernier_controle_db = maintenant
+
             tache, dernier_controle_db = _obtenir_prochaine_tache(
                 dernier_controle_db
             )
