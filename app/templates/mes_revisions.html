@@ -116,6 +116,39 @@
     {% endif %}
   </section>
 
+  {% if carte_connaissances.nb_notions %}
+  <section class="hub-section knowledge-summary-section" aria-labelledby="knowledge-summary-title">
+    <div class="hub-section-entete">
+      <div>
+        <p class="eyebrow">Nouveau · Carte cognitive</p>
+        <h2 id="knowledge-summary-title">Comprendre l'ordre des notions</h2>
+        <p class="hub-section-sous-titre">
+          Le moteur de maîtrise sait déjà mesurer chaque notion. Cette carte ajoute maintenant
+          les liens entre elles pour repérer les prérequis qui bloquent la suite.
+        </p>
+      </div>
+      <a class="hub-section-entete-action" href="/carte-connaissances">Ouvrir ma carte →</a>
+    </div>
+    {% if carte_connaissances.blocages %}
+    <div class="knowledge-summary-grid">
+      {% for relation in carte_connaissances.blocages[:3] %}
+      <article class="knowledge-summary-card">
+        <span class="knowledge-summary-label">Prérequis fragile</span>
+        <strong>{{ relation.source.notion }}</strong>
+        <span class="knowledge-summary-path">→ {{ relation.target.notion }}</span>
+        <div class="knowledge-summary-score"><b>{{ relation.source.score }}%</b> maîtrise</div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="knowledge-summary-empty">
+      <strong>Aucun blocage de prérequis détecté.</strong>
+      <span>Continue à pratiquer pour que la carte affine progressivement ton parcours.</span>
+    </div>
+    {% endif %}
+  </section>
+{% endif %}
+
   {% if cartes_maitrise %}
   <section class="hub-section hub-maitrise-section" aria-labelledby="passeport-maitrise-title">
     <div class="hub-section-entete hub-maitrise-entete">
