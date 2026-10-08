@@ -904,7 +904,7 @@ def reparer_verifications_tuteur_en_attente(
     from sqlmodel import Session, select
     from sqlalchemy import and_, or_
     from .database import engine
-    from .models import ProgressionNotion, SessionTuteur
+    from .models import SessionTuteur
 
     maintenant = datetime.utcnow()
     seuil_attente = maintenant - timedelta(seconds=max(1, age_minimum_secondes))
@@ -954,7 +954,7 @@ def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
     """Verifie une session deja livree et remplace son contenu si necessaire."""
     from sqlmodel import Session
     from .database import engine
-    from .models import SessionTuteur
+    from .models import ProgressionNotion, SessionTuteur
 
     with Session(engine) as session:
         session_tuteur = session.get(SessionTuteur, session_id)
