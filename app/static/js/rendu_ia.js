@@ -261,10 +261,10 @@
     // numérotation ou section), pour ne jamais casser une commande LaTeX
     // légitime comme \\nabla.
     resultat = resultat
-      .replace(/\\n(?=\\s*[-*•]\\s+)/g, "\\n")
-      .replace(/\\n(?=\\s*\\d+[.)]\\s+)/g, "\\n")
-      .replace(/\\n(?=\\s*(?:Correction|Exercice|Réponse|Solution|Notion)\\s*:)/gi, "\\n")
-      .replace(/\\n\\s*\\n(?=\\s*[A-ZÀ-ÖØ-Þ][^\\n]{0,80}:)/g, "\\n\\n");
+      .replace(/\\n(?=\\s*[-*•]\\s+)/g, "\n")
+      .replace(/\\n(?=\\s*\\d+[.)]\\s+)/g, "\n")
+      .replace(/\\n(?=\\s*(?:Correction|Exercice|Réponse|Solution|Notion)\\s*:)/gi, "\n")
+      .replace(/\\n\\s*\\n(?=\\s*[A-ZÀ-ÖØ-Þ][^\\n]{0,80}:)/g, "\n\n");
 
     // Les anciens modèles produisent parfois \\textit{...}/\\emph{...}
     // hors d'un délimiteur mathématique. Dans Markdown, l'équivalent sûr
