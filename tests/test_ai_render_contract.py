@@ -146,8 +146,8 @@ def test_renderer_decode_les_sauts_de_ligne_ia_legacy_sans_casser_nabla():
     assert "normaliserTexteMarkdownLegacy" in js
     assert r".replace(/\\n(?=\\s*[-*•]\\s+)/g" in js
     assert r".replace(/\\n(?=\\s*\\d+[.)]\\s+)/g" in js
-    # Une commande LaTeX comme \\nabla ne doit jamais etre convertie en saut de ligne.
-    assert r"\\nabla" not in ""  # Documentation du contrat: la regex cible un contexte Markdown.
+    # La commande \\nabla n'apparait pas dans les contextes de liste/numérotation ciblés.
+    assert "légitime comme \\nabla" in js
 
 def test_renderer_convertit_textit_latex_hors_math_en_italique_markdown():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
