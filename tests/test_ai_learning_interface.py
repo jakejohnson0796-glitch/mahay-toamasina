@@ -130,10 +130,10 @@ def test_tuteur_api_ne_prepare_plus_de_html():
     assert '"correction": rendu("correction")' in route
 
 
-def test_route_tuteur_persiste_le_statut_de_verification():
+def test_route_tuteur_planifie_une_verification_durable():
     route = lire("app/routers/tuteur_router.py")
-    assert 'statut_verification = reponse.pop("_statut_verification", "terminee")' in route
-    assert 'statut_verification_ia=statut_verification' in route
+    assert 'statut_verification_ia="en_attente"' in route
+    assert "ai_queue.planifier_verification_tuteur(session_tuteur.id)" in route
 
 
 def test_tuteur_ne_declare_pas_une_reponse_a_revoir_comme_terminee():
@@ -169,8 +169,8 @@ def test_tuteur_ne_devient_pas_vide_quand_la_verification_echoue():
 def test_tuteur_livre_la_reponse_avant_la_verification():
     route = lire("app/routers/tuteur_router.py")
     assert "verifier=False" in route
-    assert "background_tasks.add_task(" in route
-    assert "verifier_session_tuteur_en_arriere_plan" in route
+    assert "ai_queue.planifier_verification_tuteur(" in route
+    assert "background_tasks.add_task(" not in route
 
 
 def test_verification_tuteur_background_peut_etre_legere():

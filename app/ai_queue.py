@@ -15,12 +15,13 @@ from sqlmodel import Session, select
 
 from .config import parametres
 from .database import engine
-from .models import StatutTacheIA, TacheIA, TentativeQuiz
+from .models import SessionTuteur, StatutTacheIA, TacheIA, TentativeQuiz
 from . import ai_memory, ai_risk
 
 logger = logging.getLogger(__name__)
 
 TYPE_VERIFICATION_QUIZ = "verification_quiz"
+TYPE_VERIFICATION_TUTEUR = "verification_tuteur"
 DELAIS_REESSAI = (5, 15, 30, 60)
 MAX_ESSAIS = 5
 
@@ -260,6 +261,125 @@ def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
         return None
 
 
+
+def planifier_verification_tuteur(session_tuteur_id: int) -> Optional[int]:
+    """Ajoute une verification Tuteur durable et idempotente a la file."""
+    maintenant = datetime.utcnow()
+    try:
+        with Session(engine) as session:
+            session_tuteur = session.get(SessionTuteur, session_tuteur_id)
+            if not session_tuteur:
+                return None
+
+            existante = session.exec(
+                select(TacheIA)
+                .where(
+                    TacheIA.type_tache == TYPE_VERIFICATION_TUTEUR,
+                    TacheIA.session_tuteur_id == session_tuteur_id,
+                    TacheIA.statut.in_(
+                        [
+                            StatutTacheIA.EN_ATTENTE,
+                            StatutTacheIA.EN_COURS,
+                            StatutTacheIA.TERMINEE,
+                        ]
+                    ),
+                )
+                .limit(1)
+            ).first()
+            if existante:
+                if existante.statut == StatutTacheIA.EN_ATTENTE:
+                    notifier_tache(existante.id)
+                return existante.id
+
+            tache = TacheIA(
+                type_tache=TYPE_VERIFICATION_TUTEUR,
+                tentative_quiz_id=None,
+                session_tuteur_id=session_tuteur_id,
+                statut=StatutTacheIA.EN_ATTENTE,
+                strategie_verification="legere",
+                score_risque=0,
+                disponible_le=maintenant,
+                date_creation=maintenant,
+            )
+            session.add(tache)
+            session.commit()
+            session.refresh(tache)
+
+            publiee = notifier_tache(tache.id)
+            print(
+                f"[AI QUEUE] Tache creee id={tache.id} tuteur={session_tuteur_id} "
+                f"strategie={tache.strategie_verification} redis_notifiee={publiee}.",
+                flush=True,
+            )
+            logger.info(
+                "Tache IA %s planifiee pour Tuteur #%s: strategie=%s redis_notifiee=%s.",
+                tache.id,
+                session_tuteur_id,
+                tache.strategie_verification,
+                publiee,
+            )
+            return tache.id
+    except Exception as erreur:
+        print(
+            f"[AI QUEUE][ERREUR] planification tuteur={session_tuteur_id} "
+            f"type={type(erreur).__name__} detail={erreur}",
+            flush=True,
+        )
+        logger.exception(
+            "Impossible de planifier la verification IA du Tuteur #%s.",
+            session_tuteur_id,
+        )
+        return None
+
+
+def reparer_taches_en_cours_orphelines(
+    max_taches: int = 5,
+    age_secondes: int = 600,
+) -> int:
+    """Remet en file les taches dont le worker est mort pendant le traitement."""
+    maintenant = datetime.utcnow()
+    seuil = maintenant - timedelta(seconds=max(1, age_secondes))
+
+    with Session(engine) as session:
+        requete = (
+            select(TacheIA)
+            .where(
+                TacheIA.statut == StatutTacheIA.EN_COURS,
+                (TacheIA.prise_en_charge_le.is_(None))
+                | (TacheIA.prise_en_charge_le <= seuil),
+            )
+            .order_by(TacheIA.prise_en_charge_le, TacheIA.id)
+            .limit(max(1, max_taches))
+        )
+        if session.get_bind().dialect.name == "postgresql":
+            requete = requete.with_for_update(skip_locked=True)
+
+        taches = session.exec(requete).all()
+        if not taches:
+            return 0
+
+        ids = []
+        for tache in taches:
+            tache.statut = StatutTacheIA.EN_ATTENTE
+            tache.disponible_le = maintenant
+            tache.prise_en_charge_le = None
+            tache.derniere_erreur = (
+                "Reprise automatique après expiration du lease worker."
+            )
+            session.add(tache)
+            ids.append(tache.id)
+        session.commit()
+
+    for tache_id in ids:
+        notifier_tache(tache_id)
+
+    logger.warning(
+        "Reprise de %s tache(s) IA orpheline(s) après expiration du lease.",
+        len(ids),
+    )
+    return len(ids)
+
+
 def _verrouiller_tache(
     session: Session,
     tache_id: Optional[int] = None,
@@ -298,7 +418,8 @@ def _verrouiller_tache(
     session.commit()
     session.refresh(tache)
     print(
-        f"[AI QUEUE] Tache claim id={tache.id} quiz={tache.tentative_quiz_id} "
+        f"[AI QUEUE] Tache claim id={tache.id} type={tache.type_tache} "
+        f"quiz={tache.tentative_quiz_id} tuteur={tache.session_tuteur_id} "
         f"essai={tache.nombre_essais}.",
         flush=True,
     )

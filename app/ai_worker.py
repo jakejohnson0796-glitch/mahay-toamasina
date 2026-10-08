@@ -14,6 +14,10 @@ import threading
 import time
 from typing import Optional
 
+from sqlmodel import Session
+
+from .database import engine
+from .models import SessionTuteur
 from . import ai_queue, ai_quiz, quiz
 
 logger = logging.getLogger(__name__)
@@ -26,10 +30,44 @@ PAUSE_APRES_FILE_VIDE_SECONDES = 0.5
 
 def traiter_tache(tache) -> None:
     if tache.type_tache == ai_queue.TYPE_VERIFICATION_QUIZ:
+        if not tache.tentative_quiz_id:
+            raise RuntimeError("Tache de verification quiz sans tentative_quiz_id.")
         quiz.verifier_tentative_en_arriere_plan(
             tache.tentative_quiz_id,
             strategie=tache.strategie_verification,
         )
+        return
+
+    if tache.type_tache == ai_queue.TYPE_VERIFICATION_TUTEUR:
+        if not tache.session_tuteur_id:
+            raise RuntimeError("Tache de verification Tuteur sans session_tuteur_id.")
+
+        with Session(engine) as session:
+            session_tuteur = session.get(SessionTuteur, tache.session_tuteur_id)
+            if not session_tuteur:
+                raise RuntimeError(
+                    f"Session Tuteur #{tache.session_tuteur_id} introuvable avant traitement."
+                )
+            if session_tuteur.statut_verification_ia == "terminee":
+                return
+
+        ai_quiz.verifier_session_tuteur_en_arriere_plan(
+            tache.session_tuteur_id
+        )
+        with Session(engine) as session:
+            session_tuteur = session.get(SessionTuteur, tache.session_tuteur_id)
+            if not session_tuteur:
+                raise RuntimeError(
+                    f"Session Tuteur #{tache.session_tuteur_id} introuvable après traitement."
+                )
+            if session_tuteur.statut_verification_ia != "terminee":
+                raise RuntimeError(
+                    session_tuteur.erreur_verification_ia
+                    or (
+                        f"Verification Tuteur #{tache.session_tuteur_id} "
+                        f"terminee avec statut {session_tuteur.statut_verification_ia!r}."
+                    )
+                )
         return
 
     raise RuntimeError(f"Type de tache IA inconnu: {tache.type_tache}")
@@ -79,6 +117,17 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
     while arret is None or not arret.is_set():
         tache = None
         try:
+            # Le lease est surveille independamment de l'activite Redis :
+            # une tache abandonnee par un worker doit pouvoir etre reprise
+            # meme si la file continue de recevoir d'autres messages.
+            maintenant = time.monotonic()
+            if maintenant - dernier_controle_db >= INTERVALLE_FILET_SECURITE_DB:
+                ai_queue.reparer_taches_en_cours_orphelines(
+                    max_taches=5,
+                    age_secondes=600,
+                )
+                dernier_controle_db = maintenant
+
             tache, dernier_controle_db = _obtenir_prochaine_tache(
                 dernier_controle_db
             )
@@ -86,16 +135,21 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
                 if arret is not None and arret.is_set():
                     break
 
-                # Récupère les vérifications Tuteur restées en attente après
-                # un redémarrage du processus web. Une session déjà passée
-                # en "en_cours" n'est pas reprise ici, pour éviter un doublon.
+                # Le worker ne depend plus d'une BackgroundTask HTTP pour le
+                # Tuteur. Les anciennes sessions non encore planifiees sont
+                # converties en taches durables par ce filet de securite.
                 try:
+                    ai_queue.reparer_taches_en_cours_orphelines(
+                        max_taches=5,
+                        age_secondes=600,
+                    )
                     ai_quiz.reparer_verifications_tuteur_en_attente(
-                        max_sessions=1,
+                        max_sessions=2,
                         age_minimum_secondes=60,
+                        age_en_cours_secondes=600,
                     )
                 except Exception:
-                    logger.exception("Impossible de récupérer les vérifications Tuteur en attente.")
+                    logger.exception("Impossible de reparer la file IA Tuteur.")
 
                 delai = (
                     PAUSE_SANS_REDIS_SECONDES
@@ -109,16 +163,19 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
                 continue
 
             print(
-                f"[AI WORKER] Traitement tache={tache.id} quiz={tache.tentative_quiz_id} "
+                f"[AI WORKER] Traitement tache={tache.id} type={tache.type_tache} "
+                f"quiz={tache.tentative_quiz_id} tuteur={tache.session_tuteur_id} "
                 f"strategie={tache.strategie_verification} risque={tache.score_risque} "
                 f"essai={tache.nombre_essais}.",
                 flush=True,
             )
             logger.info(
-                "Worker IA traite tache #%s type=%s quiz=%s strategie=%s risque=%s essai=%s.",
+                "Worker IA traite tache #%s type=%s quiz=%s tuteur=%s strategie=%s "
+                "risque=%s essai=%s.",
                 tache.id,
                 tache.type_tache,
                 tache.tentative_quiz_id,
+                tache.session_tuteur_id,
                 tache.strategie_verification,
                 tache.score_risque,
                 tache.nombre_essais,
