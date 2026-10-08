@@ -30,6 +30,17 @@
         </div>
       </div>
 
+      <div class="quiz-focus-strip" aria-label="État du quiz">
+        <span class="quiz-focus-chip"><b>{{ questions|length }}</b> questions</span>
+        {% if correction_visible %}
+        <span class="quiz-focus-chip quiz-focus-chip--success"><b>{{ tentative.score }}</b> bonnes réponses</span>
+        <span class="quiz-focus-chip">Correction affichée</span>
+        {% else %}
+        <span class="quiz-focus-chip" data-quiz-progress-text>0 / {{ questions|length }} répondues</span>
+        <span class="quiz-focus-chip">Correction après validation</span>
+        {% endif %}
+      </div>
+
       {% if correction_visible %}
       {% set score = tentative.score or 0 %}
       {% set pct = (score / tentative.nb_questions * 100) if tentative.nb_questions else 0 %}
