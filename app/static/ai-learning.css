@@ -1654,7 +1654,7 @@
 .ai-remediation-result-item strong{display:block;margin-top:.18rem;font-size:.72rem;overflow:hidden;text-overflow:ellipsis}
 .ai-inline-action{display:inline-flex;margin:0}
 .ai-target-context{margin:.6rem 0 .8rem;padding:.7rem .8rem;border:1px solid rgba(47,143,137,.22);border-radius:13px;background:rgba(47,143,137,.055)}
-.ai-target-context strong{display:block;margin-top:.25rem;font-size:.95rem}
+.ai-target-context .ai-kicker{display:block;margin-bottom:.28rem}.ai-target-context strong{display:block;margin-top:0;font-size:.95rem}
 .ai-target-context p{margin:.25rem 0 0;color:var(--content-text-muted);font-size:.62rem}
 @media (max-width:900px){.ai-remediation-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.ai-remediation-grid{grid-template-columns:1fr}.ai-remediation-result-item{align-items:flex-start;flex-direction:column}}
