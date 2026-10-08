@@ -42,9 +42,9 @@ def test_reparation_tuteur_reprend_une_session_trop_longtemps_en_attente(monkeyp
 
     appelees = []
     monkeypatch.setattr(
-        ai_quiz,
-        "verifier_session_tuteur_en_arriere_plan",
-        lambda session_id: appelees.append(session_id),
+        ai_quiz.ai_queue,
+        "planifier_verification_tuteur",
+        lambda session_id: appelees.append(session_id) or session_id,
     )
 
     assert ai_quiz.reparer_verifications_tuteur_en_attente() == 1
