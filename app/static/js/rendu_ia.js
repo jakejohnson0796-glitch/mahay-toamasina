@@ -254,6 +254,14 @@
 
   function normaliserTexteMarkdownLegacy(texte) {
     let resultat = String(texte == null ? "" : texte);
+    const codes = [];
+
+    // Les blocs/spans de code sont intouchables : une séquence \\n ou
+    // \\textit dans du code doit rester du code.
+    resultat = resultat.replace(/\\x60\\x60\\x60[\\s\\S]*?\\x60\\x60\\x60|\\x60[^\\x60\\n]*\\x60/g, function (match) {
+      const index = codes.push(match) - 1;
+      return "\\uE100GMCODE_" + index + "\\uE101";
+    });
 
     // Certaines réponses IA arrivent encore avec les deux caractères
     // « \\n » au lieu d'un vrai saut de ligne. On les décode uniquement
@@ -273,6 +281,9 @@
       .replace(/\\(?:textit|emph)\\{([^{}]*)\\}/g, "*$1*")
       .replace(/\\textbf\\{([^{}]*)\\}/g, "**$1**");
 
+    resultat = resultat.replace(/\\uE100GMCODE_(\\d+)\\uE101/g, function (_match, index) {
+      return codes[Number(index)] || "";
+    });
     return resultat;
   }
 
