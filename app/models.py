@@ -382,6 +382,16 @@ class ProgressionNotion(SQLModel, table=True):
     derniere_reussite_le: Optional[datetime] = None
     # Prochaine date prévue par la révision espacée.
     prochaine_revision_le: Optional[datetime] = None
+    # Niveau de difficulté le plus élevé réellement réussi sur cette notion.
+    niveau_max_reussi: Optional[str] = None
+    # Confiance persistante du moteur dans l'estimation de maîtrise (0-100).
+    confiance_maitrise: int = Field(default=0)
+    # True uniquement lorsqu'une notion a rempli les critères de preuve.
+    maitrise_confirmee: bool = Field(default=False, index=True)
+    # Dernier instant où les critères de maîtrise ont été effectivement réunis.
+    derniere_preuve_le: Optional[datetime] = None
+    # Date à laquelle une nouvelle preuve devrait être recherchée.
+    prochaine_preuve_le: Optional[datetime] = None
     date_maj: datetime = Field(default_factory=datetime.utcnow)
 
     __table_args__ = (
