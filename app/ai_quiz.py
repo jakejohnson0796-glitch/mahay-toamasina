@@ -891,20 +891,21 @@ def verifier_reponse_tuteur_structuree(
 def reparer_verifications_tuteur_en_attente(
     max_sessions: int = 3,
     age_minimum_secondes: int = 60,
-    age_en_cours_secondes: int = 300,
+    age_en_cours_secondes: int = 600,
 ) -> int:
-    """Récupère les vérifications Tuteur perdues après un redémarrage.
+    """Transforme les anciennes sessions Tuteur en tâches IA durables.
 
-    ``en_attente`` couvre les BackgroundTasks qui n'ont jamais démarré.
-    ``en_cours`` couvre les vérifications dont le processus est mort après
-    la prise en charge. ``date_verification_ia`` sert de timestamp de
-    prise en charge pendant ``en_cours`` puis redevient la date de fin.
+    Cette fonction reste comme filet de sécurité pour les sessions historiques
+    ou créées avant l'activation de la file Tuteur. Elle ne lance plus l'IA
+    directement : le worker prend toujours la tâche persistante et applique
+    ses retries/leases.
     """
     from datetime import datetime, timedelta
     from sqlmodel import Session, select
     from sqlalchemy import and_, or_
     from .database import engine
     from .models import SessionTuteur
+    from . import ai_queue
 
     maintenant = datetime.utcnow()
     seuil_attente = maintenant - timedelta(seconds=max(1, age_minimum_secondes))
@@ -933,22 +934,23 @@ def reparer_verifications_tuteur_en_attente(
         ).all()
         ids = [session_tuteur.id for session_tuteur in sessions if session_tuteur.id]
 
+    planifiees = 0
     for session_id in ids:
         try:
-            verifier_session_tuteur_en_arriere_plan(session_id)
+            if ai_queue.planifier_verification_tuteur(session_id):
+                planifiees += 1
         except Exception:
             logger.exception(
-                "Récupération de la vérification Tuteur #%s impossible.",
+                "Planification de la vérification Tuteur #%s impossible.",
                 session_id,
             )
 
-    if ids:
+    if planifiees:
         logger.info(
-            "Récupération Tuteur: %s vérification(s) relancée(s), dont les orphanées en_cours.",
-            len(ids),
+            "Récupération Tuteur: %s vérification(s) transformée(s) en tâches durables.",
+            planifiees,
         )
-    return len(ids)
-
+    return planifiees
 
 def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
     """Verifie une session deja livree et remplace son contenu si necessaire."""
