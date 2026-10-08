@@ -81,7 +81,8 @@ def test_worker_dispatche_une_verification_tuteur(monkeypatch):
                 erreur_verification_ia=None,
             )
 
-    monkeypatch.setattr(ai_worker, "Session", lambda _engine: FakeSession())
+    fake_session = FakeSession()
+    monkeypatch.setattr(ai_worker, "Session", lambda _engine: fake_session)
 
     ai_worker.traiter_tache(tache)
 
