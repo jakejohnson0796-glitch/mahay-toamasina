@@ -45,6 +45,8 @@
       const repondues = reponsesCount();
       const pourcentage = total ? (repondues / total) * 100 : 0;
       if (texte) texte.textContent = repondues + " / " + total + " répondues";
+      const focusProgress = document.querySelector("[data-quiz-focus-progress]");
+      if (focusProgress) focusProgress.textContent = repondues + " / " + total + " répondues";
       const pourcentageElement = document.querySelector("[data-quiz-progress-percent]");
       if (pourcentageElement) pourcentageElement.textContent = Math.round(pourcentage) + "%";
       if (remplissage) {
