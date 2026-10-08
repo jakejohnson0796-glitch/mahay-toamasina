@@ -213,7 +213,7 @@ def construire_carte(progressions: Iterable[ProgressionNotion]) -> dict:
     blocages = [
         relation
         for relation in relations
-        if relation["source_faible"] and relation["cible"]["score"] >= relation["source"]["score"]
+        if relation["source_faible"] and relation["target"]["score"] >= relation["source"]["score"]
     ]
     blocages.sort(key=lambda relation: (relation["source"]["score"], relation["target"]["score"]))
 
