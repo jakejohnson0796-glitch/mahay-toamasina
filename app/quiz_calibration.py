@@ -73,7 +73,7 @@ def fusionner_confiances(tentative, confiances: list[Optional[str]]) -> None:
     tentative.reponses_json = json.dumps(paquet, ensure_ascii=False)
 
 
-def diagnostic_confiance(tentative, reponses: Optional[list] = None) -> dict:
+def diagnostic_confiance(tentative, questions: Optional[list] = None, reponses: Optional[list] = None) -> dict:
     """Mesure l'écart entre certitude annoncée et résultat observé.
 
     Le signal est volontairement prudent : moins de 3 jugements ne produit pas
@@ -93,6 +93,7 @@ def diagnostic_confiance(tentative, reponses: Optional[list] = None) -> dict:
 
     confiances = lire_confiances(tentative)
     observations = []
+    questions = list(questions or [])
     surconfiances = 0
     sousconfiances = 0
 
@@ -104,9 +105,10 @@ def diagnostic_confiance(tentative, reponses: Optional[list] = None) -> dict:
             continue
         correcte = False
         try:
-            questions = getattr(tentative, "_questions_cache", None)
-            if questions is not None:
-                correcte = reponse == questions[index].get("index_bonne_reponse")
+            correcte = (
+                index < len(questions)
+                and reponse == questions[index].get("index_bonne_reponse")
+            )
         except (IndexError, AttributeError, TypeError):
             correcte = False
         observations.append((confiance, correcte))
@@ -128,8 +130,6 @@ def diagnostic_confiance(tentative, reponses: Optional[list] = None) -> dict:
             "niveau_moyen": None,
         }
 
-    # diagnostic_confiance peut recevoir temporairement les questions via
-    # tentative._questions_cache afin de ne pas dépendre d'un import circulaire.
     ecarts = []
     for confiance, correcte in observations:
         ecarts.append(abs(VALEURS_CONFIANCE[confiance] - (1.0 if correcte else 0.0)))
