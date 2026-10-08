@@ -11,6 +11,7 @@ from ..templating import templates
 from .. import dashboard as dashboard_module
 from .. import quiz as quiz_module
 from .. import gamification
+from .. import quiz_calibration
 
 router = APIRouter()
 
@@ -44,7 +45,7 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
         .where(TentativeQuiz.utilisateur_id == utilisateur.id)
         .where(TentativeQuiz.date_soumission != None)  # noqa: E711
         .order_by(TentativeQuiz.date_soumission.desc())
-        .limit(20)
+        .limit(40)
     ).all()
 
     nb_sessions_tuteur = int(session.exec(
@@ -71,6 +72,29 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
         for progression in progressions_maitrise
     ]
 
+    progressions_illusions = session.exec(
+        select(ProgressionNotion)
+        .where(ProgressionNotion.utilisateur_id == utilisateur.id)
+        .where(ProgressionNotion.nb_questions > 0)
+    ).all()
+    progressions_par_notion = {
+        (p.matiere, p.notion): p
+        for p in progressions_illusions
+    }
+    cartes_illusions = quiz_calibration.construire_carte_illusions(quiz, limit=8)
+    for carte in cartes_illusions:
+        progression_illusion = progressions_par_notion.get(
+            (carte["matiere"], carte["notion"])
+        )
+        carte["progression_id"] = (
+            progression_illusion.id if progression_illusion else None
+        )
+        carte["score_maitrise"] = (
+            quiz_module.diagnostiquer_maitrise(progression_illusion)["score"]
+            if progression_illusion
+            else None
+        )
+
     return templates.TemplateResponse(
         request,
         "mes_revisions.html",
@@ -82,6 +106,7 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
             "progression_matieres": progression,
             "notions_a_revoir": notions_a_revoir,
             "cartes_maitrise": cartes_maitrise,
+            "cartes_illusions": cartes_illusions,
             "nb_documents": len(consultations),
             "nb_quiz": len(quiz),
         },
