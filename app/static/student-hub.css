@@ -277,3 +277,37 @@
   .knowledge-map-grid{grid-template-columns:1fr}
   .knowledge-relation{align-items:flex-start;flex-direction:column;gap:4px}
 }
+
+/* Learning UI V6 — priorité visuelle et parcours communs. */
+.learning-command--revision{margin-top:.1rem}
+.learning-command--revision .learning-command-item.is-active{
+  background:color-mix(in srgb,var(--content-bg) 84%,var(--accent) 16%);
+}
+.knowledge-summary-section,
+.hub-progression-section,
+.hub-maitrise-section,
+.hub-focus-section{
+  scroll-margin-top:1rem;
+}
+.hub-progression-section .progression-carte{
+  min-height:100%;
+}
+.hub-focus-section .hub-notion-carte{
+  position:relative;
+  overflow:hidden;
+}
+.hub-focus-section .hub-notion-carte::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:var(--refonte-danger);
+  opacity:.7;
+}
+@media(max-width:640px){
+  .hub-hero-side{margin-top:1rem}
+  .hub-progression-section,
+  .hub-maitrise-section,
+  .hub-focus-section,
+  .knowledge-summary-section{padding:17px}
+}

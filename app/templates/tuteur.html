@@ -31,6 +31,23 @@
     </div>
   </section>
 
+  <nav class="learning-command learning-command--ai" aria-label="Parcours d'apprentissage">
+    <a class="learning-command-item" href="/mes-revisions">
+      <span class="learning-command-index">01</span>
+      <span><strong>Réviser</strong><small>Choisir ta priorité</small></span>
+    </a>
+    <span class="learning-command-arrow" aria-hidden="true">→</span>
+    <a class="learning-command-item" href="/quiz">
+      <span class="learning-command-index">02</span>
+      <span><strong>Tester</strong><small>Mesurer ce que tu sais</small></span>
+    </a>
+    <span class="learning-command-arrow" aria-hidden="true">→</span>
+    <a class="learning-command-item is-active" href="#question">
+      <span class="learning-command-index">03</span>
+      <span><strong>Comprendre</strong><small>Faire travailler le Tuteur IA</small></span>
+    </a>
+  </nav>
+
   {% if notions_a_revoir %}
   <section class="ai-section ai-remediation-section" aria-labelledby="notions-faibles-title">
     <div class="ai-section-head">

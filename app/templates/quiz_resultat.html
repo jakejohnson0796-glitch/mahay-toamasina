@@ -33,6 +33,23 @@
     </div>
   </section>
 
+  <nav class="learning-command learning-command--result" aria-label="Suite de ton apprentissage">
+    <a class="learning-command-item" href="/mes-revisions">
+      <span class="learning-command-index">01</span>
+      <span><strong>Réviser</strong><small>Voir tes priorités</small></span>
+    </a>
+    <span class="learning-command-arrow" aria-hidden="true">→</span>
+    <a class="learning-command-item" href="/tuteur">
+      <span class="learning-command-index">02</span>
+      <span><strong>Comprendre</strong><small>Corriger une erreur</small></span>
+    </a>
+    <span class="learning-command-arrow" aria-hidden="true">→</span>
+    <a class="learning-command-item is-active" href="/quiz">
+      <span class="learning-command-index">03</span>
+      <span><strong>Rejouer</strong><small>Vérifier ta maîtrise</small></span>
+    </a>
+  </nav>
+
   {% if diagnostic_examen %}
   <section class="ai-section ai-exam-diagnostic" aria-labelledby="exam-diagnostic-title">
     <div class="ai-section-head">

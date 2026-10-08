@@ -30,6 +30,25 @@
     <a class="ai-answer-back" href="/tuteur">Nouvelle question</a>
   </div>
 
+  <nav class="learning-command learning-command--response" aria-label="Suite de ton apprentissage">
+    <a class="learning-command-item" href="/mes-revisions">
+      <span class="learning-command-index">01</span>
+      <span><strong>Réviser</strong><small>Retrouver ta notion</small></span>
+    </a>
+    <span class="learning-command-arrow" aria-hidden="true">→</span>
+    <a class="learning-command-item is-active" href="#reponse">
+      <span class="learning-command-index">02</span>
+      <span><strong>Comprendre</strong><small>Lire la réponse guidée</small></span>
+    </a>
+    <span class="learning-command-arrow" aria-hidden="true">→</span>
+    <a class="learning-command-item" href="/quiz">
+      <span class="learning-command-index">03</span>
+      <span><strong>Vérifier</strong><small>Passer à l'action</small></span>
+    </a>
+  </nav>
+
+  <div id="reponse">
+
   {% if progression_tuteur %}
   <section class="ai-target-context ai-target-context-memory" aria-label="Mémoire d'apprentissage">
     <span class="ai-kicker">Mémoire d'apprentissage</span>
@@ -113,7 +132,6 @@
     <a class="bouton bouton-secondaire" href="/quiz">Créer un quiz libre</a>
     <a class="bouton bouton-secondaire" href="/quiz/reflexion">Ouvrir le thème de réflexion</a>
   </div>
+  </div><!-- /#reponse -->
 </div>
-
-
 {% endblock %}
