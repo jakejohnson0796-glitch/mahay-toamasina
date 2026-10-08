@@ -90,7 +90,7 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
             progression_illusion.id if progression_illusion else None
         )
         carte["score_maitrise"] = (
-            quiz_module._score_maitrise_effectif(progression_illusion)
+            quiz_module.diagnostiquer_maitrise(progression_illusion)["score"]
             if progression_illusion
             else None
         )
