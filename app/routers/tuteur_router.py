@@ -45,13 +45,18 @@ def _contexte_progression_tuteur(progression: ProgressionNotion) -> str:
         else "dès maintenant"
     )
     statut = "fragile" if score < 50 else ("en cours d'acquisition" if score < 75 else "plutôt maîtrisée")
+    diagnostic = quiz_module.diagnostiquer_maitrise(progression)
     return (
         "MEMOIRE D'APPRENTISSAGE — cette notion a déjà été travaillée par cet étudiant. "
         f"Notion={progression.notion}; matière={progression.matiere}; niveau={progression.niveau or 'non précisé'}; "
-        f"maîtrise={score}%; questions={progression.nb_questions}; réussites={progression.nb_reussites}; "
+        f"maîtrise={score}%; confiance={diagnostic['confiance']}%; "
+        f"questions={progression.nb_questions}; réussites={progression.nb_reussites}; "
         f"erreurs={progression.nb_erreurs}; série actuelle={progression.serie_reussites}; "
-        f"statut={statut}; prochaine révision={prochaine}. "
-        "Adapte la pédagogie à cet historique : rappelle les erreurs à éviter, "
+        f"niveau maximal réussi={diagnostic['niveau_max_reussi']}; preuve={diagnostic['libelle']}; "
+        f"prochaine révision={prochaine}. "
+        "Traite la preuve de maîtrise comme une contrainte pédagogique : "
+        "si elle n'est pas prouvée, aide l'étudiant à combler les preuves manquantes "
+        "avant de considérer la notion acquise. Rappelle les erreurs à éviter, "
         "ne redonne pas mécaniquement la même explication, et termine par un exercice "
         "court permettant de vérifier la compréhension."
     )
