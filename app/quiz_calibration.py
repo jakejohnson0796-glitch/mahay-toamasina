@@ -170,3 +170,138 @@ def diagnostic_confiance(tentative, questions: Optional[list] = None, reponses: 
         "sousconfiances": sousconfiances,
         "niveau_moyen": niveau_moyen,
     }
+
+
+def _questions_tentative(tentative) -> list[dict]:
+    """Lit le format historique ou adaptatif sans importer le module Quiz."""
+    try:
+        donnees = json.loads(tentative.questions_json or "[]")
+    except (TypeError, ValueError):
+        return []
+    if isinstance(donnees, dict):
+        return list(donnees.get("questions") or [])
+    return list(donnees or [])
+
+
+def _reponses_tentative(tentative) -> list:
+    try:
+        donnees = json.loads(tentative.reponses_json or "[]")
+    except (TypeError, ValueError):
+        return []
+    if isinstance(donnees, dict):
+        return list(donnees.get("reponses") or [])
+    return list(donnees or [])
+
+
+def construire_carte_illusions(tentatives, limit: int = 8) -> list[dict]:
+    """Repère les notions où l'étudiant surestime régulièrement son niveau.
+
+    Une « illusion » est un signal, jamais un verdict psychologique : il faut
+    au moins deux observations sur la notion et au moins une erreur commise
+    avec une confiance forte. Les anciennes tentatives sans calibration sont
+    naturellement ignorées.
+    """
+    groupes: dict[tuple[str, str], dict] = {}
+
+    for tentative in tentatives or []:
+        if tentative is None or getattr(tentative, "date_soumission", None) is None:
+            continue
+
+        questions = _questions_tentative(tentative)
+        reponses = _reponses_tentative(tentative)
+        confiances = lire_confiances(tentative)
+
+        for index, confiance in enumerate(confiances):
+            if confiance not in NIVEAUX_CONFIANCE:
+                continue
+            if index >= len(questions) or index >= len(reponses):
+                continue
+            reponse = reponses[index]
+            if reponse is None:
+                continue
+
+            question = questions[index]
+            notion = str(question.get("notion") or "").strip()
+            if not notion:
+                notion = f"Notions générales — {getattr(tentative, 'matiere', '')}"
+            matiere = str(getattr(tentative, "matiere", "") or "").strip()
+            cle = (matiere, notion)
+
+            groupe = groupes.setdefault(
+                cle,
+                {
+                    "matiere": matiere,
+                    "notion": notion,
+                    "observations": 0,
+                    "observations_fortes": 0,
+                    "erreurs_confiance_forte": 0,
+                    "reussites_confiance_faible": 0,
+                    "dernier_signal_le": None,
+                    "dernier_exercice": None,
+                },
+            )
+
+            correcte = reponse == question.get("index_bonne_reponse")
+            groupe["observations"] += 1
+            if confiance == "forte":
+                groupe["observations_fortes"] += 1
+                if not correcte:
+                    groupe["erreurs_confiance_forte"] += 1
+                    groupe["dernier_signal_le"] = getattr(
+                        tentative, "date_soumission", None
+                    )
+                    groupe["dernier_exercice"] = question
+            elif confiance == "faible" and correcte:
+                groupe["reussites_confiance_faible"] += 1
+
+    cartes = []
+    for groupe in groupes.values():
+        fortes = groupe["observations_fortes"]
+        erreurs = groupe["erreurs_confiance_forte"]
+        observations = groupe["observations"]
+        if observations < 2 or erreurs < 1:
+            continue
+
+        taux = round(erreurs * 100 / max(1, fortes))
+        recurrence = min(30, erreurs * 10)
+        score_risque = min(100, round(taux * 0.70 + recurrence + min(fortes, 5) * 2))
+
+        if erreurs >= 2 or (fortes >= 3 and taux >= 50):
+            statut = "critique"
+            libelle = "Illusion répétée"
+            action = "Déconstruire la notion"
+        elif fortes == 1:
+            statut = "signal"
+            libelle = "Premier signal d'illusion"
+            action = "Vérifier avant de conclure"
+        else:
+            statut = "a_verifier"
+            libelle = "Illusion à vérifier"
+            action = "Tester le transfert"
+
+        groupe.update(
+            {
+                "taux_surconfiance": taux,
+                "score_risque": score_risque,
+                "statut": statut,
+                "libelle": libelle,
+                "action": action,
+                "message": (
+                    f"{erreurs} erreur"
+                    f"{'s' if erreurs != 1 else ''} avec une forte confiance "
+                    f"sur {fortes} question"
+                    f"{'s' if fortes != 1 else ''} très sûre"
+                    f"{'s' if fortes != 1 else ''}."
+                ),
+            }
+        )
+        cartes.append(groupe)
+
+    cartes.sort(
+        key=lambda carte: (
+            -carte["score_risque"],
+            -carte["erreurs_confiance_forte"],
+            -(carte["observations"]),
+        )
+    )
+    return cartes[: max(1, int(limit))]
