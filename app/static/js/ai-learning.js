@@ -115,12 +115,17 @@
       question.querySelectorAll("input[type=radio]").forEach(function (radio) {
         radio.disabled = true;
       });
+      question.querySelectorAll("input[name^=\\"confiance_\\"]").forEach(function (radio) {
+        radio.disabled = true;
+      });
 
       try {
         const body = new URLSearchParams();
         body.set("_csrf", document.querySelector('#form-quiz input[name="_csrf"]')?.value || "");
         body.set("question_index", question.dataset.quizIndex);
         body.set("reponse", input.value);
+        const confiance = question.querySelector("input[name^=\\"confiance_\\"]:checked");
+        if (confiance) body.set("confiance", confiance.value);
 
         const response = await fetch("/quiz/" + tentativeId + "/repondre", {
           method: "POST",
@@ -146,6 +151,9 @@
         }
       } catch (erreur) {
         question.querySelectorAll("input[type=radio]").forEach(function (radio) {
+          radio.disabled = false;
+        });
+        question.querySelectorAll("input[name^=\\"confiance_\\"]").forEach(function (radio) {
           radio.disabled = false;
         });
         const aide = document.querySelector(".quiz-submit-help");
