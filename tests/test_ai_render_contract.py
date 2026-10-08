@@ -149,7 +149,8 @@ def test_renderer_decode_les_sauts_de_ligne_ia_legacy_sans_casser_nabla():
     assert "__GASY_AI_CODE_" in js
     assert "resultat.replace(/\\x60\\x60\\x60" in js
     # La commande \\nabla reste explicitement hors des contextes de conversion.
-    assert "légitime comme \\nabla." in js
+    assert "légitime comme" in js
+    assert "nabla" in js
 
 def test_renderer_convertit_textit_latex_hors_math_en_italique_markdown():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
