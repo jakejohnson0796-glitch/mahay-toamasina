@@ -48,3 +48,72 @@ def test_worker_utilise_le_fallback_postgres_periodique(monkeypatch):
     assert resultat is tache
     assert appels == [None]
     assert dernier_controle == 100.0
+
+
+
+def test_worker_dispatche_une_verification_tuteur(monkeypatch):
+    tache = SimpleNamespace(
+        type_tache=ai_worker.ai_queue.TYPE_VERIFICATION_TUTEUR,
+        session_tuteur_id=27,
+    )
+    appelees = []
+
+    monkeypatch.setattr(
+        ai_worker.ai_quiz,
+        "verifier_session_tuteur_en_arriere_plan",
+        lambda session_id: appelees.append(session_id),
+    )
+
+    class FakeSession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def get(self, _model, _session_id):
+            return SimpleNamespace(
+                statut_verification_ia="terminee",
+                erreur_verification_ia=None,
+            )
+
+    monkeypatch.setattr(ai_worker, "Session", lambda _engine: FakeSession())
+
+    ai_worker.traiter_tache(tache)
+
+    assert appelees == [27]
+
+
+def test_worker_rejete_une_verification_tuteur_en_echec(monkeypatch):
+    tache = SimpleNamespace(
+        type_tache=ai_worker.ai_queue.TYPE_VERIFICATION_TUTEUR,
+        session_tuteur_id=28,
+    )
+
+    monkeypatch.setattr(
+        ai_worker.ai_quiz,
+        "verifier_session_tuteur_en_arriere_plan",
+        lambda session_id: None,
+    )
+
+    class FakeSession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def get(self, _model, _session_id):
+            return SimpleNamespace(
+                statut_verification_ia="echouee",
+                erreur_verification_ia="Provider indisponible.",
+            )
+
+    monkeypatch.setattr(ai_worker, "Session", lambda _engine: FakeSession())
+
+    try:
+        ai_worker.traiter_tache(tache)
+    except RuntimeError as erreur:
+        assert "Provider indisponible." in str(erreur)
+    else:
+        raise AssertionError("Une vérification Tuteur échouée doit déclencher un retry de la file.")
