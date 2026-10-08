@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlmodel import Session, SQLModel, create_engine
 
@@ -258,7 +258,7 @@ def test_file_ia_reprend_une_tache_orpheline(monkeypatch):
             tentative_quiz_id=None,
             statut=StatutTacheIA.EN_COURS,
             strategie_verification="legere",
-            prise_en_charge_le=datetime.utcnow(),
+            prise_en_charge_le=datetime.utcnow() - timedelta(minutes=20),
         )
         session.add(tache)
         session.commit()
