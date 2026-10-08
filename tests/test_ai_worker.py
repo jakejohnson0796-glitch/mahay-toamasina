@@ -65,6 +65,9 @@ def test_worker_dispatche_une_verification_tuteur(monkeypatch):
     )
 
     class FakeSession:
+        def __init__(self):
+            self.calls = 0
+
         def __enter__(self):
             return self
 
@@ -72,8 +75,9 @@ def test_worker_dispatche_une_verification_tuteur(monkeypatch):
             return False
 
         def get(self, _model, _session_id):
+            self.calls += 1
             return SimpleNamespace(
-                statut_verification_ia="terminee",
+                statut_verification_ia="en_cours" if self.calls == 1 else "terminee",
                 erreur_verification_ia=None,
             )
 
