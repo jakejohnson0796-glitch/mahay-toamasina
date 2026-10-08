@@ -315,6 +315,17 @@ def _generer_completion_avec_reessai(
                     "textuellement distincts, sans reformuler le meme choix. "
                     "Une seule option doit etre correcte et l'index doit pointer vers elle."
                 )
+                if numero_essai == len(messages_par_essai):
+                    messages_par_essai.append(
+                        f"{contenu}\n\n"
+                        "DERNIERE REGENERATION QUALITE : reconstruis le quiz au lieu de "
+                        "recopier les choix precedents. Pour chaque question, determine "
+                        "d'abord la reponse correcte, puis cree trois distracteurs qui "
+                        "different clairement par valeur, condition, signe, intervalle "
+                        "ou interpretation. Relis les quatre choix ensemble et verifie "
+                        "qu'aucun n'est identique ou equivalent a un autre. Conserve "
+                        "exactement le nombre de questions et une seule bonne reponse."
+                    )
             continue
 
         return completion, None
@@ -370,8 +381,8 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
         f"generer est EXACTEMENT {nb_questions} — la contrainte de 3 a 5 "
         f"elements dans le schema de l'outil concerne uniquement le "
         f"nombre de choix de reponse A L'INTERIEUR de chaque question, "
-        f"pas le nombre de questions. Appelle l'outil 'soumettre_quiz' "
-        f"directement, sans poser de question de clarification."
+        f"pas le nombre de questions. Retourne uniquement le JSON structure, "
+        f"sans texte libre ni question de clarification."
     )
 
     completion, erreur = _generer_completion_avec_reessai(
@@ -440,8 +451,7 @@ def generer_quiz_cible(
     consigne_renforcee = (
         f"{consigne_base}\n\nRappel : genere exactement {nb_questions} "
         f"questions. Respecte la difficulte {difficulte}. N'elargis pas le "
-        f"sujet a une autre notion. Appelle "
-        f"'soumettre_quiz' directement."
+        f"sujet a une autre notion. Retourne uniquement le JSON structure."
     )
     completion, erreur = _generer_completion_avec_reessai(
         client,
@@ -483,8 +493,7 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
         f"pedagogique tres courte (2 a 6 mots). Pour les mathematiques, n'utilise "
         f"pas de tableau Markdown et n'ajoute aucun prefixe A/B/C/D/E dans 'choix'. "
         f"Reste concis afin de produire "
-        f"l'ensemble des questions dans un seul appel. Utilise l'outil "
-        f"fourni pour repondre."
+        f"l'ensemble des questions dans un seul appel. Retourne le JSON structure fourni."
         f"{chr(10) + chr(10) + memoire if memoire else ''}"
     )
     consigne_renforcee = (
