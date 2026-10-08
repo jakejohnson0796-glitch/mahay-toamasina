@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Form, BackgroundTasks
+from fastapi import APIRouter, Request, Depends, Form
 from typing import Optional
 import re
 from fastapi.responses import RedirectResponse
@@ -14,7 +14,7 @@ from ..models import Document, MembreCercle, SessionTuteur, ProgressionNotion, S
 from ..storage import ouvrir_fichier_local
 from ..text_extraction import extraire_texte
 from ..ia_transport import normaliser_structure_tuteur
-from .. import ai_quiz
+from .. import ai_queue, ai_quiz
 from ..rate_limit import limite_depassee
 from .. import quiz as quiz_module
 from .. import gamification
@@ -125,7 +125,6 @@ def page_tuteur(request: Request, session: Session = Depends(get_session)):
 @router.post("/tuteur/demander")
 def demander_tuteur(
     request: Request,
-    background_tasks: BackgroundTasks,
     question: str = Form(...),
     progression_id: Optional[int] = Form(None),
     document_id: Optional[int] = Form(None),
@@ -204,12 +203,14 @@ def demander_tuteur(
         matiere=matiere_pour_ia,
         verifier=False,
     )
-    statut_verification = reponse.pop("_statut_verification", "terminee")
-    erreur_verification = reponse.pop("_erreur_verification", None)
+    # La génération initiale est déjà livrée. La relecture multi-modèles
+    # est toujours une tâche durable et ne dépend plus du cycle de vie HTTP.
+    reponse.pop("_statut_verification", None)
+    reponse.pop("_erreur_verification", None)
     reponse.pop("_verification_ok", None)
 
-    # MODIF : canonisation finale avant tout stockage, même en cas de secours
-    # ou d'arbitrage multi-modèles partiel.
+    # Canonisation finale avant tout stockage, même en cas de secours ou
+    # d'arbitrage multi-modèles partiel.
     reponse = normaliser_structure_tuteur(reponse)
 
     session_tuteur = SessionTuteur(
@@ -221,8 +222,8 @@ def demander_tuteur(
         exemple=reponse["exemple"],
         exercice=reponse["exercice"],
         correction=reponse["correction"],
-        statut_verification_ia=statut_verification,
-        erreur_verification_ia=erreur_verification,
+        statut_verification_ia="en_attente",
+        erreur_verification_ia=None,
     )
     session.add(session_tuteur)
     session.flush()
@@ -237,12 +238,9 @@ def demander_tuteur(
     session.refresh(session_tuteur)
 
     # La réponse initiale est livrée immédiatement. La vérification
-    # multi-modèles s'exécute après l'envoi HTTP et mettra à jour la session ;
-    # la page de réponse la récupère via son polling existant.
-    background_tasks.add_task(
-        ai_quiz.verifier_session_tuteur_en_arriere_plan,
-        session_tuteur.id,
-    )
+    # multi-modèles est maintenant persistée dans la file IA : le worker
+    # peut la reprendre après redémarrage, avec retries et lease.
+    ai_queue.planifier_verification_tuteur(session_tuteur.id)
 
     return RedirectResponse(f"/tuteur/{session_tuteur.id}", status_code=303)
 
