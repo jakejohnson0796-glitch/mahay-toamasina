@@ -16,6 +16,7 @@ from .. import quiz as quiz_module
 from .. import ai_queue
 from .. import theme_service
 from .. import gamification
+from .. import quiz_calibration
 from ..rate_limit import limite_depassee
 
 router = APIRouter()
@@ -336,10 +337,16 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
     formulaire = await request.form()
     nb = len(questions)
     reponses_soumises: List[Optional[int]] = []
+    confiances_soumises: List[Optional[str]] = []
     for i, question in enumerate(questions):
         valeur = formulaire.get(f"question_{i}")
+        confiance = str(formulaire.get(f"confiance_{i}") or "").strip().lower() or None
+        if confiance is not None and confiance not in quiz_calibration.NIVEAUX_CONFIANCE:
+            raise HTTPException(status_code=400, detail="Niveau de confiance invalide.")
+
         if valeur is None or valeur == "":
             reponses_soumises.append(None)
+            confiances_soumises.append(None)
             continue
         try:
             reponse = int(str(valeur))
@@ -348,12 +355,23 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
         if reponse < 0 or reponse >= len(question["choix"]):
             raise HTTPException(status_code=400, detail="Reponse de quiz invalide.")
         reponses_soumises.append(reponse)
+        confiances_soumises.append(confiance)
 
     if tentative.mode_examen and quiz_module.secondes_restantes_examen(tentative) <= 0:
         reponses_soumises = [None] * nb
 
     try:
         quiz_module.corriger(session, tentative, reponses_soumises)
+        quiz_calibration.fusionner_confiances(
+            tentative,
+            quiz_calibration.normaliser_confiances(
+                confiances_soumises,
+                len(questions),
+            ),
+        )
+        session.add(tentative)
+        session.commit()
+        session.refresh(tentative)
     except quiz_module.QuizValidationError as exc:
         raise HTTPException(status_code=400, detail="Reponses de quiz invalides.") from exc
 
@@ -381,6 +399,12 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
 
     questions_resultat = quiz_module.questions(tentative)
     reponses_resultat = quiz_module.reponses(tentative) or []
+    confiances_resultat = quiz_calibration.lire_confiances(tentative)
+    diagnostic_confiance = quiz_calibration.diagnostic_confiance(
+        tentative,
+        questions=questions_resultat,
+        reponses=reponses_resultat,
+    )
     notions_detectees = []
     progressions_par_question = []
     vus = set()
@@ -429,6 +453,8 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
             "tentative": tentative,
             "questions": questions_resultat,
             "reponses": reponses_resultat,
+            "confiances": confiances_resultat,
+            "diagnostic_confiance": diagnostic_confiance,
             "notions_detectees": notions_detectees,
             "progressions_par_question": progressions_par_question,
             "diagnostic_examen": diagnostic_examen,
