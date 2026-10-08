@@ -368,6 +368,100 @@ def _intervalle_revision_jours(
     return 30 if serie_reussites >= 3 else 14
 
 
+NIVEAU_DIFFICULTE_RANG = {"Facile": 1, "Moyen": 2, "Difficile": 3}
+
+
+def _rang_difficulte(niveau: Optional[str]) -> int:
+    return NIVEAU_DIFFICULTE_RANG.get((niveau or "").strip(), 0)
+
+
+def diagnostiquer_maitrise(progression: ProgressionNotion) -> dict:
+    """Transforme les statistiques d'une notion en preuve lisible et actionnable.
+
+    Une notion n'est pas dite « maîtrisée » sur un seul bon score : il faut
+    une répétition sur plusieurs séances, une série de réussites et au moins
+    une réussite à difficulté intermédiaire. Cette règle crée une preuve
+    pédagogique explicable, plutôt qu'un simple pourcentage.
+    """
+    score = _score_maitrise_effectif(progression)
+    questions = int(progression.nb_questions or 0)
+    revisions = int(progression.nb_revisions or 0)
+    serie = int(progression.serie_reussites or 0)
+    rang_max = _rang_difficulte(progression.niveau_max_reussi)
+
+    conditions = {
+        "score": score >= 85,
+        "questions": questions >= 8,
+        "seances": revisions >= 3,
+        "serie": serie >= 3,
+        "difficulte": rang_max >= 2,
+    }
+    confirme = bool(progression.maitrise_confirmee or all(conditions.values()))
+
+    if confirme:
+        statut = "prouvee"
+        libelle = "Maîtrise prouvée"
+        action = "Révision espacée"
+    elif score >= 75 and revisions >= 2:
+        statut = "a_confirmer"
+        libelle = "Prête pour une épreuve de maîtrise"
+        action = "Épreuve de confirmation"
+    elif score >= 50:
+        statut = "construction"
+        libelle = "En construction"
+        action = "Quiz ciblé"
+    else:
+        statut = "fragile"
+        libelle = "Notion fragile"
+        action = "Tuteur IA"
+
+    confiance = int(progression.confiance_maitrise or 0)
+    if not confiance:
+        confiance = min(
+            100,
+            max(
+                score,
+                score
+                + min(revisions * 3, 9)
+                + (10 if serie >= 3 else 0)
+                + (8 if rang_max >= 2 else 0),
+            ),
+        )
+
+    conditions_manquantes = []
+    labels = {
+        "score": f"atteindre 85 % de maîtrise ({score} %)",
+        "questions": f"avoir 8 questions évaluées ({questions})",
+        "seances": f"avoir 3 séances différentes ({revisions})",
+        "serie": f"obtenir 3 réussites consécutives ({serie})",
+        "difficulte": (
+            f"réussir au moins Moyen (meilleur niveau : {progression.niveau_max_reussi or 'aucun'})"
+        ),
+    }
+    for cle, ok in conditions.items():
+        if not ok:
+            conditions_manquantes.append(labels[cle])
+
+    return {
+        "statut": statut,
+        "libelle": libelle,
+        "action": action,
+        "score": score,
+        "confiance": confiance,
+        "conditions": conditions,
+        "conditions_manquantes": conditions_manquantes,
+        "niveau_max_reussi": progression.niveau_max_reussi or "Aucun",
+        "maitrise_confirmee": confirme,
+        "prochaine_preuve_le": progression.prochaine_preuve_le,
+    }
+
+
+def besoin_preuve_maitrise(progression: ProgressionNotion) -> bool:
+    """Autorise une épreuve ciblée même lorsque la révision n'est pas échue."""
+    diagnostic = diagnostiquer_maitrise(progression)
+    return diagnostic["statut"] == "a_confirmer" and not progression.maitrise_confirmee
+
+
 def mettre_a_jour_progression_notion(
     session: Session,
     tentative: TentativeQuiz,
@@ -417,6 +511,9 @@ def mettre_a_jour_progression_notion(
                 progression.score_maitrise
                 + max(4, round((100 - progression.score_maitrise) * 0.18)),
             )
+            niveau_question = question.get("difficulte") or tentative.difficulte
+            if _rang_difficulte(niveau_question) > _rang_difficulte(progression.niveau_max_reussi):
+                progression.niveau_max_reussi = niveau_question
             progression.derniere_reussite_le = maintenant
         else:
             progression.nb_erreurs += 1
@@ -428,6 +525,10 @@ def mettre_a_jour_progression_notion(
             )
             progression.derniere_erreur_le = maintenant
             echecs_pendant_revision.add(notion)
+            # Une nouvelle erreur invalide la preuve précédente : la preuve
+            # doit rester actuelle, pas seulement historique.
+            progression.maitrise_confirmee = False
+            progression.prochaine_preuve_le = maintenant + timedelta(days=1)
 
         progression.date_maj = maintenant
         progressions_touchees[id(progression)] = progression
@@ -442,6 +543,22 @@ def mettre_a_jour_progression_notion(
                 progression.notion in echecs_pendant_revision,
             )
         )
+
+        diagnostic_avant_preuve = diagnostiquer_maitrise(progression)
+        if diagnostic_avant_preuve["statut"] == "prouvee" and not progression.maitrise_confirmee:
+            progression.maitrise_confirmee = True
+            progression.derniere_preuve_le = maintenant
+            progression.prochaine_preuve_le = maintenant + timedelta(
+                days=30 if progression.score_maitrise >= 95 and progression.serie_reussites >= 5 else 14
+            )
+
+        progression.confiance_maitrise = diagnostic_avant_preuve["confiance"]
+        if progression.maitrise_confirmee:
+            progression.confiance_maitrise = max(
+                progression.confiance_maitrise,
+                min(100, progression.score_maitrise + 10),
+            )
+
         session.add(progression)
 
     session.commit()

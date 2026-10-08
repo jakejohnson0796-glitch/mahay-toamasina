@@ -239,9 +239,14 @@ def generer_quiz_cible(
     progression = session.get(ProgressionNotion, progression_id)
     if not progression or progression.utilisateur_id != utilisateur.id:
         return RedirectResponse("/mes-revisions", status_code=303)
-    # Une notion sans erreur peut aussi etre revisee lorsqu'elle arrive
-    # a sa date echeance de revision espacee.
-    if progression.nb_erreurs <= 0 and not quiz_module.revision_due(progression):
+    # Une notion sans erreur peut aussi être réévaluée à sa date
+    # échéance. Le moteur autorise en plus une « épreuve de confirmation »
+    # lorsqu'une maîtrise probable existe mais n'a pas encore été prouvée.
+    if (
+        progression.nb_erreurs <= 0
+        and not quiz_module.revision_due(progression)
+        and not quiz_module.besoin_preuve_maitrise(progression)
+    ):
         return RedirectResponse("/mes-revisions", status_code=303)
 
     host = request.client.host if request.client else "inconnu"

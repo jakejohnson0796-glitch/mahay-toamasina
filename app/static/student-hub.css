@@ -169,3 +169,46 @@
 .hub-deux-colonnes .hub-ligne-texte strong{font-size:.82rem;line-height:1.25}
 .hub-deux-colonnes .hub-ligne-texte small{font-size:.68rem;margin-top:2px}
 .hub-deux-colonnes .hub-ligne time,.hub-deux-colonnes .hub-ligne>b{font-size:.68rem}
+
+
+/* Passeport de maitrise — preuve plutot que simple score. */
+.hub-maitrise-section{margin-top:20px;overflow:hidden}
+.hub-maitrise-entete{align-items:flex-start}
+.hub-maitrise-principe{display:inline-flex;align-items:center;padding:7px 10px;border:1px solid var(--content-border);border-radius:999px;background:var(--content-bg);color:var(--content-text-muted);font-family:"IBM Plex Mono",monospace;font-size:.62rem;white-space:nowrap}
+.hub-maitrise-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.hub-maitrise-carte{padding:17px;border:1px solid var(--content-border);border-radius:17px;background:var(--content-bg);color:var(--content-text);box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.hub-maitrise-carte::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.hub-maitrise-carte--prouvee::before{background:var(--color-success)}
+.hub-maitrise-carte--a_confirmer::before{background:var(--refonte-orange,var(--accent))}
+.hub-maitrise-carte--fragile::before{background:var(--refonte-danger)}
+.hub-maitrise-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.hub-maitrise-top h3{margin:6px 0 0;font-size:1rem;line-height:1.35;color:var(--content-text)}
+.hub-maitrise-badge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;border:1px solid var(--content-border);background:var(--content-surface);font-size:.6rem;font-weight:850;white-space:nowrap}
+.hub-maitrise-badge--prouvee{color:var(--color-success);border-color:color-mix(in srgb,var(--color-success) 42%,var(--content-border))}
+.hub-maitrise-badge--a_confirmer{color:var(--refonte-orange,var(--accent));border-color:color-mix(in srgb,var(--refonte-orange,var(--accent)) 42%,var(--content-border))}
+.hub-maitrise-badge--construction{color:var(--accent)}
+.hub-maitrise-badge--fragile{color:var(--refonte-danger);border-color:color-mix(in srgb,var(--refonte-danger) 38%,var(--content-border))}
+.hub-maitrise-score{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;margin:16px 0 8px}
+.hub-maitrise-score-number{display:block;font-size:1.55rem;font-weight:900;line-height:1;color:var(--content-text)}
+.hub-maitrise-score-label{display:block;margin-top:4px;font-size:.66rem;color:var(--content-text-muted)}
+.hub-maitrise-confidence{display:grid;text-align:right}
+.hub-maitrise-confidence span{font-size:.61rem;color:var(--content-text-muted);text-transform:uppercase;letter-spacing:.06em}
+.hub-maitrise-confidence strong{font-family:"IBM Plex Mono",monospace;font-size:.83rem;color:var(--content-text)}
+.hub-maitrise-barre{height:8px;border-radius:999px;overflow:hidden;background:var(--content-surface);border:1px solid var(--content-border)}
+.hub-maitrise-barre span{display:block;height:100%;border-radius:inherit;background:var(--accent)}
+.hub-maitrise-carte--prouvee .hub-maitrise-barre span{background:var(--color-success)}
+.hub-maitrise-carte--a_confirmer .hub-maitrise-barre span{background:var(--refonte-orange,var(--accent))}
+.hub-maitrise-carte--fragile .hub-maitrise-barre span{background:var(--refonte-danger)}
+.hub-maitrise-preuves{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0}
+.hub-maitrise-preuves span{padding:5px 7px;border:1px solid var(--content-border);border-radius:8px;background:var(--content-surface);font-size:.61rem;color:var(--content-text-muted)}
+.hub-maitrise-preuves span.is-ok{color:var(--color-success);border-color:color-mix(in srgb,var(--color-success) 32%,var(--content-border))}
+.hub-maitrise-message{display:grid;gap:3px;min-height:42px;margin:4px 0 10px;padding:9px 10px;border-radius:10px;background:var(--content-surface);border:1px solid var(--content-border)}
+.hub-maitrise-message strong{font-size:.7rem;color:var(--content-text)}
+.hub-maitrise-message span{font-size:.66rem;line-height:1.45;color:var(--content-text-muted)}
+.hub-maitrise-carte .hub-notion-actions{margin-top:10px}
+@media (max-width:920px){.hub-maitrise-grid{grid-template-columns:1fr}}
+@media (max-width:760px){
+  .hub-maitrise-top{align-items:flex-start;flex-direction:column}
+  .hub-maitrise-principe{align-self:flex-start}
+  .hub-maitrise-grid{gap:10px}
+}
