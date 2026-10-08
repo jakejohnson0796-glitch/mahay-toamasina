@@ -116,6 +116,109 @@
     {% endif %}
   </section>
 
+  {% if cartes_maitrise %}
+  <section class="hub-section hub-maitrise-section" aria-labelledby="passeport-maitrise-title">
+    <div class="hub-section-entete hub-maitrise-entete">
+      <div>
+        <p class="eyebrow">Nouveau moteur de décision</p>
+        <h2 id="passeport-maitrise-title">Passeport de maîtrise</h2>
+        <p class="hub-section-sous-titre">
+          Gasy Mahay ne considère plus qu'une notion est maîtrisée sur un simple score :
+          il cherche une preuve répétée, sur plusieurs séances et niveaux de difficulté.
+        </p>
+      </div>
+      <span class="hub-maitrise-principe">Score ≠ preuve</span>
+    </div>
+
+    <div class="hub-maitrise-grid">
+      {% for carte in cartes_maitrise %}
+      {% set p = carte.progression %}
+      {% set d = carte.diagnostic %}
+      <article class="hub-maitrise-carte hub-maitrise-carte--{{ d.statut }}">
+        <div class="hub-maitrise-top">
+          <div>
+            <span class="hub-notion-matiere">{{ p.matiere }}</span>
+            <h3>{{ p.notion }}</h3>
+          </div>
+          <span class="hub-maitrise-badge hub-maitrise-badge--{{ d.statut }}">{{ d.libelle }}</span>
+        </div>
+
+        <div class="hub-maitrise-score">
+          <div>
+            <span class="hub-maitrise-score-number">{{ d.score }}%</span>
+            <span class="hub-maitrise-score-label">maîtrise estimée</span>
+          </div>
+          <div class="hub-maitrise-confidence">
+            <span>confiance</span>
+            <strong>{{ d.confiance }}%</strong>
+          </div>
+        </div>
+
+        <div class="hub-maitrise-barre" role="progressbar" aria-valuenow="{{ d.score }}" aria-valuemin="0" aria-valuemax="100" aria-label="Maîtrise de {{ p.notion }}">
+          <span style="width: {{ d.score }}%"></span>
+        </div>
+
+        <div class="hub-maitrise-preuves" aria-label="Preuves observées">
+          <span class="{{ 'is-ok' if d.conditions.questions else '' }}">{{ p.nb_questions }} questions</span>
+          <span class="{{ 'is-ok' if d.conditions.seances else '' }}">{{ p.nb_revisions }} séances</span>
+          <span class="{{ 'is-ok' if d.conditions.serie else '' }}">{{ p.serie_reussites }} réussites d'affilée</span>
+          <span class="{{ 'is-ok' if d.conditions.difficulte else '' }}">max. {{ d.niveau_max_reussi }}</span>
+        </div>
+
+        {% if d.statut == "prouvee" %}
+        <div class="hub-maitrise-message">
+          <strong>Preuve obtenue.</strong>
+          {% if p.derniere_preuve_le %}
+          <span>Confirmée le {{ p.derniere_preuve_le.strftime("%d/%m/%Y") }}.</span>
+          {% else %}
+          <span>Les critères de preuve sont actuellement remplis.</span>
+          {% endif %}
+          {% if p.prochaine_preuve_le %}
+          <span>Nouvelle vérification · {{ p.prochaine_preuve_le.strftime("%d/%m/%Y") }}</span>
+          {% endif %}
+        </div>
+        {% elif d.statut == "a_confirmer" %}
+        <div class="hub-maitrise-message">
+          <strong>Tu es proche.</strong>
+          <span>{{ d.conditions_manquantes|length }} preuve{{ "s" if d.conditions_manquantes|length != 1 else "" }} à sécuriser avant de déclarer la maîtrise.</span>
+        </div>
+        {% else %}
+        <div class="hub-maitrise-message">
+          <strong>Prochaine meilleure action : {{ d.action }}</strong>
+          {% if d.conditions_manquantes %}
+          <span>{{ d.conditions_manquantes[0] }}.</span>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="hub-notion-actions">
+          {% if d.statut == "a_confirmer" %}
+          <form method="post" action="/quiz/cible">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ p.id }}">
+            <button class="bouton bouton-primaire" type="submit">Prouver ma maîtrise</button>
+          </form>
+          {% elif d.statut != "prouvee" %}
+          {% if p.nb_erreurs > 0 %}
+          <form method="post" action="/tuteur/demander">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ p.id }}">
+            <input type="hidden" name="question" value="Aide-moi à consolider {{ p.notion }} en {{ p.matiere }}. Pars de mes erreurs connues, explique l'erreur que je dois éviter et donne-moi un exercice progressif.">
+            <button class="bouton bouton-secondaire" type="submit">Tuteur IA</button>
+          </form>
+          {% endif %}
+          <form method="post" action="/quiz/cible">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ p.id }}">
+            <button class="bouton bouton-primaire" type="submit">Entraîner cette notion</button>
+          </form>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
   {% if notions_a_revoir %}
   <section class="hub-section hub-focus-section" id="notions-a-revoir">
     <div class="hub-section-entete hub-focus-entete">
