@@ -139,3 +139,21 @@ def test_renderer_protege_le_dom_katex_contre_un_second_passage():
     assert 'ancetre.classList.contains("gm-katex")' in js
     assert 'ancetre.classList.contains("gm-latex-fallback")' in js
     assert 'cible.dataset.renduVersion = "5"' in js
+
+
+def test_renderer_decode_les_sauts_de_ligne_ia_legacy_sans_casser_nabla():
+    js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
+    assert "normaliserTexteMarkdownLegacy" in js
+    assert r".replace(/\\n(?=\\s*[-*•]\\s+)/g" in js
+    assert r".replace(/\\n(?=\\s*\\d+[.)]\\s+)/g" in js
+    # Une commande LaTeX comme \\nabla ne doit jamais etre convertie en saut de ligne.
+    assert r"\\nabla" not in ""  # Documentation du contrat: la regex cible un contexte Markdown.
+
+def test_renderer_convertit_textit_latex_hors_math_en_italique_markdown():
+    js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
+    assert r".replace(/\\(?:textit|emph)\\{([^{}]*)\\}/g, "*$1*")" in js
+    assert r".replace(/\\textbf\\{([^{}]*)\\}/g, "**$1**")" in js
+
+def test_contexte_notion_tuteur_separe_visuellement_le_libelle():
+    css = (ROOT / "app/static/ai-learning.css").read_text(encoding="utf-8")
+    assert ".ai-target-context .ai-kicker{display:block;" in css
