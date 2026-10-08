@@ -6,7 +6,7 @@ from sqlmodel import Session, select, func
 
 from ..auth import utilisateur_courant
 from ..database import get_session
-from ..models import ConsultationDocument, Document, SessionTuteur, TentativeQuiz, StatutDocument
+from ..models import ConsultationDocument, Document, ProgressionNotion, SessionTuteur, TentativeQuiz, StatutDocument
 from ..templating import templates
 from .. import dashboard as dashboard_module
 from .. import quiz as quiz_module
@@ -56,6 +56,21 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
     progression = dashboard_module.progression_matieres(session, utilisateur)
     notions_a_revoir = quiz_module.notions_a_revoir(session, utilisateur.id, limit=8)
 
+    progressions_maitrise = session.exec(
+        select(ProgressionNotion)
+        .where(ProgressionNotion.utilisateur_id == utilisateur.id)
+        .where(ProgressionNotion.nb_questions > 0)
+        .order_by(ProgressionNotion.score_maitrise.desc(), ProgressionNotion.date_maj.desc())
+        .limit(12)
+    ).all()
+    cartes_maitrise = [
+        {
+            "progression": progression,
+            "diagnostic": quiz_module.diagnostiquer_maitrise(progression),
+        }
+        for progression in progressions_maitrise
+    ]
+
     return templates.TemplateResponse(
         request,
         "mes_revisions.html",
@@ -66,6 +81,7 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
             "nb_sessions_tuteur": nb_sessions_tuteur,
             "progression_matieres": progression,
             "notions_a_revoir": notions_a_revoir,
+            "cartes_maitrise": cartes_maitrise,
             "nb_documents": len(consultations),
             "nb_quiz": len(quiz),
         },
