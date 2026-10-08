@@ -18,7 +18,68 @@
         <span class="hub-hero-side-label">Priorité du jour</span>
         <span class="hub-hero-side-icon" aria-hidden="true">{{ icone("tuteur", 17) }}</span>
       </div>
-      {% if notions_a_revoir %}
+      {% if cartes_illusions %}
+  <section class="hub-section hub-illusions-section" aria-labelledby="carte-illusions-title">
+    <div class="hub-section-entete hub-illusions-entete">
+      <div>
+        <p class="eyebrow">Métacognition</p>
+        <h2 id="carte-illusions-title">Carte des illusions</h2>
+        <p class="hub-section-sous-titre">
+          Une note élevée ne suffit pas : cette carte repère les notions où tu étais très sûr de toi alors que tes réponses étaient encore fragiles.
+        </p>
+      </div>
+      <span class="hub-illusions-principe">Confiance ≠ maîtrise</span>
+    </div>
+
+    <div class="hub-illusions-grid">
+      {% for carte in cartes_illusions %}
+      <article class="hub-illusion-carte hub-illusion-carte--{{ carte.statut }}">
+        <div class="hub-illusion-top">
+          <div>
+            <span class="hub-notion-matiere">{{ carte.matiere }}</span>
+            <h3>{{ carte.notion }}</h3>
+          </div>
+          <span class="hub-illusion-badge hub-illusion-badge--{{ carte.statut }}">{{ carte.libelle }}</span>
+        </div>
+
+        <div class="hub-illusion-score">
+          <div>
+            <span class="hub-illusion-score-number">{{ carte.score_risque }}%</span>
+            <span class="hub-illusion-score-label">signal de risque</span>
+          </div>
+          <div>
+            <span class="hub-illusion-score-number">{{ carte.taux_surconfiance }}%</span>
+            <span class="hub-illusion-score-label">erreurs parmi les réponses très sûres</span>
+          </div>
+        </div>
+
+        <p class="hub-illusion-message">{{ carte.message }}</p>
+
+        <div class="hub-illusion-preuves">
+          <span>{{ carte.observations_fortes }} réponse{{ "s" if carte.observations_fortes != 1 else "" }} très sûre{{ "s" if carte.observations_fortes != 1 else "" }}</span>
+          <span>{{ carte.observations }} observation{{ "s" if carte.observations != 1 else "" }} au total</span>
+          {% if carte.score_maitrise is not none %}
+          <span>maîtrise actuelle · {{ carte.score_maitrise }}%</span>
+          {% endif %}
+        </div>
+
+        <div class="hub-illusion-action">
+          <strong>Prochaine action : {{ carte.action }}</strong>
+          {% if carte.progression_id %}
+          <form method="post" action="/tuteur/demander">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ carte.progression_id }}">
+            <input type="hidden" name="question" value="J'ai une illusion de maîtrise sur {{ carte.notion }} en {{ carte.matiere }}. J'ai donné {{ carte.erreurs_confiance_forte }} réponse(s) fausse(s) avec une forte confiance sur cette notion. Ne me rassure pas artificiellement : aide-moi à identifier exactement ce que je crois savoir, teste un transfert vers un exercice différent, puis donne-moi un mini-test sans révéler la réponse immédiatement.">
+            <button class="bouton bouton-secondaire" type="submit">Déconstruire avec le Tuteur IA</button>
+          </form>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if notions_a_revoir %}
       <strong>{{ notions_a_revoir|length }} notion{{ "s" if notions_a_revoir|length != 1 else "" }} à revoir</strong>
       <span>Commence par tes points faibles, puis consolide ce que tu maîtrises déjà.</span>
       <a class="bouton bouton-primaire bouton-compact" href="#notions-a-revoir">Voir mon parcours →</a>
