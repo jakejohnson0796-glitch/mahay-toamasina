@@ -954,7 +954,7 @@ def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
     """Verifie une session deja livree et remplace son contenu si necessaire."""
     from sqlmodel import Session
     from .database import engine
-    from .models import SessionTuteur
+    from .models import ProgressionNotion, SessionTuteur
 
     with Session(engine) as session:
         session_tuteur = session.get(SessionTuteur, session_id)
