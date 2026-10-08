@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+{% block titre %}Carte des connaissances — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<div class="contenu-clair hub-page">
+  <section class="hub-hero hub-hero-revisions">
+    <div class="hub-hero-copy">
+      <div class="hub-hero-badge">
+        <span class="hub-hero-badge-icon" aria-hidden="true">{{ icone("tuteur", 16) }}</span>
+        <span>Intelligence pédagogique</span>
+      </div>
+      <h1>Ma carte des connaissances</h1>
+      <p class="hub-hero-sous-titre">
+        Gasy Mahay ne regarde pas seulement tes scores : il cherche aussi les
+        <strong>notions qui servent de prérequis</strong> aux autres.
+      </p>
+    </div>
+    <div class="hub-hero-side" aria-label="Résumé de la carte">
+      <div class="hub-hero-side-top">
+        <span class="hub-hero-side-label">Vue de ton parcours</span>
+        <span class="hub-hero-side-icon" aria-hidden="true">{{ icone("documents", 17) }}</span>
+      </div>
+      {% if carte.nb_notions %}
+      <strong>{{ carte.nb_notions }} notion{{ "s" if carte.nb_notions != 1 else "" }} observée{{ "s" if carte.nb_notions != 1 else "" }}</strong>
+      <span>{{ carte.nb_relations }} relation{{ "s" if carte.nb_relations != 1 else "" }} de prérequis confirmée{{ "s" if carte.nb_relations != 1 else "" }} dans ton historique.</span>
+      {% else %}
+      <strong>Ta carte est encore vide</strong>
+      <span>Termine quelques questions avec des notions identifiées pour commencer à construire ton parcours.</span>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if carte.prochaine %}
+  <section class="hub-section knowledge-next" aria-labelledby="knowledge-next-title">
+    <div class="knowledge-next-icon" aria-hidden="true">{{ icone("tuteur", 20) }}</div>
+    <div class="knowledge-next-copy">
+      <p class="eyebrow">Prochaine meilleure action</p>
+      <h2 id="knowledge-next-title">{{ carte.prochaine.notion }}</h2>
+      <p>
+        {% if carte.prochaine.prerequis %}
+        Cette notion dépend notamment de <strong>{{ carte.prochaine.prerequis[0] }}</strong>.
+        {% if carte.prochaine.prerequis|length > 1 %}Renforce d'abord les bases les plus fragiles.{% endif %}
+        {% else %}
+        C'est actuellement l'une de tes notions les plus fragiles parmi celles mesurées.
+        {% endif %}
+      </p>
+      <div class="knowledge-next-stats">
+        <span><b>{{ carte.prochaine.score }}%</b> maîtrise</span>
+        <span><b>{{ carte.prochaine.confiance }}%</b> confiance</span>
+        <span>{{ carte.prochaine.libelle }}</span>
+      </div>
+      <div class="hub-notion-actions">
+        <form method="post" action="/quiz/cible">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="progression_id" value="{{ carte.prochaine.id }}">
+          <button class="bouton bouton-primaire" type="submit">Entraîner cette notion</button>
+        </form>
+        {% if carte.prochaine.score < 75 %}
+        <form method="post" action="/tuteur/demander">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="progression_id" value="{{ carte.prochaine.id }}">
+          <input type="hidden" name="question" value="Aide-moi à consolider {{ carte.prochaine.notion }} en {{ carte.prochaine.matiere }}. Explique les prérequis importants puis donne-moi un exercice progressif.">
+          <button class="bouton bouton-secondaire" type="submit">Demander au Tuteur</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if carte.blocages %}
+  <section class="hub-section" aria-labelledby="knowledge-blockers-title">
+    <div class="hub-section-entete">
+      <div>
+        <p class="eyebrow">Blocages en amont</p>
+        <h2 id="knowledge-blockers-title">Ce qui peut te freiner sans être visible au score global</h2>
+        <p class="hub-section-sous-titre">Une notion avancée est parfois faible simplement parce que son prérequis est encore fragile.</p>
+      </div>
+    </div>
+    <div class="knowledge-blockers">
+      {% for relation in carte.blocages %}
+      <article class="knowledge-blocker">
+        <div class="knowledge-blocker-path">
+          <span class="knowledge-node knowledge-node--weak">{{ relation.source.notion }} · {{ relation.source.score }}%</span>
+          <span class="knowledge-arrow" aria-hidden="true">→</span>
+          <span class="knowledge-node">{{ relation.target.notion }} · {{ relation.target.score }}%</span>
+        </div>
+        <p>{{ relation.message }}</p>
+        <div class="hub-notion-actions">
+          <form method="post" action="/quiz/cible">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ relation.source.id }}">
+            <button class="bouton bouton-primaire" type="submit">Travailler le prérequis</button>
+          </form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if carte.sujets %}
+    {% for sujet in carte.sujets %}
+    <section class="hub-section knowledge-subject" aria-labelledby="knowledge-subject-{{ loop.index }}">
+      <div class="hub-section-entete">
+        <div>
+          <p class="eyebrow">{{ loop.index }} · Matière</p>
+          <h2 id="knowledge-subject-{{ loop.index }}">{{ sujet.matiere }}</h2>
+          <p class="hub-section-sous-titre">Les relations affichées sont basées uniquement sur les notions réellement rencontrées.</p>
+        </div>
+      </div>
+
+      <div class="knowledge-map-grid">
+        {% for node in sujet.nodes %}
+        <article class="knowledge-card knowledge-card--{{ node.statut }}">
+          <div class="knowledge-card-top">
+            <div>
+              <span class="hub-notion-matiere">{{ node.famille }}</span>
+              <h3>{{ node.notion }}</h3>
+            </div>
+            <span class="knowledge-score">{{ node.score }}%</span>
+          </div>
+          <div class="knowledge-barre" role="progressbar" aria-valuenow="{{ node.score }}" aria-valuemin="0" aria-valuemax="100" aria-label="Maîtrise de {{ node.notion }}">
+            <span style="width: {{ node.score }}%"></span>
+          </div>
+          <div class="knowledge-card-meta">
+            <span>{{ node.libelle }}</span>
+            <span>confiance {{ node.confiance }}%</span>
+          </div>
+          {% if node.prerequis %}
+          <p class="knowledge-card-line"><strong>Prérequis :</strong> {{ node.prerequis|join(", ") }}</p>
+          {% endif %}
+          {% if node.dependances %}
+          <p class="knowledge-card-line"><strong>Ouvre vers :</strong> {{ node.dependances|join(", ") }}</p>
+          {% endif %}
+          <form method="post" action="/quiz/cible" class="knowledge-card-action">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="progression_id" value="{{ node.id }}">
+            <button class="bouton bouton-secondaire" type="submit">Pratiquer</button>
+          </form>
+        </article>
+        {% endfor %}
+      </div>
+
+      {% if sujet.relations %}
+      <div class="knowledge-relations" aria-label="Relations de prérequis">
+        {% for relation in sujet.relations %}
+        <div class="knowledge-relation">
+          <span>{{ relation.source.notion }} <b>{{ relation.source.score }}%</b></span>
+          <span class="knowledge-relation-arrow" aria-hidden="true">→</span>
+          <span>{{ relation.target.notion }} <b>{{ relation.target.score }}%</b></span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+    {% endfor %}
+  {% else %}
+    <section class="hub-section hub-vide">
+      <h2>Construisons ta première carte</h2>
+      <p>Fais un quiz contenant des notions identifiables. La carte s'enrichira automatiquement à mesure que Gasy Mahay observe ton apprentissage.</p>
+      <a class="bouton bouton-primaire" href="/quiz">Commencer un quiz</a>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
