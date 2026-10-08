@@ -315,17 +315,17 @@ def _generer_completion_avec_reessai(
                     "textuellement distincts, sans reformuler le meme choix. "
                     "Une seule option doit etre correcte et l'index doit pointer vers elle."
                 )
-                if numero_essai == len(messages_par_essai):
-                    messages_par_essai.append(
-                        f"{contenu}\n\n"
-                        "DERNIERE REGENERATION QUALITE : reconstruis le quiz au lieu de "
-                        "recopier les choix precedents. Pour chaque question, determine "
-                        "d'abord la reponse correcte, puis cree trois distracteurs qui "
-                        "different clairement par valeur, condition, signe, intervalle "
-                        "ou interpretation. Relis les quatre choix ensemble et verifie "
-                        "qu'aucun n'est identique ou equivalent a un autre. Conserve "
-                        "exactement le nombre de questions et une seule bonne reponse."
-                    )
+            else:
+                messages_par_essai.append(
+                    f"{contenu}\n\n"
+                    "DERNIERE REGENERATION QUALITE : reconstruis le quiz au lieu de "
+                    "recopier les choix precedents. Pour chaque question, determine "
+                    "d'abord la reponse correcte, puis cree trois distracteurs qui "
+                    "different clairement par valeur, condition, signe, intervalle "
+                    "ou interpretation. Relis les quatre choix ensemble et verifie "
+                    "qu'aucun n'est identique ou equivalent a un autre. Conserve "
+                    "exactement le nombre de questions et une seule bonne reponse."
+                )
             continue
 
         return completion, None
