@@ -738,6 +738,7 @@ def generer_reponse_tuteur(
         kwargs["include_reasoning"] = False
 
     derniere_erreur = None
+    arguments = None
     for tentative in range(2):
         try:
             if tentative:
@@ -767,26 +768,29 @@ def generer_reponse_tuteur(
             break
         except ai_ensemble.ProviderCooldown as erreur:
             derniere_erreur = erreur
-            # Fallback fournisseur uniquement quand Groq est indisponible.
-            fallback = ai_ensemble._gemini_json(
-                kwargs["messages"][0]["content"],
-                ai_ensemble.TUTEUR_GEMINI_SCHEMA,
-            )
-            if fallback:
-                arguments = fallback
-                break
-            logger.warning("Tuteur suspendu: %s", erreur)
-            return _reponse_tuteur_erreur(
-                "Le Tuteur IA est temporairement tres sollicite. "
-                "Ta question n'est pas perdue; reessaie dans quelques instants."
-            )
+            logger.warning("Groq Tuteur en cooldown: %s", erreur)
+            break
         except Exception as erreur:
             derniere_erreur = erreur
-    else:
-        return _reponse_tuteur_erreur(
-            "Le Tuteur IA est temporairement tres sollicite. "
-            "Ta question n'est pas perdue; reessaie dans quelques instants."
+
+    # Un échec de tool-call n'est pas une panne définitive du Tuteur.
+    # On bascule sur le fournisseur secondaire après les deux tentatives Groq.
+    if not isinstance(arguments, dict):
+        fallback = ai_ensemble._gemini_json(
+            kwargs["messages"][0]["content"],
+            ai_ensemble.TUTEUR_GEMINI_SCHEMA,
         )
+        if isinstance(fallback, dict):
+            arguments = fallback
+        else:
+            logger.warning(
+                "Tuteur indisponible après fallback fournisseur: %s",
+                type(derniere_erreur).__name__ if derniere_erreur else "format_invalide",
+            )
+            return _reponse_tuteur_erreur(
+                "Le Tuteur IA est temporairement indisponible. "
+                "Ta question n'est pas perdue; reessaie dans quelques instants."
+            )
 
     reponse_initiale = normaliser_structure_tuteur({
         "explication": arguments.get("explication") or "—",
@@ -884,25 +888,45 @@ def verifier_reponse_tuteur_structuree(
         return reponse_secours
 
 
-def reparer_verifications_tuteur_en_attente(max_sessions: int = 3, age_minimum_secondes: int = 60) -> int:
-    """Récupère les réponses Tuteur restées en attente après un redémarrage.
+def reparer_verifications_tuteur_en_attente(
+    max_sessions: int = 3,
+    age_minimum_secondes: int = 60,
+    age_en_cours_secondes: int = 300,
+) -> int:
+    """Récupère les vérifications Tuteur perdues après un redémarrage.
 
-    Le chemin normal passe par BackgroundTasks. Cette sécurité supplémentaire
-    ne touche qu'aux sessions encore en attente depuis assez longtemps pour
-    éviter de lancer une seconde vérification pendant une requête normale.
+    ``en_attente`` couvre les BackgroundTasks qui n'ont jamais démarré.
+    ``en_cours`` couvre les vérifications dont le processus est mort après
+    la prise en charge. ``date_verification_ia`` sert de timestamp de
+    prise en charge pendant ``en_cours`` puis redevient la date de fin.
     """
     from datetime import datetime, timedelta
     from sqlmodel import Session, select
+    from sqlalchemy import and_, or_
     from .database import engine
     from .models import SessionTuteur
 
-    seuil = datetime.utcnow() - timedelta(seconds=max(1, age_minimum_secondes))
+    maintenant = datetime.utcnow()
+    seuil_attente = maintenant - timedelta(seconds=max(1, age_minimum_secondes))
+    seuil_en_cours = maintenant - timedelta(seconds=max(1, age_en_cours_secondes))
+
     with Session(engine) as session:
         sessions = session.exec(
             select(SessionTuteur)
             .where(
-                SessionTuteur.statut_verification_ia == "en_attente",
-                SessionTuteur.date_creation <= seuil,
+                or_(
+                    and_(
+                        SessionTuteur.statut_verification_ia == "en_attente",
+                        SessionTuteur.date_creation <= seuil_attente,
+                    ),
+                    and_(
+                        SessionTuteur.statut_verification_ia == "en_cours",
+                        or_(
+                            SessionTuteur.date_verification_ia.is_(None),
+                            SessionTuteur.date_verification_ia <= seuil_en_cours,
+                        ),
+                    ),
+                )
             )
             .order_by(SessionTuteur.date_creation)
             .limit(max(1, max_sessions))
@@ -920,7 +944,7 @@ def reparer_verifications_tuteur_en_attente(max_sessions: int = 3, age_minimum_s
 
     if ids:
         logger.info(
-            "Récupération Tuteur: %s session(s) relancée(s) après attente prolongée.",
+            "Récupération Tuteur: %s vérification(s) relancée(s), dont les orphanées en_cours.",
             len(ids),
         )
     return len(ids)
@@ -938,6 +962,7 @@ def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
             return
 
         session_tuteur.statut_verification_ia = "en_cours"
+        session_tuteur.date_verification_ia = datetime.utcnow()
         session_tuteur.erreur_verification_ia = None
         session.add(session_tuteur)
         session.commit()
