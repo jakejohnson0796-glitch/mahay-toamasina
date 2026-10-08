@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlmodel import Session, SQLModel, create_engine
 
 from app import ai_queue
-from app.models import StatutTacheIA, TacheIA, TentativeQuiz, Utilisateur
+from app.models import SessionTuteur, StatutTacheIA, TacheIA, TentativeQuiz, Utilisateur
 
 
 def test_file_ia_planification_idempotente(monkeypatch):
@@ -173,3 +173,115 @@ def test_file_ia_prend_une_tache_par_id_redis(monkeypatch):
     assert tache.id == tache_id
     assert tache.statut == StatutTacheIA.EN_COURS
 
+
+
+
+def test_file_ia_planification_tuteur_idempotente(monkeypatch):
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    monkeypatch.setattr(ai_queue, "engine", engine)
+
+    with Session(engine) as session:
+        utilisateur = Utilisateur(
+            nom="TestTuteur",
+            telephone="690000005",
+            mot_de_passe_hash="hash",
+        )
+        session.add(utilisateur)
+        session.commit()
+        session.refresh(utilisateur)
+
+        session_tuteur = SessionTuteur(
+            utilisateur_id=utilisateur.id,
+            notion="Déterminant d'ordre 2",
+            question="Explique-moi le déterminant.",
+            explication="Réponse.",
+            exemple="Exemple.",
+            exercice="Exercice.",
+            correction="Correction.",
+            statut_verification_ia="en_attente",
+        )
+        session.add(session_tuteur)
+        session.commit()
+        session.refresh(session_tuteur)
+
+        first = ai_queue.planifier_verification_tuteur(session_tuteur.id)
+        second = ai_queue.planifier_verification_tuteur(session_tuteur.id)
+
+        assert first == second
+
+        tache = session.get(TacheIA, first)
+        assert tache is not None
+        assert tache.type_tache == ai_queue.TYPE_VERIFICATION_TUTEUR
+        assert tache.session_tuteur_id == session_tuteur.id
+        assert tache.tentative_quiz_id is None
+
+
+def test_file_ia_reprend_une_tache_orpheline(monkeypatch):
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    monkeypatch.setattr(ai_queue, "engine", engine)
+
+    with Session(engine) as session:
+        utilisateur = Utilisateur(
+            nom="TestOrphelin",
+            telephone="690000006",
+            mot_de_passe_hash="hash",
+        )
+        session.add(utilisateur)
+        session.commit()
+        session.refresh(utilisateur)
+
+        session_tuteur = SessionTuteur(
+            utilisateur_id=utilisateur.id,
+            notion="Algèbre",
+            question="Question.",
+            explication="Réponse.",
+            exemple="Exemple.",
+            exercice="Exercice.",
+            correction="Correction.",
+            statut_verification_ia="en_cours",
+        )
+        session.add(session_tuteur)
+        session.commit()
+        session.refresh(session_tuteur)
+
+        tache = TacheIA(
+            type_tache=ai_queue.TYPE_VERIFICATION_TUTEUR,
+            session_tuteur_id=session_tuteur.id,
+            tentative_quiz_id=None,
+            statut=StatutTacheIA.EN_COURS,
+            strategie_verification="legere",
+            prise_en_charge_le=datetime.utcnow(),
+        )
+        session.add(tache)
+        session.commit()
+        session.refresh(tache)
+        tache_id = tache.id
+
+    notifications = []
+    monkeypatch.setattr(
+        ai_queue,
+        "notifier_tache",
+        lambda task_id: notifications.append(task_id) or True,
+    )
+
+    assert ai_queue.reparer_taches_en_cours_orphelines(
+        max_taches=5,
+        age_secondes=1,
+    ) == 1
+
+    with Session(engine) as session:
+        tache = session.get(TacheIA, tache_id)
+        assert tache is not None
+        assert tache.statut == StatutTacheIA.EN_ATTENTE
+        assert tache.prise_en_charge_le is None
+        assert tache.disponible_le is not None
+
+    assert notifications == [tache_id]
