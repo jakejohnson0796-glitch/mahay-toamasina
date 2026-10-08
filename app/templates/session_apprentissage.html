@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+{% block titre %}Mission d'apprentissage — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<div class="contenu-clair hub-page mission-apprentissage">
+  <section class="mission-hero hub-hero hub-hero-revisions">
+    <div class="hub-hero-copy">
+      <div class="hub-hero-badge">
+        <span class="hub-hero-badge-icon" aria-hidden="true">{{ icone("tuteur", 16) }}</span>
+        <span>Mode Mission · apprentissage ciblé</span>
+      </div>
+      {% if mission.active %}
+      <h1>{{ mission.titre }}</h1>
+      <p class="hub-hero-sous-titre">Une seule notion. Un objectif clair. Une preuve à la fin.</p>
+      {% else %}
+      <h1>Construis ta prochaine mission</h1>
+      <p class="hub-hero-sous-titre">Le moteur attend encore assez de données pour choisir une priorité de façon fiable.</p>
+      {% endif %}
+    </div>
+    <div class="mission-hero-side" aria-label="Résumé de la mission">
+      {% if mission.active %}
+      <span class="mission-kicker">{{ mission.matiere }}</span>
+      <strong>{{ mission.notion }}</strong>
+      <span>{{ mission.score }}% de maîtrise · {{ mission.erreurs }} erreur{{ "s" if mission.erreurs != 1 else "" }}</span>
+      <span class="mission-duration">{{ mission.duree }}</span>
+      {% else %}
+      <strong>Pas de priorité critique</strong>
+      <span>Commence un quiz pour donner au moteur ses premières preuves.</span>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if mission.active %}
+  <section class="mission-objective hub-section" aria-labelledby="mission-objective-title">
+    <div class="mission-objective-icon" aria-hidden="true">{{ icone("cible", 20) }}</div>
+    <div>
+      <p class="eyebrow">Objectif de la séance</p>
+      <h2 id="mission-objective-title">{{ mission.objectif }}</h2>
+      <p>{{ mission.message }}</p>
+      <div class="mission-tags">
+        <span>{{ mission.matiere }}</span>
+        <span>{{ mission.score }}% actuel</span>
+        {% if mission.revision_due %}<span>Révision due</span>{% endif %}
+        <span>5 questions ciblées</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="mission-steps hub-section" aria-labelledby="mission-steps-title">
+    <div class="hub-section-entete">
+      <div>
+        <p class="eyebrow">Le parcours</p>
+        <h2 id="mission-steps-title">Ne change pas de sujet avant d'avoir terminé</h2>
+      </div>
+      <a class="hub-section-entete-action" href="/carte-connaissances">Voir la carte →</a>
+    </div>
+
+    <div class="mission-step-grid">
+      {% for etape in mission.etapes %}
+      <article class="mission-step mission-step--{{ etape.etat }}">
+        <span class="mission-step-number">{{ etape.numero }}</span>
+        <div>
+          <span class="mission-step-title">{{ etape.titre }}</span>
+          <p>{{ etape.texte }}</p>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="mission-action hub-section" aria-labelledby="mission-action-title">
+    <div class="mission-action-copy">
+      <p class="eyebrow">Commencer maintenant</p>
+      <h2 id="mission-action-title">{{ mission.action_label }}</h2>
+      <p>On conserve la même notion jusqu'à ce que la prochaine preuve soit obtenue.</p>
+    </div>
+    <div class="mission-action-buttons">
+      {% if mission.action_principale == "tuteur" %}
+      <form method="post" action="/tuteur/demander">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <input type="hidden" name="progression_id" value="{{ mission.progression_id }}">
+        <input type="hidden" name="question" value="Aide-moi à consolider {{ mission.notion }} en {{ mission.matiere }}. Pars de mes erreurs connues, explique l'erreur prioritaire à éviter et donne-moi un exercice progressif.">
+        <button class="bouton bouton-primaire" type="submit">Commencer avec le Tuteur IA →</button>
+      </form>
+      {% else %}
+      <form method="post" action="/quiz/cible">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <input type="hidden" name="progression_id" value="{{ mission.progression_id }}">
+        <button class="bouton bouton-primaire" type="submit">Lancer le quiz ciblé →</button>
+      </form>
+      {% endif %}
+
+      <a class="bouton bouton-secondaire" href="/mes-revisions">Retour aux révisions</a>
+    </div>
+  </section>
+
+  <aside class="mission-rule" aria-label="Règle de la mission">
+    <strong>Règle</strong>
+    <span>{{ mission.preuve }}</span>
+  </aside>
+  {% else %}
+  <section class="hub-section mission-empty">
+    <div class="mission-empty-icon" aria-hidden="true">{{ icone("quiz", 20) }}</div>
+    <div>
+      <h2>Crée ta première preuve</h2>
+      <p>Un premier quiz permet d'identifier les notions à renforcer et de débloquer le mode mission.</p>
+      <a class="bouton bouton-primaire" href="/quiz">Commencer un quiz →</a>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
