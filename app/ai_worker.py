@@ -42,6 +42,15 @@ def traiter_tache(tache) -> None:
         if not tache.session_tuteur_id:
             raise RuntimeError("Tache de verification Tuteur sans session_tuteur_id.")
 
+        with Session(engine) as session:
+            session_tuteur = session.get(SessionTuteur, tache.session_tuteur_id)
+            if not session_tuteur:
+                raise RuntimeError(
+                    f"Session Tuteur #{tache.session_tuteur_id} introuvable avant traitement."
+                )
+            if session_tuteur.statut_verification_ia == "terminee":
+                return
+
         ai_quiz.verifier_session_tuteur_en_arriere_plan(
             tache.session_tuteur_id
         )
