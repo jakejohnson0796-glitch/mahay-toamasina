@@ -6,6 +6,7 @@
 
 {% block contenu %}
 <div class="ai-learning-page">
+  <link rel="stylesheet" href="/static/ai-confidence.css?v={{ version_asset('ai-confidence.css') }}">
   <div class="quiz-run-shell">
     <main class="quiz-run-main" aria-labelledby="quiz-run-title">
       <div class="quiz-run-topbar">
@@ -45,6 +46,7 @@
         {% for item in questions %}
         {% set q = loop.index0 %}
         {% set rep = reponses[q] if q < reponses|length else none %}
+        {% set confiance = confiances[q] if q < confiances|length else none %}
         {% set ok = rep == item.index_bonne_reponse %}
         <article class="quiz-question-card quiz-question-correction {{ 'is-correct' if ok else 'is-wrong' }}">
           <span class="quiz-question-number">Question {{ "%02d" % loop.index }}</span>
@@ -68,6 +70,9 @@
             <strong>{% if ok %}✅ Correcte{% elif rep is none %}⚠️ Sans réponse{% else %}❌ Incorrecte{% endif %}</strong>
             <!-- MODIF : le texte affiché ne participe jamais au calcul de la bonne réponse. -->
             <span>Bonne réponse : {{ ["A","B","C","D","E","F"][item.index_bonne_reponse] }}. <span data-rendu data-rendu-ligne>{{ item.choix[item.index_bonne_reponse] }}</span></span>
+            {% if confiance %}
+            <span>Ta confiance : <strong>{{ "Faible" if confiance == "faible" else ("Moyenne" if confiance == "moyenne" else "Forte") }}</strong></span>
+            {% endif %}
           </div>
           {% if item.explication %}
           <div class="quiz-correction-explanation">
@@ -124,6 +129,25 @@
             </label>
             {% endfor %}
           </div>
+
+          <fieldset class="ai-panel ai-confidence-panel">
+            <legend>Avant de valider : à quel point es-tu sûr de ta réponse&nbsp;?</legend>
+            <div class="ai-inline-actions ai-confidence-choices">
+              <label class="ai-confidence-choice">
+                <input type="radio" name="confiance_{{ q }}" value="faible">
+                <span><strong>Faible</strong><small>Je doute encore.</small></span>
+              </label>
+              <label class="ai-confidence-choice">
+                <input type="radio" name="confiance_{{ q }}" value="moyenne">
+                <span><strong>Moyenne</strong><small>Je pense avoir compris.</small></span>
+              </label>
+              <label class="ai-confidence-choice">
+                <input type="radio" name="confiance_{{ q }}" value="forte">
+                <span><strong>Forte</strong><small>Je suis presque certain.</small></span>
+              </label>
+            </div>
+            <p class="ai-field-help">Ce n'est pas noté : Gasy Mahay compare ensuite ta confiance à ton résultat pour mieux choisir la suite.</p>
+          </fieldset>
         </article>
         {% endfor %}
         <div class="quiz-submit-bar">

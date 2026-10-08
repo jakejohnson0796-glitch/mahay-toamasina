@@ -1,0 +1,90 @@
+/* Gasy Mahay — auto-évaluation de confiance du Quiz IA */
+.ai-confidence-panel {
+  margin-top: .85rem;
+  padding: .75rem;
+  border: 1px solid var(--content-border);
+  border-radius: 14px;
+  background: var(--content-bg);
+}
+
+.ai-confidence-panel legend {
+  padding: 0 .3rem;
+  color: var(--content-text);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.ai-confidence-choices {
+  margin-top: .35rem;
+}
+
+.ai-confidence-choice {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  padding: .58rem .65rem;
+  border: 1px solid var(--content-border);
+  border-radius: 11px;
+  background: var(--content-surface);
+  color: var(--content-text);
+  cursor: pointer;
+}
+
+.ai-confidence-choice:has(input:checked) {
+  border-color: rgba(47,143,137,.5);
+  box-shadow: 0 0 0 2px rgba(47,143,137,.10);
+}
+
+.ai-confidence-choice input {
+  accent-color: var(--refonte-teal);
+}
+
+.ai-confidence-choice span {
+  display: grid;
+  gap: .08rem;
+}
+
+.ai-confidence-choice strong {
+  font-size: .67rem;
+}
+
+.ai-confidence-choice small {
+  color: var(--content-text-muted);
+  font-size: .56rem;
+  line-height: 1.25;
+}
+
+.ai-confidence-callout {
+  margin-top: .75rem;
+}
+
+.ai-confidence-callout .ai-feature strong {
+  font-size: .95rem;
+}
+
+.ai-confidence-warning {
+  border-color: rgba(190,120,35,.28);
+  background: rgba(190,120,35,.06);
+}
+
+.ai-confidence-good {
+  border-color: rgba(47,143,137,.24);
+  background: rgba(47,143,137,.055);
+}
+
+.ai-confidence-question {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .42rem;
+  color: var(--content-text-muted);
+  font-size: .59rem;
+}
+
+@media (max-width: 700px) {
+  .ai-confidence-choice {
+    min-width: 100%;
+  }
+}
