@@ -14,7 +14,7 @@ def _score(progression: ProgressionNotion) -> int:
 
 
 def _revision_due(progression: ProgressionNotion) -> bool:
-    return bool(progression.prochaine_revision_le and progression.prochaine_revision_le <= __import__("datetime").datetime.utcnow())
+    return bool(progression.prochaine_revision_le and progression.prochaine_revision_le <= datetime.utcnow())
 
 
 def construire_mission(carte: dict, progressions: Iterable[ProgressionNotion]) -> dict:
