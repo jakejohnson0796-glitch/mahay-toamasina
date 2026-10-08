@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from sqlmodel import Session, SQLModel, create_engine
 
-from app import ai_quiz
+from app import ai_queue, ai_quiz
 from app.models import ProgressionNotion, SessionTuteur, Utilisateur
 
 
@@ -42,7 +42,7 @@ def test_reparation_tuteur_reprend_une_session_trop_longtemps_en_attente(monkeyp
 
     appelees = []
     monkeypatch.setattr(
-        ai_quiz.ai_queue,
+        ai_queue,
         "planifier_verification_tuteur",
         lambda session_id: appelees.append(session_id) or session_id,
     )
