@@ -212,6 +212,10 @@ async def repondre_question_adaptative(
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=400, detail="Réponse adaptative invalide.") from exc
 
+    confiance = str(formulaire.get("confiance") or "").strip().lower() or None
+    if confiance is not None and confiance not in quiz_calibration.NIVEAUX_CONFIANCE:
+        raise HTTPException(status_code=400, detail="Niveau de confiance invalide.")
+
     try:
         resultat = quiz_module.enregistrer_reponse_adaptative(
             session,
@@ -221,6 +225,14 @@ async def repondre_question_adaptative(
         )
     except quiz_module.QuizValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if confiance is not None:
+        confiances = quiz_calibration.lire_confiances(tentative)
+        if 0 <= index_question < len(confiances):
+            confiances[index_question] = confiance
+            quiz_calibration.fusionner_confiances(tentative, confiances)
+            session.add(tentative)
+            session.commit()
 
     return JSONResponse(resultat)
 
