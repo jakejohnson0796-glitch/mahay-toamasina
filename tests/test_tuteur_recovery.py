@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from sqlmodel import Session, SQLModel, create_engine
 
 from app import ai_quiz
-from app.models import SessionTuteur, Utilisateur
+from app.models import ProgressionNotion, SessionTuteur, Utilisateur
 
 
 def test_reparation_tuteur_reprend_une_session_trop_longtemps_en_attente(monkeypatch):
@@ -182,3 +182,100 @@ def test_reparation_tuteur_ne_reprend_pas_une_verification_en_cours_recente(monk
 
     assert ai_quiz.reparer_verifications_tuteur_en_attente() == 0
     assert appelees == []
+
+
+def test_verification_tuteur_charge_la_matiere_de_la_progression(monkeypatch):
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    monkeypatch.setattr("app.database.engine", engine)
+
+    with Session(engine) as session:
+        utilisateur = Utilisateur(
+            nom="Tutor Progression",
+            telephone="690000104",
+            mot_de_passe_hash="hash",
+        )
+        session.add(utilisateur)
+        session.commit()
+        session.refresh(utilisateur)
+
+        progression = ProgressionNotion(
+            utilisateur_id=utilisateur.id,
+            matiere="Mathématiques",
+            notion="Déterminant d'ordre 2",
+            niveau="L1",
+            score_maitrise=42,
+            nb_questions=4,
+            nb_reussites=2,
+            nb_erreurs=2,
+        )
+        session.add(progression)
+        session.commit()
+        session.refresh(progression)
+
+        session_tuteur = SessionTuteur(
+            utilisateur_id=utilisateur.id,
+            notion=progression.notion,
+            progression_id=progression.id,
+            question="Calcule le déterminant de cette matrice.",
+            explication="Réponse initiale.",
+            exemple="Exemple.",
+            exercice="Exercice.",
+            correction="Correction.",
+        )
+        session.add(session_tuteur)
+        session.commit()
+        session.refresh(session_tuteur)
+        session_tuteur_id = session_tuteur.id
+
+    appels = []
+
+    def _verification_fictive(initiale, *, question, notion, matiere, strategie):
+        appels.append(
+            {
+                "question": question,
+                "notion": notion,
+                "matiere": matiere,
+                "strategie": strategie,
+                "initiale": initiale,
+            }
+        )
+        return {
+            "explication": "Réponse vérifiée.",
+            "exemple": initiale["exemple"],
+            "exercice": initiale["exercice"],
+            "correction": initiale["correction"],
+            "_statut_verification": "terminee",
+        }
+
+    monkeypatch.setattr(
+        ai_quiz,
+        "verifier_reponse_tuteur_structuree",
+        _verification_fictive,
+    )
+
+    ai_quiz.verifier_session_tuteur_en_arriere_plan(session_tuteur_id)
+
+    assert appels == [
+        {
+            "question": "Calcule le déterminant de cette matrice.",
+            "notion": "Déterminant d'ordre 2",
+            "matiere": "Mathématiques",
+            "strategie": "legere",
+            "initiale": {
+                "explication": "Réponse initiale.",
+                "exemple": "Exemple.",
+                "exercice": "Exercice.",
+                "correction": "Correction.",
+            },
+        }
+    ]
+
+    with Session(engine) as session:
+        resultat = session.get(SessionTuteur, session_tuteur_id)
+        assert resultat is not None
+        assert resultat.statut_verification_ia == "terminee"
+        assert resultat.explication == "Réponse vérifiée."
