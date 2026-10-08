@@ -249,7 +249,10 @@ def _generer_completion_avec_reessai(
                 ),
             }],
         }
-        if str(parametres.groq_model or "").startswith(("openai/gpt-oss", "qwen/qwen3.8-27b")):
+        if str(parametres.groq_model or "").startswith("openai/gpt-oss"):
+            kwargs["reasoning_effort"] = "low"
+            kwargs["include_reasoning"] = False
+        elif str(parametres.groq_model or "").startswith("qwen/qwen3.8-27b"):
             kwargs["reasoning_effort"] = "low"
             kwargs["reasoning_format"] = "hidden"
 
