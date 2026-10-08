@@ -11,6 +11,7 @@ from ..templating import templates
 from .. import dashboard as dashboard_module
 from .. import quiz as quiz_module
 from .. import gamification
+from .. import knowledge_map
 
 router = APIRouter()
 
@@ -70,6 +71,13 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
         }
         for progression in progressions_maitrise
     ]
+    carte_connaissances = knowledge_map.construire_carte(
+        session.exec(
+            select(ProgressionNotion)
+            .where(ProgressionNotion.utilisateur_id == utilisateur.id)
+            .where(ProgressionNotion.nb_questions > 0)
+        ).all()
+    )
 
     return templates.TemplateResponse(
         request,
@@ -82,7 +90,29 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
             "progression_matieres": progression,
             "notions_a_revoir": notions_a_revoir,
             "cartes_maitrise": cartes_maitrise,
+            "carte_connaissances": carte_connaissances,
             "nb_documents": len(consultations),
             "nb_quiz": len(quiz),
         },
+    )
+
+
+@router.get("/carte-connaissances")
+def page_carte_connaissances(request: Request, session: Session = Depends(get_session)):
+    """Affiche la carte des prerequis a partir des notions deja evaluees."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    progressions = session.exec(
+        select(ProgressionNotion)
+        .where(ProgressionNotion.utilisateur_id == utilisateur.id)
+        .where(ProgressionNotion.nb_questions > 0)
+        .order_by(ProgressionNotion.score_maitrise.asc(), ProgressionNotion.date_maj.desc())
+    ).all()
+    carte = knowledge_map.construire_carte(progressions)
+    return templates.TemplateResponse(
+        request,
+        "carte_connaissances.html",
+        {"utilisateur": utilisateur, "carte": carte},
     )
