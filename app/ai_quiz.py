@@ -904,7 +904,7 @@ def reparer_verifications_tuteur_en_attente(
     from sqlmodel import Session, select
     from sqlalchemy import and_, or_
     from .database import engine
-    from .models import SessionTuteur
+    from .models import ProgressionNotion, SessionTuteur
 
     maintenant = datetime.utcnow()
     seuil_attente = maintenant - timedelta(seconds=max(1, age_minimum_secondes))
