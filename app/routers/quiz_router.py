@@ -179,6 +179,7 @@ def page_passer_quiz(request: Request, tentative_id: int, session: Session = Dep
             "tentative": tentative,
             "questions": questions,
             "reponses": quiz_module.reponses(tentative) or [],
+            "confiances": quiz_calibration.lire_confiances(tentative),
             "correction_visible": correction_visible,
             "adaptatif": quiz_module.est_quiz_adaptatif(tentative),
             "adaptatif_etat": quiz_module.etat_adaptatif(tentative) if quiz_module.est_quiz_adaptatif(tentative) else None,
@@ -359,6 +360,7 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
 
     if tentative.mode_examen and quiz_module.secondes_restantes_examen(tentative) <= 0:
         reponses_soumises = [None] * nb
+        confiances_soumises = [None] * nb
 
     try:
         quiz_module.corriger(session, tentative, reponses_soumises)
