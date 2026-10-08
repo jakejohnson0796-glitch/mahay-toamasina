@@ -197,6 +197,7 @@ def _gemini_enabled() -> bool:
 
 
 def _extract_tool_json(completion: Any) -> Optional[Dict[str, Any]]:
+    """Compatibilite avec d'anciens retours tool-call si un fournisseur en emet encore."""
     try:
         calls = completion.choices[0].message.tool_calls
         if not calls:
@@ -204,6 +205,78 @@ def _extract_tool_json(completion: Any) -> Optional[Dict[str, Any]]:
         return charger_json_ia(calls[0].function.arguments)
     except (AttributeError, IndexError, TypeError, json.JSONDecodeError):
         return None
+
+
+def _extract_structured_content(completion: Any) -> Optional[Dict[str, Any]]:
+    """Lit un JSON retourne dans message.content, sans dependance au tool-call."""
+    try:
+        contenu = completion.choices[0].message.content
+        if not contenu:
+            return None
+        valeur = charger_json_ia(contenu)
+        return valeur if isinstance(valeur, dict) else None
+    except (AttributeError, IndexError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def _schema_strict_groq(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """Adapte un JSON Schema applicatif au sous-ensemble Strict Outputs de Groq.
+
+    Groq Strict attend des objets fermes et tous les champs requis. Les
+    contraintes de longueur/unicite sont volontairement laissees a la
+    validation locale, car elles ne sont pas necessaires au decoding.
+    """
+    if not isinstance(schema, dict):
+        return {}
+
+    type_schema = schema.get("type")
+    resultat: Dict[str, Any] = {}
+
+    if type_schema:
+        resultat["type"] = type_schema
+    if "description" in schema:
+        resultat["description"] = schema["description"]
+    if "enum" in schema:
+        resultat["enum"] = list(schema["enum"])
+
+    if type_schema == "object":
+        proprietes = schema.get("properties") or {}
+        resultat["properties"] = {
+            nom: _schema_strict_groq(valeur)
+            for nom, valeur in proprietes.items()
+        }
+        resultat["required"] = list(proprietes.keys())
+        resultat["additionalProperties"] = False
+        return resultat
+
+    if type_schema == "array":
+        resultat["items"] = _schema_strict_groq(schema.get("items") or {"type": "string"})
+        return resultat
+
+    if "anyOf" in schema:
+        resultat["anyOf"] = [
+            _schema_strict_groq(item) for item in (schema.get("anyOf") or [])
+        ]
+
+    return resultat
+
+
+def structured_response_format(
+    model: str,
+    schema: Dict[str, Any],
+    name: str,
+) -> Dict[str, Any]:
+    """Retourne le format Groq robuste pour les sorties pedagogiques structurees."""
+    if str(model or "").startswith(("openai/gpt-oss", "qwen/qwen3.8-27b")):
+        return {
+            "type": "json_schema",
+            "json_schema": {
+                "name": name,
+                "strict": True,
+                "schema": _schema_strict_groq(schema),
+            },
+        }
+    return {"type": "json_object"}
 
 
 def _groq_structured_tool(
@@ -215,20 +288,44 @@ def _groq_structured_tool(
     max_completion_tokens: int = 2048,
     reasoning_effort: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
+    """Conserve le nom historique mais utilise des Structured Outputs JSON.
+
+    Le passage par tool-call est retire du chemin critique : Groq valide les
+    arguments d'un tool avant que notre code puisse appeler charger_json_ia().
+    Avec du LaTeX, un simple antislash mal echappe provoquait donc un HTTP 400
+    avant toute reparation locale.
+    """
     client = _groq_client()
     if client is None:
         return None
 
+    schema = (
+        tool.get("function", {}).get("parameters", {})
+        if isinstance(tool, dict)
+        else {}
+    )
+    response_format = structured_response_format(model, schema, tool_name)
     kwargs: Dict[str, Any] = {
         "model": model,
         "max_completion_tokens": max_completion_tokens,
         "temperature": 0.2,
-        "tools": [tool],
-        "tool_choice": {"type": "function", "function": {"name": tool_name}},
-        "messages": [{"role": "user", "content": prompt}],
+        "response_format": response_format,
+        "messages": [{
+            "role": "user",
+            "content": (
+                f"{prompt}\n\n"
+                f"Retourne uniquement un objet JSON conforme au schema de '{tool_name}'. "
+                "N'ecris aucune explication hors JSON. Le contenu des champs peut "
+                "contenir du vrai LaTeX ; il doit rester une chaine JSON valide."
+            ),
+        }],
     }
-    if reasoning_effort and model.startswith("openai/gpt-oss"):
+    if reasoning_effort and str(model or "").startswith("openai/gpt-oss"):
         kwargs["reasoning_effort"] = reasoning_effort
+        kwargs["include_reasoning"] = False
+    elif reasoning_effort and str(model or "").startswith("qwen/qwen3.8-27b"):
+        kwargs["reasoning_effort"] = reasoning_effort
+        kwargs["reasoning_format"] = "hidden"
 
     for attempt in range(1, 3):
         try:
@@ -238,23 +335,27 @@ def _groq_structured_tool(
                     "role": "user",
                     "content": (
                         f"{prompt}\n\n"
-                        "IMPORTANT : ta sortie doit obligatoirement appeler l'outil "
-                        f"'{tool_name}' maintenant. Ne reponds pas en texte libre."
+                        f"IMPORTANT : retourne maintenant uniquement l'objet JSON du "
+                        f"schema '{tool_name}'. Aucun texte libre. N'oublie pas "
+                        "d'echapper les antislashs dans les chaines JSON."
                     ),
                 }]
             completion = cost_controller.call(
                 "groq",
                 lambda: client.chat.completions.create(**kwargs),
             )
-            parsed = _extract_tool_json(completion)
+            parsed = _extract_structured_content(completion)
+            if parsed is None:
+                parsed = _extract_tool_json(completion)
             if parsed is not None:
                 return parsed
             if attempt == 1:
                 time.sleep(0.3)
                 continue
             logger.warning(
-                "Modele Groq %s n'a pas produit l'appel d'outil attendu.",
+                "Modele Groq %s n'a pas produit le JSON structure attendu (%s).",
                 model,
+                tool_name,
             )
             return None
         except ProviderCooldown as erreur:
@@ -265,9 +366,10 @@ def _groq_structured_tool(
                 time.sleep(0.5)
                 continue
             logger.warning(
-                "Modele Groq %s indisponible apres %s tentatives: %s",
+                "Modele Groq %s indisponible apres %s tentatives pour %s: %s",
                 model,
                 attempt,
+                tool_name,
                 erreur,
             )
             return None
