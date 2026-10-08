@@ -144,8 +144,8 @@ def test_renderer_protege_le_dom_katex_contre_un_second_passage():
 def test_renderer_decode_les_sauts_de_ligne_ia_legacy_sans_casser_nabla():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
     assert "normaliserTexteMarkdownLegacy" in js
-    assert r".replace(/\\n(?=\\s*[-*•]\\s+)/g, "\\n")" in js
-    assert r".replace(/\\n(?=\\s*\\d+[.)]\\s+)/g, "\\n")" in js
+    assert r'.replace(/\\n(?=\\s*[-*•]\\s+)/g, "\\n")' in js
+    assert r'.replace(/\\n(?=\\s*\\d+[.)]\\s+)/g, "\\n")' in js
     assert "__GASY_AI_CODE_" in js
     assert "resultat.replace(/\\x60\\x60\\x60" in js
     # La commande \\nabla reste explicitement hors des contextes de conversion.
@@ -153,8 +153,8 @@ def test_renderer_decode_les_sauts_de_ligne_ia_legacy_sans_casser_nabla():
 
 def test_renderer_convertit_textit_latex_hors_math_en_italique_markdown():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
-    assert r".replace(/\\(?:textit|emph)\\{([^{}]*)\\}/g, "*$1*")" in js
-    assert r".replace(/\\textbf\\{([^{}]*)\\}/g, "**$1**")" in js
+    assert r'.replace(/\\(?:textit|emph)\\{([^{}]*)\\}/g, "*$1*")' in js
+    assert r'.replace(/\\textbf\\{([^{}]*)\\}/g, "**$1**")' in js
 
 def test_contexte_notion_tuteur_separe_visuellement_le_libelle():
     css = (ROOT / "app/static/ai-learning.css").read_text(encoding="utf-8")
