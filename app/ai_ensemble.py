@@ -320,7 +320,10 @@ def _groq_structured_tool(
             ),
         }],
     }
-    if reasoning_effort and str(model or "").startswith(("openai/gpt-oss", "qwen/qwen3.8-27b")):
+    if reasoning_effort and str(model or "").startswith("openai/gpt-oss"):
+        kwargs["reasoning_effort"] = reasoning_effort
+        kwargs["include_reasoning"] = False
+    elif reasoning_effort and str(model or "").startswith("qwen/qwen3.8-27b"):
         kwargs["reasoning_effort"] = reasoning_effort
         kwargs["reasoning_format"] = "hidden"
 
