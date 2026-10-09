@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 import random
 from typing import List, Optional
 
@@ -11,8 +12,9 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
-from ..models import Document, StatutDocument, TentativeQuiz, ProgressionNotion
+from ..models import Document, MissionApprentissage, StatutDocument, TentativeQuiz, ProgressionNotion
 from .. import quiz as quiz_module
+from .. import adaptive_learning
 from .. import ai_queue
 from .. import theme_service
 from .. import gamification
@@ -241,6 +243,7 @@ async def repondre_question_adaptative(
 def generer_quiz_cible(
     request: Request,
     progression_id: int = Form(...),
+    mission_id: Optional[int] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -253,11 +256,21 @@ def generer_quiz_cible(
     progression = session.get(ProgressionNotion, progression_id)
     if not progression or progression.utilisateur_id != utilisateur.id:
         return RedirectResponse("/mes-revisions", status_code=303)
-    # Une notion sans erreur peut aussi être réévaluée à sa date
-    # échéance. Le moteur autorise en plus une « épreuve de confirmation »
-    # lorsqu'une maîtrise probable existe mais n'a pas encore été prouvée.
+    mission_adaptative = None
+    if mission_id is not None:
+        mission_adaptative = session.get(MissionApprentissage, mission_id)
+        if (
+            not mission_adaptative
+            or mission_adaptative.utilisateur_id != utilisateur.id
+            or mission_adaptative.statut != "active"
+            or mission_adaptative.progression_id != progression.id
+            or mission_adaptative.etape not in {"pratiquer", "verifier"}
+        ):
+            return RedirectResponse("/session-apprentissage", status_code=303)
+
     if (
-        progression.nb_erreurs <= 0
+        mission_adaptative is None
+        and progression.nb_erreurs <= 0
         and not quiz_module.revision_due(progression)
         and not quiz_module.besoin_preuve_maitrise(progression)
     ):
@@ -283,6 +296,13 @@ def generer_quiz_cible(
         )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
+
+    if mission_adaptative is not None:
+        mission_adaptative.derniere_tentative_id = tentative.id
+        mission_adaptative.derniere_session_tuteur_id = None
+        mission_adaptative.date_maj = datetime.utcnow()
+        session.add(mission_adaptative)
+        session.commit()
 
     tache_ia_id = ai_queue.planifier_verification_quiz(tentative.id)
     print(
@@ -374,6 +394,14 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
         reponses_soumises = [None] * nb
         confiances_soumises = [None] * nb
 
+    mission_adaptative = session.exec(
+        select(MissionApprentissage).where(
+            MissionApprentissage.utilisateur_id == utilisateur.id,
+            MissionApprentissage.derniere_tentative_id == tentative.id,
+            MissionApprentissage.statut == "active",
+        )
+    ).first()
+
     try:
         quiz_module.corriger(session, tentative, reponses_soumises)
         quiz_calibration.fusionner_confiances(
@@ -383,6 +411,23 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
                 len(questions),
             ),
         )
+        if mission_adaptative is not None:
+            progression_mission = session.get(ProgressionNotion, mission_adaptative.progression_id)
+            score_pourcent = round(
+                100 * int(tentative.score or 0) / max(int(tentative.nb_questions or 0), 1)
+            )
+            decision = adaptive_learning.transition_apres_quiz(
+                score_pourcent,
+                bool(progression_mission and progression_mission.maitrise_confirmee),
+            )
+            mission_adaptative.etape = decision["etape"]
+            mission_adaptative.statut = decision["statut"]
+            mission_adaptative.nb_tentatives = int(mission_adaptative.nb_tentatives or 0) + 1
+            mission_adaptative.dernier_score = score_pourcent
+            mission_adaptative.dernier_feedback = decision["feedback"]
+            mission_adaptative.date_maj = datetime.utcnow()
+            mission_adaptative.date_fin = datetime.utcnow() if decision["statut"] == "terminee" else None
+            session.add(mission_adaptative)
         session.add(tentative)
         session.commit()
         session.refresh(tentative)
@@ -419,6 +464,12 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
         questions=questions_resultat,
         reponses=reponses_resultat,
     )
+    mission_adaptative = session.exec(
+        select(MissionApprentissage).where(
+            MissionApprentissage.utilisateur_id == utilisateur.id,
+            MissionApprentissage.derniere_tentative_id == tentative.id,
+        )
+    ).first()
     notions_detectees = []
     progressions_par_question = []
     vus = set()
@@ -472,6 +523,7 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
             "notions_detectees": notions_detectees,
             "progressions_par_question": progressions_par_question,
             "diagnostic_examen": diagnostic_examen,
+            "mission_adaptative": mission_adaptative,
         },
     )
 

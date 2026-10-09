@@ -40,7 +40,9 @@
       <p>{{ mission.message }}</p>
       <div class="mission-tags">
         <span>{{ mission.matiere }}</span>
-        <span>{{ mission.score }}% actuel</span>
+        <span>{{ mission.score }}% de maîtrise</span>
+        {% if mission.dernier_score is not none %}<span>Dernier quiz : {{ mission.dernier_score }}%</span>{% endif %}
+        {% if mission.nb_tentatives %}<span>{{ mission.nb_tentatives }} tentative{{ "s" if mission.nb_tentatives != 1 else "" }}</span>{% endif %}
         {% if mission.revision_due %}<span>Révision due</span>{% endif %}
         <span>5 questions ciblées</span>
       </div>
@@ -69,6 +71,23 @@
     </div>
   </section>
 
+  {% if mission.retour_adaptatif %}
+  <aside class="mission-rule" role="status" aria-live="polite">
+    <strong>Retour adaptatif</strong>
+    <span>{{ mission.retour_adaptatif }}</span>
+  </aside>
+  {% endif %}
+
+  {% if mission.etat_mission == "terminee" %}
+  <section class="hub-section mission-empty" aria-labelledby="mission-terminee-title">
+    <div class="mission-empty-icon" aria-hidden="true">{{ icone("quiz", 20) }}</div>
+    <div>
+      <h2 id="mission-terminee-title">Preuve de maîtrise obtenue</h2>
+      <p>{{ mission.retour_adaptatif or mission.message }}</p>
+      <a class="bouton bouton-primaire" href="/mes-revisions">Revoir les autres notions →</a>
+    </div>
+  </section>
+  {% else %}
   <section class="mission-action hub-section" aria-labelledby="mission-action-title">
     <div class="mission-action-copy">
       <p class="eyebrow">Commencer maintenant</p>
@@ -80,6 +99,7 @@
       <form method="post" action="/tuteur/demander">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         <input type="hidden" name="progression_id" value="{{ mission.progression_id }}">
+        <input type="hidden" name="mission_id" value="{{ mission.mission_id }}">
         <input type="hidden" name="question" value="Aide-moi à consolider {{ mission.notion }} en {{ mission.matiere }}. Pars de mes erreurs connues, explique l'erreur prioritaire à éviter et donne-moi un exercice progressif.">
         <button class="bouton bouton-primaire" type="submit">Commencer avec le Tuteur IA →</button>
       </form>
@@ -87,13 +107,15 @@
       <form method="post" action="/quiz/cible">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         <input type="hidden" name="progression_id" value="{{ mission.progression_id }}">
-        <button class="bouton bouton-primaire" type="submit">Lancer le quiz ciblé →</button>
+        <input type="hidden" name="mission_id" value="{{ mission.mission_id }}">
+        <button class="bouton bouton-primaire" type="submit">{{ mission.action_label }} →</button>
       </form>
       {% endif %}
 
       <a class="bouton bouton-secondaire" href="/mes-revisions">Retour aux révisions</a>
     </div>
   </section>
+  {% endif %}
 
   <aside class="mission-rule" aria-label="Règle de la mission">
     <strong>Règle</strong>
