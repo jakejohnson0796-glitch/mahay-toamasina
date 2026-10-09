@@ -45,3 +45,47 @@ def test_vue_persistante_selectionne_la_bonne_action():
     assert vue["etape_courante"] == "verifier"
     assert vue["etapes"][2]["etat"] == "prioritaire"
     assert vue["dernier_score"] == 90
+
+
+def test_prochaine_notion_ne_depasse_pas_un_prerequis_non_confirme():
+    from app.adaptive_learning import choisir_prochaine_notion
+
+    progressions = [
+        SimpleNamespace(id=1, matiere="Mathématiques", notion="Matrices", score_maitrise=76, nb_erreurs=1, maitrise_confirmee=False),
+        SimpleNamespace(id=2, matiere="Mathématiques", notion="Déterminants", score_maitrise=40, nb_erreurs=3, maitrise_confirmee=False),
+        SimpleNamespace(id=3, matiere="Mathématiques", notion="Systèmes", score_maitrise=25, nb_erreurs=4, maitrise_confirmee=False),
+    ]
+    carte = {"sujets": [{"nodes": [
+        {"id": 1, "matiere": "Mathématiques", "notion": "Matrices", "score": 76, "prerequis": []},
+        {"id": 2, "matiere": "Mathématiques", "notion": "Déterminants", "score": 40, "prerequis": ["Matrices"]},
+        {"id": 3, "matiere": "Mathématiques", "notion": "Systèmes", "score": 25, "prerequis": ["Déterminants"]},
+    ]}]}
+
+    suivante = choisir_prochaine_notion(carte, progressions, exclure_id=99)
+    assert suivante["notion"] == "Matrices"
+
+
+def test_prochaine_notion_autorise_un_dependant_quand_prerequis_confirme():
+    from app.adaptive_learning import choisir_prochaine_notion
+
+    progressions = [
+        SimpleNamespace(id=1, matiere="Mathématiques", notion="Matrices", score_maitrise=92, nb_erreurs=0, maitrise_confirmee=True),
+        SimpleNamespace(id=2, matiere="Mathématiques", notion="Déterminants", score_maitrise=50, nb_erreurs=2, maitrise_confirmee=False),
+    ]
+    carte = {"sujets": [{"nodes": [
+        {"id": 1, "matiere": "Mathématiques", "notion": "Matrices", "score": 92, "prerequis": []},
+        {"id": 2, "matiere": "Mathématiques", "notion": "Déterminants", "score": 50, "prerequis": ["Matrices"]},
+    ]}]}
+
+    suivante = choisir_prochaine_notion(carte, progressions, exclure_id=1)
+    assert suivante["notion"] == "Déterminants"
+
+
+def test_aucune_notion_non_confirmee_ne_propose_pas_de_nouvelle_mission():
+    from app.adaptive_learning import choisir_prochaine_notion
+
+    progression = SimpleNamespace(id=1, matiere="Mathématiques", notion="Matrices", score_maitrise=95, nb_erreurs=0, maitrise_confirmee=True)
+    carte = {"sujets": [{"nodes": [
+        {"id": 1, "matiere": "Mathématiques", "notion": "Matrices", "score": 95, "prerequis": []},
+    ]}]}
+    assert choisir_prochaine_notion(carte, [progression], exclure_id=1) is None

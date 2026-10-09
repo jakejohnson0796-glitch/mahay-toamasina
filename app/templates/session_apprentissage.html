@@ -13,6 +13,9 @@
       {% if mission.active %}
       <h1>{{ mission.titre }}</h1>
       <p class="hub-hero-sous-titre">Une seule notion. Un objectif clair. Une preuve à la fin.</p>
+      {% elif mission.toutes_confirmees %}
+      <h1>{{ mission.titre }}</h1>
+      <p class="hub-hero-sous-titre">Toutes les notions suivies ont leur preuve de maîtrise.</p>
       {% else %}
       <h1>Construis ta prochaine mission</h1>
       <p class="hub-hero-sous-titre">Le moteur attend encore assez de données pour choisir une priorité de façon fiable.</p>
@@ -24,6 +27,9 @@
       <strong>{{ mission.notion }}</strong>
       <span>{{ mission.score }}% de maîtrise · {{ mission.erreurs }} erreur{{ "s" if mission.erreurs != 1 else "" }}</span>
       <span class="mission-duration">{{ mission.duree }}</span>
+      {% elif mission.toutes_confirmees %}
+      <strong>Parcours validé</strong>
+      <span>Tu peux commencer une nouvelle notion.</span>
       {% else %}
       <strong>Pas de priorité critique</strong>
       <span>Commence un quiz pour donner au moteur ses premières preuves.</span>
@@ -121,6 +127,16 @@
     <strong>Règle</strong>
     <span>{{ mission.preuve }}</span>
   </aside>
+  {% elif mission.toutes_confirmees %}
+  <section class="hub-section mission-empty">
+    <div class="mission-empty-icon" aria-hidden="true">{{ icone("quiz", 20) }}</div>
+    <div>
+      <h2>Prêt pour une nouvelle notion</h2>
+      <p>{{ mission.message }}</p>
+      <a class="bouton bouton-primaire" href="/quiz">Commencer un nouveau quiz →</a>
+      <a class="bouton bouton-secondaire" href="/carte-connaissances">Voir ma carte de connaissances</a>
+    </div>
+  </section>
   {% else %}
   <section class="hub-section mission-empty">
     <div class="mission-empty-icon" aria-hidden="true">{{ icone("quiz", 20) }}</div>

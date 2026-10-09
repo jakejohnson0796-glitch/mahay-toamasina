@@ -136,27 +136,11 @@ def page_session_apprentissage(request: Request, session: Session = Depends(get_
         else:
             mission = learning_session.construire_mission(carte, progressions)
     elif etat and etat.statut == "terminee":
-        tous_les_noeuds = [
-            node for sujet in carte.get("sujets", [])
-            for node in sujet.get("nodes", [])
-            if int(node.get("id") or 0) != int(etat.progression_id)
-        ]
-        non_confirmes = [
-            node for node in tous_les_noeuds
-            if not bool(
-                par_id.get(int(node.get("id") or 0))
-                and par_id[int(node.get("id") or 0)].maitrise_confirmee
-            )
-        ]
-        candidats = non_confirmes or tous_les_noeuds
-        candidats.sort(
-            key=lambda node: (
-                0 if not node.get("prerequis") else 1,
-                int(node.get("score") or 0),
-                str(node.get("notion") or "").lower(),
-            )
+        cible_suivante = adaptive_learning.choisir_prochaine_notion(
+            carte,
+            progressions,
+            exclure_id=etat.progression_id,
         )
-        cible_suivante = candidats[0] if candidats else None
         progression = par_id.get(int(cible_suivante["id"])) if cible_suivante else None
         if progression is not None:
             base = mission_pour(progression)
@@ -175,19 +159,13 @@ def page_session_apprentissage(request: Request, session: Session = Depends(get_
             session.refresh(etat)
             mission = adaptive_learning.appliquer_etat(base, etat)
         else:
-            progression = par_id.get(int(etat.progression_id))
-            if progression is None:
-                progression = session.get(ProgressionNotion, etat.progression_id)
-            if progression and progression.utilisateur_id == utilisateur.id:
-                mission = adaptive_learning.appliquer_etat(mission_pour(progression), etat)
-            else:
-                mission = learning_session.construire_mission(carte, progressions)
+            mission = adaptive_learning.vue_toutes_notions_confirmees()
     else:
-        cible = carte.get("prochaine")
-        mission = learning_session.construire_mission(carte, progressions)
+        cible = adaptive_learning.choisir_prochaine_notion(carte, progressions)
         if cible:
             progression = par_id.get(int(cible.get("id") or 0))
             if progression is not None:
+                mission = mission_pour(progression)
                 etape = "comprendre" if mission.get("action_principale") == "tuteur" else "pratiquer"
                 etat = MissionApprentissage(
                     utilisateur_id=utilisateur.id,
@@ -199,6 +177,10 @@ def page_session_apprentissage(request: Request, session: Session = Depends(get_
                 session.commit()
                 session.refresh(etat)
                 mission = adaptive_learning.appliquer_etat(mission, etat)
+            else:
+                mission = adaptive_learning.vue_toutes_notions_confirmees()
+        else:
+            mission = adaptive_learning.vue_toutes_notions_confirmees()
 
     return templates.TemplateResponse(
         request,
