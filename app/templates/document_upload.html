@@ -1027,6 +1027,23 @@
     field.addEventListener("input", maj);
     field.addEventListener("change", maj);
   });
+  // Empêche le navigateur d'ouvrir un PDF/une image en remplacement de la page
+  // lorsqu'un fichier est déposé en dehors de la zone prévue. Les glisser-déposer
+  // de texte ou d'autres éléments ne sont pas interceptés.
+  document.addEventListener("dragover", function (event) {
+    const types = event.dataTransfer && Array.from(event.dataTransfer.types || []);
+    if (!types || !types.includes("Files")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  });
+
+  document.addEventListener("drop", function (event) {
+    const types = event.dataTransfer && Array.from(event.dataTransfer.types || []);
+    if (types && types.includes("Files") && !zone.contains(event.target)) {
+      event.preventDefault();
+    }
+  });
+
   if (input && nom && zone) {
     input.addEventListener("change", function () { maj(); detecterFichier(); });
     ["dragenter", "dragover"].forEach(function (name) {
@@ -1035,12 +1052,44 @@
     ["dragleave", "drop"].forEach(function (name) {
       zone.addEventListener(name, function () { zone.classList.remove("dragover"); });
     });
+
+    function definirFichiersDeposes(fileList) {
+      if (!fileList || !fileList.length) return false;
+
+      const fichiers = Array.from(fileList);
+      try {
+        const transfert = new DataTransfer();
+        fichiers.forEach(function (file) {
+          transfert.items.add(file);
+        });
+        input.files = transfert.files;
+      } catch (_) {
+        // Repli pour les navigateurs où DataTransfer n'est pas constructible.
+        try {
+          input.files = fileList;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      if (!input.files || input.files.length !== fichiers.length) return false;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      return true;
+    }
+
     zone.addEventListener("drop", function (event) {
       event.preventDefault();
-      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
-        try { input.files = event.dataTransfer.files; } catch (_) {}
-        maj();
-        detecterFichier();
+      event.stopPropagation();
+      zone.classList.remove("dragover");
+      const fichiers = event.dataTransfer && event.dataTransfer.files;
+      if (!definirFichiersDeposes(fichiers)) {
+        if (fichiers && fichiers.length) {
+          const message = document.getElementById("erreur-fichier");
+          if (message) {
+            message.textContent = "Ce navigateur n’a pas pu joindre le fichier. Utilise le bouton de sélection.";
+            message.hidden = false;
+          }
+        }
       }
     });
   }
