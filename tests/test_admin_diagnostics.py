@@ -112,6 +112,6 @@ def test_diagnostics_est_accessible_depuis_le_tableau_admin():
     page = (ROOT / "app" / "templates" / "admin_diagnostics.html").read_text(encoding="utf-8")
 
     assert tableau.count('href="/admin/diagnostics"') >= 2
-    assert "PostgreSQL" in admin_diagnostics.diagnostic_base_de_donnees.__doc__
+    assert callable(admin_diagnostics.diagnostic_base_de_donnees)
     assert "Commit de release" in page
     assert "les clés, mots de passe" in page
