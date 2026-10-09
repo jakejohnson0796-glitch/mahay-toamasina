@@ -204,7 +204,121 @@
     "Piloter Gasy Mahay sans perdre le fil.": "Tantano i Gasy Mahay nefa tsy very làlana.",
     "Référentiel académique": "Tahirin-kevitra momba ny fianarana",
     "Modération": "Fanaraha-maso",
-    "Feedbacks": "Hevitra sy fanehoan-kevitra"
+    "Feedbacks": "Hevitra sy fanehoan-kevitra",
+    "Mon espace d'apprentissage": "Ny sehatra fianarako",
+    "Nouveau sur Gasy Mahay": "Vaovao amin'i Gasy Mahay",
+    "Découvre le Tuteur IA, fais un quiz et rejoins ton cercle. En quelques minutes, tu auras déjà commencé ton parcours.": "Fantaro ny Mpampianatra IA, manaova quiz ary midira amin'ny vondrona fianaranao. Afaka minitra vitsy dia efa manomboka ny dianao ianao.",
+    "Continuer mon parcours →": "Hanohy ny diako →",
+    "Prêt à continuer ton apprentissage ?": "Vonona hanohy ny fianaranao ve ianao?",
+    "Pret a continuer ton apprentissage ?": "Vonona hanohy ny fianaranao ve ianao?",
+    "Chaque session te rapproche de ton objectif.": "Ny fotoana fianarana tsirairay dia mampanakaiky anao amin'ny tanjonao.",
+    "Ta routine du jour": "Ny fandaharam-pianaranao anio",
+    "Une petite session régulière vaut mieux qu'une longue session rare.": "Tsara kokoa ny mianatra kely nefa tsy tapaka, toy izay mianatra ela indraindray.",
+    "2–5 min · Un mini quiz": "2–5 min · Quiz fohy",
+    "Teste ce que tu sais déjà.": "Andramo izay efa fantatrao.",
+    "Commencer →": "Hanomboka →",
+    "5 min · Une ressource": "5 min · Loharano iray",
+    "Relis une annale, une fiche ou un cours.": "Avereno vakina ny fanadinana taloha, ny famintinana na ny lesona iray.",
+    "Voir les documents →": "Hijery ny tahirin-kevitra →",
+    "3 min · Une interaction": "3 min · Fifandraisana iray",
+    "Pose une question ou lis les échanges d’un cercle.": "Mametraha fanontaniana na vakio ny resaka ao amin'ny vondrona fianarana.",
+    "Ouvrir mes cercles →": "Hanokatra ny vondrona ianarako →",
+    "Marquer cette étape comme terminée": "Mariho fa vita ity dingana ity",
+    "Routine terminée aujourd’hui. Bravo pour la régularité — à demain pour la prochaine session.": "Vita ny fandaharam-pianarana androany. Arahabaina amin'ny faharetana — mandra-pihaona rahampitso.",
+    "Prochaine action recommandée": "Dingana manaraka atolotra",
+    "Cette notion arrive à son échéance de révision espacée.": "Tonga ny fotoana hamerenana indray ity lesona ity.",
+    "M'entraîner": "Hanao fanazaran-tena",
+    "Transforme chaque session en progression : Tuteur, quiz, cercles et ressources partagées.": "Ataovy fandrosoana ny fotoana fianarana tsirairay: Mpampianatra IA, quiz, vondrona ary loharano ifampizarana.",
+    "Carte des illusions": "Sarintanin'ny fahatsapana diso fa voafehy ny lesona",
+    "Elle repère les notions où tu étais très sûr de toi alors que tes réponses étaient encore fragiles. C'est un signal de révision, pas un jugement sur tes capacités.": "Izy io dia mamantatra ny lesona natokisanao tena nefa mbola nisy fahadisoana ny valinteninao. Famantarana tokony hamerenana lesona izany, fa tsy fitsarana ny fahaizanao.",
+    "Confiance ≠ maîtrise": "Fitokisana ≠ fahaizana",
+    "signal de risque": "famantarana loza",
+    "erreurs parmi les réponses très sûres": "fahadisoana tamin'ny valiny tena natokisana",
+    "Déconstruire avec le Tuteur IA": "Handinika miaraka amin'ny Mpampianatra IA",
+    "Vérifier avec un quiz": "Hanamarina amin'ny quiz",
+    "Déconstruire la notion": "Handinika lalina ny lesona",
+    "Vérifier avant de conclure": "Hanamarina alohan'ny hanapahana hevitra",
+    "Tester le transfert": "Hitsapa ny fampiharana amin'ny toe-javatra hafa",
+    "Une note élevée ne suffit pas : cette carte repère les notions où tu étais très sûr de toi alors que tes réponses étaient encore fragiles.": "Tsy ampy ny naoty ambony: fantarin'ity sarintany ity ny lesona natokisanao tena nefa mbola marefo ny valinteninao.",
+    "Ce qui s'est passé pendant que tu n'étais pas là.": "Ireto ny zava-nitranga nandritra ny tsy naha-teo anao.",
+    "Retrouve ici les événements importants liés à ton apprentissage et à tes cercles.": "Jereo eto ny zava-dehibe momba ny fianaranao sy ny vondrona ianaranao.",
+    "Tout marquer comme lu": "Asio marika ho voavaky daholo",
+    "Marquer comme lu": "Asio marika ho voavaky",
+    "Tu es à jour": "Tsy misy lesona miandry",
+    "Tu es à jour 🎉": "Tsy misy lesona miandry 🎉",
+    "Aucune notification à afficher pour le moment.": "Tsy misy fampandrenesana aseho amin'izao fotoana izao.",
+    "Centre de notifications": "Foiben'ny fampandrenesana",
+    "Bibliothèque": "Tranombokin'ny loharano",
+    "Bibliotheque": "Tranombokin'ny loharano",
+    "Documents du cercle": "Tahirin-kevitry ny vondrona",
+    "Deposer un document": "Handefa tahirin-kevitra",
+    "Retour au salon": "Hiverina any amin'ny vondrona",
+    "Document envoye — il sera visible ici une fois valide par un moderateur.": "Nalefa ny tahirin-kevitra — hiseho eto izy rehefa neken'ny mpandrindra.",
+    "Document envoyé — il sera visible ici une fois validé par un modérateur.": "Nalefa ny tahirin-kevitra — hiseho eto izy rehefa neken'ny mpandrindra.",
+    "Détection automatique appliquée : titre, matière, type, année et filière ont été analysés à partir du fichier. Le modérateur garde le dernier mot avant publication.": "Natao ny fanavahana mandeha ho azy: nodinihina ny lohateny, taranja, karazana, taona ary sampam-pianarana. Ny mpandrindra no manapa-kevitra farany alohan'ny hamoahana azy.",
+    "Toutes les filières": "Ny sampam-pianarana rehetra",
+    "Toutes les filieres": "Ny sampam-pianarana rehetra",
+    "Toutes les matieres": "Ny taranja rehetra",
+    "ex: Droit civil": "ohatra: Lalàna sivily",
+    "Annales": "Fanadinana taloha",
+    "Corriges": "Fanitsiana",
+    "Corrige": "Fanitsiana",
+    "Aucune ressource ici pour le moment": "Tsy mbola misy loharano eto",
+    "La bibliothèque se construit avec les étudiants. Tu peux être le premier à partager une ressource que tu as le droit de diffuser.": "Miara-manorina ny tranombokin'ny loharano ny mpianatra. Afaka ianao no voalohany mizara loharano azonao zaraina ara-dalàna.",
+    "Explorer les documents": "Hijery ny tahirin-kevitra",
+    "Decouvrir les cercles": "Hahafantatra ny vondrona fianarana",
+    "Découvrir les cercles": "Hahafantatra ny vondrona fianarana",
+    "documents valides": "tahirin-kevitra nekena",
+    "universites partenaires": "oniversite mpiara-miasa",
+    "universités partenaires": "oniversite mpiara-miasa",
+    "cercles actifs": "vondrona mavitrika",
+    "quiz completes": "quiz vita",
+    "quiz complétés": "quiz vita",
+    "Dernieres entrees au registre": "Fampidirana farany tao amin'ny rejisitra",
+    "Dernières entrées au registre": "Fampidirana farany tao amin'ny rejisitra",
+    "Reference": "Laharana fanondroana",
+    "Référence": "Laharana fanondroana",
+    "Matiere": "Taranja",
+    "Annee": "Taona",
+    "Le registre est encore vide — soyez les premiers a deposer un document.": "Mbola foana ny rejisitra — aoka ianareo ho voalohany handefa tahirin-kevitra.",
+    "Le registre est encore vide — soyez les premiers à déposer un document.": "Mbola foana ny rejisitra — aoka ianareo ho voalohany handefa tahirin-kevitra.",
+    "Ne reste pas bloqué sur une notion.": "Aza mijanona rehefa misy lesona tsy azonao.",
+    "Pose ta question avec ton contexte. Le Tuteur IA transforme ensuite la question en explication, exemple, exercice et correction pour t'aider à progresser.": "Lazao miaraka amin'ny toe-javatra misy anao ny fanontaniana. Avy eo ny Mpampianatra IA dia manome fanazavana, ohatra, fanazaran-tena ary fanitsiana hanampy anao handroso.",
+    "Poser une question": "Hametraka fanontaniana",
+    "Voir mes questions": "Hijery ny fanontaniako",
+    "Faire un quiz": "Hanao quiz",
+    "comprendre l'explication": "mahatakatra ny fanazavana",
+    "voir un exemple concret": "mahita ohatra azo tsapain-tanana",
+    "faire un exercice": "manao fanazaran-tena",
+    "vérifier avec la correction": "manamarina amin'ny fanitsiana",
+    "Ton parcours personnalisé": "Ny lalan'ny fianaranao manokana",
+    "Commence par une notion qui te résiste": "Atombohy amin'ny lesona sarotra aminao",
+    "Le Tuteur IA et le Quiz IA travaillent ici sur les mêmes difficultés détectées dans tes réponses.": "Ny Mpampianatra IA sy ny Quiz IA dia mifantoka eto amin'ireo fahasarotana hita tamin'ny valinteninao.",
+    "Ton espace de question": "Sehatra hametrahana fanontaniana",
+    "Décris ton blocage comme tu le ferais à un professeur. Plus le contexte est précis, plus la réponse peut être exploitable.": "Hazavao toy ny amin'ny mpampianatra ny olana sedrainao. Arakaraka ny maha-mazava ny toe-javatra dia vao mainka azo ampiasaina ny valiny.",
+    "Expliquer une notion simplement": "Manazava lesona amin'ny fomba tsotra",
+    "Comparer deux concepts": "Mampitaha hevitra roa",
+    "Créer un exercice": "Mamorona fanazaran-tena",
+    "Comprendre une erreur": "Mahatakatra fahadisoana",
+    "Écris une question avant d'envoyer.": "Soraty aloha ny fanontaniana alohan'ny handefasana.",
+    "Trop de questions rapprochées. Attends quelques instants avant de continuer.": "Betsaka loatra ny fanontaniana nalefa nifanesy. Miandrasa kely vao manohy.",
+    "Ex. Explique-moi la comptabilité analytique et montre-moi comment raisonner sur un exercice de coûts complets.": "Ohatra: Hazavao ny kaonty analitika ary asehoy ny fomba famahana fanazaran-tena momba ny sanda feno.",
+    "Évite les mots de passe, codes de sécurité ou informations personnelles sensibles. Utilise plutôt le nom du cours, le chapitre et la difficulté rencontrée.": "Aza manoratra tenimiafina, kaody fiarovana na mombamomba manokana saro-pady. Ampiasao kosa ny anaran'ny taranja, ny toko ary ny olana sedrainao.",
+    "Apprendre avec les outils IA": "Mianatra amin'ny fitaovana IA",
+    "Voir mon accès": "Hijery ny fahafahako miditra",
+    "Générer mon quiz": "Hamorona quiz-ko",
+    "Les matières proposées viennent des documents approuvés disponibles sur la plateforme.": "Avy amin'ny tahirin-kevitra nekena ato amin'ny sehatra ireo taranja atolotra.",
+    "Ou préciser un autre sujet": "Na manorata lohahevitra hafa",
+    "La matière libre prend la priorité lorsqu'elle est renseignée.": "Io taranja nosoratanao io no atao lohalaharana raha feno.",
+    "Aucun quiz disponible.": "Tsy misy quiz azo ampiasaina.",
+    "Aucun résultat pour le moment.": "Tsy mbola misy valiny.",
+    "Réessayer": "Andramo indray",
+    "Une réponse à la fois. Les corrections apparaissent après validation.": "Valiny iray isaky ny mandeha. Hiseho aorian'ny fanamarinana ny fanitsiana.",
+    "Voir la correction": "Hijery ny fanitsiana",
+    "Résultat": "Vokatra",
+    "Historique": "Tantara",
+    "Mon parcours": "Ny lalam-pianarako",
+    "Prochaine mission": "Iraka manaraka"
   });
 
   var noeudsOriginaux = new WeakMap();
@@ -239,6 +353,42 @@
     if (match) return match[1] + " andro tsy niasana";
     match = cle.match(/^(\d+)\s+jour(s?)\s+d'ancienneté$/i);
     if (match) return match[1] + " andro naha-mpikambana";
+
+    // Les libellés qui contiennent une donnée dynamique gardent cette donnée
+    // telle quelle (nom de l'étudiant, compteur ou score).
+    match = cle.match(/^Bonjour,\\s+(.+?)\\s*👋$/i);
+    if (match) return "Manao ahoana, " + match[1] + " 👋";
+    match = cle.match(/^Ton démarrage est à (\\d+)\\/3\\.$/i);
+    if (match) return "Efa vita ny dingana " + match[1] + " amin'ny 3.";
+    match = cle.match(/^(\\d+)\\/3 aujourd'hui$/i);
+    if (match) return match[1] + "/3 androany";
+    match = cle.match(/^Cette notion a encore (\\d+) erreurs? à consolider\\.$/i);
+    if (match) return "Mbola misy fahadisoana " + match[1] + " mila hamafisina amin'ity lesona ity.";
+    match = cle.match(/^Prochaine action : (Déconstruire la notion|Vérifier avant de conclure|Tester le transfert)$/i);
+    if (match) {
+      var actions = {
+        "déconstruire la notion": "Handinika lalina ny lesona",
+        "vérifier avant de conclure": "Hanamarina alohan'ny hanapahana hevitra",
+        "tester le transfert": "Hitsapa ny fampiharana amin'ny toe-javatra hafa"
+      };
+      return "Dingana manaraka: " + actions[match[1].toLowerCase()];
+    }
+    match = cle.match(/^maîtrise actuelle · (\\d+)%$/i);
+    if (match) return "Fahaizana ankehitriny · " + match[1] + "%";
+    match = cle.match(/^(\\d+)\\s+documents consultés$/i);
+    if (match) return match[1] + " tahirin-kevitra nojerena";
+    match = cle.match(/^(\\d+)\\s+quiz récents$/i);
+    if (match) return match[1] + " quiz vao haingana";
+    match = cle.match(/^(\\d+)\\s+sessions? tuteur$/i);
+    if (match) return match[1] + " fotoam-pianarana niaraka tamin'ny Mpampianatra IA";
+    match = cle.match(/^(\\d+) erreurs? avec une forte confiance sur (\\d+) questions? très sûres?\\.$/i);
+    if (match) {
+      return match[1] + " valiny diso nefa natokisana, tamin'ny fanontaniana " + match[2] + " tena natokisana.";
+    }
+    match = cle.match(/^(\\d+) réponses? très sûres?$/i);
+    if (match) return "Valiny " + match[1] + " tena natokisana";
+    match = cle.match(/^(\\d+) observations? au total$/i);
+    if (match) return "Fanamarihana " + match[1] + " amin'ny fitambarany";
     return source;
   }
 
