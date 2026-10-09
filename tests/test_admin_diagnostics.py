@@ -114,4 +114,4 @@ def test_diagnostics_est_accessible_depuis_le_tableau_admin():
     assert tableau.count('href="/admin/diagnostics"') >= 2
     assert callable(admin_diagnostics.diagnostic_base_de_donnees)
     assert "Commit de release" in page
-    assert "les clés, mots de passe" in page
+    assert "Les clés, les mots de passe" in page
