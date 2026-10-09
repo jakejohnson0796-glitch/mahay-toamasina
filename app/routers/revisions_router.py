@@ -12,6 +12,7 @@ from .. import dashboard as dashboard_module
 from .. import quiz as quiz_module
 from .. import gamification
 from .. import knowledge_map
+from .. import learning_session
 
 router = APIRouter()
 
