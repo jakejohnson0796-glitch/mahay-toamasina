@@ -395,10 +395,6 @@
 <link rel="stylesheet" href="/static/activation.css?v={{ version_asset('activation.css') }}">
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
-<script nonce="{{ csp_nonce(request) }}">
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/sw.js').catch(() => {});
-  }
-</script>
+
 </body>
 </html>
