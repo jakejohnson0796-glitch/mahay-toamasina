@@ -30,11 +30,11 @@ def _construire_csp(nonce: str) -> str:
     # les attributs style générés par KaTeX.
     return (
         "default-src 'self'; "
-        "script-src 'self' 'nonce-" + nonce + "' 'strict-dynamic' https://cdn.jsdelivr.net; "
+        "script-src 'self' 'nonce-" + nonce + "' 'strict-dynamic' https://cdn.jsdelivr.net https://unpkg.com; "
         "script-src-attr 'none'; "
-        "style-src 'self' 'nonce-" + nonce + "' https://fonts.googleapis.com https://cdn.jsdelivr.net " + STYLE_ATTR_HASHES + "; "
+        "style-src 'self' 'nonce-" + nonce + "' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com " + STYLE_ATTR_HASHES + "; "
         "style-src-attr 'unsafe-inline' 'unsafe-hashes' " + STYLE_ATTR_HASHES + "; "
-        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://unpkg.com; "
         "img-src 'self' data: https://*.supabase.co; "
         "connect-src 'self' ws: wss: https://*.supabase.co; "
         "worker-src 'self' blob:; "

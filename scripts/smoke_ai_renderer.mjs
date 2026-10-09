@@ -216,4 +216,65 @@ if (before !== host.innerHTML) {
   throw new Error('Renderer is not idempotent with stable dependencies');
 }
 
+
+// Repli CDN : simule l'échec du CDN principal et la disponibilité du secours.
+const loaderSource = fs.readFileSync('app/static/js/charger-dependances-ia.js', 'utf8');
+const fallbackDom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
+  url: 'http://localhost/',
+  runScripts: 'outside-only',
+});
+const fallbackWindow = fallbackDom.window;
+let mhchemFallbackReady = false;
+const fallbackRequests = [];
+function createFakeKatex() {
+  return { render(expression, target) {
+    const node = fallbackWindow.document.createElement('span');
+    node.className = String(expression).startsWith('\\ce{') && !mhchemFallbackReady ? 'katex-error' : 'katex';
+    target.appendChild(node);
+  } };
+}
+const appendHeadOriginal = fallbackWindow.document.head.appendChild.bind(fallbackWindow.document.head);
+fallbackWindow.document.head.appendChild = function (element) {
+  const result = appendHeadOriginal(element);
+  if (element.tagName === 'SCRIPT' && element.src.startsWith('https://unpkg.com/')) {
+    fallbackRequests.push(element.src);
+    Promise.resolve().then(function () {
+      if (element.src.includes('/dist/katex.min.js')) fallbackWindow.katex = createFakeKatex();
+      else if (element.src.includes('/dist/contrib/mhchem.min.js')) mhchemFallbackReady = true;
+      else if (element.src.includes('/marked.min.js')) fallbackWindow.marked = { parse: function () { return ''; } };
+      else if (element.src.includes('/dist/purify.min.js')) fallbackWindow.DOMPurify = { sanitize: function () { return fallbackWindow.document.createDocumentFragment(); } };
+      else if (element.src.includes('/build/highlight.min.js')) fallbackWindow.hljs = { highlightElement: function () {} };
+      if (typeof element.onload === 'function') element.onload(new fallbackWindow.Event('load'));
+    });
+  } else if (element.tagName === 'LINK' && element.href.startsWith('https://unpkg.com/')) {
+    fallbackRequests.push(element.href);
+    Promise.resolve().then(function () {
+      if (typeof element.onload === 'function') element.onload(new fallbackWindow.Event('load'));
+    });
+  }
+  return result;
+};
+vm.runInNewContext(loaderSource, {
+  window: fallbackWindow,
+  document: fallbackWindow.document,
+  console: { warn: function () {}, error: function () {} },
+}, { filename: 'charger-dependances-ia.js' });
+const fallbackState = await fallbackWindow.GasyMahay.chargerDependancesRenduIA();
+if (!fallbackState.katex || !fallbackState.mhchem || !fallbackState.marked || !fallbackState.purify) {
+  throw new Error('CDN fallback did not recover the required AI renderer dependencies');
+}
+for (const fragment of [
+  '/dist/katex.min.css',
+  '/dist/katex.min.js',
+  '/dist/contrib/mhchem.min.js',
+  '/marked.min.js',
+  '/dist/purify.min.js',
+]) {
+  if (!fallbackRequests.some((url) => url.includes(fragment))) {
+    throw new Error('Expected fallback resource was not requested: ' + fragment);
+  }
+}
+
+
+
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
