@@ -160,3 +160,19 @@ def test_renderer_convertit_textit_latex_hors_math_en_italique_markdown():
 def test_contexte_notion_tuteur_separe_visuellement_le_libelle():
     css = (ROOT / "app/static/ai-learning.css").read_text(encoding="utf-8")
     assert ".ai-target-context .ai-kicker{display:block;" in css
+
+
+def test_renderer_ia_prevoit_un_cdn_de_secours_sans_affaiblir_la_csp():
+    base = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
+    loader = (ROOT / "app/static/js/charger-dependances-ia.js").read_text(encoding="utf-8")
+    csp = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
+
+    assert "charger-dependances-ia.js" in base
+    assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
+    assert 'var secours = "https://unpkg.com/"' in loader
+    assert 'secours + "katex@0.16.11/dist/katex.min.js"' in loader
+    assert 'secours + "marked@12.0.2/marked.min.js"' in loader
+    assert 'secours + "dompurify@3.1.6/dist/purify.min.js"' in loader
+    assert "https://unpkg.com" in csp
+    assert "script-src-attr 'none'" in csp
+    assert "'unsafe-inline'" not in csp.split("script-src", 1)[1].split(";", 1)[0]
