@@ -514,6 +514,27 @@ class TentativeQuiz(SQLModel, table=True):
     duree_secondes: Optional[int] = None
 
 
+class MissionApprentissage(SQLModel, table=True):
+    """État persistant de la mission adaptative courante d'un étudiant."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    progression_id: int = Field(foreign_key="progressionnotion.id", index=True)
+    etape: str = Field(default="comprendre", index=True)
+    statut: str = Field(default="active", index=True)
+    nb_tentatives: int = Field(default=0)
+    dernier_score: Optional[int] = None
+    derniere_tentative_id: Optional[int] = Field(default=None, foreign_key="tentativequiz.id", index=True)
+    derniere_session_tuteur_id: Optional[int] = Field(default=None, foreign_key="sessiontuteur.id", index=True)
+    dernier_feedback: Optional[str] = None
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_maj: datetime = Field(default_factory=datetime.utcnow)
+    date_fin: Optional[datetime] = None
+
+    __table_args__ = (
+        UniqueConstraint("utilisateur_id", name="uq_missionapprentissage_utilisateur"),
+    )
+
+
 class SignalementQuestionQuiz(SQLModel, table=True):
     """Signalement par un etudiant d'une question/reponse generee par
     l'IA qui lui semble fausse ou incoherente. Traite manuellement par

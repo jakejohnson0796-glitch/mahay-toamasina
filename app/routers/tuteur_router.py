@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Request, Depends, Form
 from typing import Optional
 import re
@@ -10,7 +11,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
-from ..models import Document, MembreCercle, SessionTuteur, ProgressionNotion, StatutDocument
+from ..models import Document, MembreCercle, MissionApprentissage, SessionTuteur, ProgressionNotion, StatutDocument
 from ..storage import ouvrir_fichier_local
 from ..text_extraction import extraire_texte
 from ..ia_transport import normaliser_structure_tuteur
@@ -132,6 +133,7 @@ def demander_tuteur(
     request: Request,
     question: str = Form(...),
     progression_id: Optional[int] = Form(None),
+    mission_id: Optional[int] = Form(None),
     document_id: Optional[int] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -149,6 +151,19 @@ def demander_tuteur(
     if not question:
         return RedirectResponse("/tuteur?erreur=question_requise", status_code=303)
 
+    mission_adaptative = None
+    if mission_id is not None:
+        mission_adaptative = session.get(MissionApprentissage, mission_id)
+        if (
+            not mission_adaptative
+            or mission_adaptative.utilisateur_id != utilisateur.id
+            or mission_adaptative.statut != "active"
+            or mission_adaptative.etape != "comprendre"
+            or (progression_id is not None and progression_id != mission_adaptative.progression_id)
+        ):
+            return RedirectResponse("/session-apprentissage", status_code=303)
+        progression_id = mission_adaptative.progression_id
+
     progression = None
     if progression_id:
         candidat_progression = session.get(ProgressionNotion, progression_id)
@@ -156,7 +171,8 @@ def demander_tuteur(
             candidat_progression
             and candidat_progression.utilisateur_id == utilisateur.id
             and (
-                candidat_progression.nb_erreurs > 0
+                mission_adaptative is not None
+                or candidat_progression.nb_erreurs > 0
                 or quiz_module.revision_due(candidat_progression)
             )
         ):
@@ -232,6 +248,14 @@ def demander_tuteur(
     )
     session.add(session_tuteur)
     session.flush()
+    if mission_adaptative is not None:
+        mission_adaptative.etape = "pratiquer"
+        mission_adaptative.derniere_tentative_id = None
+        mission_adaptative.derniere_session_tuteur_id = session_tuteur.id
+        mission_adaptative.dernier_feedback = "Explication enregistrée. Passe maintenant au quiz ciblé sur cette même notion."
+        mission_adaptative.date_maj = datetime.utcnow()
+        mission_adaptative.date_fin = None
+        session.add(mission_adaptative)
     gamification.enregistrer_action(
         session,
         utilisateur.id,
@@ -309,10 +333,17 @@ def page_reponse_tuteur(request: Request, session_id: int, session: Session = De
         else None
     )
 
+    mission_adaptative = session.exec(
+        select(MissionApprentissage).where(
+            MissionApprentissage.utilisateur_id == utilisateur.id,
+            MissionApprentissage.derniere_session_tuteur_id == session_tuteur.id,
+        )
+    ).first()
     session_vue = dict(
         utilisateur=utilisateur,
         session_tuteur=session_tuteur,
         progression_tuteur=progression,
+        mission_adaptative=mission_adaptative,
         contenu_tuteur=normaliser_structure_tuteur({
             "explication": session_tuteur.explication,
             "exemple": session_tuteur.exemple,

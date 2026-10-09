@@ -33,6 +33,20 @@
     </div>
   </section>
 
+    {% if mission_adaptative %}
+  <section class="ai-section ai-adaptive-mission-result" aria-labelledby="mission-adaptative-result-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Mission adaptative</span>
+        <h2 id="mission-adaptative-result-title">{% if mission_adaptative.statut == "terminee" %}Maîtrise confirmée{% elif mission_adaptative.etape == "comprendre" %}À comprendre{% elif mission_adaptative.etape == "verifier" %}À vérifier{% else %}À pratiquer{% endif %}</h2>
+        <p>{{ mission_adaptative.dernier_feedback }}</p>
+      </div>
+      {% if mission_adaptative.dernier_score is not none %}<span class="ai-badge">{{ mission_adaptative.dernier_score }}% sur cette série</span>{% endif %}
+    </div>
+    <a class="bouton bouton-primaire" href="/session-apprentissage">{% if mission_adaptative.statut == "terminee" %}Choisir la prochaine notion →{% else %}Continuer ma mission →{% endif %}</a>
+  </section>
+  {% endif %}
+
   <nav class="learning-command learning-command--result" aria-label="Suite de ton apprentissage">
     <a class="learning-command-item" href="/mes-revisions">
       <span class="learning-command-index">01</span>

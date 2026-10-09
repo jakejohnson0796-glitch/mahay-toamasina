@@ -6,13 +6,14 @@ from sqlmodel import Session, select, func
 
 from ..auth import utilisateur_courant
 from ..database import get_session
-from ..models import ConsultationDocument, Document, ProgressionNotion, SessionTuteur, TentativeQuiz, StatutDocument
+from ..models import ConsultationDocument, Document, MissionApprentissage, ProgressionNotion, SessionTuteur, TentativeQuiz, StatutDocument
 from ..templating import templates
 from .. import dashboard as dashboard_module
 from .. import quiz as quiz_module
 from .. import gamification
 from .. import knowledge_map
 from .. import learning_session
+from .. import adaptive_learning
 
 router = APIRouter()
 
@@ -100,7 +101,7 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
 
 @router.get("/session-apprentissage")
 def page_session_apprentissage(request: Request, session: Session = Depends(get_session)):
-    """Lance une mission courte centrée sur la prochaine meilleure notion."""
+    """Reprend la mission courante ou prépare l'étape suivante."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -111,8 +112,93 @@ def page_session_apprentissage(request: Request, session: Session = Depends(get_
         .where(ProgressionNotion.nb_questions > 0)
         .order_by(ProgressionNotion.score_maitrise.asc(), ProgressionNotion.date_maj.desc())
     ).all()
+    par_id = {int(p.id): p for p in progressions if p.id is not None}
     carte = knowledge_map.construire_carte(progressions)
-    mission = learning_session.construire_mission(carte, progressions)
+    etat = session.exec(
+        select(MissionApprentissage).where(MissionApprentissage.utilisateur_id == utilisateur.id)
+    ).first()
+
+    def mission_pour(progression):
+        cible = {
+            "id": progression.id,
+            "matiere": progression.matiere,
+            "notion": progression.notion,
+            "score": progression.score_maitrise,
+        }
+        return learning_session.construire_mission({"prochaine": cible}, progressions)
+
+    if etat and etat.statut == "active":
+        progression = par_id.get(int(etat.progression_id))
+        if progression is None:
+            progression = session.get(ProgressionNotion, etat.progression_id)
+        if progression and progression.utilisateur_id == utilisateur.id:
+            mission = adaptive_learning.appliquer_etat(mission_pour(progression), etat)
+        else:
+            mission = learning_session.construire_mission(carte, progressions)
+    elif etat and etat.statut == "terminee":
+        tous_les_noeuds = [
+            node for sujet in carte.get("sujets", [])
+            for node in sujet.get("nodes", [])
+            if int(node.get("id") or 0) != int(etat.progression_id)
+        ]
+        non_confirmes = [
+            node for node in tous_les_noeuds
+            if not bool(
+                par_id.get(int(node.get("id") or 0))
+                and par_id[int(node.get("id") or 0)].maitrise_confirmee
+            )
+        ]
+        candidats = non_confirmes or tous_les_noeuds
+        candidats.sort(
+            key=lambda node: (
+                0 if not node.get("prerequis") else 1,
+                int(node.get("score") or 0),
+                str(node.get("notion") or "").lower(),
+            )
+        )
+        cible_suivante = candidats[0] if candidats else None
+        progression = par_id.get(int(cible_suivante["id"])) if cible_suivante else None
+        if progression is not None:
+            base = mission_pour(progression)
+            etat.progression_id = int(progression.id)
+            etat.etape = "comprendre" if base.get("action_principale") == "tuteur" else "pratiquer"
+            etat.statut = "active"
+            etat.nb_tentatives = 0
+            etat.dernier_score = None
+            etat.derniere_tentative_id = None
+            etat.derniere_session_tuteur_id = None
+            etat.dernier_feedback = None
+            etat.date_fin = None
+            etat.date_maj = datetime.utcnow()
+            session.add(etat)
+            session.commit()
+            session.refresh(etat)
+            mission = adaptive_learning.appliquer_etat(base, etat)
+        else:
+            progression = par_id.get(int(etat.progression_id))
+            if progression is None:
+                progression = session.get(ProgressionNotion, etat.progression_id)
+            if progression and progression.utilisateur_id == utilisateur.id:
+                mission = adaptive_learning.appliquer_etat(mission_pour(progression), etat)
+            else:
+                mission = learning_session.construire_mission(carte, progressions)
+    else:
+        cible = carte.get("prochaine")
+        mission = learning_session.construire_mission(carte, progressions)
+        if cible:
+            progression = par_id.get(int(cible.get("id") or 0))
+            if progression is not None:
+                etape = "comprendre" if mission.get("action_principale") == "tuteur" else "pratiquer"
+                etat = MissionApprentissage(
+                    utilisateur_id=utilisateur.id,
+                    progression_id=progression.id,
+                    etape=etape,
+                    statut="active",
+                )
+                session.add(etat)
+                session.commit()
+                session.refresh(etat)
+                mission = adaptive_learning.appliquer_etat(mission, etat)
 
     return templates.TemplateResponse(
         request,
