@@ -42,6 +42,7 @@ jobs:
           npm init -y >/tmp/mahay-render-smoke-package.json
           npm install --no-save jsdom@24 marked@12 dompurify@3.1.6 katex@0.16.11
           node scripts/smoke_ai_renderer.mjs
+          node scripts/smoke_language_switcher.mjs
       - name: Lancer les tests (un module par processus)
         run: |
           set -e

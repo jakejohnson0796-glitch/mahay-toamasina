@@ -138,6 +138,14 @@
       </button>
     </div>
 
+    <div class="tb-sidebar-langue">
+      <label for="select-langue" data-langue-label>Langue</label>
+      <select id="select-langue" name="langue" aria-label="Choisir la langue">
+        <option value="fr">Français</option>
+        <option value="mg">Malagasy</option>
+      </select>
+    </div>
+
     {% if request.session.get("user_id") %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
       <a href="/dashboard" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
@@ -396,6 +404,7 @@
 <link rel="stylesheet" href="/static/activation.css?v={{ version_asset('activation.css') }}">
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/langue.js?v={{ version_asset('js/langue.js') }}" defer></script>
 
 </body>
 </html>
