@@ -4,6 +4,7 @@ Le moteur ne crée aucune nouvelle donnée. Il transforme la priorité déjà
 calculée par knowledge_map en une courte séquence d'actions cohérente :
 une notion, un objectif, puis une preuve.
 """
+from datetime import datetime
 from typing import Iterable, Optional
 
 from .models import ProgressionNotion
