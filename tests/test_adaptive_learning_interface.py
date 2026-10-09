@@ -21,6 +21,7 @@ def test_selection_suite_verifie_les_prerequis_et_letat_confirme():
     assert "choisir_prochaine_notion" in moteur
     assert "maitrise_confirmee" in moteur
     assert "choisir_prochaine_notion(" in route
+    assert route.count("choisir_prochaine_notion(") >= 2
     assert "toutes_confirmees" in template
 
 
