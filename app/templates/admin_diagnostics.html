@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block titre %}Diagnostics système — Gasy Mahay{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-status-hero" aria-labelledby="diagnostics-title">
+    <div class="ops-status-main">
+      <span class="ops-kicker">Observabilité · Administration</span>
+      <h1 id="diagnostics-title">Diagnostics système</h1>
+      <p>
+        Vérifier les composants critiques de Gasy Mahay, repérer une configuration
+        incomplète et distinguer un service joignable d'une simple clé renseignée.
+      </p>
+      <p class="ops-muted">Environnement déclaré : {{ environnement }}.</p>
+    </div>
+    <div class="ops-status-side">
+      {% if etat_global == "ok" %}
+      <strong class="ops-badge is-success">{{ libelle_global }}</strong>
+      {% elif etat_global == "warning" %}
+      <strong class="ops-badge is-alert">{{ libelle_global }}</strong>
+      {% else %}
+      <strong class="ops-badge is-alert">{{ libelle_global }}</strong>
+      {% endif %}
+      <span>{{ nb_erreurs }} erreur(s) · {{ nb_avertissements }} avertissement(s)</span>
+    </div>
+  </section>
+
+  <nav class="ops-nav" aria-label="Navigation administration">
+    <a href="/admin">Vue d'ensemble</a>
+    <a href="/admin/ia">IA & worker</a>
+    <a class="is-active" href="/admin/diagnostics" aria-current="page">Diagnostics système</a>
+    <a href="/admin/securite">Sécurité admin</a>
+  </nav>
+
+  <section class="ops-admin-group" aria-labelledby="diagnostics-checks">
+    <h2 id="diagnostics-checks">État des composants</h2>
+    <div class="ops-admin-items">
+      {% for controle in diagnostics %}
+      <article class="ops-admin-item">
+        <span>
+          <strong>{{ controle.nom }}</strong>
+          <span>{{ controle.detail }}</span>
+        </span>
+        {% if controle.statut == "ok" %}
+        <span class="ops-badge is-success">{{ controle.libelle }}</span>
+        {% elif controle.statut == "info" %}
+        <span class="ops-badge">{{ controle.libelle }}</span>
+        {% else %}
+        <span class="ops-badge is-alert">{{ controle.libelle }}</span>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ops-admin-group">
+    <h2>Comment interpréter ce rapport</h2>
+    <div class="ops-admin-items">
+      <div class="ops-admin-item">
+        <span><strong>Accessible / À jour</strong><span>Le test technique associé a répondu comme attendu.</span></span>
+      </div>
+      <div class="ops-admin-item">
+        <span><strong>Configuré</strong><span>Les paramètres nécessaires sont présents, mais le fournisseur n'a pas forcément été appelé.</span></span>
+      </div>
+      <div class="ops-admin-item">
+        <span><strong>Commit de release</strong><span>La version signalée par le processus est affichée ; cette page ne prétend pas valider le CI ni le déploiement public de Render.</span></span>
+      </div>
+      <div class="ops-admin-item">
+        <span><strong>Confidentialité</strong><span>Les clés, les mots de passe, les URL de connexion et les contenus de documents ne sont pas affichés. Les erreurs techniques brutes sont volontairement masquées.</span></span>
+      </div>
+    </div>
+  </section>
+
+  <p><a class="bouton bouton-secondaire" href="/admin">Retour à l'administration</a></p>
+</div>
+{% endblock %}
