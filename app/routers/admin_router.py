@@ -30,6 +30,7 @@ from ..models import (
 )
 from ..storage import supprimer_fichier
 from .. import ai_metrics
+from ..admin_diagnostics import collecter_diagnostics
 # Logique d'acceptation/refus reutilisee telle quelle depuis cercles_router.py
 # (meme principe que _assurer_membres_admins deja importe dans
 # admin_referentiel_router.py) : on evite de dupliquer la reverification de
@@ -124,6 +125,21 @@ def configurer_mot_de_passe_confirmation_admin(
 # il doit etre relu et retranscrit a la main (WhatsApp, appel...) par
 # l'admin vers l'etudiant, une erreur de lecture serait sinon frequente.
 _ALPHABET_MOT_DE_PASSE_TEMPORAIRE = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
+@router.get("/admin/diagnostics")
+def page_diagnostics_admin(request: Request, session: Session = Depends(get_session)):
+    """Tableau de santé réservé aux administrateurs, sans afficher les secrets."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    rapport = collecter_diagnostics(request.app.state)
+    return templates.TemplateResponse(
+        request,
+        "admin_diagnostics.html",
+        {"utilisateur": admin, **rapport},
+    )
 
 
 @router.get("/admin")
