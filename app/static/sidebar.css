@@ -180,3 +180,53 @@
     transition:none !important;
   }
 }
+
+
+/* Sélecteur de langue global, disponible pour les visiteurs et les membres. */
+.tb-sidebar-langue {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: .45rem;
+  margin: .25rem .35rem .8rem;
+  padding: .35rem .4rem;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  background: rgba(255,255,255,.045);
+  color: #D5E3DE;
+  font-size: .74rem;
+}
+.tb-sidebar-langue label {
+  color: inherit;
+  font-size: .72rem;
+  font-weight: 600;
+}
+.tb-sidebar-langue select {
+  width: 100%;
+  min-width: 0;
+  padding: .38rem .45rem;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 7px;
+  background: #0B3A3D;
+  color: #FFFFFF;
+  font: inherit;
+  cursor: pointer;
+}
+.tb-sidebar-langue select:focus-visible {
+  outline: 2px solid #F0C78B;
+  outline-offset: 2px;
+}
+@media (min-width:901px) {
+  body.sidebar-compact .tb-sidebar-langue {
+    grid-template-columns: minmax(0,1fr);
+    margin-inline: 0;
+    padding: .22rem;
+  }
+  body.sidebar-compact .tb-sidebar-langue label {
+    display: none;
+  }
+  body.sidebar-compact .tb-sidebar-langue select {
+    padding: .28rem .12rem;
+    font-size: .64rem;
+  }
+}
