@@ -47,11 +47,45 @@ window.document.body.appendChild(added);
 await new Promise((resolve) => setTimeout(resolve, 0));
 if (added.textContent !== 'Hamorona kaonty') throw new Error('Dynamically inserted labels are not translated');
 
+// Check that the common student workflows switch language, including dynamic
+// counters, and that returning to French restores the exact original strings.
+const parcours = window.document.createElement('section');
+parcours.innerHTML = `
+  <h2 id="routine">Ta routine du jour</h2>
+  <button id="illusion">Déconstruire avec le Tuteur IA</button>
+  <p id="notice">Aucune notification à afficher pour le moment.</p>
+  <span id="bonjour">Bonjour, Rakoto 👋</span>
+  <span id="compteur">1/3 aujourd'hui</span>
+`;
+window.document.body.appendChild(parcours);
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.querySelector('#routine').textContent !== 'Ny fandaharam-pianaranao anio') {
+  throw new Error('Dashboard routine label did not switch to Malagasy');
+}
+if (window.document.querySelector('#illusion').textContent !== 'Handinika miaraka amin'ny Mpampianatra IA') {
+  throw new Error('Tutor action did not switch to Malagasy');
+}
+if (window.document.querySelector('#notice').textContent !== 'Tsy misy fampandrenesana aseho amin' + "'" + 'izao fotoana izao.') {
+  throw new Error('Notification empty state did not switch to Malagasy');
+}
+if (window.document.querySelector('#bonjour').textContent !== 'Manao ahoana, Rakoto 👋') {
+  throw new Error('Dynamic greeting did not preserve the student name');
+}
+if (window.document.querySelector('#compteur').textContent !== '1/3 androany') {
+  throw new Error('Dynamic counter did not switch to Malagasy');
+}
+
 select.value = 'fr';
 select.dispatchEvent(new window.Event('change', { bubbles: true }));
 if (window.document.documentElement.getAttribute('lang') !== 'fr') throw new Error('HTML lang was not restored');
 if (window.document.querySelector('#navigation').textContent !== 'Tableau de bord') {
   throw new Error('Switching back to French did not restore the original source');
+}
+if (window.document.querySelector('#routine').textContent !== 'Ta routine du jour') {
+  throw new Error('Switching back to French did not restore dashboard labels');
+}
+if (window.document.querySelector('#bonjour').textContent !== 'Bonjour, Rakoto 👋') {
+  throw new Error('Switching back to French did not restore the dynamic greeting');
 }
 if (window.localStorage.getItem('mahay-langue') !== 'fr') throw new Error('Language preference was not persisted');
 console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg'], dynamic: true, ai_content_protected: true }));
