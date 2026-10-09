@@ -62,10 +62,10 @@ await new Promise((resolve) => setTimeout(resolve, 0));
 if (window.document.querySelector('#routine').textContent !== 'Ny fandaharam-pianaranao anio') {
   throw new Error('Dashboard routine label did not switch to Malagasy');
 }
-if (window.document.querySelector('#illusion').textContent !== 'Handinika miaraka amin'ny Mpampianatra IA') {
+if (window.document.querySelector("#illusion").textContent !== "Handinika miaraka amin'ny Mpampianatra IA") {
   throw new Error('Tutor action did not switch to Malagasy');
 }
-if (window.document.querySelector('#notice').textContent !== 'Tsy misy fampandrenesana aseho amin' + "'" + 'izao fotoana izao.') {
+if (window.document.querySelector("#notice").textContent !== "Tsy misy fampandrenesana aseho amin'izao fotoana izao.") {
   throw new Error('Notification empty state did not switch to Malagasy');
 }
 if (window.document.querySelector('#bonjour').textContent !== 'Manao ahoana, Rakoto 👋') {
