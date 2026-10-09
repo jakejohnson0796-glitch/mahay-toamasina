@@ -356,13 +356,13 @@
 
     // Les libellés qui contiennent une donnée dynamique gardent cette donnée
     // telle quelle (nom de l'étudiant, compteur ou score).
-    match = cle.match(/^Bonjour,\\s+(.+?)\\s*👋$/i);
+    match = cle.match(/^Bonjour,\s+(.+?)\s*👋$/i);
     if (match) return "Manao ahoana, " + match[1] + " 👋";
-    match = cle.match(/^Ton démarrage est à (\\d+)\\/3\\.$/i);
+    match = cle.match(/^Ton démarrage est à (\d+)\/3\.$/i);
     if (match) return "Efa vita ny dingana " + match[1] + " amin'ny 3.";
-    match = cle.match(/^(\\d+)\\/3 aujourd'hui$/i);
+    match = cle.match(/^(\d+)\/3 aujourd'hui$/i);
     if (match) return match[1] + "/3 androany";
-    match = cle.match(/^Cette notion a encore (\\d+) erreurs? à consolider\\.$/i);
+    match = cle.match(/^Cette notion a encore (\d+) erreurs? à consolider\.$/i);
     if (match) return "Mbola misy fahadisoana " + match[1] + " mila hamafisina amin'ity lesona ity.";
     match = cle.match(/^Prochaine action : (Déconstruire la notion|Vérifier avant de conclure|Tester le transfert)$/i);
     if (match) {
@@ -373,21 +373,21 @@
       };
       return "Dingana manaraka: " + actions[match[1].toLowerCase()];
     }
-    match = cle.match(/^maîtrise actuelle · (\\d+)%$/i);
+    match = cle.match(/^maîtrise actuelle · (\d+)%$/i);
     if (match) return "Fahaizana ankehitriny · " + match[1] + "%";
-    match = cle.match(/^(\\d+)\\s+documents consultés$/i);
+    match = cle.match(/^(\d+)\s+documents consultés$/i);
     if (match) return match[1] + " tahirin-kevitra nojerena";
-    match = cle.match(/^(\\d+)\\s+quiz récents$/i);
+    match = cle.match(/^(\d+)\s+quiz récents$/i);
     if (match) return match[1] + " quiz vao haingana";
-    match = cle.match(/^(\\d+)\\s+sessions? tuteur$/i);
+    match = cle.match(/^(\d+)\s+sessions? tuteur$/i);
     if (match) return match[1] + " fotoam-pianarana niaraka tamin'ny Mpampianatra IA";
-    match = cle.match(/^(\\d+) erreurs? avec une forte confiance sur (\\d+) questions? très sûres?\\.$/i);
+    match = cle.match(/^(\d+) erreurs? avec une forte confiance sur (\d+) questions? très sûres?\.$/i);
     if (match) {
       return match[1] + " valiny diso nefa natokisana, tamin'ny fanontaniana " + match[2] + " tena natokisana.";
     }
-    match = cle.match(/^(\\d+) réponses? très sûres?$/i);
+    match = cle.match(/^(\d+) réponses? très sûres?$/i);
     if (match) return "Valiny " + match[1] + " tena natokisana";
-    match = cle.match(/^(\\d+) observations? au total$/i);
+    match = cle.match(/^(\d+) observations? au total$/i);
     if (match) return "Fanamarihana " + match[1] + " amin'ny fitambarany";
     return source;
   }
