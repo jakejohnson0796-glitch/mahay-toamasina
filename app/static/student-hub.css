@@ -311,3 +311,60 @@
   .hub-focus-section,
   .knowledge-summary-section{padding:17px}
 }
+
+
+/* Mode Mission — une notion, un objectif, une preuve. */
+.mission-apprentissage{--mission-gap:12px}
+.mission-hero{margin-bottom:14px}
+.mission-hero-side{width:min(360px,38%);display:grid;gap:7px;align-content:center;padding:18px 20px;border:1px solid var(--content-border);border-radius:18px;background:linear-gradient(135deg,color-mix(in srgb,var(--content-surface) 94%,var(--accent) 6%),var(--content-surface));box-shadow:var(--shadow-sm)}
+.mission-hero-side strong{font-size:1.08rem;color:var(--content-text)}
+.mission-hero-side>span{font-size:.76rem;color:var(--content-text-muted)}
+.mission-kicker{font-size:.62rem!important;text-transform:uppercase;letter-spacing:.07em;font-weight:850;color:var(--accent)!important}
+.mission-duration{justify-self:start;padding:5px 8px;border:1px solid var(--content-border);border-radius:999px;background:var(--content-bg);font-size:.62rem!important;font-weight:800;color:var(--content-text)!important}
+.mission-objective{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;background:linear-gradient(135deg,color-mix(in srgb,var(--content-surface) 96%,var(--accent) 4%),var(--content-surface))}
+.mission-objective-icon{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--content-border);border-radius:13px;background:var(--content-bg);color:var(--accent)}
+.mission-objective h2{margin:3px 0 5px;font-size:1.05rem;line-height:1.4;color:var(--content-text)}
+.mission-objective p{margin:0;color:var(--content-text-muted);font-size:.78rem;line-height:1.5}
+.mission-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.mission-tags span{padding:5px 8px;border:1px solid var(--content-border);border-radius:8px;background:var(--content-bg);font-size:.61rem;color:var(--content-text-muted)}
+.mission-step-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--mission-gap)}
+.mission-step{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:15px;border:1px solid var(--content-border);border-radius:15px;background:var(--content-bg);min-height:112px;position:relative;overflow:hidden}
+.mission-step::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--accent)}
+.mission-step--prioritaire::before{background:var(--refonte-orange,var(--accent))}
+.mission-step-number{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;border:1px solid var(--content-border);background:var(--content-surface);font-size:.67rem;font-weight:900;color:var(--content-text)}
+.mission-step-title{font-weight:850;font-size:.86rem;color:var(--content-text)}
+.mission-step p{margin:6px 0 0;font-size:.69rem;line-height:1.45;color:var(--content-text-muted)}
+.mission-action{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;background:var(--content-bg);border:1px solid var(--content-border)}
+.mission-action-copy h2{margin:3px 0 4px;color:var(--content-text)}
+.mission-action-copy p{margin:0;font-size:.75rem;color:var(--content-text-muted)}
+.mission-action-buttons{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.mission-action-buttons form{margin:0}
+.mission-rule{display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px 12px;border:1px dashed var(--content-border);border-radius:11px;background:var(--content-bg);font-size:.68rem}
+.mission-rule strong{color:var(--content-text)}
+.mission-rule span{color:var(--content-text-muted)}
+.mission-empty{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.mission-empty-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--content-bg);border:1px solid var(--content-border);color:var(--accent)}
+.mission-empty h2{margin:2px 0 5px}
+.mission-empty p{margin:0 0 11px;color:var(--content-text-muted);font-size:.78rem}
+@media(max-width:920px){
+  .mission-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,34%)}
+  .mission-step-grid{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .mission-hero{display:block}
+  .mission-hero-side{width:auto;margin-top:16px}
+  .mission-objective,.mission-action,.mission-empty{grid-template-columns:1fr}
+  .mission-action-buttons{justify-content:flex-start}
+  .mission-rule{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+  .mission-apprentissage *,
+  .mission-apprentissage *::before,
+  .mission-apprentissage *::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
+
+.mission-entry-strip{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;margin:12px 0 6px;padding:13px 15px;border:1px solid var(--content-border);border-radius:14px;background:var(--content-bg)}
+.mission-entry-strip>div{display:grid;gap:3px}
+.mission-entry-strip strong{font-size:.82rem;color:var(--content-text)}
+.mission-entry-strip>div>span:last-child{font-size:.68rem;color:var(--content-text-muted)}
+@media(max-width:760px){.mission-entry-strip{grid-template-columns:1fr}}

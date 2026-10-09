@@ -21,7 +21,7 @@
       {% if notions_a_revoir %}
       <strong>{{ notions_a_revoir|length }} notion{{ "s" if notions_a_revoir|length != 1 else "" }} à revoir</strong>
       <span>Commence par tes points faibles, puis consolide ce que tu maîtrises déjà.</span>
-      <a class="bouton bouton-primaire bouton-compact" href="#notions-a-revoir">Voir mon parcours →</a>
+      <a class="bouton bouton-primaire bouton-compact" href="/session-apprentissage">Lancer ma mission →</a>
       {% else %}
       <strong>Tu es à jour 🎉</strong>
       <span>Aucune notion prioritaire pour l'instant. Continue à pratiquer régulièrement.</span>
@@ -46,6 +46,15 @@
       <span><strong>Comprendre</strong><small>Débloquer ton raisonnement</small></span>
     </a>
   </nav>
+
+  <div class="mission-entry-strip" aria-label="Mission d'apprentissage">
+    <div>
+      <span class="eyebrow">Nouveau · Mode Mission</span>
+      <strong>Une notion à la fois, jusqu'à la prochaine preuve.</strong>
+      <span>Le moteur choisit la priorité depuis ta carte de connaissances.</span>
+    </div>
+    <a class="bouton bouton-secondaire" href="/session-apprentissage">Voir ma mission →</a>
+  </div>
 
   <section class="hub-kpis hub-kpis-revisions" aria-label="Résumé de mes révisions">
     <div class="hub-kpi">

@@ -12,6 +12,7 @@ from .. import dashboard as dashboard_module
 from .. import quiz as quiz_module
 from .. import gamification
 from .. import knowledge_map
+from .. import learning_session
 
 router = APIRouter()
 
@@ -94,6 +95,29 @@ def page_mes_revisions(request: Request, session: Session = Depends(get_session)
             "nb_documents": len(consultations),
             "nb_quiz": len(quiz),
         },
+    )
+
+
+@router.get("/session-apprentissage")
+def page_session_apprentissage(request: Request, session: Session = Depends(get_session)):
+    """Lance une mission courte centrée sur la prochaine meilleure notion."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    progressions = session.exec(
+        select(ProgressionNotion)
+        .where(ProgressionNotion.utilisateur_id == utilisateur.id)
+        .where(ProgressionNotion.nb_questions > 0)
+        .order_by(ProgressionNotion.score_maitrise.asc(), ProgressionNotion.date_maj.desc())
+    ).all()
+    carte = knowledge_map.construire_carte(progressions)
+    mission = learning_session.construire_mission(carte, progressions)
+
+    return templates.TemplateResponse(
+        request,
+        "session_apprentissage.html",
+        {"utilisateur": utilisateur, "mission": mission},
     )
 
 
