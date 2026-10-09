@@ -45,6 +45,79 @@ def transition_apres_quiz(score_pourcent: int, maitrise_confirmee: bool) -> Dict
     }
 
 
+def choisir_prochaine_notion(carte: Dict[str, Any], progressions: Any, exclure_id: Any = None):
+    """Sélectionne une notion non maîtrisée dont les prérequis observés sont confirmés."""
+    par_id = {
+        int(item.id): item for item in progressions
+        if getattr(item, "id", None) is not None
+    }
+    noeuds = [
+        node for sujet in carte.get("sujets", [])
+        for node in sujet.get("nodes", [])
+        if int(node.get("id") or 0) in par_id
+    ]
+    par_matiere_notion = {
+        (str(node.get("matiere") or ""), str(node.get("notion") or "")): node
+        for node in noeuds
+    }
+    candidats = []
+    for node in noeuds:
+        node_id = int(node.get("id") or 0)
+        progression = par_id.get(node_id)
+        if node_id == int(exclure_id or 0) or progression is None:
+            continue
+        if bool(getattr(progression, "maitrise_confirmee", False)):
+            continue
+        prerequis = [
+            par_matiere_notion[(str(node.get("matiere") or ""), str(nom))]
+            for nom in node.get("prerequis", [])
+            if (str(node.get("matiere") or ""), str(nom)) in par_matiere_notion
+        ]
+        if all(
+            bool(getattr(par_id.get(int(parent.get("id") or 0)), "maitrise_confirmee", False))
+            for parent in prerequis
+        ):
+            candidats.append(node)
+    if not candidats:
+        return None
+    candidats.sort(
+        key=lambda node: (
+            int(node.get("score") or 0),
+            -int(getattr(par_id.get(int(node.get("id") or 0)), "nb_erreurs", 0) or 0),
+            str(node.get("notion") or "").lower(),
+        )
+    )
+    return candidats[0]
+
+
+def vue_toutes_notions_confirmees() -> dict:
+    """État d'interface quand toutes les notions observées sont confirmées."""
+    return {
+        "active": False,
+        "toutes_confirmees": True,
+        "notion": None,
+        "matiere": None,
+        "progression_id": None,
+        "mission_id": None,
+        "score": None,
+        "erreurs": 0,
+        "titre": "Toutes les notions suivies sont maîtrisées",
+        "objectif": "Tes notions suivies ont obtenu une preuve de maîtrise. Tu peux maintenant commencer une nouvelle notion.",
+        "duree": "À ton rythme",
+        "action_principale": None,
+        "action_secondaire": None,
+        "action_label": "Parcours validé",
+        "etape_courante": "terminee",
+        "etat_mission": "terminee",
+        "nb_tentatives": 0,
+        "dernier_score": None,
+        "retour_adaptatif": None,
+        "message": "Ajoute une nouvelle preuve avec un quiz libre pour enrichir ta carte de connaissances.",
+        "etapes": [],
+        "preuve": "Une notion dépendante n'est proposée qu'après confirmation de ses prérequis observés.",
+    }
+
+
 def appliquer_etat(mission: Dict[str, Any], etat: Any) -> Dict[str, Any]:
     """Fusionne l'état persistant avec les actions à afficher dans le gabarit."""
     vue = dict(mission)

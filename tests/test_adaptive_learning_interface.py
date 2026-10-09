@@ -14,6 +14,16 @@ def test_modele_et_migration_persistent_la_mission():
     assert "derniere_tentative_id" in migration
 
 
+def test_selection_suite_verifie_les_prerequis_et_letat_confirme():
+    moteur = (ROOT / "app/adaptive_learning.py").read_text(encoding="utf-8")
+    route = (ROOT / "app/routers/revisions_router.py").read_text(encoding="utf-8")
+    template = (ROOT / "app/templates/session_apprentissage.html").read_text(encoding="utf-8")
+    assert "choisir_prochaine_notion" in moteur
+    assert "maitrise_confirmee" in moteur
+    assert "choisir_prochaine_notion(" in route
+    assert "toutes_confirmees" in template
+
+
 def test_quiz_et_tuteur_transmettent_etat_de_mission():
     quiz = (ROOT / "app/routers/quiz_router.py").read_text(encoding="utf-8")
     tuteur = (ROOT / "app/routers/tuteur_router.py").read_text(encoding="utf-8")
