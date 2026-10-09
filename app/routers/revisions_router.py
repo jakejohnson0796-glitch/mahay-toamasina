@@ -161,11 +161,11 @@ def page_session_apprentissage(request: Request, session: Session = Depends(get_
         else:
             mission = adaptive_learning.vue_toutes_notions_confirmees()
     else:
-        cible = carte.get("prochaine")
-        mission = learning_session.construire_mission(carte, progressions)
+        cible = adaptive_learning.choisir_prochaine_notion(carte, progressions)
         if cible:
             progression = par_id.get(int(cible.get("id") or 0))
             if progression is not None:
+                mission = mission_pour(progression)
                 etape = "comprendre" if mission.get("action_principale") == "tuteur" else "pratiquer"
                 etat = MissionApprentissage(
                     utilisateur_id=utilisateur.id,
@@ -177,6 +177,10 @@ def page_session_apprentissage(request: Request, session: Session = Depends(get_
                 session.commit()
                 session.refresh(etat)
                 mission = adaptive_learning.appliquer_etat(mission, etat)
+            else:
+                mission = adaptive_learning.vue_toutes_notions_confirmees()
+        else:
+            mission = adaptive_learning.vue_toutes_notions_confirmees()
 
     return templates.TemplateResponse(
         request,
