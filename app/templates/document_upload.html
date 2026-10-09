@@ -1073,6 +1073,7 @@
       }
 
       if (!input.files || input.files.length !== fichiers.length) return false;
+      setDetection("", "");
       input.dispatchEvent(new Event("change", { bubbles: true }));
       return true;
     }
@@ -1084,11 +1085,7 @@
       const fichiers = event.dataTransfer && event.dataTransfer.files;
       if (!definirFichiersDeposes(fichiers)) {
         if (fichiers && fichiers.length) {
-          const message = document.getElementById("erreur-fichier");
-          if (message) {
-            message.textContent = "Ce navigateur n’a pas pu joindre le fichier. Utilise le bouton de sélection.";
-            message.hidden = false;
-          }
+          setDetection("Ce navigateur n’a pas pu joindre le fichier. Utilise le bouton de sélection.", "warning");
         }
       }
     });
