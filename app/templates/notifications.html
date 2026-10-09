@@ -32,7 +32,10 @@
           <p>{{ n.contenu }}</p>
           <div class="notification-actions">
             {% if item.lien %}
-            <a class="bouton bouton-secondaire" href="{{ item.lien }}">Ouvrir</a>
+            <form method="post" action="/notifications/{{ n.id }}/ouvrir">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Ouvrir</button>
+            </form>
             {% endif %}
             {% if not n.lu %}
             <form method="post" action="/notifications/{{ n.id }}/lire">

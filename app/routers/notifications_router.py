@@ -24,6 +24,8 @@ def _notification_vue(notification: Notification) -> dict:
         lien = "/moderation"
     elif notification.type_notification.value in {"document_approuve", "document_rejete", "document_supprime"}:
         lien = "/documents"
+    elif notification.type_notification.value == "inactivite_3_jours":
+        lien = "/dashboard"
     return {"notification": notification, "lien": lien}
 
 
@@ -72,6 +74,41 @@ def marquer_notification_lue(
             request.session.pop("notification_inactivite", None)
 
     return RedirectResponse("/notifications", status_code=303)
+
+
+@router.post("/notifications/{notification_id}/ouvrir")
+def ouvrir_notification(
+    notification_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Ouvre la destination interne d'une notification appartenant à l'utilisateur.
+
+    L'ouverture marque aussi la notification comme lue. La destination est
+    calculée côté serveur, jamais acceptée depuis un champ fourni par le client.
+    """
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    notification = session.get(Notification, notification_id)
+    if not notification or notification.destinataire_id != utilisateur.id:
+        return RedirectResponse("/notifications", status_code=303)
+
+    destination = _notification_vue(notification)["lien"]
+    if not destination:
+        return RedirectResponse("/notifications", status_code=303)
+
+    notification.lu = True
+    session.add(notification)
+    session.commit()
+
+    rappel = request.session.get("notification_inactivite")
+    if rappel and rappel.get("notification_id") == notification_id:
+        request.session.pop("notification_inactivite", None)
+
+    return RedirectResponse(destination, status_code=303)
 
 
 @router.post("/notifications/lire-toutes")
