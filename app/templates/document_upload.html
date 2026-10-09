@@ -1039,7 +1039,7 @@
 
   document.addEventListener("drop", function (event) {
     const types = event.dataTransfer && Array.from(event.dataTransfer.types || []);
-    if (types && types.includes("Files") && !zone.contains(event.target)) {
+    if (types && types.includes("Files") && (!zone || !zone.contains(event.target))) {
       event.preventDefault();
     }
   });
