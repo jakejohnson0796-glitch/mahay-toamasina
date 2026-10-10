@@ -2282,6 +2282,13 @@
     "Demandes de creation de cercles — Admin Gasy Mahay": "Fangatahana hamorona vondrona — Admin Gasy Mahay",
     "Demandes de changement de filiere — Admin Gasy Mahay": "Fangatahana hanova lalam-pianarana — Admin Gasy Mahay",
     "Mes avis — Gasy Mahay": "Ny hevitro — Gasy Mahay",
+    "← Administration": "← Fitantanana",
+    "← Referentiel academique": "← Tahirin-kevitra fototra akademika",
+    "Universite": "Oniversite",
+    "Un cercle actif existe deja pour cette combinaison mention + filiere + niveau (": "Efa misy vondrona mavitrika amin'ity fitambaran'ny sampana + lalam-pianarana + ambaratonga ity (",
+    "). Choisis une autre combinaison, ou archive l'autre cercle d'abord.": "). Misafidiana fitambarana hafa, na tehirizo ho tahiry aloha ilay vondrona hafa.",
+    "Un cercle equivalent a ete cree entre-temps par une autre demande — celle-ci a ete automatiquement rejetee (": "Efa nisy fangatahana hafa namorona vondrona mitovy — nolavina ho azy ity fangatahana ity (",
+    ").": " ).",
     "Prochaine mission": "Iraka manaraka"
   });
 
