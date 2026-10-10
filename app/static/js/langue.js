@@ -327,7 +327,7 @@
     "état actuel de l'accès": "satan'ny fidirana ankehitriny",
     "Demande envoyée. Un administrateur vérifiera ton paiement.": "Nalefa ny fangatahanao. Hamarinin'ny mpitantana ny fandoavam-bola.",
     "Cette fonctionnalité nécessite Premium. Vérifie ton abonnement ou envoie une demande ci-dessous.": "Mila Premium ity fampiasa ity. Jereo ny famandrihanao na mandefasa fangatahana etsy ambany.",
-    "Le Quiz IA et le Tuteur IA sont inclus pendant les": "Tafiditra ao anatin'ny",
+    "Le Quiz IA et le Tuteur IA sont inclus pendant les": "Ny Quiz IA sy ny Tuteur IA dia azo ampiasaina mandritra ny",
     "premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant": "andro voalohan'ny andrana ny Quiz IA sy ny Tuteur IA. Mbola azo ampiasaina mandritra ny",
     "jours.": "andro ny fampiasa Premium hafa.",
     "État de ton compte": "Satan'ny kaontinao",
@@ -688,6 +688,10 @@
     "Cette notion a encore": "Mbola misy",
     "erreurs à consolider.": "fahadisoana mila hamafisina.",
     "Maîtrise actuelle ·": "Fahaizana ankehitriny ·",
+    "Premium actif": "Premium mavitrika",
+    "Actif": "Mavitrika",
+    "jour Premium restant": "andro Premium sisa",
+    "jour d'IA restant": "andro sisa ahafahana mampiasa ny IA",
     "Prochaine mission": "Iraka manaraka"
   });
 
