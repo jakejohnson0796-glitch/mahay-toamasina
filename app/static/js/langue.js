@@ -1690,6 +1690,34 @@
     "Pratique ciblée": "Fanazaran-tena kendrena",
     "Correction": "Fanitsiana",
     "15 min": "15 minitra",
+    "Votre essai gratuit expire dans": "Tapitra afaka",
+    " pour retrouver le quiz IA et les cercles d'etude.": " mba hahafahanao mampiasa ny Quiz IA sy miditra amin'ny vondrona fianarana.",
+    "Ton accès Premium est actif pour encore": "Mbola mavitrika ny fidiranao Premium mandritra ny",
+    ", y compris le Quiz IA et le Tuteur IA.": ", anisan'izany ny Quiz IA sy Tuteur IA.",
+    "jour": "andro",
+    "Essai": "Andrana",
+    "MVola": "MVola",
+    "Orange Money": "Orange Money",
+    "Airtel Money": "Airtel Money",
+    "Mot de passe de confirmation administrateur": "Tenimiafina fanamafisana ho an'ny mpitantana",
+    "Confirmer le nouveau mot de passe": "Hamarino ny tenimiafina vaovao",
+    "Mot de passe de confirmation actuel": "Tenimiafina fanamafisana ankehitriny",
+    "Nouveau mot de passe de confirmation": "Tenimiafina fanamafisana vaovao",
+    "Prochain changement de niveau possible dans jour .": "Afaka manova ambaratonga indray afaka andro .",
+    "Cours": "Fampianarana",
+    "Séance": "Fotoam-pianarana",
+    "Devoir": "Enti-mody",
+    "Saisissez 034 12 345 67, ou 34 12 345 67 si vous utilisez l’ancien format. Le serveur normalise automatiquement.": "Ampidiro ny 034 12 345 67, na 34 12 345 67 raha mampiasa ilay endrika taloha ianao. Ahitsin'ny mpizara ho azy ny laharana.",
+    "· apprendre, réviser, collaborer": "· mianatra, mamerina lesona, miara-miasa",
+    "Un profil étudiant adapté à ton parcours académique.": "Mombamomba ny mpianatra mifanaraka amin'ny lalam-pianaranao.",
+    "Des ressources, quiz et outils d’apprentissage réunis au même endroit.": "Loharano, quiz ary fitaovana fianarana mitambatra amin'ny toerana iray.",
+    "Des espaces d’étude pour travailler avec d’autres étudiants.": "Sehatra fianarana hiarahana miasa amin'ny mpianatra hafa.",
+    "· construire son espace d’étude": "· hanangana ny sehatra fianarany",
+    "1. Votre compte": "1. Ny kaontinao",
+    "2. Votre parcours académique": "2. Ny lalam-pianaranao akademika",
+    "Cours en direct": "Fampianarana mivantana",
+    "Le Quiz IA et le Tuteur IA sont deux usages différents : l'un mesure et entraîne tes connaissances, l'autre t'accompagne dans ton raisonnement.": "Samy hafa ny fampiasana ny Quiz IA sy Tuteur IA: ny iray mandrefy sy mampiofana ny fahalalanao, ny iray manampy anao handinika.",
+    "Commencer": "Hanomboka",
     "Prochaine mission": "Iraka manaraka"
   });
 
@@ -1727,6 +1755,16 @@
     match = cle.match(/^(\d+)\s+jour(s?)\s+d'ancienneté$/i);
     if (match) return match[1] + " andro naha-mpikambana";
 
+    match = cle.match(/^Le Quiz IA et le Tuteur IA sont inclus pendant les (\\d+) premiers jours de l'essai\\. Le reste des fonctionnalités Premium reste accessible pendant (\\d+) jours\\.$/i);
+    if (match) return "Ny Quiz IA sy ny Tuteur IA dia tafiditra mandritra ny " + match[1] + " andro voalohany amin'ny andrana. Mbola azo ampiasaina mandritra ny " + match[2] + " andro ny fampiasa Premium hafa.";
+    match = cle.match(/^La demande a bien été reçue\\. Ton accès Premium reste actif pendant la vérification \\((\\d+) jours?\\)\\. L'accès IA reste ouvert pendant (\\d+) jours?\\.$/i);
+    if (match) return "Voaray ny fangatahanao. Mbola mavitrika mandritra ny fanamarinana (" + match[1] + " andro) ny fidiranao Premium. Mbola azo ampiasaina mandritra ny " + match[2] + " andro ny IA.";
+    match = cle.match(/^Ton démarrage est à (\\d+)\\/3\\.$/i);
+    if (match) return "Efa vita ny dingana " + match[1] + " amin'ny 3.";
+    match = cle.match(/^Bonjour,\\s*(.+?)\\s*$/i);
+    if (match) return "Manao ahoana, " + match[1].trim();
+    match = cle.match(/^Motif : (.+?)\\. Tu peux envoyer une nouvelle demande\\.$/i);
+    if (match) return "Antony: " + match[1] + ". Afaka mandefa fangatahana vaovao ianao.";
     // Les libellés qui contiennent une donnée dynamique gardent cette donnée
     // telle quelle (nom de l'étudiant, compteur ou score).
     match = cle.match(/^Bonjour,\s+(.+?)\s*👋$/i);
