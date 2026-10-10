@@ -14,7 +14,7 @@ from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.cercles_referentiel import assurer_cercles_pour_filiere, assurer_cercles_referentiel
 from app.models import (
-    CercleEtude, Faculte, Filiere, MembreCercle, Mention, RoleMembreCercle,
+    CercleEtude, Faculte, Filiere, MembreCercle, Mention, MessageCercle, RoleMembreCercle,
     RoleUtilisateur, StatutCercle, Universite, Utilisateur, ProgrammeUniversitaire,
 )
 from app.referentiel import NIVEAUX
@@ -260,6 +260,96 @@ class TestCerclesReferentiel(unittest.TestCase):
             self.assertEqual(len(membres), 1)
             for m in membres:
                 self.assertEqual(m.role, RoleMembreCercle.CREATEUR)
+
+    def _creer_cercle_sans_offre(self, session):
+        filiere = Filiere(
+            nom="Chimie",
+            faculte_id=self.faculte_id,
+            mention_id=self.mention_id,
+            niveau="D1",
+        )
+        session.add(filiere)
+        session.commit()
+        session.refresh(filiere)
+
+        cercle = CercleEtude(
+            nom="Chimie — Doctorat 1",
+            createur_id=self.admin_id,
+            mention_id=self.mention_id,
+            filiere_id=filiere.id,
+            niveau="D1",
+            statut=StatutCercle.ACTIF,
+        )
+        session.add(cercle)
+        session.commit()
+        session.refresh(cercle)
+        session.add(
+            MembreCercle(
+                cercle_id=cercle.id,
+                utilisateur_id=self.admin_id,
+                role=RoleMembreCercle.CREATEUR,
+            )
+        )
+        session.commit()
+        return cercle.id
+
+    def test_cercle_orphelin_avec_seul_createur_admin_est_archive(self):
+        """L'admin createur technique ne doit pas compter comme membre reel."""
+        with Session(self.engine) as session:
+            cercle_id = self._creer_cercle_sans_offre(session)
+
+            total = assurer_cercles_referentiel(session)
+
+            self.assertEqual(total, 0)
+            cercle = session.get(CercleEtude, cercle_id)
+            self.assertEqual(cercle.statut, StatutCercle.ARCHIVE)
+
+    def test_cercle_orphelin_avec_etudiant_reel_reste_actif_pour_revue(self):
+        """Un cercle avec un membre non-admin reste actif pour ne pas perdre l'acces."""
+        with Session(self.engine) as session:
+            cercle_id = self._creer_cercle_sans_offre(session)
+            etudiant = Utilisateur(
+                nom="Etudiant de test",
+                telephone="0340000002",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+            )
+            session.add(etudiant)
+            session.commit()
+            session.refresh(etudiant)
+            session.add(
+                MembreCercle(
+                    cercle_id=cercle_id,
+                    utilisateur_id=etudiant.id,
+                    role=RoleMembreCercle.MEMBRE,
+                )
+            )
+            session.commit()
+
+            total = assurer_cercles_referentiel(session)
+
+            self.assertEqual(total, 0)
+            cercle = session.get(CercleEtude, cercle_id)
+            self.assertEqual(cercle.statut, StatutCercle.ACTIF)
+
+    def test_cercle_orphelin_avec_contenu_reste_actif_meme_sans_etudiant(self):
+        """Un contenu historique doit rester accessible pour une revue admin."""
+        with Session(self.engine) as session:
+            cercle_id = self._creer_cercle_sans_offre(session)
+            session.add(
+                MessageCercle(
+                    cercle_id=cercle_id,
+                    auteur_id=self.admin_id,
+                    contenu="Message historique a conserver",
+                )
+            )
+            session.commit()
+
+            total = assurer_cercles_referentiel(session)
+
+            self.assertEqual(total, 0)
+            cercle = session.get(CercleEtude, cercle_id)
+            self.assertEqual(cercle.statut, StatutCercle.ACTIF)
 
     def test_sans_admin_ne_leve_pas_et_ne_cree_rien(self):
         """Aucun compte admin en base -> provisionnement simplement
