@@ -46,8 +46,8 @@ from typing import Optional
 from sqlmodel import Session, func, select
 
 from .models import (
-    CercleEtude, Faculte, Filiere, Mention, MembreCercle, ProgrammeUniversitaire, RoleMembreCercle, RoleUtilisateur,
-    StatutCercle, Utilisateur,
+    CercleEtude, DemandeAdhesionCercle, Document, Faculte, Filiere, Mention, MessageCercle, MembreCercle,
+    ProgrammeUniversitaire, RoleMembreCercle, RoleUtilisateur, StatutCercle, Utilisateur,
 )
 from .referentiel import NIVEAUX, libelle_niveau
 from .texte_normalise import normaliser as _normaliser_nom_parcours
@@ -63,6 +63,25 @@ def _createur_systeme(session: Session) -> Optional[Utilisateur]:
     return session.exec(
         select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)
     ).first()
+
+
+def _cercles_avec_contenu_important(session: Session, cercle_ids: list[int]) -> set[int]:
+    """Retourne les cercles avec messages, documents partages ou demandes d'adhesion.
+
+    Ces dependances ne sont jamais supprimees automatiquement : un cercle
+    sans membre non-admin peut toutefois encore contenir du contenu a preserver.
+    """
+    if not cercle_ids:
+        return set()
+
+    ids_avec_contenu: set[int] = set()
+    for modele in (MessageCercle, Document, DemandeAdhesionCercle):
+        ids_avec_contenu.update(
+            session.exec(
+                select(modele.cercle_id).where(modele.cercle_id.in_(cercle_ids))
+            ).all()
+        )
+    return ids_avec_contenu
 
 
 def assurer_cercles_pour_groupe_parcours(
@@ -133,6 +152,9 @@ def assurer_cercles_pour_groupe_parcours(
     niveaux_existants = {c.niveau for c in cercles_du_groupe}
 
     nb_archives = 0
+    cercles_avec_contenu = _cercles_avec_contenu_important(
+        session, [c.id for c in cercles_du_groupe if c.id is not None]
+    )
     if niveaux_cibles:
         # On connaît désormais avec certitude les niveaux valides pour ce
         # parcours : tout cercle ACTIF sur un autre niveau est périmé.
@@ -150,22 +172,15 @@ def assurer_cercles_pour_groupe_parcours(
                         Utilisateur.role != RoleUtilisateur.ADMIN,
                     )
                 ).one()
-                if nb_membres_reels:
-                    # Un vrai etudiant (pas seulement le createur systeme)
-                    # a rejoint ce cercle devenu perime : jamais archive
-                    # silencieusement dans ce cas, une decision humaine
-                    # est necessaire (ou vont ces membres ?) — signale au
-                    # lieu d'agir a leur place.
-                    # Le scan global de assurer_cercles_referentiel() produit deja
-                    # un resume limite aux premiers exemples. Cette branche est
-                    # appelee une fois par groupe de parcours : logger.warning()
-                    # ici recreait donc des centaines de lignes identiques au demarrage.
-                    # On garde le detail disponible en DEBUG pour diagnostic ponctuel,
-                    # sans polluer les logs de production.
+                contenu_important = cercle.id in cercles_avec_contenu
+                if nb_membres_reels or contenu_important:
+                    # Ne jamais masquer un cercle avec de vrais membres ou du
+                    # contenu important : laisser la decision a l'administration.
                     logger.debug(
-                        "Cercle #%d (%s, niveau %s) perime mais compte %d membre(s) reel(s) — "
-                        "laisse ACTIF, revue admin necessaire.",
-                        cercle.id, cercle.nom, cercle.niveau, nb_membres_reels,
+                        "Cercle #%d (%s, niveau %s) perime mais preserve "
+                        "(%d membre(s) non-admin, contenu_important=%s).",
+                        cercle.id, cercle.nom, cercle.niveau,
+                        nb_membres_reels, contenu_important,
                     )
                     continue
                 cercle.statut = StatutCercle.ARCHIVE
@@ -366,11 +381,11 @@ def assurer_cercles_referentiel(
         )
     ).all()
     membres_par_cercle = {}
-    if cercles_nationaux:
-        ids_cercles = [c.id for c in cercles_nationaux]
+    ids_cercles = [c.id for c in cercles_nationaux if c.id is not None]
+    cercles_avec_contenu = _cercles_avec_contenu_important(session, ids_cercles)
+    if ids_cercles:
         # Les cercles automatiques contiennent souvent une adhésion du
-        # compte admin créateur. Ce compte technique n'est pas un étudiant
-        # réel et ne doit pas transformer un cercle orphelin en cas de revue.
+        # compte admin créateur. Ce compte technique n'est pas un membre réel.
         membres_par_cercle = dict(
             session.exec(
                 select(MembreCercle.cercle_id, func.count())
@@ -417,8 +432,11 @@ def assurer_cercles_referentiel(
             continue
 
         nb_membres = membres_par_cercle.get(cercle.id, 0)
-        if nb_membres:
-            cercles_a_revoir.append((cercle.id, cercle.nom, cercle.niveau, nb_membres))
+        contenu_important = cercle.id in cercles_avec_contenu
+        if nb_membres or contenu_important:
+            cercles_a_revoir.append(
+                (cercle.id, cercle.nom, cercle.niveau, nb_membres, contenu_important)
+            )
             continue
 
         cercle.statut = StatutCercle.ARCHIVE
@@ -431,13 +449,13 @@ def assurer_cercles_referentiel(
     if cercles_a_revoir:
         logger.warning(
             "%d cercle(s) national/nationaux n'ont plus d'offre active correspondante "
-            "mais possedent des membres non-admin : laisses ACTIFS pour revue admin.",
+            "mais possedent des membres non-admin ou du contenu important : laisses ACTIFS pour revue admin.",
             len(cercles_a_revoir),
         )
-        for cercle_id, nom, niveau, nb_membres in cercles_a_revoir[:10]:
+        for cercle_id, nom, niveau, nb_membres, contenu_important in cercles_a_revoir[:10]:
             logger.warning(
-                "  Revue a prevoir : cercle #%d (%s, niveau %s, %d membre(s)).",
-                cercle_id, nom, niveau, nb_membres,
+                "  Revue a prevoir : cercle #%d (%s, niveau %s, %d membre(s) non-admin, contenu_important=%s).",
+                cercle_id, nom, niveau, nb_membres, contenu_important,
             )
         if len(cercles_a_revoir) > 10:
             logger.warning(
