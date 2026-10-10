@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script nonce="{{ csp_nonce(request) }}">
   /* Pose [data-theme] AVANT le chargement de style.css (script inline
      bloquant, pas defer) pour eviter un flash du mauvais theme au
@@ -60,6 +60,16 @@
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/charger-dependances-ia.js?v={{ version_asset('js/charger-dependances-ia.js') }}"></script>
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/rendu_ia.js?v={{ version_asset('js/rendu_ia.js') }}"></script>
 {% endif %}
+{% if request.url.path.startswith("/defis") or request.url.path == "/dashboard" %}
+<link rel="stylesheet" href="/static/gamification.css?v={{ version_asset('gamification.css') }}">
+{% endif %}
+{% if request.url.path == "/bienvenue" or request.url.path == "/dashboard" %}
+<link rel="stylesheet" href="/static/onboarding.css?v={{ version_asset('onboarding.css') }}">
+{% endif %}
+{% if request.url.path.startswith("/documents") or request.url.path.startswith("/cercles") %}
+<link rel="stylesheet" href="/static/activation.css?v={{ version_asset('activation.css') }}">
+{% endif %}
+<link rel="stylesheet" href="/static/responsive-foundation.css?v={{ version_asset('responsive-foundation.css') }}">
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
@@ -385,15 +395,6 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/security-ui.js?v={{ version_asset('security-ui.js') }}" defer></script>
 {% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/ai-learning.js?v={{ version_asset('ai-learning.js') }}" defer></script>
-{% endif %}
-{% if request.url.path.startswith("/defis") or request.url.path == "/dashboard" %}
-<link rel="stylesheet" href="/static/gamification.css?v={{ version_asset('gamification.css') }}">
-{% endif %}
-{% if request.url.path == "/bienvenue" or request.url.path == "/dashboard" %}
-<link rel="stylesheet" href="/static/onboarding.css?v={{ version_asset('onboarding.css') }}">
-{% endif %}
-{% if request.url.path.startswith("/documents") or request.url.path.startswith("/cercles") %}
-<link rel="stylesheet" href="/static/activation.css?v={{ version_asset('activation.css') }}">
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/langue.js?v={{ version_asset('js/langue.js') }}" defer></script>
