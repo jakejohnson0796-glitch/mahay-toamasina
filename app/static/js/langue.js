@@ -790,9 +790,9 @@
       // La clé est normalisée pour la recherche, mais les espaces aux bords
       // sont gardés pour les phrases coupées par des nombres ou des balises
       // (ex. « Il te reste <strong>5</strong> jours Premium »).
-      var espacesInitiaux = (String(source).match(/^\\s*/) || [""])[0];
-      var espacesFinaux = (String(source).match(/\\s*$/) || [""])[0];
-      traduction = espacesInitiaux + traduction.replace(/^\\s+|\\s+$/g, "") + espacesFinaux;
+      var espacesInitiaux = (String(source).match(/^\s*/) || [""])[0];
+      var espacesFinaux = (String(source).match(/\s*$/) || [""])[0];
+      traduction = espacesInitiaux + traduction.replace(/^\s+|\s+$/g, "") + espacesFinaux;
     }
 
     if (noeud.nodeValue !== traduction) noeud.nodeValue = traduction;
