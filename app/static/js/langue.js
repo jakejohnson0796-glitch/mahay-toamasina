@@ -155,10 +155,10 @@
     "— Choisissez votre université —": "— Safidio ny oniversite —",
     "Composante / établissement": "Sampam-pianarana / toeram-pianarana",
     "— Choisissez d’abord votre université —": "— Safidio aloha ny oniversite —",
-    "Mention": "Mention",
+    "Mention": "Sampana",
     "— Choisissez d’abord votre composante —": "— Safidio aloha ny sampam-pianarana —",
     "Niveau": "Ambaratonga",
-    "— Choisissez d’abord votre mention —": "— Safidio aloha ny mention —",
+    "— Choisissez d’abord votre mention —": "— Safidio aloha ny sampana —",
     "Parcours / Filière": "Sampam-pianarana",
     "— Choisissez d’abord votre niveau —": "— Safidio aloha ny ambaratonga —",
     "Aucun parcours spécifique n’est nécessaire à ce niveau pour cette mention : vous êtes en tronc commun.": "Tsy mila sampam-pianarana manokana amin'ity ambaratonga ity; tronc commun ianao.",
@@ -1953,7 +1953,7 @@
     "Jaune": "Mavo",
     "Autre couleur": "Loko hafa",
     "Epaisseur": "Hatevina",
-    "Grille millimetree": "Takelaka misy tsipika milimetatra",
+    "Grille millimetree": "Tabilao milimetatra",
     "Grille millimetree (aide au trace, pas partagee -- chacun l": "Takelaka milimetatra (fanampiana amin'ny fanaovana tsipika, tsy zaraina — samy manana ny azy",
     "Retablir": "Avereno",
     "Tout effacer": "Fafao daholo",
@@ -2477,7 +2477,34 @@
     "Changer d’apparence": "Hanova endrika",
     "Le mot de passe est masqué.": "Afenina ny tenimiafina.",
     "Réduire": "Hofintinina",
-    "Prochaine mission": "Iraka manaraka"
+    "Prochaine mission": "Iraka manaraka",
+
+    // Couverture complémentaire : libellés, accessibilité et états dynamiques.
+    "Illustrations d’étude intégrées localement dans Gasy Mahay : aucune dépendance à un service d’images externe.": "Ny sary fanazavana dia tafiditra mivantana ao amin’ny Gasy Mahay, ka tsy miankina amin’ny tolotra ivelany.",
+    "Génération…": "Mamokatra…",
+    "Validation…": "Manamarina…",
+    "Préparation…": "Manomana…",
+    "Recherche…": "Mikaroka…",
+    "Navigation rapide mobile": "Fitetezana haingana amin’ny finday",
+    "En-tête mobile": "Lohateny amin’ny finday",
+    "Ta progression": "Ny fandrosoanao",
+    "Rechercher dans l'historique": "Hikaroka ao amin’ny tantara",
+    "Catégories d'emojis": "Sokajin’ny emoji",
+    "Préciser le motif": "Hazavao ny antony",
+    "Connexion refusee — reconnectez-vous.": "Tsy nekena ny fifandraisana — midira indray.",
+    "Insérer": "Ampidiro",
+    "Réinsérer": "Ampidiro indray",
+    "Repères Gasy Mahay": "Mari-pamantarana ao amin’ny Gasy Mahay",
+    "Qu'est-ce qui fonctionne bien ? Qu'est-ce qu'on devrait améliorer ?": "Inona no mandeha tsara? Inona no tokony hatsaraina?",
+    "Ce que l'étudiant doit produire…": "Izay tokony hatolotry ny mpianatra…",
+    "Partager l'écran": "Hizara ny efijery",
+    "Grille millimetree (aide au trace, pas partagee -- chacun l'active pour soi)": "Tabilao milimetatra (fanampiana amin’ny fanaovana tsipika, tsy zaraina; samy mampandeha azy ho azy)",
+    "QR code d'activation": "Kaody QR fampahavitrihana",
+    "Ex : c'est ma mention/mon parcours reel, l'ancien etait une erreur de saisie / j'ai change cette annee...": "Ohatra: ity no sampana na lalam-pianarana marina arahiko; diso ny fampidirana teo aloha na niova aho tamin’ity taona ity...",
+    "Parcours d'apprentissage": "Lalam-pianarana",
+    "Ex. Droit des obligations": "Ohatra: Lalàn’ny adidy",
+    "Parcours d'un cercle d'étude": "Lalam-pianarana ao amin’ny vondrona fianarana",
+    "Mission d'apprentissage": "Asa fianarana",
   });
 
   var noeudsOriginaux = new WeakMap();
@@ -2622,6 +2649,11 @@
     if (match) return "Valiny " + match[1] + " tena natokisana";
     match = cle.match(/^(\d+) observations? au total$/i);
     if (match) return "Fanamarihana " + match[1] + " amin'ny fitambarany";
+    match = cle.match(/^(\d+)\s*\/\s*(\d+)\s+répondues?$/i);
+    if (match) return match[1] + " / " + match[2] + " voavaly";
+    match = cle.match(/^Aller à la question\s+(\d+)$/i);
+    if (match) return "Hankany amin'ny fanontaniana " + match[1];
+
     return source;
   }
 

@@ -8,6 +8,18 @@
 (function () {
   "use strict";
 
+  function texteSelonLangue(francais, malagasy) {
+    try {
+      if (
+        document.documentElement.getAttribute("lang") === "mg" ||
+        window.localStorage.getItem("mahay-langue") === "mg"
+      ) return malagasy;
+    } catch (_) {
+      if (document.documentElement.getAttribute("lang") === "mg") return malagasy;
+    }
+    return francais;
+  }
+
   function actionProtegee(form) {
     if (document.body.dataset.adminSession !== "1") return false;
     if (!form || (form.method || "get").toLowerCase() !== "post") return false;
@@ -47,13 +59,13 @@
     event.preventDefault();
 
     var motDePasse = window.prompt(
-      "Action administrateur protégée\n\nEntrez votre mot de passe de confirmation :"
+      texteSelonLangue("Action administrateur protégée\n\nEntrez votre mot de passe de confirmation :", "Hetsika fitantanana voaaro\n\nAmpidiro ny tenimiafina fanamafisana :")
     );
 
     if (motDePasse === null) return;
 
     if (!motDePasse) {
-      window.alert("Le mot de passe de confirmation est requis.");
+      window.alert(texteSelonLangue("Le mot de passe de confirmation est requis.", "Ilaina ny tenimiafina fanamafisana."));
       return;
     }
 
@@ -99,13 +111,13 @@
         }
         window.alert(
           (erreur && erreur.detail) ||
-          "La confirmation administrateur a été refusée."
+          texteSelonLangue("La confirmation administrateur a été refusée.", "Nolavina ny fanamafisan’ny mpitantana.")
         );
         return;
       }
 
       if (!reponse.ok) {
-        window.alert("L'action administrateur n'a pas pu être exécutée.");
+        window.alert(texteSelonLangue("L'action administrateur n'a pas pu être exécutée.", "Tsy afaka nanatanteraka ilay hetsika fitantanana."));
         return;
       }
 
@@ -114,7 +126,7 @@
       // l'écran final à afficher.
       window.location.assign(reponse.url || form.action);
     } catch (_) {
-      window.alert("Impossible de joindre le serveur. Réessayez.");
+      window.alert(texteSelonLangue("Impossible de joindre le serveur. Réessayez.", "Tsy afaka nifandray tamin’ny mpizara. Andramo indray."));
     } finally {
       delete form.dataset.adminConfirmationEnCours;
       boutons.forEach(function (bouton) {

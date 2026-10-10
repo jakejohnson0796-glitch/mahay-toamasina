@@ -16,11 +16,12 @@
     }
   }
 
-  function ajouterOption(select, value, label, selected) {
+  function ajouterOption(select, value, label, selected, nonTraduisible) {
     const option = document.createElement("option");
     option.value = String(value ?? "");
     option.textContent = label;
     option.selected = Boolean(selected);
+    if (nonTraduisible) option.setAttribute("data-no-translate", "");
     select.appendChild(option);
   }
 
@@ -92,7 +93,7 @@
       }
       ajouterOption(composante, "", "— choisissez votre composante —", false);
       catalogue.composantes.forEach(function (row) {
-        ajouterOption(composante, row.id, row.nom, String(row.id) === String(valeur || ""));
+        ajouterOption(composante, row.id, row.nom, String(row.id) === String(valeur || ""), true);
       });
       composante.disabled = catalogue.composantes.length === 0;
     }
@@ -103,7 +104,7 @@
       const rows = c ? (c.mentions || []) : [];
       ajouterOption(mention, "", "— choisissez votre mention —", false);
       rows.forEach(function (row) {
-        ajouterOption(mention, row.id, row.nom, String(row.id) === String(valeur || ""));
+        ajouterOption(mention, row.id, row.nom, String(row.id) === String(valeur || ""), true);
       });
       mention.disabled = rows.length === 0;
       if (!rows.length) {
@@ -133,7 +134,7 @@
           String(row.nom || "").toLowerCase().includes("entreprises agro-industrielles") &&
           String(row.nom || "").toLowerCase().includes("commerce international")
         ) ? "Commerce International — Entreprises agro-industrielles" : row.nom;
-        ajouterOption(filiere, row.id, label, String(row.id) === String(courant.filiere || ""));
+        ajouterOption(filiere, row.id, label, String(row.id) === String(courant.filiere || ""), true);
       });
       filiere.disabled = false;
     }
