@@ -2053,6 +2053,7 @@
     "Chargement en cours…": "Eo am-pampidirana…",
     "Veuillez patienter…": "Miandrasa kely azafady…",
     "Enregistrement…": "Eo am-pitahirizana…",
+    "Les universités, facultés et filières officielles.": "Ireo oniversite, sampam-pianarana ary lalam-pianarana ofisialy.",
     "Prochaine mission": "Iraka manaraka"
   });
 
