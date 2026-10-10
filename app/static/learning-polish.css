@@ -1,0 +1,1496 @@
+/*
+ * Gasy Mahay — direction artistique apprentissage.
+ * Couche visuelle dédiée au Quiz IA, au Tuteur IA et aux Cercles.
+ * Aucun changement de contenu, de logique métier ou de rendu mathématique.
+ */
+
+:root {
+  --gm-learn-radius: 24px;
+  --gm-learn-shadow: 0 16px 42px rgba(7, 38, 41, .08);
+  --gm-learn-shadow-hover: 0 24px 55px rgba(7, 38, 41, .15);
+  --gm-learn-teal: #2f8f89;
+  --gm-learn-coral: #e47d55;
+  --gm-learn-gold: #ddb765;
+}
+
+/* ============================================================
+   QUIZ IA + TUTEUR IA — plus de souffle, une hiérarchie nette
+   ============================================================ */
+
+.ai-learning-page {
+  padding-top: clamp(1rem, 2.8vw, 2rem);
+  padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.ai-learning-page .ai-hero {
+  position: relative;
+  gap: clamp(1.2rem, 2.4vw, 2.3rem);
+  padding: clamp(1.6rem, 4vw, 3.35rem);
+  border: 1px solid rgba(219, 239, 232, .15);
+  border-radius: 30px;
+  background:
+    radial-gradient(ellipse at 92% 4%, rgba(228, 125, 85, .28), transparent 19rem),
+    radial-gradient(ellipse at 4% 100%, rgba(67, 178, 160, .22), transparent 22rem),
+    linear-gradient(123deg, #05272b 0%, #0a3538 48%, #155154 100%);
+  box-shadow: 0 28px 70px rgba(6, 43, 46, .2);
+  isolation: isolate;
+}
+
+.ai-learning-page .ai-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: clamp(14rem, 28vw, 25rem);
+  aspect-ratio: 1;
+  right: 15%;
+  top: -52%;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2.4rem rgba(255,255,255,.025),
+    0 0 0 5rem rgba(255,255,255,.018);
+  pointer-events: none;
+}
+
+.ai-learning-page .ai-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  margin-bottom: .45rem;
+  color: #aadbd1;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.ai-learning-page .ai-hero h1 {
+  max-width: 12ch;
+  margin: .7rem 0 1rem;
+  font-size: clamp(2.7rem, 5.2vw, 5rem);
+  line-height: .99;
+  letter-spacing: -.06em;
+  text-wrap: balance;
+}
+
+.ai-learning-page .ai-hero p {
+  max-width: 54ch;
+  font-size: clamp(.98rem, 1.05vw, 1.1rem);
+  line-height: 1.75;
+}
+
+.ai-learning-page .ai-hero-actions {
+  gap: .65rem;
+  margin-top: 1.5rem;
+}
+
+.ai-learning-page .ai-hero-actions a {
+  min-height: 2.85rem;
+  padding: .76rem 1rem;
+  border: 1px solid rgba(255,255,255,.19);
+  border-radius: 13px;
+  background: rgba(255,255,255,.075);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.ai-learning-page .ai-hero-actions a:first-child {
+  border-color: #f7d5a6;
+  background: #f7d5a6;
+  color: #123638;
+  box-shadow: 0 10px 23px rgba(0,0,0,.13);
+}
+
+.ai-learning-page .ai-hero-actions a:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,.42);
+  background: rgba(255,255,255,.14);
+  text-decoration: none;
+}
+
+.ai-learning-page .ai-hero-actions a:first-child:hover {
+  border-color: #ffe6c3;
+  background: #ffe6c3;
+}
+
+.ai-learning-page .ai-stat-grid {
+  gap: .65rem;
+}
+
+.ai-learning-page .ai-stat-card {
+  min-height: 6.4rem;
+  padding: 1rem;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 17px;
+  background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.045));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.09);
+  backdrop-filter: blur(12px);
+}
+
+.ai-learning-page .ai-stat-card strong {
+  font-size: clamp(1.55rem, 2.6vw, 2.15rem);
+  letter-spacing: -.045em;
+}
+
+.ai-learning-page .ai-stat-card span {
+  margin-top: .3rem;
+  font-size: .73rem;
+  line-height: 1.45;
+}
+
+/* Parcours : les trois étapes deviennent une navigation en cartes. */
+.ai-learning-page .learning-command {
+  gap: .55rem;
+  margin: 1.25rem 0 .55rem;
+  padding: .55rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 28px rgba(7,38,41,.045);
+}
+
+.ai-learning-page .learning-command-item {
+  gap: .75rem;
+  padding: .85rem .95rem;
+  border-radius: 15px;
+}
+
+.ai-learning-page .learning-command-index {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+  background: var(--content-bg);
+  color: var(--content-text-muted);
+  font-size: .75rem;
+  font-weight: 850;
+}
+
+.ai-learning-page .learning-command-item strong {
+  font-size: .88rem;
+  letter-spacing: -.015em;
+}
+
+.ai-learning-page .learning-command-item small {
+  margin-top: .22rem;
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
+.ai-learning-page .learning-command-item:hover {
+  border-color: rgba(47,143,137,.25);
+  background: var(--content-bg);
+  transform: translateY(-1px);
+}
+
+.ai-learning-page .learning-command-item.is-active {
+  border-color: rgba(47,143,137,.28);
+  background: linear-gradient(135deg, rgba(47,143,137,.14), rgba(47,143,137,.04));
+}
+
+.ai-learning-page .learning-command-item.is-active .learning-command-index {
+  border-color: #2f8f89;
+  background: #2f8f89;
+  color: white;
+  box-shadow: 0 5px 13px rgba(47,143,137,.22);
+}
+
+.ai-learning-page .learning-command-arrow {
+  align-self: center;
+  color: var(--gm-learn-coral);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+/* Raccourcis Quiz : une vraie grille de fonctionnalités. */
+.ai-learning-page .ai-quicknav {
+  gap: .7rem;
+  margin: .85rem 0 1.5rem;
+}
+
+.ai-learning-page .ai-quicknav a {
+  min-height: 5.2rem;
+  gap: .8rem;
+  padding: .9rem;
+  border-radius: 17px;
+  background: linear-gradient(145deg, var(--content-surface), var(--content-bg));
+  box-shadow: 0 9px 25px rgba(7,38,41,.045);
+}
+
+.ai-learning-page .ai-quicknav a:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--gm-learn-shadow);
+}
+
+.ai-learning-page .ai-quicknav-icon {
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 13px;
+  background: rgba(47,143,137,.13);
+}
+
+.ai-learning-page .ai-quicknav a:nth-child(2) .ai-quicknav-icon {
+  background: rgba(228,125,85,.14);
+  color: #c9633e;
+}
+
+.ai-learning-page .ai-quicknav a:nth-child(3) .ai-quicknav-icon {
+  background: rgba(221,183,101,.2);
+  color: #9b7628;
+}
+
+.ai-learning-page .ai-quicknav a:nth-child(4) .ai-quicknav-icon {
+  background: rgba(104,130,190,.13);
+  color: #5878b2;
+}
+
+.ai-learning-page .ai-quicknav strong {
+  font-size: .85rem;
+}
+
+.ai-learning-page .ai-quicknav span {
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+/* Titres de sections et panneaux. */
+.ai-learning-page .ai-section {
+  margin-top: clamp(1.35rem, 2.8vw, 2.2rem);
+  scroll-margin-top: 1.5rem;
+}
+
+.ai-learning-page .ai-section-head {
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: .9rem;
+}
+
+.ai-learning-page .ai-section-head h2 {
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  letter-spacing: -.04em;
+  line-height: 1.15;
+}
+
+.ai-learning-page .ai-section-head p {
+  max-width: 72ch;
+  margin-top: .4rem;
+  font-size: .82rem;
+  line-height: 1.65;
+}
+
+.ai-learning-page .ai-panel,
+.ai-learning-page .ai-form-card,
+.ai-learning-page .ai-exam-card,
+.ai-learning-page .ai-chat-card,
+.ai-learning-page .ai-tuteur-side-card,
+.ai-learning-page .ai-result-summary,
+.ai-learning-page .ai-answer-card,
+.ai-learning-page .ai-correction-card {
+  border-radius: var(--gm-learn-radius);
+  box-shadow: var(--gm-learn-shadow);
+}
+
+.ai-learning-page .ai-form-card,
+.ai-learning-page .ai-chat-card {
+  padding: clamp(1rem, 2.3vw, 1.65rem);
+}
+
+.ai-learning-page .ai-form-header {
+  margin-bottom: 1.2rem;
+  padding-bottom: .9rem;
+  border-bottom: 1px solid var(--content-border);
+}
+
+.ai-learning-page .ai-form-header h3 {
+  font-size: 1.1rem;
+  letter-spacing: -.02em;
+}
+
+.ai-learning-page .ai-form-header p {
+  font-size: .77rem;
+  line-height: 1.6;
+}
+
+.ai-learning-page .ai-badge {
+  min-height: 1.9rem;
+  padding: .42rem .7rem;
+  font-size: .62rem;
+  letter-spacing: .075em;
+}
+
+.ai-learning-page .ai-form {
+  gap: 1rem;
+}
+
+.ai-learning-page .ai-field {
+  gap: .45rem;
+}
+
+.ai-learning-page .ai-field label {
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.ai-learning-page .ai-field-help {
+  font-size: .71rem;
+  line-height: 1.55;
+}
+
+.ai-learning-page .ai-field input,
+.ai-learning-page .ai-field select,
+.ai-learning-page .ai-field textarea,
+.ai-learning-page .ai-textarea-wrap textarea {
+  min-height: 3rem;
+  padding: .78rem .9rem;
+  border: 1px solid var(--content-border);
+  border-radius: 13px;
+  background: var(--content-bg);
+  color: var(--content-text);
+  font: inherit;
+  font-size: .9rem;
+  line-height: 1.5;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.ai-learning-page .ai-field input:focus,
+.ai-learning-page .ai-field select:focus,
+.ai-learning-page .ai-field textarea:focus,
+.ai-learning-page .ai-textarea-wrap textarea:focus {
+  border-color: var(--gm-learn-teal);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(47,143,137,.14);
+  background: var(--content-surface);
+}
+
+.ai-learning-page .ai-textarea-wrap textarea {
+  min-height: 12.5rem;
+  padding-bottom: 2.6rem;
+  border-radius: 17px;
+  font-size: .95rem;
+  line-height: 1.7;
+}
+
+.ai-learning-page .ai-inline-actions {
+  gap: .65rem;
+  margin-top: .25rem;
+}
+
+.ai-learning-page .ai-inline-actions .bouton,
+.ai-learning-page .ai-submit-row .bouton {
+  min-height: 3rem;
+  padding-inline: 1.1rem !important;
+  border-radius: 13px !important;
+  font-size: .84rem;
+}
+
+.ai-learning-page .ai-loading,
+.ai-learning-page .ai-tuteur-loading {
+  padding: .9rem 1rem;
+  border-radius: 15px;
+  font-size: .78rem;
+  line-height: 1.6;
+}
+
+.ai-learning-page .ai-tuteur-loading strong {
+  font-size: .82rem;
+}
+
+.ai-learning-page .ai-tuteur-loading div > span {
+  font-size: .73rem;
+}
+
+/* Examen, historique et résultats. */
+.ai-learning-page .ai-exam-card {
+  padding: clamp(1.1rem, 2.3vw, 1.6rem);
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(221,183,101,.22), transparent 16rem),
+    linear-gradient(145deg, var(--content-surface), var(--content-bg));
+}
+
+.ai-learning-page .ai-exam-title {
+  font-size: 1.25rem;
+  letter-spacing: -.035em;
+}
+
+.ai-learning-page .ai-feature-strip {
+  gap: .7rem;
+  margin-top: 1rem;
+}
+
+.ai-learning-page .ai-feature {
+  min-height: 6rem;
+  padding: 1rem;
+  border-radius: 16px;
+}
+
+.ai-learning-page .ai-feature strong {
+  font-size: .86rem;
+}
+
+.ai-learning-page .ai-feature span {
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.ai-learning-page .ai-history-stats {
+  gap: .8rem;
+}
+
+.ai-learning-page .ai-history-stat {
+  padding: 1rem;
+  border-radius: 18px;
+  box-shadow: var(--gm-learn-shadow);
+}
+
+.ai-learning-page .ai-history-stat strong {
+  font-size: 1.8rem;
+}
+
+.ai-learning-page .ai-history-stat span {
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+.ai-learning-page .ai-history-list {
+  gap: .75rem;
+}
+
+.ai-learning-page .ai-history-item {
+  padding: 1rem 1.1rem;
+  border-radius: 17px;
+  box-shadow: 0 8px 22px rgba(7,38,41,.04);
+  transition: border-color .17s ease, transform .17s ease, box-shadow .17s ease;
+}
+
+.ai-learning-page .ai-history-item:hover {
+  border-color: rgba(47,143,137,.35);
+  transform: translateY(-2px);
+  box-shadow: var(--gm-learn-shadow);
+}
+
+.ai-learning-page .ai-history-item-main h3 {
+  font-size: .98rem;
+}
+
+.ai-learning-page .ai-history-item-meta {
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.ai-learning-page .ai-history-score {
+  min-width: 4.6rem;
+  padding: .65rem;
+  border-radius: 14px;
+  background: rgba(47,143,137,.09);
+}
+
+/* Passage d'un quiz : mettre la question et les choix au premier plan. */
+.ai-learning-page .quiz-run-topbar,
+.ai-learning-page .quiz-progress-card,
+.ai-learning-page .quiz-nav-card,
+.ai-learning-page .quiz-chrono-card {
+  border-radius: 18px;
+  box-shadow: var(--gm-learn-shadow);
+}
+
+.ai-learning-page .quiz-run-topbar {
+  padding: 1rem 1.1rem;
+}
+
+.ai-learning-page .quiz-run-meta {
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.ai-learning-page .quiz-chip {
+  min-height: 2rem;
+  padding: .42rem .7rem;
+  border-radius: 999px;
+  font-size: .72rem;
+}
+
+.ai-learning-page .quiz-question-card {
+  padding: clamp(1.1rem, 2.8vw, 1.8rem);
+  border-radius: 23px;
+  box-shadow: 0 15px 37px rgba(7,38,41,.06);
+}
+
+.ai-learning-page .quiz-question-card:focus-within {
+  border-color: rgba(47,143,137,.42);
+  box-shadow: 0 0 0 4px rgba(47,143,137,.09), var(--gm-learn-shadow);
+}
+
+.ai-learning-page .quiz-question-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: .4rem .75rem;
+  border-radius: 999px;
+  background: rgba(47,143,137,.12);
+  color: var(--gm-learn-teal);
+  font-size: .72rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+}
+
+.ai-learning-page .quiz-question-title {
+  margin-top: .9rem;
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  line-height: 1.58;
+  letter-spacing: -.02em;
+}
+
+.ai-learning-page .quiz-choice-grid {
+  gap: .65rem;
+}
+
+.ai-learning-page .quiz-choice {
+  min-height: 4rem;
+  padding: .75rem .9rem;
+  border: 1px solid var(--content-border);
+  border-radius: 16px;
+  background: var(--content-surface);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.ai-learning-page .quiz-choice:hover {
+  border-color: rgba(47,143,137,.45);
+  box-shadow: 0 9px 22px rgba(7,38,41,.06);
+  transform: translateY(-2px);
+}
+
+.ai-learning-page .quiz-choice:has(input:checked) {
+  border-color: var(--gm-learn-teal);
+  background: linear-gradient(135deg, rgba(47,143,137,.14), rgba(47,143,137,.045));
+  box-shadow: 0 0 0 3px rgba(47,143,137,.1);
+}
+
+.ai-learning-page .quiz-choice-letter {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 11px;
+  background: var(--content-bg);
+  font-size: .76rem;
+}
+
+.ai-learning-page .quiz-choice:has(input:checked) .quiz-choice-letter {
+  background: var(--gm-learn-teal);
+  color: #fff;
+}
+
+.ai-learning-page .quiz-choice-text {
+  font-size: .88rem;
+  line-height: 1.6;
+}
+
+.ai-learning-page .quiz-progress-track {
+  height: .55rem;
+  border-radius: 999px;
+}
+
+.ai-learning-page .quiz-progress-fill {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f8f89, #82b9a6);
+}
+
+.ai-learning-page .quiz-nav-item {
+  min-height: 2.65rem;
+  border-radius: 11px;
+}
+
+.ai-learning-page .quiz-nav-item.is-current {
+  box-shadow: 0 0 0 3px rgba(47,143,137,.12);
+}
+
+.ai-learning-page .quiz-submit-bar {
+  padding: .85rem;
+  border-radius: 18px;
+}
+
+.ai-learning-page .quiz-submit-help {
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.ai-learning-page .ai-result-summary {
+  padding: clamp(1.2rem, 2.8vw, 2rem);
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(47,143,137,.12), transparent 18rem),
+    var(--content-surface);
+}
+
+.ai-learning-page .ai-result-score {
+  border: 1px solid rgba(47,143,137,.18);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(47,143,137,.13), rgba(47,143,137,.04));
+}
+
+.ai-learning-page .ai-result-score-number {
+  font-size: clamp(2.7rem, 5vw, 4rem);
+  letter-spacing: -.06em;
+}
+
+.ai-learning-page .ai-correction-card {
+  padding: clamp(1rem, 2.2vw, 1.4rem);
+  margin-bottom: .8rem;
+}
+
+.ai-learning-page .ai-correction-index {
+  font-size: .7rem;
+  letter-spacing: .09em;
+}
+
+.ai-learning-page .ai-correction-question {
+  font-size: 1.03rem;
+  line-height: 1.65;
+}
+
+.ai-learning-page .ai-correction-option {
+  border-radius: 13px;
+  padding: .72rem .8rem;
+  line-height: 1.55;
+}
+
+.ai-learning-page .ai-correction-explanation {
+  margin-top: .85rem;
+  padding: .9rem;
+  border-radius: 15px;
+  background: var(--content-bg);
+  font-size: .83rem;
+  line-height: 1.7;
+}
+
+/* Tuteur : conversation calme, invitations utiles et réponse facile à lire. */
+.ai-learning-page .ai-tuteur-layout {
+  gap: 1rem;
+}
+
+.ai-learning-page .ai-chat-card {
+  padding: clamp(1rem, 2.7vw, 1.7rem);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(47,143,137,.075), transparent 17rem),
+    var(--content-surface);
+}
+
+.ai-learning-page .ai-chat-intro {
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--content-border);
+}
+
+.ai-learning-page .ai-chat-avatar {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #0a3538, #2f8f89);
+  color: #fff;
+  box-shadow: 0 8px 21px rgba(10,53,56,.23);
+  font-size: .95rem;
+}
+
+.ai-learning-page .ai-chat-intro strong {
+  font-size: 1rem;
+  letter-spacing: -.02em;
+}
+
+.ai-learning-page .ai-chat-intro span {
+  margin-top: .25rem;
+  font-size: .8rem;
+  line-height: 1.65;
+}
+
+.ai-learning-page .ai-prompt-grid {
+  gap: .6rem;
+  margin: 1rem 0;
+}
+
+.ai-learning-page .ai-prompt {
+  min-height: 3.65rem;
+  padding: .8rem .9rem;
+  border-radius: 14px;
+  background: var(--content-bg);
+  font-size: .78rem;
+  font-weight: 650;
+  line-height: 1.5;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.ai-learning-page .ai-prompt:hover,
+.ai-learning-page .ai-prompt:focus-visible {
+  border-color: rgba(47,143,137,.45);
+  background: rgba(47,143,137,.075);
+  box-shadow: 0 0 0 3px rgba(47,143,137,.09);
+  transform: translateY(-1px);
+}
+
+.ai-learning-page .ai-textarea-wrap {
+  border-radius: 18px;
+  background: var(--content-bg);
+}
+
+.ai-learning-page .ai-char-count {
+  padding: .4rem .55rem;
+  border-radius: 9px;
+  font-size: .72rem;
+}
+
+.ai-learning-page .ai-submit-row {
+  gap: .8rem;
+  margin-top: .25rem;
+}
+
+.ai-learning-page .ai-submit-note {
+  font-size: .75rem;
+  line-height: 1.6;
+}
+
+.ai-learning-page .ai-tuteur-side-card {
+  padding: 1.1rem;
+}
+
+.ai-learning-page .ai-tuteur-side-card h3 {
+  font-size: .98rem;
+  letter-spacing: -.02em;
+}
+
+.ai-learning-page .ai-tuteur-side-card li {
+  margin-bottom: .55rem;
+  font-size: .78rem;
+  line-height: 1.6;
+}
+
+.ai-learning-page .ai-tuteur-history-card {
+  min-height: 9.5rem;
+  padding: .95rem;
+  border-radius: 16px;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.ai-learning-page .ai-tuteur-history-card:hover {
+  border-color: rgba(47,143,137,.4);
+  box-shadow: var(--gm-learn-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.ai-learning-page .ai-tuteur-history-question {
+  font-size: .8rem;
+  line-height: 1.6;
+}
+
+.ai-learning-page .ai-answer-header {
+  gap: 1rem;
+  padding: clamp(1.1rem, 2.7vw, 1.8rem);
+  border: 1px solid rgba(47,143,137,.15);
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 90% 0%, rgba(47,143,137,.13), transparent 17rem),
+    var(--content-surface);
+  box-shadow: var(--gm-learn-shadow);
+}
+
+.ai-learning-page .ai-answer-header h1 {
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  line-height: 1.2;
+  letter-spacing: -.04em;
+}
+
+.ai-learning-page .ai-answer-card {
+  padding: clamp(1rem, 2.4vw, 1.6rem);
+}
+
+.ai-learning-page .ai-answer-card-head {
+  margin-bottom: .8rem;
+}
+
+.ai-learning-page .ai-answer-card h2 {
+  font-size: 1.05rem;
+  letter-spacing: -.02em;
+}
+
+.ai-learning-page .ai-markdown-content {
+  font-size: .96rem;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+
+.ai-learning-page .ai-markdown-content h3,
+.ai-learning-page .ai-markdown-content h4,
+.ai-learning-page .ai-markdown-content h5 {
+  line-height: 1.35;
+  letter-spacing: -.025em;
+}
+
+.ai-learning-page .ai-markdown-table-wrap {
+  border-radius: 13px;
+  overflow-x: auto;
+}
+
+.ai-learning-page .ai-markdown-table {
+  min-width: 480px;
+}
+
+/* Progression par notions : les actions restent bien distinctes. */
+.ai-learning-page .ai-remediation-grid {
+  gap: .8rem;
+}
+
+.ai-learning-page .ai-remediation-card {
+  padding: 1.05rem;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(7,38,41,.05);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.ai-learning-page .ai-remediation-card:hover {
+  border-color: rgba(47,143,137,.3);
+  box-shadow: var(--gm-learn-shadow);
+  transform: translateY(-2px);
+}
+
+.ai-learning-page .ai-remediation-card > span {
+  font-size: .68rem;
+  letter-spacing: .09em;
+}
+
+.ai-learning-page .ai-remediation-card h3 {
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.ai-learning-page .ai-remediation-card p {
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+.ai-learning-page .ai-remediation-actions .bouton {
+  min-height: 2.7rem;
+  border-radius: 12px !important;
+  font-size: .78rem;
+}
+
+/* ============================================================
+   CERCLES — salon d'étude et cartes plus immersives
+   ============================================================ */
+
+.cercles-page-shell .cercles-hero-visuel {
+  min-height: clamp(21rem, 37vw, 29rem);
+  border-radius: 28px;
+  box-shadow: 0 25px 60px rgba(9,35,32,.2);
+}
+
+.cercles-page-shell .cercles-hero-visuel::after {
+  background:
+    linear-gradient(90deg, rgba(6,35,35,.96) 0%, rgba(6,35,35,.78) 47%, rgba(6,35,35,.16) 100%),
+    linear-gradient(0deg, rgba(6,35,35,.38), transparent 65%);
+}
+
+.cercles-page-shell .cercles-hero-contenu {
+  padding: clamp(1.5rem, 4vw, 3rem);
+  max-width: 760px;
+}
+
+.cercles-page-shell .cercles-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: .42rem .7rem;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  color: #b9e1d8;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  backdrop-filter: blur(10px);
+}
+
+.cercles-page-shell .cercles-hero-titre {
+  max-width: 12ch;
+  margin: 1rem 0 .8rem;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(2.45rem, 5vw, 4.35rem);
+  line-height: .98;
+  letter-spacing: -.06em;
+  text-wrap: balance;
+}
+
+.cercles-page-shell .cercles-hero-sous-titre {
+  max-width: 52ch;
+  font-size: clamp(.95rem, 1.2vw, 1.1rem);
+  line-height: 1.75;
+}
+
+.cercles-page-shell .cercles-hero-stats {
+  gap: .75rem;
+  padding: 1.1rem;
+  margin: 0 1.3rem 1.3rem 0;
+  border-radius: 18px;
+  background: rgba(5,34,35,.55);
+  box-shadow: 0 12px 32px rgba(0,0,0,.12);
+  backdrop-filter: blur(16px);
+}
+
+.cercles-page-shell .cercles-hero-stat {
+  padding: .7rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,.055);
+}
+
+.cercles-page-shell .cercles-hero-stat strong {
+  font-size: clamp(1.5rem, 2.8vw, 2rem);
+  letter-spacing: -.05em;
+}
+
+.cercles-page-shell .cercles-hero-stat span {
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+.cercles-page-shell .cercles-raccourcis {
+  gap: .55rem;
+  margin-block: 1rem 1.4rem;
+}
+
+.cercles-page-shell .cercles-raccourci {
+  min-height: 2.65rem;
+  padding: .62rem .85rem;
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.cercles-page-shell .cercles-raccourci:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47,143,137,.45);
+  box-shadow: 0 9px 22px rgba(7,38,41,.08);
+}
+
+.cercles-page-shell .cercles-raccourci-principal {
+  border-color: var(--gm-learn-teal);
+  background: var(--gm-learn-teal);
+  color: #fff;
+}
+
+.cercles-page-shell .cercles-inspiration {
+  gap: 1.15rem;
+  margin-bottom: 1.8rem;
+}
+
+.cercles-page-shell .cercles-inspiration-texte,
+.cercles-page-shell .carte-recherche-cercles,
+.cercles-page-shell .cercles-visibilite {
+  border-radius: 22px;
+  box-shadow: var(--gm-learn-shadow);
+}
+
+.cercles-page-shell .cercles-inspiration-texte {
+  padding: clamp(1.1rem, 2.4vw, 1.7rem);
+  border: 1px solid var(--content-border);
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(221,183,101,.12), transparent 15rem),
+    var(--content-surface);
+}
+
+.cercles-page-shell .cercles-inspiration-texte h3 {
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  letter-spacing: -.035em;
+}
+
+.cercles-page-shell .cercles-inspiration-texte p:last-child {
+  font-size: .84rem;
+  line-height: 1.7;
+}
+
+.cercles-page-shell .cercles-inspiration-livres img {
+  border-radius: 17px;
+  box-shadow: 0 13px 30px rgba(7,38,41,.12);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.cercles-page-shell .cercles-inspiration-livres .photo:hover img {
+  transform: translateY(-3px) rotate(-.5deg);
+  box-shadow: var(--gm-learn-shadow-hover);
+}
+
+.cercles-page-shell .carte-recherche-cercles {
+  padding: clamp(1rem, 2.5vw, 1.6rem);
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(47,143,137,.08), transparent 17rem),
+    var(--content-surface) !important;
+}
+
+.cercles-page-shell .carte-recherche-cercles .entete-recherche-cercles h2 {
+  font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+  letter-spacing: -.04em;
+}
+
+.cercles-page-shell .carte-recherche-cercles select,
+.cercles-page-shell .carte-recherche-cercles input {
+  min-height: 3rem;
+  border-radius: 13px;
+  font-size: .88rem;
+}
+
+.cercles-page-shell .carte-recherche-cercles select:focus,
+.cercles-page-shell .carte-recherche-cercles input:focus {
+  outline: none;
+  border-color: var(--gm-learn-teal);
+  box-shadow: 0 0 0 4px rgba(47,143,137,.13);
+}
+
+.cercles-page-shell .grille-cartes-claires {
+  gap: 1.15rem !important;
+}
+
+.cercles-page-shell .cercle-card-premium {
+  overflow: hidden;
+  border-radius: 22px !important;
+  border-color: var(--content-border) !important;
+  background: var(--content-surface) !important;
+  box-shadow: 0 10px 30px rgba(7,38,41,.065) !important;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+
+.cercles-page-shell .cercle-card-premium:hover {
+  transform: translateY(-5px);
+  border-color: rgba(47,143,137,.42) !important;
+  box-shadow: 0 22px 45px rgba(7,38,41,.14) !important;
+}
+
+.cercles-page-shell .cercle-card-premium-media {
+  min-height: 10.5rem;
+}
+
+.cercles-page-shell .cercle-card-premium-media img {
+  transition: transform .5s cubic-bezier(.2,.7,.2,1);
+}
+
+.cercles-page-shell .cercle-card-premium:hover .cercle-card-premium-media img {
+  transform: scale(1.045);
+}
+
+.cercles-page-shell .cercle-card-premium-contenu {
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.cercles-page-shell .cercle-card-premium .carte-claire-titre {
+  font-size: 1.12rem;
+  line-height: 1.35;
+  letter-spacing: -.025em;
+}
+
+.cercles-page-shell .cercle-card-premium .carte-claire-meta {
+  font-size: .76rem;
+  line-height: 1.55;
+}
+
+.cercles-page-shell .cercle-card-premium .carte-claire-description {
+  font-size: .82rem;
+  line-height: 1.7;
+}
+
+.cercles-page-shell .cercle-card-premium .carte-claire-badges {
+  gap: .4rem;
+}
+
+.cercles-page-shell .cercle-card-premium .carte-claire-actions {
+  gap: .55rem;
+  padding-top: .9rem;
+  border-top: 1px solid var(--content-border);
+}
+
+.cercles-page-shell .cercle-card-premium .carte-claire-actions .bouton {
+  min-height: 2.7rem;
+  border-radius: 12px !important;
+  font-size: .78rem;
+}
+
+.cercles-page-shell .cercles-visibilite {
+  padding: clamp(1rem, 2.5vw, 1.6rem);
+}
+
+.cercles-page-shell .cercles-visibilite-entete h3 {
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  letter-spacing: -.035em;
+}
+
+.cercles-page-shell .cercles-visibilite-card {
+  padding: .95rem;
+  border-radius: 15px;
+  box-shadow: 0 7px 20px rgba(7,38,41,.035);
+}
+
+.cercles-page-shell .cercles-visibilite-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47,143,137,.38);
+  box-shadow: 0 12px 28px rgba(7,38,41,.075);
+}
+
+/* Chat de cercle : un en-tête clair et une zone d'écriture confortable.
+   La spécificité supplémentaire remplace le compactage trop pâle du template. */
+.contenu-clair .entete-cercle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem !important;
+  padding: 1rem 1.1rem !important;
+  border: 1px solid var(--content-border);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(47,143,137,.12), transparent 17rem),
+    var(--content-surface);
+  box-shadow: var(--gm-learn-shadow);
+  opacity: 1 !important;
+}
+
+.contenu-clair .entete-cercle-icone {
+  width: 3.2rem !important;
+  height: 3.2rem !important;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #0a3538, #2f8f89);
+  color: white;
+  box-shadow: 0 8px 20px rgba(10,53,56,.2);
+}
+
+.contenu-clair .entete-cercle-titre {
+  margin: 0;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  line-height: 1.2;
+  letter-spacing: -.035em;
+}
+
+.contenu-clair .entete-cercle-sous-titre {
+  margin: .35rem 0 0;
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.contenu-clair .entete-cercle-actions {
+  gap: .45rem;
+}
+
+.contenu-clair .bouton-icone-cercle {
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 12px;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+
+.contenu-clair .bouton-icone-cercle:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47,143,137,.35);
+}
+
+.contenu-clair .fenetre-chat {
+  gap: .6rem !important;
+  padding: 1rem !important;
+  border: 1px solid var(--content-border);
+  border-radius: 21px 21px 0 0;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(47,143,137,.045), transparent 15rem),
+    var(--content-surface);
+}
+
+.contenu-clair .message .message-corps {
+  max-width: min(78ch, 100%);
+  padding: .68rem .88rem .65rem !important;
+  border: 1px solid var(--content-border);
+  border-radius: 16px 16px 16px 5px !important;
+  box-shadow: 0 5px 15px rgba(7,38,41,.04);
+}
+
+.contenu-clair .message.message-moi .message-corps {
+  border-color: rgba(47,143,137,.2);
+  border-radius: 16px 16px 5px 16px !important;
+  background: linear-gradient(145deg, rgba(47,143,137,.13), rgba(47,143,137,.06));
+}
+
+.contenu-clair .message-entete {
+  gap: .65rem;
+  margin-bottom: .25rem;
+}
+
+.contenu-clair .message-auteur {
+  font-size: .77rem;
+  font-weight: 800;
+}
+
+.contenu-clair .message-heure {
+  font-size: .67rem;
+}
+
+.contenu-clair .message-contenu {
+  font-size: .86rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.contenu-clair .barre-composition {
+  padding: .75rem !important;
+  border: 1px solid var(--content-border);
+  border-top: 0;
+  border-radius: 0 0 21px 21px;
+  background: var(--content-surface);
+  box-shadow: 0 16px 35px rgba(7,38,41,.07);
+}
+
+.contenu-clair .cercle-chat-textarea {
+  min-height: 3rem;
+  padding: .78rem .9rem;
+  border-radius: 14px;
+  font-size: .92rem;
+  line-height: 1.55;
+}
+
+.contenu-clair .cercle-chat-textarea:focus {
+  outline: none;
+  border-color: var(--gm-learn-teal);
+  box-shadow: 0 0 0 4px rgba(47,143,137,.13);
+}
+
+.contenu-clair .etat-vide-chat {
+  max-width: 46rem;
+  margin: auto;
+  padding: clamp(1.3rem, 4vw, 2.5rem);
+  border: 1px dashed rgba(47,143,137,.25);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(47,143,137,.09), transparent 18rem),
+    var(--content-bg);
+}
+
+.contenu-clair .etat-vide-chat-icone {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  margin: 0 auto 1rem;
+  border-radius: 20px;
+  background: rgba(47,143,137,.13);
+  font-size: 1.7rem;
+}
+
+.contenu-clair .etat-vide-chat-titre {
+  font-size: clamp(1.2rem, 2.2vw, 1.65rem);
+}
+
+.contenu-clair .etat-vide-chat-texte {
+  font-size: .86rem;
+  line-height: 1.75;
+}
+
+.contenu-clair .etat-vide-chat-action {
+  min-height: 2.8rem;
+  padding: .7rem .85rem;
+  border-radius: 12px;
+}
+
+/* Thème sombre : les ombres et accents restent nets sans surfaces blanches. */
+html[data-theme="sombre"] .ai-learning-page .ai-form-card,
+html[data-theme="sombre"] .ai-learning-page .ai-chat-card,
+html[data-theme="sombre"] .ai-learning-page .ai-panel,
+html[data-theme="sombre"] .ai-learning-page .ai-result-summary,
+html[data-theme="sombre"] .ai-learning-page .ai-answer-card,
+html[data-theme="sombre"] .ai-learning-page .ai-correction-card {
+  box-shadow: 0 16px 42px rgba(0,0,0,.22);
+}
+
+html[data-theme="sombre"] .ai-learning-page .ai-prompt:hover,
+html[data-theme="sombre"] .ai-learning-page .learning-command-item.is-active {
+  background: rgba(47,143,137,.15);
+}
+
+html[data-theme="sombre"] .contenu-clair .fenetre-chat {
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(47,143,137,.08), transparent 15rem),
+    var(--content-surface);
+}
+
+@media (max-width: 1000px) {
+  .ai-learning-page .ai-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ai-learning-page .ai-hero-side {
+    align-content: start;
+  }
+
+  .ai-learning-page .ai-tuteur-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ai-learning-page .ai-tuteur-side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+  }
+
+  .cercles-page-shell .cercles-hero-visuel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cercles-page-shell .cercles-hero-stats {
+    align-self: stretch;
+    margin: 0 1rem 1rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .ai-learning-page {
+    padding-inline: .85rem;
+  }
+
+  .ai-learning-page .ai-hero {
+    padding: 1.35rem;
+    border-radius: 23px;
+  }
+
+  .ai-learning-page .ai-hero h1 {
+    font-size: clamp(2.35rem, 10vw, 3.4rem);
+  }
+
+  .ai-learning-page .ai-hero-actions a {
+    min-height: 2.75rem;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .ai-learning-page .learning-command {
+    border-radius: 16px;
+    overflow-x: auto;
+  }
+
+  .ai-learning-page .learning-command-item {
+    min-width: 10.5rem;
+  }
+
+  .ai-learning-page .learning-command-arrow {
+    display: none;
+  }
+
+  .ai-learning-page .ai-quicknav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-learning-page .ai-quicknav a {
+    min-height: 5.1rem;
+    padding: .75rem;
+  }
+
+  .ai-learning-page .ai-quicknav span {
+    font-size: .7rem;
+  }
+
+  .ai-learning-page .ai-form-header {
+    flex-direction: column;
+  }
+
+  .ai-learning-page .ai-form-card,
+  .ai-learning-page .ai-chat-card {
+    padding: 1rem;
+  }
+
+  .ai-learning-page .ai-field-grid {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .ai-learning-page .ai-prompt-grid {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .ai-learning-page .ai-prompt {
+    min-height: 3rem;
+  }
+
+  .ai-learning-page .ai-tuteur-side {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .ai-learning-page .quiz-run-shell {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .ai-learning-page .quiz-submit-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cercles-page-shell .cercles-hero-visuel {
+    min-height: 0;
+    border-radius: 22px;
+  }
+
+  .cercles-page-shell .cercles-hero-contenu {
+    padding: 1.4rem;
+  }
+
+  .cercles-page-shell .cercles-hero-titre {
+    font-size: clamp(2.2rem, 10vw, 3.2rem);
+  }
+
+  .cercles-page-shell .cercles-hero-stats {
+    margin: 0 .8rem .8rem;
+  }
+
+  .cercles-page-shell .cercles-inspiration {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .cercles-page-shell .cercles-inspiration-livres {
+    max-width: none;
+  }
+
+  .cercles-page-shell .grille-cartes-claires {
+    grid-template-columns: minmax(0,1fr) !important;
+  }
+
+  .contenu-clair .entete-cercle {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: .9rem !important;
+  }
+
+  .contenu-clair .entete-cercle-actions {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .contenu-clair .fenetre-chat {
+    padding: .7rem !important;
+  }
+
+  .contenu-clair .barre-composition {
+    padding: .55rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-learning-page .ai-hero-actions a,
+  .ai-learning-page .ai-quicknav a,
+  .ai-learning-page .ai-history-item,
+  .ai-learning-page .quiz-choice,
+  .ai-learning-page .ai-prompt,
+  .ai-learning-page .ai-tuteur-history-card,
+  .ai-learning-page .ai-remediation-card,
+  .cercles-page-shell .cercles-inspiration-livres img,
+  .cercles-page-shell .cercle-card-premium,
+  .cercles-page-shell .cercles-visibilite-card,
+  .contenu-clair .bouton-icone-cercle {
+    transition: none !important;
+  }
+
+  .ai-learning-page .ai-hero-actions a:hover,
+  .ai-learning-page .ai-quicknav a:hover,
+  .ai-learning-page .ai-history-item:hover,
+  .ai-learning-page .quiz-choice:hover,
+  .ai-learning-page .ai-tuteur-history-card:hover,
+  .ai-learning-page .ai-remediation-card:hover,
+  .cercles-page-shell .cercle-card-premium:hover,
+  .cercles-page-shell .cercles-visibilite-card:hover {
+    transform: none !important;
+  }
+}
