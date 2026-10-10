@@ -2289,6 +2289,27 @@
     "). Choisis une autre combinaison, ou archive l'autre cercle d'abord.": "). Misafidiana fitambarana hafa, na tehirizo ho tahiry aloha ilay vondrona hafa.",
     "Un cercle equivalent a ete cree entre-temps par une autre demande — celle-ci a ete automatiquement rejetee (": "Efa nisy fangatahana hafa namorona vondrona mitovy — nolavina ho azy ity fangatahana ity (",
     ").": " ).",
+    "Cercles d'étude": "Vondrona fianarana",
+    "Quiz IA + Tuteur IA": "Quiz IA + Tuteur IA",
+    "Pendant 60 jours": "Mandritra ny 60 andro",
+    "Tu as commencé ce quiz sans encore le terminer.": "Nanomboka ity quiz ity ianao nefa mbola tsy nahavita azy.",
+    "Le Quiz IA et le Tuteur IA sont encore disponibles pendant": "Mbola azo ampiasaina mandritra ny",
+    "La période d'essai IA est terminée ; les autres fonctionnalités Premium restent accessibles pendant l'essai de 60 jours.": "Tapitra ny andrana IA; mbola azo ampiasaina mandritra ny 60 andro ny fampiasa Premium hafa.",
+    "Essai gratuit terminé": "Tapitra ny andrana maimaim-poana",
+    "jours": "andro",
+    "Jours": "Andro",
+    "Terminé": "Vita",
+    "Termine": "Vita",
+    "Bienvenue": "Tongasoa",
+    "Jour": "Andro",
+    "question": "fanontaniana",
+    "de maîtrise": "amin'ny fahaizana",
+    "% de maîtrise": "% amin'ny fahaizana",
+    "· maîtrise": "· fahaizana",
+    "confiance %": "fahatokisana %",
+    "· Matière": "· Taranja",
+    "Demander au Tuteur": "Hangataka amin'ny Tuteur",
+    "Le référentiel académique doit rester inchangé.": "Tsy tokony hovaina ny tahirin-kevitra fototra akademika.",
     "Prochaine mission": "Iraka manaraka"
   });
 
@@ -2355,6 +2376,14 @@
     if (match) return "Fanatrehana — " + match[1] + " — Gasy Mahay";
     match = cle.match(/^(.+) — Classe virtuelle — Gasy Mahay$/i);
     if (match) return match[1] + " — Kilasy virtoaly — Gasy Mahay";
+    match = cle.match(/^(\d+)\s+jours?$/i);
+    if (match) return match[1] + " andro";
+    match = cle.match(/^(\d+)\s+jours? restant(s?)$/i);
+    if (match) return match[1] + " andro sisa";
+    match = cle.match(/^Bienvenue[, ]+(.+?)\s*👋$/i);
+    if (match) return "Tongasoa, " + match[1].trim() + " 👋";
+    match = cle.match(/^Jour\s+(\d+)\/7$/i);
+    if (match) return "Andro " + match[1] + "/7";
     // Les libellés qui contiennent une donnée dynamique gardent cette donnée
     // telle quelle (nom de l'étudiant, compteur ou score).
     match = cle.match(/^Bonjour,\s+(.+?)\s*👋$/i);
