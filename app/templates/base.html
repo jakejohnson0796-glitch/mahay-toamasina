@@ -72,6 +72,7 @@
 <link rel="stylesheet" href="/static/responsive-foundation.css?v={{ version_asset('responsive-foundation.css') }}">
 <link rel="stylesheet" href="/static/responsive-pages.css?v={{ version_asset('responsive-pages.css') }}">
 <link rel="stylesheet" href="/static/responsive-conversations.css?v={{ version_asset('responsive-conversations.css') }}">
+<link rel="stylesheet" href="/static/responsive-shells.css?v={{ version_asset('responsive-shells.css') }}">
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"

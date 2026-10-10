@@ -1,0 +1,154 @@
+/*
+ * Gasy Mahay — finitions responsive des écrans publics, formulaires et tableaux.
+ * Cette couche est volontairement étroite : elle complète les styles de page,
+ * elle ne redéfinit pas les couleurs ni l'identité visuelle des modules.
+ */
+
+:where(.auth-page-shell, .auth-form-shell, .auth-card, .auth-form,
+  .public-page, .faq-page, .mode-emploi-page, .contact-page, .ops-page,
+  .contact-hero, .contact-grid, .faq-layout, .mode-emploi-ui,
+  .ops-status-hero, .ops-profile) {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+:where(.auth-page-shell, .auth-form-shell, .auth-card, .auth-form,
+  .public-page, .faq-page, .mode-emploi-page, .contact-page, .ops-page) {
+  max-width: 100%;
+}
+
+:where(.auth-form, .contact-composer, .faq-form, .ops-form) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 740px) {
+  /* Les tableaux de référentiel/admin doivent défiler, jamais être rognés.
+     .page-ops .table-manifeste avait un overflow:hidden plus spécifique
+     qui annulait le comportement mobile générique. */
+  .page-ops .table-manifeste {
+    display: block !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .page-ops .table-manifeste th,
+  .page-ops .table-manifeste td {
+    white-space: nowrap;
+  }
+
+  .page-ops .table-manifeste th {
+    padding-inline: .55rem;
+  }
+
+  .page-auth .auth-page-shell,
+  .page-auth .auth-form-shell,
+  .page-auth .auth-card,
+  .page-auth .auth-card-main {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .page-auth .auth-form-actions .bouton,
+  .page-auth .auth-submit {
+    min-height: 44px;
+  }
+
+  .page-auth .auth-form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  .page-auth .auth-form select,
+  .page-auth .auth-form textarea {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .page-auth .auth-password-toggle {
+    min-height: 44px;
+    flex: 0 0 auto;
+  }
+
+  .contact-page,
+  .public-page,
+  .faq-page,
+  .mode-emploi-page,
+  .ops-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 380px) {
+  .page-auth .auth-form-pane {
+    min-width: 0;
+    padding: .55rem;
+  }
+
+  .page-auth .auth-card {
+    border-radius: 16px;
+  }
+
+  .page-auth .auth-card-main {
+    padding: .8rem;
+  }
+
+  .page-auth .auth-step {
+    min-width: 0;
+  }
+
+  .page-auth .auth-step-label {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    line-height: 1.2;
+    font-size: .52rem;
+  }
+
+  .page-auth .auth-form-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-auth .auth-form-actions > * {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .page-auth .auth-showcase {
+    min-height: 0;
+  }
+
+  .page-auth .auth-showcase-copy {
+    padding-block: 1rem;
+  }
+
+  .page-auth .auth-form-pane {
+    min-height: 0;
+    align-items: flex-start;
+  }
+
+  .page-auth .auth-card {
+    margin-block: .5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-auth *,
+  .page-ops *,
+  .contact-page *,
+  .public-page *,
+  .faq-page *,
+  .mode-emploi-page * {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
