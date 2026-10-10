@@ -385,6 +385,187 @@ def upload_document(
     return RedirectResponse(f"/documents?envoye=1{suffixe}", status_code=303)
 
 
+@router.post("/documents/upload-multiple")
+def upload_documents_multiples(
+    request: Request,
+    fichiers: list[UploadFile] = File(...),
+    titre: Optional[str] = Form(default=""),
+    matiere: Optional[str] = Form(default=""),
+    type_document: Optional[TypeDocument] = Form(default=None),
+    annee: Optional[int] = Form(default=None),
+    filiere_id: Optional[int] = Form(default=None),
+    cercle_id: Optional[int] = Form(default=None),
+    classification_auto: bool = Form(default=False),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Dépose un lot de fichiers, avec classification indépendante de chaque document."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    filieres_disponibles = session.exec(select(Filiere)).all()
+    cercle = session.get(CercleEtude, cercle_id) if cercle_id is not None else None
+
+    def afficher_erreur(message: str, status_code: int = 400, details=None):
+        return templates.TemplateResponse(
+            "document_upload.html",
+            {
+                "request": request,
+                "filieres": filieres_disponibles,
+                "cercle": cercle,
+                "erreur": message,
+                "message": "",
+                "erreurs_batch": details or [],
+                "utilisateur": utilisateur,
+            },
+            status_code=status_code,
+        )
+
+    if not fichiers:
+        return afficher_erreur("Sélectionnez au moins un fichier.")
+    if len(fichiers) > 5:
+        return afficher_erreur("Un envoi est limité à 5 fichiers. Sélectionnez un lot plus petit.")
+    if not classification_auto:
+        return afficher_erreur("Activez la détection automatique pour classer chaque fichier séparément.")
+    if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(
+        f"upload-document:ip:{request.client.host if request.client else 'inconnu'}", 40, 3600
+    ):
+        return afficher_erreur("Trop de dépôts. Réessayez plus tard.", status_code=429)
+
+    if cercle_id is not None:
+        if not cercle or not _est_membre_cercle(session, cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    if not filieres_disponibles:
+        return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
+    filiere_depart = session.get(Filiere, filiere_id) if filiere_id is not None else None
+    filiere_reference = filiere_depart or filieres_disponibles[0]
+    annee_reference = annee or datetime.utcnow().year
+
+    nombre_envoyes = 0
+    erreurs_batch = []
+    for fichier in fichiers:
+        nom_fichier = Path(fichier.filename or "document").name
+        chemin_stocke = None
+        try:
+            reference_stockage = generer_reference(filiere_reference, annee_reference, session)
+            chemin_stocke = sauvegarder_fichier(fichier, reference_stockage)
+
+            try:
+                with ouvrir_fichier_local(chemin_stocke) as chemin_local:
+                    texte_document = extraire_texte(str(chemin_local))
+            except Exception:
+                # Le nom de fichier et les métadonnées fournies peuvent encore
+                # suffire à classer le document si l'extraction est indisponible.
+                texte_document = ""
+
+            classification = classifier_document(
+                nom_fichier=nom_fichier,
+                texte=texte_document or "",
+                filieres=filieres_disponibles,
+                titre_fourni=(titre or "") if len(fichiers) == 1 else "",
+                matiere_fourni=matiere or "",
+                type_fourni=type_document,
+                annee_fournie=annee,
+                filiere_id_fournie=filiere_id,
+            )
+
+            titre_final = (classification.titre or ((titre or "") if len(fichiers) == 1 else "")).strip()
+            matiere_finale = (classification.matiere or matiere or "").strip()
+            type_final = classification.type_document or type_document
+            annee_finale = classification.annee or annee
+            filiere_finale = session.get(Filiere, classification.filiere_id or filiere_id) if (classification.filiere_id or filiere_id) else None
+
+            manquants = []
+            if not titre_final:
+                manquants.append("titre")
+            if not matiere_finale:
+                manquants.append("matière")
+            if type_final is None:
+                manquants.append("type")
+            if annee_finale is None or annee_finale < 2000 or annee_finale > 2100:
+                manquants.append("année")
+            if filiere_finale is None:
+                manquants.append("filière")
+            if manquants:
+                supprimer_fichier(chemin_stocke)
+                erreurs_batch.append(
+                    f"{nom_fichier} : informations insuffisantes ({', '.join(manquants)}). "
+                    "Renommez le fichier avec la matière ou renseignez des informations communes, puis réessayez."
+                )
+                continue
+
+            document = Document(
+                reference=generer_reference(filiere_finale, annee_finale, session),
+                titre=titre_final[:180],
+                matiere=matiere_finale[:120],
+                type_document=type_final,
+                annee=annee_finale,
+                filiere_id=filiere_finale.id,
+                cercle_id=cercle_id,
+                uploader_id=utilisateur.id,
+                chemin_fichier=chemin_stocke,
+                statut=StatutDocument.EN_ATTENTE,
+            )
+            try:
+                session.add(document)
+                session.commit()
+                session.refresh(document)
+            except Exception:
+                session.rollback()
+                supprimer_fichier(chemin_stocke)
+                erreurs_batch.append(f"{nom_fichier} : impossible d'enregistrer le document. Réessayez.")
+                continue
+
+            nombre_envoyes += 1
+            try:
+                _notifier_admins_nouveau_document(session, document, utilisateur)
+                gamification.enregistrer_action(
+                    session,
+                    utilisateur.id,
+                    "document",
+                    source_type="document",
+                    source_key=str(document.id),
+                )
+                session.commit()
+            except Exception:
+                # Le document est déjà enregistré et reste en attente de modération.
+                session.rollback()
+        except FichierInvalide as erreur:
+            if chemin_stocke:
+                supprimer_fichier(chemin_stocke)
+            erreurs_batch.append(f"{nom_fichier} : {erreur}")
+        except Exception:
+            session.rollback()
+            if chemin_stocke:
+                supprimer_fichier(chemin_stocke)
+            erreurs_batch.append(
+                f"{nom_fichier} : traitement impossible. Vérifiez le fichier et ses métadonnées."
+            )
+
+    if nombre_envoyes:
+        message = (
+            f"{nombre_envoyes} document(s) envoyé(s) pour validation. "
+            "Ils seront publiés uniquement après approbation par un modérateur."
+        )
+    else:
+        message = "Aucun document n'a pu être envoyé. Consultez les détails ci-dessous."
+
+    return templates.TemplateResponse(
+        "document_upload.html",
+        {
+            "request": request,
+            "filieres": filieres_disponibles,
+            "cercle": cercle,
+            "erreur": "",
+            "message": message,
+            "erreurs_batch": erreurs_batch,
+            "utilisateur": utilisateur,
+        },
+    )
+
+
 @router.get("/documents/{document_id}/telecharger")
 def telecharger_document(request: Request, document_id: int, session: Session = Depends(get_session)):
     """Telechargement d'un document approuve.
