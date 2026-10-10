@@ -2469,6 +2469,14 @@
     "Note de 1 a 5 etoiles": "Naoty 1 ka hatramin'ny 5 kintana",
     "Revoir le document": "Hijery indray ny tahirin-kevitra",
     "Retour au quiz": "Hiverina amin'ny quiz",
+    "Défis": "Fanamby",
+    "Profil": "Mombamomba",
+    "Gasy Mahay — un hub de revision imagine pour les étudiants à Madagascar.": "Gasy Mahay — sehatra iray natao hanampiana ny mpianatra eto Madagasikara hamerina lesona.",
+    "Ouvrir le menu": "Hanokatra ny menio",
+    "Navigation principale": "Fitetezana lehibe",
+    "Changer d’apparence": "Hanova endrika",
+    "Le mot de passe est masqué.": "Afenina ny tenimiafina.",
+    "Réduire": "Hofintinina",
     "Prochaine mission": "Iraka manaraka"
   });
 
