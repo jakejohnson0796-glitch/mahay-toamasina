@@ -2477,7 +2477,7 @@
     "Changer d’apparence": "Hanova endrika",
     "Le mot de passe est masqué.": "Afenina ny tenimiafina.",
     "Réduire": "Hofintinina",
-    "Prochaine mission": "Iraka manaraka"
+    "Prochaine mission": "Iraka manaraka",
 
     // Couverture complémentaire : libellés, accessibilité et états dynamiques.
     "Illustrations d’étude intégrées localement dans Gasy Mahay : aucune dépendance à un service d’images externe.": "Ny sary fanazavana dia tafiditra mivantana ao amin’ny Gasy Mahay, ka tsy miankina amin’ny tolotra ivelany.",
