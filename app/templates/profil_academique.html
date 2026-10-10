@@ -36,7 +36,7 @@
     <select id="universite_id" name="universite_id" required>
       <option value="">— choisissez votre universite —</option>
       {% for u in universites %}
-      <option value="{{ u.id }}" {% if utilisateur.universite_id == u.id %}selected{% endif %}>{{ u.nom }}{% if u.ville %} ({{ u.ville }}){% endif %}</option>
+      <option value="{{ u.id }}" data-no-translate {% if utilisateur.universite_id == u.id %}selected{% endif %}>{{ u.nom }}{% if u.ville %} ({{ u.ville }}){% endif %}</option>
       {% endfor %}
     </select>
 
@@ -54,7 +54,7 @@
     <select id="niveau" name="niveau" required disabled>
       <option value="">— choisissez d'abord votre mention —</option>
       {% for n in niveaux %}
-      <option value="{{ n }}">{{ n }}</option>
+      <option value="{{ n }}" data-no-translate>{{ n }}</option>
       {% endfor %}
     </select>
 

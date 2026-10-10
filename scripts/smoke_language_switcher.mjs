@@ -13,8 +13,15 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
   <nav><a id="navigation">Tableau de bord</a></nav>
   <input id="phone" placeholder="Numéro de téléphone" value="0341234567">
   <p id="dynamic">Pas encore de compte ?</p>
+  <button id="dynamic-aria" aria-label="Passer au thème clair">Thème</button>
   <div id="ai-output" data-rendu>Tableau de bord \\frac{1}{2}</div>
   <pre id="code-sample">Créer mon compte</pre>
+  <main id="referentiel">
+    <h2 id="referentiel-heading">Referentiel academique</h2>
+    <p id="referentiel-copy">Assigner une mention a chaque filiere existante. Rien n'est devine automatiquement — a toi de choisir.</p>
+    <p>Filière officielle : <span id="referentiel-value" data-no-translate>Sciences de Gestion</span></p>
+  </main>
+  <select id="academic-values"><option value="gestion" data-no-translate>Sciences de Gestion</option></select>
 </body></html>`, { url: 'http://localhost/', runScripts: 'outside-only' });
 const { window } = dom;
 window.localStorage.setItem('mahay-langue', 'mg');
@@ -33,6 +40,19 @@ if (window.document.querySelector('#phone').getAttribute('placeholder') !== 'Lah
 }
 if (window.document.querySelector('#dynamic').textContent !== 'Tsy mbola manana kaonty?') {
   throw new Error('Dynamic or existing page text was not translated');
+}
+if (window.document.querySelector('#dynamic-aria').getAttribute('aria-label') !== 'Hampiasa endrika mazava') {
+  throw new Error('Accessible labels did not switch to Malagasy');
+}
+if (window.document.querySelector('#referentiel-heading').textContent !== 'Tahirin-kevitra fototra akademika') {
+  throw new Error('Academic referential interface heading did not switch to Malagasy');
+}
+if (!window.document.querySelector('#referentiel-copy').textContent.startsWith('Omeo sampana')) {
+  throw new Error('Academic referential interface description did not switch to Malagasy');
+}
+if (window.document.querySelector('#referentiel-value').textContent !== 'Sciences de Gestion' ||
+    window.document.querySelector('#academic-values').options[0].text !== 'Sciences de Gestion') {
+  throw new Error('Official academic reference values must remain in French');
 }
 if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord \\frac{1}{2}') {
   throw new Error('AI output must remain untouched by interface translation');
@@ -91,6 +111,13 @@ abonnement.innerHTML = `
   <p id="premium-sentence"><span>Il te reste </span><strong>5</strong><span> d'accès Premium.</span></p>
   <h2 id="security-heading">Compte · sécurité &amp; profil</h2>
   <p id="help-heading">Trouver une réponse sans parcourir tout le site.</p>
+  <p id="ia-trial-alert">Le Quiz IA et le Tuteur IA sont inclus pendant les 14 premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant 60 jours.</p>
+  <p id="pending-subscription">La demande a bien été reçue. Ton accès Premium reste actif pendant la vérification (5 jours). L'accès IA reste ouvert pendant 4 jours.</p>
+  <p id="dynamic-greeting">Bonjour, Jake</p>
+  <p id="guide-copy">Ce guide te montre le chemin le plus simple dans Gasy Mahay : créer ton compte, retrouver une ressource, pratiquer, utiliser l'IA, travailler en groupe et sécuriser ton compte. Il précise aussi les durées d'accès de l'essai gratuit pour éviter toute mauvaise surprise.</p>
+  <p id="circle-copy">Les cercles sont des espaces collaboratifs. L'accès dépend du cercle, du statut du compte et, selon les cas, de l'abonnement.</p>
+  <p id="contact-copy">Une question, une suggestion, un partenariat ou un problème sur le site ? Écris ton message ici, puis ouvre WhatsApp en un clic — ou scanne le QR avec ton téléphone.</p>
+  <p id="about-copy">Gasy Mahay rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.</p>
 `;
 window.document.body.appendChild(abonnement);
 await new Promise((resolve) => setTimeout(resolve, 0));
@@ -130,6 +157,27 @@ if (window.document.querySelector('#security-heading').textContent !== 'Kaonty �
 if (window.document.querySelector('#help-heading').textContent !== 'Mitadiava valiny nefa tsy mila mijery ny tranonkala manontolo.') {
   throw new Error('Help page content did not switch to Malagasy');
 }
+if (window.document.querySelector('#ia-trial-alert').textContent !== "Ny Quiz IA sy ny Tuteur IA dia tafiditra mandritra ny 14 andro voalohany amin'ny andrana. Mbola azo ampiasaina mandritra ny 60 andro ny fampiasa Premium hafa.") {
+  throw new Error('Dynamic trial duration paragraph did not switch to Malagasy');
+}
+if (window.document.querySelector('#pending-subscription').textContent !== "Voaray ny fangatahanao. Mbola mavitrika mandritra ny fanamarinana (5 andro) ny fidiranao Premium. Mbola azo ampiasaina mandritra ny 4 andro ny IA.") {
+  throw new Error('Dynamic subscription confirmation paragraph did not switch to Malagasy');
+}
+if (window.document.querySelector('#dynamic-greeting').textContent !== 'Manao ahoana, Jake') {
+  throw new Error('Dynamic greeting without an emoji did not switch to Malagasy');
+}
+if (!window.document.querySelector('#guide-copy').textContent.startsWith('Ity torolalana ity')) {
+  throw new Error('Full guide paragraph did not switch to Malagasy');
+}
+if (!window.document.querySelector('#circle-copy').textContent.startsWith('Sehatra iarahana miasa')) {
+  throw new Error('Full circles paragraph did not switch to Malagasy');
+}
+if (!window.document.querySelector('#contact-copy').textContent.startsWith('Manana fanontaniana')) {
+  throw new Error('Full contact paragraph did not switch to Malagasy');
+}
+if (!window.document.querySelector('#about-copy').textContent.startsWith('Atambatry ny Gasy Mahay')) {
+  throw new Error('Full about page paragraph did not switch to Malagasy');
+}
 
 // Les modifications de texte en place doivent être retraduites et réversibles.
 const mutable = window.document.createElement('p');
@@ -143,6 +191,12 @@ mutable.firstChild.nodeValue = 'Déposer un document';
 await new Promise((resolve) => setTimeout(resolve, 0));
 if (mutable.textContent !== 'Handefa tahirin-kevitra') {
   throw new Error('In-place text mutation was not translated');
+}
+const ariaButton = window.document.querySelector('#dynamic-aria');
+ariaButton.setAttribute('aria-label', 'Passer au thème sombre');
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (ariaButton.getAttribute('aria-label') !== 'Hampiasa endrika maizina') {
+  throw new Error('Dynamically changed accessible labels were not translated');
 }
 
 select.value = 'fr';
@@ -163,5 +217,8 @@ if (window.document.querySelector('#subscription-title').textContent !== "Ton ab
 }
 if (mutable.textContent !== 'Déposer un document') {
   throw new Error('Returning to French did not restore dynamically updated text');
+}
+if (ariaButton.getAttribute('aria-label') !== 'Passer au thème sombre') {
+  throw new Error('Returning to French did not restore the latest dynamic accessible label');
 }
 console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg'], dynamic: true, ai_content_protected: true }));

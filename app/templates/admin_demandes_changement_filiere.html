@@ -28,14 +28,14 @@
     {% for d in demandes %}
     <tr>
       <td>
-        {{ utilisateurs[d.utilisateur_id].nom if d.utilisateur_id in utilisateurs else "—" }}
-        <br><span class="stat-label">{{ utilisateurs[d.utilisateur_id].telephone if d.utilisateur_id in utilisateurs else "" }}</span>
+        <span data-no-translate>{{ utilisateurs[d.utilisateur_id].nom if d.utilisateur_id in utilisateurs else "—" }}</span>
+        <br><span class="stat-label"><span data-no-translate>{{ utilisateurs[d.utilisateur_id].telephone if d.utilisateur_id in utilisateurs else "" }}</span></span>
       </td>
-      <td>{{ filieres[d.ancienne_filiere_id].nom if d.ancienne_filiere_id and d.ancienne_filiere_id in filieres else "— aucune —" }}</td>
-      <td>{{ facultes[d.nouvelle_faculte_id].nom if d.nouvelle_faculte_id and d.nouvelle_faculte_id in facultes else "—" }}</td>
-      <td>{{ mentions[d.nouvelle_mention_id].nom if d.nouvelle_mention_id and d.nouvelle_mention_id in mentions else "—" }}</td>
-      <td>{{ filieres[d.nouvelle_filiere_id].nom if d.nouvelle_filiere_id and d.nouvelle_filiere_id in filieres else "— tronc commun —" }}</td>
-      <td>{{ d.motif }}</td>
+      <td><span data-no-translate>{{ filieres[d.ancienne_filiere_id].nom if d.ancienne_filiere_id and d.ancienne_filiere_id in filieres else "— aucune —" }}</span></td>
+      <td><span data-no-translate>{{ facultes[d.nouvelle_faculte_id].nom if d.nouvelle_faculte_id and d.nouvelle_faculte_id in facultes else "—" }}</span></td>
+      <td><span data-no-translate>{{ mentions[d.nouvelle_mention_id].nom if d.nouvelle_mention_id and d.nouvelle_mention_id in mentions else "—" }}</span></td>
+      <td><span data-no-translate>{{ filieres[d.nouvelle_filiere_id].nom if d.nouvelle_filiere_id and d.nouvelle_filiere_id in filieres else "— tronc commun —" }}</span></td>
+      <td><span data-no-translate>{{ d.motif }}</span></td>
       <td>
         {% set statut_signal = 'approuve' if d.statut.value == 'approuvee' else ('rejete' if d.statut.value == 'rejetee' else 'attente') %}
         {{ signal(statut_signal) }}<span class="tampon tampon-{{ statut_signal }}">

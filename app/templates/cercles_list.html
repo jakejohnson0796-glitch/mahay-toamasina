@@ -457,7 +457,7 @@
       <select id="recherche_domaine_id" name="domaine_id">
         <option value="">Tous les domaines</option>
         {% for d in domaines %}
-        <option value="{{ d.id }}" {% if recherche_domaine_id == d.id %}selected{% endif %}>{{ d.nom }}</option>
+        <option value="{{ d.id }}" data-no-translate {% if recherche_domaine_id == d.id %}selected{% endif %}>{{ d.nom }}</option>
         {% endfor %}
       </select>
     </div>
@@ -466,7 +466,7 @@
       <select id="recherche_mention_id" name="mention_id">
         <option value="">Toutes les mentions</option>
         {% for m in mentions %}
-        <option value="{{ m.id }}" data-domaine-id="{{ m.domaine_id or '' }}" {% if recherche_mention_id == m.id %}selected{% endif %}>{{ m.nom }}</option>
+        <option value="{{ m.id }}" data-no-translate data-domaine-id="{{ m.domaine_id or '' }}" {% if recherche_mention_id == m.id %}selected{% endif %}>{{ m.nom }}</option>
         {% endfor %}
       </select>
     </div>
@@ -475,7 +475,7 @@
       <select id="recherche_niveau" name="niveau">
         <option value="">Tous les niveaux</option>
         {% for n in niveaux %}
-        <option value="{{ n }}" {% if recherche_niveau == n %}selected{% endif %}>{{ n }}</option>
+        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ n }}</option>
         {% endfor %}
       </select>
     </div>
@@ -484,7 +484,7 @@
       <select id="recherche_filiere_id" name="filiere_id">
         <option value="">Tous les parcours</option>
         {% if recherche_tronc_commun %}<option value="tronc_commun" selected>Tronc commun</option>{% endif %}
-        {% if filiere_recherchee %}<option value="{{ filiere_recherchee.id }}" selected>{{ filiere_recherchee.nom }}</option>{% endif %}
+        {% if filiere_recherchee %}<option value="{{ filiere_recherchee.id }}" data-no-translate selected>{{ filiere_recherchee.nom }}</option>{% endif %}
       </select>
     </div>
     {% if utilisateur %}
@@ -527,7 +527,7 @@
     <select id="creation_mention_id" name="mention_id">
       <option value="">— aucune / groupe libre —</option>
       {% for m in mentions %}
-      <option value="{{ m.id }}">{{ m.nom }}</option>
+      <option value="{{ m.id }}" data-no-translate>{{ m.nom }}</option>
       {% endfor %}
     </select>
 
@@ -535,7 +535,7 @@
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
-      <option value="{{ n }}">{{ n }}</option>
+      <option value="{{ n }}" data-no-translate>{{ n }}</option>
       {% endfor %}
     </select>
 

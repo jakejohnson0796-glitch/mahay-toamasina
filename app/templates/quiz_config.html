@@ -112,7 +112,7 @@
             <select id="matiere" name="matiere">
               <option value="">— choisir dans la liste —</option>
               {% for m in matieres %}
-              <option value="{{ m }}">{{ m }}</option>
+              <option value="{{ m }}" data-no-translate>{{ m }}</option>
               {% endfor %}
             </select>
             <p class="ai-field-help">Les matières proposées viennent des documents approuvés disponibles sur la plateforme.</p>
@@ -129,7 +129,7 @@
               <label for="niveau">Niveau</label>
               <select id="niveau" name="niveau" required>
                 {% for n in niveaux %}
-                <option value="{{ n }}">{{ n }}</option>
+                <option value="{{ n }}" data-no-translate>{{ n }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -138,7 +138,7 @@
               <label for="difficulte">Difficulté</label>
               <select id="difficulte" name="difficulte" required>
                 {% for d in difficultes %}
-                <option value="{{ d }}">{{ d }}</option>
+                <option value="{{ d }}" data-no-translate>{{ d }}</option>
                 {% endfor %}
               </select>
             </div>
