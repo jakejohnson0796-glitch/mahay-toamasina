@@ -2386,6 +2386,35 @@
     "IMG": "Sary",
     "true": "marina",
     "Ex. Explique-moi les idées essentielles de ce document et montre-moi ce que je dois retenir pour un examen.": "Ohatra: Hazavao amiko ny hevi-dehibe ao amin'ity tahirin-kevitra ity ary asehoy izay tokony hotadidiko amin'ny fanadinana.",
+    "Abonnements": "Famandrihana",
+    "Navigation administration": "Fitetezana ny fitantanana",
+    "Navigation IA": "Fitetezana ny IA",
+    "Ex. Rakoto ou 034…": "Ohatra: Rakoto na 034…",
+    "Filtres abonnements": "Sivana famandrihana",
+    "Filtres sponsors": "Sivana mpanohana",
+    "Prix en Ar": "Vidiny amin'ny Ar",
+    "Prix du partenariat": "Vidin'ny fiaraha-miasa",
+    "actives": "mavitrika",
+    "inactives": "tsy mavitrika",
+    "ex: Sciences de Gestion": "ohatra: Sciences de Gestion",
+    "ex. 2026-2027": "ohatra: 2026-2027",
+    ". Seuls les cercles ACTIFS sont affiches.": ". Ireo vondrona MAVITRIKA ihany no aseho.",
+    "(ex: doublons fusionnes par scripts/dedupliquer_cercles_nationaux.py).": "(ohatra: vondrona miverimberina natambatry ny scripts/dedupliquer_cercles_nationaux.py).",
+    "Mot de passe masqué": "Nafenina ny tenimiafina",
+    "Tester": "Hitsapa",
+    "Jours restants": "Andro sisa",
+    "Votre accès Premium est expiré.": "Tapitra ny fidiranao Premium.",
+    "Aucun cercle trouvé.": "Tsy nahitana vondrona.",
+    "Aucun résultat trouvé.": "Tsy nahitana valiny.",
+    "Aucun résultat pour cette recherche.": "Tsy misy valiny amin'ity fikarohana ity.",
+    "Aucune ressource disponible.": "Tsy misy loharano azo ampiasaina.",
+    "Aucune question pour le moment.": "Mbola tsy misy fanontaniana.",
+    "Aucune réponse pour le moment.": "Mbola tsy misy valiny.",
+    "Vous pouvez maintenant vous connecter.": "Afaka miditra ianao izao.",
+    "Votre mot de passe a été réinitialisé.": "Naverina ny tenimiafinao.",
+    "Le code de vérification est invalide ou expiré.": "Tsy mety na efa tapitra ny kaody fanamarinana.",
+    "La demande de récupération a été enregistrée.": "Voatahiry ny fangatahana fanarenana.",
+    "Profil académique mis à jour.": "Nohavaozina ny mombamomba akademika.",
     "Prochaine mission": "Iraka manaraka"
   });
 
@@ -2493,6 +2522,8 @@
     match = cle.match(/^Bienvenue[, ]+(.+?)\s*👋$/i);
     if (match) return "Tongasoa, " + match[1].trim() + " 👋";
     match = cle.match(/^Jour\s+(\d+)\/7$/i);
+    if (match) return "Andro " + match[1] + "/7";
+    match = cle.match(/^J(\d+)\/7$/i);
     if (match) return "Andro " + match[1] + "/7";
     // Les libellés qui contiennent une donnée dynamique gardent cette donnée
     // telle quelle (nom de l'étudiant, compteur ou score).
