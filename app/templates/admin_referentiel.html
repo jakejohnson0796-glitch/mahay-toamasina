@@ -21,7 +21,7 @@
   <thead><tr><th>Nom</th><th>Ville</th><th>Code</th></tr></thead>
   <tbody>
     {% for u in universites %}
-    <tr><td>{{ u.nom }}</td><td>{{ u.ville or "—" }}</td><td>{{ u.code or "—" }}</td></tr>
+    <tr><td><span data-no-translate>{{ u.nom }}</span></td><td><span data-no-translate>{{ u.ville or "—" }}</span></td><td><span data-no-translate>{{ u.code or "—" }}</span></td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -38,7 +38,7 @@
   <thead><tr><th>Mention</th></tr></thead>
   <tbody>
     {% for m in mentions %}
-    <tr><td>{{ m.nom }}</td></tr>
+    <tr><td><span data-no-translate>{{ m.nom }}</span></td></tr>
     {% else %}
     <tr><td>Aucune mention creee pour l'instant.</td></tr>
     {% endfor %}
@@ -53,18 +53,18 @@
   <tbody>
     {% for f in filieres %}
     <tr>
-      <td>{{ f.nom }}</td>
-      <td>{{ facultes[f.faculte_id].nom if f.faculte_id in facultes else "—" }}</td>
+      <td><span data-no-translate><span data-no-translate>{{ f.nom }}</span></span></td>
+      <td><span data-no-translate>{{ facultes[f.faculte_id].nom if f.faculte_id in facultes else "—" }}</span></td>
       <td>
         {% set mention_actuelle = mentions | selectattr("id", "equalto", f.mention_id) | first %}
-        {{ mention_actuelle.nom if mention_actuelle else "— aucune —" }}
+        <span data-no-translate>{{ mention_actuelle.nom if mention_actuelle else "— aucune —" }}</span>
       </td>
       <td>
         <form method="post" action="/admin/referentiel/filieres/{{ f.id }}/assigner-mention" style="display:flex; gap:0.5rem; align-items:center;">
           <select name="mention_id">
             <option value="">— aucune —</option>
             {% for m in mentions %}
-            <option value="{{ m.id }}" {{ "selected" if m.id == f.mention_id else "" }}>{{ m.nom }}</option>
+            <option value="{{ m.id }}" {{ "selected" if m.id == f.mention_id else "" }}><span data-no-translate>{{ m.nom }}</span></option>
             {% endfor %}
           </select>
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -85,7 +85,7 @@
   <select id="programme_universite_id" name="universite_id" required>
     <option value="">— choisissez une universite —</option>
     {% for u in universites %}
-    <option value="{{ u.id }}">{{ u.nom }}{% if u.ville %} ({{ u.ville }}){% endif %}</option>
+    <option value="{{ u.id }}" data-no-translate>{{ u.nom }}{% if u.ville %} ({{ u.ville }}){% endif %}</option>
     {% endfor %}
   </select>
 
@@ -93,9 +93,9 @@
   <select id="programme_filiere_id" name="filiere_id" required>
     <option value="">— choisissez un parcours —</option>
     {% for f in filieres %}
-    <option value="{{ f.id }}">
+    <option value="{{ f.id }}" data-no-translate>
       {{ f.nom }}
-      {% if f.mention_id and mentions_par_id.get(f.mention_id) %} — {{ mentions_par_id[f.mention_id].nom }}{% endif %}
+      {% if f.mention_id and mentions_par_id.get(f.mention_id) %} — <span data-no-translate>{{ mentions_par_id[f.mention_id].nom }}</span>{% endif %}
     </option>
     {% endfor %}
   </select>
@@ -115,9 +115,9 @@
     {% set filiere_offre = filieres_par_id.get(p.filiere_id) %}
     {% if universite_offre and filiere_offre %}
     <tr>
-      <td>{{ universite_offre.nom }}</td>
-      <td>{{ filiere_offre.nom }}</td>
-      <td>{{ mentions_par_id[filiere_offre.mention_id].nom if filiere_offre.mention_id in mentions_par_id else "—" }}</td>
+      <td><span data-no-translate>{{ universite_offre.nom }}</span></td>
+      <td><span data-no-translate>{{ filiere_offre.nom }}</span></td>
+      <td><span data-no-translate>{{ mentions_par_id[filiere_offre.mention_id].nom if filiere_offre.mention_id in mentions_par_id else "—" }}</span></td>
       <td>{{ p.annee_academique or "En cours" }}</td>
       <td><span class="tampon {{ 'tampon-attente' if p.est_active else '' }}">{{ "Active" if p.est_active else "Inactive" }}</span></td>
       <td>
