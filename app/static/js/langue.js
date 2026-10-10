@@ -2324,15 +2324,49 @@
     return String(texte == null ? "" : texte)
       .normalize("NFC")
       .replace(/[\u00A0\u202F]/g, " ")
+      .replace(/[’‘]/g, "'")
+      .replace(/[“”]/g, '"')
       .replace(/\s+/g, " ")
       .trim();
   }
+
+  // Index canonique : la même phrase reste trouvable malgré les apostrophes
+  // typographiques, les espaces HTML ou une différence de casse initiale.
+  var TRADUCTIONS_MG_NORMALISEES = Object.create(null);
+  Object.keys(TRADUCTIONS_MG).forEach(function (cle) {
+    var canonique = normaliser(cle);
+    var minuscule = canonique.toLocaleLowerCase("fr");
+    if (!Object.prototype.hasOwnProperty.call(TRADUCTIONS_MG_NORMALISEES, canonique)) {
+      TRADUCTIONS_MG_NORMALISEES[canonique] = TRADUCTIONS_MG[cle];
+    }
+    if (!Object.prototype.hasOwnProperty.call(TRADUCTIONS_MG_NORMALISEES, minuscule)) {
+      TRADUCTIONS_MG_NORMALISEES[minuscule] = TRADUCTIONS_MG[cle];
+    }
+  });
 
   function traduireChaine(source, langue) {
     if (langue !== "mg") return source;
     var cle = normaliser(source);
     if (Object.prototype.hasOwnProperty.call(TRADUCTIONS_MG, cle)) {
       return TRADUCTIONS_MG[cle];
+    }
+    if (Object.prototype.hasOwnProperty.call(TRADUCTIONS_MG_NORMALISEES, cle)) {
+      return TRADUCTIONS_MG_NORMALISEES[cle];
+    }
+
+    var cleMinuscule = cle.toLocaleLowerCase("fr");
+    if (Object.prototype.hasOwnProperty.call(TRADUCTIONS_MG_NORMALISEES, cleMinuscule)) {
+      var traductionCassee = TRADUCTIONS_MG_NORMALISEES[cleMinuscule];
+      var premiereLettre = cle.charAt(0);
+      if (
+        traductionCassee &&
+        premiereLettre &&
+        premiereLettre === premiereLettre.toLocaleUpperCase("fr") &&
+        premiereLettre !== premiereLettre.toLocaleLowerCase("fr")
+      ) {
+        traductionCassee = traductionCassee.charAt(0).toLocaleUpperCase("fr") + traductionCassee.slice(1);
+      }
+      return traductionCassee;
     }
 
     var match = cle.match(/^Tu n['’]as pas utilisé Gasy Mahay depuis (\d+) jours?\. Reprends ton apprentissage quand tu le souhaites\.?$/i);
