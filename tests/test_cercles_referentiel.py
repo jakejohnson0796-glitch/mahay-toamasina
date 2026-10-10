@@ -261,6 +261,77 @@ class TestCerclesReferentiel(unittest.TestCase):
             for m in membres:
                 self.assertEqual(m.role, RoleMembreCercle.CREATEUR)
 
+    def _creer_cercle_sans_offre(self, session):
+        filiere = Filiere(
+            nom="Chimie",
+            faculte_id=self.faculte_id,
+            mention_id=self.mention_id,
+            niveau="D1",
+        )
+        session.add(filiere)
+        session.commit()
+        session.refresh(filiere)
+
+        cercle = CercleEtude(
+            nom="Chimie — Doctorat 1",
+            createur_id=self.admin_id,
+            mention_id=self.mention_id,
+            filiere_id=filiere.id,
+            niveau="D1",
+            statut=StatutCercle.ACTIF,
+        )
+        session.add(cercle)
+        session.commit()
+        session.refresh(cercle)
+        session.add(
+            MembreCercle(
+                cercle_id=cercle.id,
+                utilisateur_id=self.admin_id,
+                role=RoleMembreCercle.CREATEUR,
+            )
+        )
+        session.commit()
+        return cercle.id
+
+    def test_cercle_orphelin_avec_seul_createur_admin_est_archive(self):
+        """L'admin createur technique ne doit pas compter comme membre reel."""
+        with Session(self.engine) as session:
+            cercle_id = self._creer_cercle_sans_offre(session)
+
+            total = assurer_cercles_referentiel(session)
+
+            self.assertEqual(total, 0)
+            cercle = session.get(CercleEtude, cercle_id)
+            self.assertEqual(cercle.statut, StatutCercle.ARCHIVE)
+
+    def test_cercle_orphelin_avec_etudiant_reel_reste_actif_pour_revue(self):
+        """Un cercle avec un membre non-admin reste actif pour ne pas perdre l'acces."""
+        with Session(self.engine) as session:
+            cercle_id = self._creer_cercle_sans_offre(session)
+            etudiant = Utilisateur(
+                nom="Etudiant de test",
+                telephone="0340000002",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+            )
+            session.add(etudiant)
+            session.commit()
+            session.refresh(etudiant)
+            session.add(
+                MembreCercle(
+                    cercle_id=cercle_id,
+                    utilisateur_id=etudiant.id,
+                    role=RoleMembreCercle.MEMBRE,
+                )
+            )
+            session.commit()
+
+            total = assurer_cercles_referentiel(session)
+
+            self.assertEqual(total, 0)
+            cercle = session.get(CercleEtude, cercle_id)
+            self.assertEqual(cercle.statut, StatutCercle.ACTIF)
+
     def test_sans_admin_ne_leve_pas_et_ne_cree_rien(self):
         """Aucun compte admin en base -> provisionnement simplement
         reporte (createur_id requis, pas nullable sur CercleEtude)."""
