@@ -17,7 +17,7 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
   <pre id="code-sample">Créer mon compte</pre>
   <main id="referentiel">
     <h2 id="referentiel-heading">Referentiel academique</h2>
-    <p id="referentiel-copy">Affecter les mentions aux filières et gérer les universités.</p>
+    <p id="referentiel-copy">Assigner une mention a chaque filiere existante. Rien n'est devine automatiquement — a toi de choisir.</p>
     <p>Filière officielle : <span id="referentiel-value" data-no-translate>Sciences de Gestion</span></p>
   </main>
   <select id="academic-values"><option value="gestion" data-no-translate>Sciences de Gestion</option></select>
@@ -43,7 +43,7 @@ if (window.document.querySelector('#dynamic').textContent !== 'Tsy mbola manana 
 if (window.document.querySelector('#referentiel-heading').textContent !== 'Tahirin-kevitra fototra akademika') {
   throw new Error('Academic referential interface heading did not switch to Malagasy');
 }
-if (!window.document.querySelector('#referentiel-copy').textContent.startsWith('Manendry')) {
+if (!window.document.querySelector('#referentiel-copy').textContent.startsWith('Omeo sampana')) {
   throw new Error('Academic referential interface description did not switch to Malagasy');
 }
 if (window.document.querySelector('#referentiel-value').textContent !== 'Sciences de Gestion' ||
