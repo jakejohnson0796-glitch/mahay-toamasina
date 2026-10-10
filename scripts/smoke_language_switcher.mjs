@@ -15,9 +15,10 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
   <p id="dynamic">Pas encore de compte ?</p>
   <div id="ai-output" data-rendu>Tableau de bord \\frac{1}{2}</div>
   <pre id="code-sample">Créer mon compte</pre>
-  <main id="referentiel" data-no-translate>
-    <h2 id="referentiel-heading">Référentiel académique</h2>
-    <p id="referentiel-copy">Les universités, facultés et filières officielles.</p>
+  <main id="referentiel">
+    <h2 id="referentiel-heading">Referentiel academique</h2>
+    <p id="referentiel-copy">Affecter les mentions aux filières et gérer les universités.</p>
+    <p>Filière officielle : <span id="referentiel-value" data-no-translate>Sciences de Gestion</span></p>
   </main>
   <select id="academic-values"><option value="gestion" data-no-translate>Sciences de Gestion</option></select>
 </body></html>`, { url: 'http://localhost/', runScripts: 'outside-only' });
@@ -39,12 +40,15 @@ if (window.document.querySelector('#phone').getAttribute('placeholder') !== 'Lah
 if (window.document.querySelector('#dynamic').textContent !== 'Tsy mbola manana kaonty?') {
   throw new Error('Dynamic or existing page text was not translated');
 }
-if (window.document.querySelector('#referentiel-heading').textContent !== 'Référentiel académique' ||
-    window.document.querySelector('#referentiel-copy').textContent !== 'Les universités, facultés et filières officielles.') {
-  throw new Error('The academic referential section must remain in French');
+if (window.document.querySelector('#referentiel-heading').textContent !== 'Tahirin-kevitra fototra akademika') {
+  throw new Error('Academic referential interface heading did not switch to Malagasy');
 }
-if (window.document.querySelector('#academic-values').options[0].text !== 'Sciences de Gestion') {
-  throw new Error('Academic reference values must remain in French');
+if (!window.document.querySelector('#referentiel-copy').textContent.startsWith('Manendry')) {
+  throw new Error('Academic referential interface description did not switch to Malagasy');
+}
+if (window.document.querySelector('#referentiel-value').textContent !== 'Sciences de Gestion' ||
+    window.document.querySelector('#academic-values').options[0].text !== 'Sciences de Gestion') {
+  throw new Error('Official academic reference values must remain in French');
 }
 if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord \\frac{1}{2}') {
   throw new Error('AI output must remain untouched by interface translation');
@@ -108,6 +112,8 @@ abonnement.innerHTML = `
   <p id="dynamic-greeting">Bonjour, Jake</p>
   <p id="guide-copy">Ce guide te montre le chemin le plus simple dans Gasy Mahay : créer ton compte, retrouver une ressource, pratiquer, utiliser l'IA, travailler en groupe et sécuriser ton compte. Il précise aussi les durées d'accès de l'essai gratuit pour éviter toute mauvaise surprise.</p>
   <p id="circle-copy">Les cercles sont des espaces collaboratifs. L'accès dépend du cercle, du statut du compte et, selon les cas, de l'abonnement.</p>
+  <p id="contact-copy">Une question, une suggestion, un partenariat ou un problème sur le site ? Écris ton message ici, puis ouvre WhatsApp en un clic — ou scanne le QR avec ton téléphone.</p>
+  <p id="about-copy">Gasy Mahay rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.</p>
 `;
 window.document.body.appendChild(abonnement);
 await new Promise((resolve) => setTimeout(resolve, 0));
@@ -161,6 +167,12 @@ if (!window.document.querySelector('#guide-copy').textContent.startsWith('Ity to
 }
 if (!window.document.querySelector('#circle-copy').textContent.startsWith('Sehatra iarahana miasa')) {
   throw new Error('Full circles paragraph did not switch to Malagasy');
+}
+if (!window.document.querySelector('#contact-copy').textContent.startsWith('Manana fanontaniana')) {
+  throw new Error('Full contact paragraph did not switch to Malagasy');
+}
+if (!window.document.querySelector('#about-copy').textContent.startsWith('Atambatry ny Gasy Mahay')) {
+  throw new Error('Full about page paragraph did not switch to Malagasy');
 }
 
 // Les modifications de texte en place doivent être retraduites et réversibles.
