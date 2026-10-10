@@ -46,7 +46,7 @@
     "Contact": "Fifandraisana",
     "Connexion": "Fidirana",
     "Inscription": "Fisoratana anarana",
-    "Administrateur": "Mpandrindra",
+    "Administrateur": "Mpitantana",
     "Mon compte": "Kaontiko",
     "Actions rapides": "Hetsika haingana",
     "Mon espace": "Ny sehatra",
