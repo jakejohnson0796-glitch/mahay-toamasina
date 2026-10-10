@@ -15,22 +15,22 @@
   {% for info in universites_info %}
   <div class="uni-carte">
     <div class="uni-entete">
-      <h3 class="uni-nom">{{ info.universite.nom }}</h3>
-      {% if info.universite.ville %}<span class="uni-ville">{{ info.universite.ville }}</span>{% endif %}
+      <h3 class="uni-nom"><span data-no-translate>{{ info.universite.nom }}</span></h3>
+      {% if info.universite.ville %}<span class="uni-ville" data-no-translate>{{ info.universite.ville }}</span>{% endif %}
     </div>
 
     {% if info.facultes %}
     <div class="uni-facultes">
       {% for entree in info.facultes %}
       <details class="uni-faculte">
-        <summary>{{ entree.faculte.nom }}</summary>
+        <summary><span data-no-translate>{{ entree.faculte.nom }}</span></summary>
         {% if entree.filieres %}
         <ul class="liste-filieres">
           {% for filiere in entree.filieres %}
           <li>
-            {{ filiere.nom }}
+            <span data-no-translate>{{ filiere.nom }}</span>
             {% if filiere.mention_id and filiere.mention_id in mentions_par_id %}
-            <span class="uni-mention">{{ mentions_par_id[filiere.mention_id].nom }}</span>
+            <span class="uni-mention" data-no-translate>{{ mentions_par_id[filiere.mention_id].nom }}</span>
             {% endif %}
           </li>
           {% endfor %}
