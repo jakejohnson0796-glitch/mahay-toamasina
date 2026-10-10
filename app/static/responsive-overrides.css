@@ -1,0 +1,1476 @@
+/*
+ * Gasy Mahay — responsive overrides consolidés.
+ * Cascade conservée dans l'ordre :
+ * 1. fondations globales ; 2. familles de pages ;
+ * 3. conversations/salle virtuelle ; 4. formulaires, pages publiques et tables.
+ * Conserver cet ordre : les sections tardives corrigent des conflits de
+ * spécificité hérités des styles de modules.
+ */
+
+/*
+ * Gasy Mahay — fondations responsive transversales
+ * Cette couche intervient après les styles propres aux pages.
+ * But : corriger les contrats globaux (flexibilité, tactile, safe areas,
+ * navigation et débordements) sans remplacer les styles de chaque module.
+ */
+
+:root {
+  --gm-touch-target: 2.75rem;
+  --gm-layout-gutter: clamp(.75rem, 2.2vw, 2rem);
+  --gm-layout-gap: clamp(.65rem, 1.7vw, 1.35rem);
+}
+
+html {
+  min-width: 0;
+  max-width: 100%;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-block-start: max(4rem, env(safe-area-inset-top));
+}
+
+body {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:where(.app-mise-en-page, .app-page, .app-page > main, main.main-clair,
+  main.main-clair-pleine-largeur, .contenu-clair, .tb-contenu,
+  .tb-sidebar, .tb-sidebar-nav) {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+:where(.app-page > main, main.main-clair, main.main-clair-pleine-largeur,
+  .contenu-clair, .tb-contenu) {
+  overflow-wrap: anywhere;
+}
+
+img,
+video,
+canvas,
+iframe,
+svg {
+  max-width: 100%;
+}
+
+:where(input, select, textarea, button, .bouton) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+:where(.table-responsive, .tableau-responsive, .table-scroll,
+  .table-scrollable, .table-manifeste) {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tb-sidebar {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+:where(.navigation-mobile-lien, .tb-sidebar-lien,
+  .sidebar-bouton-mobile, .mobile-entete-app-notifications,
+  .mobile-entete-app-avatar, button, .bouton, input, select, textarea):focus-visible {
+  outline: 3px solid var(--refonte-teal, #2f8f89);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1150px) and (min-width: 901px) {
+  .app-mise-en-page {
+    grid-template-columns: minmax(13.75rem, 238px) minmax(0, 1fr);
+  }
+
+  .app-page,
+  .app-page > main,
+  .tb-contenu,
+  .contenu-clair {
+    min-width: 0;
+  }
+
+  .tb-contenu {
+    padding-inline: clamp(1rem, 2vw, 1.75rem);
+  }
+}
+
+@media (max-width: 900px) {
+  .app-mise-en-page {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .tb-sidebar {
+    max-width: min(88vw, 22rem);
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-mise-en-page {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .app-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .app-page > main,
+  main.main-clair,
+  main.main-clair-pleine-largeur {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .mobile-entete-app {
+    gap: .35rem;
+    padding-inline-start: max(3.1rem, calc(env(safe-area-inset-left) + 2.75rem));
+    padding-inline-end: max(.65rem, env(safe-area-inset-right));
+  }
+
+  .mobile-entete-app > a:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none !important;
+  }
+
+  .mobile-entete-app-notifications {
+    display: inline-grid !important;
+    place-items: center;
+    flex: 0 0 2.5rem;
+    width: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  .mobile-entete-app-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  .navigation-mobile-fixe {
+    width: 100%;
+    max-width: 100vw;
+    min-width: 0;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    align-items: stretch;
+    gap: clamp(.04rem, .45vw, .12rem) !important;
+    box-sizing: border-box;
+    padding-left: max(.2rem, env(safe-area-inset-left)) !important;
+    padding-right: max(.2rem, env(safe-area-inset-right)) !important;
+    padding-bottom: max(.2rem, env(safe-area-inset-bottom)) !important;
+  }
+
+  .navigation-mobile-lien {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .14rem;
+    min-width: 0;
+    min-height: 2.9rem !important;
+    padding-inline: .04rem;
+    font-size: clamp(.5rem, 2.15vw, .62rem) !important;
+    line-height: 1.08;
+    text-align: center;
+    touch-action: manipulation;
+  }
+
+  .navigation-mobile-lien span {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    font-size: clamp(.5rem, 2.3vw, .66rem) !important;
+    line-height: 1.08;
+    text-align: center;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: normal;
+  }
+
+  .navigation-mobile-lien svg {
+    flex: 0 0 auto;
+    width: clamp(1rem, 4vw, 1.2rem) !important;
+    height: clamp(1rem, 4vw, 1.2rem) !important;
+  }
+
+  .tb-contenu,
+  .contenu-clair {
+    width: 100%;
+    min-width: 0;
+  }
+
+  :where(.tb-ligne-principale, .tb-ligne-basse, .tb-ligne-supplementaire,
+    .tb-grille-stats, .grille-cartes, .grille-cartes-claires,
+    .aide-avis-grille, .quiz-grille, .filtres) {
+    min-width: 0;
+  }
+
+  :where(.tb-ligne-principale, .tb-ligne-basse, .tb-ligne-supplementaire,
+    .grille-cartes, .grille-cartes-claires, .aide-avis-grille,
+    .quiz-grille, .filtres) > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :where(.filtres, .carte-formulaire) input,
+  :where(.filtres, .carte-formulaire) select,
+  :where(.filtres, .carte-formulaire) textarea {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --gm-layout-gutter: clamp(.55rem, 2.5vw, .8rem);
+    --gm-layout-gap: clamp(.45rem, 2vw, .75rem);
+  }
+
+  .app-page > main,
+  main.main-clair,
+  main.main-clair-pleine-largeur {
+    padding-inline: var(--gm-layout-gutter) !important;
+  }
+
+  .mobile-entete-app-sous-marque {
+    display: none;
+  }
+
+  .navigation-mobile-lien span {
+    font-size: clamp(.5rem, 2.5vw, .64rem) !important;
+  }
+}
+
+@media (max-width: 340px) {
+  .app-page > main,
+  main.main-clair,
+  main.main-clair-pleine-largeur {
+    padding-inline: .5rem !important;
+  }
+
+  .mobile-entete-app {
+    padding-inline-start: max(3rem, calc(env(safe-area-inset-left) + 2.6rem));
+    padding-inline-end: .45rem;
+  }
+
+  .mobile-entete-app-notifications {
+    display: inline-grid !important;
+    flex-basis: 2.25rem;
+    width: 2.25rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+  }
+
+  .mobile-entete-app-avatar {
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+  }
+
+  .navigation-mobile-lien {
+    min-height: 2.8rem !important;
+    font-size: .5rem !important;
+  }
+
+  .navigation-mobile-lien span {
+    font-size: .5rem !important;
+    white-space: normal !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  html {
+    scroll-padding-block-end: calc(3.6rem + env(safe-area-inset-bottom));
+  }
+
+  .app-page {
+    padding-bottom: calc(3.8rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  .navigation-mobile-fixe {
+    padding-top: .18rem;
+  }
+
+  .navigation-mobile-lien {
+    min-height: 2.7rem !important;
+  }
+
+  .tb-sidebar {
+    max-height: 100vh;
+    max-height: 100dvh;
+  }
+}
+
+@media (pointer: coarse) {
+  .navigation-mobile-lien,
+  .sidebar-bouton-mobile,
+  .tb-sidebar-lien,
+  .tb-sidebar-collapse,
+  .mobile-entete-app-notifications,
+  .mobile-entete-app-avatar {
+    min-height: max(var(--gm-touch-target), 44px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ===== Familles de pages ===== */
+
+/*
+ * Gasy Mahay — responsive des familles de pages
+ * Phase 2 : harmoniser les grilles réelles des pages principales.
+ * Chargée après les styles de modules ; !important est réservé aux règles
+ * mobiles qui doivent neutraliser des contraintes historiques de templates.
+ */
+
+:where(.ai-learning-page, .classe-page, .document-upload-page, .ops-page,
+  .hub-page, .cercles-page-shell) {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+:where(.ai-learning-page, .classe-page, .document-upload-page, .ops-page) {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: clamp(.9rem, 2.2vw, 2rem);
+}
+
+:where(.ai-hero, .classe-hero, .ai-generation-grid, .ai-field-grid,
+  .quiz-run-shell, .ai-result-hero, .ai-tuteur-layout,
+  .document-upload-layout, .document-upload-grid, .document-upload-preview-grid,
+  .classe-grid, .classe-form-grid, .hub-kpis, .hub-deux-colonnes,
+  .hub-notions-grille, .ops-stat-grid, .ops-admin-groups, .ops-admin-items,
+  .tb-ligne-principale, .tb-ligne-basse, .tb-ligne-supplementaire,
+  .tb-grille-stats, .doc-grille, .grille-cartes-claires) {
+  min-width: 0;
+}
+
+:where(.ai-panel, .ai-form-card, .quiz-question-card, .quiz-run-main,
+  .quiz-run-sidebar, .ai-tuteur-main, .ai-tuteur-side, .ai-chat-card,
+  .ai-answer-card, .document-upload-card, .document-upload-sidebar,
+  .classe-salle-panel, .classe-course-card, .hub-section, .ops-stat,
+  .ops-admin-group, .doc-carte, .tb-panneau, .tb-carte-stat,
+  .tb-carte-reprendre, .tb-carte-cercle-moderne) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+:where(.ai-form input, .ai-form select, .ai-form textarea,
+  .document-upload-form input, .document-upload-form select,
+  .document-upload-form textarea, .classe-form-grid input,
+  .classe-form-grid select, .classe-form-grid textarea) {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+:where(.ai-hero, .classe-hero) {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+}
+
+.ai-generation-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr);
+}
+
+.ai-field-grid {
+  grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, .8fr));
+}
+
+.quiz-run-shell {
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 16.25rem);
+}
+
+.ai-result-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(11rem, 14.5rem);
+}
+
+.ai-tuteur-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 18.75rem);
+}
+
+.document-upload-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 16.25rem);
+}
+
+.doc-grille {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.classe-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+}
+
+.ops-stat-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tb-grille-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.tb-ligne-principale {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.tb-ligne-basse {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+}
+
+.tb-ligne-supplementaire {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+:where(.ai-learning-page, .classe-page, .document-upload-page, .ops-page) :where(h1, h2, h3, p, a, label, button) {
+  overflow-wrap: anywhere;
+}
+
+.katex-display,
+.ai-answer-card,
+.quiz-correction-explanation,
+.quiz-choice-text,
+.document-upload-file-name,
+.document-upload-preview-item,
+.classe-salle-subtitle {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: .15rem .3rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+:where(.doc-grille, .grille-cartes-claires, .classe-grid, .ops-new-users-list) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 1150px) {
+  .tb-grille-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tb-ligne-supplementaire {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-learning-page,
+  .classe-page,
+  .document-upload-page,
+  .ops-page {
+    padding-inline: clamp(.8rem, 2vw, 1.4rem);
+  }
+
+  .ai-generation-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, .78fr);
+  }
+
+  .quiz-run-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(13rem, 15rem);
+  }
+}
+
+@media (max-width: 900px) {
+  .ai-hero,
+  .classe-hero,
+  .ai-generation-grid,
+  .quiz-run-shell,
+  .ai-result-hero,
+  .ai-tuteur-layout,
+  .document-upload-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .ai-hero,
+  .classe-hero {
+    gap: .85rem;
+  }
+
+  .ai-field-grid,
+  .document-upload-grid,
+  .document-upload-preview-grid,
+  .classe-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quiz-run-sidebar {
+    position: static;
+    width: 100%;
+  }
+
+  .quiz-nav-grid {
+    grid-template-columns: repeat(auto-fit, minmax(2.4rem, 1fr));
+  }
+
+  .classe-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hub-kpis,
+  .ops-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .disposition-chat {
+    align-items: stretch;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .colonne-conversation {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .classe-salle-head,
+  .classe-salle-controls,
+  .classe-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .classe-salle-head > *,
+  .classe-salle-controls > *,
+  .classe-toolbar > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .ai-learning-page,
+  .classe-page,
+  .document-upload-page,
+  .ops-page {
+    padding-inline: clamp(.65rem, 2.6vw, 1rem);
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  .ai-hero,
+  .classe-hero {
+    padding: clamp(.9rem, 3.2vw, 1.35rem) !important;
+    border-radius: 18px;
+  }
+
+  .ai-hero-side,
+  .classe-hero-side {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ai-hero-actions,
+  .classe-hero-actions,
+  .ai-result-actions,
+  .ai-inline-actions,
+  .classe-form-actions,
+  .classe-toolbar-right,
+  .classe-salle-controls,
+  .document-upload-footer,
+  .ops-hero-actions,
+  .ops-new-user-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ai-hero-actions > *,
+  .classe-hero-actions > *,
+  .ai-result-actions > *,
+  .ai-inline-actions > *,
+  .classe-form-actions > *,
+  .classe-toolbar-right > *,
+  .classe-salle-controls > *,
+  .document-upload-footer > *,
+  .ops-hero-actions > *,
+  .ops-new-user-actions > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ai-field-grid,
+  .document-upload-grid,
+  .document-upload-preview-grid,
+  .classe-form-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .quiz-run-shell {
+    gap: .7rem;
+  }
+
+  .quiz-run-topbar,
+  .quiz-submit-bar,
+  .quiz-progress-head,
+  .document-upload-preview-head,
+  .document-upload-file,
+  .document-upload-file-meta,
+  .hub-ligne {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .quiz-question-card,
+  .ai-form-card,
+  .ai-chat-card,
+  .ai-answer-card,
+  .document-upload-card,
+  .document-upload-side-card,
+  .classe-salle-panel,
+  .tb-panneau {
+    padding: clamp(.7rem, 2.8vw, 1rem);
+  }
+
+  .quiz-question-title,
+  .ai-answer-question,
+  .ai-correction-question {
+    max-width: 100%;
+    font-size: clamp(.98rem, 2.9vw, 1.12rem);
+    line-height: 1.5;
+  }
+
+  .quiz-choice {
+    min-width: 0;
+    align-items: flex-start;
+    padding: .72rem;
+  }
+
+  .quiz-choice-text {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .quiz-submit-bar > .bouton,
+  .document-upload-submit,
+  .classe-form-actions > .bouton,
+  .classe-chat .bouton {
+    min-height: 44px;
+  }
+
+  .quiz-run-sidebar {
+    display: grid;
+    gap: .65rem;
+  }
+
+  .quiz-nav-card,
+  .quiz-progress-card,
+  .quiz-chrono-card {
+    min-width: 0;
+  }
+
+  .doc-grille {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .7rem;
+  }
+
+  .doc-carte {
+    padding: .85rem !important;
+  }
+
+  .doc-actions {
+    align-items: stretch;
+    gap: .45rem;
+  }
+
+  .doc-actions > * {
+    flex: 1 1 8.5rem;
+    min-width: 0;
+  }
+
+  .tb-ligne-principale,
+  .tb-ligne-basse,
+  .tb-ligne-supplementaire {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: .75rem !important;
+  }
+
+  .tb-grille-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .5rem !important;
+  }
+
+  .hub-page {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 0;
+  }
+
+  .hub-hero {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .8rem;
+    padding-block: 1rem;
+  }
+
+  .hub-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem;
+  }
+
+  .hub-deux-colonnes,
+  .hub-notions-grille,
+  .ops-admin-groups,
+  .ops-admin-items {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hub-ligne {
+    align-items: flex-start;
+  }
+
+  .cercles-hero-visuel {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  .cercles-hero-contenu {
+    width: 100% !important;
+    max-width: none !important;
+    padding: clamp(.8rem, 3.5vw, 1.35rem) !important;
+  }
+
+  .cercles-hero-photo {
+    min-height: 8.5rem !important;
+    max-height: 13rem;
+  }
+
+  .cercles-hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .cercles-visibilite-grid,
+  .grille-cartes-claires {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .cercle-card-premium-inner {
+    grid-template-columns: minmax(6rem, .32fr) minmax(0, 1fr) !important;
+    gap: .7rem;
+  }
+
+  .cercle-card-premium-media {
+    min-width: 0;
+    min-height: 7rem;
+  }
+
+  .classe-salle {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .classe-salle-head {
+    align-items: flex-start;
+    gap: .65rem;
+  }
+
+  .classe-salle-stage {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .classe-salle-stage .grille-video,
+  .grille-video {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    min-height: 0;
+    gap: .6rem;
+  }
+
+  .classe-chat {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .classe-chat-history {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .ops-hero {
+    gap: .75rem;
+  }
+
+  .ops-new-user,
+  .ops-new-user-main {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ops-nav {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 600px) {
+  .doc-grille,
+  .classe-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ops-stat-grid,
+  .hub-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cercle-card-premium-inner {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .cercle-card-premium-media {
+    min-height: 8rem;
+  }
+
+  .classe-salle-stage .grille-video,
+  .grille-video {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .classe-chat {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .classe-chat .bouton {
+    width: 100%;
+  }
+
+  .quiz-run-meta,
+  .quiz-focus-strip,
+  .ai-target-context-stats,
+  .document-upload-file-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+  }
+
+  .quiz-run-meta > *,
+  .quiz-focus-strip > *,
+  .ai-target-context-stats > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ops-new-user-actions > * {
+    flex: 1 1 8rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .ai-learning-page,
+  .classe-page,
+  .document-upload-page,
+  .ops-page {
+    padding-inline: .55rem;
+  }
+
+  .ai-hero,
+  .classe-hero {
+    padding: .8rem !important;
+    border-radius: 14px;
+  }
+
+  .ai-hero h1,
+  .classe-hero h1,
+  .document-upload-title,
+  .ops-hero h1 {
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
+    line-height: 1.12;
+  }
+
+  .doc-grille {
+    gap: .55rem;
+  }
+
+  .doc-carte {
+    padding: .75rem !important;
+  }
+
+  .tb-grille-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tb-stat,
+  .tb-carte-stat {
+    min-width: 0;
+  }
+
+  .quiz-nav-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .quiz-nav-grid > * {
+    min-width: 0;
+  }
+
+  .document-upload-file {
+    align-items: flex-start;
+    gap: .55rem;
+  }
+
+  .document-upload-file-copy {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .document-upload-file-name {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .classe-salle-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .classe-salle-control {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 340px) {
+  .doc-actions {
+    flex-direction: column;
+  }
+
+  .doc-actions > * {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .quiz-question-card,
+  .ai-form-card,
+  .ai-chat-card,
+  .document-upload-card,
+  .document-upload-side-card {
+    padding: .65rem !important;
+  }
+
+  .quiz-question-number {
+    flex: 0 0 auto;
+  }
+
+  .quiz-nav-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cercles-hero-stats,
+  .ops-stat-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .classe-salle-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .classe-salle-control,
+  .classe-salle-controls .bouton {
+    width: 100%;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px) {
+  .ai-hero,
+  .classe-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, .65fr) !important;
+  }
+
+  .classe-salle-stage .grille-video,
+  .grille-video {
+    grid-template-columns: repeat(auto-fit, minmax(min(48%, 15rem), 1fr));
+  }
+
+  .quiz-run-shell,
+  .ai-tuteur-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-hero *,
+  .classe-hero *,
+  .quiz-question-card,
+  .doc-carte,
+  .classe-course-card {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ===== Conversations et salle virtuelle ===== */
+
+/*
+ * Gasy Mahay — ergonomie mobile des conversations et de la salle virtuelle.
+ * Priorités : cibles tactiles accessibles, clavier mobile, zones sûres,
+ * chat exploitable en faible hauteur et commandes de classe toujours visibles.
+ */
+
+@media (max-width: 640px) {
+  .contenu-clair .barre-composition {
+    grid-template-columns: minmax(44px, 2.75rem) minmax(44px, 2.75rem) minmax(0, 1fr) minmax(44px, 2.75rem) !important;
+    grid-template-rows: auto auto auto !important;
+    column-gap: .25rem !important;
+    row-gap: .25rem !important;
+    padding: .35rem !important;
+    border-radius: 15px !important;
+  }
+
+  .contenu-clair .barre-composition #form-fichier > label {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 2.75rem !important;
+    min-width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+    padding: 0 !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .contenu-clair .barre-composition #form-fichier > .bouton-envoyer-fichier {
+    display: none !important;
+  }
+
+  .contenu-clair .barre-composition .conteneur-emoji-picker {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .contenu-clair .barre-composition #bouton-emoji-toggle {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 2.75rem !important;
+    min-width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+    padding: 0 !important;
+  }
+
+  .contenu-clair .barre-composition #form-chat > .conteneur-mentions-suggestions {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .contenu-clair .barre-composition #form-chat > .bouton-envoyer-message {
+    grid-column: 4 !important;
+    grid-row: 1 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 2.75rem !important;
+    min-width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+    padding: 0 !important;
+  }
+
+  .contenu-clair .barre-composition #champ-message {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 2.75rem !important;
+    max-height: 8rem !important;
+    padding: .65rem .3rem !important;
+    font-size: 16px !important; /* Évite le zoom automatique du champ dans Safari iOS. */
+    line-height: 1.35 !important;
+    overflow-wrap: anywhere;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-indicateurs {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    align-items: center;
+    gap: .45rem !important;
+    padding-inline: .15rem;
+    font-size: clamp(.65rem, 2.2vw, .75rem) !important;
+    line-height: 1.3;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-indicateurs span:first-child {
+    max-width: 74% !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-outils {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    gap: .35rem !important;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    padding-block: .1rem;
+    overscroll-behavior-x: contain;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-outils::-webkit-scrollbar {
+    display: none;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-outils .outil-cercle {
+    flex: 0 0 auto;
+    min-height: 2.75rem !important;
+    padding: .45rem .6rem !important;
+    font-size: .72rem !important;
+    white-space: nowrap;
+    touch-action: manipulation;
+  }
+
+  .contenu-clair .panneau-emojis-v2 {
+    width: min(340px, calc(100vw - 1.25rem)) !important;
+    max-width: calc(100vw - 1.25rem) !important;
+    max-height: min(270px, calc(100dvh - 8rem)) !important;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .contenu-clair .panneau-thread {
+    position: fixed !important;
+    inset-inline: max(.5rem, env(safe-area-inset-left)) max(.5rem, env(safe-area-inset-right)) !important;
+    top: max(4.25rem, calc(env(safe-area-inset-top) + 3.25rem)) !important;
+    bottom: calc(4.35rem + env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden;
+    z-index: 110 !important;
+    border-radius: 16px !important;
+  }
+
+  .contenu-clair .bouton-fermer-thread {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    min-height: 2.75rem;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+  }
+
+  .contenu-clair .corps-panneau-thread {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .page-classe .classe-salle-stage {
+    min-height: clamp(15rem, 45dvh, 26rem) !important;
+  }
+
+  .page-classe .classe-salle-stage .grille-video {
+    min-height: 0 !important;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)) !important;
+  }
+
+  .page-classe .classe-salle-stage .tuile-video {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .page-classe .classe-salle-controls {
+    position: sticky;
+    bottom: calc(4.25rem + env(safe-area-inset-bottom) + .35rem) !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem !important;
+    max-width: 100%;
+    padding: .55rem !important;
+    border: 1px solid var(--content-border);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--content-surface) 94%, transparent);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .page-classe .classe-salle-controls .classe-salle-control {
+    display: inline-grid !important;
+    place-items: center;
+    flex: 0 0 2.75rem;
+    width: 2.75rem !important;
+    min-width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+    padding: 0 !important;
+    touch-action: manipulation;
+  }
+
+  .page-classe .classe-salle-controls #compteur-participants {
+    flex: 1 1 100%;
+    order: 10;
+    min-width: 0;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .page-classe .classe-salle-controls #form-quitter {
+    flex: 0 0 auto;
+    margin-left: auto;
+    order: 11;
+  }
+
+  .page-classe .classe-salle-controls #form-quitter .classe-salle-control {
+    width: auto !important;
+    min-width: 2.75rem !important;
+    padding-inline: .85rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .contenu-clair .barre-composition {
+    column-gap: .15rem !important;
+    padding: .3rem !important;
+  }
+
+  .contenu-clair .barre-composition #champ-message {
+    padding-inline: .2rem !important;
+  }
+
+  .page-classe .classe-salle-controls {
+    gap: .3rem !important;
+    padding: .4rem !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px) {
+  .contenu-clair .fenetre-chat {
+    height: clamp(9rem, calc(100dvh - 10.5rem), 23rem) !important;
+    min-height: 9rem !important;
+  }
+
+  /* Le mode Focus du template imposait une hauteur minimale incompatible
+     avec les petits écrans paysage. Cette règle plus spécifique la remplace. */
+  html body.cercle-mode-focus .contenu-clair .fenetre-chat {
+    height: clamp(9rem, calc(100dvh - 10.5rem), 23rem) !important;
+    min-height: 9rem !important;
+    max-height: none !important;
+  }
+
+  .contenu-clair .panneau-thread {
+    top: max(3rem, calc(env(safe-area-inset-top) + 2.25rem)) !important;
+    bottom: calc(3.3rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  .page-classe .classe-salle-stage {
+    min-height: 10rem !important;
+  }
+
+  .page-classe .classe-salle-controls {
+    bottom: calc(3.45rem + env(safe-area-inset-bottom) + .2rem) !important;
+    gap: .3rem !important;
+    padding: .35rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contenu-clair .barre-composition *,
+  .page-classe .classe-salle-controls * {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ===== Pages publiques et formulaires ===== */
+
+/*
+ * Gasy Mahay — finitions responsive des écrans publics, formulaires et tableaux.
+ * Cette couche est volontairement étroite : elle complète les styles de page,
+ * elle ne redéfinit pas les couleurs ni l'identité visuelle des modules.
+ */
+
+:where(.auth-page-shell, .auth-form-shell, .auth-card, .auth-form,
+  .public-page, .faq-page, .mode-emploi-page, .contact-page, .ops-page,
+  .contact-hero, .contact-grid, .faq-layout, .mode-emploi-ui,
+  .ops-status-hero, .ops-profile) {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+:where(.auth-page-shell, .auth-form-shell, .auth-card, .auth-form,
+  .public-page, .faq-page, .mode-emploi-page, .contact-page, .ops-page) {
+  max-width: 100%;
+}
+
+:where(.auth-form, .contact-composer, .faq-form, .ops-form) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 740px) {
+  /* Les tableaux de référentiel/admin doivent défiler, jamais être rognés.
+     .page-ops .table-manifeste avait un overflow:hidden plus spécifique
+     qui annulait le comportement mobile générique. */
+  .page-ops .table-manifeste {
+    display: block !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .page-ops .table-manifeste th,
+  .page-ops .table-manifeste td {
+    white-space: nowrap;
+  }
+
+  .page-ops .table-manifeste th {
+    padding-inline: .55rem;
+  }
+
+  .page-auth .auth-page-shell,
+  .page-auth .auth-form-shell,
+  .page-auth .auth-card,
+  .page-auth .auth-card-main {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .page-auth .auth-form-actions .bouton,
+  .page-auth .auth-submit {
+    min-height: 44px;
+  }
+
+  .page-auth .auth-form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  .page-auth .auth-form select,
+  .page-auth .auth-form textarea {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .page-auth .auth-password-toggle {
+    min-height: 44px;
+    flex: 0 0 auto;
+  }
+
+  .contact-page,
+  .public-page,
+  .faq-page,
+  .mode-emploi-page,
+  .ops-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 380px) {
+  .page-auth .auth-form-pane {
+    min-width: 0;
+    padding: .55rem;
+  }
+
+  .page-auth .auth-card {
+    border-radius: 16px;
+  }
+
+  .page-auth .auth-card-main {
+    padding: .8rem;
+  }
+
+  .page-auth .auth-step {
+    min-width: 0;
+  }
+
+  .page-auth .auth-step-label {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    line-height: 1.2;
+    font-size: .52rem;
+  }
+
+  .page-auth .auth-form-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-auth .auth-form-actions > * {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .page-auth .auth-showcase {
+    min-height: 0;
+  }
+
+  .page-auth .auth-showcase-copy {
+    padding-block: 1rem;
+  }
+
+  .page-auth .auth-form-pane {
+    min-height: 0;
+    align-items: flex-start;
+  }
+
+  .page-auth .auth-card {
+    margin-block: .5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-auth *,
+  .page-ops *,
+  .contact-page *,
+  .public-page *,
+  .faq-page *,
+  .mode-emploi-page * {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

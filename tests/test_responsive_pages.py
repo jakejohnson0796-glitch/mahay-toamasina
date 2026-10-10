@@ -3,15 +3,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "app" / "templates" / "base.html"
-PAGES_CSS = ROOT / "app" / "static" / "responsive-pages.css"
+PAGES_CSS = ROOT / "app" / "static" / "responsive-overrides.css"
 
 
 def test_responsive_page_layer_is_loaded_after_foundations_in_head():
     base = BASE.read_text(encoding="utf-8")
-    foundation = base.index("/static/responsive-foundation.css")
-    pages = base.index("/static/responsive-pages.css")
+    responsive = base.index("/static/responsive.css")
+    overrides = base.index("/static/responsive-overrides.css")
     head_end = base.index("</head>")
-    assert foundation < pages < head_end
+    assert responsive < overrides < head_end
+    for old_layer in ("responsive-foundation.css", "responsive-pages.css", "responsive-conversations.css", "responsive-shells.css"):
+        assert f"/static/{old_layer}" not in base, old_layer
 
 
 def test_learning_pages_collapse_without_fixed_sidebar_columns():

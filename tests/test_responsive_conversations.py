@@ -3,16 +3,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "app" / "templates" / "base.html"
-CSS = ROOT / "app" / "static" / "responsive-conversations.css"
+CSS = ROOT / "app" / "static" / "responsive-overrides.css"
 
 
 def test_conversation_layer_is_loaded_after_all_other_responsive_styles():
     base = BASE.read_text(encoding="utf-8")
-    foundation = base.index("/static/responsive-foundation.css")
-    pages = base.index("/static/responsive-pages.css")
-    conversations = base.index("/static/responsive-conversations.css")
+    responsive = base.index("/static/responsive.css")
+    overrides = base.index("/static/responsive-overrides.css")
     head_end = base.index("</head>")
-    assert foundation < pages < conversations < head_end
+    assert responsive < overrides < head_end
+    assert "/static/responsive-conversations.css" not in base
 
 
 def test_mobile_circle_composer_has_ios_safe_font_and_comfortable_touch_targets():
