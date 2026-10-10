@@ -683,6 +683,15 @@
         {% if erreur %}
         <div class="document-upload-warning" role="alert">{{ erreur }}</div>
         {% endif %}
+        {% if message %}
+        <div class="document-upload-info" role="status">{{ message }}</div>
+        {% endif %}
+        {% if erreurs_batch %}
+        <div class="document-upload-warning" role="alert">
+          <strong>Fichiers non envoyés</strong>
+          <ul>{% for detail in erreurs_batch %}<li>{{ detail }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
 
         {% if cercle %}
         <div class="document-upload-info">📚 Ce dépôt sera rattaché directement au cercle <strong>{{ cercle.nom }}</strong>.</div>
@@ -744,11 +753,11 @@
               <label class="document-upload-file" id="zone-fichier" for="fichier">
                 <span class="document-upload-file-icon" aria-hidden="true">📎</span>
                 <span class="document-upload-file-copy">
-                  <strong>Choisir un fichier ou le déposer ici</strong>
-                  <span>Évitez les fichiers flous ou incomplets. Vérifiez le document avant l'envoi.</span>
+                  <strong>Choisir plusieurs fichiers ou les déposer ici</strong>
+                  <span>Jusqu’à 5 fichiers par envoi · PDF, Word, PowerPoint, JPG ou PNG · 20 Mo maximum par fichier.</span>
                   <span class="document-upload-file-name" id="nom-fichier">Aucun fichier sélectionné</span>
                 </span>
-                <input type="file" id="fichier" name="fichier" required accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
+                <input type="file" id="fichier" name="fichier" required multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
               </label>
             </div>
           </div>
@@ -874,26 +883,37 @@
     detectionBox.classList.toggle("success", tone === "success");
     detectionBox.classList.toggle("warning", tone === "warning");
   }
+  function fichiersSelectionnes() {
+    return input && input.files ? Array.from(input.files) : [];
+  }
+
   function messageErreur() {
     const erreurs = [];
     const auto = Boolean(classificationAuto && classificationAuto.checked);
+    const fichiers = fichiersSelectionnes();
     if (!auto) {
       if (!valeur(fields.titre)) erreurs.push("ajoutez un titre");
       if (!valeur(fields.matiere)) erreurs.push("indiquez la matière");
       if (!valeur(fields.annee)) erreurs.push("indiquez l'année");
       if (!valeur(fields.type)) erreurs.push("choisissez le type de document");
       if (!valeur(fields.filiere)) erreurs.push("choisissez une filière");
-    } else if (detectionEnCours) {
+    } else if (detectionEnCours && fichiers.length <= 1) {
       erreurs.push("attendez la fin de la détection automatique");
     }
 
-    const fichier = input && input.files && input.files[0];
-    if (!fichier) erreurs.push("sélectionnez un fichier");
-    else {
-      const ext = (fichier.name || "").split(".").pop().toLowerCase();
-      if (!EXTENSIONS.has(ext)) erreurs.push("le format du fichier n'est pas accepté");
-      if (fichier.size > MAX_FILE_BYTES) erreurs.push("le fichier dépasse 20 Mo");
+    if (!fichiers.length) {
+      erreurs.push("sélectionnez au moins un fichier");
+      return erreurs;
     }
+    if (fichiers.length > 5) erreurs.push("sélectionnez au maximum 5 fichiers par envoi");
+    if (fichiers.length > 1 && !auto) {
+      erreurs.push("activez la détection automatique pour classer chaque fichier séparément");
+    }
+    fichiers.forEach(function (fichier) {
+      const ext = (fichier.name || "").split(".").pop().toLowerCase();
+      if (!EXTENSIONS.has(ext)) erreurs.push(fichier.name + " : format non accepté");
+      if (fichier.size > MAX_FILE_BYTES) erreurs.push(fichier.name + " : dépasse 20 Mo");
+    });
     return erreurs;
   }
   function mettreAJourResume() {
@@ -904,16 +924,23 @@
     const option = fields.filiere && fields.filiere.selectedOptions ? fields.filiere.selectedOptions[0] : null;
     resume.filiere.textContent = option && valeur(fields.filiere) ? option.textContent : "—";
 
-    const fichier = input && input.files && input.files[0];
-    if (!fichier) {
+    const fichiers = fichiersSelectionnes();
+    if (!fichiers.length) {
       nom.textContent = "Aucun fichier sélectionné";
       resume.fichier.textContent = "Aucun fichier";
-      resume.fichierMeta.textContent = "Choisissez un fichier";
+      resume.fichierMeta.textContent = "Choisissez un ou plusieurs fichiers";
       return;
     }
-    nom.textContent = fichier.name;
-    resume.fichier.textContent = fichier.name;
-    resume.fichierMeta.textContent = formatTaille(fichier.size);
+    const tailleTotale = fichiers.reduce(function (total, fichier) { return total + fichier.size; }, 0);
+    if (fichiers.length === 1) {
+      nom.textContent = fichiers[0].name;
+      resume.fichier.textContent = fichiers[0].name;
+      resume.fichierMeta.textContent = formatTaille(fichiers[0].size);
+    } else {
+      nom.textContent = fichiers.length + " fichiers sélectionnés : " + fichiers.map(function (fichier) { return fichier.name; }).join(", ");
+      resume.fichier.textContent = fichiers.length + " fichiers sélectionnés";
+      resume.fichierMeta.textContent = "Total : " + formatTaille(tailleTotale) + " · classement individuel";
+    }
   }
   function valider() {
     const erreurs = messageErreur();
@@ -955,7 +982,18 @@
   }
   async function detecterFichier() {
     const version = ++detectionVersion;
-    const fichier = input && input.files && input.files[0];
+    const fichiers = fichiersSelectionnes();
+    if (fichiers.length > 1) {
+      detectionEnCours = false;
+      if (classificationAuto && classificationAuto.checked) {
+        setDetection("Chaque fichier sera classé séparément au moment de l’envoi. Le titre sera déduit de son propre nom et contenu.", "success");
+      } else {
+        setDetection("Pour envoyer plusieurs documents, activez la détection automatique afin de classer chaque fichier séparément.", "warning");
+      }
+      maj();
+      return;
+    }
+    const fichier = fichiers[0];
     if (!classificationAuto || !classificationAuto.checked || !fichier) {
       detectionEnCours = false;
       setDetection("", "");
@@ -1096,10 +1134,22 @@
         event.preventDefault();
         return;
       }
+      const fichiers = fichiersSelectionnes();
+      if (fichiers.length > 1) {
+        if (!classificationAuto || !classificationAuto.checked) {
+          event.preventDefault();
+          setDetection("Activez la détection automatique pour envoyer plusieurs documents en un seul lot.", "warning");
+          return;
+        }
+        form.action = "/documents/upload-multiple";
+        input.name = "fichiers";
+        submit.textContent = "Classer et envoyer " + fichiers.length + " documents…";
+      } else {
+        submit.textContent = classificationAuto && classificationAuto.checked
+          ? "Analyse et classement en cours…"
+          : "Envoi en cours…";
+      }
       submit.disabled = true;
-      submit.textContent = classificationAuto && classificationAuto.checked
-        ? "Analyse et classement en cours…"
-        : "Envoi en cours…";
     });
   }
   appliquerModeDetectionAuto();
