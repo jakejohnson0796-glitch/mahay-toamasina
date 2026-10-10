@@ -248,6 +248,14 @@
     min-height: 9rem !important;
   }
 
+  /* Le mode Focus du template imposait une hauteur minimale incompatible
+     avec les petits écrans paysage. Cette règle plus spécifique la remplace. */
+  html body.cercle-mode-focus .contenu-clair .fenetre-chat {
+    height: clamp(9rem, calc(100dvh - 10.5rem), 23rem) !important;
+    min-height: 9rem !important;
+    max-height: none !important;
+  }
+
   .contenu-clair .panneau-thread {
     top: max(3rem, calc(env(safe-area-inset-top) + 2.25rem)) !important;
     bottom: calc(3.3rem + env(safe-area-inset-bottom)) !important;

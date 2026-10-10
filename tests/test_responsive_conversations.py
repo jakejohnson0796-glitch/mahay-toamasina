@@ -44,4 +44,5 @@ def test_compact_landscape_uses_less_vertical_space_and_respects_reduced_motion(
     css = CSS.read_text(encoding="utf-8")
     assert "@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px)" in css
     assert "height: clamp(9rem, calc(100dvh - 10.5rem), 23rem) !important;" in css
+    assert "html body.cercle-mode-focus .contenu-clair .fenetre-chat" in css
     assert "@media (prefers-reduced-motion: reduce)" in css
