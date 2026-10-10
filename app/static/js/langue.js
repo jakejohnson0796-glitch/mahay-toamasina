@@ -2233,6 +2233,55 @@
     "Nouvelle filiere demandee": "Lalam-pianarana vaovao nangatahana",
     "Archive": "Voatahiry",
     "— groupe libre —": "— vondrona malalaka —",
+    "Gasy Mahay — Le reseau academique des etudiants malagasy": "Gasy Mahay — Tambajotra akademikan'ny mpianatra malagasy",
+    "À propos — Gasy Mahay": "Momba anay — Gasy Mahay",
+    "Contact — Gasy Mahay": "Fifandraisana — Gasy Mahay",
+    "Universites — Gasy Mahay": "Oniversite — Gasy Mahay",
+    "Mon tableau de bord — Gasy Mahay": "Ny tabilao ankapobeny — Gasy Mahay",
+    "Mon abonnement — Gasy Mahay": "Ny famandrihako — Gasy Mahay",
+    "Sécurité du compte — Gasy Mahay": "Fiarovana ny kaonty — Gasy Mahay",
+    "Sponsors & répétiteurs — Gasy Mahay": "Mpanohana sy mpampianatra mpanampy — Gasy Mahay",
+    "Mode d'emploi — Gasy Mahay": "Torolalana fampiasana — Gasy Mahay",
+    "FAQ & Aide — Gasy Mahay": "FAQ sy Fanampiana — Gasy Mahay",
+    "Notifications — Gasy Mahay": "Fampandrenesana — Gasy Mahay",
+    "Mes révisions — Gasy Mahay": "Ny famerenako lesona — Gasy Mahay",
+    "Mission d'apprentissage — Gasy Mahay": "Iraka fianarana — Gasy Mahay",
+    "Carte des connaissances — Gasy Mahay": "Sarintanin'ny fahalalana — Gasy Mahay",
+    "Défis & Récompenses — Gasy Mahay": "Fanamby sy Valisoa — Gasy Mahay",
+    "Verification en deux etapes — Gasy Mahay": "Fanamarinana dingana roa — Gasy Mahay",
+    "Mot de passe oublié — Gasy Mahay": "Tenimiafina hadino — Gasy Mahay",
+    "Réinitialiser le mot de passe — Gasy Mahay": "Hamerenana ny tenimiafina — Gasy Mahay",
+    "Actualiser mon profil academique — Gasy Mahay": "Havaozy ny mombamomba akademika — Gasy Mahay",
+    "Bienvenue sur Gasy Mahay — ton parcours": "Tongasoa eto amin'ny Gasy Mahay — ny lalam-pianaranao",
+    "Quiz IA — Gasy Mahay": "Quiz IA — Gasy Mahay",
+    "Historique Quiz IA — Gasy Mahay": "Tantaran'ny Quiz IA — Gasy Mahay",
+    "Tuteur IA — Gasy Mahay": "Tuteur IA — Gasy Mahay",
+    "Tuteur IA — réponse — Gasy Mahay": "Tuteur IA — valiny — Gasy Mahay",
+    "Documents — Gasy Mahay": "Tahirin-kevitra — Gasy Mahay",
+    "Déposer un document — Gasy Mahay": "Hametraka tahirin-kevitra — Gasy Mahay",
+    "Parcours — Gasy Mahay": "Lalam-pianarana — Gasy Mahay",
+    "Moderation — Gasy Mahay": "Fanamarinana — Gasy Mahay",
+    "Consulter un document — Modération": "Hijery tahirin-kevitra — Fanamarinana",
+    "Cercles d'etude — Gasy Mahay": "Vondrona fianarana — Gasy Mahay",
+    "Classe virtuelle — Gasy Mahay": "Kilasy virtoaly — Gasy Mahay",
+    "Administration — Gasy Mahay": "Fitantanana — Gasy Mahay",
+    "Sécurité administrateur — Gasy Mahay": "Fiarovana ny mpitantana — Gasy Mahay",
+    "Diagnostics système — Gasy Mahay": "Fanamarinana ny rafitra — Gasy Mahay",
+    "IA — Supervision": "IA — Fanaraha-maso",
+    "Statistiques — Gasy Mahay": "Antontan'isa — Gasy Mahay",
+    "Moderation du salon — Gasy Mahay": "Fanamarinana ny efitrano — Gasy Mahay",
+    "Moderation Quiz IA — Gasy Mahay": "Fanamarinana ny Quiz IA — Gasy Mahay",
+    "Utilisateurs — Gasy Mahay": "Mpampiasa — Gasy Mahay",
+    "Supprimer — Gasy Mahay": "Hamafa — Gasy Mahay",
+    "Abonnements étudiants — Admin Gasy Mahay": "Famandrihana mpianatra — Admin Gasy Mahay",
+    "Sponsors — Admin Gasy Mahay": "Mpanohana — Admin Gasy Mahay",
+    "Feedbacks utilisateurs — Gasy Mahay": "Hevitra avy amin'ny mpampiasa — Gasy Mahay",
+    "Gestion de la FAQ — Gasy Mahay": "Fitantanana ny FAQ — Gasy Mahay",
+    "Referentiel academique — Admin Gasy Mahay": "Tahirin-kevitra fototra akademika — Admin Gasy Mahay",
+    "Cercles — Referentiel academique — Admin Gasy Mahay": "Vondrona — Tahirin-kevitra fototra akademika — Admin Gasy Mahay",
+    "Demandes de creation de cercles — Admin Gasy Mahay": "Fangatahana hamorona vondrona — Admin Gasy Mahay",
+    "Demandes de changement de filiere — Admin Gasy Mahay": "Fangatahana hanova lalam-pianarana — Admin Gasy Mahay",
+    "Mes avis — Gasy Mahay": "Ny hevitro — Gasy Mahay",
     "Prochaine mission": "Iraka manaraka"
   });
 
@@ -2280,6 +2329,24 @@
     if (match) return "Manao ahoana, " + match[1].trim();
     match = cle.match(/^Motif : (.+?)\. Tu peux envoyer une nouvelle demande\.$/i);
     if (match) return "Antony: " + match[1] + ". Afaka mandefa fangatahana vaovao ianao.";
+    match = cle.match(/^Quiz — (.+) — Gasy Mahay$/i);
+    if (match) return "Quiz — " + match[1] + " — Gasy Mahay";
+    match = cle.match(/^Résultat — (.+) — Gasy Mahay$/i);
+    if (match) return "Vokatra — " + match[1] + " — Gasy Mahay";
+    match = cle.match(/^Parcours — (.+) — Gasy Mahay$/i);
+    if (match) return "Lalam-pianarana — " + match[1] + " — Gasy Mahay";
+    match = cle.match(/^Membres — (.+) — Gasy Mahay$/i);
+    if (match) return "Mpikambana — " + match[1] + " — Gasy Mahay";
+    match = cle.match(/^Demandes d'adhésion — (.+) — Gasy Mahay$/i);
+    if (match) return "Fangatahana hiditra — " + match[1] + " — Gasy Mahay";
+    match = cle.match(/^Étudiants — (.+) — Gasy Mahay$/i);
+    if (match) return "Mpianatra — " + match[1] + " — Gasy Mahay";
+    match = cle.match(/^Salle — (.+) — Gasy Mahay$/i);
+    if (match) return "Efitrano — " + match[1] + " — Gasy Mahay";
+    match = cle.match(/^Présences — (.+) — Gasy Mahay$/i);
+    if (match) return "Fanatrehana — " + match[1] + " — Gasy Mahay";
+    match = cle.match(/^(.+) — Classe virtuelle — Gasy Mahay$/i);
+    if (match) return match[1] + " — Kilasy virtoaly — Gasy Mahay";
     // Les libellés qui contiennent une donnée dynamique gardent cette donnée
     // telle quelle (nom de l'étudiant, compteur ou score).
     match = cle.match(/^Bonjour,\s+(.+?)\s*👋$/i);
