@@ -78,6 +78,7 @@
 {% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/cercles") %}
 <link rel="stylesheet" href="/static/learning-polish.css?v={{ version_asset('learning-polish.css') }}">
 {% endif %}
+<link rel="stylesheet" href="/static/motion-polish.css?v={{ version_asset('motion-polish.css') }}">
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"

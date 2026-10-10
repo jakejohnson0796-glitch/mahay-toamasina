@@ -1,0 +1,159 @@
+/*
+ * Gasy Mahay — micro-animations globales
+ * Effets courts, légers, sans déplacement de mise en page ni dépendance JS.
+ * Les composants gardent leurs couleurs, tailles et comportements métier.
+ */
+
+:root {
+  --gm-motion-ease: cubic-bezier(.2, .75, .25, 1);
+  --gm-motion-short: 160ms;
+  --gm-motion-medium: 240ms;
+}
+
+@keyframes gm-page-fade-in {
+  from { opacity: .72; }
+  to { opacity: 1; }
+}
+
+@keyframes gm-notice-arrive {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes gm-soft-pop {
+  0% { scale: .985; }
+  70% { scale: 1.01; }
+  100% { scale: 1; }
+}
+
+/* Fondu très bref à l'arrivée : aucune transformation du conteneur principal,
+   afin de ne pas casser les éléments positionnés en fixed/sticky. */
+@media (prefers-reduced-motion: no-preference) {
+  .app-page > main[data-page] {
+    animation: gm-page-fade-in 220ms ease-out both;
+  }
+
+  .app-page > main[data-page] > .info,
+  .app-page > main[data-page] > .erreur,
+  .app-page > main[data-page] > [role="alert"],
+  .app-page > main[data-page] > [role="status"],
+  .app-page > main[data-page] .notification-inactivite,
+  .pwa-installation:not([hidden]) {
+    animation: gm-notice-arrive 240ms var(--gm-motion-ease) both;
+  }
+
+  /* Révélation des sections plus légère, tout en conservant le décalage
+     progressif déjà géré par ux.js. */
+  .gm-reveal {
+    transition-duration: 420ms !important;
+    transition-timing-function: var(--gm-motion-ease) !important;
+  }
+
+  .gm-hover-lift {
+    transition-duration: 190ms !important;
+    transition-timing-function: var(--gm-motion-ease) !important;
+  }
+
+  .app-page main .bouton,
+  .app-page main button:not(:disabled),
+  .tb-sidebar .tb-sidebar-lien,
+  .tb-sidebar .tb-sidebar-compte,
+  .tb-sidebar .tb-toggle-theme,
+  .navigation-mobile-lien {
+    transition-timing-function: var(--gm-motion-ease);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-page main input:not([type="checkbox"]):not([type="radio"]),
+  .app-page main select,
+  .app-page main textarea {
+    transition-duration: 170ms;
+    transition-timing-function: var(--gm-motion-ease);
+  }
+
+  .tb-sidebar-lien .tb-icone {
+    transition: transform 180ms var(--gm-motion-ease), background-color 180ms var(--gm-motion-ease);
+  }
+
+  .app-page main .bouton:active:not(:disabled),
+  .app-page main button:active:not(:disabled),
+  .tb-sidebar button:active:not(:disabled),
+  .navigation-mobile-lien:active {
+    scale: .985;
+  }
+
+  .app-page main input:not([type="checkbox"]):not([type="radio"]):focus,
+  .app-page main select:focus,
+  .app-page main textarea:focus {
+    outline-offset: 2px;
+  }
+
+  .tb-sidebar-lien:focus-visible,
+  .navigation-mobile-lien:focus-visible,
+  .app-page main .bouton:focus-visible,
+  .app-page main button:focus-visible {
+    outline: 2px solid var(--refonte-teal, #2f8f89);
+    outline-offset: 3px;
+  }
+
+  .document-upload-file,
+  .classe-salle-control,
+  .quiz-choice,
+  .ai-prompt,
+  .cercles-hero-actions .bouton {
+    transition-timing-function: var(--gm-motion-ease);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .tb-sidebar-lien:hover .tb-icone {
+    transform: scale(1.045);
+  }
+
+  .app-page main .bouton:hover:not(:disabled) {
+    filter: brightness(1.035);
+  }
+
+  .app-page main input:not([type="checkbox"]):not([type="radio"]):hover,
+  .app-page main select:hover,
+  .app-page main textarea:hover {
+    border-color: color-mix(in srgb, var(--content-border) 65%, var(--refonte-teal, #2f8f89));
+  }
+}
+
+/* Contrôle tactile : clic visible sans animation persistante ou rebond long. */
+@media (prefers-reduced-motion: reduce) {
+  .app-page > main[data-page],
+  .app-page > main[data-page] > .info,
+  .app-page > main[data-page] > .erreur,
+  .app-page > main[data-page] > [role="alert"],
+  .app-page > main[data-page] > [role="status"],
+  .app-page > main[data-page] .notification-inactivite,
+  .pwa-installation:not([hidden]) {
+    animation: none !important;
+    translate: none !important;
+    scale: none !important;
+  }
+
+  .app-page main .bouton:active:not(:disabled),
+  .app-page main button:active:not(:disabled),
+  .tb-sidebar button:active:not(:disabled),
+  .navigation-mobile-lien:active,
+  .tb-sidebar-lien:hover .tb-icone {
+    scale: none !important;
+    transform: none !important;
+  }
+
+  .tb-sidebar-lien:focus-visible,
+  .navigation-mobile-lien:focus-visible,
+  .app-page main .bouton:focus-visible,
+  .app-page main button:focus-visible {
+    transition: none !important;
+  }
+}
