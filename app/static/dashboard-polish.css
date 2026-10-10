@@ -1,0 +1,114 @@
+/*
+ * Gasy Mahay — correctif de rendu de la progression sur le tableau de bord.
+ *
+ * student-hub.css partage .progression-carte avec "Mes révisions", où la
+ * carte possède un rail de 4px et un corps explicite. Le tableau de bord
+ * utilise le même nom de classe avec une structure plus simple. Sans cet
+ * override, son premier enfant est placé dans la colonne de 4px : le nom de
+ * matière se casse lettre par lettre. Ces règles ciblent uniquement le
+ * widget "Tes matières" du tableau de bord.
+ */
+
+.main-tb .tb-progression-dashboard {
+  min-width: 0;
+}
+
+.main-tb .tb-progression-dashboard .progression-grille {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: .75rem;
+  min-width: 0;
+}
+
+.main-tb .tb-progression-dashboard .progression-carte {
+  display: block;
+  min-width: 0;
+  padding: .95rem 1rem;
+  border: 1px solid var(--content-border);
+  border-radius: 14px;
+  background: var(--content-bg);
+  overflow: hidden;
+  overflow-wrap: normal;
+}
+
+.main-tb .tb-progression-dashboard .progression-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .85rem;
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.main-tb .tb-progression-dashboard .progression-entete > div {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.main-tb .tb-progression-dashboard .progression-entete strong {
+  display: block;
+  max-width: 100%;
+  color: var(--content-text);
+  font-size: .95rem;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+}
+
+.main-tb .tb-progression-dashboard .progression-entete span {
+  display: block;
+  margin-top: .22rem;
+  color: var(--content-text-muted);
+  font-size: .76rem;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.main-tb .tb-progression-dashboard .progression-entete > b {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--content-text);
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.main-tb .tb-progression-dashboard .progression-barre {
+  height: 8px;
+  margin-top: .8rem;
+  border-radius: 999px;
+  background: var(--content-border);
+  overflow: hidden;
+}
+
+.main-tb .tb-progression-dashboard .progression-barre > span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--refonte-teal, var(--accent));
+}
+
+@media (max-width: 680px) {
+  .main-tb .tb-progression-dashboard .progression-grille {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main-tb .tb-progression-dashboard .progression-carte,
+  .main-tb .tb-progression-dashboard .progression-barre > span {
+    transition: none !important;
+    animation: none !important;
+  }
+}
