@@ -9,12 +9,17 @@ def lire(path: str) -> str:
 
 
 def test_base_charge_les_assets_quiz_tuteur_et_renderer_ia():
-    # MODIF : vérifie le nouveau pipeline CDN + renderer et son ordre figé.
+    # MODIF : base ne bloque plus sur les CDN ; le chargeur borné choisit
+    # l'origine, attend un délai maximal puis le renderer récupère la source.
     base = lire("app/templates/base.html")
+    loader = lire("app/static/js/charger-dependances-ia.js")
     assert 'version_asset(\'ai-learning.css\')' in base
     assert 'version_asset(\'js/rendu_ia.js\')' in base
     assert 'request.url.path.startswith("/quiz")' in base
     assert 'request.url.path.startswith("/tuteur")' in base
+    assert "charger-dependances-ia.js" in base
+    assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
+    assert "https://cdn.jsdelivr.net/npm/katex" not in base
     ordre = [
         'katex@0.16.11/dist/katex.min.css',
         'katex@0.16.11/dist/katex.min.js',
@@ -22,10 +27,11 @@ def test_base_charge_les_assets_quiz_tuteur_et_renderer_ia():
         'marked@12.0.2/marked.min.js',
         'dompurify@3.1.6/dist/purify.min.js',
         'highlightjs/cdn-release@11.10.0/build/highlight.min.js',
-        '/static/js/rendu_ia.js',
     ]
-    positions = [base.index(item) for item in ordre]
+    positions = [loader.index(item) for item in ordre]
     assert positions == sorted(positions)
+    assert "DELAI_MAX_MS = 2500" in loader
+    assert "window.rendreTous(document)" in loader
 
 
 def test_pages_quiz_et_tuteur_utilisent_data_rendu_et_n_injectent_pas_de_html_ia():

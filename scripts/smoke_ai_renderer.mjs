@@ -217,7 +217,8 @@ if (before !== host.innerHTML) {
 }
 
 
-// Repli CDN : simule l'échec du CDN principal et la disponibilité du secours.
+// Chargement borné : simule un CDN principal qui ne répond pas,
+// les autres ressources principales qui échouent, puis un secours disponible.
 const loaderSource = fs.readFileSync('app/static/js/charger-dependances-ia.js', 'utf8');
 const fallbackDom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
   url: 'http://localhost/',
@@ -225,7 +226,10 @@ const fallbackDom = new JSDOM('<!doctype html><html><head></head><body></body></
 });
 const fallbackWindow = fallbackDom.window;
 let mhchemFallbackReady = false;
+let renduRelanceApresChargement = false;
+fallbackWindow.rendreTous = function () { renduRelanceApresChargement = true; };
 const fallbackRequests = [];
+const primaryRequests = [];
 function createFakeKatex() {
   return { render(expression, target) {
     const node = fallbackWindow.document.createElement('span');
@@ -233,22 +237,31 @@ function createFakeKatex() {
     target.appendChild(node);
   } };
 }
+const setTimeoutOriginal = fallbackWindow.setTimeout.bind(fallbackWindow);
+fallbackWindow.setTimeout = function (callback, delay) {
+  return setTimeoutOriginal(callback, delay === 2500 ? 0 : delay);
+};
 const appendHeadOriginal = fallbackWindow.document.head.appendChild.bind(fallbackWindow.document.head);
 fallbackWindow.document.head.appendChild = function (element) {
   const result = appendHeadOriginal(element);
-  if (element.tagName === 'SCRIPT' && element.src.startsWith('https://unpkg.com/')) {
-    fallbackRequests.push(element.src);
+  const url = element.src || element.href || '';
+  if (url.startsWith('https://cdn.jsdelivr.net/')) {
+    primaryRequests.push(url);
+    if (!url.includes('/dist/katex.min.js')) {
+      Promise.resolve().then(function () {
+        if (typeof element.onerror === 'function') element.onerror(new fallbackWindow.Event('error'));
+      });
+    }
+  } else if (url.startsWith('https://unpkg.com/')) {
+    fallbackRequests.push(url);
     Promise.resolve().then(function () {
-      if (element.src.includes('/dist/katex.min.js')) fallbackWindow.katex = createFakeKatex();
-      else if (element.src.includes('/dist/contrib/mhchem.min.js')) mhchemFallbackReady = true;
-      else if (element.src.includes('/marked.min.js')) fallbackWindow.marked = { parse: function () { return ''; } };
-      else if (element.src.includes('/dist/purify.min.js')) fallbackWindow.DOMPurify = { sanitize: function () { return fallbackWindow.document.createDocumentFragment(); } };
-      else if (element.src.includes('/build/highlight.min.js')) fallbackWindow.hljs = { highlightElement: function () {} };
-      if (typeof element.onload === 'function') element.onload(new fallbackWindow.Event('load'));
-    });
-  } else if (element.tagName === 'LINK' && element.href.startsWith('https://unpkg.com/')) {
-    fallbackRequests.push(element.href);
-    Promise.resolve().then(function () {
+      if (element.tagName === 'SCRIPT') {
+        if (url.includes('/dist/katex.min.js')) fallbackWindow.katex = createFakeKatex();
+        else if (url.includes('/dist/contrib/mhchem.min.js')) mhchemFallbackReady = true;
+        else if (url.includes('/marked.min.js')) fallbackWindow.marked = { parse: function () { return ''; } };
+        else if (url.includes('/dist/purify.min.js')) fallbackWindow.DOMPurify = { sanitize: function () { return fallbackWindow.document.createDocumentFragment(); } };
+        else if (url.includes('/build/highlight.min.js')) fallbackWindow.hljs = { highlightElement: function () {} };
+      }
       if (typeof element.onload === 'function') element.onload(new fallbackWindow.Event('load'));
     });
   }
@@ -261,7 +274,10 @@ vm.runInNewContext(loaderSource, {
 }, { filename: 'charger-dependances-ia.js' });
 const fallbackState = await fallbackWindow.GasyMahay.chargerDependancesRenduIA();
 if (!fallbackState.katex || !fallbackState.mhchem || !fallbackState.marked || !fallbackState.purify) {
-  throw new Error('CDN fallback did not recover the required AI renderer dependencies');
+  throw new Error('CDN timeout/fallback did not recover the required AI renderer dependencies');
+}
+if (!primaryRequests.some((url) => url.includes('/dist/katex.min.js'))) {
+  throw new Error('Primary KaTeX CDN was not tried');
 }
 for (const fragment of [
   '/dist/katex.min.css',
@@ -274,7 +290,11 @@ for (const fragment of [
     throw new Error('Expected fallback resource was not requested: ' + fragment);
   }
 }
-
-
+if (!fallbackState.css) {
+  throw new Error('KaTeX CSS fallback did not recover');
+}
+if (!renduRelanceApresChargement) {
+  throw new Error('Renderer was not retriggered after dependency loading completed');
+}
 
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));

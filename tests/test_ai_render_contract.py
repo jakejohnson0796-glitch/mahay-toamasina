@@ -25,7 +25,9 @@ def test_renderer_ia_contient_les_garde_fous():
 
 def test_base_charge_katex_core_sans_auto_render_obligatoire():
     page = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
-    assert "katex@0.16.11/dist/katex.min.js" in page
+    assert "charger-dependances-ia.js" in page
+    assert page.index("charger-dependances-ia.js") < page.index("rendu_ia.js")
+    assert "https://cdn.jsdelivr.net/npm/katex" not in page
     assert "auto-render.min.js" not in page
     assert "rendu_ia.js" in page
 
@@ -169,10 +171,14 @@ def test_renderer_ia_prevoit_un_cdn_de_secours_sans_affaiblir_la_csp():
 
     assert "charger-dependances-ia.js" in base
     assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
+    assert 'var principal = "https://cdn.jsdelivr.net/"' in loader
     assert 'var secours = "https://unpkg.com/"' in loader
+    assert 'DELAI_MAX_MS = 2500' in loader
+    assert 'principal + "npm/katex@0.16.11/dist/katex.min.js"' in loader
     assert 'secours + "katex@0.16.11/dist/katex.min.js"' in loader
-    assert 'secours + "marked@12.0.2/marked.min.js"' in loader
+    assert 'principal + "npm/marked@12.0.2/marked.min.js"' in loader
     assert 'secours + "dompurify@3.1.6/dist/purify.min.js"' in loader
+    assert "window.rendreTous(document)" in loader
     assert "https://unpkg.com" in csp
     assert "script-src-attr 'none'" in csp
     assert "'unsafe-inline'" not in csp.split("script-src", 1)[1].split(";", 1)[0]
