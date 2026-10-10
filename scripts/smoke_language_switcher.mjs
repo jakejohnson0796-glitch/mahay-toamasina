@@ -179,6 +179,54 @@ if (!window.document.querySelector('#about-copy').textContent.startsWith('Atamba
   throw new Error('Full about page paragraph did not switch to Malagasy');
 }
 
+// Vérifie les libellés oubliés, les compteurs construits en JavaScript et les attributs dynamiques.
+const illustration = window.document.createElement('p');
+illustration.textContent = 'Illustrations d’étude intégrées localement dans Gasy Mahay : aucune dépendance à un service d’images externe.';
+window.document.body.appendChild(illustration);
+
+const quizCounter = window.document.createElement('p');
+quizCounter.textContent = '3 / 5 répondues';
+window.document.body.appendChild(quizCounter);
+
+const quizNavButton = window.document.createElement('button');
+quizNavButton.setAttribute('aria-label', 'Aller à la question 3');
+window.document.body.appendChild(quizNavButton);
+
+const loadingButton = window.document.createElement('button');
+loadingButton.textContent = 'Génération…';
+window.document.body.appendChild(loadingButton);
+
+const exampleInput = window.document.createElement('input');
+exampleInput.setAttribute('placeholder', 'Ex. Droit des obligations');
+window.document.body.appendChild(exampleInput);
+
+const officialOptionSelect = window.document.createElement('select');
+const officialOption = window.document.createElement('option');
+officialOption.setAttribute('data-no-translate', '');
+officialOption.textContent = 'Mention';
+officialOptionSelect.appendChild(officialOption);
+window.document.body.appendChild(officialOptionSelect);
+
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (illustration.textContent !== 'Ny sary fanazavana dia tafiditra mivantana ao amin’ny Gasy Mahay, ka tsy miankina amin’ny tolotra ivelany.') {
+  throw new Error('The complete circles-page explanatory text was not translated');
+}
+if (quizCounter.textContent !== '3 / 5 voavaly') {
+  throw new Error('A JavaScript-generated quiz answer counter was not translated');
+}
+if (quizNavButton.getAttribute('aria-label') !== "Hankany amin'ny fanontaniana 3") {
+  throw new Error('A numbered quiz navigation label was not translated');
+}
+if (loadingButton.textContent !== 'Mamokatra…') {
+  throw new Error('The AI generation loading label was not translated');
+}
+if (exampleInput.getAttribute('placeholder') !== 'Ohatra: Lalàn’ny adidy') {
+  throw new Error('A subject example placeholder was not translated');
+}
+if (officialOption.textContent !== 'Mention') {
+  throw new Error('Dynamically inserted official reference values must remain untouched');
+}
+
 // Les modifications de texte en place doivent être retraduites et réversibles.
 const mutable = window.document.createElement('p');
 mutable.appendChild(window.document.createTextNode('Aucun document trouvé.'));

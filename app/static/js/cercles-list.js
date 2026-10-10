@@ -19,11 +19,12 @@
     }
   }
 
-  function option(select, value, label, selected) {
+  function option(select, value, label, selected, nonTraduisible) {
     const node = document.createElement("option");
     node.value = String(value ?? "");
     node.textContent = label;
     node.selected = Boolean(selected);
+    if (nonTraduisible) node.setAttribute("data-no-translate", "");
     select.appendChild(node);
   }
 
@@ -45,7 +46,7 @@
     }
 
     parcours.forEach(function (item) {
-      option(select, item.id, item.nom, String(item.id) === valeur);
+      option(select, item.id, item.nom, String(item.id) === valeur, true);
     });
 
     if (valeur && Array.from(select.options).every(function (o) { return o.value !== valeur; })) {
