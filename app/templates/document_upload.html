@@ -724,7 +724,7 @@
               <select id="filiere_id" name="filiere_id" required>
                 <option value="">Choisir une filière — la détection automatique peut la proposer</option>
                 {% for filiere in filieres %}
-                <option value="{{ filiere.id }}">{{ filiere.nom }}</option>
+                <option value="{{ filiere.id }}" data-no-translate>{{ filiere.nom }}</option>
                 {% endfor %}
               </select>
             </div>
