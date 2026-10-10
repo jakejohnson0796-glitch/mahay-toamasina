@@ -692,6 +692,7 @@
   });
 
   var noeudsOriginaux = new WeakMap();
+  var derniersRendus = new WeakMap();
   var attributsOriginaux = new WeakMap();
   var langueActuelle = "fr";
   var initialise = false;
@@ -768,10 +769,34 @@
 
   function traduireNoeudTexte(noeud, langue) {
     if (!noeud || noeud.nodeType !== 3 || estProtege(noeud.parentElement)) return;
-    if (!noeudsOriginaux.has(noeud)) noeudsOriginaux.set(noeud, noeud.nodeValue || "");
+
+    var contenuActuel = noeud.nodeValue || "";
+    if (!noeudsOriginaux.has(noeud)) {
+      noeudsOriginaux.set(noeud, contenuActuel);
+    } else if (
+      derniersRendus.has(noeud) &&
+      contenuActuel !== derniersRendus.get(noeud)
+    ) {
+      // Un composant a modifié le texte d'origine depuis le dernier rendu.
+      // Conserver cette nouvelle source, plutôt que de réappliquer l'ancienne
+      // traduction à une valeur dynamique différente.
+      noeudsOriginaux.set(noeud, contenuActuel);
+    }
+
     var source = noeudsOriginaux.get(noeud);
     var traduction = traduireChaine(source, langue);
+
+    if (langue === "mg" && traduction !== source) {
+      // La clé est normalisée pour la recherche, mais les espaces aux bords
+      // sont gardés pour les phrases coupées par des nombres ou des balises
+      // (ex. « Il te reste <strong>5</strong> jours Premium »).
+      var espacesInitiaux = (String(source).match(/^\\s*/) || [""])[0];
+      var espacesFinaux = (String(source).match(/\\s*$/) || [""])[0];
+      traduction = espacesInitiaux + traduction.replace(/^\\s+|\\s+$/g, "") + espacesFinaux;
+    }
+
     if (noeud.nodeValue !== traduction) noeud.nodeValue = traduction;
+    derniersRendus.set(noeud, traduction);
   }
 
   function traduireAttributs(element, langue) {
@@ -850,12 +875,20 @@
     if (typeof window.MutationObserver === "function" && document.body) {
       var observateur = new window.MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
+          if (mutation.type === "characterData") {
+            traduireNoeudTexte(mutation.target, langueActuelle);
+            return;
+          }
           mutation.addedNodes.forEach(function (ajoute) {
             traduireSousArbre(ajoute, langueActuelle);
           });
         });
       });
-      observateur.observe(document.body, { childList: true, subtree: true });
+      observateur.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
     }
   }
 
