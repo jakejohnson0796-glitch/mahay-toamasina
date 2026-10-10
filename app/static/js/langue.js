@@ -2295,6 +2295,7 @@
   var noeudsOriginaux = new WeakMap();
   var derniersRendus = new WeakMap();
   var attributsOriginaux = new WeakMap();
+  var attributsRendus = new WeakMap();
   var langueActuelle = "fr";
   var initialise = false;
 
@@ -2435,14 +2436,31 @@
       originaux = Object.create(null);
       attributsOriginaux.set(element, originaux);
     }
+    var rendus = attributsRendus.get(element);
+    if (!rendus) {
+      rendus = Object.create(null);
+      attributsRendus.set(element, rendus);
+    }
+
     ATTRIBUTS_TRADUCTIBLES.forEach(function (nom) {
       if (!element.hasAttribute(nom)) return;
+      var actuel = element.getAttribute(nom);
+
       if (!Object.prototype.hasOwnProperty.call(originaux, nom)) {
-        originaux[nom] = element.getAttribute(nom);
+        originaux[nom] = actuel;
+      } else if (
+        Object.prototype.hasOwnProperty.call(rendus, nom) &&
+        actuel !== rendus[nom]
+      ) {
+        // Un composant a changé l'attribut depuis le dernier rendu. Garder
+        // sa nouvelle valeur française comme source de traduction.
+        originaux[nom] = actuel;
       }
+
       var source = originaux[nom];
       var traduction = traduireChaine(source, langue);
-      if (element.getAttribute(nom) !== traduction) element.setAttribute(nom, traduction);
+      if (actuel !== traduction) element.setAttribute(nom, traduction);
+      rendus[nom] = traduction;
     });
   }
 
@@ -2508,6 +2526,10 @@
             traduireNoeudTexte(mutation.target, langueActuelle);
             return;
           }
+          if (mutation.type === "attributes") {
+            traduireAttributs(mutation.target, langueActuelle);
+            return;
+          }
           mutation.addedNodes.forEach(function (ajoute) {
             traduireSousArbre(ajoute, langueActuelle);
           });
@@ -2516,7 +2538,9 @@
       observateur.observe(document.body, {
         childList: true,
         subtree: true,
-        characterData: true
+        characterData: true,
+        attributes: true,
+        attributeFilter: ATTRIBUTS_TRADUCTIBLES
       });
     }
   }
