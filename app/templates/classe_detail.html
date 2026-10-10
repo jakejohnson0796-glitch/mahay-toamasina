@@ -120,7 +120,7 @@
       <p class="classe-section-card-intro">Rejoins une séance uniquement quand elle est en cours.</p>
       <div class="classe-list">
         {% for seance in seances %}
-        <div class="classe-row">
+        <div class="classe-row classe-row-seance">
           <div class="classe-row-main">
             <strong>{{ seance.titre }}</strong>
             {% if seance.statut.value == "planifiee" %}
