@@ -326,7 +326,7 @@
     </aside>
     {% endif %}
 
-    <main class="{% block main_classe %}{% endblock %}" data-page="{{ request.url.path }}">
+    <main class="{% block main_classe %}{% endblock %}" data-page="{{ request.url.path }}"{% if request.url.path.startswith("/admin/referentiel") %} data-no-translate{% endif %}>
       {% include "components/visuel_page.html" %}
       {% block contenu %}{% endblock %}
     </main>
