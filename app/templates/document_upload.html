@@ -912,7 +912,7 @@
     fichiers.forEach(function (fichier) {
       const ext = (fichier.name || "").split(".").pop().toLowerCase();
       if (!EXTENSIONS.has(ext)) erreurs.push(fichier.name + " : format non accepté");
-      if (fichier.size > MAX_FILE_BYTES) erreurs.push(fichier.name + " : dépasse 20 Mo");
+      if (fichier.size > MAX_FILE_BYTES) erreurs.push(fichiers.length === 1 ? "le fichier dépasse 20 Mo" : fichier.name + " : dépasse 20 Mo");
     });
     return erreurs;
   }
