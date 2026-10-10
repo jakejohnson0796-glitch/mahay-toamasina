@@ -53,7 +53,7 @@
   <tbody>
     {% for f in filieres %}
     <tr>
-      <td><span data-no-translate><span data-no-translate>{{ f.nom }}</span></span></td>
+      <td><span data-no-translate>{{ f.nom }}</span></td>
       <td><span data-no-translate>{{ facultes[f.faculte_id].nom if f.faculte_id in facultes else "—" }}</span></td>
       <td>
         {% set mention_actuelle = mentions | selectattr("id", "equalto", f.mention_id) | first %}
@@ -64,7 +64,7 @@
           <select name="mention_id">
             <option value="">— aucune —</option>
             {% for m in mentions %}
-            <option value="{{ m.id }}" {{ "selected" if m.id == f.mention_id else "" }}><span data-no-translate>{{ m.nom }}</span></option>
+            <option value="{{ m.id }}" data-no-translate {{ "selected" if m.id == f.mention_id else "" }}>{{ m.nom }}</option>
             {% endfor %}
           </select>
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
