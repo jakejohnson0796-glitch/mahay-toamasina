@@ -13,6 +13,7 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
   <nav><a id="navigation">Tableau de bord</a></nav>
   <input id="phone" placeholder="Numéro de téléphone" value="0341234567">
   <p id="dynamic">Pas encore de compte ?</p>
+  <button id="dynamic-aria" aria-label="Passer au thème clair">Thème</button>
   <div id="ai-output" data-rendu>Tableau de bord \\frac{1}{2}</div>
   <pre id="code-sample">Créer mon compte</pre>
   <main id="referentiel">
@@ -39,6 +40,9 @@ if (window.document.querySelector('#phone').getAttribute('placeholder') !== 'Lah
 }
 if (window.document.querySelector('#dynamic').textContent !== 'Tsy mbola manana kaonty?') {
   throw new Error('Dynamic or existing page text was not translated');
+}
+if (window.document.querySelector('#dynamic-aria').getAttribute('aria-label') !== 'Hampiasa endrika mazava') {
+  throw new Error('Accessible labels did not switch to Malagasy');
 }
 if (window.document.querySelector('#referentiel-heading').textContent !== 'Tahirin-kevitra fototra akademika') {
   throw new Error('Academic referential interface heading did not switch to Malagasy');
@@ -188,6 +192,12 @@ await new Promise((resolve) => setTimeout(resolve, 0));
 if (mutable.textContent !== 'Handefa tahirin-kevitra') {
   throw new Error('In-place text mutation was not translated');
 }
+const ariaButton = window.document.querySelector('#dynamic-aria');
+ariaButton.setAttribute('aria-label', 'Passer au thème sombre');
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (ariaButton.getAttribute('aria-label') !== 'Hampiasa endrika maizina') {
+  throw new Error('Dynamically changed accessible labels were not translated');
+}
 
 select.value = 'fr';
 select.dispatchEvent(new window.Event('change', { bubbles: true }));
@@ -207,5 +217,8 @@ if (window.document.querySelector('#subscription-title').textContent !== "Ton ab
 }
 if (mutable.textContent !== 'Déposer un document') {
   throw new Error('Returning to French did not restore dynamically updated text');
+}
+if (ariaButton.getAttribute('aria-label') !== 'Passer au thème sombre') {
+  throw new Error('Returning to French did not restore the latest dynamic accessible label');
 }
 console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg'], dynamic: true, ai_content_protected: true }));
