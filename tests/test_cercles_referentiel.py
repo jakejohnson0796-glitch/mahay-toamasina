@@ -14,7 +14,7 @@ from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.cercles_referentiel import assurer_cercles_pour_filiere, assurer_cercles_referentiel
 from app.models import (
-    CercleEtude, Faculte, Filiere, MembreCercle, Mention, RoleMembreCercle,
+    CercleEtude, Faculte, Filiere, MembreCercle, Mention, MessageCercle, RoleMembreCercle,
     RoleUtilisateur, StatutCercle, Universite, Utilisateur, ProgrammeUniversitaire,
 )
 from app.referentiel import NIVEAUX
@@ -322,6 +322,25 @@ class TestCerclesReferentiel(unittest.TestCase):
                     cercle_id=cercle_id,
                     utilisateur_id=etudiant.id,
                     role=RoleMembreCercle.MEMBRE,
+                )
+            )
+            session.commit()
+
+            total = assurer_cercles_referentiel(session)
+
+            self.assertEqual(total, 0)
+            cercle = session.get(CercleEtude, cercle_id)
+            self.assertEqual(cercle.statut, StatutCercle.ACTIF)
+
+    def test_cercle_orphelin_avec_contenu_reste_actif_meme_sans_etudiant(self):
+        """Un contenu historique doit rester accessible pour une revue admin."""
+        with Session(self.engine) as session:
+            cercle_id = self._creer_cercle_sans_offre(session)
+            session.add(
+                MessageCercle(
+                    cercle_id=cercle_id,
+                    auteur_id=self.admin_id,
+                    contenu="Message historique a conserver",
                 )
             )
             session.commit()
