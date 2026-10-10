@@ -15,6 +15,11 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
   <p id="dynamic">Pas encore de compte ?</p>
   <div id="ai-output" data-rendu>Tableau de bord \\frac{1}{2}</div>
   <pre id="code-sample">Créer mon compte</pre>
+  <main id="referentiel" data-no-translate>
+    <h2 id="referentiel-heading">Référentiel académique</h2>
+    <p id="referentiel-copy">Les universités, facultés et filières officielles.</p>
+  </main>
+  <select id="academic-values"><option value="gestion" data-no-translate>Sciences de Gestion</option></select>
 </body></html>`, { url: 'http://localhost/', runScripts: 'outside-only' });
 const { window } = dom;
 window.localStorage.setItem('mahay-langue', 'mg');
@@ -33,6 +38,13 @@ if (window.document.querySelector('#phone').getAttribute('placeholder') !== 'Lah
 }
 if (window.document.querySelector('#dynamic').textContent !== 'Tsy mbola manana kaonty?') {
   throw new Error('Dynamic or existing page text was not translated');
+}
+if (window.document.querySelector('#referentiel-heading').textContent !== 'Référentiel académique' ||
+    window.document.querySelector('#referentiel-copy').textContent !== 'Les universités, facultés et filières officielles.') {
+  throw new Error('The academic referential section must remain in French');
+}
+if (window.document.querySelector('#academic-values').options[0].text !== 'Sciences de Gestion') {
+  throw new Error('Academic reference values must remain in French');
 }
 if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord \\frac{1}{2}') {
   throw new Error('AI output must remain untouched by interface translation');
@@ -91,6 +103,11 @@ abonnement.innerHTML = `
   <p id="premium-sentence"><span>Il te reste </span><strong>5</strong><span> d'accès Premium.</span></p>
   <h2 id="security-heading">Compte · sécurité &amp; profil</h2>
   <p id="help-heading">Trouver une réponse sans parcourir tout le site.</p>
+  <p id="ia-trial-alert">Le Quiz IA et le Tuteur IA sont inclus pendant les 14 premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant 60 jours.</p>
+  <p id="pending-subscription">La demande a bien été reçue. Ton accès Premium reste actif pendant la vérification (5 jours). L'accès IA reste ouvert pendant 4 jours.</p>
+  <p id="dynamic-greeting">Bonjour, Jake</p>
+  <p id="guide-copy">Ce guide te montre le chemin le plus simple dans Gasy Mahay : créer ton compte, retrouver une ressource, pratiquer, utiliser l'IA, travailler en groupe et sécuriser ton compte. Il précise aussi les durées d'accès de l'essai gratuit pour éviter toute mauvaise surprise.</p>
+  <p id="circle-copy">Les cercles sont des espaces collaboratifs. L'accès dépend du cercle, du statut du compte et, selon les cas, de l'abonnement.</p>
 `;
 window.document.body.appendChild(abonnement);
 await new Promise((resolve) => setTimeout(resolve, 0));
@@ -129,6 +146,21 @@ if (window.document.querySelector('#security-heading').textContent !== 'Kaonty �
 }
 if (window.document.querySelector('#help-heading').textContent !== 'Mitadiava valiny nefa tsy mila mijery ny tranonkala manontolo.') {
   throw new Error('Help page content did not switch to Malagasy');
+}
+if (window.document.querySelector('#ia-trial-alert').textContent !== "Ny Quiz IA sy ny Tuteur IA dia tafiditra mandritra ny 14 andro voalohany amin'ny andrana. Mbola azo ampiasaina mandritra ny 60 andro ny fampiasa Premium hafa.") {
+  throw new Error('Dynamic trial duration paragraph did not switch to Malagasy');
+}
+if (window.document.querySelector('#pending-subscription').textContent !== "Voaray ny fangatahanao. Mbola mavitrika mandritra ny fanamarinana (5 andro) ny fidiranao Premium. Mbola azo ampiasaina mandritra ny 4 andro ny IA.") {
+  throw new Error('Dynamic subscription confirmation paragraph did not switch to Malagasy');
+}
+if (window.document.querySelector('#dynamic-greeting').textContent !== 'Manao ahoana, Jake') {
+  throw new Error('Dynamic greeting without an emoji did not switch to Malagasy');
+}
+if (!window.document.querySelector('#guide-copy').textContent.startsWith('Ity torolalana ity')) {
+  throw new Error('Full guide paragraph did not switch to Malagasy');
+}
+if (!window.document.querySelector('#circle-copy').textContent.startsWith('Sehatra iarahana miasa')) {
+  throw new Error('Full circles paragraph did not switch to Malagasy');
 }
 
 // Les modifications de texte en place doivent être retraduites et réversibles.
