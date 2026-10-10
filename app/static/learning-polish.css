@@ -814,6 +814,7 @@
 .ai-learning-page .ai-markdown-content {
   font-size: .96rem;
   line-height: 1.85;
+  overflow-wrap: anywhere;
 }
 
 .ai-learning-page .ai-markdown-content h3,
