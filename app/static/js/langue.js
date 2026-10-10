@@ -1755,15 +1755,15 @@
     match = cle.match(/^(\d+)\s+jour(s?)\s+d'ancienneté$/i);
     if (match) return match[1] + " andro naha-mpikambana";
 
-    match = cle.match(/^Le Quiz IA et le Tuteur IA sont inclus pendant les (\\d+) premiers jours de l'essai\\. Le reste des fonctionnalités Premium reste accessible pendant (\\d+) jours\\.$/i);
+    match = cle.match(/^Le Quiz IA et le Tuteur IA sont inclus pendant les (\d+) premiers jours de l'essai\. Le reste des fonctionnalités Premium reste accessible pendant (\d+) jours\.$/i);
     if (match) return "Ny Quiz IA sy ny Tuteur IA dia tafiditra mandritra ny " + match[1] + " andro voalohany amin'ny andrana. Mbola azo ampiasaina mandritra ny " + match[2] + " andro ny fampiasa Premium hafa.";
-    match = cle.match(/^La demande a bien été reçue\\. Ton accès Premium reste actif pendant la vérification \\((\\d+) jours?\\)\\. L'accès IA reste ouvert pendant (\\d+) jours?\\.$/i);
+    match = cle.match(/^La demande a bien été reçue\. Ton accès Premium reste actif pendant la vérification \((\d+) jours?\)\. L'accès IA reste ouvert pendant (\d+) jours?\.$/i);
     if (match) return "Voaray ny fangatahanao. Mbola mavitrika mandritra ny fanamarinana (" + match[1] + " andro) ny fidiranao Premium. Mbola azo ampiasaina mandritra ny " + match[2] + " andro ny IA.";
-    match = cle.match(/^Ton démarrage est à (\\d+)\\/3\\.$/i);
+    match = cle.match(/^Ton démarrage est à (\d+)\/3\.$/i);
     if (match) return "Efa vita ny dingana " + match[1] + " amin'ny 3.";
-    match = cle.match(/^Bonjour,\\s*(.+?)\\s*$/i);
+    match = cle.match(/^Bonjour,\s*(.+?)\s*$/i);
     if (match) return "Manao ahoana, " + match[1].trim();
-    match = cle.match(/^Motif : (.+?)\\. Tu peux envoyer une nouvelle demande\\.$/i);
+    match = cle.match(/^Motif : (.+?)\. Tu peux envoyer une nouvelle demande\.$/i);
     if (match) return "Antony: " + match[1] + ". Afaka mandefa fangatahana vaovao ianao.";
     // Les libellés qui contiennent une donnée dynamique gardent cette donnée
     // telle quelle (nom de l'étudiant, compteur ou score).
