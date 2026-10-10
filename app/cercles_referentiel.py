@@ -138,10 +138,16 @@ def assurer_cercles_pour_groupe_parcours(
         # parcours : tout cercle ACTIF sur un autre niveau est périmé.
         for cercle in cercles_du_groupe:
             if cercle.niveau not in niveaux_cibles:
+                # Ne considère comme membre réel qu'un compte non-admin.
+                # Les comptes administrateurs sont utilisés comme créateurs techniques
+                # des cercles automatiques et ne doivent pas empêcher l'archivage.
                 nb_membres_reels = session.exec(
-                    select(func.count()).select_from(MembreCercle).where(
+                    select(func.count())
+                    .select_from(MembreCercle)
+                    .join(Utilisateur, Utilisateur.id == MembreCercle.utilisateur_id)
+                    .where(
                         MembreCercle.cercle_id == cercle.id,
-                        MembreCercle.utilisateur_id != createur.id,
+                        Utilisateur.role != RoleUtilisateur.ADMIN,
                     )
                 ).one()
                 if nb_membres_reels:
@@ -362,10 +368,17 @@ def assurer_cercles_referentiel(
     membres_par_cercle = {}
     if cercles_nationaux:
         ids_cercles = [c.id for c in cercles_nationaux]
+        # Les cercles automatiques contiennent souvent une adhésion du
+        # compte admin créateur. Ce compte technique n'est pas un étudiant
+        # réel et ne doit pas transformer un cercle orphelin en cas de revue.
         membres_par_cercle = dict(
             session.exec(
                 select(MembreCercle.cercle_id, func.count())
-                .where(MembreCercle.cercle_id.in_(ids_cercles))
+                .join(Utilisateur, Utilisateur.id == MembreCercle.utilisateur_id)
+                .where(
+                    MembreCercle.cercle_id.in_(ids_cercles),
+                    Utilisateur.role != RoleUtilisateur.ADMIN,
+                )
                 .group_by(MembreCercle.cercle_id)
             ).all()
         )
@@ -418,7 +431,7 @@ def assurer_cercles_referentiel(
     if cercles_a_revoir:
         logger.warning(
             "%d cercle(s) national/nationaux n'ont plus d'offre active correspondante "
-            "mais possedent des membres : laisses ACTIFS pour revue admin.",
+            "mais possedent des membres non-admin : laisses ACTIFS pour revue admin.",
             len(cercles_a_revoir),
         )
         for cercle_id, nom, niveau, nb_membres in cercles_a_revoir[:10]:
