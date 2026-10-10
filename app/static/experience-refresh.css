@@ -1,0 +1,295 @@
+/*
+ * Gasy Mahay — couche de refonte visuelle visible.
+ * Cette feuille complète le responsive : elle change la hiérarchie visuelle
+ * sur ordinateur comme sur mobile, sans modifier les comportements métier.
+ * Les couleurs de surface utilisent les variables de thème existantes.
+ */
+
+:root {
+  --gm-refresh-radius: 22px;
+  --gm-refresh-shadow: 0 16px 42px rgba(7, 38, 41, .09);
+  --gm-refresh-shadow-hover: 0 22px 52px rgba(7, 38, 41, .15);
+}
+
+/* Accueil : un hero plus éditorial et un premier plan plus net. */
+.hero-phare {
+  min-height: clamp(27rem, 40vw, 33rem);
+  padding-block: clamp(3.25rem, 6.2vw, 5.4rem);
+  border: 1px solid rgba(255, 255, 255, .13);
+  box-shadow: 0 28px 76px rgba(6, 43, 46, .22);
+  background:
+    radial-gradient(ellipse at 82% 18%, rgba(111, 190, 177, .29), transparent 23rem),
+    radial-gradient(ellipse at 75% 100%, rgba(228, 125, 85, .24), transparent 20rem),
+    linear-gradient(118deg, #062b2e 0%, #0a3538 48%, #155354 100%);
+}
+
+.hero-phare h1 {
+  max-width: 12ch;
+  font-size: clamp(2.9rem, 5.8vw, 5.35rem);
+  line-height: .99;
+  text-wrap: balance;
+}
+
+.hero-phare h1 em {
+  color: #ffd49a;
+  text-shadow: 0 5px 30px rgba(255, 212, 154, .12);
+}
+
+.hero-phare .sous-titre {
+  max-width: 51ch;
+  font-size: clamp(1rem, 1.05vw, 1.12rem);
+}
+
+.hero-phare .cta-groupe {
+  gap: .8rem;
+}
+
+.hero-phare .bouton {
+  min-height: 3.15rem;
+  padding-inline: 1.2rem !important;
+  border-radius: 14px !important;
+}
+
+.stats.stats-4 {
+  position: relative;
+  z-index: 3;
+  margin: -2.45rem .9rem 2rem;
+  gap: .8rem;
+}
+
+.stat {
+  min-height: 7.25rem;
+  padding: 1.2rem 1.25rem;
+  border-radius: 18px;
+  box-shadow: 0 14px 36px rgba(7, 38, 41, .095);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.stat:nth-child(1) { border-top: 3px solid #2f8f89; }
+.stat:nth-child(2) { border-top: 3px solid #e47d55; }
+.stat:nth-child(3) { border-top: 3px solid #ddb765; }
+.stat:nth-child(4) { border-top: 3px solid #7396bc; }
+
+.stat-nombre {
+  font-size: clamp(1.9rem, 2.5vw, 2.35rem);
+  letter-spacing: -.04em;
+}
+
+.stat-label {
+  font-size: .74rem !important;
+  font-weight: 600;
+}
+
+.stat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 19px 42px rgba(7, 38, 41, .14);
+}
+
+.derniers {
+  border-radius: var(--gm-refresh-radius);
+  padding: clamp(1rem, 2.2vw, 1.6rem);
+  box-shadow: var(--gm-refresh-shadow);
+}
+
+.derniers h2 {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
+  letter-spacing: -.035em;
+}
+
+.table-manifeste thead th {
+  padding-block: .85rem;
+  font-size: .72rem;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.table-manifeste tbody tr {
+  transition: background-color .15s ease;
+}
+
+.table-manifeste tbody tr:hover td {
+  background: var(--content-bg);
+}
+
+/* Navigation : renforcer l'état courant, sans changer les liens disponibles. */
+.tb-sidebar-lien {
+  min-height: 2.75rem;
+  border-radius: 12px;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.tb-sidebar-lien:hover {
+  transform: translateX(2px);
+}
+
+.tb-sidebar-lien-actif {
+  background: linear-gradient(100deg, rgba(47, 143, 137, .28), rgba(47, 143, 137, .08));
+  box-shadow: inset 3px 0 0 #e47d55;
+}
+
+/* Tableau de bord : transformer le salut en véritable point d'entrée visuel. */
+.tb-hero {
+  padding: clamp(1.25rem, 2.8vw, 2rem) !important;
+  margin-block: .5rem 1.25rem;
+  border: 1px solid var(--content-border);
+  border-radius: 26px;
+  background:
+    radial-gradient(ellipse at 92% 0%, rgba(47, 143, 137, .14), transparent 20rem),
+    linear-gradient(135deg, var(--content-surface), var(--content-bg));
+  box-shadow: var(--gm-refresh-shadow);
+}
+
+.tb-hero .tb-titre {
+  max-width: 18ch;
+  font-size: clamp(2.1rem, 4.3vw, 3.65rem);
+  line-height: 1.03;
+}
+
+.tb-hero .tb-sous-titre {
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+
+.tb-acces-rapide-item {
+  min-height: 5.15rem;
+  border-radius: 17px;
+  background:
+    linear-gradient(145deg, var(--content-surface), var(--content-bg));
+  box-shadow: 0 8px 24px rgba(7, 38, 41, .055);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.tb-acces-rapide-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--refonte-teal);
+  box-shadow: var(--gm-refresh-shadow);
+}
+
+.tb-routine,
+.tb-carte-reprendre,
+.tb-carte-premium,
+.tb-panneau,
+.tb-carte-stat {
+  border-radius: var(--gm-refresh-radius) !important;
+  box-shadow: 0 12px 34px rgba(7, 38, 41, .065);
+}
+
+.tb-routine {
+  border: 1px solid var(--content-border);
+  padding: clamp(1rem, 2.3vw, 1.5rem);
+}
+
+.tb-panneau {
+  padding: clamp(1rem, 2.4vw, 1.55rem) !important;
+}
+
+.tb-carte-stat {
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.tb-carte-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--gm-refresh-shadow);
+}
+
+/* Les cartes communes gardent les mêmes couleurs en thème clair et sombre. */
+.ai-hero,
+.ai-answer-card,
+.ai-generation-card,
+.quiz-carte-generer,
+.quiz-carte-examen,
+.document-upload-card,
+.document-upload-side-card,
+.classe-salle-panel,
+.carte-formulaire {
+  border-radius: var(--gm-refresh-radius);
+  box-shadow: var(--gm-refresh-shadow);
+}
+
+.bouton-primaire {
+  box-shadow: 0 10px 24px rgba(6, 43, 46, .19);
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.bouton-primaire:hover {
+  box-shadow: 0 15px 30px rgba(6, 43, 46, .23);
+}
+
+html[data-theme="sombre"] .tb-hero {
+  background:
+    radial-gradient(ellipse at 92% 0%, rgba(47, 143, 137, .17), transparent 20rem),
+    linear-gradient(135deg, var(--content-surface), var(--content-bg));
+}
+
+html[data-theme="sombre"] .stat,
+html[data-theme="sombre"] .tb-acces-rapide-item {
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .20);
+}
+
+@media (max-width: 900px) {
+  .hero-phare {
+    min-height: 0;
+    padding-block: clamp(2.7rem, 8vw, 4rem);
+  }
+
+  .stats.stats-4 {
+    margin: -1rem 0 1.6rem;
+  }
+
+  .tb-hero {
+    margin-top: .25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-phare h1 {
+    font-size: clamp(2.5rem, 11vw, 3.65rem);
+  }
+
+  .stats.stats-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .55rem;
+  }
+
+  .stat {
+    min-height: 6.2rem;
+    padding: .95rem;
+  }
+
+  .stat-nombre {
+    font-size: 1.8rem;
+  }
+
+  .stat-label {
+    font-size: .68rem !important;
+  }
+
+  .tb-hero {
+    padding: 1rem !important;
+    border-radius: 19px;
+  }
+
+  .tb-acces-rapide-item {
+    border-radius: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat,
+  .tb-sidebar-lien,
+  .tb-acces-rapide-item,
+  .tb-carte-stat,
+  .bouton-primaire {
+    transition: none !important;
+  }
+
+  .stat:hover,
+  .tb-sidebar-lien:hover,
+  .tb-acces-rapide-item:hover,
+  .tb-carte-stat:hover {
+    transform: none !important;
+  }
+}
