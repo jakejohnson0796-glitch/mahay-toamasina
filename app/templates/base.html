@@ -56,15 +56,7 @@
 {% endif %}
 {% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path == "/admin/moderation-quiz" %}
 <link rel="stylesheet" href="/static/ai-learning.css?v={{ version_asset('ai-learning.css') }}">
-<!-- MODIF : charge KaTeX et ses dépendances dans un ordre figé pour tout contenu IA. -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-<script nonce="{{ csp_nonce(request) }}" defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<!-- MODIF : renderMathInElement est fourni par l'auto-render KaTeX, pas par katex.min.js seul. -->
-<!-- MODIF : auto-render KaTeX n'est plus requis ; rendu direct via katex.render. -->
-<script nonce="{{ csp_nonce(request) }}" defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/mhchem.min.js"></script>
-<script nonce="{{ csp_nonce(request) }}" defer src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-<script nonce="{{ csp_nonce(request) }}" defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
-<script nonce="{{ csp_nonce(request) }}" defer src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/highlight.min.js"></script>
+<!-- Le chargeur gère les CDN principal/secours avec délai maximal ; il reste non bloquant. -->
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/charger-dependances-ia.js?v={{ version_asset('js/charger-dependances-ia.js') }}"></script>
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/rendu_ia.js?v={{ version_asset('js/rendu_ia.js') }}"></script>
 {% endif %}
