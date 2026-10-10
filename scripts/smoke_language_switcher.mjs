@@ -84,6 +84,10 @@ abonnement.innerHTML = `
   <span id="premium-counter"><strong>5</strong><span> jours Premium restants</span></span>
   <span id="ia-counter"><strong>5</strong><span> jours d'IA restants</span></span>
   <span id="access-state">état actuel de l'accès</span>
+  <h2 id="premium-active">Premium actif</h2>
+  <span id="active-status">Actif</span>
+  <span id="singular-premium"><strong>1</strong><span> jour Premium restant</span></span>
+  <span id="singular-ia"><strong>1</strong><span> jour d'IA restant</span></span>
   <p id="premium-sentence"><span>Il te reste </span><strong>5</strong><span> d'accès Premium.</span></p>
   <h2 id="security-heading">Compte · sécurité &amp; profil</h2>
   <p id="help-heading">Trouver une réponse sans parcourir tout le site.</p>
@@ -107,6 +111,18 @@ if (window.document.querySelector('#ia-counter').textContent !== '5 andro sisa a
 }
 if (window.document.querySelector('#premium-sentence').textContent !== "Mbola manana 5 andro ahafahana miditra amin'ny Premium.") {
   throw new Error('Dynamic sentence did not preserve spaces around inserted values');
+}
+if (window.document.querySelector('#premium-active').textContent !== 'Premium mavitrika') {
+  throw new Error('Premium active state did not switch to Malagasy');
+}
+if (window.document.querySelector('#active-status').textContent !== 'Mavitrika') {
+  throw new Error('Active badge did not switch to Malagasy');
+}
+if (window.document.querySelector('#singular-premium').textContent !== '1 andro Premium sisa') {
+  throw new Error('Singular Premium counter did not switch to Malagasy');
+}
+if (window.document.querySelector('#singular-ia').textContent !== '1 andro sisa ahafahana mampiasa ny IA') {
+  throw new Error('Singular AI counter did not switch to Malagasy');
 }
 if (window.document.querySelector('#security-heading').textContent !== 'Kaonty · fiarovana sy mombamomba') {
   throw new Error('Security page heading did not switch to Malagasy');
@@ -142,4 +158,10 @@ if (window.document.querySelector('#bonjour').textContent !== 'Bonjour, Rakoto �
   throw new Error('Switching back to French did not restore the dynamic greeting');
 }
 if (window.localStorage.getItem('mahay-langue') !== 'fr') throw new Error('Language preference was not persisted');
+if (window.document.querySelector('#subscription-title').textContent !== "Ton abonnement, ton état d'accès, ton prochain pas.") {
+  throw new Error('Returning to French did not restore the main subscription heading');
+}
+if (mutable.textContent !== 'Déposer un document') {
+  throw new Error('Returning to French did not restore dynamically updated text');
+}
 console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg'], dynamic: true, ai_content_protected: true }));
