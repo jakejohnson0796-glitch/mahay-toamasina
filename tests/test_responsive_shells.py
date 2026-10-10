@@ -3,15 +3,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "app" / "templates" / "base.html"
-CSS = ROOT / "app" / "static" / "responsive-shells.css"
+CSS = ROOT / "app" / "static" / "responsive-overrides.css"
 
 
 def test_shell_responsive_layer_is_loaded_after_all_previous_layers_in_head():
     base = BASE.read_text(encoding="utf-8")
-    pages = base.index("/static/responsive-pages.css")
-    conversations = base.index("/static/responsive-conversations.css")
-    shells = base.index("/static/responsive-shells.css")
-    assert pages < conversations < shells < base.index("</head>")
+    responsive = base.index("/static/responsive.css")
+    overrides = base.index("/static/responsive-overrides.css")
+    assert responsive < overrides < base.index("</head>")
+    for old_layer in ("responsive-foundation.css", "responsive-pages.css", "responsive-conversations.css", "responsive-shells.css"):
+        assert f"/static/{old_layer}" not in base, old_layer
 
 
 def test_admin_reference_tables_scroll_instead_of_being_clipped_on_mobile():

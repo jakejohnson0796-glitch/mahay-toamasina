@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "app" / "templates" / "base.html"
-FOUNDATION = ROOT / "app" / "static" / "responsive-foundation.css"
+FOUNDATION = ROOT / "app" / "static" / "responsive-overrides.css"
 
 
 def test_viewport_enables_ios_safe_area_layout():
@@ -11,21 +11,24 @@ def test_viewport_enables_ios_safe_area_layout():
     assert 'name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"' in base
 
 
-def test_all_page_stylesheets_are_loaded_before_the_global_responsive_layer():
+def test_all_page_stylesheets_are_loaded_before_the_single_global_responsive_layer():
     base = BASE.read_text(encoding="utf-8")
-    foundation_ref = '/static/responsive-foundation.css?v={{ version_asset(\'responsive-foundation.css\') }}'
-    assert foundation_ref in base
-    foundation_pos = base.index(foundation_ref)
+    override_ref = '/static/responsive-overrides.css?v={{ version_asset(\'responsive-overrides.css\') }}'
+    assert override_ref in base
+    override_pos = base.index(override_ref)
     head_end = base.index("</head>")
-    assert foundation_pos < head_end
+    assert override_pos < head_end
 
-    for stylesheet in ("gamification.css", "onboarding.css", "activation.css", "responsive.css"):
+    for stylesheet in ("gamification.css", "onboarding.css", "activation.css", "responsive.css", "sidebar.css"):
         ref = f"/static/{stylesheet}"
         assert ref in base
-        assert base.index(ref) < foundation_pos, stylesheet
+        assert base.index(ref) < override_pos, stylesheet
+
+    for old_layer in ("responsive-foundation.css", "responsive-pages.css", "responsive-conversations.css", "responsive-shells.css"):
+        assert f"/static/{old_layer}" not in base, old_layer
 
     body = base[head_end:]
-    for stylesheet in ("gamification.css", "onboarding.css", "activation.css"):
+    for stylesheet in ("gamification.css", "onboarding.css", "activation.css", "responsive-overrides.css"):
         assert f"/static/{stylesheet}" not in body, stylesheet
 
 
