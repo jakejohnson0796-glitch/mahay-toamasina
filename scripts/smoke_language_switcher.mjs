@@ -75,6 +75,60 @@ if (window.document.querySelector('#compteur').textContent !== '1/3 androany') {
   throw new Error('Dynamic counter did not switch to Malagasy');
 }
 
+// Vérifie que la langue couvre aussi le contenu central, et pas seulement la barre latérale.
+const abonnement = window.document.createElement('section');
+abonnement.innerHTML = `
+  <span id="premium-kicker">Accès Premium · étudiant</span>
+  <h1 id="subscription-title">Ton abonnement, ton état d'accès, ton prochain pas.</h1>
+  <p id="subscription-copy">Visualise ton essai, ton abonnement actuel et envoie une demande de paiement depuis un espace unique.</p>
+  <span id="premium-counter"><strong>5</strong><span> jours Premium restants</span></span>
+  <span id="ia-counter"><strong>5</strong><span> jours d'IA restants</span></span>
+  <span id="access-state">état actuel de l'accès</span>
+  <p id="premium-sentence"><span>Il te reste </span><strong>5</strong><span> d'accès Premium.</span></p>
+  <h2 id="security-heading">Compte · sécurité &amp; profil</h2>
+  <p id="help-heading">Trouver une réponse sans parcourir tout le site.</p>
+`;
+window.document.body.appendChild(abonnement);
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.querySelector('#premium-kicker').textContent !== 'Fidirana Premium · mpianatra') {
+  throw new Error('Subscription page kicker did not switch to Malagasy');
+}
+if (window.document.querySelector('#subscription-title').textContent !== "Ny famandrihanao, ny satan'ny fidiranao ary ny dingana manaraka.") {
+  throw new Error('Main subscription heading did not switch to Malagasy');
+}
+if (!window.document.querySelector('#subscription-copy').textContent.includes('Jereo eto')) {
+  throw new Error('Main subscription description did not switch to Malagasy');
+}
+if (window.document.querySelector('#premium-counter').textContent !== '5 andro Premium sisa') {
+  throw new Error('Premium day counter was not translated or spacing was lost');
+}
+if (window.document.querySelector('#ia-counter').textContent !== '5 andro sisa ahafahana mampiasa ny IA') {
+  throw new Error('AI day counter did not switch to Malagasy');
+}
+if (window.document.querySelector('#premium-sentence').textContent !== "Mbola manana 5 andro ahafahana miditra amin'ny Premium.") {
+  throw new Error('Dynamic sentence did not preserve spaces around inserted values');
+}
+if (window.document.querySelector('#security-heading').textContent !== 'Kaonty · fiarovana sy mombamomba') {
+  throw new Error('Security page heading did not switch to Malagasy');
+}
+if (window.document.querySelector('#help-heading').textContent !== 'Mitadiava valiny nefa tsy mila mijery ny tranonkala manontolo.') {
+  throw new Error('Help page content did not switch to Malagasy');
+}
+
+// Les modifications de texte en place doivent être retraduites et réversibles.
+const mutable = window.document.createElement('p');
+mutable.appendChild(window.document.createTextNode('Aucun document trouvé.'));
+window.document.body.appendChild(mutable);
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (mutable.textContent !== 'Tsy nahitana tahirin-kevitra.') {
+  throw new Error('Inserted dynamic text was not translated');
+}
+mutable.firstChild.nodeValue = 'Déposer un document';
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (mutable.textContent !== 'Handefa tahirin-kevitra') {
+  throw new Error('In-place text mutation was not translated');
+}
+
 select.value = 'fr';
 select.dispatchEvent(new window.Event('change', { bubbles: true }));
 if (window.document.documentElement.getAttribute('lang') !== 'fr') throw new Error('HTML lang was not restored');
