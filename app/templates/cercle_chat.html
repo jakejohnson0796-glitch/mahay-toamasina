@@ -468,9 +468,11 @@
   {% else %}
   <p>Vous n'etes pas encore membre de ce cercle.</p>
   {% if cercle_est_national %}
-  <p class="stat-label">Ce cercle correspond a une autre mention, filiere ou niveau que le votre. Vous pouvez tout de meme demander a le rejoindre — le createur du cercle ou un administrateur validera votre demande.</p>
+  <p class="stat-label">Ce cercle correspond à une autre mention, un autre parcours ou un autre niveau que le tien. Tu peux demander à le rejoindre ; le créateur ou un administrateur examinera ta demande.</p>
+  {% elif type_cercle_courant == "libre" %}
+  <p class="stat-label">Ce groupe est libre, sans rattachement académique précis. Ta demande sera examinée par le créateur ou un administrateur.</p>
   {% else %}
-  <p class="stat-label">Ce cercle n'est pas rattache a un parcours particulier : votre demande sera examinee par le createur du cercle ou un administrateur.</p>
+  <p class="stat-label">Le rattachement académique de ce cercle doit être vérifié. Tu peux envoyer une demande, mais un créateur ou un administrateur devra confirmer sa cohérence avant de l'approuver.</p>
   {% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}
   <div class="erreur">Merci d'expliquer pourquoi vous souhaitez rejoindre ce cercle.</div>
