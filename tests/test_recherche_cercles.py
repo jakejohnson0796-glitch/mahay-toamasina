@@ -298,6 +298,67 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Sciences de Gestion", page.text)
         self.assertIn("Finance et Comptabilite", page.text)
 
+    def test_endpoint_prefere_le_parcours_du_niveau_exact_aux_lignes_sans_niveau(self):
+        programme_id = None
+        filiere_precise_id = None
+        niveau_initial = None
+        with Session(engine) as session:
+            filiere_legacy = session.get(Filiere, self.filiere_id)
+            niveau_initial = filiere_legacy.niveau
+            filiere_legacy.niveau = None
+            filiere_precise = Filiere(
+                nom=filiere_legacy.nom,
+                faculte_id=filiere_legacy.faculte_id,
+                mention_id=filiere_legacy.mention_id,
+                niveau="L3",
+            )
+            session.add(filiere_precise)
+            session.commit()
+            session.refresh(filiere_precise)
+            filiere_precise_id = filiere_precise.id
+            programme = ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere_precise.id,
+                est_active=True,
+            )
+            session.add(programme)
+            session.commit()
+            session.refresh(programme)
+            programme_id = programme.id
+
+        try:
+            page = self.client.get(
+                f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+                params={"niveau": "L3"},
+            )
+            self.assertEqual(page.status_code, 200)
+            option = next(
+                entree for entree in page.json()
+                if entree["nom"] == "Finance et Comptabilite"
+            )
+            self.assertEqual(option["id"], filiere_precise_id)
+        finally:
+            with Session(engine) as session:
+                programme = session.get(ProgrammeUniversitaire, programme_id) if programme_id else None
+                filiere_precise = session.get(Filiere, filiere_precise_id) if filiere_precise_id else None
+                filiere_legacy = session.get(Filiere, self.filiere_id)
+                if programme:
+                    session.delete(programme)
+                if filiere_precise:
+                    session.delete(filiere_precise)
+                if filiere_legacy:
+                    filiere_legacy.niveau = niveau_initial
+                    session.add(filiere_legacy)
+                session.commit()
+
+    def test_endpoint_refuse_un_code_niveau_inconnu(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "NIVEAU_INCONNU"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.json(), [])
+
     def test_endpoint_parcours_nationaux_accepte_un_niveau_optionnel(self):
         page = self.client.get(
             f"/api/academique/mentions/{self.mention_id}/parcours-nationaux"
