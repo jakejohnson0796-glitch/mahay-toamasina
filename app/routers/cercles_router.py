@@ -844,6 +844,7 @@ def liste_cercles(
             "mentions": mentions,
             "filiere_recherchee": filiere_recherchee,
             "niveaux": NIVEAUX,
+            "niveaux_libelles": NIVEAUX_LIBELLES,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
             "profil_academique_recherche": profil_academique_recherche,
@@ -934,6 +935,12 @@ def creer_cercle(
         }
         cercles_avec_info = [{
             "cercle": c,
+            "type_cercle": referentiel_academique.type_cercle(c, session),
+            "niveau_effectif": referentiel_academique.identite_cercle(c, session)["niveau"],
+            "niveau_libelle": NIVEAUX_LIBELLES.get(
+                referentiel_academique.identite_cercle(c, session)["niveau"],
+                referentiel_academique.identite_cercle(c, session)["niveau"],
+            ),
             "nb_membres": nb_membres_par_cercle.get(c.id, 0),
             "est_membre": c.id in membres_utilisateur,
             "en_attente": False,
@@ -943,7 +950,7 @@ def creer_cercle(
             request,
             "cercles_list.html",
             {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "utilisateur": utilisateur,
+                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "niveaux_libelles": NIVEAUX_LIBELLES, "utilisateur": utilisateur,
                 "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
                 "theme_du_jour": theme_service.get_theme_du_jour(),
                 "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
@@ -1250,7 +1257,7 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle):
+    if referentiel_academique.cercle_est_national(cercle, session):
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
@@ -1630,7 +1637,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle, session),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
