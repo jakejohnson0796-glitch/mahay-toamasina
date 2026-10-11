@@ -1059,10 +1059,14 @@ def creer_cercle(
         return RedirectResponse("/cercles?ok=demande_creation_envoyee", status_code=303)
 
     # --- Cas 2 : cercle "libre" (filiere seule ou aucune) — comportement inchange ---
+    # Ce chemin crée un vrai groupe libre : aucune mention, aucun niveau
+    # et aucun parcours ne sont conservés. Un parcours isolé sans mention/
+    # niveau était jusque-là stocké comme métadonnée partielle puis affiché
+    # "incomplet", ce qui contredisait le libellé "groupe libre".
     cercle = CercleEtude(
         nom=nom,
         description=description or None,
-        filiere_id=filiere_id_nettoye,
+        filiere_id=None,
         createur_id=utilisateur.id,
     )
     session.add(cercle)
