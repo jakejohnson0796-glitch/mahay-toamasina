@@ -1,0 +1,154 @@
+/*
+ * Gasy Mahay — préférences de navigation et cohérence visuelle des cercles.
+ * Pas de dépendance externe, ni d'animation longue : ces règles gardent la
+ * navigation stable et rendent la hiérarchie académique facile à lire.
+ */
+
+/* Le choix de langue est regroupé avec les préférences, sous la navigation. */
+.tb-sidebar-preferences {
+  display: grid;
+  gap: .45rem;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-top: .45rem;
+}
+
+.tb-sidebar-preferences .tb-sidebar-langue {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .4rem;
+  margin: 0;
+  padding: .68rem .65rem .7rem;
+  border: 1px solid rgba(255, 255, 255, .11);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .025));
+  color: #e2eee9;
+}
+
+.tb-sidebar-preferences .tb-sidebar-langue label {
+  display: block;
+  color: #b6cbc4;
+  font-size: .63rem;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.tb-sidebar-preferences .tb-sidebar-langue select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.45rem;
+  padding: .55rem .7rem;
+  border: 1px solid rgba(255, 255, 255, .17);
+  border-radius: 9px;
+  background-color: #0b3a3d;
+  color: #fff;
+  font: 600 .76rem/1.25 Inter, system-ui, sans-serif;
+  cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+
+.tb-sidebar-preferences .tb-sidebar-langue select:hover {
+  border-color: rgba(240, 199, 139, .6);
+}
+
+.tb-sidebar-preferences .tb-sidebar-langue select:focus-visible {
+  outline: 2px solid #f0c78b;
+  outline-offset: 2px;
+}
+
+.tb-sidebar-preferences .tb-toggle-theme {
+  margin-top: 0;
+}
+
+@media (min-width: 901px) {
+  body.sidebar-compact .tb-sidebar-preferences {
+    gap: .35rem;
+    margin-top: .25rem;
+  }
+
+  body.sidebar-compact .tb-sidebar-preferences .tb-sidebar-langue {
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: .25rem;
+    border-radius: 9px;
+  }
+
+  body.sidebar-compact .tb-sidebar-preferences .tb-sidebar-langue label {
+    display: none;
+  }
+
+  body.sidebar-compact .tb-sidebar-preferences .tb-sidebar-langue select {
+    min-height: 2.2rem;
+    padding: .3rem .12rem;
+    font-size: .6rem;
+    text-align: center;
+    text-overflow: clip;
+  }
+}
+
+@media (max-width: 900px) {
+  .tb-sidebar-preferences {
+    margin-top: .35rem;
+    padding-bottom: .35rem;
+  }
+}
+
+/* Les badges académiques restent groupés et lisibles, même avec des noms longs. */
+.cercles-page-shell .carte-claire-hierarchie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem .42rem;
+  min-width: 0;
+  line-height: 1.55;
+}
+
+.cercles-page-shell .carte-claire-hierarchie > span:not(.puce-niveau):not(.puce-incomplet) {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.cercles-page-shell .carte-claire-hierarchie .puce-niveau {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  white-space: nowrap;
+  padding: .28rem .52rem;
+  border-radius: 999px;
+  border: 1px solid rgba(22, 126, 119, .28);
+  background: rgba(22, 126, 119, .09);
+  color: var(--content-text, #203a36);
+  font-size: .68rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.cercles-page-shell .cercle-card-premium-type {
+  max-width: calc(100% - 1rem);
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.cercles-page-shell #creation-info-tronc-commun[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .cercles-page-shell .carte-claire-hierarchie {
+    gap: .3rem .35rem;
+  }
+
+  .cercles-page-shell .carte-claire-hierarchie .puce-niveau {
+    font-size: .66rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-sidebar-preferences .tb-sidebar-langue select {
+    transition: none !important;
+  }
+}
