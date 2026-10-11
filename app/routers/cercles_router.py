@@ -881,6 +881,11 @@ def creer_cercle(
     mention_id_nettoye = entier_ou_none(mention_id)
     niveau_nettoye = (niveau or "").strip() or None
 
+    if (mention_id or "").strip() and not mention_id_nettoye:
+        return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+    if (filiere_id or "").strip() and not filiere_id_nettoye:
+        return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+
     # Toute sélection académique doit être complète : ne jamais transformer
     # silencieusement une mention/parcours/niveau partiel en groupe libre.
     champs_academiques = bool(
