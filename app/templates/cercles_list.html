@@ -331,7 +331,7 @@
     {% if cercles_profil_visibilite.mention_nom %}
     <p>
       {{ cercles_profil_visibilite.mention_nom }}
-      {% if cercles_profil_visibilite.niveau %} · {{ cercles_profil_visibilite.niveau }}{% endif %}
+      {% if cercles_profil_visibilite.niveau %} · {{ niveaux_affichage.get(cercles_profil_visibilite.niveau, cercles_profil_visibilite.niveau) }}{% endif %}
     </p>
     {% endif %}
   </div>
@@ -353,7 +353,7 @@
           <p class="cercles-visibilite-meta">
             {% if info.mention %}{{ info.mention.nom }}{% endif %}
             {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.cercle.niveau %} · {{ niveaux_affichage.get(info.cercle.niveau, info.cercle.niveau) }}{% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           <span class="puce-statut">Tu es membre</span>
