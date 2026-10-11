@@ -17,9 +17,14 @@ def test_language_selector_is_a_single_control_in_the_sidebar_preferences_footer
     base = BASE.read_text(encoding="utf-8")
     css = SIDEBAR_CSS.read_text(encoding="utf-8")
     assert base.count('id="select-langue"') == 1
-    control = base.index('class="tb-sidebar-langue tb-sidebar-langue-footer"')
-    assert control < base.index("</aside>")
-    assert base.index('class="tb-sidebar-nav"') < control
+    assert base.count("{{ preference_langue() }}") == 2
+    account_selector = base.index("{{ preference_langue() }}")
+    account_button = base.index('id="bouton-menu-compte"')
+    guest_selector = base.rindex("{{ preference_langue() }}")
+    guest_nav_start = base.index('href="/inscription"')
+    guest_nav_end = base.index("</nav>", guest_nav_start)
+    assert account_selector < account_button
+    assert guest_nav_start < guest_nav_end < guest_selector < base.index("</aside>")
     assert 'label for="select-langue" data-langue-label' in base
     assert 'option value="fr">Français</option>' in base
     assert 'option value="mg">Malagasy</option>' in base
