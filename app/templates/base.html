@@ -276,18 +276,18 @@
         </select>
       </div>
       {% if request.session.get("user_id") %}
-          <button type="button" id="bouton-theme" class="tb-toggle-theme" aria-label="Changer d'apparence" title="Changer d'apparence" aria-pressed="false">
-            <span class="tb-toggle-theme-label">
-              <span class="tb-toggle-theme-label-title">Apparence</span>
-              <span class="tb-toggle-theme-label-state" data-theme-label>Clair</span>
-            </span>
-            <span class="tb-toggle-theme-switch" aria-hidden="true">
-              <span class="tb-toggle-theme-switch-icon tb-toggle-theme-switch-icon-lune">{{ icone("jours_restants", 13) }}</span>
-              <span class="tb-toggle-theme-switch-piste"><span class="tb-toggle-theme-switch-pastille"></span></span>
-              <span class="tb-toggle-theme-switch-icon tb-toggle-theme-switch-icon-soleil">{{ icone("soleil", 13) }}</span>
-            </span>
-          </button>
-            {% endif %}
+      <button type="button" id="bouton-theme" class="tb-toggle-theme" aria-label="Changer d'apparence" title="Changer d'apparence" aria-pressed="false">
+        <span class="tb-toggle-theme-label">
+          <span class="tb-toggle-theme-label-title">Apparence</span>
+          <span class="tb-toggle-theme-label-state" data-theme-label>Clair</span>
+        </span>
+        <span class="tb-toggle-theme-switch" aria-hidden="true">
+          <span class="tb-toggle-theme-switch-icon tb-toggle-theme-switch-icon-lune">{{ icone("jours_restants", 13) }}</span>
+          <span class="tb-toggle-theme-switch-piste"><span class="tb-toggle-theme-switch-pastille"></span></span>
+          <span class="tb-toggle-theme-switch-icon tb-toggle-theme-switch-icon-soleil">{{ icone("soleil", 13) }}</span>
+        </span>
+      </button>
+      {% endif %}
     </div>
   </aside>
 
