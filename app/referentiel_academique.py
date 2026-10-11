@@ -410,7 +410,7 @@ def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
 
     libre        : aucun attribut académique ;
     tronc_commun : mention active + niveau normalisé, sans parcours ;
-    parcours     : mention + parcours réellement proposé + niveau compatible ;
+    parcours     : mention + parcours de cette mention + niveau compatible ;
     incomplet    : combinaison partielle, inactive ou incohérente.
 
     session reste optionnelle pour préserver les appels historiques. Les
@@ -439,9 +439,6 @@ def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
             not filiere
             or filiere.mention_id != cercle.mention_id
             or (filiere.niveau is not None and filiere.niveau != cercle.niveau)
-            or not parcours_cercle_offert(
-                session, cercle.mention_id, cercle.filiere_id, cercle.niveau
-            )
         ):
             return "incomplet"
     return nature
@@ -493,6 +490,10 @@ def erreur_cercle_parcours(
         return "Mention, parcours et niveau sont obligatoires."
     if niveau not in NIVEAUX:
         return "Niveau invalide."
+
+    mention = session.get(Mention, mention_id)
+    if not mention or not mention.est_active:
+        return "Cette mention doit être active."
 
     filiere = session.get(Filiere, filiere_id)
     if not filiere:
