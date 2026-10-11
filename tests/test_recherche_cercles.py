@@ -190,12 +190,34 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Finance et Comptabilite — Licence 3", page.text)
         self.assertIn("Droit prive — Licence 3", page.text)
 
-    def test_filtre_par_niveau_invalide_est_ignore_silencieusement(self):
-        """Un niveau bricole dans l'URL ne doit pas planter la page — le
-        filtre est simplement ignore (voir liste_cercles)."""
+    def test_filtre_par_niveau_invalide_ne_doit_pas_elargir_la_recherche(self):
+        """Un niveau inconnu ne doit pas etre ignore car cela montrerait
+        des cercles d'autres niveaux comme si le filtre avait ete respecte."""
         page = self.client.get("/cercles", params={"niveau": "NIVEAU_INEXISTANT"})
         self.assertEqual(page.status_code, 200)
-        self.assertIn("Revision Analyse Financiere", page.text)
+        self.assertIn("Aucun résultat", page.text)
+        self.assertNotIn("Revision Analyse Financiere", page.text)
+
+    def test_creation_academique_partielle_ne_devient_pas_un_groupe_libre(self):
+        page_formulaire = self.client.get("/cercles")
+        jeton = re.search(r'name="_csrf" value="([^"]+)"', page_formulaire.text).group(1)
+        reponse = self.client.post(
+            "/cercles/creer",
+            data={
+                "nom": "Cercle academique incomplet",
+                "mention_id": str(self.mention_id),
+                "niveau": "",
+                "_csrf": jeton,
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse.status_code, 303)
+        self.assertIn("erreur=identite_academique_incomplete", reponse.headers.get("location", ""))
+        with Session(engine) as session:
+            cercle_cree = session.exec(
+                select(CercleEtude).where(CercleEtude.nom == "Cercle academique incomplet")
+            ).first()
+        self.assertIsNone(cercle_cree)
 
     def test_disponibles_pour_moi_exclut_le_cercle_national_dune_autre_filiere(self):
         """L'etudiant de test est en Finance L3 : il doit voir le cercle
@@ -306,6 +328,14 @@ class TestRechercheCercles(unittest.TestCase):
         noms = {entree["nom"] for entree in page.json()}
         self.assertIn("Finance et Comptabilite", noms)
         self.assertIn("Droit prive", noms)
+
+    def test_endpoint_parcours_nationaux_refuse_un_niveau_inconnu(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "N5"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.json(), [])
 
 
 
