@@ -137,16 +137,16 @@
   <div class="cercles-hero-contenu">
     <span class="cercles-hero-kicker">Université de Toamasina · Cercles d'étude</span>
     <h1 id="titre-hero-cercles" class="cercles-hero-titre">Réviser ensemble.<br>Progresser plus vite.</h1>
-    <p class="cercles-hero-sous-titre">Trouve un espace de travail autour de ta mention, de ton parcours et de ton niveau, puis retrouve les autres étudiants au même endroit.</p>
+    <p class="cercles-hero-sous-titre">Trouve un espace de travail par domaine, mention et niveau, puis précise le parcours quand il existe.</p>
     <div class="cercles-hero-actions">
       <a class="bouton bouton-primaire" href="#formulaire-recherche-cercles">Explorer les cercles</a>
       <a class="bouton bouton-secondaire" href="#resultats-cercles">Voir les résultats</a>
     </div>
   </div>
   <div class="cercles-hero-stats" aria-label="Principes de la recherche">
-    <div class="cercles-hero-stat"><strong>01</strong><span>Mention + niveau</span></div>
-    <div class="cercles-hero-stat"><strong>02</strong><span>Parcours précis</span></div>
-    <div class="cercles-hero-stat"><strong>03</strong><span>Groupes nationaux</span></div>
+    <div class="cercles-hero-stat"><strong>01</strong><span>Domaine → mention</span></div>
+    <div class="cercles-hero-stat"><strong>02</strong><span>Niveau d’étude</span></div>
+    <div class="cercles-hero-stat"><strong>03</strong><span>Parcours si proposé</span></div>
     <div class="cercles-hero-stat"><strong>04</strong><span>Chat en direct</span></div>
   </div>
 </section>
@@ -165,7 +165,7 @@
   {% endif %}
   {% if cercles_profil_visibilite and cercles_profil_visibilite.mention_id %}
   <a class="cercles-raccourci" href="#cercles-ma-mention">🎓 Ma mention</a>
-  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous ma mention</a>
+  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous les cercles de ma mention</a>
   {% endif %}
   {% if cercles_profil_visibilite and cercles_profil_visibilite.domaine_id %}
   <a class="cercles-raccourci" href="/cercles?domaine_id={{ cercles_profil_visibilite.domaine_id }}">🌐 Mon domaine</a>
@@ -475,7 +475,7 @@
       <select id="recherche_niveau" name="niveau">
         <option value="">Tous les niveaux</option>
         {% for n in niveaux %}
-        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ n }}</option>
+        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ libelles_niveaux.get(n, n) }} ({{ n }})</option>
         {% endfor %}
       </select>
     </div>
@@ -509,6 +509,11 @@
   <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_requis" %}<div class="erreur">Choisis un niveau pour toute création de cercle rattaché à une mention ou à un parcours.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "hierarchie_incomplete" %}<div class="erreur">Pour créer un cercle académique, choisis une mention ou un parcours avec un niveau. Pour un groupe libre, laisse les champs académiques vides.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "mention_parcours_incoherents" %}<div class="erreur">Le parcours sélectionné n'appartient pas à la mention choisie. Vérifie la mention et le parcours.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur">Ce parcours n'est pas proposé au niveau sélectionné. Choisis le niveau exact puis réessaie.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "tronc_commun_indisponible" %}<div class="erreur">Le tronc commun n'est pas disponible pour cette combinaison de mention et niveau dans ton établissement. Vérifie ton profil académique.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
@@ -535,7 +540,7 @@
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
-      <option value="{{ n }}" data-no-translate>{{ n }}</option>
+      <option value="{{ n }}" data-no-translate>{{ libelles_niveaux.get(n, n) }} ({{ n }})</option>
       {% endfor %}
     </select>
 
@@ -614,28 +619,28 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+        <span class="cercle-card-premium-type">{% if info.type_cercle == "parcours" %}Cercle de parcours{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}À vérifier{% endif %}</span>
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true" class="carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
           {% if info.type_cercle == "parcours" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigné" }}</span>
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
+          {% if info.cercle.niveau %}<span aria-hidden="true"> · </span><span class="puce-niveau">{{ libelles_niveaux.get(info.cercle.niveau, info.cercle.niveau) }}</span>{% endif %}
           {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
-          {% if info.cercle.niveau %}<span class="puce-niveau">{{ info.cercle.niveau }}</span>{% endif %}
           {% elif info.type_cercle == "tronc_commun" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigné" }}</span>
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
+          <span aria-hidden="true"> · </span><span class="puce-niveau">{{ libelles_niveaux.get(info.cercle.niveau, info.cercle.niveau) }}</span>
           <span aria-hidden="true"> · </span><span>Tronc commun</span>
-          <span class="puce-niveau">{{ info.cercle.niveau }}</span>
           {% elif info.type_cercle == "libre" %}
-          <span>Groupe libre</span>
+          <span>Groupe libre · sans rattachement académique</span>
           {% else %}
-          <span class="puce-incomplet">Référentiel à vérifier</span>
+          <span class="puce-incomplet">Référentiel à vérifier : mention, niveau ou parcours incohérent</span>
           {% endif %}
         </div>
       </div>
