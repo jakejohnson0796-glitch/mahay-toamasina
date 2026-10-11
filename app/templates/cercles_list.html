@@ -352,7 +352,7 @@
           <p class="cercles-visibilite-meta">
             {% if info.mention %}{{ info.mention.nom }}{% endif %}
             {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.cercle.niveau %} · {{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) }}{% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           <span class="puce-statut">Tu es membre</span>
@@ -475,7 +475,7 @@
       <select id="recherche_niveau" name="niveau">
         <option value="">Tous les niveaux</option>
         {% for n in niveaux %}
-        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ n }}</option>
+        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ niveaux_libelles.get(n, n) }}</option>
         {% endfor %}
       </select>
     </div>
@@ -508,6 +508,9 @@
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  {% if request.query_params.get("erreur") == "identite_academique_incomplete" %}<div class="erreur" role="alert">Choisis une mention et un niveau, ou efface les champs académiques pour créer un groupe libre.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_mention_incoherent" %}<div class="erreur" role="alert">Le parcours sélectionné ne correspond pas à la mention choisie. Vérifie la mention et le parcours.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "filiere_introuvable" %}<div class="erreur" role="alert">Le parcours sélectionné n’existe pas ou n’est plus disponible.</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
@@ -535,7 +538,7 @@
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
-      <option value="{{ n }}" data-no-translate>{{ n }}</option>
+      <option value="{{ n }}" data-no-translate>{{ niveaux_libelles.get(n, n) }}</option>
       {% endfor %}
     </select>
 
@@ -614,11 +617,11 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+        <span class="cercle-card-premium-type">{% if info.type_cercle == "parcours" %}Parcours{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}À vérifier{% endif %}</span>
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true" class="carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
