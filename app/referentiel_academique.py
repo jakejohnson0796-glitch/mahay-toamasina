@@ -449,7 +449,11 @@ def parcours_cercle_offert(
     niveau: Optional[str],
 ) -> bool:
     """Vrai si un cercle de parcours correspond a une offre academique reelle."""
-    if not mention_id or not filiere_id or not niveau:
+    if not mention_id or not filiere_id or not niveau or niveau not in NIVEAUX:
+        return False
+
+    mention = session.get(Mention, mention_id)
+    if not mention or not mention.est_active:
         return False
 
     filiere_reference = session.get(Filiere, filiere_id)
@@ -481,6 +485,10 @@ def erreur_cercle_parcours(
         return "Mention, parcours et niveau sont obligatoires."
     if niveau not in NIVEAUX:
         return "Niveau invalide."
+
+    mention = session.get(Mention, mention_id)
+    if not mention or not mention.est_active:
+        return "Mention introuvable ou inactive."
 
     filiere = session.get(Filiere, filiere_id)
     if not filiere:
