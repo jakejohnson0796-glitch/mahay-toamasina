@@ -640,7 +640,7 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -874,6 +874,19 @@ def creer_cercle(
     filiere_id_nettoye = entier_ou_none(filiere_id)
     mention_id_nettoye = entier_ou_none(mention_id)
 
+    # Ne jamais transformer une sélection académique partielle en groupe
+    # libre silencieusement. Le groupe libre n'est créé que si les trois
+    # champs académiques sont réellement vides.
+    if (mention_id or "").strip() and mention_id_nettoye is None:
+        return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+    if (filiere_id or "").strip() and filiere_id_nettoye is None:
+        return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+    niveau_nettoye = (niveau or "").strip() or None
+    if (mention_id_nettoye or filiere_id_nettoye or niveau_nettoye) and (
+        not niveau_nettoye or not (mention_id_nettoye or filiere_id_nettoye)
+    ):
+        return RedirectResponse("/cercles?erreur=identite_academique_incomplete", status_code=303)
+
     # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
     # numero de telephone. On verrouille la ligne utilisateur
     # (SELECT ... FOR UPDATE) avant de compter, pour que deux creations
@@ -925,8 +938,6 @@ def creer_cercle(
             },
         )
 
-    niveau_nettoye = (niveau or "").strip() or None
-
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
         if niveau_nettoye not in NIVEAUX:
@@ -943,6 +954,8 @@ def creer_cercle(
                 # peut pas encore porter de cercle national (voir
                 # /admin/referentiel pour l'assigner).
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            if mention_id_nettoye is not None and mention_id_nettoye != filiere.mention_id:
+                return RedirectResponse("/cercles?erreur=parcours_mention_incoherent", status_code=303)
             mention_id_cible = filiere.mention_id
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
@@ -1203,7 +1216,8 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle):
+    filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+    if referentiel_academique.cercle_est_national(cercle, filiere_cercle):
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
@@ -1575,6 +1589,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "epingle_par": noms_epingleurs.get(ligne_epinglee.epingle_par_id),
             }
 
+    filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
     return templates.TemplateResponse(
         request,
         "cercle_chat.html",
@@ -1583,7 +1598,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle, filiere_cercle),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
