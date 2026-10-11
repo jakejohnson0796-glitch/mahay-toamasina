@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -258,17 +259,31 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau and niveau not in NIVEAUX:
+        return []
 
+    # Une offre ne compte que dans l'université qui possède réellement la
+    # composante de cette filière. Un lien ProgrammeUniversitaire croisé
+    # vers une autre université ne doit pas rendre ce parcours sélectionnable.
     requete = (
         select(Filiere)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
         .where(
             Filiere.mention_id == mention_id,
+            Faculte.universite_id.is_not(None),
+            ProgrammeUniversitaire.universite_id == Faculte.universite_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
         )
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
+        # Les lignes avec niveau explicite sont prioritaires sur les anciennes
+        # lignes NULL : si le même intitulé existe à L1 et L3, un cercle L3
+        # doit être rattaché à la ligne L3, pas à celle de L1.
+        requete = requete.order_by(Filiere.niveau.is_(None), Filiere.nom, Filiere.id)
+    else:
+        requete = requete.order_by(Filiere.nom, Filiere.id)
     filieres = session.exec(requete.distinct()).all()
     filieres = [
         f for f in filieres
