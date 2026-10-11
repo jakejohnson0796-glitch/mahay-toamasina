@@ -23,6 +23,8 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from .. import referentiel_academique
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -242,45 +244,65 @@ def lister_parcours_nationaux(
     niveau: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
-    """Parcours nommes pour cette mention a ce niveau, DEDUPLIQUES par
-    nom normalise A TRAVERS TOUTES LES UNIVERSITES (voir
-    referentiel_academique._normaliser_nom_parcours) : contrairement a
-    /composantes/{id}/mentions/{id}/filieres (scope a une seule
-    universite, pour l'inscription), un cercle est national -- "Finance"
-    a Toamasina et a Fianarantsoa doit apparaitre comme UNE SEULE
-    option, pas deux. Un seul id representant est renvoye par groupe
-    (peu importe lequel : voir _filieres_equivalentes, utilisee cote
-    recherche/creation de cercle pour retrouver tout le groupe a partir
-    de ce representant).
+    """Parcours nationaux réellement proposés, filtrés de la même façon que
+    la validation des cercles.
 
-    Liste VIDE = tronc commun a ce niveau pour cette mention (aucun
-    parcours a choisir), meme convention que pour l'inscription."""
+    Les anciennes fiches sans ProgrammeUniversitaire restent proposées
+    uniquement selon la règle de compatibilité historique centralisée dans
+    offre_filiere_active_universite(). Les doublons d'un même parcours dans
+    plusieurs universités sont fusionnés, mais un nom identique en L3 et M1
+    reste un choix distinct. À niveau précis, les lignes exactes sont
+    préférées aux fiches historiques dont le niveau vaut NULL.
+    """
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau and niveau not in NIVEAUX:
+        return []
 
-    requete = (
-        select(Filiere)
-        .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
-        .where(
-            Filiere.mention_id == mention_id,
-            ProgrammeUniversitaire.est_active == True,  # noqa: E712
-        )
-    )
+    requete = select(Filiere).where(Filiere.mention_id == mention_id)
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
-    filieres = session.exec(requete.distinct()).all()
-    filieres = [
-        f for f in filieres
-        if _normaliser_nom_parcours(f.nom) != "tronc commun"
-    ]
 
-    vus: dict[str, dict] = {}
-    for f in filieres:
-        cle = _normaliser_nom_parcours(f.nom)
-        if cle not in vus:
-            vus[cle] = {"id": f.id, "nom": f.nom}
-    return sorted(vus.values(), key=lambda p: p["nom"])
+    candidates = session.exec(requete.order_by(Filiere.nom, Filiere.id)).all()
+    candidats_valides = []
+    for filiere in candidates:
+        if _normaliser_nom_parcours(filiere.nom) == "tronc commun":
+            continue
+        faculte = session.get(Faculte, filiere.faculte_id)
+        if not faculte or not faculte.universite_id:
+            continue
+        if not referentiel_academique.offre_filiere_active_universite(
+            session, faculte.universite_id, filiere.id
+        ):
+            continue
+        candidats_valides.append(filiere)
+
+    vus: dict[tuple[str, Optional[str]], Filiere] = {}
+    for filiere in candidats_valides:
+        cle_nom = _normaliser_nom_parcours(filiere.nom)
+        cle_niveau = niveau or filiere.niveau
+        cle = (cle_nom, cle_niveau)
+        precedente = vus.get(cle)
+        if precedente is None:
+            vus[cle] = filiere
+            continue
+
+        # Au niveau demandé, préférer une ligne précisément datée à une
+        # ligne historique NULL. À égalité, prendre l'ID stable le plus bas.
+        def priorite(item: Filiere) -> tuple[int, int]:
+            niveau_exact = bool(niveau and item.niveau == niveau)
+            return (0 if niveau_exact else 1, item.id or 0)
+
+        if priorite(filiere) < priorite(precedente):
+            vus[cle] = filiere
+
+    resultat = [
+        {"id": item.id, "nom": item.nom, "niveau": niveau or item.niveau}
+        for item in vus.values()
+    ]
+    return sorted(resultat, key=lambda item: (item["nom"].casefold(), item["niveau"] or "", item["id"] or 0))
+
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine
