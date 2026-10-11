@@ -28,6 +28,8 @@ from app.referentiel_academique import (
     parcours_cercle_offert,
     offre_filiere_active_universite,
     tronc_commun_offert,
+    filiere_canonique_pour_cercle,
+    _filieres_equivalentes,
 )
 
 
@@ -470,6 +472,96 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(filiere)
             session.commit()
             self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
+
+
+    def test_cercle_historique_recupere_mention_et_niveau_depuis_son_parcours(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L3"
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.add(filiere)
+            session.commit()
+
+            cercle = CercleEtude(
+                nom="Cercle historique L3",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=filiere.id,
+                niveau=None,
+            )
+            session.add(cercle)
+            session.commit()
+            session.refresh(cercle)
+
+            utilisateur = Utilisateur(
+                nom="Profil historique",
+                telephone="0340000027",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle, session=session), "parcours")
+            self.assertTrue(cercle_est_national(cercle, session=session))
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+            ids = session.exec(
+                select(CercleEtude.id).where(condition_cercles_disponibles(utilisateur, session))
+            ).all()
+            self.assertIn(cercle.id, ids)
+
+    def test_cercle_avec_mention_contradictoire_reste_a_verifier(self):
+        with Session(self.engine) as session:
+            autre_filiere = session.get(Filiere, self.autre_filiere_id)
+            cercle = CercleEtude(
+                nom="Mention contradictoire",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=autre_filiere.id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle, session=session), "incomplet")
+            self.assertFalse(cercle_est_national(cercle, session=session))
+
+    def test_equivalences_et_representant_ne_melangent_pas_les_niveaux(self):
+        with Session(self.engine) as session:
+            original = session.get(Filiere, self.filiere_id)
+            original.niveau = "L3"
+            ligne_m1 = Filiere(
+                nom=original.nom,
+                faculte_id=original.faculte_id,
+                mention_id=original.mention_id,
+                niveau="M1",
+            )
+            ligne_legacy = Filiere(
+                nom=original.nom,
+                faculte_id=original.faculte_id,
+                mention_id=original.mention_id,
+                niveau=None,
+            )
+            session.add(original)
+            session.add(ligne_m1)
+            session.add(ligne_legacy)
+            session.commit()
+            session.refresh(ligne_m1)
+            session.refresh(ligne_legacy)
+
+            ids_l3 = _filieres_equivalentes(session, original, niveau="L3")
+            self.assertIn(original.id, ids_l3)
+            self.assertIn(ligne_legacy.id, ids_l3)
+            self.assertNotIn(ligne_m1.id, ids_l3)
+
+            representant_m1 = filiere_canonique_pour_cercle(
+                session, ligne_legacy, niveau="M1"
+            )
+            self.assertEqual(representant_m1.id, ligne_m1.id)
 
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
