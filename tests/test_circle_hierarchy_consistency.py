@@ -57,6 +57,8 @@ def test_circle_creation_offers_explicit_tronc_commun_and_resets_stale_level():
     assert 'id="creation-info-tronc-commun" hidden' in template
     assert "infoTronc.hidden = false" in js
     assert "si aucun parcours spécifique n'est proposé" in js
+    assert "if (rows === null)" in js
+    assert "Référentiel indisponible — réessaie" in js
 
 
 def test_server_does_not_silently_convert_incomplete_academic_choices_to_free_groups():
@@ -69,6 +71,9 @@ def test_server_does_not_silently_convert_incomplete_academic_choices_to_free_gr
     assert 'request.query_params.get("erreur") == "mention_requise"' in template
     assert 'filiere_id_nettoye = None if filiere_id in (None, "", "tronc_commun")' in router
     assert 'mention_id_nettoye != filiere.mention_id' in router
+    # Le chemin "groupe libre" doit être réellement libre, et non conserver
+    # un parcours isolé que la carte classerait ensuite comme incomplet.
+    assert 'filiere_id=None,\n        createur_id=utilisateur.id' in router
 
 
 def test_circle_type_and_pathway_api_validate_effective_mention_and_requested_level():
