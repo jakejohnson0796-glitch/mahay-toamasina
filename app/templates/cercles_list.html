@@ -523,6 +523,7 @@
   <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "referentiel_incoherent" %}<div class="erreur">Ce cercle contient des informations académiques contradictoires. Il est temporairement exclu des suggestions ; un administrateur doit vérifier sa mention, son niveau et son parcours.</div>{% endif %}
   {% if request.query_params.get("erreur") == "referentiel_incomplet" %}<div class="erreur">Choisissez une mention et un niveau, puis un parcours si ce niveau en propose un. Pour créer un groupe libre, laissez tous les champs académiques vides.</div>{% endif %}
   {% if request.query_params.get("erreur") == "parcours_mention_incoherents" %}<div class="erreur">Le parcours choisi ne correspond pas à la mention sélectionnée. Vérifiez vos choix et réessayez.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
