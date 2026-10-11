@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -258,17 +259,26 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau and niveau not in NIVEAUX:
+        return []
 
     requete = (
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .where(
             Filiere.mention_id == mention_id,
+            ProgrammeUniversitaire.universite_id == Faculte.universite_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
         )
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
+    # Les lignes précises (par exemple CCA en M1) doivent précéder les
+    # lignes héritées sans niveau pour un même parcours normalisé. Sinon la
+    # création d'un cercle M1 pouvait retenir une Filière NULL et perdre ses
+    # équivalences nationales avec les autres universités.
+    requete = requete.order_by(Filiere.niveau.is_(None), Filiere.nom, Filiere.id)
     filieres = session.exec(requete.distinct()).all()
     filieres = [
         f for f in filieres
