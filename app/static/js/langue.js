@@ -15,6 +15,8 @@
   ].join(",");
   var TRADUCTIONS_MG = Object.freeze({
     "Langue": "Fiteny",
+    "Préférences": "Fikirana",
+    "Préférences de l’interface": "Fikirana ny interface",
     "Choisir la langue": "Safidio ny fiteny",
     "Français": "Frantsay",
     "Tableau de bord": "Fijerena ankapobeny",
