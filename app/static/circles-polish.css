@@ -1,0 +1,136 @@
+/*
+ * Gasy Mahay — finition des cercles d'étude.
+ * Sélecteurs scoppés pour rendre lisible la hiérarchie nationale sans changer
+ * les champs métier : Domaine → Mention → Parcours → Niveau.
+ */
+
+.app-page main.main-clair .cercles-page-shell .carte-recherche-cercles .filtres {
+  align-items: end;
+  gap: .9rem;
+}
+
+.app-page main.main-clair .cercles-page-shell .carte-recherche-cercles label {
+  display: block;
+  margin-bottom: .38rem;
+  color: var(--content-text);
+  font-size: .74rem;
+  font-weight: 750;
+  letter-spacing: .01em;
+}
+
+.app-page main.main-clair .cercles-page-shell .carte-recherche-cercles .stat-label {
+  line-height: 1.5;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium {
+  min-width: 0;
+  height: 100%;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium-inner {
+  min-width: 0;
+  height: 100%;
+  align-items: stretch;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium-contenu {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium .carte-claire-titre {
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium .carte-claire-hierarchie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .32rem;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium .carte-claire-hierarchie > span:not([aria-hidden="true"]) {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  padding: .22rem .42rem;
+  border: 1px solid var(--content-border);
+  border-radius: 7px;
+  background: var(--content-bg);
+  color: var(--content-text-muted);
+  font-size: .67rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium .carte-claire-hierarchie > span[aria-hidden="true"] {
+  display: none;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium .carte-claire-hierarchie > .puce-niveau {
+  flex: 0 0 auto;
+  border-color: color-mix(in srgb, var(--refonte-teal, #2d827d) 42%, var(--content-border));
+  background: color-mix(in srgb, var(--refonte-teal, #2d827d) 10%, var(--content-surface));
+  color: var(--content-text);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.app-page main.main-clair .cercles-page-shell .cercle-card-premium .carte-claire-hierarchie > .puce-incomplet {
+  border-color: color-mix(in srgb, #c78340 48%, var(--content-border));
+  background: color-mix(in srgb, #c78340 10%, var(--content-surface));
+  color: var(--content-text);
+}
+
+.app-page main.main-clair .cercles-page-shell .cercles-visibilite-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.app-page main.main-clair .cercles-page-shell #creation-info-tronc-commun[hidden] {
+  display: none !important;
+}
+
+html[data-theme="dark"] .app-page main.main-clair .cercles-page-shell .carte-recherche-cercles {
+  background: var(--content-surface) !important;
+}
+
+html[data-theme="dark"] .app-page main.main-clair .cercles-page-shell .carte-recherche-cercles select,
+html[data-theme="dark"] .app-page main.main-clair .cercles-page-shell .carte-recherche-cercles input,
+html[data-theme="dark"] .app-page main.main-clair .cercles-page-shell .carte-recherche-cercles textarea {
+  border-color: var(--content-border) !important;
+  background: var(--content-bg) !important;
+  color: var(--content-text) !important;
+}
+
+@media (max-width: 640px) {
+  .app-page main.main-clair .cercles-page-shell .cercle-card-premium-inner {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: .65rem;
+    padding: .65rem;
+  }
+
+  .app-page main.main-clair .cercles-page-shell .cercle-card-premium-media {
+    min-height: 110px;
+  }
+
+  .app-page main.main-clair .cercles-page-shell .cercle-card-premium .carte-claire-hierarchie > span:not([aria-hidden="true"]) {
+    font-size: .64rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-page main.main-clair .cercles-page-shell .cercle-card-premium {
+    transition: none !important;
+    transform: none !important;
+  }
+}
