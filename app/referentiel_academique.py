@@ -20,7 +20,7 @@ Regles implementees (voir le brief "cercles nationaux") :
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlmodel import Session, and_, or_, select
+from sqlmodel import Session, and_, func, or_, select
 
 from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire, RoleUtilisateur, Utilisateur
 from .referentiel import NIVEAUX
@@ -613,11 +613,25 @@ def condition_cercles_disponibles(
     mention_id = profil["mention"].id
     filiere_utilisateur = profil["filiere"]
 
+    # Les cercles historiques peuvent n'avoir que filiere_id. Utiliser
+    # la mention effective (cercle.mention_id, sinon filiere.mention_id)
+    # comme dans type_cercle()/profil_correspond_au_cercle().
+    mention_cercle_effective = func.coalesce(
+        CercleEtude.mention_id,
+        select(Filiere.mention_id)
+        .where(Filiere.id == CercleEtude.filiere_id)
+        .scalar_subquery(),
+    )
+    filiere_cercle_coherente = select(Filiere.id).where(
+        Filiere.id == CercleEtude.filiere_id,
+        Filiere.mention_id == mention_cercle_effective,
+        or_(Filiere.niveau.is_(None), Filiere.niveau == CercleEtude.niveau),
+    ).exists()
+
     # Cercle de tronc commun pour la mention+niveau de l'utilisateur :
-    # correspond qu'il ait deja choisi une filiere ou non (voir
-    # profil_correspond_au_cercle).
+    # correspond qu'il ait déjà choisi une filière ou non.
     cercle_tronc_commun_correspondant = and_(
-        CercleEtude.mention_id == mention_id,
+        mention_cercle_effective == mention_id,
         CercleEtude.niveau == utilisateur.niveau,
         CercleEtude.filiere_id.is_(None),
     )
@@ -634,8 +648,9 @@ def condition_cercles_disponibles(
         cercle_libre,
         cercle_tronc_commun_correspondant,
         and_(
-            CercleEtude.mention_id == mention_id,
+            mention_cercle_effective == mention_id,
             CercleEtude.filiere_id.in_(filieres_equivalentes),
             CercleEtude.niveau == utilisateur.niveau,
+            filiere_cercle_coherente,
         ),
     )
