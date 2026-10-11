@@ -521,10 +521,10 @@
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
   {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
 
-  {% set profil_tronc_valide = profil_academique_recherche and profil_academique_recherche.coherent and profil_academique_recherche.tronc_commun %}
+  {% set profil_academique_coherent = profil_academique_recherche and profil_academique_recherche.coherent %}
   <form method="post" action="/cercles/creer" id="creer-cercle" data-formulaire-creation-cercle
-        data-tronc-mention-id="{{ profil_academique_recherche.mention.id if profil_tronc_valide and profil_academique_recherche.mention else '' }}"
-        data-tronc-niveau="{{ profil_academique_recherche.niveau if profil_tronc_valide else '' }}">
+        data-tronc-mention-id="{{ profil_academique_recherche.mention.id if profil_academique_coherent and profil_academique_recherche.mention else '' }}"
+        data-tronc-niveau="{{ profil_academique_recherche.niveau if profil_academique_coherent else '' }}">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="nom">Nom du cercle</label>
     <input type="text" id="nom" name="nom" required placeholder="ex: Revision Droit civil S3">
@@ -532,7 +532,8 @@
     <label for="description">Description (facultatif)</label>
     <input type="text" id="description" name="description" placeholder="ex: Prep du partiel de janvier">
 
-    <label for="creation_mention_id">Mention académique <span class="stat-label">Optionnelle pour un groupe libre ; nécessaire pour un cercle national</span></label>
+    <label for="creation_mention_id">Mention académique</label>
+    <p class="stat-label" style="margin:.15rem 0 .35rem;">Laisse vide pour un groupe libre ; choisis une mention pour un cercle national.</p>
     <select id="creation_mention_id" name="mention_id">
       <option value="">— aucune / groupe libre —</option>
       {% for m in mentions %}
@@ -540,7 +541,8 @@
       {% endfor %}
     </select>
 
-    <label for="creation_niveau">Niveau d’étude <span class="stat-label">Obligatoire pour un cercle national</span></label>
+    <label for="creation_niveau">Niveau d’étude</label>
+    <p class="stat-label" style="margin:.15rem 0 .35rem;">Obligatoire pour un cercle national ; les niveaux proposés sont communs à tout le référentiel.</p>
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
@@ -548,13 +550,15 @@
       {% endfor %}
     </select>
 
-    <label for="creation_filiere_id">Parcours <span class="stat-label">Les choix correspondent à la mention et au niveau sélectionnés</span></label>
+    <label for="creation_filiere_id">Parcours</label>
+    <p class="stat-label" style="margin:.15rem 0 .35rem;">Seuls les parcours actifs pour la mention et le niveau sélectionnés sont proposés.</p>
     <select id="creation_filiere_id" name="filiere_id" disabled>
       <option value="">— choisissez d'abord un niveau —</option>
     </select>
     <p class="stat-label" id="creation-info-tronc-commun" role="status" aria-live="polite" hidden></p>
 
-    <label for="raison">Pourquoi créer ce cercle ? <span class="stat-label">Obligatoire pour une demande nationale ; facultatif pour un groupe libre</span></label>
+    <label for="raison">Pourquoi créer ce cercle ?</label>
+    <p class="stat-label" style="margin:.15rem 0 .35rem;">Obligatoire pour une demande nationale ; facultatif pour un groupe libre.</p>
     <textarea id="raison" name="raison" rows="2" placeholder="ex: Plusieurs etudiants de cette filiere et ce niveau, dans differentes universites, souhaitent un espace commun pour partager cours et revisions."></textarea>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cercle</button>
