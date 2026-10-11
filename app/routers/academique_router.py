@@ -24,6 +24,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
+from ..referentiel import NIVEAUX
 
 router = APIRouter(prefix="/api/academique")
 
@@ -258,14 +259,22 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau is not None and niveau not in NIVEAUX:
+        return []
 
+    # Une offre n'est valable que dans l'universite de la composante qui
+    # porte ce parcours. Un ProgrammeUniversitaire croise/incoherent ne doit
+    # pas apparaitre ici puis etre refuse par la validation de creation.
     requete = (
         select(Filiere)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
         .where(
             Filiere.mention_id == mention_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            Faculte.universite_id == ProgrammeUniversitaire.universite_id,
         )
+        .order_by(Filiere.id)
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))

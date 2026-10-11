@@ -511,6 +511,10 @@
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_requis_pour_mention" %}<div class="erreur" role="alert">Un niveau est obligatoire lorsque tu choisis une mention. Sélectionne la mention puis le niveau correspondant.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "identite_academique_incomplete" %}<div class="erreur" role="alert">Le choix académique est incomplet. Sélectionne une mention avec un niveau, ou crée un groupe libre sans niveau.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_mention_incoherente" %}<div class="erreur" role="alert">Le parcours choisi ne correspond pas à la mention. Choisis de nouveau la mention puis le parcours.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "cercle_referentiel_incoherent" %}<div class="erreur" role="alert">Ce cercle contient des informations académiques incohérentes ou non valides. Il doit être vérifié par un administrateur avant de nouvelles adhésions.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
   {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
@@ -532,7 +536,7 @@
     </select>
 
     <label for="creation_niveau">Niveau (obligatoire des qu'une mention est choisie)</label>
-    <select id="creation_niveau" name="niveau" disabled>
+    <select id="creation_niveau" name="niveau" disabled required>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
       <option value="{{ n }}" data-no-translate>{{ n }}</option>
@@ -543,7 +547,7 @@
     <select id="creation_filiere_id" name="filiere_id" disabled>
       <option value="">— choisissez d'abord un niveau —</option>
     </select>
-    <p class="stat-label" id="creation-info-tronc-commun" style="display:none;">
+    <p class="stat-label" id="creation-info-tronc-commun" hidden>
       Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
     </p>
 
@@ -614,11 +618,16 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+        <span class="cercle-card-premium-type">
+          {% if info.type_cercle == "parcours" %}Cercle de parcours
+          {% elif info.type_cercle == "tronc_commun" %}Tronc commun
+          {% elif info.type_cercle == "libre" %}Groupe libre
+          {% else %}Référentiel à vérifier{% endif %}
+        </span>
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true" class="carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
