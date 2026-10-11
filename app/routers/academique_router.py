@@ -275,11 +275,11 @@ def lister_parcours_nationaux(
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
     # Les lignes précises (par exemple CCA en M1) doivent précéder les
-    # lignes héritées sans niveau pour un même parcours normalisé. Sinon la
-    # création d'un cercle M1 pouvait retenir une Filière NULL et perdre ses
-    # équivalences nationales avec les autres universités.
-    requete = requete.order_by(Filiere.niveau.is_(None), Filiere.nom, Filiere.id)
+    # lignes héritées sans niveau pour un même parcours normalisé. On trie
+    # en Python après la requête pour rester compatible avec PostgreSQL,
+    # qui impose des contraintes supplémentaires à ORDER BY + SELECT DISTINCT.
     filieres = session.exec(requete.distinct()).all()
+    filieres.sort(key=lambda f: (f.niveau is None, f.nom.casefold(), f.id or 0))
     filieres = [
         f for f in filieres
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
