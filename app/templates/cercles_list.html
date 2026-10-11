@@ -138,7 +138,7 @@
   <div class="cercles-hero-contenu">
     <span class="cercles-hero-kicker">Université de Toamasina · Cercles d'étude</span>
     <h1 id="titre-hero-cercles" class="cercles-hero-titre">Réviser ensemble.<br>Progresser plus vite.</h1>
-    <p class="cercles-hero-sous-titre">Trouve un espace de travail autour de ta mention, de ton parcours et de ton niveau, puis retrouve les autres étudiants au même endroit.</p>
+    <p class="cercles-hero-sous-titre">Trouve un espace de travail autour de ta mention, de ton niveau et de ton parcours, puis retrouve les autres étudiants au même endroit.</p>
     <div class="cercles-hero-actions">
       <a class="bouton bouton-primaire" href="#formulaire-recherche-cercles">Explorer les cercles</a>
       <a class="bouton bouton-secondaire" href="#resultats-cercles">Voir les résultats</a>
@@ -166,7 +166,7 @@
   {% endif %}
   {% if cercles_profil_visibilite and cercles_profil_visibilite.mention_id %}
   <a class="cercles-raccourci" href="#cercles-ma-mention">🎓 Ma mention</a>
-  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous ma mention</a>
+  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous les cercles de ma mention</a>
   {% endif %}
   {% if cercles_profil_visibilite and cercles_profil_visibilite.domaine_id %}
   <a class="cercles-raccourci" href="/cercles?domaine_id={{ cercles_profil_visibilite.domaine_id }}">🌐 Mon domaine</a>
