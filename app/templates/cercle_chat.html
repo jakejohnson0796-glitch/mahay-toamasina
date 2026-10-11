@@ -394,6 +394,14 @@
   }
 }
 
+.entete-cercle-hierarchie{
+  display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;
+  margin:.25rem 0 .55rem;color:var(--content-text-muted);
+  font-size:.76rem;line-height:1.55;overflow-wrap:anywhere;
+}
+.entete-cercle-hierarchie [aria-hidden="true"]{opacity:.55}
+.entete-cercle-hierarchie .puce-niveau{flex:0 0 auto}
+@media(max-width:640px){.entete-cercle-hierarchie{font-size:.72rem;gap:.25rem}}
 </style>
 <svg class="fond-anneaux" viewBox="0 0 240 240" aria-hidden="true">
   <circle cx="190" cy="30" r="40" fill="none" stroke="currentColor" stroke-width="1"/>
@@ -403,6 +411,18 @@
 <p class="eyebrow"><a href="/cercles">&larr; Cercles d'etude</a></p>
 {% if not membre %}
 <h2>{{ cercle.nom }}</h2>
+{% if type_cercle == "parcours" or type_cercle == "tronc_commun" %}
+<div class="entete-cercle-hierarchie" aria-label="Référentiel académique du cercle">
+  {% if domaine_cercle %}<span data-no-translate>{{ domaine_cercle.nom }}</span><span aria-hidden="true"> · </span>{% endif %}
+  {% if mention_cercle %}<span data-no-translate>{{ mention_cercle.nom }}</span><span aria-hidden="true"> · </span>{% endif %}
+  {% if type_cercle == "parcours" and filiere_cercle %}<span data-no-translate>{{ filiere_cercle.nom }}</span>{% elif type_cercle == "tronc_commun" %}<span>Tronc commun</span>{% endif %}
+  {% if niveau_libelle %}<span class="puce-niveau" data-no-translate>{{ niveau_libelle }}</span>{% endif %}
+</div>
+{% elif type_cercle == "incomplet" %}
+<p class="puce-incomplet">Référentiel académique à vérifier</p>
+{% else %}
+<p class="entete-cercle-hierarchie">Groupe libre</p>
+{% endif %}
 {% if cercle.description %}<p>{{ cercle.description }}</p>{% endif %}
 <div class="carte-formulaire">
   {% if en_attente %}
@@ -441,6 +461,18 @@
     <span class="entete-cercle-icone" aria-hidden="true">{{ icone("cercles", taille=22) }}</span>
     <div class="entete-cercle-infos">
       <h2 class="entete-cercle-titre">{{ cercle.nom }}</h2>
+      {% if type_cercle == "parcours" or type_cercle == "tronc_commun" %}
+      <div class="entete-cercle-hierarchie" aria-label="Référentiel académique du cercle">
+        {% if domaine_cercle %}<span data-no-translate>{{ domaine_cercle.nom }}</span><span aria-hidden="true"> · </span>{% endif %}
+        {% if mention_cercle %}<span data-no-translate>{{ mention_cercle.nom }}</span><span aria-hidden="true"> · </span>{% endif %}
+        {% if type_cercle == "parcours" and filiere_cercle %}<span data-no-translate>{{ filiere_cercle.nom }}</span>{% elif type_cercle == "tronc_commun" %}<span>Tronc commun</span>{% endif %}
+        {% if niveau_libelle %}<span class="puce-niveau" data-no-translate>{{ niveau_libelle }}</span>{% endif %}
+      </div>
+      {% elif type_cercle == "incomplet" %}
+      <p class="puce-incomplet">Référentiel académique à vérifier</p>
+      {% else %}
+      <p class="entete-cercle-hierarchie">Groupe libre</p>
+      {% endif %}
       <p class="entete-cercle-sous-titre">En ligne : <span id="liste-presence">—</span></p>
     </div>
   </div>
