@@ -26,6 +26,7 @@
     node.selected = Boolean(selected);
     if (nonTraduisible) node.setAttribute("data-no-translate", "");
     select.appendChild(node);
+    return node;
   }
 
   async function chargerParcoursNationaux(mentionId, niveau) {
@@ -147,15 +148,34 @@
     const niveau = document.getElementById("creation_niveau");
     const parcours = document.getElementById("creation_filiere_id");
     const infoTronc = document.getElementById("creation-info-tronc-commun");
-    if (!mention || !niveau || !parcours) return;
+    const formulaire = document.querySelector("[data-formulaire-creation-cercle]");
+    if (!mention || !niveau || !parcours || !formulaire) return;
 
+    const mentionTroncProfil = String(formulaire.dataset.troncMentionId || "");
+    const niveauTroncProfil = String(formulaire.dataset.troncNiveau || "");
     let generation = 0;
+
+    function peutChoisirTroncCommun() {
+      return Boolean(
+        mentionTroncProfil
+        && niveauTroncProfil
+        && mention.value === mentionTroncProfil
+        && niveau.value === niveauTroncProfil
+      );
+    }
+
+    function afficherInfo(message) {
+      if (!infoTronc) return;
+      infoTronc.textContent = message || "";
+      infoTronc.hidden = !message;
+      infoTronc.setAttribute("data-etat", message ? "info" : "");
+    }
 
     function resetParcours() {
       parcours.replaceChildren();
-      option(parcours, "", "— choisissez d'abord un niveau —", true);
+      option(parcours, "", "— choisis d'abord un niveau —", true);
       parcours.disabled = true;
-      if (infoTronc) infoTronc.hidden = true;
+      afficherInfo("");
     }
 
     async function charger() {
@@ -166,29 +186,73 @@
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
 
+      const troncAutorise = peutChoisirTroncCommun();
       parcours.replaceChildren();
-      if (!rows.length) {
-        option(parcours, "", "— aucun parcours specifique —", true);
-        if (infoTronc) infoTronc.hidden = false;
+
+      if (troncAutorise) {
+        option(parcours, "", "Tronc commun — sans parcours spécifique", true);
       } else {
-        option(parcours, "", "— choisissez un parcours —", true);
-        rows.forEach(function (row) {
-          option(parcours, row.id, row.nom, false);
-        });
+        const placeholder = option(
+          parcours,
+          "",
+          rows.length ? "— choisis un parcours —" : "Aucun parcours disponible pour ce niveau",
+          true
+        );
+        placeholder.disabled = true;
       }
+
+      rows.forEach(function (row) {
+        option(parcours, row.id, row.nom, false, true);
+      });
+
+      if (!rows.length && !troncAutorise) {
+        parcours.disabled = true;
+        afficherInfo(
+          "Le référentiel ne propose aucun parcours pour cette mention et ce niveau. Le tronc commun n'est disponible que si ton profil académique correspond exactement à cette mention et ce niveau. Vérifie ton profil avant de créer ce cercle."
+        );
+        return;
+      }
+
       parcours.disabled = false;
+      if (!rows.length && troncAutorise) {
+        afficherInfo(
+          "Aucun parcours spécifique n'est proposé ici. Ton profil permet de demander un cercle de tronc commun ; il sera vérifié avant validation."
+        );
+      } else if (troncAutorise) {
+        afficherInfo(
+          "Tu peux choisir un parcours parmi les offres nationales, ou garder « Tronc commun » si c'est bien le cadre de tes études."
+        );
+      } else {
+        afficherInfo("Choisis un parcours proposé à ce niveau. Le cercle sera soumis à validation.");
+      }
     }
 
     mention.addEventListener("change", function () {
       niveau.disabled = !mention.value;
-      if (!mention.value) niveau.value = "";
+      niveau.value = "";
       charger();
     });
+
     niveau.addEventListener("change", charger);
+
+    formulaire.addEventListener("submit", function (event) {
+      const aChoisiUnContexteNational = Boolean(mention.value || niveau.value || parcours.value);
+      if (!aChoisiUnContexteNational) return; // groupe libre
+      if (!mention.value || !niveau.value) {
+        event.preventDefault();
+        afficherInfo("Pour un cercle national, sélectionne une mention et un niveau. Pour un groupe libre, efface ces choix.");
+        return;
+      }
+      if (!parcours.value && !peutChoisirTroncCommun()) {
+        event.preventDefault();
+        afficherInfo("Tu dois choisir un parcours proposé à ce niveau. Le tronc commun ne correspond pas à ton profil actuel.");
+      }
+    });
 
     if (mention.value) {
       niveau.disabled = false;
       if (niveau.value) charger();
+      else resetParcours();
     } else {
       resetParcours();
     }
