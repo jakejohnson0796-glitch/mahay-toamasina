@@ -1,0 +1,152 @@
+/*
+ * Gasy Mahay — barre d'utilitaires et hiérarchie des cercles.
+ * Visuel partagé, avec styles de page limités aux composants des cercles.
+ */
+
+.app-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  min-height: 3.65rem;
+  box-sizing: border-box;
+  padding: .65rem clamp(1rem, 2.8vw, 2.25rem) 0;
+}
+
+.app-toolbar-langue {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: .32rem .4rem .32rem .72rem;
+  border: 1px solid var(--content-border, #d8ded9);
+  border-radius: 999px;
+  background: var(--content-surface, #ffffff);
+  color: var(--content-text, #183333);
+  box-shadow: 0 5px 16px rgba(9, 39, 39, .06);
+}
+
+.app-toolbar-langue-globe {
+  display: inline-grid;
+  flex: 0 0 1.8rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--content-link, #0d6966) 20%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--content-link, #0d6966) 9%, transparent);
+  color: var(--content-link, #0d6966);
+  font-size: 1.12rem;
+  line-height: 1;
+}
+
+.app-toolbar-langue label {
+  color: var(--content-text-muted, #65716d);
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.app-toolbar-langue select {
+  display: block;
+  min-width: 9.3rem;
+  max-width: 100%;
+  margin: 0;
+  padding: .55rem 1.9rem .55rem .72rem;
+  border: 1px solid var(--content-border, #d8ded9);
+  border-radius: 999px;
+  background-color: var(--content-bg, #ffffff);
+  color: var(--content-text, #183333);
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 750;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.app-toolbar-langue select:hover {
+  border-color: var(--content-link, #0d6966);
+}
+
+.app-toolbar-langue select:focus-visible {
+  outline: 2px solid var(--content-link, #0d6966);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--content-link, #0d6966) 12%, transparent);
+}
+
+@media (max-width: 700px) {
+  .app-toolbar {
+    min-height: 3.1rem;
+    padding: .45rem .8rem 0;
+  }
+
+  .app-toolbar-langue {
+    gap: .4rem;
+    padding: .24rem .32rem .24rem .48rem;
+  }
+
+  .app-toolbar-langue-globe {
+    flex-basis: 1.55rem;
+    width: 1.55rem;
+    height: 1.55rem;
+    font-size: 1rem;
+  }
+
+  .app-toolbar-langue label {
+    font-size: .67rem;
+  }
+
+  .app-toolbar-langue select {
+    min-width: 8rem;
+    padding: .48rem 1.5rem .48rem .58rem;
+    font-size: .75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-toolbar-langue label {
+    display: none;
+  }
+}
+
+/* Cohérence visuelle et de lecture des métadonnées académiques. */
+.cercle-card-premium .carte-claire-hierarchie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .28rem .38rem;
+  min-width: 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.cercle-card-premium .carte-claire-hierarchie > span {
+  min-width: 0;
+}
+
+.cercle-card-premium .puce-niveau {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.cercle-card-premium .puce-incomplet {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, #b45309 32%, var(--content-border, #ddd));
+  border-radius: 999px;
+  padding: .18rem .55rem;
+  background: color-mix(in srgb, #f59e0b 10%, var(--content-surface, #fff));
+  color: color-mix(in srgb, #92400e 82%, var(--content-text, #1f2937));
+  font-size: .7rem;
+  font-weight: 750;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toolbar-langue select {
+    transition: none !important;
+  }
+}
