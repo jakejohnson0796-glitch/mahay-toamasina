@@ -284,7 +284,19 @@ def lister_parcours_nationaux(
     for f in filieres:
         cle = _normaliser_nom_parcours(f.nom)
         if cle not in vus:
-            vus[cle] = {"id": f.id, "nom": f.nom}
+            vus[cle] = {
+                "id": f.id,
+                "nom": f.nom,
+                "niveau_a_confirmer": bool(niveau and f.niveau is None),
+            }
+            continue
+
+        # Si plusieurs universites offrent le meme parcours, prefere toujours
+        # la ligne datee pour le niveau cible au lieu d'une ligne historique
+        # dont Filiere.niveau est NULL.
+        if niveau and f.niveau == niveau and vus[cle]["niveau_a_confirmer"]:
+            vus[cle] = {"id": f.id, "nom": f.nom, "niveau_a_confirmer": False}
+
     return sorted(vus.values(), key=lambda p: p["nom"])
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
