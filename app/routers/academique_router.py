@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -258,6 +259,8 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau is not None and niveau not in NIVEAUX:
+        return []
 
     requete = (
         select(Filiere)
@@ -269,6 +272,11 @@ def lister_parcours_nationaux(
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
+        # Préférer la ligne réellement rattachée à ce niveau aux lignes
+        # historiques non datées pour stabiliser l'identité du parcours.
+        requete = requete.order_by(Filiere.niveau.is_(None), Filiere.id)
+    else:
+        requete = requete.order_by(Filiere.nom, Filiere.niveau.is_(None), Filiere.id)
     filieres = session.exec(requete.distinct()).all()
     filieres = [
         f for f in filieres
