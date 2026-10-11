@@ -732,7 +732,7 @@ def liste_cercles(
         resultat = []
         for cercle in lignes:
             filiere = filieres_resume.get(cercle.filiere_id)
-            mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+            mention_id_effectif = (filiere.mention_id if filiere and filiere.mention_id else cercle.mention_id)
             mention = mentions_resume.get(mention_id_effectif)
             domaine = domaines_resume.get(mention.domaine_id) if mention and mention.domaine_id else None
             resultat.append({
@@ -742,7 +742,7 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             })
         return resultat
 
@@ -1208,7 +1208,14 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle):
+    filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+    nature_cercle = referentiel_academique.type_cercle(cercle, filiere_cercle)
+    if nature_cercle == "incomplet":
+        return RedirectResponse(
+            f"/cercles/{cercle_id}/membres?erreur=referentiel_a_verifier",
+            status_code=303,
+        )
+    if nature_cercle in {"tronc_commun", "parcours"}:
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
@@ -1588,7 +1595,10 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(
+                cercle,
+                session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None,
+            ),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
