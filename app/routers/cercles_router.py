@@ -634,13 +634,13 @@ def liste_cercles(
 
     cercles_avec_info = []
     for cercle in cercles:
-        filiere = filieres_map.get(cercle.filiere_id)
-        mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
-        mention = mentions_map.get(mention_id_effectif)
+        identite = referentiel_academique.contexte_identite_cercle(cercle, session)
+        filiere = identite["filiere"]
+        mention = mentions_map.get(identite["mention_id"]) if identite["mention_id"] else None
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": identite["type"],
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -726,9 +726,9 @@ def liste_cercles(
 
         resultat = []
         for cercle in lignes:
-            filiere = filieres_resume.get(cercle.filiere_id)
-            mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
-            mention = mentions_resume.get(mention_id_effectif)
+            identite = referentiel_academique.contexte_identite_cercle(cercle, session)
+            filiere = identite["filiere"]
+            mention = mentions_resume.get(identite["mention_id"]) if identite["mention_id"] else None
             domaine = domaines_resume.get(mention.domaine_id) if mention and mention.domaine_id else None
             resultat.append({
                 "cercle": cercle,
@@ -737,7 +737,7 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": identite["type"],
             })
         return resultat
 
@@ -927,6 +927,14 @@ def creer_cercle(
 
     niveau_nettoye = (niveau or "").strip() or None
 
+    # Une selection academique doit former un triplet coherent. Sans ce
+    # garde-fou, mention/niveau partiels pouvaient tomber dans le chemin
+    # "groupe libre" et perdre silencieusement les informations choisies.
+    selection_academique = bool(mention_id_nettoye or filiere_id_nettoye or niveau_nettoye)
+    triplet_complet = bool(niveau_nettoye and (mention_id_nettoye or filiere_id_nettoye))
+    if selection_academique and not triplet_complet:
+        return RedirectResponse("/cercles?erreur=referentiel_incomplet", status_code=303)
+
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
         if niveau_nettoye not in NIVEAUX:
@@ -943,6 +951,8 @@ def creer_cercle(
                 # peut pas encore porter de cercle national (voir
                 # /admin/referentiel pour l'assigner).
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            if mention_id_nettoye and mention_id_nettoye != filiere.mention_id:
+                return RedirectResponse("/cercles?erreur=parcours_mention_incoherents", status_code=303)
             mention_id_cible = filiere.mention_id
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
@@ -1203,7 +1213,13 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle):
+    nature_cercle = referentiel_academique.type_cercle(cercle, session)
+    if nature_cercle == "incomplet":
+        return RedirectResponse(
+            f"/cercles/{cercle_id}/membres?erreur=referentiel_incoherent",
+            status_code=303,
+        )
+    if nature_cercle in {"tronc_commun", "parcours"}:
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
@@ -1583,7 +1599,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle, session),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
