@@ -670,7 +670,11 @@ def condition_cercles_disponibles(
     if not filiere_utilisateur:
         return or_(cercle_libre, cercle_tronc_commun_correspondant)
 
-    filieres_equivalentes = _filieres_equivalentes(session, filiere_utilisateur)
+    filieres_equivalentes = [
+        filiere_id
+        for filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
+        if parcours_cercle_offert(session, mention_id, filiere_id, utilisateur.niveau)
+    ]
     cercle_parcours_correspondant = and_(
         mention_effective == mention_id,
         CercleEtude.filiere_id.in_(filieres_equivalentes),
