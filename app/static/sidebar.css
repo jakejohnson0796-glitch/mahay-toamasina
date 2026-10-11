@@ -287,13 +287,20 @@
 
 
 /* Zone de préférences persistante, partagée par les visiteurs et les membres. */
+.tb-sidebar-marque { order: 0; }
+.tb-sidebar-nav { order: 1; }
+
 .tb-sidebar-preferences {
+  order: 2;
   display: grid;
+  flex: 0 0 auto;
   gap: .25rem;
-  margin-top: auto;
+  margin-top: 0;
   padding: .72rem .52rem .25rem;
   border-top: 1px solid rgba(255,255,255,.09);
 }
+
+.tb-sidebar-compte-zone { order: 3; }
 
 .tb-sidebar-preferences-title {
   margin: 0 0 .25rem .15rem;
