@@ -147,9 +147,16 @@
     const niveau = document.getElementById("creation_niveau");
     const parcours = document.getElementById("creation_filiere_id");
     const infoTronc = document.getElementById("creation-info-tronc-commun");
+    const raison = document.getElementById("raison");
     if (!mention || !niveau || !parcours) return;
 
     let generation = 0;
+
+    function actualiserObligations() {
+      const demandeNationale = Boolean(mention.value);
+      niveau.required = demandeNationale;
+      if (raison) raison.required = demandeNationale;
+    }
 
     function resetParcours() {
       parcours.replaceChildren();
@@ -182,10 +189,12 @@
     mention.addEventListener("change", function () {
       niveau.disabled = !mention.value;
       if (!mention.value) niveau.value = "";
+      actualiserObligations();
       charger();
     });
     niveau.addEventListener("change", charger);
 
+    actualiserObligations();
     if (mention.value) {
       niveau.disabled = false;
       if (niveau.value) charger();
