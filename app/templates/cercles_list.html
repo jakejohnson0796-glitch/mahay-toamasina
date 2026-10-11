@@ -311,6 +311,28 @@
 @media(prefers-reduced-motion:reduce){
   .cercles-visibilite-card{transition:none}
 }
+
+/* Hiérarchie lisible : domaine/mention, niveau, puis parcours explicitement nommé. */
+.cercle-card-premium-type--parcours{background:#E0F1EB!important;color:#12584C!important;border-color:#B9DDD0!important}
+.cercle-card-premium-type--tronc_commun{background:#E7EEF8!important;color:#234D7B!important;border-color:#C7D7EA!important}
+.cercle-card-premium-type--libre{background:rgba(255,255,255,.14)!important;color:inherit!important;border-color:rgba(255,255,255,.22)!important}
+.cercle-card-premium-type--incomplet{background:#FFF0DC!important;color:#8A4B12!important;border-color:#EBC89E!important}
+.carte-claire-hierarchie{min-width:0;overflow-wrap:normal;word-break:normal}
+.cercle-identite-academique{display:flex;align-items:center;flex-wrap:wrap;gap:.32rem .42rem;min-width:0;font-size:.72rem;line-height:1.5}
+.cercle-identite-domaine{color:var(--content-text-muted);font-size:.69rem}
+.cercle-identite-separateur{color:var(--content-text-muted);font-weight:800}
+.cercle-identite-mention{color:var(--content-text);font-weight:750}
+.cercle-identite-academique .puce-niveau{white-space:nowrap}
+.cercle-parcours-detail{display:grid;gap:.2rem;margin-top:.52rem;padding:.58rem .68rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg)}
+.cercle-parcours-detail>span{color:var(--content-text-muted);font-size:.61rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.cercle-parcours-detail>strong{min-width:0;color:var(--content-text);font-size:.83rem;line-height:1.4;overflow-wrap:break-word;word-break:normal}
+.cercle-tronc-commun{font-size:.7rem;font-weight:800}
+.cercle-groupe-libre{display:block;color:var(--content-text-muted);font-size:.75rem;line-height:1.45}
+.cercle-form-aide{font-size:.78em;font-weight:500;color:var(--content-text-muted)}
+.cercle-form-info{padding:.65rem .75rem;border-left:3px solid var(--accent);border-radius:0 8px 8px 0;background:var(--content-bg);line-height:1.5}
+#creation-info-tronc-commun[hidden]{display:none!important}
+@media(max-width:560px){.cercle-parcours-detail{padding:.5rem}.cercle-identite-academique{gap:.28rem .35rem}}
+
 </style>
 
 {% if utilisateur and cercles_profil_visibilite
@@ -508,12 +530,15 @@
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
-  {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Le niveau choisi n'est pas valide.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "infos_academiques_incompletes" %}<div class="erreur">Pour créer un cercle lié aux études, sélectionne une mention ou un parcours et un niveau. Pour un groupe libre, laisse ces champs vides.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_mention_incoherents" %}<div class="erreur">Le parcours choisi ne correspond pas à la mention sélectionnée. Vérifie la hiérarchie académique.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "limite_creation" %}<div class="erreur">Tu as atteint la limite de cercles que tu peux créer. Tu peux toujours rejoindre un cercle existant.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
-  {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
+  {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Ta demande de cercle a été envoyée. Elle sera vérifiée par un administrateur avant activation.</div>{% endif %}
 
   <form method="post" action="/cercles/creer" id="creer-cercle" data-formulaire-creation-cercle>
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -523,7 +548,7 @@
     <label for="description">Description (facultatif)</label>
     <input type="text" id="description" name="description" placeholder="ex: Prep du partiel de janvier">
 
-    <label for="creation_mention_id">Mention (facultatif — remplir pour un cercle NATIONAL, soumis a validation)</label>
+    <label for="creation_mention_id">Mention <span class="cercle-form-aide">(facultative pour un groupe libre)</span></label>
     <select id="creation_mention_id" name="mention_id">
       <option value="">— aucune / groupe libre —</option>
       {% for m in mentions %}
@@ -531,7 +556,7 @@
       {% endfor %}
     </select>
 
-    <label for="creation_niveau">Niveau (obligatoire des qu'une mention est choisie)</label>
+    <label for="creation_niveau">Niveau d'études <span class="cercle-form-aide">(obligatoire pour un cercle académique)</span></label>
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
@@ -539,12 +564,12 @@
       {% endfor %}
     </select>
 
-    <label for="creation_filiere_id">Parcours (facultatif — laissez vide pour un cercle de tronc commun)</label>
+    <label for="creation_filiere_id">Parcours <span class="cercle-form-aide">(laisse vide pour demander le tronc commun)</span></label>
     <select id="creation_filiere_id" name="filiere_id" disabled>
       <option value="">— choisissez d'abord un niveau —</option>
     </select>
-    <p class="stat-label" id="creation-info-tronc-commun" style="display:none;">
-      Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
+    <p class="stat-label cercle-form-info" id="creation-info-tronc-commun" hidden>
+      Aucun parcours spécifique n’est recensé à ce niveau. Le tronc commun doit être confirmé pour ton établissement et sera vérifié lors de la demande.
     </p>
 
     <label for="raison">Raison (obligatoire uniquement pour un cercle national, donc des qu'une mention est choisie)</label>
@@ -614,28 +639,33 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+        <span class="cercle-card-premium-type cercle-card-premium-type--{{ info.type_cercle }}">{% if info.type_cercle == "parcours" %}Parcours national{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}Référentiel à vérifier{% endif %}</span>
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true" class="carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
+        {% set libelles_niveaux = {"L1": "Licence 1", "L2": "Licence 2", "L3": "Licence 3", "M1": "Master 1", "M2": "Master 2", "D1": "Doctorat 1", "D2": "Doctorat 2", "D3": "Doctorat 3"} %}
         <div class="carte-claire-hierarchie">
           {% if info.type_cercle == "parcours" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
-          {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
-          {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
-          {% if info.cercle.niveau %}<span class="puce-niveau">{{ info.cercle.niveau }}</span>{% endif %}
+            <div class="cercle-identite-academique">
+              <span class="cercle-identite-domaine">{{ info.domaine.nom if info.domaine else "Domaine non renseigné" }}</span>
+              {% if info.mention %}<span class="cercle-identite-separateur" aria-hidden="true">›</span><span class="cercle-identite-mention">{{ info.mention.nom }}</span>{% endif %}
+              {% if info.cercle.niveau %}<span class="puce-niveau" title="Niveau d’études">{{ libelles_niveaux.get(info.cercle.niveau, info.cercle.niveau) }} · {{ info.cercle.niveau }}</span>{% endif %}
+            </div>
+            {% if info.filiere %}<div class="cercle-parcours-detail"><span>Parcours</span><strong>{{ info.filiere.nom }}</strong></div>{% endif %}
           {% elif info.type_cercle == "tronc_commun" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
-          {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
-          <span aria-hidden="true"> · </span><span>Tronc commun</span>
-          <span class="puce-niveau">{{ info.cercle.niveau }}</span>
+            <div class="cercle-identite-academique">
+              <span class="cercle-identite-domaine">{{ info.domaine.nom if info.domaine else "Domaine non renseigné" }}</span>
+              {% if info.mention %}<span class="cercle-identite-separateur" aria-hidden="true">›</span><span class="cercle-identite-mention">{{ info.mention.nom }}</span>{% endif %}
+              <span class="cercle-identite-separateur" aria-hidden="true">›</span><span class="cercle-tronc-commun">Tronc commun</span>
+              <span class="puce-niveau" title="Niveau d’études">{{ libelles_niveaux.get(info.cercle.niveau, info.cercle.niveau) }} · {{ info.cercle.niveau }}</span>
+            </div>
           {% elif info.type_cercle == "libre" %}
-          <span>Groupe libre</span>
+            <span class="cercle-groupe-libre">Groupe d’étude libre, sans rattachement académique.</span>
           {% else %}
-          <span class="puce-incomplet">Référentiel à vérifier</span>
+            <span class="puce-incomplet">Référentiel à vérifier</span>
           {% endif %}
         </div>
       </div>
