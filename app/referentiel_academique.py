@@ -560,7 +560,13 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
         return False
 
     if nature == "tronc_commun":
-        return True
+        return tronc_commun_offert(
+            session,
+            utilisateur.universite_id,
+            utilisateur.faculte_id,
+            mention_id_effective,
+            cercle.niveau,
+        )
 
     filiere_utilisateur = profil["filiere"]
     if not filiere_utilisateur:
