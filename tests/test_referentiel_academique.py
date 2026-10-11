@@ -24,6 +24,7 @@ from app.referentiel_academique import (
     erreur_choix_academique,
     serialiser_profil_academique,
     type_cercle,
+    identite_cercle,
     erreur_cercle_parcours,
     parcours_cercle_offert,
     offre_filiere_active_universite,
@@ -470,6 +471,119 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(filiere)
             session.commit()
             self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
+
+
+    def test_cercle_legacy_avec_mention_absente_est_resolu_depuis_la_filiere(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L3"
+            session.add(filiere)
+            session.commit()
+
+            cercle = CercleEtude(
+                nom="Finance L3 historique",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            session.add(cercle)
+            session.commit()
+            session.refresh(cercle)
+
+            identite = identite_cercle(cercle, session)
+            self.assertEqual(identite["type"], "parcours")
+            self.assertEqual(identite["mention_id"], self.mention_id)
+            self.assertEqual(identite["niveau"], "L3")
+            self.assertEqual(type_cercle(cercle, session), "parcours")
+            self.assertTrue(cercle_est_national(cercle, session))
+
+            utilisateur = Utilisateur(
+                nom="Profil historique",
+                telephone="0340000030",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+            condition = condition_cercles_disponibles(utilisateur, session)
+            ids_disponibles = set(session.exec(select(CercleEtude.id).where(condition)).all())
+            self.assertIn(cercle.id, ids_disponibles)
+
+    def test_cercle_legacy_avec_niveau_absent_est_resolu_depuis_la_filiere(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L3"
+            session.add(filiere)
+            session.commit()
+
+            cercle = CercleEtude(
+                nom="Finance niveau historique",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau=None,
+            )
+            session.add(cercle)
+            session.commit()
+
+            identite = identite_cercle(cercle, session)
+            self.assertEqual(identite["type"], "parcours")
+            self.assertEqual(identite["niveau"], "L3")
+
+    def test_cercle_dont_mention_et_parcours_se_contredisent_reste_a_verifier(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L3"
+            session.add(filiere)
+            session.commit()
+
+            cercle = CercleEtude(
+                nom="Référentiel incohérent",
+                createur_id=self.createur_id,
+                mention_id=self.autre_mention_id if hasattr(self, "autre_mention_id") else None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            # La mention de test existante est la mention attendue. Créer une
+            # mention distincte ici évite de rendre le test dépendant des IDs.
+            autre_mention = Mention(nom="Mention incohérente de test")
+            session.add(autre_mention)
+            session.commit()
+            session.refresh(autre_mention)
+            cercle.mention_id = autre_mention.id
+            identite = identite_cercle(cercle, session)
+            self.assertEqual(identite["type"], "incomplet")
+            self.assertFalse(profil_correspond_au_cercle(
+                Utilisateur(
+                    nom="Profil incohérent",
+                    telephone="0340000031",
+                    mot_de_passe_hash="x",
+                    role=RoleUtilisateur.ETUDIANT,
+                    universite_id=self.universite_id,
+                    faculte_id=self.faculte_id,
+                    mention_id=self.mention_id,
+                    filiere_id=self.filiere_id,
+                    niveau="L3",
+                ),
+                cercle,
+                session,
+            ))
+
+    def test_cercle_historique_sans_intention_academique_reste_un_groupe_libre(self):
+        with Session(self.engine) as session:
+            cercle = CercleEtude(
+                nom="Groupe libre historique",
+                createur_id=self.createur_id,
+                filiere_id=self.filiere_id,
+                mention_id=None,
+                niveau=None,
+            )
+            self.assertEqual(type_cercle(cercle, session), "libre")
 
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
