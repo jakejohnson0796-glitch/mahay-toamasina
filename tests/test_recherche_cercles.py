@@ -307,6 +307,37 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Finance et Comptabilite", noms)
         self.assertIn("Droit prive", noms)
 
+    def test_endpoint_prefere_la_ligne_du_niveau_demande_a_une_filiere_heritage(self):
+        with Session(engine) as session:
+            historique = session.get(Filiere, self.filiere_id)
+            parcours_m1 = Filiere(
+                nom=historique.nom,
+                faculte_id=historique.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add(parcours_m1)
+            session.commit()
+            session.refresh(parcours_m1)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=parcours_m1.id,
+                est_active=True,
+            ))
+            session.commit()
+            parcours_m1_id = parcours_m1.id
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "M1"},
+        )
+        self.assertEqual(page.status_code, 200)
+        lignes_finance = [
+            entree for entree in page.json()
+            if entree["nom"] == "Finance et Comptabilite"
+        ]
+        self.assertEqual(len(lignes_finance), 1)
+        self.assertEqual(lignes_finance[0]["id"], parcours_m1_id)
 
 
     def test_recherche_sans_accent_trouve_un_titre_accentue(self):
