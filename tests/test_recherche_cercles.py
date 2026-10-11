@@ -319,6 +319,95 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertIn("Revision Analyse Financiere", page.text)
 
+    def test_endpoint_parcours_nationaux_ne_melange_pas_un_meme_nom_entre_niveaux(self):
+        with Session(engine) as session:
+            parcours_l3 = Filiere(
+                nom="Parcours partage multi-niveaux",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            parcours_m1 = Filiere(
+                nom="Parcours partage multi-niveaux",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add(parcours_l3)
+            session.add(parcours_m1)
+            session.commit()
+            session.refresh(parcours_l3)
+            session.refresh(parcours_m1)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=parcours_l3.id,
+                est_active=True,
+            ))
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=parcours_m1.id,
+                est_active=True,
+            ))
+            session.commit()
+            parcours_l3_id = parcours_l3.id
+            parcours_m1_id = parcours_m1.id
+
+        page_l3 = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        choix = [
+            entree for entree in page_l3.json()
+            if entree["nom"] == "Parcours partage multi-niveaux"
+        ]
+        self.assertEqual(len(choix), 1)
+        self.assertEqual(choix[0]["id"], parcours_l3_id)
+        self.assertNotEqual(choix[0]["id"], parcours_m1_id)
+
+        page_m1 = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "M1"},
+        )
+        choix_m1 = [
+            entree for entree in page_m1.json()
+            if entree["nom"] == "Parcours partage multi-niveaux"
+        ]
+        self.assertEqual(len(choix_m1), 1)
+        self.assertEqual(choix_m1[0]["id"], parcours_m1_id)
+
+    def test_filtre_affiche_un_cercle_historique_via_niveau_du_parcours(self):
+        with Session(engine) as session:
+            filiere = Filiere(
+                nom="Parcours historique sans métadonnées cercle",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(filiere)
+            session.commit()
+            session.refresh(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.add(CercleEtude(
+                nom="Cercle historique sans métadonnées",
+                createur_id=1,
+                mention_id=None,
+                filiere_id=filiere.id,
+                niveau=None,
+            ))
+            session.commit()
+
+        page = self.client.get(
+            "/cercles",
+            params={"mention_id": str(self.mention_id), "niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Cercle historique sans métadonnées", page.text)
+        self.assertIn("Parcours national", page.text)
+
     def test_filieres_nationales_excluent_une_offre_inactive(self):
         with Session(engine) as session:
             offre = session.exec(
