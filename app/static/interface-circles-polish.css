@@ -1,0 +1,172 @@
+/*
+ * Gasy Mahay — barre de langue et hiérarchie des cercles
+ * Couche additive : le comportement de traduction reste dans langue.js.
+ */
+
+.gm-language-toolbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  min-height: 3.2rem;
+  padding: .45rem clamp(.75rem, 2vw, 1.5rem) .2rem;
+}
+
+.gm-language-control {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  max-width: 100%;
+  padding: .34rem .45rem .34rem .55rem;
+  border: 1px solid var(--content-border);
+  border-radius: 999px;
+  background: var(--content-surface);
+  color: var(--content-text);
+  box-shadow: var(--refonte-shadow-sm, 0 4px 14px rgba(0, 0, 0, .06));
+}
+
+.gm-language-symbol {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid color-mix(in srgb, var(--content-border) 70%, var(--refonte-teal, #2f8f89));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--content-surface) 85%, var(--refonte-teal, #2f8f89) 15%);
+  color: var(--content-text);
+  font-size: .6rem;
+  font-weight: 850;
+  letter-spacing: -.03em;
+}
+
+.gm-language-control label {
+  margin: 0;
+  color: var(--content-text-muted);
+  font-size: .7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gm-language-control select {
+  width: auto;
+  min-width: 8.5rem;
+  max-width: min(44vw, 13rem);
+  min-height: 2rem;
+  margin: 0;
+  padding: .35rem 1.85rem .35rem .7rem;
+  border: 1px solid var(--content-border);
+  border-radius: 999px;
+  background-color: var(--content-bg);
+  color: var(--content-text);
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gm-language-control select:focus-visible {
+  outline: 2px solid var(--refonte-teal, #2f8f89);
+  outline-offset: 2px;
+}
+
+.cercle-card-premium-type {
+  max-width: calc(100% - 1rem);
+  white-space: normal;
+  line-height: 1.25;
+  text-transform: none;
+  letter-spacing: .015em;
+  text-align: center;
+}
+
+.cercle-card-premium .carte-claire-hierarchie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .28rem .38rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.cercle-card-premium .carte-claire-hierarchie > span {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.cercle-card-premium .carte-claire-hierarchie .puce-niveau {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.cercle-card-premium .puce-incomplet {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: .35rem .55rem;
+  border: 1px solid color-mix(in srgb, var(--refonte-coral, #e47d55) 35%, var(--content-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--content-surface) 88%, var(--refonte-coral, #e47d55) 12%);
+  color: var(--content-text);
+  font-size: .7rem;
+  font-weight: 750;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .gm-language-toolbar {
+    min-height: 2.8rem;
+    padding: .25rem .75rem .35rem;
+  }
+
+  .gm-language-control {
+    gap: .38rem;
+    padding: .25rem .35rem .25rem .4rem;
+    box-shadow: none;
+  }
+
+  .gm-language-symbol {
+    width: 1.65rem;
+    height: 1.65rem;
+    font-size: .56rem;
+  }
+
+  .gm-language-control label {
+    font-size: .66rem;
+  }
+
+  .gm-language-control select {
+    min-width: 7rem;
+    max-width: 48vw;
+    min-height: 1.9rem;
+    font-size: .72rem;
+  }
+
+  .cercle-card-premium .cercle-card-premium-inner {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .gm-language-control label {
+    display: none;
+  }
+
+  .gm-language-control select {
+    min-width: 6.7rem;
+    max-width: 54vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gm-language-control,
+  .gm-language-control select,
+  .cercle-card-premium .puce-incomplet {
+    transition: none !important;
+    animation: none !important;
+  }
+}
