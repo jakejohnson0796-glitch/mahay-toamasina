@@ -20,6 +20,7 @@ Regles implementees (voir le brief "cercles nationaux") :
 from datetime import datetime, timedelta
 from typing import Optional
 
+from sqlalchemy import func
 from sqlmodel import Session, and_, or_, select
 
 from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire, RoleUtilisateur, Utilisateur
@@ -397,14 +398,78 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
 
 
 
-def type_cercle(cercle: CercleEtude) -> str:
-    """Classifie un cercle selon UNE hierarchie canonique.
+def contexte_identite_cercle(cercle: CercleEtude, session: Session) -> dict:
+    """Construit et valide l'identite academique effective d'un cercle.
 
-    libre        : aucun attribut academique ;
-    tronc_commun : mention + niveau, sans parcours ;
-    parcours     : mention + parcours + niveau ;
-    incomplet    : combinaison partielle/incoherente a revoir.
+    Les anciens cercles pouvaient ne stocker que filiere_id. On derive alors
+    la mention depuis Filiere, mais on ne laisse jamais passer silencieusement
+    une mention/parcours/niveau contradictoire ou un parcours non offert.
+    Les valeurs de retour mention_id/filiere sont None lorsque le referentiel
+    est incoherent, pour eviter d'afficher une hierarchie trompeuse.
     """
+    filiere = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+    a_une_reference_filiere = bool(cercle.filiere_id)
+    mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+    filiere_effective = filiere
+    valide = True
+
+    if a_une_reference_filiere and filiere is None:
+        valide = False
+    if filiere:
+        if not filiere.mention_id:
+            valide = False
+        if cercle.mention_id and filiere.mention_id != cercle.mention_id:
+            valide = False
+        if cercle.niveau and filiere.niveau and cercle.niveau != filiere.niveau:
+            valide = False
+        # Les anciennes bases pouvaient encoder le tronc commun comme une
+        # Filiere technique. On la traite comme un tronc commun, pas comme un
+        # parcours specialise.
+        if _normaliser_nom_parcours(filiere.nom) == "tronc commun":
+            filiere_effective = None
+
+    if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
+        return {
+            "type": "libre",
+            "mention_id": None,
+            "filiere": None,
+            "coherent": True,
+        }
+
+    mention = session.get(Mention, mention_id_effectif) if mention_id_effectif else None
+    if not mention_id_effectif or not mention or not mention.est_active:
+        valide = False
+    if not cercle.niveau or cercle.niveau not in NIVEAUX:
+        valide = False
+
+    if valide and filiere_effective:
+        valide = parcours_cercle_offert(
+            session, mention_id_effectif, filiere_effective.id, cercle.niveau
+        )
+        nature = "parcours" if valide else "incomplet"
+    elif valide and not filiere_effective:
+        nature = "tronc_commun"
+    else:
+        nature = "incomplet"
+
+    return {
+        "type": nature,
+        "mention_id": mention_id_effectif if valide else None,
+        "filiere": filiere_effective if valide else None,
+        "coherent": valide,
+    }
+
+
+def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
+    """Classifie un cercle. Avec session, valide la hierarchie stockee.
+
+    Sans session conserve le comportement structurel historique pour les
+    appels/tests qui n'ont pas acces a la base. Les ecrans et controles
+    d'adhesion passent toujours la session pour inclure les anciens cercles
+    et detecter les references academiques contradictoires.
+    """
+    if session is not None:
+        return contexte_identite_cercle(cercle, session)["type"]
     if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
         return "libre"
     if cercle.mention_id and cercle.niveau and not cercle.filiere_id:
@@ -414,11 +479,11 @@ def type_cercle(cercle: CercleEtude) -> str:
     return "incomplet"
 
 
-def cercle_est_national(cercle: CercleEtude) -> bool:
-    """Vrai uniquement pour les cercles nationaux complets :
-    parcours specialise ou tronc commun."""
-    return type_cercle(cercle) in {"tronc_commun", "parcours"}
-
+def cercle_est_national(
+    cercle: CercleEtude, session: Optional[Session] = None
+) -> bool:
+    """Vrai uniquement pour les cercles nationaux complets et coherents."""
+    return type_cercle(cercle, session) in {"tronc_commun", "parcours"}
 
 def parcours_cercle_offert(
     session: Session,
