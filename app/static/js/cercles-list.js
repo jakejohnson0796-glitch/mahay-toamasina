@@ -147,15 +147,28 @@
     const niveau = document.getElementById("creation_niveau");
     const parcours = document.getElementById("creation_filiere_id");
     const infoTronc = document.getElementById("creation-info-tronc-commun");
+    const formulaire = mention && mention.closest("form");
+    const raison = formulaire && formulaire.querySelector("#raison");
     if (!mention || !niveau || !parcours) return;
 
     let generation = 0;
+
+    function mettreAJourObligations() {
+      const choixAcademique = Boolean(mention.value || niveau.value || parcours.value);
+      // Un groupe libre n'impose aucun des champs académiques. Dès qu'un
+      // choix national commence, le navigateur signale les champs manquants
+      // avant l'envoi ; le serveur réapplique les mêmes règles.
+      mention.required = Boolean(niveau.value || parcours.value);
+      niveau.required = Boolean(mention.value || parcours.value);
+      if (raison) raison.required = choixAcademique;
+    }
 
     function resetParcours() {
       parcours.replaceChildren();
       option(parcours, "", "— choisissez d'abord un niveau —", true);
       parcours.disabled = true;
       if (infoTronc) infoTronc.hidden = true;
+      mettreAJourObligations();
     }
 
     async function charger() {
@@ -168,29 +181,46 @@
 
       parcours.replaceChildren();
       if (!rows.length) {
-        option(parcours, "", "— aucun parcours specifique —", true);
+        option(parcours, "", "— aucun parcours spécifique —", true);
         if (infoTronc) infoTronc.hidden = false;
       } else {
         option(parcours, "", "— choisissez un parcours —", true);
         rows.forEach(function (row) {
-          option(parcours, row.id, row.nom, false);
+          option(parcours, row.id, row.nom, false, true);
         });
       }
       parcours.disabled = false;
+      mettreAJourObligations();
     }
 
     mention.addEventListener("change", function () {
       niveau.disabled = !mention.value;
       if (!mention.value) niveau.value = "";
+      mettreAJourObligations();
       charger();
     });
-    niveau.addEventListener("change", charger);
+    niveau.addEventListener("change", function () {
+      mettreAJourObligations();
+      charger();
+    });
+    parcours.addEventListener("change", mettreAJourObligations);
 
     if (mention.value) {
       niveau.disabled = false;
       if (niveau.value) charger();
     } else {
       resetParcours();
+    }
+    mettreAJourObligations();
+
+    if (formulaire) {
+      formulaire.addEventListener("submit", function (event) {
+        const choixAcademique = Boolean(mention.value || niveau.value || parcours.value);
+        if (choixAcademique && (!mention.value || !niveau.value)) {
+          event.preventDefault();
+          ( !mention.value ? mention : niveau ).reportValidity();
+        }
+      });
     }
   }
 
