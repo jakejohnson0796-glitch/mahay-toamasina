@@ -577,16 +577,12 @@ def tronc_commun_offert(
 
 
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
-    """Test canonique d'eligibilite a un cercle."""
-    nature = type_cercle(cercle)
+    """Test canonique d'eligibilite, y compris pour les cercles historiques."""
+    identite = contexte_identite_cercle(cercle, session)
+    nature = identite["type"]
     if nature == "libre":
         return True
-    if nature == "incomplet":
-        return False
-
-    if nature == "parcours" and not parcours_cercle_offert(
-        session, cercle.mention_id, cercle.filiere_id, cercle.niveau
-    ):
+    if nature == "incomplet" or not identite["coherent"]:
         return False
 
     profil = contexte_profil_academique(utilisateur, session)
@@ -594,42 +590,29 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
         return False
 
     mention = profil["mention"]
-    if not mention or mention.id != cercle.mention_id or profil["niveau"] != cercle.niveau:
+    if not mention or mention.id != identite["mention_id"] or profil["niveau"] != cercle.niveau:
         return False
 
     if nature == "tronc_commun":
         return True
 
     filiere_utilisateur = profil["filiere"]
-    if not filiere_utilisateur:
+    filiere_cercle = identite["filiere"]
+    if not filiere_utilisateur or not filiere_cercle:
         return False
-    return cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
+    return filiere_cercle.id in _filieres_equivalentes(session, filiere_utilisateur)
 
 
 def condition_cercles_disponibles(
     utilisateur: Optional[Utilisateur], session: Session, profil: Optional[dict] = None
 ):
-    """Condition SQLAlchemy (a passer a .where()) qui identifie les
-    cercles 'disponibles' pour cet utilisateur, au meme sens que
-    profil_correspond_au_cercle ci-dessus : les cercles libres, plus le
-    cercle de tronc commun de sa mention+niveau s'il existe, plus — s'il
-    a deja choisi une filiere — le cercle national de son parcours
-    (base sur le parcours national, pas juste sa propre Filiere.id —
-    voir _filieres_equivalentes).
+    """Condition SQL pour les cercles libres et les cercles compatibles.
 
-    Construite cote SQL (plutot qu'evaluee ligne par ligne en Python
-    apres avoir tout charge) pour rester efficace meme avec un grand
-    nombre de cercles en base (voir cercles_referentiel.py, qui peut en
-    generer plusieurs centaines — un par parcours x niveau). La seule
-    partie Python est le calcul, une fois, de la liste des Filiere
-    equivalentes au parcours de l'utilisateur — necessairement en
-    Python puisque la normalisation (accents/casse) n'est pas
-    exprimable simplement en SQL portable SQLite/Postgres.
-
-    Utilisateur non connecte, ou sans mention/niveau declares : seuls
-    les cercles libres sont consideres disponibles (il ne peut, de toute
-    facon, rejoindre aucun cercle national tant que son profil n'est pas
-    complet — voir la meme regle dans profil_correspond_au_cercle)."""
+    La mention effective est celle du cercle si elle est stockee, sinon celle
+    du parcours associe (retrocompatibilite des anciennes lignes). Les lignes
+    dont la mention stockee contredit celle du parcours sont exclues; elles
+    doivent etre corrigees plutot que presentees comme disponibles.
+    """
     cercle_libre = and_(
         CercleEtude.mention_id.is_(None),
         CercleEtude.filiere_id.is_(None),
@@ -639,36 +622,65 @@ def condition_cercles_disponibles(
     if utilisateur is None or not utilisateur.niveau:
         return cercle_libre
 
-    profil = contexte_profil_academique(utilisateur, session)
+    profil = profil or contexte_profil_academique(utilisateur, session)
     if not profil["coherent"]:
         return cercle_libre
 
     mention_id = profil["mention"].id
     filiere_utilisateur = profil["filiere"]
 
-    # Cercle de tronc commun pour la mention+niveau de l'utilisateur :
-    # correspond qu'il ait deja choisi une filiere ou non (voir
-    # profil_correspond_au_cercle).
-    cercle_tronc_commun_correspondant = and_(
-        CercleEtude.mention_id == mention_id,
-        CercleEtude.niveau == utilisateur.niveau,
-        CercleEtude.filiere_id.is_(None),
+    # Sous-requetes correlees plutot qu'une dependance a un JOIN externe :
+    # cette condition est aussi utilisee par les tests et d'autres requetes
+    # qui ne joignent pas directement Filiere.
+    mention_filiere = (
+        select(Filiere.mention_id)
+        .where(Filiere.id == CercleEtude.filiere_id)
+        .scalar_subquery()
     )
+    nom_filiere = (
+        select(Filiere.nom)
+        .where(Filiere.id == CercleEtude.filiere_id)
+        .scalar_subquery()
+    )
+    mention_effective = func.coalesce(CercleEtude.mention_id, mention_filiere)
+    references_coherentes = or_(
+        CercleEtude.filiere_id.is_(None),
+        and_(
+            mention_filiere.is_not(None),
+            or_(
+                CercleEtude.mention_id.is_(None),
+                CercleEtude.mention_id == mention_filiere,
+            ),
+        ),
+    )
+    ancienne_filiere_tronc_commun = func.lower(func.trim(nom_filiere)) == "tronc commun"
 
-    if not utilisateur.filiere_id:
-        return or_(cercle_libre, cercle_tronc_commun_correspondant)
+    # Un vieux cercle peut avoir garde une Filiere technique appelee
+    # "Tronc commun"; le traiter comme le tronc commun moderne sans parcours.
+    cercle_tronc_commun_correspondant = and_(
+        mention_effective == mention_id,
+        CercleEtude.niveau == utilisateur.niveau,
+        or_(
+            CercleEtude.filiere_id.is_(None),
+            ancienne_filiere_tronc_commun,
+        ),
+        references_coherentes,
+    )
 
     if not filiere_utilisateur:
         return or_(cercle_libre, cercle_tronc_commun_correspondant)
 
     filieres_equivalentes = _filieres_equivalentes(session, filiere_utilisateur)
+    cercle_parcours_correspondant = and_(
+        mention_effective == mention_id,
+        CercleEtude.filiere_id.in_(filieres_equivalentes),
+        CercleEtude.niveau == utilisateur.niveau,
+        references_coherentes,
+        ~ancienne_filiere_tronc_commun,
+    )
 
     return or_(
         cercle_libre,
         cercle_tronc_commun_correspondant,
-        and_(
-            CercleEtude.mention_id == mention_id,
-            CercleEtude.filiere_id.in_(filieres_equivalentes),
-            CercleEtude.niveau == utilisateur.niveau,
-        ),
+        cercle_parcours_correspondant,
     )
