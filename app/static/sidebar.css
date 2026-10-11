@@ -182,51 +182,88 @@
 }
 
 
-/* Sélecteur de langue global, disponible pour les visiteurs et les membres. */
+/* Préférence de langue : regroupée en pied de navigation avec les autres réglages. */
 .tb-sidebar-langue {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  gap: .38rem;
+  margin: .45rem .15rem .1rem;
+  padding: .65rem .35rem 0;
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,.10);
+  border-radius: 0;
+  background: transparent;
+  color: #D5E3DE;
+  font-size: .72rem;
+}
+
+.tb-sidebar-langue label {
+  display: flex;
   align-items: center;
   gap: .45rem;
-  margin: .25rem .35rem .8rem;
-  padding: .35rem .4rem;
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 10px;
-  background: rgba(255,255,255,.045);
-  color: #D5E3DE;
-  font-size: .74rem;
+  margin: 0;
+  color: #AEC5BF;
+  font-size: .66rem;
+  font-weight: 650;
+  letter-spacing: .025em;
 }
-.tb-sidebar-langue label {
-  color: inherit;
-  font-size: .72rem;
-  font-weight: 600;
+
+.tb-sidebar-langue label > span[aria-hidden="true"] {
+  font-size: .9rem;
 }
+
 .tb-sidebar-langue select {
   width: 100%;
   min-width: 0;
-  padding: .38rem .45rem;
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 7px;
+  min-height: 38px;
+  padding: .48rem 2rem .48rem .65rem;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 9px;
   background: #0B3A3D;
   color: #FFFFFF;
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease;
 }
+
+.tb-sidebar-langue select:hover {
+  border-color: rgba(255,255,255,.32);
+  background: #104448;
+}
+
 .tb-sidebar-langue select:focus-visible {
   outline: 2px solid #F0C78B;
   outline-offset: 2px;
 }
+
 @media (min-width:901px) {
   body.sidebar-compact .tb-sidebar-langue {
-    grid-template-columns: minmax(0,1fr);
-    margin-inline: 0;
-    padding: .22rem;
+    margin: .35rem 0 .1rem;
+    padding: .4rem 0 0;
+    gap: .25rem;
   }
+
   body.sidebar-compact .tb-sidebar-langue label {
     display: none;
   }
+
   body.sidebar-compact .tb-sidebar-langue select {
-    padding: .28rem .12rem;
-    font-size: .64rem;
+    min-height: 34px;
+    padding: .35rem .16rem;
+    font-size: .62rem;
+    text-align: center;
+  }
+}
+
+@media (max-width:900px) {
+  .tb-sidebar-langue {
+    margin-top: .6rem;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .tb-sidebar-langue select {
+    transition: none !important;
   }
 }
