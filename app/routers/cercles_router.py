@@ -927,6 +927,19 @@ def creer_cercle(
 
     niveau_nettoye = (niveau or "").strip() or None
 
+    # Aucun choix académique doit être interprété comme un groupe libre.
+    # Si une seule dimension académique est renseignée, refuser explicitement
+    # le formulaire plutôt que créer un cercle "incomplet" en silence.
+    identite_academique_demandee = bool(
+        mention_id_nettoye or filiere_id_nettoye or niveau_nettoye
+    )
+    if identite_academique_demandee and (
+        not niveau_nettoye or not (mention_id_nettoye or filiere_id_nettoye)
+    ):
+        return RedirectResponse(
+            "/cercles?erreur=identite_academique_incomplete", status_code=303
+        )
+
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
         if niveau_nettoye not in NIVEAUX:
@@ -944,20 +957,24 @@ def creer_cercle(
                 # /admin/referentiel pour l'assigner).
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
             mention_id_cible = filiere.mention_id
+            if mention_id_nettoye and mention_id_nettoye != mention_id_cible:
+                return RedirectResponse(
+                    "/cercles?erreur=parcours_mention_incoherents", status_code=303
+                )
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
                 session, mention_id_cible, filiere.id, niveau_nettoye
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau_nettoye)
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
             # universite + composante + mention + niveau du demandeur.
             # Une mention qui existe ailleurs ne suffit pas.
             mention = session.get(Mention, mention_id_nettoye)
-            if not mention:
+            if not mention or not mention.est_active:
                 return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
             mention_id_cible = mention.id
             if (
@@ -980,7 +997,7 @@ def creer_cercle(
         # §48 : si le cercle national existe deja, ne pas proposer de
         # doublon — rediriger vers l'existant.
         if filiere:
-            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
+            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere, niveau_nettoye)
         else:
             filieres_equivalentes = []
 
