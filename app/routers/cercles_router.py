@@ -400,10 +400,16 @@ def liste_cercles(
     # Un paramètre incohérent ne doit jamais élargir les résultats.
     filiere_selectionnee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
     if filiere_selectionnee:
-        if (
-            mention_id_nettoye
-            and filiere_selectionnee.mention_id
-            and mention_id_nettoye != filiere_selectionnee.mention_id
+        # Domaine/Mention/Parcours/Niveau forment une seule hiérarchie :
+        # un filtre contradictoire doit produire zéro résultat, jamais
+        # élargir silencieusement la recherche.
+        if mention_id_nettoye and filiere_selectionnee.mention_id != mention_id_nettoye:
+            filiere_id_nettoye = -1
+            filiere_selectionnee = None
+        elif (
+            niveau_nettoye
+            and filiere_selectionnee.niveau
+            and filiere_selectionnee.niveau != niveau_nettoye
         ):
             filiere_id_nettoye = -1
             filiere_selectionnee = None
@@ -640,7 +646,7 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -737,7 +743,7 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             })
         return resultat
 
@@ -873,6 +879,21 @@ def creer_cercle(
 
     filiere_id_nettoye = entier_ou_none(filiere_id)
     mention_id_nettoye = entier_ou_none(mention_id)
+    niveau_nettoye = (niveau or "").strip() or None
+
+    # Toute sélection académique doit être complète : ne jamais transformer
+    # silencieusement une mention/parcours/niveau partiel en groupe libre.
+    champs_academiques = bool(
+        (mention_id or "").strip()
+        or (filiere_id or "").strip()
+        or (niveau or "").strip()
+    )
+    if champs_academiques and not niveau_nettoye:
+        return RedirectResponse("/cercles?erreur=infos_academiques_incompletes", status_code=303)
+    if niveau_nettoye and niveau_nettoye not in NIVEAUX:
+        return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
+    if champs_academiques and not (mention_id_nettoye or filiere_id_nettoye):
+        return RedirectResponse("/cercles?erreur=infos_academiques_incompletes", status_code=303)
 
     # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
     # numero de telephone. On verrouille la ligne utilisateur
@@ -890,42 +911,9 @@ def creer_cercle(
         select(func.count()).select_from(CercleEtude).where(CercleEtude.createur_id == utilisateur.id)
     ).one()
     if nb_cercles_existants >= MAX_CERCLES_PAR_UTILISATEUR:
-        filieres = session.exec(select(Filiere)).all()
-        cercles = session.exec(select(CercleEtude).order_by(CercleEtude.date_creation.desc())).all()
-        cercle_ids = [c.id for c in cercles]
-        nb_membres_par_cercle = {cid: nb for cid, nb in session.exec(
-            select(MembreCercle.cercle_id, func.count())
-            .where(MembreCercle.cercle_id.in_(cercle_ids or [-1]))
-            .group_by(MembreCercle.cercle_id)
-        ).all()}
-        membres_utilisateur = {
-            cid for cid in session.exec(
-                select(MembreCercle.cercle_id).where(
-                    MembreCercle.cercle_id.in_(cercle_ids or [-1]),
-                    MembreCercle.utilisateur_id == utilisateur.id,
-                )
-            ).all()
-        }
-        cercles_avec_info = [{
-            "cercle": c,
-            "nb_membres": nb_membres_par_cercle.get(c.id, 0),
-            "est_membre": c.id in membres_utilisateur,
-            "en_attente": False,
-            "peut_gerer": _peut_gerer_cercle(c, utilisateur),
-        } for c in cercles]
-        return templates.TemplateResponse(
-            request,
-            "cercles_list.html",
-            {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "utilisateur": utilisateur,
-                "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
-                "theme_du_jour": theme_service.get_theme_du_jour(),
-                "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
-                "page": 1, "total_pages": 1, "total_cercles": len(cercles_avec_info),
-            },
-        )
-
-    niveau_nettoye = (niveau or "").strip() or None
+        # Revenir par GET à la page complète évite un rendu avec un contexte
+        # incomplet (mentions, type de cercle, filtres et compteurs manquants).
+        return RedirectResponse("/cercles?erreur=limite_creation", status_code=303)
 
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
@@ -938,11 +926,11 @@ def creer_cercle(
             if not filiere:
                 return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
             if not filiere.mention_id:
-                # §10 du brief : la coherence mention/filiere doit etre
-                # verifiee avant tout. Une filiere sans mention assignee ne
-                # peut pas encore porter de cercle national (voir
-                # /admin/referentiel pour l'assigner).
+                # Une filiere sans mention verifiee ne peut pas porter de
+                # cercle national.
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            if mention_id_nettoye and filiere.mention_id != mention_id_nettoye:
+                return RedirectResponse("/cercles?erreur=parcours_mention_incoherents", status_code=303)
             mention_id_cible = filiere.mention_id
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
@@ -950,7 +938,7 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau_nettoye)
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
@@ -1203,7 +1191,7 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle):
+    if referentiel_academique.cercle_est_national(cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None):
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
@@ -1583,7 +1571,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
