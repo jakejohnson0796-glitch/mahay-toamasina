@@ -24,6 +24,7 @@ from app.referentiel_academique import (
     erreur_choix_academique,
     serialiser_profil_academique,
     type_cercle,
+    contexte_identite_cercle,
     erreur_cercle_parcours,
     parcours_cercle_offert,
     offre_filiere_active_universite,
@@ -281,6 +282,71 @@ class TestCorrespondanceCercle(unittest.TestCase):
             for cercle in exemples:
                 self.assertEqual(type_cercle(cercle), "incomplet")
                 self.assertFalse(cercle_est_national(cercle))
+
+    def test_ancien_cercle_derive_la_mention_du_parcours_et_reste_disponible(self):
+        with Session(self.engine) as session:
+            cercle = CercleEtude(
+                nom="Finance L3 historique",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            session.add(cercle)
+            session.commit()
+            session.refresh(cercle)
+
+            identite = contexte_identite_cercle(cercle, session)
+            self.assertEqual(identite["type"], "parcours")
+            self.assertEqual(identite["mention_id"], self.mention_id)
+            self.assertEqual(identite["filiere"].id, self.filiere_id)
+
+            utilisateur = Utilisateur(
+                nom="Etudiant historique",
+                telephone="0340000031",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+            disponibles = session.exec(
+                select(CercleEtude.id).where(condition_cercles_disponibles(utilisateur, session))
+            ).all()
+            self.assertIn(cercle.id, disponibles)
+
+    def test_cercle_avec_mention_differente_de_celle_du_parcours_est_incoherent(self):
+        with Session(self.engine) as session:
+            cercle = CercleEtude(
+                nom="Référentiel contradictoire",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.autre_filiere_id,
+                niveau="L3",
+            )
+            identite = contexte_identite_cercle(cercle, session)
+            self.assertEqual(identite["type"], "incomplet")
+            self.assertIsNone(identite["mention_id"])
+            self.assertIsNone(identite["filiere"])
+
+    def test_cercle_signale_incoherent_si_niveau_du_parcours_ne_correspond_pas(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "M1"
+            session.add(filiere)
+            session.commit()
+
+            cercle = CercleEtude(
+                nom="Mauvais niveau de parcours",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle, session), "incomplet")
 
     def test_utilisateur_sans_filiere_ne_correspond_a_aucun_cercle_national(self):
         with Session(self.engine) as session:
