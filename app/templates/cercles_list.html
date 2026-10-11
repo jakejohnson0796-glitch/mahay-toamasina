@@ -350,9 +350,15 @@
         <article class="cercles-visibilite-card">
           <h5>{{ info.cercle.nom }}</h5>
           <p class="cercles-visibilite-meta">
-            {% if info.mention %}{{ info.mention.nom }}{% endif %}
-            {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.type_cercle == "incomplet" %}
+              Référentiel à vérifier
+            {% elif info.type_cercle == "libre" %}
+              Groupe libre
+            {% else %}
+              {% if info.mention %}{{ info.mention.nom }}{% endif %}
+              {% if info.type_cercle == "parcours" and info.filiere %} · {{ info.filiere.nom }}{% elif info.type_cercle == "tronc_commun" %} · Tronc commun{% endif %}
+              {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           <span class="puce-statut">Tu es membre</span>
@@ -387,10 +393,14 @@
         <article class="cercles-visibilite-card">
           <h5>{{ info.cercle.nom }}</h5>
           <p class="cercles-visibilite-meta">
-            {% if info.domaine %}{{ info.domaine.nom }} · {% endif %}
-            {{ info.mention.nom if info.mention else cercles_profil_visibilite.mention_nom }}
-            {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.type_cercle == "incomplet" %}
+              Référentiel à vérifier
+            {% else %}
+              {% if info.domaine %}{{ info.domaine.nom }} · {% endif %}
+              {{ info.mention.nom if info.mention else cercles_profil_visibilite.mention_nom }}
+              {% if info.type_cercle == "parcours" and info.filiere %} · {{ info.filiere.nom }}{% elif info.type_cercle == "tronc_commun" %} · Tronc commun{% endif %}
+              {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
@@ -419,9 +429,13 @@
         <article class="cercles-visibilite-card">
           <h5>{{ info.cercle.nom }}</h5>
           <p class="cercles-visibilite-meta">
-            {% if info.mention %}{{ info.mention.nom }}{% endif %}
-            {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.type_cercle == "incomplet" %}
+              Référentiel à vérifier
+            {% else %}
+              {% if info.mention %}{{ info.mention.nom }}{% endif %}
+              {% if info.type_cercle == "parcours" and info.filiere %} · {{ info.filiere.nom }}{% elif info.type_cercle == "tronc_commun" %} · Tronc commun{% endif %}
+              {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
