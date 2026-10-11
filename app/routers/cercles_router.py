@@ -37,7 +37,7 @@ from .. import subscription
 from .. import theme_service
 from .. import referentiel_academique
 from ..web_utils import entier_ou_none
-from ..referentiel import NIVEAUX
+from ..referentiel import NIVEAUX, NIVEAUX_LIBELLES
 from ..recherche import clause_recherche_cercles
 from ..rate_limit import limite_depassee
 from .. import gamification
@@ -640,7 +640,7 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, session),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -737,7 +737,7 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle(cercle, session),
             })
         return resultat
 
@@ -817,7 +817,7 @@ def liste_cercles(
             "domaines": domaines,
             "mentions": mentions,
             "filiere_recherchee": filiere_recherchee,
-            "niveaux": NIVEAUX,
+            "niveaux": NIVEAUX, "libelles_niveaux": NIVEAUX_LIBELLES,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
             "profil_academique_recherche": profil_academique_recherche,
@@ -917,7 +917,7 @@ def creer_cercle(
             request,
             "cercles_list.html",
             {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "utilisateur": utilisateur,
+                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "libelles_niveaux": NIVEAUX_LIBELLES, "utilisateur": utilisateur,
                 "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
                 "theme_du_jour": theme_service.get_theme_du_jour(),
                 "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
@@ -926,6 +926,14 @@ def creer_cercle(
         )
 
     niveau_nettoye = (niveau or "").strip() or None
+
+    # Ne jamais transformer silencieusement un formulaire académique partiel
+    # en groupe libre : le groupe libre n'existe que si aucun filtre scolaire
+    # n'est fourni. Mention/parcours impliquent un niveau normalisé.
+    if (mention_id_nettoye or filiere_id_nettoye) and not niveau_nettoye:
+        return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
+    if niveau_nettoye and not (mention_id_nettoye or filiere_id_nettoye):
+        return RedirectResponse("/cercles?erreur=hierarchie_incomplete", status_code=303)
 
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
@@ -943,6 +951,8 @@ def creer_cercle(
                 # peut pas encore porter de cercle national (voir
                 # /admin/referentiel pour l'assigner).
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            if mention_id_nettoye and mention_id_nettoye != filiere.mention_id:
+                return RedirectResponse("/cercles?erreur=mention_parcours_incoherents", status_code=303)
             mention_id_cible = filiere.mention_id
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
@@ -950,7 +960,7 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau_nettoye)
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
