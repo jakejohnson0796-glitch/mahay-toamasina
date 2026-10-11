@@ -147,17 +147,17 @@
         <span class="tb-sidebar-logo">Gasy Mahay</span>
         <span class="tb-sidebar-lieu">Madagascar</span>
       </a>
+      <div class="tb-sidebar-langue">
+        <span class="tb-sidebar-langue-icone" aria-hidden="true">🌐</span>
+        <label for="select-langue" class="sr-only">Langue du site</label>
+        <select id="select-langue" name="langue" aria-label="Langue du site : FR pour Français, MG pour Malagasy" title="Français / Malagasy">
+          <option value="fr">FR</option>
+          <option value="mg">MG</option>
+        </select>
+      </div>
       <button type="button" class="tb-sidebar-collapse" id="bouton-sidebar-collapse" aria-label="Réduire la barre latérale" aria-pressed="false" title="Réduire la barre latérale">
         <span aria-hidden="true">‹</span>
       </button>
-    </div>
-
-    <div class="tb-sidebar-langue">
-      <label for="select-langue" data-langue-label>Langue</label>
-      <select id="select-langue" name="langue" aria-label="Choisir la langue">
-        <option value="fr">Français</option>
-        <option value="mg">Malagasy</option>
-      </select>
     </div>
 
     {% if request.session.get("user_id") %}
