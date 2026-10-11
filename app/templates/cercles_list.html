@@ -513,6 +513,8 @@
   {% if request.query_params.get("erreur") == "niveau_requis" %}<div class="erreur">Choisis un niveau pour créer un cercle lié à une mention. Aucun cercle libre n’a été créé.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_requise" %}<div class="erreur">Choisis une mention avant de préciser le niveau du cercle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "parcours_mention_incoherente" %}<div class="erreur">Le parcours choisi ne correspond pas à la mention. Vérifie tes choix et réessaie.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur">Ce parcours n’est pas proposé au niveau choisi. Vérifie le niveau et le parcours, puis réessaie.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "tronc_commun_indisponible" %}<div class="erreur">Le tronc commun n’est pas proposé à ce niveau dans ta composante. Choisis un parcours disponible ou vérifie ton profil académique.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
