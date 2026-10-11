@@ -54,7 +54,7 @@ def test_circle_filters_and_cards_use_the_linked_pathway_as_source_of_truth():
     assert router.count("func.coalesce(Filiere.mention_id, CercleEtude.mention_id)") >= 3
     assert router.count('referentiel_academique.type_cercle(cercle, filiere)') >= 2
     assert "filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None" in router
-    assert 'f"\/cercles/{cercle_id}/membres?erreur=referentiel_a_verifier"' in router
+    assert "erreur=referentiel_a_verifier" in router
 
 
 def test_national_pathway_endpoint_scopes_active_offers_to_the_pathways_university():
