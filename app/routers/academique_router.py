@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -258,18 +259,29 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau and niveau not in NIVEAUX:
+        return []
 
     requete = (
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
+        .join(Universite, Universite.id == Faculte.universite_id)
         .where(
             Filiere.mention_id == mention_id,
+            ProgrammeUniversitaire.universite_id == Universite.id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            Universite.est_active == True,  # noqa: E712
         )
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
-    filieres = session.exec(requete.distinct()).all()
+    # Un parcours explicite du niveau choisi prime sur une ligne heritee
+    # sans niveau; l'ID representant les homonymes ne depend donc pas de
+    # l'ordre de retour variable du moteur SQL.
+    filieres = session.exec(
+        requete.distinct().order_by(Filiere.nom, Filiere.niveau.is_(None), Filiere.id)
+    ).all()
     filieres = [
         f for f in filieres
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
