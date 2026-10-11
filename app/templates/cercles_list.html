@@ -514,6 +514,7 @@
   {% if request.query_params.get("erreur") == "mention_parcours_incoherents" %}<div class="erreur">Le parcours sélectionné n'appartient pas à la mention choisie. Vérifie la mention et le parcours.</div>{% endif %}
   {% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur">Ce parcours n'est pas proposé au niveau sélectionné. Choisis le niveau exact puis réessaie.</div>{% endif %}
   {% if request.query_params.get("erreur") == "tronc_commun_indisponible" %}<div class="erreur">Le tronc commun n'est pas disponible pour cette combinaison de mention et niveau dans ton établissement. Vérifie ton profil académique.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "filiere_introuvable" %}<div class="erreur">Le parcours sélectionné n'existe plus dans le référentiel. Actualise la page et choisis un parcours disponible.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
