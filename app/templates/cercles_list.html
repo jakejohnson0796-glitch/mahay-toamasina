@@ -614,11 +614,11 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+        <span class="cercle-card-premium-type">{% if info.type_cercle == "parcours" %}Cercle de parcours{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}Référentiel à vérifier{% endif %}</span>
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true" class="carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
