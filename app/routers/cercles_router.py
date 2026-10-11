@@ -640,7 +640,7 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -737,7 +737,7 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             })
         return resultat
 
@@ -873,6 +873,33 @@ def creer_cercle(
 
     filiere_id_nettoye = entier_ou_none(filiere_id)
     mention_id_nettoye = entier_ou_none(mention_id)
+    niveau_nettoye = (niveau or "").strip() or None
+
+    # La sélection académique est atomique : dès qu'un champ de la
+    # hiérarchie est fourni, il faut une mention et un niveau cohérents.
+    # Sans cette vérification, un POST incomplet (mention seule, niveau
+    # seul ou parcours seul) pouvait être enregistré immédiatement comme
+    # "groupe libre" ou avec un rattachement partiel/inexact.
+    filiere_selectionnee = None
+    if filiere_id_nettoye is not None:
+        filiere_selectionnee = session.get(Filiere, filiere_id_nettoye)
+        if not filiere_selectionnee:
+            return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+        if not filiere_selectionnee.mention_id:
+            return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+        if mention_id_nettoye and mention_id_nettoye != filiere_selectionnee.mention_id:
+            return RedirectResponse("/cercles?erreur=mention_parcours_incoherents", status_code=303)
+        # La mention du parcours est la source de vérité. Ne pas conserver
+        # une valeur de formulaire différente de celle du référentiel.
+        mention_id_nettoye = filiere_selectionnee.mention_id
+
+    hierarchy_selectionnee = bool(mention_id_nettoye or filiere_id_nettoye or niveau_nettoye)
+    if hierarchy_selectionnee and not niveau_nettoye:
+        return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
+    if hierarchy_selectionnee and not mention_id_nettoye:
+        return RedirectResponse("/cercles?erreur=mention_requise", status_code=303)
+    if niveau_nettoye and niveau_nettoye not in NIVEAUX:
+        return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
 
     # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
     # numero de telephone. On verrouille la ligne utilisateur
@@ -925,8 +952,6 @@ def creer_cercle(
             },
         )
 
-    niveau_nettoye = (niveau or "").strip() or None
-
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
         if niveau_nettoye not in NIVEAUX:
@@ -950,7 +975,7 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau_nettoye)
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
@@ -1583,7 +1608,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
