@@ -342,7 +342,7 @@ def assigner_cercle(
     # pose deja un index unique partiel cote base pour le meme cas).
     if cercle.mention_id and cercle.filiere_id and cercle.niveau:
         filiere_canonique = (
-            referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            referentiel_academique.filiere_canonique_pour_cercle(session, filiere, cercle.niveau)
             if filiere
             else filiere
         )
@@ -447,7 +447,7 @@ def approuver_demande_creation(
                 status_code=303,
             )
         filiere_demandee = referentiel_academique.filiere_canonique_pour_cercle(
-            session, filiere_demandee
+            session, filiere_demandee, demande.niveau
         )
         demande.filiere_id = filiere_demandee.id
     else:
