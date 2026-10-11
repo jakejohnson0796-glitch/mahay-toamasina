@@ -337,7 +337,7 @@ def liste_cercles(
 ):
     """Recherche nationale des cercles avec une hierarchie explicite.
 
-    Identite affichee : Domaine -> Mention -> Parcours -> Niveau.
+    Identite affichee : Domaine -> Mention -> Niveau -> Parcours.
     La recherche textuelle couvre le nom, la description, la mention et
     le parcours au lieu de limiter le resultat au nom du cercle.
     """
