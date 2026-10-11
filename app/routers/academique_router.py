@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -258,29 +259,54 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    # Un niveau arbitraire ne doit jamais élargir la liste aux parcours
+    # hérités sans niveau : ils restent un repli UNIQUEMENT pour un niveau
+    # canonique (L1-L3, M1-M2, D1-D3).
+    if niveau is not None and niveau not in NIVEAUX:
+        return []
 
+    # Une offre universitaire n'est valide que dans l'université de la
+    # composante à laquelle la Filiere est rattachée. Une ligne
+    # ProgrammeUniversitaire croisée vers une autre université ne doit pas
+    # faire apparaître ce parcours dans un cercle national par erreur.
     requete = (
         select(Filiere)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
+        .join(Universite, Universite.id == Faculte.universite_id)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
         .where(
             Filiere.mention_id == mention_id,
+            Universite.est_active == True,  # noqa: E712
+            ProgrammeUniversitaire.universite_id == Faculte.universite_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
         )
+        .order_by(Filiere.nom, Filiere.id)
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
-    filieres = session.exec(requete.distinct()).all()
     filieres = [
-        f for f in filieres
+        f for f in session.exec(requete.distinct()).all()
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
     ]
 
+    # Un seul choix national par parcours normalisé. Quand un parcours
+    # précis existe pour le niveau sélectionné et une entrée héritée (niveau
+    # NULL) existe aussi, choisir l'entrée précise : l'ID transmis à la
+    # création doit porter le même niveau que le filtre qui l'a proposé.
     vus: dict[str, dict] = {}
     for f in filieres:
         cle = _normaliser_nom_parcours(f.nom)
-        if cle not in vus:
-            vus[cle] = {"id": f.id, "nom": f.nom}
-    return sorted(vus.values(), key=lambda p: p["nom"])
+        entree = {"id": f.id, "nom": f.nom, "niveau": f.niveau}
+        actuelle = vus.get(cle)
+        if actuelle is None:
+            vus[cle] = entree
+        elif niveau and actuelle["niveau"] is None and f.niveau == niveau:
+            vus[cle] = entree
+
+    return [
+        {"id": item["id"], "nom": item["nom"]}
+        for item in sorted(vus.values(), key=lambda p: (p["nom"].casefold(), p["id"]))
+    ]
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine
