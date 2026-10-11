@@ -89,6 +89,13 @@ def test_circle_creation_rejects_partial_or_mismatched_academic_hierarchies():
     assert 'erreur=mention_requise' in router
     assert 'erreur=mention_parcours_incoherents' in router
     assert "filiere_canonique_pour_cercle(session, filiere, niveau_nettoye)" in router
+    create_handler = router.split('@router.post("/cercles/creer")', 1)[1].split(
+        '@router.post("/cercles/{cercle_id}/demander")', 1
+    )[0]
+    assert 'RedirectResponse("/cercles?erreur=limite_cercles", status_code=303)' in create_handler
+    assert 'return templates.TemplateResponse(' not in create_handler.split(
+        "if nb_cercles_existants >= MAX_CERCLES_PAR_UTILISATEUR:", 1
+    )[1].split("# --- Cas 1", 1)[0]
 
 
 def test_circle_card_types_use_readable_labels_and_the_avatar_has_one_class_attribute():
@@ -110,10 +117,19 @@ def test_national_pathway_api_checks_canonical_level_active_offers_and_matching_
     assert 'actuelle["niveau"] is None and f.niveau == niveau' in router
 
 
+def test_circle_room_explains_invalid_academic_hierarchy_separately_from_free_groups():
+    room = (ROOT / "app" / "templates" / "cercle_chat.html").read_text(encoding="utf-8")
+    assert 'type_cercle_courant == "libre"' in room
+    assert "Le rattachement académique de ce cercle doit être vérifié" in room
+    assert 'aria-label="Identité académique du cercle"' in room
+
+
 def test_sidebar_and_css_have_balanced_structure():
     base = BASE.read_text(encoding="utf-8")
     css = SIDEBAR_CSS.read_text(encoding="utf-8")
     assert base.count("<section class=\"tb-sidebar-preferences\"") == 1
+    assert "order: 2" in css
+    assert ".tb-sidebar-compte-zone { order: 3; }" in css
 
     depth = 0
     for char in css:
