@@ -132,6 +132,42 @@ class TestCircleReferenceConsistency(unittest.TestCase):
             ).all()
             self.assertIn(circle.id, {item.id for item in available})
 
+    def test_legacy_student_pathway_without_level_matches_the_exact_national_level(self):
+        with Session(self.engine) as session:
+            legacy_pathway = Filiere(
+                nom="Parcours Test Cohérence",
+                faculte_id=self.faculty_id,
+                mention_id=self.mention_id,
+                niveau=None,
+            )
+            session.add(legacy_pathway)
+            session.commit()
+            session.refresh(legacy_pathway)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.university_id,
+                filiere_id=legacy_pathway.id,
+                est_active=True,
+            ))
+            student = session.get(Utilisateur, self.student_id)
+            student.filiere_id = legacy_pathway.id
+            session.add(student)
+            circle = CercleEtude(
+                nom="Cercle national niveau précis",
+                createur_id=self.creator_id,
+                mention_id=self.mention_id,
+                filiere_id=self.pathway_id,
+                niveau="L3",
+            )
+            session.add(circle)
+            session.commit()
+            session.refresh(circle)
+
+            self.assertTrue(profil_correspond_au_cercle(student, circle, session))
+            available = session.exec(
+                select(CercleEtude).where(condition_cercles_disponibles(student, session))
+            ).all()
+            self.assertIn(circle.id, {item.id for item in available})
+
     def test_explicitly_conflicting_mention_is_not_a_valid_pathway_circle(self):
         with Session(self.engine) as session:
             other_mention = Mention(nom="Autre Mention Test")
