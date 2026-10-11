@@ -29,6 +29,7 @@ SIDEBAR_CSS = ROOT / "app" / "static" / "sidebar.css"
 LANGUAGE_JS = ROOT / "app" / "static" / "js" / "choix-langue.js"
 CIRCLES_TEMPLATE = ROOT / "app" / "templates" / "cercles_list.html"
 CIRCLES_ROUTER = ROOT / "app" / "routers" / "cercles_router.py"
+CIRCLES_JS = ROOT / "app" / "static" / "js" / "cercles-list.js"
 ACADEMIC_ROUTER = ROOT / "app" / "routers" / "academique_router.py"
 
 
@@ -279,6 +280,18 @@ class TestCircleReferentialConsistency(unittest.TestCase):
         api = ACADEMIC_ROUTER.read_text(encoding="utf-8")
         self.assertIn("Faculte.universite_id == ProgrammeUniversitaire.universite_id", api)
         self.assertIn("niveau is not None and niveau not in NIVEAUX", api)
+
+    def test_incomplete_academic_creation_cannot_fall_back_to_a_free_group(self):
+        router = CIRCLES_ROUTER.read_text(encoding="utf-8")
+        template = CIRCLES_TEMPLATE.read_text(encoding="utf-8")
+        js = CIRCLES_JS.read_text(encoding="utf-8")
+        self.assertIn('erreur=niveau_requis_pour_mention', router)
+        self.assertIn('erreur=identite_academique_incomplete', router)
+        self.assertIn('name="niveau" disabled required', template)
+        self.assertIn('id="creation-info-tronc-commun" hidden', template)
+        self.assertNotIn('id="creation-info-tronc-commun" style="display:none;"', template)
+        self.assertIn("actualiserObligations()", js)
+        self.assertIn("raison.required = demandeNationale", js)
 
 
 if __name__ == "__main__":
