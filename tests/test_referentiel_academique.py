@@ -24,6 +24,9 @@ from app.referentiel_academique import (
     erreur_choix_academique,
     serialiser_profil_academique,
     type_cercle,
+    mention_effective_cercle,
+    filiere_canonique_pour_cercle,
+    _filieres_equivalentes,
     erreur_cercle_parcours,
     parcours_cercle_offert,
     offre_filiere_active_universite,
@@ -470,6 +473,141 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(filiere)
             session.commit()
             self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
+
+
+class TestCoherenceHierarchieCercle(unittest.TestCase):
+    """Le niveau choisi doit déterminer les parcours équivalents à l'échelle nationale."""
+
+    def setUp(self):
+        self.engine = _nouvel_engine_sqlite()
+        with Session(self.engine) as session:
+            self.universite_ancienne = Universite(nom="Université Hiérarchie Ancienne")
+            self.universite_active = Universite(nom="Université Hiérarchie Active")
+            session.add(self.universite_ancienne)
+            session.add(self.universite_active)
+            session.commit()
+            session.refresh(self.universite_ancienne)
+            session.refresh(self.universite_active)
+
+            self.faculte_ancienne = Faculte(
+                nom="Composante ancienne", universite_id=self.universite_ancienne.id
+            )
+            self.faculte_active = Faculte(
+                nom="Composante active", universite_id=self.universite_active.id
+            )
+            session.add(self.faculte_ancienne)
+            session.add(self.faculte_active)
+            session.commit()
+            session.refresh(self.faculte_ancienne)
+            session.refresh(self.faculte_active)
+
+            self.mention = Mention(nom="Gestion Hiérarchie")
+            session.add(self.mention)
+            session.commit()
+            session.refresh(self.mention)
+
+            self.filiere_heritee = Filiere(
+                nom="Finance et Comptabilité",
+                faculte_id=self.faculte_ancienne.id,
+                mention_id=self.mention.id,
+                niveau=None,
+            )
+            self.filiere_l3 = Filiere(
+                nom="Finance et Comptabilité",
+                faculte_id=self.faculte_active.id,
+                mention_id=self.mention.id,
+                niveau="L3",
+            )
+            self.filiere_m1 = Filiere(
+                nom="Finance et Comptabilité",
+                faculte_id=self.faculte_active.id,
+                mention_id=self.mention.id,
+                niveau="M1",
+            )
+            session.add(self.filiere_heritee)
+            session.add(self.filiere_l3)
+            session.add(self.filiere_m1)
+            session.commit()
+            session.refresh(self.filiere_heritee)
+            session.refresh(self.filiere_l3)
+            session.refresh(self.filiere_m1)
+
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_ancienne.id,
+                filiere_id=self.filiere_heritee.id,
+                est_active=True,
+            ))
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_active.id,
+                filiere_id=self.filiere_l3.id,
+                est_active=True,
+            ))
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_active.id,
+                filiere_id=self.filiere_m1.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            self.utilisateur = Utilisateur(
+                nom="Etudiant Hiérarchie",
+                telephone="0340000097",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_active.id,
+                faculte_id=self.faculte_active.id,
+                mention_id=self.mention.id,
+                filiere_id=self.filiere_l3.id,
+                niveau="L3",
+            )
+            session.add(self.utilisateur)
+            session.commit()
+            session.refresh(self.utilisateur)
+
+            self.cercle_heritage = CercleEtude(
+                nom="Cercle Finance L3 hérité",
+                createur_id=self.utilisateur.id,
+                mention_id=None,
+                filiere_id=self.filiere_l3.id,
+                niveau="L3",
+            )
+            session.add(self.cercle_heritage)
+            session.commit()
+            session.refresh(self.cercle_heritage)
+
+    def test_equivalences_depend_du_niveau_demande(self):
+        with Session(self.engine) as session:
+            l3 = _filieres_equivalentes(session, session.get(Filiere, self.filiere_heritee.id), "L3")
+            m1 = _filieres_equivalentes(session, session.get(Filiere, self.filiere_heritee.id), "M1")
+            self.assertIn(self.filiere_l3.id, l3)
+            self.assertIn(self.filiere_heritee.id, l3)
+            self.assertNotIn(self.filiere_m1.id, l3)
+            self.assertIn(self.filiere_m1.id, m1)
+            self.assertIn(self.filiere_heritee.id, m1)
+            self.assertNotIn(self.filiere_l3.id, m1)
+
+    def test_representation_nationale_prefere_le_parcours_date_au_bon_niveau(self):
+        with Session(self.engine) as session:
+            heritee = session.get(Filiere, self.filiere_heritee.id)
+            canonique = filiere_canonique_pour_cercle(session, heritee, "L3")
+            self.assertEqual(canonique.id, self.filiere_l3.id)
+
+    def test_cercle_heritier_recupere_mention_type_et_eligibilite(self):
+        with Session(self.engine) as session:
+            cercle = session.get(CercleEtude, self.cercle_heritage.id)
+            utilisateur = session.get(Utilisateur, self.utilisateur.id)
+            mention_effective = mention_effective_cercle(cercle, session)
+            self.assertEqual(mention_effective, self.mention.id)
+            self.assertEqual(type_cercle(cercle, mention_effective), "parcours")
+            self.assertTrue(cercle_est_national(cercle, mention_effective))
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+            disponibles = session.exec(
+                select(CercleEtude).where(
+                    condition_cercles_disponibles(utilisateur, session)
+                )
+            ).all()
+            self.assertIn(self.cercle_heritage.id, {item.id for item in disponibles})
 
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
