@@ -973,16 +973,24 @@ def creer_cercle(
             filieres_equivalentes = []
 
         cercle_existant_requete = select(CercleEtude).where(
-            CercleEtude.mention_id == mention_id_cible,
             CercleEtude.niveau == niveau_nettoye,
             CercleEtude.statut == StatutCercle.ACTIF,
         )
         if filiere:
+            # Détecte aussi un cercle historique sans mention_id explicite,
+            # dont la mention effective provient de sa Filiere.
             cercle_existant_requete = cercle_existant_requete.where(
-                CercleEtude.filiere_id.in_(filieres_equivalentes)
+                CercleEtude.filiere_id.in_(filieres_equivalentes),
+                or_(
+                    CercleEtude.mention_id == mention_id_cible,
+                    CercleEtude.mention_id.is_(None),
+                ),
             )
         else:
-            cercle_existant_requete = cercle_existant_requete.where(CercleEtude.filiere_id.is_(None))
+            cercle_existant_requete = cercle_existant_requete.where(
+                CercleEtude.mention_id == mention_id_cible,
+                CercleEtude.filiere_id.is_(None),
+            )
 
         cercle_existant = session.exec(cercle_existant_requete).first()
         if cercle_existant:
