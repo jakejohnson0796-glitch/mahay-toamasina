@@ -384,33 +384,30 @@ def filiere_canonique_pour_cercle(
     return min(candidates, key=lambda candidate: candidate.id)
 
 
-def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
-    """Renvoie les id de TOUTES les Filiere qui representent le meme
-    parcours national que `filiere` — meme mention_id + meme nom une
-    fois normalise + meme niveau (deux niveaux differents du meme nom,
-    ex. "CCA" en M1 et M2, sont deux parcours distincts, voir
-    Filiere.niveau), potentiellement rattachees a d'autres universites
-    (voir cercles_referentiel.py pour le contexte complet : Filiere est
-    scopee par universite, donc le meme parcours a une ligne differente
-    par universite qui l'offre).
+def _filieres_equivalentes(
+    session: Session, filiere: Filiere, niveau: Optional[str] = None
+) -> list[int]:
+    """Renvoie les IDs des lignes représentant le même parcours national.
 
-    Necessaire ici parce qu'un cercle national ne reference qu'UNE
-    seule Filiere representante (cercles_referentiel.py en choisit une
-    arbitrairement pour le groupe) — un etudiant dont la propre
-    filiere_id pointe vers une AUTRE Filiere du meme groupe doit quand
-    meme etre reconnu comme correspondant au cercle, sinon les
-    etudiants de toutes les universites sauf celle de la representante
-    ne pourraient jamais rejoindre leur propre cercle national."""
+    Le niveau peut être fourni par le cercle/profil lorsque la ligne Filiere
+    est historique et sans niveau. Dans ce cas, il autorise les lignes
+    héritées + les lignes explicitement proposées à ce niveau, sans mélanger
+    deux versions récentes du même intitulé (ex. CCA en L3 et CCA en M1).
+    """
     if not filiere.mention_id:
         return [filiere.id]
+    niveau_cible = niveau or filiere.niveau
     nom_normalise = _normaliser_nom_parcours(filiere.nom)
     return [
         f.id for f in session.exec(
             select(Filiere).where(Filiere.mention_id == filiere.mention_id)
         ).all()
-        if _normaliser_nom_parcours(f.nom) == nom_normalise and (f.niveau is None or f.niveau == filiere.niveau)
+        if _normaliser_nom_parcours(f.nom) == nom_normalise
+        and (
+            f.niveau is None
+            or (niveau_cible is not None and f.niveau == niveau_cible)
+        )
     ]
-
 
 
 def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
@@ -570,7 +567,7 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
     filiere_utilisateur = profil["filiere"]
     if not filiere_utilisateur:
         return False
-    return cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
+    return cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur, profil.get("niveau"))
 
 
 def condition_cercles_disponibles(
@@ -637,7 +634,7 @@ def condition_cercles_disponibles(
     if not filiere_utilisateur:
         return or_(cercle_libre, cercle_tronc_commun_correspondant)
 
-    filieres_equivalentes = _filieres_equivalentes(session, filiere_utilisateur)
+    filieres_equivalentes = _filieres_equivalentes(session, filiere_utilisateur, utilisateur.niveau)
 
     return or_(
         cercle_libre,
