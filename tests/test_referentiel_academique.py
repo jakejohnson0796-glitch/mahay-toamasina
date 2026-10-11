@@ -578,5 +578,109 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
         self.assertEqual(self._noms_disponibles(u), attendu)
 
 
+class TestLegacyCircleMetadataCoherence(unittest.TestCase):
+    """Legacy circles must use their effective mention without hiding real contradictions."""
+
+    def setUp(self):
+        self.engine = _nouvel_engine_sqlite()
+        with Session(self.engine) as session:
+            universite = Universite(nom="Universite Legacy Cercle")
+            session.add(universite)
+            session.commit()
+            session.refresh(universite)
+
+            faculte = Faculte(nom="Composante Legacy Cercle", universite_id=universite.id)
+            session.add(faculte)
+            session.commit()
+            session.refresh(faculte)
+
+            mention = Mention(nom="Gestion Legacy Cercle")
+            autre_mention = Mention(nom="Droit Legacy Cercle")
+            session.add(mention)
+            session.add(autre_mention)
+            session.commit()
+            session.refresh(mention)
+            session.refresh(autre_mention)
+
+            filiere = Filiere(
+                nom="Finance Legacy Cercle",
+                faculte_id=faculte.id,
+                mention_id=mention.id,
+                niveau="L3",
+            )
+            session.add(filiere)
+            session.commit()
+            session.refresh(filiere)
+
+            utilisateur = Utilisateur(
+                nom="Etudiant Legacy Cercle",
+                telephone="0340000091",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=universite.id,
+                faculte_id=faculte.id,
+                mention_id=mention.id,
+                filiere_id=filiere.id,
+                niveau="L3",
+            )
+            session.add(utilisateur)
+            session.commit()
+            session.refresh(utilisateur)
+
+            cercle_legacy = CercleEtude(
+                nom="Cercle historique sans mention explicite",
+                createur_id=utilisateur.id,
+                mention_id=None,
+                filiere_id=filiere.id,
+                niveau="L3",
+            )
+            cercle_incoherent = CercleEtude(
+                nom="Cercle avec mention contradictoire",
+                createur_id=utilisateur.id,
+                mention_id=autre_mention.id,
+                filiere_id=filiere.id,
+                niveau="L3",
+            )
+            session.add(cercle_legacy)
+            session.add(cercle_incoherent)
+            session.commit()
+            session.refresh(cercle_legacy)
+            session.refresh(cercle_incoherent)
+
+            self.utilisateur_id = utilisateur.id
+            self.filiere_id = filiere.id
+            self.mention_id = mention.id
+            self.cercle_legacy_id = cercle_legacy.id
+            self.cercle_incoherent_id = cercle_incoherent.id
+
+    def tearDown(self):
+        self.engine.dispose()
+
+    def test_legacy_circle_infers_mention_from_its_valid_pathway(self):
+        with Session(self.engine) as session:
+            utilisateur = session.get(Utilisateur, self.utilisateur_id)
+            cercle = session.get(CercleEtude, self.cercle_legacy_id)
+            self.assertEqual(type_cercle(cercle, session=session), "parcours")
+            self.assertTrue(cercle_est_national(cercle, session=session))
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+    def test_mismatched_circle_mention_and_pathway_is_marked_incomplete(self):
+        with Session(self.engine) as session:
+            utilisateur = session.get(Utilisateur, self.utilisateur_id)
+            cercle = session.get(CercleEtude, self.cercle_incoherent_id)
+            self.assertEqual(type_cercle(cercle, session=session), "incomplet")
+            self.assertFalse(cercle_est_national(cercle, session=session))
+            self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+    def test_available_circles_sql_includes_legacy_circle_but_not_contradictory_one(self):
+        with Session(self.engine) as session:
+            utilisateur = session.get(Utilisateur, self.utilisateur_id)
+            ids = set(session.exec(
+                select(CercleEtude.id).where(condition_cercles_disponibles(utilisateur, session))
+            ).all())
+            self.assertIn(self.cercle_legacy_id, ids)
+            self.assertNotIn(self.cercle_incoherent_id, ids)
+
+
 if __name__ == "__main__":
     unittest.main()
