@@ -80,6 +80,26 @@ class TestRechercheCercles(unittest.TestCase):
                 filiere_id=filiere.id,
                 est_active=True,
             ))
+            autre_mention = Mention(nom="Informatique Hors Mention")
+            session.add(autre_mention)
+            session.commit()
+            session.refresh(autre_mention)
+            autre_filiere_mention = Filiere(
+                nom="Génie logiciel",
+                faculte_id=faculte.id,
+                mention_id=autre_mention.id,
+                niveau="L3",
+            )
+            session.add(autre_filiere_mention)
+            session.commit()
+            session.refresh(autre_filiere_mention)
+            cls.mention_incoherente_id = autre_mention.id
+            cls.filiere_incoherente_id = autre_filiere_mention.id
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=autre_filiere_mention.id,
+                est_active=True,
+            ))
             autre_filiere = Filiere(nom="Droit prive", faculte_id=faculte.id, mention_id=mention.id)
             session.add(autre_filiere); session.commit(); session.refresh(autre_filiere)
             cls.autre_filiere_id = autre_filiere.id
@@ -126,6 +146,60 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Revision Analyse Financiere", page.text)
         self.assertIn("Finance et Comptabilite — Licence 3", page.text)
         self.assertIn("Droit prive — Licence 3", page.text)
+
+    def test_creation_refuse_une_hierarchie_partielle(self):
+        page = self.client.get("/cercles")
+        jeton = re.search(
+            r'<form method="post" action="/cercles/creer" id="creer-cercle".*?name="_csrf" value="([^"]+)"',
+            page.text,
+            flags=re.S,
+        )
+        self.assertIsNotNone(jeton, "Le formulaire de création doit inclure son jeton CSRF")
+        response = self.client.post(
+            "/cercles/creer",
+            data={
+                "_csrf": jeton.group(1),
+                "nom": "Cercle hiérarchie partielle",
+                "mention_id": str(self.mention_id),
+                "niveau": "",
+                "filiere_id": "",
+                "raison": "",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertIn("hierarchie_incomplete", response.headers.get("location", ""))
+
+    def test_creation_refuse_un_parcours_de_l_autre_mention(self):
+        page = self.client.get("/cercles")
+        jeton = re.search(
+            r'<form method="post" action="/cercles/creer" id="creer-cercle".*?name="_csrf" value="([^"]+)"',
+            page.text,
+            flags=re.S,
+        )
+        self.assertIsNotNone(jeton)
+        response = self.client.post(
+            "/cercles/creer",
+            data={
+                "_csrf": jeton.group(1),
+                "nom": "Cercle incohérent",
+                "mention_id": str(self.mention_id),
+                "niveau": "L3",
+                "filiere_id": str(self.filiere_incoherente_id),
+                "raison": "Test automatique de cohérence de la hiérarchie.",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertIn("parcours_mention_incoherente", response.headers.get("location", ""))
+
+    def test_api_parcours_refuse_un_code_niveau_invalide(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L99"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.json(), [])
 
     def test_recherche_par_nom_filtre_correctement(self):
         page = self.client.get("/cercles", params={"q": "Analyse Financiere"})
