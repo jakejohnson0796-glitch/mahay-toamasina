@@ -37,7 +37,7 @@ from .. import subscription
 from .. import theme_service
 from .. import referentiel_academique
 from ..web_utils import entier_ou_none
-from ..referentiel import NIVEAUX
+from ..referentiel import NIVEAUX, NIVEAUX_LIBELLES
 from ..recherche import clause_recherche_cercles
 from ..rate_limit import limite_depassee
 from .. import gamification
@@ -927,10 +927,21 @@ def creer_cercle(
 
     niveau_nettoye = (niveau or "").strip() or None
 
-    # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
-    if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
+    # Toute sélection académique doit former une identité complète.
+    # Avant ce garde-fou, mention seule / niveau seul / parcours seul pouvait
+    # être silencieusement ignoré et créé comme un groupe libre.
+    demande_nationale = bool(mention_id_nettoye or filiere_id_nettoye or niveau_nettoye)
+    if demande_nationale:
+        if not niveau_nettoye:
+            return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
         if niveau_nettoye not in NIVEAUX:
             return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
+        if not mention_id_nettoye:
+            return RedirectResponse("/cercles?erreur=mention_requise", status_code=303)
+
+        mention_formulaire = session.get(Mention, mention_id_nettoye)
+        if not mention_formulaire or not mention_formulaire.est_active:
+            return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
 
         filiere = None
         if filiere_id_nettoye:
@@ -938,12 +949,12 @@ def creer_cercle(
             if not filiere:
                 return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
             if not filiere.mention_id:
-                # §10 du brief : la coherence mention/filiere doit etre
-                # verifiee avant tout. Une filiere sans mention assignee ne
-                # peut pas encore porter de cercle national (voir
-                # /admin/referentiel pour l'assigner).
+                # Une filière sans mention confirmée ne peut pas porter une
+                # identité nationale fiable.
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
-            mention_id_cible = filiere.mention_id
+            if filiere.mention_id != mention_id_nettoye:
+                return RedirectResponse("/cercles?erreur=mention_parcours_incoherent", status_code=303)
+            mention_id_cible = mention_id_nettoye
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
                 session, mention_id_cible, filiere.id, niveau_nettoye
@@ -953,13 +964,10 @@ def creer_cercle(
             filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
             filiere_id_nettoye = filiere.id
         else:
-            # Tronc commun : il depend de la combinaison reelle
-            # universite + composante + mention + niveau du demandeur.
-            # Une mention qui existe ailleurs ne suffit pas.
-            mention = session.get(Mention, mention_id_nettoye)
-            if not mention:
-                return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
-            mention_id_cible = mention.id
+            # Tronc commun : il dépend de la combinaison réelle université +
+            # composante + mention + niveau du demandeur. Une mention qui
+            # existe ailleurs ne suffit pas.
+            mention_id_cible = mention_formulaire.id
             if (
                 utilisateur.mention_id != mention_id_cible
                 or utilisateur.niveau != niveau_nettoye
@@ -984,10 +992,23 @@ def creer_cercle(
         else:
             filieres_equivalentes = []
 
-        cercle_existant_requete = select(CercleEtude).where(
-            CercleEtude.mention_id == mention_id_cible,
-            CercleEtude.niveau == niveau_nettoye,
-            CercleEtude.statut == StatutCercle.ACTIF,
+        mention_cercle_effective = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+        niveau_cercle_effectif = func.coalesce(
+            CercleEtude.niveau,
+            case(
+                (CercleEtude.mention_id.is_not(None), Filiere.niveau),
+                else_=None,
+            ),
+        )
+        cercle_existant_requete = (
+            select(CercleEtude)
+            .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
+            .where(
+                mention_cercle_effective == mention_id_cible,
+                niveau_cercle_effectif == niveau_nettoye,
+                CercleEtude.statut == StatutCercle.ACTIF,
+                or_(CercleEtude.mention_id.is_not(None), CercleEtude.niveau.is_not(None)),
+            )
         )
         if filiere:
             cercle_existant_requete = cercle_existant_requete.where(
