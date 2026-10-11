@@ -1601,11 +1601,23 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "epingle_par": noms_epingleurs.get(ligne_epinglee.epingle_par_id),
             }
 
+    # Hiérarchie académique effective : compatibilité avec les anciens
+    # cercles qui stockaient la filière mais pas encore mention_id.
+    filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+    mention_cercle_id = cercle.mention_id or (filiere_cercle.mention_id if filiere_cercle else None)
+    mention_cercle = session.get(Mention, mention_cercle_id) if mention_cercle_id else None
+    domaine_cercle = session.get(Domaine, mention_cercle.domaine_id) if mention_cercle and mention_cercle.domaine_id else None
+    type_cercle_courant = referentiel_academique.type_cercle(cercle, filiere_cercle)
+
     return templates.TemplateResponse(
         request,
         "cercle_chat.html",
         {
             "cercle": cercle,
+            "filiere_cercle": filiere_cercle,
+            "mention_cercle": mention_cercle,
+            "domaine_cercle": domaine_cercle,
+            "type_cercle_courant": type_cercle_courant,
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
