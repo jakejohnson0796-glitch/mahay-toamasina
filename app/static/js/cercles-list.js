@@ -12,10 +12,11 @@
         headers: { Accept: "application/json" },
         credentials: "same-origin",
       });
-      if (!response.ok) return [];
-      return await response.json();
+      if (!response.ok) return null;
+      const data = await response.json();
+      return Array.isArray(data) ? data : null;
     } catch (_error) {
-      return [];
+      return null;
     }
   }
 
@@ -94,6 +95,14 @@
       parcours.disabled = true;
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      if (rows === null) {
+        parcours.replaceChildren();
+        option(parcours, "", "Référentiel indisponible — réessaie", true);
+        parcours.disabled = true;
+        parcours.dataset.erreurChargement = "true";
+        return;
+      }
+      delete parcours.dataset.erreurChargement;
       remplirParcours(parcours, rows, valeurCourante, true, "Tous les parcours");
     }
 
@@ -166,6 +175,17 @@
 
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      if (rows === null) {
+        parcours.replaceChildren();
+        option(parcours, "", "Référentiel indisponible — réessaie", true);
+        parcours.disabled = true;
+        parcours.required = false;
+        if (infoTronc) {
+          infoTronc.textContent = "Impossible de charger les parcours actuellement. Réessaie avant d'envoyer ta demande.";
+          infoTronc.hidden = false;
+        }
+        return;
+      }
 
       parcours.replaceChildren();
       option(parcours, "", "— choisissez une option —", true);
