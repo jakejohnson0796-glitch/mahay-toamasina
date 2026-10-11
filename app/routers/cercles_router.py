@@ -1100,6 +1100,10 @@ def demander_adhesion(
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
+    if referentiel_academique.type_cercle(cercle, session) == "incomplet":
+        # Pas de nouvelle adhesion sur une identite academique contradictoire :
+        # la correction doit passer par la verification du referentiel.
+        return RedirectResponse("/cercles?erreur=cercle_referentiel_incoherent", status_code=303)
 
     # Defense en profondeur : meme si l'interface ne devrait jamais
     # proposer ce bouton a un Admin (voir liste_cercles/salon_cercle qui
