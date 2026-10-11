@@ -996,10 +996,16 @@ def creer_cercle(
         else:
             filieres_equivalentes = []
 
-        cercle_existant_requete = select(CercleEtude).where(
-            CercleEtude.mention_id == mention_id_cible,
-            CercleEtude.niveau == niveau_nettoye,
-            CercleEtude.statut == StatutCercle.ACTIF,
+        mention_effective_existante = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+        niveau_effectif_existant = func.coalesce(CercleEtude.niveau, Filiere.niveau)
+        cercle_existant_requete = (
+            select(CercleEtude)
+            .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
+            .where(
+                mention_effective_existante == mention_id_cible,
+                niveau_effectif_existant == niveau_nettoye,
+                CercleEtude.statut == StatutCercle.ACTIF,
+            )
         )
         if filiere:
             cercle_existant_requete = cercle_existant_requete.where(
