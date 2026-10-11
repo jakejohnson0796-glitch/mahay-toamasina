@@ -330,7 +330,7 @@
     {% if cercles_profil_visibilite.mention_nom %}
     <p>
       {{ cercles_profil_visibilite.mention_nom }}
-      {% if cercles_profil_visibilite.niveau %} · {{ cercles_profil_visibilite.niveau }}{% endif %}
+      {% if cercles_profil_visibilite.niveau %} · {{ niveaux_libelles.get(cercles_profil_visibilite.niveau, cercles_profil_visibilite.niveau) if niveaux_libelles is defined else cercles_profil_visibilite.niveau }}{% endif %}
     </p>
     {% endif %}
   </div>
@@ -352,7 +352,7 @@
           <p class="cercles-visibilite-meta">
             {% if info.mention %}{{ info.mention.nom }}{% endif %}
             {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.cercle.niveau %} · {{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) if niveaux_libelles is defined else info.cercle.niveau }}{% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           <span class="puce-statut">Tu es membre</span>
@@ -390,7 +390,7 @@
             {% if info.domaine %}{{ info.domaine.nom }} · {% endif %}
             {{ info.mention.nom if info.mention else cercles_profil_visibilite.mention_nom }}
             {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.cercle.niveau %} · {{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) if niveaux_libelles is defined else info.cercle.niveau }}{% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
@@ -421,7 +421,7 @@
           <p class="cercles-visibilite-meta">
             {% if info.mention %}{{ info.mention.nom }}{% endif %}
             {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.cercle.niveau %} · {{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) if niveaux_libelles is defined else info.cercle.niveau }}{% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
@@ -625,15 +625,15 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
           {% if info.type_cercle == "parcours" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          <span>{{ info.domaine.nom if info.domaine else "" }}</span>
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
           {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
-          {% if info.cercle.niveau %}<span class="puce-niveau">{{ info.cercle.niveau }}</span>{% endif %}
+          {% if info.cercle.niveau %}<span class="puce-niveau">{{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) if niveaux_libelles is defined else info.cercle.niveau }}</span>{% endif %}
           {% elif info.type_cercle == "tronc_commun" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          <span>{{ info.domaine.nom if info.domaine else "" }}</span>
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
           <span aria-hidden="true"> · </span><span>Tronc commun</span>
-          <span class="puce-niveau">{{ info.cercle.niveau }}</span>
+          <span class="puce-niveau">{{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) if niveaux_libelles is defined else info.cercle.niveau }}</span>
           {% elif info.type_cercle == "libre" %}
           <span>Groupe libre</span>
           {% else %}
