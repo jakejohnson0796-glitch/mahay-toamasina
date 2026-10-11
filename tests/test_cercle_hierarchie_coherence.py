@@ -47,11 +47,13 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
             session.add(self.universite)
             session.commit()
             session.refresh(self.universite)
+            self.universite_id = self.universite_id
 
             self.faculte = Faculte(nom="Composante test", universite_id=self.universite.id)
             session.add(self.faculte)
             session.commit()
             session.refresh(self.faculte)
+            self.faculte_id = self.faculte_id
 
             self.mention = Mention(nom="Gestion test")
             self.autre_mention = Mention(nom="Droit test")
@@ -60,6 +62,8 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
             session.commit()
             session.refresh(self.mention)
             session.refresh(self.autre_mention)
+            self.mention_id = self.mention_id
+            self.autre_mention_id = self.autre_mention_id
 
             self.parcours_l3 = Filiere(
                 nom="Comptabilité test",
@@ -78,6 +82,8 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
             session.commit()
             session.refresh(self.parcours_l3)
             session.refresh(self.parcours_l2)
+            self.parcours_l3_id = self.parcours_l3_id
+            self.parcours_l2_id = self.parcours_l2_id
 
             self.etudiant = Utilisateur(
                 nom="Étudiant test",
@@ -93,6 +99,7 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
             session.add(self.etudiant)
             session.commit()
             session.refresh(self.etudiant)
+            self.etudiant_id = self.etudiant_id
 
     def tearDown(self):
         self.engine.dispose()
@@ -112,7 +119,8 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
 
             self.assertEqual(type_cercle(cercle, path), "parcours")
             self.assertTrue(cercle_est_national(cercle, path))
-            self.assertTrue(profil_correspond_au_cercle(self.etudiant, cercle, session))
+            utilisateur = session.get(Utilisateur, self.etudiant_id)
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
 
     def test_explicit_conflict_between_circle_mention_and_path_is_not_hidden(self):
         with Session(self.engine) as session:
@@ -125,7 +133,8 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
                 niveau="L3",
             )
             self.assertEqual(type_cercle(cercle, path), "incomplet")
-            self.assertFalse(profil_correspond_au_cercle(self.etudiant, cercle, session))
+            utilisateur = session.get(Utilisateur, self.etudiant_id)
+            self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
 
     def test_canonical_path_never_chooses_a_different_level(self):
         with Session(self.engine) as session:
@@ -146,7 +155,8 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
             )
             session.add(cercle)
             session.commit()
-            condition = condition_cercles_disponibles(self.etudiant, session)
+            utilisateur = session.get(Utilisateur, self.etudiant_id)
+            condition = condition_cercles_disponibles(utilisateur, session)
             resultats = session.exec(select(CercleEtude).where(condition)).all()
             self.assertIn(cercle.id, {item.id for item in resultats})
 
