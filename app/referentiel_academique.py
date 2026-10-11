@@ -693,7 +693,7 @@ def condition_cercles_disponibles(
             CercleEtude.mention_id == mention_id,
             and_(
                 CercleEtude.mention_id.is_(None),
-                or_(CercleEtude.niveau.is_not(None), CercleEtude.mention_id.is_not(None)),
+                CercleEtude.niveau.is_not(None),
             ),
         ),
         or_(
