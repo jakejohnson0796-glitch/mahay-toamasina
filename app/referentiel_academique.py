@@ -447,10 +447,11 @@ def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
     return nature
 
 
-def cercle_est_national(cercle: CercleEtude) -> bool:
-    """Vrai uniquement pour les cercles nationaux complets :
-    parcours specialise ou tronc commun."""
-    return type_cercle(cercle) in {"tronc_commun", "parcours"}
+def cercle_est_national(
+    cercle: CercleEtude, session: Optional[Session] = None
+) -> bool:
+    """Vrai uniquement pour un cercle national complet et cohérent."""
+    return type_cercle(cercle, session) in {"tronc_commun", "parcours"}
 
 
 def parcours_cercle_offert(
