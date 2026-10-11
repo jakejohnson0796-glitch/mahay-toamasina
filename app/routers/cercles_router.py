@@ -1113,7 +1113,11 @@ def demander_adhesion(
     # (POST forge, ancienne page en cache, etc.) ne doit jamais faire
     # passer un Admin par le circuit de demande — il est rendu membre
     # immediatement, sans creation de DemandeAdhesionCercle.
+    if _est_admin(utilisateur):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+
+    if referentiel_academique.type_cercle(cercle, session) == "incomplet":
+        return RedirectResponse("/cercles?erreur=referentiel_incoherent", status_code=303)
 
     if _a_acces_cercle(session, cercle_id, utilisateur.id):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
