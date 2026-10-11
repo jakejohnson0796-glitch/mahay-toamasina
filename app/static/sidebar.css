@@ -230,3 +230,107 @@
     font-size: .64rem;
   }
 }
+
+
+/* Barre de préférences : la langue reste accessible en bas de la navigation,
+   sans couper le parcours principal entre le logo et les rubriques. */
+.tb-sidebar-langue-preferences {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: .5rem;
+  margin: .55rem .1rem .4rem !important;
+  padding: .55rem .6rem !important;
+  border: 1px solid rgba(226, 239, 233, .16) !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.075), rgba(255,255,255,.025)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+  color: #E1EBE5;
+  font-size: .7rem;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.tb-sidebar-langue-titre {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-width: 0;
+}
+
+.tb-sidebar-langue-icone {
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  background: rgba(255,255,255,.055);
+  color: #F0C78B;
+  font-size: 1rem;
+}
+
+.tb-sidebar-langue-preferences label {
+  min-width: 0;
+  color: #E1EBE5;
+  font-size: .68rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.tb-sidebar-langue-preferences select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: .45rem .5rem;
+  border: 1px solid rgba(226,239,233,.17);
+  border-radius: 9px;
+  background: #0B3A3D;
+  color: #FFFFFF;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+}
+
+.tb-sidebar-langue-preferences select:hover {
+  border-color: rgba(240,199,139,.55);
+  background: #104447;
+}
+
+.tb-sidebar-langue-preferences select:focus-visible {
+  outline: 2px solid #F0C78B;
+  outline-offset: 2px;
+}
+
+@media (min-width: 901px) {
+  body.sidebar-compact .tb-sidebar-langue-preferences {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: .3rem;
+    margin-inline: 0 !important;
+    padding: .35rem .2rem !important;
+  }
+
+  body.sidebar-compact .tb-sidebar-langue-titre {
+    justify-content: center;
+  }
+
+  body.sidebar-compact .tb-sidebar-langue-preferences label {
+    display: none;
+  }
+
+  body.sidebar-compact .tb-sidebar-langue-preferences select {
+    min-height: 1.9rem;
+    padding: .25rem .1rem;
+    text-align: center;
+    font-size: .6rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .tb-sidebar-langue-preferences {
+    margin-inline: .15rem !important;
+  }
+}
