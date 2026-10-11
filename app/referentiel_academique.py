@@ -421,7 +421,13 @@ def type_cercle(cercle: CercleEtude, filiere: Optional[Filiere] = None) -> str:
         return "incomplet"
     if not cercle.filiere_id:
         return "tronc_commun"
-    if not filiere or not filiere.mention_id or filiere.mention_id != mention_id_effectif:
+    if filiere is None:
+        # Compatibilité de l'ancienne signature : quand la mention est déjà
+        # stockée sur le cercle, la structure du triplet suffit à conserver
+        # le classement historique. Les vues qui chargent la Filiere passent
+        # l'objet pour bénéficier du contrôle complet de cohérence.
+        return "parcours" if cercle.mention_id else "incomplet"
+    if not filiere.mention_id or filiere.mention_id != mention_id_effectif:
         return "incomplet"
     if filiere.niveau is not None and filiere.niveau != cercle.niveau:
         return "incomplet"
