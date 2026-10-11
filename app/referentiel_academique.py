@@ -413,10 +413,20 @@ def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
     if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
         return "libre"
 
+    # Les anciens appelants sans session conservent une classification
+    # structurelle ; toute route exposant un cercle passe la session afin
+    # de vérifier ensuite les rattachements réels.
+    if session is None:
+        if cercle.mention_id and cercle.niveau and not cercle.filiere_id:
+            return "tronc_commun"
+        if cercle.mention_id and cercle.filiere_id and cercle.niveau:
+            return "parcours"
+        return "incomplet"
+
     if cercle.niveau not in NIVEAUX:
         return "incomplet"
 
-    filiere = session.get(Filiere, cercle.filiere_id) if session and cercle.filiere_id else None
+    filiere = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
     mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
     if not mention_id_effectif:
         return "incomplet"
