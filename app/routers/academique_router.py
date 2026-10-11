@@ -284,7 +284,11 @@ def lister_parcours_nationaux(
         requete = requete.order_by(Filiere.niveau.is_(None), Filiere.nom, Filiere.id)
     else:
         requete = requete.order_by(Filiere.nom, Filiere.id)
-    filieres = session.exec(requete.distinct()).all()
+    # ProgrammeUniversitaire est unique par couple université/filière et
+    # le JOIN est limité à l'université propriétaire de la composante : le
+    # DISTINCT n'est donc pas nécessaire (et compliquerait le ORDER BY
+    # priorisant le niveau explicite sur PostgreSQL).
+    filieres = session.exec(requete).all()
     filieres = [
         f for f in filieres
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
