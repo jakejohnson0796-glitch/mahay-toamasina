@@ -309,6 +309,47 @@ class TestRechercheCercles(unittest.TestCase):
 
 
 
+    def test_endpoint_parcours_nationaux_separe_un_meme_nom_selon_le_niveau(self):
+        with Session(engine) as session:
+            filiere_reference = session.get(Filiere, self.filiere_id)
+            cca_m1 = Filiere(
+                nom="CCA", faculte_id=filiere_reference.faculte_id,
+                mention_id=self.mention_id, niveau="M1",
+            )
+            cca_m2 = Filiere(
+                nom="CCA", faculte_id=filiere_reference.faculte_id,
+                mention_id=self.mention_id, niveau="M2",
+            )
+            session.add_all([cca_m1, cca_m2])
+            session.commit()
+            session.refresh(cca_m1)
+            session.refresh(cca_m2)
+            session.add_all([
+                ProgrammeUniversitaire(
+                    universite_id=self.universite_id, filiere_id=cca_m1.id, est_active=True
+                ),
+                ProgrammeUniversitaire(
+                    universite_id=self.universite_id, filiere_id=cca_m2.id, est_active=True
+                ),
+            ])
+            session.commit()
+            id_m1, id_m2 = cca_m1.id, cca_m2.id
+
+        resultat_m1 = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "M1"},
+        )
+        resultat_m2 = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "M2"},
+        )
+        self.assertEqual(resultat_m1.status_code, 200)
+        self.assertEqual(resultat_m2.status_code, 200)
+        cca_resultat_m1 = [row for row in resultat_m1.json() if row["nom"] == "CCA"]
+        cca_resultat_m2 = [row for row in resultat_m2.json() if row["nom"] == "CCA"]
+        self.assertEqual([row["id"] for row in cca_resultat_m1], [id_m1])
+        self.assertEqual([row["id"] for row in cca_resultat_m2], [id_m2])
+
     def test_recherche_sans_accent_trouve_un_titre_accentue(self):
         page = self.client.get("/cercles", params={"q": "comptabilite"})
         self.assertEqual(page.status_code, 200)
