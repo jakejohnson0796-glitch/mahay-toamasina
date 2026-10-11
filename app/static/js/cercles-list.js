@@ -169,7 +169,10 @@
       parcours.replaceChildren();
       if (!rows.length) {
         option(parcours, "", "— aucun parcours specifique —", true);
-        if (infoTronc) infoTronc.hidden = false;
+        if (infoTronc) {
+          infoTronc.textContent = "Aucun parcours spécifique trouvé dans le référentiel pour ce niveau. Le tronc commun dépend de ta composante et sera vérifié à l’envoi.";
+          infoTronc.hidden = false;
+        }
       } else {
         option(parcours, "", "— choisissez un parcours —", true);
         rows.forEach(function (row) {
