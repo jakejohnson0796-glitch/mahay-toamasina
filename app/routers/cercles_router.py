@@ -518,7 +518,7 @@ def liste_cercles(
     elif filiere_id_nettoye:
         filiere_choisie = session.get(Filiere, filiere_id_nettoye)
         if filiere_choisie:
-            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
+            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie, niveau_nettoye)
             requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
         else:
             requete = requete.where(CercleEtude.id == -1)
@@ -968,7 +968,7 @@ def creer_cercle(
         # §48 : si le cercle national existe deja, ne pas proposer de
         # doublon — rediriger vers l'existant.
         if filiere:
-            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
+            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere, niveau_nettoye)
         else:
             filieres_equivalentes = []
 
