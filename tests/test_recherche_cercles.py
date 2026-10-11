@@ -338,6 +338,95 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Finance et Comptabilite", noms)
         self.assertNotIn("Droit prive", noms)
 
+    def test_parcours_nationaux_refusent_un_niveau_invalide(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L9"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.json(), [])
+
+    def test_parcours_nationaux_ne_prennent_pas_une_offre_croisee_dune_autre_universite(self):
+        with Session(engine) as session:
+            filiere_existante = session.get(Filiere, self.filiere_id)
+            faculte_origine_id = filiere_existante.faculte_id
+            autre_universite = Universite(nom="Universite Offre Croisee Cercles")
+            session.add(autre_universite)
+            session.commit()
+            session.refresh(autre_universite)
+
+            parcours = Filiere(
+                nom="Parcours fictif offre croisee",
+                faculte_id=faculte_origine_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(parcours)
+            session.commit()
+            session.refresh(parcours)
+            # La filière dépend de l'université A mais son seul lien d'offre
+            # annonce l'université B : ce parcours ne doit pas être proposé.
+            session.add(ProgrammeUniversitaire(
+                universite_id=autre_universite.id,
+                filiere_id=parcours.id,
+                est_active=True,
+            ))
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertNotIn("Parcours fictif offre croisee", {entry["nom"] for entry in page.json()})
+
+    def test_parcours_nationaux_privilegient_lidentite_exacte_du_niveau(self):
+        with Session(engine) as session:
+            filiere_existante = session.get(Filiere, self.filiere_id)
+            faculte_id = filiere_existante.faculte_id
+            niveau_null = Filiere(
+                nom="Parcours meme nom test cascade",
+                faculte_id=faculte_id,
+                mention_id=self.mention_id,
+                niveau=None,
+            )
+            niveau_exact = Filiere(
+                nom="Parcours meme nom test cascade",
+                faculte_id=faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(niveau_null)
+            session.add(niveau_exact)
+            session.commit()
+            session.refresh(niveau_null)
+            session.refresh(niveau_exact)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=niveau_null.id,
+                est_active=True,
+            ))
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=niveau_exact.id,
+                est_active=True,
+            ))
+            session.commit()
+            id_exact = niveau_exact.id
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        choix = [
+            entry for entry in page.json()
+            if entry["nom"] == "Parcours meme nom test cascade"
+        ]
+        self.assertEqual(len(choix), 1)
+        self.assertEqual(choix[0]["id"], id_exact)
+
+
 
 
     def test_profil_membre_ne_duplique_pas_la_hierarchie_academique(self):
