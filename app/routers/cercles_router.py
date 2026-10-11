@@ -408,7 +408,17 @@ def liste_cercles(
             filiere_id_nettoye = -1
             filiere_selectionnee = None
         elif filiere_selectionnee.mention_id:
-            mention_id_nettoye = filiere_selectionnee.mention_id
+            if (
+                niveau_nettoye
+                and filiere_selectionnee.niveau is not None
+                and filiere_selectionnee.niveau != niveau_nettoye
+            ):
+                # Un parcours explicitement déclaré à un autre niveau ne
+                # doit pas être élargi silencieusement par la recherche.
+                filiere_id_nettoye = -1
+                filiere_selectionnee = None
+            else:
+                mention_id_nettoye = filiere_selectionnee.mention_id
 
     mention_selectionnee = session.get(Mention, mention_id_nettoye) if mention_id_nettoye else None
     if mention_selectionnee and mention_selectionnee.domaine_id:
@@ -512,7 +522,7 @@ def liste_cercles(
     elif filiere_id_nettoye:
         filiere_choisie = session.get(Filiere, filiere_id_nettoye)
         if filiere_choisie:
-            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
+            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie, niveau_nettoye)
             requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
         else:
             requete = requete.where(CercleEtude.id == -1)
@@ -994,7 +1004,7 @@ def creer_cercle(
         # §48 : si le cercle national existe deja, ne pas proposer de
         # doublon — rediriger vers l'existant.
         if filiere:
-            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
+            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere, niveau_nettoye)
         else:
             filieres_equivalentes = []
 
