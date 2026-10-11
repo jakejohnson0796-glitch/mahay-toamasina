@@ -20,6 +20,7 @@ from app.referentiel_academique import (
     cercle_est_national,
     condition_cercles_disponibles,
     filiere_canonique_pour_cercle,
+    offre_filiere_active_universite,
     profil_correspond_au_cercle,
     type_cercle,
 )
@@ -43,73 +44,73 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
     def setUp(self):
         self.engine = nouvel_engine()
         with Session(self.engine) as session:
-            self.universite = Universite(nom="Université test active")
-            session.add(self.universite)
+            universite = Universite(nom="Université test active")
+            session.add(universite)
             session.commit()
-            session.refresh(self.universite)
-            self.universite_id = self.universite_id
+            session.refresh(universite)
+            self.universite_id = universite.id
 
-            self.faculte = Faculte(nom="Composante test", universite_id=self.universite.id)
-            session.add(self.faculte)
+            faculte = Faculte(nom="Composante test", universite_id=universite.id)
+            session.add(faculte)
             session.commit()
-            session.refresh(self.faculte)
-            self.faculte_id = self.faculte_id
+            session.refresh(faculte)
+            self.faculte_id = faculte.id
 
-            self.mention = Mention(nom="Gestion test")
-            self.autre_mention = Mention(nom="Droit test")
-            session.add(self.mention)
-            session.add(self.autre_mention)
+            mention = Mention(nom="Gestion test")
+            autre_mention = Mention(nom="Droit test")
+            session.add(mention)
+            session.add(autre_mention)
             session.commit()
-            session.refresh(self.mention)
-            session.refresh(self.autre_mention)
-            self.mention_id = self.mention_id
-            self.autre_mention_id = self.autre_mention_id
+            session.refresh(mention)
+            session.refresh(autre_mention)
+            self.mention_id = mention.id
+            self.autre_mention_id = autre_mention.id
 
-            self.parcours_l3 = Filiere(
+            parcours_l3 = Filiere(
                 nom="Comptabilité test",
-                faculte_id=self.faculte.id,
-                mention_id=self.mention.id,
+                faculte_id=faculte.id,
+                mention_id=mention.id,
                 niveau="L3",
             )
-            self.parcours_l2 = Filiere(
+            parcours_l2 = Filiere(
                 nom="Comptabilité test",
-                faculte_id=self.faculte.id,
-                mention_id=self.mention.id,
+                faculte_id=faculte.id,
+                mention_id=mention.id,
                 niveau="L2",
             )
-            session.add(self.parcours_l3)
-            session.add(self.parcours_l2)
+            session.add(parcours_l3)
+            session.add(parcours_l2)
             session.commit()
-            session.refresh(self.parcours_l3)
-            session.refresh(self.parcours_l2)
-            self.parcours_l3_id = self.parcours_l3_id
-            self.parcours_l2_id = self.parcours_l2_id
+            session.refresh(parcours_l3)
+            session.refresh(parcours_l2)
+            self.parcours_l3_id = parcours_l3.id
+            self.parcours_l2_id = parcours_l2.id
 
-            self.etudiant = Utilisateur(
+            etudiant = Utilisateur(
                 nom="Étudiant test",
                 telephone="0347000101",
                 mot_de_passe_hash="test",
                 role=RoleUtilisateur.ETUDIANT,
-                universite_id=self.universite.id,
-                faculte_id=self.faculte.id,
-                mention_id=self.mention.id,
-                filiere_id=self.parcours_l3.id,
+                universite_id=universite.id,
+                faculte_id=faculte.id,
+                mention_id=mention.id,
+                filiere_id=parcours_l3.id,
                 niveau="L3",
             )
-            session.add(self.etudiant)
+            session.add(etudiant)
             session.commit()
-            session.refresh(self.etudiant)
-            self.etudiant_id = self.etudiant_id
+            session.refresh(etudiant)
+            self.etudiant_id = etudiant.id
 
     def tearDown(self):
         self.engine.dispose()
 
     def test_legacy_circle_infers_mention_and_level_from_its_path(self):
         with Session(self.engine) as session:
-            path = session.get(Filiere, self.parcours_l3.id)
+            path = session.get(Filiere, self.parcours_l3_id)
             cercle = CercleEtude(
                 nom="Cercle historique L3",
-                createur_id=self.etudiant.id,
+                createur_id=self.etudiant_id,
                 filiere_id=path.id,
                 mention_id=None,
                 niveau=None,
@@ -124,31 +125,31 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
 
     def test_explicit_conflict_between_circle_mention_and_path_is_not_hidden(self):
         with Session(self.engine) as session:
-            path = session.get(Filiere, self.parcours_l3.id)
+            path = session.get(Filiere, self.parcours_l3_id)
             cercle = CercleEtude(
                 nom="Cercle incohérent",
-                createur_id=self.etudiant.id,
+                createur_id=self.etudiant_id,
                 filiere_id=path.id,
-                mention_id=self.autre_mention.id,
+                mention_id=self.autre_mention_id,
                 niveau="L3",
             )
-            self.assertEqual(type_cercle(cercle, path), "incomplet")
             utilisateur = session.get(Utilisateur, self.etudiant_id)
+            self.assertEqual(type_cercle(cercle, path), "incomplet")
             self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
 
     def test_canonical_path_never_chooses_a_different_level(self):
         with Session(self.engine) as session:
-            path_l2 = session.get(Filiere, self.parcours_l2.id)
+            path_l2 = session.get(Filiere, self.parcours_l2_id)
             canonical = filiere_canonique_pour_cercle(session, path_l2, "L3")
             self.assertEqual(canonical.niveau, "L3")
-            self.assertEqual(canonical.id, self.parcours_l3.id)
+            self.assertEqual(canonical.id, self.parcours_l3_id)
 
     def test_available_filter_includes_valid_legacy_circle_from_path_metadata(self):
         with Session(self.engine) as session:
-            path = session.get(Filiere, self.parcours_l3.id)
+            path = session.get(Filiere, self.parcours_l3_id)
             cercle = CercleEtude(
                 nom="Cercle historique disponible",
-                createur_id=self.etudiant.id,
+                createur_id=self.etudiant_id,
                 filiere_id=path.id,
                 mention_id=None,
                 niveau=None,
@@ -174,7 +175,7 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
             path_hors_offre = Filiere(
                 nom="Parcours externe L3",
                 faculte_id=autre_faculte.id,
-                mention_id=self.mention.id,
+                mention_id=self.mention_id,
                 niveau="L3",
             )
             session.add(path_hors_offre)
@@ -182,40 +183,41 @@ class TestCircleHierarchyConsistency(unittest.TestCase):
             session.refresh(path_hors_offre)
 
             session.add(ProgrammeUniversitaire(
-                universite_id=self.universite.id,
-                filiere_id=self.parcours_l3.id,
+                universite_id=self.universite_id,
+                filiere_id=self.parcours_l3_id,
                 est_active=True,
             ))
-            # Donnée incohérente historique : une offre rattache le parcours
+            # Donnée incohérente historique : l'offre rattache le parcours
             # de l'autre université à la mauvaise université.
             session.add(ProgrammeUniversitaire(
-                universite_id=self.universite.id,
+                universite_id=self.universite_id,
                 filiere_id=path_hors_offre.id,
                 est_active=True,
             ))
             session.add(ProgrammeUniversitaire(
-                universite_id=self.universite.id,
-                filiere_id=self.parcours_l2.id,
+                universite_id=self.universite_id,
+                filiere_id=self.parcours_l2_id,
                 est_active=True,
             ))
             session.commit()
 
-            parcours = lister_parcours_nationaux(self.mention.id, "L3", session)
+            parcours = lister_parcours_nationaux(self.mention_id, "L3", session)
             ids = {row["id"] for row in parcours}
-            self.assertIn(self.parcours_l3.id, ids)
+            self.assertIn(self.parcours_l3_id, ids)
             self.assertNotIn(path_hors_offre.id, ids)
-            self.assertNotIn(self.parcours_l2.id, ids)
+            self.assertNotIn(self.parcours_l2_id, ids)
 
     def test_inactive_university_cannot_supply_an_active_path(self):
         with Session(self.engine) as session:
-            universite = session.get(Universite, self.universite.id)
+            universite = session.get(Universite, self.universite_id)
             universite.est_active = False
             session.add(universite)
             session.commit()
-            from app.referentiel_academique import offre_filiere_active_universite
-            self.assertFalse(offre_filiere_active_universite(
-                session, self.universite.id, self.parcours_l3.id
-            ))
+            self.assertFalse(
+                offre_filiere_active_universite(
+                    session, self.universite_id, self.parcours_l3_id
+                )
+            )
 
 
 class TestLanguageSelectorNavigation(unittest.TestCase):
@@ -246,14 +248,17 @@ class TestLanguageSelectorNavigation(unittest.TestCase):
         template = (ROOT / "app" / "templates" / "cercles_list.html").read_text(encoding="utf-8")
         router = (ROOT / "app" / "routers" / "cercles_router.py").read_text(encoding="utf-8")
         js = (ROOT / "app" / "static" / "js" / "cercles-list.js").read_text(encoding="utf-8")
-        self.assertIn('data-tronc-mention-id=', template)
+        self.assertIn("data-tronc-mention-id=", template)
         self.assertIn('id="creation-info-tronc-commun" role="status" aria-live="polite" hidden', template)
-        self.assertIn('erreur=niveau_requis', router)
-        self.assertIn('erreur=combinaison_academique_invalide', router)
-        self.assertIn('erreur=incoherence_mention_parcours', router)
+        self.assertIn("erreur=niveau_requis", router)
+        self.assertIn("erreur=combinaison_academique_invalide", router)
+        self.assertIn("erreur=incoherence_mention_parcours", router)
         self.assertIn("peutChoisirTroncCommun()", js)
-        self.assertIn("formulaire.addEventListener(\"submit\"", js)
-        self.assertNotIn('style="display:none;"', template.split('id="creation-info-tronc-commun"', 1)[1].split("</p>", 1)[0])
+        self.assertIn('formulaire.addEventListener("submit"', js)
+        self.assertNotIn(
+            'style="display:none;"',
+            template.split('id="creation-info-tronc-commun"', 1)[1].split("</p>", 1)[0],
+        )
 
 
 if __name__ == "__main__":
