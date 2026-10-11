@@ -475,7 +475,7 @@
       <select id="recherche_niveau" name="niveau">
         <option value="">Tous les niveaux</option>
         {% for n in niveaux %}
-        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ n }}</option>
+        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ niveaux_libelles.get(n, n) if niveaux_libelles is defined else n }}</option>
         {% endfor %}
       </select>
     </div>
@@ -508,7 +508,9 @@
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
-  {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide : choisis Licence 1 à 3, Master 1 à 2 ou Doctorat 1 à 3.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_requis" %}<div class="erreur">Choisis un niveau pour créer un cercle rattaché à une mention ou à un parcours. Pour un groupe libre, laisse les champs académiques vides.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "mention_requise" %}<div class="erreur">Le niveau seul ne suffit pas : choisis une mention ou un parcours pour créer un cercle national.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
@@ -523,7 +525,7 @@
     <label for="description">Description (facultatif)</label>
     <input type="text" id="description" name="description" placeholder="ex: Prep du partiel de janvier">
 
-    <label for="creation_mention_id">Mention (facultatif — remplir pour un cercle NATIONAL, soumis a validation)</label>
+    <label for="creation_mention_id">Mention (choisis-la pour demander un cercle national ; sinon, laisse vide pour un groupe libre)</label>
     <select id="creation_mention_id" name="mention_id">
       <option value="">— aucune / groupe libre —</option>
       {% for m in mentions %}
@@ -531,15 +533,15 @@
       {% endfor %}
     </select>
 
-    <label for="creation_niveau">Niveau (obligatoire des qu'une mention est choisie)</label>
+    <label for="creation_niveau">Niveau (obligatoire pour un cercle national)</label>
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
-      <option value="{{ n }}" data-no-translate>{{ n }}</option>
+      <option value="{{ n }}" data-no-translate>{{ niveaux_libelles.get(n, n) if niveaux_libelles is defined else n }}</option>
       {% endfor %}
     </select>
 
-    <label for="creation_filiere_id">Parcours (facultatif — laissez vide pour un cercle de tronc commun)</label>
+    <label for="creation_filiere_id">Parcours (facultatif : laisse vide pour un cercle de tronc commun)</label>
     <select id="creation_filiere_id" name="filiere_id" disabled>
       <option value="">— choisissez d'abord un niveau —</option>
     </select>
@@ -547,7 +549,7 @@
       Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
     </p>
 
-    <label for="raison">Raison (obligatoire uniquement pour un cercle national, donc des qu'une mention est choisie)</label>
+    <label for="raison">Justification (obligatoire pour une demande de cercle national)</label>
     <textarea id="raison" name="raison" rows="2" placeholder="ex: Plusieurs etudiants de cette filiere et ce niveau, dans differentes universites, souhaitent un espace commun pour partager cours et revisions."></textarea>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cercle</button>
@@ -614,11 +616,11 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+        <span class="cercle-card-premium-type">{% if info.type_cercle == "parcours" %}Cercle national · parcours{% elif info.type_cercle == "tronc_commun" %}Cercle national · tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}Référentiel à vérifier{% endif %}</span>
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true" class="carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
