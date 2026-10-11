@@ -1593,7 +1593,18 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, session),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle, session),
+            "domaine": (
+                session.get(Domaine, session.get(Mention, cercle.mention_id).domaine_id)
+                if cercle.mention_id
+                and session.get(Mention, cercle.mention_id)
+                and session.get(Mention, cercle.mention_id).domaine_id
+                else None
+            ),
+            "mention": session.get(Mention, cercle.mention_id) if cercle.mention_id else None,
+            "filiere": session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None,
+            "libelles_niveaux": NIVEAUX_LIBELLES,
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
