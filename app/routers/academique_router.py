@@ -24,6 +24,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
+from ..referentiel import NIVEAUX
 
 router = APIRouter(prefix="/api/academique")
 
@@ -258,13 +259,22 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    # Le même contrat de niveaux doit s'appliquer ici, à la recherche et
+    # au serveur de création. Un niveau bricolé ne doit pas renvoyer une
+    # liste de parcours vide qui serait interprétée comme du tronc commun.
+    if niveau is not None and niveau not in NIVEAUX:
+        return []
 
     requete = (
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
+        .join(Universite, Universite.id == Faculte.universite_id)
         .where(
             Filiere.mention_id == mention_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            ProgrammeUniversitaire.universite_id == Faculte.universite_id,
+            Universite.est_active == True,  # noqa: E712
         )
     )
     if niveau:
@@ -274,13 +284,17 @@ def lister_parcours_nationaux(
         f for f in filieres
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
     ]
+    # En cas de doublon inter-universitaire de même nom, choisir d'abord la
+    # représentation du niveau demandé ; une ligne historique sans niveau
+    # reste un repli, pas le premier choix aléatoire.
+    filieres.sort(key=lambda f: (f.niveau is None, _normaliser_nom_parcours(f.nom), f.id or 0))
 
     vus: dict[str, dict] = {}
     for f in filieres:
         cle = _normaliser_nom_parcours(f.nom)
         if cle not in vus:
             vus[cle] = {"id": f.id, "nom": f.nom}
-    return sorted(vus.values(), key=lambda p: p["nom"])
+    return sorted(vus.values(), key=lambda p: _normaliser_nom_parcours(p["nom"]))
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine
