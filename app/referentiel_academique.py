@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from sqlmodel import Session, and_, func, or_, select
+from sqlalchemy.orm import aliased
 
 from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire, RoleUtilisateur, Utilisateur
 from .referentiel import NIVEAUX
@@ -616,10 +617,11 @@ def condition_cercles_disponibles(
     # Les cercles historiques peuvent n'avoir que filiere_id. Utiliser
     # la mention effective (cercle.mention_id, sinon filiere.mention_id)
     # comme dans type_cercle()/profil_correspond_au_cercle().
+    FiliereMentionHistorique = aliased(Filiere)
     mention_cercle_effective = func.coalesce(
         CercleEtude.mention_id,
-        select(Filiere.mention_id)
-        .where(Filiere.id == CercleEtude.filiere_id)
+        select(FiliereMentionHistorique.mention_id)
+        .where(FiliereMentionHistorique.id == CercleEtude.filiere_id)
         .scalar_subquery(),
     )
     filiere_cercle_coherente = select(Filiere.id).where(
