@@ -513,6 +513,7 @@
   {% if request.query_params.get("erreur") == "parcours_mention_incoherents" %}<div class="erreur" role="alert">Le parcours sélectionné n’appartient pas à la mention choisie. Vérifie la mention puis sélectionne à nouveau le parcours.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur" role="alert">Ce parcours n'est pas proposé à ce niveau dans le référentiel actif. Recharge la liste et vérifie ton choix.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
   {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
@@ -545,8 +546,8 @@
     <select id="creation_filiere_id" name="filiere_id" disabled>
       <option value="">— choisissez d'abord un niveau —</option>
     </select>
-    <p class="stat-label" id="creation-info-tronc-commun" style="display:none;">
-      Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
+    <p class="stat-label" id="creation-info-tronc-commun" hidden>
+      Aucun parcours spécifique n'est proposé à ce niveau : le choix sera enregistré comme tronc commun.
     </p>
 
     <label for="raison">Raison (obligatoire uniquement pour un cercle national, donc des qu'une mention est choisie)</label>
