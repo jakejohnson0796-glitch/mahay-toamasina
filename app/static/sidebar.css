@@ -182,35 +182,65 @@
 }
 
 
-/* Sélecteur de langue global, disponible pour les visiteurs et les membres. */
+/* Préférence de langue dans le pied de navigation, à côté des réglages. */
 .tb-sidebar-langue {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: .45rem;
-  margin: .25rem .35rem .8rem;
-  padding: .35rem .4rem;
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 10px;
-  background: rgba(255,255,255,.045);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: .4rem;
+  margin: .45rem .35rem .2rem;
+  padding: .6rem .65rem;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.025));
   color: #D5E3DE;
   font-size: .74rem;
+  flex: 0 0 auto;
+}
+.tb-sidebar-langue-entete {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-width: 0;
+}
+.tb-sidebar-langue-icone {
+  display: inline-grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 7px;
+  color: #F0C78B;
+  background: rgba(255,255,255,.055);
+  font-size: .61rem;
+  font-weight: 850;
+  letter-spacing: -.04em;
 }
 .tb-sidebar-langue label {
-  color: inherit;
-  font-size: .72rem;
-  font-weight: 600;
+  color: #D5E3DE;
+  font-size: .7rem;
+  font-weight: 650;
+  letter-spacing: .015em;
 }
 .tb-sidebar-langue select {
   width: 100%;
   min-width: 0;
-  padding: .38rem .45rem;
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 7px;
+  min-height: 2.35rem;
+  padding: .48rem .65rem;
+  border: 1px solid rgba(255,255,255,.17);
+  border-radius: 8px;
   background: #0B3A3D;
   color: #FFFFFF;
   font: inherit;
+  font-size: .76rem;
+  font-weight: 650;
   cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+.tb-sidebar-langue select:hover {
+  border-color: rgba(240,199,139,.55);
+  background: #104448;
 }
 .tb-sidebar-langue select:focus-visible {
   outline: 2px solid #F0C78B;
@@ -218,15 +248,34 @@
 }
 @media (min-width:901px) {
   body.sidebar-compact .tb-sidebar-langue {
-    grid-template-columns: minmax(0,1fr);
     margin-inline: 0;
-    padding: .22rem;
+    padding: .3rem;
+    gap: .25rem;
   }
-  body.sidebar-compact .tb-sidebar-langue label {
+  body.sidebar-compact .tb-sidebar-langue-entete {
+    justify-content: center;
+  }
+  body.sidebar-compact .tb-sidebar-langue-entete label {
     display: none;
   }
+  body.sidebar-compact .tb-sidebar-langue-icone {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
   body.sidebar-compact .tb-sidebar-langue select {
-    padding: .28rem .12rem;
-    font-size: .64rem;
+    min-height: 2rem;
+    padding: .3rem .08rem;
+    font-size: .62rem;
+    text-align: center;
+  }
+}
+@media (max-width:900px) {
+  .tb-sidebar-langue {
+    margin-bottom: .5rem;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .tb-sidebar-langue select {
+    transition: none;
   }
 }

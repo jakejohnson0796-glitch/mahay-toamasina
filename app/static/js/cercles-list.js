@@ -12,10 +12,11 @@
         headers: { Accept: "application/json" },
         credentials: "same-origin",
       });
-      if (!response.ok) return [];
-      return await response.json();
+      if (!response.ok) return null;
+      const data = await response.json();
+      return Array.isArray(data) ? data : null;
     } catch (_error) {
-      return [];
+      return null;
     }
   }
 
@@ -94,6 +95,14 @@
       parcours.disabled = true;
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      if (rows === null) {
+        parcours.replaceChildren();
+        option(parcours, "", "Référentiel indisponible — réessaie", true);
+        parcours.disabled = true;
+        parcours.dataset.erreurChargement = "true";
+        return;
+      }
+      delete parcours.dataset.erreurChargement;
       remplirParcours(parcours, rows, valeurCourante, true, "Tous les parcours");
     }
 
@@ -155,6 +164,7 @@
       parcours.replaceChildren();
       option(parcours, "", "— choisissez d'abord un niveau —", true);
       parcours.disabled = true;
+      parcours.required = false;
       if (infoTronc) infoTronc.hidden = true;
     }
 
@@ -165,23 +175,39 @@
 
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      if (rows === null) {
+        parcours.replaceChildren();
+        option(parcours, "", "Référentiel indisponible — réessaie", true);
+        parcours.disabled = true;
+        parcours.required = false;
+        if (infoTronc) {
+          infoTronc.textContent = "Impossible de charger les parcours actuellement. Réessaie avant d'envoyer ta demande.";
+          infoTronc.hidden = false;
+        }
+        return;
+      }
 
       parcours.replaceChildren();
-      if (!rows.length) {
-        option(parcours, "", "— aucun parcours specifique —", true);
-        if (infoTronc) infoTronc.hidden = false;
-      } else {
-        option(parcours, "", "— choisissez un parcours —", true);
-        rows.forEach(function (row) {
-          option(parcours, row.id, row.nom, false);
-        });
+      option(parcours, "", "— choisissez une option —", true);
+      option(parcours, "tronc_commun", "Tronc commun (sans parcours spécifique)", false);
+      rows.forEach(function (row) {
+        option(parcours, row.id, row.nom, false, true);
+      });
+      if (infoTronc) {
+        infoTronc.textContent = rows.length
+          ? "Le tronc commun n'est valable que si aucun parcours spécifique n'est proposé à ce niveau dans ta composante. Le serveur vérifie cette règle avant d'envoyer la demande."
+          : "Aucun parcours nommé n'est répertorié à ce niveau. Choisis Tronc commun si cette mention et ce niveau sont bien proposés dans ta composante.";
+        infoTronc.hidden = false;
       }
       parcours.disabled = false;
+      parcours.required = true;
     }
 
     mention.addEventListener("change", function () {
+      // Un changement de mention invalide toujours le niveau précédent :
+      // ne jamais réutiliser L3/M1 d'une autre mention par inadvertance.
+      niveau.value = "";
       niveau.disabled = !mention.value;
-      if (!mention.value) niveau.value = "";
       charger();
     });
     niveau.addEventListener("change", charger);

@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -258,13 +259,21 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau and niveau not in NIVEAUX:
+        return []
 
+    # Une offre nationale est valide uniquement si elle appartient aussi
+    # a l'universite de la composante de cette filiere. Cela evite qu'une
+    # ligne ProgrammeUniversitaire mal rattachee expose un parcours dans
+    # le mauvais contexte universitaire.
     requete = (
         select(Filiere)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
         .where(
             Filiere.mention_id == mention_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            Faculte.universite_id == ProgrammeUniversitaire.universite_id,
         )
     )
     if niveau:
@@ -275,12 +284,28 @@ def lister_parcours_nationaux(
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
     ]
 
-    vus: dict[str, dict] = {}
-    for f in filieres:
-        cle = _normaliser_nom_parcours(f.nom)
-        if cle not in vus:
-            vus[cle] = {"id": f.id, "nom": f.nom}
-    return sorted(vus.values(), key=lambda p: p["nom"])
+    # Deduplication nationale : le meme nom peut apparaitre dans plusieurs
+    # universites. Pour une recherche de niveau precise, choisir d'abord
+    # une ligne explicitement datee a ce niveau; les lignes historiques
+    # sans niveau servent de repli uniquement s'il n'existe aucun choix
+    # explicite. Ne jamais laisser un tri SQL implicite choisir un parcours
+    # L3 pour un cercle M1 (ou l'inverse).
+    groupes: dict[str, list[Filiere]] = {}
+    for filiere in filieres:
+        cle = _normaliser_nom_parcours(filiere.nom)
+        groupes.setdefault(cle, []).append(filiere)
+
+    resultat = []
+    for candidats in groupes.values():
+        candidats_niveau = candidats
+        if niveau:
+            explicites = [f for f in candidats if f.niveau == niveau]
+            candidats_niveau = explicites or [f for f in candidats if f.niveau is None]
+        if not candidats_niveau:
+            continue
+        representant = min(candidats_niveau, key=lambda f: f.id)
+        resultat.append({"id": representant.id, "nom": representant.nom})
+    return sorted(resultat, key=lambda parcours: parcours["nom"].casefold())
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine

@@ -1,0 +1,177 @@
+/* Gasy Mahay — interface professionnelle des cercles d'étude. */
+
+main.main-clair .cercles-page-shell .cercles-hero-sous-titre {
+  max-width: 55ch;
+  line-height: 1.7;
+}
+
+main.main-clair .cercles-page-shell .carte-recherche-cercles,
+main.main-clair .cercles-page-shell #creer-cercle {
+  min-width: 0;
+}
+
+main.main-clair .cercles-page-shell .filtres {
+  align-items: end;
+  gap: 1rem;
+}
+
+main.main-clair .cercles-page-shell .filtres label,
+main.main-clair .cercles-page-shell #creer-cercle > label {
+  display: block;
+  margin: .45rem 0 .35rem;
+  color: var(--content-text);
+  font-size: .79rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+main.main-clair .cercles-page-shell .filtres input,
+main.main-clair .cercles-page-shell .filtres select,
+main.main-clair .cercles-page-shell #creer-cercle input:not([type="hidden"]),
+main.main-clair .cercles-page-shell #creer-cercle select,
+main.main-clair .cercles-page-shell #creer-cercle textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.7rem;
+  padding: .65rem .75rem;
+  border: 1px solid var(--content-border);
+  border-radius: 10px;
+  background: var(--content-bg);
+  color: var(--content-text);
+  font: inherit;
+  font-size: .86rem;
+  line-height: 1.45;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+main.main-clair .cercles-page-shell #creer-cercle {
+  display: grid;
+  gap: .25rem;
+}
+
+main.main-clair .cercles-page-shell #creer-cercle textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+main.main-clair .cercles-page-shell .filtres input:focus-visible,
+main.main-clair .cercles-page-shell .filtres select:focus-visible,
+main.main-clair .cercles-page-shell #creer-cercle input:focus-visible,
+main.main-clair .cercles-page-shell #creer-cercle select:focus-visible,
+main.main-clair .cercles-page-shell #creer-cercle textarea:focus-visible {
+  outline: 2px solid var(--refonte-teal, var(--accent));
+  outline-offset: 2px;
+  border-color: var(--refonte-teal, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--refonte-teal, var(--accent)) 15%, transparent);
+}
+
+main.main-clair .cercles-page-shell .cercles-label-note {
+  display: block;
+  margin-top: .12rem;
+  color: var(--content-text-muted);
+  font-size: .7rem;
+  font-weight: 500;
+}
+
+main.main-clair .cercles-page-shell .cercles-info-tronc-commun {
+  margin: .35rem 0 .5rem;
+  padding: .7rem .8rem;
+  border: 1px solid var(--content-border);
+  border-left: 3px solid var(--refonte-teal, var(--accent));
+  border-radius: 9px;
+  background: var(--content-surface);
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+main.main-clair .cercles-page-shell .cercles-info-tronc-commun[hidden] {
+  display: none !important;
+}
+
+/* La hiérarchie se lit partout dans le même ordre : domaine → mention →
+   niveau → parcours. Les séparateurs décoratifs cèdent la place à des puces. */
+main.main-clair .cercles-page-shell .carte-claire-hierarchie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .38rem;
+  min-width: 0;
+  margin-top: .55rem;
+  line-height: 1.4;
+}
+
+main.main-clair .cercles-page-shell .carte-claire-hierarchie > span[aria-hidden="true"] {
+  display: none;
+}
+
+main.main-clair .cercles-page-shell .carte-claire-hierarchie > span:not([aria-hidden="true"]) {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  padding: .24rem .52rem;
+  border: 1px solid var(--content-border);
+  border-radius: 999px;
+  background: var(--content-surface);
+  color: var(--content-text-muted);
+  font-size: .68rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+main.main-clair .cercles-page-shell .carte-claire-hierarchie > .puce-niveau {
+  flex: 0 0 auto;
+  border-color: color-mix(in srgb, var(--refonte-teal, var(--accent)) 34%, var(--content-border));
+  background: color-mix(in srgb, var(--refonte-teal, var(--accent)) 9%, var(--content-surface));
+  color: var(--content-text);
+  white-space: nowrap;
+}
+
+main.main-clair .cercles-page-shell .carte-claire-hierarchie > .carte-claire-parcours {
+  background: var(--content-bg);
+  color: var(--content-text);
+  font-weight: 750;
+}
+
+main.main-clair .cercles-page-shell .cercle-card-premium-type {
+  padding: .34rem .58rem;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 999px;
+  background: rgba(7,42,43,.72);
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .025em;
+}
+
+main.main-clair .cercles-page-shell .carte-claire-avatar[class*="carte-claire-avatar-couleur-"] {
+  border-radius: 12px;
+}
+
+main.main-clair .cercles-page-shell .cercles-visibilite-meta {
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+@media (max-width: 680px) {
+  main.main-clair .cercles-page-shell .filtres {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  main.main-clair .cercles-page-shell .carte-claire-hierarchie > span:not([aria-hidden="true"]) {
+    font-size: .66rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main.main-clair .cercles-page-shell .filtres input,
+  main.main-clair .cercles-page-shell .filtres select,
+  main.main-clair .cercles-page-shell #creer-cercle input,
+  main.main-clair .cercles-page-shell #creer-cercle select,
+  main.main-clair .cercles-page-shell #creer-cercle textarea {
+    transition: none;
+  }
+}
