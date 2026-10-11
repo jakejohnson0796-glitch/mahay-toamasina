@@ -391,9 +391,13 @@ class TestRechercheCercles(unittest.TestCase):
                 filiere_id=filiere.id,
                 est_active=True,
             ))
+            cercle_existant = session.exec(
+                select(CercleEtude).where(CercleEtude.nom == "Revision Analyse Financiere")
+            ).first()
+            self.assertIsNotNone(cercle_existant)
             session.add(CercleEtude(
                 nom="Cercle historique sans métadonnées",
-                createur_id=1,
+                createur_id=cercle_existant.createur_id,
                 mention_id=None,
                 filiere_id=filiere.id,
                 niveau=None,
