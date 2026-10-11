@@ -850,22 +850,14 @@ def creer_cercle(
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    """Deux comportements distincts, selon ce qui est rempli :
+    """Valide la hiérarchie académique avant toute demande ou création.
 
-    1) niveau fourni ET (filiere_id OU mention_id) -> c'est une demande
-       de CERCLE NATIONAL (§20-27 du brief "cercles nationaux"). Pas de
-       creation immediate : une DemandeCreationCercle EN_ATTENTE est
-       creee, soumise a validation admin (voir approuver_demande_creation
-       plus bas). La raison devient obligatoire dans ce cas. Depuis le
-       11/09/2026 (Jake : "ameliorer la recherche/creation") :
-       mention_id SEUL (sans filiere_id) demande un cercle de TRONC
-       COMMUN -- mention+niveau, sans parcours precis -- jusque-la
-       impossible a demander depuis ce formulaire.
-
-    2) Sinon (filiere_id seul, ou aucun des deux = "groupe libre") ->
-       comportement INCHANGE d'avant cette evolution : creation
-       immediate, comme tous les cercles crees jusqu'ici. Rien ne
-       casse pour l'usage existant."""
+    1) Une mention et un niveau, avec ou sans parcours : demande de cercle
+       national soumise à validation administrative. La raison est requise.
+       Sans parcours, la demande concerne le tronc commun.
+    2) Aucun champ académique rempli : création immédiate d'un groupe libre.
+    Toute hiérarchie partielle, tout niveau inconnu ou tout couple
+    mention/parcours incohérent est rejeté au serveur."""
     utilisateur = utilisateur_courant(request, session)
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
