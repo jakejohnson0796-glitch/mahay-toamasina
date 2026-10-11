@@ -12,10 +12,11 @@
         headers: { Accept: "application/json" },
         credentials: "same-origin",
       });
-      if (!response.ok) return [];
-      return await response.json();
+      if (!response.ok) return null;
+      const data = await response.json();
+      return Array.isArray(data) ? data : null;
     } catch (_error) {
-      return [];
+      return null;
     }
   }
 
@@ -94,6 +95,12 @@
       parcours.disabled = true;
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      if (!Array.isArray(rows)) {
+        parcours.replaceChildren();
+        option(parcours, "", "Parcours indisponibles — réessayez", true);
+        parcours.disabled = true;
+        return;
+      }
       remplirParcours(parcours, rows, valeurCourante, true, "Tous les parcours");
     }
 
@@ -167,14 +174,27 @@
       if (ticket !== generation) return;
 
       parcours.replaceChildren();
+      if (!Array.isArray(rows)) {
+        option(parcours, "", "Chargement impossible — réessayez", true);
+        parcours.disabled = true;
+        if (infoTronc) {
+          infoTronc.textContent = "Le référentiel n’a pas pu être chargé. Réessaie avant d’envoyer ta demande.";
+          infoTronc.hidden = false;
+        }
+        return;
+      }
       if (!rows.length) {
-        option(parcours, "", "— aucun parcours specifique —", true);
-        if (infoTronc) infoTronc.hidden = false;
+        option(parcours, "", "— aucun parcours spécifique recensé —", true);
+        if (infoTronc) {
+          infoTronc.textContent = "Aucun parcours spécifique n’est recensé à ce niveau. Le tronc commun doit être confirmé pour ton établissement et sera vérifié lors de la demande.";
+          infoTronc.hidden = false;
+        }
       } else {
-        option(parcours, "", "— choisissez un parcours —", true);
+        option(parcours, "", "— choisis un parcours —", true);
         rows.forEach(function (row) {
-          option(parcours, row.id, row.nom, false);
+          option(parcours, row.id, row.nom, false, true);
         });
+        if (infoTronc) infoTronc.hidden = true;
       }
       parcours.disabled = false;
     }
