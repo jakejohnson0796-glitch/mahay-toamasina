@@ -394,7 +394,9 @@ def liste_cercles(
     mention_id_nettoye = entier_ou_none(mention_id)
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
     recherche_tronc_commun = filiere_id == "tronc_commun"
-    niveau_nettoye = niveau if niveau in NIVEAUX else None
+    # Un niveau invalide ne doit pas être ignoré, sinon le filtre est supprimé
+    # et la recherche s'élargit silencieusement à tous les niveaux.
+    niveau_nettoye = niveau if not niveau or niveau in NIVEAUX else "__filtre_invalide__"
 
     # Cohérence stricte de la cascade : Parcours -> Mention -> Domaine.
     # Un paramètre incohérent ne doit jamais élargir les résultats.
@@ -472,7 +474,7 @@ def liste_cercles(
     referentiel_recherche = (
         func.coalesce(Domaine.nom, "")
         + " " + func.coalesce(Mention.nom, "")
-        + " " + func.coalesce(CercleEtude.niveau, "")
+        + " " + func.coalesce(CercleEtude.niveau, Filiere.niveau, "")
         + " " + func.coalesce(Filiere.nom, "")
         + " "
         + func.coalesce(
@@ -495,7 +497,7 @@ def liste_cercles(
 
     if niveaux_dans_q:
         requete = requete.where(
-            CercleEtude.niveau.in_(sorted(set(niveaux_dans_q)))
+            func.coalesce(CercleEtude.niveau, Filiere.niveau).in_(sorted(set(niveaux_dans_q)))
         )
 
     if recherche_tronc_commun_dans_q:
@@ -512,13 +514,17 @@ def liste_cercles(
     elif filiere_id_nettoye:
         filiere_choisie = session.get(Filiere, filiere_id_nettoye)
         if filiere_choisie:
-            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
+            ids_equivalents = referentiel_academique._filieres_equivalentes(
+                session, filiere_choisie, niveau=niveau_nettoye
+            )
             requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
         else:
             requete = requete.where(CercleEtude.id == -1)
 
     if niveau_nettoye:
-        requete = requete.where(CercleEtude.niveau == niveau_nettoye)
+        requete = requete.where(
+            func.coalesce(CercleEtude.niveau, Filiere.niveau) == niveau_nettoye
+        )
 
     condition_disponibilite = None
     if afficher_disponibles_seulement and not _est_admin(utilisateur):
@@ -640,7 +646,8 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
+            "niveau_effectif": cercle.niveau or (filiere.niveau if filiere else None),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -737,7 +744,8 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
+                "niveau_effectif": cercle.niveau or (filiere.niveau if filiere else None),
             })
         return resultat
 
@@ -950,7 +958,9 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(
+                session, filiere, niveau=niveau_nettoye
+            )
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
@@ -980,7 +990,9 @@ def creer_cercle(
         # §48 : si le cercle national existe deja, ne pas proposer de
         # doublon — rediriger vers l'existant.
         if filiere:
-            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
+            filieres_equivalentes = referentiel_academique._filieres_equivalentes(
+                session, filiere, niveau=niveau_nettoye
+            )
         else:
             filieres_equivalentes = []
 
@@ -1203,7 +1215,9 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle):
+    if referentiel_academique.cercle_est_national(
+        cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+    ):
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
@@ -1583,7 +1597,9 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(
+                cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+            ),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
