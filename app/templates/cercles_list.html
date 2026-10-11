@@ -511,6 +511,8 @@
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "niveau_requis_pour_mention" %}<div class="erreur" role="alert">Un niveau est obligatoire lorsque tu choisis une mention. Sélectionne la mention puis le niveau correspondant.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "identite_academique_incomplete" %}<div class="erreur" role="alert">Le choix académique est incomplet. Sélectionne une mention avec un niveau, ou crée un groupe libre sans niveau.</div>{% endif %}
   {% if request.query_params.get("erreur") == "parcours_mention_incoherente" %}<div class="erreur" role="alert">Le parcours choisi ne correspond pas à la mention. Choisis de nouveau la mention puis le parcours.</div>{% endif %}
   {% if request.query_params.get("erreur") == "cercle_referentiel_incoherent" %}<div class="erreur" role="alert">Ce cercle contient des informations académiques incohérentes ou non valides. Il doit être vérifié par un administrateur avant de nouvelles adhésions.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
@@ -534,7 +536,7 @@
     </select>
 
     <label for="creation_niveau">Niveau (obligatoire des qu'une mention est choisie)</label>
-    <select id="creation_niveau" name="niveau" disabled>
+    <select id="creation_niveau" name="niveau" disabled required>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
       <option value="{{ n }}" data-no-translate>{{ n }}</option>
@@ -545,7 +547,7 @@
     <select id="creation_filiere_id" name="filiere_id" disabled>
       <option value="">— choisissez d'abord un niveau —</option>
     </select>
-    <p class="stat-label" id="creation-info-tronc-commun" style="display:none;">
+    <p class="stat-label" id="creation-info-tronc-commun" hidden>
       Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
     </p>
 
