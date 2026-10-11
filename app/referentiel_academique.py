@@ -635,7 +635,7 @@ def condition_cercles_disponibles(
     mention_id = profil["mention"].id
     niveau_cible = profil["niveau"]
     filiere_utilisateur = profil["filiere"]
-    cohérence_parcours = and_(
+    coherence_parcours = and_(
         CercleEtude.filiere_id.is_not(None),
         mention_filiere.is_not(None),
         mention_filiere == mention_effective,
