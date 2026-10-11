@@ -98,6 +98,8 @@
     }
 
     domaine.addEventListener("change", function () {
+      // Invalide une réponse réseau encore en vol pour l'ancienne hiérarchie.
+      generation += 1;
       mention.value = "";
       niveau.value = "";
       parcours.replaceChildren();
@@ -107,6 +109,8 @@
     });
 
     mention.addEventListener("change", function () {
+      // Un parcours reçu pour une autre mention ne doit jamais être réinjecté.
+      generation += 1;
       niveau.value = "";
       parcours.replaceChildren();
       option(parcours, "", "Tous les parcours", true);
