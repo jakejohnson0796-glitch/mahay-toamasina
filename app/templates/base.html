@@ -152,9 +152,22 @@
       </button>
     </div>
 
-    <div class="tb-sidebar-langue">
-      <label for="select-langue" data-langue-label>Langue</label>
-      <select id="select-langue" name="langue" aria-label="Choisir la langue">
+    <div class="tb-sidebar-langue" role="group" aria-labelledby="tb-sidebar-langue-label">
+      <div class="tb-sidebar-langue-entete">
+        <span id="tb-sidebar-langue-label" data-langue-label>Langue du site</span>
+        <span class="tb-sidebar-langue-hint" aria-hidden="true">FR / MG</span>
+      </div>
+      <div class="tb-sidebar-langue-choix" role="group" aria-label="Choisir la langue du site">
+        <button type="button" class="tb-sidebar-langue-option" data-langue-choix="fr" aria-label="Afficher le site en français" aria-pressed="true" title="Français">
+          <span class="tb-sidebar-langue-code" data-no-translate>FR</span>
+          <span class="tb-sidebar-langue-texte" data-no-translate>Français</span>
+        </button>
+        <button type="button" class="tb-sidebar-langue-option" data-langue-choix="mg" aria-label="Asehoy amin’ny teny Malagasy ny tranonkala" aria-pressed="false" title="Malagasy">
+          <span class="tb-sidebar-langue-code" data-no-translate>MG</span>
+          <span class="tb-sidebar-langue-texte" data-no-translate>Malagasy</span>
+        </button>
+      </div>
+      <select id="select-langue" name="langue" aria-label="Choisir la langue" class="tb-sidebar-langue-source" tabindex="-1" aria-hidden="true" hidden>
         <option value="fr">Français</option>
         <option value="mg">Malagasy</option>
       </select>
@@ -410,6 +423,7 @@
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/langue.js?v={{ version_asset('js/langue.js') }}" defer></script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/choix-langue.js?v={{ version_asset('js/choix-langue.js') }}" defer></script>
 
 </body>
 </html>
