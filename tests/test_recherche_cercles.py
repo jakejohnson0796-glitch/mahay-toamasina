@@ -31,6 +31,7 @@ from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
     Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere, ProgrammeUniversitaire, MembreCercle,
 )
+from app.referentiel_academique import filiere_canonique_pour_cercle  # noqa: E402
 
 
 def _creer_client_connecte(telephone: str, nom: str, **champs_utilisateur) -> TestClient:
@@ -109,6 +110,7 @@ class TestRechercheCercles(unittest.TestCase):
             ))
             session.commit()
             cls.universite_id = universite.id
+            cls.faculte_id = faculte.id
             cls.mention_id = mention.id
 
         cls.client = _creer_client_connecte(
@@ -277,6 +279,101 @@ class TestRechercheCercles(unittest.TestCase):
         page = self.client.get("/cercles", params={"domaine_id": str(domaine_id)})
         self.assertEqual(page.status_code, 200)
         self.assertIn("Legacy Finance L3", page.text)
+
+        # Le parcours lié fournit la mention de référence pour le filtre et
+        # pour la nature du cercle historique.
+        page_mention = self.client.get("/cercles", params={"mention_id": str(self.mention_id)})
+        self.assertEqual(page_mention.status_code, 200)
+        debut_titre = page_mention.text.index("Legacy Finance L3")
+        debut_carte = page_mention.text.rfind("<article", 0, debut_titre)
+        fin_carte = page_mention.text.find("</article>", debut_titre) + len("</article>")
+        carte = page_mention.text[debut_carte:fin_carte]
+        self.assertIn("Cercle de parcours", carte)
+        self.assertNotIn("Référentiel à vérifier", carte)
+
+    def test_mention_contradictoire_ne_pilote_ni_filtre_ni_badge(self):
+        with Session(engine) as session:
+            createur = session.exec(
+                select(Utilisateur).where(Utilisateur.nom == "Createur")
+            ).one()
+            domaine_id = session.exec(
+                select(Domaine.id).join(Mention, Mention.domaine_id == Domaine.id)
+                .where(Mention.id == self.mention_id)
+            ).one()
+            mention_contradictoire = Mention(
+                nom="Mention contradictoire de test",
+                domaine_id=domaine_id,
+            )
+            session.add(mention_contradictoire)
+            session.commit()
+            session.refresh(mention_contradictoire)
+            session.add(CercleEtude(
+                nom="Cercle mention contradictoire",
+                createur_id=createur.id,
+                mention_id=mention_contradictoire.id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            ))
+            session.commit()
+            mention_contradictoire_id = mention_contradictoire.id
+
+        page_reference = self.client.get("/cercles", params={"mention_id": str(self.mention_id)})
+        self.assertEqual(page_reference.status_code, 200)
+        debut_titre = page_reference.text.index("Cercle mention contradictoire")
+        debut_carte = page_reference.text.rfind("<article", 0, debut_titre)
+        fin_carte = page_reference.text.find("</article>", debut_titre) + len("</article>")
+        carte = page_reference.text[debut_carte:fin_carte]
+        self.assertIn("Référentiel à vérifier", carte)
+
+        page_ancienne_mention = self.client.get(
+            "/cercles", params={"mention_id": str(mention_contradictoire_id)}
+        )
+        self.assertEqual(page_ancienne_mention.status_code, 200)
+        self.assertNotIn("Cercle mention contradictoire", page_ancienne_mention.text)
+
+    def test_canonicalisation_prefere_le_parcours_explicite_du_niveau(self):
+        with Session(engine) as session:
+            filiere_legacy = session.get(Filiere, self.filiere_id)
+            filiere_l3 = Filiere(
+                nom=filiere_legacy.nom,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            filiere_m1 = Filiere(
+                nom=filiere_legacy.nom,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add(filiere_l3)
+            session.add(filiere_m1)
+            session.commit()
+            session.refresh(filiere_l3)
+            session.refresh(filiere_m1)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere_l3.id,
+                est_active=True,
+            ))
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere_m1.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            canon_l3 = filiere_canonique_pour_cercle(session, filiere_legacy, "L3")
+            canon_m1 = filiere_canonique_pour_cercle(session, filiere_legacy, "M1")
+            self.assertEqual(canon_l3.id, filiere_l3.id)
+            self.assertEqual(canon_m1.id, filiere_m1.id)
+
+        options = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux?niveau=L3"
+        )
+        self.assertEqual(options.status_code, 200)
+        option = next(item for item in options.json() if item["nom"] == "Finance et Comptabilite")
+        self.assertEqual(option["id"], filiere_l3.id)
 
     def test_la_visibilite_directe_du_profil_est_affichee_sur_la_vue_generale(self):
         page = self.client.get("/cercles")
