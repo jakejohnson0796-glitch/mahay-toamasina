@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -242,29 +243,29 @@ def lister_parcours_nationaux(
     niveau: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
-    """Parcours nommes pour cette mention a ce niveau, DEDUPLIQUES par
-    nom normalise A TRAVERS TOUTES LES UNIVERSITES (voir
-    referentiel_academique._normaliser_nom_parcours) : contrairement a
-    /composantes/{id}/mentions/{id}/filieres (scope a une seule
-    universite, pour l'inscription), un cercle est national -- "Finance"
-    a Toamasina et a Fianarantsoa doit apparaitre comme UNE SEULE
-    option, pas deux. Un seul id representant est renvoye par groupe
-    (peu importe lequel : voir _filieres_equivalentes, utilisee cote
-    recherche/creation de cercle pour retrouver tout le groupe a partir
-    de ce representant).
+    """Parcours réellement offerts au niveau demandé, regroupés nationalement.
 
-    Liste VIDE = tronc commun a ce niveau pour cette mention (aucun
-    parcours a choisir), meme convention que pour l'inscription."""
+    Une ligne historique sans niveau reste disponible comme solution de
+    compatibilité, mais un parcours explicitement daté au niveau sélectionné
+    est prioritaire. Sans niveau, les intitulés identiques à des niveaux
+    différents restent des identités distinctes (ex. CCA M1 et CCA M2).
+    """
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
+        return []
+    if niveau and niveau not in NIVEAUX:
         return []
 
     requete = (
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
+        .join(Universite, Universite.id == ProgrammeUniversitaire.universite_id)
         .where(
             Filiere.mention_id == mention_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            ProgrammeUniversitaire.universite_id == Faculte.universite_id,
+            Universite.est_active == True,  # noqa: E712
         )
     )
     if niveau:
@@ -275,12 +276,29 @@ def lister_parcours_nationaux(
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
     ]
 
-    vus: dict[str, dict] = {}
+    # Quand un intitulé existe dans plusieurs universités, ne proposer
+    # qu'une entrée pour le niveau cible et conserver de préférence une
+    # référence explicitement datée plutôt qu'une ancienne ligne NULL.
+    vus: dict[tuple[str, Optional[str]], dict] = {}
     for f in filieres:
-        cle = _normaliser_nom_parcours(f.nom)
-        if cle not in vus:
-            vus[cle] = {"id": f.id, "nom": f.nom}
-    return sorted(vus.values(), key=lambda p: p["nom"])
+        nom_normalise = _normaliser_nom_parcours(f.nom)
+        cle = (nom_normalise, niveau if niveau else f.niveau)
+        entree = {
+            "id": f.id,
+            "nom": f.nom,
+            "niveau": f.niveau,
+        }
+        precedente = vus.get(cle)
+        if precedente is None:
+            vus[cle] = entree
+            continue
+
+        if niveau and precedente.get("niveau") is None and f.niveau == niveau:
+            vus[cle] = entree
+        elif f.id < precedente["id"] and precedente.get("niveau") == f.niveau:
+            vus[cle] = entree
+
+    return sorted(vus.values(), key=lambda p: (p["nom"], p.get("niveau") or ""))
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine
