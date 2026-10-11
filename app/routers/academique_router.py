@@ -24,6 +24,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
+from ..referentiel import NIVEAUX
 
 router = APIRouter(prefix="/api/academique")
 
@@ -257,6 +258,10 @@ def lister_parcours_nationaux(
     parcours a choisir), meme convention que pour l'inscription."""
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
+        return []
+    # Refuser les niveaux bricolés dans l'URL : les dropdowns de parcours
+    # et la validation de création doivent partager exactement le référentiel.
+    if niveau and niveau not in NIVEAUX:
         return []
 
     requete = (
