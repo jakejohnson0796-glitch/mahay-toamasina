@@ -47,6 +47,11 @@
 
     parcours.forEach(function (item) {
       option(select, item.id, item.nom, String(item.id) === valeur, true);
+      const courant = select.options[select.options.length - 1];
+      if (item.niveau_a_confirmer) {
+        courant.dataset.niveauAConfirmer = "true";
+        courant.title = "Le référentiel ne précise pas le niveau de ce parcours.";
+      }
     });
 
     if (valeur && Array.from(select.options).every(function (o) { return o.value !== valeur; })) {
@@ -173,7 +178,12 @@
       } else {
         option(parcours, "", "— choisissez un parcours —", true);
         rows.forEach(function (row) {
-          option(parcours, row.id, row.nom, false);
+          option(parcours, row.id, row.nom, false, true);
+          const courant = parcours.options[parcours.options.length - 1];
+          if (row.niveau_a_confirmer) {
+            courant.dataset.niveauAConfirmer = "true";
+            courant.title = "Le référentiel ne précise pas le niveau de ce parcours.";
+          }
         });
       }
       parcours.disabled = false;
