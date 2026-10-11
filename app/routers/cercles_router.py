@@ -448,13 +448,11 @@ def liste_cercles(
         or afficher_disponibles_seulement
     )
 
-    # Legacy compatibility : avant l'introduction de
-    # CercleEtude.mention_id, certains cercles stockaient uniquement
-    # filiere_id. La source de verite de la mention reste alors
-    # Filiere.mention_id. On construit une "mention effective" pour que
-    # la recherche Domaine -> Mention -> Niveau -> Parcours fonctionne
-    # aussi sur ces cercles historiques.
+    # Les cercles historiques peuvent avoir la mention ou le niveau non
+    # dénormalisé alors que la Filiere contient déjà ces informations.
+    # Utiliser les dimensions effectives pour la recherche et les filtres.
     mention_effective_id = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+    niveau_effectif = func.coalesce(CercleEtude.niveau, Filiere.niveau)
 
     requete = (
         select(CercleEtude)
@@ -472,7 +470,7 @@ def liste_cercles(
     referentiel_recherche = (
         func.coalesce(Domaine.nom, "")
         + " " + func.coalesce(Mention.nom, "")
-        + " " + func.coalesce(CercleEtude.niveau, "")
+        + " " + func.coalesce(niveau_effectif, "")
         + " " + func.coalesce(Filiere.nom, "")
         + " "
         + func.coalesce(
@@ -495,7 +493,7 @@ def liste_cercles(
 
     if niveaux_dans_q:
         requete = requete.where(
-            CercleEtude.niveau.in_(sorted(set(niveaux_dans_q)))
+            niveau_effectif.in_(sorted(set(niveaux_dans_q)))
         )
 
     if recherche_tronc_commun_dans_q:
@@ -518,7 +516,7 @@ def liste_cercles(
             requete = requete.where(CercleEtude.id == -1)
 
     if niveau_nettoye:
-        requete = requete.where(CercleEtude.niveau == niveau_nettoye)
+        requete = requete.where(niveau_effectif == niveau_nettoye)
 
     condition_disponibilite = None
     if afficher_disponibles_seulement and not _est_admin(utilisateur):
@@ -640,10 +638,11 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
+            "niveau": cercle.niveau or (filiere.niveau if filiere else None),
             "nb_membres": nb_membres_par_cercle.get(cercle.id, 0),
             "est_membre": cercle.id in cercles_ou_accessibles,
             "en_attente": bool(utilisateur and cercle.id not in cercles_ou_accessibles and cercle.id in cercles_en_attente),
@@ -735,9 +734,10 @@ def liste_cercles(
                 "filiere": filiere,
                 "mention": mention,
                 "domaine": domaine,
+                "niveau": cercle.niveau or (filiere.niveau if filiere else None),
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             })
         return resultat
 
@@ -927,6 +927,14 @@ def creer_cercle(
 
     niveau_nettoye = (niveau or "").strip() or None
 
+    # Ne jamais rétrograder silencieusement une sélection académique
+    # partielle en groupe libre. Un cercle libre doit être demandé sans
+    # mention, niveau ni parcours.
+    if (mention_id_nettoye or filiere_id_nettoye) and not niveau_nettoye:
+        return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
+    if niveau_nettoye and not (mention_id_nettoye or filiere_id_nettoye):
+        return RedirectResponse("/cercles?erreur=combinaison_academique_invalide", status_code=303)
+
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
         if niveau_nettoye not in NIVEAUX:
@@ -938,11 +946,11 @@ def creer_cercle(
             if not filiere:
                 return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
             if not filiere.mention_id:
-                # §10 du brief : la coherence mention/filiere doit etre
-                # verifiee avant tout. Une filiere sans mention assignee ne
-                # peut pas encore porter de cercle national (voir
-                # /admin/referentiel pour l'assigner).
+                # Une filiere sans mention assignée ne peut pas porter de
+                # cercle national avant validation du référentiel.
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            if mention_id_nettoye and mention_id_nettoye != filiere.mention_id:
+                return RedirectResponse("/cercles?erreur=incoherence_mention_parcours", status_code=303)
             mention_id_cible = filiere.mention_id
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
@@ -950,7 +958,9 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(
+                session, filiere, niveau_nettoye
+            )
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
@@ -1583,7 +1593,10 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(
+                cercle,
+                session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None,
+            ),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
