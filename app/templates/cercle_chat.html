@@ -3,6 +3,31 @@
 {% block titre %}{{ cercle.nom }} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
+{% macro resume_hierarchie_cercle() %}
+<div class="cercle-reference-academique" aria-label="Référentiel académique du cercle">
+  {% if type_cercle == "parcours" %}
+    <span>{{ domaine.nom if domaine else "Domaine non renseigné" }}</span>
+    <span class="cercle-reference-separateur" aria-hidden="true">›</span>
+    <span>{{ mention.nom }}</span>
+    <span class="cercle-reference-separateur" aria-hidden="true">›</span>
+    <span class="cercle-reference-niveau">{{ libelles_niveaux.get(cercle.niveau, cercle.niveau) }}</span>
+    <span class="cercle-reference-separateur" aria-hidden="true">›</span>
+    <span>{{ filiere.nom }}</span>
+  {% elif type_cercle == "tronc_commun" %}
+    <span>{{ domaine.nom if domaine else "Domaine non renseigné" }}</span>
+    <span class="cercle-reference-separateur" aria-hidden="true">›</span>
+    <span>{{ mention.nom }}</span>
+    <span class="cercle-reference-separateur" aria-hidden="true">›</span>
+    <span class="cercle-reference-niveau">{{ libelles_niveaux.get(cercle.niveau, cercle.niveau) }}</span>
+    <span class="cercle-reference-separateur" aria-hidden="true">›</span>
+    <span>Tronc commun</span>
+  {% elif type_cercle == "libre" %}
+    <span class="cercle-reference-libre">Groupe libre · sans rattachement académique</span>
+  {% else %}
+    <span class="cercle-reference-incoherent">Référentiel académique à vérifier par l’administration</span>
+  {% endif %}
+</div>
+{% endmacro %}
 <div class="contenu-clair">
 <style nonce="{{ csp_nonce(request) }}">
 /* UX Cercle v2 : interface compacte, rapide, tactile et riche. */
@@ -11,6 +36,11 @@
 .cercle-chat-outils .outil-cercle:hover{border-color:var(--content-link);transform:translateY(-1px)}
 .cercle-chat-outils .outil-cercle.actif{background:var(--content-bg);border-color:var(--content-link)}
 .cercle-chat-indicateurs{display:flex;justify-content:space-between;gap:.6rem;margin:.45rem 0 0;color:var(--content-text-muted);font-size:.68rem}
+.cercle-reference-academique{display:flex;align-items:center;flex-wrap:wrap;gap:.32rem .45rem;margin:.5rem 0;color:var(--content-text-muted);font-size:.72rem;line-height:1.45}
+.cercle-reference-separateur{color:var(--content-link);font-weight:800}
+.cercle-reference-niveau{display:inline-flex;align-items:center;padding:.15rem .45rem;border:1px solid var(--content-border);border-radius:999px;background:var(--content-bg);color:var(--content-text);font-size:.68rem;font-weight:750}
+.cercle-reference-libre{display:inline-flex;padding:.25rem .5rem;border:1px solid var(--content-border);border-radius:8px}
+.cercle-reference-incoherent{display:inline-flex;padding:.28rem .5rem;border:1px solid var(--refonte-danger, #b8543a);border-radius:8px;color:var(--refonte-danger, #b8543a);font-weight:700}
 .cercle-chat-composer-wrap{position:relative;display:flex;align-items:flex-end;gap:.5rem;flex:1}
 .cercle-chat-textarea{width:100%;min-height:42px;max-height:140px;resize:none;line-height:1.45;padding:.65rem .75rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-surface);color:var(--content-text)}
 .cercle-chat-textarea:focus{outline:none;border-color:var(--content-link);box-shadow:0 0 0 3px rgba(30,122,52,.08)}
@@ -404,6 +434,7 @@
 {% if not membre %}
 <h2>{{ cercle.nom }}</h2>
 {% if cercle.description %}<p>{{ cercle.description }}</p>{% endif %}
+{{ resume_hierarchie_cercle() }}
 <div class="carte-formulaire">
   {% if en_attente %}
   <p>Votre demande d'adhesion est en attente de validation par le createur du cercle ou un administrateur.</p>
@@ -441,6 +472,7 @@
     <span class="entete-cercle-icone" aria-hidden="true">{{ icone("cercles", taille=22) }}</span>
     <div class="entete-cercle-infos">
       <h2 class="entete-cercle-titre">{{ cercle.nom }}</h2>
+      {{ resume_hierarchie_cercle() }}
       <p class="entete-cercle-sous-titre">En ligne : <span id="liste-presence">—</span></p>
     </div>
   </div>
