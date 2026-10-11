@@ -28,6 +28,8 @@ from app.referentiel_academique import (
     parcours_cercle_offert,
     offre_filiere_active_universite,
     tronc_commun_offert,
+    filiere_canonique_pour_cercle,
+    _filieres_equivalentes,
 )
 
 
@@ -162,6 +164,66 @@ class TestCorrespondanceCercle(unittest.TestCase):
                              universite_id=self.universite_id, mention_id=self.mention_id,
                              filiere_id=self.autre_filiere_id, niveau="L3")
             self.assertFalse(profil_correspond_au_cercle(u, cercle, session))
+
+    def test_cercle_legacy_recupere_la_mention_depuis_son_parcours(self):
+        with Session(self.engine) as session:
+            cercle = CercleEtude(
+                nom="Finance L3 historique",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle, session), "parcours")
+            self.assertTrue(cercle_est_national(cercle, session))
+
+    def test_cercle_refuse_une_mention_differente_de_celle_du_parcours(self):
+        with Session(self.engine) as session:
+            cercle = CercleEtude(
+                nom="Cercle incoherent",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.autre_filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle, session), "incomplet")
+            self.assertFalse(cercle_est_national(cercle, session))
+
+    def test_representant_national_prefere_le_parcours_du_niveau_demande(self):
+        with Session(self.engine) as session:
+            parcours_l3 = Filiere(
+                nom="Comptabilite Controle Audit",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            parcours_m1 = Filiere(
+                nom="Comptabilite Controle Audit",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add(parcours_l3)
+            session.add(parcours_m1)
+            session.commit()
+            session.refresh(parcours_l3)
+            session.refresh(parcours_m1)
+
+            historique = Filiere(
+                nom="Comptabilite Controle Audit",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau=None,
+            )
+            session.add(historique)
+            session.commit()
+            session.refresh(historique)
+
+            canonique = filiere_canonique_pour_cercle(session, historique, "M1")
+            self.assertEqual(canonique.id, parcours_m1.id)
+            equivalents = _filieres_equivalentes(session, historique, "M1")
+            self.assertIn(parcours_m1.id, equivalents)
+            self.assertNotIn(parcours_l3.id, equivalents)
 
     def test_cercle_parcours_refuse_un_niveau_non_offert(self):
         with Session(self.engine) as session:
