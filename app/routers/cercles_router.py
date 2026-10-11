@@ -874,6 +874,11 @@ def creer_cercle(
     mention_id_nettoye = entier_ou_none(mention_id)
     niveau_nettoye = (niveau or "").strip() or None
 
+    if (mention_id or "").strip() and mention_id_nettoye is None:
+        return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+    if (filiere_id or "").strip() and filiere_id_nettoye is None:
+        return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+
     if niveau_nettoye and niveau_nettoye not in NIVEAUX:
         return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
 
