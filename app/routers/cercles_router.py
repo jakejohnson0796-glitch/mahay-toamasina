@@ -390,11 +390,27 @@ def liste_cercles(
     # l'utilisateur ne connait pas l'ordre exact du titre : chaque terme
     # doit apparaitre dans au moins un champ searchable. On borne a 6 termes
     # pour ne pas gonfler artificiellement la requete SQL.
-    domaine_id_nettoye = entier_ou_none(domaine_id)
-    mention_id_nettoye = entier_ou_none(mention_id)
-    filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
+    domaine_id_nettoye = (
+        entier_ou_none(domaine_id)
+        if not (domaine_id or "").strip() or entier_ou_none(domaine_id) is not None
+        else -1
+    )
+    mention_id_nettoye = (
+        entier_ou_none(mention_id)
+        if not (mention_id or "").strip() or entier_ou_none(mention_id) is not None
+        else -1
+    )
     recherche_tronc_commun = filiere_id == "tronc_commun"
-    niveau_nettoye = niveau if niveau in NIVEAUX else None
+    filiere_id_nettoye = (
+        None if recherche_tronc_commun or not (filiere_id or "").strip()
+        else (entier_ou_none(filiere_id) if entier_ou_none(filiere_id) is not None else -1)
+    )
+    # Un niveau inconnu doit produire zéro résultat, pas être ignoré et
+    # élargir involontairement la recherche à tous les niveaux.
+    niveau_nettoye = (
+        niveau if niveau in NIVEAUX
+        else ("__filtre_invalide__" if (niveau or "").strip() else None)
+    )
 
     # Cohérence stricte de la cascade : Parcours -> Mention -> Domaine.
     # Un paramètre incohérent ne doit jamais élargir les résultats.
@@ -737,7 +753,7 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             })
         return resultat
 
