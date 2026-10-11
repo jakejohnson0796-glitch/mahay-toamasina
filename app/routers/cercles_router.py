@@ -400,13 +400,18 @@ def liste_cercles(
     # Un paramètre incohérent ne doit jamais élargir les résultats.
     filiere_selectionnee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
     if filiere_selectionnee:
-        if (
-            mention_id_nettoye
-            and filiere_selectionnee.mention_id
-            and mention_id_nettoye != filiere_selectionnee.mention_id
-        ):
-            filiere_id_nettoye = -1
-            filiere_selectionnee = None
+        if mention_id_nettoye:
+            # Un parcours sans mention assignée ne peut pas satisfaire un
+            # filtre de mention. Ne jamais laisser cette combinaison
+            # incohérente afficher des cercles d'une autre formation.
+            if (
+                not filiere_selectionnee.mention_id
+                or mention_id_nettoye != filiere_selectionnee.mention_id
+            ):
+                filiere_id_nettoye = -1
+                filiere_selectionnee = None
+            else:
+                mention_id_nettoye = filiere_selectionnee.mention_id
         elif filiere_selectionnee.mention_id:
             mention_id_nettoye = filiere_selectionnee.mention_id
 
@@ -454,7 +459,7 @@ def liste_cercles(
     # Filiere.mention_id. On construit une "mention effective" pour que
     # la recherche Domaine -> Mention -> Niveau -> Parcours fonctionne
     # aussi sur ces cercles historiques.
-    mention_effective_id = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+    mention_effective_id = func.coalesce(Filiere.mention_id, CercleEtude.mention_id)
 
     requete = (
         select(CercleEtude)
@@ -635,12 +640,12 @@ def liste_cercles(
     cercles_avec_info = []
     for cercle in cercles:
         filiere = filieres_map.get(cercle.filiere_id)
-        mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+        mention_id_effectif = (filiere.mention_id if filiere and filiere.mention_id else cercle.mention_id)
         mention = mentions_map.get(mention_id_effectif)
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, filiere),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -773,7 +778,7 @@ def liste_cercles(
         cercles_profil_visibilite["domaine_nom"] = domaine_profil.get("nom")
 
         if mention_profil_id:
-            mention_effective_resume = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+            mention_effective_resume = func.coalesce(Filiere.mention_id, CercleEtude.mention_id)
             cercles_profil_visibilite["mention"] = _charger_cercles_resume(
                 select(CercleEtude)
                 .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
@@ -785,7 +790,7 @@ def liste_cercles(
             )
 
         if domaine_profil_id:
-            mention_effective_resume = func.coalesce(CercleEtude.mention_id, Filiere.mention_id)
+            mention_effective_resume = func.coalesce(Filiere.mention_id, CercleEtude.mention_id)
             cercles_profil_visibilite["domaine"] = _charger_cercles_resume(
                 select(CercleEtude)
                 .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
@@ -950,7 +955,7 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau_nettoye)
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
