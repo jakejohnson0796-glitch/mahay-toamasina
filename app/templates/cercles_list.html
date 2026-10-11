@@ -314,7 +314,7 @@
 </style>
 
 {% if request.query_params.get("erreur") == "limite_cercles" %}
-<div class="erreur" role="alert">Vous avez déjà atteint la limite de {{ max_cercles_par_utilisateur if max_cercles_par_utilisateur is defined else "2" }} cercles créés. Tu peux continuer à rechercher et rejoindre les cercles existants.</div>
+<div class="erreur" role="alert">Tu as atteint la limite de création de cercles. Tu peux continuer à rechercher et rejoindre les cercles existants.</div>
 {% endif %}
 {% if utilisateur and cercles_profil_visibilite
       and not recherche_q
