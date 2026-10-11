@@ -135,7 +135,7 @@
     <img src="/static/images/cercles/livre-4.svg" alt="" fetchpriority="high">
   </div>
   <div class="cercles-hero-contenu">
-    <span class="cercles-hero-kicker">Université de Toamasina · Cercles d'étude</span>
+    <span class="cercles-hero-kicker">Réseau étudiant de Madagascar · Cercles d’étude</span>
     <h1 id="titre-hero-cercles" class="cercles-hero-titre">Réviser ensemble.<br>Progresser plus vite.</h1>
     <p class="cercles-hero-sous-titre">Trouve un espace de travail autour de ta mention, de ton parcours et de ton niveau, puis retrouve les autres étudiants au même endroit.</p>
     <div class="cercles-hero-actions">
@@ -165,7 +165,7 @@
   {% endif %}
   {% if cercles_profil_visibilite and cercles_profil_visibilite.mention_id %}
   <a class="cercles-raccourci" href="#cercles-ma-mention">🎓 Ma mention</a>
-  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous ma mention</a>
+  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous les cercles de ma mention</a>
   {% endif %}
   {% if cercles_profil_visibilite and cercles_profil_visibilite.domaine_id %}
   <a class="cercles-raccourci" href="/cercles?domaine_id={{ cercles_profil_visibilite.domaine_id }}">🌐 Mon domaine</a>
@@ -515,6 +515,9 @@
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
   {% if request.query_params.get("erreur") == "hierarchie_academique_incomplete" %}<div class="erreur" role="alert">Pour créer un cercle de mention ou de parcours, choisissez un niveau. Un groupe libre ne doit contenir aucune sélection académique.</div>{% endif %}
   {% if request.query_params.get("erreur") == "hierarchie_academique_incoherente" %}<div class="erreur" role="alert">Le parcours choisi n'appartient pas à la mention sélectionnée. Vérifiez la mention et le niveau.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur" role="alert">Ce parcours n’est pas proposé à ce niveau dans le référentiel actif. Choisissez un parcours disponible ou vérifiez votre sélection.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "tronc_commun_indisponible" %}<div class="erreur" role="alert">Le tronc commun n’est pas confirmé pour cette mention, ce niveau et ta composante. Vérifie ton profil académique ou choisis un parcours disponible.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "filiere_introuvable" %}<div class="erreur" role="alert">Le parcours choisi n’existe plus dans le référentiel. Recharge la page et sélectionne de nouveau un parcours.</div>{% endif %}
   {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
 
   <form method="post" action="/cercles/creer" id="creer-cercle" data-formulaire-creation-cercle>
@@ -620,7 +623,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
-      <span class="carte-claire-avatar" aria-hidden="true" class="carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
+      <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
       <div class="carte-claire-texte">
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
