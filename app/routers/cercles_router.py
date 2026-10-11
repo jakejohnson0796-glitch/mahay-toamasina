@@ -1607,6 +1607,10 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             }
 
     filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+    mention_id_effective = cercle.mention_id or (filiere_cercle.mention_id if filiere_cercle else None)
+    mention_cercle = session.get(Mention, mention_id_effective) if mention_id_effective else None
+    domaine_cercle = session.get(Domaine, mention_cercle.domaine_id) if mention_cercle and mention_cercle.domaine_id else None
+    nature_cercle = referentiel_academique.type_cercle(cercle, filiere_cercle)
     return templates.TemplateResponse(
         request,
         "cercle_chat.html",
@@ -1614,6 +1618,11 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "cercle": cercle,
             "membre": membre,
             "en_attente": en_attente,
+            "type_cercle": nature_cercle,
+            "mention_cercle": mention_cercle,
+            "domaine_cercle": domaine_cercle,
+            "filiere_cercle": filiere_cercle,
+            "niveau_libelle": NIVEAUX_LIBELLES.get(cercle.niveau, cercle.niveau) if cercle.niveau else None,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
             "cercle_est_national": referentiel_academique.cercle_est_national(cercle, filiere_cercle),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
