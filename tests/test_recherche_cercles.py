@@ -75,6 +75,7 @@ class TestRechercheCercles(unittest.TestCase):
             filiere = Filiere(nom="Finance et Comptabilite", faculte_id=faculte.id, mention_id=mention.id)
             session.add(filiere); session.commit(); session.refresh(filiere)
             cls.filiere_id = filiere.id
+            cls.faculte_id = faculte.id
             session.add(ProgrammeUniversitaire(
                 universite_id=universite.id,
                 filiere_id=filiere.id,
