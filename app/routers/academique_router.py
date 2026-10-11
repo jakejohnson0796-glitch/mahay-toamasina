@@ -262,10 +262,13 @@ def lister_parcours_nationaux(
     requete = (
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .where(
             Filiere.mention_id == mention_id,
+            ProgrammeUniversitaire.universite_id == Faculte.universite_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
         )
+        .order_by(Filiere.nom, Filiere.id)
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
@@ -275,12 +278,23 @@ def lister_parcours_nationaux(
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
     ]
 
+    # Les lignes anciennes sans niveau servent de secours, mais si un
+    # parcours existe explicitement au niveau demandé, c'est son ID qui doit
+    # être proposé en premier au formulaire. Cela évite de canonicaliser une
+    # sélection L3 sur une ligne M1 ou sur une ligne trop générique.
     vus: dict[str, dict] = {}
     for f in filieres:
         cle = _normaliser_nom_parcours(f.nom)
-        if cle not in vus:
-            vus[cle] = {"id": f.id, "nom": f.nom}
-    return sorted(vus.values(), key=lambda p: p["nom"])
+        entree = {"id": f.id, "nom": f.nom, "niveau": f.niveau}
+        precedente = vus.get(cle)
+        if precedente is None:
+            vus[cle] = entree
+        elif niveau and f.niveau == niveau and precedente["niveau"] != niveau:
+            vus[cle] = entree
+    return [
+        {"id": p["id"], "nom": p["nom"]}
+        for p in sorted(vus.values(), key=lambda p: p["nom"])
+    ]
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine
