@@ -15,6 +15,7 @@ import os
 import re
 import unittest
 import tempfile
+from unittest.mock import patch
 
 # DATABASE_URL doit etre fixee AVANT le premier import de app.* (le moteur
 # SQLAlchemy est cree une fois au niveau module dans app/database.py).
@@ -375,6 +376,40 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertNotIn("mention", data)
         self.assertIsInstance(data["academique"]["universite"], dict)
         self.assertEqual(data["academique"]["universite"]["id"], self.universite_id)
+
+    def test_endpoint_parcours_nationaux_refuse_un_niveau_invalide(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L4"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.json(), [])
+
+    @patch("app.routers.cercles_router.acces_premium_ou_redirection", return_value=None)
+    def test_creation_mention_sans_niveau_ne_devient_pas_un_groupe_libre(self, _acces_premium):
+        page = self.client.get("/cercles")
+        self.assertEqual(page.status_code, 200)
+        jeton = re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
+
+        reponse = self.client.post(
+            "/cercles/creer",
+            data={
+                "nom": "Cercle metadata incompletes",
+                "mention_id": str(self.mention_id),
+                "niveau": "",
+                "_csrf": jeton,
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse.status_code, 303)
+        self.assertIn("erreur=niveau_requis", reponse.headers.get("location", ""))
+
+        with Session(engine) as session:
+            cree = session.exec(
+                select(CercleEtude).where(CercleEtude.nom == "Cercle metadata incompletes")
+            ).first()
+        self.assertIsNone(cree)
+
 
 if __name__ == "__main__":
     unittest.main()
