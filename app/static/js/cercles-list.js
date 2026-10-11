@@ -12,10 +12,13 @@
         headers: { Accept: "application/json" },
         credentials: "same-origin",
       });
-      if (!response.ok) return [];
-      return await response.json();
+      if (!response.ok) return null;
+      const data = await response.json();
+      return Array.isArray(data) ? data : null;
     } catch (_error) {
-      return [];
+      // Ne jamais interpréter une erreur réseau comme une vraie liste vide :
+      // une liste vide signifie "tronc commun", pas "chargement échoué".
+      return null;
     }
   }
 
@@ -94,6 +97,12 @@
       parcours.disabled = true;
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      if (rows === null) {
+        parcours.replaceChildren();
+        option(parcours, "", "Parcours indisponibles — recharge la page", true);
+        parcours.disabled = false;
+        return;
+      }
       remplirParcours(parcours, rows, valeurCourante, true, "Tous les parcours");
     }
 
@@ -153,8 +162,10 @@
 
     function resetParcours() {
       parcours.replaceChildren();
-      option(parcours, "", "— choisissez d'abord un niveau —", true);
+      option(parcours, "", "— choisis d'abord une mention et un niveau —", true);
       parcours.disabled = true;
+      parcours.required = false;
+      parcours.dataset.parcoursCharge = "false";
       if (infoTronc) infoTronc.hidden = true;
     }
 
@@ -167,20 +178,32 @@
       if (ticket !== generation) return;
 
       parcours.replaceChildren();
+      if (rows === null) {
+        option(parcours, "", "Erreur de chargement — réessaie", true);
+        parcours.disabled = true;
+        parcours.dataset.parcoursCharge = "false";
+        if (infoTronc) infoTronc.hidden = true;
+        return;
+      }
+
       if (!rows.length) {
-        option(parcours, "", "— aucun parcours specifique —", true);
+        option(parcours, "tronc_commun", "Tronc commun — aucun parcours spécifique", true);
         if (infoTronc) infoTronc.hidden = false;
+        parcours.required = false;
       } else {
-        option(parcours, "", "— choisissez un parcours —", true);
+        option(parcours, "", "— choisis un parcours —", true);
         rows.forEach(function (row) {
-          option(parcours, row.id, row.nom, false);
+          option(parcours, row.id, row.nom, false, true);
         });
+        parcours.required = true;
       }
       parcours.disabled = false;
+      parcours.dataset.parcoursCharge = "true";
     }
 
     mention.addEventListener("change", function () {
       niveau.disabled = !mention.value;
+      niveau.required = Boolean(mention.value);
       if (!mention.value) niveau.value = "";
       charger();
     });
@@ -188,9 +211,44 @@
 
     if (mention.value) {
       niveau.disabled = false;
+      niveau.required = true;
       if (niveau.value) charger();
     } else {
+      niveau.required = false;
       resetParcours();
+    }
+
+    const formulaireCreation = document.querySelector("[data-formulaire-creation-cercle]");
+    if (formulaireCreation) {
+      formulaireCreation.addEventListener("submit", function (event) {
+        if (!mention.value) {
+          // Groupe libre : aucun champ académique ne doit être envoyé.
+          niveau.required = false;
+          return;
+        }
+        if (!niveau.value) {
+          event.preventDefault();
+          niveau.focus();
+          niveau.setCustomValidity("Choisis un niveau pour cette mention.");
+          niveau.reportValidity();
+          niveau.addEventListener("change", function () { niveau.setCustomValidity(""); }, { once: true });
+          return;
+        }
+        if (parcours.dataset.parcoursCharge !== "true" || parcours.disabled) {
+          event.preventDefault();
+          if (infoTronc) {
+            infoTronc.hidden = false;
+            infoTronc.textContent = "Le référentiel des parcours n'a pas pu être chargé. Recharge la page avant d'envoyer ta demande.";
+          }
+          return;
+        }
+        if (parcours.required && !parcours.value) {
+          event.preventDefault();
+          parcours.setCustomValidity("Choisis un parcours proposé pour ce niveau.");
+          parcours.reportValidity();
+          parcours.addEventListener("change", function () { parcours.setCustomValidity(""); }, { once: true });
+        }
+      });
     }
   }
 
