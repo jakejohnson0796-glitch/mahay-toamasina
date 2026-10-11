@@ -352,7 +352,7 @@
           <p class="cercles-visibilite-meta">
             {% if info.mention %}{{ info.mention.nom }}{% endif %}
             {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.niveau_effectif %} · {{ info.niveau_effectif }}{% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           <span class="puce-statut">Tu es membre</span>
@@ -390,7 +390,7 @@
             {% if info.domaine %}{{ info.domaine.nom }} · {% endif %}
             {{ info.mention.nom if info.mention else cercles_profil_visibilite.mention_nom }}
             {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.niveau_effectif %} · {{ info.niveau_effectif }}{% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
@@ -421,7 +421,7 @@
           <p class="cercles-visibilite-meta">
             {% if info.mention %}{{ info.mention.nom }}{% endif %}
             {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.niveau_effectif %} · {{ info.niveau_effectif }}{% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
@@ -513,6 +513,8 @@
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "hierarchie_academique_incomplete" %}<div class="erreur" role="alert">Pour créer un cercle de mention ou de parcours, choisissez un niveau. Un groupe libre ne doit contenir aucune sélection académique.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "hierarchie_academique_incoherente" %}<div class="erreur" role="alert">Le parcours choisi n'appartient pas à la mention sélectionnée. Vérifiez la mention et le niveau.</div>{% endif %}
   {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
 
   <form method="post" action="/cercles/creer" id="creer-cercle" data-formulaire-creation-cercle>
@@ -543,7 +545,7 @@
     <select id="creation_filiere_id" name="filiere_id" disabled>
       <option value="">— choisissez d'abord un niveau —</option>
     </select>
-    <p class="stat-label" id="creation-info-tronc-commun" style="display:none;">
+    <p class="stat-label" id="creation-info-tronc-commun" hidden>
       Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
     </p>
 
@@ -614,7 +616,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+        <span class="cercle-card-premium-type">{{ {"parcours": "Parcours national", "tronc_commun": "Tronc commun", "libre": "Groupe libre", "incomplet": "À vérifier"}.get(info.type_cercle, "À vérifier") }}</span>
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
@@ -623,15 +625,15 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
           {% if info.type_cercle == "parcours" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
-          {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
+          {% if info.domaine %}<span>{{ info.domaine.nom }}</span>{% endif %}
+          {% if info.mention %}{% if info.domaine %}<span aria-hidden="true"> · </span>{% endif %}<span>{{ info.mention.nom }}</span>{% endif %}
           {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
-          {% if info.cercle.niveau %}<span class="puce-niveau">{{ info.cercle.niveau }}</span>{% endif %}
+          {% if info.niveau_effectif %}<span class="puce-niveau">{{ info.niveau_effectif }}</span>{% endif %}
           {% elif info.type_cercle == "tronc_commun" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
-          {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
+          {% if info.domaine %}<span>{{ info.domaine.nom }}</span>{% endif %}
+          {% if info.mention %}{% if info.domaine %}<span aria-hidden="true"> · </span>{% endif %}<span>{{ info.mention.nom }}</span>{% endif %}
           <span aria-hidden="true"> · </span><span>Tronc commun</span>
-          <span class="puce-niveau">{{ info.cercle.niveau }}</span>
+          <span class="puce-niveau">{{ info.niveau_effectif }}</span>
           {% elif info.type_cercle == "libre" %}
           <span>Groupe libre</span>
           {% else %}
