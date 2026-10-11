@@ -935,10 +935,14 @@ def creer_cercle(
     # Si une seule dimension académique est renseignée, refuser explicitement
     # le formulaire plutôt que créer un cercle "incomplet" en silence.
     identite_academique_demandee = bool(
-        mention_id_nettoye or filiere_id_nettoye or niveau_nettoye
+        (mention_id or "").strip()
+        or (filiere_id or "").strip()
+        or niveau_nettoye
     )
+    choix_parcours_tronc_commun = (filiere_id or "").strip() == "tronc_commun"
     if identite_academique_demandee and (
-        not niveau_nettoye or not (mention_id_nettoye or filiere_id_nettoye)
+        not niveau_nettoye
+        or not (mention_id_nettoye or filiere_id_nettoye or choix_parcours_tronc_commun)
     ):
         return RedirectResponse(
             "/cercles?erreur=identite_academique_incomplete", status_code=303
