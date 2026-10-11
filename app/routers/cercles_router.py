@@ -396,6 +396,21 @@ def liste_cercles(
     recherche_tronc_commun = filiere_id == "tronc_commun"
     niveau_nettoye = niveau if niveau in NIVEAUX else None
 
+    # Niveau effectif des cercles historiques : un champ manquant peut être
+    # lu depuis Filiere uniquement si CercleEtude possède déjà une mention ou
+    # un niveau explicite. Les vrais groupes libres ne sont donc pas reclassés.
+    intention_academique_sql = or_(
+        CercleEtude.mention_id.is_not(None),
+        CercleEtude.niveau.is_not(None),
+    )
+    niveau_effectif_sql = func.coalesce(
+        CercleEtude.niveau,
+        case(
+            (intention_academique_sql, Filiere.niveau),
+            else_=None,
+        ),
+    )
+
     # Cohérence stricte de la cascade : Parcours -> Mention -> Domaine.
     # Un paramètre incohérent ne doit jamais élargir les résultats.
     filiere_selectionnee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
@@ -495,7 +510,7 @@ def liste_cercles(
 
     if niveaux_dans_q:
         requete = requete.where(
-            CercleEtude.niveau.in_(sorted(set(niveaux_dans_q)))
+            niveau_effectif_sql.in_(sorted(set(niveaux_dans_q)))
         )
 
     if recherche_tronc_commun_dans_q:
@@ -518,7 +533,7 @@ def liste_cercles(
             requete = requete.where(CercleEtude.id == -1)
 
     if niveau_nettoye:
-        requete = requete.where(CercleEtude.niveau == niveau_nettoye)
+        requete = requete.where(niveau_effectif_sql == niveau_nettoye)
 
     condition_disponibilite = None
     if afficher_disponibles_seulement and not _est_admin(utilisateur):
@@ -634,13 +649,16 @@ def liste_cercles(
 
     cercles_avec_info = []
     for cercle in cercles:
-        filiere = filieres_map.get(cercle.filiere_id)
-        mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+        identite_cercle = referentiel_academique.identite_cercle(cercle, session)
+        filiere = identite_cercle["filiere"] or filieres_map.get(cercle.filiere_id)
+        mention_id_effectif = identite_cercle["mention_id"]
         mention = mentions_map.get(mention_id_effectif)
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": identite_cercle["type"],
+            "niveau_effectif": identite_cercle["niveau"],
+            "niveau_libelle": NIVEAUX_LIBELLES.get(identite_cercle["niveau"], identite_cercle["niveau"]),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -730,14 +748,22 @@ def liste_cercles(
             mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
             mention = mentions_resume.get(mention_id_effectif)
             domaine = domaines_resume.get(mention.domaine_id) if mention and mention.domaine_id else None
+            identite_cercle = referentiel_academique.identite_cercle(cercle, session)
+            mention_effective = mentions_resume.get(identite_cercle["mention_id"])
+            domaine_effectif = (
+                domaines_resume.get(mention_effective.domaine_id)
+                if mention_effective and mention_effective.domaine_id else None
+            )
             resultat.append({
                 "cercle": cercle,
                 "filiere": filiere,
-                "mention": mention,
-                "domaine": domaine,
+                "mention": mention_effective,
+                "domaine": domaine_effectif,
+                "niveau_effectif": identite_cercle["niveau"],
+                "niveau_libelle": NIVEAUX_LIBELLES.get(identite_cercle["niveau"], identite_cercle["niveau"]),
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": identite_cercle["type"],
             })
         return resultat
 
