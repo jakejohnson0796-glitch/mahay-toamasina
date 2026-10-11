@@ -873,6 +873,15 @@ def creer_cercle(
 
     filiere_id_nettoye = entier_ou_none(filiere_id)
     mention_id_nettoye = entier_ou_none(mention_id)
+    niveau_nettoye = (niveau or "").strip() or None
+
+    # Ne pas convertir silencieusement une demande academique incomplete en
+    # groupe libre : une mention sans niveau, ou un niveau sans mention/parcours,
+    # indique un formulaire invalide qui doit etre corrige.
+    if mention_id_nettoye and not niveau_nettoye:
+        return RedirectResponse("/cercles?erreur=niveau_requis_pour_mention", status_code=303)
+    if niveau_nettoye and not (mention_id_nettoye or filiere_id_nettoye):
+        return RedirectResponse("/cercles?erreur=identite_academique_incomplete", status_code=303)
 
     # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
     # numero de telephone. On verrouille la ligne utilisateur
@@ -924,8 +933,6 @@ def creer_cercle(
                 "page": 1, "total_pages": 1, "total_cercles": len(cercles_avec_info),
             },
         )
-
-    niveau_nettoye = (niveau or "").strip() or None
 
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
