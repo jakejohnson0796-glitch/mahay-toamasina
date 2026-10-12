@@ -30,6 +30,8 @@ from app.referentiel_academique import (
     parcours_cercle_offert,
     offre_filiere_active_universite,
     tronc_commun_offert,
+    filiere_canonique_pour_cercle,
+    _filieres_equivalentes,
 )
 
 
@@ -129,6 +131,53 @@ class TestCorrespondanceCercle(unittest.TestCase):
             self.assertFalse(cercle_est_national(cercle))
             u = Utilisateur(nom="X", telephone="0340000002", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             self.assertTrue(profil_correspond_au_cercle(u, cercle, session))
+
+    def test_equivalence_and_canonical_choice_never_merge_different_levels(self):
+        with Session(self.engine) as session:
+            historique = session.get(Filiere, self.filiere_id)
+            historique.nom = "CCA"
+            historique.niveau = None
+            session.add(historique)
+            session.commit()
+            session.refresh(historique)
+
+            m1 = Filiere(
+                nom="CCA", faculte_id=self.faculte_id,
+                mention_id=self.mention_id, niveau="M1",
+            )
+            l3 = Filiere(
+                nom="CCA", faculte_id=self.faculte_id,
+                mention_id=self.mention_id, niveau="L3",
+            )
+            session.add(m1)
+            session.add(l3)
+            session.commit()
+            session.refresh(m1)
+            session.refresh(l3)
+
+            for filiere in (historique, m1, l3):
+                session.add(ProgrammeUniversitaire(
+                    universite_id=self.universite_id,
+                    filiere_id=filiere.id,
+                    est_active=True,
+                ))
+            session.commit()
+
+            equivalentes_m1 = _filieres_equivalentes(session, historique, niveau="M1")
+            self.assertIn(historique.id, equivalentes_m1)
+            self.assertIn(m1.id, equivalentes_m1)
+            self.assertNotIn(l3.id, equivalentes_m1)
+
+            canonique_m1 = filiere_canonique_pour_cercle(
+                session, historique, niveau="M1"
+            )
+            self.assertEqual(canonique_m1.id, m1.id)
+
+            equivalentes_l3 = _filieres_equivalentes(session, l3, niveau="L3")
+            self.assertIn(historique.id, equivalentes_l3)
+            self.assertIn(l3.id, equivalentes_l3)
+            self.assertNotIn(m1.id, equivalentes_l3)
+
 
     def test_cercle_legacy_derives_its_mention_from_the_official_program(self):
         with Session(self.engine) as session:
