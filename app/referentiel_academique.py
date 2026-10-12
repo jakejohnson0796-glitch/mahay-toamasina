@@ -618,6 +618,42 @@ def tronc_commun_offert(
     )
 
 
+def tronc_commun_national_offert(
+    session: Session,
+    mention_id: Optional[int],
+    niveau: Optional[str],
+) -> bool:
+    """Vrai si le tronc commun est réellement offert dans au moins une composante active.
+
+    Un cercle national de tronc commun n'est pas lié à l'université de son
+    créateur. Pour le valider côté administration, on vérifie donc les
+    composantes actives qui proposent la mention et on exige qu'au moins une
+    d'entre elles n'offre aucun parcours spécialisé pour le niveau ciblé.
+    """
+    if not mention_id or niveau not in NIVEAUX:
+        return False
+    mention = session.get(Mention, mention_id)
+    if not mention or not mention.est_active:
+        return False
+
+    composantes = session.exec(
+        select(Faculte, Universite)
+        .join(Universite, Universite.id == Faculte.universite_id)
+        .join(Filiere, Filiere.faculte_id == Faculte.id)
+        .where(
+            Filiere.mention_id == mention_id,
+            Universite.est_active == True,  # noqa: E712
+        )
+        .distinct()
+    ).all()
+    return any(
+        tronc_commun_offert(
+            session, universite.id, faculte.id, mention_id, niveau
+        )
+        for faculte, universite in composantes
+    )
+
+
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
     """Test canonique d'eligibilite, y compris pour les cercles historiques."""
     filiere_cercle = (
