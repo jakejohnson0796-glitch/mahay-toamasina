@@ -873,6 +873,28 @@ def creer_cercle(
 
     filiere_id_nettoye = entier_ou_none(filiere_id)
     mention_id_nettoye = entier_ou_none(mention_id)
+    niveau_nettoye = (niveau or "").strip() or None
+
+    # Ne jamais laisser un champ academique mal forme disparaitre et creer
+    # silencieusement un groupe libre a la place.
+    if (filiere_id or "").strip() and filiere_id_nettoye is None:
+        return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+    if (mention_id or "").strip() and mention_id_nettoye is None:
+        return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+    if filiere_id_nettoye is not None and filiere_id_nettoye <= 0:
+        return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+    if mention_id_nettoye is not None and mention_id_nettoye <= 0:
+        return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+
+    selection_academique = bool(
+        filiere_id_nettoye or mention_id_nettoye or niveau_nettoye
+    )
+    if selection_academique and not niveau_nettoye:
+        return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
+    if niveau_nettoye and niveau_nettoye not in NIVEAUX:
+        return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
+    if selection_academique and not (filiere_id_nettoye or mention_id_nettoye):
+        return RedirectResponse("/cercles?erreur=mention_requise", status_code=303)
 
     # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
     # numero de telephone. On verrouille la ligne utilisateur
@@ -925,12 +947,10 @@ def creer_cercle(
             },
         )
 
-    niveau_nettoye = (niveau or "").strip() or None
-
-    # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
-    if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
-        if niveau_nettoye not in NIVEAUX:
-            return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
+    # --- Cas 1 : demande de cercle NATIONAL ---
+    # Un niveau, une mention ou un parcours ne peuvent jamais etre jetes
+    # silencieusement : tout choix academique passe par cette validation.
+    if selection_academique:
 
         filiere = None
         if filiere_id_nettoye:
@@ -938,11 +958,16 @@ def creer_cercle(
             if not filiere:
                 return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
             if not filiere.mention_id:
-                # §10 du brief : la coherence mention/filiere doit etre
-                # verifiee avant tout. Une filiere sans mention assignee ne
-                # peut pas encore porter de cercle national (voir
-                # /admin/referentiel pour l'assigner).
+                # Une filiere sans mention assignee ne peut pas porter
+                # une identite de cercle national.
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            if mention_id_nettoye and filiere.mention_id != mention_id_nettoye:
+                return RedirectResponse("/cercles?erreur=parcours_mention_incoherente", status_code=303)
+            mention_parcours = session.get(Mention, filiere.mention_id)
+            if not mention_parcours:
+                return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+            if not mention_parcours.est_active:
+                return RedirectResponse("/cercles?erreur=mention_inactive", status_code=303)
             mention_id_cible = filiere.mention_id
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
@@ -959,6 +984,8 @@ def creer_cercle(
             mention = session.get(Mention, mention_id_nettoye)
             if not mention:
                 return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+            if not mention.est_active:
+                return RedirectResponse("/cercles?erreur=mention_inactive", status_code=303)
             mention_id_cible = mention.id
             if (
                 utilisateur.mention_id != mention_id_cible
@@ -1034,7 +1061,10 @@ def creer_cercle(
         session.commit()
         return RedirectResponse("/cercles?ok=demande_creation_envoyee", status_code=303)
 
-    # --- Cas 2 : cercle "libre" (filiere seule ou aucune) — comportement inchange ---
+    # --- Cas 2 : groupe libre ---
+    # Ce chemin n'est accessible que si aucun champ academique n'a ete
+    # renseigne : le modele definit explicitement un cercle libre avec
+    # mention_id, filiere_id et niveau tous NULL.
     cercle = CercleEtude(
         nom=nom,
         description=description or None,
