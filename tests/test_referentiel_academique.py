@@ -102,6 +102,7 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(universite); session.commit(); session.refresh(universite)
             faculte = Faculte(nom="DEGMIA", universite_id=universite.id)
             session.add(faculte); session.commit(); session.refresh(faculte)
+            self.faculte_id = faculte.id
             mention = Mention(nom="Sciences de Gestion")
             session.add(mention); session.commit(); session.refresh(mention)
             self.mention_id = mention.id
@@ -609,7 +610,7 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
             utilisateur = Utilisateur(
                 nom="Profil historique", telephone="0340000025", mot_de_passe_hash="x",
                 role=RoleUtilisateur.ETUDIANT,
-                universite_id=self.universite_id, faculte_id=1,
+                universite_id=self.universite_id, faculte_id=self.faculte_id,
                 mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L3",
             )
             tous = session.exec(select(CercleEtude)).all()
