@@ -872,7 +872,7 @@ def creer_cercle(
     if redirection:
         return redirection
 
-    filiere_id_nettoye = entier_ou_none(filiere_id)
+    filiere_id_nettoye = None if filiere_id == "tronc_commun" else entier_ou_none(filiere_id)
     mention_id_nettoye = entier_ou_none(mention_id)
     niveau_nettoye = (niveau or "").strip() or None
 
@@ -881,7 +881,7 @@ def creer_cercle(
     # être rattaché à une mention ou à un parcours connu.
     if mention_id and mention_id_nettoye is None:
         return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
-    if filiere_id and filiere_id_nettoye is None:
+    if filiere_id and filiere_id != "tronc_commun" and filiere_id_nettoye is None:
         return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
     if niveau_nettoye and niveau_nettoye not in NIVEAUX:
         return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
