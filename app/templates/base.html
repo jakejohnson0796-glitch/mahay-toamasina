@@ -147,9 +147,18 @@
         <span class="tb-sidebar-logo">Gasy Mahay</span>
         <span class="tb-sidebar-lieu">Madagascar</span>
       </a>
-      <button type="button" class="tb-sidebar-collapse" id="bouton-sidebar-collapse" aria-label="Réduire la barre latérale" aria-pressed="false" title="Réduire la barre latérale">
-        <span aria-hidden="true">‹</span>
-      </button>
+      <div class="tb-sidebar-marque-actions">
+        <div class="tb-sidebar-langue" aria-label="Préférences de langue">
+          <label class="tb-sidebar-langue-label-cachee" for="select-langue" data-langue-label>Langue du site</label>
+          <select id="select-langue" name="langue" aria-label="Choisir la langue du site" title="Choisir la langue du site">
+            <option value="fr">FR · Français</option>
+            <option value="mg">MG · Malagasy</option>
+          </select>
+        </div>
+        <button type="button" class="tb-sidebar-collapse" id="bouton-sidebar-collapse" aria-label="Réduire la barre latérale" aria-pressed="false" title="Réduire la barre latérale">
+          <span aria-hidden="true">‹</span>
+        </button>
+      </div>
     </div>
 
     {% if request.session.get("user_id") %}
@@ -278,16 +287,6 @@
     </nav>
     {% endif %}
 
-    <section class="tb-sidebar-langue" aria-label="Préférences de langue">
-      <div class="tb-sidebar-langue-entete">
-        <span class="tb-sidebar-langue-icone" aria-hidden="true">🌐</span>
-        <label for="select-langue" data-langue-label>Langue du site</label>
-      </div>
-      <select id="select-langue" name="langue" aria-label="Choisir la langue du site">
-        <option value="fr">Français</option>
-        <option value="mg">Malagasy</option>
-      </select>
-    </section>
   </aside>
 
   {% if request.session.get("user_id") %}
