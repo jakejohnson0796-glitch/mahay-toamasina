@@ -298,6 +298,41 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Sciences de Gestion", page.text)
         self.assertIn("Finance et Comptabilite", page.text)
 
+    def test_endpoint_parcours_nationaux_exclut_une_offre_liee_a_la_mauvaise_universite(self):
+        with Session(engine) as session:
+            composante = session.exec(
+                select(Faculte).where(Faculte.universite_id == self.universite_id)
+            ).first()
+            autre_universite = Universite(nom="Universite Offre Croisee Cercles")
+            session.add(autre_universite)
+            session.commit()
+            session.refresh(autre_universite)
+
+            parcours_croise = Filiere(
+                nom="Parcours de test offre croisee",
+                faculte_id=composante.id,
+                mention_id=self.mention_id,
+            )
+            session.add(parcours_croise)
+            session.commit()
+            session.refresh(parcours_croise)
+            session.add(ProgrammeUniversitaire(
+                universite_id=autre_universite.id,
+                filiere_id=parcours_croise.id,
+                est_active=True,
+            ))
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertNotIn(
+            "Parcours de test offre croisee",
+            {item["nom"] for item in page.json()},
+        )
+
     def test_endpoint_parcours_nationaux_accepte_un_niveau_optionnel(self):
         page = self.client.get(
             f"/api/academique/mentions/{self.mention_id}/parcours-nationaux"
