@@ -581,7 +581,7 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
     filiere_cercle = (
         session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
     )
-    nature = type_cercle_avec_filiere(cercle, filiere_cercle)
+    nature = type_cercle_avec_filiere(cercle, filiere_cercle, session)
     if nature == "libre":
         return True
     if nature == "incomplet":
