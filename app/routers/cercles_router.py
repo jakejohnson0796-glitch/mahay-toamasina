@@ -987,7 +987,14 @@ def creer_cercle(
         )
 
     niveau_nettoye = (niveau or "").strip() or None
-    hierarchie_renseignee = bool(mention_id_nettoye or filiere_id_nettoye or niveau_nettoye)
+    mention_fournie = bool((mention_id or "").strip())
+    filiere_fournie = bool((filiere_id or "").strip())
+    hierarchie_renseignee = bool(mention_fournie or filiere_fournie or niveau_nettoye)
+
+    if mention_fournie and not mention_id_nettoye:
+        return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+    if filiere_fournie and not filiere_id_nettoye:
+        return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
 
     # Un choix partiel ne doit jamais etre converti silencieusement en groupe
     # libre. Les cercles libres ne sont crees que lorsque les trois champs
