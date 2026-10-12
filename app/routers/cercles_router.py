@@ -894,13 +894,25 @@ def creer_cercle(
     ).one()
     if nb_cercles_existants >= MAX_CERCLES_PAR_UTILISATEUR:
         filieres = session.exec(select(Filiere)).all()
-        cercles = session.exec(select(CercleEtude).order_by(CercleEtude.date_creation.desc())).all()
+        domaines = session.exec(
+            select(Domaine).where(Domaine.est_active == True).order_by(Domaine.nom)  # noqa: E712
+        ).all()
+        mentions = session.exec(
+            select(Mention).where(Mention.est_active == True).order_by(Mention.nom)  # noqa: E712
+        ).all()
+        cercles = session.exec(
+            select(CercleEtude)
+            .where(CercleEtude.statut == StatutCercle.ACTIF)
+            .order_by(CercleEtude.date_creation.desc(), CercleEtude.id.desc())
+        ).all()
         cercle_ids = [c.id for c in cercles]
-        nb_membres_par_cercle = {cid: nb for cid, nb in session.exec(
-            select(MembreCercle.cercle_id, func.count())
-            .where(MembreCercle.cercle_id.in_(cercle_ids or [-1]))
-            .group_by(MembreCercle.cercle_id)
-        ).all()}
+        nb_membres_par_cercle = {
+            cid: int(nb) for cid, nb in session.exec(
+                select(MembreCercle.cercle_id, func.count())
+                .where(MembreCercle.cercle_id.in_(cercle_ids or [-1]))
+                .group_by(MembreCercle.cercle_id)
+            ).all()
+        }
         membres_utilisateur = {
             cid for cid in session.exec(
                 select(MembreCercle.cercle_id).where(
@@ -909,22 +921,68 @@ def creer_cercle(
                 )
             ).all()
         }
-        cercles_avec_info = [{
-            "cercle": c,
-            "nb_membres": nb_membres_par_cercle.get(c.id, 0),
-            "est_membre": c.id in membres_utilisateur,
-            "en_attente": False,
-            "peut_gerer": _peut_gerer_cercle(c, utilisateur),
-        } for c in cercles]
+        demandes_en_attente = {
+            cid for cid in session.exec(
+                select(DemandeAdhesionCercle.cercle_id).where(
+                    DemandeAdhesionCercle.cercle_id.in_(cercle_ids or [-1]),
+                    DemandeAdhesionCercle.utilisateur_id == utilisateur.id,
+                    DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE,
+                )
+            ).all()
+        }
+        filieres_map = {f.id: f for f in filieres}
+        mentions_map = {m.id: m for m in mentions}
+        domaines_map = {d.id: d for d in domaines}
+        cercles_avec_info = []
+        for cercle in cercles:
+            filiere = filieres_map.get(cercle.filiere_id)
+            mention_id_effectif = cercle.mention_id or (
+                filiere.mention_id if filiere else None
+            )
+            mention = mentions_map.get(mention_id_effectif)
+            domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
+            cercles_avec_info.append({
+                "cercle": cercle,
+                "type_cercle": referentiel_academique.type_cercle(cercle, session=session),
+                "domaine": domaine,
+                "mention": mention,
+                "filiere": filiere,
+                "niveau_libelle": libelle_niveau(cercle.niveau) if cercle.niveau else None,
+                "nb_membres": nb_membres_par_cercle.get(cercle.id, 0),
+                "est_membre": cercle.id in membres_utilisateur,
+                "en_attente": cercle.id in demandes_en_attente,
+                "profil_compatible": False,
+                "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
+            })
         return templates.TemplateResponse(
             request,
             "cercles_list.html",
             {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "niveau_libelles": NIVEAUX_LIBELLES, "utilisateur": utilisateur,
+                "cercles_avec_info": cercles_avec_info,
+                "domaines": domaines,
+                "mentions": mentions,
+                "filieres": filieres,
+                "filiere_recherchee": None,
+                "niveaux": NIVEAUX,
+                "niveau_libelles": NIVEAUX_LIBELLES,
+                "utilisateur": utilisateur,
                 "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
                 "theme_du_jour": theme_service.get_theme_du_jour(),
-                "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
-                "page": 1, "total_pages": 1, "total_cercles": len(cercles_avec_info),
+                "profil_academique_recherche": None,
+                "cercles_profil_visibilite": None,
+                "recherche_q": "",
+                "recherche_domaine_id": None,
+                "recherche_mention_id": None,
+                "recherche_filiere_id": None,
+                "recherche_tronc_commun": False,
+                "recherche_niveau": "",
+                "recherche_disponibles": False,
+                "page": 1,
+                "total_pages": 1,
+                "total_cercles": len(cercles_avec_info),
+                "has_next_page": False,
+                "recherche_textuelle_active": False,
+                "querystring": "",
             },
         )
 
