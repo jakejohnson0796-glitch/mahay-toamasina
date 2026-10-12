@@ -337,24 +337,27 @@ def jours_avant_prochain_changement_niveau(utilisateur: Utilisateur) -> int:
     return max(1, int((restant.total_seconds() + 86399) // 86400))
 
 
-def filiere_canonique_pour_cercle(session: Session, filiere: Filiere) -> Filiere:
-    """Choisit une seule Filiere représentante pour l'identité nationale.
+def filiere_canonique_pour_cercle(
+    session: Session, filiere: Filiere, niveau: Optional[str] = None
+) -> Filiere:
+    """Choisit une Filiere representante nationale sans melanger les niveaux.
 
-    Deux universités peuvent avoir des IDs Filiere différents tout en
-    proposant exactement le même parcours. Tous les nouveaux cercles
-    nationaux sont rabattus sur la représentation active de plus petit ID,
-    afin que l'index SQL (mention_id, filiere_id, niveau) puisse également
-    empêcher les doublons concurrents.
+    Les lignes historiques sans niveau restent compatibles, mais ne doivent
+    pas prendre la place d'une ligne precise L3/M1 lorsqu'elle existe.
     """
     if not filiere.mention_id:
         return filiere
 
+    niveau_cible = niveau if niveau is not None else filiere.niveau
     nom_normalise = _normaliser_nom_parcours(filiere.nom)
     candidates = []
     for candidate in session.exec(
         select(Filiere).where(Filiere.mention_id == filiere.mention_id)
     ).all():
-        if candidate.niveau is not None and filiere.niveau is not None and candidate.niveau != filiere.niveau:
+        if niveau_cible is None:
+            if candidate.niveau is not None:
+                continue
+        elif candidate.niveau is not None and candidate.niveau != niveau_cible:
             continue
         if _normaliser_nom_parcours(candidate.nom) != nom_normalise:
             continue
@@ -365,36 +368,41 @@ def filiere_canonique_pour_cercle(session: Session, filiere: Filiere) -> Filiere
             continue
         candidates.append(candidate)
 
-    return min(candidates, key=lambda f: f.id) if candidates else filiere
+    if not candidates:
+        return filiere
+    return min(
+        candidates,
+        key=lambda candidate: (
+            0 if niveau_cible is not None and candidate.niveau == niveau_cible else 1,
+            candidate.id,
+        ),
+    )
 
 
-def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
-    """Renvoie les id de TOUTES les Filiere qui representent le meme
-    parcours national que `filiere` — meme mention_id + meme nom une
-    fois normalise + meme niveau (deux niveaux differents du meme nom,
-    ex. "CCA" en M1 et M2, sont deux parcours distincts, voir
-    Filiere.niveau), potentiellement rattachees a d'autres universites
-    (voir cercles_referentiel.py pour le contexte complet : Filiere est
-    scopee par universite, donc le meme parcours a une ligne differente
-    par universite qui l'offre).
+def _filieres_equivalentes(
+    session: Session, filiere: Filiere, niveau: Optional[str] = None
+) -> list[int]:
+    """Renvoie les parcours nationaux equivalents au meme niveau cible.
 
-    Necessaire ici parce qu'un cercle national ne reference qu'UNE
-    seule Filiere representante (cercles_referentiel.py en choisit une
-    arbitrairement pour le groupe) — un etudiant dont la propre
-    filiere_id pointe vers une AUTRE Filiere du meme groupe doit quand
-    meme etre reconnu comme correspondant au cercle, sinon les
-    etudiants de toutes les universites sauf celle de la representante
-    ne pourraient jamais rejoindre leur propre cercle national."""
+    Un parcours historique sans niveau peut servir de repli. Des lignes
+    precises de niveaux differents ne sont jamais equivalentes entre elles.
+    """
     if not filiere.mention_id:
         return [filiere.id]
+    niveau_cible = niveau if niveau is not None else filiere.niveau
     nom_normalise = _normaliser_nom_parcours(filiere.nom)
     return [
-        f.id for f in session.exec(
+        f.id
+        for f in session.exec(
             select(Filiere).where(Filiere.mention_id == filiere.mention_id)
         ).all()
-        if _normaliser_nom_parcours(f.nom) == nom_normalise and (f.niveau is None or f.niveau == filiere.niveau)
+        if _normaliser_nom_parcours(f.nom) == nom_normalise
+        and (
+            f.niveau is None
+            if niveau_cible is None
+            else (f.niveau is None or f.niveau == niveau_cible)
+        )
     ]
-
 
 
 def type_cercle(cercle: CercleEtude) -> str:
