@@ -463,6 +463,7 @@ def liste_cercles(
         .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
         .where(CercleEtude.statut == StatutCercle.ACTIF)
         .where(or_(mention_effective_id.is_(None), Mention.est_active == True))  # noqa: E712
+        .where(or_(Mention.domaine_id.is_(None), Domaine.est_active == True))  # noqa: E712
     )
 
     # Le texte searchable reprend toute la hierarchie de la base
