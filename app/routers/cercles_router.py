@@ -885,6 +885,8 @@ def creer_cercle(
         return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
     if niveau_nettoye and niveau_nettoye not in NIVEAUX:
         return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
+    if filiere_id == "tronc_commun" and not mention_id_nettoye:
+        return RedirectResponse("/cercles?erreur=mention_requise", status_code=303)
     if (mention_id_nettoye or filiere_id_nettoye) and not niveau_nettoye:
         return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
     if niveau_nettoye and not (mention_id_nettoye or filiere_id_nettoye):
@@ -1121,7 +1123,7 @@ def creer_cercle(
         session.commit()
         return RedirectResponse("/cercles?ok=demande_creation_envoyee", status_code=303)
 
-    # --- Cas 2 : cercle "libre" (filiere seule ou aucune) — comportement inchange ---
+    # --- Cas 2 : groupe libre, sans aucune donnée académique partielle. ---
     cercle = CercleEtude(
         nom=nom,
         description=description or None,
