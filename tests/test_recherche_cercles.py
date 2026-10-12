@@ -349,6 +349,22 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Sciences de Gestion", page.text)
         self.assertIn("Finance et Comptabilite", page.text)
 
+    def test_cartes_cercles_gardent_les_titres_et_hierarchie_lisibles(self):
+        page = self.client.get("/cercles")
+        self.assertEqual(page.status_code, 200)
+
+        # Le titre académique doit rester complet dans le HTML, et la feuille
+        # de style de la page doit autoriser son retour à la ligne.
+        self.assertIn('class="cercle-card-premium-identite"', page.text)
+        self.assertIn('>Finance et Comptabilite — Licence 3</div>', page.text)
+        self.assertIn("white-space:normal!important;overflow:visible!important;text-overflow:clip!important", page.text)
+
+        # Les séparateurs sont masqués : la hiérarchie apparaît en étiquettes
+        # distinctes au lieu de laisser un point seul en début de ligne.
+        self.assertIn('class="cercle-card-premium-contenu"', page.text)
+        self.assertIn('.carte-claire-hierarchie>span[aria-hidden="true"]{display:none!important}', page.text)
+        self.assertIn('grid-template-columns:108px minmax(0,1fr)', page.text)
+
     def test_endpoint_parcours_nationaux_accepte_un_niveau_optionnel(self):
         page = self.client.get(
             f"/api/academique/mentions/{self.mention_id}/parcours-nationaux"
