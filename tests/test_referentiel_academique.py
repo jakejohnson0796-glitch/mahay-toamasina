@@ -174,6 +174,32 @@ class TestCorrespondanceCercle(unittest.TestCase):
             self.assertFalse(cercle_est_national_avec_filiere(cercle, filiere))
             self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
 
+    def test_cercle_with_conflicting_level_and_program_is_flagged_incoherent(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "M1"
+            session.add(filiere)
+            session.commit()
+
+            cercle = CercleEtude(
+                nom="Parcours niveau incorrect",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            utilisateur = Utilisateur(
+                nom="Profil niveau incorrect", telephone="0340000023",
+                mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle_avec_filiere(cercle, filiere), "incomplet")
+            self.assertFalse(cercle_est_national_avec_filiere(cercle, filiere))
+            self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
+
     def test_utilisateur_meme_mention_filiere_niveau_correspond(self):
         with Session(self.engine) as session:
             cercle = CercleEtude(
@@ -572,6 +598,33 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
                 select(CercleEtude).where(condition_cercles_disponibles(utilisateur, session))
             ).all()
             return {c.nom for c in resultats}
+
+    def test_cercles_disponibles_exclut_cercle_dont_niveau_conflit_avec_filiere(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "M1"
+            session.add(filiere)
+            session.add(CercleEtude(
+                nom="Parcours mauvais niveau",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            ))
+            session.commit()
+
+        u = Utilisateur(
+            nom="Profil L3", telephone="0340000024",
+            mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+            universite_id=self.universite_id,
+            mention_id=self.mention_id,
+            filiere_id=self.filiere_id,
+            niveau="L3",
+        )
+        resultats = self._noms_disponibles(u)
+        self.assertNotIn("Parcours mauvais niveau", resultats)
+        self.assertNotIn("Finance L3", resultats)
+        self.assertIn("Groupe libre", resultats)
 
     def test_etudiant_avec_profil_complet_voit_le_libre_et_son_cercle_national(self):
         u = Utilisateur(nom="X", telephone="0340000011", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
