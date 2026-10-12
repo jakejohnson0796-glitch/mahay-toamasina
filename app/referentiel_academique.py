@@ -397,6 +397,23 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
 
 
 
+def erreur_selection_creation_cercle(
+    mention_id: Optional[int],
+    filiere_id: Optional[int],
+    niveau: Optional[str],
+) -> Optional[str]:
+    """Empêche une sélection académique partielle d'être transformée en groupe libre."""
+    if not mention_id and not filiere_id and not niveau:
+        return None
+    if niveau and niveau not in NIVEAUX:
+        return "niveau_invalide"
+    if (mention_id or filiere_id) and not niveau:
+        return "niveau_requis"
+    if niveau and not (mention_id or filiere_id):
+        return "mention_ou_parcours_requis"
+    return None
+
+
 def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
     """Classifie un cercle en s'appuyant sur le référentiel effectif si disponible.
 
