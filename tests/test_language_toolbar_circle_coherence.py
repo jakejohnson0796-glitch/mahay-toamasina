@@ -18,9 +18,11 @@ def test_language_selector_is_unique_and_outside_the_navigation_sidebar():
     assert base.count('id="select-langue"') == 1
     assert "gm-preferences-toolbar" in base
     sidebar_end = base.index("</aside>")
+    app_page = base.index('<div class="app-page">')
     toolbar = base.index('class="gm-preferences-toolbar"')
     mobile_header = base.index('class="mobile-entete-app"')
-    assert sidebar_end < toolbar < mobile_header
+    # Keep the toolbar in the page's flex column, not as an extra grid sibling.
+    assert sidebar_end < app_page < toolbar < mobile_header
     assert "tb-sidebar-langue" not in base
     assert '/static/preferences-toolbar.css?v={{ version_asset(\'preferences-toolbar.css\') }}' in base
 
@@ -54,8 +56,10 @@ def test_circle_creation_does_not_silently_downgrade_incomplete_academic_choices
     assert 'erreur=parcours_mention_incoherente' in router
     assert "mention_id_nettoye != filiere.mention_id" in router
     assert "niveau_nettoye not in NIVEAUX" in router
+    assert "(mention_id_nettoye or filiere_id_nettoye) and not niveau_nettoye" in router
     assert 'filiere_id == "tronc_commun"' in router
     assert 'filiere_id != "tronc_commun" and filiere_id_nettoye is None' in router
+    assert 'erreur=tronc_commun_indisponible' in router
 
 
 def test_circle_program_selector_and_available_filter_use_coherent_references():
