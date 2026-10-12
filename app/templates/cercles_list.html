@@ -214,6 +214,39 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
   }
 }
+/* Cartes des cercles : image compacte, titres complets et hiérarchie sans ponctuation orpheline. */
+.cercles-page-shell .grille-cartes-claires{align-items:stretch}
+.cercles-page-shell .cercle-card-premium{height:100%;min-width:0;padding:0!important;gap:0!important}
+.cercles-page-shell .cercle-card-premium-inner{display:flex;flex:1;flex-direction:column;gap:.8rem;width:100%;height:100%;min-width:0;box-sizing:border-box;padding:.85rem!important}
+.cercles-page-shell .cercle-card-premium-identite{display:grid;grid-template-columns:108px minmax(0,1fr);align-items:stretch;gap:.85rem;min-width:0}
+.cercles-page-shell .cercle-card-premium-media{position:relative;width:100%;height:136px;min-height:136px;overflow:hidden;border-radius:10px;background:#ede6d8}
+.cercles-page-shell .cercle-card-premium-media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 48%;transition:transform .25s ease}
+.cercles-page-shell .cercle-card-premium:hover .cercle-card-premium-media img{transform:scale(1.035)}
+.cercles-page-shell .cercle-card-premium-media::after{border-radius:10px;background:linear-gradient(180deg,rgba(23,36,32,0) 48%,rgba(23,36,32,.46))}
+.cercles-page-shell .cercle-card-premium-type{left:.4rem;bottom:.4rem;max-width:calc(100% - .8rem);font-size:.58rem;line-height:1.2;white-space:normal}
+.cercles-page-shell .cercle-card-premium-identite-texte{display:flex;align-items:center;min-width:0}
+.cercles-page-shell .cercle-card-premium .carte-claire-corps{align-items:flex-start;gap:.5rem;min-width:0}
+.cercles-page-shell .cercle-card-premium .carte-claire-avatar{width:2rem;height:2rem;flex:0 0 2rem}
+.cercles-page-shell .cercle-card-premium .carte-claire-texte{flex:1;min-width:0}
+.cercles-page-shell .cercle-card-premium .carte-claire-titre{display:block;min-width:0;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;word-break:normal;font-size:1rem;font-weight:750;line-height:1.3;letter-spacing:-.015em}
+.cercles-page-shell .cercle-card-premium-contenu{display:flex;flex:1;flex-direction:column;min-width:0;gap:.1rem}
+.cercles-page-shell .cercle-card-premium .carte-claire-hierarchie{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.35rem;min-width:0;margin:0 0 .35rem;line-height:1.35}
+.cercles-page-shell .cercle-card-premium .carte-claire-hierarchie>span[aria-hidden="true"]{display:none!important}
+.cercles-page-shell .cercle-card-premium .carte-claire-hierarchie>span:not([aria-hidden="true"]):not(.puce-niveau):not(.puce-incomplet){display:inline-flex;align-items:center;max-width:100%;padding:.22rem .42rem;border:1px solid var(--content-border);border-radius:7px;background:var(--content-bg);color:var(--content-text-muted);font-size:.7rem;line-height:1.35;overflow-wrap:anywhere;word-break:normal}
+.cercles-page-shell .cercle-card-premium .puce-niveau,.cercles-page-shell .cercle-card-premium .puce-incomplet{max-width:100%;margin:0;padding:.22rem .45rem;font-size:.68rem;line-height:1.35;white-space:normal}
+.cercles-page-shell .cercle-card-premium .carte-claire-meta{display:flex;align-items:center;margin:.45rem 0 .2rem!important;font-size:.75rem;line-height:1.4}
+.cercles-page-shell .cercle-card-premium .carte-claire-description{margin:.25rem 0 0!important;line-height:1.5}
+.cercles-page-shell .cercle-card-premium .carte-claire-badges{min-height:0;margin-top:.55rem;gap:.35rem}
+.cercles-page-shell .cercle-card-premium .carte-claire-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:auto;padding-top:.8rem!important}
+.cercles-page-shell .cercle-card-premium .carte-claire-actions .bouton{display:inline-flex;align-items:center;justify-content:center;width:auto;max-width:100%;min-height:40px;padding:.55rem .8rem;border-radius:9px;text-align:center;white-space:normal}
+@media(max-width:640px){
+  .cercles-page-shell .cercle-card-premium-inner{gap:.65rem;padding:.7rem!important}
+  .cercles-page-shell .cercle-card-premium-identite{grid-template-columns:88px minmax(0,1fr);gap:.65rem}
+  .cercles-page-shell .cercle-card-premium-media{height:112px;min-height:112px}
+  .cercles-page-shell .cercle-card-premium .carte-claire-titre{font-size:.94rem}
+  .cercles-page-shell .cercle-card-premium .carte-claire-hierarchie>span:not([aria-hidden="true"]):not(.puce-niveau):not(.puce-incomplet){font-size:.67rem}
+}
+@media(prefers-reduced-motion:reduce){.cercles-page-shell .cercle-card-premium-media img{transition:none}}
 </style>
 
 <section class="cercles-hero-visuel" aria-labelledby="titre-hero-cercles">
@@ -694,22 +727,28 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
   {% for info in cercles_avec_info %}
   <article class="carte-claire cercle-card-premium">
     <div class="cercle-card-premium-inner">
-      <div class="cercle-card-premium-media">
-        {% set images_cercle = [
-          {"url":"/static/images/cercles/livre-1.svg","alt":"Livre d'étude"},
-          {"url":"/static/images/cercles/livre-2.svg","alt":"Table de travail et carnet"},
-          {"url":"/static/images/cercles/livre-3.svg","alt":"Livres en lecture"},
-          {"url":"/static/images/cercles/livre-4.svg","alt":"Bureau et livres d’étude"}
-        ] %}
-        {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
-        <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{% if info.type_cercle == "parcours" %}Parcours national{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}Référentiel à vérifier{% endif %}</span>
+      <div class="cercle-card-premium-identite">
+        <div class="cercle-card-premium-media">
+          {% set images_cercle = [
+            {"url":"/static/images/cercles/livre-1.svg","alt":"Livre d’étude"},
+            {"url":"/static/images/cercles/livre-2.svg","alt":"Table de travail et carnet"},
+            {"url":"/static/images/cercles/livre-3.svg","alt":"Livres en lecture"},
+            {"url":"/static/images/cercles/livre-4.svg","alt":"Bureau et livres d’étude"}
+          ] %}
+          {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
+          <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
+          <span class="cercle-card-premium-type">{% if info.type_cercle == "parcours" %}Parcours national{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}Référentiel à vérifier{% endif %}</span>
+        </div>
+        <div class="cercle-card-premium-identite-texte">
+          <div class="carte-claire-corps">
+            <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=30) }}</span>
+            <div class="carte-claire-texte">
+              <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="cercle-card-premium-contenu">
-    <div class="carte-claire-corps">
-      <span class="carte-claire-avatar carte-claire-avatar-couleur-{{ info.cercle.id % 5 }}" aria-hidden="true">{{ constellation_avatar(info.cercle.id, info.nb_membres, taille=34) }}</span>
-      <div class="carte-claire-texte">
-        <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
           {% if info.type_cercle == "parcours" %}
           <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigné" }}</span>
@@ -727,25 +766,23 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
           <span class="puce-incomplet">Référentiel à vérifier</span>
           {% endif %}
         </div>
-      </div>
-    </div>
-    <p class="carte-claire-meta">{{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</p>
-    {% if info.cercle.description %}
-    <p class="carte-claire-description">{{ info.cercle.description }}</p>
-    {% endif %}
-    <div class="carte-claire-badges">
-      {% if info.type_cercle != "incomplet" and info.profil_compatible and not info.est_membre %}<span class="puce-compatibilite">Correspond à ton profil</span>{% endif %}
-      {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% elif info.en_attente %}<span class="puce-statut">Demande en attente</span>{% endif %}
-    </div>
-    <div class="carte-claire-actions">
-      {% if info.est_membre %}
-      <a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat →</a>
-      {% elif info.en_attente %}
-      <span class="bouton bouton-secondaire" style="opacity:0.7;cursor:default;">Demande en attente</span>
-      {% elif utilisateur %}
-      <a class="bouton bouton-primaire" href="/cercles/{{ info.cercle.id }}">Voir le cercle</a>
-      {% endif %}
-    </div>
+        <p class="carte-claire-meta">{{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}</p>
+        {% if info.cercle.description %}
+        <p class="carte-claire-description">{{ info.cercle.description }}</p>
+        {% endif %}
+        <div class="carte-claire-badges">
+          {% if info.type_cercle != "incomplet" and info.profil_compatible and not info.est_membre %}<span class="puce-compatibilite">Correspond à ton profil</span>{% endif %}
+          {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% elif info.en_attente %}<span class="puce-statut">Demande en attente</span>{% endif %}
+        </div>
+        <div class="carte-claire-actions">
+          {% if info.est_membre %}
+          <a class="bouton bouton-secondaire" href="/cercles/{{ info.cercle.id }}">Ouvrir le chat →</a>
+          {% elif info.en_attente %}
+          <span class="bouton bouton-secondaire" style="opacity:0.7;cursor:default;">Demande en attente</span>
+          {% elif utilisateur %}
+          <a class="bouton bouton-primaire" href="/cercles/{{ info.cercle.id }}">Voir le cercle</a>
+          {% endif %}
+        </div>
       </div>
     </div>
   </article>
