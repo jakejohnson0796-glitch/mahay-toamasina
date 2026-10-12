@@ -12,10 +12,11 @@
         headers: { Accept: "application/json" },
         credentials: "same-origin",
       });
-      if (!response.ok) return [];
-      return await response.json();
+      if (!response.ok) return null;
+      const data = await response.json();
+      return Array.isArray(data) ? data : null;
     } catch (_error) {
-      return [];
+      return null;
     }
   }
 
@@ -94,6 +95,14 @@
       parcours.disabled = true;
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      if (rows === null) {
+        parcours.replaceChildren();
+        option(parcours, "", "Référentiel indisponible — réessaie", true);
+        parcours.disabled = true;
+        parcours.dataset.erreurChargement = "true";
+        return;
+      }
+      delete parcours.dataset.erreurChargement;
       remplirParcours(parcours, rows, valeurCourante, true, "Tous les parcours");
     }
 
@@ -143,54 +152,136 @@
   }
 
   function initialiserCreation() {
+    const formulaire = document.getElementById("creer-cercle");
     const mention = document.getElementById("creation_mention_id");
     const niveau = document.getElementById("creation_niveau");
     const parcours = document.getElementById("creation_filiere_id");
     const infoTronc = document.getElementById("creation-info-tronc-commun");
-    if (!mention || !niveau || !parcours) return;
+    const raison = document.getElementById("raison");
+    if (!formulaire || !mention || !niveau || !parcours) return;
 
     let generation = 0;
+
+    function actualiserObligations() {
+      const demandeNationale = Boolean(mention.value);
+      niveau.required = demandeNationale;
+      if (raison) raison.required = demandeNationale;
+    }
+
+    function libelleParcours(item) {
+      if (!item.niveau_a_confirmer) return item.nom;
+      const langue = document.documentElement.getAttribute("lang") || "fr";
+      const suffixe = langue === "mg"
+        ? " — ambaratonga taloha, mila fanamarinana"
+        : " — niveau historique à confirmer";
+      return item.nom + suffixe;
+    }
+
+    function definirInfo(message, erreur) {
+      if (!infoTronc) return;
+      infoTronc.textContent = message;
+      infoTronc.hidden = false;
+      infoTronc.setAttribute("role", erreur ? "alert" : "status");
+      infoTronc.dataset.etat = erreur ? "erreur" : "info";
+    }
 
     function resetParcours() {
       parcours.replaceChildren();
       option(parcours, "", "— choisissez d'abord un niveau —", true);
       parcours.disabled = true;
+      parcours.required = false;
+      delete parcours.dataset.erreurChargement;
       if (infoTronc) infoTronc.hidden = true;
     }
 
     async function charger() {
       const ticket = ++generation;
       resetParcours();
+      actualiserObligations();
       if (!mention.value || !niveau.value) return;
 
       const rows = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
 
-      parcours.replaceChildren();
-      if (!rows.length) {
-        option(parcours, "", "— aucun parcours specifique —", true);
-        if (infoTronc) infoTronc.hidden = false;
-      } else {
-        option(parcours, "", "— choisissez un parcours —", true);
-        rows.forEach(function (row) {
-          option(parcours, row.id, row.nom, false);
-        });
+      if (rows === null) {
+        parcours.replaceChildren();
+        option(parcours, "", "Référentiel indisponible — réessaie", true);
+        parcours.disabled = true;
+        parcours.required = false;
+        parcours.dataset.erreurChargement = "true";
+        definirInfo(
+          "Impossible de charger le référentiel académique. Réessaie avant d'envoyer cette demande ; aucun classement par défaut ne sera appliqué.",
+          true
+        );
+        return;
       }
+
+      delete parcours.dataset.erreurChargement;
+      parcours.replaceChildren();
+      option(parcours, "", "— choisis le parcours ou le tronc commun —", true);
+      option(parcours, "tronc_commun", "Tronc commun (sans parcours spécifique)", false, true);
+      rows.forEach(function (row) {
+        option(parcours, row.id, libelleParcours(row), false, true);
+      });
+
+      if (rows.some(function (row) { return row.niveau_a_confirmer; })) {
+        definirInfo(
+          "Certains intitulés viennent de l'ancien référentiel et n'ont pas de niveau confirmé. Ils sont signalés ; choisis-les uniquement si c'est bien ton parcours.",
+          false
+        );
+      } else if (rows.length) {
+        definirInfo(
+          "Choisis le parcours exact. « Tronc commun » n'est valable que si aucun parcours spécifique n'est offert pour cette mention et ce niveau dans ta composante.",
+          false
+        );
+      } else {
+        definirInfo(
+          "Aucun parcours nommé n'est répertorié à ce niveau. Le tronc commun n'est possible que si cette mention et ce niveau sont réellement proposés dans ta composante.",
+          false
+        );
+      }
+
       parcours.disabled = false;
+      parcours.required = true;
     }
 
     mention.addEventListener("change", function () {
+      // Une mention différente invalide systématiquement le niveau précédent.
+      niveau.value = "";
       niveau.disabled = !mention.value;
-      if (!mention.value) niveau.value = "";
+      actualiserObligations();
       charger();
     });
     niveau.addEventListener("change", charger);
 
-    if (mention.value) {
-      niveau.disabled = false;
-      if (niveau.value) charger();
+    formulaire.addEventListener("submit", function (event) {
+      if (parcours.dataset.erreurChargement === "true") {
+        event.preventDefault();
+        definirInfo(
+          "Le référentiel académique n'a pas pu être chargé. Réessaie ; le formulaire ne sera pas envoyé avec un choix par défaut.",
+          true
+        );
+        parcours.focus();
+        return;
+      }
+      actualiserObligations();
+      if (mention.value && (!niveau.value || parcours.disabled || !parcours.value)) {
+        event.preventDefault();
+        definirInfo(
+          "Pour un cercle national, choisis une mention, un niveau et une option de parcours/tronc commun.",
+          true
+        );
+        (!niveau.value ? niveau : parcours).focus();
+      }
+    });
+
+    niveau.disabled = !mention.value;
+    actualiserObligations();
+    if (mention.value && niveau.value) {
+      charger();
     } else {
       resetParcours();
+      actualiserObligations();
     }
   }
 
