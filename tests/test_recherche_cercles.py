@@ -190,6 +190,54 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Finance et Comptabilite — Licence 3", page.text)
         self.assertIn("Droit prive — Licence 3", page.text)
 
+    def test_filtre_niveau_contraire_au_parcours_ne_retourne_aucun_cercle(self):
+        cercle_id = None
+        niveau_initial = None
+        with Session(engine) as session:
+            parcours = session.get(Filiere, self.autre_filiere_id)
+            niveau_initial = parcours.niveau
+            parcours.niveau = "L3"
+            session.add(parcours)
+            createur = session.exec(
+                select(Utilisateur).where(Utilisateur.nom == "Createur")
+            ).one()
+            cercle_incoherent = CercleEtude(
+                nom="Cercle incoherent niveau parcours",
+                createur_id=createur.id,
+                mention_id=self.mention_id,
+                filiere_id=self.autre_filiere_id,
+                niveau="L2",
+            )
+            session.add(cercle_incoherent)
+            session.commit()
+            session.refresh(cercle_incoherent)
+            cercle_id = cercle_incoherent.id
+
+        page_incoherente = self.client.get("/cercles", params={
+            "mention_id": str(self.mention_id),
+            "filiere_id": str(self.autre_filiere_id),
+            "niveau": "L2",
+        })
+        page_parcours = self.client.get("/cercles", params={
+            "mention_id": str(self.mention_id),
+            "filiere_id": str(self.autre_filiere_id),
+        })
+
+        # Ne pas laisser les données de test incohérentes influencer les autres tests.
+        with Session(engine) as session:
+            circle = session.get(CercleEtude, cercle_id)
+            if circle:
+                session.delete(circle)
+            parcours = session.get(Filiere, self.autre_filiere_id)
+            parcours.niveau = niveau_initial
+            session.add(parcours)
+            session.commit()
+
+        self.assertEqual(page_incoherente.status_code, 200)
+        self.assertNotIn("Cercle incoherent niveau parcours", page_incoherente.text)
+        self.assertEqual(page_parcours.status_code, 200)
+        self.assertIn('<option value="L3" selected>Licence 3</option>', page_parcours.text)
+
     def test_filtre_par_niveau_invalide_est_ignore_silencieusement(self):
         """Un niveau bricole dans l'URL ne doit pas planter la page — le
         filtre est simplement ignore (voir liste_cercles)."""
@@ -277,6 +325,8 @@ class TestRechercheCercles(unittest.TestCase):
         page = self.client.get("/cercles", params={"domaine_id": str(domaine_id)})
         self.assertEqual(page.status_code, 200)
         self.assertIn("Legacy Finance L3", page.text)
+        self.assertIn("Parcours national", page.text)
+        self.assertIn("Licence 3", page.text)
 
     def test_la_visibilite_directe_du_profil_est_affichee_sur_la_vue_generale(self):
         page = self.client.get("/cercles")
@@ -318,6 +368,63 @@ class TestRechercheCercles(unittest.TestCase):
         page = self.client.get("/cercles", params={"q": "revisions"})
         self.assertEqual(page.status_code, 200)
         self.assertIn("Revision Analyse Financiere", page.text)
+
+    def test_endpoint_national_ignore_une_offre_active_rattachee_a_la_mauvaise_universite(self):
+        universite_erronee_id = None
+        with Session(engine) as session:
+            offre_locale = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.filiere_id == self.filiere_id,
+                    ProgrammeUniversitaire.universite_id == self.universite_id,
+                )
+            ).one()
+            offre_locale.est_active = False
+            session.add(offre_locale)
+
+            universite_erronee = Universite(nom="Universite Offre Croisee")
+            session.add(universite_erronee)
+            session.commit()
+            session.refresh(universite_erronee)
+            universite_erronee_id = universite_erronee.id
+            offre_croisee = ProgrammeUniversitaire(
+                universite_id=universite_erronee.id,
+                filiere_id=self.filiere_id,
+                est_active=True,
+            )
+            session.add(offre_croisee)
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        noms = {entry["nom"] for entry in page.json()}
+
+        # Cette suite partage le référentiel de test ; restaure l'offre locale
+        # même quand l'assertion détecte une régression.
+        with Session(engine) as session:
+            offre_locale = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.filiere_id == self.filiere_id,
+                    ProgrammeUniversitaire.universite_id == self.universite_id,
+                )
+            ).one()
+            offre_locale.est_active = True
+            session.add(offre_locale)
+            offre_croisee = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.filiere_id == self.filiere_id,
+                    ProgrammeUniversitaire.universite_id == universite_erronee_id,
+                )
+            ).one()
+            session.delete(offre_croisee)
+            universite_erronee = session.get(Universite, universite_erronee_id)
+            if universite_erronee:
+                session.delete(universite_erronee)
+            session.commit()
+
+        self.assertEqual(page.status_code, 200)
+        self.assertNotIn("Finance et Comptabilite", noms)
 
     def test_filieres_nationales_excluent_une_offre_inactive(self):
         with Session(engine) as session:

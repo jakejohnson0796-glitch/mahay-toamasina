@@ -19,7 +19,7 @@ reservee a /admin/referentiel (voir admin_referentiel_router.py).
 from typing import Optional
 
 from fastapi import APIRouter, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, or_
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
@@ -215,7 +215,10 @@ def lister_domaines(session: Session = Depends(get_session)):
 
 @router.get("/domaines/{domaine_id}/mentions")
 def lister_mentions_par_domaine(domaine_id: int, session: Session = Depends(get_session)):
-    """Mentions actives d'un domaine, pour la cascade Domaine -> Mention."""
+    """Mentions actives d'un domaine actif, pour la cascade Domaine -> Mention."""
+    domaine = session.get(Domaine, domaine_id)
+    if not domaine or not domaine.est_active:
+        return []
     mentions = session.exec(
         select(Mention)
         .where(Mention.domaine_id == domaine_id, Mention.est_active == True)  # noqa: E712
@@ -231,7 +234,13 @@ def lister_toutes_mentions(session: Session = Depends(get_session)):
     cercles_router.py) : un cercle est national, jamais rattache a une
     seule universite, donc son formulaire ne doit pas non plus l'etre."""
     mentions = session.exec(
-        select(Mention).where(Mention.est_active == True).order_by(Mention.nom)  # noqa: E712
+        select(Mention)
+        .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
+        .where(
+            Mention.est_active == True,  # noqa: E712
+            or_(Mention.domaine_id.is_(None), Domaine.est_active == True),  # noqa: E712
+        )
+        .order_by(Mention.nom)
     ).all()
     return [{"id": m.id, "nom": m.nom} for m in mentions]
 
@@ -258,12 +267,21 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if mention.domaine_id:
+        domaine = session.get(Domaine, mention.domaine_id)
+        if not domaine or not domaine.est_active:
+            return []
 
+    # Une offre n'est valide que dans l'université à laquelle appartient
+    # réellement sa composante. Cela exclut les liens croisés erronés qui
+    # faisaient remonter un parcours dans une autre université.
     requete = (
         select(Filiere)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
         .where(
             Filiere.mention_id == mention_id,
+            Faculte.universite_id == ProgrammeUniversitaire.universite_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
         )
     )
