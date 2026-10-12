@@ -277,6 +277,8 @@ class TestRechercheCercles(unittest.TestCase):
         page = self.client.get("/cercles", params={"domaine_id": str(domaine_id)})
         self.assertEqual(page.status_code, 200)
         self.assertIn("Legacy Finance L3", page.text)
+        self.assertIn("Parcours national", page.text)
+        self.assertIn("Licence 3", page.text)
 
     def test_la_visibilite_directe_du_profil_est_affichee_sur_la_vue_generale(self):
         page = self.client.get("/cercles")
