@@ -29,7 +29,7 @@ from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
-    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere, ProgrammeUniversitaire, MembreCercle,
+    Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere, ProgrammeUniversitaire, MembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion,
 )
 
 
@@ -482,6 +482,125 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertNotIn("mention", data)
         self.assertIsInstance(data["academique"]["universite"], dict)
         self.assertEqual(data["academique"]["universite"]["id"], self.universite_id)
+
+
+    def test_z_creation_et_adhesion_groupe_libre_passent_par_validation_createur(self):
+        # Création réelle via HTTP : un groupe libre ne doit pas contourner la
+        # demande d'adhésion simplement parce qu'il n'a pas de profil académique.
+        page_createur = self.client.get("/cercles")
+        csrf_createur = re.search(r'name="_csrf" value="([^"]+)"', page_createur.text)
+        self.assertIsNotNone(csrf_createur, "Jeton CSRF absent de la page Cercles")
+
+        nom_cercle = "Groupe libre validation adhesion integration"
+        creation = self.client.post(
+            "/cercles/creer",
+            data={
+                "_csrf": csrf_createur.group(1),
+                "nom": nom_cercle,
+                "description": "Test de non-régression du circuit d'adhésion.",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(creation.status_code, 303, creation.headers.get("location", ""))
+        correspondance = re.match(r"^/cercles/(\d+)$", creation.headers.get("location", ""))
+        self.assertIsNotNone(correspondance, creation.headers.get("location", ""))
+        cercle_id = int(correspondance.group(1))
+
+        demandeur = _creer_client_connecte(
+            "0359999971",
+            "Demandeur groupe libre",
+        )
+        page_recherche = demandeur.get("/cercles")
+        self.assertEqual(page_recherche.status_code, 200)
+        self.assertIn(nom_cercle, page_recherche.text)
+
+        csrf_demandeur = re.search(r'name="_csrf" value="([^"]+)"', page_recherche.text)
+        self.assertIsNotNone(csrf_demandeur, "Jeton CSRF absent de la page de recherche")
+
+        # La raison reste obligatoire et une tentative vide ne crée aucune ligne.
+        sans_raison = demandeur.post(
+            f"/cercles/{cercle_id}/demander",
+            data={"_csrf": csrf_demandeur.group(1)},
+            follow_redirects=False,
+        )
+        self.assertEqual(sans_raison.status_code, 303)
+        self.assertIn("erreur=raison_requise", sans_raison.headers.get("location", ""))
+
+        with Session(engine) as session:
+            self.assertIsNone(session.exec(
+                select(DemandeAdhesionCercle).where(
+                    DemandeAdhesionCercle.cercle_id == cercle_id,
+                )
+            ).first())
+            demandeur_obj = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == "0359999971")
+            ).one()
+            demandeur_id = demandeur_obj.id
+            self.assertIsNone(session.exec(
+                select(MembreCercle).where(
+                    MembreCercle.cercle_id == cercle_id,
+                    MembreCercle.utilisateur_id == demandeur_id,
+                )
+            ).first())
+
+        payload_demande = {
+            "_csrf": csrf_demandeur.group(1),
+            "raison": "Je souhaite travailler avec ce groupe.",
+        }
+        demande = demandeur.post(
+            f"/cercles/{cercle_id}/demander",
+            data=payload_demande,
+            follow_redirects=False,
+        )
+        self.assertEqual(demande.status_code, 303)
+        self.assertEqual(demande.headers.get("location"), "/cercles")
+
+        # Une seconde soumission ne doit pas créer une demande en double.
+        demandeur.post(
+            f"/cercles/{cercle_id}/demander",
+            data=payload_demande,
+            follow_redirects=False,
+        )
+        with Session(engine) as session:
+            demandes = session.exec(
+                select(DemandeAdhesionCercle).where(
+                    DemandeAdhesionCercle.cercle_id == cercle_id,
+                    DemandeAdhesionCercle.utilisateur_id == demandeur_id,
+                    DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE,
+                )
+            ).all()
+            self.assertEqual(len(demandes), 1)
+            demande_id = demandes[0].id
+            self.assertIsNone(session.exec(
+                select(MembreCercle).where(
+                    MembreCercle.cercle_id == cercle_id,
+                    MembreCercle.utilisateur_id == demandeur_id,
+                )
+            ).first())
+
+        # Le créateur peut valider la demande ; l'adhésion devient effective
+        # uniquement après cette décision explicite.
+        page_demandes = self.client.get(f"/cercles/{cercle_id}/demandes")
+        self.assertEqual(page_demandes.status_code, 200)
+        csrf_validation = re.search(r'name="_csrf" value="([^"]+)"', page_demandes.text)
+        self.assertIsNotNone(csrf_validation, "Jeton CSRF absent de la page des demandes")
+        validation = self.client.post(
+            f"/cercles/{cercle_id}/demandes/{demande_id}/accepter",
+            data={"_csrf": csrf_validation.group(1)},
+            follow_redirects=False,
+        )
+        self.assertEqual(validation.status_code, 303)
+        self.assertEqual(validation.headers.get("location"), f"/cercles/{cercle_id}/demandes")
+
+        with Session(engine) as session:
+            demande_finale = session.get(DemandeAdhesionCercle, demande_id)
+            self.assertEqual(demande_finale.statut, StatutDemandeAdhesion.ACCEPTEE)
+            self.assertIsNotNone(session.exec(
+                select(MembreCercle).where(
+                    MembreCercle.cercle_id == cercle_id,
+                    MembreCercle.utilisateur_id == demandeur_id,
+                )
+            ).first())
 
 if __name__ == "__main__":
     unittest.main()
