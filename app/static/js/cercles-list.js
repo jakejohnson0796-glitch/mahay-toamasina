@@ -171,11 +171,15 @@
         option(parcours, "", "— aucun parcours specifique —", true);
         if (infoTronc) infoTronc.hidden = false;
       } else {
-        option(parcours, "", "— choisissez un parcours —", true);
-        rows.forEach(function (row) {
-          option(parcours, row.id, row.nom, false);
-        });
+        option(parcours, "", "— choisissez un parcours ou un tronc commun —", true);
       }
+      // Le tronc commun peut exister dans la composante du demandeur même
+      // si un autre établissement propose un parcours national au même niveau.
+      // Le serveur reste l'autorité finale et vérifie l'offre locale.
+      option(parcours, "tronc_commun", "Tronc commun (si proposé ici)", false);
+      rows.forEach(function (row) {
+        option(parcours, row.id, row.nom, false);
+      });
       parcours.disabled = false;
     }
 
