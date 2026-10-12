@@ -309,6 +309,77 @@ class TestRechercheCercles(unittest.TestCase):
 
 
 
+    def test_endpoint_parcours_nationaux_rejette_un_niveau_inconnu(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L9"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.json(), [])
+
+    def test_endpoint_parcours_nationaux_prefere_le_parcours_date_au_niveau_exact(self):
+        with Session(engine) as session:
+            filiere_source = session.get(Filiere, self.filiere_id)
+            filiere_exacte = Filiere(
+                nom=filiere_source.nom,
+                faculte_id=filiere_source.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(filiere_exacte)
+            session.commit()
+            session.refresh(filiere_exacte)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere_exacte.id,
+                est_active=True,
+            ))
+            session.commit()
+            id_exact = filiere_exacte.id
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        entree = next(item for item in page.json() if item["nom"] == "Finance et Comptabilite")
+        self.assertEqual(entree["id"], id_exact)
+
+    def test_endpoint_parcours_nationaux_ignore_une_offre_rattachee_a_la_mauvaise_universite(self):
+        with Session(engine) as session:
+            autre_universite = Universite(nom="Universite incoherente Cercle")
+            session.add(autre_universite)
+            session.commit()
+            session.refresh(autre_universite)
+            autre_faculte = Faculte(nom="Composante incoherente Cercle", universite_id=autre_universite.id)
+            session.add(autre_faculte)
+            session.commit()
+            session.refresh(autre_faculte)
+            parcours_incoherent = Filiere(
+                nom="Parcours mal rattache",
+                faculte_id=autre_faculte.id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(parcours_incoherent)
+            session.commit()
+            session.refresh(parcours_incoherent)
+            # L'offre pointe volontairement vers une autre universite que
+            # celle de la composante de ce parcours.
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=parcours_incoherent.id,
+                est_active=True,
+            ))
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertNotIn("Parcours mal rattache", {item["nom"] for item in page.json()})
+
     def test_recherche_sans_accent_trouve_un_titre_accentue(self):
         page = self.client.get("/cercles", params={"q": "comptabilite"})
         self.assertEqual(page.status_code, 200)
