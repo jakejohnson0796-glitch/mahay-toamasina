@@ -342,7 +342,7 @@ def assigner_cercle(
     # pose deja un index unique partiel cote base pour le meme cas).
     if cercle.mention_id and cercle.filiere_id and cercle.niveau:
         filiere_canonique = (
-            referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau=cercle.niveau)
             if filiere
             else filiere
         )
@@ -350,7 +350,7 @@ def assigner_cercle(
             filiere = filiere_canonique
             cercle.filiere_id = filiere.id
         filieres_equivalentes = referentiel_academique._filieres_equivalentes(
-            session, filiere
+            session, filiere, niveau=cercle.niveau
         ) if filiere else [cercle.filiere_id]
         doublon = session.exec(
             select(CercleEtude).where(
@@ -447,7 +447,7 @@ def approuver_demande_creation(
                 status_code=303,
             )
         filiere_demandee = referentiel_academique.filiere_canonique_pour_cercle(
-            session, filiere_demandee
+            session, filiere_demandee, niveau=demande.niveau
         )
         demande.filiere_id = filiere_demandee.id
     else:
@@ -480,7 +480,7 @@ def approuver_demande_creation(
         CercleEtude.statut == StatutCercle.ACTIF,
     )
     if filiere_demandee:
-        filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere_demandee)
+        filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere_demandee, niveau=demande.niveau)
         doublon_requete = doublon_requete.where(CercleEtude.filiere_id.in_(filieres_equivalentes))
     else:
         doublon_requete = doublon_requete.where(CercleEtude.filiere_id.is_(None))
