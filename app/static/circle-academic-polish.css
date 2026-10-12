@@ -1,0 +1,171 @@
+/*
+ * Cercles d'étude — hiérarchie académique et formulaires.
+ * Reste limité aux pages /cercles ; aucune règle ne change la logique métier.
+ */
+.app-page .circle-creation-guidance {
+  margin: .45rem 0 1rem;
+  padding: .8rem .95rem;
+  border: 1px solid color-mix(in srgb, var(--content-border) 68%, var(--accent, #2f8f89));
+  border-left: 3px solid var(--accent, #2f8f89);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--content-surface) 86%, var(--accent, #2f8f89));
+  color: var(--content-text-muted);
+  font-size: .82rem;
+  line-height: 1.6;
+}
+
+.app-page .circle-field-note {
+  color: var(--content-text-muted);
+  font-size: .78em;
+  font-weight: 500;
+}
+
+.app-page .carte-formulaire.carte-creation-cercle {
+  min-width: 0;
+  border-radius: 18px;
+}
+
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .45rem;
+  min-width: 0;
+}
+
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle label {
+  margin-top: .35rem;
+  color: var(--content-text);
+  font-size: .83rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle input,
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle select,
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.65rem;
+  padding: .65rem .8rem;
+  border: 1px solid var(--content-border);
+  border-radius: 10px;
+  background: var(--content-surface);
+  color: var(--content-text);
+  font: inherit;
+  font-size: .86rem;
+  line-height: 1.45;
+}
+
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle input:focus-visible,
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle select:focus-visible,
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle textarea:focus-visible {
+  outline: 2px solid var(--accent, #2f8f89);
+  outline-offset: 2px;
+}
+
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle select:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.app-page #creation-info-tronc-commun {
+  margin: .1rem 0 .25rem;
+  padding: .7rem .8rem;
+  border: 1px solid var(--content-border);
+  border-radius: 10px;
+  background: var(--content-bg);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.app-page #creation-info-tronc-commun[hidden] {
+  display: none !important;
+}
+
+.app-page .carte-formulaire.carte-creation-cercle #creer-cercle > button[type="submit"] {
+  justify-self: start;
+  max-width: 100%;
+  margin-top: .55rem;
+}
+
+.app-page .carte-recherche-cercles #formulaire-recherche-cercles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: .9rem;
+  min-width: 0;
+}
+
+.app-page .carte-recherche-cercles #formulaire-recherche-cercles > div {
+  min-width: 0;
+}
+
+.app-page .carte-recherche-cercles #formulaire-recherche-cercles label {
+  display: block;
+  margin-bottom: .35rem;
+  color: var(--content-text);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.app-page .carte-recherche-cercles #formulaire-recherche-cercles input,
+.app-page .carte-recherche-cercles #formulaire-recherche-cercles select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.65rem;
+  padding: .6rem .7rem;
+  border-radius: 10px;
+  font-size: .83rem;
+}
+
+.app-page .cercle-card-premium .carte-claire-hierarchie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem;
+  min-width: 0;
+  line-height: 1.5;
+}
+
+.app-page .cercle-card-premium .carte-claire-hierarchie > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.app-page .cercle-card-premium .carte-claire-titre {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+@media (max-width: 980px) {
+  .app-page .carte-recherche-cercles #formulaire-recherche-cercles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .app-page .carte-recherche-cercles #formulaire-recherche-cercles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-page .carte-formulaire.carte-creation-cercle #creer-cercle > button[type="submit"] {
+    width: 100%;
+    justify-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-page .carte-formulaire.carte-creation-cercle *,
+  .app-page .carte-recherche-cercles * {
+    scroll-behavior: auto !important;
+    transition-duration: 0ms !important;
+    animation: none !important;
+  }
+}
