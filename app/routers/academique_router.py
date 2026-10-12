@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -258,29 +259,51 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau and niveau not in NIVEAUX:
+        return []
 
     requete = (
         select(Filiere)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Universite, Universite.id == Faculte.universite_id)
         .where(
             Filiere.mention_id == mention_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            # Une offre n'est valide que dans l'universite de la composante
+            # qui porte la filiere. Les liens croises errones ne doivent pas
+            # apparaitre dans la creation/recherche de cercle national.
+            ProgrammeUniversitaire.universite_id == Faculte.universite_id,
+            Universite.est_active == True,  # noqa: E712
         )
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
-    filieres = session.exec(requete.distinct()).all()
+    filieres = session.exec(requete.distinct().order_by(Filiere.nom, Filiere.id)).all()
     filieres = [
         f for f in filieres
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
     ]
 
+    # Une ancienne ligne niveau=NULL sert de repli seulement quand aucune
+    # ligne active ne confirme le même parcours à ce niveau. Ainsi une
+    # ligne L3 officielle prime une ligne historique non datée, au lieu de
+    # changer le nom/id affiché selon l'ordre de lecture de la base.
     vus: dict[str, dict] = {}
     for f in filieres:
         cle = _normaliser_nom_parcours(f.nom)
-        if cle not in vus:
-            vus[cle] = {"id": f.id, "nom": f.nom}
-    return sorted(vus.values(), key=lambda p: p["nom"])
+        entree = {"id": f.id, "nom": f.nom, "_niveau": f.niveau}
+        actuelle = vus.get(cle)
+        if actuelle is None or (
+            niveau and actuelle.get("_niveau") is None and f.niveau == niveau
+        ):
+            vus[cle] = entree
+    resultat = [
+        {"id": item["id"], "nom": item["nom"]}
+        for item in vus.values()
+    ]
+    return sorted(resultat, key=lambda p: (p["nom"].casefold(), p["id"]))
+
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine
