@@ -927,10 +927,20 @@ def creer_cercle(
 
     niveau_nettoye = (niveau or "").strip() or None
 
-    # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
-    if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
+    # Une creation est soit un groupe libre (aucun attribut academique),
+    # soit une demande nationale complete. Ne jamais accepter une mention,
+    # un parcours ou un niveau isole : cela cree sinon des identites que le
+    # referentiel classera ensuite comme incompletes.
+    demande_nationale = bool(mention_id_nettoye or filiere_id_nettoye or niveau_nettoye)
+    if demande_nationale:
+        if not mention_id_nettoye or not niveau_nettoye:
+            return RedirectResponse("/cercles?erreur=identite_academique_incomplete", status_code=303)
         if niveau_nettoye not in NIVEAUX:
             return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
+
+        mention = session.get(Mention, mention_id_nettoye)
+        if not mention or not mention.est_active:
+            return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
 
         filiere = None
         if filiere_id_nettoye:
@@ -938,36 +948,28 @@ def creer_cercle(
             if not filiere:
                 return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
             if not filiere.mention_id:
-                # §10 du brief : la coherence mention/filiere doit etre
-                # verifiee avant tout. Une filiere sans mention assignee ne
-                # peut pas encore porter de cercle national (voir
-                # /admin/referentiel pour l'assigner).
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
-            mention_id_cible = filiere.mention_id
+            if filiere.mention_id != mention_id_nettoye:
+                return RedirectResponse("/cercles?erreur=incoherence_mention_filiere", status_code=303)
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
-                session, mention_id_cible, filiere.id, niveau_nettoye
+                session, mention_id_nettoye, filiere.id, niveau_nettoye
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
             filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
             filiere_id_nettoye = filiere.id
         else:
-            # Tronc commun : il depend de la combinaison reelle
-            # universite + composante + mention + niveau du demandeur.
-            # Une mention qui existe ailleurs ne suffit pas.
-            mention = session.get(Mention, mention_id_nettoye)
-            if not mention:
-                return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
-            mention_id_cible = mention.id
+            # Le tronc commun doit exister dans l'universite/composante de
+            # l'etudiant a ce niveau ; on ne le deduit jamais du seul catalogue national.
             if (
-                utilisateur.mention_id != mention_id_cible
+                utilisateur.mention_id != mention_id_nettoye
                 or utilisateur.niveau != niveau_nettoye
                 or not referentiel_academique.tronc_commun_offert(
                     session,
                     utilisateur.universite_id,
                     utilisateur.faculte_id,
-                    mention_id_cible,
+                    mention_id_nettoye,
                     niveau_nettoye,
                 )
             ):
@@ -977,15 +979,15 @@ def creer_cercle(
         if not raison_nettoyee:
             return RedirectResponse("/cercles?erreur=raison_requise", status_code=303)
 
-        # §48 : si le cercle national existe deja, ne pas proposer de
-        # doublon — rediriger vers l'existant.
+        # Le niveau appartient toujours a l'identite nationale. Une demande
+        # identique ne doit pas multiplier les cercles, toutes universites confondues.
         if filiere:
             filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
         else:
             filieres_equivalentes = []
 
         cercle_existant_requete = select(CercleEtude).where(
-            CercleEtude.mention_id == mention_id_cible,
+            CercleEtude.mention_id == mention_id_nettoye,
             CercleEtude.niveau == niveau_nettoye,
             CercleEtude.statut == StatutCercle.ACTIF,
         )
@@ -995,18 +997,12 @@ def creer_cercle(
             )
         else:
             cercle_existant_requete = cercle_existant_requete.where(CercleEtude.filiere_id.is_(None))
-
         cercle_existant = session.exec(cercle_existant_requete).first()
         if cercle_existant:
             return RedirectResponse(f"/cercles/{cercle_existant.id}?erreur=cercle_existe_deja", status_code=303)
 
-        # Evite d'empiler plusieurs demandes EN_ATTENTE identiques (pas
-        # une contrainte base de donnees ici — juste une verification
-        # applicative, le vrai garde-fou contre les cercles en double
-        # reste l'index unique sur CercleEtude, verifie a nouveau au
-        # moment de l'approbation).
         demande_existante_requete = select(DemandeCreationCercle).where(
-            DemandeCreationCercle.mention_id == mention_id_cible,
+            DemandeCreationCercle.mention_id == mention_id_nettoye,
             DemandeCreationCercle.niveau == niveau_nettoye,
             DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
         )
@@ -1018,13 +1014,12 @@ def creer_cercle(
             demande_existante_requete = demande_existante_requete.where(
                 DemandeCreationCercle.filiere_id.is_(None)
             )
-        demande_existante = session.exec(demande_existante_requete).first()
-        if demande_existante:
+        if session.exec(demande_existante_requete).first():
             return RedirectResponse("/cercles?erreur=demande_deja_en_attente", status_code=303)
 
         session.add(DemandeCreationCercle(
             utilisateur_id=utilisateur.id,
-            mention_id=mention_id_cible,
+            mention_id=mention_id_nettoye,
             filiere_id=filiere_id_nettoye,
             niveau=niveau_nettoye,
             nom=nom,
@@ -1034,7 +1029,7 @@ def creer_cercle(
         session.commit()
         return RedirectResponse("/cercles?ok=demande_creation_envoyee", status_code=303)
 
-    # --- Cas 2 : cercle "libre" (filiere seule ou aucune) — comportement inchange ---
+    # --- Cas 2 : groupe libre — aucune mention, parcours ni niveau fournis ---
     cercle = CercleEtude(
         nom=nom,
         description=description or None,
