@@ -435,6 +435,10 @@ def type_cercle_avec_filiere(cercle: CercleEtude, filiere: Optional[Filiere]) ->
         return "incomplet"
     if cercle.mention_id and cercle.mention_id != filiere.mention_id:
         return "incomplet"
+    if filiere.niveau is not None and filiere.niveau != cercle.niveau:
+        # Un niveau explicite dans le referentiel prime sur le nom du cercle ;
+        # ne pas afficher comme valide une ligne qui sera refusee a l'adhesion.
+        return "incomplet"
     return type_cercle(cercle, mention_effective_id=filiere.mention_id)
 
 
@@ -642,9 +646,18 @@ def condition_cercles_disponibles(
         .scalar_subquery()
     )
     mention_effective_sql = func.coalesce(CercleEtude.mention_id, mention_filiere_sql)
+    niveau_filiere_sql = (
+        select(Filiere.niveau)
+        .where(Filiere.id == CercleEtude.filiere_id)
+        .scalar_subquery()
+    )
     mentions_coherentes = or_(
         CercleEtude.mention_id.is_(None),
         CercleEtude.mention_id == mention_filiere_sql,
+    )
+    niveaux_coherents = or_(
+        niveau_filiere_sql.is_(None),
+        niveau_filiere_sql == CercleEtude.niveau,
     )
 
     return or_(
@@ -655,5 +668,6 @@ def condition_cercles_disponibles(
             CercleEtude.filiere_id.in_(filieres_equivalentes),
             CercleEtude.niveau == utilisateur.niveau,
             mentions_coherentes,
+            niveaux_coherents,
         ),
     )
