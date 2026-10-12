@@ -507,10 +507,15 @@
 {% if utilisateur %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 class="titre-carte">Creer un cercle</h3>
+  <p class="circle-creation-guidance">Deux possibilités : crée un groupe libre en laissant les champs académiques vides, ou demande un cercle national avec une mention et un niveau cohérents. Les demandes nationales passent par une validation. Les parcours proposés sont filtrés sur les offres actives du référentiel.</p>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "identite_academique_incomplete" %}<div class="erreur" role="alert">Pour une demande nationale, choisissez une mention et un niveau. Laissez tous les champs académiques vides pour créer un groupe libre.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "incoherence_mention_filiere" %}<div class="erreur" role="alert">Le parcours sélectionné ne correspond pas à la mention choisie. Vérifiez les deux champs et recommencez.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur" role="alert">Ce parcours n'est pas confirmé comme actif à ce niveau. Choisissez un parcours proposé ou contactez l'administrateur du référentiel.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "tronc_commun_indisponible" %}<div class="erreur" role="alert">Le tronc commun n'est pas confirmé pour cette mention, ce niveau et votre composante. Choisissez un parcours précis si le référentiel en propose un.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
   {% if request.query_params.get("erreur") == "demande_deja_en_attente" %}<div class="erreur">Une demande pour ce meme cercle national est deja en attente de validation.</div>{% endif %}
   {% if request.query_params.get("ok") == "demande_creation_envoyee" %}<div class="info">Votre demande de cercle national a ete envoyee, elle sera examinee par un administrateur.</div>{% endif %}
@@ -523,7 +528,7 @@
     <label for="description">Description (facultatif)</label>
     <input type="text" id="description" name="description" placeholder="ex: Prep du partiel de janvier">
 
-    <label for="creation_mention_id">Mention (facultatif — remplir pour un cercle NATIONAL, soumis a validation)</label>
+    <label for="creation_mention_id">Mention <span class="circle-field-note">— requise pour un cercle national</span></label>
     <select id="creation_mention_id" name="mention_id">
       <option value="">— aucune / groupe libre —</option>
       {% for m in mentions %}
@@ -531,7 +536,7 @@
       {% endfor %}
     </select>
 
-    <label for="creation_niveau">Niveau (obligatoire des qu'une mention est choisie)</label>
+    <label for="creation_niveau">Niveau <span class="circle-field-note">— requis avec une mention</span></label>
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
@@ -539,7 +544,7 @@
       {% endfor %}
     </select>
 
-    <label for="creation_filiere_id">Parcours (facultatif — laissez vide pour un cercle de tronc commun)</label>
+    <label for="creation_filiere_id">Parcours <span class="circle-field-note">— facultatif si le tronc commun est confirmé</span></label>
     <select id="creation_filiere_id" name="filiere_id" disabled>
       <option value="">— choisissez d'abord un niveau —</option>
     </select>
@@ -614,7 +619,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         ] %}
         {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
         <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-        <span class="cercle-card-premium-type">{{ info.type_cercle|replace("_", " ") }}</span>
+        <span class="cercle-card-premium-type">{% if info.type_cercle == "parcours" %}Cercle de parcours{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}À vérifier{% endif %}</span>
       </div>
       <div class="cercle-card-premium-contenu">
     <div class="carte-claire-corps">
@@ -623,7 +628,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
           {% if info.type_cercle == "parcours" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          {% if info.domaine %}<span>{{ info.domaine.nom }}</span>{% endif %}
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
           {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
           {% if info.niveau %}<span class="puce-niveau">{{ info.niveau }}</span>{% endif %}
@@ -635,7 +640,11 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
           {% elif info.type_cercle == "libre" %}
           <span>Groupe libre</span>
           {% else %}
-          <span class="puce-incomplet">Référentiel à vérifier</span>
+          {% if info.domaine %}<span>{{ info.domaine.nom }}</span>{% endif %}
+          {% if info.mention %}<span>{{ info.mention.nom }}</span>{% endif %}
+          {% if info.filiere %}<span>{{ info.filiere.nom }}</span>{% endif %}
+          {% if info.niveau %}<span class="puce-niveau">{{ info.niveau }}</span>{% endif %}
+          <span class="puce-incomplet">Données académiques à vérifier</span>
           {% endif %}
         </div>
       </div>
