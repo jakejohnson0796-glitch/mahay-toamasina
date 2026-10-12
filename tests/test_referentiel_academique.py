@@ -653,6 +653,33 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
         u = Utilisateur(nom="X", telephone="0340000019", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
         self.assertNotIn("Profil incomplet", self._noms_disponibles(u))
 
+    def test_legacy_circle_with_derived_mention_remains_available(self):
+        with Session(self.engine) as session:
+            cercle = session.exec(
+                select(CercleEtude).where(CercleEtude.nom == "Finance L3")
+            ).one()
+            cercle.mention_id = None
+            session.add(cercle)
+            session.commit()
+
+        utilisateur = Utilisateur(
+            nom="Etudiant cercle historique",
+            telephone="0340000210",
+            mot_de_passe_hash="x",
+            role=RoleUtilisateur.ETUDIANT,
+            universite_id=self.universite_id,
+            mention_id=self.mention_id,
+            filiere_id=self.filiere_id,
+            niveau="L3",
+        )
+        self.assertIn("Finance L3", self._noms_disponibles(utilisateur))
+        with Session(self.engine) as session:
+            cercle = session.exec(
+                select(CercleEtude).where(CercleEtude.nom == "Finance L3")
+            ).one()
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+
     def test_utilisateur_none_ne_voit_que_les_cercles_libres(self):
         self.assertEqual(self._noms_disponibles(None), {"Groupe libre"})
 
