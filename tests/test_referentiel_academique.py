@@ -32,6 +32,7 @@ from app.referentiel_academique import (
     tronc_commun_offert,
     filiere_canonique_pour_cercle,
     _filieres_equivalentes,
+    tronc_commun_national_offert,
 )
 
 
@@ -131,6 +132,36 @@ class TestCorrespondanceCercle(unittest.TestCase):
             self.assertFalse(cercle_est_national(cercle))
             u = Utilisateur(nom="X", telephone="0340000002", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             self.assertTrue(profil_correspond_au_cercle(u, cercle, session))
+
+    def test_tronc_commun_national_requires_a_real_active_level_offering(self):
+        with Session(self.engine) as session:
+            self.assertTrue(
+                tronc_commun_national_offert(session, self.mention_id, "L1")
+            )
+
+            filiere_l1 = Filiere(
+                nom="Finance L1 spécialisée",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            )
+            session.add(filiere_l1)
+            session.commit()
+            session.refresh(filiere_l1)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere_l1.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            self.assertFalse(
+                tronc_commun_national_offert(session, self.mention_id, "L1")
+            )
+            self.assertFalse(
+                tronc_commun_national_offert(session, self.mention_id, "NIVEAU_FAUX")
+            )
+
 
     def test_equivalence_and_canonical_choice_never_merge_different_levels(self):
         with Session(self.engine) as session:
