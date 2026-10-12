@@ -585,6 +585,32 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
                          filiere_id=self.filiere_id, niveau="L2")
         self.assertEqual(self._noms_disponibles(u), {"Groupe libre", "Finance L2"})
 
+    def test_cercles_disponibles_inclut_un_cercle_legacy_via_sa_mention_de_parcours(self):
+        with Session(self.engine) as session:
+            session.add(CercleEtude(
+                nom="Legacy Finance L3",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            ))
+            session.commit()
+
+        u = Utilisateur(
+            nom="Profil legacy", telephone="0340000022",
+            mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+            universite_id=self.universite_id,
+            mention_id=self.mention_id,
+            filiere_id=self.filiere_id,
+            niveau="L3",
+        )
+        self.assertIn("Legacy Finance L3", self._noms_disponibles(u))
+        with Session(self.engine) as session:
+            legacy = session.exec(
+                select(CercleEtude).where(CercleEtude.nom == "Legacy Finance L3")
+            ).one()
+            self.assertTrue(profil_correspond_au_cercle(u, legacy, session))
+
     def test_etudiant_ne_voit_pas_les_cercles_dune_autre_filiere(self):
         u = Utilisateur(nom="X", telephone="0340000013", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
                          universite_id=self.universite_id, mention_id=self.mention_id,
