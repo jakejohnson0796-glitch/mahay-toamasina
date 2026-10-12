@@ -548,6 +548,11 @@ def tronc_commun_offert(
     ):
         return False
 
+    if mention.domaine_id:
+        domaine = session.get(Domaine, mention.domaine_id)
+        if not domaine or not domaine.est_active:
+            return False
+
     if not _mention_offerte_dans_faculte(session, mention_id, faculte_id):
         return False
 
