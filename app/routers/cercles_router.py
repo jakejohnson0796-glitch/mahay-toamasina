@@ -929,6 +929,15 @@ def creer_cercle(
         )
 
     niveau_nettoye = (niveau or "").strip() or None
+    hierarchie_renseignee = bool(mention_id_nettoye or filiere_id_nettoye or niveau_nettoye)
+
+    # Un choix partiel ne doit jamais etre converti silencieusement en groupe
+    # libre. Les cercles libres ne sont crees que lorsque les trois champs
+    # academiques sont vides.
+    if hierarchie_renseignee and not niveau_nettoye:
+        return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
+    if hierarchie_renseignee and not (mention_id_nettoye or filiere_id_nettoye):
+        return RedirectResponse("/cercles?erreur=mention_requise", status_code=303)
 
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
@@ -941,11 +950,11 @@ def creer_cercle(
             if not filiere:
                 return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
             if not filiere.mention_id:
-                # §10 du brief : la coherence mention/filiere doit etre
-                # verifiee avant tout. Une filiere sans mention assignee ne
-                # peut pas encore porter de cercle national (voir
-                # /admin/referentiel pour l'assigner).
+                # Une filiere sans mention verifiee ne peut pas porter un
+                # cercle national : le classement doit d'abord etre corrige.
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            if mention_id_nettoye and filiere.mention_id != mention_id_nettoye:
+                return RedirectResponse("/cercles?erreur=incoherence_mention_filiere", status_code=303)
             mention_id_cible = filiere.mention_id
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
