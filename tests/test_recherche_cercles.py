@@ -190,6 +190,54 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Finance et Comptabilite — Licence 3", page.text)
         self.assertIn("Droit prive — Licence 3", page.text)
 
+    def test_filtre_niveau_contraire_au_parcours_ne_retourne_aucun_cercle(self):
+        cercle_id = None
+        niveau_initial = None
+        with Session(engine) as session:
+            parcours = session.get(Filiere, self.autre_filiere_id)
+            niveau_initial = parcours.niveau
+            parcours.niveau = "L3"
+            session.add(parcours)
+            createur = session.exec(
+                select(Utilisateur).where(Utilisateur.nom == "Createur")
+            ).one()
+            cercle_incoherent = CercleEtude(
+                nom="Cercle incoherent niveau parcours",
+                createur_id=createur.id,
+                mention_id=self.mention_id,
+                filiere_id=self.autre_filiere_id,
+                niveau="L2",
+            )
+            session.add(cercle_incoherent)
+            session.commit()
+            session.refresh(cercle_incoherent)
+            cercle_id = cercle_incoherent.id
+
+        page_incoherente = self.client.get("/cercles", params={
+            "mention_id": str(self.mention_id),
+            "filiere_id": str(self.autre_filiere_id),
+            "niveau": "L2",
+        })
+        page_parcours = self.client.get("/cercles", params={
+            "mention_id": str(self.mention_id),
+            "filiere_id": str(self.autre_filiere_id),
+        })
+
+        # Ne pas laisser les données de test incohérentes influencer les autres tests.
+        with Session(engine) as session:
+            circle = session.get(CercleEtude, cercle_id)
+            if circle:
+                session.delete(circle)
+            parcours = session.get(Filiere, self.autre_filiere_id)
+            parcours.niveau = niveau_initial
+            session.add(parcours)
+            session.commit()
+
+        self.assertEqual(page_incoherente.status_code, 200)
+        self.assertNotIn("Cercle incoherent niveau parcours", page_incoherente.text)
+        self.assertEqual(page_parcours.status_code, 200)
+        self.assertIn('<option value="L3" selected>Licence 3</option>', page_parcours.text)
+
     def test_filtre_par_niveau_invalide_est_ignore_silencieusement(self):
         """Un niveau bricole dans l'URL ne doit pas planter la page — le
         filtre est simplement ignore (voir liste_cercles)."""
