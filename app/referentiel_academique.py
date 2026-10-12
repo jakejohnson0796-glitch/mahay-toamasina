@@ -419,6 +419,10 @@ def identite_cercle_effective(cercle: CercleEtude, session: Optional[Session] = 
     niveau = cercle.niveau or (filiere.niveau if filiere else None)
 
     incoherent = bool(session and cercle.filiere_id and not filiere)
+    if session and mention_id:
+        mention = session.get(Mention, mention_id)
+        if not mention or not mention.est_active:
+            incoherent = True
     if filiere:
         if cercle.mention_id is not None and filiere.mention_id != cercle.mention_id:
             incoherent = True
@@ -456,6 +460,8 @@ def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
     filiere = identite["filiere"]
 
     if identite["incoherent"]:
+        return "incomplet"
+    if niveau and niveau not in NIVEAUX:
         return "incomplet"
     if not mention_id and not filiere_id and not niveau:
         return "libre"
@@ -660,8 +666,13 @@ def condition_cercles_disponibles(
         CercleEtude.niveau,
         select(Filiere.niveau).where(Filiere.id == CercleEtude.filiere_id).scalar_subquery(),
     )
+    mention_active_sql = select(Mention.id).where(
+        Mention.id == mention_effective_sql,
+        Mention.est_active == True,  # noqa: E712
+    ).exists()
 
     cercle_tronc_commun_correspondant = and_(
+        mention_active_sql,
         mention_effective_sql == mention_id,
         niveau_effectif_sql == utilisateur.niveau,
         CercleEtude.filiere_id.is_(None),
@@ -676,6 +687,7 @@ def condition_cercles_disponibles(
         cercle_libre,
         cercle_tronc_commun_correspondant,
         and_(
+            mention_active_sql,
             mention_effective_sql == mention_id,
             CercleEtude.filiere_id.in_(filieres_equivalentes),
             niveau_effectif_sql == utilisateur.niveau,
