@@ -365,7 +365,16 @@ def filiere_canonique_pour_cercle(session: Session, filiere: Filiere) -> Filiere
             continue
         candidates.append(candidate)
 
-    return min(candidates, key=lambda f: f.id) if candidates else filiere
+    if not candidates:
+        return filiere
+    # Lorsqu'une offre est datee pour le niveau demande, elle prime une
+    # ligne historique niveau=NULL du meme nom. Le repli legacy ne doit pas
+    # masquer une ligne officielle plus precise.
+    if filiere.niveau is not None:
+        candidates_exacts = [candidate for candidate in candidates if candidate.niveau == filiere.niveau]
+        if candidates_exacts:
+            return min(candidates_exacts, key=lambda f: f.id)
+    return min(candidates, key=lambda f: f.id)
 
 
 def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
