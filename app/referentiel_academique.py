@@ -397,27 +397,78 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
 
 
 
-def type_cercle(cercle: CercleEtude) -> str:
-    """Classifie un cercle selon UNE hierarchie canonique.
+def identite_cercle_effective(cercle: CercleEtude, session: Optional[Session] = None) -> dict:
+    """Retourne l'identite academique resolue, sans inventer de donnees.
 
-    libre        : aucun attribut academique ;
-    tronc_commun : mention + niveau, sans parcours ;
-    parcours     : mention + parcours + niveau ;
-    incomplet    : combinaison partielle/incoherente a revoir.
+    Les anciens cercles peuvent n'avoir que filiere_id, alors que mention_id
+    et niveau sont deja connus sur la Filiere. On derive uniquement ces deux
+    valeurs deterministes. Une valeur explicite contradictoire reste une
+    incoherence et n'est jamais ecrasee par le referentiel.
     """
-    if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
+    filiere = session.get(Filiere, cercle.filiere_id) if session and cercle.filiere_id else None
+    mention_id = cercle.mention_id or (filiere.mention_id if filiere else None)
+    niveau = cercle.niveau or (filiere.niveau if filiere else None)
+
+    incoherent = bool(session and cercle.filiere_id and not filiere)
+    if filiere:
+        if cercle.mention_id is not None and filiere.mention_id != cercle.mention_id:
+            incoherent = True
+        if filiere.mention_id is None:
+            incoherent = True
+        if cercle.niveau is not None and filiere.niveau is not None and cercle.niveau != filiere.niveau:
+            incoherent = True
+
+    return {
+        "mention_id": mention_id,
+        "filiere_id": cercle.filiere_id,
+        "niveau": niveau,
+        "filiere": filiere,
+        "incoherent": incoherent,
+    }
+
+
+def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
+    """Classifie un cercle selon l'identite academique effective.
+
+    Les anciens cercles incomplets uniquement par denormalisation sont
+    recuperes depuis Filiere ; les contradictions explicites restent
+    marquees comme incompletes jusqu'a correction du referentiel.
+    """
+    identite = identite_cercle_effective(cercle, session) if session else {
+        "mention_id": cercle.mention_id,
+        "filiere_id": cercle.filiere_id,
+        "niveau": cercle.niveau,
+        "filiere": None,
+        "incoherent": False,
+    }
+    mention_id = identite["mention_id"]
+    filiere_id = identite["filiere_id"]
+    niveau = identite["niveau"]
+    filiere = identite["filiere"]
+
+    if identite["incoherent"]:
+        return "incomplet"
+    if not mention_id and not filiere_id and not niveau:
         return "libre"
-    if cercle.mention_id and cercle.niveau and not cercle.filiere_id:
+    if mention_id and niveau and not filiere_id:
         return "tronc_commun"
-    if cercle.mention_id and cercle.filiere_id and cercle.niveau:
+    if mention_id and filiere_id and niveau:
+        if session:
+            if (
+                not filiere
+                or not filiere.mention_id
+                or filiere.mention_id != mention_id
+                or (filiere.niveau is not None and filiere.niveau != niveau)
+            ):
+                return "incomplet"
         return "parcours"
     return "incomplet"
 
 
-def cercle_est_national(cercle: CercleEtude) -> bool:
+def cercle_est_national(cercle: CercleEtude, session: Optional[Session] = None) -> bool:
     """Vrai uniquement pour les cercles nationaux complets :
     parcours specialise ou tronc commun."""
-    return type_cercle(cercle) in {"tronc_commun", "parcours"}
+    return type_cercle(cercle, session) in {"tronc_commun", "parcours"}
 
 
 def parcours_cercle_offert(
@@ -512,15 +563,19 @@ def tronc_commun_offert(
 
 
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
-    """Test canonique d'eligibilite a un cercle."""
-    nature = type_cercle(cercle)
+    """Test canonique d'eligibilite, y compris pour les cercles historiques."""
+    identite = identite_cercle_effective(cercle, session)
+    nature = type_cercle(cercle, session)
     if nature == "libre":
         return True
-    if nature == "incomplet":
+    if nature == "incomplet" or identite["incoherent"]:
         return False
 
+    mention_id = identite["mention_id"]
+    niveau = identite["niveau"]
+    filiere_id = identite["filiere_id"]
     if nature == "parcours" and not parcours_cercle_offert(
-        session, cercle.mention_id, cercle.filiere_id, cercle.niveau
+        session, mention_id, filiere_id, niveau
     ):
         return False
 
@@ -529,7 +584,7 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
         return False
 
     mention = profil["mention"]
-    if not mention or mention.id != cercle.mention_id or profil["niveau"] != cercle.niveau:
+    if not mention or mention.id != mention_id or profil["niveau"] != niveau:
         return False
 
     if nature == "tronc_commun":
@@ -538,7 +593,7 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
     filiere_utilisateur = profil["filiere"]
     if not filiere_utilisateur:
         return False
-    return cercle.filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
+    return filiere_id in _filieres_equivalentes(session, filiere_utilisateur)
 
 
 def condition_cercles_disponibles(
@@ -581,19 +636,25 @@ def condition_cercles_disponibles(
     mention_id = profil["mention"].id
     filiere_utilisateur = profil["filiere"]
 
-    # Cercle de tronc commun pour la mention+niveau de l'utilisateur :
-    # correspond qu'il ait deja choisi une filiere ou non (voir
-    # profil_correspond_au_cercle).
+    # Même résolution que dans identite_cercle_effective() : plusieurs
+    # cercles historiques n'ont renseigné que filiere_id. COALESCE n'infère
+    # que les champs absents, jamais les champs explicites contradictoires.
+    mention_effective_sql = func.coalesce(
+        CercleEtude.mention_id,
+        select(Filiere.mention_id).where(Filiere.id == CercleEtude.filiere_id).scalar_subquery(),
+    )
+    niveau_effectif_sql = func.coalesce(
+        CercleEtude.niveau,
+        select(Filiere.niveau).where(Filiere.id == CercleEtude.filiere_id).scalar_subquery(),
+    )
+
     cercle_tronc_commun_correspondant = and_(
-        CercleEtude.mention_id == mention_id,
-        CercleEtude.niveau == utilisateur.niveau,
+        mention_effective_sql == mention_id,
+        niveau_effectif_sql == utilisateur.niveau,
         CercleEtude.filiere_id.is_(None),
     )
 
-    if not utilisateur.filiere_id:
-        return or_(cercle_libre, cercle_tronc_commun_correspondant)
-
-    if not filiere_utilisateur:
+    if not utilisateur.filiere_id or not filiere_utilisateur:
         return or_(cercle_libre, cercle_tronc_commun_correspondant)
 
     filieres_equivalentes = _filieres_equivalentes(session, filiere_utilisateur)
@@ -602,8 +663,8 @@ def condition_cercles_disponibles(
         cercle_libre,
         cercle_tronc_commun_correspondant,
         and_(
-            CercleEtude.mention_id == mention_id,
+            mention_effective_sql == mention_id,
             CercleEtude.filiere_id.in_(filieres_equivalentes),
-            CercleEtude.niveau == utilisateur.niveau,
+            niveau_effectif_sql == utilisateur.niveau,
         ),
     )
