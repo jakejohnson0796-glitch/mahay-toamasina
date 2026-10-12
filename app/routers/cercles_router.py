@@ -937,12 +937,11 @@ def creer_cercle(
 
     # Un choix academique partiel ne doit jamais devenir silencieusement un
     # groupe libre : les trois situations sont distinctes pour l'utilisateur.
-    if niveau_nettoye and niveau_nettoye not in NIVEAUX:
-        return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
-    if (mention_id_nettoye or filiere_id_nettoye) and not niveau_nettoye:
-        return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
-    if niveau_nettoye and not (mention_id_nettoye or filiere_id_nettoye):
-        return RedirectResponse("/cercles?erreur=mention_ou_parcours_requis", status_code=303)
+    erreur_selection = referentiel_academique.erreur_selection_creation_cercle(
+        mention_id_nettoye, filiere_id_nettoye, niveau_nettoye
+    )
+    if erreur_selection:
+        return RedirectResponse(f"/cercles?erreur={erreur_selection}", status_code=303)
     if mention_id_nettoye and not session.get(Mention, mention_id_nettoye):
         return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
 
