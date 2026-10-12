@@ -262,9 +262,14 @@ def lister_parcours_nationaux(
     requete = (
         select(Filiere)
         .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
         .where(
             Filiere.mention_id == mention_id,
             ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            # Une offre ne compte que si son universite est celle de la
+            # composante rattachee a ce parcours. Evite d'afficher au choix
+            # un lien historique croise qui sera refuse par le backend.
+            ProgrammeUniversitaire.universite_id == Faculte.universite_id,
         )
     )
     if niveau:
