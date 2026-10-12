@@ -19,6 +19,7 @@ reservee a /admin/referentiel (voir admin_referentiel_router.py).
 from typing import Optional
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import or_
 from sqlmodel import Session, select
 
 from ..database import get_session
@@ -242,45 +243,60 @@ def lister_parcours_nationaux(
     niveau: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
-    """Parcours nommes pour cette mention a ce niveau, DEDUPLIQUES par
-    nom normalise A TRAVERS TOUTES LES UNIVERSITES (voir
-    referentiel_academique._normaliser_nom_parcours) : contrairement a
-    /composantes/{id}/mentions/{id}/filieres (scope a une seule
-    universite, pour l'inscription), un cercle est national -- "Finance"
-    a Toamasina et a Fianarantsoa doit apparaitre comme UNE SEULE
-    option, pas deux. Un seul id representant est renvoye par groupe
-    (peu importe lequel : voir _filieres_equivalentes, utilisee cote
-    recherche/creation de cercle pour retrouver tout le groupe a partir
-    de ce representant).
+    """Parcours nationaux actifs, coherents avec la mention et le niveau.
 
-    Liste VIDE = tronc commun a ce niveau pour cette mention (aucun
-    parcours a choisir), meme convention que pour l'inscription."""
+    Les lignes historiques sans niveau restent candidates, mais quand des
+    lignes precises existent pour le niveau demande, elles sont prioritaires.
+    Une offre doit appartenir a l'universite de sa composante ; une offre
+    active d'une autre universite ne doit pas faire apparaitre un parcours
+    qui n'y est pas propose.
+    """
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
+    if niveau and niveau not in __import__("app.referentiel", fromlist=["NIVEAUX"]).NIVEAUX:
+        return []
+
+    offres_toutes = select(ProgrammeUniversitaire.id).where(
+        ProgrammeUniversitaire.filiere_id == Filiere.id
+    ).exists()
+    offre_locale_active = select(ProgrammeUniversitaire.id).where(
+        ProgrammeUniversitaire.filiere_id == Filiere.id,
+        ProgrammeUniversitaire.universite_id == Faculte.universite_id,
+        ProgrammeUniversitaire.est_active == True,  # noqa: E712
+    ).exists()
 
     requete = (
         select(Filiere)
-        .join(ProgrammeUniversitaire, ProgrammeUniversitaire.filiere_id == Filiere.id)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
+        .join(Universite, Universite.id == Faculte.universite_id)
+        .outerjoin(Domaine, Domaine.id == mention.domaine_id)
         .where(
             Filiere.mention_id == mention_id,
-            ProgrammeUniversitaire.est_active == True,  # noqa: E712
+            Universite.est_active == True,  # noqa: E712
+            or_(~offres_toutes, offre_locale_active),
         )
     )
     if niveau:
         requete = requete.where((Filiere.niveau == niveau) | (Filiere.niveau.is_(None)))
-    filieres = session.exec(requete.distinct()).all()
+
+    filieres = session.exec(requete.distinct().order_by(Filiere.nom, Filiere.id)).all()
     filieres = [
         f for f in filieres
         if _normaliser_nom_parcours(f.nom) != "tronc commun"
     ]
 
     vus: dict[str, dict] = {}
+    priorites: dict[str, int] = {}
     for f in filieres:
         cle = _normaliser_nom_parcours(f.nom)
-        if cle not in vus:
-            vus[cle] = {"id": f.id, "nom": f.nom}
+        priorite = 0 if niveau and f.niveau == niveau else 1
+        if cle in vus and priorites[cle] <= priorite:
+            continue
+        vus[cle] = {"id": f.id, "nom": f.nom}
+        priorites[cle] = priorite
     return sorted(vus.values(), key=lambda p: p["nom"])
+
 def lister_filieres(composante_id: int, session: Session = Depends(get_session)):
     """Renvoie aussi mention/domaine (quand connus) pour affichage en
     lecture seule sous le select — l'etudiant VOIT sa mention/domaine
