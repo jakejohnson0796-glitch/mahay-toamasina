@@ -512,7 +512,7 @@ def liste_cercles(
     elif filiere_id_nettoye:
         filiere_choisie = session.get(Filiere, filiere_id_nettoye)
         if filiere_choisie:
-            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
+            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie, niveau=niveau_nettoye)
             requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
         else:
             requete = requete.where(CercleEtude.id == -1)
@@ -640,7 +640,7 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere),
+            "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere, session),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -737,7 +737,7 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere),
+                "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere, session),
             })
         return resultat
 
@@ -964,7 +964,7 @@ def creer_cercle(
             domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
             cercles_avec_info.append({
                 "cercle": cercle,
-                "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere),
+                "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere, session),
                 "domaine": domaine,
                 "mention": mention,
                 "filiere": filiere,
@@ -1028,7 +1028,7 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau=niveau_nettoye)
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
@@ -1058,21 +1058,30 @@ def creer_cercle(
         # §48 : si le cercle national existe deja, ne pas proposer de
         # doublon — rediriger vers l'existant.
         if filiere:
-            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
+            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere, niveau=niveau_nettoye)
         else:
             filieres_equivalentes = []
 
         cercle_existant_requete = select(CercleEtude).where(
-            CercleEtude.mention_id == mention_id_cible,
             CercleEtude.niveau == niveau_nettoye,
             CercleEtude.statut == StatutCercle.ACTIF,
         )
         if filiere:
             cercle_existant_requete = cercle_existant_requete.where(
-                CercleEtude.filiere_id.in_(filieres_equivalentes)
+                or_(
+                    CercleEtude.mention_id == mention_id_cible,
+                    and_(
+                        CercleEtude.mention_id.is_(None),
+                        CercleEtude.filiere_id.in_(filieres_equivalentes),
+                    ),
+                ),
+                CercleEtude.filiere_id.in_(filieres_equivalentes),
             )
         else:
-            cercle_existant_requete = cercle_existant_requete.where(CercleEtude.filiere_id.is_(None))
+            cercle_existant_requete = cercle_existant_requete.where(
+                CercleEtude.mention_id == mention_id_cible,
+                CercleEtude.filiere_id.is_(None),
+            )
 
         cercle_existant = session.exec(cercle_existant_requete).first()
         if cercle_existant:
