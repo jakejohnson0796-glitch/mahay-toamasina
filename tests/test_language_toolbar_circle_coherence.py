@@ -8,6 +8,7 @@ SIDEBAR_CSS = ROOT / "app" / "static" / "sidebar.css"
 PREFERENCES_CSS = ROOT / "app" / "static" / "preferences-toolbar.css"
 CIRCLES_TEMPLATE = ROOT / "app" / "templates" / "cercles_list.html"
 CIRCLES_ROUTER = ROOT / "app" / "routers" / "cercles_router.py"
+CIRCLES_JS = ROOT / "app" / "static" / "js" / "cercles-list.js"
 ACADEMIC_API = ROOT / "app" / "routers" / "academique_router.py"
 ACADEMIC_SERVICE = ROOT / "app" / "referentiel_academique.py"
 
@@ -53,6 +54,8 @@ def test_circle_creation_does_not_silently_downgrade_incomplete_academic_choices
     assert 'erreur=parcours_mention_incoherente' in router
     assert "mention_id_nettoye != filiere.mention_id" in router
     assert "niveau_nettoye not in NIVEAUX" in router
+    assert 'filiere_id == "tronc_commun"' in router
+    assert 'filiere_id != "tronc_commun" and filiere_id_nettoye is None' in router
 
 
 def test_circle_program_selector_and_available_filter_use_coherent_references():
@@ -64,6 +67,23 @@ def test_circle_program_selector_and_available_filter_use_coherent_references():
     assert "def cercle_est_national_avec_filiere(" in service
     assert "mention_effective_sql == mention_id" in service
     assert "mentions_coherentes" in service
+
+
+def test_circle_cascade_distinguishes_empty_results_from_api_failure():
+    js = CIRCLES_JS.read_text(encoding="utf-8")
+    assert "if (!response.ok) return null" in js
+    assert "return Array.isArray(data) ? data : null" in js
+    assert "if (rows === null)" in js
+    assert "Référentiel indisponible — réessaie" in js
+    assert "dataset.erreurChargement" in js
+    assert "niveau_a_confirmer" in js
+
+
+def test_circle_creation_presents_common_core_as_an_explicit_choice():
+    js = CIRCLES_JS.read_text(encoding="utf-8")
+    assert 'option(parcours, "tronc_commun", "Tronc commun (sans parcours spécifique)"' in js
+    assert "parcours.required = true" in js
+    assert "aucun classement par défaut ne sera appliqué" in js
 
 
 def test_circle_stylesheet_is_valid_css_with_balanced_blocks():
