@@ -215,7 +215,10 @@ def lister_domaines(session: Session = Depends(get_session)):
 
 @router.get("/domaines/{domaine_id}/mentions")
 def lister_mentions_par_domaine(domaine_id: int, session: Session = Depends(get_session)):
-    """Mentions actives d'un domaine, pour la cascade Domaine -> Mention."""
+    """Mentions actives d'un domaine actif, pour la cascade Domaine -> Mention."""
+    domaine = session.get(Domaine, domaine_id)
+    if not domaine or not domaine.est_active:
+        return []
     mentions = session.exec(
         select(Mention)
         .where(Mention.domaine_id == domaine_id, Mention.est_active == True)  # noqa: E712
