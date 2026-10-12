@@ -179,10 +179,11 @@ class TestCorrespondanceCercle(unittest.TestCase):
 
     def test_cercle_avec_mention_contradictoire_est_incomplet_et_non_national(self):
         with Session(self.engine) as session:
+            autre_filiere = session.get(Filiere, self.autre_filiere_id)
             cercle = CercleEtude(
                 nom="Finance rattachee a Droit",
                 createur_id=self.createur_id,
-                mention_id=self.mention_id + 1,
+                mention_id=autre_filiere.mention_id,
                 filiere_id=self.filiere_id,
                 niveau="L3",
             )
