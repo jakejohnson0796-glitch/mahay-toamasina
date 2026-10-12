@@ -608,6 +608,32 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
                          filiere_id=self.filiere_id, niveau="L3")
         self.assertEqual(self._noms_disponibles(u), {"Groupe libre", "Finance L3"})
 
+    def test_cercle_legacy_mention_nulle_est_disponible_si_son_parcours_correspond(self):
+        with Session(self.engine) as session:
+            session.add(CercleEtude(
+                nom="Finance L3 legacy",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            ))
+            session.commit()
+            cercle = session.exec(
+                select(CercleEtude).where(CercleEtude.nom == "Finance L3 legacy")
+            ).one()
+            utilisateur = Utilisateur(
+                nom="Profil legacy",
+                telephone="0340000093",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+        self.assertIn("Finance L3 legacy", self._noms_disponibles(utilisateur))
+
     def test_etudiant_ne_voit_pas_le_meme_cercle_national_a_un_autre_niveau(self):
         u = Utilisateur(nom="X", telephone="0340000012", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
                          universite_id=self.universite_id, mention_id=self.mention_id,
@@ -648,6 +674,15 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
                          universite_id=self.universite_id, mention_id=self.mention_id,
                          filiere_id=self.filiere_id, niveau="L3")
         with Session(self.engine) as session:
+            # Ancien cercle : mention dénormalisée absente, mais parcours toujours rattaché.
+            session.add(CercleEtude(
+                nom="Finance L3 legacy",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            ))
+            session.commit()
             tous = session.exec(select(CercleEtude)).all()
             attendu = {c.nom for c in tous if profil_correspond_au_cercle(u, c, session)}
         self.assertEqual(self._noms_disponibles(u), attendu)
