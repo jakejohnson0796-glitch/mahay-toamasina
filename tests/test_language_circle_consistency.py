@@ -52,6 +52,7 @@ def test_creation_route_rejects_partial_or_cross_mention_selections():
     assert "niveaux_libelles" in router
     assert "type_cercle(cercle, session)" in router
     assert "cercle_est_national(cercle, session)" in router
+    assert 'type_cercle(cercle, session) != "libre"' in router
 
 
 def test_national_course_options_match_the_actual_university_of_the_faculty():
