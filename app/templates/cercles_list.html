@@ -475,7 +475,7 @@
       <select id="recherche_niveau" name="niveau">
         <option value="">Tous les niveaux</option>
         {% for n in niveaux %}
-        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ n }}</option>
+        <option value="{{ n }}" data-no-translate {% if recherche_niveau == n %}selected{% endif %}>{{ niveaux_libelles.get(n, n) if niveaux_libelles else n }}</option>
         {% endfor %}
       </select>
     </div>
@@ -540,7 +540,7 @@
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
-      <option value="{{ n }}" data-no-translate>{{ n }}</option>
+      <option value="{{ n }}" data-no-translate>{{ niveaux_libelles.get(n, n) if niveaux_libelles else n }}</option>
       {% endfor %}
     </select>
 
@@ -631,7 +631,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
           <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
           {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
-          {% if info.cercle.niveau %}<span class="puce-niveau">{{ info.cercle.niveau }}</span>{% endif %}
+          {% if info.cercle.niveau %}<span class="puce-niveau">{{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) if niveaux_libelles else info.cercle.niveau }}</span>{% endif %}
           {% elif info.type_cercle == "tronc_commun" %}
           <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
