@@ -922,22 +922,85 @@ def creer_cercle(
                 )
             ).all()
         }
-        cercles_avec_info = [{
-            "cercle": c,
-            "nb_membres": nb_membres_par_cercle.get(c.id, 0),
-            "est_membre": c.id in membres_utilisateur,
-            "en_attente": False,
-            "peut_gerer": _peut_gerer_cercle(c, utilisateur),
-        } for c in cercles]
+        filieres_map = {f.id: f for f in filieres}
+        mentions = session.exec(
+            select(Mention).where(Mention.est_active == True).order_by(Mention.nom)  # noqa: E712
+        ).all()
+        domaines = session.exec(
+            select(Domaine).where(Domaine.est_active == True).order_by(Domaine.nom)  # noqa: E712
+        ).all()
+        mentions_map = {m.id: m for m in mentions}
+        domaines_map = {d.id: d for d in domaines}
+
+        mention_ids_en_attente = set()
+        if cercle_ids:
+            mention_ids_en_attente = set(session.exec(
+                select(DemandeAdhesionCercle.cercle_id).where(
+                    DemandeAdhesionCercle.cercle_id.in_(cercle_ids),
+                    DemandeAdhesionCercle.utilisateur_id == utilisateur.id,
+                    DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE,
+                )
+            ).all())
+
+        if _est_admin(utilisateur):
+            compatibilites_limite = set(cercle_ids)
+        elif cercle_ids:
+            condition_disponibilite = referentiel_academique.condition_cercles_disponibles(
+                utilisateur, session
+            )
+            compatibilites_limite = set(session.exec(
+                select(CercleEtude.id)
+                .where(CercleEtude.id.in_(cercle_ids))
+                .where(condition_disponibilite)
+            ).all())
+        else:
+            compatibilites_limite = set()
+
+        cercles_avec_info = []
+        for cercle in cercles:
+            filiere = filieres_map.get(cercle.filiere_id)
+            mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+            mention = mentions_map.get(mention_id_effectif)
+            domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
+            cercles_avec_info.append({
+                "cercle": cercle,
+                "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere),
+                "domaine": domaine,
+                "mention": mention,
+                "filiere": filiere,
+                "nb_membres": nb_membres_par_cercle.get(cercle.id, 0),
+                "est_membre": cercle.id in membres_utilisateur,
+                "en_attente": cercle.id in mention_ids_en_attente,
+                "profil_compatible": cercle.id in compatibilites_limite,
+                "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
+            })
         return templates.TemplateResponse(
             request,
             "cercles_list.html",
             {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "niveaux_libelles": NIVEAUX_LIBELLES, "utilisateur": utilisateur,
+                "cercles_avec_info": cercles_avec_info,
+                "filieres": filieres,
+                "domaines": domaines,
+                "mentions": mentions,
+                "filiere_recherchee": None,
+                "niveaux": NIVEAUX,
+                "niveaux_libelles": NIVEAUX_LIBELLES,
+                "utilisateur": utilisateur,
                 "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
                 "theme_du_jour": theme_service.get_theme_du_jour(),
-                "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
-                "page": 1, "total_pages": 1, "total_cercles": len(cercles_avec_info),
+                "recherche_q": "",
+                "recherche_domaine_id": None,
+                "recherche_mention_id": None,
+                "recherche_filiere_id": "",
+                "recherche_tronc_commun": False,
+                "recherche_niveau": "",
+                "recherche_disponibles": False,
+                "recherche_textuelle_active": False,
+                "querystring": "",
+                "page": 1,
+                "total_pages": 1,
+                "total_cercles": len(cercles_avec_info),
+                "has_next_page": False,
             },
         )
 
