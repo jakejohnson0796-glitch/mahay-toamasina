@@ -340,6 +340,129 @@ class TestRechercheCercles(unittest.TestCase):
 
 
 
+    def test_endpoint_parcours_nationaux_prefere_le_niveau_exact_a_une_ligne_heritée(self):
+        with Session(engine) as session:
+            legacy = Filiere(
+                nom="Parcours test priorité niveau",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+            )
+            l3 = Filiere(
+                nom="Parcours test priorité niveau",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            m1 = Filiere(
+                nom="Parcours test priorité niveau",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add_all([legacy, l3, m1])
+            session.commit()
+            session.refresh(legacy)
+            session.refresh(l3)
+            session.refresh(m1)
+            session.add_all([
+                ProgrammeUniversitaire(
+                    universite_id=self.universite_id, filiere_id=l3.id, est_active=True
+                ),
+                ProgrammeUniversitaire(
+                    universite_id=self.universite_id, filiere_id=m1.id, est_active=True
+                ),
+            ])
+            session.commit()
+            id_l3 = l3.id
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        choix = [item for item in page.json() if item["nom"] == "Parcours test priorité niveau"]
+        self.assertEqual(len(choix), 1)
+        self.assertEqual(choix[0]["id"], id_l3)
+
+    def test_endpoint_exclut_une_offre_rattachee_a_la_mauvaise_universite(self):
+        with Session(engine) as session:
+            universite_locale = Universite(nom="Université locale croisement API")
+            universite_distante = Universite(nom="Université distante croisement API")
+            session.add_all([universite_locale, universite_distante])
+            session.commit()
+            session.refresh(universite_locale)
+            session.refresh(universite_distante)
+            faculte_locale = Faculte(
+                nom="Faculté locale croisement API",
+                universite_id=universite_locale.id,
+            )
+            session.add(faculte_locale)
+            session.commit()
+            session.refresh(faculte_locale)
+            filiere = Filiere(
+                nom="Parcours mal rattaché API",
+                faculte_id=faculte_locale.id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(filiere)
+            session.commit()
+            session.refresh(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite_distante.id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        noms = {item["nom"] for item in page.json()}
+        self.assertNotIn("Parcours mal rattaché API", noms)
+
+    def test_creation_cercle_refuse_une_mention_sans_niveau(self):
+        page = self.client.get("/cercles")
+        jeton = re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
+        response = self.client.post(
+            "/cercles/creer",
+            data={
+                "_csrf": jeton,
+                "nom": "Cercle test métadonnées partielles",
+                "mention_id": str(self.mention_id),
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(response.headers["location"].endswith("erreur=niveau_requis"))
+
+    def test_creation_cercle_refuse_une_mention_differente_de_celle_du_parcours(self):
+        with Session(engine) as session:
+            autre_mention = Mention(nom="Mention incoherente parcours formulaire")
+            session.add(autre_mention)
+            session.commit()
+            session.refresh(autre_mention)
+            autre_mention_id = autre_mention.id
+
+        page = self.client.get("/cercles")
+        jeton = re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
+        response = self.client.post(
+            "/cercles/creer",
+            data={
+                "_csrf": jeton,
+                "nom": "Cercle test mention incohérente",
+                "mention_id": str(autre_mention_id),
+                "filiere_id": str(self.filiere_id),
+                "niveau": "L3",
+                "raison": "Test automatique du contrôle de cohérence.",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(response.headers["location"].endswith("erreur=incoherence_mention_filiere"))
+
     def test_profil_membre_ne_duplique_pas_la_hierarchie_academique(self):
         with Session(engine) as session:
             membre = Utilisateur(
