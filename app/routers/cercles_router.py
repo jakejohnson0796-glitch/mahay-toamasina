@@ -37,7 +37,7 @@ from .. import subscription
 from .. import theme_service
 from .. import referentiel_academique
 from ..web_utils import entier_ou_none
-from ..referentiel import NIVEAUX
+from ..referentiel import NIVEAUX, NIVEAUX_LIBELLES, libelle_niveau
 from ..recherche import clause_recherche_cercles
 from ..rate_limit import limite_depassee
 from .. import gamification
@@ -512,7 +512,7 @@ def liste_cercles(
     elif filiere_id_nettoye:
         filiere_choisie = session.get(Filiere, filiere_id_nettoye)
         if filiere_choisie:
-            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
+            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie, niveau=niveau_nettoye)
             requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
         else:
             requete = requete.where(CercleEtude.id == -1)
@@ -640,7 +640,8 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, session=session),
+            "niveau_libelle": libelle_niveau(cercle.niveau) if cercle.niveau else None,
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -737,7 +738,8 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle(cercle, session=session),
+                "niveau_libelle": libelle_niveau(cercle.niveau) if cercle.niveau else None,
             })
         return resultat
 
@@ -818,6 +820,7 @@ def liste_cercles(
             "mentions": mentions,
             "filiere_recherchee": filiere_recherchee,
             "niveaux": NIVEAUX,
+            "niveau_libelles": NIVEAUX_LIBELLES,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
             "profil_academique_recherche": profil_academique_recherche,
@@ -917,7 +920,7 @@ def creer_cercle(
             request,
             "cercles_list.html",
             {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "utilisateur": utilisateur,
+                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "niveau_libelles": NIVEAUX_LIBELLES, "utilisateur": utilisateur,
                 "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
                 "theme_du_jour": theme_service.get_theme_du_jour(),
                 "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
@@ -950,7 +953,7 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau=niveau_nettoye)
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
@@ -980,7 +983,7 @@ def creer_cercle(
         # §48 : si le cercle national existe deja, ne pas proposer de
         # doublon — rediriger vers l'existant.
         if filiere:
-            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
+            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere, niveau=niveau_nettoye)
         else:
             filieres_equivalentes = []
 
@@ -1203,7 +1206,7 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle):
+    if referentiel_academique.cercle_est_national(cercle, session=session):
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
@@ -1583,7 +1586,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle, session=session),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
