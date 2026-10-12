@@ -400,15 +400,29 @@ def liste_cercles(
     # Un paramètre incohérent ne doit jamais élargir les résultats.
     filiere_selectionnee = session.get(Filiere, filiere_id_nettoye) if filiere_id_nettoye else None
     if filiere_selectionnee:
-        if (
+        # Un parcours non rattaché à une mention ne peut pas servir de filtre
+        # académique national. Les filtres incohérents doivent donner zéro
+        # résultat, jamais être ignorés en élargissant la recherche.
+        if not filiere_selectionnee.mention_id:
+            filiere_id_nettoye = -1
+            filiere_selectionnee = None
+        elif (
             mention_id_nettoye
-            and filiere_selectionnee.mention_id
             and mention_id_nettoye != filiere_selectionnee.mention_id
         ):
             filiere_id_nettoye = -1
             filiere_selectionnee = None
-        elif filiere_selectionnee.mention_id:
+        elif (
+            niveau_nettoye
+            and filiere_selectionnee.niveau
+            and niveau_nettoye != filiere_selectionnee.niveau
+        ):
+            filiere_id_nettoye = -1
+            filiere_selectionnee = None
+        else:
             mention_id_nettoye = filiere_selectionnee.mention_id
+            if not niveau_nettoye and filiere_selectionnee.niveau:
+                niveau_nettoye = filiere_selectionnee.niveau
 
     mention_selectionnee = session.get(Mention, mention_id_nettoye) if mention_id_nettoye else None
     if mention_selectionnee and mention_selectionnee.domaine_id:
