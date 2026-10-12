@@ -1140,7 +1140,10 @@ def demander_adhesion(
     if _a_acces_cercle(session, cercle_id, utilisateur.id):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
-    if referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session):
+    if (
+        referentiel_academique.cercle_est_national(cercle, session)
+        and referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session)
+    ):
         # Chemin 1 : son propre cercle national -> adhesion immediate.
         session.add(MembreCercle(cercle_id=cercle_id, utilisateur_id=utilisateur.id, role=RoleMembreCercle.MEMBRE))
         gamification.enregistrer_action(
