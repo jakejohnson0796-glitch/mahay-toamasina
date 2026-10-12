@@ -568,7 +568,13 @@ def liste_cercles(
     ).all()
     domaines_map = {d.id: d for d in domaines}
     mentions = session.exec(
-        select(Mention).where(Mention.est_active == True).order_by(Mention.nom)  # noqa: E712
+        select(Mention)
+        .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
+        .where(
+            Mention.est_active == True,  # noqa: E712
+            or_(Mention.domaine_id.is_(None), Domaine.est_active == True),  # noqa: E712
+        )
+        .order_by(Mention.nom)
     ).all()
 
     filiere_ids = {c.filiere_id for c in cercles if c.filiere_id}
