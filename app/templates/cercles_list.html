@@ -352,7 +352,7 @@
           <p class="cercles-visibilite-meta">
             {% if info.mention %}{{ info.mention.nom }}{% endif %}
             {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.cercle.niveau %} · {{ info.niveau_libelle or info.cercle.niveau }} ({{ info.cercle.niveau }}){% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           <span class="puce-statut">Tu es membre</span>
@@ -542,7 +542,7 @@
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
-      <option value="{{ n }}" data-no-translate>{{ n }}</option>
+      <option value="{{ n }}" data-no-translate>{{ niveau_libelles.get(n, n) }} ({{ n }})</option>
       {% endfor %}
     </select>
 
