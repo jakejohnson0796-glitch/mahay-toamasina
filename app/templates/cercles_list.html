@@ -612,7 +612,7 @@
     <label for="description">Description (facultatif)</label>
     <input type="text" id="description" name="description" placeholder="ex: Prep du partiel de janvier">
 
-    <label for="creation_mention_id">Mention (facultatif — remplir pour un cercle NATIONAL, soumis a validation)</label>
+    <label for="creation_mention_id">Mention (facultative pour un parcours ; à renseigner pour un cercle de tronc commun)</label>
     <select id="creation_mention_id" name="mention_id">
       <option value="">— aucune / groupe libre —</option>
       {% for m in mentions %}
@@ -620,7 +620,7 @@
       {% endfor %}
     </select>
 
-    <label for="creation_niveau">Niveau (obligatoire des qu'une mention est choisie)</label>
+    <label for="creation_niveau">Niveau (obligatoire pour un cercle national)</label>
     <select id="creation_niveau" name="niveau" disabled>
       <option value="">— choisissez d'abord une mention —</option>
       {% for n in niveaux %}
@@ -636,7 +636,7 @@
       Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
     </p>
 
-    <label for="raison">Raison (obligatoire uniquement pour un cercle national, donc des qu'une mention est choisie)</label>
+    <label for="raison">Raison (obligatoire pour toute demande de cercle national)</label>
     <textarea id="raison" name="raison" rows="2" placeholder="ex: Plusieurs etudiants de cette filiere et ce niveau, dans differentes universites, souhaitent un espace commun pour partager cours et revisions."></textarea>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cercle</button>
@@ -712,7 +712,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
         <div class="carte-claire-titre">{{ info.cercle.nom }}</div>
         <div class="carte-claire-hierarchie">
           {% if info.type_cercle == "parcours" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigné" }}</span>
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
           {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
           {% if info.cercle.niveau %}<span class="puce-niveau">{{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) }}</span>{% endif %}
