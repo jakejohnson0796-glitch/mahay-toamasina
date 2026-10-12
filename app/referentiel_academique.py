@@ -461,6 +461,10 @@ def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
                 or (filiere.niveau is not None and filiere.niveau != niveau)
             ):
                 return "incomplet"
+        if session and not parcours_cercle_offert(
+            session, mention_id, filiere_id, niveau
+        ):
+            return "incomplet"
         return "parcours"
     return "incomplet"
 
