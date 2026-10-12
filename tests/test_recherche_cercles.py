@@ -342,20 +342,21 @@ class TestRechercheCercles(unittest.TestCase):
 
     def test_endpoint_parcours_nationaux_prefere_le_niveau_exact_a_une_ligne_heritée(self):
         with Session(engine) as session:
+            faculte_id = session.get(Filiere, self.filiere_id).faculte_id
             legacy = Filiere(
                 nom="Parcours test priorité niveau",
-                faculte_id=self.faculte_id,
+                faculte_id=faculte_id,
                 mention_id=self.mention_id,
             )
             l3 = Filiere(
                 nom="Parcours test priorité niveau",
-                faculte_id=self.faculte_id,
+                faculte_id=faculte_id,
                 mention_id=self.mention_id,
                 niveau="L3",
             )
             m1 = Filiere(
                 nom="Parcours test priorité niveau",
-                faculte_id=self.faculte_id,
+                faculte_id=faculte_id,
                 mention_id=self.mention_id,
                 niveau="M1",
             )
