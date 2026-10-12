@@ -471,6 +471,39 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.commit()
             self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
 
+    def test_cercle_legacy_recupere_mention_et_niveau_du_parcours(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L3"
+            session.add(filiere)
+            session.commit()
+            cercle = CercleEtude(
+                nom="Cercle historique Finance L3",
+                createur_id=self.createur_id,
+                filiere_id=self.filiere_id,
+            )
+            utilisateur = Utilisateur(
+                nom="Etudiant historique", telephone="0340000024", mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id, faculte_id=self.faculte_id,
+                mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle), "incomplet")
+            self.assertEqual(type_cercle(cercle, session), "parcours")
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+    def test_cercle_legacy_refuse_une_mention_explicitement_contradictoire(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.autre_filiere_id)
+            cercle = CercleEtude(
+                nom="Mention contradictoire",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.autre_filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle, session), "incomplet")
+
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
     """condition_cercles_disponibles() doit filtrer exactement les memes
@@ -560,6 +593,37 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
             session.commit()
         u = Utilisateur(nom="X", telephone="0340000019", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
         self.assertNotIn("Profil incomplet", self._noms_disponibles(u))
+
+    def test_filtre_disponible_gere_les_cercles_legacy_et_reste_coherent(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "L3"
+            session.add(filiere)
+            session.add(CercleEtude(
+                nom="Parcours historique visible",
+                createur_id=self.createur_id,
+                filiere_id=self.filiere_id,
+            ))
+            session.commit()
+
+            utilisateur = Utilisateur(
+                nom="Profil historique", telephone="0340000025", mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id, faculte_id=1,
+                mention_id=self.mention_id, filiere_id=self.filiere_id, niveau="L3",
+            )
+            tous = session.exec(select(CercleEtude)).all()
+            attendu = {
+                cercle.nom for cercle in tous
+                if profil_correspond_au_cercle(utilisateur, cercle, session)
+            }
+            disponibles = {
+                cercle.nom for cercle in session.exec(
+                    select(CercleEtude).where(condition_cercles_disponibles(utilisateur, session))
+                ).all()
+            }
+        self.assertIn("Parcours historique visible", disponibles)
+        self.assertEqual(disponibles, attendu)
 
     def test_utilisateur_none_ne_voit_que_les_cercles_libres(self):
         self.assertEqual(self._noms_disponibles(None), {"Groupe libre"})
