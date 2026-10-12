@@ -1221,7 +1221,10 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle, session):
+    # Seul un groupe explicitement libre peut accueillir n'importe quel profil.
+    # Les cercles incomplets ou nationaux restent soumis au contrôle d'éligibilité;
+    # une incohérence du référentiel ne doit pas devenir un contournement.
+    if referentiel_academique.type_cercle(cercle, session) != "libre":
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
