@@ -24,6 +24,8 @@ from app.referentiel_academique import (
     erreur_choix_academique,
     serialiser_profil_academique,
     type_cercle,
+    filiere_canonique_pour_cercle,
+    _filieres_equivalentes,
     erreur_cercle_parcours,
     parcours_cercle_offert,
     offre_filiere_active_universite,
@@ -470,6 +472,96 @@ class TestCorrespondanceCercle(unittest.TestCase):
             session.add(filiere)
             session.commit()
             self.assertFalse(__import__("app.referentiel_academique", fromlist=["contexte_profil_academique"]).contexte_profil_academique(u, session)["coherent"])
+
+
+    def test_legacy_circle_derives_its_mention_from_its_pathway(self):
+        with Session(self.engine) as session:
+            cercle = CercleEtude(
+                nom="Historique sans mention explicite",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            session.add(cercle)
+            session.commit()
+
+            utilisateur = Utilisateur(
+                nom="Etudiant historique",
+                telephone="0340000201",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle, session=session), "parcours")
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+            self.assertTrue(cercle_est_national(cercle, session=session))
+
+    def test_cercle_mention_and_pathway_mismatch_is_incomplete(self):
+        with Session(self.engine) as session:
+            autre_filiere = session.get(Filiere, self.autre_filiere_id)
+            cercle = CercleEtude(
+                nom="Triplet incoherent",
+                createur_id=self.createur_id,
+                mention_id=autre_filiere.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            session.add(cercle)
+            session.commit()
+            utilisateur = Utilisateur(
+                nom="Etudiant coherence",
+                telephone="0340000202",
+                mot_de_passe_hash="x",
+                role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle(cercle, session=session), "incomplet")
+            self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+    def test_canonical_path_and_equivalences_respect_target_level(self):
+        with Session(self.engine) as session:
+            legacy = Filiere(
+                nom="Parcours même nom cross-level",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau=None,
+            )
+            exact_l3 = Filiere(
+                nom="Parcours même nom cross-level",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            exact_m1 = Filiere(
+                nom="Parcours même nom cross-level",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="M1",
+            )
+            session.add_all([legacy, exact_l3, exact_m1])
+            session.commit()
+            session.refresh(legacy)
+            session.refresh(exact_l3)
+            session.refresh(exact_m1)
+
+            canonique = filiere_canonique_pour_cercle(
+                session, legacy, niveau="L3"
+            )
+            equivalentes = _filieres_equivalentes(session, canonique, niveau="L3")
+
+            self.assertEqual(canonique.id, exact_l3.id)
+            self.assertIn(legacy.id, equivalentes)
+            self.assertIn(exact_l3.id, equivalentes)
+            self.assertNotIn(exact_m1.id, equivalentes)
 
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
