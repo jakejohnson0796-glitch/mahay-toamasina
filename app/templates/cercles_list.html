@@ -390,7 +390,7 @@
             {% if info.domaine %}{{ info.domaine.nom }} · {% endif %}
             {{ info.mention.nom if info.mention else cercles_profil_visibilite.mention_nom }}
             {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.cercle.niveau %} · {{ info.niveau_libelle or info.cercle.niveau }} ({{ info.cercle.niveau }}){% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
@@ -421,7 +421,7 @@
           <p class="cercles-visibilite-meta">
             {% if info.mention %}{{ info.mention.nom }}{% endif %}
             {% if info.filiere %} · {{ info.filiere.nom }}{% else %} · Tronc commun{% endif %}
-            {% if info.cercle.niveau %} · {{ info.cercle.niveau }}{% endif %}
+            {% if info.cercle.niveau %} · {{ info.niveau_libelle or info.cercle.niveau }} ({{ info.cercle.niveau }}){% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           {% if info.est_membre %}<span class="puce-statut">Tu es membre</span>{% endif %}
@@ -514,6 +514,7 @@
   {% if request.query_params.get("erreur") == "incoherence_mention_filiere" %}<div class="erreur">Le parcours ne correspond pas à la mention sélectionnée. Vérifie tes choix.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Ce parcours n'a pas de mention validée. Il doit être corrigé dans le référentiel avant de créer un cercle national.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Cette mention n'est pas disponible dans le référentiel actif.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "filiere_introuvable" %}<div class="erreur">Ce parcours n'existe pas dans le référentiel. Sélectionne un choix disponible.</div>{% endif %}
   {% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur">Ce parcours n'est pas proposé au niveau choisi dans le référentiel actif.</div>{% endif %}
   {% if request.query_params.get("erreur") == "tronc_commun_indisponible" %}<div class="erreur">Le tronc commun doit correspondre à ta mention, à ton niveau et à une offre réelle dans ta composante.</div>{% endif %}
   {% if request.query_params.get("erreur") == "cercle_existe_deja" %}<div class="erreur">Un cercle actif existe déjà pour cette mention, ce niveau et ce parcours.</div>{% endif %}
