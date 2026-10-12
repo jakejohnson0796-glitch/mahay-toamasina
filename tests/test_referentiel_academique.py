@@ -24,6 +24,8 @@ from app.referentiel_academique import (
     erreur_choix_academique,
     serialiser_profil_academique,
     type_cercle,
+    type_cercle_avec_filiere,
+    cercle_est_national_avec_filiere,
     erreur_cercle_parcours,
     parcours_cercle_offert,
     offre_filiere_active_universite,
@@ -127,6 +129,50 @@ class TestCorrespondanceCercle(unittest.TestCase):
             self.assertFalse(cercle_est_national(cercle))
             u = Utilisateur(nom="X", telephone="0340000002", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             self.assertTrue(profil_correspond_au_cercle(u, cercle, session))
+
+    def test_cercle_legacy_derives_its_mention_from_the_official_program(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            cercle = CercleEtude(
+                nom="Finance L3 legacy",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            utilisateur = Utilisateur(
+                nom="Profil legacy", telephone="0340000020",
+                mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle_avec_filiere(cercle, filiere), "parcours")
+            self.assertTrue(cercle_est_national_avec_filiere(cercle, filiere))
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+    def test_cercle_with_conflicting_mention_and_program_is_flagged_incoherent(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            cercle = CercleEtude(
+                nom="Mention incoherente",
+                createur_id=self.createur_id,
+                mention_id=session.get(Filiere, self.autre_filiere_id).mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            utilisateur = Utilisateur(
+                nom="Profil finance", telephone="0340000021",
+                mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle_avec_filiere(cercle, filiere), "incomplet")
+            self.assertFalse(cercle_est_national_avec_filiere(cercle, filiere))
+            self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
 
     def test_utilisateur_meme_mention_filiere_niveau_correspond(self):
         with Session(self.engine) as session:
