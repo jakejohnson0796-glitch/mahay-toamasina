@@ -472,7 +472,7 @@ def liste_cercles(
     referentiel_recherche = (
         func.coalesce(Domaine.nom, "")
         + " " + func.coalesce(Mention.nom, "")
-        + " " + func.coalesce(CercleEtude.niveau, "")
+        + " " + func.coalesce(CercleEtude.niveau, Filiere.niveau, "")
         + " " + func.coalesce(Filiere.nom, "")
         + " "
         + func.coalesce(
@@ -518,7 +518,7 @@ def liste_cercles(
             requete = requete.where(CercleEtude.id == -1)
 
     if niveau_nettoye:
-        requete = requete.where(CercleEtude.niveau == niveau_nettoye)
+        requete = requete.where(func.coalesce(CercleEtude.niveau, Filiere.niveau) == niveau_nettoye)
 
     condition_disponibilite = None
     if afficher_disponibles_seulement and not _est_admin(utilisateur):
@@ -640,7 +640,8 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle(cercle, session),
+            "niveau": cercle.niveau or (filiere.niveau if filiere else None),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -1578,7 +1579,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national(cercle, session),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
