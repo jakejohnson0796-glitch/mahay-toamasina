@@ -913,41 +913,7 @@ def creer_cercle(
         select(func.count()).select_from(CercleEtude).where(CercleEtude.createur_id == utilisateur.id)
     ).one()
     if nb_cercles_existants >= MAX_CERCLES_PAR_UTILISATEUR:
-        filieres = session.exec(select(Filiere)).all()
-        cercles = session.exec(select(CercleEtude).order_by(CercleEtude.date_creation.desc())).all()
-        cercle_ids = [c.id for c in cercles]
-        nb_membres_par_cercle = {cid: nb for cid, nb in session.exec(
-            select(MembreCercle.cercle_id, func.count())
-            .where(MembreCercle.cercle_id.in_(cercle_ids or [-1]))
-            .group_by(MembreCercle.cercle_id)
-        ).all()}
-        membres_utilisateur = {
-            cid for cid in session.exec(
-                select(MembreCercle.cercle_id).where(
-                    MembreCercle.cercle_id.in_(cercle_ids or [-1]),
-                    MembreCercle.utilisateur_id == utilisateur.id,
-                )
-            ).all()
-        }
-        cercles_avec_info = [{
-            "cercle": c,
-            "nb_membres": nb_membres_par_cercle.get(c.id, 0),
-            "est_membre": c.id in membres_utilisateur,
-            "en_attente": False,
-            "peut_gerer": _peut_gerer_cercle(c, utilisateur),
-        } for c in cercles]
-        return templates.TemplateResponse(
-            request,
-            "cercles_list.html",
-            {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX,
-                "niveaux_libelles": NIVEAUX_LIBELLES, "utilisateur": utilisateur,
-                "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
-                "theme_du_jour": theme_service.get_theme_du_jour(),
-                "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
-                "page": 1, "total_pages": 1, "total_cercles": len(cercles_avec_info),
-            },
-        )
+        return RedirectResponse("/cercles?erreur=limite_creation", status_code=303)
 
     # --- Cas 1 : demande de cercle NATIONAL ---
     # Un niveau, une mention ou un parcours ne peuvent jamais etre jetes
