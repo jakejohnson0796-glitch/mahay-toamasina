@@ -24,10 +24,15 @@ from app.referentiel_academique import (
     erreur_choix_academique,
     serialiser_profil_academique,
     type_cercle,
+    type_cercle_avec_filiere,
+    cercle_est_national_avec_filiere,
     erreur_cercle_parcours,
     parcours_cercle_offert,
     offre_filiere_active_universite,
     tronc_commun_offert,
+    filiere_canonique_pour_cercle,
+    _filieres_equivalentes,
+    tronc_commun_national_offert,
 )
 
 
@@ -127,6 +132,153 @@ class TestCorrespondanceCercle(unittest.TestCase):
             self.assertFalse(cercle_est_national(cercle))
             u = Utilisateur(nom="X", telephone="0340000002", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT)
             self.assertTrue(profil_correspond_au_cercle(u, cercle, session))
+
+    def test_tronc_commun_national_requires_a_real_active_level_offering(self):
+        with Session(self.engine) as session:
+            self.assertTrue(
+                tronc_commun_national_offert(session, self.mention_id, "L1")
+            )
+
+            filiere_l1 = Filiere(
+                nom="Finance L1 spécialisée",
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L1",
+            )
+            session.add(filiere_l1)
+            session.commit()
+            session.refresh(filiere_l1)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere_l1.id,
+                est_active=True,
+            ))
+            session.commit()
+
+            self.assertFalse(
+                tronc_commun_national_offert(session, self.mention_id, "L1")
+            )
+            self.assertFalse(
+                tronc_commun_national_offert(session, self.mention_id, "NIVEAU_FAUX")
+            )
+
+
+    def test_equivalence_and_canonical_choice_never_merge_different_levels(self):
+        with Session(self.engine) as session:
+            historique = session.get(Filiere, self.filiere_id)
+            historique.nom = "CCA"
+            historique.niveau = None
+            session.add(historique)
+            session.commit()
+            session.refresh(historique)
+
+            m1 = Filiere(
+                nom="CCA", faculte_id=self.faculte_id,
+                mention_id=self.mention_id, niveau="M1",
+            )
+            l3 = Filiere(
+                nom="CCA", faculte_id=self.faculte_id,
+                mention_id=self.mention_id, niveau="L3",
+            )
+            session.add(m1)
+            session.add(l3)
+            session.commit()
+            session.refresh(m1)
+            session.refresh(l3)
+
+            for filiere in (historique, m1, l3):
+                session.add(ProgrammeUniversitaire(
+                    universite_id=self.universite_id,
+                    filiere_id=filiere.id,
+                    est_active=True,
+                ))
+            session.commit()
+
+            equivalentes_m1 = _filieres_equivalentes(session, historique, niveau="M1")
+            self.assertIn(historique.id, equivalentes_m1)
+            self.assertIn(m1.id, equivalentes_m1)
+            self.assertNotIn(l3.id, equivalentes_m1)
+
+            canonique_m1 = filiere_canonique_pour_cercle(
+                session, historique, niveau="M1"
+            )
+            self.assertEqual(canonique_m1.id, m1.id)
+
+            equivalentes_l3 = _filieres_equivalentes(session, l3, niveau="L3")
+            self.assertIn(historique.id, equivalentes_l3)
+            self.assertIn(l3.id, equivalentes_l3)
+            self.assertNotIn(m1.id, equivalentes_l3)
+
+
+    def test_cercle_legacy_derives_its_mention_from_the_official_program(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            cercle = CercleEtude(
+                nom="Finance L3 legacy",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            utilisateur = Utilisateur(
+                nom="Profil legacy", telephone="0340000020",
+                mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle_avec_filiere(cercle, filiere), "parcours")
+            self.assertTrue(cercle_est_national_avec_filiere(cercle, filiere))
+            self.assertTrue(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+    def test_cercle_with_conflicting_mention_and_program_is_flagged_incoherent(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            cercle = CercleEtude(
+                nom="Mention incoherente",
+                createur_id=self.createur_id,
+                mention_id=session.get(Filiere, self.autre_filiere_id).mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            utilisateur = Utilisateur(
+                nom="Profil finance", telephone="0340000021",
+                mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle_avec_filiere(cercle, filiere), "incomplet")
+            self.assertFalse(cercle_est_national_avec_filiere(cercle, filiere))
+            self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
+
+    def test_cercle_with_conflicting_level_and_program_is_flagged_incoherent(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "M1"
+            session.add(filiere)
+            session.commit()
+
+            cercle = CercleEtude(
+                nom="Parcours niveau incorrect",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            utilisateur = Utilisateur(
+                nom="Profil niveau incorrect", telephone="0340000023",
+                mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+                universite_id=self.universite_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            )
+            self.assertEqual(type_cercle_avec_filiere(cercle, filiere), "incomplet")
+            self.assertFalse(cercle_est_national_avec_filiere(cercle, filiere))
+            self.assertFalse(profil_correspond_au_cercle(utilisateur, cercle, session))
 
     def test_utilisateur_meme_mention_filiere_niveau_correspond(self):
         with Session(self.engine) as session:
@@ -527,6 +679,33 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
             ).all()
             return {c.nom for c in resultats}
 
+    def test_cercles_disponibles_exclut_cercle_dont_niveau_conflit_avec_filiere(self):
+        with Session(self.engine) as session:
+            filiere = session.get(Filiere, self.filiere_id)
+            filiere.niveau = "M1"
+            session.add(filiere)
+            session.add(CercleEtude(
+                nom="Parcours mauvais niveau",
+                createur_id=self.createur_id,
+                mention_id=self.mention_id,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            ))
+            session.commit()
+
+        u = Utilisateur(
+            nom="Profil L3", telephone="0340000024",
+            mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+            universite_id=self.universite_id,
+            mention_id=self.mention_id,
+            filiere_id=self.filiere_id,
+            niveau="L3",
+        )
+        resultats = self._noms_disponibles(u)
+        self.assertNotIn("Parcours mauvais niveau", resultats)
+        self.assertNotIn("Finance L3", resultats)
+        self.assertIn("Groupe libre", resultats)
+
     def test_etudiant_avec_profil_complet_voit_le_libre_et_son_cercle_national(self):
         u = Utilisateur(nom="X", telephone="0340000011", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
                          universite_id=self.universite_id, mention_id=self.mention_id,
@@ -538,6 +717,32 @@ class TestConditionCerclesDisponibles(unittest.TestCase):
                          universite_id=self.universite_id, mention_id=self.mention_id,
                          filiere_id=self.filiere_id, niveau="L2")
         self.assertEqual(self._noms_disponibles(u), {"Groupe libre", "Finance L2"})
+
+    def test_cercles_disponibles_inclut_un_cercle_legacy_via_sa_mention_de_parcours(self):
+        with Session(self.engine) as session:
+            session.add(CercleEtude(
+                nom="Legacy Finance L3",
+                createur_id=self.createur_id,
+                mention_id=None,
+                filiere_id=self.filiere_id,
+                niveau="L3",
+            ))
+            session.commit()
+
+        u = Utilisateur(
+            nom="Profil legacy", telephone="0340000022",
+            mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,
+            universite_id=self.universite_id,
+            mention_id=self.mention_id,
+            filiere_id=self.filiere_id,
+            niveau="L3",
+        )
+        self.assertIn("Legacy Finance L3", self._noms_disponibles(u))
+        with Session(self.engine) as session:
+            legacy = session.exec(
+                select(CercleEtude).where(CercleEtude.nom == "Legacy Finance L3")
+            ).one()
+            self.assertTrue(profil_correspond_au_cercle(u, legacy, session))
 
     def test_etudiant_ne_voit_pas_les_cercles_dune_autre_filiere(self):
         u = Utilisateur(nom="X", telephone="0340000013", mot_de_passe_hash="x", role=RoleUtilisateur.ETUDIANT,

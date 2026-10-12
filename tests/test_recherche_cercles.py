@@ -298,6 +298,41 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertIn("Sciences de Gestion", page.text)
         self.assertIn("Finance et Comptabilite", page.text)
 
+    def test_endpoint_parcours_nationaux_exclut_une_offre_liee_a_la_mauvaise_universite(self):
+        with Session(engine) as session:
+            composante = session.exec(
+                select(Faculte).where(Faculte.universite_id == self.universite_id)
+            ).first()
+            autre_universite = Universite(nom="Universite Offre Croisee Cercles")
+            session.add(autre_universite)
+            session.commit()
+            session.refresh(autre_universite)
+
+            parcours_croise = Filiere(
+                nom="Parcours de test offre croisee",
+                faculte_id=composante.id,
+                mention_id=self.mention_id,
+            )
+            session.add(parcours_croise)
+            session.commit()
+            session.refresh(parcours_croise)
+            session.add(ProgrammeUniversitaire(
+                universite_id=autre_universite.id,
+                filiere_id=parcours_croise.id,
+                est_active=True,
+            ))
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertNotIn(
+            "Parcours de test offre croisee",
+            {item["nom"] for item in page.json()},
+        )
+
     def test_endpoint_parcours_nationaux_accepte_un_niveau_optionnel(self):
         page = self.client.get(
             f"/api/academique/mentions/{self.mention_id}/parcours-nationaux"
@@ -306,6 +341,76 @@ class TestRechercheCercles(unittest.TestCase):
         noms = {entree["nom"] for entree in page.json()}
         self.assertIn("Finance et Comptabilite", noms)
         self.assertIn("Droit prive", noms)
+
+    def test_endpoint_refuse_un_niveau_non_reconnu_sans_elargir_les_resultats(self):
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L9"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.json(), [])
+
+    def test_endpoint_prefere_le_parcours_explicite_au_parcours_heritage(self):
+        with Session(engine) as session:
+            historique = session.get(Filiere, self.filiere_id)
+            exact = Filiere(
+                nom=historique.nom,
+                faculte_id=historique.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(exact)
+            session.commit()
+            session.refresh(exact)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=exact.id,
+                est_active=True,
+            ))
+            session.commit()
+            exact_id = exact.id
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        choix = next(
+            item for item in page.json()
+            if item["nom"] == "Finance et Comptabilite"
+        )
+        self.assertEqual(choix["id"], exact_id)
+        self.assertEqual(choix["niveau"], "L3")
+        self.assertFalse(choix["niveau_a_confirmer"])
+
+    def test_endpoint_signale_une_filiere_heritage_dont_le_niveau_reste_a_confirmer(self):
+        nom = "Parcours heritage niveau inconnu"
+        with Session(engine) as session:
+            filiere = Filiere(
+                nom=nom,
+                faculte_id=session.get(Filiere, self.filiere_id).faculte_id,
+                mention_id=self.mention_id,
+                niveau=None,
+            )
+            session.add(filiere)
+            session.commit()
+            session.refresh(filiere)
+            session.add(ProgrammeUniversitaire(
+                universite_id=self.universite_id,
+                filiere_id=filiere.id,
+                est_active=True,
+            ))
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "M2"},
+        )
+        self.assertEqual(page.status_code, 200)
+        choix = next(item for item in page.json() if item["nom"] == nom)
+        self.assertIsNone(choix["niveau"])
+        self.assertTrue(choix["niveau_a_confirmer"])
+
 
 
 

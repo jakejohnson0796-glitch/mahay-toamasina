@@ -24,11 +24,14 @@ def test_traduction_ne_depend_d_aucun_service_tiers_et_protege_le_contenu_ia():
     assert "XMLHttpRequest" not in js
 
 
-def test_styles_du_selecteur_sont_compatibles_avec_la_sidebar_compacte():
-    css = (ROOT / "app" / "static" / "sidebar.css").read_text(encoding="utf-8")
-    assert ".tb-sidebar-langue" in css
-    assert "body.sidebar-compact .tb-sidebar-langue" in css
-    assert "body.sidebar-compact .tb-sidebar-langue label" in css
+def test_styles_du_selecteur_sont_adaptes_a_la_barre_de_preferences_globale():
+    css = (ROOT / "app" / "static" / "preferences-toolbar.css").read_text(encoding="utf-8")
+    assert ".gm-preferences-toolbar" in css
+    assert ".gm-language-control select" in css
+    assert ".gm-language-control select:focus-visible" in css
+    assert "@media (max-width: 900px)" in css
+    assert "@media (max-width: 420px)" in css
+    assert "@media (prefers-reduced-motion: reduce)" in css
 
 
 def test_ci_lance_le_test_navigateur_du_selecteur_de_langue():

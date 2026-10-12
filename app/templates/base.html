@@ -82,6 +82,7 @@
 {% if request.url.path == "/dashboard" %}
 <link rel="stylesheet" href="/static/dashboard-polish.css?v={{ version_asset('dashboard-polish.css') }}">
 {% endif %}
+<link rel="stylesheet" href="/static/preferences-toolbar.css?v={{ version_asset('preferences-toolbar.css') }}">
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
@@ -278,16 +279,6 @@
     </nav>
     {% endif %}
 
-    <section class="tb-sidebar-langue" aria-label="Préférences de langue">
-      <div class="tb-sidebar-langue-entete">
-        <span class="tb-sidebar-langue-icone" aria-hidden="true">🌐</span>
-        <label for="select-langue" data-langue-label>Langue du site</label>
-      </div>
-      <select id="select-langue" name="langue" aria-label="Choisir la langue du site">
-        <option value="fr">Français</option>
-        <option value="mg">Malagasy</option>
-      </select>
-    </section>
   </aside>
 
   {% if request.session.get("user_id") %}
@@ -314,6 +305,16 @@
   {% endif %}
 
   <div class="app-page">
+    <div class="gm-preferences-toolbar" role="region" aria-label="Préférences rapides">
+      <div class="gm-language-control">
+        <span class="gm-language-control-icon" aria-hidden="true">🌐</span>
+        <label for="select-langue" data-langue-label>Langue du site</label>
+        <select id="select-langue" name="langue" aria-label="Choisir la langue du site">
+          <option value="fr">Français</option>
+          <option value="mg">Malagasy</option>
+        </select>
+      </div>
+    </div>
     <header class="mobile-entete-app" aria-label="En-tête mobile">
       <a href="{% if request.session.get("user_id") %}/dashboard{% else %}/{% endif %}" class="sans-decoration">
         <span class="mobile-entete-app-marque">Gasy Mahay</span>

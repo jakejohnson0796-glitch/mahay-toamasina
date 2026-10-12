@@ -1,0 +1,116 @@
+/*
+ * Preferences toolbar — one global language control outside the navigation.
+ * Keep the native select so keyboard users and the existing i18n controller
+ * continue to work without a second stateful control or extra JavaScript.
+ */
+.gm-preferences-toolbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 3.25rem;
+  padding: .4rem clamp(1rem, 2.4vw, 2rem);
+  border-bottom: 1px solid var(--content-border, rgba(30, 45, 42, .12));
+  background: color-mix(in srgb, var(--content-bg, #fff) 92%, transparent);
+}
+
+.gm-language-control {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  min-width: 0;
+  padding: .24rem .35rem .24rem .7rem;
+  border: 1px solid var(--content-border, rgba(30, 45, 42, .15));
+  border-radius: 12px;
+  background: var(--content-surface, #fff);
+  color: var(--content-text, #193536);
+  box-shadow: 0 2px 8px rgba(13, 43, 42, .045);
+}
+
+.gm-language-control-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--refonte-teal, #0d6968) 10%, var(--content-surface, #fff));
+  font-size: 1rem;
+}
+
+.gm-language-control label {
+  margin: 0;
+  color: var(--content-text-muted, #5c706c);
+  font-size: .72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gm-language-control select {
+  min-width: 8.8rem;
+  max-width: min(14rem, 44vw);
+  min-height: 2.35rem;
+  padding: .45rem 1.7rem .45rem .45rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--content-text, #193536);
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.gm-language-control select:hover {
+  background: color-mix(in srgb, var(--content-bg, #fff) 70%, var(--content-border, #dfe5e2));
+}
+
+.gm-language-control select:focus-visible {
+  outline: 2px solid var(--refonte-teal, #0d6968);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .gm-preferences-toolbar {
+    min-height: 2.8rem;
+    padding: .32rem .75rem;
+  }
+
+  .gm-language-control {
+    gap: .35rem;
+    border-radius: 10px;
+    padding-left: .4rem;
+  }
+
+  .gm-language-control-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .gm-language-control label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .gm-language-control select {
+    min-width: 7.6rem;
+    max-width: 65vw;
+    font-size: .76rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gm-language-control select {
+    transition: none !important;
+  }
+}

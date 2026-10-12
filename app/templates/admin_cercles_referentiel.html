@@ -14,9 +14,15 @@
 </div>
 {% endif %}
 {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Niveau invalide.</div>{% endif %}
+{% if request.query_params.get("erreur") == "niveau_requis" %}<div class="erreur">Pour un cercle national, indique un niveau vérifié.</div>{% endif %}
+{% if request.query_params.get("erreur") == "mention_requise" %}<div class="erreur">Choisis une mention correspondant au niveau, ou retire les champs académiques pour garder un groupe libre.</div>{% endif %}
+{% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">La mention choisie n'existe pas ou n'est plus active.</div>{% endif %}
+{% if request.query_params.get("erreur") == "incoherence_mention_filiere" %}<div class="erreur">La mention et le parcours sélectionnés ne correspondent pas.</div>{% endif %}
+{% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur">Le parcours n'est pas confirmé pour ce niveau dans une offre active.</div>{% endif %}
+{% if request.query_params.get("erreur") == "tronc_commun_indisponible" %}<div class="erreur">Aucune composante active ne confirme le tronc commun à ce niveau pour cette mention.</div>{% endif %}
 {% if request.query_params.get("ok") %}<p><strong>Cercle mis a jour.</strong></p>{% endif %}
 
-<p>Assigner mention + niveau a chaque cercle existant. Un cercle sans les deux reste un cercle "libre" (comme aujourd'hui) et n'est pas concerne par la regle "un seul cercle national actif par mention+filiere+niveau".</p>
+<p>Un groupe libre n'a aucun rattachement académique. Tout cercle national doit avoir une mention, un niveau valide et, s'il est spécialisé, un parcours cohérent. Les combinaisons partielles doivent être corrigées avant validation.</p>
 <p class="stat-label">
   {% if tous %}
   Affiche TOUS les cercles, y compris archives. <a href="/admin/referentiel/cercles">Revenir aux cercles actifs seulement</a>.

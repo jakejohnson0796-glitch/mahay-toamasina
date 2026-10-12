@@ -12,6 +12,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
+from sqlalchemy import and_, or_
 from sqlmodel import Session, select
 
 from ..database import get_session
@@ -317,15 +318,23 @@ def assigner_cercle(
         if not mention:
             return RedirectResponse("/admin/referentiel/cercles?erreur=mention_introuvable", status_code=303)
         # Une Filiere rattachee a une Mention ne peut pas etre affectee a
-        # une autre Mention au niveau du cercle. Sans ce controle, un admin
-        # pourrait creer un triplet academique incoherent, puis rendre le
-        # cercle accessible a des etudiants d'une mauvaise mention.
+        # une autre Mention au niveau du cercle.
         if filiere and filiere.mention_id and filiere.mention_id != mention_id_nettoye:
             return RedirectResponse("/admin/referentiel/cercles?erreur=incoherence_mention_filiere", status_code=303)
         cercle.mention_id = mention.id
+    elif filiere and filiere.mention_id:
+        # Quand un parcours existe, la mention effective vient du référentiel ;
+        # ne pas créer une incohérence en vidant le champ dénormalisé.
+        cercle.mention_id = filiere.mention_id
     else:
         cercle.mention_id = None
 
+    if cercle.filiere_id and not filiere:
+        return RedirectResponse("/admin/referentiel/cercles?erreur=parcours_indisponible", status_code=303)
+    if (cercle.mention_id or cercle.filiere_id) and not niveau_nettoye:
+        return RedirectResponse("/admin/referentiel/cercles?erreur=niveau_requis", status_code=303)
+    if niveau_nettoye and not (cercle.mention_id or cercle.filiere_id):
+        return RedirectResponse("/admin/referentiel/cercles?erreur=mention_requise", status_code=303)
     cercle.niveau = niveau_nettoye
 
     if cercle.mention_id and cercle.filiere_id and cercle.niveau:
@@ -337,12 +346,20 @@ def assigner_cercle(
                 "/admin/referentiel/cercles?erreur=parcours_indisponible",
                 status_code=303,
             )
+    elif cercle.mention_id and not cercle.filiere_id and cercle.niveau:
+        if not referentiel_academique.tronc_commun_national_offert(
+            session, cercle.mention_id, cercle.niveau
+        ):
+            return RedirectResponse(
+                "/admin/referentiel/cercles?erreur=tronc_commun_indisponible",
+                status_code=303,
+            )
 
     # Verification anti-doublon (defense en profondeur — la migration
     # pose deja un index unique partiel cote base pour le meme cas).
     if cercle.mention_id and cercle.filiere_id and cercle.niveau:
         filiere_canonique = (
-            referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau=cercle.niveau)
             if filiere
             else filiere
         )
@@ -350,15 +367,21 @@ def assigner_cercle(
             filiere = filiere_canonique
             cercle.filiere_id = filiere.id
         filieres_equivalentes = referentiel_academique._filieres_equivalentes(
-            session, filiere
+            session, filiere, niveau=cercle.niveau
         ) if filiere else [cercle.filiere_id]
         doublon = session.exec(
             select(CercleEtude).where(
                 CercleEtude.id != cercle.id,
-                CercleEtude.mention_id == cercle.mention_id,
-                CercleEtude.filiere_id.in_(filieres_equivalentes),
                 CercleEtude.niveau == cercle.niveau,
                 CercleEtude.statut == StatutCercle.ACTIF,
+                or_(
+                    CercleEtude.mention_id == cercle.mention_id,
+                    and_(
+                        CercleEtude.mention_id.is_(None),
+                        CercleEtude.filiere_id.in_(filieres_equivalentes),
+                    ),
+                ),
+                CercleEtude.filiere_id.in_(filieres_equivalentes),
             )
         ).first()
         if doublon:
@@ -447,7 +470,7 @@ def approuver_demande_creation(
                 status_code=303,
             )
         filiere_demandee = referentiel_academique.filiere_canonique_pour_cercle(
-            session, filiere_demandee
+            session, filiere_demandee, niveau=demande.niveau
         )
         demande.filiere_id = filiere_demandee.id
     else:
@@ -475,15 +498,28 @@ def approuver_demande_creation(
             )
 
     doublon_requete = select(CercleEtude).where(
-        CercleEtude.mention_id == demande.mention_id,
         CercleEtude.niveau == demande.niveau,
         CercleEtude.statut == StatutCercle.ACTIF,
     )
     if filiere_demandee:
-        filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere_demandee)
-        doublon_requete = doublon_requete.where(CercleEtude.filiere_id.in_(filieres_equivalentes))
+        filieres_equivalentes = referentiel_academique._filieres_equivalentes(
+            session, filiere_demandee, niveau=demande.niveau
+        )
+        doublon_requete = doublon_requete.where(
+            or_(
+                CercleEtude.mention_id == demande.mention_id,
+                and_(
+                    CercleEtude.mention_id.is_(None),
+                    CercleEtude.filiere_id.in_(filieres_equivalentes),
+                ),
+            ),
+            CercleEtude.filiere_id.in_(filieres_equivalentes),
+        )
     else:
-        doublon_requete = doublon_requete.where(CercleEtude.filiere_id.is_(None))
+        doublon_requete = doublon_requete.where(
+            CercleEtude.mention_id == demande.mention_id,
+            CercleEtude.filiere_id.is_(None),
+        )
     doublon = session.exec(doublon_requete).first()
     if doublon:
         demande.statut = StatutDemandeCreationCercle.REJETEE

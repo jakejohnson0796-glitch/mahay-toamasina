@@ -37,7 +37,7 @@ from .. import subscription
 from .. import theme_service
 from .. import referentiel_academique
 from ..web_utils import entier_ou_none
-from ..referentiel import NIVEAUX
+from ..referentiel import NIVEAUX, NIVEAUX_LIBELLES
 from ..recherche import clause_recherche_cercles
 from ..rate_limit import limite_depassee
 from .. import gamification
@@ -512,7 +512,7 @@ def liste_cercles(
     elif filiere_id_nettoye:
         filiere_choisie = session.get(Filiere, filiere_id_nettoye)
         if filiere_choisie:
-            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie)
+            ids_equivalents = referentiel_academique._filieres_equivalentes(session, filiere_choisie, niveau=niveau_nettoye)
             requete = requete.where(CercleEtude.filiere_id.in_(ids_equivalents))
         else:
             requete = requete.where(CercleEtude.id == -1)
@@ -640,7 +640,7 @@ def liste_cercles(
         domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
         cercles_avec_info.append({
             "cercle": cercle,
-            "type_cercle": referentiel_academique.type_cercle(cercle),
+            "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere, session),
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
@@ -737,7 +737,7 @@ def liste_cercles(
                 "domaine": domaine,
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
-                "type_cercle": referentiel_academique.type_cercle(cercle),
+                "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere, session),
             })
         return resultat
 
@@ -818,6 +818,7 @@ def liste_cercles(
             "mentions": mentions,
             "filiere_recherchee": filiere_recherchee,
             "niveaux": NIVEAUX,
+            "niveaux_libelles": NIVEAUX_LIBELLES,
             "utilisateur": utilisateur,
             "theme_du_jour": theme_service.get_theme_du_jour(),
             "profil_academique_recherche": profil_academique_recherche,
@@ -871,8 +872,25 @@ def creer_cercle(
     if redirection:
         return redirection
 
-    filiere_id_nettoye = entier_ou_none(filiere_id)
+    filiere_id_nettoye = None if filiere_id == "tronc_commun" else entier_ou_none(filiere_id)
     mention_id_nettoye = entier_ou_none(mention_id)
+    niveau_nettoye = (niveau or "").strip() or None
+
+    # Ne jamais transformer silencieusement un choix académique incomplet
+    # en groupe libre : une mention implique un niveau, et un niveau doit
+    # être rattaché à une mention ou à un parcours connu.
+    if mention_id and mention_id_nettoye is None:
+        return RedirectResponse("/cercles?erreur=mention_introuvable", status_code=303)
+    if filiere_id and filiere_id != "tronc_commun" and filiere_id_nettoye is None:
+        return RedirectResponse("/cercles?erreur=filiere_introuvable", status_code=303)
+    if niveau_nettoye and niveau_nettoye not in NIVEAUX:
+        return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
+    if filiere_id == "tronc_commun" and not mention_id_nettoye:
+        return RedirectResponse("/cercles?erreur=mention_requise", status_code=303)
+    if (mention_id_nettoye or filiere_id_nettoye) and not niveau_nettoye:
+        return RedirectResponse("/cercles?erreur=niveau_requis", status_code=303)
+    if niveau_nettoye and not (mention_id_nettoye or filiere_id_nettoye):
+        return RedirectResponse("/cercles?erreur=mention_requise", status_code=303)
 
     # LIMITE : max MAX_CERCLES_PAR_UTILISATEUR cercles crees par le meme
     # numero de telephone. On verrouille la ligne utilisateur
@@ -906,32 +924,90 @@ def creer_cercle(
                 )
             ).all()
         }
-        cercles_avec_info = [{
-            "cercle": c,
-            "nb_membres": nb_membres_par_cercle.get(c.id, 0),
-            "est_membre": c.id in membres_utilisateur,
-            "en_attente": False,
-            "peut_gerer": _peut_gerer_cercle(c, utilisateur),
-        } for c in cercles]
+        filieres_map = {f.id: f for f in filieres}
+        mentions = session.exec(
+            select(Mention).where(Mention.est_active == True).order_by(Mention.nom)  # noqa: E712
+        ).all()
+        domaines = session.exec(
+            select(Domaine).where(Domaine.est_active == True).order_by(Domaine.nom)  # noqa: E712
+        ).all()
+        mentions_map = {m.id: m for m in mentions}
+        domaines_map = {d.id: d for d in domaines}
+
+        mention_ids_en_attente = set()
+        if cercle_ids:
+            mention_ids_en_attente = set(session.exec(
+                select(DemandeAdhesionCercle.cercle_id).where(
+                    DemandeAdhesionCercle.cercle_id.in_(cercle_ids),
+                    DemandeAdhesionCercle.utilisateur_id == utilisateur.id,
+                    DemandeAdhesionCercle.statut == StatutDemandeAdhesion.EN_ATTENTE,
+                )
+            ).all())
+
+        if _est_admin(utilisateur):
+            compatibilites_limite = set(cercle_ids)
+        elif cercle_ids:
+            condition_disponibilite = referentiel_academique.condition_cercles_disponibles(
+                utilisateur, session
+            )
+            compatibilites_limite = set(session.exec(
+                select(CercleEtude.id)
+                .where(CercleEtude.id.in_(cercle_ids))
+                .where(condition_disponibilite)
+            ).all())
+        else:
+            compatibilites_limite = set()
+
+        cercles_avec_info = []
+        for cercle in cercles:
+            filiere = filieres_map.get(cercle.filiere_id)
+            mention_id_effectif = cercle.mention_id or (filiere.mention_id if filiere else None)
+            mention = mentions_map.get(mention_id_effectif)
+            domaine = domaines_map.get(mention.domaine_id) if mention and mention.domaine_id else None
+            cercles_avec_info.append({
+                "cercle": cercle,
+                "type_cercle": referentiel_academique.type_cercle_avec_filiere(cercle, filiere, session),
+                "domaine": domaine,
+                "mention": mention,
+                "filiere": filiere,
+                "nb_membres": nb_membres_par_cercle.get(cercle.id, 0),
+                "est_membre": cercle.id in membres_utilisateur,
+                "en_attente": cercle.id in mention_ids_en_attente,
+                "profil_compatible": cercle.id in compatibilites_limite,
+                "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
+            })
         return templates.TemplateResponse(
             request,
             "cercles_list.html",
             {
-                "cercles_avec_info": cercles_avec_info, "filieres": filieres, "niveaux": NIVEAUX, "utilisateur": utilisateur,
+                "cercles_avec_info": cercles_avec_info,
+                "filieres": filieres,
+                "domaines": domaines,
+                "mentions": mentions,
+                "filiere_recherchee": None,
+                "niveaux": NIVEAUX,
+                "niveaux_libelles": NIVEAUX_LIBELLES,
+                "utilisateur": utilisateur,
                 "erreur": f"Vous avez deja atteint la limite de {MAX_CERCLES_PAR_UTILISATEUR} cercles crees.",
                 "theme_du_jour": theme_service.get_theme_du_jour(),
-                "recherche_q": "", "recherche_filiere_id": "", "recherche_niveau": "", "recherche_disponibles": False,
-                "page": 1, "total_pages": 1, "total_cercles": len(cercles_avec_info),
+                "recherche_q": "",
+                "recherche_domaine_id": None,
+                "recherche_mention_id": None,
+                "recherche_filiere_id": "",
+                "recherche_tronc_commun": False,
+                "recherche_niveau": "",
+                "recherche_disponibles": False,
+                "recherche_textuelle_active": False,
+                "querystring": "",
+                "page": 1,
+                "total_pages": 1,
+                "total_cercles": len(cercles_avec_info),
+                "has_next_page": False,
             },
         )
 
-    niveau_nettoye = (niveau or "").strip() or None
-
     # --- Cas 1 : demande de cercle NATIONAL (niveau + (filiere OU mention)) ---
     if niveau_nettoye and (filiere_id_nettoye or mention_id_nettoye):
-        if niveau_nettoye not in NIVEAUX:
-            return RedirectResponse("/cercles?erreur=niveau_invalide", status_code=303)
-
         filiere = None
         if filiere_id_nettoye:
             filiere = session.get(Filiere, filiere_id_nettoye)
@@ -943,6 +1019,10 @@ def creer_cercle(
                 # peut pas encore porter de cercle national (voir
                 # /admin/referentiel pour l'assigner).
                 return RedirectResponse("/cercles?erreur=filiere_sans_mention", status_code=303)
+            if mention_id_nettoye and mention_id_nettoye != filiere.mention_id:
+                # Ne pas accepter silencieusement un parcours d'une autre
+                # mention si le navigateur a envoyé une sélection périmée.
+                return RedirectResponse("/cercles?erreur=parcours_mention_incoherente", status_code=303)
             mention_id_cible = filiere.mention_id
 
             erreur_parcours = referentiel_academique.erreur_cercle_parcours(
@@ -950,7 +1030,7 @@ def creer_cercle(
             )
             if erreur_parcours:
                 return RedirectResponse("/cercles?erreur=parcours_indisponible", status_code=303)
-            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere)
+            filiere = referentiel_academique.filiere_canonique_pour_cercle(session, filiere, niveau=niveau_nettoye)
             filiere_id_nettoye = filiere.id
         else:
             # Tronc commun : il depend de la combinaison reelle
@@ -980,21 +1060,30 @@ def creer_cercle(
         # §48 : si le cercle national existe deja, ne pas proposer de
         # doublon — rediriger vers l'existant.
         if filiere:
-            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere)
+            filieres_equivalentes = referentiel_academique._filieres_equivalentes(session, filiere, niveau=niveau_nettoye)
         else:
             filieres_equivalentes = []
 
         cercle_existant_requete = select(CercleEtude).where(
-            CercleEtude.mention_id == mention_id_cible,
             CercleEtude.niveau == niveau_nettoye,
             CercleEtude.statut == StatutCercle.ACTIF,
         )
         if filiere:
             cercle_existant_requete = cercle_existant_requete.where(
-                CercleEtude.filiere_id.in_(filieres_equivalentes)
+                or_(
+                    CercleEtude.mention_id == mention_id_cible,
+                    and_(
+                        CercleEtude.mention_id.is_(None),
+                        CercleEtude.filiere_id.in_(filieres_equivalentes),
+                    ),
+                ),
+                CercleEtude.filiere_id.in_(filieres_equivalentes),
             )
         else:
-            cercle_existant_requete = cercle_existant_requete.where(CercleEtude.filiere_id.is_(None))
+            cercle_existant_requete = cercle_existant_requete.where(
+                CercleEtude.mention_id == mention_id_cible,
+                CercleEtude.filiere_id.is_(None),
+            )
 
         cercle_existant = session.exec(cercle_existant_requete).first()
         if cercle_existant:
@@ -1034,7 +1123,7 @@ def creer_cercle(
         session.commit()
         return RedirectResponse("/cercles?ok=demande_creation_envoyee", status_code=303)
 
-    # --- Cas 2 : cercle "libre" (filiere seule ou aucune) — comportement inchange ---
+    # --- Cas 2 : groupe libre, sans aucune donnée académique partielle. ---
     cercle = CercleEtude(
         nom=nom,
         description=description or None,
@@ -1203,7 +1292,9 @@ def ajouter_membre_par_telephone(
     if not cible:
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
-    if referentiel_academique.cercle_est_national(cercle):
+    if referentiel_academique.cercle_est_national_avec_filiere(
+            cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None, session
+        ):
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
                 f"/cercles/{cercle_id}/membres?erreur=profil_incompatible",
@@ -1583,7 +1674,9 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
-            "cercle_est_national": referentiel_academique.cercle_est_national(cercle),
+            "cercle_est_national": referentiel_academique.cercle_est_national_avec_filiere(
+                cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None, session
+            ),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
