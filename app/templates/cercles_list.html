@@ -135,7 +135,7 @@
     <img src="/static/images/cercles/livre-4.svg" alt="" fetchpriority="high">
   </div>
   <div class="cercles-hero-contenu">
-    <span class="cercles-hero-kicker">Université de Toamasina · Cercles d'étude</span>
+    <span class="cercles-hero-kicker">Cercles d’étude · Madagascar</span>
     <h1 id="titre-hero-cercles" class="cercles-hero-titre">Réviser ensemble.<br>Progresser plus vite.</h1>
     <p class="cercles-hero-sous-titre">Trouve un espace de travail autour de ta mention, de ton parcours et de ton niveau, puis retrouve les autres étudiants au même endroit.</p>
     <div class="cercles-hero-actions">
@@ -165,7 +165,7 @@
   {% endif %}
   {% if cercles_profil_visibilite and cercles_profil_visibilite.mention_id %}
   <a class="cercles-raccourci" href="#cercles-ma-mention">🎓 Ma mention</a>
-  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous ma mention</a>
+  <a class="cercles-raccourci" href="/cercles?mention_id={{ cercles_profil_visibilite.mention_id }}">📚 Tous les cercles de ma mention</a>
   {% endif %}
   {% if cercles_profil_visibilite and cercles_profil_visibilite.domaine_id %}
   <a class="cercles-raccourci" href="/cercles?domaine_id={{ cercles_profil_visibilite.domaine_id }}">🌐 Mon domaine</a>
@@ -505,7 +505,7 @@
 </div>
 
 {% if utilisateur %}
-<div class="carte-formulaire" style="margin-bottom:2rem;">
+<div class="carte-formulaire carte-creation-cercle" style="margin-bottom:2rem;">
   <h3 class="titre-carte">Creer un cercle</h3>
   <p class="circle-creation-guidance">Deux possibilités : crée un groupe libre en laissant les champs académiques vides, ou demande un cercle national avec une mention et un niveau cohérents. Les demandes nationales passent par une validation. Les parcours proposés sont filtrés sur les offres actives du référentiel.</p>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
@@ -633,7 +633,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
           {% if info.filiere %}<span aria-hidden="true"> · </span><span>{{ info.filiere.nom }}</span>{% endif %}
           {% if info.niveau %}<span class="puce-niveau">{{ info.niveau }}</span>{% endif %}
           {% elif info.type_cercle == "tronc_commun" %}
-          <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
+          {% if info.domaine %}<span>{{ info.domaine.nom }}</span>{% endif %}
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
           <span aria-hidden="true"> · </span><span>Tronc commun</span>
           <span class="puce-niveau">{{ info.niveau }}</span>
