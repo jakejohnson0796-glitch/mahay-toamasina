@@ -507,6 +507,8 @@
 {% if utilisateur %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 class="titre-carte">Creer un cercle</h3>
+  {% if request.query_params.get("erreur") == "limite_creation" %}<div class="erreur" role="alert">Tu as atteint la limite de cercles que tu peux créer. Rejoins un cercle existant ou supprime un espace que tu n’utilises plus.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "filiere_introuvable" %}<div class="erreur" role="alert">Le parcours sélectionné est introuvable. Recharge le référentiel et sélectionne-le à nouveau.</div>{% endif %}
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur" role="alert">Le niveau choisi n'est pas valide. Sélectionne Licence 1 à Doctorat 3.</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_requis" %}<div class="erreur" role="alert">Tu as choisi une mention ou un parcours : sélectionne aussi le niveau correspondant.</div>{% endif %}
@@ -636,7 +638,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
           <span>{{ info.domaine.nom if info.domaine else "Domaine non renseigne" }}</span>
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
           <span aria-hidden="true"> · </span><span>Tronc commun</span>
-          <span class="puce-niveau">{{ info.cercle.niveau }}</span>
+          <span class="puce-niveau">{{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) if niveaux_libelles else info.cercle.niveau }}</span>
           {% elif info.type_cercle == "libre" %}
           <span>Groupe libre</span>
           {% else %}
