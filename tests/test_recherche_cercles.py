@@ -28,6 +28,7 @@ from sqlmodel import Session, select  # noqa: E402
 from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
+from app import subscription  # noqa: E402
 from app.models import (  # noqa: E402
     Utilisateur, RoleUtilisateur, CercleEtude, Universite, Faculte, Domaine, Mention, Filiere, ProgrammeUniversitaire, MembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion,
 )
@@ -485,6 +486,14 @@ class TestRechercheCercles(unittest.TestCase):
 
 
     def test_z_creation_et_adhesion_groupe_libre_passent_par_validation_createur(self):
+        # Les routes Cercles sont Premium : ce compte est créé manuellement par
+        # la fixture et n'a donc pas reçu l'essai gratuit de l'inscription.
+        with Session(engine) as session:
+            createur = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == "0350000099")
+            ).one()
+            subscription.creer_essai_gratuit(session, createur)
+
         # Création réelle via HTTP : un groupe libre ne doit pas contourner la
         # demande d'adhésion simplement parce qu'il n'a pas de profil académique.
         page_createur = self.client.get("/cercles")
@@ -510,6 +519,12 @@ class TestRechercheCercles(unittest.TestCase):
             "0359999971",
             "Demandeur groupe libre",
         )
+
+        with Session(engine) as session:
+            demandeur_obj = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == "0359999971")
+            ).one()
+            subscription.creer_essai_gratuit(session, demandeur_obj)
         page_recherche = demandeur.get("/cercles")
         self.assertEqual(page_recherche.status_code, 200)
         self.assertIn(nom_cercle, page_recherche.text)
