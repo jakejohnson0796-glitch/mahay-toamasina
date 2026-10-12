@@ -1291,7 +1291,7 @@ def ajouter_membre_par_telephone(
         return RedirectResponse(f"/cercles/{cercle_id}/membres?erreur=utilisateur_introuvable", status_code=303)
 
     if referentiel_academique.cercle_est_national_avec_filiere(
-            cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+            cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None, session
         ):
         if not referentiel_academique.profil_correspond_au_cercle(cible, cercle, session):
             return RedirectResponse(
@@ -1673,8 +1673,8 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
             "cercle_est_national": referentiel_academique.cercle_est_national_avec_filiere(
-            cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
-        ),
+                cercle, session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None, session
+            ),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
             "message_epingle": message_epingle,
