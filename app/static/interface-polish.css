@@ -1,0 +1,220 @@
+/*
+ * Gasy Mahay — polish des preferences et de la hierarchie des cercles.
+ * Regles volontairement ciblees pour ne pas modifier les autres formulaires.
+ */
+
+/* Les choix de langue et d'apparence sont regroupes dans la zone de preferences
+   en bas de la sidebar, sans panneau massif qui coupe la navigation. */
+.tb-sidebar .tb-sidebar-langue {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: .55rem;
+  width: auto;
+  min-width: 0;
+  margin: .45rem .15rem 0;
+  padding: .48rem .55rem;
+  border: 1px solid rgba(232, 240, 235, .11);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .035);
+  color: #DDE9E3;
+}
+
+.tb-sidebar .tb-sidebar-langue-entete {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .38rem;
+  min-width: 0;
+}
+
+.tb-sidebar .tb-sidebar-langue-icone {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 1.45rem;
+  height: 1.45rem;
+  place-items: center;
+  border: 1px solid rgba(232, 240, 235, .12);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .055);
+  font-size: .8rem;
+}
+
+.tb-sidebar .tb-sidebar-langue label {
+  margin: 0;
+  color: #C3D5CE;
+  font-size: .69rem;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.tb-sidebar .tb-sidebar-langue select {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 2.25rem;
+  margin: 0;
+  padding: .4rem .5rem;
+  border: 1px solid rgba(232, 240, 235, .16);
+  border-radius: 8px;
+  background: #0B383A;
+  color: #FFFFFF;
+  font: inherit;
+  font-size: .73rem;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tb-sidebar .tb-sidebar-langue select:hover {
+  border-color: rgba(240, 199, 139, .55);
+  background: #0E4245;
+}
+
+.tb-sidebar .tb-sidebar-langue select:focus-visible {
+  outline: 2px solid #F0C78B;
+  outline-offset: 2px;
+  border-color: transparent;
+}
+
+@media (min-width: 901px) {
+  body.sidebar-compact .tb-sidebar .tb-sidebar-langue {
+    flex-direction: column;
+    justify-content: center;
+    gap: .32rem;
+    margin-inline: 0;
+    padding: .38rem .24rem;
+  }
+
+  body.sidebar-compact .tb-sidebar .tb-sidebar-langue-entete {
+    justify-content: center;
+  }
+
+  body.sidebar-compact .tb-sidebar .tb-sidebar-langue label {
+    display: none;
+  }
+
+  body.sidebar-compact .tb-sidebar .tb-sidebar-langue select {
+    width: 100%;
+    padding-inline: .08rem;
+    text-align: center;
+    font-size: .61rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .tb-sidebar .tb-sidebar-langue {
+    margin: .55rem .2rem 0;
+    padding: .55rem .6rem;
+  }
+
+  .tb-sidebar .tb-sidebar-langue label {
+    font-size: .73rem;
+  }
+
+  .tb-sidebar .tb-sidebar-langue select {
+    min-height: 2.45rem;
+    font-size: .78rem;
+  }
+}
+
+/* Hierarchie uniforme sur les cartes de cercle : domaine, mention, niveau,
+   puis parcours. Les libelles se replient proprement sur petits ecrans. */
+.cercles-hero-kicker {
+  max-width: 100%;
+  width: fit-content;
+  white-space: normal;
+  line-height: 1.45;
+}
+
+.cercle-card-premium .carte-claire-corps {
+  display: flex;
+  align-items: flex-start;
+  gap: .7rem;
+  min-width: 0;
+}
+
+.cercle-card-premium .carte-claire-avatar {
+  flex: 0 0 auto;
+}
+
+.cercle-card-premium .carte-claire-texte {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cercle-card-premium .carte-claire-titre {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.cercle-card-premium .carte-claire-hierarchie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .28rem .36rem;
+  min-width: 0;
+  font-size: .75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.cercle-card-premium .carte-claire-hierarchie > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.cercle-card-premium .carte-claire-hierarchie .puce-niveau {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: .22rem .48rem;
+  border: 1px solid rgba(11, 100, 98, .2);
+  border-radius: 999px;
+  background: rgba(11, 100, 98, .075);
+  color: var(--content-text);
+  font-size: .68rem;
+  font-weight: 750;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.cercle-card-premium .carte-claire-hierarchie .hierarchie-separateur {
+  color: var(--content-text-muted);
+  opacity: .65;
+}
+
+.cercle-card-premium .carte-claire-hierarchie .hierarchie-parcours {
+  font-weight: 650;
+  color: var(--content-text);
+}
+
+.cercle-card-premium .carte-claire-meta {
+  margin-top: .5rem;
+}
+
+.cercle-card-premium .carte-claire-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+
+@media (max-width: 640px) {
+  .cercle-card-premium .carte-claire-hierarchie {
+    font-size: .72rem;
+  }
+
+  .cercle-card-premium .carte-claire-hierarchie .puce-niveau {
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-sidebar .tb-sidebar-langue select {
+    transition: none !important;
+  }
+}
