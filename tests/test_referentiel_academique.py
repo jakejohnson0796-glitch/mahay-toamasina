@@ -26,6 +26,7 @@ from app.referentiel_academique import (
     type_cercle,
     erreur_cercle_parcours,
     parcours_cercle_offert,
+    filiere_canonique_pour_cercle,
     offre_filiere_active_universite,
     tronc_commun_offert,
 )
@@ -495,7 +496,6 @@ class TestCorrespondanceCercle(unittest.TestCase):
 
     def test_cercle_legacy_refuse_une_mention_explicitement_contradictoire(self):
         with Session(self.engine) as session:
-            filiere = session.get(Filiere, self.autre_filiere_id)
             cercle = CercleEtude(
                 nom="Mention contradictoire",
                 createur_id=self.createur_id,
@@ -504,6 +504,23 @@ class TestCorrespondanceCercle(unittest.TestCase):
                 niveau="L3",
             )
             self.assertEqual(type_cercle(cercle, session), "incomplet")
+
+    def test_representant_national_prefere_la_filiere_du_niveau_exact(self):
+        with Session(self.engine) as session:
+            source_legacy = session.get(Filiere, self.filiere_id)
+            source_legacy.niveau = None
+            session.add(source_legacy)
+            filiere_exacte = Filiere(
+                nom=source_legacy.nom,
+                faculte_id=self.faculte_id,
+                mention_id=self.mention_id,
+                niveau="L3",
+            )
+            session.add(filiere_exacte)
+            session.commit()
+            session.refresh(filiere_exacte)
+            representative = filiere_canonique_pour_cercle(session, filiere_exacte)
+            self.assertEqual(representative.id, filiere_exacte.id)
 
 
 class TestConditionCerclesDisponibles(unittest.TestCase):
