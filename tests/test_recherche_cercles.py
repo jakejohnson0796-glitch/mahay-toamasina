@@ -319,6 +319,36 @@ class TestRechercheCercles(unittest.TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertIn("Revision Analyse Financiere", page.text)
 
+    def test_endpoint_national_ignore_une_offre_active_rattachee_a_la_mauvaise_universite(self):
+        with Session(engine) as session:
+            offre_locale = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.filiere_id == self.filiere_id,
+                    ProgrammeUniversitaire.universite_id == self.universite_id,
+                )
+            ).one()
+            offre_locale.est_active = False
+            session.add(offre_locale)
+
+            universite_erronee = Universite(nom="Universite Offre Croisee")
+            session.add(universite_erronee)
+            session.commit()
+            session.refresh(universite_erronee)
+            session.add(ProgrammeUniversitaire(
+                universite_id=universite_erronee.id,
+                filiere_id=self.filiere_id,
+                est_active=True,
+            ))
+            session.commit()
+
+        page = self.client.get(
+            f"/api/academique/mentions/{self.mention_id}/parcours-nationaux",
+            params={"niveau": "L3"},
+        )
+        self.assertEqual(page.status_code, 200)
+        noms = {entry["nom"] for entry in page.json()}
+        self.assertNotIn("Finance et Comptabilite", noms)
+
     def test_filieres_nationales_excluent_une_offre_inactive(self):
         with Session(engine) as session:
             offre = session.exec(
