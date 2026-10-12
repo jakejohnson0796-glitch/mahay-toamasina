@@ -512,6 +512,9 @@
   {% if request.query_params.get("erreur") == "niveau_requis" %}<div class="erreur">Choisis un niveau pour la mention sélectionnée. Aucun cercle ne sera créé tant que ces informations ne sont pas cohérentes.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_requise" %}<div class="erreur">Choisis une mention ou un parcours avant de choisir un niveau pour un cercle national.</div>{% endif %}
   {% if request.query_params.get("erreur") == "parcours_mention_incoherente" %}<div class="erreur">Le parcours sélectionné ne correspond pas à la mention. Vérifie tes choix et réessaie.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "filiere_introuvable" %}<div class="erreur">Le parcours choisi n'existe plus dans le référentiel. Recharge la page et choisis à nouveau.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "parcours_indisponible" %}<div class="erreur">Ce parcours n'est pas confirmé comme offert à ce niveau. Vérifie les options ou contacte l'administration du référentiel.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "tronc_commun_indisponible" %}<div class="erreur">Le tronc commun n'est pas confirmé pour cette mention, ce niveau et ta composante. Choisis un parcours valide ou vérifie ton profil académique.</div>{% endif %}
   {% if request.query_params.get("erreur") == "filiere_sans_mention" %}<div class="erreur">Cette filiere n'a pas encore de mention assignee — contactez un administrateur avant de demander un cercle national pour elle.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_introuvable" %}<div class="erreur">Mention introuvable.</div>{% endif %}
   {% if request.query_params.get("erreur") == "raison_requise" %}<div class="erreur">Merci d'expliquer pourquoi ce cercle national est necessaire.</div>{% endif %}
