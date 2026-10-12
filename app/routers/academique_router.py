@@ -24,6 +24,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..models import Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire
+from ..referentiel import NIVEAUX
 from ..texte_normalise import normaliser as _normaliser_nom_parcours
 
 router = APIRouter(prefix="/api/academique")
@@ -254,7 +255,7 @@ def lister_parcours_nationaux(
     mention = session.get(Mention, mention_id)
     if not mention or not mention.est_active:
         return []
-    if niveau and niveau not in __import__("app.referentiel", fromlist=["NIVEAUX"]).NIVEAUX:
+    if niveau and niveau not in NIVEAUX:
         return []
 
     offres_toutes = select(ProgrammeUniversitaire.id).where(
@@ -270,10 +271,13 @@ def lister_parcours_nationaux(
         select(Filiere)
         .join(Faculte, Faculte.id == Filiere.faculte_id)
         .join(Universite, Universite.id == Faculte.universite_id)
-        .outerjoin(Domaine, Domaine.id == mention.domaine_id)
+        .join(Mention, Mention.id == Filiere.mention_id)
+        .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
         .where(
             Filiere.mention_id == mention_id,
+            Mention.est_active == True,  # noqa: E712
             Universite.est_active == True,  # noqa: E712
+            or_(Mention.domaine_id.is_(None), Domaine.est_active == True),  # noqa: E712
             or_(~offres_toutes, offre_locale_active),
         )
     )
