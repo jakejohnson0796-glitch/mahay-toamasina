@@ -329,8 +329,12 @@ def assigner_cercle(
     else:
         cercle.mention_id = None
 
-    if filiere and filiere.niveau and not niveau_nettoye:
+    if cercle.filiere_id and not filiere:
+        return RedirectResponse("/admin/referentiel/cercles?erreur=parcours_indisponible", status_code=303)
+    if (cercle.mention_id or cercle.filiere_id) and not niveau_nettoye:
         return RedirectResponse("/admin/referentiel/cercles?erreur=niveau_requis", status_code=303)
+    if niveau_nettoye and not (cercle.mention_id or cercle.filiere_id):
+        return RedirectResponse("/admin/referentiel/cercles?erreur=mention_requise", status_code=303)
     cercle.niveau = niveau_nettoye
 
     if cercle.mention_id and cercle.filiere_id and cercle.niveau:
@@ -340,6 +344,14 @@ def assigner_cercle(
         if erreur_parcours:
             return RedirectResponse(
                 "/admin/referentiel/cercles?erreur=parcours_indisponible",
+                status_code=303,
+            )
+    elif cercle.mention_id and not cercle.filiere_id and cercle.niveau:
+        if not referentiel_academique.tronc_commun_national_offert(
+            session, cercle.mention_id, cercle.niveau
+        ):
+            return RedirectResponse(
+                "/admin/referentiel/cercles?erreur=tronc_commun_indisponible",
                 status_code=303,
             )
 
