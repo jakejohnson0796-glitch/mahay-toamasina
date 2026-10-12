@@ -397,27 +397,64 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
 
 
 
-def type_cercle(cercle: CercleEtude) -> str:
-    """Classifie un cercle selon UNE hierarchie canonique.
+def type_cercle(
+    cercle: CercleEtude,
+    filiere: Optional[Filiere] = None,
+    *,
+    verifier_referentiel: bool = False,
+) -> str:
+    """Classifie un cercle et peut verifier la coherence du parcours reference.
 
     libre        : aucun attribut academique ;
-    tronc_commun : mention + niveau, sans parcours ;
-    parcours     : mention + parcours + niveau ;
-    incomplet    : combinaison partielle/incoherente a revoir.
+    tronc_commun : mention + niveau normalise, sans parcours ;
+    parcours     : mention + parcours + niveau normalise ;
+    incomplet    : combinaison partielle ou incoherente a revoir.
+
+    Quand verifier_referentiel est actif, la Filiere chargee depuis la base
+    permet de detecter les anciens cercles dont mention_id ou niveau ne
+    correspond plus au parcours reference, sans modifier automatiquement
+    les donnees historiques. L'argument reste optionnel pour conserver les
+    appels historiques qui ne disposent que de l'objet CercleEtude.
     """
-    if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
+    mention_id = cercle.mention_id
+    filiere_id = cercle.filiere_id
+    niveau = cercle.niveau
+
+    if not mention_id and not filiere_id and not niveau:
         return "libre"
-    if cercle.mention_id and cercle.niveau and not cercle.filiere_id:
-        return "tronc_commun"
-    if cercle.mention_id and cercle.filiere_id and cercle.niveau:
-        return "parcours"
-    return "incomplet"
+
+    if niveau not in NIVEAUX:
+        return "incomplet"
+
+    if filiere_id is None:
+        return "tronc_commun" if mention_id else "incomplet"
+
+    if not mention_id:
+        return "incomplet"
+
+    if verifier_referentiel:
+        if filiere is None or filiere.id != filiere_id:
+            return "incomplet"
+        if not filiere.mention_id or filiere.mention_id != mention_id:
+            return "incomplet"
+        if filiere.niveau is not None and filiere.niveau != niveau:
+            return "incomplet"
+        if _normaliser_nom_parcours(filiere.nom) == "tronc commun":
+            return "incomplet"
+
+    return "parcours"
 
 
-def cercle_est_national(cercle: CercleEtude) -> bool:
-    """Vrai uniquement pour les cercles nationaux complets :
-    parcours specialise ou tronc commun."""
-    return type_cercle(cercle) in {"tronc_commun", "parcours"}
+def cercle_est_national(
+    cercle: CercleEtude,
+    filiere: Optional[Filiere] = None,
+    *,
+    verifier_referentiel: bool = False,
+) -> bool:
+    """Vrai uniquement pour les cercles nationaux complets et coherents."""
+    return type_cercle(
+        cercle, filiere, verifier_referentiel=verifier_referentiel
+    ) in {"tronc_commun", "parcours"}
 
 
 def parcours_cercle_offert(
@@ -513,7 +550,13 @@ def tronc_commun_offert(
 
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
     """Test canonique d'eligibilite a un cercle."""
-    nature = type_cercle(cercle)
+    filiere_cercle = (
+        session.get(Filiere, cercle.filiere_id)
+        if cercle.filiere_id else None
+    )
+    nature = type_cercle(
+        cercle, filiere_cercle, verifier_referentiel=True
+    )
     if nature == "libre":
         return True
     if nature == "incomplet":
