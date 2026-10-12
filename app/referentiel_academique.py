@@ -452,6 +452,10 @@ def type_cercle_avec_filiere(
     reste explicitement « à vérifier ».
     """
     if not cercle.filiere_id:
+        if cercle.mention_id and session:
+            mention = session.get(Mention, cercle.mention_id)
+            if not mention or not mention.est_active:
+                return "incomplet"
         if cercle.mention_id and cercle.niveau not in NIVEAUX:
             return "incomplet"
         return type_cercle(cercle)
@@ -489,26 +493,64 @@ def parcours_cercle_offert(
     filiere_id: Optional[int],
     niveau: Optional[str],
 ) -> bool:
-    """Vrai si un cercle de parcours correspond a une offre academique reelle."""
-    if not mention_id or not filiere_id or not niveau:
+    """Vrai si le parcours est offert dans une université active au niveau cible."""
+    if not mention_id or not filiere_id or not niveau or niveau not in NIVEAUX:
         return False
 
+    mention = session.get(Mention, mention_id)
     filiere_reference = session.get(Filiere, filiere_id)
-    if not filiere_reference or filiere_reference.mention_id != mention_id:
-        return False
-    if filiere_reference.niveau is not None and filiere_reference.niveau != niveau:
+    if (
+        not mention or not mention.est_active
+        or not filiere_reference
+        or filiere_reference.mention_id != mention_id
+        or (filiere_reference.niveau is not None and filiere_reference.niveau != niveau)
+    ):
         return False
 
-    for filiere_id_equivalent in _filieres_equivalentes(session, filiere_reference, niveau=niveau):
-        filiere = session.get(Filiere, filiere_id_equivalent)
-        if not filiere or filiere.mention_id != mention_id:
+    ids_equivalents = _filieres_equivalentes(
+        session, filiere_reference, niveau=niveau
+    )
+    if not ids_equivalents:
+        return False
+
+    # Charge les parcours équivalents et leur composante en un lot afin que
+    # la classification de chaque carte de cercle ne déclenche pas une série
+    # de requêtes par université/parcours.
+    candidats = session.exec(
+        select(Filiere, Faculte, Universite)
+        .join(Faculte, Faculte.id == Filiere.faculte_id)
+        .join(Universite, Universite.id == Faculte.universite_id)
+        .where(
+            Filiere.id.in_(ids_equivalents),
+            Universite.est_active == True,  # noqa: E712
+        )
+    ).all()
+    if not candidats:
+        return False
+
+    offres = session.exec(
+        select(ProgrammeUniversitaire).where(
+            ProgrammeUniversitaire.filiere_id.in_(ids_equivalents)
+        )
+    ).all()
+    offres_par_filiere: dict[int, list[ProgrammeUniversitaire]] = {}
+    for offre in offres:
+        offres_par_filiere.setdefault(offre.filiere_id, []).append(offre)
+
+    for filiere, faculte, universite in candidats:
+        if filiere.mention_id != mention_id:
             continue
         if filiere.niveau is not None and filiere.niveau != niveau:
             continue
-        faculte = session.get(Faculte, filiere.faculte_id)
-        if not faculte or not faculte.universite_id:
-            continue
-        if offre_filiere_active_universite(session, faculte.universite_id, filiere.id):
+        offres_filiere = offres_par_filiere.get(filiere.id, [])
+        if not offres_filiere:
+            # Rétrocompatibilité : une ligne historique sans aucune offre
+            # enregistrée peut rester utilisable dans sa composante d'origine.
+            return True
+        if any(
+            offre.est_active and offre.universite_id == universite.id == faculte.universite_id
+            for offre in offres_filiere
+        ):
             return True
     return False
 
