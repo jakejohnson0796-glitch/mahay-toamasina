@@ -442,24 +442,31 @@ def type_cercle(cercle: CercleEtude, mention_effective_id: Optional[int] = None)
     return "incomplet"
 
 
-def type_cercle_avec_filiere(cercle: CercleEtude, filiere: Optional[Filiere]) -> str:
-    """Classifie un cercle en controlant son lien reel au referentiel.
+def type_cercle_avec_filiere(
+    cercle: CercleEtude, filiere: Optional[Filiere], session: Optional[Session] = None
+) -> str:
+    """Classifie un cercle en contrôlant son lien réel au référentiel.
 
-    Les cercles historiques peuvent ne pas avoir mention_id rempli : si leur
-    filiere porte bien une mention, on derive cette mention plutot que de les
-    afficher comme incomplets. Une filiere absente, sans mention, ou
-    contradictoire avec la mention enregistree reste un cas a verifier.
+    Les anciens cercles peuvent dériver leur mention de la filière. Une
+    relation manquante, contradictoire, hors niveau ou qui n'est plus offerte
+    reste explicitement « à vérifier ».
     """
     if not cercle.filiere_id:
+        if cercle.mention_id and cercle.niveau not in NIVEAUX:
+            return "incomplet"
         return type_cercle(cercle)
 
     if not filiere or filiere.id != cercle.filiere_id or not filiere.mention_id:
         return "incomplet"
     if cercle.mention_id and cercle.mention_id != filiere.mention_id:
         return "incomplet"
+    if cercle.niveau not in NIVEAUX:
+        return "incomplet"
     if filiere.niveau is not None and filiere.niveau != cercle.niveau:
-        # Un niveau explicite dans le referentiel prime sur le nom du cercle ;
-        # ne pas afficher comme valide une ligne qui sera refusee a l'adhesion.
+        return "incomplet"
+    if session and not parcours_cercle_offert(
+        session, filiere.mention_id, filiere.id, cercle.niveau
+    ):
         return "incomplet"
     return type_cercle(cercle, mention_effective_id=filiere.mention_id)
 
@@ -469,9 +476,11 @@ def cercle_est_national(cercle: CercleEtude) -> bool:
     return type_cercle(cercle) in {"tronc_commun", "parcours"}
 
 
-def cercle_est_national_avec_filiere(cercle: CercleEtude, filiere: Optional[Filiere]) -> bool:
-    """Version tenant compte des anciens cercles dont la mention est derivee."""
-    return type_cercle_avec_filiere(cercle, filiere) in {"tronc_commun", "parcours"}
+def cercle_est_national_avec_filiere(
+    cercle: CercleEtude, filiere: Optional[Filiere], session: Optional[Session] = None
+) -> bool:
+    """Version tenant compte des anciens cercles et de l'offre académique active."""
+    return type_cercle_avec_filiere(cercle, filiere, session) in {"tronc_commun", "parcours"}
 
 
 def parcours_cercle_offert(
@@ -486,6 +495,8 @@ def parcours_cercle_offert(
 
     filiere_reference = session.get(Filiere, filiere_id)
     if not filiere_reference or filiere_reference.mention_id != mention_id:
+        return False
+    if filiere_reference.niveau is not None and filiere_reference.niveau != niveau:
         return False
 
     for filiere_id_equivalent in _filieres_equivalentes(session, filiere_reference, niveau=niveau):
@@ -672,6 +683,7 @@ def condition_cercles_disponibles(
     niveau_filiere_sql = (
         select(Filiere.niveau)
         .where(Filiere.id == CercleEtude.filiere_id)
+        .correlate(CercleEtude)
         .scalar_subquery()
     )
     mentions_coherentes = or_(
