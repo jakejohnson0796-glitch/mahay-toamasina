@@ -397,27 +397,39 @@ def _filieres_equivalentes(session: Session, filiere: Filiere) -> list[int]:
 
 
 
-def type_cercle(cercle: CercleEtude) -> str:
-    """Classifie un cercle selon UNE hierarchie canonique.
+def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
+    """Classifie un cercle en s'appuyant sur le référentiel effectif si disponible.
 
-    libre        : aucun attribut academique ;
-    tronc_commun : mention + niveau, sans parcours ;
-    parcours     : mention + parcours + niveau ;
-    incomplet    : combinaison partielle/incoherente a revoir.
+    Un cercle historique peut avoir mention_id=NULL alors que son parcours
+    référence une Mention valide. La mention du parcours fait alors foi.
+    Toute contradiction explicite entre mention, parcours ou niveau devient
+    « incomplet » au lieu d'être présentée comme un cercle national valide.
     """
     if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
         return "libre"
-    if cercle.mention_id and cercle.niveau and not cercle.filiere_id:
+
+    mention_id = cercle.mention_id
+    if cercle.filiere_id and session is not None:
+        filiere = session.get(Filiere, cercle.filiere_id)
+        if not filiere or not filiere.mention_id:
+            return "incomplet"
+        if mention_id and mention_id != filiere.mention_id:
+            return "incomplet"
+        if cercle.niveau and filiere.niveau and cercle.niveau != filiere.niveau:
+            return "incomplet"
+        mention_id = mention_id or filiere.mention_id
+
+    if mention_id and cercle.niveau and not cercle.filiere_id:
         return "tronc_commun"
-    if cercle.mention_id and cercle.filiere_id and cercle.niveau:
+    if mention_id and cercle.filiere_id and cercle.niveau:
         return "parcours"
     return "incomplet"
 
 
-def cercle_est_national(cercle: CercleEtude) -> bool:
+def cercle_est_national(cercle: CercleEtude, session: Optional[Session] = None) -> bool:
     """Vrai uniquement pour les cercles nationaux complets :
-    parcours specialise ou tronc commun."""
-    return type_cercle(cercle) in {"tronc_commun", "parcours"}
+    parcours spécialisé ou tronc commun."""
+    return type_cercle(cercle, session) in {"tronc_commun", "parcours"}
 
 
 def parcours_cercle_offert(
@@ -512,15 +524,17 @@ def tronc_commun_offert(
 
 
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
-    """Test canonique d'eligibilite a un cercle."""
-    nature = type_cercle(cercle)
+    """Test canonique d'éligibilité, y compris pour les cercles historiques."""
+    nature = type_cercle(cercle, session)
     if nature == "libre":
         return True
     if nature == "incomplet":
         return False
 
+    filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+    mention_id_effectif = cercle.mention_id or (filiere_cercle.mention_id if filiere_cercle else None)
     if nature == "parcours" and not parcours_cercle_offert(
-        session, cercle.mention_id, cercle.filiere_id, cercle.niveau
+        session, mention_id_effectif, cercle.filiere_id, cercle.niveau
     ):
         return False
 
@@ -529,7 +543,7 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
         return False
 
     mention = profil["mention"]
-    if not mention or mention.id != cercle.mention_id or profil["niveau"] != cercle.niveau:
+    if not mention or mention.id != mention_id_effectif or profil["niveau"] != cercle.niveau:
         return False
 
     if nature == "tronc_commun":
@@ -598,11 +612,23 @@ def condition_cercles_disponibles(
 
     filieres_equivalentes = _filieres_equivalentes(session, filiere_utilisateur)
 
+    # Un cercle historique peut avoir mention_id=NULL, mais son parcours
+    # reste rattaché à la mention de l'étudiant. On accepte ce cas legacy
+    # uniquement quand la mention stockée est absente; une mention différente
+    # explicitement renseignée reste une incohérence et doit être exclue.
+    mention_compatible_avec_parcours = or_(
+        CercleEtude.mention_id == mention_id,
+        and_(
+            CercleEtude.mention_id.is_(None),
+            CercleEtude.filiere_id.in_(filieres_equivalentes),
+        ),
+    )
+
     return or_(
         cercle_libre,
         cercle_tronc_commun_correspondant,
         and_(
-            CercleEtude.mention_id == mention_id,
+            mention_compatible_avec_parcours,
             CercleEtude.filiere_id.in_(filieres_equivalentes),
             CercleEtude.niveau == utilisateur.niveau,
         ),
