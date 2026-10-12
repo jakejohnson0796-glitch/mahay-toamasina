@@ -17,6 +17,12 @@
 {% if request.query_params.get("erreur") == "impossible_retirer_admin" %}
 <div class="erreur">Impossible de retirer un administrateur de la plateforme.</div>
 {% endif %}
+{% if request.query_params.get("erreur") == "profil_incompatible" %}
+<div class="erreur" role="alert">Le profil académique de cette personne ne correspond pas au référentiel de ce cercle. Vérifie la mention, le parcours et le niveau avant de l’ajouter.</div>
+{% endif %}
+{% if request.query_params.get("erreur") == "referentiel_incoherent" %}
+<div class="erreur" role="alert">Ce cercle contient des informations académiques incohérentes. L’ajout de membres est suspendu jusqu’à vérification du référentiel par un administrateur.</div>
+{% endif %}
 {% if request.query_params.get("ajoute") %}
 <div class="info">Membre ajoute.</div>
 {% endif %}
