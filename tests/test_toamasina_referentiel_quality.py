@@ -8,11 +8,29 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from sqlmodel import Session, select
+from sqlalchemy import event
+from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import Domaine, Faculte, Filiere, Mention, ProgrammeUniversitaire, Universite
 from app.referentiel_reconciliation import reconcilier
-from tests.test_referentiel_reconciliation import nouvel_engine, source_temporaire
+
+
+def nouvel_engine():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+
+    @event.listens_for(engine, "connect")
+    def activer_cles_etrangeres(connexion, _record):
+        connexion.execute("PRAGMA foreign_keys=ON")
+
+    SQLModel.metadata.create_all(engine)
+    return engine
+
+
+def source_temporaire(formations):
+    fichier = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+    json.dump({"formations": formations}, fichier, ensure_ascii=False)
+    fichier.close()
+    return Path(fichier.name)
 
 
 RACINE = Path(__file__).resolve().parents[1]
