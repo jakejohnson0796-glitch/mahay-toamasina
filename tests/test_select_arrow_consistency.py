@@ -50,3 +50,27 @@ def test_le_correctif_ne_remplace_pas_les_listes_a_selection_multiple():
     assert "select:not([multiple])" in css
     assert "select[multiple]" not in css
     assert css.count("{") == css.count("}")
+
+
+
+def test_filtres_cercles_ne_reintroduisent_pas_la_fleche_native_ou_repetee():
+    page = lire("app/templates/cercles_list.html")
+    declaration_ancienne = page.index(".carte-recherche-cercles select,.carte-recherche-cercles input{")
+    declaration_cible = page.index(
+        ".cercles-page-shell .carte-recherche-cercles form.filtres select:not([multiple]) {"
+    )
+    fin_page_styles = page.index("</style>")
+
+    assert declaration_cible > declaration_ancienne
+    assert declaration_cible < fin_page_styles
+    bloc_cible = page[declaration_cible:fin_page_styles]
+
+    assert "-webkit-appearance: none !important" in bloc_cible
+    assert "appearance: none !important" in bloc_cible
+    assert "background-image: url(" in bloc_cible
+    assert "background-repeat: no-repeat !important" in bloc_cible
+    assert "background-position: right .8rem center !important" in bloc_cible
+    assert "background-size: 1rem 1rem !important" in bloc_cible
+    assert 'html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filtres select:not([multiple])' in bloc_cible
+    assert "stroke='%23526762'" in bloc_cible
+    assert "stroke='%23B5C7C0'" in bloc_cible
