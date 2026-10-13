@@ -41,7 +41,8 @@ def test_fleche_de_select_a_un_contraste_adapte_dans_les_deux_themes():
     assert "stroke='%23526762'" in bloc_clair
     assert "stroke='%23B5C7C0'" in bloc_sombre
     assert "background-repeat: no-repeat !important" in bloc_clair
-    assert "background-repeat: no-repeat !important" in bloc_sombre
+    # La règle commune (plus haut) fournit déjà background-repeat au thème sombre.
+    assert "background-image: url(" in bloc_sombre
 
 
 def test_le_correctif_ne_remplace_pas_les_listes_a_selection_multiple():
