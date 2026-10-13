@@ -392,6 +392,20 @@
     {
       "universite": "Université de Toamasina",
       "ville": "Toamasina",
+      "composante": "Faculté DEG",
+      "domaine": "Sciences de gestion",
+      "mention": "Gestion",
+      "niveau": "M2",
+      "type": "Spécialisation",
+      "parcours": "Commerce International",
+      "debut_specialisation": "M1",
+      "fin_specialisation": "M2",
+      "statut": "Vérifié",
+      "source": "https://www.univ-toamasina.mg/facultes/deg/"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
       "composante": "Faculté des Sciences et Technologie",
       "domaine": "Sciences et technologie",
       "mention": "Mathématiques, Informatique et Applications",
@@ -2044,5 +2058,70 @@
     "Les lignes non suffisamment vérifiées ne sont pas publiées dans les sélecteurs étudiants.",
     "Les cercles de parcours sont nationaux et dédupliqués par (mention, parcours normalisé, niveau).",
     "Les cercles de tronc commun sont identifiés uniquement par (mention, niveau)."
-  ]
+  ],
+  "audit_referentiel": {
+    "date_verification": "2026-10-13",
+    "perimetre_publie": [
+      "Faculté DEG",
+      "Faculté des Sciences et Technologie",
+      "École Normale Supérieure",
+      "Faculté des Lettres et Sciences Humaines"
+    ],
+    "regles": [
+      "Une formation n'est publiée que si elle possède un statut Vérifié ou Confirmé et une source de référence.",
+      "Les niveaux et parcours manquants ne sont jamais déduits automatiquement d'une simple habilitation de mention.",
+      "Les domaines FLSH sont harmonisés sur l'intitulé Arts, Lettres et Sciences Humaines utilisé par le MESUPRES."
+    ],
+    "formations_a_verifier_avant_publication": [
+      {
+        "composante": "Faculté DEG",
+        "mention": "Gestion",
+        "parcours": "CCA — Comptabilité, Contrôle, Audit",
+        "niveaux": [
+          "M1",
+          "M2"
+        ],
+        "statut": "À vérifier — non publié",
+        "motif": "Le parcours CCA n'est pas présent sur la page officielle de la Faculté DEG consultée. Demander une maquette de formation ou un arrêté récent.",
+        "source_consultee": "https://www.univ-toamasina.mg/facultes/deg/"
+      },
+      {
+        "composante": "École Supérieure Polytechnique de Toamasina (ESPT)",
+        "formations_signalees": [
+          "Génie Civil",
+          "Génie des mines",
+          "Génie des Procédés et Environnement"
+        ],
+        "niveaux": "À confirmer",
+        "statut": "À vérifier — hors du périmètre publié",
+        "motif": "Mentionnées dans l'annuaire MESUPRES 2022-2023, mais les niveaux, intitulés actuels et ouvertures 2026-2027 doivent être confirmés avant activation.",
+        "source_consultee": "https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf"
+      },
+      {
+        "composante": "Faculté de Médecine",
+        "formations_signalees": [
+          "Médecine humaine",
+          "Sciences infirmières",
+          "Maïeutique",
+          "Sciences paramédicales"
+        ],
+        "niveaux": "À confirmer par filière",
+        "statut": "À vérifier — hors du périmètre publié",
+        "motif": "Des formations sont recensées par le MESUPRES, mais le référentiel actuel par niveaux et parcours doit être validé avec la faculté.",
+        "source_consultee": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+      },
+      {
+        "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT) et ISSED",
+        "formations_signalees": [
+          "Tourisme",
+          "Socio-management",
+          "Environnement"
+        ],
+        "niveaux": "À confirmer",
+        "statut": "À vérifier — périmètre administratif à confirmer",
+        "motif": "L'annuaire MESUPRES 2022-2023 les recense à Toamasina, mais il faut confirmer leur rattachement actuel à l'université ainsi que les cursus et niveaux ouverts.",
+        "source_consultee": "https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf"
+      }
+    ]
+  }
 }

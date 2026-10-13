@@ -287,7 +287,12 @@ def _trouver_mention_canonique(
         select(Mention).where(Mention.nom == nom_canonique)
     ).first()
     if exact is not None:
-        if exact.domaine_id is None and domaine_id is not None:
+        # La source de cette réconciliation est le référentiel validé de
+        # Toamasina. Son domaine explicite prime sur un rattachement
+        # historique : sinon des mentions FLSH reconnues par le MESUPRES
+        # restent réparties entre « Lettres et sciences humaines » et
+        # « Arts, Lettres et Sciences Humaines » dans les filtres.
+        if domaine_id is not None and exact.domaine_id != domaine_id:
             exact.domaine_id = domaine_id
         exact.est_active = True
         session.add(exact)
@@ -328,7 +333,9 @@ def _trouver_mention_canonique(
         session.delete(doublon)
     if cible.nom != nom_canonique:
         cible.nom = nom_canonique
-    if cible.domaine_id is None and domaine_id is not None:
+    # Même règle que pour la mention exacte ci-dessus : le rattachement
+    # explicite de la source canonique remplace un ancien domaine divergent.
+    if domaine_id is not None and cible.domaine_id != domaine_id:
         cible.domaine_id = domaine_id
     cible.est_active = True
     session.add(cible)
