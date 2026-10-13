@@ -1,0 +1,476 @@
+/*
+ * Gasy Mahay — Design System 2026.10
+ * Couche transversale chargée après les feuilles de style des pages.
+ * But : une identité cohérente, accessible et responsive sans réécrire
+ * les composants métier ni toucher au fonctionnement des formulaires.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Palette claire : papier ivoire très léger, encre vert-charbon, océan et corail. */
+  --refonte-ocean-950: #082F31;
+  --refonte-ocean-900: #0D4645;
+  --refonte-ocean-800: #145A56;
+  --refonte-ocean-700: #176B64;
+  --refonte-teal: #287F77;
+  --refonte-coral: #C86F4E;
+  --refonte-gold: #B78632;
+  --refonte-sable-50: #FBFCFA;
+  --refonte-sable-100: #F3F7F5;
+  --refonte-sable-200: #E9F0ED;
+  --refonte-sable-300: #D8E4DF;
+  --refonte-ink: #1B302D;
+  --refonte-muted: #526762;
+  --refonte-white: #FFFFFF;
+
+  --content-bg: #F3F7F5;
+  --content-surface: #FFFFFF;
+  --content-border: #DCE7E2;
+  --content-text: #1B302D;
+  --content-text-muted: #526762;
+  --content-link: #145F58;
+  --primary: #176B64;
+  --primary-hover: #10564F;
+  --primary-contrast: #FFFFFF;
+  --sidebar-bg: #082F31;
+  --sidebar-text: #F2F7F4;
+  --sidebar-text-muted: #BED0CA;
+  --sidebar-muted: #BED0CA;
+  --accent: #C86F4E;
+  --accent-soft: rgba(200, 111, 78, .13);
+  --terracotta: #B85F42;
+  --terracotta-texte: #8F422D;
+  --gold: #A87820;
+  --star: #A87820;
+
+  --color-success-clair: #28734F;
+  --color-warning-clair: #875B11;
+  --color-danger-clair: #B23F39;
+  --color-info-clair: #276C82;
+  --color-violet-clair: #6D55B5;
+  --color-success: #28734F;
+  --color-warning: #875B11;
+  --color-danger: #B23F39;
+
+  --shadow-sm: 0 1px 2px rgba(16, 54, 48, .045), 0 3px 10px rgba(16, 54, 48, .045);
+  --shadow-md: 0 5px 14px rgba(16, 54, 48, .065), 0 14px 32px rgba(16, 54, 48, .065);
+  --shadow-lg: 0 12px 28px rgba(16, 54, 48, .08), 0 28px 64px rgba(16, 54, 48, .09);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --refonte-radius-sm: 8px;
+  --refonte-radius-md: 14px;
+  --refonte-radius-lg: 18px;
+  --refonte-radius-xl: 24px;
+  --refonte-focus: 0 0 0 3px rgba(40, 127, 119, .22);
+
+  --font-ui: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-code: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+html[data-theme="sombre"] {
+  color-scheme: dark;
+
+  --refonte-ocean-950: #071F20;
+  --refonte-ocean-900: #0B2929;
+  --refonte-ocean-800: #12403E;
+  --refonte-ocean-700: #8ED8CE;
+  --refonte-teal: #70C7BC;
+  --refonte-coral: #F0A080;
+  --refonte-gold: #E5C078;
+  --refonte-sable-50: #101B19;
+  --refonte-sable-100: #111F1D;
+  --refonte-sable-200: #1B2C29;
+  --refonte-sable-300: #304640;
+  --refonte-ink: #EDF5F1;
+  --refonte-muted: #B5C7C0;
+  --refonte-white: #172824;
+
+  --content-bg: #111F1D;
+  --content-surface: #172824;
+  --content-border: #304640;
+  --content-text: #EDF5F1;
+  --content-text-muted: #B5C7C0;
+  --content-link: #9BE1D7;
+  --primary: #8ED8CE;
+  --primary-hover: #B4E8E1;
+  --primary-contrast: #102A27;
+  --sidebar-bg: #071F20;
+  --sidebar-text: #EDF5F1;
+  --sidebar-text-muted: #B5C7C0;
+  --sidebar-muted: #B5C7C0;
+  --accent: #F0A080;
+  --accent-soft: rgba(240, 160, 128, .16);
+  --terracotta: #E58D6C;
+  --terracotta-texte: #F0A080;
+  --gold: #E5C078;
+  --star: #E5C078;
+
+  --color-success-clair: #86D5A6;
+  --color-warning-clair: #F3D18D;
+  --color-danger-clair: #FFA69A;
+  --color-info-clair: #92CEE2;
+  --color-violet-clair: #C5B4FF;
+  --color-success: #86D5A6;
+  --color-warning: #F3D18D;
+  --color-danger: #FFA69A;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, .18);
+  --shadow-md: 0 8px 22px rgba(0, 0, 0, .23);
+  --shadow-lg: 0 18px 48px rgba(0, 0, 0, .28);
+  --refonte-focus: 0 0 0 3px rgba(142, 216, 206, .28);
+}
+
+/* Base typographique : hiérarchie nette, textes confortables, données alignées. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 1.25rem;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui);
+  font-kerning: normal;
+}
+
+body {
+  color: var(--content-text);
+  font-size: 16px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.titre-carte,
+.tb-section-titre {
+  font-family: var(--font-display);
+  color: var(--content-text);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -.025em;
+  text-wrap: pretty;
+}
+
+h1 { font-size: clamp(2rem, 3.4vw, 3.1rem); letter-spacing: -.04em; }
+h2 { font-size: clamp(1.55rem, 2.4vw, 2.15rem); }
+h3 { font-size: clamp(1.2rem, 1.7vw, 1.55rem); }
+h4 { font-size: 1.12rem; }
+h5, h6 { font-size: 1rem; }
+
+p, li, dd, dt { line-height: 1.65; }
+small, .stat-label, .eyebrow { letter-spacing: .015em; }
+strong, b { font-weight: 700; }
+code, pre, kbd, samp, .ops-table-date {
+  font-family: var(--font-code);
+  font-variant-numeric: tabular-nums;
+}
+time, .stat-valeur, .nombre, .prix, .score, .compteur {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection { background: rgba(40, 127, 119, .2); color: var(--content-text); }
+html[data-theme="sombre"] ::selection { background: rgba(142, 216, 206, .25); }
+
+/* Liens et clavier : état perceptible sans dépendre de la couleur seule. */
+a {
+  text-underline-offset: .18em;
+  text-decoration-thickness: .07em;
+  transition: color .16s ease, text-decoration-color .16s ease;
+}
+.contenu-clair a:not(.bouton):not(.cercles-raccourci),
+.page-ops main a:not(.bouton) {
+  color: var(--content-link);
+}
+.contenu-clair a:not(.bouton):hover,
+.page-ops main a:not(.bouton):hover {
+  color: var(--accent);
+}
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+  box-shadow: var(--refonte-focus);
+}
+html[data-theme="sombre"] :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline-color: var(--primary);
+}
+
+/* Cartes : un même langage visuel entre apprentissage, documents, profil et admin. */
+.carte-formulaire,
+.carte-claire,
+.document-upload-card,
+.document-upload-side-card,
+.tb-carte-stat,
+.tb-acces-rapide-item,
+.offre,
+.faq-card,
+.public-card {
+  border-color: var(--content-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.carte-formulaire,
+.carte-claire,
+.document-upload-card,
+.document-upload-side-card,
+.faq-card,
+.public-card {
+  background: var(--content-surface);
+  color: var(--content-text);
+}
+.carte-formulaire,
+.carte-claire {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.carte-formulaire:hover,
+.carte-claire:hover {
+  border-color: var(--refonte-teal);
+  box-shadow: var(--shadow-md);
+}
+.carte-formulaire h1,
+.carte-formulaire h2,
+.carte-formulaire h3,
+.carte-claire h1,
+.carte-claire h2,
+.carte-claire h3 {
+  color: var(--content-text);
+}
+.contenu-clair .carte-claire-description,
+.contenu-clair .carte-claire-meta,
+.contenu-clair .carte-claire-hierarchie,
+.contenu-clair .stat-label {
+  color: var(--content-text-muted);
+}
+
+/* Boutons : hauteurs et états alignés, en conservant les variantes sémantiques. */
+.bouton {
+  min-height: 2.65rem;
+  border-radius: 11px;
+  padding: .68rem 1rem;
+  font-family: var(--font-ui);
+  font-size: .9rem;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: .005em;
+  box-shadow: none;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.bouton-primaire {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-contrast) !important;
+}
+.bouton-primaire:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: var(--primary-contrast) !important;
+  box-shadow: 0 5px 14px rgba(16, 54, 48, .14);
+  transform: translateY(-1px);
+}
+.bouton-secondaire {
+  background: var(--content-surface);
+  border: 1px solid var(--content-border);
+  color: var(--content-text);
+}
+.bouton-secondaire:hover:not(:disabled) {
+  border-color: var(--refonte-teal);
+  background: var(--content-bg);
+  color: var(--content-text);
+}
+.bouton-danger {
+  border-radius: 11px;
+}
+.bouton:disabled,
+button:disabled {
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+button, .bouton, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+/* Champs : même densité, mêmes bords, focus clair en thème clair et sombre. */
+.carte-formulaire label,
+.contenu-clair label,
+.page-ops main label {
+  color: var(--content-text);
+  font-size: .88rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.carte-formulaire input:not([type="checkbox"]):not([type="radio"]),
+.carte-formulaire select,
+.carte-formulaire textarea,
+.contenu-clair input:not([type="checkbox"]):not([type="radio"]),
+.contenu-clair select,
+.contenu-clair textarea,
+.page-ops main input:not([type="checkbox"]):not([type="radio"]),
+.page-ops main select,
+.page-ops main textarea {
+  min-height: 2.8rem;
+  border: 1px solid var(--content-border);
+  border-radius: 11px;
+  background: var(--content-surface);
+  color: var(--content-text);
+  font: inherit;
+  line-height: 1.45;
+  box-shadow: inset 0 1px 1px rgba(16, 54, 48, .025);
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+.carte-formulaire textarea,
+.contenu-clair textarea,
+.page-ops main textarea {
+  min-height: 6rem;
+  padding: .8rem .9rem;
+  resize: vertical;
+}
+.carte-formulaire input:hover,
+.carte-formulaire select:hover,
+.carte-formulaire textarea:hover,
+.contenu-clair input:hover,
+.contenu-clair select:hover,
+.contenu-clair textarea:hover,
+.page-ops main input:hover,
+.page-ops main select:hover,
+.page-ops main textarea:hover {
+  border-color: #9BBDB3;
+}
+.carte-formulaire input:focus,
+.carte-formulaire select:focus,
+.carte-formulaire textarea:focus,
+.contenu-clair input:focus,
+.contenu-clair select:focus,
+.contenu-clair textarea:focus,
+.page-ops main input:focus,
+.page-ops main select:focus,
+.page-ops main textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--refonte-focus);
+}
+input[type="checkbox"],
+input[type="radio"] { accent-color: var(--primary); }
+::placeholder { color: var(--content-text-muted); opacity: .82; }
+
+/* Tableaux, listes et zones d'état. */
+.contenu-clair table,
+.page-ops main table {
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--content-text);
+}
+.contenu-clair table thead th,
+.page-ops main table thead th {
+  background: var(--content-bg);
+  color: var(--content-text);
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .025em;
+}
+.contenu-clair table th,
+.contenu-clair table td,
+.page-ops main table th,
+.page-ops main table td {
+  border-color: var(--content-border);
+  padding: .72rem .85rem;
+  vertical-align: middle;
+}
+.contenu-clair table tbody tr:hover td,
+.page-ops main table tbody tr:hover td {
+  background: var(--content-bg);
+}
+.contenu-clair hr,
+.page-ops main hr { border: 0; border-top: 1px solid var(--content-border); }
+
+/* Navigation : cohérence avec la palette océan, sans modifier les liens disponibles. */
+.tb-sidebar {
+  background: linear-gradient(180deg, #0A3B3B 0%, #082F31 58%, #07282A 100%);
+  border-right: 1px solid rgba(230, 246, 241, .09);
+}
+.tb-sidebar-lien {
+  min-height: 2.7rem;
+  border-radius: 11px;
+  font-family: var(--font-ui);
+  font-size: .86rem;
+  font-weight: 550;
+  transition: background-color .16s ease, color .16s ease, transform .16s ease;
+}
+.tb-sidebar-lien:hover { background: rgba(216, 242, 235, .09); }
+.tb-sidebar-lien-actif {
+  background: rgba(142, 216, 206, .14);
+  color: #FFFFFF;
+  box-shadow: inset 3px 0 0 #80D0C5;
+}
+.tb-sidebar-groupe {
+  font-size: .66rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.tb-sidebar-compte,
+.tb-menu-compte,
+.tb-toggle-theme,
+.tb-sidebar-langue {
+  border-color: rgba(230, 246, 241, .12);
+}
+
+/* Lisibilité des badges et des métadonnées, avec le sens encodé par texte + couleur. */
+.puce-niveau,
+.puce-statut,
+.puce-compatibilite,
+.badge,
+.badge-statut,
+.statut-badge {
+  font-family: var(--font-ui);
+  font-weight: 650;
+  letter-spacing: .005em;
+}
+.puce-niveau {
+  background: rgba(40, 127, 119, .12);
+  color: #145D56;
+}
+html[data-theme="sombre"] .puce-niveau {
+  background: rgba(142, 216, 206, .15);
+  color: #B5EAE2;
+}
+.puce-compatibilite {
+  background: rgba(40, 115, 79, .12);
+  color: var(--color-success-clair);
+}
+
+/* Petits écrans : garder les zones utiles larges et les contrôles accessibles. */
+@media (max-width: 900px) {
+  .contenu-clair { min-width: 0; }
+  .carte-formulaire, .carte-claire { min-width: 0; }
+  .contenu-clair table,
+  .page-ops main table { max-width: 100%; }
+}
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: clamp(1.8rem, 8vw, 2.45rem); }
+  h2 { font-size: clamp(1.45rem, 6vw, 1.85rem); }
+  .carte-formulaire, .carte-claire { border-radius: 14px; }
+  .bouton { min-height: 2.75rem; }
+  .carte-formulaire input:not([type="checkbox"]):not([type="radio"]),
+  .carte-formulaire select,
+  .contenu-clair input:not([type="checkbox"]):not([type="radio"]),
+  .contenu-clair select { font-size: 16px; }
+}
+
+/* Respect du réglage système pour les personnes sensibles au mouvement. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
