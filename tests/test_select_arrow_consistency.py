@@ -71,6 +71,6 @@ def test_filtres_cercles_ne_reintroduisent_pas_la_fleche_native_ou_repetee():
     assert "background-repeat: no-repeat !important" in bloc_cible
     assert "background-position: right .8rem center !important" in bloc_cible
     assert "background-size: 1rem 1rem !important" in bloc_cible
-    assert "html[data-theme=\\\"sombre\\\"] .cercles-page-shell .carte-recherche-cercles form.filtres select:not([multiple])" in bloc_cible
+    assert 'html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filtres select:not([multiple])' in bloc_cible
     assert "stroke='%23526762'" in bloc_cible
     assert "stroke='%23B5C7C0'" in bloc_cible
