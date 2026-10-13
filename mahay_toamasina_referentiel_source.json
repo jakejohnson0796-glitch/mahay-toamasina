@@ -4,13 +4,11 @@
   "universite": "Universite de Toamasina",
   "hierarchie": [
     "Université",
-    "Ville",
-    "Composante / Établissement",
+    "Composante",
     "Domaine",
     "Mention",
     "Niveau",
-    "Type",
-    "Parcours / Filière"
+    "Parcours"
   ],
   "formations": [
     {
