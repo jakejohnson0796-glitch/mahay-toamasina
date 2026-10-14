@@ -76,13 +76,14 @@
       // Une equation de fonction nue est un marqueur fiable d'expression math.
       // On retire une parenthese finale excedentaire due au regroupement de phrase.
       normalisee = normalisee.replace(/\b[fg]\s*\(\s*x\s*\)\s*=\s*[^?;\n]{1,100}/gi, function (expression) {
+        const espaceFinal = (expression.match(/\s+$/) || [""])[0];
         let formule = expression.trim();
         const ouvrantes = (formule.match(/\(/g) || []).length;
         const fermantes = (formule.match(/\)/g) || []).length;
         if (formule.endsWith(")") && fermantes > ouvrantes) {
           formule = formule.slice(0, -1).trimEnd();
         }
-        return tokenFormule + (formules.push(formule) - 1) + finTokenFormule;
+        return tokenFormule + (formules.push(formule) - 1) + finTokenFormule + espaceFinal;
       });
 
       // Les bornes et la differentielle distinguent l'integrale d'un texte ordinaire.
