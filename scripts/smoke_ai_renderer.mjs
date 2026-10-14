@@ -373,4 +373,27 @@ for (const row of optionNodes) {
   if (visible.includes(formFeed) || visible.includes('\\frac')) throw new Error('Raw fraction leaked in a choice');
 }
 
+// Chaque collision JSON connue consomme la séquence entière ; le mot résiduel
+// (rac/ext/abla/ho/eta) ne doit pas rester visible après le rendu.
+const corruptedCommands = [
+  { name: 'form-feed / frac', value: formFeed + 'rac{1}{2}', tail: 'rac' },
+  { name: 'tab / text', value: '\t' + 'ext{m}', tail: 'ext' },
+  { name: 'newline / nabla', value: '\n' + 'abla f', tail: 'abla' },
+  { name: 'carriage-return / rho', value: '\r' + 'ho', tail: 'ho' },
+  { name: 'backspace / beta', value: String.fromCharCode(8) + 'eta', tail: 'eta' }
+];
+for (const sample of corruptedCommands) {
+  const target = window.document.createElement('div');
+  window.document.body.appendChild(target);
+  window.rendreReponseIA('Contrôle : ' + sample.value, target);
+  if (!target.querySelector('.katex, .gm-latex-fallback, .gm-katex')) {
+    throw new Error('Legacy control escape was not recovered: ' + sample.name);
+  }
+  const plain = target.cloneNode(true);
+  plain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+  const visible = plain.textContent || '';
+  if (visible.includes(sample.tail) || /[\u0008\u000C\t\r]/.test(visible)) {
+    throw new Error('Control character or command tail remained visible: ' + sample.name);
+  }
+}
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
