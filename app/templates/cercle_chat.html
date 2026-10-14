@@ -394,6 +394,85 @@
   }
 }
 
+
+/* Cercle chat — couche finale desktop/mobile, sans toucher au protocole métier. */
+.contenu-clair .entete-cercle{align-items:center;gap:.85rem}
+.contenu-clair .entete-cercle-identite{flex:1 1 auto;min-width:0}
+.contenu-clair .entete-cercle-infos{display:flex;flex-direction:column;gap:.22rem;min-width:0}
+.contenu-clair .entete-cercle-titre{max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+.cercle-entete-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;min-width:0;margin-top:.08rem}
+.cercle-entete-meta-item{display:inline-flex;align-items:center;max-width:100%;min-height:26px;padding:.22rem .52rem;border:1px solid var(--content-border);border-radius:999px;background:var(--content-bg);color:var(--content-text-muted);font-size:.72rem;line-height:1.25;overflow-wrap:anywhere}
+.contenu-clair .entete-cercle-sous-titre{align-items:center;gap:.35rem;line-height:1.4;overflow-wrap:anywhere}
+.contenu-clair .entete-cercle-actions{align-items:center;flex:0 0 auto;gap:.4rem}
+.contenu-clair .entete-cercle-actions>a.bouton-icone-cercle,.contenu-clair .entete-cercle-actions>.menu-options-cercle>button.bouton-icone-cercle{display:inline-flex!important;align-items:center;justify-content:center;width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;flex:0 0 auto}
+.contenu-clair .disposition-chat{min-width:0;gap:.85rem}
+.contenu-clair .colonne-conversation{display:flex;flex:1 1 auto;flex-direction:column;min-width:0;gap:.65rem}
+.contenu-clair .fenetre-chat{width:100%;min-width:0;height:clamp(18rem,calc(100dvh - 20rem),60rem)!important;min-height:18rem!important;max-height:calc(100dvh - 10rem)!important;overflow-x:hidden;overscroll-behavior:contain;scroll-padding-block:.75rem}
+.contenu-clair .fenetre-chat-vide{height:clamp(18rem,35vh,25rem)!important;min-height:18rem!important;max-height:25rem!important;padding:.85rem!important;align-content:center}
+.contenu-clair .etat-vide-chat{width:min(620px,100%);max-width:100%;padding:1.15rem 1.05rem 1rem;border-color:var(--content-border);background:var(--content-surface);box-shadow:var(--shadow-sm);backdrop-filter:none;-webkit-backdrop-filter:none}
+.contenu-clair .etat-vide-chat-icone{width:48px;height:48px;border-radius:15px;box-shadow:none}
+.contenu-clair .etat-vide-chat-titre,.contenu-clair .etat-vide-chat-texte{overflow-wrap:anywhere}
+.contenu-clair .etat-vide-chat-texte{font-size:.88rem;line-height:1.55}
+.contenu-clair .etat-vide-chat-action{min-height:44px!important;font-size:.82rem;line-height:1.35;overflow-wrap:anywhere}
+.contenu-clair .message,.contenu-clair .message-corps,.contenu-clair .message-contenu,.contenu-clair .message-auteur,.contenu-clair .thread-apercu,.contenu-clair .thread-apercu-contenu{min-width:0;overflow-wrap:anywhere;word-break:normal}
+.contenu-clair .barre-composition{position:relative!important;inset:auto;z-index:32;width:100%;min-width:0;margin-top:.15rem!important;padding:.55rem!important;border-radius:18px!important;background:var(--content-surface)!important;box-shadow:var(--shadow-sm);overflow:visible}
+.contenu-clair .barre-composition #champ-message{min-width:0!important;max-height:10rem!important;min-height:44px!important;line-height:1.45!important;font-size:.95rem!important;overflow-y:auto;overflow-wrap:anywhere}
+.contenu-clair .barre-composition .bouton-envoyer-message{display:inline-flex;align-items:center;justify-content:center;width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;border-radius:13px!important}
+.contenu-clair .barre-composition .cercle-chat-indicateurs{align-items:center;flex-wrap:wrap;gap:.4rem .75rem;font-size:.72rem!important;line-height:1.4}
+.contenu-clair .barre-composition .cercle-chat-outils{align-items:center;flex-wrap:wrap;gap:.4rem;max-width:100%;overflow:visible}
+.contenu-clair .barre-composition .cercle-chat-outils .outil-cercle{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:40px!important;padding:.4rem .65rem!important;border-radius:11px;font-size:.76rem!important;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
+.contenu-clair .barre-composition .conteneur-emoji-picker{position:relative;min-width:0}
+.contenu-clair .barre-composition .panneau-emojis-v2{position:absolute;left:0;right:auto;bottom:calc(100% + .55rem);z-index:80;width:min(360px,calc(100vw - 1.25rem));max-width:calc(100vw - 1.25rem);max-height:min(24rem,calc(100dvh - 8rem));overflow:auto;overscroll-behavior:contain}
+.contenu-clair .barre-composition .cercle-commandes{left:0;right:auto;width:min(330px,calc(100vw - 1.25rem));max-width:calc(100vw - 1.25rem);max-height:min(18rem,calc(100dvh - 8rem));overflow-y:auto;overscroll-behavior:contain}
+.contenu-clair .panneau-thread{min-width:0;overscroll-behavior:contain}
+.contenu-clair .panneau-thread .corps-panneau-thread{min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;overflow-wrap:anywhere}
+/* Le mode Focus doit conserver son propre bouton de sortie accessible. */
+.cercle-mode-focus .contenu-clair .cercle-chat-outils{max-height:none!important;overflow:visible!important;opacity:1!important;margin:.05rem 0 0!important;padding:.15rem 0 0!important;transform:none!important}
+.cercle-mode-focus .contenu-clair .cercle-chat-outils .outil-cercle:not(#bouton-focus-cercle){display:none!important}
+.cercle-mode-focus .contenu-clair .cercle-chat-outils #bouton-focus-cercle{display:inline-flex!important;min-height:40px!important}
+.cercle-mode-focus .contenu-clair .fenetre-chat{height:clamp(18rem,calc(100dvh - 20rem),60rem)!important;min-height:18rem!important;max-height:calc(100dvh - 10rem)!important}
+@media(max-width:700px){
+ .contenu-clair .entete-cercle{align-items:flex-start!important;gap:.65rem;padding:.7rem!important}
+ .contenu-clair .entete-cercle-identite{flex:1 1 100%;width:100%}
+ .contenu-clair .entete-cercle-titre{font-size:1.08rem}
+ .contenu-clair .entete-cercle-actions{display:grid!important;grid-template-columns:repeat(4,minmax(44px,1fr));width:100%!important;margin:0!important;gap:.4rem;overflow:visible!important}
+ .contenu-clair .entete-cercle-actions>a.bouton-icone-cercle,.contenu-clair .entete-cercle-actions>.menu-options-cercle>button.bouton-icone-cercle{width:100%!important;min-width:44px!important;height:44px!important;min-height:44px!important}
+ .contenu-clair .fenetre-chat:not(.fenetre-chat-vide){height:clamp(14rem,calc(100dvh - 17rem - env(safe-area-inset-bottom)),44rem)!important;min-height:14rem!important;max-height:calc(100dvh - 8.5rem)!important;padding:.7rem .55rem .85rem!important;border-radius:16px!important}
+ .contenu-clair .fenetre-chat-vide{height:auto!important;min-height:0!important;max-height:none!important;padding:.5rem!important;align-content:stretch}
+ .contenu-clair .etat-vide-chat{width:100%;padding:.95rem .75rem .85rem;border-radius:16px}
+ .contenu-clair .etat-vide-chat-actions{grid-template-columns:1fr;gap:.45rem;margin-top:.8rem}
+ .contenu-clair .etat-vide-chat-action{justify-content:flex-start;text-align:left;padding:.65rem .75rem}
+ .contenu-clair .etat-vide-chat-hint{font-size:.7rem;line-height:1.4;opacity:1}
+ .contenu-clair .barre-composition{position:sticky!important;bottom:calc(var(--mobile-nav-fluid,4rem) + env(safe-area-inset-bottom) + .35rem)!important;display:grid!important;grid-template-columns:44px 44px minmax(0,1fr) 44px!important;grid-template-rows:auto auto auto auto!important;column-gap:.35rem!important;row-gap:.35rem!important;padding:.45rem!important;margin-top:.5rem!important;border-radius:16px!important}
+ .contenu-clair .barre-composition #form-fichier>label{grid-column:1!important;grid-row:1!important;width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important}
+ /* Bouton de secours conservé si requestSubmit n'est pas disponible. */
+ .contenu-clair .barre-composition #form-fichier>.bouton-envoyer-fichier{display:inline-flex!important;grid-column:1/span 2!important;grid-row:2!important;align-items:center;justify-content:center;width:auto!important;min-width:0!important;min-height:40px!important;padding:.35rem .55rem!important;font-size:.75rem!important;line-height:1.2;opacity:1!important;white-space:normal!important}
+ .contenu-clair .barre-composition .conteneur-emoji-picker{grid-column:2!important;grid-row:1!important}
+ .contenu-clair .barre-composition #form-chat>.conteneur-mentions-suggestions{grid-column:3!important;grid-row:1!important;width:100%!important;min-width:0!important}
+ .contenu-clair .barre-composition #form-chat>.bouton-envoyer-message{grid-column:4!important;grid-row:1!important}
+ .contenu-clair .barre-composition .cercle-chat-indicateurs{grid-column:1/-1!important;grid-row:3!important;justify-content:space-between;font-size:.68rem!important}
+ .contenu-clair .barre-composition .cercle-chat-outils{grid-column:1/-1!important;grid-row:4!important;justify-content:flex-start!important;flex-wrap:wrap!important;overflow:visible!important;padding-top:.1rem}
+ .contenu-clair .barre-composition .cercle-chat-outils .outil-cercle{flex:0 1 auto;min-height:40px!important;padding:.45rem .55rem!important;font-size:.72rem!important}
+ .contenu-clair .barre-composition .cercle-chat-outils .outil-cercle .texte-option{display:inline!important}
+ .contenu-clair .barre-composition .panneau-emojis-v2{left:-2.75rem;width:min(340px,calc(100vw - 1.25rem));max-width:calc(100vw - 1.25rem);max-height:min(22rem,calc(100dvh - 7rem))}
+ .contenu-clair .barre-composition .cercle-commandes{left:0;right:auto;width:min(320px,calc(100vw - 1.25rem));max-height:calc(100dvh - 7rem)}
+ .contenu-clair .panneau-thread{position:fixed!important;left:.5rem!important;right:.5rem!important;top:max(.6rem,env(safe-area-inset-top))!important;bottom:calc(4.25rem + env(safe-area-inset-bottom))!important;width:auto!important;height:auto!important;max-width:none!important;max-height:none!important;min-height:0!important;z-index:80!important;border-radius:16px!important}
+ .contenu-clair .panneau-thread .corps-panneau-thread{min-height:0;overflow-y:auto}
+ .cercle-mode-focus .contenu-clair .fenetre-chat{height:clamp(14rem,calc(100dvh - 17rem - env(safe-area-inset-bottom)),44rem)!important;min-height:14rem!important;max-height:calc(100dvh - 8.5rem)!important}
+}
+@media(max-width:390px){
+ .contenu-clair .entete-cercle{padding:.55rem!important}
+ .cercle-entete-meta-item{font-size:.68rem;padding-inline:.42rem}
+ .contenu-clair .barre-composition{column-gap:.25rem!important;padding:.38rem!important}
+ .contenu-clair .barre-composition #champ-message{font-size:.85rem!important}
+}
+@media(max-height:560px) and (min-width:701px){
+ .contenu-clair .fenetre-chat{height:clamp(14rem,calc(100dvh - 17rem),42rem)!important;min-height:14rem!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .contenu-clair .etat-vide-chat-action,.contenu-clair .barre-composition .outil-cercle{transition:none!important;transform:none!important}
+}
+
 </style>
 <svg class="fond-anneaux" viewBox="0 0 240 240" aria-hidden="true">
   <circle cx="190" cy="30" r="40" fill="none" stroke="currentColor" stroke-width="1"/>
@@ -441,7 +520,16 @@
     <span class="entete-cercle-icone" aria-hidden="true">{{ icone("cercles", taille=22) }}</span>
     <div class="entete-cercle-infos">
       <h2 class="entete-cercle-titre">{{ cercle.nom }}</h2>
-      <p class="entete-cercle-sous-titre">En ligne : <span id="liste-presence">—</span></p>
+      {% if mention_cercle or filiere_cercle or niveau_cercle_libelle %}
+      <div class="cercle-entete-meta" aria-label="Informations académiques du cercle">
+        {% if mention_cercle %}<span class="cercle-entete-meta-item">{{ mention_cercle.nom }}</span>{% endif %}
+        {% if filiere_cercle %}<span class="cercle-entete-meta-item">{{ filiere_cercle.nom }}</span>{% endif %}
+        {% if niveau_cercle_libelle %}<span class="cercle-entete-meta-item">{{ niveau_cercle_libelle }}</span>{% endif %}
+      </div>
+      {% else %}
+      <div class="cercle-entete-meta" aria-label="Type de cercle"><span class="cercle-entete-meta-item">Groupe libre</span></div>
+      {% endif %}
+      <p class="entete-cercle-sous-titre"><span aria-hidden="true">●</span> En ligne : <span id="liste-presence">—</span></p>
     </div>
   </div>
   <div class="entete-cercle-actions">
@@ -543,11 +631,11 @@
         <div id="panneau-emojis" class="panneau-emojis-v2" hidden>
           <div class="entete-panneau-emojis">
             <strong>Emojis</strong>
-            <button type="button" id="bouton-emoji-fermer" class="bouton-emoji-fermer">✕</button>
+            <button type="button" id="bouton-emoji-fermer" class="bouton-emoji-fermer" aria-label="Fermer le sélecteur d’emojis" title="Fermer">✕</button>
           </div>
           <input type="search" id="recherche-emoji" class="champ-recherche-emoji" placeholder="Rechercher un emoji…" autocomplete="off" aria-label="Rechercher un emoji">
           <div class="emojis-barre" role="tablist" aria-label="Catégories d'emojis">
-            <button type="button" class="emojis-onglet actif" data-categorie-emoji="recents">🕘</button>
+            <button type="button" class="emojis-onglet actif" data-categorie-emoji="recents" aria-label="Emojis récents" title="Emojis récents">🕘</button>
             <button type="button" class="emojis-onglet" data-categorie-emoji="emotion">😀 Émotions</button>
             <button type="button" class="emojis-onglet" data-categorie-emoji="reaction">👍 Réactions</button>
             <button type="button" class="emojis-onglet" data-categorie-emoji="etude">📚 Études</button>
@@ -570,10 +658,10 @@
         <span id="compteur-message-cercle">0/2000</span>
       </div>
       <div class="cercle-chat-outils" aria-label="Outils du cercle">
-        <button type="button" class="outil-cercle" id="bouton-commande-cercle" title="Raccourcis">⚡ <span class="texte-option">Raccourcis</span></button>
-        <button type="button" class="outil-cercle" id="bouton-focus-cercle" title="Activer le mode Focus" aria-pressed="false">🎯 <span class="texte-option">Focus</span></button>
-        <button type="button" class="outil-cercle" id="bouton-compact-cercle" title="Activer le mode Compact" aria-pressed="false">📐 <span class="texte-option">Compact</span></button>
-        <button type="button" class="outil-cercle" id="bouton-plein-ecran-cercle" title="Plein écran">⛶ <span class="texte-option">Plein écran</span></button>
+        <button type="button" class="outil-cercle" id="bouton-commande-cercle" title="Raccourcis" aria-label="Raccourcis de message">⚡ <span class="texte-option">Raccourcis</span></button>
+        <button type="button" class="outil-cercle" id="bouton-focus-cercle" title="Activer le mode Focus" aria-label="Mode Focus" aria-pressed="false">🎯 <span class="texte-option">Focus</span></button>
+        <button type="button" class="outil-cercle" id="bouton-compact-cercle" title="Activer le mode Compact" aria-label="Mode Compact" aria-pressed="false">📐 <span class="texte-option">Compact</span></button>
+        <button type="button" class="outil-cercle" id="bouton-plein-ecran-cercle" title="Plein écran" aria-label="Basculer en plein écran">⛶ <span class="texte-option">Plein écran</span></button>
       </div>
       <div id="commandes-cercle" class="cercle-commandes" hidden>
         <button type="button" class="cercle-commande" data-commande="question">❓ <span><strong>Question</strong><br><small>Demander de l’aide au groupe</small></span></button>
@@ -1447,6 +1535,10 @@
       return;
     }
 
+    // Respecter la lecture de l'historique : suivre les nouveaux messages
+    // uniquement lorsque le lecteur est déjà proche du bas du fil.
+    const suivreNouveauxMessages =
+      fenetreChat.scrollHeight - fenetreChat.scrollTop - fenetreChat.clientHeight <= 96;
     const videActuel = document.getElementById("etat-vide-chat");
     if (videActuel) videActuel.remove();
     fenetreChat.classList.remove("fenetre-chat-vide");
@@ -1506,7 +1598,7 @@
     decorerActions(bulle);
 
     fenetreChat.appendChild(bulle);
-    fenetreChat.scrollTop = fenetreChat.scrollHeight;
+    if (suivreNouveauxMessages) fenetreChat.scrollTop = fenetreChat.scrollHeight;
     appliquerPointsPresence();
   }
 

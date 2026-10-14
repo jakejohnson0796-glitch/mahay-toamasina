@@ -1613,11 +1613,22 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "epingle_par": noms_epingleurs.get(ligne_epinglee.epingle_par_id),
             }
 
+    # Exposer uniquement les métadonnées académiques réellement liées au
+    # cercle : ne jamais déduire une mention à partir du nom de la filière.
+    mention_cercle = session.get(Mention, cercle.mention_id) if cercle.mention_id else None
+    filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
+    niveau_cercle_libelle = (
+        NIVEAUX_LIBELLES.get(cercle.niveau, cercle.niveau) if cercle.niveau else None
+    )
+
     return templates.TemplateResponse(
         request,
         "cercle_chat.html",
         {
             "cercle": cercle,
+            "mention_cercle": mention_cercle,
+            "filiere_cercle": filiere_cercle,
+            "niveau_cercle_libelle": niveau_cercle_libelle,
             "membre": membre,
             "en_attente": en_attente,
             "profil_compatible": referentiel_academique.profil_correspond_au_cercle(utilisateur, cercle, session),
