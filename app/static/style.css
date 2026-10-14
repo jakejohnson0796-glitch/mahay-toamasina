@@ -422,13 +422,20 @@ main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
    ensemble a chaque fois. */
 button {
   font-family: inherit;
-  color: inherit;
+  /* A foreground tied to the content theme is a safe default. Components
+     with their own palette (primary, danger, sidebar, etc.) override it
+     with a paired foreground/background. Do not inherit arbitrary parent
+     text colors on controls with their own colored background. */
+  color: var(--content-text, currentColor);
   background: transparent;
   appearance: none;
   -webkit-appearance: none;
 }
 button:disabled {
-  opacity: 0.5;
+  /* Keep the label legible during submission/loading. Disabled variants
+     communicate state through their own colors and the cursor, not by
+     fading the text and background together. */
+  opacity: 1;
   cursor: not-allowed;
 }
 
@@ -449,7 +456,7 @@ button:disabled {
    9.39:1). */
 .bouton-primaire { background: var(--primary); color: var(--content-surface); }
 .bouton-primaire:hover { background: var(--primary-hover); text-decoration: none; }
-.bouton-primaire:disabled, .bouton-primaire:disabled:hover { background: var(--primary); opacity: 0.5; }
+.bouton-primaire:disabled, .bouton-primaire:disabled:hover { background: var(--primary); color: var(--content-surface); opacity: 1; }
 .bouton-secondaire { background: var(--content-surface); border: 1px solid var(--primary); color: var(--primary); }
 .bouton-secondaire:hover { background: var(--content-bg); text-decoration: none; }
 .bouton-secondaire:disabled, .bouton-secondaire:disabled:hover { border-color: var(--content-border); color: var(--content-text-muted); background: var(--content-surface); }
@@ -1637,7 +1644,12 @@ input:focus, select:focus, textarea:focus {
   font-size: 1.1rem;
   cursor: pointer;
 }
-.bouton-controle-actif { background: var(--primary); border-color: var(--primary); }
+.bouton-controle-actif {
+  background: var(--primary);
+  border-color: var(--primary);
+  /* --primary becomes light in dark mode; pair it with a dark foreground. */
+  color: var(--content-surface);
+}
 .bouton-quitter {
   width: auto;
   border-radius: 6px;
@@ -2834,7 +2846,7 @@ main.main-tb { background: var(--content-bg); min-height: 100%; color: var(--con
   .chargement-spinner { animation: none; opacity: 0.5; }
 }
 .quiz-aide-generation { font-size: 0.8rem; color: var(--content-text-muted); margin: 0.5rem 0 0; }
-.bouton-form[disabled] { opacity: 0.75; cursor: progress; }
+.bouton-form[disabled] { opacity: 1; cursor: progress; }
 
 .quiz-progression {
   position: sticky;
