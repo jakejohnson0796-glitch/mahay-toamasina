@@ -64,6 +64,23 @@
       return tokenBloc + index + finTokenBloc;
     });
 
+    // Recuperation des anciennes reponses deja decodees en caracteres de
+    // controle par JSON : \f + rac -> \frac, \t + ext -> \text, etc.
+    // Les blocs de code et les formules bien delimitees sont deja proteges.
+    resultat = resultat
+      .replace(/\u000C(?=rac\b)/g, "\\frac")
+      .replace(/\t(?=ext\b)/g, "\\text")
+      .replace(/\t(?=imes\b)/g, "\\times")
+      .replace(/\t(?=an\b)/g, "\\tan")
+      .replace(/\t(?=au\b)/g, "\\tau")
+      .replace(/\t(?=heta\b)/g, "\\theta")
+      .replace(/\n(?=abla\b)/g, "\\nabla")
+      .replace(/\n(?=eq\b)/g, "\\neq")
+      .replace(/\r(?=ho\b)/g, "\\rho")
+      .replace(/\r(?=ight\b)/g, "\\right")
+      .replace(/\u0008(?=egin\b)/g, "\\begin")
+      .replace(/\u0008(?=eta\b)/g, "\\beta");
+
     resultat = resultat.split("\n").map(function (ligne) {
       let normalisee = ligne;
       const formules = [];
@@ -72,6 +89,22 @@
       normalisee = normalisee
         .replace(/\bdisplaystyle\s+\\?int(?=\s*_\{)/gi, "\\displaystyle \\int")
         .replace(/(^|[^\w\\])int(?=\s*_\{)/gi, "$1\\int");
+
+      // Les fractions nues sont frequentes dans les QCM. On supprime le
+      // mot displaystyle s'il a perdu son antislash, puis on protege la
+      // fraction entiere pour KaTeX (dans la question et dans chaque choix).
+      normalisee = normalisee.replace(
+        /\(\s*(?:\\?displaystyle\s+)?(\\(?:frac|dfrac|tfrac)\{(?:[^{}]|\{[^{}]*\})+\}\{(?:[^{}]|\{[^{}]*\})+\})\s*\)/g,
+        function (_match, formule) {
+          return tokenFormule + (formules.push(formule) - 1) + finTokenFormule;
+        }
+      );
+      normalisee = normalisee.replace(
+        /\\(?:frac|dfrac|tfrac)\{(?:[^{}]|\{[^{}]*\})+\}\{(?:[^{}]|\{[^{}]*\})+\}/g,
+        function (formule) {
+          return tokenFormule + (formules.push(formule) - 1) + finTokenFormule;
+        }
+      );
 
       // Une equation de fonction nue est un marqueur fiable d'expression math.
       // On retire une parenthese finale excedentaire due au regroupement de phrase.
@@ -113,8 +146,7 @@
     // invisibles connus qui peuvent perturber les délimiteurs sans modifier
     // les caractères pédagogiques visibles.
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
-    texte = texte.replace(/\r\n?/g, "\n");
-    return normaliserExpressionsMathematiquesNues(texte);
+    return normaliserExpressionsMathematiquesNues(texte).replace(/\r\n?/g, "\n");
   }
 
   function antislashEchappe(texte, index) {
