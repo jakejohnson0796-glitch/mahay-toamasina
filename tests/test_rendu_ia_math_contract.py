@@ -50,3 +50,13 @@ def test_renderer_repare_les_controles_latex_sans_toucher_au_code():
     assert r'.replace(/\r(?=ho\b)/g, "\\rho")' in source
     assert "Les blocs de code et les formules bien delimitees sont deja proteges." in source
 
+
+def test_contrat_anticipe_les_collisions_de_symboles_par_discipline():
+    assert "le sens d'un symbole dépend de la matière et du contexte" in REGLES_FORMAT
+    assert r"\\Delta et \\delta" in REGLES_FORMAT
+    assert r"\\Omega et \\omega" in REGLES_FORMAT
+    assert "Co n'est pas CO" in REGLES_FORMAT
+    assert "unités composées et dimensions" in REGLES_FORMAT
+    assert "`<=`, `!=`" in REGLES_FORMAT
+    assert "Ar et MGA" in REGLES_FORMAT
+    assert "Ne fais aucune substitution globale" in REGLES_FORMAT
