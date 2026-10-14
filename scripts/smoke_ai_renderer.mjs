@@ -297,4 +297,36 @@ if (!renduRelanceApresChargement) {
   throw new Error('Renderer was not retriggered after dependency loading completed');
 }
 
+
+// Référence de prévention issue du guide scientifique : les caractères Unicode
+// restent du texte copiable, tandis que les commandes de formules composées
+// passent par KaTeX. Les unités SI et les libellés comptables restent intacts.
+const guideHost = window.document.createElement('div');
+window.document.body.appendChild(guideHost);
+const guideSource = [
+  'Symboles Unicode : ≤, ≥, ≠, ≈, →, ↔, ∈, ⊆, ∀, ∃, ℝ, Ω, μ, λ, √, π, ∑, ∫, ∂, ∇.',
+  'Unités SI : v = 3 m/s ; a = 2 m/s² ; ρ = 1 kg/m³ ; Ω·m ; J/(mol·K).',
+  String.raw`Formules : \(\Delta x=3\), \(\Omega=2\pi f\), \(\hbar\omega\).`,
+  'Comptabilité : Ar 125 000 ; MGA ; HT ; TVA ; TTC.'
+].join('\n');
+window.rendreReponseIA(guideSource, guideHost);
+if (guideHost.querySelectorAll('.katex').length < 3) {
+  throw new Error('Guide Greek-letter/physics formulas were not rendered');
+}
+const guideClone = guideHost.cloneNode(true);
+guideClone
+  .querySelectorAll('.katex, .gm-katex, .gm-latex-fallback')
+  .forEach((node) => node.remove());
+const guideVisible = guideClone.textContent || '';
+for (const command of ['\\Delta', '\\Omega', '\\hbar']) {
+  if (guideVisible.includes(command)) {
+    throw new Error('Guide LaTeX command remained raw: ' + command);
+  }
+}
+for (const symbol of ['≤', 'ℝ', 'Ω', '∇', 'm/s²', 'Ω·m', 'Ar 125 000', 'MGA', 'TVA']) {
+  if (!guideVisible.includes(symbol)) {
+    throw new Error('Guide Unicode/unit/accounting content was altered: ' + symbol);
+  }
+}
+
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
