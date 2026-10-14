@@ -416,109 +416,109 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                                 session.commit()
                 continue
 
-                nom_composante_source = ligne["composante"]
-                nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
-                    normaliser(nom_composante_source),
-                    nom_composante_source,
-                )
-                facultes_universite = session.exec(
-                    select(Faculte).where(Faculte.universite_id == universite.id)
-                ).all()
+            nom_composante_source = ligne["composante"]
+            nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
+                normaliser(nom_composante_source),
+                nom_composante_source,
+            )
+            facultes_universite = session.exec(
+                select(Faculte).where(Faculte.universite_id == universite.id)
+            ).all()
+            faculte = next(
+                (
+                    fac for fac in facultes_universite
+                    if normaliser(fac.nom) == normaliser(nom_composante_cible)
+                ),
+                None,
+            )
+            if faculte is None:
+                # Dernier filet : ne pas dupliquer une composante dont
+                # le nom historique n'aurait pas ete declare dans les alias.
                 faculte = next(
                     (
                         fac for fac in facultes_universite
-                        if normaliser(fac.nom) == normaliser(nom_composante_cible)
+                        if normaliser(fac.nom) == normaliser(nom_composante_source)
                     ),
                     None,
                 )
-                if faculte is None:
-                    # Dernier filet : ne pas dupliquer une composante dont
-                    # le nom historique n'aurait pas ete declare dans les alias.
-                    faculte = next(
-                        (
-                            fac for fac in facultes_universite
-                            if normaliser(fac.nom) == normaliser(nom_composante_source)
-                        ),
-                        None,
-                    )
-                if faculte is None:
-                    faculte = Faculte(
-                        nom=nom_composante_source,
-                        universite_id=universite.id,
-                    )
-                    if not dry_run:
-                        session.add(faculte)
-                        session.commit()
-                        session.refresh(faculte)
-                    facultes_par_cle[(universite.id, normaliser(nom_composante_source))] = faculte
-                    rapport.facultes_creees.append(
-                        (ligne["universite"], nom_composante_source)
-                    )
-
-                cle_exacte = (
-                    mention.id if mention is not None else None,
-                    normaliser(ligne.get("niveau")),
-                    normaliser(ligne["parcours"]),
+            if faculte is None:
+                faculte = Faculte(
+                    nom=nom_composante_source,
+                    universite_id=universite.id,
                 )
-                filiere = filieres_exactes_par_faculte.get(faculte.id, {}).get(cle_exacte)
+                if not dry_run:
+                    session.add(faculte)
+                    session.commit()
+                    session.refresh(faculte)
+                facultes_par_cle[(universite.id, normaliser(nom_composante_source))] = faculte
+                rapport.facultes_creees.append(
+                    (ligne["universite"], nom_composante_source)
+                )
 
-                # Une migration historique peut avoir rattache un parcours
-                # au mauvais ID de Mention tout en gardant le bon nom, niveau
-                # et composante. Pour la source stricte, ce triplet (niveau +
-                # parcours + composante) constitue alors une correspondance
-                # certaine si UNE seule Filiere candidate existe. On corrige
-                # son mention_id vers la mention exacte de la source au lieu
-                # de creer un doublon artificiel.
-                if filiere is None:
-                    candidates = {
-                        candidate.id: candidate
-                        for (mention_id_historique, niveau_historique, nom_historique), candidate
-                        in filieres_exactes_par_faculte.get(faculte.id, {}).items()
-                        if niveau_historique == normaliser(ligne.get("niveau"))
-                        and nom_historique == normaliser(ligne["parcours"])
-                    }
-                    if len(candidates) == 1:
-                        filiere = next(iter(candidates.values()))
-                        if mention is not None and filiere.mention_id != mention.id:
-                            filiere.mention_id = mention.id
-                            if not dry_run:
-                                session.add(filiere)
-                                session.commit()
-                        filieres_exactes_par_faculte[faculte.id][cle_exacte] = filiere
+            cle_exacte = (
+                mention.id if mention is not None else None,
+                normaliser(ligne.get("niveau")),
+                normaliser(ligne["parcours"]),
+            )
+            filiere = filieres_exactes_par_faculte.get(faculte.id, {}).get(cle_exacte)
 
-                if filiere is None:
-                    filiere = Filiere(
-                        nom=ligne["parcours"],
-                        faculte_id=faculte.id,
-                        mention_id=mention.id if mention is not None else None,
-                        niveau=ligne.get("niveau") or None,
-                    )
-                    if not dry_run:
-                        session.add(filiere)
-                        session.commit()
-                        session.refresh(filiere)
-                    filieres_par_faculte[faculte.id][normaliser(filiere.nom)] = filiere
-                    filieres_exactes_par_faculte[faculte.id][
-                        (filiere.mention_id, normaliser(filiere.niveau), normaliser(filiere.nom))
-                    ] = filiere
-                    rapport.filieres_creees.append(
-                        (ligne["universite"], nom_composante_source, ligne["parcours"])
-                    )
+            # Une migration historique peut avoir rattache un parcours
+            # au mauvais ID de Mention tout en gardant le bon nom, niveau
+            # et composante. Pour la source stricte, ce triplet (niveau +
+            # parcours + composante) constitue alors une correspondance
+            # certaine si UNE seule Filiere candidate existe. On corrige
+            # son mention_id vers la mention exacte de la source au lieu
+            # de creer un doublon artificiel.
+            if filiere is None:
+                candidates = {
+                    candidate.id: candidate
+                    for (mention_id_historique, niveau_historique, nom_historique), candidate
+                    in filieres_exactes_par_faculte.get(faculte.id, {}).items()
+                    if niveau_historique == normaliser(ligne.get("niveau"))
+                    and nom_historique == normaliser(ligne["parcours"])
+                }
+                if len(candidates) == 1:
+                    filiere = next(iter(candidates.values()))
+                    if mention is not None and filiere.mention_id != mention.id:
+                        filiere.mention_id = mention.id
+                        if not dry_run:
+                            session.add(filiere)
+                            session.commit()
+                    filieres_exactes_par_faculte[faculte.id][cle_exacte] = filiere
 
-                cle_programme = (universite.id, filiere.id)
-                if cle_programme not in programmes_existants:
-                    if not dry_run:
-                        session.add(
-                            ProgrammeUniversitaire(
-                                universite_id=universite.id,
-                                filiere_id=filiere.id,
-                                est_active=True,
-                            )
+            if filiere is None:
+                filiere = Filiere(
+                    nom=ligne["parcours"],
+                    faculte_id=faculte.id,
+                    mention_id=mention.id if mention is not None else None,
+                    niveau=ligne.get("niveau") or None,
+                )
+                if not dry_run:
+                    session.add(filiere)
+                    session.commit()
+                    session.refresh(filiere)
+                filieres_par_faculte[faculte.id][normaliser(filiere.nom)] = filiere
+                filieres_exactes_par_faculte[faculte.id][
+                    (filiere.mention_id, normaliser(filiere.niveau), normaliser(filiere.nom))
+                ] = filiere
+                rapport.filieres_creees.append(
+                    (ligne["universite"], nom_composante_source, ligne["parcours"])
+                )
+
+            cle_programme = (universite.id, filiere.id)
+            if cle_programme not in programmes_existants:
+                if not dry_run:
+                    session.add(
+                        ProgrammeUniversitaire(
+                            universite_id=universite.id,
+                            filiere_id=filiere.id,
+                            est_active=True,
                         )
-                        session.commit()
-                    programmes_existants.add(cle_programme)
-                    rapport.programmes_crees += 1
-                continue
+                    )
+                    session.commit()
+                programmes_existants.add(cle_programme)
+                rapport.programmes_crees += 1
+            continue
 
             if universite.id in universites_curatees_ids:
                 # Le Tronc commun reste porte par Mention + niveau dans le profil :
