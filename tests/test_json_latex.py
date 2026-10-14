@@ -99,3 +99,33 @@ def test_ne_double_pas_les_antislashs_latex_deja_echappes_en_json():
 
     assert charger_json_ia(texte) == {"fraction": attendu}
 
+
+def test_repare_les_commandes_grecques_majuscule_et_notations_du_guide():
+    # Les commandes LaTeX du guide doivent survivre même si le modèle omet
+    # l'échappement JSON des antislashs.
+    texte = r'''{"variation":"\Delta x","frequence":"\Omega","ensemble":"\mathbb{R}","geometrie":"\angle ABC \perp d","logique":"A \Rightarrow B","physique":"\hbar\omega"}'''
+
+    resultat = charger_json_ia(texte)
+
+    assert resultat == {
+        "variation": r"\Delta x",
+        "frequence": r"\Omega",
+        "ensemble": r"\mathbb{R}",
+        "geometrie": r"\angle ABC \perp d",
+        "logique": r"A \Rightarrow B",
+        "physique": r"\hbar\omega",
+    }
+
+
+def test_preserve_exactement_les_symboles_unicode_et_contextes_du_guide():
+    # Les graphies Unicode, unités, formules chimiques, opérateurs de code et
+    # libellés comptables sont du contenu : le transport ne doit pas les réécrire.
+    donnees = {
+        "maths": "x ≤ 10; π ≈ 3,14; ℝ; ∀x, ∃y; A ∩ B; ∅",
+        "physique": "v = 3 m/s; a = 2 m/s²; ρ = 1 kg/m³; Ω·m; J/(mol·K)",
+        "chimie": "Co ≠ CO; H₂O(l) ⇌ 2 H⁺(aq)",
+        "informatique": "a <= b && b != null; x ^ 2; obj?.value ?? 0",
+        "comptabilite": "Ar 125 000; MGA; HT; TVA; TTC; P = 250",
+    }
+
+    assert charger_json_ia(json.dumps(donnees, ensure_ascii=False)) == donnees

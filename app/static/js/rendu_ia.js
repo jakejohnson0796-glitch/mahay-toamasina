@@ -57,56 +57,65 @@
     const finTokenBloc = "\uE101";
     const tokenFormule = "\uE102GMATHRAW_";
     const finTokenFormule = "\uE103";
-    const zonesProtegees = /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+\$/g;
+    const zonesCodeProtegees = /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60/g;
+    const zonesMathProtegees = /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+\$/g;
 
-    let resultat = String(source == null ? "" : source).replace(zonesProtegees, function (bloc) {
+    // Protéger d’abord le code, mais pas encore les formules : les séquences
+    // de contrôle corrompues doivent aussi être réparées à l’intérieur de math.
+    let resultat = String(source == null ? "" : source).replace(zonesCodeProtegees, function (bloc) {
       const index = blocsProteges.push(bloc) - 1;
       return tokenBloc + index + finTokenBloc;
     });
-
     // Recuperation des anciennes reponses deja decodees en caracteres de
     // controle par JSON : \f + rac -> \frac, \t + ext -> \text, etc.
-    // Les blocs de code et les formules bien delimitees sont deja proteges.
+    // Le code est déjà protégé ; les formules délimitées seront protégées après réparation.
     resultat = resultat
-      .replace(/\u000C(?=rac\b)/g, "\\frac")
-      .replace(/\u000C(?=orall\b)/g, "\\forall")
-      .replace(/\u000C(?=lat\b)/g, "\\flat")
-      .replace(/\u000C(?=box\b)/g, "\\fbox")
-      .replace(/\t(?=extstyle\b)/g, "\\textstyle")
-      .replace(/\t(?=ext\b)/g, "\\text")
-      .replace(/\t(?=imes\b)/g, "\\times")
-      .replace(/\t(?=frac\b)/g, "\\tfrac")
-      .replace(/\t(?=an\b)/g, "\\tan")
-      .replace(/\t(?=anh\b)/g, "\\tanh")
-      .replace(/\t(?=au\b)/g, "\\tau")
-      .replace(/\t(?=heta\b)/g, "\\theta")
-      .replace(/\t(?=ilde\b)/g, "\\tilde")
-      .replace(/\t(?=herefore\b)/g, "\\therefore")
-      .replace(/\t(?=op\b)/g, "\\top")
-      .replace(/\t(?=o\b)/g, "\\to")
-      .replace(/\n(?=abla\b)/g, "\\nabla")
-      .replace(/\n(?=eq\b)/g, "\\neq")
-      .replace(/\n(?=u\b)/g, "\\nu")
-      .replace(/\n(?=eg\b)/g, "\\neg")
-      .replace(/\n(?=exists\b)/g, "\\nexists")
-      .replace(/\n(?=otin\b)/g, "\\notin")
-      .replace(/\n(?=subseteq\b)/g, "\\nsubseteq")
-      .replace(/\n(?=leq\b)/g, "\\nleq")
-      .replace(/\n(?=geq\b)/g, "\\ngeq")
-      .replace(/\r(?=ho\b)/g, "\\rho")
-      .replace(/\r(?=ight\b)/g, "\\right")
-      .replace(/\r(?=ightarrow\b)/g, "\\rightarrow")
-      .replace(/\r(?=angle\b)/g, "\\rangle")
-      .replace(/\r(?=floor\b)/g, "\\rfloor")
-      .replace(/\r(?=vert\b)/g, "\\rvert")
-      .replace(/\r(?=m\b)/g, "\\rm")
-      .replace(/\u0008(?=egin\b)/g, "\\begin")
-      .replace(/\u0008(?=eta\b)/g, "\\beta")
-      .replace(/\u0008(?=matrix\b)/g, "\\bmatrix")
-      .replace(/\u0008(?=inom\b)/g, "\\binom")
-      .replace(/\u0008(?=oldsymbol\b)/g, "\\boldsymbol")
-      .replace(/\u0008(?=mod\b)/g, "\\bmod")
-      .replace(/\u0008(?=ig\b)/g, "\\big");
+      .replace(/\u000Crac\b/g, "\\frac")
+      .replace(/\u000Corall\b/g, "\\forall")
+      .replace(/\u000Clat\b/g, "\\flat")
+      .replace(/\u000Cbox\b/g, "\\fbox")
+      .replace(/\textstyle\b/g, "\\textstyle")
+      .replace(/\text(?=\s*\{)/g, "\\text")
+      .replace(/\times\b/g, "\\times")
+      .replace(/\tfrac\b/g, "\\tfrac")
+      .replace(/\tan\b/g, "\\tan")
+      .replace(/\tanh\b/g, "\\tanh")
+      .replace(/\tau\b/g, "\\tau")
+      .replace(/\theta\b/g, "\\theta")
+      .replace(/\tilde\b/g, "\\tilde")
+      .replace(/\therefore\b/g, "\\therefore")
+      .replace(/\top\b/g, "\\top")
+      .replace(/\to\b/g, "\\to")
+      .replace(/\nabla\b/g, "\\nabla")
+      .replace(/\neq\b/g, "\\neq")
+      .replace(/\nu\b/g, "\\nu")
+      .replace(/\neg\b/g, "\\neg")
+      .replace(/\nexists\b/g, "\\nexists")
+      .replace(/\notin\b/g, "\\notin")
+      .replace(/\nsubseteq\b/g, "\\nsubseteq")
+      .replace(/\nleq\b/g, "\\nleq")
+      .replace(/\ngeq\b/g, "\\ngeq")
+      .replace(/\rho\b/g, "\\rho")
+      .replace(/\right\b/g, "\\right")
+      .replace(/\rightarrow\b/g, "\\rightarrow")
+      .replace(/\rangle\b/g, "\\rangle")
+      .replace(/\rfloor\b/g, "\\rfloor")
+      .replace(/\rvert\b/g, "\\rvert")
+      .replace(/\rm\b/g, "\\rm")
+      .replace(/\u0008egin\b/g, "\\begin")
+      .replace(/\u0008eta\b/g, "\\beta")
+      .replace(/\u0008matrix\b/g, "\\bmatrix")
+      .replace(/\u0008inom\b/g, "\\binom")
+      .replace(/\u0008oldsymbol\b/g, "\\boldsymbol")
+      .replace(/\u0008mod\b/g, "\\bmod")
+      .replace(/\u0008ig\b/g, "\\big");
+
+    // Réparer les séquences d’abord, puis protéger les formules déjà délimitées
+    // pour que la récupération des formules nues ne les réécrive pas.
+    resultat = resultat.replace(zonesMathProtegees, function (bloc) {
+      const index = blocsProteges.push(bloc) - 1;
+      return tokenBloc + index + finTokenBloc;
+    });
 
     resultat = resultat.split("\n").map(function (ligne) {
       let normalisee = ligne;
@@ -443,10 +452,15 @@
     "ln", "log", "sin", "cos", "tan", "cot", "exp", "partial", "nabla",
     "vec", "mathbf", "mathbb", "mathrm", "text", "times", "cdot", "pm",
     "leq", "geq", "neq", "approx", "in", "infty", "alpha", "beta", "gamma",
-    "delta", "theta", "lambda", "mu", "pi", "sigma", "forall", "exists", "neg",
+    "delta", "theta", "lambda", "mu", "nu", "pi", "rho", "sigma", "tau", "phi", "omega", "forall", "exists", "neg",
     "nexists", "notin", "subseteq", "supseteq", "nsubseteq", "nleq", "ngeq",
-    "equiv", "cong", "propto", "rightarrow", "leftarrow", "leftrightarrow",
-    "therefore", "top", "tilde", "tanh", "bmod", "to", "rfloor", "rangle", "rvert"
+    "equiv", "cong", "propto", "rightarrow", "leftarrow", "leftrightarrow", "Re", "Im",
+    "Delta", "Gamma", "Lambda", "Omega", "Sigma", "Theta", "Xi", "Pi", "Phi", "Psi", "Upsilon",
+    "angle", "triangle", "perp", "parallel", "subset", "supset", "cup", "cap", "emptyset", "setminus",
+    "wedge", "vee", "lnot", "Rightarrow", "Leftarrow", "Leftrightarrow", "oplus", "hbar",
+    "varepsilon", "vartheta", "varphi", "varsigma", "varkappa", "lfloor", "lceil", "lVert", "rVert",
+    "ldots", "cdots", "vdots", "ddots", "overrightarrow", "overleftarrow", "because", "square", "Box",
+    "iint", "iiint", "oint", "therefore", "top", "tilde", "tanh", "bmod", "to", "rfloor", "rangle", "rvert"
   ];
 
   function estCommandeLatexNue(valeur) {
@@ -460,7 +474,7 @@
     /\\(?:frac|dfrac|tfrac)\{[^{}\n]*\}\{[^{}\n]*\}/g,
     /\\sqrt(?:\[[^\]\n]*\])?\{[^{}\n]*\}/g,
     /\\(?:text|mathrm|mathbf|mathbb|mathcal|operatorname|vec)\{[^{}\n]*\}/g,
-    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Re|Im|therefore|top|tilde|tanh|bmod)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
+    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Delta|Gamma|Lambda|Omega|Sigma|Theta|Xi|Pi|Phi|Psi|Upsilon|angle|triangle|perp|parallel|subset|supset|cup|cap|emptyset|setminus|wedge|vee|lnot|Rightarrow|Leftarrow|Leftrightarrow|oplus|hbar|varepsilon|vartheta|varphi|varsigma|varkappa|lfloor|lceil|lVert|rVert|ldots|cdots|vdots|ddots|overrightarrow|overleftarrow|because|square|Box|iint|iiint|oint|Re|Im|therefore|top|tilde|tanh|bmod)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
     /[A-Za-z](?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)/g,
     /\\(?:cdot|times|pm|leq|geq|neq|approx|infty|to|rightarrow|left|right|,|:|;|!)/g
   ];

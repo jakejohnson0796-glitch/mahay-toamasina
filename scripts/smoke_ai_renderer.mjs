@@ -297,4 +297,123 @@ if (!renduRelanceApresChargement) {
   throw new Error('Renderer was not retriggered after dependency loading completed');
 }
 
+
+// Prévention issue du guide des symboles : distinguer Unicode, LaTeX, unités et contexte.
+const guideHost = window.document.createElement('div');
+window.document.body.appendChild(guideHost);
+const guideSource = [
+  'Symboles Unicode : ≤, ≥, ≠, ≈, →, ↔, ∈, ⊆, ∀, ∃, ℝ, Ω, μ, λ, √, π, ∑, ∫, ∂, ∇.',
+  'Unités SI : v = 3 m/s ; a = 2 m/s² ; ρ = 1 kg/m³ ; Ω·m ; J/(mol·K).',
+  String.raw`Formules : \(\Delta x=3\), \(\Omega=2\pi f\), \(\hbar\omega\).`,
+  String.raw`Notation historique nue : \Delta x, \Omega, \angle ABC, \perp d, \hbar\omega.`,
+  'Chimie : Co ≠ CO ; H₂O(l) ⇌ 2 H⁺(aq).',
+  'Informatique : a <= b && b != null; x ^ 2; obj?.value ?? 0.',
+  'Comptabilité : Ar 125 000 ; MGA ; HT ; TVA ; TTC.'
+].join('\n');
+window.rendreReponseIA(guideSource, guideHost);
+if (guideHost.querySelectorAll('.gm-latex-fallback').length < 5) {
+  throw new Error('Undelimited historical Greek/physics LaTeX did not use the fallback renderer');
+}
+if (guideHost.querySelectorAll('.katex').length < 3) {
+  throw new Error('Guide Greek-letter/physics formulas were not rendered');
+}
+const guideClone = guideHost.cloneNode(true);
+guideClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const guideVisible = guideClone.textContent || '';
+for (const command of ['\\Delta', '\\Omega', '\\hbar', '\\angle', '\\perp']) {
+  if (guideVisible.includes(command)) throw new Error('Raw LaTeX command remained visible: ' + command);
+}
+for (const symbol of ['≤', 'ℝ', 'Ω', '∇', 'm/s²', 'Ω·m', 'Co ≠ CO', 'Ar 125 000', 'MGA', 'TVA', '&&', '?.', '??']) {
+  if (!guideVisible.includes(symbol)) throw new Error('Guide symbol/context was altered: ' + symbol);
+}
+// Régression exacte du cas signalé : les escapes JSON \f doivent redevenir des fractions.
+const badQuizHost = window.document.createElement('div');
+window.document.body.appendChild(badQuizHost);
+const formFeed = String.fromCharCode(12);
+window.rendreReponseIA(
+  'Question 03\nQuel est le résultat de la simplification de (displaystyle ' + formFeed + 'rac{12}{18}) ?',
+  badQuizHost
+);
+if (badQuizHost.querySelectorAll('.katex').length < 1) {
+  throw new Error('Broken historical quiz fraction was not recovered');
+}
+const badQuizText = badQuizHost.cloneNode(true);
+badQuizText.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+if ((badQuizText.textContent || '').includes(formFeed) || (badQuizText.textContent || '').includes('\\frac')) {
+  throw new Error('Broken raw control/LaTeX remained visible in the quiz question');
+}
+const fractionOptions = ['2/3', '3/4', '4/6', '5/9'];
+const optionLabels = ['A', 'B', 'C', 'D'];
+const optionNodes = [];
+for (let index = 0; index < fractionOptions.length; index += 1) {
+  const row = window.document.createElement('div');
+  row.className = 'quiz-choice';
+  const label = window.document.createElement('span');
+  label.className = 'quiz-choice-label';
+  label.textContent = optionLabels[index];
+  const answer = window.document.createElement('span');
+  answer.className = 'quiz-choice-value';
+  const [numerator, denominator] = fractionOptions[index].split('/');
+  window.document.body.appendChild(row);
+  row.append(label, answer);
+  window.rendreReponseIA('(' + formFeed + 'rac{' + numerator + '}{' + denominator + '})', answer);
+  optionNodes.push(row);
+}
+if (optionNodes.length !== 4 || new Set(optionNodes.map((row) => row.querySelector('.quiz-choice-label')?.textContent)).size !== 4) {
+  throw new Error('Quiz answers were not kept as four separate selectable options');
+}
+if (optionNodes.some((row) => row.querySelectorAll('.katex').length < 1)) {
+  throw new Error('One or more quiz fraction options were not rendered');
+}
+for (const row of optionNodes) {
+  const answer = row.querySelector('.quiz-choice-value');
+  const clone = answer.cloneNode(true);
+  clone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+  const visible = clone.textContent || '';
+  if (visible.includes(formFeed) || visible.includes('\\frac')) throw new Error('Raw fraction leaked in a choice');
+}
+
+// Chaque collision JSON connue consomme la séquence entière ; le mot résiduel
+// (rac/ext/abla/ho/eta) ne doit pas rester visible après le rendu.
+const corruptedCommands = [
+  { name: 'form-feed / frac', value: formFeed + 'rac{1}{2}', tail: 'rac' },
+  { name: 'tab / text', value: '\t' + 'ext{m}', tail: 'ext' },
+  { name: 'newline / nabla', value: '\n' + 'abla f', tail: 'abla' },
+  { name: 'carriage-return / rho', value: '\r' + 'ho', tail: 'ho' },
+  { name: 'backspace / beta', value: String.fromCharCode(8) + 'eta', tail: 'eta' }
+];
+for (const sample of corruptedCommands) {
+  const target = window.document.createElement('div');
+  window.document.body.appendChild(target);
+  window.rendreReponseIA('Contrôle : ' + sample.value, target);
+  if (!target.querySelector('.katex, .gm-latex-fallback, .gm-katex')) {
+    throw new Error('Legacy control escape was not recovered: ' + sample.name);
+  }
+  const plain = target.cloneNode(true);
+  plain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+  const visible = plain.textContent || '';
+  if (visible.includes(sample.tail) || /[\u0008\u000C\t\r]/.test(visible)) {
+    throw new Error('Control character or command tail remained visible: ' + sample.name);
+  }
+}
+// Les corrections doivent aussi intervenir si les données historiques ont déjà des délimiteurs math.
+const delimitedCorruptions = [
+  { name: 'inline delimiters', value: 'Inline : \\(' + formFeed + 'rac{1}{2}\\)' },
+  { name: 'legacy dollar delimiters', value: 'Dollar : ' + String.fromCharCode(36) + formFeed + 'rac{3}{4}' + String.fromCharCode(36) },
+  { name: 'display delimiters', value: 'Display : \\[' + '\t' + 'ext{m}\\]' }
+];
+for (const sample of delimitedCorruptions) {
+  const target = window.document.createElement('div');
+  window.document.body.appendChild(target);
+  window.rendreReponseIA(sample.value, target);
+  if (!target.querySelector('.katex')) {
+    throw new Error('Corrupted command inside delimited math was not repaired: ' + sample.name);
+  }
+  const plain = target.cloneNode(true);
+  plain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+  if (/[\u0008\u000C\t\r]/.test(plain.textContent || '')) {
+    throw new Error('Control character remained in an already-delimited formula: ' + sample.name);
+  }
+}
+
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));

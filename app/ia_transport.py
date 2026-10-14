@@ -53,6 +53,20 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
   \f, \t, \n, \r ou \b en caractère de contrôle à l'intérieur d'une commande.
 - Conserve fidèlement les sauts de ligne, tabulations et retours chariot.
 - N'utilise pas les anciens marqueurs [[MATH]], [[DISPLAY]] ou [[CHEM]].
+- CONTEXTE DES SYMBOLES : le sens d'un symbole dépend de la matière et du contexte. Ne remplace
+  pas automatiquement un caractère Unicode, une commande LaTeX ou un opérateur de programmation.
+- GREC : respecte la casse ; par exemple \\Delta et \\delta, \\Omega et \\omega ne sont pas interchangeables.
+- CHIMIE : respecte exactement la casse des symboles d'éléments (Co n'est pas CO), les indices,
+  les charges, les états (s), (l), (g), (aq), les coefficients et le sens des flèches de réaction.
+- PHYSIQUE/SI : distingue les variables des unités ; conserve les exposants, indices, signes de produit
+  (·), unités composées et dimensions. N'efface et ne convertis aucune unité.
+- INFORMATIQUE : conserve exactement les opérateurs et les délimiteurs dans le code ; `<=`, `!=`,
+  `===`, `&&`, `||`, `^`, `->`, `=>`, `?.` et `??` ont un sens dépendant du langage. Ne les réécris
+  pas comme des comparaisons ou des formules mathématiques dans un bloc de code.
+- COMPTABILITÉ : conserve la devise et les montants, notamment Ar et MGA ; ne transforme pas HT,
+  TVA ou TTC en variables mathématiques.
+- Ne fais aucune substitution globale sur `^`, `_`, `\\n`, les caractères de contrôle ou les symboles
+  inconnus. Répare uniquement une séquence identifiée dans son contexte et couverte par un test.
 - Vérifie calculs, signes, unités, dimensions, indices et résultats.
 - Pour un QCM, une seule réponse doit être correcte et les choix ne contiennent
   aucun préfixe A/B/C/D/E.

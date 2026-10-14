@@ -34,6 +34,29 @@ _COMMANDES_LATEX_AUTORISEES = {
     "nsubseteq", "nleq", "ngeq", "equiv", "cong", "propto",
 }
 
+# Compléments alignés sur le répertoire scientifique : commandes grecques
+# majuscules, géométrie/logique et notations de physique. La liste reste
+# explicite afin de ne jamais réinterpréter arbitrairement les escapes JSON.
+_COMMANDES_LATEX_SUPPLEMENTAIRES_AUTORISEES = {
+    "Delta", "Gamma", "Lambda", "Omega", "Sigma", "Theta", "Xi", "Pi",
+    "Phi", "Psi", "Upsilon",
+    "angle", "triangle", "perp", "parallel", "subset", "supset", "cup",
+    "cap", "emptyset", "setminus", "wedge", "vee", "lnot", "Rightarrow",
+    "Leftarrow", "Leftrightarrow", "oplus", "top", "bot", "vdash", "models",
+    "because", "square", "Box",
+    "iint", "iiint", "oint", "hbar",
+    "varepsilon", "vartheta", "varphi", "varsigma", "varkappa",
+    "lfloor", "lVert", "rVert", "ldots", "cdots", "vdots", "ddots",
+    "overrightarrow", "overleftarrow", "prime", "dagger", "circ", "star",
+    "ast", "bullet", "boxed", "colon", "mid", "nmid",
+}
+
+
+def _commande_latex_autorisee(commande: str) -> bool:
+    return (
+        commande in _COMMANDES_LATEX_AUTORISEES
+        or commande in _COMMANDES_LATEX_SUPPLEMENTAIRES_AUTORISEES
+    )
 
 
 def _reparer_collisions_escapes_json_latex(texte: str) -> str:
@@ -85,7 +108,7 @@ def _reparer_collisions_escapes_json_latex(texte: str) -> str:
         if suivant.isalpha():
             match = re.match(r"[A-Za-z]+", texte[i + 1:])
             commande = match.group(0) if match else ""
-            if commande in _COMMANDES_LATEX_AUTORISEES:
+            if _commande_latex_autorisee(commande):
                 sortie.extend(["\\", "\\", commande])
                 i += 1 + len(commande)
                 continue
@@ -146,7 +169,7 @@ def _reparer_antislashs_latex(texte: str) -> str:
         if suivant.isalpha():
             match = re.match(r"[A-Za-z]+", texte[i + 1:])
             commande = match.group(0) if match else ""
-            if commande in _COMMANDES_LATEX_AUTORISEES:
+            if _commande_latex_autorisee(commande):
                 sortie.extend(["\\", "\\", commande])
                 i += 1 + len(commande)
                 continue
