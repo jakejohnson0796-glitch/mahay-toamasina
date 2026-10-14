@@ -446,7 +446,12 @@
     "delta", "theta", "lambda", "mu", "pi", "sigma", "forall", "exists", "neg",
     "nexists", "notin", "subseteq", "supseteq", "nsubseteq", "nleq", "ngeq",
     "equiv", "cong", "propto", "rightarrow", "leftarrow", "leftrightarrow",
-    "therefore", "top", "tilde", "tanh", "bmod", "to", "rfloor", "rangle", "rvert"
+    "Delta", "Gamma", "Lambda", "Omega", "Sigma", "Theta", "Xi", "Pi", "Phi", "Psi", "Upsilon",
+    "angle", "triangle", "perp", "parallel", "subset", "supset", "cup", "cap", "emptyset", "setminus",
+    "wedge", "vee", "lnot", "Rightarrow", "Leftarrow", "Leftrightarrow", "oplus", "hbar",
+    "varepsilon", "vartheta", "varphi", "varsigma", "varkappa", "lfloor", "lceil", "lVert", "rVert",
+    "ldots", "cdots", "vdots", "ddots", "overrightarrow", "overleftarrow", "because", "square", "Box",
+    "iint", "iiint", "oint", "therefore", "top", "tilde", "tanh", "bmod", "to", "rfloor", "rangle", "rvert"
   ];
 
   function estCommandeLatexNue(valeur) {
@@ -460,7 +465,7 @@
     /\\(?:frac|dfrac|tfrac)\{[^{}\n]*\}\{[^{}\n]*\}/g,
     /\\sqrt(?:\[[^\]\n]*\])?\{[^{}\n]*\}/g,
     /\\(?:text|mathrm|mathbf|mathbb|mathcal|operatorname|vec)\{[^{}\n]*\}/g,
-    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Re|Im|therefore|top|tilde|tanh|bmod)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
+    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Delta|Gamma|Lambda|Omega|Sigma|Theta|Xi|Pi|Phi|Psi|Upsilon|angle|triangle|perp|parallel|subset|supset|cup|cap|emptyset|setminus|wedge|vee|lnot|Rightarrow|Leftarrow|Leftrightarrow|oplus|hbar|varepsilon|vartheta|varphi|varsigma|varkappa|lfloor|lceil|lVert|rVert|ldots|cdots|vdots|ddots|overrightarrow|overleftarrow|because|square|Box|iint|iiint|oint|Re|Im|therefore|top|tilde|tanh|bmod)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
     /[A-Za-z](?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)/g,
     /\\(?:cdot|times|pm|leq|geq|neq|approx|infty|to|rightarrow|left|right|,|:|;|!)/g
   ];
