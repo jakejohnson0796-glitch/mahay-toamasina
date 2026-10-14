@@ -180,8 +180,10 @@
       <a href="/admin" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin') else '' }}><span class="tb-icone">{{ icone("admin", 17) }}</span> Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %}<span class="tb-sidebar-badge">{{ nb_admin_notifs }}</span>{% endif %}</a>
       {% endif %}
 
-      <p class="tb-sidebar-groupe">Premium</p>
+      <p class="tb-sidebar-groupe">{% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}Services{% else %}Premium{% endif %}</p>
+{% if not (utilisateur is defined and utilisateur and utilisateur.role == "admin") %}
       <a href="/abonnement" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/abonnement') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/abonnement') else '' }}><span class="tb-icone">{{ icone("premium", 17) }}</span> Abonnement</a>
+{% endif %}
       <a href="/sponsoring" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/sponsoring') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/sponsoring') else '' }}><span class="tb-icone">{{ icone("sponsoring", 17) }}</span> Sponsoring</a>
 
       <p class="tb-sidebar-groupe">Ressources</p>
@@ -236,7 +238,9 @@
         <a class="tb-menu-compte-item" href="/classe"><span class="tb-menu-compte-icone">{{ icone("classe", 16) }}</span><span>Classe virtuelle</span></a>
 
         <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
+{% if not (utilisateur is defined and utilisateur and utilisateur.role == "admin") %}
         <a class="tb-menu-compte-item" href="/abonnement"><span class="tb-menu-compte-icone">{{ icone("premium", 16) }}</span><span>Abonnement</span></a>
+{% endif %}
         <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
         <a class="tb-menu-compte-item" href="/mode-emploi"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Mode d'emploi</span></a>
 
