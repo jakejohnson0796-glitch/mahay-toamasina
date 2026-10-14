@@ -32,11 +32,16 @@ from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
     Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, RoleMembreCercle,
     MessageCercle, MessageReaction, MessageMention, Notification, StatutCercle,
+    AbonnementEtudiant,
 )
 from app import rate_limit  # noqa: E402
 
 
-def _creer_client_connecte(telephone: str, nom: str) -> TestClient:
+def _creer_client_connecte(
+    telephone: str,
+    nom: str,
+    role: RoleUtilisateur = RoleUtilisateur.ETUDIANT,
+) -> TestClient:
     """Cree un utilisateur directement en base (plus rapide et plus
     fiable qu'un vrai flux d'inscription pour ce qui nous interesse ici),
     puis se connecte via la vraie route /connexion pour obtenir une
@@ -46,7 +51,7 @@ def _creer_client_connecte(telephone: str, nom: str) -> TestClient:
             nom=nom,
             telephone=telephone,
             mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
-            role=RoleUtilisateur.ETUDIANT,
+            role=role,
         )
         session.add(utilisateur)
         session.commit()
@@ -110,6 +115,41 @@ class TestMessagerieEnrichie(unittest.TestCase):
             session.commit()
             session.refresh(message)
             self.message_id = message.id
+
+    def test_administrateur_peut_utiliser_websocket_sans_abonnement_etudiant(self):
+        administrateur = _creer_client_connecte(
+            "0341000004", "Admin de test", role=RoleUtilisateur.ADMIN
+        )
+
+        # Garantit que ce test couvre bien l'exemption admin, meme si le
+        # parcours de connexion venait a creer un abonnement par defaut.
+        with Session(engine) as session:
+            for abonnement in session.exec(
+                select(AbonnementEtudiant).where(
+                    AbonnementEtudiant.utilisateur_id == administrateur.utilisateur_id
+                )
+            ).all():
+                session.delete(abonnement)
+            session.commit()
+
+        with administrateur.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+            presence = websocket.receive_json()
+            self.assertEqual(presence["type"], "presence")
+
+            websocket.send_json({"contenu": "Message admin sans abonnement"})
+            message = websocket.receive_json()
+            self.assertEqual(message["type"], "message")
+            self.assertEqual(message["contenu"], "Message admin sans abonnement")
+
+        with Session(engine) as session:
+            message_stocke = session.exec(
+                select(MessageCercle).where(
+                    MessageCercle.cercle_id == self.cercle_id,
+                    MessageCercle.auteur_id == administrateur.utilisateur_id,
+                    MessageCercle.contenu == "Message admin sans abonnement",
+                )
+            ).first()
+            self.assertIsNotNone(message_stocke)
 
     # --- Reactions ---
 
