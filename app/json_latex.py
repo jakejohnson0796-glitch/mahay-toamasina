@@ -32,7 +32,7 @@ _COMMANDES_LATEX_AUTORISEES = {
 
 
 def _reparer_collisions_escapes_json_latex(texte: str) -> str:
-    """Préserve les commandes LaTeX qui ressemblent à des escapes JSON valides.
+    r"""Préserve les commandes LaTeX qui ressemblent à des escapes JSON valides.
 
     Dans un JSON mal échappé, \frac peut être lu comme form-feed + rac,
     \text comme tabulation + ext, \nabla comme saut de ligne + abla,
@@ -108,7 +108,7 @@ def _reparer_collisions_escapes_json_latex(texte: str) -> str:
 
 
 def _reparer_antislashs_latex(texte: str) -> str:
-    """Répare uniquement des commandes LaTeX explicitement autorisées.
+    r"""Répare uniquement des commandes LaTeX explicitement autorisées.
 
     Cette fonction n'est appelée qu'après l'échec de json.loads(). Les escapes
     JSON valides (\n, \t, \r, \b, \f, \\, \/, \") restent donc intacts.
