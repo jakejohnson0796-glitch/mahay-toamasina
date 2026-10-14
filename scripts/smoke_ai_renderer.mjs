@@ -297,4 +297,33 @@ if (!renduRelanceApresChargement) {
   throw new Error('Renderer was not retriggered after dependency loading completed');
 }
 
+
+// Prévention issue du guide des symboles : distinguer Unicode, LaTeX, unités et contexte.
+const guideHost = window.document.createElement('div');
+window.document.body.appendChild(guideHost);
+const guideSource = [
+  'Symboles Unicode : ≤, ≥, ≠, ≈, →, ↔, ∈, ⊆, ∀, ∃, ℝ, Ω, μ, λ, √, π, ∑, ∫, ∂, ∇.',
+  'Unités SI : v = 3 m/s ; a = 2 m/s² ; ρ = 1 kg/m³ ; Ω·m ; J/(mol·K).',
+  String.raw`Formules : \(\Delta x=3\), \(\Omega=2\pi f\), \(\hbar\omega\).`,
+  String.raw`Notation historique nue : \Delta x, \Omega, \angle ABC, \perp d, \hbar\omega.`,
+  'Chimie : Co ≠ CO ; H₂O(l) ⇌ 2 H⁺(aq).',
+  'Informatique : a <= b && b != null; x ^ 2; obj?.value ?? 0.',
+  'Comptabilité : Ar 125 000 ; MGA ; HT ; TVA ; TTC.'
+].join('\n');
+window.rendreReponseIA(guideSource, guideHost);
+if (guideHost.querySelectorAll('.gm-latex-fallback').length < 5) {
+  throw new Error('Undelimited historical Greek/physics LaTeX did not use the fallback renderer');
+}
+if (guideHost.querySelectorAll('.katex').length < 3) {
+  throw new Error('Guide Greek-letter/physics formulas were not rendered');
+}
+const guideClone = guideHost.cloneNode(true);
+guideClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const guideVisible = guideClone.textContent || '';
+for (const command of ['\\Delta', '\\Omega', '\\hbar', '\\angle', '\\perp']) {
+  if (guideVisible.includes(command)) throw new Error('Raw LaTeX command remained visible: ' + command);
+}
+for (const symbol of ['≤', 'ℝ', 'Ω', '∇', 'm/s²', 'Ω·m', 'Co ≠ CO', 'Ar 125 000', 'MGA', 'TVA', '&&', '?.', '??']) {
+  if (!guideVisible.includes(symbol)) throw new Error('Guide symbol/context was altered: ' + symbol);
+}
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
