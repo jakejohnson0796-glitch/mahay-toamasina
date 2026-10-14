@@ -396,4 +396,26 @@ for (const sample of corruptedCommands) {
     throw new Error('Control character or command tail remained visible: ' + sample.name);
   }
 }
+// Les corrections doivent aussi intervenir si les données historiques ont déjà des délimiteurs math.
+const delimitedCorruptions = [
+  { name: 'inline delimiters', value: 'Inline : \\(' + formFeed + 'rac{1}{2}\\)' },
+  { name: 'legacy dollar delimiters', value: 'Dollar : 
+ + formFeed + 'rac{3}{4}
+ },
+  { name: 'display delimiters', value: 'Display : \\[' + '\t' + 'ext{m}\\]' }
+];
+for (const sample of delimitedCorruptions) {
+  const target = window.document.createElement('div');
+  window.document.body.appendChild(target);
+  window.rendreReponseIA(sample.value, target);
+  if (!target.querySelector('.katex')) {
+    throw new Error('Corrupted command inside delimited math was not repaired: ' + sample.name);
+  }
+  const plain = target.cloneNode(true);
+  plain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+  if (/[\u0008\u000C\t\r]/.test(plain.textContent || '')) {
+    throw new Error('Control character remained in an already-delimited formula: ' + sample.name);
+  }
+}
+
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
