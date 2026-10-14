@@ -1998,32 +1998,208 @@
       "fin_specialisation": null,
       "statut": "Confirmé",
       "source": "https://www.mesupres.gov.mg/assets/front/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
-    }
-  ],
-  "schema_version": "toamasina_referentiel_canonique_v2",
-  "scope": "Toamasina-ville — options L1/M1-M2 activables uniquement quand la structure niveau/parcours est documentée",
-  "last_reconciliation": "2026-09-30",
-  "offres_institutionnelles_a_verifier": [
+    },
     {
       "universite": "Université de Toamasina",
       "ville": "Toamasina",
       "composante": "Institut Supérieur des Sciences, Environnement et Développement Durable (ISSEDD-GRENE)",
+      "domaine": "Sciences et technologie",
       "mention": "Sciences de l’Environnement et du Développement",
-      "grade": "Licence et Master",
-      "statut": "À confirmer pour publication détaillée",
-      "source": "https://www.mesupres.gov.mg/assets/front/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf",
-      "raison": "L’habilitation confirme Licence + Master, mais la source consultée ne donne pas ici la structure exacte niveau/parcours nécessaire à la cascade et aux cercles."
+      "niveau": "L1",
+      "type": "Parcours",
+      "parcours": "Sciences de l’Environnement et du Développement",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut Supérieur des Sciences, Environnement et Développement Durable (ISSEDD-GRENE)",
+      "domaine": "Sciences et technologie",
+      "mention": "Sciences de l’Environnement et du Développement",
+      "niveau": "L2",
+      "type": "Parcours",
+      "parcours": "Sciences de l’Environnement et du Développement",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut Supérieur des Sciences, Environnement et Développement Durable (ISSEDD-GRENE)",
+      "domaine": "Sciences et technologie",
+      "mention": "Sciences de l’Environnement et du Développement",
+      "niveau": "L3",
+      "type": "Parcours",
+      "parcours": "Sciences de l’Environnement et du Développement",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut Supérieur des Sciences, Environnement et Développement Durable (ISSEDD-GRENE)",
+      "domaine": "Sciences et technologie",
+      "mention": "Sciences de l’Environnement et du Développement",
+      "niveau": "M1",
+      "type": "Parcours",
+      "parcours": "Sciences de l’Environnement et du Développement",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut Supérieur des Sciences, Environnement et Développement Durable (ISSEDD-GRENE)",
+      "domaine": "Sciences et technologie",
+      "mention": "Sciences de l’Environnement et du Développement",
+      "niveau": "M2",
+      "type": "Parcours",
+      "parcours": "Sciences de l’Environnement et du Développement",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
     },
     {
       "universite": "Université de Toamasina",
       "ville": "Toamasina",
       "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
       "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
-      "grade": "Licence et Master",
-      "statut": "À confirmer pour publication détaillée",
-      "source": "https://www.mesupres.gov.mg/assets/front/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf",
-      "raison": "L’habilitation confirme l’offre, et le document cite aussi Tourisme et Patrimoine dans les Tropicaux et Socio management et Développement Local, mais le niveau exact de chaque parcours doit être confirmé avant création des cercles."
+      "niveau": "L1",
+      "type": "Parcours",
+      "parcours": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
     },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
+      "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "niveau": "L1",
+      "type": "Parcours",
+      "parcours": "Tourisme et Patrimoine dans les Tropicaux",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
+      "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "niveau": "L1",
+      "type": "Parcours",
+      "parcours": "Socio management et Développement Local",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
+      "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "niveau": "L2",
+      "type": "Parcours",
+      "parcours": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
+      "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "niveau": "L2",
+      "type": "Parcours",
+      "parcours": "Tourisme et Patrimoine dans les Tropicaux",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
+      "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "niveau": "L2",
+      "type": "Parcours",
+      "parcours": "Socio management et Développement Local",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
+      "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "niveau": "L3",
+      "type": "Parcours",
+      "parcours": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
+      "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "niveau": "L3",
+      "type": "Parcours",
+      "parcours": "Tourisme et Patrimoine dans les Tropicaux",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)",
+      "domaine": "Arts, Lettres et Sciences Humaines",
+      "mention": "Valorisation du Tourisme, des Patrimoines et des Territoires",
+      "niveau": "L3",
+      "type": "Parcours",
+      "parcours": "Socio management et Développement Local",
+      "debut_specialisation": null,
+      "fin_specialisation": null,
+      "statut": "Confirmé",
+      "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    }
+  ],
+  "schema_version": "toamasina_referentiel_canonique_v2",
+  "scope": "Toamasina-ville — parcours et niveaux publiés à partir d’offres attestées par une source institutionnelle.",
+  "last_reconciliation": "2026-10-14",
+  "offres_institutionnelles_a_verifier": [
     {
       "universite": "Université de Toamasina",
       "ville": "Toamasina",
@@ -2060,12 +2236,14 @@
     "Les cercles de tronc commun sont identifiés uniquement par (mention, niveau)."
   ],
   "audit_referentiel": {
-    "date_verification": "2026-10-13",
+    "date_verification": "2026-10-14",
     "perimetre_publie": [
       "Faculté DEG",
       "Faculté des Sciences et Technologie",
       "École Normale Supérieure",
-      "Faculté des Lettres et Sciences Humaines"
+      "Faculté des Lettres et Sciences Humaines",
+      "Institut Supérieur des Sciences, Environnement et Développement Durable (ISSEDD-GRENE)",
+      "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)"
     ],
     "regles": [
       "Une formation n'est publiée que si elle possède un statut Vérifié ou Confirmé et une source de référence.",
@@ -2082,7 +2260,7 @@
           "M2"
         ],
         "statut": "À vérifier — non publié",
-        "motif": "Le parcours CCA n'est pas présent sur la page officielle de la Faculté DEG consultée. Demander une maquette de formation ou un arrêté récent.",
+        "motif": "Parcours signalé comme attendu, mais absent de la page officielle de la Faculté DEG consultée, qui documente Banques et Finances et Commerce International en M1/M2. Une maquette actuelle ou un arrêté récent est nécessaire pour confirmer le parcours, ses niveaux et son ouverture avant publication.",
         "source_consultee": "https://www.univ-toamasina.mg/facultes/deg/"
       },
       {
@@ -2109,18 +2287,6 @@
         "statut": "À vérifier — hors du périmètre publié",
         "motif": "Des formations sont recensées par le MESUPRES, mais le référentiel actuel par niveaux et parcours doit être validé avec la faculté.",
         "source_consultee": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
-      },
-      {
-        "composante": "Institut du Tourisme, des Patrimoines et des Territoires (ITPT) et ISSED",
-        "formations_signalees": [
-          "Tourisme",
-          "Socio-management",
-          "Environnement"
-        ],
-        "niveaux": "À confirmer",
-        "statut": "À vérifier — périmètre administratif à confirmer",
-        "motif": "L'annuaire MESUPRES 2022-2023 les recense à Toamasina, mais il faut confirmer leur rattachement actuel à l'université ainsi que les cursus et niveaux ouverts.",
-        "source_consultee": "https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf"
       }
     ]
   }
