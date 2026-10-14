@@ -19,7 +19,8 @@ def test_renderer_quiz_repare_les_equations_et_integrales_sans_delimiteur():
 def test_renderer_preserve_code_et_formules_deja_delimitees():
     source = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
 
-    assert "const zonesProtegees" in source
+    assert "const zonesCodeProtegees" in source
+    assert "const zonesMathProtegees" in source
     assert r"\\\[" in source
     assert r"\\\(" in source
     assert r"\x60\x60\x60" in source
@@ -45,7 +46,8 @@ def test_renderer_recupere_les_fractions_des_anciens_quiz_corrompus():
 def test_renderer_repare_les_controles_latex_sans_toucher_au_code():
     source = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
 
-    assert "const zonesProtegees" in source
+    assert "const zonesCodeProtegees" in source
+    assert "const zonesMathProtegees" in source
     assert r'.replace(/\nabla\b/g, "\\nabla")' in source
     assert r'.replace(/\rho\b/g, "\\rho")' in source
     assert "Les blocs de code et les formules bien delimitees sont deja proteges." in source
