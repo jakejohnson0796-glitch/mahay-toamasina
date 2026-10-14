@@ -37,6 +37,18 @@ def test_new_messages_do_not_force_scroll_when_reading_history():
     assert "if (suivreNouveauxMessages) fenetreChat.scrollTop = fenetreChat.scrollHeight;" in TEMPLATE
 
 
+def test_websocket_access_preflight_and_bounded_handshake_retries():
+    assert '"/cercles/{cercle_id}/ws-status"' in ROUTER
+    assert '"/cercles/" + cercleId + "/ws-status"' in TEMPLATE
+    assert '"session_absente"' in ROUTER
+    assert '"empreinte_session_invalide"' in ROUTER
+    assert '"non_membre"' in ROUTER
+    assert '"premium_requis"' in ROUTER
+    assert "echecsHandshakeWebSocket >= 3" in TEMPLATE
+    assert "connexionWebSocketSuspendue" in TEMPLATE
+    assert "proposerReessai" in TEMPLATE
+
+
 def test_core_chat_features_remain_wired():
     for marker in (
         "new WebSocket(urlWebSocket)",
