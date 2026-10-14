@@ -50,7 +50,7 @@ def test_renderer_repare_les_controles_latex_sans_toucher_au_code():
     assert "const zonesMathProtegees" in source
     assert r'.replace(/\nabla\b/g, "\\nabla")' in source
     assert r'.replace(/\rho\b/g, "\\rho")' in source
-    assert "Les blocs de code et les formules bien delimitees sont deja proteges." in source
+    assert "les formules délimitées seront protégées après réparation" in source
 
 
 def test_contrat_anticipe_les_collisions_de_symboles_par_discipline():
