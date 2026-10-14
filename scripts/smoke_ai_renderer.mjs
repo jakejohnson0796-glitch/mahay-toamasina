@@ -399,11 +399,9 @@ for (const sample of corruptedCommands) {
 // Les corrections doivent aussi intervenir si les données historiques ont déjà des délimiteurs math.
 const delimitedCorruptions = [
   { name: 'inline delimiters', value: 'Inline : \\(' + formFeed + 'rac{1}{2}\\)' },
-  { name: 'legacy dollar delimiters', value: 'Dollar : 
- + formFeed + 'rac{3}{4}
- },
+  { name: 'legacy dollar delimiters', value: 'Dollar : ' + String.fromCharCode(36) + formFeed + 'rac{3}{4}' + String.fromCharCode(36) },
   { name: 'display delimiters', value: 'Display : \\[' + '\t' + 'ext{m}\\]' }
-];
+].join('')
 for (const sample of delimitedCorruptions) {
   const target = window.document.createElement('div');
   window.document.body.appendChild(target);
