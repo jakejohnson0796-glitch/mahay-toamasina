@@ -72,6 +72,7 @@
       .replace(/\u000C(?=orall\b)/g, "\\forall")
       .replace(/\u000C(?=lat\b)/g, "\\flat")
       .replace(/\u000C(?=box\b)/g, "\\fbox")
+      .replace(/\t(?=extstyle\b)/g, "\\textstyle")
       .replace(/\t(?=ext\b)/g, "\\text")
       .replace(/\t(?=imes\b)/g, "\\times")
       .replace(/\t(?=frac\b)/g, "\\tfrac")
@@ -99,7 +100,6 @@
       .replace(/\r(?=floor\b)/g, "\\rfloor")
       .replace(/\r(?=vert\b)/g, "\\rvert")
       .replace(/\r(?=m\b)/g, "\\rm")
-      .replace(/\r(?=e\b)/g, "\\Re")
       .replace(/\u0008(?=egin\b)/g, "\\begin")
       .replace(/\u0008(?=eta\b)/g, "\\beta")
       .replace(/\u0008(?=matrix\b)/g, "\\bmatrix")
@@ -443,7 +443,10 @@
     "ln", "log", "sin", "cos", "tan", "cot", "exp", "partial", "nabla",
     "vec", "mathbf", "mathbb", "mathrm", "text", "times", "cdot", "pm",
     "leq", "geq", "neq", "approx", "in", "infty", "alpha", "beta", "gamma",
-    "delta", "theta", "lambda", "mu", "pi", "sigma"
+    "delta", "theta", "lambda", "mu", "pi", "sigma", "forall", "exists", "neg",
+    "nexists", "notin", "subseteq", "supseteq", "nsubseteq", "nleq", "ngeq",
+    "equiv", "cong", "propto", "rightarrow", "leftarrow", "leftrightarrow",
+    "therefore", "top", "tilde", "tanh", "bmod", "to", "rfloor", "rangle", "rvert"
   ];
 
   function estCommandeLatexNue(valeur) {
@@ -457,7 +460,7 @@
     /\\(?:frac|dfrac|tfrac)\{[^{}\n]*\}\{[^{}\n]*\}/g,
     /\\sqrt(?:\[[^\]\n]*\])?\{[^{}\n]*\}/g,
     /\\(?:text|mathrm|mathbf|mathbb|mathcal|operatorname|vec)\{[^{}\n]*\}/g,
-    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
+    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Re|Im|therefore|top|tilde|tanh|bmod)(?:_{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
     /[A-Za-z](?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)/g,
     /\\(?:cdot|times|pm|leq|geq|neq|approx|infty|to|rightarrow|left|right|,|:|;|!)/g
   ];
