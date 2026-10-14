@@ -79,7 +79,7 @@ try {
 
         await page.evaluate(() => { document.querySelector("#panneau-emojis").hidden=false; document.querySelector("#commandes-cercle").hidden=false; });
         const popups=await page.evaluate(()=>["#panneau-emojis","#commandes-cercle"].map(s=>{const r=document.querySelector(s).getBoundingClientRect();return {selector:s,x:r.x,right:r.right};}));
-        if (popups.some(r=>r.x < -1 || r.right > innerWidth+1)) failures.push("Popup outside viewport "+width+"/"+theme+" "+JSON.stringify(popups));
+        if (popups.some(r=>r.x < -1 || r.right > width+1)) failures.push("Popup outside viewport "+width+"/"+theme+" "+JSON.stringify(popups));
         await page.evaluate(()=>{document.querySelector("#panneau-emojis").hidden=true;document.querySelector("#commandes-cercle").hidden=true;document.querySelector("#panneau-thread").hidden=false;});
         const thread=await page.evaluate(()=>{const r=document.querySelector("#panneau-thread").getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};});
         if(thread.x < -1 || thread.y < -1 || thread.right > width+1 || thread.bottom > height+1) failures.push("Thread panel outside viewport "+width+"/"+theme+" "+JSON.stringify(thread));
