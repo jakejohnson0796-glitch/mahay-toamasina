@@ -13,7 +13,7 @@ from fastapi import Request
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
-from .models import Utilisateur
+from .models import RoleUtilisateur, Utilisateur
 from . import subscription
 
 
@@ -36,6 +36,10 @@ def acces_premium_ou_redirection(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    # L'administration ne doit jamais être conditionnée par un abonnement étudiant.
+    if utilisateur.role == RoleUtilisateur.ADMIN:
+        return None
+
     abonnement = subscription.obtenir_abonnement(session, utilisateur.id)
     if abonnement:
         abonnement = subscription.synchroniser_expiration(session, abonnement)
@@ -57,6 +61,10 @@ def acces_ia_ou_redirection(
     """
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+
+    # L'administration ne doit jamais être conditionnée par un abonnement étudiant.
+    if utilisateur.role == RoleUtilisateur.ADMIN:
+        return None
 
     abonnement = subscription.obtenir_abonnement(session, utilisateur.id)
     if abonnement:
