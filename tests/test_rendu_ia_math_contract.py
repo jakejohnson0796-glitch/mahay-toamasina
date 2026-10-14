@@ -13,7 +13,7 @@ def test_renderer_quiz_repare_les_equations_et_integrales_sans_delimiteur():
     assert "normaliserExpressionsMathematiquesNues(texte)" in source
     assert r"\b[fg]\s*\(\s*x\s*\)\s*=" in source
     assert r"\\int_\{" in source
-    assert r"return \"\\(\" + formules[Number(index)] + \"\\)\"" in source
+    assert r'''return "\\(" + formules[Number(index)] + "\\)"''' in source
 
 
 def test_renderer_preserve_code_et_formules_deja_delimitees():
