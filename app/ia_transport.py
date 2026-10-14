@@ -49,7 +49,7 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
   être entièrement délimitée avec \( ... \) ou \[ ... \].
 - La sortie est transportée dans un tool-call JSON strict : le JSON doit être valide.
   Dans la valeur JSON, une commande LaTeX doit être échappée comme du texte littéral
-  (ex. \\frac devient \\\\frac dans le JSON) ; ne laisse jamais le parseur transformer
+  (ex. \frac devient \\frac dans le JSON) ; ne laisse jamais le parseur transformer
   \f, \t, \n, \r ou \b en caractère de contrôle à l'intérieur d'une commande.
 - Conserve fidèlement les sauts de ligne, tabulations et retours chariot.
 - N'utilise pas les anciens marqueurs [[MATH]], [[DISPLAY]] ou [[CHEM]].
