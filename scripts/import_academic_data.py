@@ -348,19 +348,20 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
                 variantes_mention[0] if variantes_mention else None,
             )
 
-            if source_stricte:
-                # Pour la source Toamasina exacte, le Type "Tronc commun"
-                # est une instruction forte : le parcours porte uniquement
-                # la mention + le niveau et ne doit pas rester une Filiere
-                # active historique. On desactive donc toute ancienne offre
-                # qui aurait ete materialisee comme parcours avant la
-                # nouvelle source stricte ; le prochain passage de
-                # assurer_cercles_referentiel archivera ensuite le cercle
-                # devenu invalide (sauf membres reels a revoir manuellement).
-                if normaliser(ligne.get("type")) == normaliser("Tronc commun"):
-                    if mention is not None and ligne.get("niveau"):
-                        rapport.cercles_tronc_commun.add((mention.id, ligne["niveau"]))
-                    nom_composante_source = ligne["composante"]
+            est_tronc_commun = (
+                source_stricte
+                and normaliser(ligne.get("type")) == normaliser("Tronc commun")
+            )
+            # Le Type décrit la structure pédagogique ; il ne remplace pas
+            # le nom du parcours. Exemple officiel : Droit général est un
+            # parcours de type Tronc commun en L1/L2, et doit rester offert.
+            if est_tronc_commun and mention is not None and ligne.get("niveau"):
+                rapport.cercles_tronc_commun.add((mention.id, ligne["niveau"]))
+
+            # Seul un libellé de parcours explicitement égal à "Tronc commun"
+            # est une représentation technique sans parcours nommé.
+            if est_tronc_commun and normaliser(ligne.get("parcours")) == normaliser("Tronc commun"):
+                nom_composante_source = ligne["composante"]
                     nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
                         normaliser(nom_composante_source),
                         nom_composante_source,
@@ -522,7 +523,11 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             if universite.id in universites_curatees_ids:
                 # Le Tronc commun reste porte par Mention + niveau dans le profil :
                 # il ne devient pas artificiellement une Filiere nommee.
-                if source_stricte and normaliser(ligne.get("type")) == normaliser("Tronc commun"):
+                if (
+                    source_stricte
+                    and normaliser(ligne.get("type")) == normaliser("Tronc commun")
+                    and normaliser(ligne.get("parcours")) == normaliser("Tronc commun")
+                ):
                     continue
 
                 filiere_existante = None
