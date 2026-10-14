@@ -47,6 +47,7 @@ def test_websocket_access_preflight_and_bounded_handshake_retries():
     assert "echecsHandshakeWebSocket >= 3" in TEMPLATE
     assert "connexionWebSocketSuspendue" in TEMPLATE
     assert "proposerReessai" in TEMPLATE
+    assert "if (!contenu || !ws || ws.readyState !== WebSocket.OPEN) return;" in TEMPLATE
 
 
 def test_core_chat_features_remain_wired():
