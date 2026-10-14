@@ -30,6 +30,8 @@ def test_contrat_ia_exige_les_delimiteurs_maths_dans_les_qcm():
     assert "OBLIGATOIRE : chaque équation, puissance, fraction, intégrale" in REGLES_FORMAT
     assert r"« \(f(x)=3x^{2}+2x-5\) »" in REGLES_FORMAT
     assert r"« \(\displaystyle\int_{0}^{2}(x+1)\,dx\) »" in REGLES_FORMAT
+    assert "Un symbole simple peut être écrit directement en Unicode" in REGLES_FORMAT
+    assert r"(ex. \frac devient \\frac dans le JSON)" in REGLES_FORMAT
 
 def test_renderer_recupere_les_fractions_des_anciens_quiz_corrompus():
     source = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
