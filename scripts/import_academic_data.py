@@ -362,59 +362,59 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             # est une représentation technique sans parcours nommé.
             if est_tronc_commun and normaliser(ligne.get("parcours")) == normaliser("Tronc commun"):
                 nom_composante_source = ligne["composante"]
-                    nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
-                        normaliser(nom_composante_source),
-                        nom_composante_source,
-                    )
-                    facultes_universite = session.exec(
-                        select(Faculte).where(Faculte.universite_id == universite.id)
-                    ).all()
+                nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
+                    normaliser(nom_composante_source),
+                    nom_composante_source,
+                )
+                facultes_universite = session.exec(
+                    select(Faculte).where(Faculte.universite_id == universite.id)
+                ).all()
+                faculte_tronc = next(
+                    (
+                        fac for fac in facultes_universite
+                        if normaliser(fac.nom) == normaliser(nom_composante_cible)
+                    ),
+                    None,
+                )
+                if faculte_tronc is None:
                     faculte_tronc = next(
                         (
                             fac for fac in facultes_universite
-                            if normaliser(fac.nom) == normaliser(nom_composante_cible)
+                            if normaliser(fac.nom) == normaliser(nom_composante_source)
                         ),
                         None,
                     )
-                    if faculte_tronc is None:
-                        faculte_tronc = next(
-                            (
-                                fac for fac in facultes_universite
-                                if normaliser(fac.nom) == normaliser(nom_composante_source)
-                            ),
-                            None,
+                if faculte_tronc is not None and mention is not None:
+                    mentions_tronc = mentions_par_nom.get(
+                        normaliser(ligne["mention"]),
+                        [mention],
+                    )
+                    ids_mentions_tronc = {m.id for m in mentions_tronc if m.id is not None}
+                    candidats_tronc = session.exec(
+                        select(Filiere).where(
+                            Filiere.faculte_id == faculte_tronc.id,
+                            Filiere.niveau == (ligne.get("niveau") or None),
                         )
-                    if faculte_tronc is not None and mention is not None:
-                        mentions_tronc = mentions_par_nom.get(
-                            normaliser(ligne["mention"]),
-                            [mention],
-                        )
-                        ids_mentions_tronc = {m.id for m in mentions_tronc if m.id is not None}
-                        candidats_tronc = session.exec(
-                            select(Filiere).where(
-                                Filiere.faculte_id == faculte_tronc.id,
-                                Filiere.niveau == (ligne.get("niveau") or None),
+                    ).all()
+                    candidats_tronc = [
+                        fil for fil in candidats_tronc
+                        if fil.mention_id in ids_mentions_tronc
+                        and normaliser(fil.nom) == normaliser(ligne["parcours"])
+                    ]
+                    for filiere_tronc in candidats_tronc:
+                        offres_tronc = session.exec(
+                            select(ProgrammeUniversitaire).where(
+                                ProgrammeUniversitaire.universite_id == universite.id,
+                                ProgrammeUniversitaire.filiere_id == filiere_tronc.id,
+                                ProgrammeUniversitaire.est_active == True,  # noqa: E712
                             )
                         ).all()
-                        candidats_tronc = [
-                            fil for fil in candidats_tronc
-                            if fil.mention_id in ids_mentions_tronc
-                            and normaliser(fil.nom) == normaliser(ligne["parcours"])
-                        ]
-                        for filiere_tronc in candidats_tronc:
-                            offres_tronc = session.exec(
-                                select(ProgrammeUniversitaire).where(
-                                    ProgrammeUniversitaire.universite_id == universite.id,
-                                    ProgrammeUniversitaire.filiere_id == filiere_tronc.id,
-                                    ProgrammeUniversitaire.est_active == True,  # noqa: E712
-                                )
-                            ).all()
-                            for offre_tronc in offres_tronc:
-                                offre_tronc.est_active = False
-                                if not dry_run:
-                                    session.add(offre_tronc)
-                                    session.commit()
-                    continue
+                        for offre_tronc in offres_tronc:
+                            offre_tronc.est_active = False
+                            if not dry_run:
+                                session.add(offre_tronc)
+                                session.commit()
+                continue
 
                 nom_composante_source = ligne["composante"]
                 nom_composante_cible = ALIASES_COMPOSANTES_TOAMASINA.get(
