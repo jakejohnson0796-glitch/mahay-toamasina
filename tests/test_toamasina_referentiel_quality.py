@@ -87,14 +87,20 @@ class TestQualiteSourceToamasina(unittest.TestCase):
             ))
         self.assertEqual(len(clefs), len(set(clefs)), "La source contient des lignes académiques dupliquées.")
 
-    def test_cca_reste_en_attente_de_preuve_et_ne_sort_pas_dans_les_offres(self):
+    def test_cca_m2_est_publie_et_m1_reste_en_attente_de_confirmation(self):
         publiees = [
             ligne for ligne in self.formations
             if "cca" in str(ligne.get("parcours") or "").casefold()
         ]
-        self.assertEqual(publiees, [])
+        self.assertEqual(len(publiees), 1)
+        self.assertEqual(publiees[0]["niveau"], "M2")
+        self.assertEqual(publiees[0]["statut"], "Confirmé")
+        self.assertIn("scribd.com/document/689634398", publiees[0]["source"])
         en_attente = self.data.get("audit_referentiel", {}).get("formations_a_verifier_avant_publication", [])
-        self.assertTrue(any("cca" in str(item).casefold() for item in en_attente))
+        cca = [item for item in en_attente if "cca" in str(item).casefold()]
+        self.assertEqual(len(cca), 1)
+        self.assertEqual(cca[0]["niveaux"], ["M1"])
+        self.assertIn("À vérifier", cca[0]["statut"])
 
     def test_issedd_est_publie_sur_les_niveaux_licence_et_master(self):
         lignes = [
