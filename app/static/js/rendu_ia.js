@@ -68,7 +68,7 @@
     });
     // Recuperation des anciennes reponses deja decodees en caracteres de
     // controle par JSON : \f + rac -> \frac, \t + ext -> \text, etc.
-    // Les blocs de code et les formules bien delimitees sont deja proteges.
+    // Le code est déjà protégé ; les formules délimitées seront protégées après réparation.
     resultat = resultat
       .replace(/\u000Crac\b/g, "\\frac")
       .replace(/\u000Corall\b/g, "\\forall")
