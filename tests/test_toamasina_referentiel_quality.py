@@ -96,6 +96,30 @@ class TestQualiteSourceToamasina(unittest.TestCase):
         en_attente = self.data.get("audit_referentiel", {}).get("formations_a_verifier_avant_publication", [])
         self.assertTrue(any("cca" in str(item).casefold() for item in en_attente))
 
+    def test_issedd_est_publie_sur_les_niveaux_licence_et_master(self):
+        lignes = [
+            ligne for ligne in self.formations
+            if ligne["composante"] == "Institut Supérieur des Sciences, Environnement et Développement Durable (ISSEDD-GRENE)"
+            and ligne["mention"] == "Sciences de l’Environnement et du Développement"
+        ]
+        self.assertEqual({ligne["niveau"] for ligne in lignes}, {"L1", "L2", "L3", "M1", "M2"})
+        self.assertTrue(all(ligne["statut"] == "Confirmé" for ligne in lignes))
+        self.assertTrue(all("mesupres.gov.mg" in ligne["source"] for ligne in lignes))
+
+    def test_itpt_expose_les_parcours_officiels_de_tourisme_et_patrimoine(self):
+        composante = "Institut du Tourisme, des Patrimoines et des Territoires (ITPT)"
+        attendus = {
+            "Valorisation du Tourisme, des Patrimoines et des Territoires",
+            "Tourisme et Patrimoine dans les Tropicaux",
+            "Socio management et Développement Local",
+        }
+        lignes = [ligne for ligne in self.formations if ligne["composante"] == composante]
+        self.assertEqual({ligne["niveau"] for ligne in lignes}, {"L1", "L2", "L3"})
+        self.assertEqual({ligne["parcours"] for ligne in lignes}, attendus)
+        self.assertEqual(len(lignes), 9)
+        self.assertTrue(all(ligne["mention"] == "Valorisation du Tourisme, des Patrimoines et des Territoires" for ligne in lignes))
+        self.assertTrue(all(ligne["statut"] == "Confirmé" for ligne in lignes))
+
     def test_niveaux_l1_et_l2_sont_presents_pour_mia_et_physique_chimie(self):
         attendus = {
             ("Faculté des Sciences et Technologie", "Mathématiques, Informatique et Applications"): {"L1", "L2"},

@@ -30,6 +30,8 @@ def page_abonnement(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role == RoleUtilisateur.ADMIN:
+        return RedirectResponse("/admin", status_code=303)
 
     abonnement = subscription.obtenir_abonnement(session, utilisateur.id)
     if abonnement:
@@ -65,6 +67,8 @@ def soumettre_demande(
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role == RoleUtilisateur.ADMIN:
+        return RedirectResponse("/admin", status_code=303)
 
     abonnement = subscription.obtenir_abonnement(session, utilisateur.id)
     if not abonnement:

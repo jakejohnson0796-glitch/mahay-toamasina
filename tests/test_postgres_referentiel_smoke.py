@@ -59,7 +59,7 @@ def _source() -> dict:
     assert payload["sha256"] == SOURCE_SHA256
     assert _normaliser(payload["universite"]) == "universite de toamasina"
     assert payload["hierarchie"] == ["Université", "Composante", "Domaine", "Mention", "Niveau", "Parcours"]
-    assert len(payload["formations"]) == 142
+    assert len(payload["formations"]) == 156
     assert {ligne["domaine"] for ligne in payload["formations"]} == {
         "Droit et sciences politiques",
         "Sciences économiques",
@@ -69,7 +69,7 @@ def _source() -> dict:
         "Sciences de l’éducation",
         "Arts, Lettres et Sciences Humaines",
     }
-    assert len({ligne["mention"] for ligne in payload["formations"]}) == 22
+    assert len({ligne["mention"] for ligne in payload["formations"]}) == 24
     return payload
 
 
