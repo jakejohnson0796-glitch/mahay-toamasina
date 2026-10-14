@@ -44,9 +44,13 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
   lorsqu'une expression doit être rendue comme une formule.
 - Ne modifie pas les antislashs, accolades ou doubles antislashs d'un LaTeX valide.
   En particulier, les \\ entre lignes d'un environnement aligned/matrix doivent rester \\.
+- Un symbole simple peut être écrit directement en Unicode (ex. ≤, ≥, √, π, ∑, ∫).
+  Une fraction, une puissance, une intégrale avec bornes ou une formule composée doit
+  être entièrement délimitée avec \( ... \) ou \[ ... \].
 - La sortie est transportée dans un tool-call JSON strict : le JSON doit être valide.
-  Les antislashs du contenu doivent donc être échappés selon JSON afin qu'après
-  json.loads() la chaîne métier contienne le vrai LaTeX.
+  Dans la valeur JSON, une commande LaTeX doit être échappée comme du texte littéral
+  (ex. \frac devient \\frac dans le JSON) ; ne laisse jamais le parseur transformer
+  \f, \t, \n, \r ou \b en caractère de contrôle à l'intérieur d'une commande.
 - Conserve fidèlement les sauts de ligne, tabulations et retours chariot.
 - N'utilise pas les anciens marqueurs [[MATH]], [[DISPLAY]] ou [[CHEM]].
 - Vérifie calculs, signes, unités, dimensions, indices et résultats.

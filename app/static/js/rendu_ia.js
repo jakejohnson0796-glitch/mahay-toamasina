@@ -64,6 +64,50 @@
       return tokenBloc + index + finTokenBloc;
     });
 
+    // Recuperation des anciennes reponses deja decodees en caracteres de
+    // controle par JSON : \f + rac -> \frac, \t + ext -> \text, etc.
+    // Les blocs de code et les formules bien delimitees sont deja proteges.
+    resultat = resultat
+      .replace(/\u000C(?=rac\b)/g, "\\frac")
+      .replace(/\u000C(?=orall\b)/g, "\\forall")
+      .replace(/\u000C(?=lat\b)/g, "\\flat")
+      .replace(/\u000C(?=box\b)/g, "\\fbox")
+      .replace(/\t(?=extstyle\b)/g, "\\textstyle")
+      .replace(/\t(?=ext\b)/g, "\\text")
+      .replace(/\t(?=imes\b)/g, "\\times")
+      .replace(/\t(?=frac\b)/g, "\\tfrac")
+      .replace(/\t(?=an\b)/g, "\\tan")
+      .replace(/\t(?=anh\b)/g, "\\tanh")
+      .replace(/\t(?=au\b)/g, "\\tau")
+      .replace(/\t(?=heta\b)/g, "\\theta")
+      .replace(/\t(?=ilde\b)/g, "\\tilde")
+      .replace(/\t(?=herefore\b)/g, "\\therefore")
+      .replace(/\t(?=op\b)/g, "\\top")
+      .replace(/\t(?=o\b)/g, "\\to")
+      .replace(/\n(?=abla\b)/g, "\\nabla")
+      .replace(/\n(?=eq\b)/g, "\\neq")
+      .replace(/\n(?=u\b)/g, "\\nu")
+      .replace(/\n(?=eg\b)/g, "\\neg")
+      .replace(/\n(?=exists\b)/g, "\\nexists")
+      .replace(/\n(?=otin\b)/g, "\\notin")
+      .replace(/\n(?=subseteq\b)/g, "\\nsubseteq")
+      .replace(/\n(?=leq\b)/g, "\\nleq")
+      .replace(/\n(?=geq\b)/g, "\\ngeq")
+      .replace(/\r(?=ho\b)/g, "\\rho")
+      .replace(/\r(?=ight\b)/g, "\\right")
+      .replace(/\r(?=ightarrow\b)/g, "\\rightarrow")
+      .replace(/\r(?=angle\b)/g, "\\rangle")
+      .replace(/\r(?=floor\b)/g, "\\rfloor")
+      .replace(/\r(?=vert\b)/g, "\\rvert")
+      .replace(/\r(?=m\b)/g, "\\rm")
+      .replace(/\u0008(?=egin\b)/g, "\\begin")
+      .replace(/\u0008(?=eta\b)/g, "\\beta")
+      .replace(/\u0008(?=matrix\b)/g, "\\bmatrix")
+      .replace(/\u0008(?=inom\b)/g, "\\binom")
+      .replace(/\u0008(?=oldsymbol\b)/g, "\\boldsymbol")
+      .replace(/\u0008(?=mod\b)/g, "\\bmod")
+      .replace(/\u0008(?=ig\b)/g, "\\big");
+
     resultat = resultat.split("\n").map(function (ligne) {
       let normalisee = ligne;
       const formules = [];
@@ -72,6 +116,22 @@
       normalisee = normalisee
         .replace(/\bdisplaystyle\s+\\?int(?=\s*_\{)/gi, "\\displaystyle \\int")
         .replace(/(^|[^\w\\])int(?=\s*_\{)/gi, "$1\\int");
+
+      // Les fractions nues sont frequentes dans les QCM. On supprime le
+      // mot displaystyle s'il a perdu son antislash, puis on protege la
+      // fraction entiere pour KaTeX (dans la question et dans chaque choix).
+      normalisee = normalisee.replace(
+        /\(\s*(?:\\?displaystyle\s+)?(\\(?:frac|dfrac|tfrac)\{(?:[^{}]|\{[^{}]*\})+\}\{(?:[^{}]|\{[^{}]*\})+\})\s*\)/g,
+        function (_match, formule) {
+          return tokenFormule + (formules.push(formule) - 1) + finTokenFormule;
+        }
+      );
+      normalisee = normalisee.replace(
+        /\\(?:frac|dfrac|tfrac)\{(?:[^{}]|\{[^{}]*\})+\}\{(?:[^{}]|\{[^{}]*\})+\}/g,
+        function (formule) {
+          return tokenFormule + (formules.push(formule) - 1) + finTokenFormule;
+        }
+      );
 
       // Une equation de fonction nue est un marqueur fiable d'expression math.
       // On retire une parenthese finale excedentaire due au regroupement de phrase.
@@ -113,8 +173,7 @@
     // invisibles connus qui peuvent perturber les délimiteurs sans modifier
     // les caractères pédagogiques visibles.
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
-    texte = texte.replace(/\r\n?/g, "\n");
-    return normaliserExpressionsMathematiquesNues(texte);
+    return normaliserExpressionsMathematiquesNues(texte).replace(/\r\n?/g, "\n");
   }
 
   function antislashEchappe(texte, index) {
@@ -384,7 +443,10 @@
     "ln", "log", "sin", "cos", "tan", "cot", "exp", "partial", "nabla",
     "vec", "mathbf", "mathbb", "mathrm", "text", "times", "cdot", "pm",
     "leq", "geq", "neq", "approx", "in", "infty", "alpha", "beta", "gamma",
-    "delta", "theta", "lambda", "mu", "pi", "sigma"
+    "delta", "theta", "lambda", "mu", "pi", "sigma", "forall", "exists", "neg",
+    "nexists", "notin", "subseteq", "supseteq", "nsubseteq", "nleq", "ngeq",
+    "equiv", "cong", "propto", "rightarrow", "leftarrow", "leftrightarrow",
+    "therefore", "top", "tilde", "tanh", "bmod", "to", "rfloor", "rangle", "rvert"
   ];
 
   function estCommandeLatexNue(valeur) {
@@ -398,7 +460,7 @@
     /\\(?:frac|dfrac|tfrac)\{[^{}\n]*\}\{[^{}\n]*\}/g,
     /\\sqrt(?:\[[^\]\n]*\])?\{[^{}\n]*\}/g,
     /\\(?:text|mathrm|mathbf|mathbb|mathcal|operatorname|vec)\{[^{}\n]*\}/g,
-    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
+    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Re|Im|therefore|top|tilde|tanh|bmod)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
     /[A-Za-z](?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)/g,
     /\\(?:cdot|times|pm|leq|geq|neq|approx|infty|to|rightarrow|left|right|,|:|;|!)/g
   ];

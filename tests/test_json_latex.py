@@ -63,3 +63,39 @@ def test_json_valide_nabla_reste_un_texte_decodé_exact():
     texte = r'''{"texte":"\\nabla f"}'''
     resultat = charger_json_ia(texte)
     assert resultat["texte"] == r"\nabla f"
+
+def test_repare_les_commandes_latex_confondables_avec_des_escapes_json_valides():
+    # La sequence \f de \frac est un escape JSON valide : json.loads seul
+    # la transformerait en form-feed et laisserait "rac" au lieu de "\frac".
+    texte = r'''{"question":"Simplifie (displaystyle \frac{12}{18}) ?","choix":["(\frac{2}{3})","(\frac{3}{4})","(\frac{4}{6})","(\frac{5}{9})"]}'''
+
+    resultat = charger_json_ia(texte)
+
+    assert resultat["question"] == r"Simplifie (displaystyle \frac{12}{18}) ?"
+    assert resultat["choix"] == [
+        r"(\frac{2}{3})",
+        r"(\frac{3}{4})",
+        r"(\frac{4}{6})",
+        r"(\frac{5}{9})",
+    ]
+
+
+def test_repare_les_collisions_latex_text_nabla_rho_beta():
+    texte = r'''{"a":"\text{valeur}","b":"\nabla f","c":"\rho","d":"\beta"}'''
+
+    resultat = charger_json_ia(texte)
+
+    assert resultat == {
+        "a": r"\text{valeur}",
+        "b": r"\nabla f",
+        "c": r"\rho",
+        "d": r"\beta",
+    }
+
+
+def test_ne_double_pas_les_antislashs_latex_deja_echappes_en_json():
+    attendu = r"\frac{12}{18}"
+    texte = json.dumps({"fraction": attendu})
+
+    assert charger_json_ia(texte) == {"fraction": attendu}
+

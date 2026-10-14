@@ -68,11 +68,12 @@ def test_groq_structured_content_preserve_un_latex_reel():
 
 
 def test_chargeur_json_ia_repare_les_antislashs_latex_apres_json_invalide():
-    brut = r'{"question":"(\frac{1}{x-3})"}'
+    # Construire l'antislash par codepoint pour que le fichier de test lui-même
+    # ne transforme pas \\f en caractère de contrôle avant l'appel au parseur.
+    brut = '{"question":"(' + chr(92) + 'frac{1}{x-3})"}'
     parsed = charger_json_ia(brut)
 
-    assert parsed["question"] == r"(rac{1}{x-3})"
-
+    assert parsed["question"] == "(" + chr(92) + "frac{1}{x-3})"
 
 def test_validation_bloque_les_choix_dupliques():
     questions = [
