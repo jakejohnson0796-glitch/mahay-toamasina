@@ -199,6 +199,7 @@
         type="button"
         class="tb-sidebar-compte"
         id="bouton-menu-compte"
+        aria-label="Ouvrir le menu du compte"
         aria-expanded="false"
         aria-controls="menu-compte-utilisateur"
         aria-haspopup="true"
@@ -210,6 +211,11 @@
           <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% else %}Mon compte{% endif %}</span>
           {% set jours_compte = calculer_jours_inactivite(utilisateur) %}
           <span class="tb-sidebar-compte-activite">{{ jours_compte }} j. inactif</span>
+        </span>
+        {% else %}
+        <span class="tb-sidebar-compte-identite">
+          <span class="tb-sidebar-compte-nom">Mon compte</span>
+          <span class="tb-sidebar-compte-role">Compte</span>
         </span>
         {% endif %}
         <span class="tb-sidebar-compte-chevron" aria-hidden="true">⌄</span>
