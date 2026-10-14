@@ -307,9 +307,13 @@ const guideSource = [
   'Symboles Unicode : ≤, ≥, ≠, ≈, →, ↔, ∈, ⊆, ∀, ∃, ℝ, Ω, μ, λ, √, π, ∑, ∫, ∂, ∇.',
   'Unités SI : v = 3 m/s ; a = 2 m/s² ; ρ = 1 kg/m³ ; Ω·m ; J/(mol·K).',
   String.raw`Formules : \(\Delta x=3\), \(\Omega=2\pi f\), \(\hbar\omega\).`,
+  String.raw`Notation historique nue : \Delta x, \Omega, \angle ABC, \perp d, \hbar\omega.`,
   'Comptabilité : Ar 125 000 ; MGA ; HT ; TVA ; TTC.'
 ].join('\n');
 window.rendreReponseIA(guideSource, guideHost);
+if (guideHost.querySelectorAll('.gm-latex-fallback').length < 5) {
+  throw new Error('Undelimited historical Greek/physics LaTeX did not use the fallback renderer');
+}
 if (guideHost.querySelectorAll('.katex').length < 3) {
   throw new Error('Guide Greek-letter/physics formulas were not rendered');
 }
