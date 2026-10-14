@@ -57,20 +57,19 @@ def _reparer_collisions_escapes_json_latex(texte: str) -> str:
     while i < len(texte):
         caractere = texte[i]
 
-        if not dans_chaine:
-            sortie.append(caractere)
-            if caractere == '"':
-                dans_chaine = True
-            i += 1
-            continue
-
         if caractere == '"':
+            echappe = False
+            j = i - 1
+            while j >= 0 and texte[j] == "\\":
+                echappe = not echappe
+                j -= 1
             sortie.append(caractere)
-            dans_chaine = False
+            if not echappe:
+                dans_chaine = not dans_chaine
             i += 1
             continue
 
-        if caractere != "\\":
+        if not dans_chaine or caractere != "\\":
             sortie.append(caractere)
             i += 1
             continue
