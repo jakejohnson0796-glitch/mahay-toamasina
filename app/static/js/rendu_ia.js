@@ -57,13 +57,15 @@
     const finTokenBloc = "\uE101";
     const tokenFormule = "\uE102GMATHRAW_";
     const finTokenFormule = "\uE103";
-    const zonesProtegees = /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+\$/g;
+    const zonesCodeProtegees = /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60/g;
+    const zonesMathProtegees = /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+\$/g;
 
-    let resultat = String(source == null ? "" : source).replace(zonesProtegees, function (bloc) {
+    // Protéger d’abord le code, mais pas encore les formules : les séquences
+    // de contrôle corrompues doivent aussi être réparées à l’intérieur de math.
+    let resultat = String(source == null ? "" : source).replace(zonesCodeProtegees, function (bloc) {
       const index = blocsProteges.push(bloc) - 1;
       return tokenBloc + index + finTokenBloc;
     });
-
     // Recuperation des anciennes reponses deja decodees en caracteres de
     // controle par JSON : \f + rac -> \frac, \t + ext -> \text, etc.
     // Les blocs de code et les formules bien delimitees sont deja proteges.
@@ -107,6 +109,13 @@
       .replace(/\u0008oldsymbol\b/g, "\\boldsymbol")
       .replace(/\u0008mod\b/g, "\\bmod")
       .replace(/\u0008ig\b/g, "\\big");
+
+    // Réparer les séquences d’abord, puis protéger les formules déjà délimitées
+    // pour que la récupération des formules nues ne les réécrive pas.
+    resultat = resultat.replace(zonesMathProtegees, function (bloc) {
+      const index = blocsProteges.push(bloc) - 1;
+      return tokenBloc + index + finTokenBloc;
+    });
 
     resultat = resultat.split("\n").map(function (ligne) {
       let normalisee = ligne;
