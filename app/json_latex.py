@@ -1,10 +1,10 @@
 r"""Lecture stricte et conservatrice du JSON produit par les modèles IA.
 
-Règle principale : json.loads() est toujours tenté en premier et, lorsqu'il
-réussit, la chaîne décodée est retournée sans aucune réparation métier.
-
-Une récupération n'est utilisée que pour un JSON réellement invalide. Elle
-ne reconnaît que des commandes LaTeX appartenant à une liste blanche explicite.
+Règle principale : corriger uniquement les collisions connues entre une commande
+LaTeX en liste blanche et un escape JSON valide (par exemple la commande frac,
+qui peut être transformée en caractère form-feed + « rac »), puis utiliser
+json.loads(). Les séquences LaTeX déjà correctement échappées restent inchangées.
+Une récupération supplémentaire est réservée au JSON réellement invalide.
 """
 
 from __future__ import annotations
@@ -27,6 +27,11 @@ _COMMANDES_LATEX_AUTORISEES = {
     "bigl", "bigr", "Bigl", "Bigr", "bigg", "Bigg", "rangle", "langle", "rvert",
     "lvert", "nexists", "neg", "notin", "subseteq", "supseteq", "rightarrow",
     "leftarrow", "leftrightarrow", "Longrightarrow", "Longleftrightarrow",
+    "bmod", "bmatrix", "boldsymbol", "overbrace", "underbrace", "uparrow",
+    "downarrow", "updownarrow", "Uparrow", "Downarrow", "mapsto", "mathsf",
+    "mathit", "mathtt", "hspace", "vspace", "therefore", "top", "tilde",
+    "tanh", "rfloor", "lceil", "rceil", "Re", "Im", "rm", "raisebox",
+    "nsubseteq", "nleq", "ngeq", "equiv", "cong", "propto",
 }
 
 
