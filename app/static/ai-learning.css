@@ -2164,3 +2164,46 @@
 @media(prefers-reduced-motion:reduce){
   .learning-command-item,.quiz-nav-item,.quiz-choice{transition:none}
 }
+
+/* Lecture mathematique : formules nettes et choix accessibles, sur ordinateur
+   comme sur mobile. Les formules longues restent defilables sans deborder. */
+.ai-learning-page .quiz-question-title {
+  line-height: 1.42;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.ai-learning-page .quiz-question-title .katex {
+  font-size: 1.08em;
+}
+
+.ai-learning-page .quiz-question-title .katex-display,
+.ai-learning-page .quiz-choice-text .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: .35rem 0;
+  padding: .12rem 0;
+  scrollbar-width: thin;
+}
+
+.ai-learning-page .quiz-choice-text {
+  font-size: .88rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.ai-learning-page .quiz-choice-text .katex {
+  font-size: 1.04em;
+}
+
+@media (max-width: 640px) {
+  .ai-learning-page .quiz-question-title .katex {
+    font-size: 1em;
+  }
+
+  .ai-learning-page .quiz-choice-text {
+    font-size: .86rem;
+  }
+}
+
