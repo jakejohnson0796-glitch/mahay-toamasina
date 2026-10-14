@@ -168,6 +168,58 @@ class TestReferentielReconciliation(unittest.TestCase):
         finally:
             path.unlink(missing_ok=True)
 
+    def test_type_tronc_commun_ne_remplace_pas_un_parcours_nomme(self):
+        engine = nouvel_engine()
+        path = source_temporaire([
+            {
+                "universite": "Université de Toamasina",
+                "ville": "Toamasina",
+                "composante": "Faculté DEG",
+                "domaine": "Droit et sciences politiques",
+                "mention": "Droit et Sciences politiques",
+                "niveau": "L1",
+                "type": "Tronc commun",
+                "parcours": "Droit général",
+                "statut": "Vérifié",
+            }
+        ])
+        try:
+            with Session(engine) as s:
+                u = Universite(nom="Université de Toamasina")
+                s.add(u); s.commit(); s.refresh(u)
+                f = Faculte(nom="DEGMIA", universite_id=u.id)
+                d = Domaine(nom="Droit et sciences politiques")
+                s.add(f); s.add(d); s.commit(); s.refresh(f); s.refresh(d)
+                m = Mention(nom="Droit et Sciences politiques", domaine_id=d.id)
+                s.add(m); s.commit(); s.refresh(m)
+
+                droit_general = Filiere(
+                    nom="Droit général", faculte_id=f.id, mention_id=m.id, niveau="L1"
+                )
+                pseudo_tronc = Filiere(
+                    nom="Tronc commun", faculte_id=f.id, mention_id=m.id, niveau="L1"
+                )
+                s.add(droit_general); s.add(pseudo_tronc); s.commit()
+                s.refresh(droit_general); s.refresh(pseudo_tronc)
+                offre_droit = ProgrammeUniversitaire(
+                    universite_id=u.id, filiere_id=droit_general.id, est_active=False
+                )
+                offre_tronc = ProgrammeUniversitaire(
+                    universite_id=u.id, filiere_id=pseudo_tronc.id, est_active=True
+                )
+                s.add(offre_droit); s.add(offre_tronc); s.commit()
+                s.refresh(offre_droit); s.refresh(offre_tronc)
+
+                rapport = reconcilier(s, str(path))
+
+                offre_droit = s.get(ProgrammeUniversitaire, offre_droit.id)
+                offre_tronc = s.get(ProgrammeUniversitaire, offre_tronc.id)
+                self.assertTrue(offre_droit.est_active)
+                self.assertFalse(offre_tronc.est_active)
+                self.assertIn((m.id, "L1"), rapport.tronc_commun)
+        finally:
+            path.unlink(missing_ok=True)
+
     def test_tronc_commun_ne_publie_pas_un_parcours_technique(self):
         engine = nouvel_engine()
         path = source_temporaire([
