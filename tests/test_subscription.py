@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
-from app.models import AbonnementEtudiant, StatutAbonnementEtudiant
+from app.models import AbonnementEtudiant, RoleUtilisateur, StatutAbonnementEtudiant
 from app import subscription
+from app.dependencies import acces_ia_ou_redirection, acces_premium_ou_redirection
 
 
 def _abonnement_essai(jours_ecoules: int = 0) -> AbonnementEtudiant:
@@ -50,3 +51,17 @@ def test_compteur_ia_egal_zero_hors_fenetre():
     abonnement = _abonnement_essai(jours_ecoules=15)
 
     assert subscription.jours_restants_ia(abonnement) == 0
+
+
+def test_un_admin_contourne_les_gardes_abonnement_et_ia(monkeypatch):
+    from types import SimpleNamespace
+
+    admin = SimpleNamespace(id=1, role=RoleUtilisateur.ADMIN)
+
+    def abonnement_etudiant_interdit(*_args, **_kwargs):
+        raise AssertionError("Un admin ne doit pas être soumis à l'abonnement étudiant.")
+
+    monkeypatch.setattr(subscription, "obtenir_abonnement", abonnement_etudiant_interdit)
+
+    assert acces_premium_ou_redirection(admin, session=None) is None
+    assert acces_ia_ou_redirection(admin, session=None) is None
