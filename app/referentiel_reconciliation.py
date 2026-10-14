@@ -481,8 +481,14 @@ def reconcilier(
         if not niveau:
             continue
 
-        if normaliser(ligne.get("type")) == normaliser("Tronc commun"):
+        est_tronc_commun = normaliser(ligne.get("type")) == normaliser("Tronc commun")
+        if est_tronc_commun:
             cles_tronc.add((mention.id, niveau))
+
+        # Type et nom de parcours sont deux dimensions distinctes. Ne créer
+        # la Filiere technique que lorsque le parcours lui-même est libellé
+        # "Tronc commun". Sinon conserver le parcours nommé (ex. Droit général).
+        if est_tronc_commun and normaliser(ligne.get("parcours")) == normaliser("Tronc commun"):
             # Représentation technique de l'offre mention+niveau. Elle ne
             # devient jamais un cercle de parcours et est masquée du select
             # des parcours, mais elle permet à l'API de savoir que la mention

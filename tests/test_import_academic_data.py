@@ -12,7 +12,7 @@ from scripts import import_academic_data
 
 
 class TestImportStrictToamasina(unittest.TestCase):
-    def test_un_ancien_parcours_marque_tronc_commun_est_desactive(self):
+    def test_type_tronc_commun_preserve_le_parcours_droit_general(self):
         moteur = create_engine("sqlite://", connect_args={"check_same_thread": False})
         SQLModel.metadata.create_all(moteur)
 
@@ -41,6 +41,7 @@ class TestImportStrictToamasina(unittest.TestCase):
             session.add(filiere)
             session.commit()
             session.refresh(filiere)
+            mention_id = mention.id
 
             offre = ProgrammeUniversitaire(
                 universite_id=universite.id,
@@ -82,13 +83,14 @@ class TestImportStrictToamasina(unittest.TestCase):
             ancien_moteur = import_academic_data.engine
             import_academic_data.engine = moteur
             try:
-                import_academic_data.importer(str(source))
+                rapport = import_academic_data.importer(str(source))
             finally:
                 import_academic_data.engine = ancien_moteur
 
             with Session(moteur) as session:
                 offre_rechargee = session.exec(select(ProgrammeUniversitaire)).one()
-                self.assertFalse(offre_rechargee.est_active)
+                self.assertTrue(offre_rechargee.est_active)
+                self.assertIn((mention_id, "L1"), rapport.cercles_tronc_commun)
         finally:
             source.unlink(missing_ok=True)
 
