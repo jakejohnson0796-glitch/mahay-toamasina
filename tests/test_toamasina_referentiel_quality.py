@@ -42,6 +42,17 @@ class TestQualiteSourceToamasina(unittest.TestCase):
         self.data = json.loads(SOURCE.read_text(encoding="utf-8"))
         self.formations = self.data["formations"]
 
+    def test_droit_l1_l2_gardent_le_parcours_nomme_sous_type_tronc_commun(self):
+        lignes = [
+            ligne for ligne in self.formations
+            if ligne["composante"] == "Faculté DEG"
+            and ligne["mention"] == "Droit et Sciences politiques"
+            and ligne["niveau"] in {"L1", "L2"}
+        ]
+        self.assertEqual({ligne["niveau"] for ligne in lignes}, {"L1", "L2"})
+        self.assertTrue(all(ligne["type"] == "Tronc commun" for ligne in lignes))
+        self.assertTrue(all(ligne["parcours"] == "Droit général" for ligne in lignes))
+
     def test_gestion_commerce_international_est_present_en_m1_et_m2(self):
         niveaux = {
             ligne["niveau"]
