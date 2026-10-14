@@ -31,6 +31,10 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
   bloc : \[ ... \]
   et les commandes \frac{}, \sqrt{}, \sum, \int, \begin{aligned}, \begin{pmatrix},
   \begin{cases}, \mathrm{}, \vec{}, \nabla, \le, \ge, \neq, \times, \cdot, etc.
+- OBLIGATOIRE : chaque équation, puissance, fraction, intégrale ou variable avec indice
+  doit être entièrement placée entre \( ... \) ou \[ ... \], même au milieu d'une phrase.
+  Exemples : « \(f(x)=3x^{2}+2x-5\) » et
+  « \(\displaystyle\int_{0}^{2}(x+1)\,dx\) ».
 - CHIMIE : utilise mhchem uniquement dans un délimiteur mathématique :
   \( \ce{H2O} \)
   \( \ce{2H2 + O2 -> 2H2O} \)

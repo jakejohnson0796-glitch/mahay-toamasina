@@ -47,6 +47,65 @@
       });
   }
 
+  // Les modeles peuvent omettre les delimiters LaTeX dans un QCM. On
+  // repare seulement les motifs fortement mathematiques (fonction f/g(x)=...
+  // et integrale avec bornes + differentielle), sans toucher au code ni aux
+  // formules deja delimitees. Le texte brut reste sinon inchange.
+  function normaliserExpressionsMathematiquesNues(source) {
+    const blocsProteges = [];
+    const tokenBloc = "\uE100GMSRC_";
+    const finTokenBloc = "\uE101";
+    const tokenFormule = "\uE102GMATHRAW_";
+    const finTokenFormule = "\uE103";
+    const zonesProtegees = /\x60\x60\x60[\s\S]*?\x60\x60\x60|\x60[^\x60\n]*\x60|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]+\$/g;
+
+    let resultat = String(source == null ? "" : source).replace(zonesProtegees, function (bloc) {
+      const index = blocsProteges.push(bloc) - 1;
+      return tokenBloc + index + finTokenBloc;
+    });
+
+    resultat = resultat.split("\n").map(function (ligne) {
+      let normalisee = ligne;
+      const formules = [];
+
+      // Quelques modeles suppriment l'antislash initial de \displaystyle \int.
+      normalisee = normalisee
+        .replace(/\bdisplaystyle\s+\\?int(?=\s*_\{)/gi, "\\displaystyle \\int")
+        .replace(/(^|[^\w\\])int(?=\s*_\{)/gi, "$1\\int");
+
+      // Une equation de fonction nue est un marqueur fiable d'expression math.
+      // On retire une parenthese finale excedentaire due au regroupement de phrase.
+      normalisee = normalisee.replace(/\b[fg]\s*\(\s*x\s*\)\s*=\s*[^?;\n]{1,100}/gi, function (expression) {
+        const espaceFinal = (expression.match(/\s+$/) || [""])[0];
+        let formule = expression.trim();
+        const ouvrantes = (formule.match(/\(/g) || []).length;
+        const fermantes = (formule.match(/\)/g) || []).length;
+        if (formule.endsWith(")") && fermantes > ouvrantes) {
+          formule = formule.slice(0, -1).trimEnd();
+        }
+        return tokenFormule + (formules.push(formule) - 1) + finTokenFormule + espaceFinal;
+      });
+
+      // Les bornes et la differentielle distinguent l'integrale d'un texte ordinaire.
+      normalisee = normalisee.replace(
+        /(?:\\displaystyle\s+)?\\int_\{[^{}\n]{1,12}\}(?:\^\{[^{}\n]{1,12}\})?[^?;\n]{0,100}?\bd[a-z]\b/gi,
+        function (expression) {
+          return tokenFormule + (formules.push(expression.trim()) - 1) + finTokenFormule;
+        }
+      );
+
+      normalisee = normalisee.replace(/\uE102GMATHRAW_(\d+)\uE103/g, function (_match, index) {
+        return "\\(" + formules[Number(index)] + "\\)";
+      });
+      return normalisee;
+    }).join("\n");
+
+    resultat = resultat.replace(/\uE100GMSRC_(\d+)\uE101/g, function (match, index) {
+      return blocsProteges[Number(index)] || match;
+    });
+    return resultat;
+  }
+
   function normaliserSourceRendu(source) {
     let texte = String(source == null ? "" : source);
     try { texte = texte.normalize("NFC"); } catch (_) {}
@@ -54,7 +113,8 @@
     // invisibles connus qui peuvent perturber les délimiteurs sans modifier
     // les caractères pédagogiques visibles.
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
-    return texte.replace(/\r\n?/g, "\n");
+    texte = texte.replace(/\r\n?/g, "\n");
+    return normaliserExpressionsMathematiquesNues(texte);
   }
 
   function antislashEchappe(texte, index) {
