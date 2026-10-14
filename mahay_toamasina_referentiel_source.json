@@ -2194,6 +2194,20 @@
       "fin_specialisation": null,
       "statut": "Confirmé",
       "source": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    {
+      "universite": "Université de Toamasina",
+      "ville": "Toamasina",
+      "composante": "Faculté DEG",
+      "domaine": "Sciences de gestion",
+      "mention": "Gestion",
+      "niveau": "M2",
+      "type": "Spécialisation",
+      "parcours": "CCA — Comptabilité, Contrôle, Audit",
+      "debut_specialisation": "M1",
+      "fin_specialisation": "M2",
+      "statut": "Confirmé",
+      "source": "https://fr.scribd.com/document/689634398/Evaluation-de-Lentreprise-M2-CCA"
     }
   ],
   "schema_version": "toamasina_referentiel_canonique_v2",
@@ -2256,12 +2270,12 @@
         "mention": "Gestion",
         "parcours": "CCA — Comptabilité, Contrôle, Audit",
         "niveaux": [
-          "M1",
-          "M2"
+          "M1"
         ],
-        "statut": "À vérifier — non publié",
-        "motif": "Parcours signalé comme attendu, mais absent de la page officielle de la Faculté DEG consultée, qui documente Banques et Finances et Commerce International en M1/M2. Une maquette actuelle ou un arrêté récent est nécessaire pour confirmer le parcours, ses niveaux et son ouverture avant publication.",
-        "source_consultee": "https://www.univ-toamasina.mg/facultes/deg/"
+        "statut": "À vérifier — M1 non publié",
+        "motif": "Un support de cours attribué à l’Université de Toamasina confirme un enseignement de M2, semestre 9, parcours CCA. Le M1 CCA reste absent de la page officielle de la Faculté DEG consultée et n’est pas publié sans maquette ou arrêté actuel.",
+        "source_consultee": "https://www.univ-toamasina.mg/facultes/deg/",
+        "preuve_partielle": "https://fr.scribd.com/document/689634398/Evaluation-de-Lentreprise-M2-CCA"
       },
       {
         "composante": "École Supérieure Polytechnique de Toamasina (ESPT)",
