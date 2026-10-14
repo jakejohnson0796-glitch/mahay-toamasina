@@ -41,6 +41,7 @@ class TestImportStrictToamasina(unittest.TestCase):
             session.add(filiere)
             session.commit()
             session.refresh(filiere)
+            mention_id = mention.id
 
             offre = ProgrammeUniversitaire(
                 universite_id=universite.id,
@@ -89,7 +90,7 @@ class TestImportStrictToamasina(unittest.TestCase):
             with Session(moteur) as session:
                 offre_rechargee = session.exec(select(ProgrammeUniversitaire)).one()
                 self.assertTrue(offre_rechargee.est_active)
-                self.assertIn((mention.id, "L1"), rapport.cercles_tronc_commun)
+                self.assertIn((mention_id, "L1"), rapport.cercles_tronc_commun)
         finally:
             source.unlink(missing_ok=True)
 
