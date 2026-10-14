@@ -326,4 +326,51 @@ for (const command of ['\\Delta', '\\Omega', '\\hbar', '\\angle', '\\perp']) {
 for (const symbol of ['≤', 'ℝ', 'Ω', '∇', 'm/s²', 'Ω·m', 'Co ≠ CO', 'Ar 125 000', 'MGA', 'TVA', '&&', '?.', '??']) {
   if (!guideVisible.includes(symbol)) throw new Error('Guide symbol/context was altered: ' + symbol);
 }
+// Régression exacte du cas signalé : les escapes JSON \f doivent redevenir des fractions.
+const badQuizHost = window.document.createElement('div');
+window.document.body.appendChild(badQuizHost);
+const formFeed = String.fromCharCode(12);
+window.rendreReponseIA(
+  'Question 03\nQuel est le résultat de la simplification de (displaystyle ' + formFeed + 'rac{12}{18}) ?',
+  badQuizHost
+);
+if (badQuizHost.querySelectorAll('.katex').length < 1) {
+  throw new Error('Broken historical quiz fraction was not recovered');
+}
+const badQuizText = badQuizHost.cloneNode(true);
+badQuizText.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+if ((badQuizText.textContent || '').includes(formFeed) || (badQuizText.textContent || '').includes('\\frac')) {
+  throw new Error('Broken raw control/LaTeX remained visible in the quiz question');
+}
+const fractionOptions = ['2/3', '3/4', '4/6', '5/9'];
+const optionLabels = ['A', 'B', 'C', 'D'];
+const optionNodes = [];
+for (let index = 0; index < fractionOptions.length; index += 1) {
+  const row = window.document.createElement('div');
+  row.className = 'quiz-choice';
+  const label = window.document.createElement('span');
+  label.className = 'quiz-choice-label';
+  label.textContent = optionLabels[index];
+  const answer = window.document.createElement('span');
+  answer.className = 'quiz-choice-value';
+  const [numerator, denominator] = fractionOptions[index].split('/');
+  window.document.body.appendChild(row);
+  row.append(label, answer);
+  window.rendreReponseIA('(' + formFeed + 'rac{' + numerator + '}{' + denominator + '})', answer);
+  optionNodes.push(row);
+}
+if (optionNodes.length !== 4 || new Set(optionNodes.map((row) => row.querySelector('.quiz-choice-label')?.textContent)).size !== 4) {
+  throw new Error('Quiz answers were not kept as four separate selectable options');
+}
+if (optionNodes.some((row) => row.querySelectorAll('.katex').length < 1)) {
+  throw new Error('One or more quiz fraction options were not rendered');
+}
+for (const row of optionNodes) {
+  const answer = row.querySelector('.quiz-choice-value');
+  const clone = answer.cloneNode(true);
+  clone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+  const visible = clone.textContent || '';
+  if (visible.includes(formFeed) || visible.includes('\\frac')) throw new Error('Raw fraction leaked in a choice');
+}
+
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
