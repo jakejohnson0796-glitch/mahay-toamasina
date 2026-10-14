@@ -1848,7 +1848,9 @@
   formulaire.addEventListener("submit", function (evenement) {
     evenement.preventDefault();
     const contenu = champMessage.value.trim();
-    if (!contenu || ws.readyState !== WebSocket.OPEN) return;
+    // Le controle d'acces HTTP est asynchrone : avant la creation du
+    // premier socket, ws peut encore etre indefini.
+    if (!contenu || !ws || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ contenu: contenu, mentions: extraireMentionsPresentes(contenu, mentionsPrincipal) }));
     champMessage.value = "";
     try { sessionStorage.removeItem("mahay-brouillon-cercle-" + cercleId); } catch (_) {}
