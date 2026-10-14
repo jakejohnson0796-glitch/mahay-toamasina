@@ -98,6 +98,22 @@ def _est_admin(utilisateur: Optional[Utilisateur]) -> bool:
     return bool(utilisateur and utilisateur.role == RoleUtilisateur.ADMIN)
 
 
+def _a_acces_premium_cercle(session: Session, utilisateur: Utilisateur) -> bool:
+    """Applique au WebSocket les memes regles Premium que les routes HTTP.
+
+    Les administrateurs sont exemptes d'abonnement et peuvent acceder a tous
+    les cercles. Pour les autres comptes, l'expiration est synchronisee avant
+    de verifier l'acces, y compris lors de la revalidation de chaque message.
+    """
+    if _est_admin(utilisateur):
+        return True
+
+    abonnement = subscription.obtenir_abonnement(session, utilisateur.id)
+    if abonnement:
+        abonnement = subscription.synchroniser_expiration(session, abonnement)
+    return subscription.acces_premium_valide(abonnement)
+
+
 def _peut_gerer_cercle(cercle: CercleEtude, utilisateur: Optional[Utilisateur]) -> bool:
     """Createur du cercle (uniquement le sien) ou admin (n'importe
     lequel), mais uniquement tant que le cercle est ACTIF.
@@ -2171,10 +2187,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
             await websocket.close(code=4403)
             return
 
-        abonnement = subscription.obtenir_abonnement(session, user_id)
-        if abonnement:
-            abonnement = subscription.synchroniser_expiration(session, abonnement)
-        if not subscription.acces_premium_valide(abonnement):
+        if not _a_acces_premium_cercle(session, utilisateur):
             # 4402, en echo au code HTTP 402 Payment Required : pas de
             # redirection possible en WebSocket, donc on ferme simplement
             # la connexion. La page /cercles/{id} (HTTP) bloque deja
@@ -2226,10 +2239,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                     await websocket.close(code=4403)
                     break
 
-                abonnement = subscription.obtenir_abonnement(session, user_id)
-                if abonnement:
-                    abonnement = subscription.synchroniser_expiration(session, abonnement)
-                if not subscription.acces_premium_valide(abonnement):
+                if not _a_acces_premium_cercle(session, utilisateur_frais):
                     await websocket.close(code=4402)
                     break
 
