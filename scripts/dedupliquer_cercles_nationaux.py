@@ -629,7 +629,7 @@ def deduplicquer(
                     if f.mention_id == cle[1]
                     and normaliser(f.nom) == cle[2]
                     and _offre_active_filiere(contexte, f)
-                    and (not f.niveau or f.niveau == cle[3])
+                    and f.niveau == cle[3]
                 ]
                 if candidates:
                     fid_canonique = min(candidates, key=lambda f: f.id).id
