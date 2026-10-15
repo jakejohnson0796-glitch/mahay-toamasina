@@ -211,7 +211,6 @@
     const automatique = document.createElement("option");
     automatique.value = "";
     automatique.textContent = "Voix automatique";
-    automatique.setAttribute("data-no-translate", "");
     selectVoix.appendChild(automatique);
 
     voixDisponibles.forEach((voix, index) => {
