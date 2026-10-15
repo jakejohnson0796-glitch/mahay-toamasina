@@ -16,6 +16,7 @@ import os
 import re
 import unittest
 import tempfile
+from types import SimpleNamespace
 from unittest.mock import patch
 
 # DATABASE_URL doit etre fixee AVANT le premier import de app.* (le moteur
@@ -31,10 +32,11 @@ from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.admin_security import action_admin_protegee  # noqa: E402
+from app.routers.cercles_router import _origine_websocket_autorisee  # noqa: E402
 from app.models import (  # noqa: E402
     Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, RoleMembreCercle,
     MessageCercle, MessageReaction, MessageMention, Notification, StatutCercle,
-    AbonnementEtudiant,
+    AbonnementEtudiant, DemandeAdhesionCercle,
 )
 from app import rate_limit, subscription  # noqa: E402
 
@@ -142,7 +144,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
 
     def test_websocket_refuse_un_message_trop_long_sans_perdre_la_socket(self):
         client_message_id = "message-trop-long-001"
-        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws", headers={"origin": "https://testserver"}) as websocket:
             self.assertEqual(websocket.receive_json()["type"], "presence")
             websocket.send_json({
                 "contenu": "x" * 2001,
@@ -174,7 +176,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
 
     def test_websocket_refuse_un_parent_invalide_sans_creer_de_reponse(self):
         client_message_id = "parent-invalide-001"
-        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws", headers={"origin": "https://testserver"}) as websocket:
             self.assertEqual(websocket.receive_json()["type"], "presence")
             websocket.send_json({
                 "contenu": "Réponse à un message inexistant",
@@ -198,7 +200,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
     def test_websocket_signale_clairement_la_limite_de_debit(self):
         client_message_id = "debit-limite-001"
         with patch("app.routers.cercles_router.limite_depassee", return_value=True):
-            with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+            with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws", headers={"origin": "https://testserver"}) as websocket:
                 self.assertEqual(websocket.receive_json()["type"], "presence")
                 websocket.send_json({
                     "contenu": "Message rejeté par le quota",
@@ -219,7 +221,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
             self.assertIsNone(refuse)
 
     def test_websocket_refuse_une_trame_texte_surdimensionnee_avant_json(self):
-        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws", headers={"origin": "https://testserver"}) as websocket:
             self.assertEqual(websocket.receive_json()["type"], "presence")
             websocket.send_text(" " * 16_385)
             erreur = websocket.receive_json()
@@ -235,7 +237,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
             self.assertEqual(evenement["contenu"], "La connexion survit au gros payload")
 
     def test_websocket_refuse_un_payload_non_objet_sans_planter(self):
-        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws", headers={"origin": "https://testserver"}) as websocket:
             self.assertEqual(websocket.receive_json()["type"], "presence")
             websocket.send_json(["pas", "un", "objet"])
             erreur = websocket.receive_json()
@@ -269,6 +271,111 @@ class TestMessagerieEnrichie(unittest.TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertEqual(page.text.count('<span class="message-contenu">MATCH-TEST-'), 50)
 
+    def test_origine_websocket_exige_exactement_le_meme_hote(self):
+        self.assertTrue(_origine_websocket_autorisee(SimpleNamespace(
+            headers={"origin": "https://testserver", "host": "testserver"}
+        )))
+        self.assertFalse(_origine_websocket_autorisee(SimpleNamespace(
+            headers={"origin": "https://evil.example", "host": "testserver"}
+        )))
+        self.assertFalse(_origine_websocket_autorisee(SimpleNamespace(
+            headers={"host": "testserver"}
+        )))
+        self.assertFalse(_origine_websocket_autorisee(SimpleNamespace(
+            headers={"origin": "null", "host": "testserver"}
+        )))
+        self.assertFalse(_origine_websocket_autorisee(SimpleNamespace(
+            headers={"origin": "https://testserver/chemin", "host": "testserver"}
+        )))
+
+    def test_administrateur_ne_cree_pas_de_demande_adhesion_inutile(self):
+        administrateur = _creer_client_connecte(
+            "0341000010", "Admin demande", role=RoleUtilisateur.ADMIN
+        )
+        jeton = _jeton_csrf(administrateur, "/cercles")
+        reponse = administrateur.post(
+            f"/cercles/{self.cercle_id}/demander",
+            data={"raison": "Demande admin qui doit être ignorée", "_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse.status_code, 303)
+        with Session(engine) as session:
+            demande = session.exec(
+                select(DemandeAdhesionCercle).where(
+                    DemandeAdhesionCercle.cercle_id == self.cercle_id,
+                    DemandeAdhesionCercle.utilisateur_id == administrateur.utilisateur_id,
+                )
+            ).first()
+            self.assertIsNone(demande)
+
+    def test_membre_exclu_ne_peut_plus_supprimer_son_ancien_message(self):
+        with Session(engine) as session:
+            message = MessageCercle(
+                cercle_id=self.cercle_id,
+                auteur_id=self.thomas.utilisateur_id,
+                contenu="Mon message avant exclusion",
+            )
+            session.add(message)
+            session.commit()
+            session.refresh(message)
+            message_id = message.id
+            membre = session.exec(
+                select(MembreCercle).where(
+                    MembreCercle.cercle_id == self.cercle_id,
+                    MembreCercle.utilisateur_id == self.thomas.utilisateur_id,
+                )
+            ).one()
+            session.delete(membre)
+            session.commit()
+
+        jeton = _jeton_csrf(self.thomas, "/cercles")
+        reponse = self.thomas.post(
+            f"/cercles/{self.cercle_id}/messages/{message_id}/supprimer",
+            data={"_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse.status_code, 303)
+        with Session(engine) as session:
+            message = session.get(MessageCercle, message_id)
+            self.assertFalse(message.supprime)
+
+    def test_supprimer_message_parent_masque_aussi_ses_reponses(self):
+        with Session(engine) as session:
+            reponses = [
+                MessageCercle(
+                    cercle_id=self.cercle_id,
+                    auteur_id=self.thomas.utilisateur_id,
+                    contenu=f"Réponse privée à cacher {i}",
+                    parent_message_id=self.message_id,
+                )
+                for i in range(2)
+            ]
+            session.add_all(reponses)
+            session.commit()
+            ids_reponses = [reponse.id for reponse in reponses]
+
+        jeton = _jeton_csrf(self.sarah, f"/cercles/{self.cercle_id}")
+        reponse_http = self.sarah.post(
+            f"/cercles/{self.cercle_id}/messages/{self.message_id}/supprimer",
+            data={"_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse_http.status_code, 303)
+
+        with Session(engine) as session:
+            parent = session.get(MessageCercle, self.message_id)
+            self.assertTrue(parent.supprime)
+            for id_reponse in ids_reponses:
+                self.assertTrue(session.get(MessageCercle, id_reponse).supprime)
+
+        recherche = self.sarah.get(
+            f"/cercles/{self.cercle_id}/recherche",
+            params={"q": "Réponse privée à cacher"},
+        )
+        self.assertEqual(recherche.status_code, 200)
+        self.assertNotIn("Réponse privée à cacher 0", recherche.text)
+        self.assertNotIn("Réponse privée à cacher 1", recherche.text)
+
     def test_administrateur_peut_utiliser_websocket_sans_abonnement_etudiant(self):
         administrateur = _creer_client_connecte(
             "0341000004", "Admin de test", role=RoleUtilisateur.ADMIN
@@ -289,7 +396,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
         self.assertEqual(statut_acces.status_code, 200)
         self.assertTrue(statut_acces.json()["ok"])
 
-        with administrateur.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+        with administrateur.websocket_connect(f"/cercles/{self.cercle_id}/ws", headers={"origin": "https://testserver"}) as websocket:
             presence = websocket.receive_json()
             self.assertEqual(presence["type"], "presence")
 
