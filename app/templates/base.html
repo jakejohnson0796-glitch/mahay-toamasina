@@ -33,7 +33,7 @@
 <link rel="stylesheet" href="/static/ux.css?v={{ version_asset('ux.css') }}">
 <link rel="stylesheet" href="/static/refonte.css?v={{ version_asset('refonte.css') }}">
 <link rel="stylesheet" href="/static/csp-utilities.css?v={{ version_asset('csp-utilities.css') }}">
-{% if request.url.path == "/cadre-legal" %}
+{% if request.url.path in ["/cadre-legal", "/conditions-utilisation", "/charte-ethique", "/confidentialite", "/mentions-legales"] %}
 <link rel="stylesheet" href="/static/legal.css?v={{ version_asset('legal.css') }}">
 {% endif %}
 {% if request.url.path in ["/a-propos", "/faq"] %}
