@@ -12,10 +12,12 @@
         headers: { Accept: "application/json" },
         credentials: "same-origin",
       });
-      if (!response.ok) return [];
-      return await response.json();
+      if (!response.ok) return { ok: false, data: [] };
+      const data = await response.json();
+      if (!Array.isArray(data)) return { ok: false, data: [] };
+      return { ok: true, data: data };
     } catch (_error) {
-      return [];
+      return { ok: false, data: [] };
     }
   }
 
@@ -29,11 +31,49 @@
   }
 
   async function chargerParcoursNationaux(mentionId, niveau) {
-    if (!mentionId || !niveau) return [];
+    if (!mentionId || !niveau) return { ok: true, data: [] };
     return await chargerJSON(
       "/api/academique/mentions/" + encodeURIComponent(mentionId)
       + "/parcours-nationaux?niveau=" + encodeURIComponent(niveau)
     );
+  }
+
+  function effacerEtatParcours(select) {
+    const etat = document.getElementById(select.id + "-etat");
+    if (etat) etat.remove();
+    select.removeAttribute("aria-invalid");
+    select.removeAttribute("aria-busy");
+  }
+
+  function afficherEtatParcours(select, message, recommencer, erreur) {
+    let etat = document.getElementById(select.id + "-etat");
+    if (!etat) {
+      etat = document.createElement("div");
+      etat.id = select.id + "-etat";
+      etat.tabIndex = -1;
+      select.insertAdjacentElement("afterend", etat);
+    }
+    etat.className = erreur ? "erreur" : "stat-label";
+    etat.setAttribute("role", erreur ? "alert" : "status");
+    etat.setAttribute("aria-live", "polite");
+    etat.replaceChildren();
+
+    const texte = document.createElement("span");
+    texte.textContent = message;
+    etat.appendChild(texte);
+
+    if (typeof recommencer === "function") {
+      const bouton = document.createElement("button");
+      bouton.type = "button";
+      bouton.className = "bouton bouton-secondaire";
+      bouton.textContent = "Réessayer";
+      bouton.addEventListener("click", recommencer);
+      etat.appendChild(document.createTextNode(" "));
+      etat.appendChild(bouton);
+    }
+
+    if (erreur) select.setAttribute("aria-invalid", "true");
+    else select.removeAttribute("aria-invalid");
   }
 
   function remplirParcours(select, parcours, valeurCourante, allowTronc, aucuneOption) {
@@ -91,15 +131,42 @@
 
     async function actualiserParcours(valeurCourante) {
       const ticket = ++generation;
+      effacerEtatParcours(parcours);
+      if (!mention.value || !niveau.value) {
+        parcours.replaceChildren();
+        option(parcours, "", "Tous les parcours", true);
+        parcours.disabled = true;
+        return;
+      }
+
       parcours.disabled = true;
-      const rows = await chargerParcoursNationaux(mention.value, niveau.value);
+      parcours.setAttribute("aria-busy", "true");
+      afficherEtatParcours(parcours, "Chargement des parcours…", null, false);
+      const resultat = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
-      remplirParcours(parcours, rows, valeurCourante, true, "Tous les parcours");
+      parcours.removeAttribute("aria-busy");
+      effacerEtatParcours(parcours);
+
+      if (!resultat.ok) {
+        parcours.replaceChildren();
+        option(parcours, "", "— parcours indisponibles —", true);
+        parcours.disabled = false;
+        afficherEtatParcours(
+          parcours,
+          "Impossible de charger les parcours du référentiel. Réessaie avant de filtrer par parcours.",
+          function () { actualiserParcours(""); },
+          true
+        );
+        return;
+      }
+
+      remplirParcours(parcours, resultat.data, valeurCourante, true, "Tous les parcours");
     }
 
     domaine.addEventListener("change", function () {
       mention.value = "";
       niveau.value = "";
+      effacerEtatParcours(parcours);
       parcours.replaceChildren();
       option(parcours, "", "Tous les parcours", true);
       parcours.disabled = true;
@@ -108,6 +175,7 @@
 
     mention.addEventListener("change", function () {
       niveau.value = "";
+      effacerEtatParcours(parcours);
       parcours.replaceChildren();
       option(parcours, "", "Tous les parcours", true);
       parcours.disabled = true;
@@ -149,13 +217,27 @@
     const infoTronc = document.getElementById("creation-info-tronc-commun");
     if (!mention || !niveau || !parcours) return;
 
+    const formulaire = parcours.closest("form");
     let generation = 0;
+    if (formulaire) {
+      formulaire.dataset.parcoursState = "idle";
+      formulaire.addEventListener("submit", function (event) {
+        const etat = formulaire.dataset.parcoursState;
+        if (etat === "loading" || etat === "error") {
+          event.preventDefault();
+          const message = document.getElementById(parcours.id + "-etat");
+          if (message) message.focus();
+        }
+      });
+    }
 
     function resetParcours() {
+      effacerEtatParcours(parcours);
       parcours.replaceChildren();
       option(parcours, "", "— choisissez d'abord un niveau —", true);
       parcours.disabled = true;
       if (infoTronc) infoTronc.hidden = true;
+      if (formulaire) formulaire.dataset.parcoursState = "idle";
     }
 
     async function charger() {
@@ -163,9 +245,31 @@
       resetParcours();
       if (!mention.value || !niveau.value) return;
 
-      const rows = await chargerParcoursNationaux(mention.value, niveau.value);
+      if (formulaire) formulaire.dataset.parcoursState = "loading";
+      parcours.setAttribute("aria-busy", "true");
+      afficherEtatParcours(parcours, "Chargement des parcours…", null, false);
+      const resultat = await chargerParcoursNationaux(mention.value, niveau.value);
       if (ticket !== generation) return;
+      parcours.removeAttribute("aria-busy");
 
+      if (!resultat.ok) {
+        parcours.replaceChildren();
+        option(parcours, "", "— parcours indisponibles —", true);
+        parcours.disabled = true;
+        if (infoTronc) infoTronc.hidden = true;
+        if (formulaire) formulaire.dataset.parcoursState = "error";
+        afficherEtatParcours(
+          parcours,
+          "Le référentiel des parcours est momentanément indisponible. Réessaie avant de créer le cercle.",
+          function () { charger(); },
+          true
+        );
+        return;
+      }
+
+      effacerEtatParcours(parcours);
+      if (formulaire) formulaire.dataset.parcoursState = "ready";
+      const rows = resultat.data;
       parcours.replaceChildren();
       if (!rows.length) {
         option(parcours, "", "— aucun parcours specifique —", true);
