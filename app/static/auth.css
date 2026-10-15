@@ -296,3 +296,61 @@ html[data-theme="sombre"] .auth-step.is-active,html[data-theme="sombre"] .auth-s
 @media (prefers-reduced-motion:reduce) {
   .auth-phone-wrap,.auth-password-meter span { transition:none; }
 }
+
+
+/* Consentement explicite aux conditions à l'inscription. */
+.auth-legal-consent{
+  display:grid;
+  gap:.8rem;
+  margin:1.15rem 0 .85rem;
+  padding:1rem;
+  border:1px solid var(--content-border, #d7e2e3);
+  border-radius:14px;
+  background:color-mix(in srgb, var(--content-bg, #f7faf9) 74%, #0e7773 6%);
+}
+.auth-legal-consent h3{
+  margin:0;
+  color:var(--content-text, #163b3d);
+  font-size:.92rem;
+  line-height:1.4;
+}
+.auth-legal-checkbox{
+  display:grid;
+  grid-template-columns:1.15rem minmax(0,1fr);
+  align-items:start;
+  gap:.65rem;
+}
+.auth-legal-checkbox input[type="checkbox"]{
+  width:1.15rem;
+  height:1.15rem;
+  margin:.18rem 0 0;
+  accent-color:var(--content-link, #087e7a);
+  cursor:pointer;
+}
+.auth-legal-checkbox label{
+  color:var(--content-text, #163b3d);
+  font-size:.82rem;
+  line-height:1.65;
+  cursor:pointer;
+}
+.auth-legal-consent a{
+  color:var(--content-link, #087e7a);
+  font-weight:700;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+.auth-legal-checkbox input:focus-visible{
+  outline:3px solid color-mix(in srgb, var(--content-link, #087e7a) 60%, transparent);
+  outline-offset:3px;
+}
+.auth-legal-aide{
+  margin:0;
+  color:var(--content-text-muted, #5c7374);
+  font-size:.75rem;
+  line-height:1.55;
+}
+@media(max-width:520px){
+  .auth-legal-consent{padding:.8rem;border-radius:12px}
+  .auth-legal-checkbox{gap:.55rem}
+  .auth-legal-checkbox label{font-size:.78rem}
+}
