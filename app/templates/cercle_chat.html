@@ -407,6 +407,9 @@
 .contenu-clair .entete-cercle-actions>a.bouton-icone-cercle,.contenu-clair .entete-cercle-actions>.menu-options-cercle>button.bouton-icone-cercle{display:inline-flex!important;align-items:center;justify-content:center;width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;flex:0 0 auto}
 .contenu-clair .disposition-chat{min-width:0;gap:.85rem}
 .contenu-clair .colonne-conversation{display:flex;flex:1 1 auto;flex-direction:column;min-width:0;gap:.65rem}
+.bouton-historique-chat{align-self:center;min-height:38px;padding:.45rem .8rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-surface);color:var(--content-text);font-size:.82rem;cursor:pointer}
+.bouton-historique-chat:hover{border-color:var(--content-link)}
+.bouton-historique-chat:disabled{opacity:.65;cursor:wait}
 .contenu-clair .fenetre-chat{width:100%;min-width:0;height:clamp(18rem,calc(100dvh - 20rem),60rem)!important;min-height:18rem!important;max-height:calc(100dvh - 10rem)!important;overflow-x:hidden;overscroll-behavior:contain;scroll-padding-block:.75rem}
 .contenu-clair .fenetre-chat-vide{height:clamp(18rem,35vh,25rem)!important;min-height:18rem!important;max-height:25rem!important;padding:.85rem!important;align-content:center}
 .contenu-clair .etat-vide-chat{width:min(620px,100%);max-width:100%;padding:1.15rem 1.05rem 1rem;border-color:var(--content-border);background:var(--content-surface);box-shadow:var(--shadow-sm);backdrop-filter:none;-webkit-backdrop-filter:none}
@@ -593,6 +596,9 @@
 
 <div class="disposition-chat">
   <div class="colonne-conversation">
+    {% if has_older_messages %}
+    <button type="button" id="bouton-historique-cercle" class="bouton-historique-chat">Charger les messages précédents</button>
+    {% endif %}
     <div id="fenetre-chat" class="fenetre-chat{% if not messages %} fenetre-chat-vide{% endif %}">
       {% for m in messages %}
       {% include "_message_cercle.html" %}
@@ -712,6 +718,7 @@
   // insere cote serveur — on l'ajoute nous-memes a chaque appel ci-dessous.
   const jetonCsrf = "{{ jeton_csrf(request) }}";
   const fenetreChat = document.getElementById("fenetre-chat");
+  const boutonHistoriqueCercle = document.getElementById("bouton-historique-cercle");
   const listePresence = document.getElementById("liste-presence");
   const formulaire = document.getElementById("form-chat");
   const champMessage = document.getElementById("champ-message");
@@ -1541,7 +1548,9 @@
 
   // ---------- Rendu des nouveaux messages (websocket) ----------
 
-  function ajouterMessage(donnees) {
+  function ajouterMessage(donnees, options) {
+    options = options || {};
+    if (donnees.id && fenetreChat.querySelector('[data-message-id="' + donnees.id + '"]')) return;
     // Une reponse (parent_message_id present) vit uniquement dans le
     // panneau de fil de discussion, pas dans le flux principal — si ce
     // fil est ouvert au moment de l'envoi, on le recharge pour la faire
@@ -1590,17 +1599,18 @@
 
     // Respecter la lecture de l'historique : suivre les nouveaux messages
     // uniquement lorsque le lecteur est déjà proche du bas du fil.
-    const suivreNouveauxMessages =
+    const suivreNouveauxMessages = !options.prepend &&
       fenetreChat.scrollHeight - fenetreChat.scrollTop - fenetreChat.clientHeight <= 96;
     const videActuel = document.getElementById("etat-vide-chat");
     if (videActuel) videActuel.remove();
     fenetreChat.classList.remove("fenetre-chat-vide");
 
     const bulle = document.createElement("div");
-    bulle.className = "message" + (donnees.auteur_id === idUtilisateur ? " message-moi" : "");
+    bulle.className = "message" + (donnees.auteur_id === idUtilisateur ? " message-moi" : "") +
+      (donnees.epingle ? " message-epingle" : "");
     bulle.dataset.messageId = donnees.id;
     bulle.dataset.auteurId = donnees.auteur_id;
-    bulle.dataset.reponses = "0";
+    bulle.dataset.reponses = String(Number(donnees.reponses || 0));
     if (donnees.piece_jointe_url) bulle.dataset.piecejointe = "1";
 
     // creerConteneurAvatar() attend un champ est_moi (comme les objets
@@ -1649,10 +1659,76 @@
     actions.className = "message-actions";
     corps.appendChild(actions);
     decorerActions(bulle);
+    rendreReactions(bulle, donnees.reactions || []);
 
-    fenetreChat.appendChild(bulle);
+    if (Number(donnees.reponses || 0) > 0) {
+      if (donnees.derniere_reponse) {
+        const apercu = document.createElement("div");
+        apercu.className = "thread-apercu";
+        apercu.addEventListener("click", function () { ouvrirThread(donnees.id); });
+        const auteurApercu = document.createElement("span");
+        auteurApercu.className = "thread-apercu-auteur";
+        auteurApercu.textContent = donnees.derniere_reponse.auteur || "";
+        const contenuApercu = document.createElement("span");
+        contenuApercu.className = "thread-apercu-contenu";
+        contenuApercu.textContent = donnees.derniere_reponse.contenu || "";
+        apercu.appendChild(auteurApercu);
+        apercu.appendChild(contenuApercu);
+        corps.appendChild(apercu);
+      }
+      corps.appendChild(creerLienNombreReponses(donnees.id, Number(donnees.reponses)));
+    }
+
+    if (options.prepend) fenetreChat.insertBefore(bulle, fenetreChat.firstElementChild);
+    else fenetreChat.appendChild(bulle);
     if (suivreNouveauxMessages) fenetreChat.scrollTop = fenetreChat.scrollHeight;
     appliquerPointsPresence();
+  }
+
+  if (boutonHistoriqueCercle) {
+    boutonHistoriqueCercle.addEventListener("click", async function () {
+      const premiereBulle = fenetreChat.querySelector(".message[data-message-id]");
+      const avantId = premiereBulle ? Number(premiereBulle.dataset.messageId) : 0;
+      if (!avantId || boutonHistoriqueCercle.disabled) return;
+
+      boutonHistoriqueCercle.disabled = true;
+      const texteInitial = boutonHistoriqueCercle.textContent;
+      boutonHistoriqueCercle.textContent = "Chargement…";
+      try {
+        const reponse = await fetch(
+          "/cercles/" + cercleId + "/messages/historique?avant_id=" + avantId + "&limite=50",
+          { credentials: "same-origin", headers: { "Accept": "application/json" }, cache: "no-store" }
+        );
+        if (reponse.status === 401) {
+          window.location.assign("/connexion");
+          return;
+        }
+        if (reponse.status === 402) {
+          window.location.assign("/abonnement?premium_requis=1");
+          return;
+        }
+        if (reponse.status === 403) {
+          window.location.assign("/cercles");
+          return;
+        }
+        if (!reponse.ok) throw new Error("Impossible de charger les messages précédents.");
+        const page = await reponse.json();
+        const hauteurAvant = fenetreChat.scrollHeight;
+        (page.messages || []).forEach(function (message) {
+          ajouterMessage(message, { prepend: true });
+        });
+        fenetreChat.scrollTop += fenetreChat.scrollHeight - hauteurAvant;
+        if (!page.has_more || !page.messages || page.messages.length === 0) {
+          boutonHistoriqueCercle.remove();
+        } else {
+          boutonHistoriqueCercle.textContent = texteInitial;
+          boutonHistoriqueCercle.disabled = false;
+        }
+      } catch (_) {
+        boutonHistoriqueCercle.textContent = "Réessayer de charger les messages précédents";
+        boutonHistoriqueCercle.disabled = false;
+      }
+    });
   }
 
   function retirerMessage(id) {

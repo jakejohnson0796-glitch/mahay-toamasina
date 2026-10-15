@@ -1604,6 +1604,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
 
     messages = []
     message_epingle = None
+    has_older_messages = False
     membres_pour_mentions = []
     if membre:
         membres_pour_mentions = [
@@ -1625,8 +1626,14 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             # /cercles/{id}/messages/{id}/thread quand l'utilisateur ouvre
             # le panneau (§28 : chargement progressif des threads).
             .where(MessageCercle.parent_message_id == None)  # noqa: E711
-            .order_by(MessageCercle.date_envoi)
+            # Affiche les 100 messages principaux les plus récents au départ.
+            # Les plus anciens restent accessibles par le point de terminaison
+            # paginé afin que le chargement initial reste borné.
+            .order_by(MessageCercle.id.desc())
+            .limit(101)
         ).all()
+        has_older_messages = len(lignes) > 100
+        lignes = list(reversed(lignes[:100]))
         auteurs_epinglage_ids = {m.epingle_par_id for m, _ in lignes if m.epingle_par_id}
         noms_epingleurs = {
             u2.id: u2.nom
@@ -1642,23 +1649,30 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             )
             .group_by(MessageCercle.parent_message_id)
         ).all()}
-        reponses = session.exec(
-            select(MessageCercle, Utilisateur)
+        # Un message peut avoir énormément de réponses. Ne charge pas tous les
+        # objets-réponse uniquement pour chercher le dernier aperçu : d'abord
+        # sélectionner au plus un identifiant par parent, puis charger ces
+        # quelques lignes seulement.
+        derniers_ids_reponses = session.exec(
+            select(func.max(MessageCercle.id))
             .where(
                 MessageCercle.parent_message_id.in_(message_ids or [-1]),
                 MessageCercle.supprime == False,  # noqa: E712
             )
+            .group_by(MessageCercle.parent_message_id)
+        ).all()
+        reponses = session.exec(
+            select(MessageCercle, Utilisateur)
+            .where(MessageCercle.id.in_(derniers_ids_reponses or [-1]))
             .where(MessageCercle.auteur_id == Utilisateur.id)
         ).all()
         derniere_reponse_par_message = {}
         for reponse, auteur_reponse in reponses:
-            courante = derniere_reponse_par_message.get(reponse.parent_message_id)
-            if courante is None or reponse.date_envoi > courante[0].date_envoi:
-                contenu = reponse.piece_jointe_nom if reponse.piece_jointe_chemin else (reponse.contenu or "")
-                derniere_reponse_par_message[reponse.parent_message_id] = (
-                    reponse, auteur_reponse,
-                    contenu[:79].rstrip() + "…" if len(contenu) > 80 else contenu,
-                )
+            contenu = reponse.piece_jointe_nom if reponse.piece_jointe_chemin else (reponse.contenu or "")
+            derniere_reponse_par_message[reponse.parent_message_id] = (
+                reponse, auteur_reponse,
+                contenu[:79].rstrip() + "…" if len(contenu) > 80 else contenu,
+            )
 
         reactions_lignes = session.exec(
             select(MessageReaction).where(MessageReaction.message_id.in_(message_ids or [-1]))
@@ -1700,6 +1714,23 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
                 "reactions": reactions,
             })
         ligne_epinglee = next((m for m, _ in lignes if m.epingle), None)
+        if ligne_epinglee is None:
+            # L'épingle active peut être plus ancienne que les 100 messages
+            # chargés initialement ; elle reste affichée dans sa bannière.
+            ligne_epinglee = session.exec(
+                select(MessageCercle)
+                .where(
+                    MessageCercle.cercle_id == cercle_id,
+                    MessageCercle.supprime == False,  # noqa: E712
+                    MessageCercle.parent_message_id == None,  # noqa: E711
+                    MessageCercle.epingle == True,  # noqa: E712
+                )
+                .order_by(MessageCercle.id.desc())
+            ).first()
+            if ligne_epinglee and ligne_epinglee.epingle_par_id:
+                epingleur = session.get(Utilisateur, ligne_epinglee.epingle_par_id)
+                if epingleur:
+                    noms_epingleurs[epingleur.id] = epingleur.nom
         if ligne_epinglee:
             message_epingle = {
                 "id": ligne_epinglee.id,
@@ -1729,6 +1760,7 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             "cercle_est_national": referentiel_academique.cercle_est_national(cercle, session),
             "peut_gerer": _peut_gerer_cercle(cercle, utilisateur),
             "messages": messages,
+            "has_older_messages": has_older_messages,
             "message_epingle": message_epingle,
             "membres_pour_mentions": membres_pour_mentions,
             "utilisateur": utilisateur,
@@ -2274,6 +2306,98 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
         "cercle_recherche.html",
         {"cercle": cercle, "utilisateur": utilisateur, "terme": terme, "resultats": resultats},
     )
+
+
+@router.get("/cercles/{cercle_id}/messages/historique")
+def historique_messages_cercle(
+    request: Request,
+    cercle_id: int,
+    avant_id: int,
+    limite: int = 50,
+    session: Session = Depends(get_session),
+):
+    """Charge une page de messages plus anciens, sans révéler le contenu
+    aux visiteurs, non-membres ou comptes dont l'accès Premium est expiré."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return JSONResponse({"code": "auth_required"}, status_code=401)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
+        return JSONResponse({"code": "circle_unavailable"}, status_code=404)
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
+        return JSONResponse({"code": "membership_required"}, status_code=403)
+    if not _a_acces_premium_cercle(session, utilisateur):
+        return JSONResponse({"code": "premium_required"}, status_code=402)
+    if avant_id <= 0:
+        return JSONResponse({"code": "cursor_invalid"}, status_code=400)
+
+    taille_page = max(1, min(int(limite), 50))
+    lignes = session.exec(
+        select(MessageCercle, Utilisateur)
+        .where(
+            MessageCercle.cercle_id == cercle_id,
+            MessageCercle.auteur_id == Utilisateur.id,
+            MessageCercle.supprime == False,  # noqa: E712
+            MessageCercle.parent_message_id == None,  # noqa: E711
+            MessageCercle.id < avant_id,
+        )
+        .order_by(MessageCercle.id.desc())
+        .limit(taille_page + 1)
+    ).all()
+    has_more = len(lignes) > taille_page
+    lignes = lignes[:taille_page]
+    message_ids = [m.id for m, _u in lignes]
+    if not message_ids:
+        return {"messages": [], "has_more": False}
+
+    reponses_par_parent = {
+        parent_id: nombre
+        for parent_id, nombre in session.exec(
+            select(MessageCercle.parent_message_id, func.count())
+            .where(
+                MessageCercle.parent_message_id.in_(message_ids),
+                MessageCercle.supprime == False,  # noqa: E712
+            )
+            .group_by(MessageCercle.parent_message_id)
+        ).all()
+    }
+    reactions_par_message = {}
+    for reaction in session.exec(
+        select(MessageReaction).where(MessageReaction.message_id.in_(message_ids))
+    ).all():
+        par_type = reactions_par_message.setdefault(reaction.message_id, {})
+        entree = par_type.setdefault(
+            reaction.type_reaction.value,
+            {"type_reaction": reaction.type_reaction.value, "total": 0, "mienne": False},
+        )
+        entree["total"] += 1
+        if reaction.utilisateur_id == utilisateur.id:
+            entree["mienne"] = True
+
+    messages = []
+    for message, auteur in lignes:
+        groupes = reactions_par_message.get(message.id, {})
+        reactions = [groupes[t.value] for t in TypeReaction if t.value in groupes]
+        messages.append({
+            "id": message.id,
+            "auteur": auteur.nom,
+            "auteur_id": auteur.id,
+            "auteur_a_une_photo": bool(auteur.photo_chemin),
+            "contenu": message.contenu or "",
+            "piece_jointe_nom": message.piece_jointe_nom,
+            "piece_jointe_url": (
+                f"/cercles/{cercle_id}/messages/{message.id}/piece-jointe"
+                if message.piece_jointe_chemin else None
+            ),
+            "est_moi": auteur.id == utilisateur.id,
+            "date_envoi": message.date_envoi.isoformat(),
+            "modifie": message.date_modification is not None,
+            "epingle": message.epingle,
+            "reponses": reponses_par_parent.get(message.id, 0),
+            "reactions": reactions,
+        })
+    return {"messages": messages, "has_more": has_more}
 
 
 @router.get("/cercles/{cercle_id}/ws-status")
