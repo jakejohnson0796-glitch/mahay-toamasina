@@ -807,6 +807,47 @@
   let heureDeconnexion = null;
   let indicateurReconnexion = null;
 
+  // Le composeur reste rempli tant que le serveur n'a pas confirme
+  // l'enregistrement par sa diffusion WebSocket. Une erreur (debit,
+  // parent invalide, contenu refuse) ne fait donc jamais disparaitre le texte.
+  const envoisMessagesEnAttente = new Map();
+
+  function envoyerMessageAvecAccuse(donnees, champ) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+    const contenu = String(donnees.contenu || "").trim();
+    for (const entree of envoisMessagesEnAttente.values()) {
+      if (entree.champ === champ && entree.contenu === contenu) return false;
+    }
+    const clientMessageId = "cm-" + Date.now().toString(36) + "-" +
+      Math.random().toString(36).slice(2, 10);
+    envoisMessagesEnAttente.set(clientMessageId, { contenu: contenu, champ: champ });
+    try {
+      ws.send(JSON.stringify({ ...donnees, client_message_id: clientMessageId }));
+      return true;
+    } catch (_) {
+      envoisMessagesEnAttente.delete(clientMessageId);
+      afficherEtatWebSocket(
+        "Envoi impossible pour le moment. Votre texte est conservé.",
+        null, null, false
+      );
+      return false;
+    }
+  }
+
+  function confirmerEnvoiMessage(donnees) {
+    if (!donnees.client_message_id) return;
+    const envoi = envoisMessagesEnAttente.get(donnees.client_message_id);
+    if (!envoi) return;
+    envoisMessagesEnAttente.delete(donnees.client_message_id);
+    if (envoi.champ.value.trim() !== envoi.contenu) return;
+    envoi.champ.value = "";
+    if (envoi.champ === champMessage) {
+      try { sessionStorage.removeItem("mahay-brouillon-cercle-" + cercleId); } catch (_) {}
+      ajusterHauteurTextarea();
+      mettreAJourCompteurMessage();
+    }
+  }
+
   const MOTIFS_SIGNALEMENT = [
     "Spam",
     "Harcèlement ou insultes",
@@ -1759,7 +1800,24 @@
     });
 
     socket.addEventListener("message", function (evenement) {
-      const donnees = JSON.parse(evenement.data);
+      let donnees;
+      try {
+        donnees = JSON.parse(evenement.data);
+      } catch (_) {
+        afficherEtatWebSocket("Le serveur a renvoyé une réponse illisible. Votre texte reste dans le champ.", null, null, false);
+        return;
+      }
+      if (donnees.type === "erreur") {
+        if (donnees.client_message_id) envoisMessagesEnAttente.delete(donnees.client_message_id);
+        afficherEtatWebSocket(
+          donnees.message || "Le message n'a pas été envoyé. Votre texte est conservé.",
+          null,
+          null,
+          false
+        );
+        return;
+      }
+      if (donnees.type === "message") confirmerEnvoiMessage(donnees);
       if (donnees.type === "presence") {
         mettreAJourPresence(donnees.utilisateurs);
       } else if (donnees.type === "suppression") {
@@ -1863,11 +1921,10 @@
     // Le controle d'acces HTTP est asynchrone : avant la creation du
     // premier socket, ws peut encore etre indefini.
     if (!contenu || !ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({ contenu: contenu, mentions: extraireMentionsPresentes(contenu, mentionsPrincipal) }));
-    champMessage.value = "";
-    try { sessionStorage.removeItem("mahay-brouillon-cercle-" + cercleId); } catch (_) {}
-    ajusterHauteurTextarea();
-    mettreAJourCompteurMessage();
+    envoyerMessageAvecAccuse(
+      { contenu: contenu, mentions: extraireMentionsPresentes(contenu, mentionsPrincipal) },
+      champMessage
+    );
   });
 
   document.querySelectorAll(".etat-vide-chat-action").forEach(function (bouton) {
@@ -1976,13 +2033,12 @@
   formReponseThread.addEventListener("submit", function (evenement) {
     evenement.preventDefault();
     const contenu = champReponseThread.value.trim();
-    if (!contenu || !threadOuvertPourId || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({
+    if (!contenu || !threadOuvertPourId || !ws || ws.readyState !== WebSocket.OPEN) return;
+    envoyerMessageAvecAccuse({
       contenu: contenu,
       parent_message_id: Number(threadOuvertPourId),
       mentions: extraireMentionsPresentes(contenu, mentionsThread),
-    }));
-    champReponseThread.value = "";
+    }, champReponseThread);
   });
 
 

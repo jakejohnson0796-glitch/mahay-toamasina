@@ -10,6 +10,7 @@ existant (SessionMiddleware, deja installe dans main.py) : pas besoin de
 mecanisme separe, Starlette applique cette middleware aussi bien aux
 requetes HTTP classiques qu'aux connexions WebSocket.
 """
+import json
 from typing import Optional
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
@@ -2206,7 +2207,9 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
         return RedirectResponse("/cercles", status_code=303)
 
     resultats = []
-    terme = q.strip()
+    # Recherche bornee : evite de charger tout l'historique en memoire
+    # lorsqu'un membre recherche un terme tres courant ou trop long.
+    terme = q.strip()[:160]
     if terme:
         lignes = session.exec(
             select(MessageCercle, Utilisateur)
@@ -2215,6 +2218,7 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
             .where(MessageCercle.supprime == False)  # noqa: E712
             .where(MessageCercle.contenu.ilike(f"%{terme}%"))
             .order_by(MessageCercle.date_envoi.desc())
+            .limit(50)
         ).all()
         resultats = [{"auteur": u.nom, "contenu": m.contenu, "date_envoi": m.date_envoi} for m, u in lignes]
 
@@ -2253,6 +2257,26 @@ def statut_websocket_cercle(
         return JSONResponse({"ok": False, "code": "premium_required"}, status_code=402)
 
     return {"ok": True, "code": "ok"}
+
+
+async def _erreur_message_websocket(
+    websocket: WebSocket,
+    code: str,
+    message: str,
+    client_message_id: Optional[str] = None,
+) -> None:
+    """Retourne une erreur de protocole au seul client qui a envoye le message."""
+    donnees = {"type": "erreur", "code": code, "message": message}
+    if client_message_id:
+        donnees["client_message_id"] = client_message_id
+    await websocket.send_json(donnees)
+
+
+def _identifier_message_client(donnees: dict) -> Optional[str]:
+    valeur = donnees.get("client_message_id")
+    if isinstance(valeur, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", valeur):
+        return valeur
+    return None
 
 
 @router.websocket("/cercles/{cercle_id}/ws")
@@ -2309,16 +2333,92 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
     await gestionnaire.diffuser_presence(cercle_id)
     try:
         while True:
-            donnees_recues = await websocket.receive_json()
-            if limite_depassee(f"ws-cercle:user:{user_id}:{cercle_id}", 60, 60):
+            texte_recu = await websocket.receive_text()
+            # Le client valide n'a besoin que de quelques Ko au maximum
+            # (2 000 caracteres + 50 IDs de mentions). Borner la trame avant
+            # json.loads evite de parser des payloads volontairement enormes.
+            if len(texte_recu) > 16_384:
+                await _erreur_message_websocket(
+                    websocket,
+                    "payload_trop_volumineux",
+                    "La demande envoyée est trop volumineuse.",
+                )
+                continue
+            try:
+                donnees_recues = json.loads(texte_recu)
+            except (json.JSONDecodeError, TypeError):
+                await _erreur_message_websocket(
+                    websocket, "json_invalide", "Le format du message est invalide."
+                )
                 continue
 
-            contenu = (donnees_recues.get("contenu") or "").strip()[:LONGUEUR_MAX_MESSAGE]
+            if not isinstance(donnees_recues, dict):
+                await _erreur_message_websocket(
+                    websocket, "payload_invalide", "Le message doit être un objet valide."
+                )
+                continue
+
+            client_message_id = _identifier_message_client(donnees_recues)
+            if limite_depassee(f"ws-cercle:user:{user_id}:{cercle_id}", 60, 60):
+                await _erreur_message_websocket(
+                    websocket,
+                    "limite_debit",
+                    "Vous envoyez trop de messages. Attendez une minute avant de réessayer.",
+                    client_message_id,
+                )
+                continue
+
+            contenu_brut = donnees_recues.get("contenu")
+            if not isinstance(contenu_brut, str):
+                await _erreur_message_websocket(
+                    websocket, "contenu_invalide", "Le contenu du message doit être du texte.",
+                    client_message_id,
+                )
+                continue
+            contenu = contenu_brut.strip()
             if not contenu:
+                continue
+            if len(contenu) > LONGUEUR_MAX_MESSAGE:
+                await _erreur_message_websocket(
+                    websocket, "message_trop_long",
+                    f"Le message dépasse la limite de {LONGUEUR_MAX_MESSAGE} caractères.",
+                    client_message_id,
+                )
                 continue
 
             parent_message_id = donnees_recues.get("parent_message_id")
-            mentions_demandees = donnees_recues.get("mentions") or []
+            if parent_message_id is not None:
+                if type(parent_message_id) is int and 0 < parent_message_id <= 2_147_483_647:
+                    pass
+                elif (
+                    isinstance(parent_message_id, str)
+                    and len(parent_message_id) <= 10
+                    and parent_message_id.isdigit()
+                    and 0 < int(parent_message_id) <= 2_147_483_647
+                ):
+                    parent_message_id = int(parent_message_id)
+                else:
+                    await _erreur_message_websocket(
+                        websocket, "parent_invalide", "Le message auquel vous répondez est invalide.",
+                        client_message_id,
+                    )
+                    continue
+
+            mentions_demandees = donnees_recues.get("mentions", [])
+            if mentions_demandees is None:
+                mentions_demandees = []
+            if not isinstance(mentions_demandees, list):
+                await _erreur_message_websocket(
+                    websocket, "mentions_invalides", "La liste des mentions est invalide.",
+                    client_message_id,
+                )
+                continue
+            if len(mentions_demandees) > 50:
+                await _erreur_message_websocket(
+                    websocket, "trop_de_mentions", "Un message ne peut contenir plus de 50 mentions.",
+                    client_message_id,
+                )
+                continue
 
             # Revalidation post-connexion : un changement de mot de passe,
             # une desactivation de 2FA, un bannissement ou le retrait du
@@ -2360,8 +2460,13 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                         or parent.supprime
                         or parent.parent_message_id is not None
                     ):
-                        parent_message_id = None
-                        parent = None
+                        await _erreur_message_websocket(
+                            websocket,
+                            "parent_indisponible",
+                            "Le message auquel vous répondez n'est plus disponible. Votre texte n'a pas été envoyé.",
+                            client_message_id,
+                        )
+                        continue
 
                 message = MessageCercle(
                     cercle_id=cercle_id,
@@ -2394,10 +2499,19 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 mentions_valides = {
                     int(uid)
                     for uid in mentions_demandees
-                    if isinstance(uid, (int, str))
-                    and str(uid).isdigit()
-                    and int(uid) in ids_membres_valides
-                    and int(uid) != user_id
+                    if (
+                        type(uid) is int
+                        and 0 < uid <= 2_147_483_647
+                        and uid in ids_membres_valides
+                        and uid != user_id
+                    ) or (
+                        isinstance(uid, str)
+                        and len(uid) <= 10
+                        and uid.isdigit()
+                        and 0 < int(uid) <= 2_147_483_647
+                        and int(uid) in ids_membres_valides
+                        and int(uid) != user_id
+                    )
                 }
                 for uid_mentionne in mentions_valides:
                     session.add(
@@ -2445,6 +2559,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 "contenu": contenu,
                 "parent_message_id": parent_message_id,
                 "mentions": list(mentions_valides),
+                "client_message_id": client_message_id,
                 "date_envoi": date_envoi_message.isoformat(),
             })
     except WebSocketDisconnect:
