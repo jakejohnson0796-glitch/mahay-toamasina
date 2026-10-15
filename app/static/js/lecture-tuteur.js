@@ -98,7 +98,7 @@
       .replace(/\\\\/g, ". ")
       .replace(/[=]/g, " égal à ")
       .replace(/[+]/g, " plus ")
-      .replace(/(?<![eE])[−-](?!\d{2,})/g, " moins ")
+      .replace(/[−-]/g, " moins ")
       .replace(/[<>]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
