@@ -218,6 +218,22 @@ class TestMessagerieEnrichie(unittest.TestCase):
             ).first()
             self.assertIsNone(refuse)
 
+    def test_websocket_refuse_une_trame_texte_surdimensionnee_avant_json(self):
+        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+            self.assertEqual(websocket.receive_json()["type"], "presence")
+            websocket.send_text(" " * 16_385)
+            erreur = websocket.receive_json()
+            self.assertEqual(erreur["type"], "erreur")
+            self.assertEqual(erreur["code"], "payload_trop_volumineux")
+
+            websocket.send_json({
+                "contenu": "La connexion survit au gros payload",
+                "client_message_id": "payload-trop-gros-suivi-001",
+            })
+            evenement = websocket.receive_json()
+            self.assertEqual(evenement["type"], "message")
+            self.assertEqual(evenement["contenu"], "La connexion survit au gros payload")
+
     def test_websocket_refuse_un_payload_non_objet_sans_planter(self):
         with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
             self.assertEqual(websocket.receive_json()["type"], "presence")
@@ -251,7 +267,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
             params={"q": "MATCH-TEST-"},
         )
         self.assertEqual(page.status_code, 200)
-        self.assertEqual(page.text.count("MATCH-TEST-"), 50)
+        self.assertEqual(page.text.count('<span class="message-contenu">MATCH-TEST-'), 50)
 
     def test_administrateur_peut_utiliser_websocket_sans_abonnement_etudiant(self):
         administrateur = _creer_client_connecte(
