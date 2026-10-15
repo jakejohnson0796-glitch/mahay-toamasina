@@ -24,6 +24,7 @@ from ..web_utils import entier_ou_none
 from .. import subscription
 from ..storage import sauvegarder_avatar, obtenir_url_telechargement, supprimer_fichier, stockage_distant_actif, FichierInvalide
 from ..email_utils import envoyer_email, email_configure, EmailNonConfigure
+from ..conditions_legales import VERSION_CONDITIONS
 
 
 def _ip_client(request: Request) -> str:
@@ -95,6 +96,7 @@ def _contexte_formulaire_inscription(session: Session, erreur: Optional[str] = N
         "universites": session.exec(select(Universite).where(Universite.est_active == True)).all(),  # noqa: E712
         "niveaux": NIVEAUX,
         "erreur": erreur,
+        "version_conditions": VERSION_CONDITIONS,
     }
 
 
@@ -117,6 +119,7 @@ def inscription(
     universite_id: Optional[str] = Form(None),
     composante_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
+    accepter_conditions: str = Form(""),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -124,6 +127,19 @@ def inscription(
     filiere_id_nettoye = entier_ou_none(filiere_id)
     universite_id_nettoye = entier_ou_none(universite_id)
     composante_id_nettoye = entier_ou_none(composante_id)
+
+    # La case obligatoire côté navigateur est doublée d'un contrôle serveur :
+    # un POST direct ne peut pas créer de compte sans accepter les conditions.
+    if accepter_conditions != "oui":
+        return templates.TemplateResponse(
+            request,
+            "register.html",
+            _contexte_formulaire_inscription(
+                session,
+                "Vous devez lire et accepter les conditions d’utilisation et la charte éthique avant de créer un compte.",
+            ),
+            status_code=400,
+        )
 
     nom = nom.strip()
     if not nom or len(nom) > LONGUEUR_MAX_NOM:
@@ -223,6 +239,8 @@ def inscription(
         faculte_id=composante_id_nettoye,
         universite_id=universite_id_nettoye,
         niveau=niveau,
+        conditions_acceptees_le=datetime.utcnow(),
+        version_conditions_acceptees=VERSION_CONDITIONS,
         derniere_activite_le=datetime.utcnow(),
     )
     session.add(utilisateur)
