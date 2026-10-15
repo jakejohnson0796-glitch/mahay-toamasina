@@ -23,6 +23,8 @@
     "Quiz IA": "Fanadinana IA",
     "Tuteur IA": "Mpampianatra IA",
     "Lecture vocale": "Famakiana am-peo",
+    "Lecture vocale de la réponse": "Famakiana am-peo ny valiny",
+    "La voix utilise les options disponibles sur ton appareil. Rien ne démarre automatiquement.": "Ny feo azo ampiasaina amin'ny fitaovanao no ampiasaina. Tsy manomboka ho azy ny famakiana.",
     "Écouter la réponse": "Henoy ny valiny",
     "Écouter toute la réponse": "Henoy manontolo ny valiny",
     "Écouter": "Henoy",
