@@ -494,3 +494,59 @@ html[data-theme="sombre"] select:not([multiple]) {
     scroll-behavior: auto !important;
   }
 }
+
+/* Contraste des actions principales — garde-fou global.
+   refonte.css définissait le fond de .bouton-primaire avec !important,
+   puis cette feuille remplaçait seulement la couleur du texte selon le
+   thème. En mode sombre, cela produisait du texte sombre sur un fond
+   sombre. Le fond et le texte doivent toujours venir du même jeu de
+   tokens, y compris pendant le survol et lorsque le bouton est désactivé. */
+.bouton-primaire {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary-contrast) !important;
+  -webkit-text-fill-color: var(--primary-contrast) !important;
+  text-shadow: none !important;
+}
+
+.bouton-primaire:hover {
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+  color: var(--primary-contrast) !important;
+  -webkit-text-fill-color: var(--primary-contrast) !important;
+}
+
+.bouton-primaire:disabled,
+.bouton-primaire:disabled:hover {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary-contrast) !important;
+  -webkit-text-fill-color: var(--primary-contrast) !important;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* Le CTA du hero nocturne garde son traitement ivoire intentionnel. */
+.hero-phare .bouton-primaire {
+  background: #F6F1E7 !important;
+  border-color: #F6F1E7 !important;
+  color: var(--refonte-ocean-950) !important;
+  -webkit-text-fill-color: var(--refonte-ocean-950) !important;
+}
+
+.hero-phare .bouton-primaire:hover {
+  background: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+  color: var(--refonte-ocean-950) !important;
+  -webkit-text-fill-color: var(--refonte-ocean-950) !important;
+}
+
+.hero-phare .bouton-primaire:disabled,
+.hero-phare .bouton-primaire:disabled:hover {
+  background: #F6F1E7 !important;
+  border-color: #F6F1E7 !important;
+  color: var(--refonte-ocean-950) !important;
+  -webkit-text-fill-color: var(--refonte-ocean-950) !important;
+  opacity: 1;
+}
+
