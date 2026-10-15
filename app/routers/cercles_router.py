@@ -2334,6 +2334,16 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
     try:
         while True:
             texte_recu = await websocket.receive_text()
+            # Le client valide n'a besoin que de quelques Ko au maximum
+            # (2 000 caracteres + 50 IDs de mentions). Borner la trame avant
+            # json.loads evite de parser des payloads volontairement enormes.
+            if len(texte_recu) > 16_384:
+                await _erreur_message_websocket(
+                    websocket,
+                    "payload_trop_volumineux",
+                    "La demande envoyée est trop volumineuse.",
+                )
+                continue
             try:
                 donnees_recues = json.loads(texte_recu)
             except (json.JSONDecodeError, TypeError):
