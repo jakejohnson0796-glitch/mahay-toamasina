@@ -50,6 +50,17 @@ def test_websocket_access_preflight_and_bounded_handshake_retries():
     assert "if (!contenu || !ws || ws.readyState !== WebSocket.OPEN) return;" in TEMPLATE
 
 
+def test_chat_history_is_bounded_and_older_pages_are_access_controlled():
+    assert ".limit(101)" in ROUTER
+    assert '@router.get("/cercles/{cercle_id}/messages/historique")' in ROUTER
+    assert "taille_page = max(1, min(int(limite), 50))" in ROUTER
+    assert "derniers_ids_reponses = session.exec(" in ROUTER
+    assert "select(func.max(MessageCercle.id))" in ROUTER
+    assert 'id="bouton-historique-cercle"' in TEMPLATE
+    assert '"/cercles/" + cercleId + "/messages/historique?avant_id="' in TEMPLATE
+    assert "fenetreChat.insertBefore(bulle, fenetreChat.firstElementChild)" in TEMPLATE
+
+
 def test_core_chat_features_remain_wired():
     for marker in (
         "new WebSocket(urlWebSocket)",
