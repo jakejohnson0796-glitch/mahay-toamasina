@@ -133,6 +133,17 @@ def _a_acces_premium_cercle(session: Session, utilisateur: Utilisateur) -> bool:
     return subscription.acces_premium_valide(abonnement)
 
 
+def _exiger_acces_premium_api(session: Session, utilisateur: Utilisateur) -> None:
+    """Exige Premium dans les endpoints JSON du chat.
+
+    Les clients fetch() recoivent un HTTP 402 explicite au lieu d'une
+    redirection HTML que le navigateur suivrait silencieusement. Les admins
+    restent exemptes via _a_acces_premium_cercle().
+    """
+    if not _a_acces_premium_cercle(session, utilisateur):
+        raise HTTPException(status_code=402, detail="Accès Premium requis.")
+
+
 def _peut_gerer_cercle(cercle: CercleEtude, utilisateur: Optional[Utilisateur]) -> bool:
     """Createur du cercle (uniquement le sien) ou admin (n'importe
     lequel), mais uniquement tant que le cercle est ACTIF.
@@ -1262,6 +1273,10 @@ def ajouter_membre_par_telephone(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
@@ -1299,6 +1314,10 @@ def voir_demandes(request: Request, cercle_id: int, session: Session = Depends(g
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
     if not cercle or cercle.statut != StatutCercle.ACTIF:
@@ -1404,6 +1423,10 @@ def accepter_demande(request: Request, cercle_id: int, demande_id: int, session:
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
     cercle = session.get(CercleEtude, cercle_id)
     demande = session.get(DemandeAdhesionCercle, demande_id)
     if not cercle or not demande or demande.cercle_id != cercle_id:
@@ -1424,6 +1447,10 @@ def refuser_demande(request: Request, cercle_id: int, demande_id: int, session: 
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
 
     cercle = session.get(CercleEtude, cercle_id)
     demande = session.get(DemandeAdhesionCercle, demande_id)
@@ -1757,6 +1784,10 @@ def telecharger_piece_jointe(request: Request, cercle_id: int, message_id: int, 
     if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         return RedirectResponse("/connexion", status_code=303)
 
+    redirection = acces_premium_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
     message = session.get(MessageCercle, message_id)
     if not message or message.cercle_id != cercle_id or not message.piece_jointe_chemin or message.supprime:
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
@@ -1893,6 +1924,7 @@ async def reagir_message(
         raise HTTPException(status_code=404, detail="Message introuvable.")
     if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
+    _exiger_acces_premium_api(session, utilisateur)
 
     reaction_existante = session.exec(
         select(MessageReaction).where(
@@ -1951,6 +1983,9 @@ async def modifier_message(
     message = session.get(MessageCercle, message_id)
     if not message or message.cercle_id != cercle_id or message.supprime:
         raise HTTPException(status_code=404, detail="Message introuvable.")
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
+        raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
+    _exiger_acces_premium_api(session, utilisateur)
     if message.auteur_id != utilisateur.id:
         raise HTTPException(status_code=403, detail="Vous ne pouvez modifier que vos propres messages.")
 
@@ -1990,6 +2025,7 @@ async def epingler_message(
         raise HTTPException(status_code=404, detail="Cercle introuvable.")
     if not _peut_gerer_cercle(cercle, utilisateur):
         raise HTTPException(status_code=403, detail="Action reservee au createur du cercle ou a un administrateur.")
+    _exiger_acces_premium_api(session, utilisateur)
 
     message = session.get(MessageCercle, message_id)
     if not message or message.cercle_id != cercle_id or message.supprime:
@@ -2033,6 +2069,7 @@ async def desepingler_message(
         raise HTTPException(status_code=404, detail="Cercle introuvable.")
     if not _peut_gerer_cercle(cercle, utilisateur):
         raise HTTPException(status_code=403, detail="Action reservee au createur du cercle ou a un administrateur.")
+    _exiger_acces_premium_api(session, utilisateur)
 
     message = session.get(MessageCercle, message_id)
     if not message or message.cercle_id != cercle_id:
@@ -2059,9 +2096,15 @@ def voir_thread(request: Request, cercle_id: int, message_id: int, session: Sess
         raise HTTPException(status_code=401, detail="Non connecte.")
     if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         raise HTTPException(status_code=403, detail="Vous n'etes pas membre de ce cercle.")
+    _exiger_acces_premium_api(session, utilisateur)
 
     parent = session.get(MessageCercle, message_id)
-    if not parent or parent.cercle_id != cercle_id:
+    if (
+        not parent
+        or parent.cercle_id != cercle_id
+        or parent.supprime
+        or parent.parent_message_id is not None
+    ):
         raise HTTPException(status_code=404, detail="Message introuvable.")
 
     auteur_parent = session.get(Utilisateur, parent.auteur_id)
@@ -2127,6 +2170,7 @@ def profil_membre_cercle(
         raise HTTPException(status_code=401, detail="Non connecte.")
     if not _a_acces_cercle(session, cercle_id, utilisateur.id):
         raise HTTPException(status_code=403, detail="Vous n'avez pas acces a ce cercle.")
+    _exiger_acces_premium_api(session, utilisateur)
 
     cible = session.get(Utilisateur, utilisateur_id)
     if not cible or not _a_acces_cercle(session, cercle_id, utilisateur_id):

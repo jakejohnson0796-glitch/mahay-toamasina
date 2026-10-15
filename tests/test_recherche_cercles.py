@@ -121,6 +121,14 @@ class TestRechercheCercles(unittest.TestCase):
             niveau="L3",
         )
 
+        # Les endpoints de profils dans un cercle requièrent un accès Premium,
+        # comme le salon lui-même. Réutilisé par le test de création ci-dessous.
+        with Session(engine) as session:
+            utilisateur_client = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == "0350000099")
+            ).one()
+            subscription.creer_essai_gratuit(session, utilisateur_client)
+
     def test_sans_filtre_affiche_tous_les_cercles(self):
         page = self.client.get("/cercles")
         self.assertEqual(page.status_code, 200)
