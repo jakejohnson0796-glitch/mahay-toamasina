@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block titre %}Éthique, conditions et confidentialité — Gasy Mahay{% endblock %}
+{% block main_classe %}cadre-legal-page{% endblock %}
+{% block contenu %}
+<div class="cadre-legal">
+  <header class="cadre-legal-hero">
+    <p class="cadre-legal-kicker">GASY MAHAY · MAHAY TOAMASINA</p>
+    <h1>Éthique, conditions d’utilisation et confidentialité</h1>
+    <p class="cadre-legal-intro">Les règles de la communauté, vos droits et la manière dont vos données sont utilisées, expliqués au même endroit.</p>
+    <div class="cadre-legal-meta">
+      <span>Version des conditions : <strong>{{ version_conditions }}</strong></span>
+      <span>Mis à jour le <strong>{{ date_version_conditions }}</strong></span>
+    </div>
+  </header>
+
+  <nav class="cadre-legal-nav" aria-label="Sections du cadre légal">
+    <a href="#conditions">Conditions d’utilisation</a>
+    <a href="#ethique">Charte éthique</a>
+    <a href="#confidentialite">Confidentialité</a>
+    <a href="#intelligence-artificielle">IA et apprentissage</a>
+    <a href="#moderation">Signalements et modération</a>
+    <a href="#mentions-legales">Mentions légales</a>
+  </nav>
+
+  <section class="cadre-legal-section" id="conditions">
+    <div class="cadre-legal-section-entete"><span class="cadre-legal-numero">01</span><div><p class="cadre-legal-surtitre">Votre compte et vos engagements</p><h2>Conditions d’utilisation</h2></div></div>
+    <p>En créant un compte, vous acceptez les présentes conditions et la Charte éthique dans leur version affichée au moment de l’inscription. La date et le numéro de version acceptés sont enregistrés avec votre compte. Si vous n’acceptez pas ces règles, ne créez pas de compte.</p>
+    <h3>Un espace dédié à l’apprentissage</h3>
+    <p>Gasy Mahay propose des outils d’apprentissage, notamment des documents, quiz, explications par IA, espaces d’étude et fonctionnalités de collaboration. Vous devez utiliser ces services de bonne foi, respecter les autres utilisateurs et suivre les règles de votre établissement d’enseignement.</p>
+    <h3>Compte et sécurité</h3>
+    <p>Les renseignements fournis lors de l’inscription doivent être exacts et ceux de votre profil doivent rester à jour. Vous êtes responsable de la confidentialité de vos identifiants et des activités effectuées depuis votre compte. Prévenez-nous via la page Contact si vous soupçonnez un accès non autorisé.</p>
+    <h3>Documents et contributions</h3>
+    <p>Vous ne pouvez publier ou partager que des documents et contenus que vous êtes autorisé à utiliser et à diffuser. N’envoyez pas de documents confidentiels, de données personnelles appartenant à des tiers sans autorisation, ni de contenus protégés dont le partage n’est pas autorisé. Vous conservez vos droits sur vos contributions. Vous autorisez uniquement leur hébergement, leur affichage, leur transmission aux personnes que vous choisissez et leur traitement technique dans la mesure nécessaire au fonctionnement des fonctionnalités que vous utilisez.</p>
+    <h3>Services, abonnements et disponibilité</h3>
+    <p>Les fonctionnalités gratuites, périodes d’essai, offres et tarifs applicables sont présentés sur la page Abonnement au moment de leur utilisation ou de leur souscription. Les conditions spécifiques d’une offre présentée séparément peuvent compléter cette page. Nous pouvons effectuer des opérations de maintenance ou modifier une fonctionnalité pour des raisons de sécurité, de stabilité ou d’amélioration du service.</p>
+    <h3>Limites du service</h3>
+    <p>La plateforme est un outil d’apprentissage et ne garantit ni l’exactitude de chaque réponse automatique, ni une note, une réussite à un examen ou un résultat académique précis. Vérifiez les informations importantes avec vos cours, enseignants et sources fiables. Dans la mesure permise par la loi, Gasy Mahay ne peut garantir un service sans interruption ni erreur.</p>
+    <h3>Suspension et fin d’utilisation</h3>
+    <p>En cas de violation grave ou répétée des règles, d’atteinte à la sécurité ou de risque pour la communauté, l’accès à certaines fonctions ou au compte peut être limité ou suspendu. Lorsque cela est possible, la mesure est expliquée et vous pouvez demander un réexamen via la page Contact. Les obligations légales et les droits des utilisateurs restent applicables.</p>
+  </section>
+
+  <section class="cadre-legal-section" id="ethique">
+    <div class="cadre-legal-section-entete"><span class="cadre-legal-numero">02</span><div><p class="cadre-legal-surtitre">Respect, honnêteté et confiance</p><h2>Charte éthique de la communauté</h2></div></div>
+    <p>Gasy Mahay doit rester un espace accueillant, sûr et utile aux apprenants. En rejoignant la plateforme, vous vous engagez à :</p>
+    <ul class="cadre-legal-liste">
+      <li><strong>Respecter chaque personne.</strong> Aucun harcèlement, menace, humiliation, intimidation, discrimination, discours haineux ou divulgation malveillante d’informations personnelles.</li>
+      <li><strong>Être honnête.</strong> Ne vous faites pas passer pour quelqu’un d’autre, ne falsifiez pas vos informations et ne manipulez pas les échanges, votes, évaluations ou signalements.</li>
+      <li><strong>Respecter l’intégrité académique.</strong> Ne publiez pas de corrigés ou réponses d’examen obtenus illicitement, ne facilitez pas la triche et respectez les règles données par votre enseignant ou votre établissement.</li>
+      <li><strong>Respecter les droits d’autrui.</strong> Citez les sources lorsque c’est nécessaire, respectez les droits d’auteur et obtenez les autorisations requises avant tout partage.</li>
+      <li><strong>Protéger la plateforme.</strong> N’essayez pas de contourner les accès, de collecter massivement les données, d’introduire un logiciel malveillant, de perturber le service ou d’exploiter une faille.</li>
+      <li><strong>Éviter le spam et les abus.</strong> Pas de publicité répétitive non sollicitée, escroquerie, sollicitation trompeuse, contenu illégal ou usage des cercles à des fins étrangères à leur objectif.</li>
+      <li><strong>Coopérer avec la modération.</strong> Signalez les problèmes de bonne foi et ne lancez pas de campagnes de signalements mensongers ou de représailles.</li>
+    </ul>
+    <p>Les désaccords doivent être traités avec respect. Un signalement doit décrire les faits utiles, sans diffuser davantage de données privées. Les contenus publiés doivent rester adaptés à un environnement d’étude partagé.</p>
+  </section>
+
+  <section class="cadre-legal-section" id="confidentialite">
+    <div class="cadre-legal-section-entete"><span class="cadre-legal-numero">03</span><div><p class="cadre-legal-surtitre">Transparence sur les données</p><h2>Notice de confidentialité</h2></div></div>
+    <p>Responsable présenté pour le service : l’équipe Gasy Mahay / Mahay Toamasina. Pour une question sur vos données, une demande d’accès ou de rectification ou une demande relative à votre compte, utilisez la page Contact. Les coordonnées juridiques complètes de l’exploitant doivent être confirmées par le responsable du service.</p>
+    <h3>Quelles données sont utilisées ?</h3>
+    <ul class="cadre-legal-liste">
+      <li>Les informations de compte : nom affiché, numéro de téléphone, éventuelle adresse électronique et données de sécurité. Le mot de passe est conservé sous forme de hash, pas en clair.</li>
+      <li>Le profil académique : université, composante, mention, niveau et parcours lorsqu’ils sont renseignés.</li>
+      <li>Les données d’apprentissage : questions adressées au Tuteur IA, réponses, quiz, résultats, progression, révisions et documents que vous choisissez d’utiliser.</li>
+      <li>Les contributions et interactions : messages, pièces jointes, demandes d’adhésion, signalements, retours et échanges avec le support.</li>
+      <li>Les données techniques nécessaires à la sécurité et au fonctionnement : journaux de connexion, événements de sécurité, informations de session et diagnostics d’erreurs.</li>
+    </ul>
+    <h3>Pourquoi les utilisons-nous ?</h3>
+    <p>Ces données servent à créer et sécuriser votre compte, fournir les fonctionnalités demandées, organiser votre parcours d’apprentissage, conserver votre progression, modérer les espaces collaboratifs, répondre au support, prévenir les abus et maintenir la fiabilité du service. Elles ne doivent pas être réutilisées à une fin incompatible avec ces objectifs.</p>
+    <h3>Hébergement et prestataires</h3>
+    <p>L’application est hébergée sur Render et la plateforme utilise Supabase pour des fonctions de base de données et, selon la configuration, de stockage. Certaines fonctionnalités d’IA peuvent transmettre la question, la réponse attendue ou un extrait documentaire au fournisseur d’IA configuré afin de produire une réponse. Le traitement technique peut impliquer des prestataires ou des serveurs situés hors de Madagascar. Les fournisseurs exacts, lieux de traitement et garanties applicables doivent être vérifiés par l’exploitant et communiqués aux utilisateurs avant de considérer cette notice comme juridiquement complète.</p>
+    <h3>Durée de conservation</h3>
+    <p>Les données sont conservées pendant la durée nécessaire au fonctionnement du compte, à l’apprentissage demandé, à la sécurité et au traitement des réclamations, ainsi que pendant les durées éventuellement imposées par la loi. Les journaux techniques et copies de sauvegarde peuvent subsister pendant une durée limitée selon leur finalité et les cycles de sauvegarde. Les éléments attestant l’acceptation des conditions peuvent être conservés aussi longtemps que nécessaire pour en apporter la preuve et traiter un litige.</p>
+    <h3>Vos droits et vos demandes</h3>
+    <p>Vous pouvez demander des informations sur les données vous concernant, solliciter leur accès ou leur rectification et poser une question sur leur utilisation. Vous pouvez également demander la suppression de votre compte ou de contenus lorsque cela est possible, sous réserve des obligations légales, de la sécurité et des droits d’autres personnes. Pour exercer ces droits, contactez Gasy Mahay via la page Contact en décrivant votre demande. Nous pourrons vérifier votre identité avant de communiquer ou modifier des données.</p>
+    <p>Cette notice vise à expliquer les pratiques du service et doit être ajustée lorsque l’infrastructure ou les fournisseurs changent. Elle fait notamment référence à la loi malagasy n° 2014-038 relative à la protection des données à caractère personnel. <a href="https://digital.gov.mg/2022/07/05/loi-n-2014-038-sur-la-protection-des-donnees-a-caractere-personnel/" target="_blank" rel="noopener noreferrer">Consulter le texte publié par l’Unité de Gouvernance Digitale</a>.</p>
+  </section>
+
+  <section class="cadre-legal-section" id="intelligence-artificielle">
+    <div class="cadre-legal-section-entete"><span class="cadre-legal-numero">04</span><div><p class="cadre-legal-surtitre">Utiliser les outils avec discernement</p><h2>Intelligence artificielle et apprentissage</h2></div></div>
+    <p>Les réponses du Quiz IA et du Tuteur IA sont générées automatiquement. Elles peuvent contenir des erreurs, des omissions ou des explications incomplètes, même lorsqu’un mécanisme de vérification est affiché. Il vous appartient de confronter les réponses importantes aux supports de cours, au référentiel de votre établissement et aux indications de votre enseignant.</p>
+    <p>N’utilisez pas une réponse IA comme preuve unique pour une décision importante. Ne transmettez pas de mot de passe, donnée bancaire, document confidentiel ou donnée personnelle sensible dans une question ou un document à analyser. Les informations que vous soumettez peuvent être traitées par le fournisseur IA configuré pour fournir la fonctionnalité.</p>
+    <p>L’IA sert à vous aider à comprendre et à pratiquer ; elle ne doit pas être utilisée pour contourner les règles d’un examen, usurper le travail d’autrui ou présenter une production générée comme personnelle lorsque les consignes académiques l’interdisent.</p>
+  </section>
+
+  <section class="cadre-legal-section" id="moderation">
+    <div class="cadre-legal-section-entete"><span class="cadre-legal-numero">05</span><div><p class="cadre-legal-surtitre">Préserver un espace sûr</p><h2>Signalements, modération et recours</h2></div></div>
+    <p>Si vous voyez un contenu ou un comportement contraire à ces règles, utilisez la fonction de signalement disponible ou contactez l’équipe par la page Contact. Fournissez le contexte utile et évitez de republier des informations personnelles ou le contenu problématique.</p>
+    <p>L’équipe peut examiner les signalements, retirer ou masquer un contenu, limiter des fonctionnalités ou suspendre un compte selon la gravité, la répétition et le risque constaté. Les mesures sont prises de manière proportionnée autant que possible. Vous pouvez demander une explication ou un réexamen en fournissant les informations nécessaires à l’identification de la mesure.</p>
+  </section>
+
+  <section class="cadre-legal-section" id="mentions-legales">
+    <div class="cadre-legal-section-entete"><span class="cadre-legal-numero">06</span><div><p class="cadre-legal-surtitre">Identifier le service</p><h2>Mentions légales</h2></div></div>
+    <dl class="cadre-legal-mentions">
+      <div><dt>Nom du service</dt><dd>Gasy Mahay — Mahay Toamasina.</dd></div>
+      <div><dt>Contact</dt><dd>Le formulaire de contact disponible sur la plateforme.</dd></div>
+      <div><dt>Hébergement de l’application</dt><dd>Render.</dd></div>
+      <div><dt>Base de données et stockage technique</dt><dd>Supabase, selon la configuration active.</dd></div>
+      <div><dt>Textes applicables</dt><dd>Les lois applicables à Madagascar et les dispositions impératives de protection des utilisateurs, des données et de la propriété intellectuelle.</dd></div>
+    </dl>
+    <p>La dénomination juridique complète de l’exploitant, son adresse postale et les coordonnées du responsable de publication restent à confirmer par l’équipe qui exploite le service. Cette page ne constitue pas un avis juridique et doit être vérifiée au regard de la situation réelle de l’exploitant, des prestataires utilisés et des lois applicables.</p>
+    <p>Pour toute question ou demande, <a href="/contact">contacter Gasy Mahay</a>.</p>
+  </section>
+
+  <footer class="cadre-legal-fin">
+    <p>Vous créez un compte ? Lisez les conditions et la charte éthique, puis cochez la case d’acceptation sur le formulaire d’inscription.</p>
+    <a class="bouton bouton-primaire" href="/inscription">Retour à l’inscription</a>
+  </footer>
+</div>
+{% endblock %}
