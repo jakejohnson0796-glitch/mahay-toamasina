@@ -2207,3 +2207,141 @@
   }
 }
 
+
+
+/* Lecture vocale du Tuteur : commandes visibles, tactiles et compatibles clair/sombre. */
+.ai-learning-page .tuteur-lecture{
+  display:grid;
+  gap:.8rem;
+  margin:1rem 0 1.25rem;
+  padding:1rem;
+  border:1px solid var(--content-border);
+  border-radius:16px;
+  background:var(--content-surface);
+  color:var(--content-text);
+  box-shadow:var(--shadow-sm);
+}
+.ai-learning-page .tuteur-lecture-entete{
+  display:flex;
+  align-items:flex-start;
+  gap:.7rem;
+  min-width:0;
+}
+.ai-learning-page .tuteur-lecture-icone{
+  display:grid;
+  flex:0 0 2.4rem;
+  width:2.4rem;
+  height:2.4rem;
+  place-items:center;
+  border-radius:11px;
+  background:color-mix(in srgb,var(--content-link) 12%,var(--content-surface));
+  font-size:1.05rem;
+}
+.ai-learning-page .tuteur-lecture-entete strong{display:block;font-size:.95rem;line-height:1.35}
+.ai-learning-page .tuteur-lecture-entete p{
+  margin:.2rem 0 0;
+  color:var(--content-text-muted);
+  font-size:.78rem;
+  line-height:1.5;
+}
+.ai-learning-page .tuteur-lecture-commandes{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:.5rem;
+  min-width:0;
+}
+.ai-learning-page .tuteur-lecture-bouton,
+.ai-learning-page .tuteur-lecture-partie{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.42rem;
+  min-height:40px;
+  padding:.55rem .8rem;
+  border:1px solid var(--content-border);
+  border-radius:10px;
+  background:var(--content-bg);
+  color:var(--content-text);
+  font:inherit;
+  font-size:.78rem;
+  font-weight:650;
+  line-height:1.25;
+  text-align:center;
+  cursor:pointer;
+  transition:border-color .16s ease,background .16s ease,transform .16s ease;
+}
+.ai-learning-page .tuteur-lecture-bouton-principal{
+  border-color:var(--content-link);
+  background:var(--content-link);
+  color:#fff;
+}
+.ai-learning-page .tuteur-lecture-bouton:hover:not(:disabled),
+.ai-learning-page .tuteur-lecture-partie:hover:not(:disabled){
+  border-color:var(--content-link);
+  transform:translateY(-1px);
+}
+.ai-learning-page .tuteur-lecture-bouton-principal:hover:not(:disabled){
+  background:color-mix(in srgb,var(--content-link) 88%,#000);
+}
+.ai-learning-page .tuteur-lecture-bouton:focus-visible,
+.ai-learning-page .tuteur-lecture-partie:focus-visible,
+.ai-learning-page .tuteur-lecture-selecteur select:focus-visible{
+  outline:3px solid color-mix(in srgb,var(--content-link) 70%,transparent);
+  outline-offset:2px;
+}
+.ai-learning-page .tuteur-lecture-bouton:disabled,
+.ai-learning-page .tuteur-lecture-partie:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+  transform:none;
+}
+.ai-learning-page .tuteur-lecture-selecteur{
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+  min-width:0;
+  color:var(--content-text-muted);
+  font-size:.73rem;
+}
+.ai-learning-page .tuteur-lecture-selecteur select{
+  width:auto;
+  max-width:min(13rem,100%);
+  min-width:6rem;
+  min-height:40px;
+  padding:.45rem 1.8rem .45rem .6rem;
+  border:1px solid var(--content-border);
+  border-radius:9px;
+  background:var(--content-surface);
+  color:var(--content-text);
+  font:inherit;
+}
+.ai-learning-page .tuteur-lecture-statut{
+  margin:0;
+  min-height:1.35em;
+  color:var(--content-text-muted);
+  font-size:.75rem;
+  line-height:1.45;
+}
+.ai-learning-page .ai-answer-card-head .tuteur-lecture-partie{
+  flex:0 0 auto;
+  margin-left:auto;
+  min-height:34px;
+  padding:.38rem .6rem;
+  font-size:.7rem;
+}
+.ai-learning-page .ai-answer-correction details[open] .tuteur-lecture-partie{margin:.6rem 0}
+@media(max-width:640px){
+  .ai-learning-page .tuteur-lecture{padding:.8rem;border-radius:13px}
+  .ai-learning-page .tuteur-lecture-commandes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ai-learning-page .tuteur-lecture-bouton{width:100%;min-width:0;padding:.55rem .45rem}
+  .ai-learning-page .tuteur-lecture-bouton-principal{grid-column:1/-1}
+  .ai-learning-page .tuteur-lecture-selecteur{align-items:flex-start;flex-direction:column;gap:.25rem}
+  .ai-learning-page .tuteur-lecture-selecteur select{width:100%;max-width:100%}
+  .ai-learning-page .ai-answer-card-head{flex-wrap:wrap}
+  .ai-learning-page .ai-answer-card-head .tuteur-lecture-partie{margin-left:auto}
+}
+@media(prefers-reduced-motion:reduce){
+  .ai-learning-page .tuteur-lecture-bouton,
+  .ai-learning-page .tuteur-lecture-partie{transition:none}
+}

@@ -212,3 +212,35 @@ def test_resultat_examen_affiche_un_diagnostic_et_une_action():
     css = lire("app/static/ai-learning.css")
     assert ".ai-exam-diagnostic" in css
     assert ".ai-exam-next-step" in css
+
+
+
+def test_tuteur_reponse_expose_une_lecture_vocale_accessible():
+    template = lire("app/templates/tuteur_reponse.html")
+    js = lire("app/static/js/lecture-tuteur.js")
+    css = lire("app/static/ai-learning.css")
+    assert 'data-tuteur-lecture' in template
+    assert 'data-lecture-tout' in template
+    assert 'data-lecture-pause' in template
+    assert 'data-lecture-reprendre' in template
+    assert 'data-lecture-arreter' in template
+    assert 'data-lecture-cible="explication"' in template
+    assert 'data-tuteur-content="explication"' in template
+    assert "lecture-tuteur.js" in template
+    assert "speechSynthesis" in js
+    assert "mathEnParoles" in js
+    assert "annotation[encoding=\"application/x-tex\"]" in js
+    assert "details.open" in js
+    assert 'querySelectorAll("pre, script, style, button' in js
+    assert "innerHTML" not in js
+    assert ".tuteur-lecture-commandes" in css
+    assert "@media(max-width:640px)" in css
+
+
+def test_lecture_vocale_tuteur_est_incluse_dans_le_smoke_navigateur_ci():
+    workflow = lire(".github/workflows/ci.yml")
+    smoke = lire("scripts/smoke_tuteur_voice.mjs")
+    assert "node scripts/smoke_tuteur_voice.mjs" in workflow
+    assert "fraction 12 sur 18" in smoke
+    assert "Correction cachée" in smoke
+    assert "playwright" in smoke
