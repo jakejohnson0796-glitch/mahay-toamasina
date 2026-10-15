@@ -41,7 +41,7 @@ const html = [
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage();
-  await page.addInitScript(() => {
+  const installerMock = () => {
     const utterances = [];
     const voices = [
       { name: "French Test Voice", lang: "fr-FR", default: true, localService: true }
@@ -66,8 +66,9 @@ try {
     Object.defineProperty(window, "speechSynthesis", { configurable: true, value: mock });
     window.SpeechSynthesisUtterance = MockUtterance;
     window.__speechMock = mock;
-  });
+  };
   await page.setContent(html);
+  await page.evaluate(installerMock);
   await page.addScriptTag({ content: script });
   await page.waitForFunction(() =>
     Array.from(document.querySelector("[data-lecture-voix]").options).some((o) => o.value === "0")
