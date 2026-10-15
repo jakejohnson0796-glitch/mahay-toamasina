@@ -206,6 +206,7 @@ def _offre_active_filiere(contexte: _Contexte, filiere: Filiere) -> bool:
 def _cle_canonique(
     cercle: CercleEtude,
     contexte: _Contexte,
+    verifier_offre_active: bool = True,
 ) -> tuple[tuple, Optional[str]]:
     """Renvoie (clé, raison_suspicion). None comme clé = incomplet non publiable."""
     if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
@@ -251,7 +252,12 @@ def _cle_canonique(
     if filiere.niveau != cercle.niveau:
         return ("incomplet", cercle.id), "niveau du cercle différent du niveau explicite du parcours"
 
-    if not _offre_active_filiere(contexte, filiere):
+    # En pre-reconciliation, l'import et le recablage de l'offre peuvent
+    # temporairement marquer inactive une offre qui sera reactivee quelques
+    # etapes plus loin. Ne pas archiver un cercle uniquement pour cet etat
+    # transitoire : cela le ferait recreer au meme demarrage puis archiver/
+    # recreer a chaque redeploiement.
+    if verifier_offre_active and not _offre_active_filiere(contexte, filiere):
         return ("incomplet", cercle.id), "aucune offre universitaire active pour ce parcours"
 
     if not nom_normalise:
@@ -545,8 +551,19 @@ def _archiver_suspect_si_possible(
     rapport.cercles_archives.append(cercle.id)
 
 
-def deduplicquer(session: Optional[Session] = None, dry_run: bool = False) -> Rapport:
-    """Audit et fusion des cercles ACTIFS. Idempotent."""
+def deduplicquer(
+    session: Optional[Session] = None,
+    dry_run: bool = False,
+    verifier_offres_actives: bool = True,
+) -> Rapport:
+    """Audit/fusion des cercles actifs.
+
+    verifier_offres_actives=False est reserve au pre-nettoyage AVANT
+    reconcilier() au demarrage : une offre temporairement inactive doit
+    encore participer a la cle canonique afin que les doublons soient
+    regroupes sans archiver les seuls cercles valides avant la reconciliation.
+    L'appel post-reconciliation conserve la validation stricte par defaut.
+    """
     rapport = Rapport()
     session_a_fermer = session is None
     if session is None:
@@ -560,7 +577,9 @@ def deduplicquer(session: Optional[Session] = None, dry_run: bool = False) -> Ra
 
         groupes: dict[tuple, list[CercleEtude]] = defaultdict(list)
         for cercle in cercles:
-            cle, suspicion = _cle_canonique(cercle, contexte)
+            cle, suspicion = _cle_canonique(
+                cercle, contexte, verifier_offre_active=verifier_offres_actives
+            )
 
             if cle[0] == "incomplet":
                 _archiver_suspect_si_possible(
