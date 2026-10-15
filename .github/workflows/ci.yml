@@ -49,6 +49,7 @@ jobs:
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
           node scripts/smoke_circle_layout.mjs
+          node scripts/smoke_circle_hierarchy.mjs
       - name: Lancer les tests (un module par processus)
         run: |
           set -e
