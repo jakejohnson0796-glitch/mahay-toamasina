@@ -222,7 +222,10 @@ def _cle_canonique(
     mention = contexte.mentions.get(cercle.mention_id)
     if not mention:
         return ("incomplet", cercle.id), "mention inexistante"
-    if not mention.est_active:
+    # Avant la reconciliation, une mention peut etre marquee inactive
+    # temporairement alors que la source qui sera chargee juste apres la
+    # revalidera. Ce n'est pas un motif d'archivage du cercle au pre-nettoyage.
+    if verifier_offre_active and not mention.est_active:
         return ("incomplet", cercle.id), "mention inactive"
 
     # Vrai tronc commun : il ne porte aucune Filiere technique.
@@ -240,17 +243,22 @@ def _cle_canonique(
     if nom_normalise == "tronc commun":
         return ("tronc", cercle.mention_id, None, cercle.niveau), None
 
-    if filiere.mention_id != cercle.mention_id:
+    # Le pre-nettoyage deduplique avec l'identite explicite du cercle
+    # (mention + nom normalise du parcours + niveau). Les valeurs de la
+    # Filiere elle-meme peuvent etre en cours de correction par la source
+    # canonique et seront validees strictement apres reconciliation.
+    if verifier_offre_active and filiere.mention_id != cercle.mention_id:
         return ("incomplet", cercle.id), "mention du cercle différente de celle du parcours"
 
     # Une Filiere nationale sans niveau vérifié ne permet pas de savoir si
     # le cercle correspond à L1, L2, L3, M1 ou M2. Ce n'est pas une permission
     # de considérer tous les niveaux comme valides : le cercle est suspect.
-    if not filiere.niveau:
-        return ("incomplet", cercle.id), "niveau du parcours non vérifié"
+    if verifier_offre_active:
+        if not filiere.niveau:
+            return ("incomplet", cercle.id), "niveau du parcours non vérifié"
 
-    if filiere.niveau != cercle.niveau:
-        return ("incomplet", cercle.id), "niveau du cercle différent du niveau explicite du parcours"
+        if filiere.niveau != cercle.niveau:
+            return ("incomplet", cercle.id), "niveau du cercle différent du niveau explicite du parcours"
 
     # En pre-reconciliation, l'import et le recablage de l'offre peuvent
     # temporairement marquer inactive une offre qui sera reactivee quelques
