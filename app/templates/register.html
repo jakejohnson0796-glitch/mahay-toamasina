@@ -187,6 +187,17 @@
               </div>
             </div>
 
+            <section class="auth-legal-consent" aria-labelledby="titre-acceptation-conditions">
+              <h3 id="titre-acceptation-conditions">Avant de créer votre compte</h3>
+              <div class="auth-legal-checkbox">
+                <input type="checkbox" id="accepter_conditions" name="accepter_conditions" value="oui" required aria-describedby="conditions-aide">
+                <label for="accepter_conditions">
+                  J’ai lu et j’accepte les <a href="/cadre-legal#conditions" target="_blank" rel="noopener">Conditions d’utilisation</a> et la <a href="/cadre-legal#ethique" target="_blank" rel="noopener">Charte éthique</a> (version <strong>{{ version_conditions }}</strong>). Je m’engage à respecter ces règles.
+                </label>
+              </div>
+              <p id="conditions-aide" class="auth-legal-aide">La <a href="/cadre-legal#confidentialite" target="_blank" rel="noopener">notice de confidentialité</a> et les <a href="/cadre-legal#mentions-legales" target="_blank" rel="noopener">mentions légales</a> sont consultables avant l’inscription.</p>
+            </section>
+
             <button class="bouton bouton-primaire auth-submit" type="submit">Créer mon compte</button>
             <div class="auth-submit-meta"><span class="auth-submit-meta-dot" aria-hidden="true"></span><span>Création protégée contre les abus automatisés</span></div>
           </form>
