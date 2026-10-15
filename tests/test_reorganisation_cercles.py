@@ -25,7 +25,11 @@ from app.models import (
     Universite,
     Utilisateur,
 )
-from app.cercles_referentiel import assurer_cercles_referentiel, assurer_cercles_pour_filiere
+from app.cercles_referentiel import (
+    assurer_cercles_referentiel,
+    assurer_cercles_pour_filiere,
+    assurer_cercles_pour_groupe_parcours,
+)
 from scripts.dedupliquer_cercles_nationaux import deduplicquer
 
 
@@ -132,6 +136,92 @@ class TestReorganisationCercles(unittest.TestCase):
             self.mention_id = mention.id
             self.p1_id = p1.id
             self.p2_id = p2.id
+
+    def test_filiere_sans_niveau_ne_remplace_pas_la_representante_verifiee(self):
+        """Le redémarrage doit recabler le cercle existant, pas l'archiver puis
+        recréer une nouvelle ligne à chaque release."""
+        with Session(self.engine) as session:
+            p1 = session.get(Filiere, self.p1_id)  # parcours de niveau M1 vérifié
+            p2 = session.get(Filiere, self.p2_id)
+            faculte = session.get(Faculte, p1.faculte_id)
+            legacy = Filiere(
+                nom="Finance et Comptabilité",
+                faculte_id=faculte.id,
+                mention_id=self.mention_id,
+                niveau=None,
+            )
+            session.add(legacy)
+            session.commit()
+            session.refresh(legacy)
+            session.add(
+                ProgrammeUniversitaire(
+                    universite_id=faculte.universite_id,
+                    filiere_id=legacy.id,
+                    est_active=True,
+                )
+            )
+            cercle = CercleEtude(
+                nom="Finance et Comptabilité — Master 1",
+                mention_id=self.mention_id,
+                filiere_id=legacy.id,
+                niveau="M1",
+                createur_id=self.admin_id,
+                statut=StatutCercle.ACTIF,
+            )
+            session.add(cercle)
+            session.commit()
+            session.refresh(cercle)
+            cercle_id = cercle.id
+            session.add(MembreCercle(
+                cercle_id=cercle_id,
+                utilisateur_id=self.alice_id,
+                role=RoleMembreCercle.MEMBRE,
+            ))
+            message = MessageCercle(
+                cercle_id=cercle_id,
+                auteur_id=self.alice_id,
+                contenu="Historique à préserver",
+            )
+            session.add(message)
+            session.commit()
+            message_id = message.id
+
+            nombre_cree, nombre_archive = assurer_cercles_pour_groupe_parcours(
+                session, self.mention_id, [p1, p2, legacy], session.get(Utilisateur, self.admin_id)
+            )
+            cercle_conserve = session.get(CercleEtude, cercle_id)
+            self.assertEqual(nombre_cree, 0)
+            self.assertEqual(nombre_archive, 0)
+            self.assertEqual(cercle_conserve.statut, StatutCercle.ACTIF)
+            self.assertEqual(cercle_conserve.filiere_id, self.p1_id)
+            self.assertIsNotNone(session.exec(
+                select(MembreCercle).where(
+                    MembreCercle.cercle_id == cercle_id,
+                    MembreCercle.utilisateur_id == self.alice_id,
+                )
+            ).first())
+            self.assertEqual(session.get(MessageCercle, message_id).contenu, "Historique à préserver")
+
+            # Le passage strict final ne doit ni archiver ni changer la clé
+            # nationale si la représentante correspond exactement au niveau.
+            rapport = deduplicquer(session)
+            self.assertEqual(rapport.cercles_archives, [])
+            self.assertEqual(session.get(CercleEtude, cercle_id).statut, StatutCercle.ACTIF)
+
+            # Le deuxième passage est réellement idempotent : aucune ligne
+            # nouvelle et aucun nouveau remplacement de représentante.
+            nombre_cree, nombre_archive = assurer_cercles_pour_groupe_parcours(
+                session, self.mention_id, [p1, p2, legacy], session.get(Utilisateur, self.admin_id)
+            )
+            self.assertEqual((nombre_cree, nombre_archive), (0, 0))
+            self.assertEqual(
+                len(session.exec(select(CercleEtude).where(
+                    CercleEtude.mention_id == self.mention_id,
+                    CercleEtude.niveau == "M1",
+                    CercleEtude.statut == StatutCercle.ACTIF,
+                )).all()),
+                1,
+            )
 
     def test_pre_nettoyage_preserve_un_cercle_dont_offre_va_etre_reconciliee(self):
         """Un import peut temporairement rendre l'offre inactive avant la
