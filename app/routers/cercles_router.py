@@ -22,6 +22,7 @@ from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 from sqlalchemy import case, update
 from sqlmodel import Session, select, or_, func
 
+from ..config import parametres
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
