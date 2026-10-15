@@ -289,7 +289,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
         self.assertNotIn("HISTO-PAGE-000", page_initiale.text)
         self.assertIn('id="bouton-historique-cercle"', page_initiale.text)
 
-        identifiants = re.findall(r'<div class="message[^"]*" data-message-id="(\d+)"', page_initiale.text)
+        identifiants = re.findall(r'<div class="message[^"]*"\s+data-message-id="(\d+)"', page_initiale.text)
         self.assertEqual(len(identifiants), 100)
         curseur = int(identifiants[0])
 
