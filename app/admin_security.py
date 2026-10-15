@@ -45,7 +45,7 @@ def action_admin_protegee(path: str) -> bool:
         # a l'admin, pas les actions ordinaires du salon (message, reaction,
         # demande d'adhesion d'un etudiant, etc.).
         return bool(
-            re.fullmatch(r"/cercles/\\d+/supprimer", path) is not None
+            re.fullmatch(r"/cercles/[0-9]+/supprimer", path) is not None
             or "/membres/ajouter" in path
             or "/membres/" in path and path.endswith("/retirer")
             or "/demandes/" in path and (path.endswith("/accepter") or path.endswith("/refuser"))
