@@ -5,6 +5,7 @@ Il est demande a chaque POST portant une action d'administration sensible.
 Le secret n'est jamais stocke en clair ni dans la session.
 """
 
+import re
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -44,7 +45,7 @@ def action_admin_protegee(path: str) -> bool:
         # a l'admin, pas les actions ordinaires du salon (message, reaction,
         # demande d'adhesion d'un etudiant, etc.).
         return bool(
-            path.endswith("/supprimer")
+            re.fullmatch(r"/cercles/[0-9]+/supprimer", path) is not None
             or "/membres/ajouter" in path
             or "/membres/" in path and path.endswith("/retirer")
             or "/demandes/" in path and (path.endswith("/accepter") or path.endswith("/refuser"))

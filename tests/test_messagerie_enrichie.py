@@ -29,6 +29,7 @@ from sqlmodel import SQLModel, Session, select  # noqa: E402
 from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
+from app.admin_security import action_admin_protegee  # noqa: E402
 from app.models import (  # noqa: E402
     Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, RoleMembreCercle,
     MessageCercle, MessageReaction, MessageMention, Notification, StatutCercle,
@@ -154,6 +155,46 @@ class TestMessagerieEnrichie(unittest.TestCase):
                 )
             ).first()
             self.assertIsNotNone(message_stocke)
+
+    def test_administrateur_peut_supprimer_son_propre_message_sans_confirmation_admin(self):
+        administrateur = _creer_client_connecte(
+            "0341000005", "Admin supprimant son message", role=RoleUtilisateur.ADMIN
+        )
+
+        # Cette action ordinaire du salon ne doit pas demander le secret de
+        # confirmation réservé aux actions d'administration sensibles.
+        with Session(engine) as session:
+            message = MessageCercle(
+                cercle_id=self.cercle_id,
+                auteur_id=administrateur.utilisateur_id,
+                contenu="Message admin à supprimer",
+            )
+            session.add(message)
+            session.commit()
+            session.refresh(message)
+            message_id = message.id
+
+        jeton = _jeton_csrf(administrateur, f"/cercles/{self.cercle_id}")
+        reponse = administrateur.post(
+            f"/cercles/{self.cercle_id}/messages/{message_id}/supprimer",
+            data={"_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse.status_code, 303, reponse.text)
+        self.assertEqual(reponse.headers.get("location"), f"/cercles/{self.cercle_id}")
+
+        with Session(engine) as session:
+            message_stocke = session.get(MessageCercle, message_id)
+            self.assertIsNotNone(message_stocke)
+            self.assertTrue(message_stocke.supprime)
+
+    def test_confirmation_admin_ne_cible_pas_la_suppression_message(self):
+        self.assertFalse(
+            action_admin_protegee(f"/cercles/{self.cercle_id}/messages/{self.message_id}/supprimer")
+        )
+
+    def test_confirmation_admin_protege_toujours_la_suppression_cercle(self):
+        self.assertTrue(action_admin_protegee(f"/cercles/{self.cercle_id}/supprimer"))
 
     def test_preflight_refuse_un_non_membre_avec_une_raison_stable(self):
         reponse = self.intrus.get(f"/cercles/{self.cercle_id}/ws-status")
