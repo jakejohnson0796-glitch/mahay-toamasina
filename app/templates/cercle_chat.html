@@ -2033,7 +2033,7 @@
   formReponseThread.addEventListener("submit", function (evenement) {
     evenement.preventDefault();
     const contenu = champReponseThread.value.trim();
-    if (!contenu || !threadOuvertPourId || ws.readyState !== WebSocket.OPEN) return;
+    if (!contenu || !threadOuvertPourId || !ws || ws.readyState !== WebSocket.OPEN) return;
     envoyerMessageAvecAccuse({
       contenu: contenu,
       parent_message_id: Number(threadOuvertPourId),
