@@ -1649,23 +1649,30 @@ def salon_cercle(request: Request, cercle_id: int, session: Session = Depends(ge
             )
             .group_by(MessageCercle.parent_message_id)
         ).all()}
-        reponses = session.exec(
-            select(MessageCercle, Utilisateur)
+        # Un message peut avoir énormément de réponses. Ne charge pas tous les
+        # objets-réponse uniquement pour chercher le dernier aperçu : d'abord
+        # sélectionner au plus un identifiant par parent, puis charger ces
+        # quelques lignes seulement.
+        derniers_ids_reponses = session.exec(
+            select(func.max(MessageCercle.id))
             .where(
                 MessageCercle.parent_message_id.in_(message_ids or [-1]),
                 MessageCercle.supprime == False,  # noqa: E712
             )
+            .group_by(MessageCercle.parent_message_id)
+        ).all()
+        reponses = session.exec(
+            select(MessageCercle, Utilisateur)
+            .where(MessageCercle.id.in_(derniers_ids_reponses or [-1]))
             .where(MessageCercle.auteur_id == Utilisateur.id)
         ).all()
         derniere_reponse_par_message = {}
         for reponse, auteur_reponse in reponses:
-            courante = derniere_reponse_par_message.get(reponse.parent_message_id)
-            if courante is None or reponse.date_envoi > courante[0].date_envoi:
-                contenu = reponse.piece_jointe_nom if reponse.piece_jointe_chemin else (reponse.contenu or "")
-                derniere_reponse_par_message[reponse.parent_message_id] = (
-                    reponse, auteur_reponse,
-                    contenu[:79].rstrip() + "…" if len(contenu) > 80 else contenu,
-                )
+            contenu = reponse.piece_jointe_nom if reponse.piece_jointe_chemin else (reponse.contenu or "")
+            derniere_reponse_par_message[reponse.parent_message_id] = (
+                reponse, auteur_reponse,
+                contenu[:79].rstrip() + "…" if len(contenu) > 80 else contenu,
+            )
 
         reactions_lignes = session.exec(
             select(MessageReaction).where(MessageReaction.message_id.in_(message_ids or [-1]))
