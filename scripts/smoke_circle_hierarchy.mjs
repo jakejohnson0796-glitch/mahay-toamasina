@@ -138,7 +138,7 @@ try {
 
   await page.locator("#recherche_mention_id").selectOption("1");
   await page.locator("#recherche_niveau").selectOption("L3");
-  await page.waitForSelector("#recherche_filiere_id-etat");
+  await page.waitForFunction(() => document.querySelector("#recherche_filiere_id-etat")?.textContent.includes("Impossible de charger"));
   const filtreEnErreur = await page.locator("#recherche_filiere_id-etat").textContent();
   assert.match(filtreEnErreur || "", /impossible de charger les parcours/i);
   await page.locator("#recherche_filiere_id-etat button").click();
