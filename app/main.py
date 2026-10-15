@@ -266,7 +266,14 @@ def _initialiser_donnees_apres_demarrage() -> None:
         # 1) Répare d'abord les doublons de cercles historiques afin que
         # la fusion des Filiere ci-dessous ne puisse pas heurter l'index
         # national unique.
-        rapport_dedup_avant = deduplicquer_cercles_nationaux(session)
+        # A ce stade, les offres de la source peuvent etre temporairement
+        # marquees inactives avant que reconcilier() les reactive. Le pre-
+        # nettoyage fusionne les doublons mais ne doit pas archiver les seuls
+        # cercles d'un parcours pour cette raison transitoire ; la verification
+        # stricte et l'archivage des vraies offres retirees ont lieu apres.
+        rapport_dedup_avant = deduplicquer_cercles_nationaux(
+            session, verifier_offres_actives=False
+        )
         if rapport_dedup_avant.groupes_fusionnes or rapport_dedup_avant.cercles_archives:
             print(
                 "[DEBUG DATABASE] Pré-nettoyage cercles — "
