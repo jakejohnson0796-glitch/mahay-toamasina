@@ -30,6 +30,40 @@
     <a class="ai-answer-back" href="/tuteur">Nouvelle question</a>
   </div>
 
+  <section class="tuteur-lecture" data-tuteur-lecture aria-label="Lecture vocale de la réponse">
+    <div class="tuteur-lecture-entete">
+      <span class="tuteur-lecture-icone" aria-hidden="true">🔊</span>
+      <div>
+        <strong>Écouter la réponse</strong>
+        <p>La voix utilise les options disponibles sur ton appareil. Rien ne démarre automatiquement.</p>
+      </div>
+    </div>
+    <div class="tuteur-lecture-commandes" role="group" aria-label="Commandes de lecture">
+      <button class="tuteur-lecture-bouton tuteur-lecture-bouton-principal" type="button" data-lecture-tout>
+        <span aria-hidden="true">▶</span><span>Écouter toute la réponse</span>
+      </button>
+      <button class="tuteur-lecture-bouton" type="button" data-lecture-pause disabled>Pause</button>
+      <button class="tuteur-lecture-bouton" type="button" data-lecture-reprendre disabled>Reprendre</button>
+      <button class="tuteur-lecture-bouton" type="button" data-lecture-arreter disabled>Arrêter</button>
+      <label class="tuteur-lecture-selecteur">
+        <span>Voix</span>
+        <select data-lecture-voix aria-label="Choisir une voix">
+          <option value="">Voix automatique</option>
+        </select>
+      </label>
+      <label class="tuteur-lecture-selecteur">
+        <span>Vitesse</span>
+        <select data-lecture-vitesse aria-label="Vitesse de lecture">
+          <option value="0.8">Lente</option>
+          <option value="1" selected>Normale</option>
+          <option value="1.15">Rapide</option>
+          <option value="1.3">Très rapide</option>
+        </select>
+      </label>
+    </div>
+    <p class="tuteur-lecture-statut" data-lecture-statut role="status" aria-live="polite">Prêt à lire. Les corrections masquées ne seront pas lues.</p>
+  </section>
+
   <nav class="learning-command learning-command--response" aria-label="Suite de ton apprentissage">
     <a class="learning-command-item" href="/mes-revisions">
       <span class="learning-command-index">01</span>
@@ -70,6 +104,7 @@
       <div class="ai-answer-card-head">
         <span class="ai-answer-card-icon">{{ icone("tuteur", 16) }}</span>
         <h2>Explication</h2>
+        <button class="tuteur-lecture-partie" type="button" data-lecture-cible="explication" aria-label="Écouter l’explication"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
       <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="explication" data-rendu>{{ contenu_tuteur['explication'] }}</div>
@@ -80,6 +115,7 @@
       <div class="ai-answer-card-head">
         <span class="ai-answer-card-icon">{{ icone("documents", 16) }}</span>
         <h2>Exemple</h2>
+        <button class="tuteur-lecture-partie" type="button" data-lecture-cible="exemple" aria-label="Écouter l’exemple"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
       <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="exemple" data-rendu>{{ contenu_tuteur['exemple'] }}</div>
@@ -91,6 +127,7 @@
       <div class="ai-answer-card-head">
         <span class="ai-answer-card-icon">{{ icone("quiz", 16) }}</span>
         <h2>Exercice pour pratiquer</h2>
+        <button class="tuteur-lecture-partie" type="button" data-lecture-cible="exercice" aria-label="Écouter l’exercice"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
       <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="exercice" data-rendu>{{ contenu_tuteur['exercice'] }}</div>
@@ -105,6 +142,7 @@
       </div>
       <details>
         <summary>Afficher la correction</summary>
+        <button class="tuteur-lecture-partie" type="button" data-lecture-cible="correction" aria-label="Écouter la correction"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
         <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
         <div class="ai-answer-correction-body ai-markdown-content" data-tuteur-content="correction" data-rendu>{{ contenu_tuteur['correction'] }}</div>
       </details>
@@ -146,4 +184,5 @@
   </div>
   </div><!-- /#reponse -->
 </div>
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/lecture-tuteur.js?v={{ version_asset('js/lecture-tuteur.js') }}" defer></script>
 {% endblock %}
