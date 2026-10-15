@@ -605,7 +605,7 @@ class CercleEtude(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str
     description: Optional[str] = None
-    filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id", index=True)
     # Denormalise a dessein (deductible via filiere.mention_id) : le
     # brief definit explicitement l'identite d'un cercle comme le
     # triplet (mention_id, filiere_id, niveau) — §27 : "Ne pas utiliser
@@ -617,7 +617,7 @@ class CercleEtude(SQLModel, table=True):
     mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
     niveau: Optional[str] = None
     statut: StatutCercle = Field(default=StatutCercle.ACTIF)
-    createur_id: int = Field(foreign_key="utilisateur.id")
+    createur_id: int = Field(foreign_key="utilisateur.id", index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
     # Reflete exactement l'index cree par la migration e1a4c9d2b7f5
@@ -677,7 +677,7 @@ class ThemeDuJour(SQLModel, table=True):
     date_jour: date = Field(index=True, unique=True)
     theme: str
     amorce: str
-    cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
+    cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id", index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -697,7 +697,7 @@ class DemandeAdhesionCercle(SQLModel, table=True):
     applicative pour rester compatible SQLite."""
     id: Optional[int] = Field(default=None, primary_key=True)
     cercle_id: int = Field(foreign_key="cercleetude.id")
-    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
     # Nullable en base (les demandes existantes n'en ont pas), mais le
     # prochain formulaire de demande d'adhesion devra l'exiger cote
     # route pour les nouvelles demandes (§21 du brief : "Pourquoi
@@ -707,7 +707,7 @@ class DemandeAdhesionCercle(SQLModel, table=True):
     statut: StatutDemandeAdhesion = Field(default=StatutDemandeAdhesion.EN_ATTENTE)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_traitement: Optional[datetime] = None
-    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
 
 
 class StatutDemandeCreationCercle(str, Enum):
@@ -724,9 +724,9 @@ class DemandeCreationCercle(SQLModel, table=True):
     continue de fonctionner sans changement tant que ce nouveau flux
     n'est pas active."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
     mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
-    filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
+    filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id", index=True)
     niveau: Optional[str] = None
     nom: str
     description: Optional[str] = None
@@ -734,11 +734,11 @@ class DemandeCreationCercle(SQLModel, table=True):
     statut: StatutDemandeCreationCercle = Field(default=StatutDemandeCreationCercle.EN_ATTENTE)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_traitement: Optional[datetime] = None
-    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
     # Rempli seulement quand la demande est approuvee (le cercle est
     # alors reellement cree) — permet de retrouver le cercle issu de
     # cette demande depuis l'historique admin.
-    cercle_cree_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
+    cercle_cree_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id", index=True)
 
     __table_args__ = (
         Index(
@@ -810,7 +810,7 @@ class MessageCercle(SQLModel, table=True):
     relu a chaque ouverture du salon en plus du flux temps reel)."""
     id: Optional[int] = Field(default=None, primary_key=True)
     cercle_id: int = Field(foreign_key="cercleetude.id")
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
     contenu: str
     date_envoi: datetime = Field(default_factory=datetime.utcnow)
     # Partage de fichier (PDF) : optionnel, un message peut etre texte
@@ -834,7 +834,7 @@ class MessageCercle(SQLModel, table=True):
     # cote service, pas en base, pour rester tolerant si jamais deux
     # moderateurs epinglent au meme moment) — voir §10 du brief.
     epingle: bool = Field(default=False)
-    epingle_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    epingle_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
     date_epinglage: Optional[datetime] = None
 
 
@@ -843,7 +843,7 @@ class SignalementMessage(SQLModel, table=True):
     admin (voir/supprimer le message, ou rejeter le signalement)."""
     id: Optional[int] = Field(default=None, primary_key=True)
     message_id: int = Field(foreign_key="messagecercle.id")
-    signale_par_id: int = Field(foreign_key="utilisateur.id")
+    signale_par_id: int = Field(foreign_key="utilisateur.id", index=True)
     motif: Optional[str] = None
     date_signalement: datetime = Field(default_factory=datetime.utcnow)
     traite: bool = Field(default=False)
@@ -887,7 +887,7 @@ class MessageReaction(SQLModel, table=True):
     concurrents)."""
     id: Optional[int] = Field(default=None, primary_key=True)
     message_id: int = Field(foreign_key="messagecercle.id")
-    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
     type_reaction: TypeReaction
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
