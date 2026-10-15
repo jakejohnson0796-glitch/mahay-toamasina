@@ -133,6 +133,56 @@ class TestReorganisationCercles(unittest.TestCase):
             self.p1_id = p1.id
             self.p2_id = p2.id
 
+    def test_pre_nettoyage_preserve_un_cercle_dont_offre_va_etre_reconciliee(self):
+        """Un import peut temporairement rendre l'offre inactive avant la
+        reconciliation. Le pre-nettoyage ne doit pas archiver le seul cercle,
+        puis le provisionnement ne doit pas en creer un remplaçant."""
+        with Session(self.engine) as session:
+            # Recherche l'offre de p1 via son universite, pas via l'id de faculte.
+            filiere = session.get(Filiere, self.p1_id)
+            faculte = session.get(Faculte, filiere.faculte_id)
+            offre = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.universite_id == faculte.universite_id,
+                    ProgrammeUniversitaire.filiere_id == self.p1_id,
+                )
+            ).one()
+            offre.est_active = False
+            session.add(offre)
+            cercle = CercleEtude(
+                nom="Finance & Comptabilite M1",
+                mention_id=self.mention_id,
+                filiere_id=self.p1_id,
+                niveau="M1",
+                createur_id=self.admin_id,
+                statut=StatutCercle.ACTIF,
+            )
+            session.add(cercle)
+            session.commit()
+            session.refresh(cercle)
+            cercle_id = cercle.id
+
+            deduplicquer(session, verifier_offres_actives=False)
+            conserve = session.get(CercleEtude, cercle_id)
+            self.assertEqual(conserve.statut, StatutCercle.ACTIF)
+
+            # La reconciliation remet l'offre canonique en service ; le
+            # provisionnement suivant doit réutiliser le cercle conservé.
+            offre.est_active = True
+            session.add(offre)
+            session.commit()
+            nombre_cree = assurer_cercles_referentiel(session)
+            cercles_actifs = session.exec(
+                select(CercleEtude).where(
+                    CercleEtude.mention_id == self.mention_id,
+                    CercleEtude.niveau == "M1",
+                    CercleEtude.statut == StatutCercle.ACTIF,
+                )
+            ).all()
+            self.assertEqual(nombre_cree, 0)
+            self.assertEqual(len(cercles_actifs), 1)
+            self.assertEqual(cercles_actifs[0].id, cercle_id)
+
     def test_fusionne_les_doublons_nationaux_entre_filiere_ids(self):
         with Session(self.engine) as session:
             c1 = CercleEtude(
