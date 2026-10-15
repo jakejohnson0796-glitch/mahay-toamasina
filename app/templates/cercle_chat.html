@@ -820,6 +820,10 @@
     donnees.append("_csrf", jetonCsrf);
     Object.keys(champs || {}).forEach(function (cle) { donnees.append(cle, champs[cle]); });
     const reponse = await fetch(url, { method: "POST", body: donnees });
+    if (reponse.status === 402) {
+      window.location.assign("/abonnement?premium_requis=1");
+      return { accesPremiumRequis: true };
+    }
     if (!reponse.ok) {
       const detail = await reponse.json().catch(function () { return {}; });
       throw new Error(detail.detail || ("Erreur " + reponse.status));
@@ -1127,6 +1131,10 @@
     corpsPanneauThread.innerHTML = '<p class="stat-label">Chargement…</p>';
     try {
       const reponse = await fetch("/cercles/" + cercleId + "/messages/" + messageId + "/thread");
+      if (reponse.status === 402) {
+        window.location.assign("/abonnement?premium_requis=1");
+        return;
+      }
       if (!reponse.ok) throw new Error("Impossible de charger le fil.");
       const corps = await reponse.json();
       corpsPanneauThread.innerHTML = "";
@@ -1178,6 +1186,10 @@
     corpsPanneauProfil.innerHTML = '<p class="stat-label">Chargement…</p>';
     try {
       const reponse = await fetch("/cercles/" + cercleId + "/membres/" + auteurId + "/profil");
+      if (reponse.status === 402) {
+        window.location.assign("/abonnement?premium_requis=1");
+        return;
+      }
       if (!reponse.ok) throw new Error("Impossible de charger ce profil.");
       const p = await reponse.json();
       corpsPanneauProfil.innerHTML = "";
