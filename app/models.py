@@ -259,6 +259,10 @@ class Utilisateur(SQLModel, table=True):
     # aucune restriction au premier changement).
     niveau_modifie_le: Optional[datetime] = None
     date_creation: datetime = Field(default_factory=datetime.utcnow)
+    # Preuve explicite de l'acceptation de la version des conditions affichée
+    # lors de l'inscription. Null pour les comptes créés avant cette exigence.
+    conditions_acceptees_le: Optional[datetime] = None
+    version_conditions_acceptees: Optional[str] = Field(default=None, max_length=32)
     banni: bool = Field(default=False)
 
     # --- Double authentification (TOTP, gratuite — aucun SMS/service
