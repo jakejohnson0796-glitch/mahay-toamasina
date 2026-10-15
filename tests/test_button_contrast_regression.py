@@ -12,7 +12,7 @@ QUIZ_TEMPLATE = ROOT / "app" / "templates" / "quiz_config.html"
 
 def _block(css: str, selector: str) -> str:
     match = re.search(
-        rf"(?m)^{re.escape(selector)}\\s*\\{{([^{{}}]*)\\}}",
+        rf"(?m)^{re.escape(selector)}\s*\{{([^{{}}]*)\}}",
         css,
     )
     assert match, f"CSS block not found: {selector}"
@@ -22,7 +22,7 @@ def _block(css: str, selector: str) -> str:
 def _variables(css: str, selector: str) -> dict[str, str]:
     block = _block(css, selector)
     return dict(
-        re.findall(r"(--[a-zA-Z0-9_-]+)\\s*:\\s*(#[0-9a-fA-F]{{3,8}})\\s*;", block)
+        re.findall(r"(--[a-zA-Z0-9_-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;", block)
     )
 
 
@@ -72,10 +72,10 @@ def test_primary_button_text_meets_wcag_aa_in_both_themes() -> None:
 def test_primary_button_overrides_legacy_background_and_text_conflict() -> None:
     css = DESIGN_CSS.read_text(encoding="utf-8")
     primary_rules = re.findall(
-        r"(?m)^\\.bouton-primaire\\s*\\{([^{}]*)\\}", css
+        r"(?m)^\.bouton-primaire\s*\{([^{}]*)\}", css
     )
     hover_rules = re.findall(
-        r"(?m)^\\.bouton-primaire:hover\\s*\\{([^{}]*)\\}", css
+        r"(?m)^\.bouton-primaire:hover\s*\{([^{}]*)\}", css
     )
     assert primary_rules and hover_rules
 
@@ -91,8 +91,8 @@ def test_primary_button_overrides_legacy_background_and_text_conflict() -> None:
     assert "color: var(--primary-contrast) !important;" in hover_rules[-1]
 
     disabled_rule = re.search(
-        r"(?s)\\.bouton-primaire:disabled,\\s*"
-        r"\\.bouton-primaire:disabled:hover\\s*\\{([^{}]*)\\}",
+        r"(?s)\.bouton-primaire:disabled,\s*"
+        r"\.bouton-primaire:disabled:hover\s*\{([^{}]*)\}",
         css,
     )
     assert disabled_rule
