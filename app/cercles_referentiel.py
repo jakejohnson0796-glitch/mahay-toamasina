@@ -149,7 +149,62 @@ def assurer_cercles_pour_groupe_parcours(
             and _normaliser_nom_parcours(filieres_representants[cercle.filiere_id].nom) == nom_groupe
         )
     ]
-    niveaux_existants = {c.niveau for c in cercles_du_groupe}
+    niveaux_cibles = {f.niveau for f in filieres_du_groupe if f.niveau}
+
+    # Repare les cercles historiques qui portent un niveau valide mais
+    # pointent encore vers une Filiere legacy sans niveau (niveau=None).
+    # Sans ce recablage, le nettoyage strict les archive au redemarrage,
+    # puis le provisionneur les recree, ce qui accumule des lignes a chaque
+    # release. La cible est une offre active de la meme mention, du meme
+    # parcours national et du meme niveau : on conserve le cercle lui-meme,
+    # ses membres, messages et demandes, et on ne cree aucune nouvelle ligne.
+    filiere_par_niveau = {
+        niveau: min(
+            (f for f in filieres_du_groupe if f.niveau == niveau),
+            key=lambda f: f.id,
+        )
+        for niveau in niveaux_cibles
+    }
+    cercles_repares = 0
+    for cercle in cercles_du_groupe:
+        representative = filieres_representants.get(cercle.filiere_id)
+        canonique = filiere_par_niveau.get(cercle.niveau)
+        if not canonique or cercle.filiere_id == canonique.id:
+            continue
+        # Evite de violer l'index unique s'il existe deja un autre cercle
+        # actif de cette identite attache a la meme filiere canonique.
+        collision = any(
+            autre.id != cercle.id
+            and autre.niveau == cercle.niveau
+            and autre.filiere_id == canonique.id
+            for autre in cercles_du_groupe
+        )
+        if collision:
+            continue
+        if (
+            representative is None
+            or representative.niveau != cercle.niveau
+            or representative.mention_id != mention_id
+            or _normaliser_nom_parcours(representative.nom) != nom_groupe
+        ):
+            cercle.filiere_id = canonique.id
+            session.add(cercle)
+            filieres_representants[canonique.id] = canonique
+            cercles_repares += 1
+    if cercles_repares:
+        session.commit()
+        logger.info(
+            "%d cercle(s) national/nationaux recables vers une filiere du niveau verifie.",
+            cercles_repares,
+        )
+
+    niveaux_existants = {
+        c.niveau
+        for c in cercles_du_groupe
+        if c.niveau and c.filiere_id in {
+            f.id for f in filieres_du_groupe if f.niveau == c.niveau
+        }
+    }
 
     nb_archives = 0
     cercles_avec_contenu = _cercles_avec_contenu_important(
