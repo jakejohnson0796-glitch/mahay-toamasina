@@ -35,7 +35,7 @@ from app.models import (  # noqa: E402
     MessageCercle, MessageReaction, MessageMention, Notification, StatutCercle,
     AbonnementEtudiant,
 )
-from app import rate_limit  # noqa: E402
+from app import rate_limit, subscription  # noqa: E402
 
 
 def _creer_client_connecte(
@@ -77,6 +77,18 @@ def _jeton_csrf(client: TestClient, url: str) -> str:
     return re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
 
 
+def _retirer_abonnement(utilisateur_id: int) -> None:
+    with Session(engine) as session:
+        abonnements = session.exec(
+            select(AbonnementEtudiant).where(
+                AbonnementEtudiant.utilisateur_id == utilisateur_id
+            )
+        ).all()
+        for abonnement in abonnements:
+            session.delete(abonnement)
+        session.commit()
+
+
 class TestMessagerieEnrichie(unittest.TestCase):
 
     @classmethod
@@ -92,7 +104,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
         # test — plus rapide, et aucun autre test du projet ne partage
         # ce fichier SQLite temporaire.
         with Session(engine) as session:
-            for table in (Notification, MessageMention, MessageReaction, MessageCercle, MembreCercle, CercleEtude, Utilisateur):
+            for table in (Notification, MessageMention, MessageReaction, MessageCercle, MembreCercle, CercleEtude, AbonnementEtudiant, Utilisateur):
                 for ligne in session.exec(select(table)).all():
                     session.delete(ligne)
             session.commit()
@@ -100,6 +112,16 @@ class TestMessagerieEnrichie(unittest.TestCase):
         self.sarah = _creer_client_connecte("0341000001", "Sarah")
         self.thomas = _creer_client_connecte("0341000002", "Thomas")
         self.intrus = _creer_client_connecte("0341000003", "Intrus")  # jamais ajoute au cercle
+
+        # Les tests de fonctionnalités doivent disposer d'un accès Premium
+        # réel ; les tests d'expiration retirent explicitement cet essai.
+        with Session(engine) as session:
+            subscription.creer_essai_gratuit(
+                session, session.get(Utilisateur, self.sarah.utilisateur_id)
+            )
+            subscription.creer_essai_gratuit(
+                session, session.get(Utilisateur, self.thomas.utilisateur_id)
+            )
 
         with Session(engine) as session:
             cercle = CercleEtude(nom="L2 Gestion / Finance", createur_id=self.sarah.utilisateur_id, statut=StatutCercle.ACTIF)
@@ -202,9 +224,102 @@ class TestMessagerieEnrichie(unittest.TestCase):
         self.assertEqual(reponse.json(), {"ok": False, "code": "membership_required"})
 
     def test_preflight_signale_le_premium_expire_pour_un_membre(self):
+        _retirer_abonnement(self.thomas.utilisateur_id)
         reponse = self.thomas.get(f"/cercles/{self.cercle_id}/ws-status")
         self.assertEqual(reponse.status_code, 402)
         self.assertEqual(reponse.json(), {"ok": False, "code": "premium_required"})
+
+    def test_premium_expire_refuse_le_chargement_du_thread(self):
+        _retirer_abonnement(self.thomas.utilisateur_id)
+        reponse = self.thomas.get(
+            f"/cercles/{self.cercle_id}/messages/{self.message_id}/thread"
+        )
+        self.assertEqual(reponse.status_code, 402)
+        self.assertEqual(reponse.json()["detail"], "Accès Premium requis.")
+
+    def test_premium_expire_refuse_le_profil_d_un_membre(self):
+        _retirer_abonnement(self.thomas.utilisateur_id)
+        reponse = self.thomas.get(
+            f"/cercles/{self.cercle_id}/membres/{self.sarah.utilisateur_id}/profil"
+        )
+        self.assertEqual(reponse.status_code, 402)
+
+    def test_premium_expire_refuse_les_reactions(self):
+        jeton = _jeton_csrf(self.thomas, f"/cercles/{self.cercle_id}")
+        _retirer_abonnement(self.thomas.utilisateur_id)
+        reponse = self.thomas.post(
+            f"/cercles/{self.cercle_id}/messages/{self.message_id}/reaction",
+            data={"type_reaction": "pouce", "_csrf": jeton},
+        )
+        self.assertEqual(reponse.status_code, 402)
+
+    def test_premium_expire_refuse_le_telechargement_des_pieces_jointes(self):
+        with Session(engine) as session:
+            message = MessageCercle(
+                cercle_id=self.cercle_id,
+                auteur_id=self.sarah.utilisateur_id,
+                contenu="",
+                piece_jointe_chemin="piece-jointe-test.pdf",
+                piece_jointe_nom="cours.pdf",
+            )
+            session.add(message)
+            session.commit()
+            session.refresh(message)
+            message_id = message.id
+
+        _retirer_abonnement(self.thomas.utilisateur_id)
+        reponse = self.thomas.get(
+            f"/cercles/{self.cercle_id}/messages/{message_id}/piece-jointe",
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse.status_code, 303)
+        self.assertEqual(reponse.headers.get("location"), "/abonnement?premium_requis=1")
+
+    def test_thread_ne_restitue_pas_un_message_supprime(self):
+        with Session(engine) as session:
+            message = session.get(MessageCercle, self.message_id)
+            message.supprime = True
+            session.add(message)
+            session.commit()
+        reponse = self.sarah.get(
+            f"/cercles/{self.cercle_id}/messages/{self.message_id}/thread"
+        )
+        self.assertEqual(reponse.status_code, 404)
+
+    def test_thread_refuse_une_reponse_comme_message_parent(self):
+        with Session(engine) as session:
+            reponse_message = MessageCercle(
+                cercle_id=self.cercle_id,
+                auteur_id=self.thomas.utilisateur_id,
+                contenu="Réponse imbriquée",
+                parent_message_id=self.message_id,
+            )
+            session.add(reponse_message)
+            session.commit()
+            session.refresh(reponse_message)
+            reponse_id = reponse_message.id
+        reponse = self.sarah.get(
+            f"/cercles/{self.cercle_id}/messages/{reponse_id}/thread"
+        )
+        self.assertEqual(reponse.status_code, 404)
+
+    def test_membre_retire_ne_peut_plus_modifier_son_ancien_message(self):
+        with Session(engine) as session:
+            membre = session.exec(
+                select(MembreCercle).where(
+                    MembreCercle.cercle_id == self.cercle_id,
+                    MembreCercle.utilisateur_id == self.thomas.utilisateur_id,
+                )
+            ).one()
+            session.delete(membre)
+            session.commit()
+
+        jeton = _jeton_csrf(self.thomas, "/cercles")
+        reponse = self.thomas.post(
+            f"/cercles/{self.cercle_id}/messages/{self.message_id}/modifier",
+            data={"contenu": "Modification après exclusion", "_csrf": jeton},
+        )
+        self.assertEqual(reponse.status_code, 403)
 
     # --- Reactions ---
 
