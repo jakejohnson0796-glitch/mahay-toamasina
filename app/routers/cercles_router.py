@@ -13,7 +13,7 @@ requetes HTTP classiques qu'aux connexions WebSocket.
 import json
 from typing import Optional
 from datetime import datetime, timedelta
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 import logging
 import re
 
@@ -22,6 +22,7 @@ from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 from sqlalchemy import case, update
 from sqlmodel import Session, select, or_, func
 
+from ..config import parametres
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
@@ -62,6 +63,38 @@ def _journaliser_refus_ws(cercle_id: int, motif: str) -> None:
         return
     _DERNIER_LOG_REFUS_WS[cle] = maintenant
     logger.warning("Refus WebSocket cercle: cercle_id=%s motif=%s", cercle_id, motif)
+
+
+def _origine_websocket_autorisee(websocket: WebSocket) -> bool:
+    """Refuse les sockets navigateur initiées depuis un autre site.
+
+    Les navigateurs envoient Origin pour l'ouverture WebSocket. On exige
+    une origine HTTP(S) complète, sans identifiants/chemin/query, dont
+    l'hôte correspond exactement à l'en-tête Host reçu par l'application.
+    Les clients sans Origin sont refusés eux aussi : aucune route du chat
+    ne doit dépendre d'une connexion WebSocket cross-origin.
+    """
+    origine = (websocket.headers.get("origin") or "").strip()
+    hote_requete = (websocket.headers.get("host") or "").strip()
+    if not origine or not hote_requete or origine.lower() == "null":
+        return False
+    try:
+        analysee = urlsplit(origine)
+    except ValueError:
+        return False
+    if (
+        analysee.scheme.lower() not in {"http", "https"}
+        or not analysee.netloc
+        or analysee.username is not None
+        or analysee.password is not None
+        or analysee.path not in {"", "/"}
+        or analysee.query
+        or analysee.fragment
+    ):
+        return False
+    if parametres.environnement == "production" and analysee.scheme.lower() != "https":
+        return False
+    return analysee.netloc.casefold() == hote_requete.casefold()
 
 
 LONGUEUR_MAX_MESSAGE = 2000
@@ -1176,12 +1209,10 @@ def demander_adhesion(
     if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
-    # Defense en profondeur : meme si l'interface ne devrait jamais
-    # proposer ce bouton a un Admin (voir liste_cercles/salon_cercle qui
-    # l'assurent deja membre en amont), un appel direct sur cette route
-    # (POST forge, ancienne page en cache, etc.) ne doit jamais faire
-    # passer un Admin par le circuit de demande — il est rendu membre
-    # immediatement, sans creation de DemandeAdhesionCercle.
+    # Les administrateurs ont un accès transversal accordé par
+    # _a_acces_cercle ; ils ne sont pas ajoutés artificiellement comme
+    # membres à chaque cercle et ne doivent jamais créer de demande.
+    if utilisateur.role == RoleUtilisateur.ADMIN:
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     if _a_acces_cercle(session, cercle_id, utilisateur.id):
@@ -1816,8 +1847,11 @@ async def supprimer_message(request: Request, cercle_id: int, message_id: int, s
     if not cercle or cercle.statut != StatutCercle.ACTIF:
         return RedirectResponse("/cercles", status_code=303)
 
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
+        return RedirectResponse(f"/cercles/{cercle_id}?erreur=acces_refuse", status_code=303)
+
     message = session.get(MessageCercle, message_id)
-    if not cercle or not message or message.cercle_id != cercle_id:
+    if not message or message.cercle_id != cercle_id:
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     if message.auteur_id != utilisateur.id:
@@ -1825,11 +1859,24 @@ async def supprimer_message(request: Request, cercle_id: int, message_id: int, s
         # refusee sans exception, y compris pour le createur du cercle.
         return RedirectResponse(f"/cercles/{cercle_id}?erreur=suppression_refusee", status_code=303)
 
+    ids_supprimes = [message.id]
     message.supprime = True
     session.add(message)
+    if message.parent_message_id is None:
+        reponses = session.exec(
+            select(MessageCercle).where(
+                MessageCercle.parent_message_id == message.id,
+                MessageCercle.supprime == False,  # noqa: E712
+            )
+        ).all()
+        for reponse in reponses:
+            reponse.supprime = True
+            session.add(reponse)
+            ids_supprimes.append(reponse.id)
     session.commit()
 
-    await gestionnaire.diffuser(cercle_id, {"type": "suppression", "id": message.id})
+    for id_supprime in ids_supprimes:
+        await gestionnaire.diffuser(cercle_id, {"type": "suppression", "id": id_supprime})
 
     return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
@@ -2281,6 +2328,11 @@ def _identifier_message_client(donnees: dict) -> Optional[str]:
 
 @router.websocket("/cercles/{cercle_id}/ws")
 async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
+    if not _origine_websocket_autorisee(websocket):
+        _journaliser_refus_ws(cercle_id, "origine_refusee")
+        await websocket.close(code=4403)
+        return
+
     user_id = websocket.session.get("user_id")
     if not user_id:
         _journaliser_refus_ws(cercle_id, "session_absente")

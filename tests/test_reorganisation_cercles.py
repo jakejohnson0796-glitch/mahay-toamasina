@@ -148,7 +148,10 @@ class TestReorganisationCercles(unittest.TestCase):
                 )
             ).one()
             offre.est_active = False
-            session.add(offre)
+            filiere.niveau = None
+            mention = session.get(Mention, self.mention_id)
+            mention.est_active = False
+            session.add_all([offre, filiere, mention])
             cercle = CercleEtude(
                 nom="Finance & Comptabilite M1",
                 mention_id=self.mention_id,
@@ -166,10 +169,13 @@ class TestReorganisationCercles(unittest.TestCase):
             conserve = session.get(CercleEtude, cercle_id)
             self.assertEqual(conserve.statut, StatutCercle.ACTIF)
 
-            # La reconciliation remet l'offre canonique en service ; le
-            # provisionnement suivant doit réutiliser le cercle conservé.
+            # Simule la reconciliation : l'offre et les métadonnées
+            # académiques sont remises dans leur état canonique. Le
+            # provisionnement doit réutiliser le cercle conservé.
             offre.est_active = True
-            session.add(offre)
+            filiere.niveau = "M1"
+            mention.est_active = True
+            session.add_all([offre, filiere, mention])
             session.commit()
             nombre_cree = assurer_cercles_referentiel(session)
             cercles_actifs = session.exec(
