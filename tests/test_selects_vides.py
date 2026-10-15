@@ -142,6 +142,7 @@ class TestSelectsVides(unittest.TestCase):
                 "nom": "Nouvel Etudiant", "telephone": "0340000099",
                 "mot_de_passe": "MotDePasse123!",
                 "filiere_id": "", "universite_id": "",
+                "accepter_conditions": "oui",
                 "_csrf": jeton,
             },
             follow_redirects=False,
