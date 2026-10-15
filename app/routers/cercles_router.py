@@ -11,12 +11,13 @@ mecanisme separe, Starlette applique cette middleware aussi bien aux
 requetes HTTP classiques qu'aux connexions WebSocket.
 """
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
+import logging
 import re
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 from sqlalchemy import case, update
 from sqlmodel import Session, select, or_, func
 
@@ -43,6 +44,24 @@ from ..rate_limit import limite_depassee
 from .. import gamification
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+# Evite de repeter des avertissements identiques a chaque tentative d'un
+# navigateur : une categorie de refus est journalisee au maximum une fois
+# par cercle et par minute. Aucun cookie, identifiant utilisateur, telephone
+# ou contenu de message n'est inclus dans ces diagnostics.
+_DERNIER_LOG_REFUS_WS: dict[tuple[int, str], datetime] = {}
+
+
+def _journaliser_refus_ws(cercle_id: int, motif: str) -> None:
+    maintenant = datetime.utcnow()
+    cle = (cercle_id, motif)
+    precedent = _DERNIER_LOG_REFUS_WS.get(cle)
+    if precedent and maintenant - precedent < timedelta(minutes=1):
+        return
+    _DERNIER_LOG_REFUS_WS[cle] = maintenant
+    logger.warning("Refus WebSocket cercle: cercle_id=%s motif=%s", cercle_id, motif)
+
 
 LONGUEUR_MAX_MESSAGE = 2000
 TAILLE_MAX_PIECE_JOINTE = 10 * 1024 * 1024  # 10 Mo
@@ -2162,36 +2181,76 @@ def rechercher_messages(request: Request, cercle_id: int, q: str = "", session: 
     )
 
 
+@router.get("/cercles/{cercle_id}/ws-status")
+def statut_websocket_cercle(
+    request: Request,
+    cercle_id: int,
+    session: Session = Depends(get_session),
+):
+    """Diagnostic d'acces HTTP pour eviter les handshakes WebSocket refuses.
+
+    Cette route n'ouvre pas la socket et ne remplace jamais les controles
+    d'autorisation dans le gestionnaire WebSocket ; elle indique seulement
+    au client s'il doit se reconnecter, rejoindre le cercle ou renouveler
+    son acces Premium avant de tenter la connexion temps reel.
+    """
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return JSONResponse({"ok": False, "code": "auth_required"}, status_code=401)
+
+    cercle = session.get(CercleEtude, cercle_id)
+    if not cercle or cercle.statut != StatutCercle.ACTIF:
+        return JSONResponse({"ok": False, "code": "circle_unavailable"}, status_code=404)
+
+    if not _a_acces_cercle(session, cercle_id, utilisateur.id):
+        return JSONResponse({"ok": False, "code": "membership_required"}, status_code=403)
+
+    if not _a_acces_premium_cercle(session, utilisateur):
+        return JSONResponse({"ok": False, "code": "premium_required"}, status_code=402)
+
+    return {"ok": True, "code": "ok"}
+
+
 @router.websocket("/cercles/{cercle_id}/ws")
 async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
     user_id = websocket.session.get("user_id")
     if not user_id:
-        # Refuse la connexion avant meme le handshake WebSocket si personne
-        # n'est connecte (pas de session valide).
+        _journaliser_refus_ws(cercle_id, "session_absente")
         await websocket.close(code=4401)
         return
 
     with Session(engine) as session:
         utilisateur = session.get(Utilisateur, user_id)
-        cercle = session.get(CercleEtude, cercle_id)
-        if (
-            not utilisateur
-            or not session_utilisateur_valide(websocket.session, utilisateur)
-            or utilisateur.banni
-            or not cercle
-            or cercle.statut != StatutCercle.ACTIF
-        ):
+        if not utilisateur:
+            _journaliser_refus_ws(cercle_id, "utilisateur_introuvable")
             await websocket.close(code=4403)
             return
+        if not session_utilisateur_valide(websocket.session, utilisateur):
+            _journaliser_refus_ws(cercle_id, "empreinte_session_invalide")
+            await websocket.close(code=4403)
+            return
+        if utilisateur.banni:
+            _journaliser_refus_ws(cercle_id, "compte_banni")
+            await websocket.close(code=4403)
+            return
+
+        cercle = session.get(CercleEtude, cercle_id)
+        if not cercle:
+            _journaliser_refus_ws(cercle_id, "cercle_introuvable")
+            await websocket.close(code=4403)
+            return
+        if cercle.statut != StatutCercle.ACTIF:
+            _journaliser_refus_ws(cercle_id, "cercle_inactif")
+            await websocket.close(code=4403)
+            return
+
         if not _a_acces_cercle(session, cercle_id, user_id):
+            _journaliser_refus_ws(cercle_id, "non_membre")
             await websocket.close(code=4403)
             return
 
         if not _a_acces_premium_cercle(session, utilisateur):
-            # 4402, en echo au code HTTP 402 Payment Required : pas de
-            # redirection possible en WebSocket, donc on ferme simplement
-            # la connexion. La page /cercles/{id} (HTTP) bloque deja
-            # l'affichage du salon avant meme d'essayer d'ouvrir ce socket.
+            _journaliser_refus_ws(cercle_id, "premium_requis")
             await websocket.close(code=4402)
             return
 

@@ -132,6 +132,10 @@ class TestMessagerieEnrichie(unittest.TestCase):
                 session.delete(abonnement)
             session.commit()
 
+        statut_acces = administrateur.get(f"/cercles/{self.cercle_id}/ws-status")
+        self.assertEqual(statut_acces.status_code, 200)
+        self.assertTrue(statut_acces.json()["ok"])
+
         with administrateur.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
             presence = websocket.receive_json()
             self.assertEqual(presence["type"], "presence")
@@ -150,6 +154,16 @@ class TestMessagerieEnrichie(unittest.TestCase):
                 )
             ).first()
             self.assertIsNotNone(message_stocke)
+
+    def test_preflight_refuse_un_non_membre_avec_une_raison_stable(self):
+        reponse = self.intrus.get(f"/cercles/{self.cercle_id}/ws-status")
+        self.assertEqual(reponse.status_code, 403)
+        self.assertEqual(reponse.json(), {"ok": False, "code": "membership_required"})
+
+    def test_preflight_signale_le_premium_expire_pour_un_membre(self):
+        reponse = self.thomas.get(f"/cercles/{self.cercle_id}/ws-status")
+        self.assertEqual(reponse.status_code, 402)
+        self.assertEqual(reponse.json(), {"ok": False, "code": "premium_required"})
 
     # --- Reactions ---
 

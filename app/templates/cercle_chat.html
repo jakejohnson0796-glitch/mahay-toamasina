@@ -1639,23 +1639,103 @@
     });
   }
 
-  function connecterWebSocket() {
-    ws = new WebSocket(urlWebSocket);
+  let connexionWebSocketSuspendue = false;
+  let verificationAccesWebSocketEnCours = false;
+  let echecsHandshakeWebSocket = 0;
 
-    ws.addEventListener("open", function () {
-      delaiReconnexion = 1000; // reussite -> reinitialise le backoff pour la prochaine fois
+  function afficherEtatWebSocket(message, href, libelleLien, proposerReessai) {
+    if (!indicateurReconnexion) {
+      indicateurReconnexion = document.createElement("p");
+      indicateurReconnexion.className = "stat-label";
+      formulaire.parentNode.insertBefore(indicateurReconnexion, formulaire);
+    }
+    indicateurReconnexion.replaceChildren(document.createTextNode(message));
+    if (href && libelleLien) {
+      indicateurReconnexion.append(document.createTextNode(" "));
+      const lien = document.createElement("a");
+      lien.href = href;
+      lien.textContent = libelleLien;
+      indicateurReconnexion.appendChild(lien);
+    }
+    if (proposerReessai) {
+      indicateurReconnexion.append(document.createTextNode(" "));
+      const bouton = document.createElement("button");
+      bouton.type = "button";
+      bouton.className = "outil-cercle";
+      bouton.textContent = "Réessayer";
+      bouton.addEventListener("click", function () {
+        connexionWebSocketSuspendue = false;
+        echecsHandshakeWebSocket = 0;
+        delaiReconnexion = 1000;
+        if (indicateurReconnexion) {
+          indicateurReconnexion.remove();
+          indicateurReconnexion = null;
+        }
+        connecterWebSocket();
+      });
+      indicateurReconnexion.appendChild(bouton);
+    }
+  }
+
+  function suspendreWebSocketPourAcces(message, href, libelleLien) {
+    connexionWebSocketSuspendue = true;
+    champMessage.disabled = true;
+    champMessage.placeholder = message;
+    const boutonEnvoyer = formulaire.querySelector('button[type="submit"]');
+    if (boutonEnvoyer) boutonEnvoyer.disabled = true;
+    listePresence.textContent = "accès à vérifier";
+    afficherEtatWebSocket(message, href, libelleLien, false);
+  }
+
+  async function connecterWebSocket() {
+    if (connexionWebSocketSuspendue || verificationAccesWebSocketEnCours) return;
+
+    // L'HTTP expose une raison lisible lorsque la session, l'adhesion ou
+    // le Premium ne permet plus d'ouvrir le chat. Le serveur controle
+    // toujours toutes ces conditions au handshake et avant chaque message.
+    verificationAccesWebSocketEnCours = true;
+    try {
+      const controle = await fetch("/cercles/" + cercleId + "/ws-status", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "Accept": "application/json" }
+      });
+      const statut = await controle.json().catch(function () { return {}; });
+      if (!controle.ok || statut.ok !== true) {
+        if (statut.code === "auth_required" || controle.status === 401) {
+          suspendreWebSocketPourAcces("Votre session a expiré.", "/connexion", "Se reconnecter");
+        } else if (statut.code === "premium_required" || controle.status === 402) {
+          suspendreWebSocketPourAcces("L'accès Premium au chat n'est plus actif.", "/abonnement?premium_requis=1", "Gérer l'abonnement");
+        } else if (statut.code === "membership_required" || controle.status === 403) {
+          suspendreWebSocketPourAcces("Vous n'avez plus accès à ce cercle.", "/cercles", "Voir les cercles");
+        } else {
+          suspendreWebSocketPourAcces("Ce cercle n'est plus disponible.", "/cercles", "Retour aux cercles");
+        }
+        return;
+      }
+    } catch (erreurControle) {
+      // Une panne du controle HTTP ne doit pas empecher une tentative de
+      // connexion : le backoff ci-dessous limitera les echecs consecutifs.
+    } finally {
+      verificationAccesWebSocketEnCours = false;
+    }
+
+    const socket = new WebSocket(urlWebSocket);
+    ws = socket;
+    let socketOuvert = false;
+
+    socket.addEventListener("open", function () {
+      if (ws !== socket) return;
+      socketOuvert = true;
+      echecsHandshakeWebSocket = 0;
+      delaiReconnexion = 1000;
       if (indicateurReconnexion) {
         indicateurReconnexion.remove();
         indicateurReconnexion = null;
       }
-      // Deconnecte plus de quelques secondes (mise en veille du service
-      // gratuit Render apres 15 min d'inactivite, redeploiement, coupure
-      // reseau...) : des messages d'autres personnes ont pu arriver
-      // entre-temps sans qu'on les recoive en direct. Recharger la page
-      // les recupere tous d'un coup, plutot que de reimplementer un
-      // protocole de synchronisation "messages manques depuis X" pour un
-      // cas qui reste rare une fois la reconnexion automatique en place.
-      // Le brouillon en cours de frappe est preserve (voir plus bas).
+      // Apres une longue coupure, recharge l'historique manquant tout en
+      // conservant le brouillon deja tape par l'utilisateur.
       if (heureDeconnexion && Date.now() - heureDeconnexion > 3000) {
         if (champMessage.value.trim()) {
           sessionStorage.setItem("mahay-brouillon-cercle-" + cercleId, champMessage.value);
@@ -1666,7 +1746,7 @@
       heureDeconnexion = null;
     });
 
-    ws.addEventListener("message", function (evenement) {
+    socket.addEventListener("message", function (evenement) {
       const donnees = JSON.parse(evenement.data);
       if (donnees.type === "presence") {
         mettreAJourPresence(donnees.utilisateurs);
@@ -1686,31 +1766,43 @@
       }
     });
 
-    ws.addEventListener("close", function (evenement) {
-      // 4401 (pas connecte) / 4403 (pas membre, pas Premium...) : le
-      // serveur refuse deliberement l'acces, retenter ne changerait rien
-      // et boucherait juste la console de tentatives inutiles.
-      if (evenement.code === 4401 || evenement.code === 4403) {
-        champMessage.placeholder = "Connexion refusee — reconnectez-vous.";
-        champMessage.disabled = true;
-        listePresence.textContent = "deconnecte";
+    socket.addEventListener("close", function (evenement) {
+      if (ws !== socket || connexionWebSocketSuspendue) return;
+
+      if (evenement.code === 4401) {
+        suspendreWebSocketPourAcces("Votre session a expiré.", "/connexion", "Se reconnecter");
+        return;
+      }
+      if (evenement.code === 4402) {
+        suspendreWebSocketPourAcces("L'accès Premium au chat n'est plus actif.", "/abonnement?premium_requis=1", "Gérer l'abonnement");
+        return;
+      }
+      if (evenement.code === 4403) {
+        suspendreWebSocketPourAcces("Vous n'avez plus accès à ce cercle.", "/cercles", "Voir les cercles");
         return;
       }
 
-      // Toute autre fermeture (mise en veille du service, redeploiement,
-      // reseau instable...) : reconnexion automatique en arriere-plan,
-      // avec un delai croissant pour ne pas marteler le serveur pendant
-      // qu'il redemarre (le cold start du plan gratuit Render prend
-      // environ une minute — voir render.yaml, plan: free).
-      listePresence.textContent = "reconnexion...";
-      if (!indicateurReconnexion) {
-        indicateurReconnexion = document.createElement("p");
-        indicateurReconnexion.className = "stat-label";
-        indicateurReconnexion.textContent = "Connexion perdue — nouvelle tentative en cours...";
-        formulaire.parentNode.insertBefore(indicateurReconnexion, formulaire);
+      // Un refus avant l'acceptation WebSocket apparait au navigateur sous
+      // forme de fermeture 1006, sans le code 440x du serveur. Apres trois
+      // echecs de handshake, on arrete les tentatives automatiques et on
+      // propose un bouton : on evite une boucle infinie de 403 dans Render.
+      if (!socketOuvert) {
+        echecsHandshakeWebSocket += 1;
+        if (echecsHandshakeWebSocket >= 3) {
+          listePresence.textContent = "connexion indisponible";
+          afficherEtatWebSocket(
+            "L'accès HTTP semble valide, mais le chat temps réel refuse la connexion.",
+            null,
+            null,
+            true
+          );
+          return;
+        }
       }
-      if (!heureDeconnexion) heureDeconnexion = Date.now();
 
+      listePresence.textContent = "reconnexion...";
+      afficherEtatWebSocket("Connexion perdue — nouvelle tentative en cours...", null, null, false);
+      if (!heureDeconnexion) heureDeconnexion = Date.now();
       setTimeout(connecterWebSocket, delaiReconnexion);
       delaiReconnexion = Math.min(delaiReconnexion * 2, DELAI_RECONNEXION_MAX);
     });
@@ -1723,7 +1815,8 @@
   // la plus frequente est un telephone qui met l'onglet en veille puis
   // qu'on y revient, pas une vraie panne reseau prolongee.
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible" && ws && ws.readyState === WebSocket.CLOSED) {
+    if (!connexionWebSocketSuspendue && document.visibilityState === "visible" &&
+        (!ws || ws.readyState === WebSocket.CLOSED)) {
       delaiReconnexion = 1000;
       connecterWebSocket();
     }
@@ -1755,7 +1848,9 @@
   formulaire.addEventListener("submit", function (evenement) {
     evenement.preventDefault();
     const contenu = champMessage.value.trim();
-    if (!contenu || ws.readyState !== WebSocket.OPEN) return;
+    // Le controle d'acces HTTP est asynchrone : avant la creation du
+    // premier socket, ws peut encore etre indefini.
+    if (!contenu || !ws || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ contenu: contenu, mentions: extraireMentionsPresentes(contenu, mentionsPrincipal) }));
     champMessage.value = "";
     try { sessionStorage.removeItem("mahay-brouillon-cercle-" + cercleId); } catch (_) {}
