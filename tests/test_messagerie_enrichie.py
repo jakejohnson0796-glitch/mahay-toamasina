@@ -271,6 +271,81 @@ class TestMessagerieEnrichie(unittest.TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertEqual(page.text.count('<span class="message-contenu">MATCH-TEST-'), 50)
 
+    def test_historique_chat_est_paginer_sans_perdre_les_messages_anciens(self):
+        with Session(engine) as session:
+            session.add_all([
+                MessageCercle(
+                    cercle_id=self.cercle_id,
+                    auteur_id=self.sarah.utilisateur_id,
+                    contenu=f"HISTO-PAGE-{index:03d}",
+                )
+                for index in range(160)
+            ])
+            session.commit()
+
+        page_initiale = self.sarah.get(f"/cercles/{self.cercle_id}")
+        self.assertEqual(page_initiale.status_code, 200)
+        self.assertIn("HISTO-PAGE-159", page_initiale.text)
+        self.assertNotIn("HISTO-PAGE-000", page_initiale.text)
+        self.assertIn('id="bouton-historique-cercle"', page_initiale.text)
+
+        identifiants = re.findall(r'<div class="message[^"]*" data-message-id="(\d+)"', page_initiale.text)
+        self.assertEqual(len(identifiants), 100)
+        curseur = int(identifiants[0])
+
+        premiere_page = self.sarah.get(
+            f"/cercles/{self.cercle_id}/messages/historique",
+            params={"avant_id": curseur, "limite": 500},
+        )
+        self.assertEqual(premiere_page.status_code, 200)
+        donnees = premiere_page.json()
+        self.assertEqual(len(donnees["messages"]), 50)  # limite serveur, même si le client demande 500
+        self.assertTrue(donnees["has_more"])
+        self.assertEqual(
+            donnees["messages"],
+            sorted(donnees["messages"], key=lambda item: item["id"], reverse=True),
+        )
+
+        curseur = donnees["messages"][-1]["id"]
+        seconde_page = self.sarah.get(
+            f"/cercles/{self.cercle_id}/messages/historique",
+            params={"avant_id": curseur, "limite": 50},
+        )
+        self.assertEqual(seconde_page.status_code, 200)
+        ancienne_page = seconde_page.json()
+        self.assertFalse(ancienne_page["has_more"])
+        self.assertEqual(len(ancienne_page["messages"]), 11)
+        contenus_anciens = {item["contenu"] for item in ancienne_page["messages"]}
+        self.assertIn("Quelqu'un a compris l'exercice 4 ?", contenus_anciens)
+        self.assertIn("HISTO-PAGE-000", contenus_anciens)
+
+    def test_historique_chat_refuse_un_non_membre_et_un_premium_expire(self):
+        with Session(engine) as session:
+            repere = MessageCercle(
+                cercle_id=self.cercle_id,
+                auteur_id=self.sarah.utilisateur_id,
+                contenu="Repère historique",
+            )
+            session.add(repere)
+            session.commit()
+            session.refresh(repere)
+            curseur = repere.id + 1
+
+        non_membre = self.intrus.get(
+            f"/cercles/{self.cercle_id}/messages/historique",
+            params={"avant_id": curseur},
+        )
+        self.assertEqual(non_membre.status_code, 403)
+        self.assertEqual(non_membre.json()["code"], "membership_required")
+
+        _retirer_abonnement(self.thomas.utilisateur_id)
+        premium_expire = self.thomas.get(
+            f"/cercles/{self.cercle_id}/messages/historique",
+            params={"avant_id": curseur},
+        )
+        self.assertEqual(premium_expire.status_code, 402)
+        self.assertEqual(premium_expire.json()["code"], "premium_required")
+
     def test_origine_websocket_exige_exactement_le_meme_hote(self):
         self.assertTrue(_origine_websocket_autorisee(SimpleNamespace(
             headers={"origin": "https://testserver", "host": "testserver"}
