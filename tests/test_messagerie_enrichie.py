@@ -16,6 +16,7 @@ import os
 import re
 import unittest
 import tempfile
+from unittest.mock import patch
 
 # DATABASE_URL doit etre fixee AVANT le premier import de app.* (le moteur
 # SQLAlchemy est cree une fois au niveau module dans app/database.py).
@@ -138,6 +139,119 @@ class TestMessagerieEnrichie(unittest.TestCase):
             session.commit()
             session.refresh(message)
             self.message_id = message.id
+
+    def test_websocket_refuse_un_message_trop_long_sans_perdre_la_socket(self):
+        client_message_id = "message-trop-long-001"
+        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+            self.assertEqual(websocket.receive_json()["type"], "presence")
+            websocket.send_json({
+                "contenu": "x" * 2001,
+                "client_message_id": client_message_id,
+            })
+            erreur = websocket.receive_json()
+            self.assertEqual(erreur["type"], "erreur")
+            self.assertEqual(erreur["code"], "message_trop_long")
+            self.assertEqual(erreur["client_message_id"], client_message_id)
+
+            websocket.send_json({
+                "contenu": "Message valide après refus",
+                "client_message_id": "message-valide-001",
+            })
+            evenement = websocket.receive_json()
+            self.assertEqual(evenement["type"], "message")
+            self.assertEqual(evenement["contenu"], "Message valide après refus")
+            self.assertEqual(evenement["client_message_id"], "message-valide-001")
+
+        with Session(engine) as session:
+            refus = session.exec(
+                select(MessageCercle).where(
+                    MessageCercle.cercle_id == self.cercle_id,
+                    MessageCercle.auteur_id == self.sarah.utilisateur_id,
+                    MessageCercle.contenu == "x" * 2001,
+                )
+            ).first()
+            self.assertIsNone(refus)
+
+    def test_websocket_refuse_un_parent_invalide_sans_creer_de_reponse(self):
+        client_message_id = "parent-invalide-001"
+        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+            self.assertEqual(websocket.receive_json()["type"], "presence")
+            websocket.send_json({
+                "contenu": "Réponse à un message inexistant",
+                "parent_message_id": 2_147_483_647,
+                "client_message_id": client_message_id,
+            })
+            erreur = websocket.receive_json()
+            self.assertEqual(erreur["type"], "erreur")
+            self.assertEqual(erreur["code"], "parent_indisponible")
+            self.assertEqual(erreur["client_message_id"], client_message_id)
+
+        with Session(engine) as session:
+            refusee = session.exec(
+                select(MessageCercle).where(
+                    MessageCercle.cercle_id == self.cercle_id,
+                    MessageCercle.contenu == "Réponse à un message inexistant",
+                )
+            ).first()
+            self.assertIsNone(refusee)
+
+    def test_websocket_signale_clairement_la_limite_de_debit(self):
+        client_message_id = "debit-limite-001"
+        with patch("app.routers.cercles_router.limite_depassee", return_value=True):
+            with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+                self.assertEqual(websocket.receive_json()["type"], "presence")
+                websocket.send_json({
+                    "contenu": "Message rejeté par le quota",
+                    "client_message_id": client_message_id,
+                })
+                erreur = websocket.receive_json()
+                self.assertEqual(erreur["type"], "erreur")
+                self.assertEqual(erreur["code"], "limite_debit")
+                self.assertEqual(erreur["client_message_id"], client_message_id)
+
+        with Session(engine) as session:
+            refuse = session.exec(
+                select(MessageCercle).where(
+                    MessageCercle.cercle_id == self.cercle_id,
+                    MessageCercle.contenu == "Message rejeté par le quota",
+                )
+            ).first()
+            self.assertIsNone(refuse)
+
+    def test_websocket_refuse_un_payload_non_objet_sans_planter(self):
+        with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws") as websocket:
+            self.assertEqual(websocket.receive_json()["type"], "presence")
+            websocket.send_json(["pas", "un", "objet"])
+            erreur = websocket.receive_json()
+            self.assertEqual(erreur["type"], "erreur")
+            self.assertEqual(erreur["code"], "payload_invalide")
+
+            websocket.send_json({
+                "contenu": "La socket reste disponible",
+                "client_message_id": "payload-suivi-001",
+            })
+            evenement = websocket.receive_json()
+            self.assertEqual(evenement["type"], "message")
+            self.assertEqual(evenement["contenu"], "La socket reste disponible")
+
+    def test_recherche_historique_est_bornee_a_cinquante_resultats(self):
+        with Session(engine) as session:
+            session.add_all([
+                MessageCercle(
+                    cercle_id=self.cercle_id,
+                    auteur_id=self.sarah.utilisateur_id,
+                    contenu=f"MATCH-TEST-{index:02d}",
+                )
+                for index in range(55)
+            ])
+            session.commit()
+
+        page = self.sarah.get(
+            f"/cercles/{self.cercle_id}/recherche",
+            params={"q": "MATCH-TEST-"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.text.count("MATCH-TEST-"), 50)
 
     def test_administrateur_peut_utiliser_websocket_sans_abonnement_etudiant(self):
         administrateur = _creer_client_connecte(
