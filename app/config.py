@@ -101,17 +101,12 @@ class Parametres:
     gemini_api_key: str = field(default_factory=lambda: os.getenv("GEMINI_API_KEY", ""))
     gemini_model: str = field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-3.8-flash"))
 
-    # --- Email (SMTP) pour "mot de passe oublie" (voir app/email_utils.py
-    # et /mot-de-passe-oublie dans auth_router.py) : GRATUIT, contrairement
-    # a un envoi de SMS -- fonctionne avec n'importe quel fournisseur SMTP
-    # (compte Gmail avec un "mot de passe d'application", ou l'offre SMTP
-    # gratuite de Brevo/Sendinblue, par exemple). smtp_from_email est
-    # l'adresse expeditrice affichee au destinataire (souvent la meme que
-    # smtp_utilisateur, mais pas obligatoirement selon le fournisseur).
-    # Si l'une des valeurs manque, /mot-de-passe-oublie affiche une erreur
-    # claire au lieu de planter au demarrage du site (module optionnel,
-    # comme LiveKit ci-dessus) -- la reinitialisation par un admin depuis
-    # /admin/utilisateurs reste utilisable meme sans SMTP configure.
+    # --- Emails de récupération et MFA (app/email_utils.py) ---
+    # Sur Render Free, EMAIL_TRANSPORT=brevo_api force l'API HTTPS/443 car
+    # les ports SMTP sortants 25/465/587 y sont bloqués. L'offre Brevo gratuite
+    # a des quotas ; hors Render Free, un transport SMTP reste aussi possible.
+    # smtp_from_email est l'adresse expéditrice qui doit être vérifiée chez
+    # le fournisseur. Sans transport configuré, aucun code email ne sera envoyé.
     # Render Free bloque les connexions SMTP sortantes sur les ports usuels.
     # Sur ce plan, privilégier l'API transactionnelle Brevo via HTTPS (443) :
     # elle utilise la même adresse expéditrice vérifiée SMTP_FROM_EMAIL.
