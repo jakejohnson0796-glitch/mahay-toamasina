@@ -34,7 +34,7 @@ from . import ai_worker
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="Gasy Mahay — Madagascar")
+app = FastAPI(title="MITARIDALA — Madagascar")
 
 # --- Garde-fou : refuse de demarrer en production avec la cle de demo ---
 # Un secret par defaut connu de tous (present dans .env.example, donc
