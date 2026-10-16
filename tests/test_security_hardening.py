@@ -114,6 +114,15 @@ def test_email_otp_is_hashed_expiring_and_single_use():
         def commit(self):
             self.commits += 1
 
+        def execute(self, _requete):
+            from types import SimpleNamespace
+            # Simule l'UPDATE conditionnel gagnant ; la ligne ORM reflète
+            # ensuite l'état consommé pour la vérification de rejeu.
+            if not entree.utilise:
+                entree.utilise = True
+                return SimpleNamespace(rowcount=1)
+            return SimpleNamespace(rowcount=0)
+
     session = FausseSession([entree])
     assert _verifier_code_email_2fa(session, 99, "004261", "connexion") is True
     assert entree.utilise is True
