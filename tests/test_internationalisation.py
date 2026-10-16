@@ -40,7 +40,7 @@ def test_ci_lance_le_test_navigateur_du_selecteur_de_langue():
 def test_traductions_des_libelles_signales_et_des_etats_dynamiques():
     js = (ROOT / "app" / "static" / "js" / "langue.js").read_text(encoding="utf-8")
     cles = (
-        "Illustrations d’étude intégrées localement dans Gasy Mahay : aucune dépendance à un service d’images externe.",
+        "Illustrations d’étude intégrées localement dans MITARIDALA : aucune dépendance à un service d’images externe.",
         "Génération…",
         "Validation…",
         "Préparation…",
