@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block titre %}Contact — Gasy Mahay{% endblock %}
+{% block titre %}Contact — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair contact-page">
@@ -116,7 +116,7 @@
 <section class="contact-hero" aria-labelledby="contact-title">
   <div class="contact-hero-copy">
     <span class="contact-kicker">Nous contacter</span>
-    <h2 id="contact-title">Parlons directement à l'équipe Gasy Mahay.</h2>
+    <h2 id="contact-title">Parlons directement à l'équipe MITARIDALA.</h2>
     <p>Une question, une suggestion, un partenariat ou un problème sur le site ? Écris ton message ici, puis ouvre WhatsApp en un clic — ou scanne le QR avec ton téléphone.</p>
   </div>
   <aside class="contact-hero-note">
@@ -140,7 +140,7 @@
       <span>Votre message</span>
       <span class="contact-counter" id="compteur-message-whatsapp">0 / 1000</span>
     </label>
-    <textarea id="message-whatsapp" class="contact-whatsapp-message" rows="7" maxlength="1000" placeholder="Bonjour Gasy Mahay, je vous contacte au sujet de…">Bonjour Gasy Mahay, je vous contacte depuis le site.</textarea>
+    <textarea id="message-whatsapp" class="contact-whatsapp-message" rows="7" maxlength="1000" placeholder="Bonjour MITARIDALA, je vous contacte au sujet de…">Bonjour MITARIDALA, je vous contacte depuis le site.</textarea>
 
     <div class="contact-actions">
       <a
@@ -175,11 +175,11 @@
         href="https://wa.me/261337581732?text=Bonjour%20Gasy%20Mahay%2C%20je%20vous%20contacte%20depuis%20le%20site."
         target="_blank"
         rel="noopener"
-        aria-label="Ouvrir WhatsApp avec Gasy Mahay"
+        aria-label="Ouvrir WhatsApp avec MITARIDALA"
       >
         <img
           src="{{ url_for('static', path='images/contact/whatsapp-gasy-mahay.png') }}"
-          alt="QR code WhatsApp Gasy Mahay"
+          alt="QR code WhatsApp MITARIDALA"
           width="280"
           height="280"
           loading="eager"
@@ -206,7 +206,7 @@
 </section>
 
 <section class="contact-trust" aria-label="Informations pratiques">
-  <div class="contact-trust-item"><strong>Réponse directe</strong><span>Tu échanges avec le contact WhatsApp officiel de Gasy Mahay.</span></div>
+  <div class="contact-trust-item"><strong>Réponse directe</strong><span>Tu échanges avec le contact WhatsApp officiel de MITARIDALA.</span></div>
   <div class="contact-trust-item"><strong>Message personnalisable</strong><span>Tu peux écrire ou modifier ton texte avant d'ouvrir WhatsApp.</span></div>
   <div class="contact-trust-item"><strong>QR toujours visible</strong><span>Le code reste accessible même sur mobile pour un accès rapide.</span></div>
 </section>
@@ -219,7 +219,7 @@
   const lien = document.getElementById("lien-whatsapp");
   const boutonCopier = document.getElementById("copier-message-whatsapp");
   const compteur = document.getElementById("compteur-message-whatsapp");
-  const valeurParDefaut = "Bonjour Gasy Mahay, je vous contacte depuis le site.";
+  const valeurParDefaut = "Bonjour MITARIDALA, je vous contacte depuis le site.";
 
   if (!champ || !lien) return;
 
