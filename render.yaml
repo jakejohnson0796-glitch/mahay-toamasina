@@ -54,7 +54,7 @@ services:
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_SENDER_NAME
-        value: Gasy Mahay
+        value: MITARIDALA
       - key: SMTP_HOTE
         sync: false
       - key: SMTP_PORT
