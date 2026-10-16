@@ -1,0 +1,101 @@
+/* Parcours MFA : activation lisible, guidée et cohérente avec les deux thèmes. */
+.mfa-setup-page {
+  width: min(100%, 980px);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem) clamp(.8rem, 2.6vw, 1.75rem) 3rem;
+  color: var(--content-text);
+}
+.mfa-breadcrumb { margin: 0 0 .8rem; font-size: .84rem; }
+.mfa-breadcrumb a { display: inline-flex; align-items: center; gap: .45rem; color: var(--content-text-muted); text-decoration: none; }
+.mfa-breadcrumb a:hover { color: var(--primary); text-decoration: underline; }
+.mfa-page-heading { max-width: 760px; margin: 0 0 1.25rem; }
+.mfa-page-kicker { display: inline-flex; align-items: center; gap: .45rem; margin-bottom: .55rem; color: var(--refonte-teal); font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.mfa-page-kicker::before { content: ""; width: 1.35rem; height: 2px; border-radius: 9px; background: currentColor; }
+.mfa-page-heading h1 { margin: 0; color: var(--content-text); font-family: "Fraunces", Georgia, serif; font-size: clamp(1.9rem, 4.4vw, 3.1rem); line-height: 1.06; letter-spacing: -.045em; }
+.mfa-page-heading > p { max-width: 66ch; margin: .7rem 0 0; color: var(--content-text-muted); font-size: .96rem; line-height: 1.65; }
+.mfa-setup-card { overflow: hidden; border: 1px solid var(--content-border); border-radius: 22px; background: var(--content-surface); box-shadow: var(--refonte-shadow-md, 0 14px 36px rgba(0,0,0,.12)); }
+.mfa-card-heading { display: flex; align-items: flex-start; gap: .8rem; padding: clamp(1rem, 2.5vw, 1.5rem); border-bottom: 1px solid var(--content-border); background: linear-gradient(135deg, rgba(47,143,137,.075), transparent 72%); }
+.mfa-card-symbol { display: grid; flex: 0 0 2.75rem; width: 2.75rem; height: 2.75rem; place-items: center; border: 1px solid rgba(47,143,137,.2); border-radius: 14px; background: rgba(47,143,137,.1); color: var(--refonte-teal); font-size: 1.3rem; }
+.mfa-card-heading h2 { margin: 0; color: var(--content-text); font-size: 1.08rem; line-height: 1.35; }
+.mfa-card-heading p { margin: .25rem 0 0; color: var(--content-text-muted); font-size: .86rem; line-height: 1.55; }
+.mfa-setup-content { padding: clamp(.9rem, 2.5vw, 1.45rem); }
+.mfa-flow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
+.mfa-step-card { min-width: 0; padding: 1rem; border: 1px solid var(--content-border); border-radius: 16px; background: var(--content-bg); }
+.mfa-step-title { display: flex; align-items: center; gap: .6rem; margin: 0 0 .55rem; color: var(--content-text); font-size: .98rem; line-height: 1.4; }
+.mfa-step-number { display: inline-grid; flex: 0 0 1.9rem; width: 1.9rem; height: 1.9rem; place-items: center; border-radius: 10px; background: rgba(47,143,137,.13); color: var(--refonte-teal); font-family: "IBM Plex Mono", monospace; font-size: .75rem; font-weight: 700; }
+.mfa-step-card p { margin: .35rem 0 .75rem; color: var(--content-text-muted); font-size: .88rem; line-height: 1.65; }
+.mfa-app-pills { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .7rem; }
+.mfa-app-pills span { display: inline-flex; align-items: center; min-height: 1.9rem; padding: .34rem .6rem; border: 1px solid var(--content-border); border-radius: 999px; background: var(--content-surface); color: var(--content-text); font-size: .76rem; font-weight: 650; }
+.mfa-qr-frame { display: grid; width: min(100%, 250px); min-height: 250px; place-items: center; margin: .85rem auto .75rem; padding: .75rem; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 17px; background: #FFFFFF; }
+.mfa-qr-frame img { display: block; width: 100%; height: auto; max-width: 220px; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; }
+.mfa-qr-caption { margin: 0 !important; text-align: center; font-size: .78rem !important; }
+.mfa-manual-key { margin-top: .85rem; border: 1px solid var(--content-border); border-radius: 12px; background: var(--content-surface); }
+.mfa-manual-key summary { padding: .75rem .85rem; color: var(--content-text); font-size: .84rem; font-weight: 750; cursor: pointer; }
+.mfa-manual-key summary:hover { color: var(--primary); }
+.mfa-manual-key-body { padding: 0 .85rem .85rem; }
+.mfa-manual-key-body p { margin: 0 0 .55rem; font-size: .82rem; }
+.mfa-secret-controls { display: flex; align-items: stretch; gap: .5rem; min-width: 0; }
+.mfa-secret-value { display: flex; flex: 1 1 auto; min-width: 0; align-items: center; padding: .65rem .7rem; border: 1px solid var(--content-border); border-radius: 10px; background: var(--content-bg); }
+.mfa-secret-value code { display: block; width: 100%; min-width: 0; overflow-wrap: anywhere; color: var(--content-text); font-family: "IBM Plex Mono", monospace; font-size: .77rem; line-height: 1.5; user-select: all; }
+.mfa-copy-button { flex: 0 0 auto; min-height: 2.65rem; padding: .55rem .75rem; border: 1px solid var(--content-border); border-radius: 10px; background: var(--content-surface); color: var(--content-text); font: inherit; font-size: .78rem; font-weight: 750; cursor: pointer; }
+.mfa-copy-button:hover { border-color: var(--refonte-teal); background: var(--content-bg); }
+.mfa-copy-status { min-height: 1.1em; margin: .4rem 0 0 !important; color: var(--refonte-teal) !important; font-size: .76rem !important; }
+.mfa-verify-panel { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 1.2rem; align-items: start; margin-top: 1rem; padding: clamp(1rem, 2.5vw, 1.35rem); border: 1px solid rgba(47,143,137,.22); border-radius: 16px; background: linear-gradient(120deg, rgba(47,143,137,.075), transparent 80%), var(--content-bg); }
+.mfa-verify-panel h2 { margin: 0; color: var(--content-text); font-family: "Fraunces", Georgia, serif; font-size: 1.35rem; line-height: 1.2; }
+.mfa-verify-panel p { margin: .45rem 0 0; color: var(--content-text-muted); font-size: .86rem; line-height: 1.55; }
+.mfa-code-form { display: grid; align-content: start; gap: .55rem; min-width: 0; }
+.mfa-code-form label { color: var(--content-text); font-size: .83rem; font-weight: 750; }
+.mfa-code-input { width: 100%; box-sizing: border-box; min-height: 3.35rem !important; padding: .7rem .9rem !important; border: 1px solid var(--content-border) !important; border-radius: 12px !important; background: var(--content-surface) !important; color: var(--content-text) !important; font-family: "IBM Plex Mono", monospace !important; font-size: 1.25rem !important; font-weight: 700 !important; letter-spacing: .24em; text-align: center; }
+.mfa-code-input:focus { outline: none !important; border-color: var(--refonte-teal) !important; box-shadow: var(--refonte-focus, 0 0 0 3px rgba(47,143,137,.15)) !important; }
+.mfa-code-form .bouton { width: 100%; min-height: 3rem; justify-content: center; margin-top: .1rem; font-size: .9rem; }
+.mfa-validation-message { margin: 0 !important; color: var(--refonte-danger, #bd4d45) !important; font-size: .82rem !important; line-height: 1.45; }
+.mfa-validation-message[hidden] { display: none !important; }
+.mfa-server-error { margin: 1rem clamp(.9rem, 2.5vw, 1.45rem) 0 !important; }
+.mfa-email-destination { display: flex; align-items: flex-start; gap: .7rem; margin: 1rem 0; padding: .95rem; border: 1px solid var(--content-border); border-radius: 14px; background: var(--content-bg); }
+.mfa-email-destination-icon { display: grid; flex: 0 0 2.3rem; width: 2.3rem; height: 2.3rem; place-items: center; border-radius: 11px; background: rgba(47,143,137,.12); color: var(--refonte-teal); font-size: 1.1rem; }
+.mfa-email-destination strong { display: block; color: var(--content-text); font-size: .9rem; overflow-wrap: anywhere; }
+.mfa-email-destination span { display: block; margin-top: .2rem; color: var(--content-text-muted); font-size: .8rem; line-height: 1.5; }
+.mfa-security-note { display: flex; align-items: flex-start; gap: .55rem; margin: 1rem 0 0; padding: .8rem .95rem; border-radius: 12px; background: var(--content-bg); color: var(--content-text-muted); font-size: .8rem; line-height: 1.55; }
+.mfa-security-note strong { color: var(--content-text); }
+.mfa-cancel-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
+.mfa-cancel-row a { color: var(--content-text-muted); font-size: .84rem; text-decoration: none; }
+.mfa-cancel-row a:hover { color: var(--primary); text-decoration: underline; }
+
+/* Le panneau MFA de la page Sécurité est volontairement large : ses deux
+   méthodes restent côte à côte sur ordinateur et s'empilent sur mobile. */
+.page-ops .ops-security-card-mfa { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; border-color: rgba(47,143,137,.23); }
+.page-ops .ops-security-card-mfa > h2,
+.page-ops .ops-security-card-mfa > .ops-security-card-intro,
+.page-ops .ops-security-card-mfa > .ops-alert,
+.page-ops .ops-security-card-mfa > .ops-security-status,
+.page-ops .ops-security-card-mfa > .ops-form-actions { grid-column: 1 / -1; }
+.page-ops .ops-security-card-mfa > h2 { font-size: 1.12rem; }
+.page-ops .ops-security-card-mfa > .ops-security-card-intro { margin: 0; font-size: .86rem; line-height: 1.6; }
+.page-ops .ops-security-card-mfa > .ops-subsection { min-width: 0; margin: 0; padding: 1rem; border: 1px solid var(--content-border); border-radius: 15px; background: var(--content-bg); }
+.page-ops .ops-security-card-mfa > .ops-subsection h3 { font-size: .91rem; line-height: 1.4; }
+.page-ops .ops-security-card-mfa > .ops-subsection > .ops-security-card-intro { font-size: .8rem; line-height: 1.6; }
+.page-ops .ops-security-card-mfa .ops-form { margin-top: .7rem; }
+.page-ops .ops-security-card-mfa .bouton { max-width: 100%; white-space: normal; line-height: 1.35; }
+@media (max-width: 900px) {
+  .mfa-setup-page { padding-top: 1rem; }
+  .mfa-flow-grid { grid-template-columns: 1fr; }
+  .mfa-verify-panel { grid-template-columns: 1fr; gap: .85rem; }
+  .page-ops .ops-security-card-mfa { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .mfa-page-heading h1 { font-size: clamp(1.8rem, 8.5vw, 2.35rem); }
+  .mfa-page-heading > p { font-size: .9rem; }
+  .mfa-card-heading { gap: .65rem; }
+  .mfa-card-symbol { width: 2.45rem; height: 2.45rem; flex-basis: 2.45rem; border-radius: 12px; }
+  .mfa-step-card { padding: .8rem; }
+  .mfa-qr-frame { width: min(100%, 220px); min-height: 220px; padding: .55rem; }
+  .mfa-qr-frame img { max-width: 190px; }
+  .mfa-secret-controls { flex-direction: column; }
+  .mfa-copy-button { width: 100%; }
+  .mfa-setup-card { border-radius: 17px; }
+  .mfa-cancel-row { align-items: stretch; flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mfa-setup-page *, .mfa-setup-page *::before, .mfa-setup-page *::after { animation: none !important; transition: none !important; }
+}
