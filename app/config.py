@@ -115,6 +115,7 @@ class Parametres:
     # Render Free bloque les connexions SMTP sortantes sur les ports usuels.
     # Sur ce plan, privilégier l'API transactionnelle Brevo via HTTPS (443) :
     # elle utilise la même adresse expéditrice vérifiée SMTP_FROM_EMAIL.
+    email_transport: str = field(default_factory=lambda: os.getenv("EMAIL_TRANSPORT", "auto").strip().lower())
     brevo_api_key: str = field(default_factory=lambda: os.getenv("BREVO_API_KEY", ""))
     brevo_sender_name: str = field(default_factory=lambda: os.getenv("BREVO_SENDER_NAME", "Gasy Mahay"))
     smtp_hote: str = field(default_factory=lambda: os.getenv("SMTP_HOTE", ""))
