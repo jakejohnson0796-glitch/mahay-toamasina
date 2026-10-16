@@ -195,6 +195,9 @@ Le projet intègre plusieurs protections côté serveur :
 - limitation anti-brute-force et anti-spam ;
 - double authentification TOTP ;
 - codes de secours 2FA hachés ;
+- choix de double authentification par application TOTP hors ligne ou code OTP par email, sans SMS payant ;
+- codes email à usage unique, expirables, hachés en base et protégés contre le rejeu ;
+
 - validation du type réel des fichiers déposés ;
 - contrôles contre certains chemins dangereux dans les archives ;
 - contrôles d'autorisation côté serveur pour les documents, cercles et fonctions d'administration ;
