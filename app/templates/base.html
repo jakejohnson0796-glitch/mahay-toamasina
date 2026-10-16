@@ -40,7 +40,7 @@
 <link rel="stylesheet" href="/static/public-pages.css?v={{ version_asset('public-pages.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/activite.css?v={{ version_asset('activite.css') }}">
-{% if request.url.path.startswith("/admin") or request.url.path in ["/abonnement", "/sponsoring", "/securite"] %}
+{% if request.url.path.startswith("/admin") or request.url.path.startswith("/securite/") or request.url.path in ["/abonnement", "/sponsoring", "/securite"] %}
 <link rel="stylesheet" href="/static/ops.css?v={{ version_asset('ops.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/sidebar.css?v={{ version_asset('sidebar.css') }}">
