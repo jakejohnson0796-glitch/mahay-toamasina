@@ -33,6 +33,9 @@
 <link rel="stylesheet" href="/static/ux.css?v={{ version_asset('ux.css') }}">
 <link rel="stylesheet" href="/static/refonte.css?v={{ version_asset('refonte.css') }}">
 <link rel="stylesheet" href="/static/csp-utilities.css?v={{ version_asset('csp-utilities.css') }}">
+{% if request.url.path in ["/cadre-legal", "/conditions-utilisation", "/charte-ethique", "/confidentialite", "/mentions-legales"] %}
+<link rel="stylesheet" href="/static/legal.css?v={{ version_asset('legal.css') }}">
+{% endif %}
 {% if request.url.path in ["/a-propos", "/faq"] %}
 <link rel="stylesheet" href="/static/public-pages.css?v={{ version_asset('public-pages.css') }}">
 {% endif %}
@@ -248,6 +251,7 @@
         <a class="tb-menu-compte-item" href="/abonnement"><span class="tb-menu-compte-icone">{{ icone("premium", 16) }}</span><span>Abonnement</span></a>
 {% endif %}
         <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
+        <a class="tb-menu-compte-item" href="/cadre-legal"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Éthique et confidentialité</span></a>
         <a class="tb-menu-compte-item" href="/mode-emploi"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Mode d'emploi</span></a>
 
         <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter Gasy Mahay</span></a>
@@ -379,7 +383,7 @@
         </a>
       </div>
       <p>Gasy Mahay — un hub de revision imagine pour les étudiants à Madagascar.</p>
-      <p class="pied-liens"><a href="/faq">FAQ</a> · <a href="/feedback">Donner mon avis</a></p>
+      <p class="pied-liens"><a href="/faq">FAQ</a> · <a href="/feedback">Donner mon avis</a> · <a href="/cadre-legal">Éthique, conditions et confidentialité</a></p>
     </footer>
   </div>
 </div>
