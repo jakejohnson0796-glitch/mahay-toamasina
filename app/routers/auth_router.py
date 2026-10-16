@@ -317,6 +317,7 @@ def connexion(
         request.session["en_attente_2fa_user_id"] = utilisateur.id
         request.session["en_attente_2fa_email_statut"] = "non_envoye"
         request.session["en_attente_2fa_email_envoye"] = False
+        request.session.pop("en_attente_2fa_methode", None)
         # Si l'email est la seule methode active, envoyer tout de suite le
         # code attendu. Avec TOTP actif, l'utilisateur choisit sa methode
         # sur l'ecran suivant et aucun email n'est envoye sans demande.
@@ -342,6 +343,7 @@ def page_2fa(request: Request, session: Session = Depends(get_session)):
         request.session.pop("en_attente_2fa_user_id", None)
         request.session.pop("en_attente_2fa_email_envoye", None)
         request.session.pop("en_attente_2fa_email_statut", None)
+        request.session.pop("en_attente_2fa_methode", None)
         return RedirectResponse("/connexion", status_code=303)
 
     codes_secours_disponibles = session.exec(
@@ -359,7 +361,7 @@ def page_2fa(request: Request, session: Session = Depends(get_session)):
             "email_masque": _masquer_email(utilisateur.email),
             "email_envoye": bool(request.session.get("en_attente_2fa_email_envoye")),
             "email_statut": request.session.get("en_attente_2fa_email_statut", "non_envoye"),
-            "methode_defaut": "totp" if utilisateur.totp_active else "email",
+            "methode_defaut": request.session.get("en_attente_2fa_methode") or ("totp" if utilisateur.totp_active else "email"),
             "codes_secours_disponibles": codes_secours_disponibles,
         },
     )
@@ -381,6 +383,7 @@ def envoyer_code_email_connexion(
     statut = _demander_code_email_connexion(request, session, utilisateur)
     request.session["en_attente_2fa_email_statut"] = statut
     request.session["en_attente_2fa_email_envoye"] = statut == "envoye"
+    request.session["en_attente_2fa_methode"] = "email"
     return RedirectResponse("/connexion/2fa", status_code=303)
 
 
@@ -420,6 +423,7 @@ def verifier_2fa(
         request.session.pop("en_attente_2fa_user_id", None)
         request.session.pop("en_attente_2fa_email_envoye", None)
         request.session.pop("en_attente_2fa_email_statut", None)
+        request.session.pop("en_attente_2fa_methode", None)
         return RedirectResponse("/connexion", status_code=303)
 
     code_saisi = code.strip()
@@ -472,6 +476,9 @@ def verifier_2fa(
             },
         )
 
+    request.session.pop("en_attente_2fa_email_envoye", None)
+    request.session.pop("en_attente_2fa_email_statut", None)
+    request.session.pop("en_attente_2fa_methode", None)
     _ouvrir_session_authentifiee(request, utilisateur)
     _preparer_rappel_inactivite_apres_connexion(request, session, utilisateur)
     return _redirection_apres_connexion(utilisateur)
