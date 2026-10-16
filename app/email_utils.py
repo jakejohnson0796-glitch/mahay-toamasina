@@ -7,9 +7,8 @@ Fonctionne avec n'importe quel fournisseur SMTP : un compte Gmail avec
 un "mot de passe d'application" (myaccount.google.com/apppasswords),
 l'offre SMTP gratuite de Brevo/Sendinblue, ou tout autre fournisseur.
 
-Module volontairement minimal : un seul usage (code de reinitialisation
-a 6 chiffres), pas de generalisation prematuree vers d'autres types
-d'email (notifications, etc.) tant que le besoin ne se presente pas.
+Le module fournit l'envoi commun des messages texte sans imposer un fournisseur.
+Les codes sensibles sont générés, hachés, expirés et vérifiés dans le routeur métier.
 """
 import smtplib
 from email.mime.text import MIMEText
