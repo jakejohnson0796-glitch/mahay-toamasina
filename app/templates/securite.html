@@ -132,7 +132,7 @@
 
         <div class="ops-subsection">
           <h3>2. Code OTP envoyé par e-mail</h3>
-          <p class="ops-security-card-intro">Un code à 6 chiffres, valable 10 minutes et utilisable une seule fois, est envoyé à l'adresse enregistrée sur ton profil. Cette méthode ne nécessite pas de SMS ; un serveur SMTP doit être configuré.</p>
+          <p class="ops-security-card-intro">Un code à 6 chiffres, valable 10 minutes et utilisable une seule fois, est envoyé à l'adresse enregistrée sur ton profil. Cette méthode ne nécessite pas de SMS ; un transport e-mail par API HTTPS ou SMTP doit être configuré.</p>
           {% if not utilisateur.email %}
             <p class="ops-alert ops-alert-warn">Ajoute d'abord une adresse dans la section « Email de récupération » de ton profil.</p>
           {% elif not email_smtp_configure %}
