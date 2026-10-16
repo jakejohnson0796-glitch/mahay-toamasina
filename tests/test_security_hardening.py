@@ -59,3 +59,96 @@ def test_strict_csp_garde_unsafe_inline_uniquement_pour_les_attributs_style():
     assert "script-src 'self' 'nonce-nonce-test-123' 'strict-dynamic'" in csp
     assert "style-src 'self' 'nonce-nonce-test-123'" in csp
     assert "https://cdn.jsdelivr.net" in csp
+
+
+def test_email_mfa_keeps_legacy_fingerprint_for_existing_accounts():
+    import hashlib
+
+    utilisateur = Utilisateur(
+        id=201,
+        nom="Test MFA",
+        telephone="0340000201",
+        mot_de_passe_hash="hash-legacy",
+        role=RoleUtilisateur.ETUDIANT,
+        email_otp_active=False,
+    )
+    expected = hashlib.sha256(
+        f"{utilisateur.mot_de_passe_hash}|{utilisateur.role.value}|2fa=0".encode("utf-8")
+    ).hexdigest()
+    assert empreinte_session_utilisateur(utilisateur) == expected
+
+    utilisateur.email_otp_active = True
+    assert empreinte_session_utilisateur(utilisateur) != expected
+
+
+def test_email_otp_is_hashed_expiring_and_single_use():
+    from datetime import datetime, timedelta
+    from app.auth import hacher_mot_de_passe
+    from app.models import CodeEmail2FA
+    from app.routers.auth_router import _masquer_email, _verifier_code_email_2fa
+
+    maintenant = datetime.utcnow()
+    entree = CodeEmail2FA(
+        id=1,
+        utilisateur_id=99,
+        purpose="connexion",
+        code_hash=hacher_mot_de_passe("004261"),
+        expire_le=maintenant + timedelta(minutes=10),
+    )
+
+    class Resultat:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def all(self):
+            return self.rows
+
+    class FausseSession:
+        def __init__(self, rows):
+            self.rows = rows
+            self.commits = 0
+
+        def exec(self, _requete):
+            return Resultat(self.rows)
+
+        def add(self, _objet):
+            pass
+
+        def commit(self):
+            self.commits += 1
+
+    session = FausseSession([entree])
+    assert _verifier_code_email_2fa(session, 99, "004261", "connexion") is True
+    assert entree.utilise is True
+    assert session.commits == 1
+    assert _verifier_code_email_2fa(session, 99, "004261", "connexion") is False
+    assert _verifier_code_email_2fa(session, 99, "004261", "activation") is False
+    assert _verifier_code_email_2fa(session, 99, "4261", "connexion") is False
+    assert _masquer_email("etudiant@example.com") == "e***@e***.com"
+
+
+def test_email_otp_rejects_expired_and_mismatched_purpose():
+    from datetime import datetime, timedelta
+    from app.auth import hacher_mot_de_passe
+    from app.models import CodeEmail2FA
+    from app.routers.auth_router import _verifier_code_email_2fa
+
+    entree = CodeEmail2FA(
+        id=2,
+        utilisateur_id=100,
+        purpose="activation",
+        code_hash=hacher_mot_de_passe("123456"),
+        expire_le=datetime.utcnow() - timedelta(seconds=1),
+    )
+
+    class Resultat:
+        def all(self):
+            return [entree]
+
+    class FausseSession:
+        def exec(self, _requete):
+            return Resultat()
+
+    session = FausseSession()
+    assert _verifier_code_email_2fa(session, 100, "123456", "activation") is False
+    assert _verifier_code_email_2fa(session, 100, "123456", "connexion") is False
