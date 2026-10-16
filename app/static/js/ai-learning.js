@@ -1,4 +1,4 @@
-/* Gasy Mahay — interactions Quiz IA + Tuteur IA */
+/* MITARIDALA — interactions Quiz IA + Tuteur IA */
 (function () {
   "use strict";
 
