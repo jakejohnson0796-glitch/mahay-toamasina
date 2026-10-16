@@ -40,7 +40,7 @@
 <link rel="stylesheet" href="/static/public-pages.css?v={{ version_asset('public-pages.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/activite.css?v={{ version_asset('activite.css') }}">
-{% if request.url.path.startswith("/admin") or request.url.path in ["/abonnement", "/sponsoring", "/securite"] %}
+{% if request.url.path.startswith("/admin") or request.url.path.startswith("/securite/") or request.url.path in ["/abonnement", "/sponsoring", "/securite"] %}
 <link rel="stylesheet" href="/static/ops.css?v={{ version_asset('ops.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/sidebar.css?v={{ version_asset('sidebar.css') }}">
@@ -86,6 +86,12 @@
 <link rel="stylesheet" href="/static/dashboard-polish.css?v={{ version_asset('dashboard-polish.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/global-design-system.css?v={{ version_asset('global-design-system.css') }}">
+{% if request.url.path.startswith("/securite") %}
+<link rel="stylesheet" href="/static/mfa.css?v={{ version_asset('mfa.css') }}">
+{% endif %}
+{% if request.url.path.startswith("/securite/2fa/") %}
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/mfa-setup.js?v={{ version_asset('js/mfa-setup.js') }}" defer></script>
+{% endif %}
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"

@@ -6,7 +6,7 @@
 {% block contenu %}
 {% set score = 0 %}
 {% if utilisateur.email %}{% set score = score + 1 %}{% endif %}
-{% if utilisateur.totp_active %}{% set score = score + 2 %}{% endif %}
+{% if utilisateur.totp_active or utilisateur.email_otp_active %}{% set score = score + 2 %}{% endif %}
 {% if utilisateur.photo_chemin %}{% set score = score + 1 %}{% endif %}
 {% if profil_academique.coherent %}{% set score = score + 1 %}{% endif %}
 
@@ -31,7 +31,7 @@
       </div>
       <div class="ops-checklist">
         <div class="ops-check {{ '' if utilisateur.email else 'is-off' }}"><span class="ops-check-mark">{{ '✓' if utilisateur.email else '!' }}</span><div><strong>Email de récupération</strong><span>{{ 'Configuré' if utilisateur.email else 'À configurer' }}</span></div></div>
-        <div class="ops-check {{ '' if utilisateur.totp_active else 'is-off' }}"><span class="ops-check-mark">{{ '✓' if utilisateur.totp_active else '!' }}</span><div><strong>Double authentification</strong><span>{{ 'Active' if utilisateur.totp_active else 'Désactivée' }}</span></div></div>
+        <div class="ops-check {{ '' if (utilisateur.totp_active or utilisateur.email_otp_active) else 'is-off' }}"><span class="ops-check-mark">{{ '✓' if (utilisateur.totp_active or utilisateur.email_otp_active) else '!' }}</span><div><strong>Double authentification</strong><span>{{ 'Active' if (utilisateur.totp_active or utilisateur.email_otp_active) else 'Désactivée' }}</span></div></div>
         <div class="ops-check {{ '' if utilisateur.photo_chemin else 'is-off' }}"><span class="ops-check-mark">{{ '✓' if utilisateur.photo_chemin else '!' }}</span><div><strong>Profil personnalisé</strong><span>{{ 'Photo ajoutée' if utilisateur.photo_chemin else 'Avatar automatique' }}</span></div></div>
       </div>
     </div>
@@ -88,7 +88,10 @@
         <p class="ops-security-card-intro ops-activity-last">Dernière activité : {{ utilisateur.derniere_activite_le.strftime("%d/%m/%Y à %H:%M") if utilisateur.derniere_activite_le else "pas encore enregistrée" }} UTC.</p>
       </section>
 
-      <section class="ops-security-card">
+    </aside>
+
+    <main>
+      <section class="ops-security-card ops-security-card-mfa">
         <h2>Double authentification (MFA)</h2>
         <p class="ops-security-card-intro">Choisis une ou plusieurs méthodes sans SMS : application d'authentification gratuite ou code à usage unique envoyé par e-mail. Les codes de secours restent disponibles si tu perds l'accès à un facteur.</p>
         {% if erreur_2fa %}<div class="ops-alert ops-alert-danger" role="alert">{{ erreur_2fa }}</div>{% endif %}
@@ -156,9 +159,6 @@
           {% endif %}
         </div>
       </section>
-    </aside>
-
-    <main>
       <section class="ops-security-card">
         <h2>Photo de profil</h2>
         <p class="ops-security-card-intro">La photo est visible dans les espaces où ton profil apparaît.</p>
@@ -365,6 +365,5 @@
     initialiserBoutonsMotDePasse();
   }
 })();
-</script
+</script>
 {% endblock %}
->
