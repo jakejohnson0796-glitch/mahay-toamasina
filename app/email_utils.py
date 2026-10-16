@@ -1,14 +1,12 @@
-"""
-Envoi d'email via SMTP, pour la fonctionnalite "mot de passe oublie"
-(voir /mot-de-passe-oublie dans auth_router.py). Utilise `smtplib` de la
-bibliotheque standard Python -- aucune dependance externe a ajouter,
-contrairement a un envoi de SMS (Twilio etc.) qui est en plus payant.
-Fonctionne avec n'importe quel fournisseur SMTP : un compte Gmail avec
-un "mot de passe d'application" (myaccount.google.com/apppasswords),
-l'offre SMTP gratuite de Brevo/Sendinblue, ou tout autre fournisseur.
+"""Envoi des emails transactionnels par SMTP, sans dépendance à un service SMS.
 
-Le module fournit l'envoi commun des messages texte sans imposer un fournisseur.
-Les codes sensibles sont générés, hachés, expirés et vérifiés dans le routeur métier.
+Utilisé pour la récupération du mot de passe et la double authentification
+par code à usage unique. La bibliothèque standard smtplib permet d'utiliser
+un fournisseur SMTP compatible (par exemple une offre gratuite, soumise aux
+quotas et conditions de ce fournisseur). Aucun SMS n'est envoyé par ce module.
+
+Les OTP sont générés, hachés, expirés et consommés dans le routeur métier ; ce
+module ne fait qu'assurer leur transport par email.
 """
 import smtplib
 from email.mime.text import MIMEText
