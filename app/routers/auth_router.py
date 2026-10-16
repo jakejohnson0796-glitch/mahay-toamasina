@@ -1490,8 +1490,8 @@ def page_confirmer_2fa_email(request: Request, session: Session = Depends(get_se
         return RedirectResponse("/securite", status_code=303)
     return templates.TemplateResponse(
         request,
-        "confirmer_2fa_email.html",
-        {"email_masque": _masquer_email(utilisateur.email), "erreur": None},
+        "configurer_2fa.html",
+        {"email_mode": True, "email_masque": _masquer_email(utilisateur.email), "erreur": None},
     )
 
 
@@ -1530,8 +1530,8 @@ def confirmer_activation_2fa_email(
 
     if not _verifier_code_email_2fa(session, utilisateur.id, code.strip(), "activation"):
         return templates.TemplateResponse(
-            request, "confirmer_2fa_email.html",
-            {"email_masque": _masquer_email(utilisateur.email), "erreur": "Code invalide ou expire."},
+            request, "configurer_2fa.html",
+            {"email_mode": True, "email_masque": _masquer_email(utilisateur.email), "erreur": "Code invalide ou expire."},
         )
 
     utilisateur.email_otp_active = True
