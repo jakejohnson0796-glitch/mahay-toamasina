@@ -112,6 +112,11 @@ class Parametres:
     # claire au lieu de planter au demarrage du site (module optionnel,
     # comme LiveKit ci-dessus) -- la reinitialisation par un admin depuis
     # /admin/utilisateurs reste utilisable meme sans SMTP configure.
+    # Render Free bloque les connexions SMTP sortantes sur les ports usuels.
+    # Sur ce plan, privilégier l'API transactionnelle Brevo via HTTPS (443) :
+    # elle utilise la même adresse expéditrice vérifiée SMTP_FROM_EMAIL.
+    brevo_api_key: str = field(default_factory=lambda: os.getenv("BREVO_API_KEY", ""))
+    brevo_sender_name: str = field(default_factory=lambda: os.getenv("BREVO_SENDER_NAME", "Gasy Mahay"))
     smtp_hote: str = field(default_factory=lambda: os.getenv("SMTP_HOTE", ""))
     smtp_port: int = field(default_factory=lambda: int(os.getenv("SMTP_PORT", "587")))
     smtp_utilisateur: str = field(default_factory=lambda: os.getenv("SMTP_UTILISATEUR", ""))
