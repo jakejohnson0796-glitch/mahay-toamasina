@@ -1173,6 +1173,7 @@ def modifier_email(
         # adresse devra prouver sa possession avant de pouvoir être activée.
         if utilisateur.email_otp_active:
             utilisateur.email_otp_active = False
+            utilisateur.mfa_session_generation = secrets.token_urlsafe(24)
             mfa_email_desactive = True
         codes_email = session.exec(
             select(CodeEmail2FA).where(
@@ -1365,6 +1366,7 @@ def confirmer_activation_2fa(
 
     utilisateur.totp_secret = secret
     utilisateur.totp_active = True
+    utilisateur.mfa_session_generation = secrets.token_urlsafe(24)
     session.add(utilisateur)
 
     # Les codes de secours sont communs aux méthodes MFA actives.
@@ -1412,6 +1414,7 @@ def desactiver_2fa(
 
     utilisateur.totp_secret = None
     utilisateur.totp_active = False
+    utilisateur.mfa_session_generation = secrets.token_urlsafe(24)
     session.add(utilisateur)
 
     # Garder les codes de secours si l'OTP email reste actif.
@@ -1561,6 +1564,7 @@ def confirmer_activation_2fa_email(
         )
 
     utilisateur.email_otp_active = True
+    utilisateur.mfa_session_generation = secrets.token_urlsafe(24)
     session.add(utilisateur)
     codes_clairs = []
     if not utilisateur.totp_active:
@@ -1606,6 +1610,7 @@ def desactiver_2fa_email(
         )
 
     utilisateur.email_otp_active = False
+    utilisateur.mfa_session_generation = secrets.token_urlsafe(24)
     request.session.pop("email_2fa_activation_user_id", None)
     codes_email = session.exec(
         select(CodeEmail2FA).where(
