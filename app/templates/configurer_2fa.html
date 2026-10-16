@@ -1,23 +1,40 @@
 {% extends "base.html" %}
-{% block titre %}Activer la double authentification — Gasy Mahay{% endblock %}
+{% block titre %}{% if email_mode %}Confirmer la double authentification par e-mail{% else %}Activer la double authentification{% endif %} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
-<p class="eyebrow"><a href="/securite">&larr; Securite du compte</a></p>
-<h2>Activer la double authentification</h2>
-<div class="carte-formulaire">
-  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
-  <p>1. Ouvrez Google Authenticator, Microsoft Authenticator ou une application equivalente sur votre telephone.</p>
-  <p>2. Scannez ce QR code :</p>
-  <img src="{{ qr_data_uri }}" alt="QR code d'activation" style="background:#fff;padding:0.5rem;border-radius:8px;display:block;margin:0.75rem auto;width:220px;height:220px;max-width:100%;">
-  <p class="stat-label">Impossible de scanner ? Entrez cette cle manuellement : <code>{{ secret }}</code></p>
-  <p>3. Entrez le code a 6 chiffres affiche par l'application pour confirmer :</p>
-  <form method="post" action="/securite/2fa/confirmer">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="code">Code</label>
-    <input type="text" id="code" name="code" required autocomplete="one-time-code" autofocus>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Confirmer et activer</button>
-  </form>
-</div>
+{% if email_mode %}
+  <p class="eyebrow"><a href="/securite">← Sécurité du compte</a></p>
+  <h2>Confirmer la double authentification par e-mail</h2>
+  <div class="carte-formulaire">
+    {% if erreur %}<div class="erreur" role="alert">{{ erreur }}</div>{% endif %}
+    <p>Un code à 6 chiffres a été envoyé à <strong>{{ email_masque }}</strong>. Entrez-le pour confirmer que vous pouvez recevoir les messages à cette adresse.</p>
+    <p>Le code est valable 10 minutes et ne fonctionne qu'une seule fois.</p>
+    <form method="post" action="/securite/2fa/email/confirmer">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="code">Code reçu par e-mail</label>
+      <input type="text" id="code" name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" autofocus>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Confirmer et activer</button>
+    </form>
+    <p class="stat-label"><a href="/securite">Annuler et revenir aux paramètres de sécurité</a></p>
+  </div>
+{% else %}
+  <p class="eyebrow"><a href="/securite">&larr; Securite du compte</a></p>
+  <h2>Activer la double authentification</h2>
+  <div class="carte-formulaire">
+    {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+    <p>1. Ouvrez Google Authenticator, Microsoft Authenticator ou une application equivalente sur votre telephone.</p>
+    <p>2. Scannez ce QR code :</p>
+    <img src="{{ qr_data_uri }}" alt="QR code d'activation" style="background:#fff;padding:0.5rem;border-radius:8px;display:block;margin:0.75rem auto;width:220px;height:220px;max-width:100%;">
+    <p class="stat-label">Impossible de scanner ? Entrez cette cle manuellement : <code>{{ secret }}</code></p>
+    <p>3. Entrez le code a 6 chiffres affiche par l'application pour confirmer :</p>
+    <form method="post" action="/securite/2fa/confirmer">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="code">Code</label>
+      <input type="text" id="code" name="code" required autocomplete="one-time-code" autofocus>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Confirmer et activer</button>
+    </form>
+  </div>
+{% endif %}
 </div>
 {% endblock %}
