@@ -340,3 +340,13 @@
     height: 1.4rem;
   }
 }
+
+
+/* MITARIDALA brand lockup: compact, accessible and responsive. */
+.tb-sidebar-brand-lockup{display:flex;align-items:center;gap:.65rem;min-width:0;}
+.tb-sidebar-logo-mark{display:block;flex:0 0 34px;width:34px;height:34px;border-radius:10px;object-fit:contain;}
+.tb-sidebar-brand-copy{display:grid;gap:.15rem;min-width:0;}
+.tb-sidebar-brand-copy .tb-sidebar-logo{overflow-wrap:anywhere;}
+.tb-sidebar-brand-copy .tb-sidebar-lieu{line-height:1.25;}
+.tb-sidebar.is-collapsed .tb-sidebar-brand-copy{display:none;}
+@media (max-width:420px){.tb-sidebar-brand-lockup{gap:.5rem}.tb-sidebar-logo-mark{width:30px;height:30px;flex-basis:30px}}
