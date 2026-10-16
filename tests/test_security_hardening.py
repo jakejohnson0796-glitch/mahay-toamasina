@@ -151,6 +151,34 @@ def test_email_otp_rejects_expired_and_mismatched_purpose():
     assert _verifier_code_email_2fa(session, 100, "123456", "connexion") is False
 
 
+
+def test_mfa_generation_prevents_old_session_fingerprint_from_reviving():
+    from app.auth import empreinte_session_utilisateur
+
+    utilisateur = Utilisateur(
+        id=202,
+        nom="MFA generation",
+        telephone="0340000202",
+        mot_de_passe_hash="hash-stable",
+        role=RoleUtilisateur.ETUDIANT,
+        totp_active=False,
+        email_otp_active=False,
+        mfa_session_generation=None,
+    )
+    empreinte_historique = empreinte_session_utilisateur(utilisateur)
+
+    utilisateur.email_otp_active = True
+    utilisateur.mfa_session_generation = "generation-activation"
+    empreinte_active = empreinte_session_utilisateur(utilisateur)
+    assert empreinte_active != empreinte_historique
+
+    utilisateur.email_otp_active = False
+    utilisateur.mfa_session_generation = "generation-desactivation"
+    empreinte_apres_desactivation = empreinte_session_utilisateur(utilisateur)
+    assert empreinte_apres_desactivation != empreinte_historique
+    assert empreinte_apres_desactivation != empreinte_active
+
+
 def test_brevo_https_configures_email_without_smtp(monkeypatch):
     from app import email_utils
     from app.config import parametres
