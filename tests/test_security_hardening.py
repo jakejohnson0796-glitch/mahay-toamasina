@@ -151,5 +151,90 @@ def test_email_otp_rejects_expired_and_mismatched_purpose():
     assert _verifier_code_email_2fa(session, 100, "123456", "connexion") is False
 
 
+def test_brevo_https_configures_email_without_smtp(monkeypatch):
+    from app import email_utils
+    from app.config import parametres
+
+    monkeypatch.setattr(parametres, "brevo_api_key", "cle-api-test")
+    monkeypatch.setattr(parametres, "smtp_from_email", "securite@example.org")
+    monkeypatch.setattr(parametres, "smtp_hote", "")
+    monkeypatch.setattr(parametres, "smtp_utilisateur", "")
+    monkeypatch.setattr(parametres, "smtp_mot_de_passe", "")
+
+    assert email_utils.email_configure() is True
+
+
+def test_brevo_api_sends_transactional_email_over_https_without_smtp(monkeypatch):
+    import json
+    from app import email_utils
+    from app.config import parametres
+
+    monkeypatch.setattr(parametres, "brevo_api_key", "cle-api-test")
+    monkeypatch.setattr(parametres, "brevo_sender_name", "Gasy Mahay")
+    monkeypatch.setattr(parametres, "smtp_from_email", "securite@example.org")
+    monkeypatch.setattr(parametres, "smtp_hote", "")
+    monkeypatch.setattr(parametres, "smtp_utilisateur", "")
+    monkeypatch.setattr(parametres, "smtp_mot_de_passe", "")
+    capture = {}
+
+    class FausseReponse:
+        status = 201
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return b'{"messageId":"test-message"}'
+
+    def faux_urlopen(requete, timeout):
+        capture["requete"] = requete
+        capture["timeout"] = timeout
+        return FausseReponse()
+
+    monkeypatch.setattr(email_utils.urllib.request, "urlopen", faux_urlopen)
+
+    def smtp_interdit(*_args, **_kwargs):
+        raise AssertionError("L'API HTTPS doit être utilisée, pas SMTP.")
+
+    monkeypatch.setattr(email_utils.smtplib, "SMTP", smtp_interdit)
+    email_utils.envoyer_email(
+        "etudiant@example.net",
+        "Gasy Mahay — code de connexion",
+        "Votre code est 004261.",
+    )
+
+    requete = capture["requete"]
+    assert requete.full_url == "https://api.brevo.com/v3/smtp/email"
+    assert requete.get_method() == "POST"
+    assert requete.get_header("Api-key") == "cle-api-test"
+    assert capture["timeout"] == 10
+    payload = json.loads(requete.data.decode("utf-8"))
+    assert payload["sender"] == {
+        "name": "Gasy Mahay",
+        "email": "securite@example.org",
+    }
+    assert payload["to"] == [{"email": "etudiant@example.net"}]
+    assert payload["textContent"] == "Votre code est 004261."
+
+
+def test_email_not_configured_without_brevo_or_smtp(monkeypatch):
+    import pytest
+    from app import email_utils
+    from app.config import parametres
+
+    monkeypatch.setattr(parametres, "brevo_api_key", "")
+    monkeypatch.setattr(parametres, "smtp_from_email", "")
+    monkeypatch.setattr(parametres, "smtp_hote", "")
+    monkeypatch.setattr(parametres, "smtp_utilisateur", "")
+    monkeypatch.setattr(parametres, "smtp_mot_de_passe", "")
+
+    assert email_utils.email_configure() is False
+    with pytest.raises(email_utils.EmailNonConfigure):
+        email_utils.envoyer_email("etudiant@example.net", "Test", "Test")
+
+
 if __name__ == "__main__":
     unittest.main()
