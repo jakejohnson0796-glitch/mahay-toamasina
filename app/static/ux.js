@@ -1,5 +1,5 @@
 /*
- * Gasy Mahay — interactions UX 2026
+ * MITARIDALA — interactions UX 2026
  * Routine quotidienne locale + installation PWA.
  * Aucune donnée personnelle ni tracking externe.
  */
