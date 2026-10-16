@@ -48,6 +48,10 @@
     "Désactiver le code par e-mail": "Hanafoana ny kaody amin’ny mailaka",
     "Adresse de destination :": "Adiresy handefasana:",
     "Code à usage unique par e-mail": "Kaody ampiasaina indray mandeha amin’ny mailaka",
+    "Mot de passe actuel requis pour changer l'adresse MFA": "Tenimiafina ankehitriny ilaina hanovana ny adiresy MFA",
+    "Mot de passe actuel requis et doit être correct pour modifier l'adresse utilisée par la MFA.": "Tsy maintsy ampidirina sy marina ny tenimiafina ankehitriny raha hanova ny adiresy ampiasain'ny MFA.",
+    "API e-mail HTTPS": "API mailaka HTTPS",
+
     "Apprendre": "Hianatra",
     "Documents": "Tahirin-kevitra",
     "Quiz IA": "Fanadinana IA",
