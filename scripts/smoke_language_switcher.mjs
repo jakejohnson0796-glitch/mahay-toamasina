@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import { JSDOM } from 'jsdom';
 
 const source = fs.readFileSync('app/static/js/langue.js', 'utf8');
-const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion — Gasy Mahay</title></head><body>
+const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion — MITARIDALA</title></head><body>
   <div class="tb-sidebar-langue">
     <label for="select-langue">Langue</label>
     <select id="select-langue" aria-label="Choisir la langue">
@@ -114,10 +114,10 @@ abonnement.innerHTML = `
   <p id="ia-trial-alert">Le Quiz IA et le Tuteur IA sont inclus pendant les 14 premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant 60 jours.</p>
   <p id="pending-subscription">La demande a bien été reçue. Ton accès Premium reste actif pendant la vérification (5 jours). L'accès IA reste ouvert pendant 4 jours.</p>
   <p id="dynamic-greeting">Bonjour, Jake</p>
-  <p id="guide-copy">Ce guide te montre le chemin le plus simple dans Gasy Mahay : créer ton compte, retrouver une ressource, pratiquer, utiliser l'IA, travailler en groupe et sécuriser ton compte. Il précise aussi les durées d'accès de l'essai gratuit pour éviter toute mauvaise surprise.</p>
+  <p id="guide-copy">Ce guide te montre le chemin le plus simple dans MITARIDALA : créer ton compte, retrouver une ressource, pratiquer, utiliser l'IA, travailler en groupe et sécuriser ton compte. Il précise aussi les durées d'accès de l'essai gratuit pour éviter toute mauvaise surprise.</p>
   <p id="circle-copy">Les cercles sont des espaces collaboratifs. L'accès dépend du cercle, du statut du compte et, selon les cas, de l'abonnement.</p>
   <p id="contact-copy">Une question, une suggestion, un partenariat ou un problème sur le site ? Écris ton message ici, puis ouvre WhatsApp en un clic — ou scanne le QR avec ton téléphone.</p>
-  <p id="about-copy">Gasy Mahay rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.</p>
+  <p id="about-copy">MITARIDALA rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.</p>
 `;
 window.document.body.appendChild(abonnement);
 await new Promise((resolve) => setTimeout(resolve, 0));
@@ -175,13 +175,13 @@ if (!window.document.querySelector('#circle-copy').textContent.startsWith('Sehat
 if (!window.document.querySelector('#contact-copy').textContent.startsWith('Manana fanontaniana')) {
   throw new Error('Full contact paragraph did not switch to Malagasy');
 }
-if (!window.document.querySelector('#about-copy').textContent.startsWith('Atambatry ny Gasy Mahay')) {
+if (!window.document.querySelector('#about-copy').textContent.startsWith('Atambatry ny MITARIDALA')) {
   throw new Error('Full about page paragraph did not switch to Malagasy');
 }
 
 // Vérifie les libellés oubliés, les compteurs construits en JavaScript et les attributs dynamiques.
 const illustration = window.document.createElement('p');
-illustration.textContent = 'Illustrations d’étude intégrées localement dans Gasy Mahay : aucune dépendance à un service d’images externe.';
+illustration.textContent = 'Illustrations d’étude intégrées localement dans MITARIDALA : aucune dépendance à un service d’images externe.';
 window.document.body.appendChild(illustration);
 
 const quizCounter = window.document.createElement('p');
@@ -208,7 +208,7 @@ officialOptionSelect.appendChild(officialOption);
 window.document.body.appendChild(officialOptionSelect);
 
 await new Promise((resolve) => setTimeout(resolve, 0));
-if (illustration.textContent !== 'Ny sary fanazavana dia tafiditra mivantana ao amin’ny Gasy Mahay, ka tsy miankina amin’ny tolotra ivelany.') {
+if (illustration.textContent !== 'Ny sary fanazavana dia tafiditra mivantana ao amin’ny MITARIDALA, ka tsy miankina amin’ny tolotra ivelany.') {
   throw new Error('The complete circles-page explanatory text was not translated');
 }
 if (quizCounter.textContent !== '3 / 5 voavaly') {
