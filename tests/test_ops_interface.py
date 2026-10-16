@@ -39,6 +39,7 @@ def test_ops_css_has_responsive_rules_and_core_surfaces():
     for selector in (".ops-hero", ".ops-table", ".ops-profile", ".ops-offer", ".ops-admin-groups", "@media(max-width:740px)"):
         assert selector in css
 
+
 def test_mfa_setup_is_guided_accessible_and_responsive():
     base = (ROOT / "app" / "templates" / "base.html").read_text(encoding="utf-8")
     setup = (ROOT / "app" / "templates" / "configurer_2fa.html").read_text(encoding="utf-8")
@@ -59,5 +60,5 @@ def test_mfa_setup_is_guided_accessible_and_responsive():
     assert "@media (max-width: 560px)" in css
     assert css.count("{") == css.count("}")
     assert "utilisateur.totp_active or utilisateur.email_otp_active" in security
-    assert "</script\\n" not in security
+    assert "</script\n" not in security
 
