@@ -327,11 +327,15 @@ LIVEKIT_API_SECRET=
 ### Mot de passe oublié
 
 ~~~text
+BREVO_API_KEY=
+BREVO_SENDER_NAME=Gasy Mahay
+SMTP_FROM_EMAIL=
+
+# SMTP alternatif uniquement si l'hébergeur autorise les ports sortants
 SMTP_HOTE=
 SMTP_PORT=587
 SMTP_UTILISATEUR=
 SMTP_MOT_DE_PASSE=
-SMTP_FROM_EMAIL=
 ~~~
 
 ### Administration
