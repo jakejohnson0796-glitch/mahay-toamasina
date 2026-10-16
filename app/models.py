@@ -276,6 +276,9 @@ class Utilisateur(SQLModel, table=True):
     # Méthode MFA optionnelle : code à usage unique envoyé par email.
     # Elle n'est active qu'après confirmation de possession de l'adresse email.
     email_otp_active: bool = Field(default=False)
+    # Jeton de génération changé à chaque changement de facteur MFA.
+    # None préserve l'empreinte des sessions historiques avant cette migration.
+    mfa_session_generation: Optional[str] = None
 
     # --- Photo de profil (upload reel OU repli sur l'avatar genere
     # automatiquement -- voir app/storage.py, sauvegarder_avatar(), et
