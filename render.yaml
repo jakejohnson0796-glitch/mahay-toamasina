@@ -48,7 +48,9 @@ services:
         sync: false
       - key: ADMIN_INITIAL_PASSWORD
         sync: false
-      # API email HTTPS recommandée pour Render Free (évite les ports SMTP bloqués).
+      # Forcer l'API HTTPS : le plan Free bloque les ports SMTP sortants.
+      - key: EMAIL_TRANSPORT
+        value: brevo_api
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_SENDER_NAME
