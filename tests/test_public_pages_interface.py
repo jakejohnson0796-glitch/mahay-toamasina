@@ -23,7 +23,7 @@ def test_base_charge_le_style_public():
 def test_a_propos_contient_les_sections_principales():
     page = lire("app/templates/a_propos.html")
     for terme in (
-        "Pourquoi Gasy Mahay existe",
+        "Pourquoi MITARIDALA existe",
         "Une histoire construite autour d'un besoin concret",
         "Notre approche de l'intelligence artificielle",
         "Notre manière de construire",
