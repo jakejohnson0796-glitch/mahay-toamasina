@@ -99,3 +99,5 @@
 @media (prefers-reduced-motion: reduce) {
   .mfa-setup-page *, .mfa-setup-page *::before, .mfa-setup-page *::after { animation: none !important; transition: none !important; }
 }
+
+.mfa-step-note { margin-top: .8rem !important; }
