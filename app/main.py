@@ -1,5 +1,5 @@
 """
-Point d'entree de Gasy Mahay.
+Point d'entree de MITARIDALA.
 
 Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
@@ -34,7 +34,7 @@ from . import ai_worker
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="Gasy Mahay — Madagascar")
+app = FastAPI(title="MITARIDALA — Madagascar")
 
 # --- Garde-fou : refuse de demarrer en production avec la cle de demo ---
 # Un secret par defaut connu de tous (present dans .env.example, donc

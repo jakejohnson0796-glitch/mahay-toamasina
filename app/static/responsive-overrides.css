@@ -1,5 +1,5 @@
 /*
- * Gasy Mahay — responsive overrides consolidés.
+ * MITARIDALA — responsive overrides consolidés.
  * Cascade conservée dans l'ordre :
  * 1. fondations globales ; 2. familles de pages ;
  * 3. conversations/salle virtuelle ; 4. formulaires, pages publiques et tables.
@@ -8,7 +8,7 @@
  */
 
 /*
- * Gasy Mahay — fondations responsive transversales
+ * MITARIDALA — fondations responsive transversales
  * Cette couche intervient après les styles propres aux pages.
  * But : corriger les contrats globaux (flexibilité, tactile, safe areas,
  * navigation et débordements) sans remplacer les styles de chaque module.
@@ -346,7 +346,7 @@ svg {
 /* ===== Familles de pages ===== */
 
 /*
- * Gasy Mahay — responsive des familles de pages
+ * MITARIDALA — responsive des familles de pages
  * Phase 2 : harmoniser les grilles réelles des pages principales.
  * Chargée après les styles de modules ; !important est réservé aux règles
  * mobiles qui doivent neutraliser des contraintes historiques de templates.
@@ -1037,7 +1037,7 @@ svg {
 /* ===== Conversations et salle virtuelle ===== */
 
 /*
- * Gasy Mahay — ergonomie mobile des conversations et de la salle virtuelle.
+ * MITARIDALA — ergonomie mobile des conversations et de la salle virtuelle.
  * Priorités : cibles tactiles accessibles, clavier mobile, zones sûres,
  * chat exploitable en faible hauteur et commandes de classe toujours visibles.
  */
@@ -1321,7 +1321,7 @@ svg {
 /* ===== Pages publiques et formulaires ===== */
 
 /*
- * Gasy Mahay — finitions responsive des écrans publics, formulaires et tableaux.
+ * MITARIDALA — finitions responsive des écrans publics, formulaires et tableaux.
  * Cette couche est volontairement étroite : elle complète les styles de page,
  * elle ne redéfinit pas les couleurs ni l'identité visuelle des modules.
  */

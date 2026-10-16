@@ -156,7 +156,7 @@
     }
 
     if (!etat.katex || !etat.mhchem || !etat.marked || !etat.purify) {
-      console.warn("[Gasy Mahay] Les CDN IA sont indisponibles ou incomplets. Le rendu sûr en texte reste actif.", {
+      console.warn("[MITARIDALA] Les CDN IA sont indisponibles ou incomplets. Le rendu sûr en texte reste actif.", {
         css: etat.css,
         katex: etat.katex,
         mhchem: etat.mhchem,
@@ -172,7 +172,7 @@
     if (!promesseChargement) {
       promesseChargement = executerChargement()
         .catch(function () {
-          console.warn("[Gasy Mahay] Le chargement des dépendances IA a échoué ; le texte reste accessible.");
+          console.warn("[MITARIDALA] Le chargement des dépendances IA a échoué ; le texte reste accessible.");
           return {
             css: cssDisponible(),
             katex: katexDisponible(),

@@ -1,4 +1,4 @@
-// Gasy Mahay — service worker léger pour les réseaux instables.
+// MITARIDALA — service worker léger pour les réseaux instables.
 // Les pages et données utilisateur restent toujours dynamiques et ne sont
 // jamais mises en cache. Seuls les assets statiques sont mis en cache.
 const CACHE_NOM = "mahay-static-v2";

@@ -1,5 +1,5 @@
 """
-Configuration centralisee de Gasy Mahay.
+Configuration centralisee de MITARIDALA.
 
 Tout ce qui differe entre "je developpe en local" et "c'est deploye en
 vrai" passe par des variables d'environnement, lues ici une seule fois
@@ -112,7 +112,7 @@ class Parametres:
     # elle utilise la même adresse expéditrice vérifiée SMTP_FROM_EMAIL.
     email_transport: str = field(default_factory=lambda: os.getenv("EMAIL_TRANSPORT", "auto").strip().lower())
     brevo_api_key: str = field(default_factory=lambda: os.getenv("BREVO_API_KEY", ""))
-    brevo_sender_name: str = field(default_factory=lambda: os.getenv("BREVO_SENDER_NAME", "Gasy Mahay"))
+    brevo_sender_name: str = field(default_factory=lambda: os.getenv("BREVO_SENDER_NAME", "MITARIDALA"))
     smtp_hote: str = field(default_factory=lambda: os.getenv("SMTP_HOTE", ""))
     smtp_port: int = field(default_factory=lambda: int(os.getenv("SMTP_PORT", "587")))
     smtp_utilisateur: str = field(default_factory=lambda: os.getenv("SMTP_UTILISATEUR", ""))

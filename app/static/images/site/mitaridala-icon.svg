@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">MITARIDALA</title>
+  <rect width="512" height="512" fill="#123A68"/>
+  <path d="M112 382V156L256 310 400 156V382" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M196 108 256 65 316 108" fill="none" stroke="#55D6BE" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

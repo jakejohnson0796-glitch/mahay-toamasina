@@ -1,4 +1,4 @@
-"""Carte de connaissances et pre-requis pedagogiques de Gasy Mahay.
+"""Carte de connaissances et pre-requis pedagogiques de MITARIDALA.
 
 Le moteur ne cree aucune nouvelle note de maitrise : il reutilise ProgressionNotion
 et ajoute une couche de lecture des relations entre notions. Les relations sont

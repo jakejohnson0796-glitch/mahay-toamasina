@@ -1,4 +1,4 @@
-"""XP, missions quotidiennes et badges de Gasy Mahay."""
+"""XP, missions quotidiennes et badges de MITARIDALA."""
 from datetime import datetime, timedelta
 from typing import Optional
 

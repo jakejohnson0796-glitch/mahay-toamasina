@@ -17,9 +17,9 @@ from .models import FAQ, CategorieFAQ
 FAQ_INITIALE: list[dict] = [
     # --- Général ---
     {
-        "question": "Qu'est-ce que Gasy Mahay ?",
+        "question": "Qu'est-ce que MITARIDALA ?",
         "reponse": (
-            "Gasy Mahay est une plateforme d'apprentissage et d'entraide "
+            "MITARIDALA est une plateforme d'apprentissage et d'entraide "
             "pensée pour les étudiants de Madagascar. Elle réunit des "
             "ressources académiques, des quiz, un Tuteur IA, des cercles "
             "d'étude, une classe virtuelle et des outils de suivi."
@@ -27,7 +27,7 @@ FAQ_INITIALE: list[dict] = [
         "categorie": CategorieFAQ.GENERAL,
     },
     {
-        "question": "À qui s'adresse Gasy Mahay ?",
+        "question": "À qui s'adresse MITARIDALA ?",
         "reponse": (
             "La plateforme est principalement pensée pour les étudiants et "
             "communautés académiques couvertes par son référentiel. Le module "
@@ -37,7 +37,7 @@ FAQ_INITIALE: list[dict] = [
         "categorie": CategorieFAQ.GENERAL,
     },
     {
-        "question": "Que puis-je faire sur Gasy Mahay ?",
+        "question": "Que puis-je faire sur MITARIDALA ?",
         "reponse": (
             "Vous pouvez rechercher des ressources, déposer des documents, "
             "vous entraîner avec des quiz, utiliser le Tuteur IA, rejoindre "
@@ -47,9 +47,9 @@ FAQ_INITIALE: list[dict] = [
         "categorie": CategorieFAQ.GENERAL,
     },
     {
-        "question": "Gasy Mahay remplace-t-il mon enseignant ou mon cours ?",
+        "question": "MITARIDALA remplace-t-il mon enseignant ou mon cours ?",
         "reponse": (
-            "Non. Gasy Mahay est un outil d'appui à l'apprentissage. Les "
+            "Non. MITARIDALA est un outil d'appui à l'apprentissage. Les "
             "supports officiels, les enseignants et les règles de votre "
             "établissement restent les références à privilégier."
         ),
@@ -122,7 +122,7 @@ FAQ_INITIALE: list[dict] = [
         "question": "Pourquoi vois-je un rappel d'inactivité ?",
         "reponse": (
             "Si votre dernière utilisation remonte à au moins trois jours, "
-            "Gasy Mahay peut afficher une notification lors de votre retour "
+            "MITARIDALA peut afficher une notification lors de votre retour "
             "pour vous signaler la période d'inactivité."
         ),
         "categorie": CategorieFAQ.PROFIL,

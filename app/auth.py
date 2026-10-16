@@ -141,7 +141,7 @@ def creer_rappel_inactivite_si_necessaire(
             destinataire_id=utilisateur.id,
             type_notification=TypeNotification.INACTIVITE_3_JOURS,
             contenu=(
-                f"Bienvenue de retour ! Tu n'as pas utilise Gasy Mahay depuis {jours} "
+                f"Bienvenue de retour ! Tu n'as pas utilise MITARIDALA depuis {jours} "
                 f"jour{'s' if jours != 1 else ''}. Reprends ton apprentissage quand tu le souhaites."
             ),
         )

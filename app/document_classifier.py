@@ -230,7 +230,7 @@ def _classification_ia(
     ) or "- Aucune filière candidate trouvée"
 
     prompt = (
-        "Tu es le classificateur de documents de Gasy Mahay. "
+        "Tu es le classificateur de documents de MITARIDALA. "
         "Tu dois renseigner des métadonnées sans rien inventer. "
         "Si une information est absente ou ambiguë, laisse-la vide et mets une confiance basse.\n\n"
         f"Nom du fichier : {nom_fichier}\n\n"

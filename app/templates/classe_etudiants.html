@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/avatar.html" import avatar_utilisateur %}
-{% block titre %}Étudiants — {{ cours.nom }} — Gasy Mahay{% endblock %}
+{% block titre %}Étudiants — {{ cours.nom }} — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="classe-page">
@@ -10,7 +10,7 @@
   </header>
 
   {% if request.query_params.get("erreur") == "utilisateur_introuvable" %}
-  <div class="erreur" role="alert">Aucun compte Gasy Mahay avec ce numéro.</div>
+  <div class="erreur" role="alert">Aucun compte MITARIDALA avec ce numéro.</div>
   {% endif %}
   {% if request.query_params.get("ajoute") %}
   <div class="info" role="status">Étudiant ajouté.</div>
@@ -18,7 +18,7 @@
 
   <section class="classe-form-panel">
     <div class="classe-form-head">
-      <div><h2>Ajouter un étudiant</h2><p>Utilise le numéro associé au compte Gasy Mahay.</p></div>
+      <div><h2>Ajouter un étudiant</h2><p>Utilise le numéro associé au compte MITARIDALA.</p></div>
     </div>
     <form method="post" action="/classe/{{ cours.id }}/etudiants/ajouter">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">

@@ -6,7 +6,7 @@
 
 {% if chemin == "/" %}
   {% set image = "/static/images/site/hero-campus.svg" %}
-  {% set titre = "Bienvenue à Gasy Mahay" %}
+  {% set titre = "Bienvenue à MITARIDALA" %}
   {% set texte = "Ton campus de révision pour l’Université de Toamasina." %}
 {% elif chemin.startswith("/documents") or chemin.startswith("/document") %}
   {% set image = "/static/images/site/documents.svg" %}
@@ -35,7 +35,7 @@
 {% elif chemin.startswith("/connexion") or chemin.startswith("/inscription") or chemin.startswith("/mot-de-passe") %}
   {% set image = "/static/images/site/study-books.svg" %}
   {% set titre = "Construire de bonnes habitudes" %}
-  {% set texte = "Gasy Mahay t’accompagne avant, pendant et après tes révisions." %}
+  {% set texte = "MITARIDALA t’accompagne avant, pendant et après tes révisions." %}
 {% endif %}
 
 <div class="visuel-page-global" aria-hidden="true">
