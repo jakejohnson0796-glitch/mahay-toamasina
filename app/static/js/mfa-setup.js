@@ -28,7 +28,7 @@
       form.addEventListener("submit", function (event) {
         if (!/^\d{6}$/.test(input.value.trim())) {
           event.preventDefault();
-          setMessage(form, "Saisissez les 6 chiffres affichés par votre application ou reçus par e-mail.");
+          setMessage(form, "Saisis les 6 chiffres affichés par ton application ou reçus par e-mail.");
           input.focus();
         } else {
           setMessage(form, "");
