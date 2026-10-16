@@ -67,6 +67,7 @@ def test_page_legale_est_accessible_depuis_le_pied_de_page_et_le_menu():
     main = lire("app/main.py")
     assert "legal_router" in main
     assert 'href="/cadre-legal"' in base
+    assert base.count("Conditions &amp; charte éthique") >= 2
     assert "static/legal.css" in base
     css = lire("app/static/legal.css")
     assert ".cadre-legal-section" in css
@@ -81,6 +82,7 @@ def test_libelles_du_cadre_legal_et_du_consentement_sont_traduits_en_malagasy():
         '"Charte éthique":',
         '"Confidentialité":',
         '"J’ai lu et j’accepte les":',
+        '"Conditions & charte éthique":',
         '"Documents à lire avant inscription :":',
         '"Notice de confidentialité":',
         '"Les réponses du Quiz IA et du Tuteur IA sont générées automatiquement.',

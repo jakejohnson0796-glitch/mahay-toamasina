@@ -110,6 +110,7 @@
     " ; j’accepte aussi la": " ; ekeko koa ny",
     "Documents à lire avant inscription :": "Tahirin-kevitra hovakina alohan’ny fisoratana anarana:",
     "Notice de confidentialité": "Fampahafantarana momba ny tsiambaratelo",
+    "Conditions & charte éthique": "Fepetra sy fitsipika momba ny fitondran-tena",
     "Éthique et confidentialité": "Fitsipi-pitondrantena sy tsiambaratelo",
     "Avant de vous inscrire, consultez les documents suivants :": "Alohan’ny hisoratana anarana dia vakio ireto tahirin-kevitra ireto:",
     "Vous créez un compte ? Lisez les conditions et la charte éthique, puis cochez la case d’acceptation sur le formulaire d’inscription.": "Mamorona kaonty ve ianao? Vakio ny fepetra sy ny fitsipika momba ny fitondran-tena, ary asio marika ny boaty fanekena ao amin’ny taratasy fisoratana anarana.",
