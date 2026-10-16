@@ -1429,7 +1429,7 @@ def desactiver_2fa(
     if not verifier_mot_de_passe(mot_de_passe, utilisateur.mot_de_passe_hash):
         return templates.TemplateResponse(
             request, "securite.html",
-            {"utilisateur": utilisateur, "nb_codes_restants": 0, "erreur": "Mot de passe incorrect."},
+            _contexte_securite(utilisateur, session, erreur_2fa="Mot de passe incorrect."),
         )
 
     utilisateur.totp_secret = None
