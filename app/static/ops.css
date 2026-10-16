@@ -1,4 +1,4 @@
-/* Gasy Mahay — Backoffice / abonnement / sponsoring / sécurité */
+/* MITARIDALA — Backoffice / abonnement / sponsoring / sécurité */
 
 .ops-page{width:min(100%,1280px);margin:0 auto;padding:1rem 2rem 3rem}
 .ops-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:1rem;padding:clamp(1.35rem,3vw,2.5rem);border-radius:24px;color:#fff;background:radial-gradient(circle at 88% 14%,rgba(228,125,85,.22),transparent 14rem),radial-gradient(circle at 12% 88%,rgba(47,143,137,.22),transparent 17rem),linear-gradient(135deg,#062b2e 0%,#0a3538 58%,#12484a 100%);box-shadow:var(--refonte-shadow-lg)}
