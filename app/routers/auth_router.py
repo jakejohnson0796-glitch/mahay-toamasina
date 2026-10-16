@@ -399,25 +399,6 @@ def verifier_2fa(
     if not user_id:
         return RedirectResponse("/connexion", status_code=303)
 
-    # Limitation stricte pour les codes courts : toutes les methodes sont
-    # protegees contre les tentatives massives, par adresse IP et par compte.
-    trop_ip = limite_depassee(f"2fa:ip:{_ip_client(request)}", max_tentatives=8, fenetre_secondes=60)
-    trop_utilisateur = limite_depassee(f"2fa:user:{user_id}", max_tentatives=5, fenetre_secondes=60)
-    if trop_ip or trop_utilisateur:
-        return templates.TemplateResponse(
-            request,
-            "connexion_2fa.html",
-            {
-                "erreur": "Trop de tentatives. Reessayez dans une minute.",
-                "totp_disponible": False,
-                "email_disponible": False,
-                "email_envoye": False,
-                "email_statut": "non_envoye",
-                "methode_defaut": "totp",
-                "codes_secours_disponibles": False,
-            },
-        )
-
     utilisateur = session.get(Utilisateur, user_id)
     if not utilisateur or not (utilisateur.totp_active or utilisateur.email_otp_active):
         request.session.pop("en_attente_2fa_user_id", None)
@@ -425,6 +406,32 @@ def verifier_2fa(
         request.session.pop("en_attente_2fa_email_statut", None)
         request.session.pop("en_attente_2fa_methode", None)
         return RedirectResponse("/connexion", status_code=303)
+
+    # Limitation stricte pour les codes courts : toutes les methodes sont
+    # protegees contre les tentatives massives, par adresse IP et par compte.
+    trop_ip = limite_depassee(f"2fa:ip:{_ip_client(request)}", max_tentatives=8, fenetre_secondes=60)
+    trop_utilisateur = limite_depassee(f"2fa:user:{user_id}", max_tentatives=5, fenetre_secondes=60)
+    if trop_ip or trop_utilisateur:
+        codes_secours_disponibles = session.exec(
+            select(CodeSecours2FA).where(
+                CodeSecours2FA.utilisateur_id == user_id,
+                CodeSecours2FA.utilise == False,  # noqa: E712
+            )
+        ).first() is not None
+        return templates.TemplateResponse(
+            request,
+            "connexion_2fa.html",
+            {
+                "erreur": "Trop de tentatives. Reessayez dans une minute.",
+                "totp_disponible": utilisateur.totp_active,
+                "email_disponible": utilisateur.email_otp_active,
+                "email_masque": _masquer_email(utilisateur.email),
+                "email_envoye": bool(request.session.get("en_attente_2fa_email_envoye")),
+                "email_statut": request.session.get("en_attente_2fa_email_statut", "non_envoye"),
+                "methode_defaut": request.session.get("en_attente_2fa_methode") or ("totp" if utilisateur.totp_active else "email"),
+                "codes_secours_disponibles": codes_secours_disponibles,
+            },
+        )
 
     code_saisi = code.strip()
     valide = False
