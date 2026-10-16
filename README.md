@@ -327,6 +327,7 @@ LIVEKIT_API_SECRET=
 ### Mot de passe oublié
 
 ~~~text
+EMAIL_TRANSPORT=brevo_api  # nécessaire sur Render Free ; auto en local
 BREVO_API_KEY=
 BREVO_SENDER_NAME=Gasy Mahay
 SMTP_FROM_EMAIL=
