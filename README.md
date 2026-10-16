@@ -1,8 +1,8 @@
-# Gasy Mahay — plateforme d'apprentissage pour les étudiants de Madagascar
+# MITARIDALA — plateforme d'apprentissage pour les étudiants de Madagascar
 
-Gasy Mahay est une plateforme web d'apprentissage et d'entraide conçue pour les étudiants de Madagascar.
+MITARIDALA est une plateforme web d'apprentissage et d'entraide conçue pour les étudiants de Madagascar.
 
-Elle rassemble dans un même espace :
+MITARIDALA rassemble dans un même espace :
 
 - les ressources académiques et documents de révision ;
 - les quiz et révisions assistés par IA ;
@@ -16,7 +16,7 @@ Elle rassemble dans un même espace :
 
 ---
 
-## 1. Ce que Gasy Mahay apporte
+## 1. Ce que MITARIDALA apporte
 
 ### Ressources académiques
 
@@ -26,7 +26,7 @@ Le dépôt d'un document passe par un processus de validation avant sa publicati
 
 ### Apprentissage actif
 
-Le projet ne se limite pas à afficher des documents. Les ressources peuvent servir de point de départ pour :
+MITARIDALA ne se limite pas à afficher des documents. Les ressources peuvent servir de point de départ pour :
 
 - créer ou passer des quiz ;
 - revoir les résultats et les erreurs ;
@@ -89,7 +89,7 @@ Progresser
 Partager à son tour
 ~~~
 
-Le projet inclut également :
+La plateforme inclut également :
 
 - notifications internes ;
 - rappel d'inactivité après plusieurs jours sans utilisation ;
@@ -116,7 +116,7 @@ Les nouveaux comptes étudiants disposent d'un **essai gratuit de 60 jours** pou
 
 ### Base de données
 
-Le projet peut fonctionner avec :
+L’application peut fonctionner avec :
 
 - SQLite en local ;
 - PostgreSQL en environnement de déploiement ;
@@ -242,7 +242,7 @@ Filière / parcours
 Niveau
 ~~~
 
-Le projet évite autant que possible de déduire automatiquement une classification académique lorsqu'elle est ambiguë.
+La plateforme évite autant que possible de déduire automatiquement une classification académique lorsqu'elle est ambiguë.
 
 La source de données est synchronisée au démarrage lorsque le référentiel versionné est présent. Les anciennes données peuvent être réconciliées et les doublons historiques traités de manière idempotente.
 
@@ -329,7 +329,7 @@ LIVEKIT_API_SECRET=
 ~~~text
 EMAIL_TRANSPORT=brevo_api  # nécessaire sur Render Free ; auto en local
 BREVO_API_KEY=
-BREVO_SENDER_NAME=Gasy Mahay
+BREVO_SENDER_NAME=MITARIDALA
 SMTP_FROM_EMAIL=
 
 # SMTP alternatif uniquement si l'hébergeur autorise les ports sortants
@@ -393,7 +393,7 @@ Le worker IA est intégré au processus Web afin de rester compatible avec le mo
 
 ### Côté pédagogique
 
-Gasy Mahay cherche à aider l'étudiant à comprendre et pratiquer plutôt qu'à simplement consommer du contenu.
+MITARIDALA cherche à aider l'étudiant à comprendre et pratiquer plutôt qu'à simplement consommer du contenu.
 
 ### Côté confiance
 
@@ -430,7 +430,7 @@ Une fonctionnalité n'est considérée comme terminée que lorsqu'elle est cohé
 
 ## 14. Vision
 
-Gasy Mahay veut progressivement devenir un espace numérique dans lequel un étudiant peut :
+MITARIDALA veut progressivement devenir un espace numérique dans lequel un étudiant peut :
 
 - trouver une ressource fiable ;
 - pratiquer ;
@@ -442,4 +442,4 @@ Gasy Mahay veut progressivement devenir un espace numérique dans lequel un étu
 
 > **Trouver. Comprendre. Pratiquer. Progresser. Partager.**
 
-**Gasy Mahay — construire ensemble un espace d'apprentissage pour Madagascar.**
+**MITARIDALA — construire ensemble un espace d'apprentissage pour Madagascar.**
