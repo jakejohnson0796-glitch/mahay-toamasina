@@ -1,5 +1,5 @@
 """
-Point d'entree de Gasy Mahay.
+Point d'entree de MITARIDALA.
 
 Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
