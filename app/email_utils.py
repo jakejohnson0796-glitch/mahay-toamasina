@@ -41,7 +41,7 @@ def _envoyer_via_brevo(destinataire: str, sujet: str, corps: str) -> None:
     """Envoie un email texte via l'API transactionnelle Brevo en HTTPS."""
     payload = {
         "sender": {
-            "name": parametres.brevo_sender_name or "Gasy Mahay",
+            "name": parametres.brevo_sender_name or "MITARIDALA",
             "email": parametres.smtp_from_email,
         },
         "to": [{"email": destinataire}],
