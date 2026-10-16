@@ -13,7 +13,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import utilisateur_courant, hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
@@ -310,14 +310,20 @@ def connexion(
             request, "login.html", {"erreur": "Ce compte a ete suspendu. Contactez un administrateur."}
         )
 
-    if utilisateur.totp_active:
+    if utilisateur.totp_active or utilisateur.email_otp_active:
         _rotation_session_authentifiee(request)
-        # Ne pas ouvrir la session tout de suite : le mot de passe seul
-        # ne suffit pas, il faut encore le code 2FA. On memorise juste
-        # QUI est en train de se connecter (utile nulle part d'autre tant
-        # que le code n'est pas verifie) et on redirige vers l'etape
-        # suivante — voir verifier_2fa() ci-dessous.
+        # Le mot de passe seul ne suffit pas : on attend l'une des methodes
+        # MFA activees avant d'ouvrir la session authentifiee.
         request.session["en_attente_2fa_user_id"] = utilisateur.id
+        request.session["en_attente_2fa_email_statut"] = "non_envoye"
+        request.session["en_attente_2fa_email_envoye"] = False
+        # Si l'email est la seule methode active, envoyer tout de suite le
+        # code attendu. Avec TOTP actif, l'utilisateur choisit sa methode
+        # sur l'ecran suivant et aucun email n'est envoye sans demande.
+        if utilisateur.email_otp_active and not utilisateur.totp_active:
+            statut_email = _demander_code_email_connexion(request, session, utilisateur)
+            request.session["en_attente_2fa_email_statut"] = statut_email
+            request.session["en_attente_2fa_email_envoye"] = statut_email == "envoye"
         return RedirectResponse("/connexion/2fa", status_code=303)
 
     _ouvrir_session_authentifiee(request, utilisateur)
@@ -326,16 +332,63 @@ def connexion(
 
 
 @router.get("/connexion/2fa")
-def page_2fa(request: Request):
-    if not request.session.get("en_attente_2fa_user_id"):
+def page_2fa(request: Request, session: Session = Depends(get_session)):
+    user_id = request.session.get("en_attente_2fa_user_id")
+    if not user_id:
         return RedirectResponse("/connexion", status_code=303)
-    return templates.TemplateResponse(request, "connexion_2fa.html", {})
+
+    utilisateur = session.get(Utilisateur, user_id)
+    if not utilisateur or not (utilisateur.totp_active or utilisateur.email_otp_active):
+        request.session.pop("en_attente_2fa_user_id", None)
+        request.session.pop("en_attente_2fa_email_envoye", None)
+        request.session.pop("en_attente_2fa_email_statut", None)
+        return RedirectResponse("/connexion", status_code=303)
+
+    codes_secours_disponibles = session.exec(
+        select(CodeSecours2FA).where(
+            CodeSecours2FA.utilisateur_id == user_id,
+            CodeSecours2FA.utilise == False,  # noqa: E712
+        )
+    ).first() is not None
+    return templates.TemplateResponse(
+        request,
+        "connexion_2fa.html",
+        {
+            "totp_disponible": utilisateur.totp_active,
+            "email_disponible": utilisateur.email_otp_active,
+            "email_masque": _masquer_email(utilisateur.email),
+            "email_envoye": bool(request.session.get("en_attente_2fa_email_envoye")),
+            "email_statut": request.session.get("en_attente_2fa_email_statut", "non_envoye"),
+            "methode_defaut": "totp" if utilisateur.totp_active else "email",
+            "codes_secours_disponibles": codes_secours_disponibles,
+        },
+    )
+
+
+@router.post("/connexion/2fa/envoyer-email")
+def envoyer_code_email_connexion(
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    user_id = request.session.get("en_attente_2fa_user_id")
+    if not user_id:
+        return RedirectResponse("/connexion", status_code=303)
+    utilisateur = session.get(Utilisateur, user_id)
+    if not utilisateur or not utilisateur.email_otp_active:
+        return RedirectResponse("/connexion", status_code=303)
+
+    statut = _demander_code_email_connexion(request, session, utilisateur)
+    request.session["en_attente_2fa_email_statut"] = statut
+    request.session["en_attente_2fa_email_envoye"] = statut == "envoye"
+    return RedirectResponse("/connexion/2fa", status_code=303)
 
 
 @router.post("/connexion/2fa")
 def verifier_2fa(
     request: Request,
     code: str = Form(...),
+    methode: str = Form("totp"),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -343,43 +396,80 @@ def verifier_2fa(
     if not user_id:
         return RedirectResponse("/connexion", status_code=303)
 
-    # Anti brute-force specifique : un code TOTP n'a que 6 chiffres
-    # (1 million de combinaisons), largement a la portee d'un script sans
-    # cette limite — bien plus severe que la limite de connexion normale.
-    if limite_depassee(f"2fa:ip:{_ip_client(request)}", max_tentatives=8, fenetre_secondes=60) or \
-       limite_depassee(f"2fa:user:{user_id}", max_tentatives=5, fenetre_secondes=60):
+    # Limitation stricte pour les codes courts : toutes les methodes sont
+    # protegees contre les tentatives massives, par adresse IP et par compte.
+    trop_ip = limite_depassee(f"2fa:ip:{_ip_client(request)}", max_tentatives=8, fenetre_secondes=60)
+    trop_utilisateur = limite_depassee(f"2fa:user:{user_id}", max_tentatives=5, fenetre_secondes=60)
+    if trop_ip or trop_utilisateur:
         return templates.TemplateResponse(
-            request, "connexion_2fa.html", {"erreur": "Trop de tentatives. Reessayez dans une minute."}
+            request,
+            "connexion_2fa.html",
+            {
+                "erreur": "Trop de tentatives. Reessayez dans une minute.",
+                "totp_disponible": False,
+                "email_disponible": False,
+                "email_envoye": False,
+                "email_statut": "non_envoye",
+                "methode_defaut": "totp",
+                "codes_secours_disponibles": False,
+            },
         )
 
     utilisateur = session.get(Utilisateur, user_id)
-    if not utilisateur or not utilisateur.totp_active:
+    if not utilisateur or not (utilisateur.totp_active or utilisateur.email_otp_active):
         request.session.pop("en_attente_2fa_user_id", None)
+        request.session.pop("en_attente_2fa_email_envoye", None)
+        request.session.pop("en_attente_2fa_email_statut", None)
         return RedirectResponse("/connexion", status_code=303)
 
     code_saisi = code.strip()
-    valide = verifier_code_totp(utilisateur.totp_secret, code_saisi)
+    valide = False
 
+    if methode == "email" and utilisateur.email_otp_active:
+        valide = _verifier_code_email_2fa(session, user_id, code_saisi, "connexion")
+    elif methode == "totp" and utilisateur.totp_active:
+        valide = verifier_code_totp(utilisateur.totp_secret, code_saisi)
+    elif methode == "secours":
+        valide = False
+
+    # Un code de secours peut être utilisé à la place du facteur choisi.
+    # Il est marqué consommé avant que la session authentifiée soit ouverte.
     if not valide and "-" in code_saisi:
-        # Tentative avec un code de secours plutot qu'un code TOTP.
         codes_non_utilises = session.exec(
             select(CodeSecours2FA).where(
                 CodeSecours2FA.utilisateur_id == user_id,
                 CodeSecours2FA.utilise == False,  # noqa: E712
             )
         ).all()
-        for c in codes_non_utilises:
-            if verifier_code_secours(code_saisi, c.code_hash):
-                c.utilise = True
-                c.date_utilisation = datetime.utcnow()
-                session.add(c)
+        for entree in codes_non_utilises:
+            if verifier_code_secours(code_saisi, entree.code_hash):
+                entree.utilise = True
+                entree.date_utilisation = datetime.utcnow()
+                session.add(entree)
                 session.commit()
                 valide = True
                 break
 
     if not valide:
+        codes_secours_disponibles = session.exec(
+            select(CodeSecours2FA).where(
+                CodeSecours2FA.utilisateur_id == user_id,
+                CodeSecours2FA.utilise == False,  # noqa: E712
+            )
+        ).first() is not None
         return templates.TemplateResponse(
-            request, "connexion_2fa.html", {"erreur": "Code invalide."}
+            request,
+            "connexion_2fa.html",
+            {
+                "erreur": "Code invalide ou expire.",
+                "totp_disponible": utilisateur.totp_active,
+                "email_disponible": utilisateur.email_otp_active,
+                "email_masque": _masquer_email(utilisateur.email),
+                "email_envoye": bool(request.session.get("en_attente_2fa_email_envoye")),
+                "email_statut": request.session.get("en_attente_2fa_email_statut", "non_envoye"),
+                "methode_defaut": methode if methode in ("totp", "email", "secours") else "totp",
+                "codes_secours_disponibles": codes_secours_disponibles,
+            },
         )
 
     _ouvrir_session_authentifiee(request, utilisateur)
@@ -715,10 +805,155 @@ def actualiser_profil_academique(
 # Gestion de la double authentification (2FA / TOTP)
 # ============================================================
 
+DUREE_VALIDITE_CODE_EMAIL_2FA = timedelta(minutes=10)
+
+
+def _masquer_email(email: Optional[str]) -> str:
+    """Masque l'adresse de destination dans l'ecran de connexion."""
+    if not email or "@" not in email:
+        return ""
+    local, domaine = email.rsplit("@", 1)
+    local_masque = (local[:1] + "***") if local else "***"
+    morceaux = domaine.split(".", 1)
+    domaine_masque = (morceaux[0][:1] + "***") if morceaux[0] else "***"
+    suffixe = "." + morceaux[1] if len(morceaux) == 2 else ""
+    return f"{local_masque}@{domaine_masque}{suffixe}"
+
+
+def _emettre_code_email_2fa(
+    session: Session, utilisateur: Utilisateur, purpose: str
+) -> None:
+    """Crée un OTP haché avant envoi, et invalide les anciens OTP du même flux."""
+    if purpose not in ("activation", "connexion"):
+        raise ValueError("Finalite de code email MFA invalide.")
+    if not utilisateur.email:
+        raise EmailNonConfigure("Aucune adresse email n'est configuree pour ce compte.")
+    if not email_configure():
+        raise EmailNonConfigure("Le service SMTP n'est pas configure.")
+
+    codes_precedents = session.exec(
+        select(CodeEmail2FA).where(
+            CodeEmail2FA.utilisateur_id == utilisateur.id,
+            CodeEmail2FA.purpose == purpose,
+            CodeEmail2FA.utilise == False,  # noqa: E712
+        )
+    ).all()
+    maintenant = datetime.utcnow()
+    for entree in codes_precedents:
+        entree.utilise = True
+        entree.date_utilisation = maintenant
+        session.add(entree)
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    entree = CodeEmail2FA(
+        utilisateur_id=utilisateur.id,
+        purpose=purpose,
+        code_hash=hacher_mot_de_passe(code),
+        expire_le=maintenant + DUREE_VALIDITE_CODE_EMAIL_2FA,
+    )
+    session.add(entree)
+    session.commit()
+
+    if purpose == "activation":
+        sujet = "Gasy Mahay — confirmation de la double authentification"
+        corps = (
+            f"Votre code de confirmation Gasy Mahay est : {code}\n\n"
+            "Ce code expire dans 10 minutes. Saisissez-le sur le site pour activer "
+            "la double authentification par email. Si vous n'etes pas a l'origine "
+            "de cette demande, ignorez ce message."
+        )
+    else:
+        sujet = "Gasy Mahay — code de connexion"
+        corps = (
+            f"Votre code de connexion Gasy Mahay est : {code}\n\n"
+            "Ce code expire dans 10 minutes et ne peut servir qu'une seule fois. "
+            "Ne le communiquez jamais. Si vous n'etes pas a l'origine de cette "
+            "tentative, changez votre mot de passe."
+        )
+
+    try:
+        envoyer_email(utilisateur.email, sujet, corps)
+    except Exception:
+        # Un code dont l'envoi a échoué ne doit jamais rester valide.
+        entree.utilise = True
+        entree.date_utilisation = datetime.utcnow()
+        session.add(entree)
+        session.commit()
+        raise
+
+
+def _verifier_code_email_2fa(
+    session: Session, utilisateur_id: int, code: str, purpose: str
+) -> bool:
+    """Vérifie l'expiration, la finalité, l'usage unique et consomme l'OTP."""
+    if len(code) != 6 or not code.isdigit():
+        return False
+    maintenant = datetime.utcnow()
+    candidats = session.exec(
+        select(CodeEmail2FA).where(
+            CodeEmail2FA.utilisateur_id == utilisateur_id,
+            CodeEmail2FA.purpose == purpose,
+            CodeEmail2FA.utilise == False,  # noqa: E712
+            CodeEmail2FA.expire_le > maintenant,
+        )
+    ).all()
+    for entree in candidats:
+        # Les vérifications Python protègent aussi contre un mock/driver
+        # qui renverrait une ligne hors des critères de la requête.
+        if (
+            entree.utilise
+            or entree.purpose != purpose
+            or entree.expire_le <= maintenant
+        ):
+            continue
+        if verifier_mot_de_passe(code, entree.code_hash):
+            entree.utilise = True
+            entree.date_utilisation = maintenant
+            session.add(entree)
+            # Un seul code actif par flux : invalider aussi tous les autres.
+            for autre in candidats:
+                if autre.id != entree.id and not autre.utilise:
+                    autre.utilise = True
+                    autre.date_utilisation = maintenant
+                    session.add(autre)
+            session.commit()
+            return True
+    return False
+
+
+def _demander_code_email_connexion(
+    request: Request, session: Session, utilisateur: Utilisateur
+) -> str:
+    """Demande un OTP de connexion avec limites anti-spam et réponse non sensible."""
+    trop_ip = limite_depassee(
+        f"2fa-email-envoi:ip:{_ip_client(request)}",
+        max_tentatives=8,
+        fenetre_secondes=600,
+    )
+    trop_utilisateur = limite_depassee(
+        f"2fa-email-envoi:user:{utilisateur.id}",
+        max_tentatives=3,
+        fenetre_secondes=600,
+    )
+    if trop_ip or trop_utilisateur:
+        return "limite"
+    try:
+        _emettre_code_email_2fa(session, utilisateur, "connexion")
+    except EmailNonConfigure:
+        return "non_configure"
+    except Exception as exc:
+        # Ne jamais journaliser l'OTP ni les informations SMTP.
+        print(f"[2fa-email] echec d'envoi ({type(exc).__name__}).")
+        return "echec"
+    return "envoye"
+
+
+
 def _contexte_securite(
     utilisateur: Utilisateur, session: Session,
     erreur_photo: Optional[str] = None, erreur_bio: Optional[str] = None,
     erreur_email: Optional[str] = None, erreur_mot_de_passe: Optional[str] = None,
+    erreur_2fa: Optional[str] = None,
 ) -> dict:
     """Factorise le contexte de securite.html, construit a plusieurs
     endroits : le GET normal ci-dessous, et chaque POST /profil/... ou
@@ -728,7 +963,7 @@ def _contexte_securite(
     que de passer par une redirection, pour eviter d'avoir a encoder un
     message d'erreur libre dans l'URL)."""
     nb_codes_restants = 0
-    if utilisateur.totp_active:
+    if utilisateur.totp_active or utilisateur.email_otp_active:
         nb_codes_restants = len(session.exec(
             select(CodeSecours2FA).where(
                 CodeSecours2FA.utilisateur_id == utilisateur.id,
@@ -751,6 +986,8 @@ def _contexte_securite(
         "erreur_bio": erreur_bio,
         "erreur_email": erreur_email,
         "erreur_mot_de_passe": erreur_mot_de_passe,
+        "erreur_2fa": erreur_2fa,
+        "email_smtp_configure": email_configure(),
     }
 
 
@@ -902,9 +1139,33 @@ def modifier_email(
             _contexte_securite(utilisateur, session, erreur_email="Adresse email invalide."),
         )
 
+    email_precedent = utilisateur.email or ""
+    email_modifie = email_nettoye.casefold() != email_precedent.casefold()
+    mfa_email_desactive = False
+    if email_modifie:
+        # Un changement d'adresse invalide le facteur email : la nouvelle
+        # adresse devra prouver sa possession avant de pouvoir être activée.
+        if utilisateur.email_otp_active:
+            utilisateur.email_otp_active = False
+            mfa_email_desactive = True
+        codes_email = session.exec(
+            select(CodeEmail2FA).where(
+                CodeEmail2FA.utilisateur_id == utilisateur.id,
+                CodeEmail2FA.utilise == False,  # noqa: E712
+            )
+        ).all()
+        maintenant = datetime.utcnow()
+        for entree in codes_email:
+            entree.utilise = True
+            entree.date_utilisation = maintenant
+            session.add(entree)
+        request.session.pop("email_2fa_activation_user_id", None)
+
     utilisateur.email = email_nettoye or None
     session.add(utilisateur)
     session.commit()
+    if mfa_email_desactive:
+        request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     return RedirectResponse("/securite?ok=email_mis_a_jour", status_code=303)
 
 
@@ -1080,9 +1341,16 @@ def confirmer_activation_2fa(
     utilisateur.totp_active = True
     session.add(utilisateur)
 
+    # Les codes de secours sont communs aux méthodes MFA actives.
+    # Remplacer l'ancien lot évite d'accumuler des codes oubliés.
+    anciens_codes = session.exec(
+        select(CodeSecours2FA).where(CodeSecours2FA.utilisateur_id == utilisateur.id)
+    ).all()
+    for ancien_code in anciens_codes:
+        session.delete(ancien_code)
     codes_clairs = generer_codes_secours()
-    for c in codes_clairs:
-        session.add(CodeSecours2FA(utilisateur_id=utilisateur.id, code_hash=hacher_code_secours(c)))
+    for code_secours in codes_clairs:
+        session.add(CodeSecours2FA(utilisateur_id=utilisateur.id, code_hash=hacher_code_secours(code_secours)))
     session.commit()
 
     request.session.pop("totp_secret_en_attente", None)
@@ -1120,9 +1388,13 @@ def desactiver_2fa(
     utilisateur.totp_active = False
     session.add(utilisateur)
 
-    anciens_codes = session.exec(select(CodeSecours2FA).where(CodeSecours2FA.utilisateur_id == utilisateur.id)).all()
-    for c in anciens_codes:
-        session.delete(c)
+    # Garder les codes de secours si l'OTP email reste actif.
+    if not utilisateur.email_otp_active:
+        anciens_codes = session.exec(
+            select(CodeSecours2FA).where(CodeSecours2FA.utilisateur_id == utilisateur.id)
+        ).all()
+        for entree in anciens_codes:
+            session.delete(entree)
     session.commit()
     request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
 
@@ -1132,7 +1404,7 @@ def desactiver_2fa(
 @router.post("/securite/2fa/regenerer-codes-secours")
 def regenerer_codes_secours(request: Request, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or not utilisateur.totp_active:
+    if not utilisateur or not (utilisateur.totp_active or utilisateur.email_otp_active):
         return RedirectResponse("/securite", status_code=303)
 
     anciens_codes = session.exec(select(CodeSecours2FA).where(CodeSecours2FA.utilisateur_id == utilisateur.id)).all()
@@ -1147,6 +1419,190 @@ def regenerer_codes_secours(request: Request, session: Session = Depends(get_ses
     return templates.TemplateResponse(
         request, "codes_secours_2fa.html", {"utilisateur": utilisateur, "codes": codes_clairs},
     )
+
+
+@router.post("/securite/2fa/email/demarrer")
+def demarrer_activation_2fa_email(
+    request: Request,
+    mot_de_passe: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.email_otp_active:
+        return RedirectResponse("/securite", status_code=303)
+
+    trop_ip = limite_depassee(
+        f"2fa-email-activation:ip:{_ip_client(request)}",
+        max_tentatives=8,
+        fenetre_secondes=3600,
+    )
+    trop_utilisateur = limite_depassee(
+        f"2fa-email-activation:user:{utilisateur.id}",
+        max_tentatives=3,
+        fenetre_secondes=3600,
+    )
+    if trop_ip or trop_utilisateur:
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_2fa="Trop de demandes d'activation. Reessayez plus tard."),
+        )
+    if not verifier_mot_de_passe(mot_de_passe, utilisateur.mot_de_passe_hash):
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_2fa="Mot de passe incorrect."),
+        )
+    if not utilisateur.email:
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_2fa="Ajoutez d'abord une adresse email dans votre profil."),
+        )
+    if not email_configure():
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_2fa="L'envoi email n'est pas configure sur le serveur. Aucun SMS ne sera utilise."),
+        )
+
+    try:
+        _emettre_code_email_2fa(session, utilisateur, "activation")
+    except Exception as exc:
+        print(f"[2fa-email] echec du code d'activation ({type(exc).__name__}).")
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_2fa="Impossible d'envoyer le code. Verifiez la configuration email ou reessayez plus tard."),
+        )
+
+    request.session["email_2fa_activation_user_id"] = utilisateur.id
+    return RedirectResponse("/securite/2fa/email/confirmer", status_code=303)
+
+
+@router.get("/securite/2fa/email/confirmer")
+def page_confirmer_2fa_email(request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if (
+        request.session.get("email_2fa_activation_user_id") != utilisateur.id
+        or utilisateur.email_otp_active
+    ):
+        return RedirectResponse("/securite", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "confirmer_2fa_email.html",
+        {"email_masque": _masquer_email(utilisateur.email), "erreur": None},
+    )
+
+
+@router.post("/securite/2fa/email/confirmer")
+def confirmer_activation_2fa_email(
+    request: Request,
+    code: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if (
+        request.session.get("email_2fa_activation_user_id") != utilisateur.id
+        or utilisateur.email_otp_active
+        or not utilisateur.email
+    ):
+        return RedirectResponse("/securite", status_code=303)
+
+    trop_ip = limite_depassee(
+        f"2fa-email-confirmation:ip:{_ip_client(request)}",
+        max_tentatives=10,
+        fenetre_secondes=600,
+    )
+    trop_utilisateur = limite_depassee(
+        f"2fa-email-confirmation:user:{utilisateur.id}",
+        max_tentatives=6,
+        fenetre_secondes=600,
+    )
+    if trop_ip or trop_utilisateur:
+        return templates.TemplateResponse(
+            request, "confirmer_2fa_email.html",
+            {"email_masque": _masquer_email(utilisateur.email), "erreur": "Trop de tentatives. Reessayez dans quelques minutes."},
+        )
+
+    if not _verifier_code_email_2fa(session, utilisateur.id, code.strip(), "activation"):
+        return templates.TemplateResponse(
+            request, "confirmer_2fa_email.html",
+            {"email_masque": _masquer_email(utilisateur.email), "erreur": "Code invalide ou expire."},
+        )
+
+    utilisateur.email_otp_active = True
+    session.add(utilisateur)
+    codes_clairs = []
+    if not utilisateur.totp_active:
+        anciens_codes = session.exec(
+            select(CodeSecours2FA).where(CodeSecours2FA.utilisateur_id == utilisateur.id)
+        ).all()
+        for ancien_code in anciens_codes:
+            session.delete(ancien_code)
+        codes_clairs = generer_codes_secours()
+        for code_secours in codes_clairs:
+            session.add(
+                CodeSecours2FA(
+                    utilisateur_id=utilisateur.id,
+                    code_hash=hacher_code_secours(code_secours),
+                )
+            )
+    session.commit()
+    request.session.pop("email_2fa_activation_user_id", None)
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
+
+    if codes_clairs:
+        return templates.TemplateResponse(
+            request, "codes_secours_2fa.html",
+            {"utilisateur": utilisateur, "codes": codes_clairs},
+        )
+    return RedirectResponse("/securite?email_2fa_active=1", status_code=303)
+
+
+@router.post("/securite/2fa/email/desactiver")
+def desactiver_2fa_email(
+    request: Request,
+    mot_de_passe: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if not verifier_mot_de_passe(mot_de_passe, utilisateur.mot_de_passe_hash):
+        return templates.TemplateResponse(
+            request, "securite.html",
+            _contexte_securite(utilisateur, session, erreur_2fa="Mot de passe incorrect."),
+        )
+
+    utilisateur.email_otp_active = False
+    request.session.pop("email_2fa_activation_user_id", None)
+    codes_email = session.exec(
+        select(CodeEmail2FA).where(
+            CodeEmail2FA.utilisateur_id == utilisateur.id,
+            CodeEmail2FA.utilise == False,  # noqa: E712
+        )
+    ).all()
+    maintenant = datetime.utcnow()
+    for entree in codes_email:
+        entree.utilise = True
+        entree.date_utilisation = maintenant
+        session.add(entree)
+
+    if not utilisateur.totp_active:
+        codes_secours = session.exec(
+            select(CodeSecours2FA).where(CodeSecours2FA.utilisateur_id == utilisateur.id)
+        ).all()
+        for entree in codes_secours:
+            session.delete(entree)
+    session.add(utilisateur)
+    session.commit()
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
+    return RedirectResponse("/securite?email_2fa_desactive=1", status_code=303)
 
 
 
