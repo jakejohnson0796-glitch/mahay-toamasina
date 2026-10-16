@@ -1,4 +1,4 @@
-"""Mode d'emploi public de Gasy Mahay.
+"""Mode d'emploi public de MITARIDALA.
 
 Cette page centralise le parcours de prise en main du site, avec des etapes
 visuelles et des explications qui correspondent aux fonctionnalites reelles
