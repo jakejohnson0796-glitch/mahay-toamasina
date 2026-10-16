@@ -273,6 +273,9 @@ class Utilisateur(SQLModel, table=True):
     # le QR code a ete mal scanne)."""
     totp_secret: Optional[str] = None
     totp_active: bool = Field(default=False)
+    # Méthode MFA optionnelle : code à usage unique envoyé par email.
+    # Elle n'est active qu'après confirmation de possession de l'adresse email.
+    email_otp_active: bool = Field(default=False)
 
     # --- Photo de profil (upload reel OU repli sur l'avatar genere
     # automatiquement -- voir app/storage.py, sauvegarder_avatar(), et
@@ -317,6 +320,23 @@ class CodeSecours2FA(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
     code_hash: str
+    utilise: bool = Field(default=False)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_utilisation: Optional[datetime] = None
+
+
+class CodeEmail2FA(SQLModel, table=True):
+    """Codes email MFA à usage unique, stockés hachés et à expiration courte.
+
+    purpose vaut "activation" pendant la vérification de l'adresse ou
+    "connexion" pendant le défi MFA. Le code en clair n'est jamais placé
+    dans la session signée du navigateur ni enregistré en base.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    purpose: str = Field(max_length=20, index=True)
+    code_hash: str
+    expire_le: datetime
     utilise: bool = Field(default=False)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_utilisation: Optional[datetime] = None
