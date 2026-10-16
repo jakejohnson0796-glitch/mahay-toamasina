@@ -550,7 +550,7 @@ def demander_reinitialisation(
             try:
                 envoyer_email(
                     utilisateur.email,
-                    "Gasy Mahay — code de reinitialisation",
+                    "MITARIDALA — code de reinitialisation",
                     f"Votre code de reinitialisation de mot de passe est : {code}\n\n"
                     "Il expire dans 15 minutes. Si vous n'etes pas a l'origine de cette "
                     "demande, ignorez cet email : votre mot de passe actuel reste valable.",
@@ -870,17 +870,17 @@ def _emettre_code_email_2fa(
     session.commit()
 
     if purpose == "activation":
-        sujet = "Gasy Mahay — confirmation de la double authentification"
+        sujet = "MITARIDALA — confirmation de la double authentification"
         corps = (
-            f"Votre code de confirmation Gasy Mahay est : {code}\n\n"
+            f"Votre code de confirmation MITARIDALA est : {code}\n\n"
             "Ce code expire dans 10 minutes. Saisissez-le sur le site pour activer "
             "la double authentification par email. Si vous n'etes pas a l'origine "
             "de cette demande, ignorez ce message."
         )
     else:
-        sujet = "Gasy Mahay — code de connexion"
+        sujet = "MITARIDALA — code de connexion"
         corps = (
-            f"Votre code de connexion Gasy Mahay est : {code}\n\n"
+            f"Votre code de connexion MITARIDALA est : {code}\n\n"
             "Ce code expire dans 10 minutes et ne peut servir qu'une seule fois. "
             "Ne le communiquez jamais. Si vous n'etes pas a l'origine de cette "
             "tentative, changez votre mot de passe."
