@@ -101,3 +101,5 @@
 }
 
 .mfa-step-note { margin-top: .8rem !important; }
+
+.mfa-copy-temporary { position: fixed; left: -10000px; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
