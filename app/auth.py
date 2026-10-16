@@ -37,6 +37,10 @@ def empreinte_session_utilisateur(utilisateur: Utilisateur) -> str:
         str(utilisateur.role.value),
         "2fa=1" if utilisateur.totp_active else "2fa=0",
     ])
+    # Compatibilité : conserver l'empreinte historique pour tous les comptes
+    # sans MFA email afin de ne pas déconnecter toute la base au déploiement.
+    if getattr(utilisateur, "email_otp_active", False):
+        source += "|email-otp=1"
     return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
 
