@@ -1130,6 +1130,7 @@ def modifier_bio(
 def modifier_email(
     request: Request,
     email: str = Form(""),
+    mot_de_passe: str = Form(""),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -1156,6 +1157,17 @@ def modifier_email(
     email_precedent = utilisateur.email or ""
     email_modifie = email_nettoye.casefold() != email_precedent.casefold()
     mfa_email_desactive = False
+    if email_modifie and utilisateur.email_otp_active:
+        # Sans cette vérification, un navigateur laissé ouvert pourrait
+        # retirer le facteur MFA simplement en remplaçant l'adresse email.
+        if not mot_de_passe or not verifier_mot_de_passe(mot_de_passe, utilisateur.mot_de_passe_hash):
+            return templates.TemplateResponse(
+                request, "securite.html",
+                _contexte_securite(
+                    utilisateur, session,
+                    erreur_email="Mot de passe actuel requis et doit être correct pour modifier l'adresse utilisée par la MFA.",
+                ),
+            )
     if email_modifie:
         # Un changement d'adresse invalide le facteur email : la nouvelle
         # adresse devra prouver sa possession avant de pouvoir être activée.
