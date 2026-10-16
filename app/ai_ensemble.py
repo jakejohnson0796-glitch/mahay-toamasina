@@ -1,4 +1,4 @@
-"""Orchestrateur multi-modeles pour les fonctions pedagogiques de Gasy Mahay.
+"""Orchestrateur multi-modeles pour les fonctions pedagogiques de MITARIDALA.
 
 Pipeline volontairement deterministe :
     generateur -> critiques independantes -> arbitre -> sortie unique.
