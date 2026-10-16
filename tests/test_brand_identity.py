@@ -6,6 +6,7 @@ import json
 
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_BRAND = "Gasy" + " Mahay"
+LEGACY_ALIAS = "Mahay" + " Toamasina"
 
 
 def test_public_surfaces_do_not_expose_legacy_brand() -> None:
@@ -19,7 +20,7 @@ def test_public_surfaces_do_not_expose_legacy_brand() -> None:
     leftovers = [
         f"{path.relative_to(ROOT)}"
         for path in targets
-        if path.is_file() and LEGACY_BRAND.casefold() in path.read_text(encoding="utf-8").casefold()
+        if path.is_file() and any(legacy.casefold() in path.read_text(encoding="utf-8").casefold() for legacy in (LEGACY_BRAND, LEGACY_ALIAS))
     ]
     assert not leftovers, "Ancienne marque encore visible dans : " + ", ".join(sorted(leftovers))
 
