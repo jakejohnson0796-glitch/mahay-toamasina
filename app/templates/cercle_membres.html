@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "components/entete_cercle.html" import entete_cercle %}
 {% from "components/avatar.html" import avatar_utilisateur %}
-{% block titre %}Membres — {{ cercle.nom }} — Gasy Mahay{% endblock %}
+{% block titre %}Membres — {{ cercle.nom }} — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
@@ -9,7 +9,7 @@
 {{ entete_cercle(cercle, sous_titre="Membres · " ~ membres|length) }}
 
 {% if request.query_params.get("erreur") == "utilisateur_introuvable" %}
-<div class="erreur">Aucun compte Gasy Mahay avec ce numero. La personne doit d'abord s'inscrire.</div>
+<div class="erreur">Aucun compte MITARIDALA avec ce numero. La personne doit d'abord s'inscrire.</div>
 {% endif %}
 {% if request.query_params.get("erreur") == "impossible_retirer_createur" %}
 <div class="erreur">Impossible de retirer le createur du cercle.</div>
@@ -24,7 +24,7 @@
 {% if peut_gerer %}
 <div class="carte-formulaire" style="margin-bottom:2rem;">
   <h3 style="margin-top:0;">Ajouter un membre par numero</h3>
-  <p class="stat-label">La personne doit deja avoir un compte Gasy Mahay.</p>
+  <p class="stat-label">La personne doit deja avoir un compte MITARIDALA.</p>
   <form method="post" action="/cercles/{{ cercle.id }}/membres/ajouter">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
     <label for="telephone">Numero de telephone</label>
