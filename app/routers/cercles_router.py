@@ -1300,7 +1300,7 @@ def ajouter_membre_par_telephone(
     """Ajout direct d'un membre par numero de telephone, sans passer par
     le workflow de demande — reserve au createur du cercle (le sien
     uniquement) ou a un admin. L'utilisateur cible doit deja avoir un
-    compte Gasy Mahay (on ne cree pas de compte a sa place)."""
+    compte MITARIDALA (on ne cree pas de compte a sa place)."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
