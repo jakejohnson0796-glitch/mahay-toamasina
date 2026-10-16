@@ -10,20 +10,12 @@ LEGACY_BRAND = "Gasy" + " Mahay"
 
 def test_public_surfaces_do_not_expose_legacy_brand() -> None:
     """Catch old product naming left in a template or launch-facing file."""
-    targets = list((ROOT / "app" / "templates").rglob("*.html"))
-    targets.extend(
-        ROOT / relative
-        for relative in (
-            "app/main.py",
-            "app/config.py",
-            "app/email_utils.py",
-            "app/routers/auth_router.py",
-            "app/static/manifest.json",
-            ".env.example",
-            "README.md",
-            "render.yaml",
-        )
-    )
+    text_extensions = {".py", ".html", ".js", ".css", ".json", ".svg", ".md", ".txt", ".yaml", ".yml"}
+    targets = [
+        path for path in (ROOT / "app").rglob("*")
+        if path.is_file() and path.suffix.casefold() in text_extensions
+    ]
+    targets.extend(ROOT / relative for relative in (".env.example", "README.md", "render.yaml"))
     leftovers = [
         f"{path.relative_to(ROOT)}"
         for path in targets
