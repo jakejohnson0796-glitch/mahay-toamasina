@@ -8,6 +8,7 @@ import secrets
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
+from sqlalchemy import update as sql_update
 from sqlmodel import Session, select
 
 from ..database import get_session
@@ -921,15 +922,34 @@ def _verifier_code_email_2fa(
         ):
             continue
         if verifier_mot_de_passe(code, entree.code_hash):
-            entree.utilise = True
-            entree.date_utilisation = maintenant
-            session.add(entree)
-            # Un seul code actif par flux : invalider aussi tous les autres.
-            for autre in candidats:
-                if autre.id != entree.id and not autre.utilise:
-                    autre.utilise = True
-                    autre.date_utilisation = maintenant
-                    session.add(autre)
+            # Consommation atomique : deux requêtes simultanées ne peuvent pas
+            # valider le même OTP. Le filtre utilise=False est revérifié par
+            # la base après l'acquisition du verrou sur la ligne.
+            resultat = session.execute(
+                sql_update(CodeEmail2FA)
+                .where(
+                    CodeEmail2FA.id == entree.id,
+                    CodeEmail2FA.utilisateur_id == utilisateur_id,
+                    CodeEmail2FA.purpose == purpose,
+                    CodeEmail2FA.utilise == False,  # noqa: E712
+                    CodeEmail2FA.expire_le > maintenant,
+                )
+                .values(utilise=True, date_utilisation=maintenant)
+            )
+            if resultat.rowcount != 1:
+                continue
+
+            # Consommer aussi les éventuels anciens codes encore valides du
+            # même flux, sans écraser les lignes déjà consommées.
+            session.execute(
+                sql_update(CodeEmail2FA)
+                .where(
+                    CodeEmail2FA.utilisateur_id == utilisateur_id,
+                    CodeEmail2FA.purpose == purpose,
+                    CodeEmail2FA.utilise == False,  # noqa: E712
+                )
+                .values(utilise=True, date_utilisation=maintenant)
+            )
             session.commit()
             return True
     return False
