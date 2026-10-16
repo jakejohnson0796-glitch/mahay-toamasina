@@ -1,5 +1,5 @@
 """
-Modeles de donnees de Gasy Mahay.
+Modeles de donnees de MITARIDALA.
 
 SQLModel = SQLAlchemy + Pydantic en un seul objet : chaque classe ci-dessous
 est a la fois une table SQLite ET un schema de validation. C'est ce qui
@@ -1080,7 +1080,7 @@ class Seance(SQLModel, table=True):
     a la creation (unique, stable) — c'est lui qui identifie la salle
     LiveKit ; la salle elle-meme n'existe reellement cote LiveKit que le
     temps ou des participants y sont connectes (LiveKit gere ca tout
-    seul, rien a provisionner a l'avance cote Gasy Mahay)."""
+    seul, rien a provisionner a l'avance cote MITARIDALA)."""
     id: Optional[int] = Field(default=None, primary_key=True)
     cours_id: int = Field(foreign_key="cours.id")
     titre: str
