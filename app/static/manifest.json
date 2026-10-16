@@ -1,14 +1,29 @@
 {
-  "name": "Gasy Mahay",
-  "short_name": "Gasy Mahay",
-  "description": "Plateforme d'apprentissage pour les etudiants de Madagascar",
+  "name": "MITARIDALA — Ton chemin vers la réussite",
+  "short_name": "MITARIDALA",
+  "description": "La plateforme éducative malgache pour apprendre, réviser et collaborer.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B1F42",
   "theme_color": "#0B1F42",
   "icons": [
-    { "src": "/static/icones/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/static/icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/static/icones/icone-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/static/icones/icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icones/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icones/icone-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
