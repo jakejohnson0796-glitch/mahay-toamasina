@@ -2,39 +2,113 @@
 {% block titre %}{% if email_mode %}Confirmer la double authentification par e-mail{% else %}Activer la double authentification{% endif %} — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-{% if email_mode %}
-  <p class="eyebrow"><a href="/securite">← Sécurité du compte</a></p>
-  <h2>Confirmer la double authentification par e-mail</h2>
-  <div class="carte-formulaire">
-    {% if erreur %}<div class="erreur" role="alert">{{ erreur }}</div>{% endif %}
-    <p>Un code à 6 chiffres a été envoyé à <strong>{{ email_masque }}</strong>. Entrez-le pour confirmer que vous pouvez recevoir les messages à cette adresse.</p>
-    <p>Le code est valable 10 minutes et ne fonctionne qu'une seule fois.</p>
-    <form method="post" action="/securite/2fa/email/confirmer">
-      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <label for="code">Code reçu par e-mail</label>
-      <input type="text" id="code" name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" autofocus>
-      <button class="bouton bouton-primaire bouton-form" type="submit">Confirmer et activer</button>
-    </form>
-    <p class="stat-label"><a href="/securite">Annuler et revenir aux paramètres de sécurité</a></p>
-  </div>
-{% else %}
-  <p class="eyebrow"><a href="/securite">&larr; Securite du compte</a></p>
-  <h2>Activer la double authentification</h2>
-  <div class="carte-formulaire">
-    {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
-    <p>1. Ouvrez Google Authenticator, Microsoft Authenticator ou une application equivalente sur votre telephone.</p>
-    <p>2. Scannez ce QR code :</p>
-    <img src="{{ qr_data_uri }}" alt="QR code d'activation" style="background:#fff;padding:0.5rem;border-radius:8px;display:block;margin:0.75rem auto;width:220px;height:220px;max-width:100%;">
-    <p class="stat-label">Impossible de scanner ? Entrez cette cle manuellement : <code>{{ secret }}</code></p>
-    <p>3. Entrez le code a 6 chiffres affiche par l'application pour confirmer :</p>
-    <form method="post" action="/securite/2fa/confirmer">
-      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <label for="code">Code</label>
-      <input type="text" id="code" name="code" required autocomplete="one-time-code" autofocus>
-      <button class="bouton bouton-primaire bouton-form" type="submit">Confirmer et activer</button>
-    </form>
-  </div>
-{% endif %}
+<div class="mfa-setup-page">
+  <p class="mfa-breadcrumb"><a href="/securite"><span aria-hidden="true">←</span> Sécurité du compte</a></p>
+  {% if email_mode %}
+    <header class="mfa-page-heading">
+      <span class="mfa-page-kicker">Protection du compte</span>
+      <h1>Confirmer la double authentification par e-mail</h1>
+      <p>Vérifions que tu peux accéder à cette adresse avant d’activer la protection. Le code est à usage unique et expire après 10 minutes.</p>
+    </header>
+
+    <section class="mfa-setup-card mfa-email-card" aria-labelledby="mfa-email-title">
+      <div class="mfa-card-heading">
+        <span class="mfa-card-symbol" aria-hidden="true">✉</span>
+        <div>
+          <h2 id="mfa-email-title">Confirmer ton adresse e-mail</h2>
+          <p>Consulte ta boîte de réception et sa section courrier indésirable.</p>
+        </div>
+      </div>
+      {% if erreur %}<div class="ops-alert ops-alert-danger mfa-server-error" role="alert">{{ erreur }}</div>{% endif %}
+      <div class="mfa-setup-content">
+        <div class="mfa-email-destination">
+          <span class="mfa-email-destination-icon" aria-hidden="true">✉</span>
+          <div>
+            <strong>{{ email_masque }}</strong>
+            <span>Code à 6 chiffres · valable 10 minutes · utilisable une seule fois</span>
+          </div>
+        </div>
+        <form method="post" action="/securite/2fa/email/confirmer" class="mfa-code-form" data-mfa-code-form novalidate>
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <label for="code">Code reçu par e-mail</label>
+          <input class="mfa-code-input" type="text" id="code" name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" minlength="6" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" aria-describedby="mfa-email-code-help" autofocus>
+          <p id="mfa-email-code-help" class="stat-label">Entre uniquement les six chiffres, sans espace.</p>
+          <p class="mfa-validation-message" data-mfa-validation-message role="alert" hidden></p>
+          <button class="bouton bouton-primaire" type="submit">Confirmer et activer</button>
+        </form>
+        <div class="mfa-cancel-row"><a href="/securite">← Retour aux paramètres de sécurité</a></div>
+      </div>
+    </section>
+    <p class="mfa-security-note"><span aria-hidden="true">🔒</span><span><strong>Conseil de sécurité.</strong> Ne communique jamais ce code à une autre personne, même si elle prétend représenter l’assistance.</span></p>
+  {% else %}
+    <header class="mfa-page-heading">
+      <span class="mfa-page-kicker">Protection du compte</span>
+      <h1>Activer la double authentification</h1>
+      <p>Ajoute une étape de vérification à la connexion. Une application d’authentification génère les codes sur ton téléphone, même sans réseau mobile.</p>
+    </header>
+
+    <section class="mfa-setup-card mfa-totp-card" aria-labelledby="mfa-totp-title">
+      <div class="mfa-card-heading">
+        <span class="mfa-card-symbol" aria-hidden="true">▦</span>
+        <div>
+          <h2 id="mfa-totp-title">Configurer une application d’authentification</h2>
+          <p>Prévois une minute environ. La protection ne sera activée qu’après vérification du premier code.</p>
+        </div>
+      </div>
+      {% if erreur %}<div class="ops-alert ops-alert-danger mfa-server-error" role="alert">{{ erreur }}</div>{% endif %}
+      <div class="mfa-setup-content">
+        <div class="mfa-flow-grid">
+          <section class="mfa-step-card" aria-labelledby="mfa-step-app">
+            <h3 class="mfa-step-title" id="mfa-step-app"><span class="mfa-step-number">01</span> Ouvre une application</h3>
+            <p>Sur ton téléphone, ouvre une application d’authentification compatible TOTP. Tu peux utiliser, par exemple :</p>
+            <div class="mfa-app-pills" aria-label="Applications compatibles">
+              <span>Google Authenticator</span>
+              <span>Microsoft Authenticator</span>
+              <span>Autre application TOTP</span>
+            </div>
+            <p style="margin-top:.8rem">Choisis « Ajouter un compte » ou « Scanner un QR code ».</p>
+          </section>
+
+          <section class="mfa-step-card" aria-labelledby="mfa-step-scan">
+            <h3 class="mfa-step-title" id="mfa-step-scan"><span class="mfa-step-number">02</span> Scanne le QR code</h3>
+            <p>Garde cette page ouverte et scanne le code depuis l’application sur ton téléphone.</p>
+            <figure class="mfa-qr-frame">
+              <img src="{{ qr_data_uri }}" alt="QR code secret pour configurer la double authentification">
+            </figure>
+            <p class="mfa-qr-caption">Le QR code contient la clé secrète de ton compte. Ne le partage pas.</p>
+            <details class="mfa-manual-key">
+              <summary>Je ne peux pas scanner le QR code</summary>
+              <div class="mfa-manual-key-body">
+                <p>Dans l’application, choisis la configuration manuelle puis recopie cette clé.</p>
+                <div class="mfa-secret-controls">
+                  <div class="mfa-secret-value"><code id="mfa-totp-secret">{{ secret }}</code></div>
+                  <button class="mfa-copy-button" type="button" data-copy-secret="{{ secret }}">Copier la clé</button>
+                </div>
+                <p class="mfa-copy-status" data-copy-status role="status" aria-live="polite"></p>
+                <p>Traite cette clé comme un mot de passe : toute personne qui la possède peut générer tes codes.</p>
+              </div>
+            </details>
+          </section>
+        </div>
+
+        <section class="mfa-verify-panel" aria-labelledby="mfa-step-verify">
+          <div>
+            <h2 id="mfa-step-verify"><span class="mfa-step-number">03</span> Vérifie et active</h2>
+            <p>Entre les six chiffres affichés par l’application pour confirmer que la configuration fonctionne. Le code change régulièrement.</p>
+          </div>
+          <form method="post" action="/securite/2fa/confirmer" class="mfa-code-form" data-mfa-code-form novalidate>
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <label for="code">Code de vérification à 6 chiffres</label>
+            <input class="mfa-code-input" type="text" id="code" name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" minlength="6" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" aria-describedby="mfa-totp-code-help" autofocus>
+            <p id="mfa-totp-code-help" class="stat-label">N’inclus ni espace ni tiret.</p>
+            <p class="mfa-validation-message" data-mfa-validation-message role="alert" hidden></p>
+            <button class="bouton bouton-primaire" type="submit">Vérifier et activer la protection</button>
+          </form>
+        </section>
+        <div class="mfa-cancel-row"><a href="/securite">← Retour aux paramètres de sécurité</a></div>
+      </div>
+    </section>
+    <p class="mfa-security-note"><span aria-hidden="true">🔒</span><span><strong>Garde un moyen de secours.</strong> Après activation, conserve les codes de secours proposés par le site. Ne partage jamais le QR code, la clé secrète ou tes codes temporaires.</span></p>
+  {% endif %}
 </div>
 {% endblock %}
