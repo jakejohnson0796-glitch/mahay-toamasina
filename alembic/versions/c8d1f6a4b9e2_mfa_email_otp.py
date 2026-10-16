@@ -1,7 +1,7 @@
 """Ajoute la MFA par code email à usage unique.
 
 Revision ID: c8d1f6a4b9e2
-Revises: b4c6d8e0f2a4
+Revises: b4c6d8e0f2a4, e8d1a6c4f2b9
 """
 from typing import Sequence, Union
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 revision: str = "c8d1f6a4b9e2"
-down_revision: Union[str, None] = "b4c6d8e0f2a4"
+down_revision: Union[str, Sequence[str], None] = ("b4c6d8e0f2a4", "e8d1a6c4f2b9")
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
