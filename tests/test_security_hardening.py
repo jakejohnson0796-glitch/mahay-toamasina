@@ -44,9 +44,6 @@ class TestSecurityHardening(unittest.TestCase):
         self.assertTrue(limite_depassee(cle, 2, 60))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 def test_strict_csp_garde_unsafe_inline_uniquement_pour_les_attributs_style():
     from app.security_headers import _construire_csp
@@ -152,3 +149,7 @@ def test_email_otp_rejects_expired_and_mismatched_purpose():
     session = FausseSession()
     assert _verifier_code_email_2fa(session, 100, "123456", "activation") is False
     assert _verifier_code_email_2fa(session, 100, "123456", "connexion") is False
+
+
+if __name__ == "__main__":
+    unittest.main()
