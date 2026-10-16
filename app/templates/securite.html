@@ -59,6 +59,10 @@
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
             <label for="email">Adresse email</label>
             <input type="email" id="email" name="email" value="{{ utilisateur.email or '' }}" placeholder="vous@exemple.com">
+            {% if utilisateur.email_otp_active %}
+              <label for="mot_de_passe_email_changement">Mot de passe actuel requis pour changer l'adresse MFA</label>
+              <input type="password" id="mot_de_passe_email_changement" name="mot_de_passe" required autocomplete="current-password">
+            {% endif %}
             <button class="bouton bouton-secondaire" type="submit">Enregistrer</button>
           </form>
         </div>
