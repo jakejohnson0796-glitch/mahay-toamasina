@@ -20,14 +20,21 @@ class EmailNonConfigure(RuntimeError):
     """Aucun transport e-mail compatible n'est configuré."""
 
 
+def _brevo_api_configure() -> bool:
+    return bool(parametres.brevo_api_key and parametres.smtp_from_email)
+
+
 def email_configure() -> bool:
-    """Retourne True si l'API Brevo HTTPS ou un SMTP complet est prêt."""
-    api_configuree = bool(parametres.brevo_api_key and parametres.smtp_from_email)
+    """Retourne True si le transport e-mail sélectionné est configuré."""
     smtp_configure = bool(
         parametres.smtp_hote and parametres.smtp_utilisateur
         and parametres.smtp_mot_de_passe and parametres.smtp_from_email
     )
-    return api_configuree or smtp_configure
+    if parametres.email_transport == "brevo_api":
+        # Render Free bloque SMTP : ne jamais signaler que l'envoi est prêt
+        # si la configuration API HTTPS obligatoire manque.
+        return _brevo_api_configure()
+    return _brevo_api_configure() or smtp_configure
 
 
 def _envoyer_via_brevo(destinataire: str, sujet: str, corps: str) -> None:
@@ -70,9 +77,15 @@ def envoyer_email(destinataire: str, sujet: str, corps: str) -> None:
             "ou un ensemble SMTP complet sur un serveur autorisant la sortie SMTP."
         )
 
-    # Sur Render Free, l'API HTTPS est utilisée même si d'anciennes variables SMTP
-    # sont définies, car les ports SMTP sortants y sont bloqués.
-    if parametres.brevo_api_key and parametres.smtp_from_email:
+    # Le mode forcé "brevo_api" est utilisé par Render Free : ne jamais
+    # retomber sur SMTP car les ports sortants SMTP y sont bloqués.
+    if parametres.email_transport == "brevo_api" or (
+        parametres.brevo_api_key and parametres.smtp_from_email
+    ):
+        if not _brevo_api_configure():
+            raise EmailNonConfigure(
+                "Le transport BREVO_API_KEY via HTTPS est requis par cette configuration."
+            )
         _envoyer_via_brevo(destinataire, sujet, corps)
         return
 
