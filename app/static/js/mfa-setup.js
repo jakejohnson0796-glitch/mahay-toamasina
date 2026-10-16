@@ -55,9 +55,7 @@
           var temp = document.createElement("textarea");
           temp.value = text;
           temp.setAttribute("readonly", "");
-          temp.style.position = "fixed";
-          temp.style.opacity = "0";
-          temp.style.pointerEvents = "none";
+          temp.className = "mfa-copy-temporary";
           document.body.appendChild(temp);
           temp.select();
           var ok = false;
