@@ -1,4 +1,4 @@
-/* Gasy Mahay — rendu sécurisé des réponses IA */
+/* MITARIDALA — rendu sécurisé des réponses IA */
 // MODIF : nouveau moteur navigateur unique pour Markdown, KaTeX, chimie,
 // code et tableaux. Le texte source reste du texte brut ; seul le DOM
 // final est généré après sanitization DOMPurify.
@@ -19,7 +19,7 @@
   function verifierDependances() {
     const etat = etatDependances();
     if (!etat.marked || !etat.purify || !etat.katex) {
-      console.warn("[Gasy Mahay] rendu IA en mode dégradé", etat);
+      console.warn("[MITARIDALA] rendu IA en mode dégradé", etat);
     }
     return etat;
   }
@@ -363,7 +363,7 @@
             }
           } catch (erreur) {
             morceaux.push(racine.createTextNode(item.contenu));
-            console.warn("[Gasy Mahay] formule KaTeX invalide :", erreur);
+            console.warn("[MITARIDALA] formule KaTeX invalide :", erreur);
           }
         }
         dernier = motif.lastIndex;
@@ -655,7 +655,7 @@
     try {
       rendreTous(document);
     } catch (erreur) {
-      console.warn("[Gasy Mahay] rendu IA partiel :", erreur);
+      console.warn("[MITARIDALA] rendu IA partiel :", erreur);
     }
 
     if ((!etat.marked || !etat.purify || !etat.katex) && numeroTentative < 100) {
@@ -675,7 +675,7 @@ En chimie : \ce{2H2 + O2 -> 2H2O}.
 
 En informatique :
 \`\`\`python
-print("Bonjour Gasy Mahay")
+print("Bonjour MITARIDALA")
 \`\`\`
 `;
 
