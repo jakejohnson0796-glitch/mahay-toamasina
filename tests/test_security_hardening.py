@@ -169,6 +169,7 @@ def test_brevo_api_sends_transactional_email_over_https_without_smtp(monkeypatch
     from app import email_utils
     from app.config import parametres
 
+    monkeypatch.setattr(parametres, "email_transport", "brevo_api")
     monkeypatch.setattr(parametres, "brevo_api_key", "cle-api-test")
     monkeypatch.setattr(parametres, "brevo_sender_name", "Gasy Mahay")
     monkeypatch.setattr(parametres, "smtp_from_email", "securite@example.org")
