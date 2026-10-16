@@ -1,4 +1,4 @@
-/* Gasy Mahay — interactions connexion / inscription. */
+/* MITARIDALA — interactions connexion / inscription. */
 (function () {
   "use strict";
 
