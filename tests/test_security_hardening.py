@@ -220,6 +220,23 @@ def test_brevo_api_sends_transactional_email_over_https_without_smtp(monkeypatch
     assert payload["textContent"] == "Votre code est 004261."
 
 
+
+def test_render_brevo_mode_does_not_report_smtp_only_as_configured(monkeypatch):
+    import pytest
+    from app import email_utils
+    from app.config import parametres
+
+    monkeypatch.setattr(parametres, "email_transport", "brevo_api")
+    monkeypatch.setattr(parametres, "brevo_api_key", "")
+    monkeypatch.setattr(parametres, "smtp_from_email", "securite@example.org")
+    monkeypatch.setattr(parametres, "smtp_hote", "smtp.example.org")
+    monkeypatch.setattr(parametres, "smtp_utilisateur", "user")
+    monkeypatch.setattr(parametres, "smtp_mot_de_passe", "mot-de-passe-test")
+
+    assert email_utils.email_configure() is False
+    with pytest.raises(email_utils.EmailNonConfigure):
+        email_utils.envoyer_email("etudiant@example.net", "Test", "Test")
+
 def test_email_not_configured_without_brevo_or_smtp(monkeypatch):
     import pytest
     from app import email_utils
