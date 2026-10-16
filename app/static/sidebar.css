@@ -348,5 +348,5 @@
 .tb-sidebar-brand-copy{display:grid;gap:.15rem;min-width:0;}
 .tb-sidebar-brand-copy .tb-sidebar-logo{overflow-wrap:anywhere;}
 .tb-sidebar-brand-copy .tb-sidebar-lieu{line-height:1.25;}
-.tb-sidebar.is-collapsed .tb-sidebar-brand-copy{display:none;}
+body.sidebar-compact .tb-sidebar-brand-copy{display:none;}
 @media (max-width:420px){.tb-sidebar-brand-lockup{gap:.5rem}.tb-sidebar-logo-mark{width:30px;height:30px;flex-basis:30px}}
