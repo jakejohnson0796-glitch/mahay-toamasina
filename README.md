@@ -195,6 +195,9 @@ Le projet intègre plusieurs protections côté serveur :
 - limitation anti-brute-force et anti-spam ;
 - double authentification TOTP ;
 - codes de secours 2FA hachés ;
+- choix de double authentification par application TOTP hors ligne ou code OTP par email, sans SMS payant ;
+- codes email à usage unique, expirables, hachés en base et protégés contre le rejeu ;
+
 - validation du type réel des fichiers déposés ;
 - contrôles contre certains chemins dangereux dans les archives ;
 - contrôles d'autorisation côté serveur pour les documents, cercles et fonctions d'administration ;
@@ -324,11 +327,16 @@ LIVEKIT_API_SECRET=
 ### Mot de passe oublié
 
 ~~~text
+EMAIL_TRANSPORT=brevo_api  # nécessaire sur Render Free ; auto en local
+BREVO_API_KEY=
+BREVO_SENDER_NAME=Gasy Mahay
+SMTP_FROM_EMAIL=
+
+# SMTP alternatif uniquement si l'hébergeur autorise les ports sortants
 SMTP_HOTE=
 SMTP_PORT=587
 SMTP_UTILISATEUR=
 SMTP_MOT_DE_PASSE=
-SMTP_FROM_EMAIL=
 ~~~
 
 ### Administration

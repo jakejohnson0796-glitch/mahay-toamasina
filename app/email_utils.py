@@ -1,58 +1,98 @@
-"""
-Envoi d'email via SMTP, pour la fonctionnalite "mot de passe oublie"
-(voir /mot-de-passe-oublie dans auth_router.py). Utilise `smtplib` de la
-bibliotheque standard Python -- aucune dependance externe a ajouter,
-contrairement a un envoi de SMS (Twilio etc.) qui est en plus payant.
-Fonctionne avec n'importe quel fournisseur SMTP : un compte Gmail avec
-un "mot de passe d'application" (myaccount.google.com/apppasswords),
-l'offre SMTP gratuite de Brevo/Sendinblue, ou tout autre fournisseur.
+"""Envoi d'emails transactionnels pour la récupération et la MFA.
 
-Module volontairement minimal : un seul usage (code de reinitialisation
-a 6 chiffres), pas de generalisation prematuree vers d'autres types
-d'email (notifications, etc.) tant que le besoin ne se presente pas.
+Sur Render Free, l'API HTTPS Brevo est préférable car les connexions SMTP sortantes
+sur les ports 25, 465 et 587 sont bloquées. L'API utilise HTTPS (443). SMTP reste
+disponible en local ou chez un hébergeur qui autorise cette connexion.
+
+Aucun SMS n'est envoyé par ce module. Les codes sont générés, hachés, expirés et
+consommés dans le routeur métier ; ce module assure uniquement leur transport.
 """
+import json
 import smtplib
+import urllib.error
+import urllib.request
 from email.mime.text import MIMEText
 
 from .config import parametres
 
 
 class EmailNonConfigure(RuntimeError):
-    """Levee si SMTP_HOTE / SMTP_UTILISATEUR / SMTP_MOT_DE_PASSE /
-    SMTP_FROM_EMAIL ne sont pas toutes definies. Permet d'afficher un
-    message clair a l'utilisateur plutot qu'une 500 brute si "mot de
-    passe oublie" est utilise avant que le SMTP soit configure."""
+    """Aucun transport e-mail compatible n'est configuré."""
+
+
+def _brevo_api_configure() -> bool:
+    return bool(parametres.brevo_api_key and parametres.smtp_from_email)
 
 
 def email_configure() -> bool:
-    return bool(
+    """Retourne True si le transport e-mail sélectionné est configuré."""
+    smtp_configure = bool(
         parametres.smtp_hote and parametres.smtp_utilisateur
         and parametres.smtp_mot_de_passe and parametres.smtp_from_email
     )
+    if parametres.email_transport == "brevo_api":
+        # Render Free bloque SMTP : ne jamais signaler que l'envoi est prêt
+        # si la configuration API HTTPS obligatoire manque.
+        return _brevo_api_configure()
+    return _brevo_api_configure() or smtp_configure
+
+
+def _envoyer_via_brevo(destinataire: str, sujet: str, corps: str) -> None:
+    """Envoie un email texte via l'API transactionnelle Brevo en HTTPS."""
+    payload = {
+        "sender": {
+            "name": parametres.brevo_sender_name or "Gasy Mahay",
+            "email": parametres.smtp_from_email,
+        },
+        "to": [{"email": destinataire}],
+        "subject": sujet,
+        "textContent": corps,
+    }
+    requete = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "accept": "application/json",
+            "api-key": parametres.brevo_api_key,
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(requete, timeout=10) as reponse:
+            if not 200 <= reponse.status < 300:
+                raise RuntimeError(f"Brevo a retourné le statut HTTP {reponse.status}.")
+            reponse.read()
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"Échec de l'API e-mail HTTPS (HTTP {exc.code}).") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError("Le service e-mail HTTPS est momentanément inaccessible.") from exc
 
 
 def envoyer_email(destinataire: str, sujet: str, corps: str) -> None:
-    """Envoie un email texte brut. Leve EmailNonConfigure si le SMTP
-    n'est pas configure, ou l'exception smtplib telle quelle si l'envoi
-    echoue (identifiants invalides, hote injoignable...) : c'est a
-    l'appelant de decider comment presenter l'erreur (voir
-    /mot-de-passe-oublie dans auth_router.py)."""
+    """Envoie via Brevo API HTTPS, ou via SMTP en solution secondaire."""
     if not email_configure():
         raise EmailNonConfigure(
-            "L'envoi d'email n'est pas configure sur ce serveur (SMTP_HOTE / SMTP_UTILISATEUR / "
-            "SMTP_MOT_DE_PASSE / SMTP_FROM_EMAIL manquantes)."
+            "Configurez BREVO_API_KEY et SMTP_FROM_EMAIL (recommandé sur Render Free), "
+            "ou un ensemble SMTP complet sur un serveur autorisant la sortie SMTP."
         )
+
+    # Le mode forcé "brevo_api" est utilisé par Render Free : ne jamais
+    # retomber sur SMTP car les ports sortants SMTP y sont bloqués.
+    if parametres.email_transport == "brevo_api" or (
+        parametres.brevo_api_key and parametres.smtp_from_email
+    ):
+        if not _brevo_api_configure():
+            raise EmailNonConfigure(
+                "Le transport BREVO_API_KEY via HTTPS est requis par cette configuration."
+            )
+        _envoyer_via_brevo(destinataire, sujet, corps)
+        return
 
     message = MIMEText(corps, "plain", "utf-8")
     message["Subject"] = sujet
     message["From"] = parametres.smtp_from_email
     message["To"] = destinataire
-
-    # STARTTLS sur le port 587 : convention la plus repandue chez les
-    # fournisseurs SMTP grand public (Gmail, Brevo...). Si un jour un
-    # fournisseur exige le SSL implicite (port 465, smtplib.SMTP_SSL),
-    # ce sera a adapter ici -- pas anticipe tant que ce n'est pas
-    # reellement necessaire.
     with smtplib.SMTP(parametres.smtp_hote, parametres.smtp_port, timeout=10) as serveur:
         serveur.starttls()
         serveur.login(parametres.smtp_utilisateur, parametres.smtp_mot_de_passe)

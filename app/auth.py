@@ -37,6 +37,16 @@ def empreinte_session_utilisateur(utilisateur: Utilisateur) -> str:
         str(utilisateur.role.value),
         "2fa=1" if utilisateur.totp_active else "2fa=0",
     ])
+    # Compatibilité : conserver l'empreinte historique pour tous les comptes
+    # sans MFA email afin de ne pas déconnecter toute la base au déploiement.
+    if getattr(utilisateur, "email_otp_active", False):
+        source += "|email-otp=1"
+    # None conserve la valeur historique pour les sessions créées avant la
+    # migration. Une fois la MFA modifiée, le jeton aléatoire empêche qu'une
+    # ancienne session redevienne valide si les booléens reviennent à l'état initial.
+    generation_mfa = getattr(utilisateur, "mfa_session_generation", None)
+    if generation_mfa:
+        source += "|mfa-generation=" + generation_mfa
     return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
 

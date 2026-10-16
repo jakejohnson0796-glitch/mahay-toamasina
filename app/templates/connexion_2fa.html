@@ -1,18 +1,52 @@
 {% extends "base.html" %}
-{% block titre %}Verification en deux etapes — Gasy Mahay{% endblock %}
+{% block titre %}Vérification en deux étapes — Gasy Mahay{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
-<h2>Verification en deux etapes</h2>
-<div class="carte-formulaire">
-  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
-  <p>Entrez le code a 6 chiffres de votre application d'authentification, ou l'un de vos codes de secours.</p>
-  <form method="post" action="/connexion/2fa">
-    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-    <label for="code">Code</label>
-    <input type="text" id="code" name="code" required autocomplete="one-time-code" inputmode="text" autofocus>
-    <button class="bouton bouton-primaire bouton-form" type="submit">Verifier</button>
-  </form>
-</div>
+  <p class="eyebrow">Sécurité du compte</p>
+  <h2>Vérification en deux étapes</h2>
+  <div class="carte-formulaire">
+    {% if erreur %}<div class="erreur" role="alert">{{ erreur }}</div>{% endif %}
+    <p>Le mot de passe est accepté. Confirmez maintenant votre identité avec l'une des méthodes activées sur votre compte.</p>
+    {% if email_disponible %}
+      <div class="ops-subsection">
+        <h3>Code à usage unique par e-mail</h3>
+        <p>Adresse de destination : <strong>{{ email_masque }}</strong>. Le code expire après 10 minutes et ne peut être utilisé qu'une fois.</p>
+        {% if email_statut == "envoye" %}
+          <p role="status">Un nouveau code vient d'être envoyé. Vérifiez aussi le dossier spam.</p>
+        {% elif email_statut == "limite" %}
+          <p role="status">Trop de demandes de codes. Réessayez dans quelques minutes.</p>
+        {% elif email_statut == "non_configure" %}
+          <p role="alert">L'envoi d'e-mails n'est pas configuré. Aucune méthode SMS ne sera utilisée.</p>
+        {% elif email_statut == "echec" %}
+          <p role="alert">L'envoi a échoué. Réessayez plus tard ou utilisez l'application d'authentification si elle est activée.</p>
+        {% endif %}
+        <form method="post" action="/connexion/2fa/envoyer-email">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire bouton-form" type="submit">Envoyer / renvoyer le code e-mail</button>
+        </form>
+      </div>
+    {% endif %}
+    <form method="post" action="/connexion/2fa">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="methode">Méthode de vérification</label>
+      <select id="methode" name="methode" required>
+        {% if totp_disponible %}
+          <option value="totp" {{ 'selected' if methode_defaut == 'totp' else '' }}>Application d'authentification (TOTP)</option>
+        {% endif %}
+        {% if email_disponible %}
+          <option value="email" {{ 'selected' if methode_defaut == 'email' else '' }}>Code reçu par e-mail</option>
+        {% endif %}
+        {% if codes_secours_disponibles %}
+          <option value="secours">Code de secours à usage unique</option>
+        {% endif %}
+      </select>
+      <label for="code">Code de vérification</label>
+      <input type="text" id="code" name="code" required autocomplete="one-time-code"
+             inputmode="text" maxlength="32" autofocus>
+      <p class="stat-label">Saisissez le code à 6 chiffres correspondant à la méthode choisie, ou un code de secours au format XXXX-XXXX.</p>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Vérifier et me connecter</button>
+    </form>
+  </div>
 </div>
 {% endblock %}

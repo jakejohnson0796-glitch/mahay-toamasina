@@ -48,6 +48,13 @@ services:
         sync: false
       - key: ADMIN_INITIAL_PASSWORD
         sync: false
+      # Forcer l'API HTTPS : le plan Free bloque les ports SMTP sortants.
+      - key: EMAIL_TRANSPORT
+        value: brevo_api
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: Gasy Mahay
       - key: SMTP_HOTE
         sync: false
       - key: SMTP_PORT
