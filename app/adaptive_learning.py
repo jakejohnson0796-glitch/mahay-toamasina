@@ -1,4 +1,4 @@
-"""Transitions déterministes pour le parcours adaptatif de Gasy Mahay."""
+"""Transitions déterministes pour le parcours adaptatif de MITARIDALA."""
 from typing import Any, Dict
 
 
