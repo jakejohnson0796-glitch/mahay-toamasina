@@ -17,7 +17,8 @@
 </script>
 <title>{% block titre %}MITARIDALA — Madagascar{% endblock %}</title>
 <link rel="manifest" href="/static/manifest.json">
-<link rel="icon" href="/static/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/static/images/site/mitaridala-mark.svg">
+<link rel="alternate icon" href="/static/favicon.ico">
 <link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
 <meta name="theme-color" content="#0A3538">
 <meta name="description" content="MITARIDALA — plateforme éducative malgache pour apprendre, réviser et collaborer. Documents, cercles d’étude, universités et outils d’apprentissage réunis au même endroit.">
@@ -154,8 +155,13 @@
   <aside class="tb-sidebar" id="nav-principale" aria-label="Navigation principale">
     <div class="tb-sidebar-marque">
       <a href="/" class="sans-decoration">
-        <span class="tb-sidebar-logo">MITARIDALA</span>
-        <span class="tb-sidebar-lieu">Ton chemin vers la réussite</span>
+        <span class="tb-sidebar-brand-lockup">
+          <img class="tb-sidebar-logo-mark" src="/static/images/site/mitaridala-mark.svg" alt="" width="34" height="34">
+          <span class="tb-sidebar-brand-copy">
+            <span class="tb-sidebar-logo">MITARIDALA</span>
+            <span class="tb-sidebar-lieu">Ton chemin vers la réussite</span>
+          </span>
+        </span>
       </a>
       <button type="button" class="tb-sidebar-collapse" id="bouton-sidebar-collapse" aria-label="Réduire la barre latérale" aria-pressed="false" title="Réduire la barre latérale">
         <span aria-hidden="true">‹</span>
