@@ -1,6 +1,6 @@
-# MITARIDALA — plateforme d'apprentissage pour les étudiants de Madagascar
+# MITARIDALA — Ton chemin vers la réussite
 
-MITARIDALA est une plateforme web d'apprentissage et d'entraide conçue pour les étudiants de Madagascar.
+MITARIDALA est une plateforme éducative malgache qui guide les étudiants de la recherche de ressources jusqu'à la compréhension, la pratique et la progression.
 
 MITARIDALA rassemble dans un même espace :
 
