@@ -2,7 +2,7 @@
 {% from "components/icone.html" import icone %}
 {% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
 {% from "components/constellation.html" import constellation_avatar %}
-{% block titre %}Mon tableau de bord — Gasy Mahay{% endblock %}
+{% block titre %}Mon tableau de bord — MITARIDALA{% endblock %}
 {% block main_classe %}main-tb{% endblock %}
 {% block contenu %}
 {% if request.query_params.get("ok") == "profil_academique_actualise" %}<div class="info">Profil academique mis a jour.</div>{% endif %}
@@ -12,7 +12,7 @@
     {% if parcours_demarrage is defined and not parcours_demarrage.onboarding_termine %}
     <section class="tb-onboarding-banner" aria-labelledby="tb-onboarding-title">
       <div>
-        <p class="eyebrow">Nouveau sur Gasy Mahay</p>
+        <p class="eyebrow">Nouveau sur MITARIDALA</p>
         <h2 id="tb-onboarding-title">Ton démarrage est à {{ parcours_demarrage.etapes_terminees }}/3.</h2>
         <p>Découvre le Tuteur IA, fais un quiz et rejoins ton cercle. En quelques minutes, tu auras déjà commencé ton parcours.</p>
       </div>
@@ -185,7 +185,7 @@
       {% endif %}
 
       <div class="tb-carte-premium">
-        <p class="tb-etiquette-carte tb-etiquette-premium">{{ icone("premium", 15) }} Gasy Mahay Premium</p>
+        <p class="tb-etiquette-carte tb-etiquette-premium">{{ icone("premium", 15) }} MITARIDALA Premium</p>
         <p class="tb-premium-texte">
           {% if abonnement and abonnement.statut.value == "actif" %}
             Votre abonnement est actif pour encore <strong>{{ jours_restants }} jour{{ "s" if jours_restants > 1 else "" }}</strong>.
@@ -352,7 +352,7 @@
         {% else %}
         {{ etat_vide_constellation(
           titre="Aucune activite recente",
-          texte="Commence a explorer Gasy Mahay.",
+          texte="Commence a explorer MITARIDALA.",
         ) }}
         {% endif %}
       </div>
