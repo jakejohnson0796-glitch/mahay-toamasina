@@ -15,14 +15,14 @@
     document.documentElement.setAttribute("data-theme", theme);
   })();
 </script>
-<title>{% block titre %}Gasy Mahay — Madagascar{% endblock %}</title>
+<title>{% block titre %}MITARIDALA — Madagascar{% endblock %}</title>
 <link rel="manifest" href="/static/manifest.json">
 <link rel="icon" href="/static/favicon.ico">
 <link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
 <meta name="theme-color" content="#0A3538">
-<meta name="description" content="Gasy Mahay — plateforme publique d’apprentissage et de collaboration pour les étudiants malagasy. Documents, cercles d’étude, universités et outils d’apprentissage à Madagascar.">
-<meta property="og:title" content="Gasy Mahay — Madagascar">
-<meta property="og:description" content="Apprendre, réviser et collaborer entre étudiants malagasy.">
+<meta name="description" content="MITARIDALA — plateforme éducative malgache pour apprendre, réviser et collaborer. Documents, cercles d’étude, universités et outils d’apprentissage réunis au même endroit.">
+<meta property="og:title" content="MITARIDALA — Madagascar">
+<meta property="og:description" content="Ton chemin vers la réussite : apprendre, réviser et collaborer.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{{ request.url }}">
 <meta name="twitter:card" content="summary">
@@ -154,8 +154,8 @@
   <aside class="tb-sidebar" id="nav-principale" aria-label="Navigation principale">
     <div class="tb-sidebar-marque">
       <a href="/" class="sans-decoration">
-        <span class="tb-sidebar-logo">Gasy Mahay</span>
-        <span class="tb-sidebar-lieu">Madagascar</span>
+        <span class="tb-sidebar-logo">MITARIDALA</span>
+        <span class="tb-sidebar-lieu">Ton chemin vers la réussite</span>
       </a>
       <button type="button" class="tb-sidebar-collapse" id="bouton-sidebar-collapse" aria-label="Réduire la barre latérale" aria-pressed="false" title="Réduire la barre latérale">
         <span aria-hidden="true">‹</span>
@@ -261,7 +261,7 @@
         <a class="tb-menu-compte-item" href="/cadre-legal"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Éthique et confidentialité</span></a>
         <a class="tb-menu-compte-item" href="/mode-emploi"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Mode d'emploi</span></a>
 
-        <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter Gasy Mahay</span></a>
+        <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
         {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
         <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %} · {{ nb_admin_notifs }} nouvelles{% endif %}</span></a>
         {% endif %}
@@ -340,7 +340,7 @@
   <div class="app-page">
     <header class="mobile-entete-app" aria-label="En-tête mobile">
       <a href="{% if request.session.get("user_id") %}/dashboard{% else %}/{% endif %}" class="sans-decoration">
-        <span class="mobile-entete-app-marque">Gasy Mahay</span>
+        <span class="mobile-entete-app-marque">MITARIDALA</span>
         <span class="mobile-entete-app-sous-marque">Madagascar</span>
       </a>
       {% if request.session.get("user_id") and utilisateur is defined and utilisateur %}
@@ -366,7 +366,7 @@
       <span class="notification-inactivite-icone" aria-hidden="true">!</span>
       <div class="notification-inactivite-contenu">
         <strong>Bienvenue de retour</strong>
-        <span>Tu n'as pas utilisé Gasy Mahay depuis {{ rappel_inactivite.jours }} jour{{ "s" if rappel_inactivite.jours != 1 else "" }}. Reprends ton apprentissage quand tu le souhaites.</span>
+        <span>Tu n'as pas utilisé MITARIDALA depuis {{ rappel_inactivite.jours }} jour{{ "s" if rappel_inactivite.jours != 1 else "" }}. Reprends ton apprentissage quand tu le souhaites.</span>
       </div>
       <form method="post" action="/notifications/inactivite/lue">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -390,7 +390,7 @@
           <span class="pied-contact-icone">💬</span> WhatsApp · +261 33 75 817 32
         </a>
       </div>
-      <p>Gasy Mahay — un hub de revision imagine pour les étudiants à Madagascar.</p>
+      <p>MITARIDALA — un hub de revision imagine pour les étudiants à Madagascar.</p>
       <p class="pied-liens"><a href="/faq">FAQ</a> · <a href="/feedback">Donner mon avis</a> · <a href="/cadre-legal">Éthique, conditions et confidentialité</a></p>
     </footer>
   </div>
@@ -400,7 +400,7 @@
   <div class="pwa-installation-corps">
     <span class="pwa-installation-icone" aria-hidden="true">{{ icone("premium", 18) }}</span>
     <div class="pwa-installation-texte">
-      <strong>Installer Gasy Mahay</strong>
+      <strong>Installer MITARIDALA</strong>
       <span>Un accès plus rapide depuis l’écran d’accueil de ton téléphone.</span>
     </div>
   </div>
