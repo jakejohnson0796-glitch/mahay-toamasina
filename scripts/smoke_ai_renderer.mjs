@@ -51,7 +51,46 @@ if (visibleText.includes('\\lambda') || visibleText.includes('\\det')) {
   throw new Error('Raw LaTeX command remains outside rendered KaTeX nodes');
 }
 
-// Régression quiz : les anciens délimiteurs $...$ et $$...$$ doivent être
+// Régression du rendu du texte IA historique : paragraphes séparés par les deux
+// caractères \n, Markdown et entités d'espacement issues de certains transports.
+const legacyMarkdownHost = window.document.createElement('div');
+window.document.body.appendChild(legacyMarkdownHost);
+const legacyMarkdownSource =
+  "La réduction d’une fraction consiste à exprimer la même valeur numérique avec des nombres plus petits, en éliminant les facteurs communs au numérateur et au dénominateur.\\n\\n" +
+  "**Pourquoi le PGCD ?**\\n" +
+  "Le plus grand commun diviseur (PGCD) est le plus grand entier qui divise simultanément le numérateur et le dénominateur.\\n\\n" +
+  "**Méthode pas à pas**\\n" +
+  "1. **Calcul du PGCD** : décomposition en facteurs premiers ou algorithme d’Euclide.\\n" +
+  "2. **Division** : diviser les deux termes par le PGCD trouvé.\\n" +
+  "3. **Vérification** : contrôler que le PGCD vaut 1.\\n\\n" +
+  "**Conseils pour éviter les erreurs**\\n" +
+  "- Ne pas confondre le PPCM avec le PGCD.\\n" +
+  "- Vérifier le plus grand commun diviseur.\\n" +
+  "- Refaire le calcul du PGCD.\\n\\n" +
+  "En suivant ces étapes, la réduction devient fiable et rapide. &#x20;";
+window.rendreReponseIA(legacyMarkdownSource, legacyMarkdownHost);
+if ((legacyMarkdownHost.textContent || '').includes('\\n')) {
+  throw new Error('Escaped newline sequences remained visible in legacy AI Markdown');
+}
+if (legacyMarkdownHost.querySelectorAll('p').length < 4 ||
+    legacyMarkdownHost.querySelectorAll('strong').length < 4 ||
+    legacyMarkdownHost.querySelectorAll('ol li').length !== 3 ||
+    legacyMarkdownHost.querySelectorAll('ul li').length !== 3) {
+  throw new Error('Legacy AI paragraphs, bold labels or lists were not rendered as Markdown');
+}
+if ((legacyMarkdownHost.textContent || '').includes('&#x20;')) {
+  throw new Error('Whitespace HTML entity remained visible in rendered AI content');
+}
+
+// La normalisation des retours à la ligne ne doit pas convertir \\nabla en newline.
+const nakedNablaHost = window.document.createElement('div');
+window.document.body.appendChild(nakedNablaHost);
+window.rendreReponseIA("Notation : \\nabla f", nakedNablaHost);
+if (!nakedNablaHost.querySelector('.katex, .gm-latex-fallback')) {
+  throw new Error('The LaTeX command \\\\nabla was incorrectly decoded as a newline');
+}
+
+// Régression quiz : les anciens délimiteurs $...$ et $...$ doivent être
 // convertis avant le passage Markdown.
 const dollarHost = window.document.createElement('div');
 window.document.body.appendChild(dollarHost);

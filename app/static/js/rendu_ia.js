@@ -391,16 +391,27 @@
       return "__GASY_AI_CODE_" + index + "__";
     });
 
-    // Certaines réponses IA arrivent encore avec les deux caractères
-    // « \\n » au lieu d'un vrai saut de ligne. On les décode uniquement
-    // lorsqu'ils introduisent une structure Markdown évidente (liste,
-    // numérotation ou section), pour ne jamais casser une commande LaTeX
-    // légitime comme \\nabla.
+    // Certaines réponses IA historiques contiennent les deux caractères
+    // \n au lieu d'un vrai saut de ligne. On protège d'abord les commandes
+    // LaTeX commençant par n (nabla, neq, nu, notin...) pour ne jamais les
+    // transformer en retours à la ligne.
+    const commandesLatexN = [];
+    resultat = resultat.replace(
+      /\\(nabla|neq|nu|neg|nexists|notin|nsubseteq|nleq|ngeq|nleftarrow|nrightarrow|nleftrightarrow|nLeftarrow|nRightarrow|nLeftrightarrow|nwarrow|nearrow|nmid|nparallel|nsim|ncong|nvdash|nvDash|natural|newcommand|newline|not|nleqslant|ngeqslant|nprec|nsucc|ntriangleleft|ntriangleright)\b/g,
+      function (match) {
+        return "__GASY_AI_NLATEX_" + (commandesLatexN.push(match) - 1) + "__";
+      }
+    );
+
+    // Décoder toutes les séquences de nouvelle ligne héritées, pas seulement
+    // celles qui précèdent une liste. Les blocs de code ont été protégés avant.
+    // Les entités d'espace fréquentes sont converties avant le parsing Markdown.
     resultat = resultat
-      .replace(/\\n(?=\\s*[-*•]\\s+)/g, "\n")
-      .replace(/\\n(?=\\s*\\d+[.)]\\s+)/g, "\n")
-      .replace(/\\n(?=\\s*(?:Correction|Exercice|Réponse|Solution|Notion)\\s*:)/gi, "\n")
-      .replace(/\\n\\s*\\n(?=\\s*[A-ZÀ-ÖØ-Þ][^\\n]{0,80}:)/g, "\n\n");
+      .replace(/\\r\\n|\\n/g, "\n")
+      .replace(/(?:&#(?:x0*20|0*32|x0*a0|0*160);|&(?:nbsp|ensp|emsp|thinsp);)/gi, " ")
+      .replace(/[ \t]+(?=\n|$)/g, "");
+
+
 
     // Les anciens modèles produisent parfois \\textit{...}/\\emph{...}
     // hors d'un délimiteur mathématique. Dans Markdown, l'équivalent sûr
@@ -409,6 +420,9 @@
       .replace(/\\(?:textit|emph)\\{([^{}]*)\\}/g, "*$1*")
       .replace(/\\textbf\\{([^{}]*)\\}/g, "**$1**");
 
+    resultat = resultat.replace(/__GASY_AI_NLATEX_(\d+)__/g, function (_match, index) {
+      return commandesLatexN[Number(index)] || "";
+    });
     resultat = resultat.replace(/__GASY_AI_CODE_(\d+)__/g, function (_match, index) {
       return codes[Number(index)] || "";
     });
@@ -609,7 +623,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "6" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -626,7 +640,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "5";
+    cible.dataset.renduVersion = "6";
     cible.dataset.renduDeps = signature;
     return cible;
   }
