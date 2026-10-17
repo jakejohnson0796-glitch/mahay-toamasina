@@ -151,7 +151,7 @@
   function synchroniser() {
     var langue = "";
     try { langue = window.localStorage.getItem("mahay-langue") || ""; } catch (_erreur) {}
-    if (selecteur && (selecteur.value === "mg" || selecteur.value === "fr")) langue = selecteur.value;
+    if (langue !== "mg" && langue !== "fr") langue = selecteur && selecteur.value === "mg" ? "mg" : "fr";
     champ.value = langue === "mg" ? "mg" : "fr";
   }
   synchroniser();
