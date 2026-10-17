@@ -67,7 +67,7 @@
   </section>
 
   <div class="radar-privacy" role="note">
-    {{ icone("shield-check", 19) }}
+    {{ icone("securite", 19) }}
     <div><strong>Conçu pour soutenir, pas classer.</strong> Ce radar affiche uniquement des tendances collectives, sans noms, classements individuels ni notes nominatives. Une notion n'apparaît que si au moins {{ radar.seuil_confidentialite }} étudiants ont une mesure disponible. Le professeur garde la décision pédagogique.</div>
   </div>
 
@@ -111,7 +111,7 @@
     <label for="plan-reprise" class="sr-only">Plan pédagogique proposé</label>
     <textarea id="plan-reprise" class="radar-plan" readonly>{{ plan_reprise }}</textarea>
     <div class="radar-plan-actions">
-      <button type="button" class="bouton bouton-primaire" id="copier-plan">{{ icone("copy", 15) }} Copier le plan</button>
+      <button type="button" class="bouton bouton-primaire" id="copier-plan">{{ icone("documents", 15) }} Copier le plan</button>
       <span class="radar-status" id="radar-copie-etat" role="status" aria-live="polite"></span>
     </div>
   </section>
