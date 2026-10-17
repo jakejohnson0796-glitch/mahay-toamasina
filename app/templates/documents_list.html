@@ -5,6 +5,21 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
+<style nonce="{{ csp_nonce(request) }}">
+  .doc-fiche{margin:.75rem 0;padding:.72rem .78rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);color:var(--content-text)}
+  .doc-fiche summary{cursor:pointer;font-size:.76rem;font-weight:750;color:var(--content-text);line-height:1.45}
+  .doc-fiche p{font-size:.75rem;line-height:1.6;color:var(--content-text-muted);overflow-wrap:anywhere}
+  .doc-fiche strong{color:var(--content-text)}
+  .doc-fiche ul{margin:.25rem 0 .7rem;padding-left:1.2rem;font-size:.74rem;line-height:1.6;color:var(--content-text-muted)}
+  .doc-fiche-etat{display:inline-flex;margin-top:.35rem;padding:.18rem .45rem;border-radius:999px;background:var(--content-surface);border:1px solid var(--content-border);font-size:.62rem;color:var(--content-text-muted)}
+  .doc-depots-personnels{margin:1rem 0 1.25rem;padding:1rem;border:1px solid var(--content-border);border-radius:18px;background:var(--content-surface)}
+  .doc-depots-personnels h3{margin:0 0 .25rem;color:var(--content-text);font-size:1rem}
+  .doc-depots-personnels>p{margin:0 0 .75rem;color:var(--content-text-muted);font-size:.76rem;line-height:1.5}
+  .doc-depot-personnel{padding:.7rem 0;border-top:1px solid var(--content-border)}
+  .doc-depot-personnel h4{margin:0;color:var(--content-text);font-size:.83rem}
+  .doc-depot-personnel-meta{margin:.18rem 0 .45rem;color:var(--content-text-muted);font-size:.68rem}
+  @media(max-width:560px){.doc-fiche{padding:.65rem}.doc-depots-personnels{padding:.8rem}}
+</style>
 <p class="eyebrow">{% if cercle %}Cercle {{ cercle.nom }}{% else %}Bibliotheque{% endif %}</p>
 <div class="tb-panneau-entete">
   <h2>{% if cercle %}Documents du cercle{% else %}Documents{% endif %}</h2>
@@ -39,6 +54,36 @@
     <button class="bouton bouton-secondaire" type="submit">Filtrer</button>
   </div>
 </form>
+
+{% if mes_depots %}
+<section class="doc-depots-personnels" aria-labelledby="mes-depots-titre">
+  <h3 id="mes-depots-titre">Mes dépôts à valider ou à corriger</h3>
+  <p>Ces fichiers ne sont visibles qu’à toi tant qu’ils ne sont pas approuvés. Leur fiche de compréhension est préparée séparément de la validation.</p>
+  {% for doc in mes_depots %}
+  {% set fiche = fiches_documents.get(doc.id, {}) %}
+  <article class="doc-depot-personnel">
+    <h4>{{ doc.titre }}</h4>
+    <p class="doc-depot-personnel-meta">{{ doc.matiere }} · {{ doc.type_document.value }} · {{ doc.annee }} · Statut : {{ doc.statut.value }}</p>
+    <details class="doc-fiche">
+      <summary>Comprendre ce document</summary>
+      {% if doc.resume_ia %}
+      <span class="doc-fiche-etat">{% if doc.resume_statut_ia == "generee" %}Fiche IA prête{% elif doc.resume_statut_ia == "insuffisante" %}Texte non extractible{% else %}Aperçu provisoire{% endif %}</span>
+      <p>{{ doc.resume_ia }}</p>
+      {% if fiche.get("objectif_pedagogique") %}<p><strong>Objectif du cours :</strong> {{ fiche.get("objectif_pedagogique") }}</p>{% endif %}
+      {% if fiche.get("type_cours") %}<p><strong>Type pédagogique :</strong> {{ fiche.get("type_cours") }}</p>{% endif %}
+      {% if fiche.get("niveau_cible") %}<p><strong>Niveau visé :</strong> {{ fiche.get("niveau_cible") }}</p>{% endif %}
+      {% for etiquette, cle in [("Notions clés", "notions_cles"), ("Compétences travaillées", "competences_visees"), ("Prérequis", "prerequis"), ("Plan repéré", "plan_cours")] %}
+        {% if fiche.get(cle) %}<p><strong>{{ etiquette }} :</strong></p><ul>{% for valeur in fiche.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+      {% endfor %}
+      {% if fiche.get("limites") %}<p>{{ fiche.get("limites") }}</p>{% endif %}
+      {% elif doc.resume_statut_ia in ["en_attente", "en_cours", "a_generer"] %}
+      <p>La fiche est en cours de préparation. Elle apparaîtra ici dès que le traitement du fichier sera terminé.</p>
+      {% else %}<p>La fiche n’a pas encore pu être générée. Le fichier reste disponible pour la modération.</p>{% endif %}
+    </details>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
 
 <div class="doc-filtres-type">
   <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}" class="doc-chip {{ 'doc-chip-actif' if not type_document else '' }}">Tous</a>
@@ -75,6 +120,24 @@ session dediee, avec sa propre verification desktop+mobile.
     <h3 class="doc-titre">{{ doc.titre }}</h3>
     <p class="doc-meta">{{ doc.matiere }} · {{ doc.annee }}</p>
     <p class="doc-ref">{{ doc.reference }}</p>
+    {% set fiche = fiches_documents.get(doc.id, {}) %}
+    <details class="doc-fiche">
+      <summary>Résumé et fiche pédagogique</summary>
+      {% if doc.resume_ia %}
+      <span class="doc-fiche-etat">{% if doc.resume_statut_ia == "generee" %}Fiche IA prête{% elif doc.resume_statut_ia == "insuffisante" %}Texte non extractible{% else %}Aperçu provisoire{% endif %}</span>
+      <p>{{ doc.resume_ia }}</p>
+      {% if fiche.get("objectif_pedagogique") %}<p><strong>Objectif du cours :</strong> {{ fiche.get("objectif_pedagogique") }}</p>{% endif %}
+      {% if fiche.get("type_cours") %}<p><strong>Type pédagogique :</strong> {{ fiche.get("type_cours") }}</p>{% endif %}
+      {% if fiche.get("niveau_cible") %}<p><strong>Niveau visé :</strong> {{ fiche.get("niveau_cible") }}</p>{% endif %}
+      {% if fiche.get("langue") %}<p><strong>Langue :</strong> {{ fiche.get("langue") }}</p>{% endif %}
+      {% for etiquette, cle in [("Notions clés", "notions_cles"), ("Compétences visées", "competences_visees"), ("Prérequis", "prerequis"), ("Plan repéré", "plan_cours")] %}
+        {% if fiche.get(cle) %}<p><strong>{{ etiquette }} :</strong></p><ul>{% for valeur in fiche.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+      {% endfor %}
+      {% if fiche.get("limites") %}<p>{{ fiche.get("limites") }}</p>{% endif %}
+      {% elif doc.resume_statut_ia in ["en_attente", "en_cours", "a_generer"] %}
+      <p>La fiche de compréhension est en cours de préparation.</p>
+      {% else %}<p>Le texte du fichier n’a pas pu être exploité suffisamment pour créer une fiche fiable.</p>{% endif %}
+    </details>
     <div class="doc-actions">
       <a class="bouton bouton-secondaire doc-bouton" href="/documents/{{ doc.id }}/telecharger">Telecharger</a>
       {% if utilisateur %}
