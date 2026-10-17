@@ -465,7 +465,7 @@ const scienceRecoverySource = [
   'Estimation : ( sqrt{1000}approx31,6) ; estimation arrondie : 30\u202F≈\u202F32.',
   "On calcule d'abord (7" + tabEscape + "imes 8 + 9 = 65), puis on explique le résultat.",
   'Physique : (rho = 1 kg/m^3) et (Delta E = hbar omega).',
-  'Chimie : 2H2 + O2 -> 2H2O ; Co n\\'est pas CO.'
+  "Chimie : 2H2 + O2 -> 2H2O ; Co n'est pas CO."
 ].join('\\n');
 window.rendreReponseIA(scienceRecoverySource, scienceRecoveryHost);
 if (scienceRecoveryHost.querySelectorAll('.katex').length < 5) {
@@ -484,7 +484,7 @@ for (const raw of ['sqrt{1000}', 'approx31,6', 'imes 8', 'rho =', 'Delta E', 'hb
     throw new Error('Raw scientific notation remained visible: ' + raw);
   }
 }
-if (!scienceRecoveryText.includes('Co n\\'est pas CO')) {
+if (!scienceRecoveryText.includes("Co n'est pas CO")) {
   throw new Error('Chemical element capitalization Co/CO was altered');
 }
 if (!scienceRecoveryText.includes('30\u202F≈\u202F32')) {
