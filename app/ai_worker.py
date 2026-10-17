@@ -18,7 +18,7 @@ from sqlmodel import Session
 
 from .database import engine
 from .models import SessionTuteur
-from . import ai_queue, ai_quiz, quiz
+from . import ai_queue, ai_quiz, quiz, document_summary
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,12 @@ PAUSE_APRES_FILE_VIDE_SECONDES = 0.5
 
 
 def traiter_tache(tache) -> None:
+    if tache.type_tache == ai_queue.TYPE_RESUME_DOCUMENT:
+        if not tache.document_id:
+            raise RuntimeError("Tâche de fiche pédagogique sans document_id.")
+        document_summary.generer_et_sauvegarder_fiche_document(tache.document_id)
+        return
+
     if tache.type_tache == ai_queue.TYPE_VERIFICATION_QUIZ:
         if not tache.tentative_quiz_id:
             raise RuntimeError("Tache de verification quiz sans tentative_quiz_id.")
@@ -148,6 +154,9 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
                         age_minimum_secondes=60,
                         age_en_cours_secondes=600,
                     )
+                    # Les anciens documents sont préparés progressivement, sans
+                    # lancer un lot massif de requêtes IA au démarrage.
+                    ai_queue.planifier_resumes_documents_manquants(max_documents=3)
                 except Exception:
                     logger.exception("Impossible de reparer la file IA Tuteur.")
 
