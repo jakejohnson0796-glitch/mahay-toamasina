@@ -58,9 +58,24 @@
 {% if request.url.path == "/mode-emploi" %}
 <link rel="stylesheet" href="/static/mode-emploi.css?v={{ version_asset('mode-emploi.css') }}">
 {% endif %}
-{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/jeu-cerebral") or request.url.path == "/admin/moderation-quiz" %}
+{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/jeu-cerebral") or request.url.path.startswith("/admin/moderation-") %}
 <link rel="stylesheet" href="/static/ai-learning.css?v={{ version_asset('ai-learning.css') }}">
-<!-- Le chargeur gère les CDN principal/secours avec délai maximal ; il reste non bloquant. -->
+{% endif %}
+{# Un seul moteur de rendu pour toutes les surfaces qui peuvent afficher du texte scientifique IA. #}
+{% if request.url.path.startswith("/quiz")
+   or request.url.path.startswith("/tuteur")
+   or request.url.path.startswith("/jeu-cerebral")
+   or request.url.path.startswith("/documents")
+   or request.url.path.startswith("/document")
+   or request.url.path.startswith("/classe")
+   or request.url.path.startswith("/cercle")
+   or request.url.path.startswith("/cercles")
+   or request.url.path.startswith("/moderation")
+   or request.url.path.startswith("/admin/moderation-")
+   or request.url.path == "/admin/ia"
+   or request.url.path == "/dashboard"
+   or request.url.path == "/mes-revisions" %}
+<!-- Chargeur borné avec CDN de secours ; le contenu utilisateur reste sur la page. -->
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/charger-dependances-ia.js?v={{ version_asset('js/charger-dependances-ia.js') }}"></script>
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/rendu_ia.js?v={{ version_asset('js/rendu_ia.js') }}"></script>
 {% endif %}
