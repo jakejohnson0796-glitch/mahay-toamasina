@@ -48,13 +48,17 @@ def _est_membre_cercle(session: Session, cercle_id: int, utilisateur_id: int) ->
     )
 
 
-def _charger_fiche_pedagogique(document: Document) -> dict:
-    """Charge sans risque les informations détaillées de la fiche IA."""
+def _charger_fiche_pedagogique_json(contenu: str) -> dict:
+    """Charge sans risque les informations détaillées d’une fiche IA."""
     try:
-        fiche = json.loads(document.fiche_pedagogique_json or "{}")
+        fiche = json.loads(contenu or "{}")
         return fiche if isinstance(fiche, dict) else {}
     except (TypeError, ValueError):
         return {}
+
+
+def _charger_fiche_pedagogique(document: Document) -> dict:
+    return _charger_fiche_pedagogique_json(document.fiche_pedagogique_json)
 
 
 def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
@@ -154,9 +158,14 @@ def liste_documents(
         if cercle_id is not None:
             requete_depots = requete_depots.where(Document.cercle_id == cercle_id)
         mes_depots = session.exec(requete_depots).all()
+    documents_affiches = [*documents, *mes_depots]
     fiches_documents = {
         document.id: _charger_fiche_pedagogique(document)
-        for document in [*documents, *mes_depots]
+        for document in documents_affiches
+    }
+    fiches_documents_mg = {
+        document.id: _charger_fiche_pedagogique_json(document.fiche_pedagogique_mg_json)
+        for document in documents_affiches
     }
 
     return templates.TemplateResponse(
@@ -166,6 +175,7 @@ def liste_documents(
             "documents": documents,
             "mes_depots": mes_depots,
             "fiches_documents": fiches_documents,
+            "fiches_documents_mg": fiches_documents_mg,
             "filieres": filieres,
             "filiere_id": filiere_id,
             "matiere": matiere or "",
@@ -685,6 +695,7 @@ def consulter_document_moderation(
             "texte_apercu": texte_apercu,
             "erreur_apercu": erreur_apercu,
             "fiche_document": _charger_fiche_pedagogique(document),
+            "fiche_document_mg": _charger_fiche_pedagogique_json(document.fiche_pedagogique_mg_json),
         },
     )
 
