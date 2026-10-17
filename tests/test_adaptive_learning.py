@@ -47,6 +47,47 @@ def test_vue_persistante_selectionne_la_bonne_action():
     assert vue["dernier_score"] == 90
 
 
+def test_ancienne_confirmation_sans_preuves_distinctes_ne_debloque_pas_un_prerequis():
+    from app.adaptive_learning import choisir_prochaine_notion
+    from app.models import ProgressionNotion
+
+    ancienne_preuve = ProgressionNotion(
+        id=1,
+        utilisateur_id=7,
+        matiere="Mathématiques",
+        notion="Matrices",
+        score_maitrise=96,
+        nb_questions=12,
+        nb_revisions=4,
+        serie_reussites=5,
+        niveau_max_reussi="Moyen",
+        maitrise_confirmee=True,
+        preuves_apprentissage_json="{}",
+    )
+    notion_suivante = ProgressionNotion(
+        id=2,
+        utilisateur_id=7,
+        matiere="Mathématiques",
+        notion="Déterminants",
+        score_maitrise=30,
+        nb_questions=3,
+        nb_erreurs=2,
+        maitrise_confirmee=False,
+    )
+    carte = {"sujets": [{"nodes": [
+        {"id": 1, "matiere": "Mathématiques", "notion": "Matrices", "score": 96, "prerequis": []},
+        {"id": 2, "matiere": "Mathématiques", "notion": "Déterminants", "score": 30, "prerequis": ["Matrices"]},
+    ]}]}
+
+    suivante = choisir_prochaine_notion(
+        carte,
+        [ancienne_preuve, notion_suivante],
+        exclure_id=2,
+    )
+
+    assert suivante is None
+
+
 def test_prochaine_notion_ne_depasse_pas_un_prerequis_non_confirme():
     from app.adaptive_learning import choisir_prochaine_notion
 
