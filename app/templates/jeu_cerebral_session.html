@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
-{% block titre %}Ton défi — MITARIDALA{% endblock %}
+{% block titre %}{% if langue == "mg" %}Ny fanamby-nao — MITARIDALA{% else %}Ton défi — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="jeu-session-page">
   <style nonce="{{ csp_nonce(request) }}">
+    .jeu-session-page .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .jeu-session-page{max-width:960px;margin:0 auto;padding:clamp(1rem,2.5vw,2rem);color:var(--content-text)}
     .jeu-session-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
     .jeu-session-breadcrumb{font-size:.74rem;color:var(--content-text-muted);margin:0 0 .35rem}
@@ -44,16 +45,16 @@
   <header class="jeu-session-header">
     <div>
       <p class="jeu-session-breadcrumb"><a href="/jeu-cerebral" style="color:var(--content-link);text-decoration:none">Jeu cérébral</a> / {{ theme.titre }}</p>
-      <h1>{{ theme.emoji }} {{ theme.titre }}</h1>
-      <p class="jeu-session-desc">Prends ton temps. Lis calmement, choisis la réponse qui te semble juste et découvre la suite pas à pas.</p>
+      <h1>{% if langue == "mg" %}{{ theme.emoji }} {% if theme.id == "logique" %}Lojika sy fanatsoahan-kevitra{% elif theme.id == "calcul" %}Kajy an-tsaina{% elif theme.id == "suites" %}Filaharana sy lamina{% elif theme.id == "langage" %}Teny sy fampitahana{% else %}Fandinihana sy fifantohana{% endif %}{% else %}{{ theme.emoji }} {{ theme.titre }}{% endif %}</h1>
+      <p class="jeu-session-desc">{% if langue == "mg" %}Makà fotoana. Vakio am-pitoniana, safidio ny valiny heverinao fa marina, ary tohizo tsikelikely.{% else %}Prends ton temps. Lis calmement, choisis la réponse qui te semble juste et découvre la suite pas à pas.{% endif %}</p>
     </div>
     <a class="jeu-bouton-retour" href="/jeu-cerebral">{{ icone("retour", 15) }} Quitter le défi</a>
   </header>
 
   <section class="jeu-session-progress" aria-label="Avancement du défi">
     <div class="jeu-progress-meta">
-      <strong>Question {{ numero_question }} sur {{ total_questions }}</strong>
-      <span>Une question à la fois · niveau adaptatif</span>
+      <strong>{% if langue == "mg" %}Fanontaniana {{ numero_question }} amin’ny {{ total_questions }}{% else %}Question {{ numero_question }} sur {{ total_questions }}{% endif %}</strong>
+      <span>{% if langue == "mg" %}Fanontaniana iray isaky ny mandeha · ambaratonga miovaova{% else %}Une question à la fois · niveau adaptatif{% endif %}</span>
     </div>
     <div class="jeu-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total_questions }}" aria-valuenow="{{ numero_question - 1 }}" aria-label="Progression du jeu">
       <div class="jeu-progress-fill" style="width:{{ progression_pct }}%"></div>
