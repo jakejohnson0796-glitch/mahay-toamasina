@@ -556,7 +556,7 @@ def generer_et_sauvegarder_fiche_document(document_id: int) -> None:
     fiche_mg = fiche.pop("fiche_malagasy", None) or _fiche_malagasy_indisponible()
     # Si le modèle a produit une bonne fiche française mais une version malagasy vide,
     # une seconde tentative de traduction ciblée est plus fiable qu’un faux résumé.
-    if fiche.get("source") == "ia" and fiche_mg.get("statut") == "indisponible":
+    if fiche_mg.get("statut") == "indisponible":
         fiche_mg = traduire_fiche_existante_malagasy(fiche)
 
     with Session(engine) as session:
