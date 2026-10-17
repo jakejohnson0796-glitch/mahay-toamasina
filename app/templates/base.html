@@ -338,9 +338,6 @@
     <a href="/cercles" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
       {{ icone("cercles", 20) }}<span>Cercles</span>
     </a>
-    <a href="/defis" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/defis') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/defis') else '' }}>
-      🏆<span>Défis</span>
-    </a>
     <a href="/securite" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}>
       {{ icone("securite", 20) }}<span>Profil</span>
     </a>
