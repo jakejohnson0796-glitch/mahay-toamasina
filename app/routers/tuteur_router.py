@@ -133,6 +133,28 @@ def _extrait_document_pertinent(document: Document, question: str) -> tuple[str,
     return "\n\n".join(morceaux)[:MAX_EXTRAIT_DOCUMENT], references
 
 
+def _charger_sources_documentaires(session_tuteur: SessionTuteur) -> list[dict]:
+    """Charge les références enregistrées sans faire confiance au JSON historique."""
+    try:
+        sources = json.loads(session_tuteur.sources_documentaires_json or "[]")
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(sources, list):
+        return []
+    resultat = []
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        titre = str(source.get("titre") or "").strip()[:300]
+        references = source.get("references")
+        if not isinstance(references, list):
+            references = []
+        references = [str(ref).strip()[:120] for ref in references if str(ref).strip()]
+        if titre:
+            resultat.append({"titre": titre, "references": references[:10]})
+    return resultat[:5]
+
+
 @router.get("/tuteur")
 def page_tuteur(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
