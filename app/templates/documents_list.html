@@ -70,7 +70,7 @@
       <div data-fiche-lang="fr" data-no-translate>
         {% if doc.resume_ia %}
         <span class="doc-fiche-etat">{% if doc.resume_statut_ia == "generee" %}Fiche IA prête{% elif doc.resume_statut_ia == "insuffisante" %}Texte non extractible{% else %}Aperçu provisoire{% endif %}</span>
-        <div class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</div>
+        <p class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</p>
         {% if fiche.get("objectif_pedagogique") %}<p><strong>Objectif du cours :</strong> {{ fiche.get("objectif_pedagogique") }}</p>{% endif %}
         {% if fiche.get("type_cours") %}<p><strong>Type pédagogique :</strong> {{ fiche.get("type_cours") }}</p>{% endif %}
         {% if fiche.get("niveau_cible") %}<p><strong>Niveau visé :</strong> {{ fiche.get("niveau_cible") }}</p>{% endif %}
@@ -85,7 +85,7 @@
       <div data-fiche-lang="mg" data-no-translate hidden>
         {% if doc.resume_ia_mg %}
         <span class="doc-fiche-etat">{% if doc.resume_statut_ia_mg == "generee" %}Vonona ny famintinana IA{% elif doc.resume_statut_ia_mg == "indisponible" %}Tsy mbola azo hamarinina{% else %}Topimaso vonjimaika{% endif %}</span>
-        <div class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</div>
+        <p class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</p>
         {% if fiche_mg.get("objectif_pedagogique") %}<p><strong>Tanjona amin’ny lesona:</strong> {{ fiche_mg.get("objectif_pedagogique") }}</p>{% endif %}
         {% if fiche_mg.get("type_cours") %}<p><strong>Karazana lesona:</strong> {{ fiche_mg.get("type_cours") }}</p>{% endif %}
         {% if fiche_mg.get("niveau_cible") %}<p><strong>Ambaratonga kendrena:</strong> {{ fiche_mg.get("niveau_cible") }}</p>{% endif %}
