@@ -120,6 +120,8 @@ BANQUE_LOCALE: dict[str, list[dict[str, Any]]] = {
            "Misy karatra efatra A, B, C ary D. Tsy maintsy alohan'i C i A, ary tsy maintsy aorian'i C i D. Iza no tsy maintsy aorian'i C?",
            ["B", "C", "D", "Tsy misy"],
            "Milaza ilay fitsipika fa tsy maintsy aorian'i C i D.", "Filaharana"),
+    ],
+    "calcul": [
         _q("Combien font 25 % de 80 ?", ["10", "20", "25", "40"], 1,
            "25 % correspond à un quart : 80 ÷ 4 = 20.", "Pourcentages simples", "Facile",
            "Ohatrinona ny 25 % amin'ny 80?", ["10", "20", "25", "40"],
