@@ -83,6 +83,27 @@
 
   <div id="reponse">
 
+  {% if sources_documentaires %}
+  <section class="ai-target-context ai-source-context" aria-label="Sources documentaires utilisées">
+    <span class="ai-kicker">Sources du cours</span>
+    <p>Ces repères identifient les passages documentaires transmis au Tuteur pour préparer cette réponse.</p>
+    {% for source in sources_documentaires %}
+    <div class="ai-source-entry">
+      <strong>{{ source.titre }}</strong>
+      {% if source.references %}
+      <p>Passages consultés :
+        {% for reference in source.references %}
+        <span class="ai-source-reference">{{ reference }}</span>{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+      {% else %}
+      <p>La pagination n'est pas disponible pour ce format de document.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
   {% if progression_tuteur %}
   <section class="ai-target-context ai-target-context-memory" aria-label="Mémoire d'apprentissage">
     <span class="ai-kicker">Mémoire d'apprentissage</span>

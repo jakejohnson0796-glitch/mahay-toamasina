@@ -419,6 +419,9 @@ class ProgressionNotion(SQLModel, table=True):
     derniere_preuve_le: Optional[datetime] = None
     # Date à laquelle une nouvelle preuve devrait être recherchée.
     prochaine_preuve_le: Optional[datetime] = None
+    # Preuves objectives de diversité : empreintes des questions distinctes et identifiants des séances.
+    # JSON compact pour rester compatible SQLite/PostgreSQL et préserver l'historique existant.
+    preuves_apprentissage_json: str = Field(default="{}")
     date_maj: datetime = Field(default_factory=datetime.utcnow)
 
     __table_args__ = (
@@ -1034,6 +1037,8 @@ class SessionTuteur(SQLModel, table=True):
     statut_verification_ia: str = Field(default="en_attente", index=True)
     date_verification_ia: Optional[datetime] = None
     erreur_verification_ia: Optional[str] = None
+    # Provenance des extraits documentaires présentés au Tuteur (JSON sans texte du document).
+    sources_documentaires_json: str = Field(default="[]")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 

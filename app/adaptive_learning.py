@@ -5,6 +5,23 @@ from typing import Any, Dict
 ETAPES = ("comprendre", "pratiquer", "verifier")
 
 
+def _maitrise_objectivement_confirmee(progression: Any) -> bool:
+    """Ne fait confiance au booléen persistant que pour les anciens objets incomplets.
+
+    Les modèles ProgressionNotion complets doivent satisfaire les critères
+    actuels de diversité et de répétition, même si une ancienne ligne contient
+    encore maitrise_confirmee=True.
+    """
+    if progression is None:
+        return False
+    try:
+        from .quiz import diagnostiquer_maitrise
+
+        return bool(diagnostiquer_maitrise(progression)["maitrise_confirmee"])
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return bool(getattr(progression, "maitrise_confirmee", False))
+
+
 def transition_apres_quiz(score_pourcent: int, maitrise_confirmee: bool) -> Dict[str, str]:
     """Choisit l'étape suivante sans confondre bon score et maîtrise confirmée."""
     score = max(0, min(100, int(score_pourcent or 0)))
@@ -66,7 +83,7 @@ def choisir_prochaine_notion(carte: Dict[str, Any], progressions: Any, exclure_i
         progression = par_id.get(node_id)
         if node_id == int(exclure_id or 0) or progression is None:
             continue
-        if bool(getattr(progression, "maitrise_confirmee", False)):
+        if _maitrise_objectivement_confirmee(progression):
             continue
         prerequis = [
             par_matiere_notion[(str(node.get("matiere") or ""), str(nom))]
@@ -74,7 +91,9 @@ def choisir_prochaine_notion(carte: Dict[str, Any], progressions: Any, exclure_i
             if (str(node.get("matiere") or ""), str(nom)) in par_matiere_notion
         ]
         if all(
-            bool(getattr(par_id.get(int(parent.get("id") or 0)), "maitrise_confirmee", False))
+            _maitrise_objectivement_confirmee(
+                par_id.get(int(parent.get("id") or 0))
+            )
             for parent in prerequis
         ):
             candidats.append(node)

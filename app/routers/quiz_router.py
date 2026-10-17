@@ -416,9 +416,15 @@ async def soumettre_quiz(request: Request, tentative_id: int, session: Session =
             score_pourcent = round(
                 100 * int(tentative.score or 0) / max(int(tentative.nb_questions or 0), 1)
             )
+            maitrise_reellement_confirmee = bool(
+                progression_mission
+                and quiz_module.diagnostiquer_maitrise(
+                    progression_mission
+                )["maitrise_confirmee"]
+            )
             decision = adaptive_learning.transition_apres_quiz(
                 score_pourcent,
-                bool(progression_mission and progression_mission.maitrise_confirmee),
+                maitrise_reellement_confirmee,
             )
             mission_adaptative.etape = decision["etape"]
             mission_adaptative.statut = decision["statut"]

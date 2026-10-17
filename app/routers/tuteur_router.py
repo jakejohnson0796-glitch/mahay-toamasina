@@ -1,6 +1,7 @@
 from datetime import datetime
 from fastapi import APIRouter, Request, Depends, Form
 from typing import Optional
+import json
 import re
 from fastapi.responses import RedirectResponse
 from fastapi.responses import JSONResponse
@@ -13,7 +14,7 @@ from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
 from ..models import Document, MembreCercle, MissionApprentissage, SessionTuteur, ProgressionNotion, StatutDocument
 from ..storage import ouvrir_fichier_local
-from ..text_extraction import extraire_texte
+from ..text_extraction import extraire_texte, extraire_passages_avec_sources
 from ..ia_transport import normaliser_structure_tuteur
 from .. import ai_queue, ai_quiz
 from ..rate_limit import limite_depassee
@@ -63,42 +64,96 @@ def _contexte_progression_tuteur(progression: ProgressionNotion) -> str:
     )
 
 
-def _extrait_document_pertinent(document: Document, question: str) -> str:
-    """Extrait localement quelques passages d'un document approuvé.
+def _extrait_document_pertinent(document: Document, question: str) -> tuple[str, list[str]]:
+    """Extrait quelques passages d'un document approuvé en gardant leurs repères.
 
-    On privilégie les blocs contenant des termes significatifs de la question,
-    puis on limite fortement la taille envoyée au modèle afin de préserver la
-    latence. Le texte reste une source de contexte : le Tuteur doit signaler
-    lorsqu'il ne trouve pas l'information plutôt que l'inventer.
+    Un repère n'est renvoyé que si l'extracteur peut l'associer au passage :
+    numéro de page pour un PDF textuel, diapositive pour un PPTX ou repère de
+    paragraphe pour un DOCX dont la pagination n'est pas disponible.
     """
     try:
         with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
-            texte = extraire_texte(str(chemin_local)) or ""
+            passages = extraire_passages_avec_sources(str(chemin_local))
+            if not passages:
+                texte = extraire_texte(str(chemin_local)) or ""
+                if texte.strip():
+                    passages = [{
+                        "reference": "document (pagination indisponible)",
+                        "texte": texte,
+                    }]
     except Exception:
-        return ""
+        return "", []
 
-    texte = re.sub(r"\s+", " ", texte).strip()
-    if not texte:
-        return ""
+    blocs = []
+    longueur_totale = 0
+    for passage in passages:
+        reference = str(passage.get("reference") or "document (pagination indisponible)")[:120]
+        texte = re.sub(r"\s+", " ", str(passage.get("texte") or "")).strip()
+        if not texte:
+            continue
+        for debut in range(0, len(texte), 1800):
+            if longueur_totale >= 18000:
+                break
+            morceau = texte[debut:debut + 1800]
+            blocs.append({"references": [reference], "texte": morceau})
+            longueur_totale += len(morceau)
+        if longueur_totale >= 18000:
+            break
 
-    blocs = [texte[i:i + 1800] for i in range(0, min(len(texte), 18000), 1800)]
+    if not blocs:
+        return "", []
+
     termes = {
         mot.lower()
         for mot in re.findall(r"[A-Za-zÀ-ÿ0-9]{4,}", question or "")
         if mot.lower() not in {"avec", "pour", "dans", "cette", "comme", "donne", "aide-moi"}
     }
 
-    def score(bloc: str) -> int:
-        bas = bloc.lower()
+    def score(bloc: dict) -> int:
+        bas = bloc["texte"].lower()
         return sum(bas.count(mot) for mot in termes)
 
-    blocs_scores = sorted(enumerate(blocs), key=lambda item: (score(item[1]), -item[0]), reverse=True)
-    selection = [bloc for _, bloc in blocs_scores[:3] if score(bloc) > 0]
+    blocs_scores = sorted(
+        enumerate(blocs),
+        key=lambda item: (score(item[1]), -item[0]),
+        reverse=True,
+    )
+    selection = [bloc for _, bloc in blocs_scores if score(bloc) > 0][:3]
     if not selection:
         selection = blocs[:3]
 
-    extrait = "\n\n".join(selection)
-    return extrait[:MAX_EXTRAIT_DOCUMENT]
+    references = []
+    morceaux = []
+    for bloc in selection:
+        for reference in bloc["references"]:
+            if reference not in references:
+                references.append(reference)
+        libelle_references = ", ".join(bloc["references"])
+        morceaux.append(f"[Référence source : {libelle_references}]\n{bloc['texte']}")
+
+    return "\n\n".join(morceaux)[:MAX_EXTRAIT_DOCUMENT], references
+
+
+def _charger_sources_documentaires(session_tuteur: SessionTuteur) -> list[dict]:
+    """Charge les références enregistrées sans faire confiance au JSON historique."""
+    try:
+        sources = json.loads(session_tuteur.sources_documentaires_json or "[]")
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(sources, list):
+        return []
+    resultat = []
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        titre = str(source.get("titre") or "").strip()[:300]
+        references = source.get("references")
+        if not isinstance(references, list):
+            references = []
+        references = [str(ref).strip()[:120] for ref in references if str(ref).strip()]
+        if titre:
+            resultat.append({"titre": titre, "references": references[:10]})
+    return resultat[:5]
 
 
 @router.get("/tuteur")
@@ -190,6 +245,8 @@ def demander_tuteur(
 
     question_pour_ia = question
     matiere_pour_ia = progression.matiere if progression else None
+    extrait_document = ""
+    references_source: list[str] = []
 
     if progression:
         question_pour_ia = (
@@ -198,17 +255,20 @@ def demander_tuteur(
         )
 
     if document_source:
-        extrait = _extrait_document_pertinent(document_source, question)
+        extrait_document, references_source = _extrait_document_pertinent(document_source, question)
         matiere_pour_ia = matiere_pour_ia or document_source.matiere
-        if extrait:
+        if extrait_document:
             question_pour_ia = (
                 f"{question}\n\n"
                 f"SOURCE DOCUMENTAIRE — {document_source.titre} "
                 f"({document_source.matiere}, {document_source.annee})\n"
                 "Utilise prioritairement cet extrait comme source de contexte. "
+                "Les passages portent leur repère [Référence source : ...] : lorsque tu t'appuies "
+                "sur un passage, reprends exactement son repère dans l'explication. "
+                "N'invente jamais une page, une diapositive ou une référence. "
                 "Ne présente pas une information comme provenant du document si elle n'y figure pas. "
                 "Si l'extrait est insuffisant, indique-le clairement.\n\n"
-                f"EXTRAIT :\n{extrait}"
+                f"EXTRAIT :\n{extrait_document}"
             )
 
     if document_source and progression:
@@ -243,6 +303,13 @@ def demander_tuteur(
         exemple=reponse["exemple"],
         exercice=reponse["exercice"],
         correction=reponse["correction"],
+        sources_documentaires_json=json.dumps(
+            [{
+                "titre": document_source.titre,
+                "references": references_source,
+            }] if document_source and extrait_document and references_source else [],
+            ensure_ascii=False,
+        ),
         statut_verification_ia="en_attente",
         erreur_verification_ia=None,
     )
@@ -350,6 +417,7 @@ def page_reponse_tuteur(request: Request, session_id: int, session: Session = De
             "exercice": session_tuteur.exercice,
             "correction": session_tuteur.correction,
         }),
+        sources_documentaires=_charger_sources_documentaires(session_tuteur),
     )
     return templates.TemplateResponse(
         request,

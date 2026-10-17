@@ -50,6 +50,93 @@ def extraire_texte(chemin_fichier: str) -> str:
     return ""
 
 
+def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
+    """Extrait des passages avec un repère de provenance exploitable par le Tuteur.
+
+    Les PDF textuels gardent leur numéro de page et les présentations leur
+    numéro de diapositive. Les formats sans pagination fiable utilisent un
+    repère explicite plutôt que de fabriquer des numéros de page.
+    """
+    chemin = Path(chemin_fichier)
+    suffixe = chemin.suffix.lower()
+
+    if suffixe == ".pdf":
+        passages = []
+        try:
+            with pdfplumber.open(chemin) as pdf:
+                total = 0
+                for numero, page in enumerate(pdf.pages[:MAX_PAGES_PDF_TEXTE], start=1):
+                    texte = (page.extract_text() or "").strip()
+                    if texte:
+                        passages.append({"reference": f"page {numero}", "texte": texte})
+                        total += len(texte)
+                    if total >= MAX_TEXTE_EXTRAIT:
+                        break
+        except Exception:
+            return []
+        return passages
+
+    if suffixe == ".pptx":
+        try:
+            from pptx import Presentation
+
+            presentation = Presentation(str(chemin))
+            passages = []
+            total = 0
+            for numero, diapositive in enumerate(presentation.slides, start=1):
+                if numero > 500 or total >= MAX_TEXTE_EXTRAIT:
+                    break
+                morceaux = []
+                for forme in diapositive.shapes:
+                    texte = getattr(forme, "text", "") or ""
+                    if texte.strip():
+                        morceaux.append(texte.strip())
+                texte_diapositive = "\\n".join(morceaux).strip()
+                if texte_diapositive:
+                    texte_diapositive = texte_diapositive[:MAX_TEXTE_EXTRAIT - total]
+                    passages.append({
+                        "reference": f"diapositive {numero}",
+                        "texte": texte_diapositive,
+                    })
+                    total += len(texte_diapositive)
+            return passages
+        except Exception:
+            return []
+
+    if suffixe == ".docx":
+        try:
+            from docx import Document as DocxDocument
+
+            document = DocxDocument(str(chemin))
+            passages = []
+            total = 0
+            for numero, paragraphe in enumerate(document.paragraphs, start=1):
+                if numero > 2000 or total >= MAX_TEXTE_EXTRAIT:
+                    break
+                texte = (paragraphe.text or "").strip()
+                if texte:
+                    texte = texte[:MAX_TEXTE_EXTRAIT - total]
+                    passages.append({
+                        "reference": f"paragraphe {numero} (pagination indisponible)",
+                        "texte": texte,
+                    })
+                    total += len(texte)
+            if passages:
+                return passages
+        except Exception:
+            return []
+
+    # OCR, images et formats sans repères fiables : la source reste identifiée
+    # par le document, sans inventer une page ou une diapositive.
+    texte = extraire_texte(str(chemin)).strip()
+    if texte:
+        return [{
+            "reference": "document (pagination indisponible)",
+            "texte": texte[:MAX_TEXTE_EXTRAIT],
+        }]
+    return []
+
+
 def _extraire_texte_pdf(chemin: Path) -> str:
     morceaux = []
     try:
