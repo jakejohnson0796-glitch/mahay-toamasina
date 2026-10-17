@@ -192,11 +192,6 @@ class TestCorrectionDomainesHistoriques(unittest.TestCase):
             path.unlink(missing_ok=True)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
-
 def test_domaine_ens_est_canonical_et_les_mentions_ne_sont_plus_ambigues():
     data = json.loads(SOURCE.read_text(encoding="utf-8"))
     formations = data["formations"]
@@ -228,3 +223,6 @@ def test_domaine_ens_est_canonical_et_les_mentions_ne_sont_plus_ambigues():
         if ligne["mention"] in mentions_ens_concernees
     }
     assert domaines_cibles == {"Sciences de l’éducation"}
+
+if __name__ == "__main__":
+    unittest.main()
