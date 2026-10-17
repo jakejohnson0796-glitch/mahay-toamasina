@@ -43,7 +43,7 @@
     <div>
       <p class="eyebrow">Objectif de la séance</p>
       <h2 id="mission-objective-title">{{ mission.objectif }}</h2>
-      <p>{{ mission.message }}</p>
+      <div data-rendu>{{ mission.message }}</div>
       <div class="mission-tags">
         <span>{{ mission.matiere }}</span>
         <span>{{ mission.score }}% de maîtrise</span>
@@ -89,7 +89,7 @@
     <div class="mission-empty-icon" aria-hidden="true">{{ icone("quiz", 20) }}</div>
     <div>
       <h2 id="mission-terminee-title">Preuve de maîtrise obtenue</h2>
-      <p>{{ mission.retour_adaptatif or mission.message }}</p>
+      <div data-rendu>{{ mission.retour_adaptatif or mission.message }}</div>
       <a class="bouton bouton-primaire" href="/mes-revisions">Revoir les autres notions →</a>
     </div>
   </section>
@@ -132,7 +132,7 @@
     <div class="mission-empty-icon" aria-hidden="true">{{ icone("quiz", 20) }}</div>
     <div>
       <h2>Prêt pour une nouvelle notion</h2>
-      <p>{{ mission.message }}</p>
+      <div data-rendu>{{ mission.message }}</div>
       <a class="bouton bouton-primaire" href="/quiz">Commencer un nouveau quiz →</a>
       <a class="bouton bouton-secondaire" href="/carte-connaissances">Voir ma carte de connaissances</a>
     </div>
