@@ -64,6 +64,10 @@ def page_jeu_cerebral(request: Request, session: Session = Depends(get_session))
     ).all()
     profil = jeu_cerebral.profil_pour_ia(historique)
     moyenne = profil.get("moyenne_recente")
+    historique_affiche = [
+        {"partie": partie, "theme": jeu_cerebral.obtenir_theme(partie.theme_id)}
+        for partie in historique
+    ]
     return templates.TemplateResponse(
         request,
         "jeu_cerebral.html",
@@ -71,6 +75,7 @@ def page_jeu_cerebral(request: Request, session: Session = Depends(get_session))
             "utilisateur": utilisateur,
             "themes": jeu_cerebral.THEMES,
             "historique": historique,
+            "historique_affiche": historique_affiche,
             "profil": profil,
             "moyenne_recente": moyenne,
         },
@@ -236,6 +241,18 @@ def page_session_jeu_cerebral(
         else {"Facile": "Amim-pitoniana", "Moyen": "Amin'ny hafainganam-pandehanao", "Difficile": "Fanamby kely"}
     )
     retour = etat.get("dernier_feedback")
+    if retour and 0 <= int(retour.get("question_index", -1)) < len(questions):
+        ancienne = questions[int(retour["question_index"])]
+        choix_anciens = ancienne.get("choix") or []
+        index_bonne = ancienne.get("index_bonne_reponse")
+        index_choisi = reponses[int(retour["question_index"])] if int(retour["question_index"]) < len(reponses) else None
+        retour = {
+            **retour,
+            "question": ancienne.get("question", ""),
+            "explication": ancienne.get("explication", ""),
+            "reponse_correcte": choix_anciens[index_bonne] if isinstance(index_bonne, int) and 0 <= index_bonne < len(choix_anciens) else "",
+            "reponse_choisie": choix_anciens[index_choisi] if isinstance(index_choisi, int) and 0 <= index_choisi < len(choix_anciens) else "",
+        }
 
     return templates.TemplateResponse(
         request,
