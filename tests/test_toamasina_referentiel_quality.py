@@ -194,3 +194,39 @@ class TestCorrectionDomainesHistoriques(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+    def test_domaine_ens_est_canonical_et_les_mentions_ne_sont_plus_ambigues(self):
+        composante = "École Normale Supérieure"
+        lignes_ens = [
+            ligne for ligne in self.formations
+            if ligne["composante"] == composante
+        ]
+        self.assertTrue(lignes_ens)
+        self.assertEqual(
+            {ligne["domaine"] for ligne in lignes_ens},
+            {"Sciences de l’éducation"},
+        )
+
+        domaines_par_mention = {}
+        for ligne in self.formations:
+            domaines_par_mention.setdefault(ligne["mention"], set()).add(ligne["domaine"])
+        ambigues = {
+            mention: sorted(domaines)
+            for mention, domaines in domaines_par_mention.items()
+            if len(domaines) > 1
+        }
+        self.assertEqual(ambigues, {})
+
+        mentions_ens_concernees = {
+            "Enseignement-Apprentissage et didactique de la Langue Malagasy",
+            "Enseignement-Apprentissage et didactique de la Langue Française",
+            "Enseignement-Apprentissage et didactique de la Langue Anglaise",
+            "Enseignement-Apprentissage et didactique en Sciences de l’Éducation",
+        }
+        domaines_cibles = {
+            ligne["domaine"] for ligne in lignes_ens
+            if ligne["mention"] in mentions_ens_concernees
+        }
+        self.assertEqual(domaines_cibles, {"Sciences de l’éducation"})
