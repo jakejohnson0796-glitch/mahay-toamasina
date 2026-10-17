@@ -394,11 +394,10 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             if domaine is None:
                 continue
 
-            # Rattache le Domaine a TOUTES les variantes historiques de
-            # cette Mention dont le domaine est encore NULL. Ainsi une
-            # ligne "Sciences de gestion" n'est pas perdue si une ancienne
-            # migration avait deja "Sciences de Gestion" en base, et vice
-            # versa. On ne remplace jamais un Domaine deja renseigne.
+            # La source stricte donne un domaine unique par Mention.
+            # On rattache les profils incomplets et on corrige les anciens liens
+            # divergents seulement lorsque la source ne présente plus d'ambiguïté.
+            # Les mentions pour lesquelles plusieurs domaines subsistent restent non affectées.
             for mention in mentions_trouvees:
                 if mention.domaine_id == domaine.id:
                     continue
