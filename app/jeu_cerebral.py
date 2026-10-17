@@ -532,18 +532,22 @@ def construire_recommandation(
 
     if score < 40:
         titre = "Chaque essai est un joli point de départ 🌱"
+        titre_mg = "Fiandohana tsara ny fanandramana tsirairay 🌱"
         message = "Merci d’avoir joué ! Les questions qui t’ont résisté nous donnent simplement une piste pour la prochaine fois. Ton score ne résume jamais tes capacités."
         message_mg = "Misaotra anao nilalao! Ireo fanontaniana sarotra taminao dia manampy antsika hahita izay azo ampiharina manaraka. Tsy mamaritra ny fahaizanao rehetra velively ny isa."
     elif score < 60:
         titre = "Tes repères sont en train de pousser 🌿"
+        titre_mg = "Mihamiorina tsikelikely ny fahalalanao 🌿"
         message = "Tu construis tes repères, question après question. Un peu de pratique ciblée peut rendre ces réflexes plus familiers — sans te presser."
         message_mg = "Mihamiorina tsikelikely ny fahalalanao. Manampy hampahazatra ireo fomba fisainana ireo ny fampiharana kely, tsy mila maika."
     elif score < 80:
         titre = "De beaux réflexes se dessinent ✨"
+        titre_mg = "Mihamafy ny fomba fisainanao ✨"
         message = "Tu as trouvé plusieurs bonnes pistes. En reprenant doucement les notions ci-dessous, tu pourras gagner encore en aisance."
         message_mg = "Maro ny valiny hitanao tsara. Raha averinao moramora ireo hevitra etsy ambany, dia hihamora kokoa ny fampiharana."
     else:
         titre = "Très belle session, bravo à toi 🌟"
+        titre_mg = "Tsara dia tsara ny lalaonao 🌟"
         message = "Tu as été attentif·ve et tu as bien avancé. Pour entretenir cette curiosité, tu peux essayer un autre thème ou un défi un peu plus corsé."
         message_mg = "Tsara dia tsara ny lalaonao! Nandinika tsara ianao ary nandroso. Mba hitohizan'ny fahalianana dia afaka manandrana lohahevitra hafa na fanamby somary sarotra kokoa ianao."
 
@@ -586,6 +590,7 @@ def construire_recommandation(
         "bonnes_reponses": len(bonnes),
         "total": total,
         "titre": titre,
+        "titre_mg": titre_mg,
         "message": message,
         "message_mg": message_mg,
         "points_forts": forces,
