@@ -8,12 +8,14 @@ from app.quiz import (
 )
 
 
-def _question():
+def _question(numero: int = 0):
+    valeur = numero + 1
+    determinant = 3 * valeur - 2
     return {
-        "question": "Calcule.",
-        "choix": ["4", "5", "6"],
+        "question": f"Quel est le déterminant de la matrice [[{valeur}, 1], [2, 3]] ?",
+        "choix": [str(determinant), str(determinant + 1), str(determinant - 1)],
         "index_bonne_reponse": 0,
-        "explication": "Le résultat est 4.",
+        "explication": f"Le déterminant vaut 3 × {valeur} − 2 = {determinant}.",
         "notion": "Déterminant d'ordre 2",
         "difficulte": "Moyen",
     }
@@ -49,7 +51,7 @@ def test_diagnostic_maitrise_explique_les_preuves_manquantes():
     assert diagnostic["maitrise_confirmee"] is False
     assert diagnostic["action"] == "Quiz ciblé"
     assert diagnostic["conditions"]["questions"] is False
-    assert "avoir 3 séances différentes (1)" in diagnostic["conditions_manquantes"]
+    assert "travailler sur 3 séances distinctes (0)" in diagnostic["conditions_manquantes"]
 
 
 def test_trois_seances_et_neuf_reussites_produisent_une_maitrise_prouvee():
@@ -66,8 +68,8 @@ def test_trois_seances_et_neuf_reussites_produisent_une_maitrise_prouvee():
         session.commit()
         session.refresh(utilisateur)
 
-        questions = [_question(), _question(), _question()]
         for numero in range(1, 4):
+            questions = [_question((numero - 1) * 3 + index) for index in range(3)]
             tentative = _tentative(utilisateur.id, numero)
             mettre_a_jour_progression_notion(
                 session,
@@ -95,6 +97,45 @@ def test_trois_seances_et_neuf_reussites_produisent_une_maitrise_prouvee():
         assert diagnostic["conditions_manquantes"] == []
 
 
+def test_la_repetition_des_memes_questions_ne_prouve_pas_la_maitrise():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+    SQLModel.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        utilisateur = Utilisateur(
+            nom="Preuve Sans Diversite",
+            telephone="690000202",
+            mot_de_passe_hash="hash",
+        )
+        session.add(utilisateur)
+        session.commit()
+        session.refresh(utilisateur)
+
+        questions = [_question(), _question(), _question()]
+        for numero in range(1, 4):
+            mettre_a_jour_progression_notion(
+                session,
+                _tentative(utilisateur.id, numero),
+                questions,
+                [0, 0, 0],
+            )
+
+        progression = session.exec(
+            select(ProgressionNotion).where(
+                ProgressionNotion.utilisateur_id == utilisateur.id
+            )
+        ).one()
+        diagnostic = diagnostiquer_maitrise(progression)
+
+        assert progression.nb_questions == 9
+        assert diagnostic["questions_distinctes"] == 1
+        assert diagnostic["seances_distinctes"] == 3
+        assert diagnostic["conditions"]["questions"] is False
+        assert diagnostic["maitrise_confirmee"] is False
+        assert progression.maitrise_confirmee is False
+        assert any("questions distinctes" in item for item in diagnostic["conditions_manquantes"])
+
+
 def test_une_nouvelle_erreur_invalide_une_preuve_precedente():
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
     SQLModel.metadata.create_all(engine)
@@ -109,8 +150,8 @@ def test_une_nouvelle_erreur_invalide_une_preuve_precedente():
         session.commit()
         session.refresh(utilisateur)
 
-        questions = [_question(), _question(), _question()]
         for numero in range(1, 4):
+            questions = [_question((numero - 1) * 3 + index) for index in range(3)]
             mettre_a_jour_progression_notion(
                 session,
                 _tentative(utilisateur.id, numero),
