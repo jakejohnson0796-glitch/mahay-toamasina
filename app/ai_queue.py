@@ -12,6 +12,7 @@ from typing import Optional
 
 import redis
 from sqlmodel import Session, select
+from sqlalchemy import or_
 
 from .config import parametres
 from .database import engine
@@ -178,9 +179,15 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
             document = session.get(Document, document_id)
             if not document:
                 return None
-            if document.resume_ia and document.resume_statut_ia in {
-                "generee", "provisoire", "insuffisante"
-            }:
+            fiche_fr_prete = bool(
+                document.resume_ia
+                and document.resume_statut_ia in {"generee", "provisoire", "insuffisante"}
+            )
+            fiche_mg_finale = bool(
+                document.resume_ia_mg
+                and document.resume_statut_ia_mg in {"generee", "indisponible"}
+            )
+            if fiche_fr_prete and fiche_mg_finale:
                 return None
 
             existante = session.exec(
@@ -193,7 +200,9 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
             ).first()
 
             if existante and existante.statut == StatutTacheIA.EN_COURS:
-                document.resume_statut_ia = "en_cours"
+                if not fiche_fr_prete:
+                    document.resume_statut_ia = "en_cours"
+                document.resume_statut_ia_mg = "en_cours"
                 session.add(document)
                 session.commit()
                 return existante.id
@@ -201,7 +210,9 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
             if existante and existante.statut == StatutTacheIA.EN_ATTENTE:
                 existante.disponible_le = maintenant
                 existante.derniere_erreur = None
-                document.resume_statut_ia = "en_attente"
+                if not fiche_fr_prete:
+                    document.resume_statut_ia = "en_attente"
+                document.resume_statut_ia_mg = "en_attente"
                 session.add(existante)
                 session.add(document)
                 session.commit()
@@ -213,7 +224,9 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 existante.prise_en_charge_le = None
                 existante.terminee_le = None
                 existante.derniere_erreur = None
-                document.resume_statut_ia = "en_attente"
+                if not fiche_fr_prete:
+                    document.resume_statut_ia = "en_attente"
+                document.resume_statut_ia_mg = "en_attente"
                 session.add(existante)
                 session.add(document)
                 session.commit()
@@ -230,7 +243,9 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                     disponible_le=maintenant,
                     date_creation=maintenant,
                 )
-                document.resume_statut_ia = "en_attente"
+                if not fiche_fr_prete:
+                    document.resume_statut_ia = "en_attente"
+                document.resume_statut_ia_mg = "en_attente"
                 session.add(tache)
                 session.add(document)
                 session.commit()
@@ -255,7 +270,10 @@ def planifier_resumes_documents_manquants(max_documents: int = 3) -> int:
     with Session(engine) as session:
         ids = session.exec(
             select(Document.id)
-            .where(Document.resume_statut_ia == "a_generer")
+            .where(or_(
+                Document.resume_statut_ia == "a_generer",
+                Document.resume_statut_ia_mg == "a_generer",
+            ))
             .order_by(Document.date_upload, Document.id)
             .limit(limite)
         ).all()
@@ -555,6 +573,17 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
         if tache.nombre_essais >= MAX_ESSAIS:
             tache.statut = StatutTacheIA.ECHOUEE
             tache.terminee_le = datetime.utcnow()
+            if tache.type_tache == TYPE_RESUME_DOCUMENT and tache.document_id:
+                # Clôture l’état de la fiche si toutes les tentatives ont échoué.
+                # Une fiche française déjà enregistrée reste utilisable si seule
+                # la traduction malagasy n’a pas pu être obtenue.
+                document = session.get(Document, tache.document_id)
+                if document:
+                    if document.resume_statut_ia not in {"generee", "provisoire", "insuffisante", "indisponible"}:
+                        document.resume_statut_ia = "indisponible"
+                    if document.resume_statut_ia_mg not in {"generee", "indisponible"}:
+                        document.resume_statut_ia_mg = "indisponible"
+                    session.add(document)
             logger.error(
                 "Tache IA %s abandonnee apres %s essais: %s",
                 tache_id,
