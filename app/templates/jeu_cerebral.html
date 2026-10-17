@@ -5,51 +5,59 @@
 {% block contenu %}
 <div class="jeu-cerebral-page">
   <style nonce="{{ csp_nonce(request) }}">
+    .jeu-cerebral-page,.jeu-cerebral-page *{box-sizing:border-box}
     .jeu-cerebral-page{max-width:1240px;margin:0 auto;padding:clamp(1rem,2.5vw,2rem);color:var(--content-text)}
-    .jeu-hero{position:relative;overflow:hidden;border:1px solid var(--content-border);border-radius:24px;padding:clamp(1.2rem,3vw,2.2rem);background:var(--content-surface);display:grid;grid-template-columns:minmax(0,1.3fr) minmax(190px,.7fr);gap:1.5rem;align-items:center}
-    .jeu-eyebrow{font-size:.73rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--content-link);margin:0 0 .6rem}
+    .jeu-hero{position:relative;overflow:hidden;border:1px solid var(--content-border);border-radius:24px;padding:clamp(1.2rem,3vw,2.2rem);background:linear-gradient(135deg,var(--content-surface),color-mix(in srgb,var(--content-link) 5%,var(--content-surface)));display:grid;grid-template-columns:minmax(0,1.3fr) minmax(190px,.7fr);gap:1.5rem;align-items:center;box-shadow:0 12px 32px color-mix(in srgb,var(--content-text) 5%,transparent)}
+    .jeu-eyebrow{font-size:.73rem;font-weight:850;letter-spacing:.11em;text-transform:uppercase;color:var(--content-link);margin:0 0 .6rem}
     .jeu-hero h1{margin:0;font-size:clamp(1.85rem,4vw,3rem);line-height:1.05;letter-spacing:-.045em;max-width:700px}
-    .jeu-hero p{max-width:700px;color:var(--content-text-muted);line-height:1.65;margin:.8rem 0 0;font-size:.91rem}
+    .jeu-hero p{max-width:700px;color:var(--content-text-muted);line-height:1.7;margin:.8rem 0 0;font-size:.93rem}
     .jeu-hero-illustration{display:flex;align-items:center;justify-content:center;min-height:150px}
-    .jeu-orbite{width:clamp(130px,18vw,210px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;border:1px solid var(--content-border);background:var(--content-bg);font-size:clamp(3.4rem,6vw,5.4rem);position:relative}
-    .jeu-orbite:before,.jeu-orbite:after{content:"";position:absolute;inset:10%;border:1px dashed var(--content-border);border-radius:50%;transform:rotate(28deg) scaleX(1.24)}
+    .jeu-orbite{width:clamp(130px,18vw,210px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;border:1px solid var(--content-border);background:var(--content-bg);font-size:clamp(3.4rem,6vw,5.4rem);position:relative;box-shadow:inset 0 0 35px color-mix(in srgb,var(--content-link) 8%,transparent)}
+    .jeu-orbite:before,.jeu-orbite:after{content:"";position:absolute;inset:10%;border:1px dashed var(--content-border);border-radius:50%;transform:rotate(28deg) scaleX(1.24);pointer-events:none}
     .jeu-orbite:after{transform:rotate(-34deg) scaleX(1.24)}
-    .jeu-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:1rem 0 1.35rem}
-    .jeu-stat{border:1px solid var(--content-border);border-radius:15px;padding:.9rem 1rem;background:var(--content-surface);min-width:0}
-    .jeu-stat span{display:block;color:var(--content-text-muted);font-size:.73rem;line-height:1.4}
-    .jeu-stat strong{display:block;font-size:1.45rem;letter-spacing:-.03em;margin:.18rem 0;font-variant-numeric:tabular-nums}
-    .jeu-section{margin-top:1.35rem}
-    .jeu-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:.8rem;margin:0 0 .8rem;flex-wrap:wrap}
-    .jeu-section-head h2{font-size:1.18rem;letter-spacing:-.025em;margin:0}
-    .jeu-section-head p{font-size:.8rem;color:var(--content-text-muted);margin:.28rem 0 0;line-height:1.55}
-    .jeu-theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}
-    .jeu-theme-option{position:relative;display:block;cursor:pointer}
-    .jeu-theme-option input{position:absolute;top:.8rem;right:.8rem;width:18px;height:18px;accent-color:var(--content-link)}
-    .jeu-theme-card{height:100%;border:1px solid var(--content-border);border-radius:16px;padding:1rem;background:var(--content-surface);transition:border-color .15s ease,transform .15s ease}
-    .jeu-theme-option input:checked+.jeu-theme-card{border:2px solid var(--content-link);padding:calc(1rem - 1px);box-shadow:0 0 0 3px color-mix(in srgb,var(--content-link) 12%,transparent)}
-    .jeu-theme-option:hover .jeu-theme-card{transform:translateY(-2px)}
-    .jeu-theme-emoji{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--content-border);border-radius:13px;font-size:1.45rem;margin-bottom:.75rem}
-    .jeu-theme-card strong{display:block;font-size:.93rem;margin:0 1.2rem .35rem 0}
-    .jeu-theme-card span{display:block;color:var(--content-text-muted);font-size:.77rem;line-height:1.55}
-    .jeu-theme-surprise{background:var(--content-bg)}
-    .jeu-lancement{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:1rem;padding:1rem;border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface)}
-    .jeu-lancement p{margin:0;color:var(--content-text-muted);font-size:.78rem;line-height:1.5;max-width:640px}
-    .jeu-bouton{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;border:0;border-radius:12px;padding:.85rem 1.1rem;background:var(--content-link);color:#fff;font-weight:800;font-size:.85rem;text-decoration:none;cursor:pointer;min-height:44px}
-    .jeu-bouton-secondaire{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border:1px solid var(--content-border);border-radius:10px;padding:.6rem .8rem;background:var(--content-surface);color:var(--content-text);font-weight:700;font-size:.76rem;text-decoration:none;cursor:pointer;min-height:40px}
-    .jeu-note{margin-top:1rem;display:flex;gap:.65rem;border:1px solid var(--content-border);border-radius:14px;padding:.85rem 1rem;color:var(--content-text-muted);font-size:.75rem;line-height:1.6;background:var(--content-bg)}
+    .jeu-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin:1rem 0 1.6rem}
+    .jeu-stat{border:1px solid var(--content-border);border-radius:16px;padding:1rem 1.1rem;background:var(--content-surface);min-width:0;box-shadow:0 4px 14px color-mix(in srgb,var(--content-text) 3%,transparent)}
+    .jeu-stat span{display:block;color:var(--content-text-muted);font-size:.75rem;line-height:1.45}
+    .jeu-stat strong{display:block;font-size:1.55rem;letter-spacing:-.035em;margin:.25rem 0;font-variant-numeric:tabular-nums}
+    .jeu-section{margin-top:1.6rem}
+    .jeu-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:.8rem;margin:0 0 .95rem;flex-wrap:wrap}
+    .jeu-section-head h2{font-size:clamp(1.1rem,2vw,1.3rem);letter-spacing:-.025em;margin:0}
+    .jeu-section-head p{font-size:.82rem;color:var(--content-text-muted);margin:.32rem 0 0;line-height:1.6}
+    .jeu-theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.85rem;min-width:0;margin:0;padding:0;border:0}
+    .jeu-theme-option{position:relative;display:block;min-width:0;height:100%;cursor:pointer}
+    .jeu-theme-option input{position:absolute;z-index:2;top:1rem;right:1rem;width:20px;height:20px;margin:0;accent-color:var(--content-link);cursor:pointer}
+    .jeu-theme-card{display:flex;flex-direction:column;align-items:flex-start;gap:0;position:relative;width:100%;height:100%;min-height:190px;border:1px solid var(--content-border);border-radius:18px;padding:1.05rem;background:var(--content-surface);transition:border-color .16s ease,background-color .16s ease,transform .16s ease,box-shadow .16s ease}
+    .jeu-theme-option input:checked+.jeu-theme-card{border:2px solid var(--content-link);padding:calc(1.05rem - 1px);background:color-mix(in srgb,var(--content-link) 8%,var(--content-surface));box-shadow:0 0 0 3px color-mix(in srgb,var(--content-link) 13%,transparent),0 8px 20px color-mix(in srgb,var(--content-text) 5%,transparent)}
+    .jeu-theme-option:hover .jeu-theme-card{border-color:var(--content-link);transform:translateY(-2px)}
+    .jeu-theme-option:focus-within .jeu-theme-card{outline:2px solid var(--content-link);outline-offset:3px}
+    .jeu-theme-emoji{display:grid!important;place-items:center;flex:0 0 44px;width:44px;height:44px;min-height:44px;border:1px solid var(--content-border);border-radius:14px;background:var(--content-bg);color:var(--content-text);font-size:1.5rem;line-height:1;margin:0 0 .9rem!important}
+    .jeu-theme-card strong{display:block;font-size:.96rem;line-height:1.35;letter-spacing:-.015em;margin:0 1.5rem .4rem 0;color:var(--content-text)}
+    .jeu-theme-description{display:block;color:var(--content-text-muted);font-size:.81rem;line-height:1.6;overflow-wrap:anywhere}
+    .jeu-theme-surprise{background:color-mix(in srgb,var(--content-link) 4%,var(--content-surface));border-style:dashed}
+    .jeu-theme-surprise .jeu-theme-emoji{border-style:dashed}
+    .jeu-theme-option input:checked+.jeu-theme-surprise{border-style:solid}
+    .jeu-lancement{display:flex;align-items:center;justify-content:space-between;gap:1.2rem;flex-wrap:wrap;margin-top:1rem;padding:1.1rem 1.2rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface);box-shadow:0 5px 18px color-mix(in srgb,var(--content-text) 3%,transparent)}
+    .jeu-lancement p{margin:0;color:var(--content-text-muted);font-size:.8rem;line-height:1.65;max-width:640px;flex:1 1 320px}
+    .jeu-bouton{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;border:0;border-radius:12px;padding:.88rem 1.2rem;background:var(--content-link);color:var(--content-bg);font-weight:850;font-size:.85rem;text-decoration:none;cursor:pointer;min-height:46px;white-space:nowrap;box-shadow:0 4px 12px color-mix(in srgb,var(--content-link) 18%,transparent);transition:filter .15s ease,transform .15s ease}
+    .jeu-bouton:hover{filter:brightness(1.04);transform:translateY(-1px)}
+    .jeu-bouton:focus-visible,.jeu-bouton-secondaire:focus-visible{outline:2px solid var(--content-link);outline-offset:3px}
+    .jeu-bouton-secondaire{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border:1px solid var(--content-border);border-radius:10px;padding:.6rem .8rem;background:var(--content-surface);color:var(--content-text);font-weight:750;font-size:.76rem;text-decoration:none;cursor:pointer;min-height:40px}
+    .jeu-note{margin-top:1rem;display:flex;gap:.65rem;border:1px solid var(--content-border);border-radius:14px;padding:.9rem 1rem;color:var(--content-text-muted);font-size:.77rem;line-height:1.7;background:var(--content-bg)}
     .jeu-erreur{border:1px solid #b95b5b;border-radius:12px;padding:.8rem 1rem;margin-bottom:.8rem;font-size:.82rem}
-    .jeu-history{display:grid;gap:.6rem}
-    .jeu-history-item{display:flex;align-items:center;gap:.8rem;border:1px solid var(--content-border);background:var(--content-surface);border-radius:13px;padding:.8rem 1rem}
-    .jeu-history-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--content-bg);border:1px solid var(--content-border);font-size:1.25rem;flex:0 0 auto}
+    .jeu-history{display:grid;gap:.65rem}
+    .jeu-history-item{display:flex;align-items:center;gap:.85rem;border:1px solid var(--content-border);background:var(--content-surface);border-radius:14px;padding:.9rem 1rem;transition:border-color .15s ease}
+    .jeu-history-item:hover{border-color:var(--content-link)}
+    .jeu-history-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:var(--content-bg);border:1px solid var(--content-border);font-size:1.3rem;flex:0 0 auto}
     .jeu-history-main{flex:1;min-width:0}
-    .jeu-history-main strong{display:block;font-size:.84rem;overflow-wrap:anywhere}
-    .jeu-history-main span{display:block;color:var(--content-text-muted);font-size:.71rem;margin-top:.2rem}
-    .jeu-history-score{font-size:1.02rem;font-weight:850;font-variant-numeric:tabular-nums;white-space:nowrap}
-    .jeu-empty{padding:1.3rem;border:1px dashed var(--content-border);border-radius:15px;color:var(--content-text-muted);font-size:.8rem;line-height:1.6;background:var(--content-surface)}
-    @media(max-width:800px){.jeu-hero{grid-template-columns:1fr}.jeu-hero-illustration{min-height:90px;justify-content:flex-start}.jeu-orbite{width:112px}}
-    @media(max-width:690px){.jeu-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.jeu-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.jeu-stat{padding:.7rem}.jeu-stat strong{font-size:1.25rem}}
-    @media(max-width:440px){.jeu-cerebral-page{padding:.75rem}.jeu-hero{border-radius:18px;padding:1rem}.jeu-theme-grid{grid-template-columns:1fr}.jeu-theme-card{display:grid;grid-template-columns:42px 1fr;column-gap:.75rem;align-items:center;padding:.8rem}.jeu-theme-emoji{grid-row:span 2;margin:0}.jeu-theme-card strong{margin:0 1.6rem .15rem 0}.jeu-theme-card span{grid-column:2}.jeu-theme-option input{top:1.15rem;right:.75rem}.jeu-lancement{align-items:stretch}.jeu-lancement .jeu-bouton{width:100%}.jeu-history-item{padding:.7rem}.jeu-history-score{font-size:.9rem}}
-    @media(prefers-reduced-motion:reduce){.jeu-theme-card{transition:none}.jeu-theme-option:hover .jeu-theme-card{transform:none}}
+    .jeu-history-main strong{display:block;font-size:.86rem;overflow-wrap:anywhere}
+    .jeu-history-main span{display:block;color:var(--content-text-muted);font-size:.73rem;margin-top:.25rem;line-height:1.45}
+    .jeu-history-score{font-size:1.08rem;font-weight:850;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .jeu-empty{padding:1.2rem 1.3rem;border:1px dashed var(--content-border);border-radius:15px;color:var(--content-text-muted);font-size:.82rem;line-height:1.7;background:var(--content-surface)}
+    .jeu-cerebral-page .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:900px){.jeu-hero{grid-template-columns:minmax(0,1fr) minmax(125px,.45fr);gap:1rem}.jeu-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.jeu-theme-card{min-height:175px}}
+    @media(max-width:650px){.jeu-hero{grid-template-columns:1fr;border-radius:20px}.jeu-hero-illustration{min-height:75px;justify-content:flex-start}.jeu-orbite{width:100px}.jeu-stat-grid{gap:.55rem}.jeu-stat{padding:.8rem .75rem}.jeu-stat span{font-size:.69rem}.jeu-stat strong{font-size:1.28rem}.jeu-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.jeu-theme-card{min-height:185px;padding:.85rem}.jeu-theme-option input:checked+.jeu-theme-card{padding:calc(.85rem - 1px)}.jeu-theme-emoji{margin-bottom:.7rem!important}.jeu-theme-card strong{font-size:.9rem}.jeu-theme-description{font-size:.77rem}}
+    @media(max-width:440px){.jeu-cerebral-page{padding:.75rem}.jeu-hero{border-radius:18px;padding:1rem}.jeu-theme-grid{grid-template-columns:1fr;gap:.6rem}.jeu-theme-card{display:grid;grid-template-columns:46px minmax(0,1fr);grid-template-rows:auto auto;column-gap:.8rem;align-items:start;min-height:0;padding:.85rem}.jeu-theme-option input:checked+.jeu-theme-card{padding:calc(.85rem - 1px)}.jeu-theme-emoji{grid-column:1;grid-row:1 / span 2;margin:0!important;width:44px;height:44px;min-height:44px}.jeu-theme-card strong{grid-column:2;grid-row:1;padding-right:1.45rem;margin:0 0 .2rem}.jeu-theme-description{grid-column:2;grid-row:2;padding-right:.2rem}.jeu-theme-option input{top:1rem;right:1rem}.jeu-lancement{align-items:stretch;padding:.9rem;gap:.8rem}.jeu-lancement .jeu-bouton{width:100%;white-space:normal}.jeu-history-item{padding:.75rem}.jeu-history-score{font-size:.95rem}}
+    @media(prefers-reduced-motion:reduce){.jeu-theme-card,.jeu-history-item,.jeu-bouton{transition:none}.jeu-theme-option:hover .jeu-theme-card,.jeu-bouton:hover{transform:none}}
   </style>
 
   <header class="jeu-hero">
@@ -86,13 +94,13 @@
     <form method="post" action="/jeu-cerebral/demarrer" id="form-jeu-cerebral">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
       <input type="hidden" name="langue" id="jeu-langue" value="fr">
-      <div class="jeu-theme-grid">
+      <fieldset class="jeu-theme-grid" aria-labelledby="jeu-choisir-theme"><legend class="sr-only">Choisis le thème de ton défi</legend>
         <label class="jeu-theme-option">
           <input type="radio" name="theme" value="aleatoire" checked>
           <span class="jeu-theme-card jeu-theme-surprise">
             <span class="jeu-theme-emoji">🎲</span>
             <strong>Surprends-moi</strong>
-            <span>Le hasard choisit un thème que tu n'avais peut-être pas prévu.</span>
+            <span class="jeu-theme-description">Le hasard choisit un thème que tu n'avais peut-être pas prévu.</span>
           </span>
         </label>
         {% for theme in themes %}
@@ -101,11 +109,11 @@
           <span class="jeu-theme-card">
             <span class="jeu-theme-emoji">{{ theme.emoji }}</span>
             <strong>{{ theme.titre }}</strong>
-            <span>{{ theme.description }}</span>
+            <span class="jeu-theme-description">{{ theme.description }}</span>
           </span>
         </label>
         {% endfor %}
-      </div>
+      </fieldset>
       <div class="jeu-lancement">
         <p>Le niveau est un point de départ, pas une étiquette. Après deux bonnes réponses consécutives, le défi peut monter; après une question difficile, il peut redescendre.</p>
         <button class="jeu-bouton" type="submit">{{ icone("quiz", 17) }} Lancer mon défi <span aria-hidden="true">→</span></button>
