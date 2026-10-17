@@ -35,6 +35,15 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
   doit être entièrement placée entre \( ... \) ou \[ ... \], même au milieu d'une phrase.
   Exemples : « \(f(x)=3x^{2}+2x-5\) » et
   « \(\displaystyle\int_{0}^{2}(x+1)\,dx\) ».
+- FORMULES COMPOSÉES : encadre toute l'expression, et pas seulement l'opérateur.
+  Exemples exacts : « \(7\times 8+9=65\) » et « \(\sqrt{1000}\approx31{,}6\) ».
+  N'écris jamais « sqrt{1000}approx31,6 » sans commandes LaTeX ni délimiteurs.
+- PHYSIQUE : conserve symboles, indices, puissances et unités dans l'expression :
+  « \(\Delta E=\hbar\omega\) », « \(v=3\,\mathrm{m/s}\) »,
+  « \(a=2\,\mathrm{m/s^{2}}\) », « \(\rho=1\,\mathrm{kg/m^{3}}\) ».
+  Les unités sont en \(\mathrm{...}\) et séparées de la valeur par \(\,\).
+- RÉSULTATS : utilise la virgule décimale française à l'intérieur de la formule
+  (ex. \(31{,}6\)) et vérifie les opérations avant d'expliquer l'estimation.
 - CHIMIE : utilise mhchem uniquement dans un délimiteur mathématique :
   \( \ce{H2O} \)
   \( \ce{2H2 + O2 -> 2H2O} \)
