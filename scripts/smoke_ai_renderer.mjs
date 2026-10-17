@@ -466,7 +466,7 @@ const scienceRecoverySource = [
   "On calcule d'abord (7" + tabEscape + "imes 8 + 9 = 65), puis on explique le résultat.",
   'Physique : (rho = 1 kg/m^3) et (Delta E = hbar omega).',
   "Chimie : 2H2 + O2 -> 2H2O ; Co n'est pas CO."
-].join('\\n');
+].join('\n');
 window.rendreReponseIA(scienceRecoverySource, scienceRecoveryHost);
 if (scienceRecoveryHost.querySelectorAll('.katex').length < 5) {
   throw new Error('Math/physics/reaction expressions were not grouped into KaTeX');
