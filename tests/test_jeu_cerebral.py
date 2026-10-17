@@ -30,6 +30,7 @@ def _questions_test(difficultes=None):
 
 
 def test_tous_les_themes_ont_une_banque_locale_valide_et_suffisante():
+    assert set(jeu_cerebral.BANQUE_LOCALE) == set(jeu_cerebral.THEMES_PAR_ID)
     for theme in jeu_cerebral.THEMES:
         questions = jeu_cerebral.BANQUE_LOCALE[theme["id"]]
         assert len(questions) >= jeu_cerebral.NB_QUESTIONS_SESSION
