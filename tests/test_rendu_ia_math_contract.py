@@ -178,3 +178,15 @@ def test_fiche_et_apercu_document_rendent_les_formules_sans_paragraphes_embrique
     assert '<div class="moderation-preview-text" data-rendu>{{ texte_apercu }}</div>' in moderation
     assert '<li data-rendu data-rendu-ligne>{{ valeur }}</li>' in moderation
     assert '<div class="moderation-fiche-note" data-rendu>' in moderation
+
+
+
+def test_rendu_couvre_messages_de_mission_recommandations_et_descriptions_de_cours():
+    classe = (RACINE / "app" / "templates" / "classe_detail.html").read_text(encoding="utf-8")
+    missions = (RACINE / "app" / "templates" / "session_apprentissage.html").read_text(encoding="utf-8")
+    revisions = (RACINE / "app" / "templates" / "mes_revisions.html").read_text(encoding="utf-8")
+
+    assert '<div class="classe-detail-meta" data-rendu>{{ cours.description }}</div>' in classe
+    assert '<div data-rendu>{{ mission.message }}</div>' in missions
+    assert '<div data-rendu>{{ mission.retour_adaptatif or mission.message }}</div>' in missions
+    assert '<div class="hub-illusion-message" data-rendu>{{ carte.message }}</div>' in revisions
