@@ -61,7 +61,7 @@
 
   <section class="radar-kpis" aria-label="Synthèse pédagogique">
     <article class="radar-kpi"><span>Étudiants inscrits</span><strong>{{ radar.effectif_inscrit }}</strong><span>dans ce cours</span></article>
-    <article class="radar-kpi"><span>Étudiants observés</span><strong>{{ radar.effectif_observe }}</strong><span>{{ radar.couverture_pct }} % ont des résultats dans cette matière</span></article>
+    <article class="radar-kpi"><span>Étudiants observés</span><strong>{{ radar.effectif_observe }}</strong><span>{{ radar.couverture_pct }} % ont des résultats pour cette matière et ce niveau</span></article>
     <article class="radar-kpi"><span>Notions mesurées</span><strong>{{ radar.nb_notions_mesurees }}</strong><span>avec au moins une activité enregistrée</span></article>
     <article class="radar-kpi"><span>Signaux partageables</span><strong>{{ radar.nb_notions_affichables }}</strong><span>assez d'observations pour préserver la confidentialité</span></article>
   </section>
@@ -73,7 +73,7 @@
 
   <section class="radar-panel" aria-labelledby="radar-notions-title">
     <h2 id="radar-notions-title">Notions à traiter en priorité</h2>
-    <p class="radar-intro">Le score est le score de maîtrise déjà calculé par MITARIDALA. Un signal de fragilité est une mesure sous 65 %; cela indique une piste de reprise, pas un diagnostic définitif d'un étudiant.</p>
+    <p class="radar-intro">Le radar utilise la matière et le niveau de ce cours. Les libellés « L1 » et « Licence 1 » sont rapprochés; les résultats sans niveau connu ou d’un autre niveau ne sont pas mélangés. Le score est le score de maîtrise déjà calculé par MITARIDALA. Un signal sous 65 % indique une piste de reprise, pas un diagnostic définitif d’un étudiant.</p>
     {% if radar.notions %}
     <div class="radar-notes">
       {% for notion in radar.notions %}
@@ -100,7 +100,7 @@
     {% else %}
     <div class="radar-empty">
       <strong>Pas encore assez de données collectives pour prioriser une notion.</strong>
-      <p>Invite les étudiants à faire quelques quiz dans la matière « {{ cours.matiere }} ». Quand au moins {{ radar.seuil_confidentialite }} étudiants auront des données sur une même notion, le radar donnera une recommandation plus précise. Aucune donnée n'est interprétée comme un échec.</p>
+      <p>Invite les étudiants à faire quelques quiz dans la matière « {{ cours.matiere }} ». Quand au moins {{ radar.seuil_confidentialite }} étudiants du même niveau auront des données sur une même notion, le radar donnera une recommandation plus précise. Vérifie aussi que la matière et le niveau dans les quiz correspondent à ce cours. Aucune donnée n’est interprétée comme un échec.</p>
     </div>
     {% endif %}
   </section>
