@@ -325,6 +325,7 @@ def generer_banque_questions(
 ) -> tuple[list[dict[str, Any]], str]:
     """Génère une banque adaptée, ou utilise un jeu local clairement signalé."""
     theme = obtenir_theme(theme_id)
+    theme_id = theme["id"]
     questions: list[dict[str, Any]] = []
     source = "ia"
     if utiliser_ia:
