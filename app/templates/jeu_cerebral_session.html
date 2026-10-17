@@ -76,9 +76,9 @@
     <strong>{% if langue == "mg" %}{% if retour.correcte %}Tsara izany 🌱{% else %}Aza manahy 🌷{% endif %}{% else %}{% if retour.correcte %}Bien vu 🌱{% else %}Pas de souci 🌷{% endif %}{% endif %}</strong>
     <span data-no-translate>{{ retour.message }}</span>
     {% if not retour.correcte %}
-      <p>{% if langue == "mg" %}Ny valiny marina dia{% else %}La bonne réponse était{% endif %} : <strong data-no-translate>{{ retour.reponse_correcte }}</strong></p>
+      <p>{% if langue == "mg" %}Ny valiny marina dia{% else %}La bonne réponse était{% endif %} : <strong data-no-translate data-rendu>{{ retour.reponse_correcte }}</strong></p>
     {% endif %}
-    {% if retour.explication %}<p data-no-translate>{{ retour.explication }}</p>{% endif %}
+    {% if retour.explication %}<p data-no-translate data-rendu>{{ retour.explication }}</p>{% endif %}
   </section>
   {% endif %}
 
@@ -88,7 +88,7 @@
       <span class="jeu-question-hint">{% if langue == "mg" %}Tsy mila mamaly haingana{% else %}Pas besoin de répondre vite{% endif %}</span>
     </div>
     <div data-no-translate>
-      <h2 class="jeu-question-text" id="question-du-jeu">{{ question.question }}</h2>
+      <h2 class="jeu-question-text" id="question-du-jeu" data-rendu>{{ question.question }}</h2>
     </div>
     <form method="post" action="/jeu-cerebral/{{ partie.id }}/repondre" id="form-reponse-jeu">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -98,7 +98,7 @@
         {% for choix in question.choix %}
         <label class="jeu-option">
           <input type="radio" name="reponse" value="{{ loop.index0 }}" required>
-          <span data-no-translate>{{ choix }}</span>
+          <span data-no-translate data-rendu>{{ choix }}</span>
         </label>
         {% endfor %}
       </fieldset>

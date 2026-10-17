@@ -235,3 +235,28 @@ def test_interface_accueil_du_jeu_utilise_de_vraies_cartes_accessibles_et_respon
     assert "@media(max-width:900px)" in source
     assert "@media(max-width:440px)" in source
     assert "prefers-reduced-motion:reduce" in source
+
+
+
+def test_les_formules_du_jeu_cerebral_emploient_le_rendu_scientifique():
+    session_template = (
+        ROOT / "app" / "templates" / "jeu_cerebral_session.html"
+    ).read_text(encoding="utf-8")
+    result_template = (
+        ROOT / "app" / "templates" / "jeu_cerebral_resultat.html"
+    ).read_text(encoding="utf-8")
+    base_template = (
+        ROOT / "app" / "templates" / "base.html"
+    ).read_text(encoding="utf-8")
+
+    # Une question, ses options et ses corrections peuvent toutes contenir du LaTeX.
+    assert 'id="question-du-jeu" data-rendu' in session_template
+    assert '<span data-no-translate data-rendu>{{ choix }}</span>' in session_template
+    assert '<p data-no-translate data-rendu>{{ retour.explication }}</p>' in session_template
+    assert '<span data-no-translate data-rendu>{{ correction.question }}</span>' in result_template
+    assert 'data-rendu>{{ correction.explication }}' in result_template
+
+    # Le renderer/KaTeX était auparavant chargé uniquement sur Quiz IA et Tuteur IA.
+    assert 'request.url.path.startswith("/jeu-cerebral")' in base_template
+    assert 'src="/static/js/rendu_ia.js' in base_template
+    assert 'src="/static/js/charger-dependances-ia.js' in base_template

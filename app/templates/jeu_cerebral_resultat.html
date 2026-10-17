@@ -102,16 +102,16 @@
       {% for correction in corrections %}
       <article class="jeu-answer">
         <div class="jeu-answer-head">
-          <strong>{{ correction.numero }}. <span data-no-translate>{{ correction.question }}</span></strong>
+          <strong>{{ correction.numero }}. <span data-no-translate data-rendu>{{ correction.question }}</span></strong>
           <span class="jeu-answer-state">{% if correction.correcte %}{% if langue == "mg" %}Marina 🌱{% else %}Juste 🌱{% endif %}{% else %}{% if langue == "mg" %}Fotoana hianarana 🌷{% else %}À retenir 🌷{% endif %}{% endif %}</span>
         </div>
         <p class="jeu-answer-label">{% if langue == "mg" %}Valinteninao{% else %}Ta réponse{% endif %} :</p>
-        <p data-no-translate>{% if correction.reponse_choisie is not none and correction.reponse_choisie >= 0 and correction.reponse_choisie < correction.choix|length %}{{ correction.choix[correction.reponse_choisie] }}{% else %}—{% endif %}</p>
+        <p data-no-translate data-rendu>{% if correction.reponse_choisie is not none and correction.reponse_choisie >= 0 and correction.reponse_choisie < correction.choix|length %}{{ correction.choix[correction.reponse_choisie] }}{% else %}—{% endif %}</p>
         {% if not correction.correcte %}
         <p class="jeu-answer-label">{% if langue == "mg" %}Valiny marina{% else %}Bonne réponse{% endif %} :</p>
-        <p data-no-translate>{% if correction.reponse_correcte is not none and correction.reponse_correcte >= 0 and correction.reponse_correcte < correction.choix|length %}{{ correction.choix[correction.reponse_correcte] }}{% endif %}</p>
+        <p data-no-translate data-rendu>{% if correction.reponse_correcte is not none and correction.reponse_correcte >= 0 and correction.reponse_correcte < correction.choix|length %}{{ correction.choix[correction.reponse_correcte] }}{% endif %}</p>
         {% endif %}
-        {% if correction.explication %}<p class="jeu-answer-explain" data-no-translate>{{ correction.explication }}</p>{% endif %}
+        {% if correction.explication %}<p class="jeu-answer-explain" data-no-translate data-rendu>{{ correction.explication }}</p>{% endif %}
       </article>
       {% endfor %}
     </div>
