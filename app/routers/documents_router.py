@@ -48,6 +48,15 @@ def _est_membre_cercle(session: Session, cercle_id: int, utilisateur_id: int) ->
     )
 
 
+def _charger_fiche_pedagogique(document: Document) -> dict:
+    """Charge sans risque les informations détaillées de la fiche IA."""
+    try:
+        fiche = json.loads(document.fiche_pedagogique_json or "{}")
+        return fiche if isinstance(fiche, dict) else {}
+    except (TypeError, ValueError):
+        return {}
+
+
 def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
     """Reference unique sans charger/compter toute la table des documents."""
     prefixe = "".join(c for c in filiere.nom.upper() if c.isalpha())[:3] or "DOC"
@@ -111,13 +120,13 @@ def liste_documents(
     session: Session = Depends(get_session),
 ):
     filiere_id = entier_ou_none(filiere_id)
+    utilisateur = utilisateur_courant(request, session)
     cercle = None
     if cercle_id is not None:
         # Vue "Documents du cercle" : reservee aux membres, comme le salon
         # de discussion. Un document non-approuve reste invisible ici
         # aussi (meme garantie de moderation que la bibliotheque generale).
-        utilisateur_pour_cercle = utilisateur_courant(request, session)
-        if not utilisateur_pour_cercle or not _est_membre_cercle(session, cercle_id, utilisateur_pour_cercle.id):
+        if not utilisateur or not _est_membre_cercle(session, cercle_id, utilisateur.id):
             return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
         cercle = session.get(CercleEtude, cercle_id)
         if not cercle:
@@ -135,11 +144,28 @@ def liste_documents(
     documents = session.exec(requete.order_by(Document.date_upload.desc())).all()
     filieres = session.exec(select(Filiere)).all()
 
+    # Les dépôts non encore publics ne sont visibles qu’à leur déposant.
+    mes_depots = []
+    if utilisateur:
+        requete_depots = select(Document).where(
+            Document.uploader_id == utilisateur.id,
+            Document.statut.in_([StatutDocument.EN_ATTENTE, StatutDocument.REJETE]),
+        ).order_by(Document.date_upload.desc()).limit(10)
+        if cercle_id is not None:
+            requete_depots = requete_depots.where(Document.cercle_id == cercle_id)
+        mes_depots = session.exec(requete_depots).all()
+    fiches_documents = {
+        document.id: _charger_fiche_pedagogique(document)
+        for document in [*documents, *mes_depots]
+    }
+
     return templates.TemplateResponse(
         "documents_list.html",
         {
             "request": request,
             "documents": documents,
+            "mes_depots": mes_depots,
+            "fiches_documents": fiches_documents,
             "filieres": filieres,
             "filiere_id": filiere_id,
             "matiere": matiere or "",
@@ -368,6 +394,12 @@ def upload_document(
     session.add(document)
     session.commit()
 
+    # La fiche est créée hors requête HTTP : son échec ne bloque pas le dépôt.
+    try:
+        ai_queue.planifier_resume_document(document.id)
+    except Exception:
+        pass
+
     _notifier_admins_nouveau_document(session, document, utilisateur)
 
     gamification.enregistrer_action(
@@ -512,6 +544,11 @@ def upload_documents_multiples(
                 session.add(document)
                 session.commit()
                 session.refresh(document)
+                # Chaque fichier du lot possède sa propre fiche pédagogique.
+                try:
+                    ai_queue.planifier_resume_document(document.id)
+                except Exception:
+                    pass
             except Exception:
                 session.rollback()
                 supprimer_fichier(chemin_stocke)
@@ -647,6 +684,7 @@ def consulter_document_moderation(
             "apercu_integrable": apercu_integrable,
             "texte_apercu": texte_apercu,
             "erreur_apercu": erreur_apercu,
+            "fiche_document": _charger_fiche_pedagogique(document),
         },
     )
 
