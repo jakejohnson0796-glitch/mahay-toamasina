@@ -17,7 +17,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz
+from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
@@ -923,6 +923,12 @@ def supprimer_document(
         f"Ton document « {document.titre} » ({document.reference}) a été supprimé définitivement par un administrateur.",
         acteur_id=utilisateur.id,
     )
+
+    # Les tâches IA référencent le document : on les supprime d'abord pour
+    # éviter une violation de clé étrangère lors de la suppression définitive.
+    for tache in session.exec(select(TacheIA).where(TacheIA.document_id == document_id)).all():
+        session.delete(tache)
+    session.commit()
 
     supprimer_fichier(document.chemin_fichier)
 
