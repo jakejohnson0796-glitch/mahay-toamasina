@@ -140,19 +140,20 @@ def test_renderer_protege_le_dom_katex_contre_un_second_passage():
     assert 'ancetre.classList.contains("katex")' in js
     assert 'ancetre.classList.contains("gm-katex")' in js
     assert 'ancetre.classList.contains("gm-latex-fallback")' in js
-    assert 'cible.dataset.renduVersion = "5"' in js
+    assert 'cible.dataset.renduVersion = "6"' in js
 
 
 def test_renderer_decode_les_sauts_de_ligne_ia_legacy_sans_casser_nabla():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
     assert "normaliserTexteMarkdownLegacy" in js
-    assert r'.replace(/\\n(?=\\s*[-*•]\\s+)/g, "\n")' in js
-    assert r'.replace(/\\n(?=\\s*\\d+[.)]\\s+)/g, "\n")' in js
-    assert "__GASY_AI_CODE_" in js
-    assert "resultat.replace(/\\x60\\x60\\x60" in js
-    # La commande \\nabla reste explicitement hors des contextes de conversion.
-    assert "légitime comme" in js
-    assert "nabla" in js
+    assert r'.replace(/\\r\\n|\\n/g, "\n")' in js
+    assert "const commandesLatexN = [];" in js
+    assert "__GASY_AI_NLATEX_" in js
+    assert r"/(?:&#(?:x0*20|0*32|x0*a0|0*160);|&(?:nbsp|ensp|emsp|thinsp);)/gi" in js
+    assert "resultat.replace(/__GASY_AI_CODE_" in js
+    # Les commandes LaTeX commencent parfois par \n : elles doivent être restaurées intactes.
+    for commande in ("nabla", "neq", "nu", "neg", "notin", "nexists"):
+        assert commande in js
 
 def test_renderer_convertit_textit_latex_hors_math_en_italique_markdown():
     js = (ROOT / "app/static/js/rendu_ia.js").read_text(encoding="utf-8")
