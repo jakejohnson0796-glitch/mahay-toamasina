@@ -113,15 +113,13 @@ BANQUE_LOCALE: dict[str, list[dict[str, Any]]] = {
            "Raha misokatra ny varavarana dia maneno ny fanairana. Tsy maneno ny fanairana. Inona no tsoahina araka io fitsipika io?",
            ["Misokatra tokoa ny varavarana", "Tsy misokatra ny varavarana", "Maneno foana ny fanairana", "Tsy misy azo tsoahina"],
            "Raha maneno foana ny fanairana rehefa misokatra ny varavarana, dia manondro fa tsy misokatra izy ny tsy fisian'ny feo.", "Fanjohian-kevitra misy fepetra"),
-        _q("Quatre cartes portent A, B, C et D. A doit être avant C, et D doit être après C. Quelle carte doit obligatoirement être après A ?",
+        _q("Quatre cartes portent A, B, C et D. A doit être avant C, et D doit être après C. Quelle carte doit obligatoirement être après C ?",
            ["B", "C", "D", "Aucune"],
-           1, "A est avant C et C est avant D, donc C est après A.",
+           2, "La règle indique que D doit arriver après C.",
            "Relations d'ordre", "Difficile",
-           "Misy karatra efatra A, B, C ary D. Tsy maintsy alohan'i C i A, ary tsy maintsy aorian'i C i D. Iza no tsy maintsy aorian'i A?",
-           ["B", "C", "D", "Tsy misy"],
-           "A alohan'i C ary C alohan'i D, ka aorian'i A i C.", "Filaharana"),
-    ],
-    "calcul": [
+           "Misy karatra efatra A, B, C ary D. Tsy maintsy alohan'i C i A, ary tsy maintsy aorian'i C i D. Iza no tsy maintsy aorian'i C?",
+           ["B", "C", "D", "Tsy misy"], 2,
+           "Milaza ilay fitsipika fa tsy maintsy aorian'i C i D.", "Filaharana"),
         _q("Combien font 25 % de 80 ?", ["10", "20", "25", "40"], 1,
            "25 % correspond à un quart : 80 ÷ 4 = 20.", "Pourcentages simples", "Facile",
            "Ohatrinona ny 25 % amin'ny 80?", ["10", "20", "25", "40"], 1,
@@ -376,10 +374,14 @@ def generer_banque_questions(
                 expected_count=NB_QUESTIONS_BANQUE_IA,
                 strict_coherence=True,
             )
-            if not any(q.get("difficulte") == "Facile" for q in questions):
-                raise QuizValidationError("Banque IA sans niveau facile")
-            if not any(q.get("difficulte") == "Difficile" for q in questions):
-                raise QuizValidationError("Banque IA sans niveau difficile")
+            compte_par_difficulte = {
+                niveau: sum(1 for question in questions if question.get("difficulte") == niveau)
+                for niveau in DIFFICULTES
+            }
+            if any(compte < 2 for compte in compte_par_difficulte.values()):
+                raise QuizValidationError(
+                    "Banque IA insuffisamment répartie sur les trois difficultés"
+                )
         except Exception as exc:
             logger.warning(
                 "Jeu cérébral : génération IA indisponible pour thème=%s (%s). Mode local utilisé.",
