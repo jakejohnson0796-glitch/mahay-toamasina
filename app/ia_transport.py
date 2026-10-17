@@ -76,6 +76,7 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
   TVA ou TTC en variables mathématiques.
 - Ne fais aucune substitution globale sur `^`, `_`, `\\n`, les caractères de contrôle ou les symboles
   inconnus. Répare uniquement une séquence identifiée dans son contexte et couverte par un test.
+- Ne confonds pas valeur exacte, approximation et arrondi : calcule d'abord, puis indique séparément l'approximation et l'arrondi demandé. Ne produis pas de contradictions telles que « arrondi à la dizaine = 30 ≈ 32 ». Vérifie le chiffre des unités avant tout arrondi à la dizaine.
 - Vérifie calculs, signes, unités, dimensions, indices et résultats.
 - Pour un QCM, une seule réponse doit être correcte et les choix ne contiennent
   aucun préfixe A/B/C/D/E.
