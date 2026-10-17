@@ -43,6 +43,8 @@ def test_diagnostic_maitrise_explique_les_preuves_manquantes():
         nb_revisions=1,
         serie_reussites=2,
         niveau_max_reussi="Facile",
+        # Une ancienne valeur vraie ne remplace pas les preuves de diversité.
+        maitrise_confirmee=True,
     )
 
     diagnostic = diagnostiquer_maitrise(progression)
