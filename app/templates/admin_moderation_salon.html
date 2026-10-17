@@ -13,7 +13,7 @@
     {% for s in signalements %}
     <tr>
       <td><a href="/cercles/{{ s.cercle.id }}">{{ s.cercle.nom }}</a></td>
-      <td><span data-rendu data-rendu-ligne>{{ s.message.piece_jointe_nom if s.message.piece_jointe_chemin else s.message.contenu }}</span></td>
+      <td>{% if s.message.piece_jointe_chemin %}<span>{{ s.message.piece_jointe_nom }}</span>{% else %}<span data-rendu data-rendu-ligne>{{ s.message.contenu }}</span>{% endif %}</td>
       <td>{{ s.signale_par.nom }}</td>
       <td>{{ s.signalement.motif or "—" }}</td>
       <td>
