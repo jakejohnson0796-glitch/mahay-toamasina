@@ -151,7 +151,14 @@
         if (/\uE102GMATHRAW_\d+\uE103/.test(expression)) return match;
         const contientMath = /(?:\\(?:sqrt|frac|dfrac|tfrac|times|approx|cdot|pm|leq|geq|neq|sum|prod|int|sin|cos|tan|ln|log|ce)\b|[=+*/^_×÷≈≤≥≠±√∑∫]|(?:\d)\s*(?:[-+*/×÷]|\b(?:times|approx)\b)\s*\d)/i.test(expression);
         if (!contientMath) return match;
-        return tokenFormule + (formules.push(expression.trim()) - 1) + finTokenFormule;
+        // Si la barre oblique a disparu dans une ancienne sortie, récupérer les
+        // noms de symboles grecs seulement DANS une expression déjà reconnue
+        // comme mathématique; le texte courant (Co/CO, alpha comme mot, etc.) reste intact.
+        const expressionFormatee = expression.replace(
+          /(^|[^A-Za-z\\])(Delta|delta|Omega|omega|alpha|beta|gamma|theta|lambda|mu|rho|sigma|phi|psi|pi|epsilon|tau|hbar|nabla|partial)(?=$|[^A-Za-z])/g,
+          "$1\\$2"
+        );
+        return tokenFormule + (formules.push(expressionFormatee.trim()) - 1) + finTokenFormule;
       });
 
       // Quelques modeles suppriment l'antislash initial de \displaystyle \int.
