@@ -203,20 +203,22 @@ session dediee, avec sa propre verification desktop+mobile.
 
 <script nonce="{{ csp_nonce(request) }}">
 (function () {
-  function synchroniserLangueFiches() {
-    var selecteurLangue = document.getElementById("select-langue");
-    var langue = (selecteurLangue && selecteurLangue.value) || "fr";
-    if (langue !== "mg") {
-      try { langue = window.localStorage.getItem("mahay-langue") === "mg" ? "mg" : "fr"; }
-      catch (_erreur) { langue = "fr"; }
-    }
+  function afficherFicheDansLaLangue(langue) {
+    langue = langue === "mg" ? "mg" : "fr";
     document.querySelectorAll("[data-fiche-lang]").forEach(function (panneau) {
       panneau.hidden = panneau.getAttribute("data-fiche-lang") !== langue;
     });
   }
-  synchroniserLangueFiches();
   var selecteurLangue = document.getElementById("select-langue");
-  if (selecteurLangue) selecteurLangue.addEventListener("change", synchroniserLangueFiches);
+  var langueInitiale = "";
+  try { langueInitiale = window.localStorage.getItem("mahay-langue") || ""; }
+  catch (_erreur) { langueInitiale = ""; }
+  afficherFicheDansLaLangue(langueInitiale || (selecteurLangue && selecteurLangue.value) || "fr");
+  if (selecteurLangue) {
+    selecteurLangue.addEventListener("change", function () {
+      afficherFicheDansLaLangue(selecteurLangue.value);
+    });
+  }
 
   // Le clic sur "Quiz IA" declenche une generation par IA synchrone
   // (voir /documents/{id}/quiz) qui peut prendre plusieurs secondes
