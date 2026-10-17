@@ -15,6 +15,7 @@
   ].join(",");
   var TRADUCTIONS_MG = Object.freeze({
     "Langue": "Fiteny",
+    "Jeu": "Lalao",
     "Jeu cérébral": "Lalao fanazaran-tsaina",
     "Un défi à la fois. Tu progresses à ton rythme.": "Fanamby iray isaky ny mandeha. Mandroso araka ny hafainganam-pandehanao ianao.",
     "MITARIDALA · petite pause futée": "MITARIDALA · fiatoana kely mampiasa saina",
