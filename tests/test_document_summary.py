@@ -1,7 +1,9 @@
 import json
 from types import SimpleNamespace
 
+from app import ai_queue
 from app.document_summary import generer_fiche_pedagogique
+from app.models import Document, StatutTacheIA, TacheIA
 
 
 def test_sans_ia_fiche_provisoire_ne_invente_pas_le_niveau(monkeypatch):
@@ -151,3 +153,96 @@ def test_fiches_documentaires_protegent_les_deux_langues_et_se_synchronisent():
     assert 'data-fiche-lang="fr"' in moderation and 'data-fiche-lang="mg"' in moderation
     assert 'fiche_document_mg' in moderation
     assert '"Résumé et fiche pédagogique": "Famintinana sy mombamomba ny lesona"' in dictionnaire
+
+
+
+def test_echec_final_ne_laisse_pas_fiche_bloquee_en_cours(monkeypatch):
+    tache = SimpleNamespace(
+        id=91,
+        type_tache=ai_queue.TYPE_RESUME_DOCUMENT,
+        document_id=28,
+        statut=StatutTacheIA.EN_COURS,
+        nombre_essais=ai_queue.MAX_ESSAIS,
+        terminee_le=None,
+        derniere_erreur=None,
+    )
+    document = SimpleNamespace(
+        id=28,
+        resume_ia="",
+        resume_statut_ia="en_cours",
+        resume_ia_mg="",
+        resume_statut_ia_mg="en_cours",
+    )
+
+    class FauxSession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def get(self, modele, identifiant):
+            if modele is TacheIA and identifiant == tache.id:
+                return tache
+            if modele is Document and identifiant == document.id:
+                return document
+            return None
+
+        def add(self, _objet):
+            return None
+
+        def commit(self):
+            return None
+
+    monkeypatch.setattr(ai_queue, "Session", lambda _engine: FauxSession())
+    ai_queue.echouer_tache(tache.id, RuntimeError("IA indisponible"))
+
+    assert tache.statut == StatutTacheIA.ECHOUEE
+    assert document.resume_statut_ia == "indisponible"
+    assert document.resume_statut_ia_mg == "indisponible"
+
+
+def test_echec_traduction_preserve_fiche_francaise_deja_prete(monkeypatch):
+    tache = SimpleNamespace(
+        id=92,
+        type_tache=ai_queue.TYPE_RESUME_DOCUMENT,
+        document_id=29,
+        statut=StatutTacheIA.EN_COURS,
+        nombre_essais=ai_queue.MAX_ESSAIS,
+        terminee_le=None,
+        derniere_erreur=None,
+    )
+    document = SimpleNamespace(
+        id=29,
+        resume_ia="Résumé français fiable",
+        resume_statut_ia="generee",
+        resume_ia_mg="",
+        resume_statut_ia_mg="en_cours",
+    )
+
+    class FauxSession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def get(self, modele, identifiant):
+            if modele is TacheIA and identifiant == tache.id:
+                return tache
+            if modele is Document and identifiant == document.id:
+                return document
+            return None
+
+        def add(self, _objet):
+            return None
+
+        def commit(self):
+            return None
+
+    monkeypatch.setattr(ai_queue, "Session", lambda _engine: FauxSession())
+    ai_queue.echouer_tache(tache.id, RuntimeError("traduction indisponible"))
+
+    assert document.resume_ia == "Résumé français fiable"
+    assert document.resume_statut_ia == "generee"
+    assert document.resume_statut_ia_mg == "indisponible"
