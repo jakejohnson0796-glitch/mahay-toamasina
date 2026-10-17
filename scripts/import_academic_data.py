@@ -97,13 +97,29 @@ def normaliser(texte: str | None) -> str:
     return texte.lower()
 
 
+# « Sciences de l’éducation » est l’intitulé canonique du domaine national.
+# Les anciennes lignes ENS utilisaient parfois « Sciences de l’éducation et didactique »
+# pour les mêmes mentions, ce qui rendait leur rattachement ambigu.
+ALIASES_DOMAINES = {
+    normaliser("Sciences de l’éducation et didactique"): "Sciences de l’éducation",
+}
+
+
+def canoniser_domaine(nom: str | None) -> str:
+    """Retourne le libellé canonique vérifié d’un domaine connu."""
+    libelle = (nom or "").strip()
+    return ALIASES_DOMAINES.get(normaliser(libelle), libelle)
+
+
 @dataclass
 class Rapport:
     universites_hors_perimetre: set = field(default_factory=set)
     domaines_crees: list = field(default_factory=list)
+    domaines_canonicalises: list = field(default_factory=list)
     mentions_creees: list = field(default_factory=list)
     mentions_domaine_ambigu: dict = field(default_factory=lambda: defaultdict(set))
     mentions_domaine_rattache: list = field(default_factory=list)
+    mentions_domaine_reaffectees: list = field(default_factory=list)
     facultes_creees: list = field(default_factory=list)
     filieres_creees: list = field(default_factory=list)
     programmes_crees: int = 0
@@ -118,8 +134,10 @@ class Rapport:
         if self.universites_hors_perimetre:
             print(f"Universites hors perimetre (ignorees) : {sorted(self.universites_hors_perimetre)}")
         print(f"Domaines crees : {len(self.domaines_crees)}")
+        print(f"Variantes de domaines canonicalisees : {len(self.domaines_canonicalises)}")
         print(f"Mentions creees : {len(self.mentions_creees)}")
         print(f"Mentions -> Domaine rattache : {len(self.mentions_domaine_rattache)}")
+        print(f"Mentions -> Domaine corrige : {len(self.mentions_domaine_reaffectees)}")
         if self.mentions_domaine_ambigu:
             print(f"Mentions avec Domaine AMBIGU (non rattache, a trancher en admin) : {len(self.mentions_domaine_ambigu)}")
             for nom_mention, domaines in sorted(self.mentions_domaine_ambigu.items()):
@@ -149,7 +167,7 @@ def lire_lignes_source(chemin: str) -> list[dict]:
                 "universite": str(ligne.get("universite") or "").strip(),
                 "ville": str(ligne.get("ville") or "").strip(),
                 "composante": str(ligne.get("composante") or "").strip(),
-                "domaine": str(ligne.get("domaine") or "").strip(),
+                "domaine": canoniser_domaine(str(ligne.get("domaine") or "")),
                 "mention": str(ligne.get("mention") or "").strip(),
                 "niveau": str(ligne.get("niveau") or "").strip(),
                 "type": str(ligne.get("type") or "").strip(),
@@ -172,7 +190,7 @@ def lire_lignes_source(chemin: str) -> list[dict]:
             "universite": (d.get("Université") or "").strip(),
             "ville": (d.get("Ville") or "").strip(),
             "composante": (d.get("Composante") or d.get("Composante / Établissement") or "").strip(),
-            "domaine": (d.get("Domaine") or "").strip(),
+            "domaine": canoniser_domaine(d.get("Domaine") or ""),
             "mention": (d.get("Mention") or "").strip(),
             "niveau": (d.get("Niveau") or "").strip(),
             "type": (d.get("Type") or "").strip(),
@@ -182,12 +200,68 @@ def lire_lignes_source(chemin: str) -> list[dict]:
     return lignes
 
 
+
+
+def _canonicaliser_domaines_existants(
+    session: Session,
+    dry_run: bool,
+    rapport: Rapport,
+) -> None:
+    """Fusionne l'alias ENS dans le domaine officiel sans perdre de liens.
+
+    Domaine est une entité nationale : les mentions qui pointent vers
+    l'ancien libellé sont réaffectées avant la suppression de la ligne alias.
+    Si la cible n'existe pas encore, la ligne historique est renommée.
+    En dry-run, les changements sont rapportés sans être persistés.
+    """
+    domaines = session.exec(select(Domaine)).all()
+    par_nom = {normaliser(domaine.nom): domaine for domaine in domaines}
+
+    for domaine in domaines:
+        nom_original = domaine.nom
+        nom_canonique = canoniser_domaine(nom_original)
+        cle_originale = normaliser(nom_original)
+        cle_canonique = normaliser(nom_canonique)
+        if not cle_canonique or cle_canonique == cle_originale:
+            continue
+
+        cible = par_nom.get(cle_canonique)
+        if cible is not None and cible.id != domaine.id:
+            mentions = session.exec(
+                select(Mention).where(Mention.domaine_id == domaine.id)
+            ).all()
+            for mention in mentions:
+                mention.domaine_id = cible.id
+                session.add(mention)
+
+            if not dry_run:
+                # Persister les nouvelles clés étrangères avant de supprimer la source.
+                session.flush()
+                session.delete(domaine)
+                session.commit()
+
+            rapport.domaines_canonicalises.append((nom_original, cible.nom))
+            par_nom.pop(cle_originale, None)
+            continue
+
+        # Aucune cible existante : renommer la ligne pour conserver son ID.
+        domaine.nom = nom_canonique
+        if not dry_run:
+            session.add(domaine)
+            session.commit()
+        rapport.domaines_canonicalises.append((nom_original, nom_canonique))
+        par_nom.pop(cle_originale, None)
+        par_nom[cle_canonique] = domaine
+
+
 def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
     rapport = Rapport()
     lignes = lire_lignes_source(chemin_excel)
     source_stricte = Path(chemin_excel).suffix.lower() == ".json"
 
     with Session(engine) as session:
+        # Répare d’abord les variantes déjà stockées avant de lire le catalogue canonique.
+        _canonicaliser_domaines_existants(session, dry_run, rapport)
         universites_par_nom = {normaliser(u.nom): u for u in session.exec(select(Universite)).all()}
         domaines_par_nom = {normaliser(d.nom): d for d in session.exec(select(Domaine)).all()}
 
@@ -320,19 +394,24 @@ def importer(chemin_excel: str, dry_run: bool = False) -> Rapport:
             if domaine is None:
                 continue
 
-            # Rattache le Domaine a TOUTES les variantes historiques de
-            # cette Mention dont le domaine est encore NULL. Ainsi une
-            # ligne "Sciences de gestion" n'est pas perdue si une ancienne
-            # migration avait deja "Sciences de Gestion" en base, et vice
-            # versa. On ne remplace jamais un Domaine deja renseigne.
+            # La source stricte donne un domaine unique par Mention.
+            # On rattache les profils incomplets et on corrige les anciens liens
+            # divergents seulement lorsque la source ne présente plus d'ambiguïté.
+            # Les mentions pour lesquelles plusieurs domaines subsistent restent non affectées.
             for mention in mentions_trouvees:
-                if mention.domaine_id is not None:
+                if mention.domaine_id == domaine.id:
                     continue
+                ancien_domaine = session.get(Domaine, mention.domaine_id) if mention.domaine_id else None
                 mention.domaine_id = domaine.id
                 if not dry_run:
                     session.add(mention)
                     session.commit()
-                rapport.mentions_domaine_rattache.append((mention.nom, domaine.nom))
+                if ancien_domaine is None:
+                    rapport.mentions_domaine_rattache.append((mention.nom, domaine.nom))
+                else:
+                    rapport.mentions_domaine_reaffectees.append(
+                        (mention.nom, ancien_domaine.nom, domaine.nom)
+                    )
 
         for ligne in lignes_retenues:
             universite = universites_par_nom.get(normaliser(ligne["universite"]))
