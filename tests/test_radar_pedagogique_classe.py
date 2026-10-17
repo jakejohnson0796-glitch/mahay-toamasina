@@ -106,7 +106,7 @@ def test_plan_de_reprise_est_actionnable_et_signale_ses_limites():
     assert "Algèbre 1" in plan
     assert "Dérivées" in plan
     assert "questions nouvelles" in plan
-    assert "pas un jugement sur un étudiant" in plan
+    assert "ni un jugement sur un étudiant" in plan
 
 
 def test_template_radar_compile_et_contient_les_gardes_de_confidentialite():
