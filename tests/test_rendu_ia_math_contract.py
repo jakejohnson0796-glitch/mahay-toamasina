@@ -152,10 +152,10 @@ def test_rendu_couvre_resumes_documents_et_messages_de_cours():
     salle = (RACINE / "app" / "templates" / "classe_salle.html").read_text(encoding="utf-8")
     moderation_salon = (RACINE / "app" / "templates" / "admin_moderation_salon.html").read_text(encoding="utf-8")
 
-    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</p>' in documents
-    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</p>' in documents
-    assert '<p data-rendu>{{ document.resume_ia }}</p>' in moderation
-    assert '<p data-rendu>{{ document.resume_ia_mg }}</p>' in moderation
+    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</div>' in documents
+    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</div>' in documents
+    assert '<div data-rendu>{{ document.resume_ia }}</div>' in moderation
+    assert '<div data-rendu>{{ document.resume_ia_mg }}</div>' in moderation
     assert 'class="message-contenu" data-rendu data-rendu-ligne' in messages
     assert 'contenuApercu.dataset.rendu = ""' in messages
     assert 'nouveauSpan.dataset.rendu = ""' in messages
@@ -164,3 +164,17 @@ def test_rendu_couvre_resumes_documents_et_messages_de_cours():
     assert 'class="classe-section-card-intro" data-rendu' in devoir
     assert 'contenu.dataset.rendu = ""' in salle
     assert '<span data-rendu data-rendu-ligne>{{ s.message.piece_jointe_nom' in moderation_salon
+
+
+
+def test_fiche_et_apercu_document_rendent_les_formules_sans_paragraphes_embriques():
+    documents = (RACINE / "app" / "templates" / "documents_list.html").read_text(encoding="utf-8")
+    moderation = (RACINE / "app" / "templates" / "moderation_document_preview.html").read_text(encoding="utf-8")
+
+    assert '<div class="doc-resume-ia" data-rendu>' in documents
+    assert '<li data-rendu data-rendu-ligne>{{ valeur }}</li>' in documents
+    assert '<span data-rendu data-rendu-ligne>{{ fiche.get("objectif_pedagogique") }}</span>' in documents
+    assert '<div class="doc-fiche-limites" data-rendu>' in documents
+    assert '<div class="moderation-preview-text" data-rendu>{{ texte_apercu }}</div>' in moderation
+    assert '<li data-rendu data-rendu-ligne>{{ valeur }}</li>' in moderation
+    assert '<div class="moderation-fiche-note" data-rendu>' in moderation
