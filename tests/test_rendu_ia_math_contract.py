@@ -123,6 +123,7 @@ def test_renderer_scientifique_est_charge_sur_les_surfaces_ia_et_documents():
         'request.url.path.startswith("/cercle")',
         'request.url.path.startswith("/moderation")',
         'request.url.path == "/mes-revisions"',
+        'request.url.path == "/session-apprentissage"',
     ):
         assert route in base
     assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
