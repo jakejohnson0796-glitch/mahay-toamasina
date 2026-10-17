@@ -171,12 +171,12 @@
       // parenthèses (« 56+9=65 », « 30 ≈ 32 »). Rendre uniquement une petite
       // expression bornée par chiffres/opérateurs, en laissant les dates telles quelles.
       normalisee = normalisee.replace(
-        /(^|[^\w\\])([-+]?\d+(?:[.,]\d+)?(?:\s*[-+*×÷/]\s*[-+]?\d+(?:[.,]\d+)?|\s*(?:=|≈|≤|≥|≠|<|>|\\approx|\\leq|\\geq|\\neq)\s*[-+]?\d+(?:[.,]\d+)?(?:\s*%)?)+)(?=$|[^\w])/g,
+        /(^|[^\w\\])([-+]?\d+(?:[.,]\d+)?(?:\s*[-+*×÷/]\s*[-+]?\d+(?:[.,]\d+)?|\s*(?:=|<|>|\\approx|\\leq|\\geq|\\neq)\s*[-+]?\d+(?:[.,]\d+)?(?:\s*%)?)+)(?=$|[^\w])/g,
         function (match, prefix, expression) {
           const propre = expression.trim();
           if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(propre) ||
               /^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(propre)) return match;
-          const contientRelation = /(?:=|≈|≤|≥|≠|<|>|\\approx|\\leq|\\geq|\\neq)/.test(propre);
+          const contientRelation = /(?:=|<|>|\\approx|\\leq|\\geq|\\neq)/.test(propre);
           const nombreOperations = (propre.match(/[-+*×÷/]/g) || []).length;
           if (!contientRelation && nombreOperations < 2) return match;
           return prefix + tokenFormule + (formules.push(propre) - 1) + finTokenFormule;
