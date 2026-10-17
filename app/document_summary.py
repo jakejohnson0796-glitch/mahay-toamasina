@@ -318,6 +318,13 @@ def _normaliser_reponse_ia(
         "fiche_malagasy": fiche_malagasy,
     }
 
+def _confiance_fiche(fiche: dict[str, Any]) -> float:
+    try:
+        return max(0.0, min(1.0, float(fiche.get("confiance") or 0.7)))
+    except (TypeError, ValueError):
+        return 0.7
+
+
 def traduire_fiche_existante_malagasy(fiche_fr: dict[str, Any]) -> dict[str, Any]:
     """Traduit une fiche française historique sans relire le fichier d'origine."""
     client = _client_ia()
@@ -374,7 +381,7 @@ def traduire_fiche_existante_malagasy(fiche_fr: dict[str, Any]) -> dict[str, Any
             "prerequis": _nettoyer_liste(donnees.get("prerequis")),
             "plan_cours": _nettoyer_liste(donnees.get("plan_cours"), limite=10),
             "langue": re.sub(r"\s+", " ", str(donnees.get("langue") or "Malagasy")).strip()[:80],
-            "confiance": float(fiche_fr.get("confiance") or 0.7),
+            "confiance": _confiance_fiche(fiche_fr),
             "source": "ia",
             "statut": "generee",
             "limites": re.sub(r"\s+", " ", str(donnees.get("limites") or "")).strip()[:900],
@@ -547,6 +554,10 @@ def generer_et_sauvegarder_fiche_document(document_id: int) -> None:
         texte=texte,
     )
     fiche_mg = fiche.pop("fiche_malagasy", None) or _fiche_malagasy_indisponible()
+    # Si le modèle a produit une bonne fiche française mais une version malagasy vide,
+    # une seconde tentative de traduction ciblée est plus fiable qu’un faux résumé.
+    if fiche.get("source") == "ia" and fiche_mg.get("statut") == "indisponible":
+        fiche_mg = traduire_fiche_existante_malagasy(fiche)
 
     with Session(engine) as session:
         document = session.get(Document, document_id)
