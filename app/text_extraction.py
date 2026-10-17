@@ -82,7 +82,10 @@ def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
 
             presentation = Presentation(str(chemin))
             passages = []
+            total = 0
             for numero, diapositive in enumerate(presentation.slides, start=1):
+                if numero > 500 or total >= MAX_TEXTE_EXTRAIT:
+                    break
                 morceaux = []
                 for forme in diapositive.shapes:
                     texte = getattr(forme, "text", "") or ""
@@ -90,10 +93,12 @@ def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
                         morceaux.append(texte.strip())
                 texte_diapositive = "\\n".join(morceaux).strip()
                 if texte_diapositive:
+                    texte_diapositive = texte_diapositive[:MAX_TEXTE_EXTRAIT - total]
                     passages.append({
                         "reference": f"diapositive {numero}",
                         "texte": texte_diapositive,
                     })
+                    total += len(texte_diapositive)
             return passages
         except Exception:
             return []
@@ -104,13 +109,18 @@ def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
 
             document = DocxDocument(str(chemin))
             passages = []
+            total = 0
             for numero, paragraphe in enumerate(document.paragraphs, start=1):
+                if numero > 2000 or total >= MAX_TEXTE_EXTRAIT:
+                    break
                 texte = (paragraphe.text or "").strip()
                 if texte:
+                    texte = texte[:MAX_TEXTE_EXTRAIT - total]
                     passages.append({
                         "reference": f"paragraphe {numero} (pagination indisponible)",
                         "texte": texte,
                     })
+                    total += len(texte)
             if passages:
                 return passages
         except Exception:
