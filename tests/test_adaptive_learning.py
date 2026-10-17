@@ -82,7 +82,7 @@ def test_ancienne_confirmation_sans_preuves_distinctes_ne_debloque_pas_un_prereq
     suivante = choisir_prochaine_notion(
         carte,
         [ancienne_preuve, notion_suivante],
-        exclure_id=2,
+        exclure_id=1,
     )
 
     assert suivante is None
