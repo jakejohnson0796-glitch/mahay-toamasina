@@ -355,8 +355,8 @@ def _empreinte_question(question: dict) -> str:
     if not isinstance(texte, str):
         return ""
     texte = unicodedata.normalize("NFKC", texte).casefold()
-    texte = re.sub(r"^(?:question\\s*)?\\d{1,3}\\s*[).:–—-]\\s*", "", texte)
-    texte = re.sub(r"\\s+", " ", texte).strip().strip(" \\t\\r\\n.:;!?")
+    texte = re.sub(r"^(?:question\s*)?\d{1,3}\s*[).:–—-]\s*", "", texte)
+    texte = re.sub(r"\s+", " ", texte).strip().strip(" \t\r\n.:;!?")
     if not texte:
         return ""
     return hashlib.sha256(texte.encode("utf-8")).hexdigest()
