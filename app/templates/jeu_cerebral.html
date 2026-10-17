@@ -155,7 +155,9 @@
     champ.value = langue === "mg" ? "mg" : "fr";
   }
   synchroniser();
-  if (selecteur) selecteur.addEventListener("change", synchroniser);
+  if (selecteur) selecteur.addEventListener("change", function () {
+    champ.value = selecteur.value === "mg" ? "mg" : "fr";
+  });
 })();
 </script>
 {% endblock %}
