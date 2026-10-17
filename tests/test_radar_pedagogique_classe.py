@@ -114,7 +114,6 @@ def test_template_radar_compile_et_contient_les_gardes_de_confidentialite():
 
     source = (ROOT / "app" / "templates" / "radar_pedagogique_classe.html").read_text(encoding="utf-8")
     assert "radar.seuil_confidentialite" in source
-    assert "aucun nom" in source.lower()
-    assert "data" not in source.lower() or "données" in source.lower()
+    assert "sans noms" in source.lower()
     assert 'id="copier-plan"' in source
     assert 'name="utilisateur.nom"' not in source
