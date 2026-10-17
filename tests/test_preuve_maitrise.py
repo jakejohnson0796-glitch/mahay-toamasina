@@ -56,6 +56,28 @@ def test_diagnostic_maitrise_explique_les_preuves_manquantes():
     assert "travailler sur 3 séances distinctes (0)" in diagnostic["conditions_manquantes"]
 
 
+def test_ancienne_confirmation_ne_bloque_pas_une_epreuve_de_confirmation():
+    progression = ProgressionNotion(
+        utilisateur_id=1,
+        matiere="Mathématiques",
+        notion="Matrices",
+        score_maitrise=90,
+        nb_questions=12,
+        nb_revisions=3,
+        serie_reussites=4,
+        niveau_max_reussi="Moyen",
+        maitrise_confirmee=True,
+        preuves_apprentissage_json='{"version":1,"questions":["' + "a" * 64 + '"],"seances":["1","2","3"]}',
+    )
+
+    diagnostic = diagnostiquer_maitrise(progression)
+
+    assert diagnostic["statut"] == "a_confirmer"
+    assert diagnostic["maitrise_confirmee"] is False
+    assert "réussir 8 questions distinctes (1)" in diagnostic["conditions_manquantes"]
+    assert besoin_preuve_maitrise(progression) is True
+
+
 def test_trois_seances_et_neuf_reussites_produisent_une_maitrise_prouvee():
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
     SQLModel.metadata.create_all(engine)
