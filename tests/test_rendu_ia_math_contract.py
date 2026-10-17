@@ -163,7 +163,8 @@ def test_rendu_couvre_resumes_documents_et_messages_de_cours():
     assert 'class="thread-apercu-contenu" data-rendu data-rendu-ligne' in messages
     assert 'class="classe-section-card-intro" data-rendu' in devoir
     assert 'contenu.dataset.rendu = ""' in salle
-    assert '<span data-rendu data-rendu-ligne>{{ s.message.piece_jointe_nom' in moderation_salon
+    assert '<span data-rendu data-rendu-ligne>{{ s.message.contenu }}</span>' in moderation_salon
+    assert '<span>{{ s.message.piece_jointe_nom }}</span>' in moderation_salon
 
 
 
