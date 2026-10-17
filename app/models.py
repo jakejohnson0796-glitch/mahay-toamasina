@@ -553,6 +553,33 @@ class TentativeQuiz(SQLModel, table=True):
     duree_secondes: Optional[int] = None
 
 
+class JeuCerebralSession(SQLModel, table=True):
+    """Une session de défis cognitifs, séparée des résultats scolaires des quiz.
+
+    La banque de questions et les réponses restent JSON pour pouvoir conserver
+    les questions exactes, leur difficulté IA et le chemin adaptatif réellement suivi.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    theme_id: str = Field(max_length=40)
+    langue: str = Field(default="fr", max_length=5)
+    source_generation: str = Field(default="ia", max_length=16)
+    difficulte_initiale: str = Field(default="Moyen", max_length=16)
+    nb_questions: int = Field(default=5)
+    questions_json: str
+    reponses_json: str = Field(default="{}")
+    score: Optional[int] = None  # pourcentage, uniquement pour une session terminée
+    bonnes_reponses: Optional[int] = None
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    date_fin: Optional[datetime] = None
+    recommandation_json: str = Field(default="{}")
+
+    __table_args__ = (
+        Index("ix_jeu_cerebral_user_date", "utilisateur_id", "date_creation"),
+    )
+
+
+
 class MissionApprentissage(SQLModel, table=True):
     """État persistant de la mission adaptative courante d'un étudiant."""
     id: Optional[int] = Field(default=None, primary_key=True)
