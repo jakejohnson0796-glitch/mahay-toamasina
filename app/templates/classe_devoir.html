@@ -25,7 +25,7 @@
       <div class="classe-notice"><strong>Délai dépassé</strong><span>La date limite est dépassée. Vérifie les consignes de ton professeur avant toute nouvelle tentative.</span></div>
       {% endif %}
       {% if devoir.description %}
-      <div class="classe-section-card-intro">{{ devoir.description }}</div>
+      <div class="classe-section-card-intro" data-rendu>{{ devoir.description }}</div>
       {% endif %}
 
       {% if not peut_gerer and not delai_depasse %}
