@@ -512,9 +512,16 @@ def diagnostiquer_maitrise(progression: ProgressionNotion) -> dict:
 
 
 def besoin_preuve_maitrise(progression: ProgressionNotion) -> bool:
-    """Autorise une épreuve ciblée même lorsque la révision n'est pas échue."""
+    """Autorise une épreuve ciblée même lorsque la révision n'est pas échue.
+
+    Le statut calculé est la source de vérité : un ancien booléen enregistré
+    avant l'introduction des preuves distinctes ne doit pas bloquer la reprise.
+    """
     diagnostic = diagnostiquer_maitrise(progression)
-    return diagnostic["statut"] == "a_confirmer" and not progression.maitrise_confirmee
+    return (
+        diagnostic["statut"] == "a_confirmer"
+        and not diagnostic["maitrise_confirmee"]
+    )
 
 
 def mettre_a_jour_progression_notion(
@@ -612,7 +619,10 @@ def mettre_a_jour_progression_notion(
 
         diagnostic_avant_preuve = diagnostiquer_maitrise(progression)
         if diagnostic_avant_preuve["statut"] == "prouvee":
-            if not progression.maitrise_confirmee:
+            if (
+                not progression.maitrise_confirmee
+                or progression.derniere_preuve_le is None
+            ):
                 progression.derniere_preuve_le = maintenant
                 progression.prochaine_preuve_le = maintenant + timedelta(
                     days=30 if progression.score_maitrise >= 95 and progression.serie_reussites >= 5 else 14
