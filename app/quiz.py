@@ -4,8 +4,11 @@ du router pour la meme raison que subscription.py et dashboard.py :
 le router orchestre la requete HTTP, ce module sait generer/corriger un
 quiz et calculer les statistiques.
 """
+import hashlib
 import json
 import logging
+import re
+import unicodedata
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
@@ -342,6 +345,52 @@ def _score_maitrise_effectif(progression: ProgressionNotion) -> int:
     return 0
 
 
+def _empreinte_question(question: dict) -> str:
+    """Identifie une question par son énoncé, sans ses labels de présentation.
+
+    Les choix et la difficulté ne rendent pas un énoncé répété « nouveau ».
+    Les nombres et les symboles mathématiques de l'énoncé sont conservés.
+    """
+    texte = question.get("question", "")
+    if not isinstance(texte, str):
+        return ""
+    texte = unicodedata.normalize("NFKC", texte).casefold()
+    texte = re.sub(r"^(?:question\\s*)?\\d{1,3}\\s*[).:–—-]\\s*", "", texte)
+    texte = re.sub(r"\\s+", " ", texte).strip().strip(" \\t\\r\\n.:;!?")
+    if not texte:
+        return ""
+    return hashlib.sha256(texte.encode("utf-8")).hexdigest()
+
+
+def _lire_preuves_apprentissage(progression: ProgressionNotion) -> Dict[str, set[str]]:
+    """Charge les preuves enregistrées tout en tolérant les lignes historiques."""
+    try:
+        brut = json.loads(getattr(progression, "preuves_apprentissage_json", "{}") or "{}")
+    except (TypeError, ValueError):
+        brut = {}
+    if not isinstance(brut, dict):
+        brut = {}
+    questions = {
+        valeur for valeur in brut.get("questions", [])
+        if isinstance(valeur, str) and len(valeur) == 64
+    } if isinstance(brut.get("questions", []), list) else set()
+    seances = {
+        str(valeur) for valeur in brut.get("seances", [])
+        if valeur is not None and str(valeur).strip()
+    } if isinstance(brut.get("seances", []), list) else set()
+    return {"questions": questions, "seances": seances}
+
+
+def _serialiser_preuves_apprentissage(preuves: Dict[str, set[str]]) -> str:
+    """Stocke un historique borné : quelques centaines de hashes suffisent."""
+    donnees = {
+        "version": 1,
+        "questions": sorted(preuves["questions"])[:512],
+        "seances": sorted(preuves["seances"])[-256:],
+    }
+    return json.dumps(donnees, ensure_ascii=False, separators=(",", ":"))
+
+
 def revision_due(progression: ProgressionNotion, maintenant: Optional[datetime] = None) -> bool:
     """Indique si une notion doit etre revisee maintenant."""
     maintenant = maintenant or datetime.utcnow()
@@ -389,20 +438,24 @@ def diagnostiquer_maitrise(progression: ProgressionNotion) -> dict:
     serie = int(progression.serie_reussites or 0)
     rang_max = _rang_difficulte(progression.niveau_max_reussi)
 
+    preuves = _lire_preuves_apprentissage(progression)
+    questions_distinctes = len(preuves["questions"])
+    seances_distinctes = len(preuves["seances"])
     conditions = {
         "score": score >= 85,
-        "questions": questions >= 8,
-        "seances": revisions >= 3,
+        "questions": questions_distinctes >= 8,
+        "seances": seances_distinctes >= 3,
         "serie": serie >= 3,
         "difficulte": rang_max >= 2,
     }
-    confirme = bool(progression.maitrise_confirmee or all(conditions.values()))
+    # Une ancienne confirmation ne remplace jamais les preuves objectives.
+    confirme = all(conditions.values())
 
     if confirme:
         statut = "prouvee"
         libelle = "Maîtrise prouvée"
         action = "Révision espacée"
-    elif score >= 75 and revisions >= 2:
+    elif score >= 75 and seances_distinctes >= 2:
         statut = "a_confirmer"
         libelle = "Prête pour une épreuve de maîtrise"
         action = "Épreuve de confirmation"
@@ -431,8 +484,8 @@ def diagnostiquer_maitrise(progression: ProgressionNotion) -> dict:
     conditions_manquantes = []
     labels = {
         "score": f"atteindre 85 % de maîtrise ({score} %)",
-        "questions": f"avoir 8 questions évaluées ({questions})",
-        "seances": f"avoir 3 séances différentes ({revisions})",
+        "questions": f"réussir 8 questions distinctes ({questions_distinctes})",
+        "seances": f"travailler sur 3 séances distinctes ({seances_distinctes})",
         "serie": f"obtenir 3 réussites consécutives ({serie})",
         "difficulte": (
             f"réussir au moins Moyen (meilleur niveau : {progression.niveau_max_reussi or 'aucun'})"
@@ -450,6 +503,8 @@ def diagnostiquer_maitrise(progression: ProgressionNotion) -> dict:
         "confiance": confiance,
         "conditions": conditions,
         "conditions_manquantes": conditions_manquantes,
+        "questions_distinctes": questions_distinctes,
+        "seances_distinctes": seances_distinctes,
         "niveau_max_reussi": progression.niveau_max_reussi or "Aucun",
         "maitrise_confirmee": confirme,
         "prochaine_preuve_le": progression.prochaine_preuve_le,
@@ -472,7 +527,9 @@ def mettre_a_jour_progression_notion(
     recalcule la prochaine revision de chaque notion rencontree."""
     maintenant = datetime.utcnow()
     progressions_touchees: Dict[int, ProgressionNotion] = {}
+    preuves_par_progression: Dict[int, Dict[str, set[str]]] = {}
     echecs_pendant_revision = set()
+    seance_id = str(tentative.id) if tentative.id is not None else maintenant.isoformat()
 
     for index, question in enumerate(questions_quiz):
         notion = (question.get("notion") or "").strip()
@@ -531,10 +588,19 @@ def mettre_a_jour_progression_notion(
             progression.prochaine_preuve_le = maintenant + timedelta(days=1)
 
         progression.date_maj = maintenant
-        progressions_touchees[id(progression)] = progression
+        cle_progression = id(progression)
+        progressions_touchees[cle_progression] = progression
+        if cle_progression not in preuves_par_progression:
+            preuves_par_progression[cle_progression] = _lire_preuves_apprentissage(progression)
+        empreinte = _empreinte_question(question)
+        if empreinte:
+            preuves_par_progression[cle_progression]["questions"].add(empreinte)
+        preuves_par_progression[cle_progression]["seances"].add(seance_id)
         session.add(progression)
 
-    for progression in progressions_touchees.values():
+    for cle_progression, progression in progressions_touchees.items():
+        preuves = preuves_par_progression[cle_progression]
+        progression.preuves_apprentissage_json = _serialiser_preuves_apprentissage(preuves)
         progression.nb_revisions += 1
         progression.prochaine_revision_le = maintenant + timedelta(
             days=_intervalle_revision_jours(
@@ -545,12 +611,17 @@ def mettre_a_jour_progression_notion(
         )
 
         diagnostic_avant_preuve = diagnostiquer_maitrise(progression)
-        if diagnostic_avant_preuve["statut"] == "prouvee" and not progression.maitrise_confirmee:
+        if diagnostic_avant_preuve["statut"] == "prouvee":
+            if not progression.maitrise_confirmee:
+                progression.derniere_preuve_le = maintenant
+                progression.prochaine_preuve_le = maintenant + timedelta(
+                    days=30 if progression.score_maitrise >= 95 and progression.serie_reussites >= 5 else 14
+                )
             progression.maitrise_confirmee = True
-            progression.derniere_preuve_le = maintenant
-            progression.prochaine_preuve_le = maintenant + timedelta(
-                days=30 if progression.score_maitrise >= 95 and progression.serie_reussites >= 5 else 14
-            )
+        else:
+            # Les anciennes confirmations sont révoquées si elles ne satisfont
+            # pas les nouveaux critères de diversité et de répétition.
+            progression.maitrise_confirmee = False
 
         progression.confiance_maitrise = diagnostic_avant_preuve["confiance"]
         if progression.maitrise_confirmee:
