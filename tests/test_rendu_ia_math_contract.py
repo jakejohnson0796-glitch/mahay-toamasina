@@ -145,10 +145,10 @@ def test_rendu_couvre_resumes_documents_et_messages_de_cours():
     devoir = (RACINE / "app" / "templates" / "classe_devoir.html").read_text(encoding="utf-8")
     salle = (RACINE / "app" / "templates" / "classe_salle.html").read_text(encoding="utf-8")
 
-    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</div>' in documents
-    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</div>' in documents
-    assert '<div data-rendu>{{ document.resume_ia }}</div>' in moderation
-    assert '<div data-rendu>{{ document.resume_ia_mg }}</div>' in moderation
+    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</p>' in documents
+    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</p>' in documents
+    assert '<p data-rendu>{{ document.resume_ia }}</p>' in moderation
+    assert '<p data-rendu>{{ document.resume_ia_mg }}</p>' in moderation
     assert 'class="message-contenu" data-rendu data-rendu-ligne' in messages
     assert 'class="thread-apercu-contenu" data-rendu data-rendu-ligne' in messages
     assert 'class="classe-section-card-intro" data-rendu' in devoir
