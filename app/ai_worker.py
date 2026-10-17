@@ -120,6 +120,7 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
     )
 
     dernier_controle_db = 0.0
+    derniere_planification_resume = 0.0
     while arret is None or not arret.is_set():
         tache = None
         try:
@@ -154,9 +155,12 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
                         age_minimum_secondes=60,
                         age_en_cours_secondes=600,
                     )
-                    # Les anciens documents sont préparés progressivement, sans
-                    # lancer un lot massif de requêtes IA au démarrage.
-                    ai_queue.planifier_resumes_documents_manquants(max_documents=3)
+                    # Un petit lot au maximum toutes les 30 secondes limite les
+                    # requêtes SQL/IA en période de file vide.
+                    maintenant_resume = time.monotonic()
+                    if maintenant_resume - derniere_planification_resume >= INTERVALLE_FILET_SECURITE_DB:
+                        ai_queue.planifier_resumes_documents_manquants(max_documents=3)
+                        derniere_planification_resume = maintenant_resume
                 except Exception:
                     logger.exception("Impossible de reparer la file IA Tuteur.")
 
