@@ -219,3 +219,19 @@ def test_partie_est_visible_uniquement_par_son_proprietaire():
             assert _partie_du_proprietaire(session, 999_999, proprietaire.id) is None
     finally:
         engine.dispose()
+
+
+
+def test_interface_accueil_du_jeu_utilise_de_vraies_cartes_accessibles_et_responsives():
+    source = (ROOT / "app" / "templates" / "jeu_cerebral.html").read_text(encoding="utf-8")
+
+    # Régression constatée sur capture : un span de carte inline fragmentait
+    # la bordure et le sélecteur générique stylait l'emoji comme une description.
+    assert ".jeu-theme-card{display:flex" in source
+    assert ".jeu-theme-card span{display:block" not in source
+    assert 'class="jeu-theme-description"' in source
+    assert '<fieldset class="jeu-theme-grid"' in source
+    assert ".jeu-theme-option:focus-within .jeu-theme-card" in source
+    assert "@media(max-width:900px)" in source
+    assert "@media(max-width:440px)" in source
+    assert "prefers-reduced-motion:reduce" in source
