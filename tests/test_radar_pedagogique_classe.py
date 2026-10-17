@@ -88,7 +88,7 @@ def test_radar_ne_compte_pas_deux_fois_le_meme_etudiant_pour_une_notion():
     derivees = radar["notions"][0]
 
     assert derivees["effectif_observe"] == 3
-    assert derivees["score_moyen"] == 58
+    assert derivees["score_moyen"] == 52  # score le plus prudent, sans compter l’étudiant deux fois
 
 
 def test_plan_de_reprise_est_actionnable_et_signale_ses_limites():
