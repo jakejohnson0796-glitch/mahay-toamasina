@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+{% block titre %}Ton défi — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="jeu-session-page">
+  <style nonce="{{ csp_nonce(request) }}">
+    .jeu-session-page{max-width:960px;margin:0 auto;padding:clamp(1rem,2.5vw,2rem);color:var(--content-text)}
+    .jeu-session-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+    .jeu-session-breadcrumb{font-size:.74rem;color:var(--content-text-muted);margin:0 0 .35rem}
+    .jeu-session-header h1{font-size:clamp(1.45rem,3vw,2rem);letter-spacing:-.035em;margin:0}
+    .jeu-session-desc{font-size:.82rem;color:var(--content-text-muted);line-height:1.55;margin:.4rem 0 0}
+    .jeu-bouton-retour{display:inline-flex;gap:.45rem;align-items:center;text-decoration:none;padding:.62rem .8rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-surface);color:var(--content-text);font-size:.78rem;font-weight:750}
+    .jeu-session-progress{border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface);padding:1rem;margin-bottom:1rem}
+    .jeu-progress-meta{display:flex;justify-content:space-between;gap:.7rem;align-items:center;font-size:.78rem;flex-wrap:wrap}
+    .jeu-progress-meta strong{font-size:.83rem}
+    .jeu-progress-meta span{color:var(--content-text-muted)}
+    .jeu-progress-track{height:8px;border-radius:999px;overflow:hidden;background:var(--content-border);margin-top:.7rem}
+    .jeu-progress-fill{height:100%;border-radius:999px;background:var(--content-link);transition:width .2s ease}
+    .jeu-local-note{padding:.7rem .85rem;border:1px solid var(--content-border);border-radius:12px;color:var(--content-text-muted);font-size:.76rem;line-height:1.55;margin-bottom:1rem;background:var(--content-bg)}
+    .jeu-feedback{border:1px solid var(--content-border);background:var(--content-surface);border-radius:14px;padding:.9rem 1rem;margin-bottom:1rem;font-size:.8rem;line-height:1.6}
+    .jeu-feedback strong{display:block;font-size:.87rem;margin-bottom:.2rem}
+    .jeu-feedback p{margin:.35rem 0 0}
+    .jeu-feedback-success{border-color:var(--content-border)}
+    .jeu-question-card{border:1px solid var(--content-border);border-radius:20px;background:var(--content-surface);padding:clamp(1.1rem,3vw,2rem)}
+    .jeu-question-top{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-bottom:1.25rem}
+    .jeu-difficulty{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .6rem;border:1px solid var(--content-border);border-radius:999px;color:var(--content-text-muted);background:var(--content-bg);font-size:.7rem;font-weight:800}
+    .jeu-question-hint{font-size:.72rem;color:var(--content-text-muted)}
+    .jeu-question-text{font-size:clamp(1.15rem,2.6vw,1.55rem);line-height:1.5;letter-spacing:-.015em;font-weight:750;margin:0 0 1.2rem;overflow-wrap:anywhere}
+    .jeu-options{display:grid;gap:.65rem;margin:0;padding:0;border:0}
+    .jeu-option{position:relative;display:flex;align-items:flex-start;gap:.75rem;border:1px solid var(--content-border);border-radius:13px;padding:.85rem .9rem;cursor:pointer;background:var(--content-bg);transition:border-color .15s ease,background .15s ease}
+    .jeu-option input{width:18px;height:18px;margin:.15rem 0 0;accent-color:var(--content-link);flex:0 0 auto}
+    .jeu-option span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
+    .jeu-option:has(input:checked){border-color:var(--content-link);background:color-mix(in srgb,var(--content-link) 7%,var(--content-bg))}
+    .jeu-option:focus-within{outline:2px solid var(--content-link);outline-offset:2px}
+    .jeu-submit-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-top:1.15rem}
+    .jeu-submit-note{font-size:.72rem;line-height:1.5;color:var(--content-text-muted);max-width:470px}
+    .jeu-bouton{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;border:0;border-radius:12px;background:var(--content-link);color:#fff;padding:.8rem 1.1rem;font-weight:850;font-size:.82rem;cursor:pointer}
+    .jeu-bouton:disabled{opacity:.45;cursor:not-allowed}
+    @media(max-width:560px){.jeu-session-page{padding:.75rem}.jeu-session-header{gap:.7rem}.jeu-session-header h1{font-size:1.5rem}.jeu-bouton-retour{width:100%;justify-content:center}.jeu-question-card{border-radius:16px;padding:1rem}.jeu-submit-row{align-items:stretch}.jeu-submit-row .jeu-bouton{width:100%}}
+    @media(prefers-reduced-motion:reduce){.jeu-progress-fill,.jeu-option{transition:none}}
+  </style>
+
+  <header class="jeu-session-header">
+    <div>
+      <p class="jeu-session-breadcrumb"><a href="/jeu-cerebral" style="color:var(--content-link);text-decoration:none">Jeu cérébral</a> / {{ theme.titre }}</p>
+      <h1>{{ theme.emoji }} {{ theme.titre }}</h1>
+      <p class="jeu-session-desc">Prends ton temps. Lis calmement, choisis la réponse qui te semble juste et découvre la suite pas à pas.</p>
+    </div>
+    <a class="jeu-bouton-retour" href="/jeu-cerebral">{{ icone("retour", 15) }} Quitter le défi</a>
+  </header>
+
+  <section class="jeu-session-progress" aria-label="Avancement du défi">
+    <div class="jeu-progress-meta">
+      <strong>Question {{ numero_question }} sur {{ total_questions }}</strong>
+      <span>Une question à la fois · niveau adaptatif</span>
+    </div>
+    <div class="jeu-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total_questions }}" aria-valuenow="{{ numero_question - 1 }}" aria-label="Progression du jeu">
+      <div class="jeu-progress-fill" style="width:{{ progression_pct }}%"></div>
+    </div>
+  </section>
+
+  {% if partie.source_generation != "ia" %}
+  <div class="jeu-local-note" role="note">
+    {% if langue == "mg" %}
+    <strong>Fomba fanazaran-tena vonjimaika.</strong> Tsy mbola azo nampiasaina ny famoronana IA tamin'ity lalao ity, ka fanontaniana voaomana mialoha no ampiasaina. Mbola miova araka ny valinteninao ny filaharan'ny fahasarotana.
+    {% else %}
+    <strong>Mode d'entraînement de secours.</strong> La génération IA n'était pas disponible pour cette partie; des questions préparées sont utilisées à la place. L'ordre et le niveau continuent de s'adapter à tes réponses.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if retour %}
+  <section class="jeu-feedback {% if retour.correcte %}jeu-feedback-success{% endif %}" role="status" aria-live="polite">
+    <strong>{% if langue == "mg" %}{% if retour.correcte %}Tsara izany 🌱{% else %}Aza manahy 🌷{% endif %}{% else %}{% if retour.correcte %}Bien vu 🌱{% else %}Pas de souci 🌷{% endif %}{% endif %}</strong>
+    <span data-no-translate>{{ retour.message }}</span>
+    {% if not retour.correcte %}
+      <p>{% if langue == "mg" %}Ny valiny marina dia{% else %}La bonne réponse était{% endif %} : <strong data-no-translate>{{ retour.reponse_correcte }}</strong></p>
+    {% endif %}
+    {% if retour.explication %}<p data-no-translate>{{ retour.explication }}</p>{% endif %}
+  </section>
+  {% endif %}
+
+  <section class="jeu-question-card" aria-labelledby="question-du-jeu">
+    <div class="jeu-question-top">
+      <span class="jeu-difficulty">✦ {{ label_difficulte }}</span>
+      <span class="jeu-question-hint">{% if langue == "mg" %}Tsy mila mamaly haingana{% else %}Pas besoin de répondre vite{% endif %}</span>
+    </div>
+    <div data-no-translate>
+      <h2 class="jeu-question-text" id="question-du-jeu">{{ question.question }}</h2>
+    </div>
+    <form method="post" action="/jeu-cerebral/{{ partie.id }}/repondre" id="form-reponse-jeu">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <input type="hidden" name="index_question" value="{{ index_question }}">
+      <fieldset class="jeu-options">
+        <legend class="sr-only">{% if langue == "mg" %}Fidio ny valiny{% else %}Choisis une réponse{% endif %}</legend>
+        {% for choix in question.choix %}
+        <label class="jeu-option">
+          <input type="radio" name="reponse" value="{{ loop.index0 }}" required>
+          <span data-no-translate>{{ choix }}</span>
+        </label>
+        {% endfor %}
+      </fieldset>
+      <div class="jeu-submit-row">
+        <p class="jeu-submit-note">{% if langue == "mg" %}Na inona na inona valiny, manampy anao hahalala izay hofanina manaraka izany.{% else %}Quelle que soit ta réponse, elle aidera à choisir le prochain niveau de défi.{% endif %}</p>
+        <button class="jeu-bouton" type="submit" id="envoyer-reponse">{{ icone("quiz", 16) }} {% if langue == "mg" %}Hamaly{% else %}Valider ma réponse{% endif %} <span aria-hidden="true">→</span></button>
+      </div>
+    </form>
+  </section>
+</div>
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  var form = document.getElementById("form-reponse-jeu");
+  var bouton = document.getElementById("envoyer-reponse");
+  if (!form || !bouton) return;
+  form.addEventListener("change", function (event) {
+    if (event.target && event.target.name === "reponse") bouton.disabled = false;
+  });
+})();
+</script>
+{% endblock %}
