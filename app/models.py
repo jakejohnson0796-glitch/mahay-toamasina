@@ -387,6 +387,10 @@ class Document(SQLModel, table=True):
     fiche_pedagogique_json: str = Field(default="{}")
     resume_statut_ia: str = Field(default="a_generer", index=True)
     resume_genere_le: Optional[datetime] = None
+    # Version malagasy distincte pour suivre la langue choisie dans l’interface.
+    resume_ia_mg: str = Field(default="")
+    fiche_pedagogique_mg_json: str = Field(default="{}")
+    resume_statut_ia_mg: str = Field(default="a_generer", index=True)
 
 
 class ProgressionNotion(SQLModel, table=True):
