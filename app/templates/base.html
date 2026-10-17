@@ -177,6 +177,7 @@
       <p class="tb-sidebar-groupe">Apprendre</p>
       <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
       <a href="/quiz" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Quiz IA</a>
+      <a href="/jeu-cerebral" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}><span class="tb-icone">🧠</span> Jeu cérébral</a>
       <a href="/tuteur" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/tuteur') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/tuteur') else '' }}><span class="tb-icone">{{ icone("tuteur", 17) }}</span> Tuteur IA</a>
 
       <p class="tb-sidebar-groupe">Collaborer</p>
@@ -329,6 +330,9 @@
       {{ icone("documents", 20) }}<span>Docs</span>
     </a>
     <a href="/quiz" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}>
+    <a href="/jeu-cerebral" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}>
+      🧠<span>Jeu</span>
+    </a>
       {{ icone("quiz", 20) }}<span>Quiz</span>
     </a>
     <a href="/cercles" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
