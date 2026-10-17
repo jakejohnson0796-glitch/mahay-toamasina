@@ -926,9 +926,13 @@ def supprimer_document(
 
     # Les tâches IA référencent le document : on les supprime d'abord pour
     # éviter une violation de clé étrangère lors de la suppression définitive.
-    for tache in session.exec(select(TacheIA).where(TacheIA.document_id == document_id)).all():
-        session.delete(tache)
-    session.commit()
+    taches_document = session.exec(
+        select(TacheIA).where(TacheIA.document_id == document_id)
+    ).all()
+    if taches_document:
+        for tache in taches_document:
+            session.delete(tache)
+        session.commit()
 
     supprimer_fichier(document.chemin_fichier)
 
