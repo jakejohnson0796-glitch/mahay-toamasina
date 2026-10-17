@@ -2212,7 +2212,7 @@
   ],
   "schema_version": "toamasina_referentiel_canonique_v2",
   "scope": "Toamasina-ville — parcours et niveaux publiés à partir d’offres attestées par une source institutionnelle.",
-  "last_reconciliation": "2026-10-14",
+  "last_reconciliation": "2026-10-17",
   "offres_institutionnelles_a_verifier": [
     {
       "universite": "Université de Toamasina",
@@ -2262,7 +2262,8 @@
     "regles": [
       "Une formation n'est publiée que si elle possède un statut Vérifié ou Confirmé et une source de référence.",
       "Les niveaux et parcours manquants ne sont jamais déduits automatiquement d'une simple habilitation de mention.",
-      "Les domaines FLSH sont harmonisés sur l'intitulé Arts, Lettres et Sciences Humaines utilisé par le MESUPRES."
+      "Les domaines FLSH sont harmonisés sur l'intitulé Arts, Lettres et Sciences Humaines utilisé par le MESUPRES.",
+      "Toutes les lignes d’une même Mention partagent un seul Domaine canonique; les alias connus sont résolus avant import."
     ],
     "formations_a_verifier_avant_publication": [
       {
