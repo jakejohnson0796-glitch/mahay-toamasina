@@ -25,22 +25,42 @@
 
   <section class="moderation-fiche" aria-labelledby="moderation-fiche-titre">
     <h2 id="moderation-fiche-titre">Fiche de compréhension du document</h2>
-    {% if document.resume_ia %}
-      <p>{{ document.resume_ia }}</p>
-      {% if fiche_document.get("objectif_pedagogique") %}<p><strong>Objectif pédagogique :</strong> {{ fiche_document.get("objectif_pedagogique") }}</p>{% endif %}
-      {% if fiche_document.get("type_cours") %}<p><strong>Type détaillé :</strong> {{ fiche_document.get("type_cours") }}</p>{% endif %}
-      {% if fiche_document.get("niveau_cible") %}<p><strong>Niveau cible :</strong> {{ fiche_document.get("niveau_cible") }}</p>{% endif %}
-      {% if fiche_document.get("langue") %}<p><strong>Langue :</strong> {{ fiche_document.get("langue") }}</p>{% endif %}
-      {% for etiquette, cle in [("Notions clés", "notions_cles"), ("Compétences visées", "competences_visees"), ("Prérequis", "prerequis"), ("Plan repéré", "plan_cours")] %}
-        {% if fiche_document.get(cle) %}<p><strong>{{ etiquette }} :</strong></p><ul>{% for valeur in fiche_document.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
-      {% endfor %}
-      {% if fiche_document.get("limites") %}<p class="moderation-fiche-note">{{ fiche_document.get("limites") }}</p>{% endif %}
-    {% elif document.resume_statut_ia in ["en_attente", "en_cours", "a_generer"] %}
-      <p class="moderation-fiche-etat">La fiche pédagogique est en cours de préparation. Cette analyse ne remplace pas la lecture du fichier original.</p>
-    {% else %}
-      <p class="moderation-fiche-etat">Aucune extraction fiable n’a été obtenue. Vérifiez le fichier original avant toute décision.</p>
-    {% endif %}
-    <p class="moderation-fiche-note">Cette fiche est une aide à la compréhension, pas une preuve de conformité ni une décision de modération.</p>
+    <div data-fiche-lang="fr" data-no-translate>
+      {% if document.resume_ia %}
+        <p>{{ document.resume_ia }}</p>
+        {% if fiche_document.get("objectif_pedagogique") %}<p><strong>Objectif pédagogique :</strong> {{ fiche_document.get("objectif_pedagogique") }}</p>{% endif %}
+        {% if fiche_document.get("type_cours") %}<p><strong>Type détaillé :</strong> {{ fiche_document.get("type_cours") }}</p>{% endif %}
+        {% if fiche_document.get("niveau_cible") %}<p><strong>Niveau cible :</strong> {{ fiche_document.get("niveau_cible") }}</p>{% endif %}
+        {% if fiche_document.get("langue") %}<p><strong>Langue du document :</strong> {{ fiche_document.get("langue") }}</p>{% endif %}
+        {% for etiquette, cle in [("Notions clés", "notions_cles"), ("Compétences visées", "competences_visees"), ("Prérequis", "prerequis"), ("Plan repéré", "plan_cours")] %}
+          {% if fiche_document.get(cle) %}<p><strong>{{ etiquette }} :</strong></p><ul>{% for valeur in fiche_document.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+        {% endfor %}
+        {% if fiche_document.get("limites") %}<p class="moderation-fiche-note">{{ fiche_document.get("limites") }}</p>{% endif %}
+      {% elif document.resume_statut_ia in ["en_attente", "en_cours", "a_generer"] %}
+        <p class="moderation-fiche-etat">La fiche pédagogique est en cours de préparation. Cette analyse ne remplace pas la lecture du fichier original.</p>
+      {% else %}
+        <p class="moderation-fiche-etat">Aucune extraction fiable n’a été obtenue. Vérifiez le fichier original avant toute décision.</p>
+      {% endif %}
+      <p class="moderation-fiche-note">Cette fiche aide à comprendre le document ; elle ne remplace pas la lecture originale ni la décision de modération.</p>
+    </div>
+    <div data-fiche-lang="mg" data-no-translate hidden>
+      {% if document.resume_ia_mg %}
+        <p>{{ document.resume_ia_mg }}</p>
+        {% if fiche_document_mg.get("objectif_pedagogique") %}<p><strong>Tanjona amin’ny lesona:</strong> {{ fiche_document_mg.get("objectif_pedagogique") }}</p>{% endif %}
+        {% if fiche_document_mg.get("type_cours") %}<p><strong>Karazana lesona:</strong> {{ fiche_document_mg.get("type_cours") }}</p>{% endif %}
+        {% if fiche_document_mg.get("niveau_cible") %}<p><strong>Ambaratonga kendrena:</strong> {{ fiche_document_mg.get("niveau_cible") }}</p>{% endif %}
+        {% if fiche_document_mg.get("langue") %}<p><strong>Fitenin’ny tahirin-kevitra:</strong> {{ fiche_document_mg.get("langue") }}</p>{% endif %}
+        {% for etiquette, cle in [("Hevi-dehibe", "notions_cles"), ("Fahaiza-manao kendrena", "competences_visees"), ("Fahalalana ilaina mialoha", "prerequis"), ("Drafitra hita ao", "plan_cours")] %}
+          {% if fiche_document_mg.get(cle) %}<p><strong>{{ etiquette }}:</strong></p><ul>{% for valeur in fiche_document_mg.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+        {% endfor %}
+        {% if fiche_document_mg.get("limites") %}<p class="moderation-fiche-note">{{ fiche_document_mg.get("limites") }}</p>{% endif %}
+      {% elif document.resume_statut_ia_mg in ["en_attente", "en_cours", "a_generer"] %}
+        <p class="moderation-fiche-etat">Eo am-panomanana ny famintinana amin’ny teny malagasy. Tsy misolo ny famakiana ilay rakitra tany am-boalohany ity fanampiana ity.</p>
+      {% else %}
+        <p class="moderation-fiche-etat">Tsy mbola misy famintinana malagasy voamarina. Vakio mivantana ny rakitra alohan’ny handraisana fanapahan-kevitra.</p>
+      {% endif %}
+      <p class="moderation-fiche-note">Fanampiana hahatakarana ny tahirin-kevitra ity fiche ity; tsy misolo ny rakitra tany am-boalohany na ny fanapahan-kevitra momba ny fanamarinana.</p>
+    </div>
   </section>
 
   <section class="moderation-preview-viewer">
@@ -140,6 +160,20 @@
 <script nonce="{{ csp_nonce(request) }}">
 (function () {
   const fileUrl = "/moderation/{{ document.id }}/fichier";
+  function synchroniserLangueFiches() {
+    const selecteur = document.getElementById("select-langue");
+    let langue = selecteur ? selecteur.value : "";
+    if (langue !== "mg") {
+      try { langue = window.localStorage.getItem("mahay-langue") === "mg" ? "mg" : "fr"; }
+      catch (_erreur) { langue = "fr"; }
+    }
+    document.querySelectorAll("[data-fiche-lang]").forEach(function (panneau) {
+      panneau.hidden = panneau.getAttribute("data-fiche-lang") !== langue;
+    });
+  }
+  synchroniserLangueFiches();
+  const selecteurLangue = document.getElementById("select-langue");
+  if (selecteurLangue) selecteurLangue.addEventListener("change", synchroniserLangueFiches);
   const pdf = document.getElementById("preview-pdf");
   const pdfLoading = document.getElementById("preview-pdf-loading");
   const pdfError = document.getElementById("preview-pdf-error");
