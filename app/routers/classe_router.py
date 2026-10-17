@@ -13,6 +13,7 @@ prochaine etape explicitement separee de celle-ci.
 """
 import secrets
 import json
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -24,7 +25,7 @@ from sqlmodel import Session, select
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir
+from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
@@ -32,6 +33,7 @@ from ..ws_manager import gestionnaire
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
 from ..rate_limit import limite_depassee
 from .. import gamification
+from .. import quiz as quiz_module
 
 router = APIRouter()
 
@@ -219,6 +221,205 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
             "peut_gerer": peut_gerer,
             "devoirs": devoirs,
             "mes_rendus_ids": mes_rendus_ids,
+        },
+    )
+
+
+
+# Le radar reste volontairement collectif : aucun nom, score individuel ni
+# export de données personnelles n'est exposé. Une notion n'apparaît qu'avec
+# au moins trois étudiants disposant de données mesurées.
+SEUIL_CONFIDENTIALITE_RADAR = 3
+
+
+def _cle_academique(valeur: Optional[str]) -> str:
+    texte = unicodedata.normalize("NFKD", valeur or "").casefold()
+    texte = "".join(caractere for caractere in texte if not unicodedata.combining(caractere))
+    return " ".join("".join(c if c.isalnum() else " " for c in texte).split())
+
+
+def construire_radar_pedagogique(
+    progressions: list[ProgressionNotion],
+    effectif_inscrit: int,
+) -> dict:
+    """Produit un aperçu collectif, sans identifier les étudiants."""
+    groupes: dict[str, dict] = {}
+    etudiants_observes: set[int] = set()
+
+    for progression in progressions:
+        utilisateur_id = getattr(progression, "utilisateur_id", None)
+        notion = (getattr(progression, "notion", "") or "").strip()
+        cle = _cle_academique(notion)
+        if utilisateur_id is None or not cle or not notion:
+            continue
+        diagnostic = quiz_module.diagnostiquer_maitrise(progression)
+        etudiants_observes.add(int(utilisateur_id))
+        groupe = groupes.setdefault(
+            cle,
+            {"notion": notion, "scores_par_etudiant": {}, "maitrises_prouvees": 0},
+        )
+        # Garde une seule observation par étudiant pour la même notion.
+        precedente = groupe["scores_par_etudiant"].get(int(utilisateur_id))
+        score = int(diagnostic.get("score", 0))
+        if precedente is None or score < precedente:
+            groupe["scores_par_etudiant"][int(utilisateur_id)] = score
+        if diagnostic.get("maitrise_confirmee"):
+            groupe["maitrises_prouvees"] += 1
+
+    notions = []
+    for groupe in groupes.values():
+        scores = list(groupe["scores_par_etudiant"].values())
+        observes = len(scores)
+        if observes < SEUIL_CONFIDENTIALITE_RADAR:
+            continue
+        score_moyen = round(sum(scores) / observes)
+        nb_fragiles = sum(1 for score in scores if score < 65)
+        part_fragile = round(nb_fragiles * 100 / observes)
+        if score_moyen < 50 or part_fragile >= 70:
+            priorite = "Élevée"
+            niveau_priorite = 0
+        elif score_moyen < 65 or part_fragile >= 40:
+            priorite = "À reprendre"
+            niveau_priorite = 1
+        elif score_moyen < 80:
+            priorite = "À consolider"
+            niveau_priorite = 2
+        else:
+            priorite = "À approfondir"
+            niveau_priorite = 3
+
+        if score_moyen < 50:
+            action = (
+                "Reprendre le prérequis avec un exemple guidé, faire verbaliser chaque étape, "
+                "puis proposer trois questions faciles."
+            )
+        elif score_moyen < 65:
+            action = (
+                "Prévoir une micro-leçon de 5 à 10 minutes, un exemple corrigé et un quiz ciblé "
+                "avant de passer au chapitre suivant."
+            )
+        elif score_moyen < 80:
+            action = (
+                "Faire résoudre un exercice de transfert et demander aux étudiants d'expliquer "
+                "la méthode en binômes."
+            )
+        else:
+            action = (
+                "Proposer une application plus complexe et vérifier la maîtrise avec de nouvelles "
+                "questions sur une autre séance."
+            )
+
+        notions.append({
+            "notion": groupe["notion"],
+            "effectif_observe": observes,
+            "score_moyen": score_moyen,
+            "nb_fragiles": nb_fragiles,
+            "part_fragile": part_fragile,
+            "maitrises_prouvees": min(observes, groupe["maitrises_prouvees"]),
+            "priorite": priorite,
+            "niveau_priorite": niveau_priorite,
+            "action": action,
+        })
+
+    notions.sort(
+        key=lambda item: (
+            item["niveau_priorite"],
+            -item["part_fragile"],
+            item["score_moyen"],
+            _cle_academique(item["notion"]),
+        )
+    )
+    nb_eleves = max(0, int(effectif_inscrit or 0))
+    nb_eleves_observes = len(etudiants_observes)
+    return {
+        "effectif_inscrit": nb_eleves,
+        "effectif_observe": nb_eleves_observes,
+        "couverture_pct": round(nb_eleves_observes * 100 / nb_eleves) if nb_eleves else 0,
+        "nb_notions_mesurees": len(groupes),
+        "nb_notions_affichables": len(notions),
+        "notions": notions[:12],
+        "seuil_confidentialite": SEUIL_CONFIDENTIALITE_RADAR,
+    }
+
+
+def construire_plan_reprise(cours: Cours, radar: dict) -> str:
+    """Prépare un plan de cours éditable, sans prétendre qu'il a été généré par IA."""
+    lignes = [
+        f"PLAN DE REPRISE — {cours.nom}",
+        f"Matière : {cours.matiere} · Niveau : {cours.niveau}",
+        "",
+        "Objectif : reprendre les notions pour lesquelles les résultats collectifs sont les plus fragiles.",
+    ]
+    notions = radar.get("notions", [])
+    if notions:
+        lignes.extend(["", "Ordre proposé pour la prochaine séance :"])
+        for index, notion in enumerate(notions[:3], start=1):
+            lignes.append(
+                f"{index}. {notion['notion']} — score collectif {notion['score_moyen']} %, "
+                f"{notion['part_fragile']} % des étudiants observés en difficulté."
+            )
+            lignes.append(f"   Action : {notion['action']}")
+    else:
+        lignes.extend([
+            "",
+            "Les données disponibles ne permettent pas encore d'afficher une notion précise.",
+            "Faire un mini-diagnostic commun de 5 questions, vérifier les prérequis, puis relancer "
+            "le radar après plusieurs étudiants actifs.",
+        ])
+    lignes.extend([
+        "",
+        "Vérification de sortie : proposer 3 à 5 questions nouvelles, demander une explication "
+        "du raisonnement, puis refaire le point lors d'une autre séance.",
+        "Note : cet aperçu est un indicateur d'aide à l'enseignement, pas une note ni un jugement "
+        "sur un étudiant. Il ne remplace pas l'observation du professeur.",
+    ])
+    return "\n".join(lignes)
+
+
+@router.get("/classe/{cours_id}/radar")
+def radar_pedagogique_cours(
+    request: Request,
+    cours_id: int,
+    session: Session = Depends(get_session),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    cours = session.get(Cours, cours_id)
+    if not cours:
+        return RedirectResponse("/classe", status_code=303)
+    if not _peut_gerer_cours(cours, utilisateur):
+        # Le radar est une vue réservée au professeur propriétaire et aux admins.
+        return RedirectResponse(f"/classe/{cours_id}", status_code=303)
+
+    inscriptions = session.exec(
+        select(InscriptionCours.utilisateur_id).where(InscriptionCours.cours_id == cours_id)
+    ).all()
+    ids_etudiants = sorted({int(valeur) for valeur in inscriptions if valeur is not None})
+    progressions = []
+    cle_matiere = _cle_academique(cours.matiere)
+    if ids_etudiants and cle_matiere:
+        lignes = session.exec(
+            select(ProgressionNotion).where(
+                ProgressionNotion.utilisateur_id.in_(ids_etudiants)
+            )
+        ).all()
+        progressions = [
+            ligne for ligne in lignes
+            if _cle_academique(ligne.matiere) == cle_matiere
+        ]
+
+    radar = construire_radar_pedagogique(progressions, len(ids_etudiants))
+    plan_reprise = construire_plan_reprise(cours, radar)
+    return templates.TemplateResponse(
+        request,
+        "radar_pedagogique_classe.html",
+        {
+            "utilisateur": utilisateur,
+            "cours": cours,
+            "radar": radar,
+            "plan_reprise": plan_reprise,
         },
     )
 
