@@ -140,6 +140,8 @@ def test_contrat_ia_prevoit_les_formules_exactes_qui_ont_pose_probleme():
     assert r"\(\Delta E=\hbar\omega\)" in contrat
     assert r"\(\rho=1\,\mathrm{kg/m^{3}}\)" in contrat
     assert "pas seulement de l'opérateur" in contrat
+    assert "valeur exacte, approximation et arrondi" in contrat
+    assert "chiffre des unités" in contrat
 
 
 def test_rendu_couvre_resumes_documents_et_messages_de_cours():
