@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
-{% block titre %}Ton bilan — Jeu cérébral — MITARIDALA{% endblock %}
+{% block titre %}{% if langue == "mg" %}Famintinana ny lalao — MITARIDALA{% else %}Ton bilan — Jeu cérébral — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="jeu-result-page">
