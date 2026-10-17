@@ -65,7 +65,6 @@ def _source() -> dict:
         "Sciences économiques",
         "Sciences de gestion",
         "Sciences et technologie",
-        "Sciences de l'éducation et didactique",
         "Sciences de l’éducation",
         "Arts, Lettres et Sciences Humaines",
     }
