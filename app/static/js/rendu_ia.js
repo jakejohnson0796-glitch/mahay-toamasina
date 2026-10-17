@@ -51,7 +51,8 @@
   // repare seulement les motifs fortement mathematiques (fonction f/g(x)=...
   // et integrale avec bornes + differentielle), sans toucher au code ni aux
   // formules deja delimitees. Le texte brut reste sinon inchange.
-  function normaliserExpressionsMathematiquesNues(source) {
+  function normaliserExpressionsMathematiquesNues(source, options) {
+    const contexte = options || {};
     const blocsProteges = [];
     const tokenBloc = "\uE100GMSRC_";
     const finTokenBloc = "\uE101";
@@ -161,6 +162,11 @@
         return tokenFormule + (formules.push(expressionFormatee.trim()) - 1) + finTokenFormule;
       });
 
+      // Les calculs nus dans les titres et libellés courts peuvent être du texte
+      // volontaire (ex. « 2*3*4 = 24 » dans un H2). Les formules explicites,
+      // parentes ou munies d'une commande restent réparées, mais on ne détecte
+      // pas de nouvelles expressions numériques nues dans un contexte en ligne.
+      if (!contexte.enLigne) {
       // Certaines anciennes réponses laissent une égalité numérique nue hors
       // parenthèses (« 56+9=65 », « 30 ≈ 32 »). Rendre uniquement une petite
       // expression bornée par chiffres/opérateurs, en laissant les dates telles quelles.
@@ -177,6 +183,7 @@
         }
       );
 
+      }
       // Quelques modeles suppriment l'antislash initial de \displaystyle \int.
       normalisee = normalisee
         .replace(/\bdisplaystyle\s+\\?int(?=\s*_\{)/gi, "\\displaystyle \\int")
@@ -231,14 +238,14 @@
     return resultat;
   }
 
-  function normaliserSourceRendu(source) {
+  function normaliserSourceRendu(source, options) {
     let texte = String(source == null ? "" : source);
     try { texte = texte.normalize("NFC"); } catch (_) {}
     // Reprise du principe du moteur riche : supprimer uniquement les marqueurs
     // invisibles connus qui peuvent perturber les délimiteurs sans modifier
     // les caractères pédagogiques visibles.
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
-    return normaliserExpressionsMathematiquesNues(texte).replace(/\r\n?/g, "\n");
+    return normaliserExpressionsMathematiquesNues(texte, options).replace(/\r\n?/g, "\n");
   }
 
   function antislashEchappe(texte, index) {
@@ -262,9 +269,9 @@
     "align", "align*", "gather", "gather*", "equation", "equation*", "split"
   ]);
 
-  function protegerMath(brut) {
+  function protegerMath(brut, options) {
     const math = [];
-    const source = normaliserSourceRendu(convertirMarqueursTransport(brut));
+    const source = normaliserSourceRendu(convertirMarqueursTransport(brut), options);
     let protection = "";
     let i = 0;
 
@@ -687,7 +694,7 @@
     const sourceOriginale = SOURCES_ORIGINALES.get(cible) || String(brut == null ? "" : brut);
     SOURCES_ORIGINALES.set(cible, sourceOriginale);
 
-    const protection = protegerMath(sourceOriginale);
+    const protection = protegerMath(sourceOriginale, { enLigne: contexteEnLigne(cible, configuration) });
     const resultatMarkdown = parserMarkdown(protection.source, contexteEnLigne(cible, configuration));
     const fragment = fragmentSanitise(resultatMarkdown);
     restaurerMath(fragment, protection.math);
