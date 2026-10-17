@@ -144,6 +144,7 @@ def test_rendu_couvre_resumes_documents_et_messages_de_cours():
     messages = (RACINE / "app" / "templates" / "_message_cercle.html").read_text(encoding="utf-8")
     devoir = (RACINE / "app" / "templates" / "classe_devoir.html").read_text(encoding="utf-8")
     salle = (RACINE / "app" / "templates" / "classe_salle.html").read_text(encoding="utf-8")
+    moderation_salon = (RACINE / "app" / "templates" / "admin_moderation_salon.html").read_text(encoding="utf-8")
 
     assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</p>' in documents
     assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</p>' in documents
@@ -153,3 +154,4 @@ def test_rendu_couvre_resumes_documents_et_messages_de_cours():
     assert 'class="thread-apercu-contenu" data-rendu data-rendu-ligne' in messages
     assert 'class="classe-section-card-intro" data-rendu' in devoir
     assert 'contenu.dataset.rendu = ""' in salle
+    assert '<span data-rendu data-rendu-ligne>{{ s.message.piece_jointe_nom' in moderation_salon
