@@ -84,3 +84,45 @@ def test_quiz_et_tuteur_gardent_un_rendu_independant_pour_chaque_bloc():
     assert 'data-tuteur-content="exemple" data-rendu' in tuteur
     assert 'data-tuteur-content="exercice" data-rendu' in tuteur
     assert 'data-tuteur-content="correction" data-rendu' in tuteur
+
+
+
+def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathematiques():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+
+    # Exemples vus en production : backslash perdu avant sqrt/approx, et \\t
+    # JSON devenu tabulation avant « imes » dans une multiplication.
+    assert r".replace(/(^|[^A-Za-z\\])(sqrt|frac|dfrac|tfrac)" in js
+    assert r".replace(/([}\d)])(\s*)(approx|times|cdot|pm|leq|geq|neq" in js
+    assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
+    assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
+    assert "const contientMath =" in js
+    assert 'cible.dataset.renduVersion = "7"' in js
+
+
+def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+
+    assert '"ce"' in js
+    assert r"/\\ce\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g" in js
+    assert "motifReactionChimique" in js
+    assert r'"\\ce{" + formuleChimique + "}"' in js
+    # Le détecteur exige un indice/coefficient et une flèche pour préserver « Co » vs « CO ».
+    assert r"if (!/\d/.test(equation) || !/(?:->|→|⇌|↔)/.test(equation))" in js
+
+
+def test_renderer_scientifique_est_charge_sur_les_surfaces_ia_et_documents():
+    base = (RACINE / "app" / "templates" / "base.html").read_text(encoding="utf-8")
+
+    for route in (
+        'request.url.path.startswith("/quiz")',
+        'request.url.path.startswith("/tuteur")',
+        'request.url.path.startswith("/jeu-cerebral")',
+        'request.url.path.startswith("/documents")',
+        'request.url.path.startswith("/classe")',
+        'request.url.path.startswith("/cercle")',
+        'request.url.path.startswith("/moderation")',
+        'request.url.path == "/mes-revisions"',
+    ):
+        assert route in base
+    assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
