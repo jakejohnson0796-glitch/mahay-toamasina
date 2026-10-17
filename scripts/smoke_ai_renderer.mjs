@@ -69,7 +69,7 @@ const legacyMarkdownSource =
   "- Refaire le calcul du PGCD.\\n\\n" +
   "En suivant ces étapes, la réduction devient fiable et rapide. &#x20;";
 window.rendreReponseIA(legacyMarkdownSource, legacyMarkdownHost);
-if ((legacyMarkdownHost.textContent || '').includes('\\\\n')) {
+if ((legacyMarkdownHost.textContent || '').includes('\\n')) {
   throw new Error('Escaped newline sequences remained visible in legacy AI Markdown');
 }
 if (legacyMarkdownHost.querySelectorAll('p').length < 4 ||
