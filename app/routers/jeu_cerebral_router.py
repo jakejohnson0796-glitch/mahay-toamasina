@@ -236,8 +236,6 @@ def page_session_jeu_cerebral(
         else {"Facile": "Amim-pitoniana", "Moyen": "Amin'ny hafainganam-pandehanao", "Difficile": "Fanamby kely"}
     )
     retour = etat.get("dernier_feedback")
-    if retour and retour.get("question_index") == index_question:
-        retour = None
 
     return templates.TemplateResponse(
         request,
