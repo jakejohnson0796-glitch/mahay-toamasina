@@ -15,13 +15,14 @@ from sqlmodel import Session, select
 
 from .config import parametres
 from .database import engine
-from .models import SessionTuteur, StatutTacheIA, TacheIA, TentativeQuiz
+from .models import Document, SessionTuteur, StatutTacheIA, TacheIA, TentativeQuiz
 from . import ai_memory, ai_risk
 
 logger = logging.getLogger(__name__)
 
 TYPE_VERIFICATION_QUIZ = "verification_quiz"
 TYPE_VERIFICATION_TUTEUR = "verification_tuteur"
+TYPE_RESUME_DOCUMENT = "resume_document"
 DELAIS_REESSAI = (5, 15, 30, 60)
 MAX_ESSAIS = 5
 
@@ -166,6 +167,105 @@ def longueur_file_redis() -> Optional[int]:
     except redis.RedisError:
         _invalider_clients_redis()
         return None
+
+
+
+def planifier_resume_document(document_id: int) -> Optional[int]:
+    """Ajoute ou réactive une tâche durable de fiche pédagogique, sans doublon."""
+    maintenant = datetime.utcnow()
+    try:
+        with Session(engine) as session:
+            document = session.get(Document, document_id)
+            if not document:
+                return None
+            if document.resume_ia and document.resume_statut_ia in {
+                "generee", "provisoire", "insuffisante"
+            }:
+                return None
+
+            existante = session.exec(
+                select(TacheIA)
+                .where(
+                    TacheIA.type_tache == TYPE_RESUME_DOCUMENT,
+                    TacheIA.document_id == document_id,
+                )
+                .limit(1)
+            ).first()
+
+            if existante and existante.statut == StatutTacheIA.EN_COURS:
+                document.resume_statut_ia = "en_cours"
+                session.add(document)
+                session.commit()
+                return existante.id
+
+            if existante and existante.statut == StatutTacheIA.EN_ATTENTE:
+                existante.disponible_le = maintenant
+                existante.derniere_erreur = None
+                document.resume_statut_ia = "en_attente"
+                session.add(existante)
+                session.add(document)
+                session.commit()
+                tache_id = existante.id
+            elif existante:
+                existante.statut = StatutTacheIA.EN_ATTENTE
+                existante.nombre_essais = 0
+                existante.disponible_le = maintenant
+                existante.prise_en_charge_le = None
+                existante.terminee_le = None
+                existante.derniere_erreur = None
+                document.resume_statut_ia = "en_attente"
+                session.add(existante)
+                session.add(document)
+                session.commit()
+                tache_id = existante.id
+            else:
+                tache = TacheIA(
+                    type_tache=TYPE_RESUME_DOCUMENT,
+                    tentative_quiz_id=None,
+                    session_tuteur_id=None,
+                    document_id=document_id,
+                    statut=StatutTacheIA.EN_ATTENTE,
+                    strategie_verification="fiche_pedagogique",
+                    score_risque=0,
+                    disponible_le=maintenant,
+                    date_creation=maintenant,
+                )
+                document.resume_statut_ia = "en_attente"
+                session.add(tache)
+                session.add(document)
+                session.commit()
+                session.refresh(tache)
+                tache_id = tache.id
+
+        if tache_id is not None:
+            notifier_tache(tache_id)
+        return tache_id
+    except Exception as erreur:
+        logger.exception(
+            "Impossible de planifier la fiche pédagogique du document #%s (%s).",
+            document_id,
+            type(erreur).__name__,
+        )
+        return None
+
+
+def planifier_resumes_documents_manquants(max_documents: int = 3) -> int:
+    """Met progressivement en file les documents historiques sans fiche."""
+    limite = max(1, min(int(max_documents or 1), 20))
+    with Session(engine) as session:
+        ids = session.exec(
+            select(Document.id)
+            .where(Document.resume_statut_ia == "a_generer")
+            .order_by(Document.date_upload, Document.id)
+            .limit(limite)
+        ).all()
+    planifies = 0
+    for document_id in ids:
+        if planifier_resume_document(int(document_id)):
+            planifies += 1
+    if planifies:
+        logger.info("Fiches pédagogiques historiques planifiées: %s.", planifies)
+    return planifies
 
 
 def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
