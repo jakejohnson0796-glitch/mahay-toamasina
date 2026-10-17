@@ -126,6 +126,10 @@ def test_renderer_scientifique_est_charge_sur_les_surfaces_ia_et_documents():
     ):
         assert route in base
     assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
+    assert base.count('request.url.path.startswith("/classe")') >= 2
+    assert base.count('request.url.path.startswith("/cercle")') >= 2
+    assert base.count('request.url.path.startswith("/documents")') >= 2
+    assert base.count('href="/static/ai-learning.css') >= 1
 
 
 
