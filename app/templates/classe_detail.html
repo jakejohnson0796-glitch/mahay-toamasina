@@ -10,7 +10,7 @@
       <p class="classe-breadcrumb"><a href="/classe">Classe virtuelle</a> / {{ cours.nom }}</p>
       <h1>{{ cours.nom }}</h1>
       <p class="classe-detail-meta">{{ cours.matiere }} · {{ cours.niveau }} · Professeur : {{ professeur.nom }} · {{ nb_etudiants }} étudiant{{ "s" if nb_etudiants != 1 else "" }}</p>
-      {% if cours.description %}<p class="classe-detail-meta">{{ cours.description }}</p>{% endif %}
+      {% if cours.description %}<div class="classe-detail-meta" data-rendu>{{ cours.description }}</div>{% endif %}
     </div>
     <div>
       {% if seances and seances|selectattr("statut.value","equalto","en_cours")|list %}

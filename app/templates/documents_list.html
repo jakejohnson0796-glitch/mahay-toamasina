@@ -70,14 +70,14 @@
       <div data-fiche-lang="fr" data-no-translate>
         {% if doc.resume_ia %}
         <span class="doc-fiche-etat">{% if doc.resume_statut_ia == "generee" %}Fiche IA prête{% elif doc.resume_statut_ia == "insuffisante" %}Texte non extractible{% else %}Aperçu provisoire{% endif %}</span>
-        <p>{{ doc.resume_ia }}</p>
-        {% if fiche.get("objectif_pedagogique") %}<p><strong>Objectif du cours :</strong> {{ fiche.get("objectif_pedagogique") }}</p>{% endif %}
-        {% if fiche.get("type_cours") %}<p><strong>Type pédagogique :</strong> {{ fiche.get("type_cours") }}</p>{% endif %}
-        {% if fiche.get("niveau_cible") %}<p><strong>Niveau visé :</strong> {{ fiche.get("niveau_cible") }}</p>{% endif %}
+        <div class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</div>
+        {% if fiche.get("objectif_pedagogique") %}<p><strong>Objectif du cours :</strong> <span data-rendu data-rendu-ligne>{{ fiche.get("objectif_pedagogique") }}</span></p>{% endif %}
+        {% if fiche.get("type_cours") %}<p><strong>Type pédagogique :</strong> <span data-rendu data-rendu-ligne>{{ fiche.get("type_cours") }}</span></p>{% endif %}
+        {% if fiche.get("niveau_cible") %}<p><strong>Niveau visé :</strong> <span data-rendu data-rendu-ligne>{{ fiche.get("niveau_cible") }}</span></p>{% endif %}
         {% for etiquette, cle in [("Notions clés", "notions_cles"), ("Compétences travaillées", "competences_visees"), ("Prérequis", "prerequis"), ("Plan repéré", "plan_cours")] %}
-          {% if fiche.get(cle) %}<p><strong>{{ etiquette }} :</strong></p><ul>{% for valeur in fiche.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+          {% if fiche.get(cle) %}<p><strong>{{ etiquette }} :</strong></p><ul>{% for valeur in fiche.get(cle, []) %}<li data-rendu data-rendu-ligne>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
         {% endfor %}
-        {% if fiche.get("limites") %}<p>{{ fiche.get("limites") }}</p>{% endif %}
+        {% if fiche.get("limites") %}<div class="doc-fiche-limites" data-rendu>{{ fiche.get("limites") }}</div>{% endif %}
         {% elif doc.resume_statut_ia in ["en_attente", "en_cours", "a_generer"] %}
         <p>La fiche est en cours de préparation. Elle apparaîtra ici dès que le traitement du fichier sera terminé.</p>
         {% else %}<p>La fiche n’a pas encore pu être générée. Le fichier reste disponible pour la modération.</p>{% endif %}
@@ -85,14 +85,14 @@
       <div data-fiche-lang="mg" data-no-translate hidden>
         {% if doc.resume_ia_mg %}
         <span class="doc-fiche-etat">{% if doc.resume_statut_ia_mg == "generee" %}Vonona ny famintinana IA{% elif doc.resume_statut_ia_mg == "indisponible" %}Tsy mbola azo hamarinina{% else %}Topimaso vonjimaika{% endif %}</span>
-        <p>{{ doc.resume_ia_mg }}</p>
-        {% if fiche_mg.get("objectif_pedagogique") %}<p><strong>Tanjona amin’ny lesona:</strong> {{ fiche_mg.get("objectif_pedagogique") }}</p>{% endif %}
-        {% if fiche_mg.get("type_cours") %}<p><strong>Karazana lesona:</strong> {{ fiche_mg.get("type_cours") }}</p>{% endif %}
-        {% if fiche_mg.get("niveau_cible") %}<p><strong>Ambaratonga kendrena:</strong> {{ fiche_mg.get("niveau_cible") }}</p>{% endif %}
+        <div class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</div>
+        {% if fiche_mg.get("objectif_pedagogique") %}<p><strong>Tanjona amin’ny lesona:</strong> <span data-rendu data-rendu-ligne>{{ fiche_mg.get("objectif_pedagogique") }}</span></p>{% endif %}
+        {% if fiche_mg.get("type_cours") %}<p><strong>Karazana lesona:</strong> <span data-rendu data-rendu-ligne>{{ fiche_mg.get("type_cours") }}</span></p>{% endif %}
+        {% if fiche_mg.get("niveau_cible") %}<p><strong>Ambaratonga kendrena:</strong> <span data-rendu data-rendu-ligne>{{ fiche_mg.get("niveau_cible") }}</span></p>{% endif %}
         {% for etiquette, cle in [("Hevi-dehibe", "notions_cles"), ("Fahaiza-manao kendrena", "competences_visees"), ("Fahalalana ilaina mialoha", "prerequis"), ("Drafitra hita ao", "plan_cours")] %}
-          {% if fiche_mg.get(cle) %}<p><strong>{{ etiquette }}:</strong></p><ul>{% for valeur in fiche_mg.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+          {% if fiche_mg.get(cle) %}<p><strong>{{ etiquette }}:</strong></p><ul>{% for valeur in fiche_mg.get(cle, []) %}<li data-rendu data-rendu-ligne>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
         {% endfor %}
-        {% if fiche_mg.get("limites") %}<p>{{ fiche_mg.get("limites") }}</p>{% endif %}
+        {% if fiche_mg.get("limites") %}<div class="doc-fiche-limites" data-rendu>{{ fiche_mg.get("limites") }}</div>{% endif %}
         {% elif doc.resume_statut_ia_mg in ["en_attente", "en_cours", "a_generer"] %}
         <p>Eo am-panomanana ny famintinana amin’ny teny malagasy. Hiseho eto izany rehefa vita.</p>
         {% else %}<p>Tsy mbola misy famintinana malagasy voamarina. Mbola azonao jerena ny antontan-taratasy tany am-boalohany.</p>{% endif %}
@@ -145,15 +145,15 @@ session dediee, avec sa propre verification desktop+mobile.
       <div data-fiche-lang="fr" data-no-translate>
         {% if doc.resume_ia %}
         <span class="doc-fiche-etat">{% if doc.resume_statut_ia == "generee" %}Fiche IA prête{% elif doc.resume_statut_ia == "insuffisante" %}Texte non extractible{% else %}Aperçu provisoire{% endif %}</span>
-        <p>{{ doc.resume_ia }}</p>
-        {% if fiche.get("objectif_pedagogique") %}<p><strong>Objectif du cours :</strong> {{ fiche.get("objectif_pedagogique") }}</p>{% endif %}
-        {% if fiche.get("type_cours") %}<p><strong>Type pédagogique :</strong> {{ fiche.get("type_cours") }}</p>{% endif %}
-        {% if fiche.get("niveau_cible") %}<p><strong>Niveau visé :</strong> {{ fiche.get("niveau_cible") }}</p>{% endif %}
+        <div class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</div>
+        {% if fiche.get("objectif_pedagogique") %}<p><strong>Objectif du cours :</strong> <span data-rendu data-rendu-ligne>{{ fiche.get("objectif_pedagogique") }}</span></p>{% endif %}
+        {% if fiche.get("type_cours") %}<p><strong>Type pédagogique :</strong> <span data-rendu data-rendu-ligne>{{ fiche.get("type_cours") }}</span></p>{% endif %}
+        {% if fiche.get("niveau_cible") %}<p><strong>Niveau visé :</strong> <span data-rendu data-rendu-ligne>{{ fiche.get("niveau_cible") }}</span></p>{% endif %}
         {% if fiche.get("langue") %}<p><strong>Langue du document :</strong> {{ fiche.get("langue") }}</p>{% endif %}
         {% for etiquette, cle in [("Notions clés", "notions_cles"), ("Compétences visées", "competences_visees"), ("Prérequis", "prerequis"), ("Plan repéré", "plan_cours")] %}
-          {% if fiche.get(cle) %}<p><strong>{{ etiquette }} :</strong></p><ul>{% for valeur in fiche.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+          {% if fiche.get(cle) %}<p><strong>{{ etiquette }} :</strong></p><ul>{% for valeur in fiche.get(cle, []) %}<li data-rendu data-rendu-ligne>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
         {% endfor %}
-        {% if fiche.get("limites") %}<p>{{ fiche.get("limites") }}</p>{% endif %}
+        {% if fiche.get("limites") %}<div class="doc-fiche-limites" data-rendu>{{ fiche.get("limites") }}</div>{% endif %}
         {% elif doc.resume_statut_ia in ["en_attente", "en_cours", "a_generer"] %}
         <p>La fiche de compréhension est en cours de préparation.</p>
         {% else %}<p>Le texte du fichier n’a pas pu être exploité suffisamment pour créer une fiche fiable.</p>{% endif %}
@@ -161,15 +161,15 @@ session dediee, avec sa propre verification desktop+mobile.
       <div data-fiche-lang="mg" data-no-translate hidden>
         {% if doc.resume_ia_mg %}
         <span class="doc-fiche-etat">{% if doc.resume_statut_ia_mg == "generee" %}Vonona ny famintinana IA{% elif doc.resume_statut_ia_mg == "indisponible" %}Tsy mbola azo hamarinina{% else %}Topimaso vonjimaika{% endif %}</span>
-        <p>{{ doc.resume_ia_mg }}</p>
-        {% if fiche_mg.get("objectif_pedagogique") %}<p><strong>Tanjona amin’ny lesona:</strong> {{ fiche_mg.get("objectif_pedagogique") }}</p>{% endif %}
-        {% if fiche_mg.get("type_cours") %}<p><strong>Karazana lesona:</strong> {{ fiche_mg.get("type_cours") }}</p>{% endif %}
-        {% if fiche_mg.get("niveau_cible") %}<p><strong>Ambaratonga kendrena:</strong> {{ fiche_mg.get("niveau_cible") }}</p>{% endif %}
+        <div class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</div>
+        {% if fiche_mg.get("objectif_pedagogique") %}<p><strong>Tanjona amin’ny lesona:</strong> <span data-rendu data-rendu-ligne>{{ fiche_mg.get("objectif_pedagogique") }}</span></p>{% endif %}
+        {% if fiche_mg.get("type_cours") %}<p><strong>Karazana lesona:</strong> <span data-rendu data-rendu-ligne>{{ fiche_mg.get("type_cours") }}</span></p>{% endif %}
+        {% if fiche_mg.get("niveau_cible") %}<p><strong>Ambaratonga kendrena:</strong> <span data-rendu data-rendu-ligne>{{ fiche_mg.get("niveau_cible") }}</span></p>{% endif %}
         {% if fiche_mg.get("langue") %}<p><strong>Fitenin’ny tahirin-kevitra:</strong> {{ fiche_mg.get("langue") }}</p>{% endif %}
         {% for etiquette, cle in [("Hevi-dehibe", "notions_cles"), ("Fahaiza-manao kendrena", "competences_visees"), ("Fahalalana ilaina mialoha", "prerequis"), ("Drafitra hita ao", "plan_cours")] %}
-          {% if fiche_mg.get(cle) %}<p><strong>{{ etiquette }}:</strong></p><ul>{% for valeur in fiche_mg.get(cle, []) %}<li>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+          {% if fiche_mg.get(cle) %}<p><strong>{{ etiquette }}:</strong></p><ul>{% for valeur in fiche_mg.get(cle, []) %}<li data-rendu data-rendu-ligne>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
         {% endfor %}
-        {% if fiche_mg.get("limites") %}<p>{{ fiche_mg.get("limites") }}</p>{% endif %}
+        {% if fiche_mg.get("limites") %}<div class="doc-fiche-limites" data-rendu>{{ fiche_mg.get("limites") }}</div>{% endif %}
         {% elif doc.resume_statut_ia_mg in ["en_attente", "en_cours", "a_generer"] %}
         <p>Eo am-panomanana ny famintinana amin’ny teny malagasy.</p>
         {% else %}<p>Tsy mbola misy famintinana malagasy voamarina amin’ity tahirin-kevitra ity.</p>{% endif %}

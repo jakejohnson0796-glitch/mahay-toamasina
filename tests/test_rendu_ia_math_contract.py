@@ -9,8 +9,8 @@ RACINE = Path(__file__).resolve().parents[1]
 def test_renderer_quiz_repare_les_equations_et_integrales_sans_delimiteur():
     source = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
 
-    assert "function normaliserExpressionsMathematiquesNues(source)" in source
-    assert "normaliserExpressionsMathematiquesNues(texte)" in source
+    assert "function normaliserExpressionsMathematiquesNues(source, options)" in source
+    assert "normaliserExpressionsMathematiquesNues(texte, options)" in source
     assert r"\b[fg]\s*\(\s*x\s*\)\s*=" in source
     assert r"\\int_\{" in source
     assert r'''return "\\(" + formules[Number(index)] + "\\)"''' in source
@@ -84,3 +84,129 @@ def test_quiz_et_tuteur_gardent_un_rendu_independant_pour_chaque_bloc():
     assert 'data-tuteur-content="exemple" data-rendu' in tuteur
     assert 'data-tuteur-content="exercice" data-rendu' in tuteur
     assert 'data-tuteur-content="correction" data-rendu' in tuteur
+
+
+
+def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathematiques():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+
+    # Exemples vus en production : backslash perdu avant sqrt/approx, et \\t
+    # JSON devenu tabulation avant « imes » dans une multiplication.
+    assert r".replace(/(^|[^A-Za-z\\])(sqrt|frac|dfrac|tfrac)" in js
+    assert r".replace(/([}\d)])(\s*)(approx|times|cdot|pm|leq|geq|neq" in js
+    assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
+    assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
+    assert "const contientMath =" in js
+    assert 'cible.dataset.renduVersion = "8"' in js
+
+
+def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+
+    assert '"ce"' in js
+    assert r"/\\ce\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g" in js
+    assert "motifReactionChimique" in js
+    assert r'"\\ce{" + formuleChimique + "}"' in js
+    # Le détecteur exige un indice/coefficient et une flèche pour préserver « Co » vs « CO ».
+    assert r"if (!/\d/.test(equation) || !/(?:->|→|⇌|↔)/.test(equation))" in js
+
+
+def test_renderer_scientifique_est_charge_sur_les_surfaces_ia_et_documents():
+    base = (RACINE / "app" / "templates" / "base.html").read_text(encoding="utf-8")
+
+    for route in (
+        'request.url.path.startswith("/quiz")',
+        'request.url.path.startswith("/tuteur")',
+        'request.url.path.startswith("/jeu-cerebral")',
+        'request.url.path.startswith("/documents")',
+        'request.url.path.startswith("/classe")',
+        'request.url.path.startswith("/cercle")',
+        'request.url.path.startswith("/moderation")',
+        'request.url.path == "/mes-revisions"',
+        'request.url.path == "/session-apprentissage"',
+    ):
+        assert route in base
+    assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
+    assert base.count('request.url.path.startswith("/classe")') >= 2
+    assert base.count('request.url.path.startswith("/cercle")') >= 2
+    assert base.count('request.url.path.startswith("/documents")') >= 2
+    assert base.count('href="/static/ai-learning.css') >= 1
+
+
+
+def test_contrat_ia_prevoit_les_formules_exactes_qui_ont_pose_probleme():
+    contrat = REGLES_FORMAT
+    assert r"\(7\times 8+9=65\)" in contrat
+    assert r"\(\sqrt{1000}\approx31{,}6\)" in contrat
+    assert r"\(\Delta E=\hbar\omega\)" in contrat
+    assert r"\(\rho=1\,\mathrm{kg/m^{3}}\)" in contrat
+    assert "encadre toute l'expression, et pas seulement l'opérateur" in contrat
+    assert "valeur exacte, approximation et arrondi" in contrat
+    assert "chiffre des unités" in contrat
+
+
+def test_rendu_couvre_resumes_documents_et_messages_de_cours():
+    documents = (RACINE / "app" / "templates" / "documents_list.html").read_text(encoding="utf-8")
+    moderation = (RACINE / "app" / "templates" / "moderation_document_preview.html").read_text(encoding="utf-8")
+    messages = (RACINE / "app" / "templates" / "_message_cercle.html").read_text(encoding="utf-8")
+    chat = (RACINE / "app" / "templates" / "cercle_chat.html").read_text(encoding="utf-8")
+    devoir = (RACINE / "app" / "templates" / "classe_devoir.html").read_text(encoding="utf-8")
+    salle = (RACINE / "app" / "templates" / "classe_salle.html").read_text(encoding="utf-8")
+    moderation_salon = (RACINE / "app" / "templates" / "admin_moderation_salon.html").read_text(encoding="utf-8")
+
+    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</div>' in documents
+    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</div>' in documents
+    assert '<div data-rendu>{{ document.resume_ia }}</div>' in moderation
+    assert '<div data-rendu>{{ document.resume_ia_mg }}</div>' in moderation
+    assert 'class="message-contenu" data-rendu data-rendu-ligne' in messages
+    assert 'contenuApercu.dataset.rendu = ""' in chat
+    assert 'nouveauSpan.dataset.rendu = ""' in chat
+    assert 'contenu.dataset.rendu = ""' in chat
+    assert 'class="thread-apercu-contenu" data-rendu data-rendu-ligne' in messages
+    assert 'class="classe-section-card-intro" data-rendu' in devoir
+    assert 'contenu.dataset.rendu = ""' in salle
+    assert '<span data-rendu data-rendu-ligne>{{ s.message.contenu }}</span>' in moderation_salon
+    assert '<span>{{ s.message.piece_jointe_nom }}</span>' in moderation_salon
+
+
+
+def test_fiche_et_apercu_document_rendent_les_formules_sans_paragraphes_embriques():
+    documents = (RACINE / "app" / "templates" / "documents_list.html").read_text(encoding="utf-8")
+    moderation = (RACINE / "app" / "templates" / "moderation_document_preview.html").read_text(encoding="utf-8")
+
+    assert '<div class="doc-resume-ia" data-rendu>' in documents
+    assert '<li data-rendu data-rendu-ligne>{{ valeur }}</li>' in documents
+    assert '<span data-rendu data-rendu-ligne>{{ fiche.get("objectif_pedagogique") }}</span>' in documents
+    assert '<div class="doc-fiche-limites" data-rendu>' in documents
+    assert '<div class="moderation-preview-text" data-rendu>{{ texte_apercu }}</div>' in moderation
+    assert '<li data-rendu data-rendu-ligne>{{ valeur }}</li>' in moderation
+    assert '<div class="moderation-fiche-note" data-rendu>' in moderation
+
+
+
+def test_rendu_couvre_messages_de_mission_recommandations_et_descriptions_de_cours():
+    classe = (RACINE / "app" / "templates" / "classe_detail.html").read_text(encoding="utf-8")
+    missions = (RACINE / "app" / "templates" / "session_apprentissage.html").read_text(encoding="utf-8")
+    revisions = (RACINE / "app" / "templates" / "mes_revisions.html").read_text(encoding="utf-8")
+
+    assert '<div class="classe-detail-meta" data-rendu>{{ cours.description }}</div>' in classe
+    assert '<div data-rendu>{{ mission.message }}</div>' in missions
+    assert '<div data-rendu>{{ mission.retour_adaptatif or mission.message }}</div>' in missions
+    assert '<div class="hub-illusion-message" data-rendu>{{ carte.message }}</div>' in revisions
+
+
+
+def test_carte_de_connaissances_et_notions_affichent_les_formules_en_ligne():
+    carte = (RACINE / "app" / "templates" / "carte_connaissances.html").read_text(encoding="utf-8")
+    tuteur = (RACINE / "app" / "templates" / "tuteur.html").read_text(encoding="utf-8")
+    missions = (RACINE / "app" / "templates" / "session_apprentissage.html").read_text(encoding="utf-8")
+    revisions = (RACINE / "app" / "templates" / "mes_revisions.html").read_text(encoding="utf-8")
+    base = (RACINE / "app" / "templates" / "base.html").read_text(encoding="utf-8")
+
+    assert 'request.url.path == "/carte-connaissances"' in base
+    assert '<h3 data-rendu data-rendu-ligne>{{ node.notion }}</h3>' in carte
+    assert '<div data-rendu>{{ relation.message }}</div>' in carte
+    assert '<h3 data-rendu data-rendu-ligne>{{ n.notion }}</h3>' in tuteur
+    assert '<strong data-rendu data-rendu-ligne>{{ mission.notion }}</strong>' in missions
+    assert '<h3 data-rendu data-rendu-ligne>{{ p.notion }}</h3>' in revisions
+    assert '<h3 data-rendu data-rendu-ligne>{{ n.notion }}</h3>' in revisions

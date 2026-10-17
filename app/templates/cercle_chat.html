@@ -1036,6 +1036,8 @@
     function annuler() {
       const span = document.createElement("span");
       span.className = "message-contenu";
+      span.dataset.rendu = "";
+      span.dataset.renduLigne = "";
       span.textContent = texteActuel;
       input.replaceWith(span);
     }
@@ -1052,6 +1054,8 @@
     const span = bulle.querySelector("input") || bulle.querySelector(".message-contenu");
     const nouveauSpan = document.createElement("span");
     nouveauSpan.className = "message-contenu";
+    nouveauSpan.dataset.rendu = "";
+    nouveauSpan.dataset.renduLigne = "";
     nouveauSpan.textContent = donnees.contenu;
     span.replaceWith(nouveauSpan);
     if (!bulle.querySelector(".message-modifie-etiquette")) {
@@ -1158,6 +1162,8 @@
     corps.appendChild(entete);
     const contenu = document.createElement("span");
     contenu.className = "message-contenu";
+    contenu.dataset.rendu = "";
+    contenu.dataset.renduLigne = "";
     contenu.textContent = m.contenu;
     corps.appendChild(contenu);
     if (m.modifie) {
@@ -1199,6 +1205,8 @@
         parentBulle.appendChild(auteur);
         const contenu = document.createElement("span");
         contenu.className = "message-contenu";
+        contenu.dataset.rendu = "";
+        contenu.dataset.renduLigne = "";
         contenu.style.display = "block";
         contenu.textContent = corps.parent.contenu;
         parentBulle.appendChild(contenu);
@@ -1647,6 +1655,8 @@
       contenu.textContent = "📎 ";
       contenu.appendChild(lien);
     } else {
+      contenu.dataset.rendu = "";
+      contenu.dataset.renduLigne = "";
       contenu.textContent = donnees.contenu;
     }
     corps.appendChild(contenu);
@@ -1671,6 +1681,8 @@
         auteurApercu.textContent = donnees.derniere_reponse.auteur || "";
         const contenuApercu = document.createElement("span");
         contenuApercu.className = "thread-apercu-contenu";
+        contenuApercu.dataset.rendu = "";
+        contenuApercu.dataset.renduLigne = "";
         contenuApercu.textContent = donnees.derniere_reponse.contenu || "";
         apercu.appendChild(auteurApercu);
         apercu.appendChild(contenuApercu);

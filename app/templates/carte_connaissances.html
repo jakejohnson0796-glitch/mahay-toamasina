@@ -36,10 +36,10 @@
     <div class="knowledge-next-icon" aria-hidden="true">{{ icone("tuteur", 20) }}</div>
     <div class="knowledge-next-copy">
       <p class="eyebrow">Prochaine meilleure action</p>
-      <h2 id="knowledge-next-title">{{ carte.prochaine.notion }}</h2>
+      <h2 id="knowledge-next-title" data-rendu data-rendu-ligne>{{ carte.prochaine.notion }}</h2>
       <p>
         {% if carte.prochaine.prerequis %}
-        Cette notion dépend notamment de <strong>{{ carte.prochaine.prerequis[0] }}</strong>.
+        Cette notion dépend notamment de <strong data-rendu data-rendu-ligne>{{ carte.prochaine.prerequis[0] }}</strong>.
         {% if carte.prochaine.prerequis|length > 1 %}Renforce d'abord les bases les plus fragiles.{% endif %}
         {% else %}
         C'est actuellement l'une de tes notions les plus fragiles parmi celles mesurées.
@@ -82,11 +82,11 @@
       {% for relation in carte.blocages %}
       <article class="knowledge-blocker">
         <div class="knowledge-blocker-path">
-          <span class="knowledge-node knowledge-node--weak">{{ relation.source.notion }} · {{ relation.source.score }}%</span>
+          <span class="knowledge-node knowledge-node--weak"><span data-rendu data-rendu-ligne>{{ relation.source.notion }}</span> · {{ relation.source.score }}%</span>
           <span class="knowledge-arrow" aria-hidden="true">→</span>
-          <span class="knowledge-node">{{ relation.target.notion }} · {{ relation.target.score }}%</span>
+          <span class="knowledge-node"><span data-rendu data-rendu-ligne>{{ relation.target.notion }}</span> · {{ relation.target.score }}%</span>
         </div>
-        <p>{{ relation.message }}</p>
+        <div data-rendu>{{ relation.message }}</div>
         <div class="hub-notion-actions">
           <form method="post" action="/quiz/cible">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -117,7 +117,7 @@
           <div class="knowledge-card-top">
             <div>
               <span class="hub-notion-matiere">{{ node.famille }}</span>
-              <h3>{{ node.notion }}</h3>
+              <h3 data-rendu data-rendu-ligne>{{ node.notion }}</h3>
             </div>
             <span class="knowledge-score">{{ node.score }}%</span>
           </div>
@@ -129,10 +129,10 @@
             <span>confiance {{ node.confiance }}%</span>
           </div>
           {% if node.prerequis %}
-          <p class="knowledge-card-line"><strong>Prérequis :</strong> {{ node.prerequis|join(", ") }}</p>
+          <p class="knowledge-card-line"><strong>Prérequis :</strong> <span data-rendu data-rendu-ligne>{{ node.prerequis|join(", ") }}</span></p>
           {% endif %}
           {% if node.dependances %}
-          <p class="knowledge-card-line"><strong>Ouvre vers :</strong> {{ node.dependances|join(", ") }}</p>
+          <p class="knowledge-card-line"><strong>Ouvre vers :</strong> <span data-rendu data-rendu-ligne>{{ node.dependances|join(", ") }}</span></p>
           {% endif %}
           <form method="post" action="/quiz/cible" class="knowledge-card-action">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -147,9 +147,9 @@
       <div class="knowledge-relations" aria-label="Relations de prérequis">
         {% for relation in sujet.relations %}
         <div class="knowledge-relation">
-          <span>{{ relation.source.notion }} <b>{{ relation.source.score }}%</b></span>
+          <span><span data-rendu data-rendu-ligne>{{ relation.source.notion }}</span> <b>{{ relation.source.score }}%</b></span>
           <span class="knowledge-relation-arrow" aria-hidden="true">→</span>
-          <span>{{ relation.target.notion }} <b>{{ relation.target.score }}%</b></span>
+          <span><span data-rendu data-rendu-ligne>{{ relation.target.notion }}</span> <b>{{ relation.target.score }}%</b></span>
         </div>
         {% endfor %}
       </div>

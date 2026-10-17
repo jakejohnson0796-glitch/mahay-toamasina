@@ -24,7 +24,7 @@
       📎 <a href="/cercles/{{ cercle.id }}/messages/{{ m.id }}/piece-jointe" target="_blank">{{ m.piece_jointe_nom }}</a>
     </span>
     {% else %}
-    <span class="message-contenu">{{ m.contenu }}</span>
+    <span class="message-contenu" data-rendu data-rendu-ligne>{{ m.contenu }}</span>
     {% endif %}
     {% if m.modifie %}<span class="message-modifie-etiquette">(modifié)</span>{% endif %}
     <div class="reactions-du-message">
@@ -39,7 +39,7 @@
     {% if m.derniere_reponse %}
     <div class="thread-apercu">
       <span class="thread-apercu-auteur">{{ m.derniere_reponse.auteur }}</span>
-      <span class="thread-apercu-contenu">{{ m.derniere_reponse.contenu }}</span>
+      <span class="thread-apercu-contenu" data-rendu data-rendu-ligne>{{ m.derniere_reponse.contenu }}</span>
     </div>
     {% endif %}
     <button type="button" class="bouton-thread-ouvrir" data-thread-preexistant="{{ m.id }}">💬 {{ m.reponses }} réponse{{ "s" if m.reponses > 1 else "" }}</button>

@@ -51,7 +51,8 @@
   // repare seulement les motifs fortement mathematiques (fonction f/g(x)=...
   // et integrale avec bornes + differentielle), sans toucher au code ni aux
   // formules deja delimitees. Le texte brut reste sinon inchange.
-  function normaliserExpressionsMathematiquesNues(source) {
+  function normaliserExpressionsMathematiquesNues(source, options) {
+    const contexte = options || {};
     const blocsProteges = [];
     const tokenBloc = "\uE100GMSRC_";
     const finTokenBloc = "\uE101";
@@ -121,6 +122,68 @@
       let normalisee = ligne;
       const formules = [];
 
+      // Récupération ciblée des commandes dont l'antislash a été supprimé par
+      // un modèle ou par un ancien transport JSON. La réparation se fait après
+      // protection du code et des maths déjà délimitées, uniquement sur la ligne
+      // de texte scientifique à afficher.
+      normalisee = normalisee
+        .replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g, "\\times")
+        .replace(/(^|[^A-Za-z\\])(sqrt|frac|dfrac|tfrac)(?=\s*\{)/gi, "$1\\$2")
+        .replace(/([}\d)])(\s*)(approx|times|cdot|pm|leq|geq|neq|equiv|cong|propto|infty|rightarrow|leftarrow|leftrightarrow)(?=\s*(?:\d|[A-Za-z({]))/gi, "$1$2\\$3")
+        .replace(/(^|[^A-Za-z\\])(Delta|delta|Omega|omega|alpha|beta|gamma|theta|lambda|mu|rho|sigma|phi|psi|hbar|nabla|partial)(?=\s*(?:[A-Za-z]\s*)?(?:=|≈|≤|≥|<|>))/g, "$1\\$2");
+
+      // Une réaction chimique non délimitée doit passer par mhchem en une seule
+      // formule. On ne transforme que les chaînes avec flèche de réaction ET
+      // au moins un indice/coefficient numérique : « Co » et « CO » restent du texte.
+      const motifReactionChimique = /(^|[^A-Za-z\\])((?:\d+\s*)?(?:[A-Z][a-z]?\d*)+(?:\((?:aq|s|l|g)\))?(?:\s*(?:\+|->|→|⇌|↔)\s*(?:\d+\s*)?(?:[A-Z][a-z]?\d*)+(?:\((?:aq|s|l|g)\))?)+)(?=$|[^A-Za-z])/g;
+      normalisee = normalisee.replace(motifReactionChimique, function (match, prefix, equation) {
+        if (!/\d/.test(equation) || !/(?:->|→|⇌|↔)/.test(equation)) return match;
+        const formuleChimique = equation
+          .replace(/→/g, "->")
+          .replace(/[⇌↔]/g, "<=>")
+          .trim();
+        return prefix + tokenFormule + (formules.push("\\ce{" + formuleChimique + "}") - 1) + finTokenFormule;
+      });
+
+      // Les expressions arithmétiques entre parenthèses sont rassemblées dans
+      // un même nœud KaTeX. Cela évite un rendu morcelé comme « (7 × 8 + 9) »
+      // et récupère les anciennes formes « (sqrt{1000}approx31,6) ».
+      normalisee = normalisee.replace(/\(([^()\n]{1,160})\)/g, function (match, expression) {
+        if (/\uE102GMATHRAW_\d+\uE103/.test(expression)) return match;
+        const contientMath = /(?:\\(?:sqrt|frac|dfrac|tfrac|times|approx|cdot|pm|leq|geq|neq|sum|prod|int|sin|cos|tan|ln|log|ce)\b|[=+*/^_×÷≈≤≥≠±√∑∫]|(?:\d)\s*(?:[-+*/×÷]|\b(?:times|approx)\b)\s*\d)/i.test(expression);
+        if (!contientMath) return match;
+        // Si la barre oblique a disparu dans une ancienne sortie, récupérer les
+        // noms de symboles grecs seulement DANS une expression déjà reconnue
+        // comme mathématique; le texte courant (Co/CO, alpha comme mot, etc.) reste intact.
+        const expressionFormatee = expression.replace(
+          /(^|[^A-Za-z\\])(Delta|delta|Omega|omega|alpha|beta|gamma|theta|lambda|mu|rho|sigma|phi|psi|pi|epsilon|tau|hbar|nabla|partial)(?=$|[^A-Za-z])/g,
+          "$1\\$2"
+        );
+        return tokenFormule + (formules.push(expressionFormatee.trim()) - 1) + finTokenFormule;
+      });
+
+      // Les calculs nus dans les titres et libellés courts peuvent être du texte
+      // volontaire (ex. « 2*3*4 = 24 » dans un H2). Les formules explicites,
+      // parentes ou munies d'une commande restent réparées, mais on ne détecte
+      // pas de nouvelles expressions numériques nues dans un contexte en ligne.
+      if (!contexte.enLigne) {
+      // Certaines anciennes réponses laissent une égalité numérique nue hors
+      // parenthèses (« 56+9=65 », « 30 ≈ 32 »). Rendre uniquement une petite
+      // expression bornée par chiffres/opérateurs, en laissant les dates telles quelles.
+      normalisee = normalisee.replace(
+        /(^|[^\w\\])([-+]?\d+(?:[.,]\d+)?(?:\s*[-+*×÷/]\s*[-+]?\d+(?:[.,]\d+)?|\s*(?:=|<|>|\\approx|\\leq|\\geq|\\neq)\s*[-+]?\d+(?:[.,]\d+)?(?:\s*%)?)+)(?=$|[^\w])/g,
+        function (match, prefix, expression) {
+          const propre = expression.trim();
+          if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(propre) ||
+              /^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(propre)) return match;
+          const contientRelation = /(?:=|<|>|\\approx|\\leq|\\geq|\\neq)/.test(propre);
+          const nombreOperations = (propre.match(/[-+*×÷/]/g) || []).length;
+          if (!contientRelation && nombreOperations < 2) return match;
+          return prefix + tokenFormule + (formules.push(propre) - 1) + finTokenFormule;
+        }
+      );
+
+      }
       // Quelques modeles suppriment l'antislash initial de \displaystyle \int.
       normalisee = normalisee
         .replace(/\bdisplaystyle\s+\\?int(?=\s*_\{)/gi, "\\displaystyle \\int")
@@ -175,14 +238,14 @@
     return resultat;
   }
 
-  function normaliserSourceRendu(source) {
+  function normaliserSourceRendu(source, options) {
     let texte = String(source == null ? "" : source);
     try { texte = texte.normalize("NFC"); } catch (_) {}
     // Reprise du principe du moteur riche : supprimer uniquement les marqueurs
     // invisibles connus qui peuvent perturber les délimiteurs sans modifier
     // les caractères pédagogiques visibles.
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
-    return normaliserExpressionsMathematiquesNues(texte).replace(/\r\n?/g, "\n");
+    return normaliserExpressionsMathematiquesNues(texte, options).replace(/\r\n?/g, "\n");
   }
 
   function antislashEchappe(texte, index) {
@@ -206,9 +269,9 @@
     "align", "align*", "gather", "gather*", "equation", "equation*", "split"
   ]);
 
-  function protegerMath(brut) {
+  function protegerMath(brut, options) {
     const math = [];
-    const source = normaliserSourceRendu(convertirMarqueursTransport(brut));
+    const source = normaliserSourceRendu(convertirMarqueursTransport(brut), options);
     let protection = "";
     let i = 0;
 
@@ -462,7 +525,7 @@
   // délimiteur. Le contrat IA reste prioritaire ; ce fallback évite qu'une
   // réponse imparfaitement formatée redevienne du texte brut.
   const COMMANDES_LATEX_NUES = [
-    "det", "frac", "dfrac", "tfrac", "sqrt", "sum", "prod", "int", "lim",
+    "det", "frac", "dfrac", "tfrac", "sqrt", "ce", "sum", "prod", "int", "lim",
     "ln", "log", "sin", "cos", "tan", "cot", "exp", "partial", "nabla",
     "vec", "mathbf", "mathbb", "mathrm", "text", "times", "cdot", "pm",
     "leq", "geq", "neq", "approx", "in", "infty", "alpha", "beta", "gamma",
@@ -485,8 +548,9 @@
 
   const MOTIFS_LATEX_NUS = [
     /\\begin\{(bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}[\s\S]*?\\end\{\1\}/g,
-    /\\(?:frac|dfrac|tfrac)\{[^{}\n]*\}\{[^{}\n]*\}/g,
-    /\\sqrt(?:\[[^\]\n]*\])?\{[^{}\n]*\}/g,
+    /\\(?:frac|dfrac|tfrac)\{(?:[^{}\n]|\{[^{}\n]*\})*\}\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
+    /\\sqrt(?:\[[^\]\n]*\])?\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
+    /\\ce\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
     /\\(?:text|mathrm|mathbf|mathbb|mathcal|operatorname|vec)\{[^{}\n]*\}/g,
     /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Delta|Gamma|Lambda|Omega|Sigma|Theta|Xi|Pi|Phi|Psi|Upsilon|angle|triangle|perp|parallel|subset|supset|cup|cap|emptyset|setminus|wedge|vee|lnot|Rightarrow|Leftarrow|Leftrightarrow|oplus|hbar|varepsilon|vartheta|varphi|varsigma|varkappa|lfloor|lceil|lVert|rVert|ldots|cdots|vdots|ddots|overrightarrow|overleftarrow|because|square|Box|iint|iiint|oint|Re|Im|therefore|top|tilde|tanh|bmod)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
     /[A-Za-z](?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)/g,
@@ -623,14 +687,14 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "6" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "8" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
     const sourceOriginale = SOURCES_ORIGINALES.get(cible) || String(brut == null ? "" : brut);
     SOURCES_ORIGINALES.set(cible, sourceOriginale);
 
-    const protection = protegerMath(sourceOriginale);
+    const protection = protegerMath(sourceOriginale, { enLigne: contexteEnLigne(cible, configuration) });
     const resultatMarkdown = parserMarkdown(protection.source, contexteEnLigne(cible, configuration));
     const fragment = fragmentSanitise(resultatMarkdown);
     restaurerMath(fragment, protection.math);
@@ -640,7 +704,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "6";
+    cible.dataset.renduVersion = "8";
     cible.dataset.renduDeps = signature;
     return cible;
   }

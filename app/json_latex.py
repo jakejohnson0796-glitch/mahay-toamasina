@@ -31,7 +31,9 @@ _COMMANDES_LATEX_AUTORISEES = {
     "downarrow", "updownarrow", "Uparrow", "Downarrow", "mapsto", "mathsf",
     "mathit", "mathtt", "hspace", "vspace", "therefore", "top", "tilde",
     "tanh", "rfloor", "lceil", "rceil", "Re", "Im", "rm", "raisebox",
-    "nsubseteq", "nleq", "ngeq", "equiv", "cong", "propto",
+    "nsubseteq", "nleq", "ngeq", "equiv", "cong", "propto", "simeq", "sim", "ll", "gg",
+    "doteq", "triangleq", "lesssim", "gtrsim", "limsup", "liminf", "sup", "inf", "ker", "dim",
+    "rank", "gcd", "lcm", "arg", "min", "max", "not", "hslash", "ell", "varnothing",
 }
 
 # Compléments alignés sur le répertoire scientifique : commandes grecques

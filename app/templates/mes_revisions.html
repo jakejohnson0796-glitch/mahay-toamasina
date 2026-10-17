@@ -50,7 +50,7 @@
         <div class="hub-illusion-top">
           <div>
             <span class="hub-notion-matiere">{{ carte.matiere }}</span>
-            <h3>{{ carte.notion }}</h3>
+            <h3 data-rendu data-rendu-ligne>{{ carte.notion }}</h3>
           </div>
           <span class="hub-illusion-badge hub-illusion-badge--{{ carte.statut }}">{{ carte.libelle }}</span>
         </div>
@@ -66,7 +66,7 @@
           </div>
         </div>
 
-        <p class="hub-illusion-message">{{ carte.message }}</p>
+        <div class="hub-illusion-message" data-rendu>{{ carte.message }}</div>
 
         <div class="hub-illusion-preuves">
           <span>{{ carte.observations_fortes }} réponse{{ "s" if carte.observations_fortes != 1 else "" }} très sûre{{ "s" if carte.observations_fortes != 1 else "" }}</span>
@@ -225,8 +225,8 @@
       {% for relation in carte_connaissances.blocages[:3] %}
       <article class="knowledge-summary-card">
         <span class="knowledge-summary-label">Prérequis fragile</span>
-        <strong>{{ relation.source.notion }}</strong>
-        <span class="knowledge-summary-path">→ {{ relation.target.notion }}</span>
+        <strong data-rendu data-rendu-ligne>{{ relation.source.notion }}</strong>
+        <span class="knowledge-summary-path">→ <span data-rendu data-rendu-ligne>{{ relation.target.notion }}</span></span>
         <div class="knowledge-summary-score"><b>{{ relation.source.score }}%</b> maîtrise</div>
       </article>
       {% endfor %}
@@ -262,7 +262,7 @@
         <div class="hub-maitrise-top">
           <div>
             <span class="hub-notion-matiere">{{ p.matiere }}</span>
-            <h3>{{ p.notion }}</h3>
+            <h3 data-rendu data-rendu-ligne>{{ p.notion }}</h3>
           </div>
           <span class="hub-maitrise-badge hub-maitrise-badge--{{ d.statut }}">{{ d.libelle }}</span>
         </div>
@@ -363,7 +363,7 @@
           <span class="hub-notion-matiere">{{ n.matiere }}</span>
           <span class="hub-notion-score">{{ erreurs_pct }}% d'erreurs</span>
         </div>
-        <h3>{{ n.notion }}</h3>
+        <h3 data-rendu data-rendu-ligne>{{ n.notion }}</h3>
         <div class="hub-notion-metrics">
           <span><strong>{{ n.score_maitrise }}%</strong> maîtrise</span>
           <span><strong>{{ n.nb_erreurs }}</strong> erreur{{ "s" if n.nb_erreurs != 1 else "" }}</span>

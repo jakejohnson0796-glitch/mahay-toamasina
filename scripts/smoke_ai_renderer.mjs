@@ -3,6 +3,7 @@ import vm from 'node:vm';
 import { JSDOM } from 'jsdom';
 import { marked } from 'marked';
 import katex from 'katex';
+const mhchemSource = fs.readFileSync('node_modules/katex/dist/contrib/mhchem.min.js', 'utf8');
 import createDOMPurify from 'dompurify';
 
 const source = fs.readFileSync('app/static/js/rendu_ia.js', 'utf8');
@@ -18,6 +19,7 @@ window.marked = marked;
 const purifyInstance = createDOMPurify(window);
 window.DOMPurify = purifyInstance;
 window.katex = katex;
+window.eval(mhchemSource);
 window.hljs = null;
 const context = {
   window,
@@ -453,6 +455,41 @@ for (const sample of delimitedCorruptions) {
   if (/[\u0008\u000C\t\r]/.test(plain.textContent || '')) {
     throw new Error('Control character remained in an already-delimited formula: ' + sample.name);
   }
+}
+
+// Régressions exactes issues du rendu réel : commandes sans antislash,
+// \t interprété en tabulation avant « imes », symboles de physique et chimie.
+const scienceRecoveryHost = window.document.createElement('div');
+window.document.body.appendChild(scienceRecoveryHost);
+const tabEscape = String.fromCharCode(9);
+const scienceRecoverySource = [
+  'Estimation : ( sqrt{1000}approx31,6) ; estimation arrondie : 30\u202F≈\u202F32.',
+  "On calcule d'abord (7" + tabEscape + "imes 8 + 9 = 65), puis on explique le résultat.",
+  'Physique : (rho = 1 kg/m^3) et (Delta E = hbar omega).',
+  "Chimie : 2H2 + O2 -> 2H2O ; Co n'est pas CO."
+].join('\n');
+window.rendreReponseIA(scienceRecoverySource, scienceRecoveryHost);
+if (scienceRecoveryHost.querySelectorAll('.katex').length < 5) {
+  throw new Error('Math/physics/reaction expressions were not grouped into KaTeX');
+}
+if (scienceRecoveryHost.querySelectorAll('.katex-error').length) {
+  throw new Error('A recovered scientific formula contains a KaTeX error');
+}
+const scienceRecoveryClone = scienceRecoveryHost.cloneNode(true);
+scienceRecoveryClone
+  .querySelectorAll('.katex, .gm-katex, .gm-latex-fallback')
+  .forEach((node) => node.remove());
+const scienceRecoveryText = scienceRecoveryClone.textContent || '';
+for (const raw of ['sqrt{1000}', 'approx31,6', 'imes 8', 'rho =', 'Delta E', 'hbar omega', '\\ce{2H2']) {
+  if (scienceRecoveryText.includes(raw)) {
+    throw new Error('Raw scientific notation remained visible: ' + raw);
+  }
+}
+if (!scienceRecoveryText.includes("Co n'est pas CO")) {
+  throw new Error('Chemical element capitalization Co/CO was altered');
+}
+if (!scienceRecoveryText.includes('30\u202F≈\u202F32')) {
+  throw new Error('A valid Unicode approximation was altered');
 }
 
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
