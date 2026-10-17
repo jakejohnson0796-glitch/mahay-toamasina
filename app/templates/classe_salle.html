@@ -190,6 +190,8 @@ const room = new Room({
     auteur.className = "message-auteur";
     auteur.textContent = nom;
     const contenu = document.createElement("span");
+    contenu.dataset.rendu = "";
+    contenu.dataset.renduLigne = "";
     contenu.textContent = texte;
     ligne.appendChild(auteur);
     ligne.appendChild(contenu);
