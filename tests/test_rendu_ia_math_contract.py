@@ -139,7 +139,7 @@ def test_contrat_ia_prevoit_les_formules_exactes_qui_ont_pose_probleme():
     assert r"\(\sqrt{1000}\approx31{,}6\)" in contrat
     assert r"\(\Delta E=\hbar\omega\)" in contrat
     assert r"\(\rho=1\,\mathrm{kg/m^{3}}\)" in contrat
-    assert "pas seulement de l'opérateur" in contrat
+    assert "encadre toute l'expression, et pas seulement l'opérateur" in contrat
     assert "valeur exacte, approximation et arrondi" in contrat
     assert "chiffre des unités" in contrat
 
