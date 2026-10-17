@@ -24,7 +24,7 @@
     <div class="mission-hero-side" aria-label="Résumé de la mission">
       {% if mission.active %}
       <span class="mission-kicker">{{ mission.matiere }}</span>
-      <strong>{{ mission.notion }}</strong>
+      <strong data-rendu data-rendu-ligne>{{ mission.notion }}</strong>
       <span>{{ mission.score }}% de maîtrise · {{ mission.erreurs }} erreur{{ "s" if mission.erreurs != 1 else "" }}</span>
       <span class="mission-duration">{{ mission.duree }}</span>
       {% elif mission.toutes_confirmees %}
