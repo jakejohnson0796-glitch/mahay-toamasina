@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import { JSDOM } from 'jsdom';
 import { marked } from 'marked';
 import katex from 'katex';
-import 'katex/contrib/mhchem.js';
+const mhchemSource = fs.readFileSync('node_modules/katex/dist/contrib/mhchem.min.js', 'utf8');
 import createDOMPurify from 'dompurify';
 
 const source = fs.readFileSync('app/static/js/rendu_ia.js', 'utf8');
@@ -19,6 +19,7 @@ window.marked = marked;
 const purifyInstance = createDOMPurify(window);
 window.DOMPurify = purifyInstance;
 window.katex = katex;
+window.eval(mhchemSource);
 window.hljs = null;
 const context = {
   window,
