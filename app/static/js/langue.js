@@ -75,6 +75,11 @@
 
     "Apprendre": "Hianatra",
     "Documents": "Tahirin-kevitra",
+    "Résumé et fiche pédagogique": "Famintinana sy mombamomba ny lesona",
+    "Comprendre ce document": "Fantaro ity tahirin-kevitra ity",
+    "Fiche de compréhension du document": "Mombamomba hahatakarana ny tahirin-kevitra",
+    "Mes dépôts à valider ou à corriger": "Ireo tahirin-kevitra napetrako mbola miandry fanamarinana na fanitsiana",
+    "Ces fichiers ne sont visibles qu’à toi tant qu’ils ne sont pas approuvés. Leur fiche de compréhension est préparée séparément de la validation.": "Ianao irery ihany no mahita ireo tahirin-kevitra ireo mandra-pankatoavana azy. Omanina misaraka amin’ny fanamarinana ny famintinana azy.",
     "Quiz IA": "Fanadinana IA",
     "Tuteur IA": "Mpampianatra IA",
     "Éthique, conditions et confidentialité — MITARIDALA": "Fitsipi-pitondrantena, fepetra ary tsiambaratelo — MITARIDALA",
