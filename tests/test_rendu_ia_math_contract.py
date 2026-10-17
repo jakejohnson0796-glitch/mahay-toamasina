@@ -157,6 +157,9 @@ def test_rendu_couvre_resumes_documents_et_messages_de_cours():
     assert '<p data-rendu>{{ document.resume_ia }}</p>' in moderation
     assert '<p data-rendu>{{ document.resume_ia_mg }}</p>' in moderation
     assert 'class="message-contenu" data-rendu data-rendu-ligne' in messages
+    assert 'contenuApercu.dataset.rendu = ""' in messages
+    assert 'nouveauSpan.dataset.rendu = ""' in messages
+    assert 'contenu.dataset.rendu = ""' in messages
     assert 'class="thread-apercu-contenu" data-rendu data-rendu-ligne' in messages
     assert 'class="classe-section-card-intro" data-rendu' in devoir
     assert 'contenu.dataset.rendu = ""' in salle
