@@ -136,3 +136,20 @@ def test_contrat_ia_prevoit_les_formules_exactes_qui_ont_pose_probleme():
     assert r"\(\Delta E=\hbar\omega\)" in contrat
     assert r"\(\rho=1\,\mathrm{kg/m^{3}}\)" in contrat
     assert "pas seulement de l'opérateur" in contrat
+
+
+def test_rendu_couvre_resumes_documents_et_messages_de_cours():
+    documents = (RACINE / "app" / "templates" / "documents_list.html").read_text(encoding="utf-8")
+    moderation = (RACINE / "app" / "templates" / "moderation_document_preview.html").read_text(encoding="utf-8")
+    messages = (RACINE / "app" / "templates" / "_message_cercle.html").read_text(encoding="utf-8")
+    devoir = (RACINE / "app" / "templates" / "classe_devoir.html").read_text(encoding="utf-8")
+    salle = (RACINE / "app" / "templates" / "classe_salle.html").read_text(encoding="utf-8")
+
+    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia }}</div>' in documents
+    assert 'class="doc-resume-ia" data-rendu>{{ doc.resume_ia_mg }}</div>' in documents
+    assert '<div data-rendu>{{ document.resume_ia }}</div>' in moderation
+    assert '<div data-rendu>{{ document.resume_ia_mg }}</div>' in moderation
+    assert 'class="message-contenu" data-rendu data-rendu-ligne' in messages
+    assert 'class="thread-apercu-contenu" data-rendu data-rendu-ligne' in messages
+    assert 'class="classe-section-card-intro" data-rendu' in devoir
+    assert 'contenu.dataset.rendu = ""' in salle
