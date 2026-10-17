@@ -27,7 +27,7 @@
     <h2 id="moderation-fiche-titre">Fiche de compréhension du document</h2>
     <div data-fiche-lang="fr" data-no-translate>
       {% if document.resume_ia %}
-        <p>{{ document.resume_ia }}</p>
+        <div data-rendu>{{ document.resume_ia }}</div>
         {% if fiche_document.get("objectif_pedagogique") %}<p><strong>Objectif pédagogique :</strong> {{ fiche_document.get("objectif_pedagogique") }}</p>{% endif %}
         {% if fiche_document.get("type_cours") %}<p><strong>Type détaillé :</strong> {{ fiche_document.get("type_cours") }}</p>{% endif %}
         {% if fiche_document.get("niveau_cible") %}<p><strong>Niveau cible :</strong> {{ fiche_document.get("niveau_cible") }}</p>{% endif %}
@@ -45,7 +45,7 @@
     </div>
     <div data-fiche-lang="mg" data-no-translate hidden>
       {% if document.resume_ia_mg %}
-        <p>{{ document.resume_ia_mg }}</p>
+        <div data-rendu>{{ document.resume_ia_mg }}</div>
         {% if fiche_document_mg.get("objectif_pedagogique") %}<p><strong>Tanjona amin’ny lesona:</strong> {{ fiche_document_mg.get("objectif_pedagogique") }}</p>{% endif %}
         {% if fiche_document_mg.get("type_cours") %}<p><strong>Karazana lesona:</strong> {{ fiche_document_mg.get("type_cours") }}</p>{% endif %}
         {% if fiche_document_mg.get("niveau_cible") %}<p><strong>Ambaratonga kendrena:</strong> {{ fiche_document_mg.get("niveau_cible") }}</p>{% endif %}
