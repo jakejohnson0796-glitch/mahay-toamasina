@@ -453,27 +453,74 @@ def generer_fiche_pedagogique(
 
 
 def generer_et_sauvegarder_fiche_document(document_id: int) -> None:
-    """Worker durable : extrait le document, puis persiste sa fiche pédagogique."""
+    """Crée la fiche bilingue ou traduit la fiche française déjà enregistrée."""
+    statuts_fr_finaux = {"generee", "provisoire", "insuffisante"}
+    statuts_mg_finaux = {"generee", "indisponible"}
+
     with Session(engine) as session:
         document = session.get(Document, document_id)
         if not document:
             raise RuntimeError(f"Document #{document_id} introuvable.")
-        if document.resume_ia and document.resume_statut_ia in {
-            "generee", "provisoire", "insuffisante"
-        }:
+
+        fiche_fr_deja_prete = bool(
+            document.resume_ia and document.resume_statut_ia in statuts_fr_finaux
+        )
+        fiche_mg_deja_prete = bool(
+            document.resume_ia_mg and document.resume_statut_ia_mg in statuts_mg_finaux
+        )
+        if fiche_fr_deja_prete and fiche_mg_deja_prete:
             return
-        document.resume_statut_ia = "en_cours"
-        session.add(document)
-        session.commit()
-        donnees_document = {
-            "chemin_fichier": document.chemin_fichier,
-            "nom_fichier": Path(document.chemin_fichier).name,
-            "titre": document.titre,
-            "matiere": document.matiere,
-            "type_document": document.type_document.value,
-            "annee": document.annee,
-            "filiere_id": document.filiere_id,
-        }
+
+        if fiche_fr_deja_prete:
+            try:
+                fiche_fr = json.loads(document.fiche_pedagogique_json or "{}")
+                if not isinstance(fiche_fr, dict):
+                    fiche_fr = {}
+            except (TypeError, ValueError):
+                fiche_fr = {}
+            fiche_mg_enregistree = fiche_fr.get("fiche_malagasy")
+            nom_titre = document.titre
+            # Le résumé français ne doit pas être mis en attente simplement
+            # parce qu'une traduction malagasy est en cours.
+            donnees_document = None
+        else:
+            document.resume_statut_ia = "en_cours"
+            document.resume_statut_ia_mg = "en_cours"
+            session.add(document)
+            session.commit()
+            fiche_fr = {}
+            fiche_mg_enregistree = None
+            donnees_document = {
+                "chemin_fichier": document.chemin_fichier,
+                "nom_fichier": Path(document.chemin_fichier).name,
+                "titre": document.titre,
+                "matiere": document.matiere,
+                "type_document": document.type_document.value,
+                "annee": document.annee,
+                "filiere_id": document.filiere_id,
+            }
+            nom_titre = document.titre
+
+    if donnees_document is None:
+        if isinstance(fiche_mg_enregistree, dict) and fiche_mg_enregistree.get("resume"):
+            fiche_mg = fiche_mg_enregistree
+        else:
+            fiche_mg = traduire_fiche_existante_malagasy(fiche_fr)
+        with Session(engine) as session:
+            document = session.get(Document, document_id)
+            if not document:
+                raise RuntimeError(f"Document #{document_id} supprimé pendant la traduction.")
+            document.resume_ia_mg = fiche_mg["resume"]
+            document.fiche_pedagogique_mg_json = json.dumps(fiche_mg, ensure_ascii=False)
+            document.resume_statut_ia_mg = fiche_mg.get("statut", "indisponible")
+            session.add(document)
+            session.commit()
+        logger.info(
+            "Version malagasy enregistrée pour le document #%s (statut=%s).",
+            document_id,
+            fiche_mg.get("statut", "inconnu"),
+        )
+        return
 
     texte = ""
     try:
@@ -499,6 +546,8 @@ def generer_et_sauvegarder_fiche_document(document_id: int) -> None:
         filiere=nom_filiere,
         texte=texte,
     )
+    fiche_mg = fiche.pop("fiche_malagasy", None) or _fiche_malagasy_indisponible()
+
     with Session(engine) as session:
         document = session.get(Document, document_id)
         if not document:
@@ -507,9 +556,15 @@ def generer_et_sauvegarder_fiche_document(document_id: int) -> None:
         document.fiche_pedagogique_json = json.dumps(fiche, ensure_ascii=False)
         document.resume_statut_ia = fiche["statut"]
         document.resume_genere_le = datetime.utcnow()
+        document.resume_ia_mg = fiche_mg["resume"]
+        document.fiche_pedagogique_mg_json = json.dumps(fiche_mg, ensure_ascii=False)
+        document.resume_statut_ia_mg = fiche_mg.get("statut", "indisponible")
         session.add(document)
         session.commit()
     logger.info(
-        "Fiche pédagogique enregistrée pour document #%s (mode=%s, statut=%s).",
-        document_id, fiche.get("source", "inconnu"), fiche.get("statut", "inconnu")
+        "Fiche pédagogique bilingue enregistrée pour document #%s "
+        "(français=%s, malagasy=%s).",
+        document_id,
+        fiche.get("statut", "inconnu"),
+        fiche_mg.get("statut", "inconnu"),
     )
