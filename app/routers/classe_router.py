@@ -238,6 +238,27 @@ def _cle_academique(valeur: Optional[str]) -> str:
     return " ".join("".join(c if c.isalnum() else " " for c in texte).split())
 
 
+def _cle_niveau(valeur: Optional[str]) -> str:
+    """Normalise les libellés usuels du niveau pour éviter de croiser L1 et L2."""
+    cle = _cle_academique(valeur)
+    alias = {
+        "licence 1": "l1",
+        "premiere annee": "l1",
+        "1ere annee": "l1",
+        "licence 2": "l2",
+        "deuxieme annee": "l2",
+        "2eme annee": "l2",
+        "licence 3": "l3",
+        "troisieme annee": "l3",
+        "3eme annee": "l3",
+        "master 1": "m1",
+        "master premiere annee": "m1",
+        "master 2": "m2",
+        "master deuxieme annee": "m2",
+    }
+    return alias.get(cle, cle)
+
+
 def construire_radar_pedagogique(
     progressions: list[ProgressionNotion],
     effectif_inscrit: int,
@@ -405,9 +426,16 @@ def radar_pedagogique_cours(
                 ProgressionNotion.utilisateur_id.in_(ids_etudiants)
             )
         ).all()
-        progressions = [
+        progressions_matiere = [
             ligne for ligne in lignes
             if _cle_academique(ligne.matiere) == cle_matiere
+        ]
+        cle_niveau = _cle_niveau(cours.niveau)
+        # Ne jamais mélanger les cohortes de L1, L2, etc. Les lignes sans
+        # niveau connu restent hors du radar, car leur attribution serait spéculative.
+        progressions = [
+            ligne for ligne in progressions_matiere
+            if _cle_niveau(ligne.niveau) == cle_niveau
         ]
 
     radar = construire_radar_pedagogique(progressions, len(ids_etudiants))
