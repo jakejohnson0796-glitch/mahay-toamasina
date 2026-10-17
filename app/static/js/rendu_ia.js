@@ -121,6 +121,39 @@
       let normalisee = ligne;
       const formules = [];
 
+      // Récupération ciblée des commandes dont l'antislash a été supprimé par
+      // un modèle ou par un ancien transport JSON. La réparation se fait après
+      // protection du code et des maths déjà délimitées, uniquement sur la ligne
+      // de texte scientifique à afficher.
+      normalisee = normalisee
+        .replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g, "\\times")
+        .replace(/(^|[^A-Za-z\\])(sqrt|frac|dfrac|tfrac)(?=\s*\{)/gi, "$1\\$2")
+        .replace(/([}\d)])(\s*)(approx|times|cdot|pm|leq|geq|neq|equiv|cong|propto|infty|rightarrow|leftarrow|leftrightarrow)(?=\s*(?:\d|[A-Za-z({]))/gi, "$1$2\\$3")
+        .replace(/(^|[^A-Za-z\\])(Delta|delta|Omega|omega|alpha|beta|gamma|theta|lambda|mu|rho|sigma|phi|psi|hbar|nabla|partial)(?=\s*(?:[A-Za-z]\s*)?(?:=|≈|≤|≥|<|>))/g, "$1\\$2");
+
+      // Une réaction chimique non délimitée doit passer par mhchem en une seule
+      // formule. On ne transforme que les chaînes avec flèche de réaction ET
+      // au moins un indice/coefficient numérique : « Co » et « CO » restent du texte.
+      const motifReactionChimique = /(^|[^A-Za-z\\])((?:\d+\s*)?(?:[A-Z][a-z]?\d*)+(?:\((?:aq|s|l|g)\))?(?:\s*(?:\+|->|→|⇌|↔)\s*(?:\d+\s*)?(?:[A-Z][a-z]?\d*)+(?:\((?:aq|s|l|g)\))?)+)(?=$|[^A-Za-z])/g;
+      normalisee = normalisee.replace(motifReactionChimique, function (match, prefix, equation) {
+        if (!/\d/.test(equation) || !/(?:->|→|⇌|↔)/.test(equation)) return match;
+        const formuleChimique = equation
+          .replace(/→/g, "->")
+          .replace(/[⇌↔]/g, "<=>")
+          .trim();
+        return prefix + tokenFormule + (formules.push("\\ce{" + formuleChimique + "}") - 1) + finTokenFormule;
+      });
+
+      // Les expressions arithmétiques entre parenthèses sont rassemblées dans
+      // un même nœud KaTeX. Cela évite un rendu morcelé comme « (7 × 8 + 9) »
+      // et récupère les anciennes formes « (sqrt{1000}approx31,6) ».
+      normalisee = normalisee.replace(/\(([^()\n]{1,160})\)/g, function (match, expression) {
+        if (/\uE102GMATHRAW_\d+\uE103/.test(expression)) return match;
+        const contientMath = /(?:\\(?:sqrt|frac|dfrac|tfrac|times|approx|cdot|pm|leq|geq|neq|sum|prod|int|sin|cos|tan|ln|log|ce)\b|[=+*/^_×÷≈≤≥≠±√∑∫]|(?:\d)\s*(?:[-+*/×÷]|\b(?:times|approx)\b)\s*\d)/i.test(expression);
+        if (!contientMath) return match;
+        return tokenFormule + (formules.push(expression.trim()) - 1) + finTokenFormule;
+      });
+
       // Quelques modeles suppriment l'antislash initial de \displaystyle \int.
       normalisee = normalisee
         .replace(/\bdisplaystyle\s+\\?int(?=\s*_\{)/gi, "\\displaystyle \\int")
@@ -462,7 +495,7 @@
   // délimiteur. Le contrat IA reste prioritaire ; ce fallback évite qu'une
   // réponse imparfaitement formatée redevienne du texte brut.
   const COMMANDES_LATEX_NUES = [
-    "det", "frac", "dfrac", "tfrac", "sqrt", "sum", "prod", "int", "lim",
+    "det", "frac", "dfrac", "tfrac", "sqrt", "ce", "sum", "prod", "int", "lim",
     "ln", "log", "sin", "cos", "tan", "cot", "exp", "partial", "nabla",
     "vec", "mathbf", "mathbb", "mathrm", "text", "times", "cdot", "pm",
     "leq", "geq", "neq", "approx", "in", "infty", "alpha", "beta", "gamma",
@@ -485,8 +518,9 @@
 
   const MOTIFS_LATEX_NUS = [
     /\\begin\{(bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}[\s\S]*?\\end\{\1\}/g,
-    /\\(?:frac|dfrac|tfrac)\{[^{}\n]*\}\{[^{}\n]*\}/g,
-    /\\sqrt(?:\[[^\]\n]*\])?\{[^{}\n]*\}/g,
+    /\\(?:frac|dfrac|tfrac)\{(?:[^{}\n]|\{[^{}\n]*\})*\}\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
+    /\\sqrt(?:\[[^\]\n]*\])?\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
+    /\\ce\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
     /\\(?:text|mathrm|mathbf|mathbb|mathcal|operatorname|vec)\{[^{}\n]*\}/g,
     /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Delta|Gamma|Lambda|Omega|Sigma|Theta|Xi|Pi|Phi|Psi|Upsilon|angle|triangle|perp|parallel|subset|supset|cup|cap|emptyset|setminus|wedge|vee|lnot|Rightarrow|Leftarrow|Leftrightarrow|oplus|hbar|varepsilon|vartheta|varphi|varsigma|varkappa|lfloor|lceil|lVert|rVert|ldots|cdots|vdots|ddots|overrightarrow|overleftarrow|because|square|Box|iint|iiint|oint|Re|Im|therefore|top|tilde|tanh|bmod)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
     /[A-Za-z](?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)/g,
@@ -623,7 +657,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "6" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "7" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -640,7 +674,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "6";
+    cible.dataset.renduVersion = "7";
     cible.dataset.renduDeps = signature;
     return cible;
   }
