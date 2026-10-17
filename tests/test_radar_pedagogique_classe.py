@@ -3,7 +3,8 @@ from types import SimpleNamespace
 
 from jinja2 import Environment, FileSystemLoader
 
-from app.models import ProgressionNotion
+from app.models import ProgressionNotion, RoleUtilisateur
+from app.routers.classe_router import _peut_gerer_cours
 from app.routers.classe_router import (
     _cle_academique,
     construire_plan_reprise,
@@ -117,3 +118,18 @@ def test_template_radar_compile_et_contient_les_gardes_de_confidentialite():
     assert "sans noms" in source.lower()
     assert 'id="copier-plan"' in source
     assert 'name="utilisateur.nom"' not in source
+
+
+
+def test_radar_professeur_limite_au_proprietaire_du_cours_ou_admin():
+    cours = SimpleNamespace(professeur_id=41)
+    proprietaire = SimpleNamespace(id=41, role=RoleUtilisateur.PROFESSEUR)
+    autre_professeur = SimpleNamespace(id=42, role=RoleUtilisateur.PROFESSEUR)
+    etudiant = SimpleNamespace(id=43, role=RoleUtilisateur.ETUDIANT)
+    administrateur = SimpleNamespace(id=99, role=RoleUtilisateur.ADMIN)
+
+    assert _peut_gerer_cours(cours, proprietaire)
+    assert not _peut_gerer_cours(cours, autre_professeur)
+    assert not _peut_gerer_cours(cours, etudiant)
+    assert _peut_gerer_cours(cours, administrateur)
+    assert not _peut_gerer_cours(cours, None)
