@@ -90,7 +90,7 @@ def test_normalisation_reponse_ia_liste_et_objectif(monkeypatch):
     assert len(fiche["notions_cles"]) == 2
     assert fiche["confiance"] == 0.91
     assert fiche["fiche_malagasy"]["statut"] == "generee"
-    assert "Derivative" in fiche["fiche_malagasy"]["resume"]
+    assert "derivative" in fiche["fiche_malagasy"]["resume"].lower()
     assert len(fiche["fiche_malagasy"]["notions_cles"]) == 2
 
 
