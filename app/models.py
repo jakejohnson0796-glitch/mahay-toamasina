@@ -382,6 +382,11 @@ class Document(SQLModel, table=True):
     # la bibliotheque, sans passer par un cercle (comportement d'origine,
     # inchange pour toutes les lignes existantes).
     cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id", index=True)
+    # Fiche de compréhension pédagogique générée après le dépôt.
+    resume_ia: str = Field(default="")
+    fiche_pedagogique_json: str = Field(default="{}")
+    resume_statut_ia: str = Field(default="a_generer", index=True)
+    resume_genere_le: Optional[datetime] = None
 
 
 class ProgressionNotion(SQLModel, table=True):
@@ -1330,6 +1335,11 @@ class TacheIA(SQLModel, table=True):
         foreign_key="sessiontuteur.id",
         index=True,
     )
+    document_id: Optional[int] = Field(
+        default=None,
+        foreign_key="document.id",
+        index=True,
+    )
     statut: StatutTacheIA = Field(default=StatutTacheIA.EN_ATTENTE, index=True)
     strategie_verification: str = Field(default="standard", index=True)
     score_risque: int = Field(default=0)
@@ -1350,6 +1360,12 @@ class TacheIA(SQLModel, table=True):
             "type_tache",
             "session_tuteur_id",
             name="uq_tache_ia_type_session_tuteur",
+        ),
+        Index(
+            "uq_tache_ia_type_document",
+            "type_tache",
+            "document_id",
+            unique=True,
         ),
         Index(
             "ix_tache_ia_file",
