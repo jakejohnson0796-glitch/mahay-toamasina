@@ -85,22 +85,7 @@ def _extrait_document_pertinent(document: Document, question: str) -> tuple[str,
         return "", []
 
     blocs = []
-    tampon_textes = []
-    tampon_references = []
-    taille_tampon = 0
     longueur_totale = 0
-
-    def vider_tampon():
-        nonlocal tampon_textes, tampon_references, taille_tampon
-        if tampon_textes:
-            blocs.append({
-                "references": list(tampon_references),
-                "texte": " ".join(tampon_textes),
-            })
-        tampon_textes = []
-        tampon_references = []
-        taille_tampon = 0
-
     for passage in passages:
         reference = str(passage.get("reference") or "document (pagination indisponible)")[:120]
         texte = re.sub(r"\s+", " ", str(passage.get("texte") or "")).strip()
@@ -110,16 +95,10 @@ def _extrait_document_pertinent(document: Document, question: str) -> tuple[str,
             if longueur_totale >= 18000:
                 break
             morceau = texte[debut:debut + 1800]
-            if tampon_textes and taille_tampon + len(morceau) > 1800:
-                vider_tampon()
-            tampon_textes.append(morceau)
-            if reference not in tampon_references:
-                tampon_references.append(reference)
-            taille_tampon += len(morceau)
+            blocs.append({"references": [reference], "texte": morceau})
             longueur_totale += len(morceau)
         if longueur_totale >= 18000:
             break
-    vider_tampon()
 
     if not blocs:
         return "", []
