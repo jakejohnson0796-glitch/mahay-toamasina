@@ -7,6 +7,7 @@ from app.models import ProgressionNotion, RoleUtilisateur
 from app.routers.classe_router import _peut_gerer_cours
 from app.routers.classe_router import (
     _cle_academique,
+    _cle_niveau,
     construire_plan_reprise,
     construire_radar_pedagogique,
 )
@@ -133,3 +134,11 @@ def test_radar_professeur_limite_au_proprietaire_du_cours_ou_admin():
     assert not _peut_gerer_cours(cours, etudiant)
     assert _peut_gerer_cours(cours, administrateur)
     assert not _peut_gerer_cours(cours, None)
+
+
+
+def test_niveaux_academiques_sont_normalises_sans_confondre_l1_et_l2():
+    assert _cle_niveau("Licence 1") == _cle_niveau("L1")
+    assert _cle_niveau("Première année") == _cle_niveau("L1")
+    assert _cle_niveau("Master 2") == _cle_niveau("M2")
+    assert _cle_niveau("L1") != _cle_niveau("L2")
