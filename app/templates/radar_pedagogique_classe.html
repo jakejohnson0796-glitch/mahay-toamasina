@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+{% block titre %}Radar pédagogique — {{ cours.nom }} — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="radar-page">
+  <style nonce="{{ csp_nonce(request) }}">
+    .radar-page{max-width:1320px;margin:0 auto;padding:1.1rem clamp(.85rem,2.4vw,1.7rem) 3rem;color:var(--content-text)}
+    .radar-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1.15rem}
+    .radar-breadcrumb{margin:0 0 .45rem;color:var(--content-text-muted);font-size:.75rem}
+    .radar-breadcrumb a{color:var(--content-accent);text-decoration:none}
+    .radar-head h1{font-size:clamp(1.55rem,3vw,2.35rem);line-height:1.12;margin:0 0 .5rem;letter-spacing:-.035em}
+    .radar-subtitle{max-width:780px;margin:0;color:var(--content-text-muted);font-size:.9rem;line-height:1.6}
+    .radar-head-actions{display:flex;gap:.55rem;flex-wrap:wrap}
+    .radar-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin:1rem 0}
+    .radar-kpi,.radar-panel{min-width:0;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface);box-shadow:0 3px 12px rgba(17,24,39,.035)}
+    .radar-kpi{padding:.9rem 1rem}
+    .radar-kpi span{display:block;color:var(--content-text-muted);font-size:.72rem;line-height:1.4}
+    .radar-kpi strong{display:block;font-size:clamp(1.3rem,2.8vw,1.9rem);margin:.28rem 0;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+    .radar-panel{padding:clamp(.9rem,2vw,1.35rem);margin-top:1rem}
+    .radar-panel h2{margin:0 0 .35rem;font-size:1.05rem;letter-spacing:-.02em}
+    .radar-intro{margin:0 0 .95rem;color:var(--content-text-muted);font-size:.8rem;line-height:1.55}
+    .radar-notes{display:grid;gap:.75rem}
+    .radar-note{border:1px solid var(--content-border);border-radius:13px;padding:.9rem;background:var(--content-bg)}
+    .radar-note-top{display:flex;gap:.65rem;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+    .radar-note h3{font-size:.91rem;line-height:1.4;margin:0;overflow-wrap:anywhere}
+    .radar-tags{display:flex;gap:.35rem;flex-wrap:wrap}
+    .radar-tag{display:inline-flex;align-items:center;border-radius:999px;padding:.24rem .55rem;font-size:.66rem;font-weight:750;border:1px solid var(--content-border);color:var(--content-text-muted);background:var(--content-surface)}
+    .radar-tag-elevated{border-color:#efb1a6;color:#9b2c20;background:#fff4f1}
+    .radar-tag-medium{border-color:#e7ce8a;color:#75500a;background:#fff9e8}
+    .radar-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:.75rem 0}
+    .radar-metric{padding:.6rem .7rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-surface)}
+    .radar-metric strong{display:block;font-size:.98rem;font-variant-numeric:tabular-nums}
+    .radar-metric span{display:block;margin-top:.13rem;color:var(--content-text-muted);font-size:.65rem}
+    .radar-bar{height:7px;border-radius:999px;overflow:hidden;background:var(--content-border);margin:.45rem 0 .65rem}
+    .radar-bar span{display:block;height:100%;border-radius:999px;background:var(--content-accent);max-width:100%}
+    .radar-action{margin:.5rem 0 0;font-size:.77rem;line-height:1.6}
+    .radar-plan{width:100%;min-height:230px;resize:vertical;padding:.8rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);color:var(--content-text);font:500 .79rem/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
+    .radar-plan-actions{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.75rem}
+    .radar-status{font-size:.75rem;color:var(--content-text-muted)}
+    .radar-privacy{display:flex;gap:.7rem;align-items:flex-start;padding:.8rem .9rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-bg);color:var(--content-text-muted);font-size:.75rem;line-height:1.55}
+    .radar-privacy svg{flex:0 0 auto}
+    .radar-empty{padding:1.15rem;text-align:center;border:1px dashed var(--content-border);border-radius:13px;background:var(--content-bg)}
+    .radar-empty strong{display:block;margin-bottom:.35rem}
+    .radar-empty p{font-size:.79rem;line-height:1.6;color:var(--content-text-muted);margin:0}
+    @media(max-width:760px){.radar-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.radar-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:420px){.radar-metrics{grid-template-columns:1fr}.radar-head-actions{width:100%}.radar-head-actions a{flex:1;text-align:center}.radar-kpi{padding:.75rem}.radar-note{padding:.75rem}}
+  </style>
+
+  <header class="radar-head">
+    <div>
+      <p class="radar-breadcrumb"><a href="/classe/{{ cours.id }}">{{ cours.nom }}</a> / Radar pédagogique</p>
+      <h1>Du score à une meilleure séance</h1>
+      <p class="radar-subtitle">Repère les notions à reprendre à l'échelle de la classe, puis transforme les résultats en actions concrètes pour ton prochain cours.</p>
+    </div>
+    <div class="radar-head-actions">
+      <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Retour au cours</a>
+      <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}/etudiants">Étudiants</a>
+    </div>
+  </header>
+
+  <section class="radar-kpis" aria-label="Synthèse pédagogique">
+    <article class="radar-kpi"><span>Étudiants inscrits</span><strong>{{ radar.effectif_inscrit }}</strong><span>dans ce cours</span></article>
+    <article class="radar-kpi"><span>Étudiants observés</span><strong>{{ radar.effectif_observe }}</strong><span>{{ radar.couverture_pct }} % ont des résultats dans cette matière</span></article>
+    <article class="radar-kpi"><span>Notions mesurées</span><strong>{{ radar.nb_notions_mesurees }}</strong><span>avec au moins une activité enregistrée</span></article>
+    <article class="radar-kpi"><span>Signaux partageables</span><strong>{{ radar.nb_notions_affichables }}</strong><span>assez d'observations pour préserver la confidentialité</span></article>
+  </section>
+
+  <div class="radar-privacy" role="note">
+    {{ icone("shield-check", 19) }}
+    <div><strong>Conçu pour soutenir, pas classer.</strong> Ce radar affiche uniquement des tendances collectives, sans noms, classements individuels ni notes nominatives. Une notion n'apparaît que si au moins {{ radar.seuil_confidentialite }} étudiants ont une mesure disponible. Le professeur garde la décision pédagogique.</div>
+  </div>
+
+  <section class="radar-panel" aria-labelledby="radar-notions-title">
+    <h2 id="radar-notions-title">Notions à traiter en priorité</h2>
+    <p class="radar-intro">Le score est le score de maîtrise déjà calculé par MITARIDALA. Un signal de fragilité est une mesure sous 65 %; cela indique une piste de reprise, pas un diagnostic définitif d'un étudiant.</p>
+    {% if radar.notions %}
+    <div class="radar-notes">
+      {% for notion in radar.notions %}
+      <article class="radar-note">
+        <div class="radar-note-top">
+          <h3>{{ loop.index }}. {{ notion.notion }}</h3>
+          <div class="radar-tags">
+            {% if notion.priorite == "Élevée" %}<span class="radar-tag radar-tag-elevated">Priorité élevée</span>
+            {% elif notion.priorite == "À reprendre" %}<span class="radar-tag radar-tag-medium">À reprendre</span>
+            {% elif notion.priorite == "À consolider" %}<span class="radar-tag">À consolider</span>
+            {% else %}<span class="radar-tag">À approfondir</span>{% endif %}
+          </div>
+        </div>
+        <div class="radar-metrics">
+          <div class="radar-metric"><strong>{{ notion.score_moyen }} %</strong><span>Score collectif moyen</span></div>
+          <div class="radar-metric"><strong>{{ notion.part_fragile }} %</strong><span>Mesures sous 65 %</span></div>
+          <div class="radar-metric"><strong>{{ notion.effectif_observe }}</strong><span>Étudiants observés</span></div>
+        </div>
+        <div class="radar-bar" aria-label="Score collectif moyen : {{ notion.score_moyen }} %"><span style="width:{{ notion.score_moyen }}%"></span></div>
+        <p class="radar-action"><strong>Action suggérée :</strong> {{ notion.action }}</p>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="radar-empty">
+      <strong>Pas encore assez de données collectives pour prioriser une notion.</strong>
+      <p>Invite les étudiants à faire quelques quiz dans la matière « {{ cours.matiere }} ». Quand au moins {{ radar.seuil_confidentialite }} étudiants auront des données sur une même notion, le radar donnera une recommandation plus précise. Aucune donnée n'est interprétée comme un échec.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="radar-panel" aria-labelledby="radar-plan-title">
+    <h2 id="radar-plan-title">Plan prêt pour la prochaine séance</h2>
+    <p class="radar-intro">Un brouillon fondé sur les résultats actuels — modifie-le selon ton cours, ton programme et ce que tu observes en classe. Aucun appel IA supplémentaire n'est nécessaire.</p>
+    <label for="plan-reprise" class="sr-only">Plan pédagogique proposé</label>
+    <textarea id="plan-reprise" class="radar-plan" readonly>{{ plan_reprise }}</textarea>
+    <div class="radar-plan-actions">
+      <button type="button" class="bouton bouton-primaire" id="copier-plan">{{ icone("copy", 15) }} Copier le plan</button>
+      <span class="radar-status" id="radar-copie-etat" role="status" aria-live="polite"></span>
+    </div>
+  </section>
+</div>
+
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  var champ = document.getElementById("plan-reprise");
+  var bouton = document.getElementById("copier-plan");
+  var statut = document.getElementById("radar-copie-etat");
+  if (!champ || !bouton || !statut) return;
+
+  bouton.addEventListener("click", async function () {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(champ.value);
+      } else {
+        champ.focus();
+        champ.select();
+        if (!document.execCommand("copy")) throw new Error("copy");
+        champ.setSelectionRange(0, 0);
+      }
+      statut.textContent = "Plan copié. Tu peux le coller dans tes notes ou le modifier avant le cours.";
+    } catch (_erreur) {
+      champ.focus();
+      champ.select();
+      statut.textContent = "Sélectionne le texte puis utilise Ctrl+C ou Copier sur ton téléphone.";
+    }
+  });
+})();
+</script>
+{% endblock %}
