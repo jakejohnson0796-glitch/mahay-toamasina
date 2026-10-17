@@ -75,7 +75,8 @@
    or request.url.path == "/admin/ia"
    or request.url.path == "/dashboard"
    or request.url.path == "/mes-revisions"
-   or request.url.path == "/session-apprentissage" %}
+   or request.url.path == "/session-apprentissage"
+   or request.url.path == "/carte-connaissances" %}
 <!-- Chargeur borné avec CDN de secours ; le contenu utilisateur reste sur la page. -->
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/charger-dependances-ia.js?v={{ version_asset('js/charger-dependances-ia.js') }}"></script>
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/rendu_ia.js?v={{ version_asset('js/rendu_ia.js') }}"></script>
