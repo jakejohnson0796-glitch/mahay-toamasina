@@ -1037,6 +1037,8 @@ class SessionTuteur(SQLModel, table=True):
     statut_verification_ia: str = Field(default="en_attente", index=True)
     date_verification_ia: Optional[datetime] = None
     erreur_verification_ia: Optional[str] = None
+    # Provenance des extraits documentaires présentés au Tuteur (JSON sans texte du document).
+    sources_documentaires_json: str = Field(default="[]")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
