@@ -9,8 +9,8 @@ RACINE = Path(__file__).resolve().parents[1]
 def test_renderer_quiz_repare_les_equations_et_integrales_sans_delimiteur():
     source = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
 
-    assert "function normaliserExpressionsMathematiquesNues(source)" in source
-    assert "normaliserExpressionsMathematiquesNues(texte)" in source
+    assert "function normaliserExpressionsMathematiquesNues(source, options)" in source
+    assert "normaliserExpressionsMathematiquesNues(texte, options)" in source
     assert r"\b[fg]\s*\(\s*x\s*\)\s*=" in source
     assert r"\\int_\{" in source
     assert r'''return "\\(" + formules[Number(index)] + "\\)"''' in source
@@ -97,7 +97,7 @@ def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathem
     assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
     assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
     assert "const contientMath =" in js
-    assert 'cible.dataset.renduVersion = "7"' in js
+    assert 'cible.dataset.renduVersion = "8"' in js
 
 
 def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
