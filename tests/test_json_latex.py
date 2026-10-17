@@ -129,3 +129,14 @@ def test_preserve_exactement_les_symboles_unicode_et_contextes_du_guide():
     }
 
     assert charger_json_ia(json.dumps(donnees, ensure_ascii=False)) == donnees
+
+
+
+def test_transport_preserve_les_commandes_mathematiques_physiques_et_chimiques_courantes():
+    texte = r'''{"calcul":"\\(7\\times 8+9=65\\)","estimation":"\\(\\sqrt{1000}\\approx31{,}6\\)","physique":"\\(\\Delta E=\\hbar\\omega\\)","chimie":"\\(\\ce{2H2 + O2 -> 2H2O}\\)","comparaison":"\\(a\\simeq b\\)"}'''
+    resultat = charger_json_ia(texte)
+    assert resultat["calcul"] == r"\(7\times 8+9=65\)"
+    assert resultat["estimation"] == r"\(\sqrt{1000}\approx31{,}6\)"
+    assert resultat["physique"] == r"\(\Delta E=\hbar\omega\)"
+    assert resultat["chimie"] == r"\(\ce{2H2 + O2 -> 2H2O}\)"
+    assert resultat["comparaison"] == r"\(a\simeq b\)"
