@@ -68,8 +68,8 @@ def _extrait_document_pertinent(document: Document, question: str) -> tuple[str,
     """Extrait quelques passages d'un document approuvé en gardant leurs repères.
 
     Un repère n'est renvoyé que si l'extracteur peut l'associer au passage :
-    numéro de page pour un PDF textuel, diapositive pour un PPTX ou paragraphe
-    avec mention explicite de l'absence de pagination pour un DOCX.
+    numéro de page pour un PDF textuel, diapositive pour un PPTX ou repère de
+    paragraphe pour un DOCX dont la pagination n'est pas disponible.
     """
     try:
         with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
@@ -85,20 +85,41 @@ def _extrait_document_pertinent(document: Document, question: str) -> tuple[str,
         return "", []
 
     blocs = []
+    tampon_textes = []
+    tampon_references = []
+    taille_tampon = 0
     longueur_totale = 0
+
+    def vider_tampon():
+        nonlocal tampon_textes, tampon_references, taille_tampon
+        if tampon_textes:
+            blocs.append({
+                "references": list(tampon_references),
+                "texte": " ".join(tampon_textes),
+            })
+        tampon_textes = []
+        tampon_references = []
+        taille_tampon = 0
+
     for passage in passages:
         reference = str(passage.get("reference") or "document (pagination indisponible)")[:120]
         texte = re.sub(r"\s+", " ", str(passage.get("texte") or "")).strip()
         if not texte:
             continue
         for debut in range(0, len(texte), 1800):
-            if len(blocs) >= 10 or longueur_totale >= 18000:
+            if longueur_totale >= 18000:
                 break
             morceau = texte[debut:debut + 1800]
-            blocs.append({"reference": reference, "texte": morceau})
+            if tampon_textes and taille_tampon + len(morceau) > 1800:
+                vider_tampon()
+            tampon_textes.append(morceau)
+            if reference not in tampon_references:
+                tampon_references.append(reference)
+            taille_tampon += len(morceau)
             longueur_totale += len(morceau)
-        if len(blocs) >= 10 or longueur_totale >= 18000:
+        if longueur_totale >= 18000:
             break
+    vider_tampon()
 
     if not blocs:
         return "", []
@@ -125,10 +146,11 @@ def _extrait_document_pertinent(document: Document, question: str) -> tuple[str,
     references = []
     morceaux = []
     for bloc in selection:
-        reference = bloc["reference"]
-        if reference not in references:
-            references.append(reference)
-        morceaux.append(f"[Référence source : {reference}]\n{bloc['texte']}")
+        for reference in bloc["references"]:
+            if reference not in references:
+                references.append(reference)
+        libelle_references = ", ".join(bloc["references"])
+        morceaux.append(f"[Référence source : {libelle_references}]\n{bloc['texte']}")
 
     return "\n\n".join(morceaux)[:MAX_EXTRAIT_DOCUMENT], references
 
