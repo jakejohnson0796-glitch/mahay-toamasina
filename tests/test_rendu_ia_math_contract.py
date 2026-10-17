@@ -126,3 +126,13 @@ def test_renderer_scientifique_est_charge_sur_les_surfaces_ia_et_documents():
     ):
         assert route in base
     assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
+
+
+
+def test_contrat_ia_prevoit_les_formules_exactes_qui_ont_pose_probleme():
+    contrat = REGLES_FORMAT
+    assert r"\(7\times 8+9=65\)" in contrat
+    assert r"\(\sqrt{1000}\approx31{,}6\)" in contrat
+    assert r"\(\Delta E=\hbar\omega\)" in contrat
+    assert r"\(\rho=1\,\mathrm{kg/m^{3}}\)" in contrat
+    assert "pas seulement de l'opérateur" in contrat
