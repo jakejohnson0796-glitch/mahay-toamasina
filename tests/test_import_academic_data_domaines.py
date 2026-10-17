@@ -134,3 +134,39 @@ def test_lecture_json_canonise_le_domaine_avant_agrégation_des_mentions():
         chemin.unlink(missing_ok=True)
 
     assert {ligne["domaine"] for ligne in lignes} == {DOMAINE_CANONIQUE}
+
+
+
+def test_dry_run_ne_persiste_ni_fusion_ni_reaffectation():
+    engine = nouvel_engine()
+    try:
+        with Session(engine) as session:
+            domaine_canonique = Domaine(nom=DOMAINE_CANONIQUE)
+            domaine_alias = Domaine(nom=DOMAINE_ALIAS)
+            session.add(domaine_canonique)
+            session.add(domaine_alias)
+            session.commit()
+            session.refresh(domaine_canonique)
+            session.refresh(domaine_alias)
+            id_canonique = domaine_canonique.id
+            id_alias = domaine_alias.id
+
+            mention = Mention(nom="Mention de test dry-run", domaine_id=id_alias)
+            session.add(mention)
+            session.commit()
+            id_mention = mention.id
+
+            rapport = Rapport()
+            _canonicaliser_domaines_existants(session, dry_run=True, rapport=rapport)
+            session.rollback()
+
+        with Session(engine) as verification:
+            domaines = verification.exec(select(Domaine).order_by(Domaine.id)).all()
+            mention_verifiee = verification.get(Mention, id_mention)
+            assert len(domaines) == 2
+            assert {domaine.id for domaine in domaines} == {id_canonique, id_alias}
+            assert mention_verifiee is not None
+            assert mention_verifiee.domaine_id == id_alias
+            assert rapport.domaines_canonicalises == [(DOMAINE_ALIAS, DOMAINE_CANONIQUE)]
+    finally:
+        engine.dispose()
