@@ -44,6 +44,23 @@ def upgrade() -> None:
             ),
         )
 
+    # Une ancienne confirmation sans empreinte de questions distinctes ne
+    # constitue pas une preuve suffisante : on la remet en attente de validation.
+    op.execute(
+        sa.text(
+            """
+            UPDATE progressionnotion
+            SET maitrise_confirmee = :non_confirmee
+            WHERE maitrise_confirmee = :confirmee
+              AND (
+                preuves_apprentissage_json IS NULL
+                OR preuves_apprentissage_json = '{}'
+                OR preuves_apprentissage_json = ''
+              )
+            """
+        ).bindparams(non_confirmee=False, confirmee=True)
+    )
+
 
 def downgrade() -> None:
     bind = op.get_bind()
