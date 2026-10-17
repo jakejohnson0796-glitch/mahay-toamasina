@@ -243,10 +243,11 @@ def _initialiser_donnees_apres_demarrage() -> None:
                 print(
                     "[DEBUG ACADEMIQUE] Referentiel national synchronise — "
                     f"source={chemin_referentiel.name}, "
-                    f"{len(rapport_referentiel.domaines_crees)} domaine(s), "
-                    f"{len(rapport_referentiel.mentions_domaine_rattache)} rattachement(s) "
-                    f"Mention→Domaine, "
-                    f"{len(rapport_referentiel.mentions_domaine_ambigu)} mention(s) ambigue(s), "
+                    f"{len(rapport_referentiel.domaines_crees)} nouveau(x) domaine(s), "
+                    f"{len(rapport_referentiel.domaines_canonicalises)} variante(s) de domaine fusionnée(s), "
+                    f"{len(rapport_referentiel.mentions_domaine_rattache)} rattachement(s) nouveau(x) et "
+                    f"{len(rapport_referentiel.mentions_domaine_reaffectees)} corrigé(s) Mention→Domaine, "
+                    f"{len(rapport_referentiel.mentions_domaine_ambigu)} mention(s) encore ambigüe(s), "
                     f"{len(rapport_referentiel.filieres_creees)} filiere(s) creee(s), "
                     f"{rapport_referentiel.programmes_crees} offre(s) creee(s)."
                 )
