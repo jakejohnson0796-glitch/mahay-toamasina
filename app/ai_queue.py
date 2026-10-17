@@ -573,6 +573,17 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
         if tache.nombre_essais >= MAX_ESSAIS:
             tache.statut = StatutTacheIA.ECHOUEE
             tache.terminee_le = datetime.utcnow()
+            if tache.type_tache == TYPE_RESUME_DOCUMENT and tache.document_id:
+                # Clôture l’état de la fiche si toutes les tentatives ont échoué.
+                # Une fiche française déjà enregistrée reste utilisable si seule
+                # la traduction malagasy n’a pas pu être obtenue.
+                document = session.get(Document, tache.document_id)
+                if document:
+                    if document.resume_statut_ia not in {"generee", "provisoire", "insuffisante", "indisponible"}:
+                        document.resume_statut_ia = "indisponible"
+                    if document.resume_statut_ia_mg not in {"generee", "indisponible"}:
+                        document.resume_statut_ia_mg = "indisponible"
+                    session.add(document)
             logger.error(
                 "Tache IA %s abandonnee apres %s essais: %s",
                 tache_id,
