@@ -193,3 +193,20 @@ def test_rendu_couvre_messages_de_mission_recommandations_et_descriptions_de_cou
     assert '<div data-rendu>{{ mission.message }}</div>' in missions
     assert '<div data-rendu>{{ mission.retour_adaptatif or mission.message }}</div>' in missions
     assert '<div class="hub-illusion-message" data-rendu>{{ carte.message }}</div>' in revisions
+
+
+
+def test_carte_de_connaissances_et_notions_affichent_les_formules_en_ligne():
+    carte = (RACINE / "app" / "templates" / "carte_connaissances.html").read_text(encoding="utf-8")
+    tuteur = (RACINE / "app" / "templates" / "tuteur.html").read_text(encoding="utf-8")
+    missions = (RACINE / "app" / "templates" / "session_apprentissage.html").read_text(encoding="utf-8")
+    revisions = (RACINE / "app" / "templates" / "mes_revisions.html").read_text(encoding="utf-8")
+    base = (RACINE / "app" / "templates" / "base.html").read_text(encoding="utf-8")
+
+    assert 'request.url.path == "/carte-connaissances"' in base
+    assert '<h3 data-rendu data-rendu-ligne>{{ node.notion }}</h3>' in carte
+    assert '<div data-rendu>{{ relation.message }}</div>' in carte
+    assert '<h3 data-rendu data-rendu-ligne>{{ n.notion }}</h3>' in tuteur
+    assert '<strong data-rendu data-rendu-ligne>{{ mission.notion }}</strong>' in missions
+    assert '<h3 data-rendu data-rendu-ligne>{{ p.notion }}</h3>' in revisions
+    assert '<h3 data-rendu data-rendu-ligne>{{ n.notion }}</h3>' in revisions
