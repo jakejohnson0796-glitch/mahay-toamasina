@@ -62,7 +62,7 @@
       {% set total_n = n.nb_questions if n.nb_questions else 1 %}
       <article class="ai-remediation-card">
         <span>{{ n.matiere }}</span>
-        <h3>{{ n.notion }}</h3>
+        <h3 data-rendu data-rendu-ligne>{{ n.notion }}</h3>
         <p>{{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} / {{ n.nb_questions }} questions</p>
         <div class="ai-remediation-actions">
           <form method="post" action="/tuteur/demander">
