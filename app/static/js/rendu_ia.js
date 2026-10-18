@@ -306,6 +306,67 @@
     });
   }
 
+  // Répare aussi les réponses de Tuteur déjà enregistrées : une identité
+  // d'Euclide coupée par les backticks ou une expansion a = bq + a - bq
+  // est ramenée à l'égalité canonique calculée, avant Markdown et KaTeX.
+  function normaliserIdentitesEuclideRendu(source) {
+    const texte = String(source == null ? "" : source);
+    if (!/(?:\beuclide\b|\bpgcd\b)/i.test(texte)) return texte;
+
+    return texte.split("\n").map(function (ligne) {
+      const candidate = ligne.replace(/\x60/g, "");
+      const motif = /(\d{1,18})\s*=\s*(\d{1,18})\s*(\\times|×|x|\t?imes)\s*(\d{1,18})\s*\+\s*(\d{1,18})/i;
+      const match = motif.exec(candidate);
+      if (!match) return ligne;
+
+      let dividende;
+      let diviseur;
+      try {
+        dividende = BigInt(match[1]);
+        diviseur = BigInt(match[4]);
+      } catch (_) {
+        return ligne;
+      }
+      if (diviseur <= 0n || dividende < 0n) return ligne;
+
+      const quotientCorrect = dividende / diviseur;
+      const resteCorrect = dividende % diviseur;
+      const suffixe = candidate.slice(match.index + match[0].length);
+      const suffixeNormalise = suffixe
+        .replace(/\\(?:times|cdot|div)\b/g, "×")
+        .replace(/\t?imes\b/g, "×");
+      const ponctuation = suffixeNormalise.match(/[.!?;:]\s*$/);
+      const suffixeCalcul = ponctuation
+        ? suffixeNormalise.slice(0, ponctuation.index)
+        : suffixeNormalise;
+      const suffixeEstExpansion = Boolean(
+        suffixeCalcul.trim() &&
+        suffixeCalcul.includes("=") &&
+        /[-−]\s*\d/.test(suffixeCalcul) &&
+        /[×x]\s*\d/.test(suffixeCalcul) &&
+        /^[\d\s,.\-+−*/×÷=()]+$/.test(suffixeCalcul.trim())
+      );
+      const quotientRecu = BigInt(match[2]);
+      const resteRecu = BigInt(match[5]);
+      const operatorCorrompu = /[\x60\t]/.test(ligne);
+      const besoinCorrection =
+        quotientCorrect !== quotientRecu ||
+        resteCorrect !== resteRecu ||
+        operatorCorrompu ||
+        suffixeEstExpansion;
+      if (!besoinCorrection) return ligne;
+
+      const formule = "\\(" + dividende.toString() + "=" +
+        quotientCorrect.toString() + "\\times" + diviseur.toString() +
+        "+" + resteCorrect.toString() + "\\)";
+      const ponctuationFinale = ponctuation ? ponctuation[0] : "";
+      if (suffixeEstExpansion) {
+        return candidate.slice(0, match.index) + formule + ponctuationFinale;
+      }
+      return candidate.slice(0, match.index) + formule + suffixe;
+    }).join("\n");
+  }
+
   function normaliserSourceRendu(source, options) {
     let texte = String(source == null ? "" : source);
     try { texte = texte.normalize("NFC"); } catch (_) {}
@@ -313,6 +374,7 @@
     // invisibles connus qui peuvent perturber les délimiteurs sans modifier
     // les caractères pédagogiques visibles.
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
+    texte = normaliserIdentitesEuclideRendu(texte);
     texte = normaliserCodeMathInline(texte);
     return normaliserExpressionsMathematiquesNues(texte, options).replace(/\r\n?/g, "\n");
   }
@@ -777,7 +839,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "11" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "12" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -794,7 +856,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "11";
+    cible.dataset.renduVersion = "12";
     cible.dataset.renduDeps = signature;
     return cible;
   }
