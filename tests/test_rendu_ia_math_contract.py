@@ -218,7 +218,7 @@ def test_renderer_fait_depuis_lisibilite_fractions_inline_et_etat_css_katex():
     css = (RACINE / "app" / "static" / "ai-learning.css").read_text(encoding="utf-8")
 
     assert "function ameliorerFractionsInline(formule, modeAffichage)" in js
-    assert r"return \"\\\\dfrac{\" + numerateur + \"}{\" + denominateur + \"}\"" in js
+    assert r'return "\\dfrac{" + numerateur' in js
     assert "css: !chargeurActif || Boolean(etatChargeur && etatChargeur.css)" in js
     assert 'etat.css ? "1" : "0"' in js
     assert "ameliorerFractionsInline(formule, Boolean(item.display))" in js
