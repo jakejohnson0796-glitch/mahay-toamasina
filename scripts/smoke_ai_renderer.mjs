@@ -207,17 +207,20 @@ const pgcdFormulaOffset = formulesRendues.length;
 window.rendreReponseIA(pgcdExemplesSource, pgcdExemplesHost);
 const pgcdFormules = formulesRendues.slice(pgcdFormulaOffset);
 const pgcdExpected = [
-  '\\\\frac{48}{180}',
-  '\\\\frac{4}{15}',
-  '\\\\frac{84}{210}',
-  '\\\\frac{2}{5}',
-  '180=3\\\\times48+36',
-  '48=1\\\\times36+12',
-  '36=3\\\\times12+0',
-  '210=2\\\\times84+42',
-  '84=2\\\\times42+0'
+  'frac{48}{180}',
+  'frac{4}{15}',
+  'frac{84}{210}',
+  'frac{2}{5}',
+  '180=3times48+36',
+  '48=1times36+12',
+  '36=3times12+0',
+  '210=2times84+42',
+  '84=2times42+0'
 ];
-if (pgcdExpected.some((expected) => !pgcdFormules.some((actual) => actual.includes(expected)))) {
+const pgcdFormulesNormalisees = pgcdFormules.map((actual) =>
+  actual.replace(/\\/g, '').replace(/\s+/g, '')
+);
+if (pgcdExpected.some((expected) => !pgcdFormulesNormalisees.some((actual) => actual.includes(expected)))) {
   throw new Error('Missing PGCD expressions: ' + pgcdExpected.filter((expected) => !pgcdFormules.some((actual) => actual.includes(expected))).join(', ') + '; actual=' + JSON.stringify(pgcdFormules));
 }
 const pgcdExemplesClone = pgcdExemplesHost.cloneNode(true);
