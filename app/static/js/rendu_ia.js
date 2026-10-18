@@ -555,7 +555,7 @@
     }
     entetes.sort((a, b) => a.start - b.start);
 
-    const formuleRegex = /\\?\(?\s*\d{1,18}\s*=\s*\d{1,18}\s*(?:\\times|×|x|\t?imes)\s*\d{1,18}\s*\+\s*\d{1,18}\s*\\?\)?/gi;
+    const formuleRegex = /\\*\(?\s*\d{1,18}\s*=\s*\d{1,18}\s*(?:\\+times|×|x|\t?imes)\s*\d{1,18}\s*\+\s*\d{1,18}\s*\\*\)?/gi;
     const remplacements = [];
     for (let i = 0; i < entetes.length; i += 1) {
       const entete = entetes[i];
