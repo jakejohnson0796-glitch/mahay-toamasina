@@ -524,7 +524,10 @@
       const nr = paire.n / g, dr = paire.d / g;
       const joint = paire.n.toString() + paire.d.toString();
       const jointFinal = nr.toString() + dr.toString();
-      texte = texte.split(tick + joint + tick).join(fraction(paire.n, paire.d));
+      texte = texte.replace(
+        new RegExp("(^|\\\\D)" + joint + "(?=\\\\D|$)", "g"),
+        (_m, prefixe) => prefixe + fraction(paire.n, paire.d)
+      );
 
       const motifDivisions = new RegExp(
         tick + "?" + paire.n.toString() + "\\s*(?:÷|\\\\div|/)\\s*" + g.toString() +
