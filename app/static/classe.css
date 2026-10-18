@@ -1001,3 +1001,28 @@ body.page-classe {
     text-align: center;
   }
 }
+
+ 
+/* Illustration d'accueil de la classe virtuelle. */
+.classe-hero-art {
+  display: grid;
+  place-items: center;
+  min-height: 115px;
+  margin: 0 0 .75rem;
+  padding: .5rem;
+  border: 1px solid var(--content-border);
+  border-radius: 16px;
+  background: radial-gradient(circle at 50% 40%, rgba(47,143,137,.13), transparent 72%), var(--content-bg);
+  overflow: hidden;
+}
+.classe-hero-art img {
+  display: block;
+  width: 100%;
+  max-width: 290px;
+  height: 110px;
+  object-fit: contain;
+}
+@media (max-width: 640px) {
+  .classe-hero-art { min-height: 90px; }
+  .classe-hero-art img { height: 90px; }
+}
