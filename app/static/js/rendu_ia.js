@@ -333,8 +333,8 @@
       const resteCorrect = dividende % diviseur;
       const suffixe = candidate.slice(match.index + match[0].length);
       const suffixeNormalise = suffixe
-        .replace(/\\(?:times|cdot|div)\b/g, "×")
-        .replace(/\t?imes\b/g, "×");
+        .replace(/\\(?:times|cdot|div)(?![A-Za-z])/g, "×")
+        .replace(/\t?imes(?![A-Za-z])/g, "×");
       const ponctuation = suffixeNormalise.match(/[.!?;:]\s*$/);
       const suffixeCalcul = ponctuation
         ? suffixeNormalise.slice(0, ponctuation.index)
