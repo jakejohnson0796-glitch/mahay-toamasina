@@ -550,3 +550,66 @@ html[data-theme="sombre"] select:not([multiple]) {
   opacity: 1;
 }
 
+
+
+/* MITARIDALA — bandeaux illustrés nettement visibles sur chaque page.
+   Placé en fin de feuille globale pour neutraliser les anciennes règles responsives
+   qui réduisaient parfois le visuel à un simple détail. */
+.visuel-page-global {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 38%) !important;
+  align-items: stretch !important;
+  min-height: 240px !important;
+  overflow: hidden !important;
+}
+.visuel-page-global-illustration {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  order: 2 !important;
+  min-width: 0 !important;
+  min-height: 240px !important;
+  height: 100% !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  background: #e9e1d2 !important;
+}
+.visuel-page-global-illustration img {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 240px !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+@media (max-width: 900px) {
+  .visuel-page-global {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-height: 0 !important;
+  }
+  .visuel-page-global-illustration {
+    order: 0 !important;
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: 180px !important;
+  }
+  .visuel-page-global-illustration img {
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: 180px !important;
+  }
+}
+@media (max-width: 640px) {
+  .visuel-page-global {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .visuel-page-global-illustration,
+  .visuel-page-global-illustration img {
+    height: 150px !important;
+    min-height: 150px !important;
+    max-height: 150px !important;
+  }
+}
