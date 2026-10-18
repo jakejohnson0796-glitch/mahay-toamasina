@@ -11,6 +11,7 @@ identitaire.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Mapping
 
 MARKER_INLINE = "[[MATH]]"
@@ -25,9 +26,9 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 
 - Réponds en français et en Markdown clair et pédagogique.
 - Le code informatique reste dans des blocs Markdown clôturés.
-- INTERDICTION DE BACKTICKS MATHS : n'entoure jamais une formule, une fraction, une égalité, un calcul ou une puissance avec des backticks Markdown. Les backticks sont réservés au code informatique réel. Même dans une liste, écris \\(123456=156\\times789+372\\) en LaTeX, pas `123456=156`\\times789+372.
-- FRACTIONS : écris toujours le numérateur et le dénominateur explicitement avec \\(\\frac{a}{b}\\) ou \\[\\frac{a}{b}\\]. N'écris jamais les deux nombres collés, ni seulement la fraction visuelle sans commandes LaTeX. Pour \\(\\frac{123456000}{789000}\\), conserve bien les deux nombres séparés par `\\frac{...}{...}`.
-- PUISSANCES : écris chaque exposant explicitement, par exemple \\(10^{3}\\), jamais `103` pour représenter dix puissance trois. N'aplatis jamais les indices/exposants en nombres ordinaires.
+- INTERDICTION DES BACKTICKS POUR LES MATHS : n'entoure jamais une formule, une fraction, une égalité, un calcul ou une puissance avec des backticks Markdown. Les backticks sont réservés au code informatique réel. Même dans une liste, écris toute l'identité dans un seul délimiteur LaTeX, par exemple \\(123456=156\\\\times789+372\\), et jamais seulement la partie gauche en code avec l'opérateur en texte à côté.
+- FRACTIONS : écris toujours le numérateur et le dénominateur explicitement avec \\(\\\\frac{a}{b}\\) ou \\[\\\\frac{a}{b}\\]. N'écris jamais les deux nombres collés, ni seulement la fraction visuelle sans commandes LaTeX. Pour \\(\\\\frac{123456000}{789000}\\), conserve explicitement les deux nombres dans le numérateur et le dénominateur.
+- PUISSANCES : écris chaque exposant explicitement, par exemple \\(10^{3}\\), jamais le nombre 103 collé pour représenter dix puissance trois. N'aplatis jamais les indices/exposants en nombres ordinaires.
 - Les tableaux Markdown servent aux données tabulaires, jamais à représenter une matrice.
 - MATHS/PHYSIQUE : utilise le vrai LaTeX avec délimiteurs :
   inline : \( ... \)
@@ -104,18 +105,98 @@ def convertir_math_transport_texte(valeur: Any) -> str:
     return "" if valeur is None else str(valeur)
 
 
+_MOTIF_IDENTITE_EUCLIDE = re.compile(
+    r"(?P<dividende>\d{1,18})\s*=\s*(?P<quotient>\d{1,18})\s*"
+    r"(?:\\times|×|x|\t?imes)\s*(?P<diviseur>\d{1,18})\s*"
+    r"\+\s*(?P<reste>\d{1,18})"
+)
+_CONTEXTE_EUCLIDE = re.compile(r"\beuclide\b|\bpgcd\b", re.IGNORECASE)
+
+
+def _contexte_euclide_present(*textes: str) -> bool:
+    return any(_CONTEXTE_EUCLIDE.search(str(texte or "")) for texte in textes)
+
+
+def corriger_identites_euclide(texte: Any, *, contexte_euclide: bool = False) -> str:
+    """Corrige et met au format LaTeX les divisions euclidiennes identifiables.
+
+    La correction n'est activée que si le contenu parle du PGCD/de l'algorithme
+    d'Euclide. Elle recalcule quotient et reste, au lieu de faire confiance aux
+    nombres fournis par le modèle. Elle répare aussi les délimiteurs de code
+    inline qui coupent une formule et la tabulation JSON remplaçant le début
+    de la commande LaTeX de multiplication. Les autres textes restent inchangés.
+    """
+    source = convertir_math_transport_texte(texte)
+    if not (contexte_euclide or _CONTEXTE_EUCLIDE.search(source)):
+        return source
+
+    resultat = []
+    for ligne in source.splitlines(keepends=True):
+        fin_ligne = ""
+        contenu_ligne = ligne
+        if contenu_ligne.endswith("\r\n"):
+            contenu_ligne, fin_ligne = contenu_ligne[:-2], "\r\n"
+        elif contenu_ligne.endswith(("\n", "\r")):
+            contenu_ligne, fin_ligne = contenu_ligne[:-1], contenu_ligne[-1:]
+
+        # Retirer les délimiteurs de code uniquement sur une ligne qui contient
+        # réellement une identité euclidienne reconnue.
+        candidate = contenu_ligne.replace(chr(96), "")
+        match = _MOTIF_IDENTITE_EUCLIDE.search(candidate)
+        if not match:
+            resultat.append(ligne)
+            continue
+
+        dividende = int(match.group("dividende"))
+        diviseur = int(match.group("diviseur"))
+        if diviseur <= 0 or dividende < 0:
+            resultat.append(ligne)
+            continue
+
+        quotient_correct, reste_correct = divmod(dividende, diviseur)
+        quotient_recu = int(match.group("quotient"))
+        reste_recu = int(match.group("reste"))
+        operator_corrompu = "\t" in contenu_ligne or chr(96) in contenu_ligne
+        if (
+            quotient_correct == quotient_recu
+            and reste_correct == reste_recu
+            and not operator_corrompu
+        ):
+            resultat.append(ligne)
+            continue
+
+        formule = (
+            rf"\({dividende}={quotient_correct}\times{diviseur}+{reste_correct}\)"
+        )
+        candidate = candidate[:match.start()] + formule + candidate[match.end():]
+        resultat.append(candidate + fin_ligne)
+
+    return "".join(resultat)
+
+
 def normaliser_structure_quiz(questions: list[Mapping[str, Any]] | None) -> list[dict]:
-    """Copie la structure du quiz sans toucher aux champs pédagogiques."""
+    """Préserve les champs du quiz et corrige uniquement les divisions euclidiennes identifiables."""
     resultat: list[dict] = []
     for question in questions or []:
         item = dict(question)
-        item["question"] = convertir_math_transport_texte(item.get("question", ""))
-        item["choix"] = [
+        question_brute = convertir_math_transport_texte(item.get("question", ""))
+        explication_brute = convertir_math_transport_texte(item.get("explication", ""))
+        choix_bruts = [
             convertir_math_transport_texte(choix)
             for choix in (item.get("choix") or [])
         ]
-        item["explication"] = convertir_math_transport_texte(
-            item.get("explication", "")
+        contexte_euclide = _contexte_euclide_present(
+            question_brute, explication_brute, *choix_bruts
+        )
+        item["question"] = corriger_identites_euclide(
+            question_brute, contexte_euclide=contexte_euclide
+        )
+        item["choix"] = [
+            corriger_identites_euclide(choix, contexte_euclide=contexte_euclide)
+            for choix in choix_bruts
+        ]
+        item["explication"] = corriger_identites_euclide(
+            explication_brute, contexte_euclide=contexte_euclide
         )
         resultat.append(item)
     return resultat
@@ -124,11 +205,16 @@ def normaliser_structure_quiz(questions: list[Mapping[str, Any]] | None) -> list
 def normaliser_structure_tuteur(
     reponse: Mapping[str, Any] | None,
 ) -> dict[str, str]:
-    """Copie les quatre sections du Tuteur sans transformation de contenu."""
+    """Préserve les quatre sections, en corrigeant les divisions euclidiennes ciblées si besoin."""
     source = reponse or {}
-    return {
+    sections = {
         "explication": convertir_math_transport_texte(source.get("explication", "")),
         "exemple": convertir_math_transport_texte(source.get("exemple", "")),
         "exercice": convertir_math_transport_texte(source.get("exercice", "")),
         "correction": convertir_math_transport_texte(source.get("correction", "")),
+    }
+    contexte_euclide = _contexte_euclide_present(*sections.values())
+    return {
+        cle: corriger_identites_euclide(valeur, contexte_euclide=contexte_euclide)
+        for cle, valeur in sections.items()
     }

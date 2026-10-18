@@ -97,7 +97,7 @@ def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathem
     assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
     assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
     assert "const contientMath =" in js
-    assert 'cible.dataset.renduVersion = "10"' in js
+    assert 'cible.dataset.renduVersion = "11"' in js
 
 
 def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
@@ -222,7 +222,7 @@ def test_renderer_recupere_les_formules_enfermees_dans_le_code_inline():
 
 
 def test_contrat_ia_interdit_les_backticks_math_et_verifie_euclide():
-    assert "INTERDICTION DE BACKTICKS MATHS" in REGLES_FORMAT
+    assert "INTERDICTION DES BACKTICKS POUR LES MATHS" in REGLES_FORMAT
     assert "FRACTIONS : écris toujours le numérateur et le dénominateur explicitement" in REGLES_FORMAT
     assert "PUISSANCES : écris chaque exposant explicitement" in REGLES_FORMAT
     assert r"123456=156\\times789+372" in REGLES_FORMAT

@@ -94,6 +94,23 @@ if (fractionHost.querySelectorAll('.katex').length !== 2) {
  if (inlineMathPlain.includes('\\times') || inlineMathPlain.includes('\\frac') || inlineMathPlain.includes('`')) {
    throw new Error('Raw inline-code LaTeX remains visible after math recovery');
  }
+const brokenTimesHost = window.document.createElement('div');
+window.document.body.appendChild(brokenTimesHost);
+const tickCharacter = String.fromCharCode(96);
+const brokenTimesSource =
+  "Euclide : " + tickCharacter + "123456=156" + tickCharacter +
+  String.fromCharCode(9) + "imes789 + 372.";
+window.rendreReponseIA(brokenTimesSource, brokenTimesHost);
+if (brokenTimesHost.querySelectorAll('.katex').length !== 1) {
+  throw new Error('A tab-corrupted LaTeX times command after inline code was not grouped into one formula');
+}
+const brokenTimesClone = brokenTimesHost.cloneNode(true);
+brokenTimesClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const brokenTimesPlain = brokenTimesClone.textContent || '';
+if (brokenTimesPlain.includes('imes789') || brokenTimesPlain.includes(String.fromCharCode(9))) {
+  throw new Error('A tab-corrupted multiplication command remained visible as raw text');
+}
+
 const visibleClone = host.cloneNode(true);
 visibleClone.querySelectorAll('.katex').forEach((node) => node.remove());
 const visibleText = visibleClone.textContent || '';
