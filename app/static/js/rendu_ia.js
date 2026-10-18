@@ -543,46 +543,43 @@
       texte = texte.replace(motifConclusion, (_m, prefixe) => prefixe + fraction(nr, dr));
     }
 
-    // Chaque bloc de divisions est rattaché à la référence PGCD la plus proche.
-    // Cela marche aussi lorsque plusieurs exemples se suivent sur la même ligne.
-    const references = [];
-    for (const m of texte.matchAll(motifPaire)) {
-      const n = BigInt(m[1] || m[3]), d = BigInt(m[2] || m[4]);
+    // Repère les introductions réelles de calcul. Une simple mention du PGCD
+    // dans une conclusion ne doit pas lancer une nouvelle chaîne d'Euclide.
+    const entetes = [];
+    for (const match of texte.matchAll(motifPaire)) {
+      const n = BigInt(match[1] || match[3]);
+      const d = BigInt(match[2] || match[4]);
       const paire = paires.find((p) => p.n === n && p.d === d);
-      if (paire) references.push({index:m.index, end:m.index + m[0].length, paire});
+      if (!paire) continue;
+      const apres = texte.slice(match.index + match[0].length, match.index + match[0].length + 110);
+      const avant = texte.slice(Math.max(0, match.index - 55), match.index);
+      const debutEuclide = /algorithme\s+d['’]Euclide\s*:/i.test(apres);
+      const debutCalcul = /^\s*:\s*/.test(apres) && /(?:calcul\s+du|calcul)\s*$/i.test(avant);
+      if (debutEuclide || debutCalcul) {
+        entetes.push({start:match.index, end:match.index + match[0].length, paire});
+      }
     }
 
     const formuleRegex = /\\*\(?\s*\d{1,18}\s*=\s*\d{1,18}\s*(?:\\+times|×|x|\t?imes)\s*\d{1,18}\s*\+\s*\d{1,18}\s*\\*\)?/gi;
-    const expressions = Array.from(texte.matchAll(formuleRegex));
-    const groupes = [];
-    for (const expression of expressions) {
-      const debut = expression.index, fin = debut + expression[0].length;
-      if (groupes.length) {
-        const precedent = groupes[groupes.length - 1];
-        const intervalle = texte.slice(precedent.fin, debut);
-        const reste = intervalle.replace(/[\s,;:—\-•\x60\\()]+/g, "");
-        if (!reste && intervalle.length <= 64) {
-          precedent.fin = fin;
-          continue;
-        }
-      }
-      groupes.push({debut, fin});
-    }
-
     const remplacements = [];
-    for (const groupe of groupes) {
-      const reference = references
-        .filter((r) => r.index < groupe.debut && groupe.debut - r.end <= 500)
-        .sort((a, b) => b.index - a.index)[0];
-      if (!reference) continue;
-      const paire = reference.paire;
-      const chaines = chaineEuclide(paire.n, paire.d);
-      let debut = groupe.debut, fin = groupe.fin;
-      remplacements.push({debut, fin, texte:chaines.join(", ")});
+    for (let i = 0; i < entetes.length; i += 1) {
+      const entete = entetes[i];
+      const limite = i + 1 < entetes.length ? entetes[i + 1].start : texte.length;
+      const region = texte.slice(entete.end, limite);
+      const finSemantique = region.search(/\b(?:Le\s+dernier\s+reste|Donc\s+PGCD|La\s+fraction\s+réduite|La\s+fraction\s+est|Exercice\s+proposé)\b/i);
+      const regionUtile = finSemantique >= 0 ? region.slice(0, finSemantique) : region;
+      const formules = Array.from(regionUtile.matchAll(formuleRegex));
+      if (!formules.length) continue;
+      const chaine = chaineEuclide(entete.paire.n, entete.paire.d);
+      remplacements.push({
+        start:entete.end + formules[0].index,
+        end:entete.end + formules[formules.length - 1].index + formules[formules.length - 1][0].length,
+        value:chaine.join(", ")
+      });
     }
-    remplacements.sort((a, b) => b.debut - a.debut);
+    remplacements.sort((a, b) => b.start - a.start);
     for (const r of remplacements) {
-      texte = texte.slice(0, r.debut) + r.texte + texte.slice(r.fin);
+      texte = texte.slice(0, r.start) + r.value + texte.slice(r.end);
     }
 
     const regexPhrase = /la\s+fraction\s+est\s+maintenant\s+irréductible(?!\s*[:;])/ig;
