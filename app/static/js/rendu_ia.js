@@ -250,6 +250,59 @@
     return resultat;
   }
 
+  // Certains modèles entourent les formules de backticks Markdown, comme du
+  // code inline. Le renderer protégeait alors ces fragments, laissant les
+  // calculs en texte brut. Les blocs de code clôturés restent intacts; seuls
+  // les fragments inline sans ambiguïté mathématique sont convertis.
+  function normaliserCodeMathInline(source) {
+    const blocsProteges = [];
+    const tokenBloc = "\uE200GMATHCODE_";
+    const finTokenBloc = "\uE201";
+    let resultat = String(source == null ? "" : source).replace(/\x60{3}[\s\S]*?\x60{3}/g, function (bloc) {
+      const index = blocsProteges.push(bloc) - 1;
+      return tokenBloc + index + finTokenBloc;
+    });
+
+    function normaliserOperateurs(expression) {
+      return String(expression).replace(/×/g, "\\times ").replace(/÷/g, "\\div ");
+    }
+
+    // Rassemble une identité d'Euclide quand le modèle ne met que son
+    // premier membre en code, puis laisse \\times et la suite hors des backticks.
+    resultat = resultat.replace(
+      /\x60(\s*\d[\d ,]*(?:\.\d+)?\s*(?:=|≈|<=|>=|≤|≥|<|>)\s*\d[\d ,]*(?:\.\d+)?)\x60\s*(\\(?:times|cdot|div)\s*\d[\d ,]*(?:\.\d+)?(?:\s*[+*/×÷-]\s*\d[\d ,]*(?:\.\d+)?)*)/g,
+      function (_match, gauche, droite) {
+        return "\\\\(" + normaliserOperateurs(gauche.trim() + " " + droite.trim()) + "\\\\)";
+      }
+    );
+
+    const commandesMathematiques = new Set([
+      "frac", "dfrac", "tfrac", "sqrt", "times", "cdot", "div", "pm", "approx",
+      "le", "ge", "leq", "geq", "neq", "equiv", "infty", "mathrm", "text",
+      "mathbb", "mathbf", "mathcal", "sin", "cos", "tan", "ln", "log", "det",
+      "alpha", "beta", "gamma", "delta", "theta", "lambda", "mu", "pi", "rho",
+      "sigma", "omega", "Delta", "Omega", "hbar", "nabla", "partial"
+    ]);
+    resultat = resultat.replace(/\x60([^\x60\n]{1,180})\x60/g, function (bloc, contenu) {
+      const formule = contenu.trim();
+      if (!/\d/.test(formule)) return bloc;
+      if (!/(?:[=^_+*/×÷<>≤≥≈≠±-]|\\[A-Za-z]+)/.test(formule)) return bloc;
+      // Garde le code informatique conventionnel tel quel.
+      if (/(?:&&|\|\||===|!==|\?\.|\?\?|\b(?:const|let|return|function|class|import|from)\b)/.test(formule)) return bloc;
+      if (!/^[\dA-Za-z\\{}\[\]\s.,()+\-*/=^_×÷<>≤≥≈≠±]+$/.test(formule)) return bloc;
+      const mots = formule.match(/[A-Za-z]+/g) || [];
+      if (mots.some(function (mot) {
+        return mot.length > 1 && !commandesMathematiques.has(mot);
+      })) return bloc;
+      if (formule.length > 1 && !/[=^_+*/×÷<>≤≥≈≠±-]/.test(formule) && !/\\[A-Za-z]+/.test(formule)) return bloc;
+      return "\\\\(" + normaliserOperateurs(formule) + "\\\\)";
+    });
+
+    return resultat.replace(/\uE200GMATHCODE_(\d+)\uE201/g, function (match, index) {
+      return blocsProteges[Number(index)] || match;
+    });
+  }
+
   function normaliserSourceRendu(source, options) {
     let texte = String(source == null ? "" : source);
     try { texte = texte.normalize("NFC"); } catch (_) {}
@@ -257,6 +310,7 @@
     // invisibles connus qui peuvent perturber les délimiteurs sans modifier
     // les caractères pédagogiques visibles.
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
+    texte = normaliserCodeMathInline(texte);
     return normaliserExpressionsMathematiquesNues(texte, options).replace(/\r\n?/g, "\n");
   }
 
@@ -720,7 +774,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "9" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "10" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -737,7 +791,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "9";
+    cible.dataset.renduVersion = "10";
     cible.dataset.renduDeps = signature;
     return cible;
   }
