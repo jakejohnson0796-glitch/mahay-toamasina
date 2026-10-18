@@ -97,7 +97,7 @@ def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathem
     assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
     assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
     assert "const contientMath =" in js
-    assert 'cible.dataset.renduVersion = "13"' in js
+    assert 'cible.dataset.renduVersion = "14"' in js
 
 
 def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
@@ -226,6 +226,8 @@ def test_renderer_reconstruit_les_fractions_pgcd_concatenees():
     transport = (RACINE / "app" / "ia_transport.py").read_text(encoding="utf-8")
 
     assert "function normaliserFractionsPgcdRendu(source)" in js
+    assert "function normaliserPairesPgcdExplicitesRendu(source)" in js
+    assert "def corriger_pgcd_selon_paires(" in transport
     assert "texte = normaliserFractionsPgcdRendu(texte)" in js
     assert "def corriger_fraction_pgcd_mal_formatee(" in transport
     assert "joint_initial" in transport
