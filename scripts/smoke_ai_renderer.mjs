@@ -139,6 +139,36 @@ if (
   throw new Error('Broken Euclidean arithmetic remained visible beside the rendered formulas');
 }
 
+// Régression Tuteur : les anciennes fractions PGCD concaténées doivent
+// redevenir des fractions KaTeX cohérentes sans laisser les nombres collés.
+const pgcdFractionHost = window.document.createElement('div');
+window.document.body.appendChild(pgcdFractionHost);
+const pgcdFractionSource = [
+  "1. Factorisation des puissances de 10 :",
+  "   `9876543210=987654321×10` et `1234560=123456×10`.",
+  "   Les 10 se simplifient, il reste `987654321123456`.",
+  "2. Calcul du PGCD de 987654321 et 123456.",
+  "3. Division par le PGCD :\\",
+  "   `987654321/3123456/3=32921810741152`.",
+  "   La fraction finale réduite est `32921810741152`."
+].join("\n");
+const formulesPgcdAvant = formulesRendues.length;
+window.rendreReponseIA(pgcdFractionSource, pgcdFractionHost);
+const formulesPgcdRendues = formulesRendues.slice(formulesPgcdAvant);
+if (
+  !formulesPgcdRendues.some((formule) => formule.includes('987654321') && formule.includes('123456')) ||
+  !formulesPgcdRendues.some((formule) => formule.includes('329218107') && formule.includes('41152')) ||
+  !formulesPgcdRendues.some((formule) => formule.includes('987654321') && formule.includes('123456') && formule.includes('329218107') && formule.includes('41152'))
+) {
+  throw new Error('Malformed PGCD fractions were not rebuilt as verified numerator/denominator expressions');
+}
+const pgcdFractionClone = pgcdFractionHost.cloneNode(true);
+pgcdFractionClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const pgcdFractionPlain = pgcdFractionClone.textContent || '';
+if (pgcdFractionPlain.includes('987654321123456') || pgcdFractionPlain.includes('32921810741152')) {
+  throw new Error('Concatenated PGCD numerator and denominator remained visible after rendering');
+}
+
 const visibleClone = host.cloneNode(true);
 visibleClone.querySelectorAll('.katex').forEach((node) => node.remove());
 const visibleText = visibleClone.textContent || '';
