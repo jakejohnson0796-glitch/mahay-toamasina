@@ -175,7 +175,7 @@ def corriger_identites_euclide(texte: Any, *, contexte_euclide: bool = False) ->
 
 
 def normaliser_structure_quiz(questions: list[Mapping[str, Any]] | None) -> list[dict]:
-    """Copie la structure du quiz sans toucher aux champs pédagogiques."""
+    """Préserve les champs du quiz et corrige uniquement les divisions euclidiennes identifiables."""
     resultat: list[dict] = []
     for question in questions or []:
         item = dict(question)
@@ -205,7 +205,7 @@ def normaliser_structure_quiz(questions: list[Mapping[str, Any]] | None) -> list
 def normaliser_structure_tuteur(
     reponse: Mapping[str, Any] | None,
 ) -> dict[str, str]:
-    """Copie les quatre sections du Tuteur sans transformation de contenu."""
+    """Préserve les quatre sections, en corrigeant les divisions euclidiennes ciblées si besoin."""
     source = reponse or {}
     sections = {
         "explication": convertir_math_transport_texte(source.get("explication", "")),
