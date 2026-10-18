@@ -402,6 +402,206 @@ def corriger_fraction_pgcd_mal_formatee(
     return resultat
 
 
+_MOTIF_PGCD_DE = re.compile(
+    r"\bPGCD\s+de\s+(?P<numerateur>\d{1,18})\s+et\s+(?P<denominateur>\d{1,18})\b",
+    re.IGNORECASE,
+)
+_MOTIF_PGCD_PARENTHESES = re.compile(
+    r"\bPGCD\s*\(\s*(?P<numerateur>\d{1,18})\s*[,;]\s*(?P<denominateur>\d{1,18})\s*\)",
+    re.IGNORECASE,
+)
+
+
+def _extraire_paires_pgcd(texte: str) -> list[tuple[int, int]]:
+    occurrences: list[tuple[int, tuple[int, int]]] = []
+    for motif in (_MOTIF_PGCD_DE, _MOTIF_PGCD_PARENTHESES):
+        for match in motif.finditer(texte or ""):
+            numerateur = int(match.group("numerateur"))
+            denominateur = int(match.group("denominateur"))
+            if numerateur > 0 and denominateur > 0 and numerateur != denominateur:
+                occurrences.append((match.start(), (numerateur, denominateur)))
+    paires: list[tuple[int, int]] = []
+    for _, paire in sorted(occurrences, key=lambda item: item[0]):
+        if paire not in paires:
+            paires.append(paire)
+    return paires
+
+
+def _chaine_euclide_pour_fraction(
+    numerateur: int, denominateur: int
+) -> list[tuple[int, int, int, int]]:
+    """Construit la chaîne d'Euclide correcte à partir des deux termes."""
+    a, b = max(numerateur, denominateur), min(numerateur, denominateur)
+    chaine: list[tuple[int, int, int, int]] = []
+    while b:
+        quotient, reste = divmod(a, b)
+        chaine.append((a, quotient, b, reste))
+        a, b = b, reste
+    return chaine
+
+
+def corriger_pgcd_selon_paires(
+    texte: Any, *, paires_contextuelles: list[tuple[int, int]] | None = None
+) -> str:
+    """Rattache fraction, chaîne d'Euclide, PGCD et résultat final à la même paire."""
+    source = convertir_math_transport_texte(texte)
+    if not _CONTEXTE_FRACTION_PGCD.search(source):
+        return source
+
+    references_locales = _extraire_paires_pgcd(source)
+    candidates: list[tuple[int, int]] = []
+    for paire in references_locales + (paires_contextuelles or []):
+        if paire not in candidates and paire[0] > 0 and paire[1] > 0:
+            candidates.append(paire)
+    if not candidates:
+        return source
+
+    def contient_nombre(nombre: int, valeur: str) -> bool:
+        return bool(re.search(rf"(?<!\d){nombre}(?!\d)", valeur))
+
+    def groupes_formules(valeur: str) -> list[list[re.Match[str]]]:
+        groupes: list[list[re.Match[str]]] = []
+        for match in _MOTIF_IDENTITE_EUCLIDE.finditer(valeur):
+            if groupes:
+                precedent = groupes[-1][-1]
+                intervalle = valeur[precedent.end():match.start()]
+                nettoye = re.sub(r"[\s,;:—\-•\x60\()]+", "", intervalle)
+                if not nettoye and len(intervalle) <= 64:
+                    groupes[-1].append(match)
+                    continue
+            groupes.append([match])
+        return groupes
+
+    groupes = groupes_formules(source)
+    paires_actives: list[tuple[int, int]] = []
+    for numerateur, denominateur in candidates:
+        pgcd = gcd(numerateur, denominateur)
+        if pgcd <= 0:
+            continue
+        joint_initial = f"{numerateur}{denominateur}"
+        joint_final = f"{numerateur // pgcd}{denominateur // pgcd}"
+        token_initial = bool(re.search(rf"\x60{re.escape(joint_initial)}\x60", source))
+        resultat_colle = bool(re.search(
+            rf"(?i)(?:fraction|résultat|irréductible|réduite)[^\n]{{0,100}}"
+            rf"\x60?{re.escape(joint_final)}\x60?",
+            source,
+        ))
+        reference_locale = (numerateur, denominateur) in references_locales
+        groupe_correspondant = any(
+            contient_nombre(numerateur, source[g[0].start():g[-1].end()])
+            and contient_nombre(denominateur, source[g[0].start():g[-1].end()])
+            for g in groupes
+        )
+        termes_present = contient_nombre(numerateur, source) and contient_nombre(denominateur, source)
+        fraction_seule = len(candidates) == 1 and bool(re.search(
+            r"(?i)fraction|irréductible|réduite", source
+        ))
+        if token_initial or resultat_colle or reference_locale or groupe_correspondant or (
+            termes_present and len(candidates) == 1
+        ) or fraction_seule:
+            paires_actives.append((numerateur, denominateur))
+
+    if not paires_actives:
+        return source
+
+    for numerateur, denominateur in paires_actives:
+        pgcd = gcd(numerateur, denominateur)
+        nr, dr = numerateur // pgcd, denominateur // pgcd
+        joint_initial, joint_final = f"{numerateur}{denominateur}", f"{nr}{dr}"
+        fraction_initiale = rf"\(\frac{{{numerateur}}}{{{denominateur}}}\)"
+        fraction_finale = rf"\(\frac{{{nr}}}{{{dr}}}\)"
+
+        # Les chiffres accolés ne sont réparés que si la paire a été identifiée.
+        source = re.sub(
+            rf"\x60{re.escape(joint_initial)}\x60",
+            lambda _m, formule=fraction_initiale: formule,
+            source,
+        )
+
+        # Exemple : 48÷12180÷12=415 devient 48÷12=4 et 180÷12=15.
+        motif_divisions = re.compile(
+            rf"(?i)\x60?{numerateur}\s*(?:÷|\\div|/)\s*{pgcd}"
+            rf"\s*{denominateur}\s*(?:÷|\\div|/)\s*{pgcd}"
+            rf"\s*=\s*{joint_final}\x60?"
+        )
+        divisions_correctes = (
+            rf"\({numerateur}\div{pgcd}={nr}\)"
+            rf" et \({denominateur}\div{pgcd}={dr}\)"
+        )
+        source = motif_divisions.sub(divisions_correctes, source)
+
+        # Le résultat final utilise une fraction, jamais les deux termes collés.
+        source = re.sub(
+            rf"(?i)(fraction\s+(?:(?:finale|réduite|irréductible)\s+)?"
+            rf"(?:est(?:\s+maintenant)?|:)\s*)\x60?{re.escape(joint_final)}\x60?",
+            lambda m, formule=fraction_finale: m.group(1) + formule,
+            source,
+        )
+
+    # Réassocie chaque groupe d'identités à la paire dont il contient les deux termes.
+    groupes = groupes_formules(source)
+    remplacements: list[tuple[int, int, str]] = []
+    for groupe in groupes:
+        debut, fin = groupe[0].start(), groupe[-1].end()
+        bloc = source[debut:fin]
+        possibles = []
+        for numerateur, denominateur in paires_actives:
+            n_present = contient_nombre(numerateur, bloc)
+            d_present = contient_nombre(denominateur, bloc)
+            voisinage = source[max(0, debut - 220):min(len(source), fin + 220)]
+            reference_voisine = (numerateur, denominateur) in _extraire_paires_pgcd(voisinage)
+            score = int(n_present) + int(d_present)
+            if score == 2 or reference_voisine:
+                possibles.append((score * 10 + int(reference_voisine), numerateur, denominateur))
+        if not possibles:
+            continue
+        meilleur_score = max(item[0] for item in possibles)
+        meilleurs = {(item[1], item[2]) for item in possibles if item[0] == meilleur_score}
+        if len(meilleurs) != 1:
+            continue
+
+        numerateur, denominateur = next(iter(meilleurs))
+        chaines = _chaine_euclide_pour_fraction(numerateur, denominateur)
+        textes_formules = [
+            rf"\({a}={quotient}\times{b}+{reste}\)"
+            for a, quotient, b, reste in chaines
+        ]
+        debut_remplacement = debut
+        if source[max(0, debut - 2):debut] == r"\(":
+            debut_remplacement -= 2
+        elif debut > 0 and source[debut - 1] == chr(96):
+            debut_remplacement -= 1
+        fin_remplacement = fin
+        if source[fin_remplacement:fin_remplacement + 2] == r"\)":
+            fin_remplacement += 2
+        while fin_remplacement < len(source) and source[fin_remplacement] in (chr(96), ")"):
+            fin_remplacement += 1
+        remplacements.append((debut_remplacement, fin_remplacement, ", ".join(textes_formules)))
+
+    for debut, fin, remplacement in reversed(remplacements):
+        source = source[:debut] + remplacement + source[fin:]
+
+    # Ajoute le résultat à la phrase pédagogique la plus proche de sa référence PGCD.
+    phrase = re.compile(
+        r"(?i)(la\s+fraction\s+est\s+maintenant\s+irréductible)(?!\s*[:;])"
+    )
+    decalage = 0
+    for mention in list(phrase.finditer(source)):
+        position = mention.start() + decalage
+        refs = _extraire_paires_pgcd(source[max(0, position - 240):position])
+        paire = refs[-1] if refs else (paires_actives[0] if len(paires_actives) == 1 else None)
+        if not paire or paire not in paires_actives:
+            continue
+        pgcd = gcd(paire[0], paire[1])
+        formule = rf"\(\frac{{{paire[0] // pgcd}}}{{{paire[1] // pgcd}}}\)"
+        ajout = mention.group(1) + " : " + formule
+        debut, fin = mention.start() + decalage, mention.end() + decalage
+        source = source[:debut] + ajout + source[fin:]
+        decalage += len(ajout) - (fin - debut)
+
+    return source
+
+
 def normaliser_structure_quiz(questions: list[Mapping[str, Any]] | None) -> list[dict]:
     """Préserve les champs du quiz et corrige uniquement les divisions euclidiennes identifiables."""
     resultat: list[dict] = []
@@ -413,34 +613,41 @@ def normaliser_structure_quiz(questions: list[Mapping[str, Any]] | None) -> list
             convertir_math_transport_texte(choix)
             for choix in (item.get("choix") or [])
         ]
+        texte_global = " ".join([question_brute, explication_brute, *choix_bruts])
         contexte_euclide = _contexte_euclide_present(
             question_brute, explication_brute, *choix_bruts
         )
-        contexte_pgcd = bool(
-            _CONTEXTE_FRACTION_PGCD.search(
-                " ".join([question_brute, explication_brute, *choix_bruts])
-            )
-        )
-        item["question"] = corriger_fraction_pgcd_mal_formatee(
-            corriger_identites_euclide(
-                question_brute, contexte_euclide=contexte_euclide
-            ),
-            contexte_pgcd=contexte_pgcd,
-        )
-        item["choix"] = [
+        contexte_pgcd = bool(_CONTEXTE_FRACTION_PGCD.search(texte_global))
+        paires_contextuelles = _extraire_paires_pgcd(texte_global)
+        item["question"] = corriger_pgcd_selon_paires(
             corriger_fraction_pgcd_mal_formatee(
                 corriger_identites_euclide(
-                    choix, contexte_euclide=contexte_euclide
+                    question_brute, contexte_euclide=contexte_euclide
                 ),
                 contexte_pgcd=contexte_pgcd,
+            ),
+            paires_contextuelles=paires_contextuelles,
+        )
+        item["choix"] = [
+            corriger_pgcd_selon_paires(
+                corriger_fraction_pgcd_mal_formatee(
+                    corriger_identites_euclide(
+                        choix, contexte_euclide=contexte_euclide
+                    ),
+                    contexte_pgcd=contexte_pgcd,
+                ),
+                paires_contextuelles=paires_contextuelles,
             )
             for choix in choix_bruts
         ]
-        item["explication"] = corriger_fraction_pgcd_mal_formatee(
-            corriger_identites_euclide(
-                explication_brute, contexte_euclide=contexte_euclide
+        item["explication"] = corriger_pgcd_selon_paires(
+            corriger_fraction_pgcd_mal_formatee(
+                corriger_identites_euclide(
+                    explication_brute, contexte_euclide=contexte_euclide
+                ),
+                contexte_pgcd=contexte_pgcd,
             ),
-            contexte_pgcd=contexte_pgcd,
+            paires_contextuelles=paires_contextuelles,
         )
         resultat.append(item)
     return resultat
@@ -457,14 +664,19 @@ def normaliser_structure_tuteur(
         "exercice": convertir_math_transport_texte(source.get("exercice", "")),
         "correction": convertir_math_transport_texte(source.get("correction", "")),
     }
+    texte_global = "\n".join(sections.values())
     contexte_euclide = _contexte_euclide_present(*sections.values())
-    contexte_pgcd = bool(_CONTEXTE_FRACTION_PGCD.search(" ".join(sections.values())))
+    contexte_pgcd = bool(_CONTEXTE_FRACTION_PGCD.search(texte_global))
+    paires_contextuelles = _extraire_paires_pgcd(texte_global)
     return {
-        cle: corriger_fraction_pgcd_mal_formatee(
-            corriger_identites_euclide(
-                valeur, contexte_euclide=contexte_euclide
+        cle: corriger_pgcd_selon_paires(
+            corriger_fraction_pgcd_mal_formatee(
+                corriger_identites_euclide(
+                    valeur, contexte_euclide=contexte_euclide
+                ),
+                contexte_pgcd=contexte_pgcd,
             ),
-            contexte_pgcd=contexte_pgcd,
+            paires_contextuelles=paires_contextuelles,
         )
         for cle, valeur in sections.items()
     }
