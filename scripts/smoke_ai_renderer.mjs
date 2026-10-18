@@ -19,6 +19,12 @@ window.marked = marked;
 const purifyInstance = createDOMPurify(window);
 window.DOMPurify = purifyInstance;
 window.katex = katex;
+const formulesRendues = [];
+const renduKatexOriginal = window.katex.render.bind(window.katex);
+window.katex.render = function (expression, target, options) {
+  formulesRendues.push(String(expression));
+  return renduKatexOriginal(expression, target, options);
+};
 window.eval(mhchemSource);
 window.hljs = null;
 const context = {
@@ -45,6 +51,24 @@ if (raw.includes('[[DISPLAY]]') || raw.includes('[[MATH]]')) {
 }
 if (host.querySelectorAll('.katex').length < 2) {
   throw new Error('Expected KaTeX nodes were not generated');
+}
+
+const fractionHost = window.document.createElement('div');
+window.document.body.appendChild(fractionHost);
+const indiceFormules = formulesRendues.length;
+window.rendreReponseIA(
+  String.raw`Considérons \(\frac{123456000}{789000}\), puis \(\frac{12}{18}\).`,
+  fractionHost
+);
+const formulesFractions = formulesRendues.slice(indiceFormules);
+if (!formulesFractions.some((formule) => formule.includes(String.raw`\dfrac{123456000}{789000}`))) {
+  throw new Error('Long inline fractions should use displaystyle to remain readable');
+}
+if (formulesFractions.some((formule) => formule.includes(String.raw`\dfrac{12}{18}`))) {
+  throw new Error('Short inline fractions should remain compact');
+}
+if (fractionHost.querySelectorAll('.katex').length !== 2) {
+  throw new Error('Both fractions should be rendered as KaTeX nodes');
 }
 const visibleClone = host.cloneNode(true);
 visibleClone.querySelectorAll('.katex').forEach((node) => node.remove());

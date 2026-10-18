@@ -9,23 +9,35 @@
   const SELECTEUR_RENDU = "[data-rendu]";
 
   function etatDependances() {
+    const chargeur = window.GasyMahay;
+    const chargeurActif = Boolean(chargeur && typeof chargeur.chargerDependancesRenduIA === "function");
+    const etatChargeur = chargeur && chargeur.etatDependancesRenduIA;
     return {
       marked: Boolean(window.marked),
       purify: Boolean(window.DOMPurify),
       katex: Boolean(window.katex && typeof window.katex.render === "function"),
+      // KaTeX JS sans sa feuille CSS donne des fractions petites/mal alignées.
+      // Le CSS fait partie de la signature de rendu afin qu'un rendu précoce
+      // soit invalidé lorsque le chargeur a terminé son repli CDN.
+      css: !chargeurActif || Boolean(etatChargeur && etatChargeur.css),
     };
   }
 
   function verifierDependances() {
     const etat = etatDependances();
-    if (!etat.marked || !etat.purify || !etat.katex) {
+    if (!etat.marked || !etat.purify || !etat.katex || !etat.css) {
       console.warn("[MITARIDALA] rendu IA en mode dégradé", etat);
     }
     return etat;
   }
 
   function signatureDependances(etat) {
-    return [etat.marked ? "1" : "0", etat.purify ? "1" : "0", etat.katex ? "1" : "0"].join("");
+    return [
+      etat.marked ? "1" : "0",
+      etat.purify ? "1" : "0",
+      etat.katex ? "1" : "0",
+      etat.css ? "1" : "0",
+    ].join("");
   }
 
   // MODIF : Marked considère \\[ et \\( comme des échappements Markdown et
@@ -369,6 +381,26 @@
     return { source: protection, math: math };
   }
 
+  // Les fractions longues dans une formule inline héritent du style TeX
+  // « textstyle », qui rapetisse trop les nombres dans les explications.
+  // Les fractions courtes restent compactes ; les plus substantielles passent
+  // en displaystyle via \dfrac pour être lisibles dans Quiz, Tuteur et le jeu.
+  function ameliorerFractionsInline(formule, modeAffichage) {
+    if (modeAffichage) return String(formule == null ? "" : formule);
+    return String(formule == null ? "" : formule).replace(
+      /\\frac\{((?:[^{}]|\{[^{}]*\})*)\}\{((?:[^{}]|\{[^{}]*\})*)\}/g,
+      function (fraction, numerateur, denominateur) {
+        const chiffres = ((numerateur + denominateur).match(/\d/g) || []).length;
+        const taille = numerateur.length + denominateur.length;
+        const formuleComplexe = /\\(?:sqrt|frac|sum|prod|int|log|ln)\b/.test(numerateur + denominateur);
+        if (chiffres >= 5 || taille >= 9 || formuleComplexe) {
+          return "\\dfrac{" + numerateur + "}{" + denominateur + "}";
+        }
+        return fraction;
+      }
+    );
+  }
+
   function restaurerMath(fragment, math) {
     if (!math.length) return;
 
@@ -411,6 +443,7 @@
                 formule = formule.replace(/\\\\(?=[A-Za-z])/g, "\\");
               }
               formule = formule.replace(/\\label\{[^{}]*\}/g, "");
+              formule = ameliorerFractionsInline(formule, Boolean(item.display));
               window.katex.render(formule, cible, {
                 displayMode: Boolean(item.display),
                 throwOnError: false,
@@ -687,7 +720,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "8" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "9" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -704,7 +737,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "8";
+    cible.dataset.renduVersion = "9";
     cible.dataset.renduDeps = signature;
     return cible;
   }
@@ -730,13 +763,27 @@
     }
 
     const etat = etatDependances();
+    const chargeurActif = Boolean(
+      window.GasyMahay &&
+      typeof window.GasyMahay.chargerDependancesRenduIA === "function"
+    );
+
+    // Ne pas figer le DOM avec du KaTeX non stylé avant la fin du chargement
+    // de la feuille CSS. Le chargeur rappelle aussi rendreTous() à sa résolution.
+    if (chargeurActif && !etat.css && numeroTentative < 100) {
+      window.setTimeout(function () {
+        initialiser(numeroTentative + 1);
+      }, 150);
+      return;
+    }
+
     try {
       rendreTous(document);
     } catch (erreur) {
       console.warn("[MITARIDALA] rendu IA partiel :", erreur);
     }
 
-    if ((!etat.marked || !etat.purify || !etat.katex) && numeroTentative < 100) {
+    if ((!etat.marked || !etat.purify || !etat.katex || !etat.css) && numeroTentative < 100) {
       window.setTimeout(function () {
         initialiser(numeroTentative + 1);
       }, 150);

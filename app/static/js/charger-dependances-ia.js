@@ -155,8 +155,8 @@
       etat.mhchem = await avecSecours("mhchem", mhchemDisponible, chargerScript);
     }
 
-    if (!etat.katex || !etat.mhchem || !etat.marked || !etat.purify) {
-      console.warn("[MITARIDALA] Les CDN IA sont indisponibles ou incomplets. Le rendu sûr en texte reste actif.", {
+    if (!etat.css || !etat.katex || !etat.mhchem || !etat.marked || !etat.purify) {
+      console.warn("[MITARIDALA] Les dépendances IA sont indisponibles ou incomplètes. Vérifier notamment la feuille CSS KaTeX, indispensable à la mise en page des formules.", {
         css: etat.css,
         katex: etat.katex,
         mhchem: etat.mhchem,
