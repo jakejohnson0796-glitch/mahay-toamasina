@@ -71,17 +71,15 @@ def test_tuteur_corrige_les_divisions_euclidiennes_dans_les_reponses_historiques
     resultat = normaliser_structure_tuteur({"explication": explication})["explication"]
 
     assert r"\(123456=156\times789+372\)" in resultat
-    assert r"\(789=1\times462+327\)" in resultat
-    assert r"\(462=1\times327+135\)" in resultat
-    assert r"\(327=2\times135+57\)" in resultat
-    assert r"\(135=2\times57+21\)" in resultat
-    assert r"\(57=2\times21+15\)" in resultat
-    assert r"\(21=1\times15+6\)" in resultat
-    assert r"\(15=2\times6+3\)" in resultat
-    assert r"\(6=2\times3+0\)" in resultat
+    assert r"\(789=2\times372+45\)" in resultat
+    assert r"\(372=8\times45+12\)" in resultat
+    assert r"\(45=3\times12+9\)" in resultat
+    assert r"\(12=1\times9+3\)" in resultat
+    assert r"\(9=3\times3+0\)" in resultat
+    assert r"\(789=1\times462+327\)" not in resultat
+    assert r"\(462=1\times327+135\)" not in resultat
     assert tick + "123456=156" + tick not in resultat
     assert "123456=156" + "\t" + "imes789 + 462" not in resultat
-
 
 def test_quiz_corrige_aussi_les_restes_euclidiens_mal_formates():
     tick = chr(96)
@@ -118,6 +116,12 @@ def test_tuteur_nettoie_les_expansions_euclide_coupees_par_backticks():
     assert r"\(123456=19\times6321+3357\)" in resultat
     assert "987654321−987648000" not in resultat
     assert "123456−120099" not in resultat
+    assert r"\(2964=7\times393+213\)" in resultat
+    assert r"\(393=1\times213+180\)" in resultat
+    assert r"\(213=1\times180+33\)" in resultat
+    assert r"\(33=2\times15+3\)" in resultat
+    assert r"\(15=5\times3+0\)" in resultat
+    assert "393=1\\times315+78" not in resultat
     assert tick not in resultat
 
 
