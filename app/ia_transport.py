@@ -445,7 +445,7 @@ def corriger_pgcd_selon_paires(
 ) -> str:
     """Rattache fraction, chaîne d'Euclide, PGCD et résultat final à la même paire."""
     source = convertir_math_transport_texte(texte)
-    if not _CONTEXTE_FRACTION_PGCD.search(source):
+    if not _CONTEXTE_FRACTION_PGCD.search(source) and not paires_contextuelles:
         return source
 
     references_locales = _extraire_paires_pgcd(source)
