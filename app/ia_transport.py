@@ -28,6 +28,7 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 - Le code informatique reste dans des blocs Markdown clôturés.
 - INTERDICTION DES BACKTICKS POUR LES MATHS : n'entoure jamais une formule, une fraction, une égalité, un calcul ou une puissance avec des backticks Markdown. Les backticks sont réservés au code informatique réel. Même dans une liste, écris toute l'identité dans un seul délimiteur LaTeX, par exemple \\(123456=156\\\\times789+372\\), et jamais seulement la partie gauche en code avec l'opérateur en texte à côté.
 - FRACTIONS : écris toujours le numérateur et le dénominateur explicitement avec \\(\\\\frac{a}{b}\\) ou \\[\\\\frac{a}{b}\\]. N'écris jamais les deux nombres collés, ni seulement la fraction visuelle sans commandes LaTeX. Pour \\(\\\\frac{123456000}{789000}\\), conserve explicitement les deux nombres dans le numérateur et le dénominateur.
+- RÉDUCTION DE FRACTION PAR PGCD : chaque étape reste une fraction explicite, jamais des chiffres accolés ni une suite de barres obliques ambiguë. Écris par exemple \\(\\frac{9876543210}{1234560}=\\frac{987654321}{123456}=\\frac{329218107}{41152}\\). Avant d’afficher le résultat final, vérifie séparément le numérateur et le dénominateur après division par le PGCD.
 - PUISSANCES : écris chaque exposant explicitement, par exemple \\(10^{3}\\), jamais le nombre 103 collé pour représenter dix puissance trois. N'aplatis jamais les indices/exposants en nombres ordinaires.
 - Les tableaux Markdown servent aux données tabulaires, jamais à représenter une matrice.
 - MATHS/PHYSIQUE : utilise le vrai LaTeX avec délimiteurs :
@@ -156,11 +157,29 @@ def corriger_identites_euclide(texte: Any, *, contexte_euclide: bool = False) ->
         quotient_correct, reste_correct = divmod(dividende, diviseur)
         quotient_recu = int(match.group("quotient"))
         reste_recu = int(match.group("reste"))
+        suffixe = candidate[match.end():]
+        suffixe_normalise = re.sub(r"\\(?:times|cdot|div)(?![A-Za-z])", "×", suffixe)
+        suffixe_normalise = re.sub(r"\t?imes(?![A-Za-z])", "×", suffixe_normalise)
+        ponctuation_finale = re.search(r"[.!?;:]\s*$", suffixe_normalise)
+        suffixe_calcul = (
+            suffixe_normalise[:ponctuation_finale.start()]
+            if ponctuation_finale
+            else suffixe_normalise
+        )
+        suffixe_est_expansion = bool(
+            suffixe_calcul.strip()
+            and "=" in suffixe_calcul
+            and re.search(r"[-−]\s*\d", suffixe_calcul)
+            and re.search(r"[×x]\s*\d", suffixe_calcul)
+            and re.fullmatch(r"[\d\s,.\-+−*/×÷=()]+", suffixe_calcul.strip())
+        )
+
         operator_corrompu = "\t" in contenu_ligne or chr(96) in contenu_ligne
         if (
             quotient_correct == quotient_recu
             and reste_correct == reste_recu
             and not operator_corrompu
+            and not suffixe_est_expansion
         ):
             resultat.append(ligne)
             continue
@@ -168,7 +187,11 @@ def corriger_identites_euclide(texte: Any, *, contexte_euclide: bool = False) ->
         formule = (
             rf"\({dividende}={quotient_correct}\times{diviseur}+{reste_correct}\)"
         )
-        candidate = candidate[:match.start()] + formule + candidate[match.end():]
+        if suffixe_est_expansion:
+            ponctuation = ponctuation_finale.group(0) if ponctuation_finale else ""
+            candidate = candidate[:match.start()] + formule + ponctuation
+        else:
+            candidate = candidate[:match.start()] + formule + candidate[match.end():]
         resultat.append(candidate + fin_ligne)
 
     return "".join(resultat)

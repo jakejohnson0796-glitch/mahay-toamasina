@@ -111,6 +111,34 @@ if (brokenTimesPlain.includes('imes789') || brokenTimesPlain.includes(String.fro
   throw new Error('A tab-corrupted multiplication command remained visible as raw text');
 }
 
+// Régression exacte du Tuteur : les identités fragmentées doivent devenir
+// deux formules canoniques, sans conserver l'expansion fautive.
+const euclideDetailedHost = window.document.createElement('div');
+window.document.body.appendChild(euclideDetailedHost);
+const euclideDetailedSource =
+  "PGCD — algorithme d'Euclide :\n" +
+  " - " + tickCharacter + "987654321=8000" + tickCharacter +
+  "\\times123456 + 987654321 - 8000\\times123456 = " +
+  tickCharacter + "987654321−987648000=6321" + tickCharacter + "\n" +
+  " - " + tickCharacter + "123456=19" + tickCharacter +
+  "\\times6321 + 123456 - 19\\times6321 = " +
+  tickCharacter + "123456−120099=3357" + tickCharacter;
+window.rendreReponseIA(euclideDetailedSource, euclideDetailedHost);
+if (euclideDetailedHost.querySelectorAll('.katex').length !== 2) {
+  throw new Error('Detailed Euclidean identities were not rendered as two canonical formulas');
+}
+const euclideDetailedClone = euclideDetailedHost.cloneNode(true);
+euclideDetailedClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const euclideDetailedPlain = euclideDetailedClone.textContent || '';
+if (
+  euclideDetailedPlain.includes('987654321−987648000') ||
+  euclideDetailedPlain.includes('123456−120099') ||
+  euclideDetailedPlain.includes('\\times') ||
+  euclideDetailedPlain.includes(tickCharacter)
+) {
+  throw new Error('Broken Euclidean arithmetic remained visible beside the rendered formulas');
+}
+
 const visibleClone = host.cloneNode(true);
 visibleClone.querySelectorAll('.katex').forEach((node) => node.remove());
 const visibleText = visibleClone.textContent || '';
