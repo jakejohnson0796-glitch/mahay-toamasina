@@ -534,7 +534,7 @@ def corriger_pgcd_selon_paires(
             rf"\({numerateur}\div{pgcd}={nr}\)"
             rf" et \({denominateur}\div{pgcd}={dr}\)"
         )
-        source = motif_divisions.sub(divisions_correctes, source)
+        source = motif_divisions.sub(lambda _match, formule=divisions_correctes: formule, source)
 
         # Le résultat final utilise une fraction, jamais les deux termes collés.
         source = re.sub(
