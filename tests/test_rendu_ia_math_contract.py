@@ -97,7 +97,7 @@ def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathem
     assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
     assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
     assert "const contientMath =" in js
-    assert 'cible.dataset.renduVersion = "12"' in js
+    assert 'cible.dataset.renduVersion = "13"' in js
 
 
 def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
@@ -219,6 +219,17 @@ def test_renderer_recupere_les_formules_enfermees_dans_le_code_inline():
     assert r"/\x60([^\x60\n]{1,180})\x60/g" in js
     assert "Rassemble une identité d'Euclide" in js
     assert "les fragments inline sans ambiguïté mathématique sont convertis" in js
+
+
+def test_renderer_reconstruit_les_fractions_pgcd_concatenees():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+    transport = (RACINE / "app" / "ia_transport.py").read_text(encoding="utf-8")
+
+    assert "function normaliserFractionsPgcdRendu(source)" in js
+    assert "texte = normaliserFractionsPgcdRendu(texte)" in js
+    assert "def corriger_fraction_pgcd_mal_formatee(" in transport
+    assert "joint_initial" in transport
+    assert "fraction finale" in transport.lower()
 
 
 def test_contrat_ia_interdit_les_backticks_math_et_verifie_euclide():
