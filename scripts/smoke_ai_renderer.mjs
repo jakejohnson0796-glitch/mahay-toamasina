@@ -221,7 +221,7 @@ const pgcdFormulesNormalisees = pgcdFormules.map((actual) =>
   actual.split(String.fromCharCode(92)).join('').replace(/\s+/g, '')
 );
 if (pgcdExpected.some((expected) => !pgcdFormulesNormalisees.some((actual) => actual.includes(expected)))) {
-  throw new Error('Missing PGCD expressions: ' + pgcdExpected.filter((expected) => !pgcdFormulesNormalisees.some((actual) => actual.includes(expected))).join(', ') + '; actual=' + JSON.stringify(pgcdFormules));
+  throw new Error('Missing PGCD expressions: ' + pgcdExpected.filter((expected) => !pgcdFormulesNormalisees.some((actual) => actual.includes(expected))).join(', ') + '; actual=' + JSON.stringify(pgcdFormules) + '; html=' + pgcdExemplesHost.innerHTML);
 }
 const pgcdExemplesClone = pgcdExemplesHost.cloneNode(true);
 pgcdExemplesClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
