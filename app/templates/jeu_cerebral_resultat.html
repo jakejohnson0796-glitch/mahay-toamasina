@@ -35,6 +35,46 @@
     .jeu-answer .jeu-answer-explain{color:var(--content-text-muted)}
     .jeu-answer .jeu-answer-label{font-size:.7rem;font-weight:850;margin-top:.6rem}
     @media(max-width:620px){.jeu-result-hero{grid-template-columns:1fr}.jeu-result-score{min-width:0;aspect-ratio:auto;display:flex;align-items:baseline;justify-content:flex-start;gap:.55rem;border-radius:13px}.jeu-result-score strong{font-size:1.6rem}.jeu-result-score span{margin:0}.jeu-tip-grid{grid-template-columns:1fr}.jeu-result-actions .jeu-btn{flex:1}.jeu-answer{padding:.8rem}}
+  
+    /* Le bilan arrive progressivement; le score attire l'oeil sans flash ni compteur forcé. */
+    @keyframes jeu-bilan-entree {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes jeu-score-entree {
+      0% { opacity: 0; transform: scale(.88); }
+      70% { opacity: 1; transform: scale(1.035); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .jeu-result-hero { animation: jeu-bilan-entree .48s cubic-bezier(.2,.7,.25,1) both; }
+    .jeu-result-score { animation: jeu-score-entree .52s .10s cubic-bezier(.2,.7,.25,1) both; }
+    .jeu-result-section { animation: jeu-bilan-entree .42s .08s ease-out both; }
+    .jeu-tip:nth-child(1) { animation: jeu-bilan-entree .38s .08s ease-out both; }
+    .jeu-tip:nth-child(2) { animation: jeu-bilan-entree .38s .15s ease-out both; }
+    .jeu-answer { animation: jeu-bilan-entree .36s ease-out both; }
+    .jeu-answer:nth-child(2) { animation-delay: .04s; }
+    .jeu-answer:nth-child(3) { animation-delay: .08s; }
+    .jeu-answer:nth-child(4) { animation-delay: .12s; }
+    .jeu-answer:nth-child(5) { animation-delay: .16s; }
+    .jeu-result-actions .jeu-btn { transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+    .jeu-result-actions .jeu-btn:active { transform: scale(.98); }
+    @media (hover:hover) and (pointer:fine) {
+      .jeu-answer { transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
+      .jeu-answer:hover { border-color: var(--content-link); transform: translateY(-2px); box-shadow: 0 7px 18px color-mix(in srgb,var(--content-text) 6%,transparent); }
+      .jeu-result-actions .jeu-btn:hover { filter: brightness(1.04); transform: translateY(-2px); box-shadow: 0 6px 16px color-mix(in srgb,var(--content-link) 17%,transparent); }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      .jeu-result-page *,
+      .jeu-result-page *::before,
+      .jeu-result-page *::after {
+        animation: none !important;
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+      .jeu-answer:hover,
+      .jeu-result-actions .jeu-btn:hover,
+      .jeu-result-actions .jeu-btn:active { transform: none !important; }
+    }
   </style>
 
   <header class="jeu-result-hero">

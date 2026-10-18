@@ -58,6 +58,83 @@
     @media(max-width:650px){.jeu-hero{grid-template-columns:1fr;border-radius:20px}.jeu-hero-illustration{min-height:75px;justify-content:flex-start}.jeu-orbite{width:100px}.jeu-stat-grid{gap:.55rem}.jeu-stat{padding:.8rem .75rem}.jeu-stat span{font-size:.69rem}.jeu-stat strong{font-size:1.28rem}.jeu-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.jeu-theme-card{min-height:185px;padding:.85rem}.jeu-theme-option input:checked+.jeu-theme-card{padding:calc(.85rem - 1px)}.jeu-theme-emoji{margin-bottom:.7rem}.jeu-theme-card strong{font-size:.9rem}.jeu-theme-description{font-size:.77rem}}
     @media(max-width:440px){.jeu-cerebral-page{padding:.75rem}.jeu-hero{border-radius:18px;padding:1rem}.jeu-theme-grid{grid-template-columns:1fr;gap:.6rem}.jeu-theme-card{display:grid;grid-template-columns:46px minmax(0,1fr);grid-template-rows:auto auto;column-gap:.8rem;align-items:start;min-height:0;padding:.85rem}.jeu-theme-option input:checked+.jeu-theme-card{padding:calc(.85rem - 1px)}.jeu-theme-emoji{grid-column:1;grid-row:1 / span 2;margin:0;width:44px;height:44px;min-height:44px}.jeu-theme-card strong{grid-column:2;grid-row:1;padding-right:1.45rem;margin:0 0 .2rem}.jeu-theme-description{grid-column:2;grid-row:2;padding-right:.2rem}.jeu-theme-option input{top:1rem;right:1rem}.jeu-lancement{align-items:stretch;padding:.9rem;gap:.8rem}.jeu-lancement .jeu-bouton{width:100%;white-space:normal}.jeu-history-item{padding:.75rem}.jeu-history-score{font-size:.95rem}}
     @media(prefers-reduced-motion:reduce){.jeu-theme-card,.jeu-history-item,.jeu-bouton{transition:none}.jeu-theme-option:hover .jeu-theme-card,.jeu-bouton:hover{transform:none}}
+  
+    /* Mouvement subtil : donne du rythme à l'écran sans détourner de l'exercice. */
+    @keyframes jeu-entree-douce {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes jeu-orbite-flotte {
+      0%, 100% { transform: translateY(0) rotate(0); }
+      50% { transform: translateY(-7px) rotate(2deg); }
+    }
+    @keyframes jeu-orbite-rotation {
+      from { transform: rotate(28deg) scaleX(1.24); }
+      to { transform: rotate(388deg) scaleX(1.24); }
+    }
+    @keyframes jeu-orbite-rotation-inverse {
+      from { transform: rotate(-34deg) scaleX(1.24); }
+      to { transform: rotate(-394deg) scaleX(1.24); }
+    }
+    @keyframes jeu-carte-selectionnee {
+      0% { transform: scale(.985); }
+      65% { transform: scale(1.012); }
+      100% { transform: scale(1); }
+    }
+    .jeu-hero > div:first-child,
+    .jeu-hero-illustration {
+      animation: jeu-entree-douce .55s cubic-bezier(.2,.7,.25,1) both;
+    }
+    .jeu-hero-illustration { animation-delay: .08s; }
+    .jeu-orbite { animation: jeu-orbite-flotte 5.5s ease-in-out 1s infinite; }
+    .jeu-orbite:before { animation: jeu-orbite-rotation 22s linear infinite; }
+    .jeu-orbite:after { animation: jeu-orbite-rotation-inverse 27s linear infinite; }
+    .jeu-stat { animation: jeu-entree-douce .42s ease-out both; }
+    .jeu-stat:nth-child(1) { animation-delay: .04s; }
+    .jeu-stat:nth-child(2) { animation-delay: .11s; }
+    .jeu-stat:nth-child(3) { animation-delay: .18s; }
+    .jeu-theme-card { animation: jeu-entree-douce .42s ease-out both; }
+    .jeu-theme-option:nth-of-type(2) .jeu-theme-card { animation-delay: .04s; }
+    .jeu-theme-option:nth-of-type(3) .jeu-theme-card { animation-delay: .08s; }
+    .jeu-theme-option:nth-of-type(4) .jeu-theme-card { animation-delay: .12s; }
+    .jeu-theme-option:nth-of-type(5) .jeu-theme-card { animation-delay: .16s; }
+    .jeu-theme-option:nth-of-type(6) .jeu-theme-card { animation-delay: .20s; }
+    .jeu-theme-option:nth-of-type(7) .jeu-theme-card { animation-delay: .24s; }
+    .jeu-theme-option input:checked + .jeu-theme-card { animation: jeu-carte-selectionnee .28s ease-out; }
+    .jeu-lancement { animation: jeu-entree-douce .45s .12s ease-out both; }
+    .jeu-history-item {
+      animation: jeu-entree-douce .38s ease-out both;
+      transition: border-color .15s ease, transform .16s ease, box-shadow .16s ease;
+    }
+    .jeu-history-item:nth-child(2) { animation-delay: .04s; }
+    .jeu-history-item:nth-child(3) { animation-delay: .08s; }
+    .jeu-history-item:nth-child(4) { animation-delay: .12s; }
+    .jeu-history-item:nth-child(5) { animation-delay: .16s; }
+    .jeu-history-item:nth-child(6) { animation-delay: .20s; }
+    .jeu-history-item:nth-child(7) { animation-delay: .24s; }
+    .jeu-history-item:nth-child(8) { animation-delay: .28s; }
+    .jeu-bouton { transition: filter .15s ease, transform .15s ease, box-shadow .15s ease; }
+    .jeu-bouton:active { transform: scale(.98); }
+    @media (hover:hover) and (pointer:fine) {
+      .jeu-theme-option:hover .jeu-theme-card {
+        box-shadow: 0 10px 24px color-mix(in srgb,var(--content-text) 9%,transparent);
+      }
+      .jeu-history-item:hover { transform: translateX(3px); }
+      .jeu-bouton:hover { box-shadow: 0 7px 18px color-mix(in srgb,var(--content-link) 24%,transparent); }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      .jeu-cerebral-page *,
+      .jeu-cerebral-page *::before,
+      .jeu-cerebral-page *::after {
+        animation: none !important;
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+      .jeu-theme-option:hover .jeu-theme-card,
+      .jeu-history-item:hover,
+      .jeu-bouton:hover,
+      .jeu-bouton:active { transform: none !important; }
+    }
   </style>
 
   <header class="jeu-hero">
