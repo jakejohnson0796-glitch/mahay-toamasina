@@ -1,46 +1,102 @@
-{# Bandeau visuel global : une illustration locale par grand univers du site. #}
+{# Bandeau visuel partagé : chaque univers du site reçoit une illustration locale adaptée. #}
 {% set chemin = request.url.path %}
 {% set image = "/static/images/site/community.svg" %}
 {% set titre = "Apprendre ensemble" %}
-{% set texte = "Un espace visuel pensé pour accompagner ton parcours universitaire." %}
+{% set texte = "Un espace commun pour apprendre, partager et progresser." %}
 
 {% if chemin == "/" %}
   {% set image = "/static/images/site/hero-campus.svg" %}
   {% set titre = "Bienvenue à MITARIDALA" %}
-  {% set texte = "Ton campus de révision pour l’Université de Toamasina." %}
+  {% set texte = "Ton campus pour apprendre et progresser à Madagascar." %}
+{% elif chemin == "/dashboard" %}
+  {% set image = "/static/images/site/hero-campus.svg" %}
+  {% set titre = "Ton tableau de bord étudiant" %}
+  {% set texte = "Retrouve tes activités et choisis ta prochaine étape." %}
+{% elif chemin.startswith("/jeu-cerebral") %}
+  {% set image = "/static/images/jeu-cerebral/brain-hero.webp" %}
+  {% set titre = "Pause cérébrale" %}
+  {% set texte = "Exercices courts de logique, de calcul et d’observation." %}
 {% elif chemin.startswith("/documents") or chemin.startswith("/document") %}
   {% set image = "/static/images/site/documents.svg" %}
   {% set titre = "Tes ressources d’étude" %}
-  {% set texte = "Cours, fiches, annales et documents à portée de main." %}
+  {% set texte = "Cours, fiches et annales réunis au même endroit." %}
 {% elif chemin.startswith("/quiz") %}
   {% set image = "/static/images/site/quiz.svg" %}
-  {% set titre = "Réviser en mode quiz" %}
-  {% set texte = "Transforme tes révisions en entraînement interactif." %}
+  {% set titre = "Révise en mode quiz" %}
+  {% set texte = "Entraîne-toi, vérifie tes réponses et repère les notions à revoir." %}
 {% elif chemin.startswith("/tuteur") %}
   {% set image = "/static/images/site/tuteur.svg" %}
-  {% set titre = "Ton tuteur de révision" %}
+  {% set titre = "Ton tuteur IA" %}
   {% set texte = "Pose tes questions et avance étape par étape." %}
 {% elif chemin.startswith("/classe") %}
   {% set image = "/static/images/site/classe.svg" %}
-  {% set titre = "Ta classe, au même endroit" %}
-  {% set texte = "Cours, devoirs, présence et travail collectif réunis." %}
+  {% set titre = "Ta classe virtuelle" %}
+  {% set texte = "Cours, devoirs et travail collectif au même endroit." %}
 {% elif chemin.startswith("/universites") or chemin.startswith("/profil/academique") %}
   {% set image = "/static/images/site/universite.svg" %}
   {% set titre = "Ton parcours universitaire" %}
-  {% set texte = "Retrouve ta composante, ta mention, ton niveau et ton parcours." %}
-{% elif chemin.startswith("/cercles") %}
+  {% set texte = "Retrouve ton université, ta mention, ton niveau et ton parcours." %}
+{% elif chemin.startswith("/cercles") or chemin.startswith("/cercle") %}
   {% set image = "/static/images/site/community.svg" %}
   {% set titre = "Étudier à plusieurs" %}
-  {% set texte = "Des communautés d’étudiants autour des mêmes objectifs." %}
+  {% set texte = "Échange et avance avec des étudiants qui partagent tes objectifs." %}
+{% elif chemin.startswith("/mes-revisions") or chemin.startswith("/session-apprentissage") or chemin.startswith("/carte-connaissances") %}
+  {% set image = "/static/images/site/quiz.svg" %}
+  {% set titre = "Mes révisions" %}
+  {% set texte = "Reprends les notions et exercices à renforcer." %}
+{% elif chemin.startswith("/defis") %}
+  {% set image = "/static/images/site/quiz.svg" %}
+  {% set titre = "Les défis t’attendent" %}
+  {% set texte = "Transforme tes séances de révision en objectifs concrets." %}
+{% elif chemin.startswith("/notifications") %}
+  {% set image = "/static/images/site/community.svg" %}
+  {% set titre = "Reste informé" %}
+  {% set texte = "Retrouve les nouvelles et les messages importants de ton espace." %}
+{% elif chemin.startswith("/securite") or chemin.startswith("/connexion/2fa") %}
+  {% set image = "/static/images/site/study-books.svg" %}
+  {% set titre = "Protéger ton compte" %}
+  {% set texte = "Vérifie tes accès, tes paramètres et tes options de sécurité." %}
+{% elif chemin.startswith("/admin/moderation-") or chemin.startswith("/moderation") %}
+  {% set image = "/static/images/site/documents.svg" %}
+  {% set titre = "Qualité et modération" %}
+  {% set texte = "Examine les contenus et veille à la qualité des ressources partagées." %}
+{% elif chemin.startswith("/admin") %}
+  {% set image = "/static/images/site/universite.svg" %}
+  {% set titre = "Administration de la plateforme" %}
+  {% set texte = "Garde un œil sur les contenus, les comptes et les outils du site." %}
+{% elif chemin.startswith("/abonnement") %}
+  {% set image = "/static/images/site/hero-campus.svg" %}
+  {% set titre = "Des options adaptées" %}
+  {% set texte = "Découvre les fonctionnalités et les conditions d’accès." %}
+{% elif chemin.startswith("/sponsoring") %}
+  {% set image = "/static/images/site/community.svg" %}
+  {% set titre = "Soutenir l’apprentissage" %}
+  {% set texte = "Aide à développer des ressources utiles aux étudiants." %}
 {% elif chemin.startswith("/connexion") or chemin.startswith("/inscription") or chemin.startswith("/mot-de-passe") %}
   {% set image = "/static/images/site/study-books.svg" %}
-  {% set titre = "Construire de bonnes habitudes" %}
-  {% set texte = "MITARIDALA t’accompagne avant, pendant et après tes révisions." %}
+  {% set titre = "Bien démarrer" %}
+  {% set texte = "Connecte-toi ou crée un compte pour continuer ton parcours." %}
+{% elif chemin.startswith("/faq") or chemin.startswith("/feedback") or chemin.startswith("/contact") %}
+  {% set image = "/static/images/site/community.svg" %}
+  {% set titre = "Besoin d’aide ?" %}
+  {% set texte = "Trouve une réponse, signale un problème ou contacte l’équipe." %}
+{% elif chemin == "/mode-emploi" %}
+  {% set image = "/static/images/site/study-books.svg" %}
+  {% set titre = "Bien utiliser MITARIDALA" %}
+  {% set texte = "Explore les étapes essentielles pour démarrer efficacement." %}
+{% elif chemin in ["/cadre-legal", "/conditions-utilisation", "/charte-ethique", "/confidentialite", "/mentions-legales"] %}
+  {% set image = "/static/images/site/documents.svg" %}
+  {% set titre = "Un cadre clair et responsable" %}
+  {% set texte = "Consulte les conditions, l’éthique et la confidentialité." %}
+{% elif chemin == "/a-propos" %}
+  {% set image = "/static/images/site/hero-campus.svg" %}
+  {% set titre = "À propos de MITARIDALA" %}
+  {% set texte = "Une plateforme malgache pensée pour apprendre, pratiquer et collaborer." %}
 {% endif %}
 
-<div class="visuel-page-global" aria-hidden="true">
-  <div class="visuel-page-global-illustration">
-    <img src="{{ image }}" alt="" loading="lazy" decoding="async">
+<div class="visuel-page-global" data-visuel-page="{{ chemin }}">
+  <div class="visuel-page-global-illustration" aria-hidden="true">
+    <img src="{{ image }}" alt="" loading="lazy" decoding="async" width="560" height="220">
   </div>
   <div class="visuel-page-global-texte">
     <span>{{ titre }}</span>
