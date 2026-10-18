@@ -83,7 +83,7 @@ def test_tuteur_corrige_les_divisions_euclidiennes_dans_les_reponses_historiques
     assert "123456=156" + "\t" + "imes789 + 462" not in resultat
 
 
-def test_quiz_corrige_aussi_les_rests_euclidiens_mal_formates():
+def test_quiz_corrige_aussi_les_restes_euclidiens_mal_formates():
     tick = chr(96)
     questions = [{
         "question": "Calcule le PGCD de 123456 et 789 avec l'algorithme d'Euclide.",
