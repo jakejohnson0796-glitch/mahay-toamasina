@@ -40,6 +40,69 @@
     .jeu-bouton:disabled{opacity:.45;cursor:not-allowed}
     @media(max-width:560px){.jeu-session-page{padding:.75rem}.jeu-session-header{gap:.7rem}.jeu-session-header h1{font-size:1.5rem}.jeu-bouton-retour{width:100%;justify-content:center}.jeu-question-card{border-radius:16px;padding:1rem}.jeu-submit-row{align-items:stretch}.jeu-submit-row .jeu-bouton{width:100%}}
     @media(prefers-reduced-motion:reduce){.jeu-progress-fill,.jeu-option{transition:none}}
+  
+    /* Animations discrètes pendant la résolution, rejouées à chaque question. */
+    @keyframes jeu-question-entree {
+      from { opacity: 0; transform: translateY(14px) scale(.995); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes jeu-option-entree {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes jeu-retour-entree {
+      0% { opacity: 0; transform: translateY(-7px); }
+      75% { opacity: 1; transform: translateY(2px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes jeu-progress-entree {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+    @keyframes jeu-reponse-selection {
+      0% { transform: scale(.99); }
+      70% { transform: scale(1.006); }
+      100% { transform: scale(1); }
+    }
+    .jeu-session-header { animation: jeu-question-entree .42s ease-out both; }
+    .jeu-session-progress { animation: jeu-question-entree .42s .04s ease-out both; }
+    .jeu-progress-fill {
+      transform-origin: left center;
+      animation: jeu-progress-entree .55s cubic-bezier(.2,.7,.25,1) both;
+    }
+    .jeu-feedback { animation: jeu-retour-entree .32s ease-out both; }
+    .jeu-question-card { animation: jeu-question-entree .42s .07s cubic-bezier(.2,.7,.25,1) both; }
+    .jeu-option {
+      transition: border-color .15s ease, background .15s ease, transform .15s ease, box-shadow .15s ease;
+      animation: jeu-option-entree .35s ease-out both;
+    }
+    .jeu-option:nth-child(2) { animation-delay: .04s; }
+    .jeu-option:nth-child(3) { animation-delay: .09s; }
+    .jeu-option:nth-child(4) { animation-delay: .14s; }
+    .jeu-option:nth-child(5) { animation-delay: .19s; }
+    .jeu-option:has(input:checked) {
+      box-shadow: 0 0 0 3px color-mix(in srgb,var(--content-link) 10%,transparent);
+      animation: jeu-reponse-selection .24s ease-out;
+    }
+    .jeu-bouton { transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+    .jeu-bouton:active:not(:disabled) { transform: scale(.98); }
+    @media (hover:hover) and (pointer:fine) {
+      .jeu-option:hover { transform: translateY(-2px); box-shadow: 0 6px 15px color-mix(in srgb,var(--content-text) 7%,transparent); }
+      .jeu-bouton:hover:not(:disabled) { filter: brightness(1.04); box-shadow: 0 6px 16px color-mix(in srgb,var(--content-link) 20%,transparent); }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      .jeu-session-page *,
+      .jeu-session-page *::before,
+      .jeu-session-page *::after {
+        animation: none !important;
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+      .jeu-option:hover,
+      .jeu-option:has(input:checked),
+      .jeu-bouton:hover,
+      .jeu-bouton:active { transform: none !important; }
+    }
   </style>
 
   <header class="jeu-session-header">
