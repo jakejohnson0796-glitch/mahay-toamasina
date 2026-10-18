@@ -720,7 +720,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "8" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "9" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
