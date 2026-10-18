@@ -25,6 +25,9 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 
 - Réponds en français et en Markdown clair et pédagogique.
 - Le code informatique reste dans des blocs Markdown clôturés.
+- INTERDICTION DE BACKTICKS MATHS : n'entoure jamais une formule, une fraction, une égalité, un calcul ou une puissance avec des backticks Markdown. Les backticks sont réservés au code informatique réel. Même dans une liste, écris \\(123456=156\\times789+372\\) en LaTeX, pas `123456=156`\\times789+372.
+- FRACTIONS : écris toujours le numérateur et le dénominateur explicitement avec \\(\\frac{a}{b}\\) ou \\[\\frac{a}{b}\\]. N'écris jamais les deux nombres collés, ni seulement la fraction visuelle sans commandes LaTeX. Pour \\(\\frac{123456000}{789000}\\), conserve bien les deux nombres séparés par `\\frac{...}{...}`.
+- PUISSANCES : écris chaque exposant explicitement, par exemple \\(10^{3}\\), jamais `103` pour représenter dix puissance trois. N'aplatis jamais les indices/exposants en nombres ordinaires.
 - Les tableaux Markdown servent aux données tabulaires, jamais à représenter une matrice.
 - MATHS/PHYSIQUE : utilise le vrai LaTeX avec délimiteurs :
   inline : \( ... \)
@@ -82,7 +85,8 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 - Ne fais aucune substitution globale sur `^`, `_`, `\\n`, les caractères de contrôle ou les symboles
   inconnus. Répare uniquement une séquence identifiée dans son contexte et couverte par un test.
 - Ne confonds pas valeur exacte, approximation et arrondi : calcule d'abord, puis indique séparément l'approximation et l'arrondi demandé. Ne produis pas de contradictions telles que « arrondi à la dizaine = 30 ≈ 32 ». Vérifie le chiffre des unités avant tout arrondi à la dizaine.
-- Vérifie calculs, signes, unités, dimensions, indices et résultats.
+- Vérifie calculs, signes, unités, dimensions, indices et résultats. Pour l'algorithme d'Euclide, chaque ligne \\(a=bq+r\\) doit vérifier numériquement l'égalité et \\(0\\le r<b\\); contrôle particulièrement les restes. Exemple vérifié : \\(123456=156\\times789+372\\), et non un reste différent.
+- Avant de renvoyer le JSON, relis les formules dans leur contexte : aucune commande \\times ne doit rester hors délimiteurs mathématiques, aucune fraction ne doit être collée en texte brut, et les équations doivent être correctes.
 - Pour un QCM, une seule réponse doit être correcte et les choix ne contiennent
   aucun préfixe A/B/C/D/E.
 """
