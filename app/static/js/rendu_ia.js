@@ -367,6 +367,100 @@
     }).join("\n");
   }
 
+  // Répare les anciennes fractions PGCD concaténées uniquement si deux
+  // égalités distinctes confirment une réduction des deux termes par 10.
+  function normaliserFractionsPgcdRendu(source) {
+    const texte = String(source == null ? "" : source);
+    if (!/(?:\bpgcd\b|\beuclide\b|fraction\s+(?:finale|réduite)|réduction\s+de\s+fraction)/i.test(texte)) {
+      return texte;
+    }
+
+    const motifReduction = /(\d{3,})\s*=\s*(\d{2,})\s*(?:\\times|×|x|\*)\s*10\b/gi;
+    const reductions = Array.from(texte.matchAll(motifReduction)).filter(function (match) {
+      try {
+        return BigInt(match[1]) === BigInt(match[2]) * 10n;
+      } catch (_) {
+        return false;
+      }
+    });
+    if (reductions.length < 2) return texte;
+
+    const numerateur = BigInt(reductions[0][2]);
+    const denominateur = BigInt(reductions[1][2]);
+    if (numerateur <= 0n || denominateur <= 0n) return texte;
+
+    function pgcdBigInt(a, b) {
+      let gauche = a;
+      let droite = b;
+      while (droite !== 0n) {
+        const reste = gauche % droite;
+        gauche = droite;
+        droite = reste;
+      }
+      return gauche;
+    }
+
+    const diviseurCommun = pgcdBigInt(numerateur, denominateur);
+    if (diviseurCommun <= 0n) return texte;
+    const numerateurReduit = numerateur / diviseurCommun;
+    const denominateurReduit = denominateur / diviseurCommun;
+    const jointInitial = numerateur.toString() + denominateur.toString();
+    const jointFinal = numerateurReduit.toString() + denominateurReduit.toString();
+    const fractionInitiale = "\\(\\frac{" + numerateur.toString() + "}{" + denominateur.toString() + "}\\)";
+    const fractionFinale = "\\(\\frac{" + numerateurReduit.toString() + "}{" + denominateurReduit.toString() + "}\\)";
+    const fractionComplete = "\\(\\frac{" + numerateur.toString() + "}{" + denominateur.toString() +
+      "}=\\frac{" + numerateurReduit.toString() + "}{" + denominateurReduit.toString() + "}\\)";
+
+    let resultat = texte.replace(
+      new RegExp("(il\\s+reste\\s+)(?:\\x60)?" + jointInitial + "(?:\\x60)?", "i"),
+      function (_match, prefixe) { return prefixe + fractionInitiale; }
+    );
+
+    const lignes = resultat.split("\n");
+    const corrigees = [];
+    let sauterExpressionSuivante = false;
+    for (const ligneOriginale of lignes) {
+      let ligne = ligneOriginale;
+      if (sauterExpressionSuivante) {
+        if (!ligne.trim()) {
+          corrigees.push(ligne);
+          continue;
+        }
+        sauterExpressionSuivante = false;
+        const sansBackticks = ligne.replace(/\x60/g, "");
+        if (
+          (sansBackticks.includes(jointInitial) || sansBackticks.includes(jointFinal)) &&
+          /[/=]/.test(sansBackticks) &&
+          !/\b(?:pgcd|euclide)\b/i.test(sansBackticks)
+        ) {
+          continue;
+        }
+      }
+
+      const entete = ligne.match(/^([ \t]*(?:\d+[.)]\s*)?Division\s+par\s+le\s+PGCD\s*:)(.*)$/i);
+      if (entete) {
+        if (entete[2].includes("\\frac{" + numerateur.toString() + "}{" + denominateur.toString() + "}")) {
+          corrigees.push(ligne);
+        } else {
+          corrigees.push(entete[1] + " " + fractionComplete);
+          sauterExpressionSuivante = true;
+        }
+        continue;
+      }
+
+      ligne = ligne.replace(
+        new RegExp("(fraction\\s+finale\\s+r[ée]duite\\s+est\\s+)(?:\\x60)?" + jointFinal + "(?:\\x60)?", "i"),
+        function (_match, prefixe) { return prefixe + fractionFinale; }
+      );
+      corrigees.push(ligne);
+    }
+
+    return corrigees.join("\n").replace(
+      new RegExp("\\x60" + jointFinal + "\\x60", "g"),
+      fractionFinale
+    );
+  }
+
   function normaliserSourceRendu(source, options) {
     let texte = String(source == null ? "" : source);
     try { texte = texte.normalize("NFC"); } catch (_) {}
@@ -375,6 +469,7 @@
     // les caractères pédagogiques visibles.
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
     texte = normaliserIdentitesEuclideRendu(texte);
+    texte = normaliserFractionsPgcdRendu(texte);
     texte = normaliserCodeMathInline(texte);
     return normaliserExpressionsMathematiquesNues(texte, options).replace(/\r\n?/g, "\n");
   }
@@ -839,7 +934,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "12" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "13" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -856,7 +951,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "12";
+    cible.dataset.renduVersion = "13";
     cible.dataset.renduDeps = signature;
     return cible;
   }
