@@ -118,6 +118,12 @@ def test_tuteur_nettoie_les_expansions_euclide_coupees_par_backticks():
     assert r"\(123456=19\times6321+3357\)" in resultat
     assert "987654321−987648000" not in resultat
     assert "123456−120099" not in resultat
+    assert r"\(2964=7\times393+213\)" in resultat
+    assert r"\(393=1\times213+180\)" in resultat
+    assert r"\(213=1\times180+33\)" in resultat
+    assert r"\(33=2\times15+3\)" in resultat
+    assert r"\(15=5\times3+0\)" in resultat
+    assert "393=1\\times315+78" not in resultat
     assert tick not in resultat
 
 
