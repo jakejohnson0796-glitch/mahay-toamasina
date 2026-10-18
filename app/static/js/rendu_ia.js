@@ -487,125 +487,110 @@
     let texte = String(source == null ? "" : source);
     if (!/(?:\bpgcd\b|\beuclide\b|fraction|réduire|irréductible)/i.test(texte)) return texte;
 
+    const tick = String.fromCharCode(96);
     const paires = [];
-    function ajoute(a, b) {
+    function ajouter(a, b) {
       const n = BigInt(a), d = BigInt(b);
       if (n <= 0n || d <= 0n || n === d) return;
       if (!paires.some((p) => p.n === n && p.d === d)) paires.push({n, d});
     }
-    const motifs = [
-      /\bPGCD\s+de\s+(\d{1,18})\s+et\s+(\d{1,18})\b/gi,
-      /\bPGCD\s*\(\s*(\d{1,18})\s*[,;]\s*(\d{1,18})\s*\)/gi
-    ];
-    for (const motif of motifs) {
-      for (const match of texte.matchAll(motif)) ajoute(match[1], match[2]);
-    }
-    if (!paires.length && /(?:fraction|réduire|exercice proposé|exemple)/i.test(texte)) {
-      const tick = String.fromCharCode(96);
-      for (const match of texte.matchAll(new RegExp(tick + "(\\\\d{4,7})" + tick, "g"))) {
-        const chiffres = match[1], coupe = Math.floor(chiffres.length / 2);
-        const n = BigInt(chiffres.slice(0, coupe)), d = BigInt(chiffres.slice(coupe));
-        if (n > 0n && n < d && n % 2n === 0n && d % 2n === 0n) ajoute(n, d);
-      }
-    }
+    const motifPaire = /\bPGCD\s+de\s+(\d{1,18})\s+et\s+(\d{1,18})\b|\bPGCD\s*\(\s*(\d{1,18})\s*[,;]\s*(\d{1,18})\s*\)/gi;
+    for (const match of texte.matchAll(motifPaire)) ajouter(match[1] || match[3], match[2] || match[4]);
     if (!paires.length) return texte;
 
     function pgcd(a, b) {
-      while (b !== 0n) { const reste = a % b; a = b; b = reste; }
+      while (b !== 0n) { const r = a % b; a = b; b = r; }
       return a;
     }
-    function contient(n, valeur) {
-      return new RegExp("(^|\\\\D)" + n.toString() + "(?=\\\\D|$)").test(valeur);
+    function fraction(n, d) {
+      return "\\(" + "\\frac{" + n.toString() + "}{" + d.toString() + "}" + "\\)";
     }
-    const tick = String.fromCharCode(96);
+    function chaineEuclide(n, d) {
+      let a = n > d ? n : d, b = n > d ? d : n;
+      const result = [];
+      while (b !== 0n) {
+        const q = a / b, r = a % b;
+        result.push("\\(" + a.toString() + "=" + q.toString() + "\\times" + b.toString() + "+" + r.toString() + "\\)");
+        a = b; b = r;
+      }
+      return result;
+    }
 
     for (const paire of paires) {
       const g = pgcd(paire.n, paire.d);
       const nr = paire.n / g, dr = paire.d / g;
       const joint = paire.n.toString() + paire.d.toString();
       const jointFinal = nr.toString() + dr.toString();
-      const fractionInitiale = "\\\\(\\\\frac{" + paire.n.toString() + "}{" + paire.d.toString() + "}\\\\)";
-      const fractionFinale = "\\\\(\\\\frac{" + nr.toString() + "}{" + dr.toString() + "}\\\\)";
+      texte = texte.split(tick + joint + tick).join(fraction(paire.n, paire.d));
 
-      texte = texte.split(tick + joint + tick).join(fractionInitiale);
-      const motifDivision = new RegExp(
-        tick + "?" + paire.n.toString() + "\\\\s*(?:÷|\\\\\\\\div|/)\\\\s*" + g.toString() +
-        "\\\\s*" + paire.d.toString() + "\\\\s*(?:÷|\\\\\\\\div|/)\\\\s*" + g.toString() +
-        "\\\\s*=\\\\s*" + jointFinal + tick + "?",
+      const motifDivisions = new RegExp(
+        tick + "?" + paire.n.toString() + "\\s*(?:÷|\\\\div|/)\\s*" + g.toString() +
+        "\\s*" + paire.d.toString() + "\\s*(?:÷|\\\\div|/)\\s*" + g.toString() +
+        "\\s*=\\s*" + jointFinal + tick + "?",
         "i"
       );
-      const divisions =
-        "\\\\(" + paire.n.toString() + "\\\\div" + g.toString() + "=" + nr.toString() + "\\\\)" +
+      const divisionsCorrectes =
+        "\\(" + paire.n.toString() + "\\div" + g.toString() + "=" + nr.toString() + "\\)" +
         " et " +
-        "\\\\(" + paire.d.toString() + "\\\\div" + g.toString() + "=" + dr.toString() + "\\\\)";
-      texte = texte.replace(motifDivision, divisions);
-      const motifFinal = new RegExp(
-        "(fraction\\\\s+(?:(?:finale|réduite|irréductible)\\\\s+)?(?:est(?:\\\\s+maintenant)?|:)\\\\s*)" +
+        "\\(" + paire.d.toString() + "\\div" + g.toString() + "=" + dr.toString() + "\\)";
+      texte = texte.replace(motifDivisions, divisionsCorrectes);
+
+      const motifConclusion = new RegExp(
+        "(fraction\\s+(?:(?:finale|réduite|irréductible)\\s+)?(?:est(?:\\s+maintenant)?|:)\\s*)" +
         tick + "?" + jointFinal + tick + "?",
         "i"
       );
-      texte = texte.replace(motifFinal, (_m, prefixe) => prefixe + fractionFinale);
+      texte = texte.replace(motifConclusion, (_m, prefixe) => prefixe + fraction(nr, dr));
     }
 
-    const motifFormule = /(\d{1,18})\s*=\s*(\d{1,18})\s*(\\times|×|x|\t?imes)\s*(\d{1,18})\s*\+\s*(\d{1,18})/gi;
-    const expressions = Array.from(texte.matchAll(motifFormule));
-    const groupes = [];
-    for (const expression of expressions) {
-      const debut = expression.index, fin = debut + expression[0].length;
-      if (groupes.length) {
-        const dernier = groupes[groupes.length - 1];
-        const gap = texte.slice(dernier.fin, debut);
-        if (!gap.replace(/[\s,;:—\-•\x60\\()]+/g, "") && gap.length <= 64) {
-          dernier.fin = fin;
-          continue;
-        }
+    const entetes = [];
+    const motifsEntetes = [
+      /\b(?:On\s+calcule\s+)?(?:le\s+)?PGCD\s+de\s+(\d{1,18})\s+et\s+(\d{1,18})[^.\n:]{0,120}algorithme\s+d['’]Euclide\s*:/gi,
+      /\b(?:Calcul\s+du\s+)?PGCD\s*\(\s*(\d{1,18})\s*[,;]\s*(\d{1,18})\s*\)\s*:\s*/gi
+    ];
+    for (const motif of motifsEntetes) {
+      for (const m of texte.matchAll(motif)) {
+        entetes.push({start:m.index, end:m.index + m[0].length, n:BigInt(m[1] || m[3]), d:BigInt(m[2] || m[4])});
       }
-      groupes.push({debut, fin});
     }
+    entetes.sort((a, b) => a.start - b.start);
 
+    const formuleRegex = /\\?\(?\s*\d{1,18}\s*=\s*\d{1,18}\s*(?:\\times|×|x|\t?imes)\s*\d{1,18}\s*\+\s*\d{1,18}\s*\\?\)?/gi;
     const remplacements = [];
-    for (const groupe of groupes) {
-      const bloc = texte.slice(groupe.debut, groupe.fin);
-      const candidates = paires.filter((p) => contient(p.n, bloc) && contient(p.d, bloc));
-      if (candidates.length !== 1) continue;
-      const paire = candidates[0];
-      let a = paire.n > paire.d ? paire.n : paire.d;
-      let b = paire.n > paire.d ? paire.d : paire.n;
-      const chaine = [];
-      while (b !== 0n) {
-        const q = a / b, reste = a % b;
-        chaine.push("\\\\(" + a.toString() + "=" + q.toString() + "\\\\times" + b.toString() + "+" + reste.toString() + "\\\\)");
-        a = b; b = reste;
-      }
-      let debut = groupe.debut, fin = groupe.fin;
-      if (texte.slice(Math.max(0, debut - 2), debut) === "\\\\(") debut -= 2;
-      else if (debut > 0 && texte[debut - 1] === tick) debut -= 1;
-      if (texte.slice(fin, fin + 2) === "\\\\)") fin += 2;
-      while (fin < texte.length && (texte[fin] === tick || texte[fin] === ")")) fin += 1;
-      remplacements.push({debut, fin, texte:chaine.join(", ")});
+    for (let i = 0; i < entetes.length; i += 1) {
+      const entete = entetes[i];
+      const paire = paires.find((p) => p.n === entete.n && p.d === entete.d);
+      if (!paire) continue;
+      const limite = i + 1 < entetes.length ? entetes[i + 1].start : texte.length;
+      const region = texte.slice(entete.end, limite);
+      const finSemantique = region.search(/\b(?:Le\s+dernier\s+reste|Donc\s+PGCD|La\s+fraction\s+réduite|La\s+fraction\s+est|Exercice\s+proposé)\b/i);
+      const regionUtile = finSemantique >= 0 ? region.slice(0, finSemantique) : region;
+      const formules = Array.from(regionUtile.matchAll(formuleRegex));
+      if (!formules.length) continue;
+      const chaine = chaineEuclide(paire.n, paire.d);
+      remplacements.push({
+        start:entete.end + formules[0].index,
+        end:entete.end + formules[formules.length - 1].index + formules[formules.length - 1][0].length,
+        value:chaine.join(", ")
+      });
     }
-    remplacements.sort((a, b) => b.debut - a.debut);
-    for (const remplacement of remplacements) {
-      texte = texte.slice(0, remplacement.debut) + remplacement.texte + texte.slice(remplacement.fin);
-    }
+    remplacements.sort((a, b) => b.start - a.start);
+    for (const r of remplacements) texte = texte.slice(0, r.start) + r.value + texte.slice(r.end);
 
-    const phrase = /la\s+fraction\s+est\s+maintenant\s+irréductible(?!\s*[:;])/ig;
-    let mention;
-    while ((mention = phrase.exec(texte)) !== null) {
-      const avant = texte.slice(Math.max(0, mention.index - 180), mention.index);
-      const references = Array.from(avant.matchAll(/\bPGCD\s+de\s+(\d{1,18})\s+et\s+(\d{1,18})\b|\bPGCD\s*\(\s*(\d{1,18})\s*[,;]\s*(\d{1,18})\s*\)/gi));
-      let paire = null;
-      if (references.length) {
-        const r = references[references.length - 1];
-        const n = BigInt(r[1] || r[3]), d = BigInt(r[2] || r[4]);
-        paire = paires.find((p) => p.n === n && p.d === d) || null;
-      } else if (paires.length === 1) paire = paires[0];
+    const regexPhrase = /la\s+fraction\s+est\s+maintenant\s+irréductible(?!\s*[:;])/ig;
+    let phrase;
+    while ((phrase = regexPhrase.exec(texte)) !== null) {
+      const avant = texte.slice(Math.max(0, phrase.index - 220), phrase.index);
+      const refs = Array.from(avant.matchAll(motifPaire));
+      if (!refs.length) continue;
+      const ref = refs[refs.length - 1];
+      const n = BigInt(ref[1] || ref[3]), d = BigInt(ref[2] || ref[4]);
+      const paire = paires.find((p) => p.n === n && p.d === d);
       if (!paire) continue;
       const g = pgcd(paire.n, paire.d);
-      const fraction = "\\\\(\\\\frac{" + (paire.n / g).toString() + "}{" + (paire.d / g).toString() + "}\\\\)";
-      const ajout = mention[0] + " : " + fraction;
-      texte = texte.slice(0, mention.index) + ajout + texte.slice(mention.index + mention[0].length);
-      phrase.lastIndex = mention.index + ajout.length;
+      const ajout = phrase[0] + " : " + fraction(paire.n / g, paire.d / g);
+      texte = texte.slice(0, phrase.index) + ajout + texte.slice(phrase.index + phrase[0].length);
+      regexPhrase.lastIndex = phrase.index + ajout.length;
     }
     return texte;
   }
