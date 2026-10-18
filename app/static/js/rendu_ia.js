@@ -546,8 +546,7 @@
       texte = texte.replace(motifConclusion, (_m, prefixe) => prefixe + fraction(nr, dr));
     }
 
-    // Repère les introductions réelles de calcul. Une simple mention du PGCD
-    // dans une conclusion ne doit pas lancer une nouvelle chaîne d'Euclide.
+    // Repère uniquement les introductions réelles de calcul avec une paire explicite.
     const entetes = [];
     for (const match of texte.matchAll(motifPaire)) {
       const n = BigInt(match[1] || match[3]);
@@ -558,26 +557,27 @@
       const avant = texte.slice(Math.max(0, match.index - 55), match.index);
       const debutEuclide = /algorithme\s+d['’]Euclide\s*:/i.test(apres);
       const debutCalcul = /^\s*:\s*/.test(apres) && /(?:calcul\s+du|calcul)\s*$/i.test(avant);
-      if (debutEuclide || debutCalcul) {
-        entetes.push({start:match.index, end:match.index + match[0].length, paire});
-      }
+      if (!debutEuclide && !debutCalcul) continue;
+      const limiteColon = texte.indexOf(":", match.index + match[0].length);
+      if (limiteColon < 0 || limiteColon > match.index + match[0].length + 110) continue;
+      entetes.push({start:match.index, end:limiteColon + 1, paire});
     }
 
-    const formuleRegex = /\\*\(?\s*\d{1,18}\s*=\s*\d{1,18}\s*(?:\\+times|×|x|\t?imes)\s*\d{1,18}\s*\+\s*\d{1,18}\s*\\*\)?/gi;
     const remplacements = [];
     for (let i = 0; i < entetes.length; i += 1) {
       const entete = entetes[i];
       const limite = i + 1 < entetes.length ? entetes[i + 1].start : texte.length;
       const region = texte.slice(entete.end, limite);
       const finSemantique = region.search(/\b(?:Le\s+dernier\s+reste|Donc\s+PGCD|La\s+fraction\s+réduite|La\s+fraction\s+est|Exercice\s+proposé)\b/i);
-      const regionUtile = finSemantique >= 0 ? region.slice(0, finSemantique) : region;
-      const formules = Array.from(regionUtile.matchAll(formuleRegex));
-      if (!formules.length) continue;
+      const regionCalcul = finSemantique >= 0 ? region.slice(0, finSemantique) : region;
+      if (!/\d{1,18}\s*=/.test(regionCalcul) || !/\+\s*\d{1,18}/.test(regionCalcul)) continue;
       const chaine = chaineEuclide(entete.paire.n, entete.paire.d);
+      // Remplace tout le vieux segment (y compris backticks et délimiteurs cassés)
+      // plutôt que d'insérer du LaTeX à l'intérieur d'un bloc de code préexistant.
       remplacements.push({
-        start:entete.end + formules[0].index,
-        end:entete.end + formules[formules.length - 1].index + formules[formules.length - 1][0].length,
-        value:chaine.join(", ")
+        start:entete.end,
+        end:entete.end + (finSemantique >= 0 ? finSemantique : region.length),
+        value:" " + chaine.join(", ") + ". "
       });
     }
     remplacements.sort((a, b) => b.start - a.start);
