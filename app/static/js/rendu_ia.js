@@ -393,7 +393,7 @@
         const chiffres = ((numerateur + denominateur).match(/\d/g) || []).length;
         const taille = numerateur.length + denominateur.length;
         const formuleComplexe = /\\(?:sqrt|frac|sum|prod|int|log|ln)\b/.test(numerateur + denominateur);
-        if (chiffres >= 4 || taille >= 9 || formuleComplexe) {
+        if (chiffres >= 5 || taille >= 9 || formuleComplexe) {
           return "\\dfrac{" + numerateur + "}{" + denominateur + "}";
         }
         return fraction;
