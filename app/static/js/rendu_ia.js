@@ -270,9 +270,12 @@
     // Rassemble une identité d'Euclide quand le modèle ne met que son
     // premier membre en code, puis laisse \\times et la suite hors des backticks.
     resultat = resultat.replace(
-      /\x60(\s*\d[\d ,]*(?:\.\d+)?\s*(?:=|≈|<=|>=|≤|≥|<|>)\s*\d[\d ,]*(?:\.\d+)?)\x60\s*(\\(?:times|cdot|div)\s*\d[\d ,]*(?:\.\d+)?(?:\s*[+*/×÷-]\s*\d[\d ,]*(?:\.\d+)?)*)/g,
-      function (_match, gauche, droite) {
-        return "\\(" + normaliserOperateurs(gauche.trim() + " " + droite.trim()) + "\\)";
+      /\x60(\s*\d[\d ,]*(?:\.\d+)?\s*(?:=|≈|<=|>=|≤|≥|<|>)\s*\d[\d ,]*(?:\.\d+)?)\x60\s*(\\(?:times|cdot|div)|\t?imes)\s*(\d[\d ,]*(?:\.\d+)?(?:\s*[+*/×÷-]\s*\d[\d ,]*(?:\.\d+)?)*)/g,
+      function (_match, gauche, operateur, droite) {
+        // JSON invalide peut convertir le début de \\times en tabulation :
+        // la séquence tab + « imes » ne doit pas être laissée après l'égalité.
+        if (/^\t?imes$/.test(operateur)) operateur = "\\times";
+        return "\\(" + gauche.trim() + " " + operateur + " " + normaliserOperateurs(droite.trim()) + "\\)";
       }
     );
 
@@ -774,7 +777,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "10" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "11" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -791,7 +794,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "10";
+    cible.dataset.renduVersion = "11";
     cible.dataset.renduDeps = signature;
     return cible;
   }
