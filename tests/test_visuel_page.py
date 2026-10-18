@@ -34,7 +34,7 @@ def test_chaque_grand_espace_a_un_bandeau_visuel_contextuel():
         assert route in template, f"Règle de visuel absente : {route}"
 
     assert 'class="visuel-page-global"' in template
-    assert 'loading="lazy"' in template
+    assert 'loading="eager"' in template\n    assert 'fetchpriority="high"' in template
     assert 'decoding="async"' in template
     assert 'aria-hidden="true"' in template
 
