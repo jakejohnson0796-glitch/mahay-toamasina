@@ -518,8 +518,9 @@ def corriger_pgcd_selon_paires(
         fraction_finale = rf"\(\frac{{{nr}}}{{{dr}}}\)"
 
         # Les chiffres accolés ne sont réparés que si la paire a été identifiée.
+        # Retrouve aussi le cas où le transport a déjà supprimé les backticks.
         source = re.sub(
-            rf"\x60{re.escape(joint_initial)}\x60",
+            rf"(?<!\d){re.escape(joint_initial)}(?!\d)",
             lambda _m, formule=fraction_initiale: formule,
             source,
         )
