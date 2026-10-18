@@ -2377,3 +2377,50 @@
 @media (prefers-reduced-motion: reduce) {
   .ai-hero-illustration img { transition: none !important; }
 }
+
+
+/* Rendu scientifique lisible — fractions inline, expressions longues et jeu cérébral.
+   Le KaTeX de base réduit les fractions inline en style texte; on conserve
+   les formules compactes, tandis que rendu_ia.js promeut les fractions longues
+   en \\dfrac. Les blocs restent défilables sur petit écran. */
+.ai-learning-page .ai-markdown-content .katex,
+.ai-learning-page .quiz-question-title .katex,
+.ai-learning-page .quiz-choice-text .katex,
+.jeu-cerebral-page .katex {
+  font-size: 1.28em;
+}
+.ai-learning-page .quiz-question-title .katex {
+  font-size: 1.18em;
+}
+.ai-learning-page .quiz-choice-text .katex {
+  font-size: 1.12em;
+}
+.ai-learning-page .katex-display,
+.jeu-cerebral-page .katex-display {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .15rem 0 .3rem;
+  -webkit-overflow-scrolling: touch;
+}
+.ai-learning-page .gm-katex-display,
+.jeu-cerebral-page .gm-katex-display {
+  display: block;
+  max-width: 100%;
+  margin: .65em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+@media (max-width: 640px) {
+  .ai-learning-page .ai-markdown-content .katex,
+  .jeu-cerebral-page .katex {
+    font-size: 1.18em;
+  }
+  .ai-learning-page .quiz-question-title .katex {
+    font-size: 1.12em;
+  }
+  .ai-learning-page .quiz-choice-text .katex {
+    font-size: 1.08em;
+  }
+}
