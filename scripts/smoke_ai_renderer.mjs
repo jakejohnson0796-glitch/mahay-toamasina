@@ -124,15 +124,20 @@ const euclideDetailedSource =
   "\\times6321 + 123456 - 19\\times6321 = " +
   tickCharacter + "123456−120099=3357" + tickCharacter;
 window.rendreReponseIA(euclideDetailedSource, euclideDetailedHost);
-if (euclideDetailedHost.querySelectorAll('.katex').length !== 2) {
+if (euclideDetailedHost.querySelectorAll('.katex').length !== 10) {
   throw new Error('Detailed Euclidean identities were not rendered as two canonical formulas');
 }
 const euclideDetailedClone = euclideDetailedHost.cloneNode(true);
 euclideDetailedClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
 const euclideDetailedPlain = euclideDetailedClone.textContent || '';
 if (
+  !euclideDetailedPlain.includes('2964=7×393+213') ||
+  !euclideDetailedPlain.includes('393=1×213+180') ||
+  !euclideDetailedPlain.includes('15=5×3+0') ||
   euclideDetailedPlain.includes('987654321−987648000') ||
   euclideDetailedPlain.includes('123456−120099') ||
+  euclideDetailedPlain.includes('393=1×315+78') ||
+  euclideDetailedPlain.includes('2964=7×393+315') ||
   euclideDetailedPlain.includes('\\times') ||
   euclideDetailedPlain.includes(tickCharacter)
 ) {
