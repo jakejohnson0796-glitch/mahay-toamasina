@@ -118,6 +118,79 @@ def _contexte_euclide_present(*textes: str) -> bool:
     return any(_CONTEXTE_EUCLIDE.search(str(texte or "")) for texte in textes)
 
 
+def _corriger_chaine_euclide(source: str) -> str:
+    """Reconstruit une suite continue de divisions d'Euclide à partir de ses deux premiers nombres."""
+    lignes = source.splitlines(keepends=True)
+    sortie: list[str] = []
+    index = 0
+
+    def extraire(ligne: str):
+        contenu = ligne.rstrip("\r\n")
+        candidat = contenu.replace(chr(96), "")
+        match = _MOTIF_IDENTITE_EUCLIDE.search(candidat)
+        return candidat, match
+
+    while index < len(lignes):
+        candidat, match = extraire(lignes[index])
+        if not match:
+            sortie.append(lignes[index])
+            index += 1
+            continue
+
+        bloc = [(lignes[index], candidat, match)]
+        suivant = index + 1
+        while suivant < len(lignes):
+            candidat_suivant, match_suivant = extraire(lignes[suivant])
+            if not match_suivant:
+                break
+            bloc.append((lignes[suivant], candidat_suivant, match_suivant))
+            suivant += 1
+
+        if len(bloc) < 2 or int(bloc[1][2].group("dividende")) != int(match.group("diviseur")):
+            sortie.append(lignes[index])
+            index += 1
+            continue
+
+        a = int(match.group("dividende"))
+        b = int(match.group("diviseur"))
+        if a < 0 or b <= 0:
+            sortie.extend(ligne for ligne, _, _ in bloc)
+            index = suivant
+            continue
+
+        prefixes = [candidat_ligne[:match_ligne.start()] for _, candidat_ligne, match_ligne in bloc]
+        prefix_numero = re.match(r"^(\s*)(\d+)([.)]\s*)$", prefixes[0])
+        formules: list[tuple[int, int, int, int]] = []
+        while b:
+            quotient, reste = divmod(a, b)
+            formules.append((a, quotient, b, reste))
+            a, b = b, reste
+
+        nouveaux: list[str] = []
+        for position, (a, quotient, b, reste) in enumerate(formules):
+            if prefix_numero:
+                prefixe = f"{prefix_numero.group(1)}{int(prefix_numero.group(2)) + position}{prefix_numero.group(3)}"
+            elif position < len(prefixes):
+                prefixe = prefixes[position]
+            else:
+                prefixe = prefixes[0]
+            nouveaux.append(prefixe + rf"\({a}={quotient}\times{b}+{reste}\)")
+
+        derniere_ligne = lignes[suivant - 1]
+        fin_ligne_match = re.search(r"(\r\n|\n|\r)$", derniere_ligne)
+        fin_ligne = fin_ligne_match.group(1) if fin_ligne_match else ""
+        derniere_texte = derniere_ligne.rstrip("\r\n").rstrip()
+        ponctuation = derniere_texte[-1] if derniere_texte and derniere_texte[-1] in ".!?;:" else ""
+        if ponctuation:
+            nouveaux[-1] += ponctuation
+
+        sortie.extend(ligne + ("\n" if position < len(nouveaux) - 1 else fin_ligne)
+                      for position, ligne in enumerate(nouveaux))
+        index = suivant
+
+    return "".join(sortie)
+
+
 def corriger_identites_euclide(texte: Any, *, contexte_euclide: bool = False) -> str:
     """Corrige et met au format LaTeX les divisions euclidiennes identifiables.
 
@@ -130,6 +203,8 @@ def corriger_identites_euclide(texte: Any, *, contexte_euclide: bool = False) ->
     source = convertir_math_transport_texte(texte)
     if not (contexte_euclide or _CONTEXTE_EUCLIDE.search(source)):
         return source
+
+    source = _corriger_chaine_euclide(source)
 
     resultat = []
     for ligne in source.splitlines(keepends=True):
