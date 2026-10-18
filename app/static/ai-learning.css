@@ -2345,3 +2345,35 @@
   .ai-learning-page .tuteur-lecture-bouton,
   .ai-learning-page .tuteur-lecture-partie{transition:none}
 }
+
+ 
+/* Illustrations intégrées aux espaces d'apprentissage : distinctes du bandeau global. */
+.ai-hero-illustration {
+  display: grid;
+  place-items: center;
+  min-height: 118px;
+  margin: 0;
+  padding: .45rem .7rem;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  background: radial-gradient(circle at 50% 45%, rgba(168,226,218,.13), rgba(255,255,255,.025) 72%);
+  overflow: hidden;
+}
+.ai-hero-illustration img {
+  display: block;
+  width: 100%;
+  max-width: 310px;
+  height: 118px;
+  object-fit: contain;
+}
+@media (max-width: 1020px) {
+  .ai-hero-illustration { min-height: 100px; }
+  .ai-hero-illustration img { height: 100px; }
+}
+@media (max-width: 700px) {
+  .ai-hero-illustration { min-height: 90px; }
+  .ai-hero-illustration img { height: 90px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-hero-illustration img { transition: none !important; }
+}
