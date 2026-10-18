@@ -81,10 +81,6 @@ def test_tuteur_corrige_les_divisions_euclidiennes_dans_les_reponses_historiques
     assert tick + "123456=156" + tick not in resultat
     assert "123456=156" + "\t" + "imes789 + 462" not in resultat
 
-
-    assert "123456=156" + "\t" + "imes789 + 462" not in resultat
-
-
 def test_quiz_corrige_aussi_les_restes_euclidiens_mal_formates():
     tick = chr(96)
     questions = [{
