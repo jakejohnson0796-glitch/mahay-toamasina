@@ -481,6 +481,12 @@ def corriger_pgcd_selon_paires(
         joint_initial = f"{numerateur}{denominateur}"
         joint_final = f"{numerateur // pgcd}{denominateur // pgcd}"
         token_initial = bool(re.search(rf"\x60{re.escape(joint_initial)}\x60", source))
+        division_collee = bool(re.search(
+            rf"\x60?{numerateur}\s*(?:÷|\\\\div|/)\s*{pgcd}"
+            rf"\s*{denominateur}\s*(?:÷|\\\\div|/)\s*{pgcd}"
+            rf"\s*=\s*{re.escape(joint_final)}\x60?",
+            source,
+        ))
         resultat_colle = bool(re.search(
             rf"(?i)(?:fraction|résultat|irréductible|réduite)[^\n]{{0,100}}"
             rf"\x60?{re.escape(joint_final)}\x60?",
@@ -496,7 +502,7 @@ def corriger_pgcd_selon_paires(
         fraction_seule = len(candidates) == 1 and bool(re.search(
             r"(?i)fraction|irréductible|réduite", source
         ))
-        if token_initial or resultat_colle or reference_locale or groupe_correspondant or (
+        if token_initial or division_collee or resultat_colle or reference_locale or groupe_correspondant or (
             termes_present and len(candidates) == 1
         ) or fraction_seule:
             paires_actives.append((numerateur, denominateur))
