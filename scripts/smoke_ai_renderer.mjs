@@ -70,6 +70,30 @@ if (formulesFractions.some((formule) => formule.includes(String.raw`\dfrac{12}{1
 if (fractionHost.querySelectorAll('.katex').length !== 2) {
   throw new Error('Both fractions should be rendered as KaTeX nodes');
 }
+
+ // Régression réelle : certains modèles placent les maths dans des backticks,
+ // puis laissent une commande \times à l'extérieur. Ces calculs doivent être
+ // rendus en une formule complète, tandis que les blocs de code sont préservés.
+ const inlineCodeMathHost = window.document.createElement('div');
+ window.document.body.appendChild(inlineCodeMathHost);
+ const inlineCodeMathSource = [
+   "Fraction : `\\frac{123456000}{789000}`.",
+   "Euclide : `123456=156`\\times789 + 372.",
+   "Puissance : `123456000=123456×10^3`."
+ ].join('\\n');
+ window.rendreReponseIA(inlineCodeMathSource, inlineCodeMathHost);
+ if (inlineCodeMathHost.querySelectorAll('.katex').length < 3) {
+   throw new Error('Inline-code math from the Tuteur example was not converted into complete KaTeX formulas');
+ }
+ if (inlineCodeMathHost.querySelector('code')) {
+   throw new Error('Inline mathematical notation remained protected as code');
+ }
+ const inlineMathClone = inlineCodeMathHost.cloneNode(true);
+ inlineMathClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+ const inlineMathPlain = inlineMathClone.textContent || '';
+ if (inlineMathPlain.includes('\\times') || inlineMathPlain.includes('\\frac') || inlineMathPlain.includes('`')) {
+   throw new Error('Raw inline-code LaTeX remains visible after math recovery');
+ }
 const visibleClone = host.cloneNode(true);
 visibleClone.querySelectorAll('.katex').forEach((node) => node.remove());
 const visibleText = visibleClone.textContent || '';
