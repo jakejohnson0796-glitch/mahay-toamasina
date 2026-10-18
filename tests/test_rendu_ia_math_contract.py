@@ -216,7 +216,7 @@ def test_renderer_recupere_les_formules_enfermees_dans_le_code_inline():
     js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
     assert "function normaliserCodeMathInline(source)" in js
     assert "texte = normaliserCodeMathInline(texte)" in js
-    assert r"/\\x60([^\\x60\\n]{1,180})\\x60/g" in js
+    assert r"/\x60([^\x60\n]{1,180})\x60/g" in js
     assert "Rassemble une identité d'Euclide" in js
     assert "les fragments inline sans ambiguïté mathématique sont convertis" in js
 
@@ -226,7 +226,7 @@ def test_contrat_ia_interdit_les_backticks_math_et_verifie_euclide():
     assert "FRACTIONS : écris toujours le numérateur et le dénominateur explicitement" in REGLES_FORMAT
     assert "PUISSANCES : écris chaque exposant explicitement" in REGLES_FORMAT
     assert r"123456=156\\times789+372" in REGLES_FORMAT
-    assert "aucune commande \\times ne doit rester hors délimiteurs mathématiques" in REGLES_FORMAT
+    assert r"aucune commande \\times ne doit rester hors délimiteurs mathématiques" in REGLES_FORMAT
 
 
 def test_renderer_fait_depuis_lisibilite_fractions_inline_et_etat_css_katex():
