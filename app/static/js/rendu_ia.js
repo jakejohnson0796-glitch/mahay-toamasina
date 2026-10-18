@@ -488,6 +488,9 @@
     if (!/(?:\bpgcd\b|\beuclide\b|fraction|réduire|irréductible)/i.test(texte)) return texte;
 
     const tick = String.fromCharCode(96);
+    // Certaines sorties IA transportent deux antislashs devant les délimiteurs
+    // et les opérateurs TeX : réduis seulement ces séquences dans un contexte PGCD.
+    texte = texte.replace(new RegExp("\\\\+(?=\\(|\\)|times|div)", "g"), "\\");
     const paires = [];
     function ajouter(a, b) {
       const n = BigInt(a), d = BigInt(b);
