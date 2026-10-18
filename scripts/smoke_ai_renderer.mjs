@@ -123,22 +123,37 @@ const euclideDetailedSource =
   " - " + tickCharacter + "123456=19" + tickCharacter +
   "\\times6321 + 123456 - 19\\times6321 = " +
   tickCharacter + "123456−120099=3357" + tickCharacter;
+const indiceFormulesEuclide = formulesRendues.length;
 window.rendreReponseIA(euclideDetailedSource, euclideDetailedHost);
 if (euclideDetailedHost.querySelectorAll('.katex').length !== 10) {
-  throw new Error('Detailed Euclidean identities were not rendered as two canonical formulas');
+  throw new Error('The full Euclidean chain should contain ten rendered divisions');
+}
+const euclideFormules = formulesRendues.slice(indiceFormulesEuclide);
+const formulesAttendues = [
+  String.raw\`987654321=8000\\times123456+6321\`,
+  String.raw\`123456=19\\times6321+3357\`,
+  String.raw\`2964=7\\times393+213\`,
+  String.raw\`393=1\\times213+180\`,
+  String.raw\`15=5\\times3+0\`
+];
+if (formulesAttendues.some((formule) => !euclideFormules.includes(formule))) {
+  throw new Error('The Euclidean chain was not recalculated consistently from the original dividend and divisor');
+}
+if (euclideFormules.some((formule) =>
+  formule.includes(String.raw\`393=1\\times315+78\`) ||
+  formule.includes(String.raw\`2964=7\\times393+315\`)
+)) {
+  throw new Error('A stale Euclidean remainder remained in the rendered chain');
 }
 const euclideDetailedClone = euclideDetailedHost.cloneNode(true);
 euclideDetailedClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
 const euclideDetailedPlain = euclideDetailedClone.textContent || '';
 if (
-  !euclideDetailedPlain.includes('2964=7×393+213') ||
-  !euclideDetailedPlain.includes('393=1×213+180') ||
-  !euclideDetailedPlain.includes('15=5×3+0') ||
   euclideDetailedPlain.includes('987654321−987648000') ||
   euclideDetailedPlain.includes('123456−120099') ||
   euclideDetailedPlain.includes('393=1×315+78') ||
   euclideDetailedPlain.includes('2964=7×393+315') ||
-  euclideDetailedPlain.includes('\\times') ||
+  euclideDetailedPlain.includes('\\\\times') ||
   euclideDetailedPlain.includes(tickCharacter)
 ) {
   throw new Error('Broken Euclidean arithmetic remained visible beside the rendered formulas');
