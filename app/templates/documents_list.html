@@ -129,6 +129,17 @@ session dediee, avec sa propre verification desktop+mobile.
 <div class="doc-grille">
   {% for doc in documents %}
   <div class="doc-carte">
+    <div class="doc-carte-visuel" aria-hidden="true">
+      {% if doc.type_document.value == "annale" %}
+      <img src="/static/images/site/study-books.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
+      {% elif doc.type_document.value == "corrige" %}
+      <img src="/static/images/site/quiz.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
+      {% elif doc.type_document.value == "fiche" %}
+      <img src="/static/images/site/documents.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
+      {% else %}
+      <img src="/static/images/site/hero-campus.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
+      {% endif %}
+    </div>
     <div class="doc-carte-entete">
       <span class="doc-icone doc-icone-{{ doc.type_document.value }}">
         {{ { "annale": icone("tuteur", 18), "corrige": icone("corrige", 18), "fiche": icone("documents", 18), "cours": icone("cours", 18) }[doc.type_document.value] }}

@@ -3,13 +3,18 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="contenu-clair">
-<p class="eyebrow">Ecosysteme universitaire national</p>
-<h2>Universites</h2>
-<p>
-  MITARIDALA couvre progressivement les universites publiques de Madagascar.
-  Chaque document, cercle d'etude et quiz peut etre rattache a une
-  filiere precise, partagee entre les universites qui la proposent.
-</p>
+<section class="uni-intro-visuel" aria-labelledby="universites-titre">
+  <div>
+    <p class="eyebrow">Ecosysteme universitaire national</p>
+    <h2 id="universites-titre">Universites</h2>
+    <p>
+      MITARIDALA couvre progressivement les universites publiques de Madagascar.
+      Chaque document, cercle d'etude et quiz peut etre rattache a une
+      filiere precise, partagee entre les universites qui la proposent.
+    </p>
+  </div>
+  <img src="/static/images/site/universite.svg" alt="" width="480" height="220" loading="eager" decoding="async">
+</section>
 
 <div class="uni-grille">
   {% for info in universites_info %}

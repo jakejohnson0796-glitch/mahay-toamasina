@@ -4296,3 +4296,54 @@ button:focus-visible,
     transition:none;
   }
 }
+
+ 
+/* Miniatures visuelles par type de ressource dans la bibliothèque. */
+.doc-carte { overflow: hidden; }
+.doc-carte-visuel {
+  display: grid;
+  place-items: center;
+  min-height: 126px;
+  margin: -1.15rem -1.25rem .5rem;
+  padding: .4rem .8rem;
+  overflow: hidden;
+  border-bottom: 1px solid var(--content-border);
+  border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
+  background:
+    radial-gradient(circle at 80% 15%, rgba(47,143,137,.12), transparent 8rem),
+    linear-gradient(135deg, var(--content-bg), var(--content-surface));
+}
+.doc-carte-visuel img {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: 112px;
+  object-fit: contain;
+}
+.doc-carte:focus-within .doc-carte-visuel img { transform: translateY(-1px); }
+@media (max-width: 480px) {
+  .doc-carte-visuel { min-height: 110px; }
+  .doc-carte-visuel img { height: 100px; }
+}
+
+/* Introduction illustrée de l'annuaire universitaire. */
+.uni-intro-visuel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 34%);
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.35rem;
+  padding: 1.2rem 1.4rem;
+  border: 1px solid var(--content-border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(47,143,137,.12), transparent 15rem),
+    var(--content-surface);
+}
+.uni-intro-visuel h2 { margin: .25rem 0 .6rem; }
+.uni-intro-visuel p:last-child { margin-bottom: 0; max-width: 65ch; }
+.uni-intro-visuel img { display: block; width: 100%; max-height: 170px; object-fit: contain; }
+@media (max-width: 640px) {
+  .uni-intro-visuel { grid-template-columns: minmax(0,1fr); padding: 1rem; }
+  .uni-intro-visuel img { max-height: 120px; }
+}
