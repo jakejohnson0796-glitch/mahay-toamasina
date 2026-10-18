@@ -313,58 +313,80 @@
     const texte = String(source == null ? "" : source);
     if (!/(?:\beuclide\b|\bpgcd\b)/i.test(texte)) return texte;
 
-    return texte.split("\n").map(function (ligne) {
-      const candidate = ligne.replace(/\x60/g, "");
-      const motif = /(\d{1,18})\s*=\s*(\d{1,18})\s*(\\times|×|x|\t?imes)\s*(\d{1,18})\s*\+\s*(\d{1,18})/i;
-      const match = motif.exec(candidate);
-      if (!match) return ligne;
+    const lignes = texte.split("\n");
+    const sortie = [];
+    const motif = /(\d{1,18})\s*=\s*(\d{1,18})\s*(\\times|×|x|\t?imes)\s*(\d{1,18})\s*\+\s*(\d{1,18})/i;
+    function extraire(ligne) {
+      const contenu = ligne.replace(/\r$/, "");
+      const candidat = contenu.replace(/\x60/g, "");
+      return { candidat, match: motif.exec(candidat) };
+    }
 
-      let dividende;
-      let diviseur;
-      try {
-        dividende = BigInt(match[1]);
-        diviseur = BigInt(match[4]);
-      } catch (_) {
-        return ligne;
+    let index = 0;
+    while (index < lignes.length) {
+      const premier = extraire(lignes[index]);
+      if (!premier.match) {
+        sortie.push(lignes[index]);
+        index += 1;
+        continue;
       }
-      if (diviseur <= 0n || dividende < 0n) return ligne;
 
-      const quotientCorrect = dividende / diviseur;
-      const resteCorrect = dividende % diviseur;
-      const suffixe = candidate.slice(match.index + match[0].length);
-      const suffixeNormalise = suffixe
-        .replace(/\\(?:times|cdot|div)(?![A-Za-z])/g, "×")
-        .replace(/\t?imes(?![A-Za-z])/g, "×");
-      const ponctuation = suffixeNormalise.match(/[.!?;:]\s*$/);
-      const suffixeCalcul = ponctuation
-        ? suffixeNormalise.slice(0, ponctuation.index)
-        : suffixeNormalise;
-      const suffixeEstExpansion = Boolean(
-        suffixeCalcul.trim() &&
-        suffixeCalcul.includes("=") &&
-        /[-−]\s*\d/.test(suffixeCalcul) &&
-        /[×x]\s*\d/.test(suffixeCalcul) &&
-        /^[\d\s,.\-+−*/×÷=()]+$/.test(suffixeCalcul.trim())
-      );
-      const quotientRecu = BigInt(match[2]);
-      const resteRecu = BigInt(match[5]);
-      const operatorCorrompu = /[\x60\t]/.test(ligne);
-      const besoinCorrection =
-        quotientCorrect !== quotientRecu ||
-        resteCorrect !== resteRecu ||
-        operatorCorrompu ||
-        suffixeEstExpansion;
-      if (!besoinCorrection) return ligne;
-
-      const formule = "\\(" + dividende.toString() + "=" +
-        quotientCorrect.toString() + "\\times" + diviseur.toString() +
-        "+" + resteCorrect.toString() + "\\)";
-      const ponctuationFinale = ponctuation ? ponctuation[0] : "";
-      if (suffixeEstExpansion) {
-        return candidate.slice(0, match.index) + formule + ponctuationFinale;
+      const bloc = [{ ligne: lignes[index], candidat: premier.candidat, match: premier.match }];
+      let suivant = index + 1;
+      while (suivant < lignes.length) {
+        const courant = extraire(lignes[suivant]);
+        if (!courant.match) break;
+        bloc.push({ ligne: lignes[suivant], candidat: courant.candidat, match: courant.match });
+        suivant += 1;
       }
-      return candidate.slice(0, match.index) + formule + suffixe;
-    }).join("\n");
+
+      if (bloc.length < 2 || BigInt(bloc[1].match[1]) !== BigInt(premier.match[4])) {
+        sortie.push(lignes[index]);
+        index += 1;
+        continue;
+      }
+
+      let a = BigInt(premier.match[1]);
+      let b = BigInt(premier.match[4]);
+      if (a < 0n || b <= 0n) {
+        sortie.push(...lignes.slice(index, suivant));
+        index = suivant;
+        continue;
+      }
+
+      const prefixes = bloc.map(function (item) {
+        return item.candidat.slice(0, item.match.index);
+      });
+      const prefixNumero = /^(\s*)(\d+)([.)]\s*)$/.exec(prefixes[0]);
+      const formules = [];
+      while (b !== 0n) {
+        const quotient = a / b;
+        const reste = a % b;
+        formules.push({ a: a.toString(), quotient: quotient.toString(), b: b.toString(), reste: reste.toString() });
+        a = b;
+        b = reste;
+      }
+
+      const nouvellesLignes = formules.map(function (item, position) {
+        let prefixe;
+        if (prefixNumero) {
+          prefixe = prefixNumero[1] + (Number(prefixNumero[2]) + position) + prefixNumero[3];
+        } else if (position < prefixes.length) {
+          prefixe = prefixes[position];
+        } else {
+          prefixe = prefixes[0];
+        }
+        return prefixe + "\\(" + item.a + "=" + item.quotient + "\\times" + item.b + "+" + item.reste + "\\)";
+      });
+
+      const derniereSource = lignes[suivant - 1].replace(/\r$/, "").trimEnd();
+      const ponctuation = /[.!?;:]$/.exec(derniereSource);
+      if (ponctuation) nouvellesLignes[nouvellesLignes.length - 1] += ponctuation[0];
+      sortie.push(...nouvellesLignes);
+      index = suivant;
+    }
+
+    return sortie.join("\n");
   }
 
   function normaliserSourceRendu(source, options) {
@@ -839,7 +861,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "12" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "13" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -856,7 +878,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "12";
+    cible.dataset.renduVersion = "13";
     cible.dataset.renduDeps = signature;
     return cible;
   }
