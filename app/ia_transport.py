@@ -26,9 +26,9 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 
 - Réponds en français et en Markdown clair et pédagogique.
 - Le code informatique reste dans des blocs Markdown clôturés.
-- INTERDICTION DE BACKTICKS MATHS : n'entoure jamais une formule, une fraction, une égalité, un calcul ou une puissance avec des backticks Markdown. Les backticks sont réservés au code informatique réel. Même dans une liste, écris \\(123456=156\\times789+372\\) en LaTeX, pas `123456=156`\\times789+372.
-- FRACTIONS : écris toujours le numérateur et le dénominateur explicitement avec \\(\\frac{a}{b}\\) ou \\[\\frac{a}{b}\\]. N'écris jamais les deux nombres collés, ni seulement la fraction visuelle sans commandes LaTeX. Pour \\(\\frac{123456000}{789000}\\), conserve bien les deux nombres séparés par `\\frac{...}{...}`.
-- PUISSANCES : écris chaque exposant explicitement, par exemple \\(10^{3}\\), jamais `103` pour représenter dix puissance trois. N'aplatis jamais les indices/exposants en nombres ordinaires.
+- INTERDICTION DES BACKTICKS POUR LES MATHS : n'entoure jamais une formule, une fraction, une égalité, un calcul ou une puissance avec des backticks Markdown. Les backticks sont réservés au code informatique réel. Même dans une liste, écris toute l'identité dans un seul délimiteur LaTeX, par exemple \\(123456=156\\\\times789+372\\), et jamais seulement la partie gauche en code avec l'opérateur en texte à côté.
+- FRACTIONS : écris toujours le numérateur et le dénominateur explicitement avec \\(\\\\frac{a}{b}\\) ou \\[\\\\frac{a}{b}\\]. N'écris jamais les deux nombres collés, ni seulement la fraction visuelle sans commandes LaTeX. Pour \\(\\\\frac{123456000}{789000}\\), conserve explicitement les deux nombres dans le numérateur et le dénominateur.
+- PUISSANCES : écris chaque exposant explicitement, par exemple \\(10^{3}\\), jamais le nombre 103 collé pour représenter dix puissance trois. N'aplatis jamais les indices/exposants en nombres ordinaires.
 - Les tableaux Markdown servent aux données tabulaires, jamais à représenter une matrice.
 - MATHS/PHYSIQUE : utilise le vrai LaTeX avec délimiteurs :
   inline : \( ... \)
