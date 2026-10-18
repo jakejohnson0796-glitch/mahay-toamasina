@@ -272,7 +272,7 @@
     resultat = resultat.replace(
       /\x60(\s*\d[\d ,]*(?:\.\d+)?\s*(?:=|≈|<=|>=|≤|≥|<|>)\s*\d[\d ,]*(?:\.\d+)?)\x60\s*(\\(?:times|cdot|div)\s*\d[\d ,]*(?:\.\d+)?(?:\s*[+*/×÷-]\s*\d[\d ,]*(?:\.\d+)?)*)/g,
       function (_match, gauche, droite) {
-        return "\\\\(" + normaliserOperateurs(gauche.trim() + " " + droite.trim()) + "\\\\)";
+        return "\\(" + normaliserOperateurs(gauche.trim() + " " + droite.trim()) + "\\)";
       }
     );
 
@@ -295,7 +295,7 @@
         return mot.length > 1 && !commandesMathematiques.has(mot);
       })) return bloc;
       if (formule.length > 1 && !/[=^_+*/×÷<>≤≥≈≠±-]/.test(formule) && !/\\[A-Za-z]+/.test(formule)) return bloc;
-      return "\\\\(" + normaliserOperateurs(formule) + "\\\\)";
+      return "\\(" + normaliserOperateurs(formule) + "\\)";
     });
 
     return resultat.replace(/\uE200GMATHCODE_(\d+)\uE201/g, function (match, index) {
