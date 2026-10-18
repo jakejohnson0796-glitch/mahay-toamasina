@@ -125,6 +125,29 @@ def test_tuteur_nettoie_les_expansions_euclide_coupees_par_backticks():
     assert tick not in resultat
 
 
+def test_tuteur_corrige_les_fractions_pgcd_concatenees():
+    tick = chr(96)
+    explication = "\n".join([
+        "1. Factorisation des puissances de 10 :",
+        "   " + tick + "9876543210=987654321×10" + tick
+        + " et " + tick + "1234560=123456×10" + tick + ".",
+        "   Les 10 se simplifient, il reste "
+        + tick + "987654321123456" + tick + ".",
+        "2. Calcul du PGCD de 987654321 et 123456.",
+        "3. Division par le PGCD :" + chr(92),
+        "   " + tick + "987654321/3123456/3=32921810741152" + tick + ".",
+        "   La fraction finale réduite est " + tick + "32921810741152" + tick + ".",
+    ])
+
+    resultat = normaliser_structure_tuteur({"explication": explication})["explication"]
+
+    assert r"\frac{987654321}{123456}" in resultat
+    assert r"\frac{329218107}{41152}" in resultat
+    assert r"\frac{987654321}{123456}=\frac{329218107}{41152}" in resultat
+    assert "987654321123456" not in resultat
+    assert "32921810741152" not in resultat
+
+
 def test_transport_preserve_chimie_mhchem():
     brut = r"\(\ce{2H2 + O2 -> 2H2O}\)"
     assert convertir_math_transport_texte(brut) == brut

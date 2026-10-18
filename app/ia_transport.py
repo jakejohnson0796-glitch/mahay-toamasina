@@ -12,6 +12,7 @@ identitaire.
 from __future__ import annotations
 
 import re
+from math import gcd
 from typing import Any, Mapping
 
 MARKER_INLINE = "[[MATH]]"
@@ -272,6 +273,135 @@ def corriger_identites_euclide(texte: Any, *, contexte_euclide: bool = False) ->
     return "".join(resultat)
 
 
+_CONTEXTE_FRACTION_PGCD = re.compile(
+    r"\b(?:pgcd|euclide)\b|réduction\s+de\s+fraction|fraction\s+(?:irréductible|réduite)",
+    re.IGNORECASE,
+)
+_MOTIF_REDUCTION_DIX = re.compile(
+    r"(?P<original>\d{3,})\s*=\s*(?P<reduit>\d{2,})\s*(?:\\times|×|x|\*)\s*10\b",
+    re.IGNORECASE,
+)
+
+
+def corriger_fraction_pgcd_mal_formatee(
+    texte: Any, *, contexte_pgcd: bool = False
+) -> str:
+    """Répare les fractions concaténées si deux réductions par 10
+    identifient sans ambiguïté le numérateur et le dénominateur.
+    """
+    source = convertir_math_transport_texte(texte)
+    if not (contexte_pgcd or _CONTEXTE_FRACTION_PGCD.search(source)):
+        return source
+
+    reductions = []
+    for match in _MOTIF_REDUCTION_DIX.finditer(source):
+        original = int(match.group("original"))
+        reduit = int(match.group("reduit"))
+        if original == reduit * 10:
+            reductions.append(match.group("reduit"))
+
+    if len(reductions) < 2:
+        return source
+
+    numerateur = int(reductions[0])
+    denominateur = int(reductions[1])
+    if numerateur <= 0 or denominateur <= 0:
+        return source
+
+    diviseur_commun = gcd(numerateur, denominateur)
+    if diviseur_commun <= 0:
+        return source
+    numerateur_reduit = numerateur // diviseur_commun
+    denominateur_reduit = denominateur // diviseur_commun
+
+    numerateur_texte = str(numerateur)
+    denominateur_texte = str(denominateur)
+    numerateur_final_texte = str(numerateur_reduit)
+    denominateur_final_texte = str(denominateur_reduit)
+    fraction_initiale = rf"\(\frac{{{numerateur}}}{{{denominateur}}}\)"
+    fraction_finale = rf"\(\frac{{{numerateur_reduit}}}{{{denominateur_reduit}}}\)"
+    fraction_complete = (
+        rf"\(\frac{{{numerateur}}}{{{denominateur}}}"
+        rf"=\frac{{{numerateur_reduit}}}{{{denominateur_reduit}}}\)"
+    )
+
+    joint_initial = numerateur_texte + denominateur_texte
+    joint_final = numerateur_final_texte + denominateur_final_texte
+
+    # Cas fréquent : la barre de fraction a disparu entre les deux entiers.
+    motif_reste = re.compile(
+        rf"(?i)(il\s+reste\s+)(?:\x60)?{re.escape(joint_initial)}(?:\x60)?"
+    )
+    source = motif_reste.sub(lambda m: m.group(1) + fraction_initiale, source)
+
+    lignes = source.splitlines(keepends=True)
+    corrigees: list[str] = []
+    sauter_expression_suivante = False
+    for ligne in lignes:
+        if sauter_expression_suivante:
+            if not ligne.strip():
+                corrigees.append(ligne)
+                continue
+            sauter_expression_suivante = False
+            ligne_sans_code = ligne.replace(chr(96), "")
+            if (
+                (joint_initial in ligne_sans_code or joint_final in ligne_sans_code)
+                and ("/" in ligne_sans_code or "=" in ligne_sans_code)
+                and not _CONTEXTE_FRACTION_PGCD.search(ligne_sans_code)
+            ):
+                continue
+
+        entete = re.match(
+            r"^(?P<prefixe>[ \t]*(?:\d+[.)]\s*)?Division\s+par\s+le\s+PGCD\s*:)"
+            r"(?P<reste>.*?)(?P<fin>\r?\n)?$",
+            ligne,
+            re.IGNORECASE,
+        )
+        if entete:
+            contenu_entete = entete.group("reste") or ""
+            fin_ligne = entete.group("fin") or ""
+            if (
+                r"\frac{" + numerateur_texte + r"}{" + denominateur_texte + "}"
+                in contenu_entete
+            ):
+                corrigees.append(ligne)
+            else:
+                corrigees.append(
+                    entete.group("prefixe") + " " + fraction_complete + fin_ligne
+                )
+                sauter_expression_suivente = True
+            continue
+
+        motif_final = re.compile(
+            rf"(?i)(fraction\s+finale\s+r[ée]duite\s+est\s+)(?:\x60)?"
+            rf"{re.escape(joint_final)}(?:\x60)?"
+        )
+        ligne = motif_final.sub(lambda m: m.group(1) + fraction_finale, ligne)
+        corrigees.append(ligne)
+
+    resultat = "".join(corrigees)
+    # Garde-fou final : si une ancienne ligne de calcul a échappé au saut de
+    # ligne précédent, ne jamais laisser l'expression "a/b/...=numden" brute.
+    lignes_nettoyees = []
+    for ligne in resultat.splitlines(keepends=True):
+        ligne_sans_code = ligne.replace(chr(96), "")
+        if (
+            joint_final in ligne_sans_code
+            and "/" in ligne_sans_code
+            and "=" in ligne_sans_code
+            and not re.search(r"(?i)fraction\s+finale\s+r[ée]duite\s+est", ligne_sans_code)
+        ):
+            continue
+        lignes_nettoyees.append(ligne)
+    resultat = "".join(lignes_nettoyees)
+    resultat = re.sub(
+        rf"\x60{re.escape(joint_final)}\x60",
+        lambda _m: fraction_finale,
+        resultat,
+    )
+    return resultat
+
+
 def normaliser_structure_quiz(questions: list[Mapping[str, Any]] | None) -> list[dict]:
     """Préserve les champs du quiz et corrige uniquement les divisions euclidiennes identifiables."""
     resultat: list[dict] = []
@@ -286,15 +416,31 @@ def normaliser_structure_quiz(questions: list[Mapping[str, Any]] | None) -> list
         contexte_euclide = _contexte_euclide_present(
             question_brute, explication_brute, *choix_bruts
         )
-        item["question"] = corriger_identites_euclide(
-            question_brute, contexte_euclide=contexte_euclide
+        contexte_pgcd = bool(
+            _CONTEXTE_FRACTION_PGCD.search(
+                " ".join([question_brute, explication_brute, *choix_bruts])
+            )
+        )
+        item["question"] = corriger_fraction_pgcd_mal_formatee(
+            corriger_identites_euclide(
+                question_brute, contexte_euclide=contexte_euclide
+            ),
+            contexte_pgcd=contexte_pgcd,
         )
         item["choix"] = [
-            corriger_identites_euclide(choix, contexte_euclide=contexte_euclide)
+            corriger_fraction_pgcd_mal_formatee(
+                corriger_identites_euclide(
+                    choix, contexte_euclide=contexte_euclide
+                ),
+                contexte_pgcd=contexte_pgcd,
+            )
             for choix in choix_bruts
         ]
-        item["explication"] = corriger_identites_euclide(
-            explication_brute, contexte_euclide=contexte_euclide
+        item["explication"] = corriger_fraction_pgcd_mal_formatee(
+            corriger_identites_euclide(
+                explication_brute, contexte_euclide=contexte_euclide
+            ),
+            contexte_pgcd=contexte_pgcd,
         )
         resultat.append(item)
     return resultat
@@ -312,7 +458,13 @@ def normaliser_structure_tuteur(
         "correction": convertir_math_transport_texte(source.get("correction", "")),
     }
     contexte_euclide = _contexte_euclide_present(*sections.values())
+    contexte_pgcd = bool(_CONTEXTE_FRACTION_PGCD.search(" ".join(sections.values())))
     return {
-        cle: corriger_identites_euclide(valeur, contexte_euclide=contexte_euclide)
+        cle: corriger_fraction_pgcd_mal_formatee(
+            corriger_identites_euclide(
+                valeur, contexte_euclide=contexte_euclide
+            ),
+            contexte_pgcd=contexte_pgcd,
+        )
         for cle, valeur in sections.items()
     }

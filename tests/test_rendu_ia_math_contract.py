@@ -221,6 +221,18 @@ def test_renderer_recupere_les_formules_enfermees_dans_le_code_inline():
     assert "les fragments inline sans ambiguïté mathématique sont convertis" in js
 
 
+def test_renderer_reconstruit_les_fractions_pgcd_concatenees():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+    transport = (RACINE / "app" / "ia_transport.py").read_text(encoding="utf-8")
+
+    assert "function normaliserFractionsPgcdRendu(source)" in js
+    assert "texte = normaliserFractionsPgcdRendu(texte)" in js
+    assert "def corriger_fraction_pgcd_mal_formatee(" in transport
+    assert "joint_initial" in transport
+    assert "joint_final" in transport
+    assert "fraction\\s+finale" in transport
+
+
 def test_contrat_ia_interdit_les_backticks_math_et_verifie_euclide():
     assert "INTERDICTION DES BACKTICKS POUR LES MATHS" in REGLES_FORMAT
     assert "FRACTIONS : écris toujours le numérateur et le dénominateur explicitement" in REGLES_FORMAT
