@@ -229,7 +229,8 @@ def test_renderer_reconstruit_les_fractions_pgcd_concatenees():
     assert "texte = normaliserFractionsPgcdRendu(texte)" in js
     assert "def corriger_fraction_pgcd_mal_formatee(" in transport
     assert "joint_initial" in transport
-    assert "fraction finale" in transport.lower()
+    assert "joint_final" in transport
+    assert "fraction\\s+finale" in transport
 
 
 def test_contrat_ia_interdit_les_backticks_math_et_verifie_euclide():
