@@ -100,6 +100,27 @@ def test_quiz_corrige_aussi_les_restes_euclidiens_mal_formates():
     assert " + 462" not in resultat[0]["explication"]
 
 
+def test_tuteur_nettoie_les_expansions_euclide_coupees_par_backticks():
+    tick = chr(96)
+    explication = (
+        "Algorithme d'Euclide :\n"
+        " - " + tick + "987654321=8000" + tick
+        + r"\times123456 + 987654321 - 8000\times123456 = "
+        + tick + "987654321−987648000=6321" + tick + "\n"
+        " - " + tick + "123456=19" + tick
+        + r"\times6321 + 123456 - 19\times6321 = "
+        + tick + "123456−120099=3357" + tick
+    )
+
+    resultat = normaliser_structure_tuteur({"explication": explication})["explication"]
+
+    assert r"\(987654321=8000\times123456+6321\)" in resultat
+    assert r"\(123456=19\times6321+3357\)" in resultat
+    assert "987654321−987648000" not in resultat
+    assert "123456−120099" not in resultat
+    assert tick not in resultat
+
+
 def test_transport_preserve_chimie_mhchem():
     brut = r"\(\ce{2H2 + O2 -> 2H2O}\)"
     assert convertir_math_transport_texte(brut) == brut
