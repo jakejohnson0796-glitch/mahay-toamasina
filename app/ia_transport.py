@@ -158,8 +158,8 @@ def corriger_identites_euclide(texte: Any, *, contexte_euclide: bool = False) ->
         quotient_recu = int(match.group("quotient"))
         reste_recu = int(match.group("reste"))
         suffixe = candidate[match.end():]
-        suffixe_normalise = re.sub(r"\\(?:times|cdot|div)\b", "×", suffixe)
-        suffixe_normalise = re.sub(r"\t?imes\b", "×", suffixe_normalise)
+        suffixe_normalise = re.sub(r"\\(?:times|cdot|div)(?![A-Za-z])", "×", suffixe)
+        suffixe_normalise = re.sub(r"\t?imes(?![A-Za-z])", "×", suffixe_normalise)
         ponctuation_finale = re.search(r"[.!?;:]\s*$", suffixe_normalise)
         suffixe_calcul = (
             suffixe_normalise[:ponctuation_finale.start()]
