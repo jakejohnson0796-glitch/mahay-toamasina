@@ -130,11 +130,11 @@ if (euclideDetailedHost.querySelectorAll('.katex').length !== 10) {
 }
 const euclideFormules = formulesRendues.slice(indiceFormulesEuclide);
 const formulesAttendues = [
-  String.raw`987654321=8000\\times123456+6321`,
-  String.raw`123456=19\\times6321+3357`,
-  String.raw`2964=7\\times393+213`,
-  String.raw`393=1\\times213+180`,
-  String.raw`15=5\\times3+0`
+  String.raw`987654321=8000\times123456+6321`,
+  String.raw`123456=19\times6321+3357`,
+  String.raw`2964=7\times393+213`,
+  String.raw`393=1\times213+180`,
+  String.raw`15=5\times3+0`
 ];
 if (formulesAttendues.some((formule) => !euclideFormules.includes(formule))) {
   throw new Error('The Euclidean chain was not recalculated consistently from the original dividend and divisor');
