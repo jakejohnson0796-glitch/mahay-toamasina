@@ -305,6 +305,20 @@ def corriger_fraction_pgcd_mal_formatee(
         corrigees.append(ligne)
 
     resultat = "".join(corrigees)
+    # Garde-fou final : si une ancienne ligne de calcul a échappé au saut de
+    # ligne précédent, ne jamais laisser l'expression "a/b/...=numden" brute.
+    lignes_nettoyees = []
+    for ligne in resultat.splitlines(keepends=True):
+        ligne_sans_code = ligne.replace(chr(96), "")
+        if (
+            joint_final in ligne_sans_code
+            and "/" in ligne_sans_code
+            and "=" in ligne_sans_code
+            and not re.search(r"(?i)fraction\s+finale\s+r[ée]duite\s+est", ligne_sans_code)
+        ):
+            continue
+        lignes_nettoyees.append(ligne)
+    resultat = "".join(lignes_nettoyees)
     resultat = re.sub(
         rf"\x60{re.escape(joint_final)}\x60",
         lambda _m: fraction_finale,
