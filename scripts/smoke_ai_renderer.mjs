@@ -218,7 +218,7 @@ const pgcdExpected = [
   '84=2\\\\times42+0'
 ];
 if (pgcdExpected.some((expected) => !pgcdFormules.some((actual) => actual.includes(expected)))) {
-  throw new Error('The PGCD fractions and Euclidean chains were not repaired consistently');
+  throw new Error('Missing PGCD expressions: ' + pgcdExpected.filter((expected) => !pgcdFormules.some((actual) => actual.includes(expected)).join(', ') + '; actual=' + JSON.stringify(pgcdFormules));
 }
 const pgcdExemplesClone = pgcdExemplesHost.cloneNode(true);
 pgcdExemplesClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
