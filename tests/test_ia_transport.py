@@ -83,6 +83,23 @@ def test_tuteur_corrige_les_divisions_euclidiennes_dans_les_reponses_historiques
     assert "123456=156" + "\t" + "imes789 + 462" not in resultat
 
 
+def test_quiz_corrige_aussi_les_rests_euclidiens_mal_formates():
+    tick = chr(96)
+    questions = [{
+        "question": "Calcule le PGCD de 123456 et 789 avec l'algorithme d'Euclide.",
+        "choix": ["3", "6", "9", "12"],
+        "index_bonne_reponse": 0,
+        "explication": (
+            "Euclide : " + tick + "123456=156" + tick + r"\times789 + 462"
+        ),
+    }]
+
+    resultat = normaliser_structure_quiz(questions)
+
+    assert r"\(123456=156\times789+372\)" in resultat[0]["explication"]
+    assert " + 462" not in resultat[0]["explication"]
+
+
 def test_transport_preserve_chimie_mhchem():
     brut = r"\(\ce{2H2 + O2 -> 2H2O}\)"
     assert convertir_math_transport_texte(brut) == brut
