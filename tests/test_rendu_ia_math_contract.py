@@ -97,7 +97,7 @@ def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathem
     assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
     assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
     assert "const contientMath =" in js
-    assert 'cible.dataset.renduVersion = "8"' in js
+    assert 'cible.dataset.renduVersion = "9"' in js
 
 
 def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
@@ -210,3 +210,19 @@ def test_carte_de_connaissances_et_notions_affichent_les_formules_en_ligne():
     assert '<strong data-rendu data-rendu-ligne>{{ mission.notion }}</strong>' in missions
     assert '<h3 data-rendu data-rendu-ligne>{{ p.notion }}</h3>' in revisions
     assert '<h3 data-rendu data-rendu-ligne>{{ n.notion }}</h3>' in revisions
+
+
+def test_renderer_fait_depuis_lisibilite_fractions_inline_et_etat_css_katex():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+    chargeur = (RACINE / "app" / "static" / "js" / "charger-dependances-ia.js").read_text(encoding="utf-8")
+    css = (RACINE / "app" / "static" / "ai-learning.css").read_text(encoding="utf-8")
+
+    assert "function ameliorerFractionsInline(formule, modeAffichage)" in js
+    assert r"return \"\\\\dfrac{\" + numerateur + \"}{\" + denominateur + \"}\"" in js
+    assert "css: !chargeurActif || Boolean(etatChargeur && etatChargeur.css)" in js
+    assert 'etat.css ? "1" : "0"' in js
+    assert "ameliorerFractionsInline(formule, Boolean(item.display))" in js
+    assert "!etat.css || !etat.katex" in chargeur
+    assert ".ai-learning-page .ai-markdown-content .katex" in css
+    assert ".jeu-cerebral-page .katex" in css
+    assert "font-size: 1.28em" in css
