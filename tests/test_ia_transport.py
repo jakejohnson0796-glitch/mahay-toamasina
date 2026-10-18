@@ -54,6 +54,35 @@ def test_normalise_structure_tuteur_ne_modifie_aucune_section():
     assert resultat == reponse
 
 
+def test_tuteur_corrige_les_divisions_euclidiennes_dans_les_reponses_historiques():
+    tick = chr(96)
+    explication = (
+        "En appliquant l'algorithme d'Euclide :\n"
+        " - " + tick + "123456=156" + tick + "\t" + "imes789 + 462\n"
+        " - " + tick + "789=1" + tick + r"\times462 + 327" + "\n"
+        " - " + tick + "462=1" + tick + r"\times327 + 135" + "\n"
+        " - " + tick + "327=2" + tick + r"\times135 + 57" + "\n"
+        " - " + tick + "135=2" + tick + r"\times57 + 21" + "\n"
+        " - " + tick + "57=2" + tick + r"\times21 + 15" + "\n"
+        " - " + tick + "21=1" + tick + r"\times15 + 6" + "\n"
+        " - " + tick + "15=2" + tick + r"\times6 + 3" + "\n"
+        " - " + tick + "6=2" + tick + r"\times3 + 0"
+    )
+    resultat = normaliser_structure_tuteur({"explication": explication})["explication"]
+
+    assert r"\(123456=156\times789+372\)" in resultat
+    assert r"\(789=1\times462+327\)" in resultat
+    assert r"\(462=1\times327+135\)" in resultat
+    assert r"\(327=2\times135+57\)" in resultat
+    assert r"\(135=2\times57+21\)" in resultat
+    assert r"\(57=2\times21+15\)" in resultat
+    assert r"\(21=1\times15+6\)" in resultat
+    assert r"\(15=2\times6+3\)" in resultat
+    assert r"\(6=2\times3+0\)" in resultat
+    assert tick + "123456=156" + tick not in resultat
+    assert "123456=156" + "\t" + "imes789 + 462" not in resultat
+
+
 def test_transport_preserve_chimie_mhchem():
     brut = r"\(\ce{2H2 + O2 -> 2H2O}\)"
     assert convertir_math_transport_texte(brut) == brut
