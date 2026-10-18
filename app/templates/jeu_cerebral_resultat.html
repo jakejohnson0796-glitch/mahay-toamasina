@@ -75,6 +75,9 @@
       .jeu-result-actions .jeu-btn:hover,
       .jeu-result-actions .jeu-btn:active { transform: none !important; }
     }
+  
+    .jeu-result-score img{display:block;width:62px;height:36px;object-fit:contain;justify-self:center;filter:drop-shadow(0 4px 7px color-mix(in srgb,#e6b64c 30%,transparent));}
+    @media(max-width:620px){.jeu-result-score img{width:44px;height:30px;justify-self:auto;}}
   </style>
 
   <header class="jeu-result-hero">
@@ -93,6 +96,7 @@
       </div>
     </div>
     <div class="jeu-result-score" aria-label="Score de la session">
+      <img src="/static/images/jeu-cerebral/trophy.webp" alt="" width="64" height="38" loading="lazy" decoding="async">
       <strong>{{ partie.score }} %</strong>
       <span>{{ partie.bonnes_reponses }}/{{ partie.nb_questions }} {% if langue == "mg" %}valiny marina{% else %}bonnes réponses{% endif %}</span>
     </div>

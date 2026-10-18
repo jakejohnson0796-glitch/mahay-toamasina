@@ -260,3 +260,25 @@ def test_les_formules_du_jeu_cerebral_emploient_le_rendu_scientifique():
     assert 'request.url.path.startswith("/jeu-cerebral")' in base_template
     assert 'src="/static/js/rendu_ia.js' in base_template
     assert 'src="/static/js/charger-dependances-ia.js' in base_template
+
+
+
+def test_illustrations_du_jeu_cerebral_sont_locales_et_utilisees():
+    accueil = (ROOT / "app" / "templates" / "jeu_cerebral.html").read_text(encoding="utf-8")
+    session = (ROOT / "app" / "templates" / "jeu_cerebral_session.html").read_text(encoding="utf-8")
+    resultat = (ROOT / "app" / "templates" / "jeu_cerebral_resultat.html").read_text(encoding="utf-8")
+    assets = ROOT / "app" / "static" / "images" / "jeu-cerebral"
+
+    assert "brain-hero.webp" in accueil
+    assert "math-visual.webp" in accueil
+    assert "mascotte-pink.webp" in session
+    assert "trophy.webp" in resultat
+
+    for nom in ("brain-hero.webp", "math-visual.webp", "mascotte-pink.webp", "trophy.webp"):
+        fichier = assets / nom
+        assert fichier.is_file(), f"Illustration manquante : {nom}"
+        assert 0 < fichier.stat().st_size < 100_000, f"Illustration trop volumineuse : {nom}"
+
+    assert 'alt=""' in accueil
+    assert "prefers-reduced-motion:reduce" in accueil
+    assert "loading=\"lazy\"" in session
