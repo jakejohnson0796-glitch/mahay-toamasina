@@ -75,7 +75,7 @@
         <select id="fiche-type-document-verifie" name="type_document_verifie" required>
           <option value="">Choisir le type vérifié</option>
           {% for type_doc in types_document %}
-          <option value="{{ type_doc.value }}" {% if document.type_document == type_doc %}selected{% endif %}>{{ type_doc.value }}</option>
+          <option value="{{ type_doc.value }}" {% if document.type_document == type_doc %}selected{% endif %}>{% if type_doc.value == "annale" %}Annale / sujet d'examen{% elif type_doc.value == "corrige" %}Corrigé{% elif type_doc.value == "fiche" %}Fiche de révision{% else %}Cours / support pédagogique{% endif %}</option>
           {% endfor %}
         </select>
         <label for="fiche-type-cours-verifie">Type pédagogique (laisser vide si non déterminable)</label>

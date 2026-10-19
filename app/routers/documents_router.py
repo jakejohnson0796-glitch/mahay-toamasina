@@ -149,6 +149,16 @@ def liste_documents(
     requete = select(Document).where(Document.statut == StatutDocument.APPROUVE)
     if cercle_id is not None:
         requete = requete.where(Document.cercle_id == cercle_id)
+    elif not utilisateur:
+        # Une ressource de cercle reste privée, même si son document est approuvé.
+        requete = requete.where(Document.cercle_id.is_(None))
+    else:
+        cercles_autorises = session.exec(
+            select(MembreCercle.cercle_id).where(MembreCercle.utilisateur_id == utilisateur.id)
+        ).all()
+        requete = requete.where(
+            (Document.cercle_id.is_(None)) | (Document.cercle_id.in_(cercles_autorises))
+        )
     if filiere_id:
         requete = requete.where(Document.filiere_id == filiere_id)
     if matiere:
@@ -805,6 +815,12 @@ def valider_fiche_document(
         return RedirectResponse("/documents", status_code=303)
     if utilisateur.role != RoleUtilisateur.ADMIN and document.uploader_id != utilisateur.id:
         return RedirectResponse("/documents", status_code=303)
+    if (
+        document.cercle_id is not None
+        and utilisateur.role != RoleUtilisateur.ADMIN
+        and not _est_membre_cercle(session, document.cercle_id, utilisateur.id)
+    ):
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
     if not _fiche_pedagogique_peut_etre_validee(document):
         return RedirectResponse(
             f"/documents/{document.id}/apprendre?erreur=fiche_indisponible#fiche-verification",
@@ -916,6 +932,10 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
+    if document.cercle_id is not None and (
+        not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id)
+    ):
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
     if not _fiche_pedagogique_est_validee(document):
         return RedirectResponse(
             f"/documents/{document.id}/apprendre?erreur=fiche_a_verifier#fiche-verification",
