@@ -32,6 +32,7 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 - RÉDUCTION DE FRACTION PAR PGCD : chaque étape reste une fraction explicite, jamais des chiffres accolés ni une suite de barres obliques ambiguë. Écris par exemple \\(\\frac{9876543210}{1234560}=\\frac{987654321}{123456}=\\frac{329218107}{41152}\\). Avant d’afficher le résultat final, vérifie séparément le numérateur et le dénominateur après division par le PGCD.
 - PUISSANCES : écris chaque exposant explicitement, par exemple \\(10^{3}\\), jamais le nombre 103 collé pour représenter dix puissance trois. N'aplatis jamais les indices/exposants en nombres ordinaires.
 - Les tableaux Markdown servent aux données tabulaires, jamais à représenter une matrice.
+- MATRICES ET FONCTIONS PAR MORCEAUX : encadre toute la structure dans un seul délimiteur mathématique ; utilise les environnements LaTeX, pas un tableau Markdown. Exemples : \\(A=\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\) et \\(f(x)=\\begin{cases}x^{2},&x\\ge0\\\\-x,&x<0\\end{cases}\\). Chaque ligne de matrice ou de cas doit conserver son séparateur \\\\ ; ne transforme jamais ces séparateurs en sauts de paragraphe.
 - MATHS/PHYSIQUE : utilise le vrai LaTeX avec délimiteurs :
   inline : \( ... \)
   bloc : \[ ... \]
