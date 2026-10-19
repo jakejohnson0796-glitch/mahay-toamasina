@@ -391,6 +391,10 @@ class Document(SQLModel, table=True):
     resume_ia_mg: str = Field(default="")
     fiche_pedagogique_mg_json: str = Field(default="{}")
     resume_statut_ia_mg: str = Field(default="a_generer", index=True)
+    # Validation explicite de l’extraction pédagogique avant usage par le Quiz/Tuteur.
+    fiche_validation_statut: str = Field(default="a_verifier", index=True)
+    fiche_validee_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    fiche_validee_le: Optional[datetime] = None
 
 
 class ProgressionNotion(SQLModel, table=True):
@@ -1066,6 +1070,13 @@ class SessionTuteur(SQLModel, table=True):
     notion: Optional[str] = None
     progression_id: Optional[int] = Field(default=None, index=True)
     question: str
+    # Indice distinct de la correction, dévoilé uniquement à la demande de l’étudiant.
+    indice: str = Field(default="")
+    # Une réponse de compréhension est évaluée explicitement avant de débloquer l'exercice.
+    comprehension_validee: bool = Field(default=False)
+    comprehension_reponse: str = Field(default="")
+    comprehension_feedback: str = Field(default="")
+    comprehension_indice: str = Field(default="")
     explication: str
     exemple: str
     exercice: str

@@ -570,6 +570,9 @@ def generer_et_sauvegarder_fiche_document(document_id: int) -> None:
         document.resume_ia_mg = fiche_mg["resume"]
         document.fiche_pedagogique_mg_json = json.dumps(fiche_mg, ensure_ascii=False)
         document.resume_statut_ia_mg = fiche_mg.get("statut", "indisponible")
+        document.fiche_validation_statut = "a_verifier"
+        document.fiche_validee_par_id = None
+        document.fiche_validee_le = None
         session.add(document)
         session.commit()
     logger.info(

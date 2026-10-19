@@ -28,9 +28,11 @@ def test_quiz_depuis_document_cree_une_tentative_interactive(monkeypatch):
     document = SimpleNamespace(
         id=42,
         statut=StatutDocument.APPROUVE,
+        cercle_id=None,
         chemin_fichier="/tmp/cours.pdf",
         matiere="Algèbre",
         titre="Cours Algèbre",
+        fiche_validation_statut="validee",
     )
 
     class FakeSession:
@@ -131,3 +133,31 @@ def test_tuteur_peut_recevoir_un_document_source():
     assert "StatutDocument.APPROUVE" in route
     assert "_extrait_document_pertinent" in route
     assert "SOURCE DOCUMENTAIRE" in route
+
+
+def test_quiz_refuse_direct_access_a_un_document_prive_d_un_autre_cercle(monkeypatch):
+    utilisateur = SimpleNamespace(id=7, niveau="L1")
+    document = SimpleNamespace(
+        id=42,
+        statut=StatutDocument.APPROUVE,
+        cercle_id=321,
+        fiche_validation_statut="validee",
+        chemin_fichier="/tmp/cercle-prive.pdf",
+    )
+
+    class FakeSession:
+        def get(self, model, identifier):
+            return document
+
+    monkeypatch.setattr(documents_router, "utilisateur_courant", lambda request, session: utilisateur)
+    monkeypatch.setattr(documents_router, "acces_premium_ou_redirection", lambda utilisateur, session: None)
+    monkeypatch.setattr(documents_router, "_est_membre_cercle", lambda session, cercle_id, utilisateur_id: False)
+    monkeypatch.setattr(
+        documents_router,
+        "generer_quiz_depuis_texte",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("Le quiz ne doit pas être généré.")),
+    )
+
+    response = documents_router.quiz_document(SimpleNamespace(session={}), 42, FakeSession())
+    assert response.status_code == 303
+    assert response.headers["location"] == "/cercles/321"

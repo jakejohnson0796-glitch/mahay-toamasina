@@ -11,7 +11,12 @@
         Vérifiez le contenu réel avant d'approuver, rejeter ou supprimer le document.
       </p>
     </div>
-    <a class="bouton bouton-secondaire" href="/moderation">← Retour à la modération</a>
+    <div class="moderation-preview-head-actions">
+      {% if document.statut.value == "approuve" %}
+      <a class="bouton bouton-primaire" href="/documents/{{ document.id }}/apprendre#fiche-verification">Vérifier la fiche utilisée par le Quiz IA</a>
+      {% endif %}
+      <a class="bouton bouton-secondaire" href="/moderation">← Retour à la modération</a>
+    </div>
   </div>
 
   <section class="moderation-preview-meta">

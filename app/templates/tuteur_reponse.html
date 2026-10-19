@@ -127,7 +127,6 @@
         <h2>Explication</h2>
         <button class="tuteur-lecture-partie" type="button" data-lecture-cible="explication" aria-label="Écouter l’explication"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
-      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="explication" data-rendu>{{ contenu_tuteur['explication'] }}</div>
     </article>
 
@@ -138,24 +137,81 @@
         <h2>Exemple</h2>
         <button class="tuteur-lecture-partie" type="button" data-lecture-cible="exemple" aria-label="Écouter l’exemple"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
-      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="exemple" data-rendu>{{ contenu_tuteur['exemple'] }}</div>
     </article>
     {% endif %}
 
-    {% if session_tuteur.exercice %}
+    {% if session_tuteur.indice %}
+    <article class="ai-answer-card ai-answer-card-full ai-answer-hint">
+      <div class="ai-answer-card-head">
+        <span class="ai-answer-card-icon" aria-hidden="true">💡</span>
+        <h2>Un indice pour commencer</h2>
+        <button class="tuteur-lecture-partie" type="button" data-lecture-cible="indice" aria-label="Écouter l’indice"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
+      </div>
+      <p>Lis cet indice, puis reformule avec tes mots l'idée centrale ou la première étape. L'exercice s'ouvrira après validation de ta compréhension.</p>
+      <details>
+        <summary>Dévoiler l'indice progressif</summary>
+        <div class="ai-markdown-content" data-tuteur-content="indice" data-rendu>{{ session_tuteur.indice }}</div>
+      </details>
+    </article>
+    {% endif %}
+
+    {% if not session_tuteur.comprehension_validee %}
+    <section class="ai-answer-card ai-answer-card-full ai-answer-hint" id="comprehension-tuteur" aria-labelledby="comprehension-tuteur-title">
+      <div class="ai-answer-card-head">
+        <span class="ai-answer-card-icon" aria-hidden="true">🧠</span>
+        <h2 id="comprehension-tuteur-title">Vérifie ta compréhension</h2>
+      </div>
+      <p>En une ou deux phrases, explique l'idée essentielle ou la première étape que tu retiens. Le Tuteur vérifie le raisonnement, accepte tes propres mots et ne demande pas une phrase parfaite.</p>
+      {% if session_tuteur.comprehension_feedback %}
+      <div class="ai-panel" role="status" aria-live="polite">
+        <p data-rendu>{{ session_tuteur.comprehension_feedback }}</p>
+        {% if session_tuteur.comprehension_indice %}
+        <p><strong>Une autre piste :</strong></p>
+        <div data-no-translate data-rendu>{{ session_tuteur.comprehension_indice }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% if request.query_params.get("erreur") == "trop_de_questions" %}
+      <p class="ai-panel" role="alert">Tu as fait plusieurs essais rapprochés. Fais une courte pause, puis réessaie.</p>
+      {% elif request.query_params.get("erreur") == "comprehension_requise" %}
+      <p class="ai-panel" role="alert">Écris une réponse avant de lancer la vérification.</p>
+      {% endif %}
+      <form method="post" action="/tuteur/{{ session_tuteur.id }}/verifier-comprehension" class="ai-form">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="reponse-comprehension">Mon explication avec mes mots</label>
+        <textarea id="reponse-comprehension" name="reponse" rows="3" maxlength="2000" required>{{ session_tuteur.comprehension_reponse }}</textarea>
+        <button class="bouton bouton-primaire" type="submit">Vérifier mon raisonnement</button>
+      </form>
+      <p class="ai-answer-muted">La correction reste masquée. Si le contrôle IA est indisponible, rien n'est pénalisé : tu peux réessayer.</p>
+    </section>
+    {% else %}
+    <section class="ai-answer-card ai-answer-card-full ai-panel" id="comprehension-tuteur" role="status">
+      <strong>Compréhension vérifiée ✓</strong>
+      <p>{{ session_tuteur.comprehension_feedback }}</p>
+      <p>Ton exercice est maintenant disponible. Essaie de le résoudre avant d'ouvrir la correction.</p>
+    </section>
+    {% endif %}
+
+    {% if session_tuteur.exercice and not session_tuteur.comprehension_validee %}
+    <article class="ai-answer-card ai-answer-card-full">
+      <h2>Exercice suivant</h2>
+      <p>Il apparaîtra dès que tu auras expliqué avec tes mots l'idée essentielle de cette séance.</p>
+    </article>
+    {% endif %}
+
+    {% if session_tuteur.exercice and session_tuteur.comprehension_validee %}
     <article class="ai-answer-card ai-answer-card-full">
       <div class="ai-answer-card-head">
         <span class="ai-answer-card-icon">{{ icone("quiz", 16) }}</span>
         <h2>Exercice pour pratiquer</h2>
         <button class="tuteur-lecture-partie" type="button" data-lecture-cible="exercice" aria-label="Écouter l’exercice"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
-      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="exercice" data-rendu>{{ contenu_tuteur['exercice'] }}</div>
     </article>
     {% endif %}
 
-    {% if session_tuteur.correction %}
+    {% if session_tuteur.correction and session_tuteur.comprehension_validee %}
     <article class="ai-answer-card ai-answer-card-full ai-answer-correction">
       <div class="ai-answer-card-head">
         <span class="ai-answer-card-icon">{{ icone("securite", 16) }}</span>
@@ -164,7 +220,6 @@
       <details>
         <summary>Afficher la correction</summary>
         <button class="tuteur-lecture-partie" type="button" data-lecture-cible="correction" aria-label="Écouter la correction"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
-        <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
         <div class="ai-answer-correction-body ai-markdown-content" data-tuteur-content="correction" data-rendu>{{ contenu_tuteur['correction'] }}</div>
       </details>
     </article>

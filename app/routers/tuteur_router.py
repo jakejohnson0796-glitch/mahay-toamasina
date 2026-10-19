@@ -241,6 +241,11 @@ def demander_tuteur(
             and candidat.statut == StatutDocument.APPROUVE
             and _utilisateur_membre_cercle(session, candidat.cercle_id, utilisateur.id)
         ):
+            if candidat.fiche_validation_statut != "validee":
+                return RedirectResponse(
+                    f"/documents/{candidat.id}/apprendre?erreur=fiche_a_verifier#fiche-verification",
+                    status_code=303,
+                )
             document_source = candidat
 
     question_pour_ia = question
@@ -290,6 +295,13 @@ def demander_tuteur(
     reponse.pop("_erreur_verification", None)
     reponse.pop("_verification_ok", None)
 
+    # L'indice est capturé séparément des quatre sections canoniques.
+    indice_tuteur = str(reponse.get("indice") or "").strip()[:2400]
+    if not indice_tuteur:
+        indice_tuteur = (
+            "Indice de méthode : repère les données utiles et ce que l'on cherche. "
+            "Identifie la règle pertinente, puis essaie une première étape avant la correction."
+        )
     # Canonisation finale avant tout stockage, même en cas de secours ou
     # d'arbitrage multi-modèles partiel.
     reponse = normaliser_structure_tuteur(reponse)
@@ -299,6 +311,7 @@ def demander_tuteur(
         notion=progression.notion if progression else None,
         progression_id=progression.id if progression else None,
         question=question,
+        indice=indice_tuteur,
         explication=reponse["explication"],
         exemple=reponse["exemple"],
         exercice=reponse["exercice"],
@@ -360,9 +373,14 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
         "exercice": session_tuteur.exercice,
         "correction": session_tuteur.correction,
     })
+    indice = str(session_tuteur.indice or "")
 
     def rendu(champ: str) -> str:
         return contenu.get(champ, "")
+
+    # Ne pas compter sur le masquage HTML : l'API ne doit jamais livrer
+    # l'exercice ni sa correction avant la vérification de compréhension.
+    comprehension_ok = bool(getattr(session_tuteur, "comprehension_validee", False))
 
     return {
         "statut": session_tuteur.statut_verification_ia,
@@ -375,10 +393,78 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
         "contenu": {
             "explication": rendu("explication"),
             "exemple": rendu("exemple"),
-            "exercice": rendu("exercice"),
-            "correction": rendu("correction"),
+            "exercice": rendu("exercice") if comprehension_ok else "",
+            "correction": rendu("correction") if comprehension_ok else "",
+            "indice": indice,
         },
     }
+
+
+
+@router.post("/tuteur/{session_id}/verifier-comprehension")
+def verifier_comprehension_tuteur_session(
+    request: Request,
+    session_id: int,
+    reponse: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Vérifie la compréhension de l'étudiant sans exposer la correction."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    session_tuteur = session.get(SessionTuteur, session_id)
+    if not session_tuteur or session_tuteur.utilisateur_id != utilisateur.id:
+        return RedirectResponse("/tuteur", status_code=303)
+    if session_tuteur.comprehension_validee:
+        return RedirectResponse(f"/tuteur/{session_id}#comprehension-tuteur", status_code=303)
+
+    reponse = str(reponse or "").strip()[:2000]
+    if not reponse:
+        return RedirectResponse(
+            f"/tuteur/{session_id}?erreur=comprehension_requise#comprehension-tuteur",
+            status_code=303,
+        )
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"ia-tuteur-comprehension:user:{utilisateur.id}", 10, 300) or limite_depassee(
+        f"ia-tuteur-comprehension:ip:{host}", 30, 300
+    ):
+        return RedirectResponse(
+            f"/tuteur/{session_id}?erreur=trop_de_questions#comprehension-tuteur",
+            status_code=303,
+        )
+
+    matiere = None
+    if session_tuteur.progression_id:
+        progression = session.get(ProgressionNotion, session_tuteur.progression_id)
+        if progression:
+            matiere = progression.matiere
+
+    evaluation = ai_quiz.verifier_comprehension_tuteur(
+        question=session_tuteur.question,
+        notion=session_tuteur.notion,
+        matiere=matiere,
+        explication=session_tuteur.explication,
+        exemple=session_tuteur.exemple,
+        indice_precedent=session_tuteur.indice,
+        reponse_etudiant=reponse,
+    )
+    session_tuteur.comprehension_reponse = reponse
+    session_tuteur.comprehension_feedback = str(evaluation.get("feedback") or "")[:900]
+    session_tuteur.comprehension_indice = (
+        str(evaluation.get("indice_suivant") or "")[:900]
+        if not evaluation.get("compris")
+        else ""
+    )
+    session_tuteur.comprehension_validee = bool(
+        evaluation.get("compris") and evaluation.get("verification_disponible", True)
+    )
+    session.add(session_tuteur)
+    session.commit()
+
+    return RedirectResponse(f"/tuteur/{session_id}#comprehension-tuteur", status_code=303)
 
 
 @router.get("/tuteur/{session_id}")

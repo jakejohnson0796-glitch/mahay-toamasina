@@ -17,7 +17,11 @@
       </p>
       <div class="ai-hero-actions">
         <a href="/documents/{{ document.id }}/telecharger">Consulter le document</a>
+        {% if fiche_validee %}
         <a href="/documents/{{ document.id }}/quiz">Créer un quiz</a>
+        {% else %}
+        <a href="#fiche-verification">Vérifier la fiche avant le quiz</a>
+        {% endif %}
       </div>
     </div>
 
@@ -29,6 +33,75 @@
         <div class="ai-stat-card"><strong>{{ document.reference }}</strong><span>référence</span></div>
       </div>
     </div>
+  </section>
+
+
+  <section class="ai-section" id="fiche-verification" aria-labelledby="fiche-verification-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Vérification pédagogique</span>
+        <h2 id="fiche-verification-title">Vérifier la fiche avant de générer un quiz</h2>
+        <p>Le résumé automatique peut contenir des erreurs. Compare-le au fichier original ; la génération du quiz reste bloquée tant que la fiche n'a pas été vérifiée.</p>
+      </div>
+    </div>
+    {% if request.query_params.get("erreur") == "fiche_a_verifier" %}
+      <p class="ai-panel" role="status">La fiche doit être vérifiée avant d'utiliser le Quiz IA ou le Tuteur contextualisé.</p>
+    {% elif request.query_params.get("erreur") == "confirmation_requise" %}
+      <p class="ai-panel" role="alert">Coche les deux confirmations après avoir comparé la fiche au document original.</p>
+    {% elif request.query_params.get("erreur") == "fiche_indisponible" %}
+      <p class="ai-panel" role="alert">Aucune extraction suffisamment exploitable n'est disponible pour valider cette fiche.</p>
+    {% elif request.query_params.get("erreur") == "fiche_incomplete" %}
+      <p class="ai-panel" role="alert">Le résumé doit contenir du texte avant de valider la fiche.</p>
+    {% elif request.query_params.get("fiche") == "validee" %}
+      <p class="ai-panel" role="status">La fiche a été enregistrée et validée. Le Quiz IA peut maintenant utiliser cette ressource.</p>
+    {% elif request.query_params.get("erreur") == "metadonnees_incompletes" %}
+      <p class="ai-panel" role="alert">Renseigne une matière et choisis le type de document avant de valider.</p>
+    {% endif %}
+    {% if fiche_validee %}
+      <p class="ai-panel" role="status">Fiche vérifiée le {{ document.fiche_validee_le.strftime("%d/%m/%Y à %H:%M") if document.fiche_validee_le else "—" }}. La génération de quiz est autorisée.</p>
+    {% else %}
+      <p class="ai-panel" role="status">État : fiche en attente de vérification. Son résumé ne sera pas proposé aux autres étudiants tant qu'il n'aura pas été confirmé.</p>
+    {% endif %}
+    {% if peut_valider_fiche %}
+      {% if fiche_validation_possible %}
+      <form method="post" action="/documents/{{ document.id }}/fiche/valider" class="ai-form ai-panel ai-form-card">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <p>Vérifie le texte ci-dessous avec le fichier original. Tu peux corriger les informations extraites avant de confirmer.</p>
+        <label for="fiche-resume-verifie">Résumé du document</label>
+        <textarea id="fiche-resume-verifie" name="resume_verifie" rows="6" maxlength="12000" required>{{ document.resume_ia }}</textarea>
+        <label for="fiche-matiere-verifiee">Matière</label>
+        <input id="fiche-matiere-verifiee" name="matiere_verifiee" maxlength="120" required value="{{ document.matiere }}">
+        <label for="fiche-type-document-verifie">Type de document</label>
+        <select id="fiche-type-document-verifie" name="type_document_verifie" required>
+          <option value="">Choisir le type vérifié</option>
+          {% for type_doc in types_document %}
+          <option value="{{ type_doc.value }}" {% if document.type_document == type_doc %}selected{% endif %}>{% if type_doc.value == "annale" %}Annale / sujet d'examen{% elif type_doc.value == "corrige" %}Corrigé{% elif type_doc.value == "fiche" %}Fiche de révision{% else %}Cours / support pédagogique{% endif %}</option>
+          {% endfor %}
+        </select>
+        <label for="fiche-type-cours-verifie">Type pédagogique (laisser vide si non déterminable)</label>
+        <input id="fiche-type-cours-verifie" name="type_cours_verifie" maxlength="140" value="{{ fiche_pedagogique.get("type_cours", "") }}">
+        <label for="fiche-objectif-verifie">Objectif pédagogique</label>
+        <textarea id="fiche-objectif-verifie" name="objectif_verifie" rows="2" maxlength="800">{{ fiche_pedagogique.get("objectif_pedagogique", "") }}</textarea>
+        <label for="fiche-niveau-verifie">Niveau cible (laisser vide si non déterminé)</label>
+        <input id="fiche-niveau-verifie" name="niveau_verifie" maxlength="140" value="{{ fiche_pedagogique.get("niveau_cible", "") }}">
+        <label for="fiche-notions-verifiees">Notions clés (une notion par ligne)</label>
+        <textarea id="fiche-notions-verifiees" name="notions_verifiees" rows="4" maxlength="2400">{% for notion in fiche_pedagogique.get("notions_cles", []) %}{{ notion }}
+{% endfor %}</textarea>
+        <label><input type="checkbox" name="confirmer_contenu" value="1" required> J'ai comparé le résumé et les notions au document original, et j'ai corrigé les erreurs repérées.</label>
+        <label><input type="checkbox" name="confirmer_metadonnees" value="1" required> J'ai vérifié la matière, le type de document, le type pédagogique et le niveau indiqué (ou confirmé qu'il reste indéterminé).</label>
+        <button class="bouton bouton-primaire" type="submit">Enregistrer et valider la fiche</button>
+      </form>
+      {% else %}
+      <div class="ai-panel">
+        <p>La fiche n'est pas encore exploitable (extraction en cours ou texte insuffisant). Elle ne peut pas être validée ni utilisée pour générer un quiz.</p>
+        <p>Vérifie que le fichier est lisible et que son contenu textuel peut être extrait.</p>
+      </div>
+      {% endif %}
+    {% elif not fiche_validee %}
+      <div class="ai-panel">
+        <p>Seul le déposant ou un administrateur peut vérifier et confirmer cette fiche. Le Quiz IA et le Tuteur contextualisé restent bloqués jusqu'à cette validation.</p>
+      </div>
+    {% endif %}
   </section>
 
   <section class="ai-section" aria-labelledby="document-parcours-actions">
@@ -58,7 +131,11 @@
             <p>Le quiz existant est conservé et reste généré à partir du texte réel du document.</p>
           </div>
         </div>
+        {% if fiche_validee %}
         <a class="bouton bouton-primaire" href="/documents/{{ document.id }}/quiz">Lancer le Quiz IA</a>
+        {% else %}
+        <a class="bouton bouton-secondaire" href="#fiche-verification">Vérifier la fiche avant de pratiquer</a>
+        {% endif %}
       </article>
 
       <article class="ai-panel ai-form-card">
@@ -68,12 +145,17 @@
             <p>Pose une question : le Tuteur reçoit un extrait pertinent du document comme contexte.</p>
           </div>
         </div>
+        {% if fiche_validee %}
         <form method="post" action="/tuteur/demander" class="ai-form">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <input type="hidden" name="document_id" value="{{ document.id }}">
           <textarea name="question" rows="5" maxlength="4000" required placeholder="Ex. Explique-moi les idées essentielles de ce document et montre-moi ce que je dois retenir pour un examen."></textarea>
           <button class="bouton bouton-primaire" type="submit">Demander au Tuteur IA</button>
         </form>
+        {% else %}
+        <p>Le Tuteur contextualisé sera disponible après la vérification de cette fiche.</p>
+        <a class="bouton bouton-secondaire" href="#fiche-verification">Vérifier la fiche d'abord</a>
+        {% endif %}
       </article>
     </div>
   </section>

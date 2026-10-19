@@ -61,6 +61,16 @@ def _charger_fiche_pedagogique(document: Document) -> dict:
     return _charger_fiche_pedagogique_json(document.fiche_pedagogique_json)
 
 
+def _fiche_pedagogique_peut_etre_validee(document: Document) -> bool:
+    statut = str(getattr(document, "resume_statut_ia", "") or "")
+    resume = str(getattr(document, "resume_ia", "") or "").strip()
+    return bool(resume) and statut in {"generee", "provisoire"}
+
+
+def _fiche_pedagogique_est_validee(document: Document) -> bool:
+    return str(getattr(document, "fiche_validation_statut", "a_verifier") or "a_verifier") == "validee"
+
+
 def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
     """Reference unique sans charger/compter toute la table des documents."""
     prefixe = "".join(c for c in filiere.nom.upper() if c.isalpha())[:3] or "DOC"
@@ -139,6 +149,16 @@ def liste_documents(
     requete = select(Document).where(Document.statut == StatutDocument.APPROUVE)
     if cercle_id is not None:
         requete = requete.where(Document.cercle_id == cercle_id)
+    elif not utilisateur:
+        # Une ressource de cercle reste privée, même si son document est approuvé.
+        requete = requete.where(Document.cercle_id.is_(None))
+    else:
+        cercles_autorises = session.exec(
+            select(MembreCercle.cercle_id).where(MembreCercle.utilisateur_id == utilisateur.id)
+        ).all()
+        requete = requete.where(
+            (Document.cercle_id.is_(None)) | (Document.cercle_id.in_(cercles_autorises))
+        )
     if filiere_id:
         requete = requete.where(Document.filiere_id == filiere_id)
     if matiere:
@@ -739,9 +759,8 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
     relie lecture, quiz et Tuteur contextualisé autour de la même ressource.
     """
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_ia_ou_redirection(utilisateur, session)
-    if redirection:
-        return redirection
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
 
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
@@ -758,7 +777,145 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             "request": request,
             "utilisateur": utilisateur,
             "document": document,
+            "fiche_pedagogique": _charger_fiche_pedagogique(document),
+            "fiche_validee": _fiche_pedagogique_est_validee(document),
+            "fiche_validation_possible": _fiche_pedagogique_peut_etre_validee(document),
+            "types_document": list(TypeDocument),
+            "peut_valider_fiche": (
+                utilisateur.role == RoleUtilisateur.ADMIN
+                or document.uploader_id == utilisateur.id
+            ),
         },
+    )
+
+
+@router.post("/documents/{document_id}/fiche/valider")
+def valider_fiche_document(
+    request: Request,
+    document_id: int,
+    resume_verifie: str = Form(...),
+    matiere_verifiee: str = Form(default=""),
+    type_document_verifie: Optional[TypeDocument] = Form(default=None),
+    type_cours_verifie: str = Form(default=""),
+    objectif_verifie: str = Form(default=""),
+    niveau_verifie: str = Form(default=""),
+    notions_verifiees: str = Form(default=""),
+    confirmer_contenu: bool = Form(default=False),
+    confirmer_metadonnees: bool = Form(default=False),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Enregistre la vérification humaine de la fiche et les corrections éventuelles."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document or document.statut != StatutDocument.APPROUVE:
+        return RedirectResponse("/documents", status_code=303)
+    if utilisateur.role != RoleUtilisateur.ADMIN and document.uploader_id != utilisateur.id:
+        return RedirectResponse("/documents", status_code=303)
+    if (
+        document.cercle_id is not None
+        and utilisateur.role != RoleUtilisateur.ADMIN
+        and not _est_membre_cercle(session, document.cercle_id, utilisateur.id)
+    ):
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+    if not _fiche_pedagogique_peut_etre_validee(document):
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=fiche_indisponible#fiche-verification",
+            status_code=303,
+        )
+    if not confirmer_contenu or not confirmer_metadonnees:
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=confirmation_requise#fiche-verification",
+            status_code=303,
+        )
+
+    matiere = " ".join(str(matiere_verifiee or "").split()).strip()[:120]
+    if not matiere or not isinstance(type_document_verifie, TypeDocument):
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=metadonnees_incompletes#fiche-verification",
+            status_code=303,
+        )
+
+    resume = str(resume_verifie or "").strip()[:12000]
+    type_cours = " ".join(str(type_cours_verifie or "").split()).strip()[:140]
+    objectif = str(objectif_verifie or "").strip()[:800]
+    niveau = str(niveau_verifie or "").strip()[:140]
+    notions = []
+    for ligne in (notions_verifiees or "").splitlines():
+        valeur = " ".join(ligne.split()).strip()
+        if valeur and valeur not in notions:
+            notions.append(valeur[:180])
+        if len(notions) >= 12:
+            break
+    if not resume:
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=fiche_incomplete#fiche-verification",
+            status_code=303,
+        )
+
+    fiche = _charger_fiche_pedagogique(document)
+    ancienne_matiere = str(document.matiere or "")
+    ancien_type_document = (
+        document.type_document.value
+        if isinstance(document.type_document, TypeDocument)
+        else str(document.type_document or "")
+    )
+    nouveau_type_document = type_document_verifie.value
+    anciens = {
+        "resume": str(document.resume_ia or "").strip(),
+        "type_cours": str(fiche.get("type_cours") or "").strip(),
+        "objectif_pedagogique": str(fiche.get("objectif_pedagogique") or "").strip(),
+        "niveau_cible": str(fiche.get("niveau_cible") or "").strip(),
+        "notions_cles": [str(n).strip() for n in (fiche.get("notions_cles") or [])],
+    }
+    nouveau = {
+        "resume": resume,
+        "type_cours": type_cours,
+        "objectif_pedagogique": objectif,
+        "niveau_cible": niveau,
+        "notions_cles": notions,
+    }
+    fiche_modifiee = anciens != nouveau
+    metadata_modifiee = ancienne_matiere != matiere or ancien_type_document != nouveau_type_document
+    date_validation = datetime.utcnow()
+
+    fiche["resume"] = resume
+    fiche["type_cours"] = type_cours
+    fiche["objectif_pedagogique"] = objectif
+    fiche["niveau_cible"] = niveau
+    fiche["notions_cles"] = notions
+    fiche["validation_humaine"] = True
+    fiche["source_validation"] = "humaine"
+    fiche["statut"] = "generee"
+    fiche["validation_audit"] = {
+        "valide_par_id": utilisateur.id,
+        "valide_le": date_validation.isoformat(),
+        "matiere_avant": ancienne_matiere,
+        "matiere_apres": matiere,
+        "type_document_avant": ancien_type_document,
+        "type_document_apres": nouveau_type_document,
+    }
+    document.matiere = matiere
+    document.type_document = type_document_verifie
+    document.resume_ia = resume
+    document.fiche_pedagogique_json = json.dumps(fiche, ensure_ascii=False)
+    document.resume_statut_ia = "generee"
+    document.fiche_validation_statut = "validee"
+    document.fiche_validee_par_id = utilisateur.id
+    document.fiche_validee_le = date_validation
+    if fiche_modifiee or metadata_modifiee:
+        document.resume_ia_mg = ""
+        document.fiche_pedagogique_mg_json = "{}"
+        document.resume_statut_ia_mg = "indisponible"
+
+    session.add(document)
+    session.commit()
+    return RedirectResponse(
+        f"/documents/{document.id}/apprendre?fiche=validee#fiche-verification",
+        status_code=303,
     )
 
 
@@ -775,6 +932,15 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
+    if document.cercle_id is not None and (
+        not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id)
+    ):
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+    if not _fiche_pedagogique_est_validee(document):
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=fiche_a_verifier#fiche-verification",
+            status_code=303,
+        )
 
     try:
         with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
