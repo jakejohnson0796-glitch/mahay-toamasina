@@ -273,7 +273,7 @@ def test_illustrations_du_jeu_cerebral_sont_locales_et_utilisees():
     assets = ROOT / "app" / "static" / "images" / "jeu-cerebral"
 
     assert "brain-hero.webp" in accueil
-    assert "math-visual.webp" in accueil
+    assert "illustrations/calcul.svg" in accueil
     assert "mascotte-pink.webp" in session
     assert "trophy.webp" in resultat
 
