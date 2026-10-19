@@ -20,16 +20,29 @@ def test_base_charge_les_assets_quiz_tuteur_et_renderer_ia():
     assert "charger-dependances-ia.js" in base
     assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
     assert "https://cdn.jsdelivr.net/npm/katex" not in base
-    ordre = [
-        'katex@0.16.11/dist/katex.min.css',
-        'katex@0.16.11/dist/katex.min.js',
-        'katex@0.16.11/dist/contrib/mhchem.min.js',
-        'marked@12.0.2/marked.min.js',
-        'dompurify@3.1.6/dist/purify.min.js',
-        'highlightjs/cdn-release@11.10.0/build/highlight.min.js',
+    # Les bundles locaux sont toujours essayés avant les CDNs, et les versions
+    # externes de secours restent cohérentes avec le manifeste de vendoring.
+    locales = [
+        'local + "katex/katex.min.css?v=" + versionsLocales.katex',
+        'local + "katex/katex.min.js?v=" + versionsLocales.katex',
+        'local + "katex/contrib/mhchem.min.js?v=" + versionsLocales.katex',
+        'local + "marked/marked.min.js?v=" + versionsLocales.marked',
+        'local + "dompurify/purify.min.js?v=" + versionsLocales.purify',
+        'local + "highlightjs/highlight.min.js?v=" + versionsLocales.highlight',
     ]
+    ordre = [
+        'katex@0.19.0/dist/katex.min.css',
+        'katex@0.19.0/dist/katex.min.js',
+        'katex@0.19.0/dist/contrib/mhchem.min.js',
+        'marked@18.1.1/lib/marked.umd.js',
+        'dompurify@3.4.17/dist/purify.min.js',
+        'highlightjs/cdn-release@11.12.0/build/highlight.min.js',
+    ]
+    positions_locales = [loader.index(item) for item in locales]
     positions = [loader.index(item) for item in ordre]
+    assert positions_locales == sorted(positions_locales)
     assert positions == sorted(positions)
+    assert all(loader.index(local) < loader.index(secours) for local, secours in zip(locales, ordre))
     assert "DELAI_MAX_MS = 2500" in loader
     assert "window.rendreTous(document)" in loader
 

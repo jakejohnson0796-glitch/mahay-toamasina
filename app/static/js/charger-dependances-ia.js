@@ -5,32 +5,40 @@
   "use strict";
 
   var DELAI_MAX_MS = 2500;
+  var local = "/static/vendor/";
   var principal = "https://cdn.jsdelivr.net/";
+  var versionsLocales = { katex: "0.19.0", marked: "18.1.1", purify: "3.4.17", highlight: "11.12.0" };
   var secours = "https://unpkg.com/";
   var ressources = {
     css: [
-      principal + "npm/katex@0.16.11/dist/katex.min.css",
-      secours + "katex@0.16.11/dist/katex.min.css"
+      local + "katex/katex.min.css?v=" + versionsLocales.katex,
+      principal + "npm/katex@0.19.0/dist/katex.min.css",
+      secours + "katex@0.19.0/dist/katex.min.css"
     ],
     katex: [
-      principal + "npm/katex@0.16.11/dist/katex.min.js",
-      secours + "katex@0.16.11/dist/katex.min.js"
+      local + "katex/katex.min.js?v=" + versionsLocales.katex,
+      principal + "npm/katex@0.19.0/dist/katex.min.js",
+      secours + "katex@0.19.0/dist/katex.min.js"
     ],
     mhchem: [
-      principal + "npm/katex@0.16.11/dist/contrib/mhchem.min.js",
-      secours + "katex@0.16.11/dist/contrib/mhchem.min.js"
+      local + "katex/contrib/mhchem.min.js?v=" + versionsLocales.katex,
+      principal + "npm/katex@0.19.0/dist/contrib/mhchem.min.js",
+      secours + "katex@0.19.0/dist/contrib/mhchem.min.js"
     ],
     marked: [
-      principal + "npm/marked@12.0.2/marked.min.js",
-      secours + "marked@12.0.2/marked.min.js"
+      local + "marked/marked.min.js?v=" + versionsLocales.marked,
+      principal + "npm/marked@18.1.1/lib/marked.umd.js",
+      secours + "marked@18.1.1/lib/marked.umd.js"
     ],
     purify: [
-      principal + "npm/dompurify@3.1.6/dist/purify.min.js",
-      secours + "dompurify@3.1.6/dist/purify.min.js"
+      local + "dompurify/purify.min.js?v=" + versionsLocales.purify,
+      principal + "npm/dompurify@3.4.17/dist/purify.min.js",
+      secours + "dompurify@3.4.17/dist/purify.min.js"
     ],
     highlight: [
-      principal + "gh/highlightjs/cdn-release@11.10.0/build/highlight.min.js",
-      secours + "highlight.js@11.10.0/build/highlight.min.js"
+      local + "highlightjs/highlight.min.js?v=" + versionsLocales.highlight,
+      principal + "gh/highlightjs/cdn-release@11.12.0/build/highlight.min.js",
+      secours + "@highlightjs/cdn-assets@11.12.0/highlight.min.js"
     ]
   };
 

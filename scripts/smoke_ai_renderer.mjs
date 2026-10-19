@@ -6,6 +6,90 @@ import katex from 'katex';
 const mhchemSource = fs.readFileSync('node_modules/katex/dist/contrib/mhchem.min.js', 'utf8');
 import createDOMPurify from 'dompurify';
 
+// Vérifie les vraies distributions locales produites par le script de build.
+const vendorRoot = 'app/static/vendor';
+const vendorManifest = JSON.parse(fs.readFileSync(vendorRoot + '/manifest.json', 'utf8'));
+const vendorVersions = {
+  katex: '0.19.0',
+  marked: '18.1.1',
+  dompurify: '3.4.17',
+  '@highlightjs/cdn-assets': '11.12.0'
+};
+for (const [name, version] of Object.entries(vendorVersions)) {
+  if (!vendorManifest.packages[name] || vendorManifest.packages[name].version !== version) {
+    throw new Error('Vendor package version mismatch for ' + name + ': expected ' + version);
+  }
+}
+const katexCssLocal = fs.readFileSync(vendorRoot + '/katex/katex.min.css', 'utf8');
+const fontNames = Array.from(katexCssLocal.matchAll(/url\(["']?(?:\.\/)?fonts\/([^)"']+)["']?\)/g), match => match[1].split('?')[0]);
+if (fontNames.length < 10) {
+  throw new Error('KaTeX stylesheet does not reference the expected full font set');
+}
+for (const fontName of fontNames) {
+  if (!fs.existsSync(vendorRoot + '/katex/fonts/' + fontName)) {
+    throw new Error('KaTeX stylesheet references a font that was not bundled locally: ' + fontName);
+  }
+}
+for (const required of [
+  '/katex/katex.min.js',
+  '/katex/contrib/mhchem.min.js',
+  '/marked/marked.min.js',
+  '/dompurify/purify.min.js',
+  '/highlightjs/highlight.min.js',
+  '/THIRD_PARTY_NOTICES.md'
+]) {
+  if (!fs.existsSync(vendorRoot + required)) throw new Error('Missing local browser dependency: ' + required);
+}
+
+// Exécute les bundles réellement téléchargés dans un navigateur isolé.
+const vendorDom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
+  url: 'http://localhost/',
+  runScripts: 'outside-only',
+});
+const vendorWindow = vendorDom.window;
+for (const scriptPath of [
+  vendorRoot + '/katex/katex.min.js',
+  vendorRoot + '/katex/contrib/mhchem.min.js',
+  vendorRoot + '/marked/marked.min.js',
+  vendorRoot + '/dompurify/purify.min.js',
+  vendorRoot + '/highlightjs/highlight.min.js'
+]) {
+  vendorWindow.eval(fs.readFileSync(scriptPath, 'utf8'));
+}
+if (!vendorWindow.katex || typeof vendorWindow.katex.render !== 'function') {
+  throw new Error('Locally vendored KaTeX did not initialize');
+}
+if (!vendorWindow.marked || typeof vendorWindow.marked.parse !== 'function') {
+  throw new Error('Locally vendored Marked did not initialize');
+}
+if (!vendorWindow.DOMPurify || typeof vendorWindow.DOMPurify.sanitize !== 'function') {
+  throw new Error('Locally vendored DOMPurify did not initialize');
+}
+if (!vendorWindow.hljs || typeof vendorWindow.hljs.highlight !== 'function') {
+  throw new Error('Locally vendored Highlight.js did not initialize');
+}
+const vendorMathHost = vendorWindow.document.createElement('div');
+const vendorReactionHost = vendorWindow.document.createElement('div');
+// katex.render remplace le contenu de sa cible : isoler les deux assertions.
+vendorWindow.katex.render('\\frac{1}{2}', vendorMathHost, { throwOnError: false });
+vendorWindow.katex.render('\\ce{2H2 + O2 -> 2H2O}', vendorReactionHost, { throwOnError: false, strict: 'ignore' });
+if (vendorMathHost.querySelectorAll('.katex').length !== 1 || vendorMathHost.querySelector('.katex-error')) {
+  throw new Error('Locally vendored KaTeX failed the fraction smoke test');
+}
+if (vendorReactionHost.querySelectorAll('.katex').length !== 1 || vendorReactionHost.querySelector('.katex-error')) {
+  throw new Error('Locally vendored KaTeX/mhchem failed the reaction smoke test');
+}
+if (!vendorWindow.marked.parse('**test**').includes('<strong>test</strong>')) {
+  throw new Error('Locally vendored Marked did not parse Markdown correctly');
+}
+const vendorUnsafe = vendorWindow.DOMPurify.sanitize('<img src=x onerror=alert(1)><script>alert(2)</script>');
+if (/onerror|<script/i.test(vendorUnsafe)) {
+  throw new Error('Locally vendored DOMPurify failed the XSS smoke test');
+}
+if (!vendorWindow.hljs.highlight('const total = 1;', { language: 'javascript' }).value.includes('total')) {
+  throw new Error('Locally vendored Highlight.js failed its JavaScript smoke test');
+}
+
 const source = fs.readFileSync('app/static/js/rendu_ia.js', 'utf8');
 const aiLearningSource = fs.readFileSync('app/static/js/ai-learning.js', 'utf8');
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
@@ -462,6 +546,7 @@ let renduRelanceApresChargement = false;
 fallbackWindow.rendreTous = function () { renduRelanceApresChargement = true; };
 const fallbackRequests = [];
 const primaryRequests = [];
+const localRequests = [];
 function createFakeKatex() {
   return { render(expression, target) {
     const node = fallbackWindow.document.createElement('span');
@@ -477,7 +562,12 @@ const appendHeadOriginal = fallbackWindow.document.head.appendChild.bind(fallbac
 fallbackWindow.document.head.appendChild = function (element) {
   const result = appendHeadOriginal(element);
   const url = element.src || element.href || '';
-  if (url.startsWith('https://cdn.jsdelivr.net/')) {
+  if (url.startsWith('http://localhost/static/vendor/')) {
+    localRequests.push(url);
+    Promise.resolve().then(function () {
+      if (typeof element.onerror === 'function') element.onerror(new fallbackWindow.Event('error'));
+    });
+  } else if (url.startsWith('https://cdn.jsdelivr.net/')) {
     primaryRequests.push(url);
     if (!url.includes('/dist/katex.min.js')) {
       Promise.resolve().then(function () {
@@ -490,9 +580,9 @@ fallbackWindow.document.head.appendChild = function (element) {
       if (element.tagName === 'SCRIPT') {
         if (url.includes('/dist/katex.min.js')) fallbackWindow.katex = createFakeKatex();
         else if (url.includes('/dist/contrib/mhchem.min.js')) mhchemFallbackReady = true;
-        else if (url.includes('/marked.min.js')) fallbackWindow.marked = { parse: function () { return ''; } };
+        else if (url.includes('/lib/marked.umd.js')) fallbackWindow.marked = { parse: function () { return ''; } };
         else if (url.includes('/dist/purify.min.js')) fallbackWindow.DOMPurify = { sanitize: function () { return fallbackWindow.document.createDocumentFragment(); } };
-        else if (url.includes('/build/highlight.min.js')) fallbackWindow.hljs = { highlightElement: function () {} };
+        else if (url.includes('highlight.min.js')) fallbackWindow.hljs = { highlightElement: function () {} };
       }
       if (typeof element.onload === 'function') element.onload(new fallbackWindow.Event('load'));
     });
@@ -511,11 +601,23 @@ if (!fallbackState.katex || !fallbackState.mhchem || !fallbackState.marked || !f
 if (!primaryRequests.some((url) => url.includes('/dist/katex.min.js'))) {
   throw new Error('Primary KaTeX CDN was not tried');
 }
+for (const localFragment of [
+  '/katex/katex.min.css',
+  '/katex/katex.min.js',
+  '/katex/contrib/mhchem.min.js',
+  '/marked/marked.min.js',
+  '/dompurify/purify.min.js',
+  '/highlightjs/highlight.min.js'
+]) {
+  if (!localRequests.some((url) => url.includes(localFragment))) {
+    throw new Error('Local dependency was not tried before CDN fallback: ' + localFragment);
+  }
+}
 for (const fragment of [
   '/dist/katex.min.css',
   '/dist/katex.min.js',
   '/dist/contrib/mhchem.min.js',
-  '/marked.min.js',
+  '/lib/marked.umd.js',
   '/dist/purify.min.js',
 ]) {
   if (!fallbackRequests.some((url) => url.includes(fragment))) {
@@ -529,6 +631,79 @@ if (!renduRelanceApresChargement) {
   throw new Error('Renderer was not retriggered after dependency loading completed');
 }
 
+
+
+// Succès normal : les ressources locales doivent suffire sans appeler un CDN.
+const localDom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
+  url: 'http://localhost/',
+  runScripts: 'outside-only',
+});
+const localWindow = localDom.window;
+let localMhchemReady = false;
+let localRerendered = false;
+const localAssetRequests = [];
+const unexpectedExternalRequests = [];
+localWindow.rendreTous = function () { localRerendered = true; };
+function createLocallyAvailableKatex() {
+  return { render(expression, target) {
+    const node = localWindow.document.createElement('span');
+    node.className = String(expression).startsWith('\\ce{') && !localMhchemReady ? 'katex-error' : 'katex';
+    target.appendChild(node);
+  } };
+}
+const appendLocalHeadOriginal = localWindow.document.head.appendChild.bind(localWindow.document.head);
+localWindow.document.head.appendChild = function (element) {
+  const result = appendLocalHeadOriginal(element);
+  const url = element.src || element.href || '';
+  if (url.startsWith('http://localhost/static/vendor/')) {
+    localAssetRequests.push(url);
+    Promise.resolve().then(function () {
+      if (element.tagName === 'LINK') {
+        element.dataset.gmKatexCharge = 'ok';
+      } else if (element.tagName === 'SCRIPT') {
+        if (url.includes('/katex/katex.min.js')) localWindow.katex = createLocallyAvailableKatex();
+        else if (url.includes('/katex/contrib/mhchem.min.js')) localMhchemReady = true;
+        else if (url.includes('/marked/marked.min.js')) localWindow.marked = { parse: function () { return ''; } };
+        else if (url.includes('/dompurify/purify.min.js')) localWindow.DOMPurify = { sanitize: function () { return localWindow.document.createDocumentFragment(); } };
+        else if (url.includes('/highlightjs/highlight.min.js')) localWindow.hljs = { highlightElement: function () {} };
+      }
+      if (typeof element.onload === 'function') element.onload(new localWindow.Event('load'));
+    });
+  } else if (url.startsWith('https://')) {
+    unexpectedExternalRequests.push(url);
+    Promise.resolve().then(function () {
+      if (typeof element.onerror === 'function') element.onerror(new localWindow.Event('error'));
+    });
+  }
+  return result;
+};
+vm.runInNewContext(loaderSource, {
+  window: localWindow,
+  document: localWindow.document,
+  console: { warn: function () {}, error: function () {} },
+}, { filename: 'charger-dependances-ia-local.js' });
+const localState = await localWindow.GasyMahay.chargerDependancesRenduIA();
+if (!localState.katex || !localState.mhchem || !localState.marked || !localState.purify || !localState.css || !localState.highlight) {
+  throw new Error('The local asset set did not initialize every renderer dependency');
+}
+if (unexpectedExternalRequests.length) {
+  throw new Error('A CDN was contacted even though local dependency files were available: ' + unexpectedExternalRequests.join(', '));
+}
+if (!localRerendered) {
+  throw new Error('Renderer was not retriggered after local dependency loading');
+}
+for (const localFragment of [
+  '/katex/katex.min.css',
+  '/katex/katex.min.js',
+  '/katex/contrib/mhchem.min.js',
+  '/marked/marked.min.js',
+  '/dompurify/purify.min.js',
+  '/highlightjs/highlight.min.js'
+]) {
+  if (!localAssetRequests.some((url) => url.includes(localFragment))) {
+    throw new Error('Expected vendored local asset was not loaded: ' + localFragment);
+  }
+}
 
 // Prévention issue du guide des symboles : distinguer Unicode, LaTeX, unités et contexte.
 const guideHost = window.document.createElement('div');

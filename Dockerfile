@@ -12,6 +12,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Télécharge, vérifie et embarque les bibliothèques d'affichage IA et les polices.
+# Le navigateur les sert ensuite depuis /static/vendor, sans dépendre d'un CDN.
+RUN python scripts/vendor_frontend_dependencies.py
+
 # Render transmet le trafic au port interne expose par le service (8080 par défaut).
 EXPOSE 8080
 
