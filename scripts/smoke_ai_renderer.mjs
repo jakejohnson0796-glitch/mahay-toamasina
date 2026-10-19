@@ -69,10 +69,15 @@ if (!vendorWindow.hljs || typeof vendorWindow.hljs.highlight !== 'function') {
   throw new Error('Locally vendored Highlight.js did not initialize');
 }
 const vendorMathHost = vendorWindow.document.createElement('div');
+const vendorReactionHost = vendorWindow.document.createElement('div');
+// katex.render remplace le contenu de sa cible : isoler les deux assertions.
 vendorWindow.katex.render('\\frac{1}{2}', vendorMathHost, { throwOnError: false });
-vendorWindow.katex.render('\\ce{2H2 + O2 -> 2H2O}', vendorMathHost, { throwOnError: false, strict: 'ignore' });
-if (vendorMathHost.querySelectorAll('.katex').length !== 2 || vendorMathHost.querySelector('.katex-error')) {
-  throw new Error('Locally vendored KaTeX/mhchem failed the fraction/reaction smoke test');
+vendorWindow.katex.render('\\ce{2H2 + O2 -> 2H2O}', vendorReactionHost, { throwOnError: false, strict: 'ignore' });
+if (vendorMathHost.querySelectorAll('.katex').length !== 1 || vendorMathHost.querySelector('.katex-error')) {
+  throw new Error('Locally vendored KaTeX failed the fraction smoke test');
+}
+if (vendorReactionHost.querySelectorAll('.katex').length !== 1 || vendorReactionHost.querySelector('.katex-error')) {
+  throw new Error('Locally vendored KaTeX/mhchem failed the reaction smoke test');
 }
 if (!vendorWindow.marked.parse('**test**').includes('<strong>test</strong>')) {
   throw new Error('Locally vendored Marked did not parse Markdown correctly');
