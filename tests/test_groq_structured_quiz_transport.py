@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from app import ai_ensemble
+from app import ai_ensemble, ai_quiz
 from app.ai_quiz import OUTIL_QUIZ
 from app.json_latex import charger_json_ia
 from app.quiz_validation import QuizValidationError, valider_questions
@@ -89,3 +89,44 @@ def test_validation_bloque_les_choix_dupliques():
 
     with pytest.raises(QuizValidationError, match="doivent etre distincts"):
         valider_questions(questions, expected_count=1, strict_coherence=True)
+
+
+def test_generation_groq_ne_depasse_pas_le_budget_tpm_sur_les_reessais(monkeypatch):
+    appels = []
+
+    def create_completion(**kwargs):
+        appels.append(kwargs)
+        # Une réponse invalide force le second essai sans appeler Groq.
+        return SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(content="{}", tool_calls=None),
+                    finish_reason="stop",
+                )
+            ]
+        )
+
+    client = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(create=create_completion)
+        )
+    )
+    monkeypatch.setattr(ai_quiz.parametres, "groq_model", "openai/gpt-oss-120b")
+    monkeypatch.setattr(
+        ai_ensemble.cost_controller,
+        "call",
+        lambda provider, callback: callback(),
+    )
+
+    completion, erreur = ai_quiz._generer_completion_avec_reessai(
+        client,
+        ["consigne initiale", "consigne de secours"],
+        max_completion_tokens=2048,
+        expected_count=5,
+    )
+
+    assert completion is None
+    assert erreur is not None
+    assert len(appels) == 2
+    assert [appel["max_completion_tokens"] for appel in appels] == [2012, 2012]
+    assert all(appel["max_completion_tokens"] <= 2048 for appel in appels)
