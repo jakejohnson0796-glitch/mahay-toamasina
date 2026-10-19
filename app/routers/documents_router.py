@@ -61,6 +61,16 @@ def _charger_fiche_pedagogique(document: Document) -> dict:
     return _charger_fiche_pedagogique_json(document.fiche_pedagogique_json)
 
 
+def _fiche_pedagogique_peut_etre_validee(document: Document) -> bool:
+    statut = str(getattr(document, "resume_statut_ia", "") or "")
+    resume = str(getattr(document, "resume_ia", "") or "").strip()
+    return bool(resume) and statut in {"generee", "provisoire"}
+
+
+def _fiche_pedagogique_est_validee(document: Document) -> bool:
+    return str(getattr(document, "fiche_validation_statut", "a_verifier") or "a_verifier") == "validee"
+
+
 def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
     """Reference unique sans charger/compter toute la table des documents."""
     prefixe = "".join(c for c in filiere.nom.upper() if c.isalpha())[:3] or "DOC"
@@ -739,9 +749,8 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
     relie lecture, quiz et Tuteur contextualisé autour de la même ressource.
     """
     utilisateur = utilisateur_courant(request, session)
-    redirection = acces_ia_ou_redirection(utilisateur, session)
-    if redirection:
-        return redirection
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
 
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
@@ -758,7 +767,105 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             "request": request,
             "utilisateur": utilisateur,
             "document": document,
+            "fiche_pedagogique": _charger_fiche_pedagogique(document),
+            "fiche_validee": _fiche_pedagogique_est_validee(document),
+            "fiche_validation_possible": _fiche_pedagogique_peut_etre_validee(document),
+            "peut_valider_fiche": (
+                utilisateur.role == RoleUtilisateur.ADMIN
+                or document.uploader_id == utilisateur.id
+            ),
         },
+    )
+
+
+@router.post("/documents/{document_id}/fiche/valider")
+def valider_fiche_document(
+    request: Request,
+    document_id: int,
+    resume_verifie: str = Form(...),
+    objectif_verifie: str = Form(default=""),
+    niveau_verifie: str = Form(default=""),
+    notions_verifiees: str = Form(default=""),
+    confirmer_contenu: bool = Form(default=False),
+    confirmer_metadonnees: bool = Form(default=False),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Enregistre la vérification humaine de la fiche et les corrections éventuelles."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document or document.statut != StatutDocument.APPROUVE:
+        return RedirectResponse("/documents", status_code=303)
+    if utilisateur.role != RoleUtilisateur.ADMIN and document.uploader_id != utilisateur.id:
+        return RedirectResponse("/documents", status_code=303)
+    if not _fiche_pedagogique_peut_etre_validee(document):
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=fiche_indisponible#fiche-verification",
+            status_code=303,
+        )
+    if not confirmer_contenu or not confirmer_metadonnees:
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=confirmation_requise#fiche-verification",
+            status_code=303,
+        )
+
+    resume = str(resume_verifie or "").strip()[:12000]
+    objectif = str(objectif_verifie or "").strip()[:800]
+    niveau = str(niveau_verifie or "").strip()[:140]
+    notions = []
+    for ligne in (notions_verifiees or "").splitlines():
+        valeur = " ".join(ligne.split()).strip()
+        if valeur and valeur not in notions:
+            notions.append(valeur[:180])
+        if len(notions) >= 12:
+            break
+    if not resume:
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=fiche_incomplete#fiche-verification",
+            status_code=303,
+        )
+
+    fiche = _charger_fiche_pedagogique(document)
+    anciens = {
+        "resume": str(document.resume_ia or "").strip(),
+        "objectif_pedagogique": str(fiche.get("objectif_pedagogique") or "").strip(),
+        "niveau_cible": str(fiche.get("niveau_cible") or "").strip(),
+        "notions_cles": [str(n).strip() for n in (fiche.get("notions_cles") or [])],
+    }
+    nouveau = {
+        "resume": resume,
+        "objectif_pedagogique": objectif,
+        "niveau_cible": niveau,
+        "notions_cles": notions,
+    }
+    fiche_modifiee = anciens != nouveau
+
+    fiche["resume"] = resume
+    fiche["objectif_pedagogique"] = objectif
+    fiche["niveau_cible"] = niveau
+    fiche["notions_cles"] = notions
+    fiche["validation_humaine"] = True
+    fiche["source_validation"] = "humaine"
+    fiche["statut"] = "generee"
+    document.resume_ia = resume
+    document.fiche_pedagogique_json = json.dumps(fiche, ensure_ascii=False)
+    document.resume_statut_ia = "generee"
+    document.fiche_validation_statut = "validee"
+    document.fiche_validee_par_id = utilisateur.id
+    document.fiche_validee_le = datetime.utcnow()
+    if fiche_modifiee:
+        document.resume_ia_mg = ""
+        document.fiche_pedagogique_mg_json = "{}"
+        document.resume_statut_ia_mg = "indisponible"
+
+    session.add(document)
+    session.commit()
+    return RedirectResponse(
+        f"/documents/{document.id}/apprendre?fiche=validee#fiche-verification",
+        status_code=303,
     )
 
 
@@ -775,6 +882,11 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
+    if not _fiche_pedagogique_est_validee(document):
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=fiche_a_verifier#fiche-verification",
+            status_code=303,
+        )
 
     try:
         with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:

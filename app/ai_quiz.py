@@ -663,26 +663,34 @@ OUTIL_TUTEUR = {
     "type": "function",
     "function": {
         "name": "repondre_tuteur",
-        "description": "Repond a la question d'un etudiant en 4 parties structurees.",
+        "description": "Répond en cinq parties pédagogiques, dont un indice séparé de la correction.",
         "parameters": {
             "type": "object",
             "properties": {
-                "explication": {
-                    "type": "string",
-                    "description": "Explication claire et pedagogique du concept demande, adaptee a un etudiant universitaire malgache. Plusieurs phrases, structuree.",
-                },
-                "exemple": {
-                    "type": "string",
-                    "description": "Un exemple concret qui illustre le concept explique.",
-                },
-                "exercice": {
-                    "type": "string",
-                    "description": "Un petit exercice d'application sur ce meme concept, que l'etudiant peut essayer de resoudre lui-meme.",
-                },
-                "correction": {
-                    "type": "string",
-                    "description": "La solution detaillee de l'exercice propose ci-dessus, avec le raisonnement.",
-                },
+                "explication": {"type": "string", "description": "Explication claire et pédagogique du concept demandé."},
+                "exemple": {"type": "string", "description": "Un exemple concret qui illustre le concept."},
+                "indice": {"type": "string", "description": "Un indice progressif, court et utile, qui guide une première étape sans révéler le résultat final ni la correction."},
+                "exercice": {"type": "string", "description": "Un exercice d'application que l'étudiant peut résoudre lui-même."},
+                "correction": {"type": "string", "description": "La solution détaillée de l'exercice proposé, avec le raisonnement."},
+            },
+            "required": ["explication", "exemple", "indice", "exercice", "correction"],
+        },
+    },
+}
+
+# L'arbitre vérifie les quatre sections historiques ; l'indice est conservé à part.
+OUTIL_TUTEUR_VERIFICATION = {
+    "type": "function",
+    "function": {
+        **OUTIL_TUTEUR["function"],
+        "name": "verifier_reponse_tuteur",
+        "description": "Vérifie la cohérence pédagogique des quatre sections du Tuteur.",
+        "parameters": {
+            **OUTIL_TUTEUR["function"]["parameters"],
+            "properties": {
+                cle: valeur
+                for cle, valeur in OUTIL_TUTEUR["function"]["parameters"]["properties"].items()
+                if cle != "indice"
             },
             "required": ["explication", "exemple", "exercice", "correction"],
         },
@@ -734,8 +742,9 @@ def generer_reponse_tuteur(
                 f"{'La matiere est ' + repr(matiere) + '. ' if matiere else ''}"
                 f"Fais de cette reponse une etape de remediation : explique "
                 f"l'origine probable de la difficulte, donne un exemple, "
-                f"propose un exercice progressif puis une correction qui "
-                f"resout exactement l'exercice fourni. Avant de repondre, "
+                f"propose un indice progressif distinct qui guide une première étape sans "
+                f"révéler la solution. Ensuite, propose un exercice progressif puis une "
+                f"correction qui résout exactement l'exercice fourni. Avant de répondre, "
                 f"verifie les calculs, les signes, les unités, les dimensions, "
                 f"les conversions, la syntaxe et le résultat du code selon la "
                 f"matiere. Ne donne jamais une correction qui contredit "
@@ -818,6 +827,13 @@ def generer_reponse_tuteur(
         "exercice": arguments.get("exercice") or "—",
         "correction": arguments.get("correction") or "—",
     })
+    indice = str(arguments.get("indice") or "").strip()[:2400]
+    if not indice:
+        indice = (
+            "Indice de méthode : repère les données utiles et ce que l'on cherche. "
+            "Identifie la règle pertinente, puis essaie une première étape avant la correction."
+        )
+    reponse_initiale["indice"] = indice
 
     if not verifier:
         return reponse_initiale
@@ -846,6 +862,8 @@ def generer_reponse_tuteur(
         )
     else:
         reponse_finale["_verification_ok"] = verification_ok
+    # La vérification ne réécrit pas l'indice : il reste séparé de la correction.
+    reponse_finale["indice"] = indice
     return reponse_finale
 
 
@@ -864,7 +882,7 @@ def verifier_reponse_tuteur_structuree(
             question=question,
             notion=notion,
             matiere=matiere,
-            outil_tuteur=OUTIL_TUTEUR,
+            outil_tuteur=OUTIL_TUTEUR_VERIFICATION,
             strategie=strategie,
         )
         resume_audit = _resume_audit_ensemble(audit, confiant_tuteur)

@@ -241,6 +241,11 @@ def demander_tuteur(
             and candidat.statut == StatutDocument.APPROUVE
             and _utilisateur_membre_cercle(session, candidat.cercle_id, utilisateur.id)
         ):
+            if candidat.fiche_validation_statut != "validee":
+                return RedirectResponse(
+                    f"/documents/{candidat.id}/apprendre?erreur=fiche_a_verifier#fiche-verification",
+                    status_code=303,
+                )
             document_source = candidat
 
     question_pour_ia = question
@@ -290,6 +295,13 @@ def demander_tuteur(
     reponse.pop("_erreur_verification", None)
     reponse.pop("_verification_ok", None)
 
+    # L'indice est capturé séparément des quatre sections canoniques.
+    indice_tuteur = str(reponse.get("indice") or "").strip()[:2400]
+    if not indice_tuteur:
+        indice_tuteur = (
+            "Indice de méthode : repère les données utiles et ce que l'on cherche. "
+            "Identifie la règle pertinente, puis essaie une première étape avant la correction."
+        )
     # Canonisation finale avant tout stockage, même en cas de secours ou
     # d'arbitrage multi-modèles partiel.
     reponse = normaliser_structure_tuteur(reponse)
@@ -299,6 +311,7 @@ def demander_tuteur(
         notion=progression.notion if progression else None,
         progression_id=progression.id if progression else None,
         question=question,
+        indice=indice_tuteur,
         explication=reponse["explication"],
         exemple=reponse["exemple"],
         exercice=reponse["exercice"],
@@ -360,6 +373,7 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
         "exercice": session_tuteur.exercice,
         "correction": session_tuteur.correction,
     })
+    indice = str(session_tuteur.indice or "")
 
     def rendu(champ: str) -> str:
         return contenu.get(champ, "")
@@ -377,6 +391,7 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
             "exemple": rendu("exemple"),
             "exercice": rendu("exercice"),
             "correction": rendu("correction"),
+            "indice": indice,
         },
     }
 

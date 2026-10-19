@@ -66,6 +66,9 @@
     <p class="doc-depot-personnel-meta">{{ doc.matiere }} · {{ doc.type_document.value }} · {{ doc.annee }} · Statut : {{ doc.statut.value }}</p>
     {% set fiche_mg = fiches_documents_mg.get(doc.id, {}) %}
     <details class="doc-fiche">
+      <summary>Résumé et fiche pédagogique{% if doc.fiche_validation_statut != "validee" %} · en attente de vérification{% endif %}</summary>
+      {% set fiche_visible = doc.fiche_validation_statut == "validee" or (utilisateur and (doc.uploader_id == utilisateur.id or utilisateur.role.value == "admin")) %}
+      {% if fiche_visible %}
       <summary>Comprendre ce document</summary>
       <div data-fiche-lang="fr" data-no-translate>
         {% if doc.resume_ia %}
@@ -97,6 +100,9 @@
         <p>Eo am-panomanana ny famintinana amin’ny teny malagasy. Hiseho eto izany rehefa vita.</p>
         {% else %}<p>Tsy mbola misy famintinana malagasy voamarina. Mbola azonao jerena ny antontan-taratasy tany am-boalohany.</p>{% endif %}
       </div>
+      {% else %}
+      <p>Le résumé automatique est masqué jusqu'à sa vérification par le déposant ou l'administration. Le Quiz IA restera indisponible entre-temps.</p>
+      {% endif %}
     </details>
   </article>
   {% endfor %}
@@ -189,7 +195,11 @@ session dediee, avec sa propre verification desktop+mobile.
     <div class="doc-actions">
       <a class="bouton bouton-secondaire doc-bouton" href="/documents/{{ doc.id }}/telecharger">Telecharger</a>
       {% if utilisateur %}
+      {% if doc.fiche_validation_statut == "validee" %}
       <a class="doc-lien-quiz" href="/documents/{{ doc.id }}/quiz">Quiz IA &rarr;</a>
+      {% else %}
+      <a class="doc-lien-fiche-validation" href="/documents/{{ doc.id }}/apprendre#fiche-verification">Vérifier la fiche avant le quiz &rarr;</a>
+      {% endif %}
       <a class="doc-lien-quiz" href="/documents/{{ doc.id }}/apprendre">Parcours &rarr;</a>
       {% endif %}
     </div>
@@ -235,7 +245,7 @@ session dediee, avec sa propre verification desktop+mobile.
   // (voir /documents/{id}/quiz) qui peut prendre plusieurs secondes
   // sans retour visuel avant cet ajout. On ne bloque pas la navigation
   // (comportement du lien inchange), on donne juste un retour immediat.
-  document.querySelectorAll(".doc-lien-quiz").forEach(function (lien) {
+  document.querySelectorAll('.doc-lien-quiz[href$="/quiz"]').forEach(function (lien) {
     lien.addEventListener("click", function () {
       lien.innerHTML = '<span class="chargement-spinner" aria-hidden="true"></span> Generation…';
       lien.style.pointerEvents = "none";

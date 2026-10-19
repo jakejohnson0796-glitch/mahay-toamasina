@@ -155,6 +155,21 @@
     </article>
     {% endif %}
 
+    {% if session_tuteur.indice %}
+    <article class="ai-answer-card ai-answer-card-full ai-answer-hint">
+      <div class="ai-answer-card-head">
+        <span class="ai-answer-card-icon" aria-hidden="true">💡</span>
+        <h2>Un indice avant la correction</h2>
+        <button class="tuteur-lecture-partie" type="button" data-lecture-cible="indice" aria-label="Écouter l’indice"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
+      </div>
+      <p>Essaie de résoudre l'exercice avec cet indice avant d'ouvrir la correction complète.</p>
+      <details>
+        <summary>Dévoiler l'indice progressif</summary>
+        <div class="ai-markdown-content" data-tuteur-content="indice" data-rendu>{{ session_tuteur.indice }}</div>
+      </details>
+    </article>
+    {% endif %}
+
     {% if session_tuteur.correction %}
     <article class="ai-answer-card ai-answer-card-full ai-answer-correction">
       <div class="ai-answer-card-head">
