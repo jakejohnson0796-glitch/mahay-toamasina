@@ -55,11 +55,11 @@ PACKAGES: dict[str, dict[str, Any]] = {
         "files": [("dist/purify.min.js", "purify.min.js")],
         "license_candidates": ["LICENSE", "LICENSE.md", "LICENSE.txt"],
     },
-    "highlight.js": {
+    "@highlightjs/cdn-assets": {
         "version": "11.12.0",
         "target": "highlightjs",
         "license_label": "BSD-3-Clause",
-        "files": [("build/highlight.min.js", "highlight.min.js")],
+        "files_candidates": [(["highlight.min.js", "build/highlight.min.js"], "highlight.min.js")],
         "license_candidates": ["LICENSE", "LICENSE.md", "LICENSE.txt"],
     },
 }
