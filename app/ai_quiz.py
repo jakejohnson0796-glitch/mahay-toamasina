@@ -343,6 +343,25 @@ def _generer_completion_avec_reessai(
 
     return None, derniere_erreur
 
+MAX_TEXTE_SOURCE_QUIZ = 5_000
+MARQUEUR_TEXTE_OMIS = "\n\n[... partie du document omise pour respecter la limite de contexte ...]\n\n"
+
+
+def _reduire_texte_document_pour_quiz(texte: str, limite: int = MAX_TEXTE_SOURCE_QUIZ) -> str:
+    """Borne le contexte envoyé au modèle tout en gardant début, milieu et fin."""
+    contenu = (texte or "").strip()
+    if len(contenu) <= limite:
+        return contenu
+
+    budget_extraits = max(3, limite - (2 * len(MARQUEUR_TEXTE_OMIS)))
+    taille_extrait = budget_extraits // 3
+    debut = contenu[:taille_extrait]
+    debut_milieu = max(taille_extrait, (len(contenu) - taille_extrait) // 2)
+    milieu = contenu[debut_milieu:debut_milieu + taille_extrait]
+    fin = contenu[-taille_extrait:]
+    return MARQUEUR_TEXTE_OMIS.join((debut, milieu, fin))
+
+
 def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> List[Dict]:
     """
     Envoie le texte du document a Groq et recupere un quiz a choix
@@ -362,10 +381,10 @@ def generer_quiz_depuis_texte(texte_document: str, nb_questions: int = 5) -> Lis
     except RuntimeError as erreur:
         return _quiz_erreur("Generation de quiz IA non configuree.", str(erreur))
 
-    # On tronque pour rester dans une taille de contexte raisonnable (et
-    # rester large sous les limites du palier gratuit) meme sur un gros
-    # support de cours.
-    texte_tronque = texte_document[:12000]
+    # Les limites Groq TPM incluent le prompt ET le budget de sortie.
+    # Garder trois extraits répartis dans le document plutôt qu'un long début
+    # évite les erreurs HTTP 413 sans perdre complètement la vue d'ensemble.
+    texte_tronque = _reduire_texte_document_pour_quiz(texte_document)
 
     # Le document est une donnee non fiable : les instructions eventuelles
     # qu'il contient ne doivent jamais etre traitees comme des consignes IA.
