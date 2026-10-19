@@ -683,4 +683,79 @@ if (!scienceRecoveryText.includes('30\u202F≈\u202F32')) {
   throw new Error('A valid Unicode approximation was altered');
 }
 
+
+// Audit multidisciplinaire : matrices, fonctions par morceaux, unités SI,
+// réactions chimiques, montants comptables et opérateurs de programmation.
+const multiDisciplineHost = window.document.createElement('div');
+window.document.body.appendChild(multiDisciplineHost);
+const tickForCode = String.fromCharCode(96);
+const codeFence = tickForCode.repeat(3);
+const multiDisciplineSource = [
+  String.raw`Mathématiques — matrice : \(A=\begin{pmatrix}1&2\\3&4\end{pmatrix}\).`,
+  String.raw`Fonction par morceaux : \(f(x)=\begin{cases}x^2,&x\ge 0\\-x,&x<0\end{cases}\).`,
+  String.raw`Physique : \(\Delta E=\hbar\omega\), \(v=3\,\mathrm{m/s}\), \(a=2\,\mathrm{m/s^{2}}\), \(\rho=1\,\mathrm{kg/m^{3}}\).`,
+  String.raw`Chimie : \(\ce{2H2 + O2 -> 2H2O}\) et \(\ce{Fe^{3+} + 3OH^- -> Fe(OH)3}\).`,
+  'Comptabilité : Ar 125 000 MGA ; HT 100 000 ; TVA 20 000 ; TTC 120 000.',
+  'Informatique : ' + tickForCode + 'const ok = a <= b && value !== null; const fallback = obj?.value ?? 0;' + tickForCode,
+  'Code clôturé :\n' + codeFence + 'js\nconst ratio = 12 / 18;\\nif (ratio <= 1 && ready !== null) console.log(ratio);\n' + codeFence
+].join('\n');
+const multiFormulaOffset = formulesRendues.length;
+window.rendreReponseIA(multiDisciplineSource, multiDisciplineHost);
+const multiRenderedFormulas = formulesRendues.slice(multiFormulaOffset);
+if (multiRenderedFormulas.length !== 8) {
+  throw new Error('Expected exactly eight scientific expressions; got ' + multiRenderedFormulas.length + ': ' + JSON.stringify(multiRenderedFormulas));
+}
+if (multiDisciplineHost.querySelectorAll('.katex-error').length) {
+  throw new Error('A matrix, piecewise function, SI unit or chemical equation caused a KaTeX error');
+}
+for (const formula of [
+  String.raw`\begin{pmatrix}`,
+  String.raw`\begin{cases}`,
+  String.raw`\mathrm{kg/m^{3}}`,
+  String.raw`\ce{2H2 + O2 -> 2H2O}`,
+  String.raw`\ce{Fe^{3+} + 3OH^- -> Fe(OH)3}`
+]) {
+  if (!multiRenderedFormulas.some((rendered) => rendered.includes(formula))) {
+    throw new Error('Scientific formula was lost or rewritten: ' + formula);
+  }
+}
+const multiPlainClone = multiDisciplineHost.cloneNode(true);
+multiPlainClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const multiPlainText = multiPlainClone.textContent || '';
+for (const preserved of [
+  'Ar 125 000 MGA',
+  'HT 100 000',
+  'TVA 20 000',
+  'TTC 120 000',
+  'a <= b && value !== null',
+  'obj?.value ?? 0',
+  'const ratio = 12 / 18;',
+  'ready !== null'
+]) {
+  if (!multiPlainText.includes(preserved)) {
+    throw new Error('Non-mathematical content was altered or lost: ' + preserved);
+  }
+}
+if (multiDisciplineHost.querySelector('code') === null || multiDisciplineHost.querySelector('pre') === null) {
+  throw new Error('Inline or fenced programming code was not preserved as code');
+}
+if (multiDisciplineHost.querySelector('code .katex, pre .katex')) {
+  throw new Error('Programming code was incorrectly passed to KaTeX');
+}
+
+// Vérifie la sanitisation réelle du HTML hostile dans le même pipeline.
+// Le texte utile doit rester visible, mais les attributs exécutables et scripts sont retirés.
+const securityHost = window.document.createElement('div');
+window.document.body.appendChild(securityHost);
+window.rendreReponseIA(
+  'Texte sûr <img src="x" onerror="alert(1)"> après image <script>alert(2)</script>',
+  securityHost
+);
+if (securityHost.querySelector('img[onerror], script')) {
+  throw new Error('Un attribut exécutable ou un script HTML a survécu à DOMPurify');
+}
+if (!(securityHost.textContent || '').includes('Texte sûr') || !(securityHost.textContent || '').includes('après image')) {
+  throw new Error('Safe text around sanitized HTML was lost');
+}
+
 console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));

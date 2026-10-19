@@ -259,3 +259,29 @@ def test_renderer_fait_depuis_lisibilite_fractions_inline_et_etat_css_katex():
     assert ".ai-learning-page .ai-markdown-content .katex" in css
     assert ".jeu-cerebral-page .katex" in css
     assert "font-size: 1.28em" in css
+
+
+def test_contrat_explicite_les_matrices_et_fonctions_par_morceaux():
+    # Les environnements structurés doivent rester des formules complètes,
+    # notamment dans les sorties du Tuteur IA et du Quiz IA.
+    assert "MATRICES ET FONCTIONS PAR MORCEAUX" in REGLES_FORMAT
+    assert r"\\begin{pmatrix}" in REGLES_FORMAT
+    assert r"\\begin{cases}" in REGLES_FORMAT
+    assert "séparateur" in REGLES_FORMAT
+    assert "jamais à représenter une matrice" in REGLES_FORMAT
+
+
+def test_smoke_browser_couvre_les_disciplines_et_la_sanitisation():
+    smoke = (RACINE / "scripts" / "smoke_ai_renderer.mjs").read_text(encoding="utf-8")
+    for fragment in (
+        "Audit multidisciplinaire",
+        r"\begin{pmatrix}",
+        r"\begin{cases}",
+        r"\mathrm{kg/m^{3}}",
+        r"\ce{2H2 + O2 -> 2H2O}",
+        "Ar 125 000 MGA",
+        "a <= b && value !== null",
+        "DOMPurify",
+        "img[onerror], script",
+    ):
+        assert fragment in smoke
