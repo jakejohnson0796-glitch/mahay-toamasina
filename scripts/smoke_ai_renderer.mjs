@@ -13,7 +13,7 @@ const vendorVersions = {
   katex: '0.19.0',
   marked: '18.1.1',
   dompurify: '3.4.17',
-  'highlight.js': '11.12.0'
+  '@highlightjs/cdn-assets': '11.12.0'
 };
 for (const [name, version] of Object.entries(vendorVersions)) {
   if (!vendorManifest.packages[name] || vendorManifest.packages[name].version !== version) {
