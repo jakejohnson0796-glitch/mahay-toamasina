@@ -31,6 +31,7 @@ def test_quiz_depuis_document_cree_une_tentative_interactive(monkeypatch):
         chemin_fichier="/tmp/cours.pdf",
         matiere="Algèbre",
         titre="Cours Algèbre",
+        fiche_validation_statut="validee",
     )
 
     class FakeSession:

@@ -3,7 +3,13 @@ from types import SimpleNamespace
 
 from fastapi.responses import RedirectResponse
 
-from app.ai_quiz import OUTIL_TUTEUR, OUTIL_TUTEUR_VERIFICATION, generer_reponse_tuteur
+from app.ai_quiz import (
+    OUTIL_TUTEUR,
+    OUTIL_TUTEUR_VERIFICATION,
+    OUTIL_VERIFICATION_COMPREHENSION,
+    generer_reponse_tuteur,
+    verifier_comprehension_tuteur,
+)
 from app.models import Document, RoleUtilisateur, SessionTuteur, StatutDocument
 from app.routers import documents_router
 
@@ -92,3 +98,73 @@ def test_templates_exigent_relecture_humaine_et_affichent_un_indice_progressif()
     assert 'name="confirmer_contenu"' in hub and 'name="confirmer_metadonnees"' in hub
     assert 'doc.fiche_validation_statut == "validee"' in library
     assert "/documents/{{ document.id }}/apprendre#fiche-verification" in moderation
+
+
+def test_verification_comprehension_debloque_seulement_une_reponse_raisonnee(monkeypatch):
+    payload = {
+        "compris": True,
+        "feedback": "Oui : tu as correctement identifié la première étape.",
+        "indice_suivant": "",
+    }
+    message = SimpleNamespace(
+        tool_calls=[
+            SimpleNamespace(
+                function=SimpleNamespace(arguments=json.dumps(payload, ensure_ascii=False))
+            )
+        ]
+    )
+    completion = SimpleNamespace(choices=[SimpleNamespace(message=message)])
+    monkeypatch.setattr("app.ai_quiz._obtenir_client", lambda: object())
+    monkeypatch.setattr(
+        "app.ai_quiz.ai_ensemble.cost_controller.call",
+        lambda *_args, **_kwargs: completion,
+    )
+
+    resultat = verifier_comprehension_tuteur(
+        question="Explique le déterminant d'une matrice 2x2.",
+        notion="Déterminant d'ordre 2",
+        matiere="Mathématiques",
+        explication="Pour une matrice 2x2, utilise la différence des produits diagonaux.",
+        exemple="Pour [[a,b],[c,d]], on calcule ad-bc.",
+        indice_precedent="Repère les deux diagonales.",
+        reponse_etudiant="Je calcule le produit de la diagonale principale puis je retire l'autre produit.",
+    )
+
+    assert resultat["compris"] is True
+    assert resultat["verification_disponible"] is True
+    assert resultat["feedback"]
+    assert resultat["indice_suivant"] == ""
+    assert "indice_suivant" in OUTIL_VERIFICATION_COMPREHENSION["function"]["parameters"]["required"]
+
+
+def test_verification_comprehension_echoue_sans_debloquer_quand_les_modeles_sont_indisponibles(monkeypatch):
+    def indisponible():
+        raise RuntimeError("fournisseur indisponible")
+
+    monkeypatch.setattr("app.ai_quiz._obtenir_client", indisponible)
+    monkeypatch.setattr("app.ai_quiz.ai_ensemble._gemini_json", lambda *_args, **_kwargs: None)
+    resultat = verifier_comprehension_tuteur(
+        question="Une question",
+        notion="Notion",
+        matiere="Mathématiques",
+        explication="Explication",
+        exemple="Exemple",
+        indice_precedent="Repère les données",
+        reponse_etudiant="Je pense avoir compris",
+    )
+    assert resultat["compris"] is False
+    assert resultat["verification_disponible"] is False
+    assert "réessaie" in resultat["feedback"].lower()
+
+
+def test_le_tuteur_ne_propose_pas_exercice_ni_correction_avant_validation():
+    from pathlib import Path
+
+    contenu = (
+        Path(__file__).resolve().parents[1] / "app" / "templates" / "tuteur_reponse.html"
+    ).read_text(encoding="utf-8")
+    assert "id=\\"comprehension-tuteur\\"" in contenu
+    assert "verifier-comprehension" in contenu
+    assert "{% if session_tuteur.exercice and session_tuteur.comprehension_validee %}" in contenu
+    assert "{% if session_tuteur.correction and session_tuteur.comprehension_validee %}" in contenu
+    assert "comprehension_validee" in SessionTuteur.model_fields

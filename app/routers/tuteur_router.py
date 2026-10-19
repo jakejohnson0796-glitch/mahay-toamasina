@@ -396,6 +396,73 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
     }
 
 
+
+@router.post("/tuteur/{session_id}/verifier-comprehension")
+def verifier_comprehension_tuteur_session(
+    request: Request,
+    session_id: int,
+    reponse: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Vérifie la compréhension de l'étudiant sans exposer la correction."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    session_tuteur = session.get(SessionTuteur, session_id)
+    if not session_tuteur or session_tuteur.utilisateur_id != utilisateur.id:
+        return RedirectResponse("/tuteur", status_code=303)
+    if session_tuteur.comprehension_validee:
+        return RedirectResponse(f"/tuteur/{session_id}#comprehension-tuteur", status_code=303)
+
+    reponse = str(reponse or "").strip()[:2000]
+    if not reponse:
+        return RedirectResponse(
+            f"/tuteur/{session_id}?erreur=comprehension_requise#comprehension-tuteur",
+            status_code=303,
+        )
+    host = request.client.host if request.client else "inconnu"
+    if limite_depassee(f"ia-tuteur-comprehension:user:{utilisateur.id}", 10, 300) or limite_depassee(
+        f"ia-tuteur-comprehension:ip:{host}", 30, 300
+    ):
+        return RedirectResponse(
+            f"/tuteur/{session_id}?erreur=trop_de_questions#comprehension-tuteur",
+            status_code=303,
+        )
+
+    matiere = None
+    if session_tuteur.progression_id:
+        progression = session.get(ProgressionNotion, session_tuteur.progression_id)
+        if progression:
+            matiere = progression.matiere
+
+    evaluation = ai_quiz.verifier_comprehension_tuteur(
+        question=session_tuteur.question,
+        notion=session_tuteur.notion,
+        matiere=matiere,
+        explication=session_tuteur.explication,
+        exemple=session_tuteur.exemple,
+        indice_precedent=session_tuteur.indice,
+        reponse_etudiant=reponse,
+    )
+    session_tuteur.comprehension_reponse = reponse
+    session_tuteur.comprehension_feedback = str(evaluation.get("feedback") or "")[:900]
+    session_tuteur.comprehension_indice = (
+        str(evaluation.get("indice_suivant") or "")[:900]
+        if not evaluation.get("compris")
+        else ""
+    )
+    session_tuteur.comprehension_validee = bool(
+        evaluation.get("compris") and evaluation.get("verification_disponible", True)
+    )
+    session.add(session_tuteur)
+    session.commit()
+
+    return RedirectResponse(f"/tuteur/{session_id}#comprehension-tuteur", status_code=303)
+
+
 @router.get("/tuteur/{session_id}")
 def page_reponse_tuteur(request: Request, session_id: int, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)

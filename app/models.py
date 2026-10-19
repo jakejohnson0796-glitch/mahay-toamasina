@@ -1072,6 +1072,11 @@ class SessionTuteur(SQLModel, table=True):
     question: str
     # Indice distinct de la correction, dévoilé uniquement à la demande de l’étudiant.
     indice: str = Field(default="")
+    # Une réponse de compréhension est évaluée explicitement avant de débloquer l'exercice.
+    comprehension_validee: bool = Field(default=False)
+    comprehension_reponse: str = Field(default="")
+    comprehension_feedback: str = Field(default="")
+    comprehension_indice: str = Field(default="")
     explication: str
     exemple: str
     exercice: str

@@ -8,6 +8,7 @@
 <style nonce="{{ csp_nonce(request) }}">
   .doc-fiche{margin:.75rem 0;padding:.72rem .78rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);color:var(--content-text)}
   .doc-fiche summary{cursor:pointer;font-size:.76rem;font-weight:750;color:var(--content-text);line-height:1.45}
+  .doc-fiche h5{font-size:.76rem;margin:.65rem 0 .4rem;color:var(--content-text)}
   .doc-fiche p{font-size:.75rem;line-height:1.6;color:var(--content-text-muted);overflow-wrap:anywhere}
   .doc-fiche strong{color:var(--content-text)}
   .doc-fiche ul{margin:.25rem 0 .7rem;padding-left:1.2rem;font-size:.74rem;line-height:1.6;color:var(--content-text-muted)}
@@ -69,7 +70,7 @@
       <summary>Résumé et fiche pédagogique{% if doc.fiche_validation_statut != "validee" %} · en attente de vérification{% endif %}</summary>
       {% set fiche_visible = doc.fiche_validation_statut == "validee" or (utilisateur and (doc.uploader_id == utilisateur.id or utilisateur.role.value == "admin")) %}
       {% if fiche_visible %}
-      <summary>Comprendre ce document</summary>
+      <h5>Comprendre ce document</h5>
       <div data-fiche-lang="fr" data-no-translate>
         {% if doc.resume_ia %}
         <span class="doc-fiche-etat">{% if doc.resume_statut_ia == "generee" %}Fiche IA prête{% elif doc.resume_statut_ia == "insuffisante" %}Texte non extractible{% else %}Aperçu provisoire{% endif %}</span>
