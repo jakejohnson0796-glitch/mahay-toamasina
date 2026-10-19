@@ -27,8 +27,8 @@
     ],
     marked: [
       local + "marked/marked.min.js?v=" + versionsLocales.marked,
-      principal + "npm/marked@18.1.1/marked.min.js",
-      secours + "marked@18.1.1/marked.min.js"
+      principal + "npm/marked@18.1.1/lib/marked.umd.js",
+      secours + "marked@18.1.1/lib/marked.umd.js"
     ],
     purify: [
       local + "dompurify/purify.min.js?v=" + versionsLocales.purify,
@@ -37,8 +37,8 @@
     ],
     highlight: [
       local + "highlightjs/highlight.min.js?v=" + versionsLocales.highlight,
-      principal + "npm/highlight.js@11.12.0/build/highlight.min.js",
-      secours + "highlight.js@11.12.0/build/highlight.min.js"
+      principal + "gh/highlightjs/cdn-release@11.12.0/build/highlight.min.js",
+      secours + "@highlightjs/cdn-assets@11.12.0/highlight.min.js"
     ]
   };
 
