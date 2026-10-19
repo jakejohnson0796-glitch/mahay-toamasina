@@ -221,9 +221,13 @@ def _generer_completion_avec_reessai(
     derniere_erreur = None
     messages_par_essai = [message + "\n\n" + REGLES_FORMAT for message in messages_par_essai]
 
-    budget_adapte = max(
-        max_completion_tokens,
-        min(16_384, max(4_096, 1_024 + (700 * max(1, expected_count)))),
+    # Le budget demandé par l'appelant est un plafond, pas un minimum.
+    # Le relever automatiquement à 4 096+ jetons dépassait les quotas TPM
+    # Groq gratuits avant même que le modèle commence à générer le quiz.
+    budget_demande = max(1, int(max_completion_tokens))
+    budget_adapte = min(
+        budget_demande,
+        max(1_024, min(4_096, 512 + (300 * max(1, expected_count)))),
     )
     schema = OUTIL_QUIZ["function"]["parameters"]
     response_format = ai_ensemble.structured_response_format(
@@ -232,8 +236,12 @@ def _generer_completion_avec_reessai(
         "soumettre_quiz",
     )
 
-    for numero_essai, contenu in enumerate(messages_par_essai, start=1):
-        budget_essai = budget_adapte if numero_essai == 1 else min(32_768, budget_adapte * 2)
+    # Itérer sur le nombre d'essais initial : les corrections ajoutées après
+    # une validation invalide ne doivent pas étendre la boucle sans limite.
+    for numero_essai, contenu in enumerate(list(messages_par_essai), start=1):
+        # Un nouvel essai ne doit pas doubler le budget : cela peut transformer
+        # un échec de validation en dépassement de la limite tokens/minute.
+        budget_essai = budget_adapte
         kwargs = {
             "model": parametres.groq_model,
             "max_completion_tokens": budget_essai,
