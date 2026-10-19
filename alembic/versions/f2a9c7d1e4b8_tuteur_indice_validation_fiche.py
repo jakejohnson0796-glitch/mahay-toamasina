@@ -22,7 +22,19 @@ def upgrade() -> None:
         if "fiche_validation_statut" not in columns:
             op.add_column("document", sa.Column("fiche_validation_statut", sa.String(20), nullable=False, server_default="a_verifier"))
         if "fiche_validee_par_id" not in columns:
-            op.add_column("document", sa.Column("fiche_validee_par_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=True))
+            # SQLite ne sait pas ajouter une contrainte FK avec ALTER TABLE.
+            # PostgreSQL garde la vraie clé étrangère; SQLite conserve la colonne
+            # additive pour les tests locaux et utilise la relation du modèle.
+            if bind.dialect.name == "sqlite":
+                colonne_validateur = sa.Column("fiche_validee_par_id", sa.Integer(), nullable=True)
+            else:
+                colonne_validateur = sa.Column(
+                    "fiche_validee_par_id",
+                    sa.Integer(),
+                    sa.ForeignKey("utilisateur.id"),
+                    nullable=True,
+                )
+            op.add_column("document", colonne_validateur)
         if "fiche_validee_le" not in columns:
             op.add_column("document", sa.Column("fiche_validee_le", sa.DateTime(), nullable=True))
         indexes = {i["name"] for i in sa.inspect(bind).get_indexes("document")}
