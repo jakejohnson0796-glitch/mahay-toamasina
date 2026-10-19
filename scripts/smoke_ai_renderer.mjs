@@ -575,7 +575,7 @@ fallbackWindow.document.head.appendChild = function (element) {
       if (element.tagName === 'SCRIPT') {
         if (url.includes('/dist/katex.min.js')) fallbackWindow.katex = createFakeKatex();
         else if (url.includes('/dist/contrib/mhchem.min.js')) mhchemFallbackReady = true;
-        else if (url.includes('/marked.min.js')) fallbackWindow.marked = { parse: function () { return ''; } };
+        else if (url.includes('/lib/marked.umd.js')) fallbackWindow.marked = { parse: function () { return ''; } };
         else if (url.includes('/dist/purify.min.js')) fallbackWindow.DOMPurify = { sanitize: function () { return fallbackWindow.document.createDocumentFragment(); } };
         else if (url.includes('/build/highlight.min.js')) fallbackWindow.hljs = { highlightElement: function () {} };
       }
@@ -612,7 +612,7 @@ for (const fragment of [
   '/dist/katex.min.css',
   '/dist/katex.min.js',
   '/dist/contrib/mhchem.min.js',
-  '/marked.min.js',
+  '/lib/marked.umd.js',
   '/dist/purify.min.js',
 ]) {
   if (!fallbackRequests.some((url) => url.includes(fragment))) {
