@@ -51,7 +51,7 @@ def test_fiche_documentaire_n_est_validable_que_si_une_extraction_exploitable_ex
 
 def test_generation_quiz_document_est_bloquee_tant_que_la_fiche_n_est_pas_validee(monkeypatch):
     user = SimpleNamespace(id=8, role=RoleUtilisateur.ETUDIANT, niveau="L1")
-    document = SimpleNamespace(id=42, statut=StatutDocument.APPROUVE, fiche_validation_statut="a_verifier",
+    document = SimpleNamespace(id=42, statut=StatutDocument.APPROUVE, cercle_id=None, fiche_validation_statut="a_verifier",
         chemin_fichier="not-opened.pdf", titre="Document test", matiere="Mathématiques", resume_ia="Résumé", resume_statut_ia="generee")
     fake_session = SimpleNamespace(get=lambda _model, ident: document if ident == 42 else None)
     monkeypatch.setattr(documents_router, "utilisateur_courant", lambda _request, _session: user)
@@ -66,7 +66,7 @@ def test_generation_quiz_document_est_bloquee_tant_que_la_fiche_n_est_pas_valide
 def test_route_validation_fiche_enregistre_corrections_et_audit(monkeypatch):
     user = SimpleNamespace(id=12, role=RoleUtilisateur.ETUDIANT)
     original = {"resume":"Résumé ancien.","type_cours":"Cours magistral","objectif_pedagogique":"Objectif ancien.","niveau_cible":"L1","notions_cles":["Ancienne notion"],"source":"ia","statut":"generee"}
-    document = SimpleNamespace(id=43,uploader_id=user.id,statut=StatutDocument.APPROUVE,matiere="Mathématiques",type_document=TypeDocument.COURS,resume_ia="Résumé ancien.",
+    document = SimpleNamespace(id=43,uploader_id=user.id,statut=StatutDocument.APPROUVE,cercle_id=None,matiere="Mathématiques",type_document=TypeDocument.COURS,resume_ia="Résumé ancien.",
         resume_statut_ia="generee",fiche_pedagogique_json=json.dumps(original,ensure_ascii=False),fiche_validation_statut="a_verifier",
         fiche_validee_par_id=None,fiche_validee_le=None,resume_ia_mg="Résumé MG",fiche_pedagogique_mg_json='{"resume":"Résumé MG"}',resume_statut_ia_mg="generee")
     class FakeSession:
@@ -175,3 +175,36 @@ def test_le_tuteur_ne_propose_pas_exercice_ni_correction_avant_validation():
     assert '{% if session_tuteur.exercice and session_tuteur.comprehension_validee %}' in contenu
     assert '{% if session_tuteur.correction and session_tuteur.comprehension_validee %}' in contenu
     assert "comprehension_validee" in SessionTuteur.model_fields
+
+
+def test_api_statut_tuteur_ne_divulgue_pas_exercice_ou_correction_avant_comprehension(monkeypatch):
+    from app.routers import tuteur_router
+
+    user = SimpleNamespace(id=5)
+    tutor_session = SimpleNamespace(
+        id=77,
+        utilisateur_id=user.id,
+        explication="La méthode consiste à identifier les données utiles.",
+        exemple="Un exemple simple.",
+        exercice="EXERCICE SECRET",
+        correction="CORRECTION SECRÈTE",
+        indice="Commence par identifier les données.",
+        statut_verification_ia="terminee",
+        erreur_verification_ia=None,
+        date_verification_ia=None,
+        comprehension_validee=False,
+    )
+    fake_session = SimpleNamespace(get=lambda _model, _id: tutor_session)
+    monkeypatch.setattr(tuteur_router, "utilisateur_courant", lambda _request, _session: user)
+    monkeypatch.setattr(tuteur_router, "acces_ia_ou_redirection", lambda _user, _session: None)
+
+    result = tuteur_router.statut_tuteur(
+        SimpleNamespace(session={}, client=SimpleNamespace(host="127.0.0.1")),
+        77,
+        fake_session,
+    )
+
+    assert result["contenu"]["explication"]
+    assert result["contenu"]["indice"]
+    assert result["contenu"]["exercice"] == ""
+    assert result["contenu"]["correction"] == ""

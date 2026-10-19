@@ -28,6 +28,7 @@ def test_quiz_depuis_document_cree_une_tentative_interactive(monkeypatch):
     document = SimpleNamespace(
         id=42,
         statut=StatutDocument.APPROUVE,
+        cercle_id=None,
         chemin_fichier="/tmp/cours.pdf",
         matiere="Algèbre",
         titre="Cours Algèbre",

@@ -378,6 +378,10 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
     def rendu(champ: str) -> str:
         return contenu.get(champ, "")
 
+    # Ne pas compter sur le masquage HTML : l'API ne doit jamais livrer
+    # l'exercice ni sa correction avant la vérification de compréhension.
+    comprehension_ok = bool(getattr(session_tuteur, "comprehension_validee", False))
+
     return {
         "statut": session_tuteur.statut_verification_ia,
         "erreur": session_tuteur.erreur_verification_ia,
@@ -389,8 +393,8 @@ def statut_tuteur(request: Request, session_id: int, session: Session = Depends(
         "contenu": {
             "explication": rendu("explication"),
             "exemple": rendu("exemple"),
-            "exercice": rendu("exercice"),
-            "correction": rendu("correction"),
+            "exercice": rendu("exercice") if comprehension_ok else "",
+            "correction": rendu("correction") if comprehension_ok else "",
             "indice": indice,
         },
     }

@@ -35,7 +35,7 @@ def test_bibliotheque_generale_filtre_les_documents_prives_aux_membres_du_cercle
     requete_documents = next(sql for sql in session.sql if "FROM document" in sql and "statut" in sql)
     assert "document.cercle_id IS NULL" in requete_documents
     assert "document.cercle_id IN" in requete_documents
-    assert "membrecercle" in requete_documents.lower()
+    assert any("from membrecercle" in sql.lower() for sql in session.sql)
 
 
 def test_bibliotheque_anonyme_ne_liste_jamais_les_documents_de_cercle(monkeypatch):
