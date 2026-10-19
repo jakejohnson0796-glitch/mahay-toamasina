@@ -189,6 +189,54 @@ if (pgcdFractionPlain.includes('987654321123456') || pgcdFractionPlain.includes(
   throw new Error('Concatenated PGCD numerator and denominator remained visible after rendering');
 }
 
+// Régression exacte du Tuteur : les fractions et les chaînes d'Euclide
+// doivent rester cohérentes avec leur PGCD, même si le texte est concaténé.
+const pgcdExemplesHost = window.document.createElement('div');
+window.document.body.appendChild(pgcdExemplesHost);
+const pgcdExemplesSource = [
+  "Pour réduire une fraction, on divise le numérateur et le dénominateur par leur plus grand commun diviseur (PGCD).",
+  "Exemple : \x60" + "48180" + "\x60.",
+  "On calcule le PGCD de 48 et 180 avec l'algorithme d'Euclide : \\\\(180=60\\\\times3+0), \x6048=36×1+12\x60, \x6036=12×3+0\x60.",
+  "Le dernier reste non nul est 12, donc PGCD(48,180)=12.",
+  "On divise chaque terme : \x6048÷12180÷12=415\x60. La fraction est maintenant irréductible.",
+  "Exercice proposé (progressif) : réduire la fraction \x6084210\x60.",
+  "Correction de l'exercice : 1. Calcul du PGCD(84,210) : \\\\(210=105\\\\times2+0), \x6084=42×2+0\x60. Donc PGCD=42.",
+  "2. Division : \x6084÷42210÷42=25\x60. La fraction réduite est \x6025\x60."
+].join("\n");
+const pgcdFormulaOffset = formulesRendues.length;
+window.rendreReponseIA(pgcdExemplesSource, pgcdExemplesHost);
+const pgcdFormules = formulesRendues.slice(pgcdFormulaOffset);
+const pgcdExpected = [
+  'frac{48}{180}',
+  'frac{4}{15}',
+  'frac{84}{210}',
+  'frac{2}{5}',
+  '180=3times48+36',
+  '48=1times36+12',
+  '36=3times12+0',
+  '210=2times84+42',
+  '84=2times42+0'
+];
+const pgcdFormulesNormalisees = pgcdFormules.map((actual) =>
+  actual.split(String.fromCharCode(92)).join('').replace(/\s+/g, '')
+);
+if (pgcdExpected.some((expected) => !pgcdFormulesNormalisees.some((actual) => actual.includes(expected)))) {
+  throw new Error('Missing PGCD expressions: ' + pgcdExpected.filter((expected) => !pgcdFormulesNormalisees.some((actual) => actual.includes(expected))).join(', ') + '; actual=' + JSON.stringify(pgcdFormules) + '; html=' + pgcdExemplesHost.innerHTML);
+}
+const pgcdExemplesClone = pgcdExemplesHost.cloneNode(true);
+pgcdExemplesClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const pgcdPlain = pgcdExemplesClone.textContent || '';
+if (
+  pgcdPlain.includes('48180') ||
+  pgcdPlain.includes('84210') ||
+  pgcdPlain.includes('48÷12180÷12=415') ||
+  pgcdPlain.includes('84÷42210÷42=25') ||
+  pgcdPlain.includes('180=60×3+0') ||
+  pgcdPlain.includes('210=105×2+0')
+) {
+  throw new Error('Malformed concatenated PGCD arithmetic remained visible after rendering');
+}
+
 const visibleClone = host.cloneNode(true);
 visibleClone.querySelectorAll('.katex').forEach((node) => node.remove());
 const visibleText = visibleClone.textContent || '';

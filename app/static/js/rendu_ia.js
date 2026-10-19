@@ -483,6 +483,131 @@
     );
   }
 
+  function normaliserPairesPgcdExplicitesRendu(source) {
+    let texte = String(source == null ? "" : source);
+    if (!/(?:\bpgcd\b|\beuclide\b|fraction|réduire|irréductible)/i.test(texte)) return texte;
+
+    const tick = String.fromCharCode(96);
+    // Certaines sorties IA transportent deux antislashs devant les délimiteurs
+    // et les opérateurs TeX : réduis seulement ces séquences dans un contexte PGCD.
+    texte = texte.replace(new RegExp("\\\\+(?=\\(|\\)|times|div)", "g"), "\\");
+    const paires = [];
+    function ajouter(a, b) {
+      const n = BigInt(a), d = BigInt(b);
+      if (n <= 0n || d <= 0n || n === d) return;
+      if (!paires.some((p) => p.n === n && p.d === d)) paires.push({n, d});
+    }
+    const motifPaire = /\bPGCD\s+de\s+(\d{1,18})\s+et\s+(\d{1,18})\b|\bPGCD\s*\(\s*(\d{1,18})\s*[,;]\s*(\d{1,18})\s*\)/gi;
+    for (const match of texte.matchAll(motifPaire)) ajouter(match[1] || match[3], match[2] || match[4]);
+    if (!paires.length) return texte;
+
+    function pgcd(a, b) {
+      while (b !== 0n) { const r = a % b; a = b; b = r; }
+      return a;
+    }
+    function fraction(n, d) {
+      return "\\(" + "\\frac{" + n.toString() + "}{" + d.toString() + "}" + "\\)";
+    }
+    function chaineEuclide(n, d) {
+      let a = n > d ? n : d, b = n > d ? d : n;
+      const result = [];
+      while (b !== 0n) {
+        const q = a / b, r = a % b;
+        result.push("\\(" + a.toString() + "=" + q.toString() + "\\times" + b.toString() + "+" + r.toString() + "\\)");
+        a = b; b = r;
+      }
+      return result;
+    }
+
+    for (const paire of paires) {
+      const g = pgcd(paire.n, paire.d);
+      const nr = paire.n / g, dr = paire.d / g;
+      const joint = paire.n.toString() + paire.d.toString();
+      const jointFinal = nr.toString() + dr.toString();
+      texte = texte.split(tick + joint + tick).join(fraction(paire.n, paire.d));
+      // Repli lorsque le transport a retiré les backticks autour des chiffres accolés.
+      texte = texte.replace(
+        new RegExp("(^|\\D)" + joint + "(?=\\D|$)", "g"),
+        (_m, prefixe) => prefixe + fraction(paire.n, paire.d)
+      );
+
+      const motifDivisions = new RegExp(
+        tick + "?" + paire.n.toString() + "\\s*(?:÷|\\\\div|/)\\s*" + g.toString() +
+        "\\s*" + paire.d.toString() + "\\s*(?:÷|\\\\div|/)\\s*" + g.toString() +
+        "\\s*=\\s*" + jointFinal + tick + "?",
+        "i"
+      );
+      const divisionsCorrectes =
+        "\\(" + paire.n.toString() + "\\div" + g.toString() + "=" + nr.toString() + "\\)" +
+        " et " +
+        "\\(" + paire.d.toString() + "\\div" + g.toString() + "=" + dr.toString() + "\\)";
+      texte = texte.replace(motifDivisions, divisionsCorrectes);
+
+      const motifConclusion = new RegExp(
+        "(fraction\\s+(?:(?:finale|réduite|irréductible)\\s+)?(?:est(?:\\s+maintenant)?|:)\\s*)" +
+        tick + "?" + jointFinal + tick + "?",
+        "i"
+      );
+      texte = texte.replace(motifConclusion, (_m, prefixe) => prefixe + fraction(nr, dr));
+    }
+
+    // Repère uniquement les introductions réelles de calcul avec une paire explicite.
+    const entetes = [];
+    for (const match of texte.matchAll(motifPaire)) {
+      const n = BigInt(match[1] || match[3]);
+      const d = BigInt(match[2] || match[4]);
+      const paire = paires.find((p) => p.n === n && p.d === d);
+      if (!paire) continue;
+      const apres = texte.slice(match.index + match[0].length, match.index + match[0].length + 110);
+      const avant = texte.slice(Math.max(0, match.index - 55), match.index);
+      const debutEuclide = /algorithme\s+d['’]Euclide\s*:/i.test(apres);
+      const debutCalcul = /^\s*:\s*/.test(apres) && /(?:calcul\s+du|calcul)\s*$/i.test(avant);
+      if (!debutEuclide && !debutCalcul) continue;
+      const limiteColon = texte.indexOf(":", match.index + match[0].length);
+      if (limiteColon < 0 || limiteColon > match.index + match[0].length + 110) continue;
+      entetes.push({start:match.index, end:limiteColon + 1, paire});
+    }
+
+    const remplacements = [];
+    for (let i = 0; i < entetes.length; i += 1) {
+      const entete = entetes[i];
+      const limite = i + 1 < entetes.length ? entetes[i + 1].start : texte.length;
+      const region = texte.slice(entete.end, limite);
+      const finSemantique = region.search(/\b(?:Le\s+dernier\s+reste|Donc\s+PGCD|La\s+fraction\s+réduite|La\s+fraction\s+est|Exercice\s+proposé)\b/i);
+      const regionCalcul = finSemantique >= 0 ? region.slice(0, finSemantique) : region;
+      if (!/\d{1,18}\s*=/.test(regionCalcul) || !/\+\s*\d{1,18}/.test(regionCalcul)) continue;
+      const chaine = chaineEuclide(entete.paire.n, entete.paire.d);
+      // Remplace tout le vieux segment (y compris backticks et délimiteurs cassés)
+      // plutôt que d'insérer du LaTeX à l'intérieur d'un bloc de code préexistant.
+      remplacements.push({
+        start:entete.end,
+        end:entete.end + (finSemantique >= 0 ? finSemantique : region.length),
+        value:" " + chaine.join(", ") + ". "
+      });
+    }
+    remplacements.sort((a, b) => b.start - a.start);
+    for (const r of remplacements) {
+      texte = texte.slice(0, r.start) + r.value + texte.slice(r.end);
+    }
+
+    const regexPhrase = /la\s+fraction\s+est\s+maintenant\s+irréductible(?!\s*[:;])/ig;
+    let phrase;
+    while ((phrase = regexPhrase.exec(texte)) !== null) {
+      const avant = texte.slice(0, phrase.index);
+      const refs = Array.from(avant.matchAll(motifPaire));
+      if (!refs.length) continue;
+      const ref = refs[refs.length - 1];
+      const n = BigInt(ref[1] || ref[3]), d = BigInt(ref[2] || ref[4]);
+      const paire = paires.find((p) => p.n === n && p.d === d);
+      if (!paire) continue;
+      const g = pgcd(paire.n, paire.d);
+      const ajout = phrase[0] + " : " + fraction(paire.n / g, paire.d / g);
+      texte = texte.slice(0, phrase.index) + ajout + texte.slice(phrase.index + phrase[0].length);
+      regexPhrase.lastIndex = phrase.index + ajout.length;
+    }
+    return texte;
+  }
+
   function normaliserSourceRendu(source, options) {
     let texte = String(source == null ? "" : source);
     try { texte = texte.normalize("NFC"); } catch (_) {}
@@ -492,6 +617,7 @@
     texte = texte.replace(/\uFEFF/g, "").replace(/[\u200B\u200C\u200D\u2060]/g, "");
     texte = normaliserIdentitesEuclideRendu(texte);
     texte = normaliserFractionsPgcdRendu(texte);
+    texte = normaliserPairesPgcdExplicitesRendu(texte);
     texte = normaliserCodeMathInline(texte);
     return normaliserExpressionsMathematiquesNues(texte, options).replace(/\r\n?/g, "\n");
   }
@@ -956,7 +1082,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "13" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "14" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -973,7 +1099,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "13";
+    cible.dataset.renduVersion = "14";
     cible.dataset.renduDeps = signature;
     return cible;
   }

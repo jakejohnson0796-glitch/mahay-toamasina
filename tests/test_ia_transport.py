@@ -148,6 +148,48 @@ def test_tuteur_corrige_les_fractions_pgcd_concatenees():
     assert "32921810741152" not in resultat
 
 
+def test_tuteur_reconstruit_fraction_pgcd_et_chaine_euclide_exactes():
+    tick = chr(96)
+    texte = (
+        "Pour réduire une fraction, on divise le numérateur et le dénominateur par leur PGCD. "
+        "Exemple : " + tick + "48180" + tick + ". "
+        "On calcule le PGCD de 48 et 180 avec l'algorithme d'Euclide : "
+        + r"\(180=60\times3+0), "
+        + tick + "48=36×1+12" + tick + ", "
+        + tick + "36=12×3+0" + tick + ". "
+        "Le dernier reste non nul est 12, donc PGCD(48,180)=12. "
+        "On divise chaque terme : "
+        + tick + "48÷12180÷12=415" + tick + ". "
+        "La fraction est maintenant irréductible. "
+        "Exercice proposé (progressif) : réduire la fraction "
+        + tick + "84210" + tick + ". "
+        "Correction de l'exercice : "
+        "1. Calcul du PGCD(84,210) : "
+        + r"\(210=105\times2+0), "
+        + tick + "84=42×2+0" + tick + ". Donc PGCD=42. "
+        "2. Division : "
+        + tick + "84÷42210÷42=25" + tick + ". "
+        "La fraction réduite est " + tick + "25" + tick + "."
+    )
+
+    resultat = normaliser_structure_tuteur({"explication": texte})["explication"]
+
+    assert r"\frac{48}{180}" in resultat
+    assert r"\frac{4}{15}" in resultat
+    assert r"\(180=3\times48+36\)" in resultat
+    assert r"\(48=1\times36+12\)" in resultat
+    assert r"\(36=3\times12+0\)" in resultat
+    assert r"\frac{84}{210}" in resultat
+    assert r"\frac{2}{5}" in resultat
+    assert r"\(210=2\times84+42\)" in resultat
+    assert r"\(84=2\times42+0\)" in resultat
+    assert "180=60\\\\times3+0" not in resultat
+    assert "210=105\\\\times2+0" not in resultat
+    assert "48÷12180÷12=415" not in resultat
+    assert "84÷42210÷42=25" not in resultat
+    assert "La fraction réduite est " + tick + "25" + tick not in resultat
+
+
 def test_transport_preserve_chimie_mhchem():
     brut = r"\(\ce{2H2 + O2 -> 2H2O}\)"
     assert convertir_math_transport_texte(brut) == brut
