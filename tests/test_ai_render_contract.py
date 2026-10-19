@@ -175,11 +175,45 @@ def test_renderer_ia_prevoit_un_cdn_de_secours_sans_affaiblir_la_csp():
     assert 'var principal = "https://cdn.jsdelivr.net/"' in loader
     assert 'var secours = "https://unpkg.com/"' in loader
     assert 'DELAI_MAX_MS = 2500' in loader
-    assert 'principal + "npm/katex@0.16.11/dist/katex.min.js"' in loader
-    assert 'secours + "katex@0.16.11/dist/katex.min.js"' in loader
-    assert 'principal + "npm/marked@12.0.2/marked.min.js"' in loader
-    assert 'secours + "dompurify@3.1.6/dist/purify.min.js"' in loader
+    assert 'principal + "npm/katex@0.19.0/dist/katex.min.js"' in loader
+    assert 'secours + "katex@0.19.0/dist/katex.min.js"' in loader
+    assert 'principal + "npm/marked@18.1.1/marked.min.js"' in loader
+    assert 'secours + "dompurify@3.4.17/dist/purify.min.js"' in loader
     assert "window.rendreTous(document)" in loader
     assert "https://unpkg.com" in csp
     assert "script-src-attr 'none'" in csp
     assert "'unsafe-inline'" not in csp.split("script-src", 1)[1].split(";", 1)[0]
+
+
+def test_dependances_frontend_ia_sont_empaquetees_et_verifiees():
+    vendor = (ROOT / "scripts/vendor_frontend_dependencies.py").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    loader = (ROOT / "app/static/js/charger-dependances-ia.js").read_text(encoding="utf-8")
+
+    # Versions précises, archive vérifiée par l'intégrité SHA-512 officielle de npm.
+    for package_version in (
+        '"katex": {\n        "version": "0.19.0"',
+        '"marked": {\n        "version": "18.1.1"',
+        '"dompurify": {\n        "version": "3.4.17"',
+        '"highlight.js": {\n        "version": "11.12.0"',
+    ):
+        assert package_version in vendor
+    assert 'actual_integrity != integrity' in vendor
+    assert 'registry.npmjs.org' in vendor
+    assert 'dist/fonts/' in vendor
+    assert 'contrib/mhchem.min.js' in vendor
+    assert 'THIRD_PARTY_NOTICES.md' in vendor
+
+    # Le build de production et la CI produisent puis testent les fichiers locaux.
+    assert 'RUN python scripts/vendor_frontend_dependencies.py' in dockerfile
+    assert 'python scripts/vendor_frontend_dependencies.py' in workflow
+    for local_asset in (
+        '/static/vendor/katex/katex.min.css',
+        '/static/vendor/katex/katex.min.js',
+        '/static/vendor/katex/contrib/mhchem.min.js',
+        '/static/vendor/marked/marked.min.js',
+        '/static/vendor/dompurify/purify.min.js',
+        '/static/vendor/highlightjs/highlight.min.js',
+    ):
+        assert local_asset in loader
