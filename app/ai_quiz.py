@@ -236,7 +236,9 @@ def _generer_completion_avec_reessai(
         "soumettre_quiz",
     )
 
-    for numero_essai, contenu in enumerate(messages_par_essai, start=1):
+    # Itérer sur le nombre d'essais initial : les corrections ajoutées après
+    # une validation invalide ne doivent pas étendre la boucle sans limite.
+    for numero_essai, contenu in enumerate(list(messages_par_essai), start=1):
         # Un nouvel essai ne doit pas doubler le budget : cela peut transformer
         # un échec de validation en dépassement de la limite tokens/minute.
         budget_essai = budget_adapte
