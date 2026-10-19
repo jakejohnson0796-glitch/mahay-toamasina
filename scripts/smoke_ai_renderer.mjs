@@ -6,6 +6,85 @@ import katex from 'katex';
 const mhchemSource = fs.readFileSync('node_modules/katex/dist/contrib/mhchem.min.js', 'utf8');
 import createDOMPurify from 'dompurify';
 
+// Vérifie les vraies distributions locales produites par le script de build.
+const vendorRoot = 'app/static/vendor';
+const vendorManifest = JSON.parse(fs.readFileSync(vendorRoot + '/manifest.json', 'utf8'));
+const vendorVersions = {
+  katex: '0.19.0',
+  marked: '18.1.1',
+  dompurify: '3.4.17',
+  'highlight.js': '11.12.0'
+};
+for (const [name, version] of Object.entries(vendorVersions)) {
+  if (!vendorManifest.packages[name] || vendorManifest.packages[name].version !== version) {
+    throw new Error('Vendor package version mismatch for ' + name + ': expected ' + version);
+  }
+}
+const katexCssLocal = fs.readFileSync(vendorRoot + '/katex/katex.min.css', 'utf8');
+const fontNames = Array.from(katexCssLocal.matchAll(/url\\(["']?(?:\\.\\/)?fonts\\/([^)"']+)["']?\\)/g), match => match[1].split('?')[0]);
+if (fontNames.length < 10) {
+  throw new Error('KaTeX stylesheet does not reference the expected full font set');
+}
+for (const fontName of fontNames) {
+  if (!fs.existsSync(vendorRoot + '/katex/fonts/' + fontName)) {
+    throw new Error('KaTeX stylesheet references a font that was not bundled locally: ' + fontName);
+  }
+}
+for (const required of [
+  '/katex/katex.min.js',
+  '/katex/contrib/mhchem.min.js',
+  '/marked/marked.min.js',
+  '/dompurify/purify.min.js',
+  '/highlightjs/highlight.min.js',
+  '/THIRD_PARTY_NOTICES.md'
+]) {
+  if (!fs.existsSync(vendorRoot + required)) throw new Error('Missing local browser dependency: ' + required);
+}
+
+// Exécute les bundles réellement téléchargés dans un navigateur isolé.
+const vendorDom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
+  url: 'http://localhost/',
+  runScripts: 'outside-only',
+});
+const vendorWindow = vendorDom.window;
+for (const scriptPath of [
+  vendorRoot + '/katex/katex.min.js',
+  vendorRoot + '/katex/contrib/mhchem.min.js',
+  vendorRoot + '/marked/marked.min.js',
+  vendorRoot + '/dompurify/purify.min.js',
+  vendorRoot + '/highlightjs/highlight.min.js'
+]) {
+  vendorWindow.eval(fs.readFileSync(scriptPath, 'utf8'));
+}
+if (!vendorWindow.katex || typeof vendorWindow.katex.render !== 'function') {
+  throw new Error('Locally vendored KaTeX did not initialize');
+}
+if (!vendorWindow.marked || typeof vendorWindow.marked.parse !== 'function') {
+  throw new Error('Locally vendored Marked did not initialize');
+}
+if (!vendorWindow.DOMPurify || typeof vendorWindow.DOMPurify.sanitize !== 'function') {
+  throw new Error('Locally vendored DOMPurify did not initialize');
+}
+if (!vendorWindow.hljs || typeof vendorWindow.hljs.highlight !== 'function') {
+  throw new Error('Locally vendored Highlight.js did not initialize');
+}
+const vendorMathHost = vendorWindow.document.createElement('div');
+vendorWindow.katex.render('\\frac{1}{2}', vendorMathHost, { throwOnError: false });
+vendorWindow.katex.render('\\ce{2H2 + O2 -> 2H2O}', vendorMathHost, { throwOnError: false, strict: 'ignore' });
+if (vendorMathHost.querySelectorAll('.katex').length !== 2 || vendorMathHost.querySelector('.katex-error')) {
+  throw new Error('Locally vendored KaTeX/mhchem failed the fraction/reaction smoke test');
+}
+if (!vendorWindow.marked.parse('**test**').includes('<strong>test</strong>')) {
+  throw new Error('Locally vendored Marked did not parse Markdown correctly');
+}
+const vendorUnsafe = vendorWindow.DOMPurify.sanitize('<img src=x onerror=alert(1)><script>alert(2)</script>');
+if (/onerror|<script/i.test(vendorUnsafe)) {
+  throw new Error('Locally vendored DOMPurify failed the XSS smoke test');
+}
+if (!vendorWindow.hljs.highlight('const total = 1;', { language: 'javascript' }).value.includes('total')) {
+  throw new Error('Locally vendored Highlight.js failed its JavaScript smoke test');
+}
+
 const source = fs.readFileSync('app/static/js/rendu_ia.js', 'utf8');
 const aiLearningSource = fs.readFileSync('app/static/js/ai-learning.js', 'utf8');
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
