@@ -3,7 +3,7 @@
 {% block titre %}{% if langue == "mg" %}Ny fanamby-nao — MITARIDALA{% else %}Ton défi — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="jeu-session-page">
+<div class="jeu-session-page" data-partie-id="{{ partie.id }}" data-chrono-actif="{{ 'true' if chrono_actif else 'false' }}" data-langue="{{ langue }}">
   <style nonce="{{ csp_nonce(request) }}">
     .jeu-session-page .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .jeu-session-page{max-width:960px;margin:0 auto;padding:clamp(1rem,2.5vw,2rem);color:var(--content-text)}
@@ -111,7 +111,43 @@
     .jeu-feedback-mascotte{position:absolute;right:.85rem;top:.75rem;display:block;width:76px;height:64px;object-fit:cover;object-position:center;border:1px solid color-mix(in srgb,var(--content-link) 28%,var(--content-border));border-radius:14px;background:#07183b;box-shadow:0 6px 16px color-mix(in srgb,var(--content-link) 14%,transparent);}
     @media(max-width:560px){.jeu-session-mascotte{width:54px;height:48px;border-radius:12px;}.jeu-feedback{padding-right:4.5rem;min-height:76px;}.jeu-feedback-mascotte{right:.6rem;top:.6rem;width:52px;height:48px;border-radius:11px;}}
     @media(prefers-reduced-motion:reduce){.jeu-session-mascotte{animation:none!important;}}
-  </style>
+
+    .jeu-cerebral-toolbar{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap;margin:0 0 1rem;padding:.75rem .85rem;border:1px solid var(--content-border);border-radius:14px;background:var(--content-surface)}
+    .jeu-toolbar-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+    .jeu-tool-button{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:40px;padding:.58rem .75rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit;font-size:.76rem;font-weight:800;cursor:pointer}
+    .jeu-tool-button:focus-visible{outline:2px solid var(--content-link);outline-offset:2px}
+    .jeu-tool-button[aria-pressed="true"]{border-color:var(--content-link);background:color-mix(in srgb,var(--content-link) 8%,var(--content-surface))}
+    .jeu-tool-check{display:inline-flex;align-items:center;gap:.45rem;color:var(--content-text-muted);font-size:.75rem;line-height:1.4;cursor:pointer}
+    .jeu-tool-check input{width:17px;height:17px;accent-color:var(--content-link)}
+    .jeu-chrono-panel{display:flex;align-items:center;gap:.65rem;min-width:0}
+    .jeu-chrono-panel[hidden]{display:none}
+    .jeu-chrono-clock{display:inline-grid;place-items:center;min-width:62px;padding:.42rem .55rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);font-size:1rem;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+    .jeu-chrono-copy{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+    .jeu-chrono-copy strong{font-size:.76rem}
+    .jeu-chrono-copy span{font-size:.7rem;line-height:1.45;color:var(--content-text-muted)}
+    .jeu-chrono-panel.jeu-chrono-ecoule .jeu-chrono-clock{border-color:#b88a30;color:var(--content-text)}
+    .jeu-pause-notice{margin:0 0 1rem;padding:1rem;border:1px dashed var(--content-link);border-radius:14px;background:color-mix(in srgb,var(--content-link) 6%,var(--content-surface));font-size:.85rem;line-height:1.65}
+    .jeu-pause-notice[hidden]{display:none}
+    .jeu-pause-notice strong{display:block;margin-bottom:.25rem}
+    .jeu-theme-scene{display:flex;align-items:center;gap:.8rem;margin:-.25rem 0 1rem;padding:.65rem .75rem;border:1px solid var(--content-border);border-radius:14px;background:var(--content-bg)}
+    .jeu-theme-scene img{display:block;width:74px;height:58px;object-fit:contain;flex:0 0 auto}
+    .jeu-theme-scene span{font-size:.75rem;line-height:1.45;color:var(--content-text-muted)}
+    .jeu-level-steps{display:flex;align-items:center;gap:.4rem;margin:0 0 1.1rem}
+    .jeu-level-step{display:flex;align-items:center;gap:.35rem;flex:1;min-width:0;color:var(--content-text-muted);font-size:.68rem;line-height:1.3}
+    .jeu-level-step i{display:grid;place-items:center;width:23px;height:23px;flex:0 0 23px;border:1px solid var(--content-border);border-radius:50%;font-style:normal;font-weight:850;font-size:.68rem;background:var(--content-bg)}
+    .jeu-level-step[aria-current="step"]{color:var(--content-text);font-weight:850}
+    .jeu-level-step[aria-current="step"] i{background:var(--content-link);border-color:var(--content-link);color:var(--content-bg)}
+    .jeu-level-step::after{content:"";height:2px;flex:1;background:var(--content-border);margin-left:.1rem}
+    .jeu-level-step:last-child::after{display:none}
+    .jeu-feedback-success{border-color:color-mix(in srgb,#229765 50%,var(--content-border));background:color-mix(in srgb,#229765 5%,var(--content-surface))}
+    .jeu-feedback-error{border-color:color-mix(in srgb,#c18b38 44%,var(--content-border));background:color-mix(in srgb,#c18b38 4%,var(--content-surface))}
+    @keyframes jeu-reponse-bravo{0%{transform:scale(.96);filter:saturate(.9)}55%{transform:scale(1.018);filter:saturate(1.12)}100%{transform:scale(1);filter:saturate(1)}}
+    @keyframes jeu-reponse-encourage{0%{transform:translateY(4px);opacity:.7}100%{transform:translateY(0);opacity:1}}
+    .jeu-feedback-success .jeu-feedback-mascotte{animation:jeu-reponse-bravo .62s cubic-bezier(.2,.7,.25,1) both}
+    .jeu-feedback-error .jeu-feedback-mascotte{animation:jeu-reponse-encourage .36s ease-out both}
+    .jeu-session-page.jeu-reduit-mouvement *, .jeu-session-page.jeu-reduit-mouvement *::before, .jeu-session-page.jeu-reduit-mouvement *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;transform:none!important;filter:none!important}
+    @media(max-width:560px){.jeu-cerebral-toolbar{align-items:stretch}.jeu-chrono-panel{flex:1 1 100%}.jeu-toolbar-actions{width:100%;display:grid;grid-template-columns:1fr}.jeu-tool-button{width:100%}.jeu-theme-scene img{width:56px;height:48px}.jeu-level-step{font-size:.63rem}.jeu-level-step i{width:21px;height:21px;flex-basis:21px}}
+    </style>
 
   <header class="jeu-session-header">
     <div>
@@ -132,6 +168,22 @@
     </div>
   </section>
 
+  <section class="jeu-cerebral-toolbar" aria-label="Options du défi">
+    <div class="jeu-chrono-panel" id="jeu-chrono-panel" {% if not chrono_actif %}hidden{% endif %}>
+      <span class="jeu-chrono-clock" id="jeu-chrono-valeur" aria-label="Temps restant">02:30</span>
+      <span class="jeu-chrono-copy"><strong>{% if langue == "mg" %}Fanamby araka ny fotoana{% else %}Objectif de temps{% endif %}</strong><span id="jeu-chrono-message">{% if langue == "mg" %}Tsy misy sazy raha mihoatra ny fotoana.{% else %}Aucune pénalité si tu dépasses le temps.{% endif %}</span></span>
+    </div>
+    <div class="jeu-toolbar-actions">
+      <button type="button" class="jeu-tool-button" id="jeu-pause-toggle" aria-pressed="false">{% if langue == "mg" %}Miato{% else %}Mettre en pause{% endif %}</button>
+      <label class="jeu-tool-check"><input type="checkbox" id="jeu-reduire-animations-session"><span>{% if langue == "mg" %}Ahena ny animation{% else %}Réduire les animations{% endif %}</span></label>
+    </div>
+    <span class="sr-only" id="jeu-pause-status" role="status" aria-live="polite"></span>
+  </section>
+  <div class="jeu-pause-notice" id="jeu-pause-notice" hidden>
+    <strong>{% if langue == "mg" %}Miato kely 🌿{% else %}Pause en cours 🌿{% endif %}</strong>
+    <span>{% if langue == "mg" %}Milamina ny lalao. Tohizo rehefa vonona ianao.{% else %}Le défi est en pause. Reprends quand tu es prêt·e ; le chronomètre est suspendu aussi.{% endif %}</span>
+  </div>
+
   {% if partie.source_generation != "ia" %}
   <div class="jeu-local-note" role="note">
     {% if langue == "mg" %}
@@ -143,7 +195,7 @@
   {% endif %}
 
   {% if retour %}
-  <section class="jeu-feedback {% if retour.correcte %}jeu-feedback-success{% endif %}" role="status" aria-live="polite">
+  <section class="jeu-feedback {% if retour.correcte %}jeu-feedback-success{% else %}jeu-feedback-error{% endif %}" role="status" aria-live="polite">
     <img class="jeu-feedback-mascotte" src="/static/images/jeu-cerebral/mascotte-pink.webp" alt="" width="76" height="64" loading="lazy" decoding="async">
     <strong>{% if langue == "mg" %}{% if retour.correcte %}Tsara izany 🌱{% else %}Aza manahy 🌷{% endif %}{% else %}{% if retour.correcte %}Bien vu 🌱{% else %}Pas de souci 🌷{% endif %}{% endif %}</strong>
     <span data-no-translate>{{ retour.message }}</span>
@@ -159,6 +211,25 @@
       <span class="jeu-difficulty">✦ {{ label_difficulte }}</span>
       <span class="jeu-question-hint">{% if langue == "mg" %}Tsy mila mamaly haingana{% else %}Pas besoin de répondre vite{% endif %}</span>
       <img class="jeu-session-mascotte" src="/static/images/jeu-cerebral/mascotte-pink.webp" alt="" width="70" height="60" loading="lazy" decoding="async">
+    </div>
+    <div class="jeu-theme-scene">
+      {% if theme.id == "calcul" %}
+      <img src="/static/images/jeu-cerebral/illustrations/calcul.svg" alt="Illustration du calcul mental" width="74" height="58" loading="lazy" decoding="async">
+      {% elif theme.id == "logique" %}
+      <img src="/static/images/jeu-cerebral/illustrations/logique.svg" alt="Illustration de la logique et de la déduction" width="74" height="58" loading="lazy" decoding="async">
+      {% elif theme.id == "suites" %}
+      <img src="/static/images/jeu-cerebral/illustrations/suites.svg" alt="Illustration des suites et régularités" width="74" height="58" loading="lazy" decoding="async">
+      {% elif theme.id == "langage" %}
+      <img src="/static/images/jeu-cerebral/illustrations/langage.svg" alt="Illustration des mots et analogies" width="74" height="58" loading="lazy" decoding="async">
+      {% else %}
+      <img src="/static/images/jeu-cerebral/illustrations/observation.svg" alt="Illustration de l'observation et de l'attention" width="74" height="58" loading="lazy" decoding="async">
+      {% endif %}
+      <span>{% if langue == "mg" %}Lohahevitra hita maso · fanontaniana iray isaky ny mandeha{% else %}Un repère visuel pour le thème · une question à la fois{% endif %}</span>
+    </div>
+    <div class="jeu-level-steps" aria-label="{% if langue == 'mg' %}Ambaratonga telo{% else %}Progression en trois niveaux{% endif %}">
+      <span class="jeu-level-step" {% if niveau_index == 0 %}aria-current="step"{% endif %}><i>1</i>{% if langue == "mg" %}Mora{% else %}Facile{% endif %}</span>
+      <span class="jeu-level-step" {% if niveau_index == 1 %}aria-current="step"{% endif %}><i>2</i>{% if langue == "mg" %}Antonony{% else %}Moyen{% endif %}</span>
+      <span class="jeu-level-step" {% if niveau_index == 2 %}aria-current="step"{% endif %}><i>3</i>{% if langue == "mg" %}Sarotra{% else %}Difficile{% endif %}</span>
     </div>
     <div data-no-translate>
       <h2 class="jeu-question-text" id="question-du-jeu" data-rendu>{{ question.question }}</h2>
@@ -192,4 +263,5 @@
   });
 })();
 </script>
+<script defer nonce="{{ csp_nonce(request) }}" src="/static/js/jeu-cerebral.js?v=20261019-immersif"></script>
 {% endblock %}

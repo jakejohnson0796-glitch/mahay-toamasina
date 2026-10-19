@@ -87,6 +87,7 @@ def demarrer_jeu_cerebral(
     request: Request,
     theme: str = Form("aleatoire"),
     langue: str = Form("fr"),
+    chronometre: str = Form(""),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -135,6 +136,8 @@ def demarrer_jeu_cerebral(
 
     etat = jeu_cerebral.etat_initial(questions, difficulte)
     etat["langue"] = langue
+    # Le chrono est un objectif facultatif côté interface, jamais une pénalité de score.
+    etat["chrono_actif"] = str(chronometre).strip() == "1"
     partie = JeuCerebralSession(
         utilisateur_id=utilisateur.id,
         theme_id=theme_id,
@@ -267,6 +270,8 @@ def page_session_jeu_cerebral(
             "total_questions": partie.nb_questions,
             "progression_pct": min(100, round((len(ordre) - 1) * 100 / partie.nb_questions)),
             "label_difficulte": labels_difficulte.get(difficulte, labels_difficulte["Moyen"]),
+            "niveau_index": {"Facile": 0, "Moyen": 1, "Difficile": 2}.get(difficulte, 1),
+            "chrono_actif": bool(etat.get("chrono_actif", False)),
             "retour": retour,
             "langue": partie.langue,
         },

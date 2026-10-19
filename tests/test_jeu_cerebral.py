@@ -235,6 +235,9 @@ def test_interface_accueil_du_jeu_utilise_de_vraies_cartes_accessibles_et_respon
     assert "@media(max-width:900px)" in source
     assert "@media(max-width:440px)" in source
     assert "prefers-reduced-motion:reduce" in source
+    assert 'name="chronometre" value="1"' in source
+    assert 'id="jeu-reduire-animations"' in source
+    assert "jeu-cerebral.js?v=" in source
 
 
 
@@ -281,4 +284,13 @@ def test_illustrations_du_jeu_cerebral_sont_locales_et_utilisees():
 
     assert 'alt=""' in accueil
     assert "prefers-reduced-motion:reduce" in accueil
+    assert 'name="chronometre" value="1"' in accueil
+    assert "jeu-pause-toggle" in session
+    assert "jeu-chrono-panel" in session
+    assert "illustrations/logique.svg" in session
+    for nom in ("logique.svg", "calcul.svg", "suites.svg", "langage.svg", "observation.svg"):
+        fichier = assets / "illustrations" / nom
+        assert fichier.is_file(), f"Illustration thématique manquante : {nom}"
+        assert 0 < fichier.stat().st_size < 20_000, f"Illustration SVG trop volumineuse : {nom}"
+    assert "sessionStorage" in (ROOT / "app" / "static" / "js" / "jeu-cerebral.js").read_text(encoding="utf-8")
     assert "loading=\"lazy\"" in session

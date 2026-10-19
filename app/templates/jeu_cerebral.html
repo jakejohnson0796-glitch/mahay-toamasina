@@ -146,7 +146,17 @@
     @media (hover:hover) and (pointer:fine){.jeu-theme-option:hover .jeu-theme-image img{transform:scale(1.08);filter:saturate(1.08);}}
     @media(max-width:440px){.jeu-theme-image{flex:0 0 44px;width:44px;height:44px;min-height:44px;margin:0;border-radius:12px;}.jeu-theme-image img{width:100%;height:100%;}}
     @media(prefers-reduced-motion:reduce){.jeu-theme-image img{transition:none!important;}}
-  </style>
+
+    /* Réglages de rythme : le chrono reste facultatif et n'enlève jamais de points. */
+    .jeu-config-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:1rem 0 0;padding:0;border:0;min-width:0}
+    .jeu-config-option{display:flex;align-items:flex-start;gap:.75rem;min-width:0;padding:.85rem .9rem;border:1px solid var(--content-border);border-radius:14px;background:var(--content-bg);cursor:pointer}
+    .jeu-config-option input{flex:0 0 auto;width:19px;height:19px;margin:.12rem 0 0;accent-color:var(--content-link)}
+    .jeu-config-option strong{display:block;font-size:.82rem;line-height:1.4;color:var(--content-text)}
+    .jeu-config-option small{display:block;margin-top:.25rem;font-size:.74rem;line-height:1.55;color:var(--content-text-muted)}
+    .jeu-config-option:focus-within{outline:2px solid var(--content-link);outline-offset:2px}
+    .jeu-cerebral-page.jeu-reduit-mouvement *, .jeu-cerebral-page.jeu-reduit-mouvement *::before, .jeu-cerebral-page.jeu-reduit-mouvement *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;transform:none!important}
+    @media(max-width:650px){.jeu-config-options{grid-template-columns:1fr}}
+    </style>
 
   <header class="jeu-hero">
     <div>
@@ -197,11 +207,15 @@
           <span class="jeu-theme-card">
             <span class="jeu-theme-emoji jeu-theme-image" aria-hidden="true">
               {% if theme.id == "calcul" %}
-                <img src="/static/images/jeu-cerebral/math-visual.webp" alt="" width="76" height="76" loading="lazy" decoding="async">
-              {% elif theme.id in ["logique", "suites"] %}
-                <img src="/static/images/jeu-cerebral/brain-hero.webp" alt="" width="76" height="76" loading="lazy" decoding="async">
+                <img src="/static/images/jeu-cerebral/illustrations/calcul.svg" alt="" width="76" height="76" loading="lazy" decoding="async">
+              {% elif theme.id == "logique" %}
+                <img src="/static/images/jeu-cerebral/illustrations/logique.svg" alt="" width="76" height="76" loading="lazy" decoding="async">
+              {% elif theme.id == "suites" %}
+                <img src="/static/images/jeu-cerebral/illustrations/suites.svg" alt="" width="76" height="76" loading="lazy" decoding="async">
+              {% elif theme.id == "langage" %}
+                <img src="/static/images/jeu-cerebral/illustrations/langage.svg" alt="" width="76" height="76" loading="lazy" decoding="async">
               {% else %}
-                <img src="/static/images/jeu-cerebral/mascotte-pink.webp" alt="" width="76" height="76" loading="lazy" decoding="async">
+                <img src="/static/images/jeu-cerebral/illustrations/observation.svg" alt="" width="76" height="76" loading="lazy" decoding="async">
               {% endif %}
             </span>
             <strong>{{ theme.titre }}</strong>
@@ -209,6 +223,17 @@
           </span>
         </label>
         {% endfor %}
+      </fieldset>
+      <fieldset class="jeu-config-options" aria-label="Options facultatives du défi">
+        <legend class="sr-only">Personnalise ton défi</legend>
+        <label class="jeu-config-option">
+          <input type="checkbox" name="chronometre" value="1" id="jeu-chrono-option">
+          <span><strong>Défi chronométré (facultatif)</strong><small>Un objectif de 2 min 30 pour le jeu. Si le temps s'écoule, tu peux finir tranquillement, sans perdre de points.</small></span>
+        </label>
+        <label class="jeu-config-option">
+          <input type="checkbox" id="jeu-reduire-animations">
+          <span><strong>Réduire les animations</strong><small>Privilégie des transitions discrètes et un affichage plus calme.</small></span>
+        </label>
       </fieldset>
       <div class="jeu-lancement">
         <p>Le niveau est un point de départ, pas une étiquette. Après deux bonnes réponses consécutives, le défi peut monter; après une question difficile, il peut redescendre.</p>
@@ -264,4 +289,5 @@
   });
 })();
 </script>
+<script defer nonce="{{ csp_nonce(request) }}" src="/static/js/jeu-cerebral.js?v=20261019-immersif"></script>
 {% endblock %}
