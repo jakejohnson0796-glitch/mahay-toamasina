@@ -192,13 +192,14 @@ def test_dependances_frontend_ia_sont_empaquetees_et_verifiees():
     loader = (ROOT / "app/static/js/charger-dependances-ia.js").read_text(encoding="utf-8")
 
     # Versions précises, archive vérifiée par l'intégrité SHA-512 officielle de npm.
-    for package_version in (
-        '"katex": {\n        "version": "0.19.0"',
-        '"marked": {\n        "version": "18.1.1"',
-        '"dompurify": {\n        "version": "3.4.17"',
-        '"highlight.js": {\n        "version": "11.12.0"',
+    for package_name, version in (
+        ('"katex": {', '"version": "0.19.0"'),
+        ('"marked": {', '"version": "18.1.1"'),
+        ('"dompurify": {', '"version": "3.4.17"'),
+        ('"highlight.js": {', '"version": "11.12.0"'),
     ):
-        assert package_version in vendor
+        assert package_name in vendor
+        assert version in vendor
     assert 'actual_integrity != integrity' in vendor
     assert 'registry.npmjs.org' in vendor
     assert 'dist/fonts/' in vendor
@@ -208,12 +209,13 @@ def test_dependances_frontend_ia_sont_empaquetees_et_verifiees():
     # Le build de production et la CI produisent puis testent les fichiers locaux.
     assert 'RUN python scripts/vendor_frontend_dependencies.py' in dockerfile
     assert 'python scripts/vendor_frontend_dependencies.py' in workflow
+    assert 'var local = "/static/vendor/"' in loader
     for local_asset in (
-        '/static/vendor/katex/katex.min.css',
-        '/static/vendor/katex/katex.min.js',
-        '/static/vendor/katex/contrib/mhchem.min.js',
-        '/static/vendor/marked/marked.min.js',
-        '/static/vendor/dompurify/purify.min.js',
-        '/static/vendor/highlightjs/highlight.min.js',
+        'local + "katex/katex.min.css',
+        'local + "katex/katex.min.js',
+        'local + "katex/contrib/mhchem.min.js',
+        'local + "marked/marked.min.js',
+        'local + "dompurify/purify.min.js',
+        'local + "highlightjs/highlight.min.js',
     ):
         assert local_asset in loader
