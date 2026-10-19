@@ -163,8 +163,8 @@ def test_le_tuteur_ne_propose_pas_exercice_ni_correction_avant_validation():
     contenu = (
         Path(__file__).resolve().parents[1] / "app" / "templates" / "tuteur_reponse.html"
     ).read_text(encoding="utf-8")
-    assert "id=\\"comprehension-tuteur\\"" in contenu
+    assert 'id="comprehension-tuteur"' in contenu
     assert "verifier-comprehension" in contenu
-    assert "{% if session_tuteur.exercice and session_tuteur.comprehension_validee %}" in contenu
-    assert "{% if session_tuteur.correction and session_tuteur.comprehension_validee %}" in contenu
+    assert '{% if session_tuteur.exercice and session_tuteur.comprehension_validee %}' in contenu
+    assert '{% if session_tuteur.correction and session_tuteur.comprehension_validee %}' in contenu
     assert "comprehension_validee" in SessionTuteur.model_fields

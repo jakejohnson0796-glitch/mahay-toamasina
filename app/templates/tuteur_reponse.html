@@ -127,7 +127,6 @@
         <h2>Explication</h2>
         <button class="tuteur-lecture-partie" type="button" data-lecture-cible="explication" aria-label="Écouter l’explication"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
-      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="explication" data-rendu>{{ contenu_tuteur['explication'] }}</div>
     </article>
 
@@ -138,23 +137,7 @@
         <h2>Exemple</h2>
         <button class="tuteur-lecture-partie" type="button" data-lecture-cible="exemple" aria-label="Écouter l’exemple"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
-      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="exemple" data-rendu>{{ contenu_tuteur['exemple'] }}</div>
-    </article>
-    {% endif %}
-
-    {% if session_tuteur.indice %}
-    <article class="ai-answer-card ai-answer-card-full ai-answer-hint">
-      <div class="ai-answer-card-head">
-        <span class="ai-answer-card-icon" aria-hidden="true">💡</span>
-        <h2>Un indice avant la correction</h2>
-        <button class="tuteur-lecture-partie" type="button" data-lecture-cible="indice" aria-label="Écouter l’indice"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
-      </div>
-      <p>Essaie de résoudre l'exercice avec cet indice avant d'ouvrir la correction complète.</p>
-      <details>
-        <summary>Dévoiler l'indice progressif</summary>
-        <div class="ai-markdown-content" data-tuteur-content="indice" data-rendu>{{ session_tuteur.indice }}</div>
-      </details>
     </article>
     {% endif %}
 
@@ -224,10 +207,11 @@
         <h2>Exercice pour pratiquer</h2>
         <button class="tuteur-lecture-partie" type="button" data-lecture-cible="exercice" aria-label="Écouter l’exercice"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
       </div>
-      <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
       <div class="ai-markdown-content" data-tuteur-content="exercice" data-rendu>{{ contenu_tuteur['exercice'] }}</div>
     </article>
-    {% endif %}    {% if session_tuteur.correction and session_tuteur.comprehension_validee %}
+    {% endif %}
+
+    {% if session_tuteur.correction and session_tuteur.comprehension_validee %}
     <article class="ai-answer-card ai-answer-card-full ai-answer-correction">
       <div class="ai-answer-card-head">
         <span class="ai-answer-card-icon">{{ icone("securite", 16) }}</span>
@@ -236,7 +220,6 @@
       <details>
         <summary>Afficher la correction</summary>
         <button class="tuteur-lecture-partie" type="button" data-lecture-cible="correction" aria-label="Écouter la correction"><span aria-hidden="true">🔊</span><span>Écouter</span></button>
-        <!-- MODIF : texte IA brut ; rendu Markdown/KaTeX côté navigateur. -->
         <div class="ai-answer-correction-body ai-markdown-content" data-tuteur-content="correction" data-rendu>{{ contenu_tuteur['correction'] }}</div>
       </details>
     </article>
