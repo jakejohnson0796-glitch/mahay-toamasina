@@ -208,5 +208,6 @@ def test_quiz_document_envoie_un_contexte_borne_a_groq_sans_appel_reseau(monkeyp
     assert "CENTRE_DOCUMENT" in prompt
     assert "FIN_DOCUMENT" in prompt
     assert "partie du document omise" in prompt
-    assert len(prompt) < 7_500
+    assert ("A" * 2_000) not in prompt
+    assert ("B" * 2_000) not in prompt
     assert appels[0]["max_completion_tokens"] <= 2048
