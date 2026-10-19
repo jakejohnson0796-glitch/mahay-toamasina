@@ -54,6 +54,8 @@
       <p class="ai-panel" role="alert">Le résumé doit contenir du texte avant de valider la fiche.</p>
     {% elif request.query_params.get("fiche") == "validee" %}
       <p class="ai-panel" role="status">La fiche a été enregistrée et validée. Le Quiz IA peut maintenant utiliser cette ressource.</p>
+    {% elif request.query_params.get("erreur") == "metadonnees_incompletes" %}
+      <p class="ai-panel" role="alert">Renseigne une matière et choisis le type de document avant de valider.</p>
     {% endif %}
     {% if fiche_validee %}
       <p class="ai-panel" role="status">Fiche vérifiée le {{ document.fiche_validee_le.strftime("%d/%m/%Y à %H:%M") if document.fiche_validee_le else "—" }}. La génération de quiz est autorisée.</p>
@@ -67,6 +69,17 @@
         <p>Vérifie le texte ci-dessous avec le fichier original. Tu peux corriger les informations extraites avant de confirmer.</p>
         <label for="fiche-resume-verifie">Résumé du document</label>
         <textarea id="fiche-resume-verifie" name="resume_verifie" rows="6" maxlength="12000" required>{{ document.resume_ia }}</textarea>
+        <label for="fiche-matiere-verifiee">Matière</label>
+        <input id="fiche-matiere-verifiee" name="matiere_verifiee" maxlength="120" required value="{{ document.matiere }}">
+        <label for="fiche-type-document-verifie">Type de document</label>
+        <select id="fiche-type-document-verifie" name="type_document_verifie" required>
+          <option value="">Choisir le type vérifié</option>
+          {% for type_doc in types_document %}
+          <option value="{{ type_doc.value }}" {% if document.type_document == type_doc %}selected{% endif %}>{{ type_doc.value }}</option>
+          {% endfor %}
+        </select>
+        <label for="fiche-type-cours-verifie">Type pédagogique (laisser vide si non déterminable)</label>
+        <input id="fiche-type-cours-verifie" name="type_cours_verifie" maxlength="140" value="{{ fiche_pedagogique.get("type_cours", "") }}">
         <label for="fiche-objectif-verifie">Objectif pédagogique</label>
         <textarea id="fiche-objectif-verifie" name="objectif_verifie" rows="2" maxlength="800">{{ fiche_pedagogique.get("objectif_pedagogique", "") }}</textarea>
         <label for="fiche-niveau-verifie">Niveau cible (laisser vide si non déterminé)</label>
@@ -75,7 +88,7 @@
         <textarea id="fiche-notions-verifiees" name="notions_verifiees" rows="4" maxlength="2400">{% for notion in fiche_pedagogique.get("notions_cles", []) %}{{ notion }}
 {% endfor %}</textarea>
         <label><input type="checkbox" name="confirmer_contenu" value="1" required> J'ai comparé le résumé et les notions au document original, et j'ai corrigé les erreurs repérées.</label>
-        <label><input type="checkbox" name="confirmer_metadonnees" value="1" required> J'ai vérifié la matière, le type du document et le niveau indiqué (ou confirmé qu'il reste indéterminé).</label>
+        <label><input type="checkbox" name="confirmer_metadonnees" value="1" required> J'ai vérifié la matière, le type de document, le type pédagogique et le niveau indiqué (ou confirmé qu'il reste indéterminé).</label>
         <button class="bouton bouton-primaire" type="submit">Enregistrer et valider la fiche</button>
       </form>
       {% else %}

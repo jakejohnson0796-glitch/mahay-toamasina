@@ -770,6 +770,7 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             "fiche_pedagogique": _charger_fiche_pedagogique(document),
             "fiche_validee": _fiche_pedagogique_est_validee(document),
             "fiche_validation_possible": _fiche_pedagogique_peut_etre_validee(document),
+            "types_document": list(TypeDocument),
             "peut_valider_fiche": (
                 utilisateur.role == RoleUtilisateur.ADMIN
                 or document.uploader_id == utilisateur.id
@@ -783,6 +784,9 @@ def valider_fiche_document(
     request: Request,
     document_id: int,
     resume_verifie: str = Form(...),
+    matiere_verifiee: str = Form(default=""),
+    type_document_verifie: Optional[TypeDocument] = Form(default=None),
+    type_cours_verifie: str = Form(default=""),
     objectif_verifie: str = Form(default=""),
     niveau_verifie: str = Form(default=""),
     notions_verifiees: str = Form(default=""),
@@ -812,7 +816,15 @@ def valider_fiche_document(
             status_code=303,
         )
 
+    matiere = " ".join(str(matiere_verifiee or "").split()).strip()[:120]
+    if not matiere or not isinstance(type_document_verifie, TypeDocument):
+        return RedirectResponse(
+            f"/documents/{document.id}/apprendre?erreur=metadonnees_incompletes#fiche-verification",
+            status_code=303,
+        )
+
     resume = str(resume_verifie or "").strip()[:12000]
+    type_cours = " ".join(str(type_cours_verifie or "").split()).strip()[:140]
     objectif = str(objectif_verifie or "").strip()[:800]
     niveau = str(niveau_verifie or "").strip()[:140]
     notions = []
@@ -829,34 +841,56 @@ def valider_fiche_document(
         )
 
     fiche = _charger_fiche_pedagogique(document)
+    ancienne_matiere = str(document.matiere or "")
+    ancien_type_document = (
+        document.type_document.value
+        if isinstance(document.type_document, TypeDocument)
+        else str(document.type_document or "")
+    )
+    nouveau_type_document = type_document_verifie.value
     anciens = {
         "resume": str(document.resume_ia or "").strip(),
+        "type_cours": str(fiche.get("type_cours") or "").strip(),
         "objectif_pedagogique": str(fiche.get("objectif_pedagogique") or "").strip(),
         "niveau_cible": str(fiche.get("niveau_cible") or "").strip(),
         "notions_cles": [str(n).strip() for n in (fiche.get("notions_cles") or [])],
     }
     nouveau = {
         "resume": resume,
+        "type_cours": type_cours,
         "objectif_pedagogique": objectif,
         "niveau_cible": niveau,
         "notions_cles": notions,
     }
     fiche_modifiee = anciens != nouveau
+    metadata_modifiee = ancienne_matiere != matiere or ancien_type_document != nouveau_type_document
+    date_validation = datetime.utcnow()
 
     fiche["resume"] = resume
+    fiche["type_cours"] = type_cours
     fiche["objectif_pedagogique"] = objectif
     fiche["niveau_cible"] = niveau
     fiche["notions_cles"] = notions
     fiche["validation_humaine"] = True
     fiche["source_validation"] = "humaine"
     fiche["statut"] = "generee"
+    fiche["validation_audit"] = {
+        "valide_par_id": utilisateur.id,
+        "valide_le": date_validation.isoformat(),
+        "matiere_avant": ancienne_matiere,
+        "matiere_apres": matiere,
+        "type_document_avant": ancien_type_document,
+        "type_document_apres": nouveau_type_document,
+    }
+    document.matiere = matiere
+    document.type_document = type_document_verifie
     document.resume_ia = resume
     document.fiche_pedagogique_json = json.dumps(fiche, ensure_ascii=False)
     document.resume_statut_ia = "generee"
     document.fiche_validation_statut = "validee"
     document.fiche_validee_par_id = utilisateur.id
-    document.fiche_validee_le = datetime.utcnow()
-    if fiche_modifiee:
+    document.fiche_validee_le = date_validation
+    if fiche_modifiee or metadata_modifiee:
         document.resume_ia_mg = ""
         document.fiche_pedagogique_mg_json = "{}"
         document.resume_statut_ia_mg = "indisponible"

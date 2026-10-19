@@ -10,7 +10,7 @@ from app.ai_quiz import (
     generer_reponse_tuteur,
     verifier_comprehension_tuteur,
 )
-from app.models import Document, RoleUtilisateur, SessionTuteur, StatutDocument
+from app.models import Document, RoleUtilisateur, SessionTuteur, StatutDocument, TypeDocument
 from app.routers import documents_router
 
 
@@ -65,8 +65,8 @@ def test_generation_quiz_document_est_bloquee_tant_que_la_fiche_n_est_pas_valide
 
 def test_route_validation_fiche_enregistre_corrections_et_audit(monkeypatch):
     user = SimpleNamespace(id=12, role=RoleUtilisateur.ETUDIANT)
-    original = {"resume":"Résumé ancien.","objectif_pedagogique":"Objectif ancien.","niveau_cible":"L1","notions_cles":["Ancienne notion"],"source":"ia","statut":"generee"}
-    document = SimpleNamespace(id=43,uploader_id=user.id,statut=StatutDocument.APPROUVE,resume_ia="Résumé ancien.",
+    original = {"resume":"Résumé ancien.","type_cours":"Cours magistral","objectif_pedagogique":"Objectif ancien.","niveau_cible":"L1","notions_cles":["Ancienne notion"],"source":"ia","statut":"generee"}
+    document = SimpleNamespace(id=43,uploader_id=user.id,statut=StatutDocument.APPROUVE,matiere="Mathématiques",type_document=TypeDocument.COURS,resume_ia="Résumé ancien.",
         resume_statut_ia="generee",fiche_pedagogique_json=json.dumps(original,ensure_ascii=False),fiche_validation_statut="a_verifier",
         fiche_validee_par_id=None,fiche_validee_le=None,resume_ia_mg="Résumé MG",fiche_pedagogique_mg_json='{"resume":"Résumé MG"}',resume_statut_ia_mg="generee")
     class FakeSession:
@@ -74,7 +74,8 @@ def test_route_validation_fiche_enregistre_corrections_et_audit(monkeypatch):
         def add(self, _obj): pass
         def commit(self): pass
     monkeypatch.setattr(documents_router, "utilisateur_courant", lambda _r, _s: user)
-    response=documents_router.valider_fiche_document(None,43,resume_verifie="Résumé corrigé.",objectif_verifie="Objectif corrigé.",
+    response=documents_router.valider_fiche_document(None,43,resume_verifie="Résumé corrigé.",matiere_verifiee="Algèbre",type_document_verifie=TypeDocument.FICHE,
+        type_cours_verifie="Fiche de révision",objectif_verifie="Objectif corrigé.",
         niveau_verifie="L2",notions_verifiees="Notion corrigée\nNotion corrigée",confirmer_contenu=True,confirmer_metadonnees=True,session=FakeSession())
     assert isinstance(response, RedirectResponse) and response.status_code == 303
     assert document.fiche_validation_statut == "validee"
@@ -82,6 +83,10 @@ def test_route_validation_fiche_enregistre_corrections_et_audit(monkeypatch):
     assert document.resume_ia == "Résumé corrigé."
     saved=json.loads(document.fiche_pedagogique_json)
     assert saved["notions_cles"] == ["Notion corrigée"] and saved["validation_humaine"]
+    assert saved["type_cours"] == "Fiche de révision"
+    assert saved["validation_audit"]["matiere_avant"] == "Mathématiques"
+    assert saved["validation_audit"]["matiere_apres"] == "Algèbre"
+    assert document.matiere == "Algèbre" and document.type_document == TypeDocument.FICHE
     assert document.resume_ia_mg == "" and document.resume_statut_ia_mg == "indisponible"
 
 
@@ -96,6 +101,8 @@ def test_templates_exigent_relecture_humaine_et_affichent_un_indice_progressif()
     assert 'data-tuteur-content="indice"' in tutor
     assert 'id="fiche-verification"' in hub
     assert 'name="confirmer_contenu"' in hub and 'name="confirmer_metadonnees"' in hub
+    assert 'name="matiere_verifiee"' in hub and 'name="type_document_verifie"' in hub
+    assert 'name="type_cours_verifie"' in hub
     assert 'doc.fiche_validation_statut == "validee"' in library
     assert "/documents/{{ document.id }}/apprendre#fiche-verification" in moderation
 
