@@ -196,7 +196,7 @@ def test_dependances_frontend_ia_sont_empaquetees_et_verifiees():
         ('"katex": {', '"version": "0.19.0"'),
         ('"marked": {', '"version": "18.1.1"'),
         ('"dompurify": {', '"version": "3.4.17"'),
-        ('"highlight.js": {', '"version": "11.12.0"'),
+        ('"@highlightjs/cdn-assets": {', '"version": "11.12.0"'),
     ):
         assert package_name in vendor
         assert version in vendor
