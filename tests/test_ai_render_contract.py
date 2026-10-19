@@ -177,7 +177,7 @@ def test_renderer_ia_prevoit_un_cdn_de_secours_sans_affaiblir_la_csp():
     assert 'DELAI_MAX_MS = 2500' in loader
     assert 'principal + "npm/katex@0.19.0/dist/katex.min.js"' in loader
     assert 'secours + "katex@0.19.0/dist/katex.min.js"' in loader
-    assert 'principal + "npm/marked@18.1.1/marked.min.js"' in loader
+    assert 'principal + "npm/marked@18.1.1/lib/marked.umd.js"' in loader
     assert 'secours + "dompurify@3.4.17/dist/purify.min.js"' in loader
     assert "window.rendreTous(document)" in loader
     assert "https://unpkg.com" in csp
