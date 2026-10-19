@@ -577,7 +577,7 @@ fallbackWindow.document.head.appendChild = function (element) {
         else if (url.includes('/dist/contrib/mhchem.min.js')) mhchemFallbackReady = true;
         else if (url.includes('/lib/marked.umd.js')) fallbackWindow.marked = { parse: function () { return ''; } };
         else if (url.includes('/dist/purify.min.js')) fallbackWindow.DOMPurify = { sanitize: function () { return fallbackWindow.document.createDocumentFragment(); } };
-        else if (url.includes('/build/highlight.min.js')) fallbackWindow.hljs = { highlightElement: function () {} };
+        else if (url.includes('highlight.min.js')) fallbackWindow.hljs = { highlightElement: function () {} };
       }
       if (typeof element.onload === 'function') element.onload(new fallbackWindow.Event('load'));
     });
