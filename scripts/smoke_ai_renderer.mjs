@@ -21,7 +21,7 @@ for (const [name, version] of Object.entries(vendorVersions)) {
   }
 }
 const katexCssLocal = fs.readFileSync(vendorRoot + '/katex/katex.min.css', 'utf8');
-const fontNames = Array.from(katexCssLocal.matchAll(/url\\(["']?(?:\\.\\/)?fonts\\/([^)"']+)["']?\\)/g), match => match[1].split('?')[0]);
+const fontNames = Array.from(katexCssLocal.matchAll(/url\(["']?(?:\.\/)?fonts\/([^)"']+)["']?\)/g), match => match[1].split('?')[0]);
 if (fontNames.length < 10) {
   throw new Error('KaTeX stylesheet does not reference the expected full font set');
 }
