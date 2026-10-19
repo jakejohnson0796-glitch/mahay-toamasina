@@ -3,7 +3,7 @@
 {% block titre %}{% if langue == "mg" %}Famintinana ny lalao — MITARIDALA{% else %}Ton bilan — Jeu cérébral — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="jeu-result-page">
+<div class="jeu-result-page" data-partie-id="{{ partie.id }}" data-session-terminee="true">
   <style nonce="{{ csp_nonce(request) }}">
     .jeu-result-page{max-width:1040px;margin:0 auto;padding:clamp(1rem,2.5vw,2rem);color:var(--content-text)}
     .jeu-result-hero{border:1px solid var(--content-border);border-radius:24px;padding:clamp(1.1rem,3vw,2rem);background:var(--content-surface);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1.2rem;align-items:center}
@@ -78,7 +78,18 @@
   
     .jeu-result-score img{display:block;width:62px;height:36px;object-fit:contain;justify-self:center;filter:drop-shadow(0 4px 7px color-mix(in srgb,#e6b64c 30%,transparent));}
     @media(max-width:620px){.jeu-result-score img{width:44px;height:30px;justify-self:auto;}}
-  </style>
+
+    .jeu-result-page.jeu-reduit-mouvement *, .jeu-result-page.jeu-reduit-mouvement *::before, .jeu-result-page.jeu-reduit-mouvement *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;transform:none!important;filter:none!important}
+    .jeu-result-reward{display:grid;justify-items:center;gap:.25rem;margin-top:.65rem;padding:.55rem .6rem;border:1px solid var(--content-border);border-radius:12px;background:color-mix(in srgb,var(--content-link) 6%,var(--content-bg));animation:jeu-recompense-arrivee .5s cubic-bezier(.2,.7,.25,1) both}
+    .jeu-result-reward .jeu-reward-stars{font-size:1.05rem;letter-spacing:.16em;line-height:1.25;color:var(--content-link)}
+    .jeu-result-reward strong{font-size:.71rem;line-height:1.35;text-align:center}
+    .jeu-result-reward span:last-child{font-size:.65rem;color:var(--content-text-muted);text-align:center;line-height:1.35}
+    .jeu-result-settings{display:flex;justify-content:flex-end;margin:.7rem 0;color:var(--content-text-muted);font-size:.75rem}
+    .jeu-result-settings label{display:inline-flex;align-items:center;gap:.45rem;cursor:pointer}
+    .jeu-result-settings input{width:17px;height:17px;accent-color:var(--content-link)}
+    @keyframes jeu-recompense-arrivee{0%{opacity:0;transform:translateY(7px) scale(.94)}70%{opacity:1;transform:translateY(-1px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+    @media(max-width:620px){.jeu-result-settings{justify-content:flex-start}}
+    </style>
 
   <header class="jeu-result-hero">
     <div>
@@ -99,8 +110,28 @@
       <img src="/static/images/jeu-cerebral/trophy.webp" alt="" width="64" height="38" loading="lazy" decoding="async">
       <strong>{{ partie.score }} %</strong>
       <span>{{ partie.bonnes_reponses }}/{{ partie.nb_questions }} {% if langue == "mg" %}valiny marina{% else %}bonnes réponses{% endif %}</span>
+      <div class="jeu-result-reward" role="status" aria-label="{% if langue == 'mg' %}Valisoa amin'ny lalao{% else %}Récompense de la session{% endif %}">
+        {% if partie.score >= 80 %}
+          <span class="jeu-reward-stars" aria-hidden="true">✦ ✦ ✦</span>
+          <strong>{% if langue == "mg" %}Kintana telo mamirapiratra{% else %}Éclat brillant{% endif %}</strong>
+          <span>{% if langue == "mg" %}Faharetana sy fahaiza-manao{% else %}Trois étoiles de progression{% endif %}</span>
+        {% elif partie.score >= 60 %}
+          <span class="jeu-reward-stars" aria-hidden="true">✦ ✦</span>
+          <strong>{% if langue == "mg" %}Kintana roa mitombo{% else %}Belle progression{% endif %}</strong>
+          <span>{% if langue == "mg" %}Mihamafy tsikelikely ny fahalalana{% else %}Deux étoiles de progression{% endif %}</span>
+        {% elif partie.score >= 40 %}
+          <span class="jeu-reward-stars" aria-hidden="true">✦</span>
+          <strong>{% if langue == "mg" %}Kintan'ny fikirizana{% else %}Étoile de persévérance{% endif %}</strong>
+          <span>{% if langue == "mg" %}Ny fanandramana dia efa fandrosoana{% else %}Chaque essai compte{% endif %}</span>
+        {% else %}
+          <span class="jeu-reward-stars" aria-hidden="true">🌱</span>
+          <strong>{% if langue == "mg" %}Voan'ny fandrosoana{% else %}Graine de progrès{% endif %}</strong>
+          <span>{% if langue == "mg" %}Misy dingana kely foana azo atao{% else %}Un prochain petit pas t'attend{% endif %}</span>
+        {% endif %}
+      </div>
     </div>
   </header>
+  <div class="jeu-result-settings"><label><input type="checkbox" id="jeu-reduire-animations-resultat"><span>{% if langue == "mg" %}Ahena ny animation{% else %}Réduire les animations{% endif %}</span></label></div>
 
   {% if partie.source_generation != "ia" %}
   <div class="jeu-result-section" role="note">
@@ -161,4 +192,5 @@
     </div>
   </section>
 </div>
+<script defer nonce="{{ csp_nonce(request) }}" src="/static/js/jeu-cerebral.js?v=20261019-immersif"></script>
 {% endblock %}
