@@ -22,7 +22,7 @@ MITARIDALA rassemble dans un même espace :
 
 La bibliothèque permet de retrouver des annales, corrigés, fiches et cours classés selon le référentiel académique.
 
-Le dépôt d'un document passe par un processus de validation avant sa publication. Le système peut également analyser le document déposé afin d'aider à identifier automatiquement son type et sa matière.
+Le dépôt d'un document passe par un processus de validation avant sa publication. Le système peut également analyser le document déposé afin d'aider à identifier automatiquement son type et sa matière. Depuis le panneau de modération, un administrateur peut corriger le titre, le type, la matière, l'année et la filière/parcours, y compris après publication. Si la matière, le type ou la filière change, la fiche pédagogique repasse en attente de vérification.
 
 ### Apprentissage actif
 

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block titre %}Corriger un document — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair moderation-document-modifier">
+  <div class="tb-panneau-entete">
+    <div>
+      <p class="eyebrow">Administration · Modération</p>
+      <h2>Corriger les métadonnées</h2>
+      <p class="stat-label">Référence {{ document.reference }} · Le fichier original et le statut de publication sont conservés.</p>
+    </div>
+  </div>
+
+  {% if erreur %}
+  <div class="erreur" role="alert">{{ erreur }}</div>
+  {% endif %}
+  {% if resultat == "modifie" %}
+  <div class="info" role="status">Les métadonnées ont été enregistrées.</div>
+  {% elif resultat == "metadonnees_modifiees" %}
+  <div class="info" role="status">Les métadonnées ont été enregistrées. La fiche pédagogique doit être revérifiée.</div>
+  {% endif %}
+
+  {% set titre_actuel = valeurs.titre if valeurs else document.titre %}
+  {% set matiere_actuelle = valeurs.matiere if valeurs else document.matiere %}
+  {% set type_actuel = valeurs.type_document if valeurs else document.type_document.value %}
+  {% set annee_actuelle = valeurs.annee if valeurs else document.annee %}
+  {% set filiere_actuelle = valeurs.filiere_id if valeurs else document.filiere_id %}
+
+  <form class="metadata-edit-form" method="post" action="/moderation/{{ document.id }}/modifier">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+
+    <div class="metadata-edit-grid">
+      <div class="metadata-edit-field metadata-edit-field-wide">
+        <label for="titre">Titre du document</label>
+        <input id="titre" name="titre" type="text" maxlength="240" required value="{{ titre_actuel }}">
+      </div>
+
+      <div class="metadata-edit-field">
+        <label for="type_document">Type de document</label>
+        <select id="type_document" name="type_document" required>
+          {% for type in types_document %}
+          <option value="{{ type.value }}" {% if type.value == type_actuel %}selected{% endif %}>{{ type.value|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="metadata-edit-field">
+        <label for="matiere">Matière</label>
+        <input id="matiere" name="matiere" type="text" maxlength="120" required value="{{ matiere_actuelle }}" placeholder="Ex. : Mathématiques, Droit civil...">
+      </div>
+
+      <div class="metadata-edit-field">
+        <label for="annee">Année du document</label>
+        <input id="annee" name="annee" type="number" min="1900" max="2100" step="1" required value="{{ annee_actuelle }}">
+      </div>
+
+      <div class="metadata-edit-field">
+        <label for="filiere_id">Filière / parcours académique</label>
+        <select id="filiere_id" name="filiere_id" required>
+          {% for filiere in filieres %}
+          <option value="{{ filiere.id }}" {% if filiere.id|string == filiere_actuelle|string %}selected{% endif %}>
+            {{ filiere.nom }}{% if filiere.niveau %} — {{ filiere.niveau }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="metadata-edit-status">
+      <p><strong>Statut actuel :</strong> {{ document.statut.value|replace("_", " ")|capitalize }}</p>
+      <p>Corriger la matière, le type ou la filière remet la fiche pédagogique en attente de vérification. Cela évite de réutiliser une classification IA devenue incorrecte.</p>
+    </div>
+
+    <div class="metadata-edit-actions">
+      <button class="bouton bouton-primaire" type="submit">Enregistrer les corrections</button>
+      <a class="bouton bouton-secondaire" href="/moderation">Annuler</a>
+    </div>
+  </form>
+</div>
+
+<style nonce="{{ csp_nonce(request) }}">
+  .moderation-document-modifier {
+    width: min(100%, 960px);
+    margin-inline: auto;
+  }
+  .metadata-edit-form {
+    margin-top: 1.25rem;
+  }
+  .metadata-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .metadata-edit-field {
+    display: grid;
+    gap: .4rem;
+    min-width: 0;
+  }
+  .metadata-edit-field-wide {
+    grid-column: 1 / -1;
+  }
+  .metadata-edit-field label {
+    font-weight: 650;
+  }
+  .metadata-edit-field input,
+  .metadata-edit-field select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: .65rem .75rem;
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: .65rem;
+    color: var(--text, #172033);
+    background: var(--surface, #fff);
+    font: inherit;
+  }
+  .metadata-edit-status {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    border-radius: .75rem;
+    background: var(--surface-muted, #f1f5f9);
+  }
+  .metadata-edit-status p {
+    margin: .25rem 0;
+  }
+  .metadata-edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+    margin-top: 1.25rem;
+  }
+  @media (max-width: 640px) {
+    .metadata-edit-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .metadata-edit-field-wide {
+      grid-column: auto;
+    }
+    .metadata-edit-actions {
+      flex-direction: column;
+    }
+    .metadata-edit-actions .bouton {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}

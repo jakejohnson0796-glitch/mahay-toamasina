@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import json
 from typing import Optional
+from urllib.parse import urlencode
 import mimetypes
 import secrets
 import tempfile
@@ -1009,6 +1010,196 @@ def panneau_moderation(request: Request, session: Session = Depends(get_session)
 
 def _rediriger_moderation(resultat: str) -> RedirectResponse:
     return RedirectResponse(f"/moderation?resultat={resultat}", status_code=303)
+
+
+def _normaliser_metadonnees_document(
+    titre: str,
+    matiere: str,
+    type_document: str,
+    annee: str,
+    filiere_id: str,
+) -> tuple[Optional[dict], Optional[str]]:
+    """Valide et normalise les champs éditables par un administrateur."""
+    titre_normalise = " ".join(str(titre or "").split()).strip()
+    matiere_normalisee = " ".join(str(matiere or "").split()).strip()
+    type_normalise = str(type_document or "").strip()
+    annee_normalisee = str(annee or "").strip()
+    filiere_normalisee = str(filiere_id or "").strip()
+
+    if not titre_normalise:
+        return None, "Le titre est obligatoire."
+    if len(titre_normalise) > 240:
+        return None, "Le titre ne peut pas dépasser 240 caractères."
+    if not matiere_normalisee:
+        return None, "La matière est obligatoire."
+    if len(matiere_normalisee) > 120:
+        return None, "La matière ne peut pas dépasser 120 caractères."
+
+    try:
+        type_valide = TypeDocument(type_normalise)
+    except (TypeError, ValueError):
+        return None, "Choisissez un type de document valide."
+
+    try:
+        annee_validee = int(annee_normalisee)
+    except (TypeError, ValueError):
+        return None, "L'année doit être un nombre entier."
+    if not 1900 <= annee_validee <= 2100:
+        return None, "L'année doit être comprise entre 1900 et 2100."
+
+    try:
+        filiere_validee = int(filiere_normalisee)
+    except (TypeError, ValueError):
+        return None, "Choisissez une filière valide."
+    if filiere_validee < 1:
+        return None, "Choisissez une filière valide."
+
+    return {
+        "titre": titre_normalise,
+        "matiere": matiere_normalisee,
+        "type_document": type_valide,
+        "annee": annee_validee,
+        "filiere_id": filiere_validee,
+    }, None
+
+
+@router.get("/moderation/{document_id}/modifier")
+def formulaire_modifier_document(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_session),
+):
+    """Formulaire d'édition des métadonnées réservé aux administrateurs."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document:
+        return _rediriger_moderation("introuvable")
+
+    filieres = session.exec(select(Filiere).order_by(Filiere.nom)).all()
+    champs_formulaire = ("titre", "matiere", "type_document", "annee", "filiere_id")
+    valeurs = (
+        {champ: request.query_params.get(champ, "") for champ in champs_formulaire}
+        if any(champ in request.query_params for champ in champs_formulaire)
+        else None
+    )
+    return templates.TemplateResponse(
+        "moderation_document_modifier.html",
+        {
+            "request": request,
+            "document": document,
+            "filieres": filieres,
+            "types_document": list(TypeDocument),
+            "utilisateur": utilisateur,
+            "erreur": request.query_params.get("erreur"),
+            "resultat": request.query_params.get("resultat"),
+            "valeurs": valeurs,
+        },
+    )
+
+
+@router.post("/moderation/{document_id}/modifier")
+def enregistrer_modification_document(
+    request: Request,
+    document_id: int,
+    titre: str = Form(default=""),
+    matiere: str = Form(default=""),
+    type_document: str = Form(default=""),
+    annee: str = Form(default=""),
+    filiere_id: str = Form(default=""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Corrige les métadonnées sans modifier le fichier ni le statut de publication."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+
+    document = session.get(Document, document_id)
+    if not document:
+        return _rediriger_moderation("introuvable")
+
+    filieres = session.exec(select(Filiere).order_by(Filiere.nom)).all()
+    valeurs = {
+        "titre": titre or "",
+        "matiere": matiere or "",
+        "type_document": type_document or "",
+        "annee": annee or "",
+        "filiere_id": filiere_id or "",
+    }
+
+    def afficher_erreur(message: str) -> RedirectResponse:
+        # Le JS de confirmation admin suit les redirections, mais présente
+        # une alerte générique pour les réponses 4xx. Un 303 permet donc
+        # d'afficher le message précis et de conserver les champs saisis.
+        valeurs_limitees = {
+            "titre": valeurs["titre"][:240],
+            "matiere": valeurs["matiere"][:120],
+            "type_document": valeurs["type_document"][:40],
+            "annee": valeurs["annee"][:4],
+            "filiere_id": valeurs["filiere_id"][:12],
+        }
+        query = urlencode({"erreur": message, **valeurs_limitees})
+        return RedirectResponse(
+            f"/moderation/{document.id}/modifier?{query}",
+            status_code=303,
+        )
+
+    metadonnees, erreur = _normaliser_metadonnees_document(
+        titre=titre,
+        matiere=matiere,
+        type_document=type_document,
+        annee=annee,
+        filiere_id=filiere_id,
+    )
+    if erreur:
+        return afficher_erreur(erreur)
+
+    filiere = session.get(Filiere, metadonnees["filiere_id"])
+    if not filiere:
+        return afficher_erreur("La filière sélectionnée n'existe plus. Choisissez-en une autre.")
+
+    ancienne_filiere_id = document.filiere_id
+    anciennes_matiere = document.matiere
+    ancien_type = document.type_document
+    changement_contexte_pedagogique = (
+        anciennes_matiere != metadonnees["matiere"]
+        or ancien_type != metadonnees["type_document"]
+        or ancienne_filiere_id != metadonnees["filiere_id"]
+    )
+    modification = any((
+        document.titre != metadonnees["titre"],
+        anciennes_matiere != metadonnees["matiere"],
+        ancien_type != metadonnees["type_document"],
+        document.annee != metadonnees["annee"],
+        ancienne_filiere_id != metadonnees["filiere_id"],
+    ))
+    if not modification:
+        return _rediriger_moderation("inchange")
+
+    document.titre = metadonnees["titre"]
+    document.matiere = metadonnees["matiere"]
+    document.type_document = metadonnees["type_document"]
+    document.annee = metadonnees["annee"]
+    document.filiere_id = metadonnees["filiere_id"]
+
+    # Une fiche IA validée avec une ancienne matière, un ancien type ou une
+    # autre filière ne doit plus être considérée comme validée sans contrôle.
+    if changement_contexte_pedagogique:
+        document.fiche_validation_statut = "a_verifier"
+        document.fiche_validee_par_id = None
+        document.fiche_validee_le = None
+        document.resume_ia_mg = ""
+        document.fiche_pedagogique_mg_json = "{}"
+        document.resume_statut_ia_mg = "indisponible"
+
+    session.add(document)
+    session.commit()
+    return _rediriger_moderation(
+        "metadonnees_modifiees" if changement_contexte_pedagogique else "modifie"
+    )
 
 
 @router.post("/moderation/{document_id}/approuver")
