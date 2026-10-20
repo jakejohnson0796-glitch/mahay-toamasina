@@ -276,7 +276,7 @@ try {
             const response = await fetch(src);
             const text = await response.text();
             const doc = new DOMParser().parseFromString(text, "image/svg+xml");
-            return { src, status: response.status, contentType: response.headers.get("content-type"), root: doc.documentElement?.localName, namespace: doc.documentElement?.namespaceURI, parserError: !!doc.querySelector("parsererror") };
+            return { src, status: response.status, contentType: response.headers.get("content-type"), root: doc.documentElement?.localName, namespace: doc.documentElement?.namespaceURI, parserError: !!doc.querySelector("parsererror"), parserMessage: doc.querySelector("parsererror")?.textContent?.slice(0, 500) || "", sourceStart: text.slice(0, 220) };
           }));
         });
         for (const svg of svgValidation) {
