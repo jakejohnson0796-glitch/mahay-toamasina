@@ -423,6 +423,77 @@ def progression_sur_plusieurs_sessions(
     }
 
 
+def _normaliser_libelle_ressource(texte: str) -> str:
+    valeur = unicodedata.normalize("NFKD", str(texte or "")).casefold()
+    valeur = "".join(c for c in valeur if not unicodedata.combining(c))
+    return " ".join("".join(c if c.isalnum() else " " for c in valeur).split())
+
+
+_ALIAS_RESSOURCES = {
+    "calcul mental et estimation": ("calcul mental", "calcul numerique", "arithmetique", "estimation numerique"),
+    "raisonnement logique": ("raisonnement logique", "logique mathematique", "deduction logique"),
+    "suites et regularites": ("suites numeriques", "suite numerique", "regularites numeriques", "progression arithmetique", "progression geometrique"),
+    "mots et analogies": ("analogies", "analogie verbale", "vocabulaire", "lexique"),
+    "observation et attention": ("observation", "attention visuelle", "perception visuelle", "discrimination visuelle"),
+}
+
+
+def trouver_ressources_pour_notion(
+    notions_a_renforcer: list[dict[str, Any]],
+    documents: list[Any],
+    *,
+    limite: int = 3,
+) -> list[dict[str, Any]]:
+    """Associe une notion à un document seulement si un libellé explicite correspond.
+
+    La fonction ne déduit pas qu'un cours de mathématiques quelconque couvre
+    une faiblesse de calcul mental. Elle privilégie les titres/matières explicites
+    et les synonymes pédagogiques contrôlés, afin de ne pas inventer de lien.
+    L'autorisation d'accès et le statut de modération doivent être filtrés avant
+    de transmettre les documents à cette fonction.
+    """
+    if not notions_a_renforcer or not documents or limite <= 0:
+        return []
+
+    suggestions: list[dict[str, Any]] = []
+    deja_vus: set[int] = set()
+    for notion in notions_a_renforcer:
+        if not isinstance(notion, dict):
+            continue
+        libelle = str(notion.get("notion") or "").strip()
+        cle = _normaliser_libelle_ressource(libelle)
+        if not cle:
+            continue
+        candidats = (cle, *_ALIAS_RESSOURCES.get(cle, ()))
+        for document in documents:
+            identifiant = getattr(document, "id", None)
+            if not isinstance(identifiant, int) or identifiant in deja_vus:
+                continue
+            titre = str(getattr(document, "titre", "") or "")
+            matiere = str(getattr(document, "matiere", "") or "")
+            texte_document = _normaliser_libelle_ressource(f"{titre} {matiere}")
+            if not any(candidat and candidat in texte_document for candidat in candidats):
+                continue
+            deja_vus.add(identifiant)
+            type_document = getattr(document, "type_document", "")
+            type_document = getattr(type_document, "value", type_document)
+            suggestions.append({
+                "notion": libelle,
+                "taux_reussite": notion.get("taux_reussite"),
+                "essais": notion.get("essais"),
+                "document_id": identifiant,
+                "titre": titre,
+                "matiere": matiere,
+                "type_document": str(type_document or ""),
+                "annee": getattr(document, "annee", None),
+                "reference": getattr(document, "reference", ""),
+            })
+            break
+        if len(suggestions) >= limite:
+            break
+    return suggestions
+
+
 def profil_pour_ia(sessions: list[Any], langue: str | None = "fr") -> dict[str, Any]:
     scores = [int(s.score) for s in sessions[:5] if getattr(s, "score", None) is not None]
     par_theme: dict[str, list[int]] = {}
