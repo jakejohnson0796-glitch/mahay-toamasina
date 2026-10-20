@@ -242,6 +242,33 @@
     <p class="jeu-progression-note">Pour éviter les conclusions hâtives, une notion n'est classée « à renforcer » qu'après plusieurs réponses. Ce suivi décrit tes exercices récents ; il ne mesure pas ton intelligence générale.</p>
   </section>
 
+  {% if progression_notion.a_renforcer %}
+  <section class="jeu-section" aria-labelledby="jeu-ressources-ciblees-title">
+    <div class="jeu-section-head">
+      <div>
+        <h2 id="jeu-ressources-ciblees-title">Des ressources pour les notions à reprendre</h2>
+        <p>Seuls les documents approuvés de ta filière dont le titre ou la matière correspondent explicitement sont proposés ici.</p>
+      </div>
+    </div>
+    {% if ressources_recommandees %}
+      <div class="jeu-progression-grid">
+        {% for ressource in ressources_recommandees %}
+        <article class="jeu-progression-card">
+          <h3>{{ ressource.notion }}</h3>
+          <p><strong>{{ ressource.titre }}</strong></p>
+          <p>{{ ressource.matiere }}{% if ressource.annee %} · {{ ressource.annee }}{% endif %}</p>
+          <p class="jeu-progression-note">Correspondance explicite · {{ ressource.essais }} réponses observées · {{ ressource.taux_reussite }} % de réussite</p>
+          <p><a href="/documents/{{ ressource.document_id }}/apprendre">Ouvrir cette ressource</a></p>
+        </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p role="note">Aucune ressource approuvée n'a de titre suffisamment précis pour être liée sans deviner. Tu peux parcourir la bibliothèque et choisir un cours correspondant à la notion.</p>
+      <p><a href="{% if utilisateur.filiere_id %}/documents?filiere_id={{ utilisateur.filiere_id }}{% else %}/documents{% endif %}">Parcourir les documents disponibles</a></p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="jeu-section" aria-labelledby="jeu-choisir-theme">
     <div class="jeu-section-head">
       <div>
