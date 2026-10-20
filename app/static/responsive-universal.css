@@ -1,0 +1,338 @@
+/*
+ * MITARIDALA — socle responsive transversal.
+ * Cette feuille est chargée en dernier depuis base.html pour harmoniser
+ * les pages et corriger les conflits des styles hérités sans ajouter
+ * un framework CSS en doublon.
+ */
+
+:root {
+  --gm-universal-gutter: clamp(0.625rem, 2.6vw, 1.75rem);
+  --gm-mobile-nav-height: 3.5rem;
+}
+
+html {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-block-end: calc(var(--gm-mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+body {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.app-mise-en-page,
+.app-page,
+.app-page > main,
+main,
+main > *,
+.contenu-clair,
+.tb-contenu,
+.tb-panneau,
+.tb-hero,
+.tb-sidebar,
+.page-auth,
+.page-ops,
+.page-classe,
+[class*="grille"],
+[class*="-grid"],
+[class*="grid-"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+img,
+picture,
+video,
+canvas,
+iframe,
+svg {
+  max-width: 100%;
+}
+
+img,
+picture img,
+video,
+canvas {
+  height: auto;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+:is(h1, h2, h3, h4, h5, h6, p, li, dd, dt, legend, label, summary, .tb-titre, .tb-sous-titre, .doc-titre, .doc-description, .quiz-question, .message-contenu, .auth-description) {
+  overflow-wrap: anywhere;
+}
+
+:is(pre, .code-block, .hljs, .katex-display, .table-responsive, .tableau-scroll, .table-scroll, .table-manifeste-conteneur, .ops-table-wrapper, .admin-table-wrapper) {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: max-content;
+  min-width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+:is(.doc-grille, .quiz-grille, .classe-grid, .ops-stat-grid, .hub-kpis, .tb-grille-stats, .stats-4, .aide-avis-grille, .grille-cartes, .grille-cartes-claires, .uni-grille, .cercles-grille) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(.doc-carte, .quiz-carte-generer, .quiz-carte-examen, .tb-panneau, .tb-carte-stat, .tb-carte-reprendre, .tb-carte-premium, .carte-claire, .carte-formulaire, .auth-card, .document-upload-card, .document-upload-side-card) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.navigation-mobile-fixe {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  :is(.tb-ligne-principale, .tb-ligne-basse, .tb-ligne-supplementaire) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.doc-grille, .quiz-grille, .classe-grid, .ops-stat-grid, .hub-kpis, .tb-grille-stats, .grille-cartes, .grille-cartes-claires, .uni-grille, .cercles-grille) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    scroll-padding-block-start: calc(3.5rem + env(safe-area-inset-top, 0px));
+    scroll-padding-block-end: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .app-mise-en-page,
+  .app-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .app-page {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .app-page > main,
+  main,
+  main.main-clair,
+  main.main-clair-pleine-largeur {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+  }
+
+  .navigation-mobile-fixe {
+    position: fixed !important;
+    inset-inline: 0 !important;
+    inset-block-end: 0 !important;
+    z-index: 60;
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    align-items: stretch;
+    gap: clamp(0.04rem, 0.4vw, 0.12rem) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    margin: 0;
+    padding: 0.25rem max(0.2rem, env(safe-area-inset-right, 0px)) calc(0.25rem + env(safe-area-inset-bottom, 0px)) max(0.2rem, env(safe-area-inset-left, 0px)) !important;
+    border-top: 1px solid var(--content-border, rgba(30, 63, 58, 0.15));
+    background: var(--content-surface, rgba(255, 255, 255, 0.97));
+    color: var(--content-text, #1d3531);
+    box-shadow: 0 -8px 24px rgba(14, 45, 42, 0.08);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  .navigation-mobile-lien {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.22rem;
+    width: 100%;
+    min-width: 0 !important;
+    min-height: 3.05rem !important;
+    margin: 0;
+    padding: 0.2rem 0.03rem !important;
+    border-radius: 0.65rem;
+    font-size: 0.56rem !important;
+    line-height: 1.05;
+    text-align: center;
+    text-decoration: none;
+    white-space: normal;
+    touch-action: manipulation;
+  }
+
+  .navigation-mobile-lien > svg,
+  .navigation-mobile-lien > .navigation-mobile-icone {
+    display: block;
+    flex: 0 0 auto;
+    width: 1.12rem;
+    height: 1.12rem;
+    max-width: 100%;
+    line-height: 1;
+    font-size: 1.05rem;
+    object-fit: contain;
+  }
+
+  .navigation-mobile-lien > span:not(.navigation-mobile-icone) {
+    display: block !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    font-size: clamp(0.48rem, 2vw, 0.61rem) !important;
+    font-weight: 600;
+    line-height: 1.08;
+    text-align: center;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    overflow-wrap: normal;
+  }
+
+  .navigation-mobile-lien.actif {
+    background: rgba(47, 143, 137, 0.11);
+    color: var(--refonte-teal, #216e68);
+  }
+
+  .navigation-mobile-lien:focus-visible {
+    outline-offset: -2px;
+  }
+
+  :is(.doc-grille, .quiz-grille, .classe-grid, .ops-stat-grid, .hub-kpis, .tb-grille-stats, .grille-cartes, .grille-cartes-claires, .uni-grille, .cercles-grille) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.stats-4, .tb-grille-stats) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :is(.table-manifeste, .tableau-admin, .tableau-operations, .tableau-donnees) {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  :is(.table-manifeste, .tableau-admin, .tableau-operations, .tableau-donnees) thead th,
+  :is(.table-manifeste, .tableau-admin, .tableau-operations, .tableau-donnees) tbody td {
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-entete-app,
+  .tb-sidebar,
+  .tb-menu-compte,
+  .main-clair,
+  .contenu-clair {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 340px) {
+  :root {
+    --gm-universal-gutter: 0.55rem;
+  }
+
+  .navigation-mobile-lien {
+    gap: 0.16rem;
+    min-height: 2.95rem !important;
+    padding-inline: 0 !important;
+  }
+
+  .navigation-mobile-lien > svg,
+  .navigation-mobile-lien > .navigation-mobile-icone {
+    width: 1rem;
+    height: 1rem;
+    font-size: 0.96rem;
+  }
+
+  .navigation-mobile-lien > span:not(.navigation-mobile-icone) {
+    font-size: 0.47rem !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .navigation-mobile-fixe {
+    display: none !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 768px) {
+  .app-page {
+    padding-bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .navigation-mobile-lien {
+    min-height: 2.65rem !important;
+  }
+
+  .navigation-mobile-lien > svg,
+  .navigation-mobile-lien > .navigation-mobile-icone {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  .navigation-mobile-fixe,
+  .sidebar-bouton-mobile,
+  .mobile-entete-app {
+    display: none !important;
+  }
+
+  .app-page {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}
