@@ -191,9 +191,9 @@ try {
       }
       const sidebarAvatarInvalid = !result.sidebarAvatar ||
         Math.abs(result.sidebarAvatar.width - 30) > 0.5 || Math.abs(result.sidebarAvatar.height - 30) > 0.5;
-      const headerAvatarInvalid = width <= 768 && (!result.headerAvatar ||
+      const headerAvatarInvalid = width <= 900 && (!result.headerAvatar ||
         Math.abs(result.headerAvatar.width - 30) > 0.5 || Math.abs(result.headerAvatar.height - 30) > 0.5);
-      const hiddenMobileAvatarVisible = width > 768 && result.headerAvatar && result.headerAvatar.width > 0;
+      const hiddenMobileAvatarVisible = width > 900 && result.headerAvatar && result.headerAvatar.width > 0;
       if (sidebarAvatarInvalid || headerAvatarInvalid || hiddenMobileAvatarVisible) {
         failures.push(scenario + " @ " + width + "px: photo de profil trop grande/déformée ou en-tête mobile visible à tort");
       }
