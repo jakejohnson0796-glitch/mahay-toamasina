@@ -420,7 +420,7 @@ def progression_sur_plusieurs_sessions(
     }
 
 
-def profil_pour_ia(sessions: list[Any], langue: str = "fr") -> dict[str, Any]:
+def profil_pour_ia(sessions: list[Any], langue: str | None = "fr") -> dict[str, Any]:
     scores = [int(s.score) for s in sessions[:5] if getattr(s, "score", None) is not None]
     par_theme: dict[str, list[int]] = {}
     for item in sessions:
