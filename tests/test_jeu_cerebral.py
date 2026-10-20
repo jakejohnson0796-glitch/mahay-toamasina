@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -168,6 +169,72 @@ def test_profil_ne_essaie_pas_de_mesurer_l_intelligence_et_calibre_la_difficulte
     assert profil["moyenne_recente"] == 86
     assert profil["difficulte_depart"] == "Difficile"
     assert profil["meilleure_piste"] == "calcul"
+
+
+def test_progression_par_notion_agrege_plusieurs_sessions_sans_surinterpreter_un_essai():
+    def partie(theme, notions, reponses, langue="fr"):
+        questions = [
+            {
+                "question": "Question de suivi",
+                "choix": ["Non", "Oui"],
+                "index_bonne_reponse": 1,
+                "notion": notion,
+            }
+            for notion in notions
+        ]
+        etat = {"ordre": list(range(len(questions))), "reponses": reponses}
+        return SimpleNamespace(
+            theme_id=theme,
+            langue=langue,
+            score=0,
+            date_fin=None,
+            questions_json=json.dumps(questions, ensure_ascii=False),
+            reponses_json=json.dumps(etat, ensure_ascii=False),
+        )
+
+    # L'ordre fourni est du plus récent au plus ancien.
+    sessions = [
+        partie("calcul", ["Calcul mental"], [0]),
+        partie("calcul", ["Calcul mental", "Logique"], [0, 1]),
+        partie("calcul", ["Calcul mental", "Logique", "Observation"], [1, 1, 0]),
+        SimpleNamespace(theme_id="calcul", langue="fr", questions_json="{bad", reponses_json="{}"),
+    ]
+
+    progression = jeu_cerebral.progression_sur_plusieurs_sessions(sessions)
+
+    assert progression["sessions_analysees"] == 3
+    assert progression["reponses_analysees"] == 6
+    assert progression["notions_suivies"] == 3
+    assert progression["a_renforcer"][0]["notion"] == "Calcul mental"
+    assert progression["a_renforcer"][0]["essais"] == 3
+    assert progression["a_renforcer"][0]["bonnes_reponses"] == 1
+    assert progression["a_renforcer"][0]["taux_reussite"] == 33
+    assert progression["a_renforcer"][0]["dernier_resultat"] is False
+    assert progression["bien_reussies"][0]["notion"] == "Logique"
+    assert progression["bien_reussies"][0]["taux_reussite"] == 100
+    assert progression["a_observer"][0]["notion"] == "Observation"
+    assert progression["a_observer"][0]["essais"] == 1
+
+
+def test_progression_par_notion_filtre_la_langue_pour_personnaliser_la_banque():
+    def partie(notion, reponse, langue):
+        question = {"question": "Question", "choix": ["Non", "Oui"], "index_bonne_reponse": 1, "notion": notion}
+        return SimpleNamespace(
+            theme_id="logique",
+            langue=langue,
+            questions_json=json.dumps([question], ensure_ascii=False),
+            reponses_json=json.dumps({"ordre": [0], "reponses": [reponse]}, ensure_ascii=False),
+        )
+
+    progression = jeu_cerebral.progression_sur_plusieurs_sessions(
+        [partie("Logique", 0, "fr"), partie("Lojika", 1, "mg")],
+        langue="fr",
+    )
+
+    assert progression["sessions_analysees"] == 1
+    assert progression["reponses_analysees"] == 1
+    assert progression["a_observer"][0]["notion"] == "Logique"
+    assert progression["a_observer"][0]["taux_reussite"] == 0
 
 
 def test_page_jeu_et_templates_compilent():
