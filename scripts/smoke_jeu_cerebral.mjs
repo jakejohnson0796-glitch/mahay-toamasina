@@ -199,20 +199,11 @@ try {
     }
   });
   const page = await context.newPage();
-  page.on("response", (response) => {
-    if (response.url().includes("/illustrations/logique.svg")) console.log("LOGIQUE_ASSET_RESPONSE", response.status(), response.url());
-  });
-  page.on("requestfailed", (request) => {
-    if (request.url().includes("/illustrations/logique.svg")) console.log("LOGIQUE_ASSET_FAILED", request.url(), request.failure()?.errorText);
-  });
   await page.route("http://jeu.test/**", async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith("/static/")) {
       const relative = path.join("app", url.pathname.slice(1));
       const absolute = path.resolve(ROOT, relative);
-      if (url.pathname.endsWith("/illustrations/logique.svg")) {
-        console.log("LOGIQUE_ASSET_ROUTE", JSON.stringify({ relative, absolute, exists: exists(relative), safe: absolute.startsWith(path.resolve(ROOT, "app/static") + path.sep) }));
-      }
       if (!absolute.startsWith(path.resolve(ROOT, "app/static") + path.sep) || !exists(relative)) {
         await route.fulfill({ status: 404, body: "Not found" });
         return;
@@ -266,7 +257,9 @@ try {
             const r = el.getBoundingClientRect();
             return { x: r.x, right: r.right, width: r.width };
           })(),
-          loadedImages: Array.from(document.images).map((img) => ({ src: img.getAttribute("src"), width: img.naturalWidth, height: img.naturalHeight }))
+          loadedImages: Array.from(document.images).map((img) => ({ src: img.getAttribute("src"), width: img.naturalWidth, height: img.naturalHeight, complete: img.complete, box: (() => { const r = img.getBoundingClientRect(); return { width: r.width, height: r.height }; })() })),
+          svgChecks: Array.from(document.images).filter((img) => (img.getAttribute("src") || "").endsWith(".svg")).map((img) => ({ src: img.getAttribute("src"), complete: img.complete, xmlError: img.getAttribute("src") }))
+
         }));
         if (layout.doc > width + 1 || layout.body > width + 1) {
           failures.push("Débordement horizontal " + type + "/" + mode + "/" + width + "px : " + JSON.stringify(layout));
@@ -274,8 +267,22 @@ try {
         if (layout.root.x < -1 || layout.root.right > width + 1) {
           failures.push("Conteneur du jeu hors écran " + type + "/" + mode + "/" + width + "px : " + JSON.stringify(layout.root));
         }
-        if (layout.loadedImages.some((img) => img.width < 1 || img.height < 1)) {
-          failures.push("Illustration non chargée " + type + "/" + mode + "/" + width + "px : " + JSON.stringify(layout.loadedImages.filter((img) => img.width < 1 || img.height < 1)));
+        if (layout.loadedImages.some((img) => !img.complete || img.box.width < 1 || img.box.height < 1)) {
+          failures.push("Illustration non chargée ou sans zone visible " + type + "/" + mode + "/" + width + "px : " + JSON.stringify(layout.loadedImages.filter((img) => !img.complete || img.box.width < 1 || img.box.height < 1)));
+        }
+        const svgValidation = await page.evaluate(async () => {
+          const sources = Array.from(new Set(Array.from(document.images).map((img) => img.getAttribute("src")).filter((src) => src && src.endsWith(".svg"))));
+          return await Promise.all(sources.map(async (src) => {
+            const response = await fetch(src);
+            const text = await response.text();
+            const doc = new DOMParser().parseFromString(text, "image/svg+xml");
+            return { src, status: response.status, contentType: response.headers.get("content-type"), root: doc.documentElement?.localName, namespace: doc.documentElement?.namespaceURI, parserError: !!doc.querySelector("parsererror") };
+          }));
+        });
+        for (const svg of svgValidation) {
+          if (svg.status !== 200 || svg.root !== "svg" || svg.namespace !== "http://www.w3.org/2000/svg" || svg.parserError) {
+            failures.push("SVG invalide ou indisponible " + type + "/" + mode + "/" + width + "px : " + JSON.stringify(svg));
+          }
         }
         if (type === "home") {
           assert.equal(await page.locator('input[name="theme"]').count(), 6, "Les six choix de thèmes doivent apparaître.");
