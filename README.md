@@ -24,6 +24,14 @@ La bibliothèque permet de retrouver des annales, corrigés, fiches et cours cla
 
 Le dépôt d'un document passe par un processus de validation avant sa publication. Le système peut également analyser le document déposé afin d'aider à identifier automatiquement son type et sa matière. Depuis le panneau de modération, un administrateur peut corriger le titre, le type, la matière, l'année et la filière/parcours, y compris après publication. Si la matière, le type ou la filière change, la fiche pédagogique repasse en attente de vérification.
 
+### Carnet de révision IA personnel
+
+À la fin de chaque séance terminée d'une classe virtuelle, MITARIDALA met en file une fiche de révision individuelle pour chaque étudiant inscrit. La génération est asynchrone et durable ; les fiches sont conservées en base pour ne pas appeler l'IA à chaque consultation ou téléchargement.
+
+Chaque carnet peut contenir un résumé, les objectifs, les notions et exemples essentiels, les formules ou méthodes à retenir, des exercices avec indice et correction, les points à retravailler et un plan de révision espacé. La personnalisation s'appuie sur les supports approuvés et les notes disponibles, ainsi que sur les difficultés et quiz de l'étudiant concerné. Les scores individuels ne sont pas visibles aux autres étudiants ou au professeur.
+
+Depuis la liste des séances, l'étudiant peut télécharger sa fiche au format **PDF** ou **Word (DOCX)**. L'accès est vérifié côté serveur et réservé à son propriétaire. En l'absence de notes ou de transcription de séance, la fiche doit signaler cette limite et présenter un guide général au lieu d'inventer le contenu du direct.
+
 ### Apprentissage actif
 
 MITARIDALA ne se limite pas à afficher des documents. Les ressources peuvent servir de point de départ pour :
