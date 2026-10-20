@@ -63,7 +63,7 @@ def test_normalise_fiche_revision_personnalisee():
         "Dans 7 jours",
     ]
 
-    notation = course_revision._normaliser_notation_math(r"\\frac{1}{2} \\times \\sqrt{9} \\leq \\Delta")
+    notation = course_revision._normaliser_notation_math(r"\frac{1}{2} \times \sqrt{9} \leq \Delta")
     assert notation == "(1)/(2) * sqrt(9) <= Delta"
     assert course_revision._texte_pdf_compatible("√9 ≤ 3; Δ ≠ 0; x²") == "sqrt9 <= 3; Delta != 0; x^2"
 
@@ -186,7 +186,10 @@ def test_planification_est_idempotente_et_reservee_aux_etudiants_inscrits(monkey
 
 def test_template_classe_detail_compile_avec_la_fiche_personnalisee():
     templates_dir = Path(__file__).resolve().parents[1] / "app" / "templates"
-    environnement = Environment(loader=FileSystemLoader(str(templates_dir)))
-    template = environnement.get_template("classe_detail.html")
-    assert "fiches_revision_par_seance" in template.render.__code__.co_varnames or template.name == "classe_detail.html"
-    assert "/telecharger/pdf" in template.render.__self__.name if hasattr(template.render, "__self__") else template.name == "classe_detail.html"
+    source = (templates_dir / "classe_detail.html").read_text(encoding="utf-8")
+    template = Environment(loader=FileSystemLoader(str(templates_dir))).get_template("classe_detail.html")
+
+    assert template.name == "classe_detail.html"
+    assert "fiches_revision_par_seance" in source
+    assert "/telecharger/pdf" in source
+    assert "/telecharger/docx" in source
