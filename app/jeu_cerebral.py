@@ -431,7 +431,9 @@ def profil_pour_ia(sessions: list[Any], langue: str | None = "fr") -> dict[str, 
             par_theme.setdefault(item.theme_id, []).append(int(item.score))
     progression = progression_sur_plusieurs_sessions(sessions, langue=langue)
     return {
-        "sessions_terminees": len(scores),
+        "sessions_terminees": sum(
+            1 for item in sessions if getattr(item, "score", None) is not None
+        ),
         "scores_recents": scores,
         "moyenne_recente": round(sum(scores) / len(scores)) if scores else None,
         "meilleure_piste": max(par_theme, key=lambda k: sum(par_theme[k]) / len(par_theme[k])) if par_theme else None,
