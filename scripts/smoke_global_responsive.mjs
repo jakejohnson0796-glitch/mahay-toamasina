@@ -36,6 +36,14 @@ const navHtml = navSource
   .replace(/\{\{[\s\S]*?\}\}/g, "")
   .replace(/\{%[\s\S]*?%\}/g, "");
 
+const avatarSizes = [24, 27, 30, 32, 34, 72];
+// Une image 2:1 permet de détecter si une règle globale height:auto reprend le dessus.
+const avatarTestImage = "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%2260%22%20height=%2230%22%3E%3C/svg%3E";
+const avatarSmokeMarkup = avatarSizes.map((size) =>
+  '<img class="avatar-cercle avatar-taille-' + size + '" src="' + avatarTestImage +
+  '" width="' + size + '" height="' + size + '" alt="">'
+).join("");
+
 const cssPaths = [...base.matchAll(/href="\/static\/([^"?]+\.css)(?:\?[^"]*)?"/g)]
   .map((match) => "app/static/" + match[1])
   .filter((value, index, all) => all.indexOf(value) === index);
@@ -85,8 +93,10 @@ function scenarioContent(name) {
 function fixture(name, theme) {
   return '<!doctype html><html lang="fr" data-theme="' + theme + '"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">' + styles +
-    '</head><body><div class="app-mise-en-page"><aside class="tb-sidebar"><a class="tb-sidebar-logo">MITARIDALA</a><nav class="tb-sidebar-nav"><a class="tb-sidebar-lien">Tableau de bord</a><a class="tb-sidebar-lien">Documents</a><a class="tb-sidebar-lien">Quiz IA</a><a class="tb-sidebar-lien">Mes cercles</a></nav></aside>' +
-    navHtml + '<div class="app-page"><header class="mobile-entete-app"><span class="mobile-entete-app-marque">MITARIDALA</span><span class="mobile-entete-app-sous-marque">Madagascar</span><a class="mobile-entete-app-avatar" href="/securite" aria-label="Profil">M</a></header>' +
+    '</head><body><div class="avatar-size-smoke" aria-hidden="true" style="position:absolute;top:0;left:0;visibility:hidden;display:flex;gap:1px">' + avatarSmokeMarkup + '</div>' +
+    '<div class="app-mise-en-page"><aside class="tb-sidebar"><a class="tb-sidebar-logo">MITARIDALA</a><nav class="tb-sidebar-nav"><a class="tb-sidebar-lien">Tableau de bord</a><a class="tb-sidebar-lien">Documents</a><a class="tb-sidebar-lien">Quiz IA</a><a class="tb-sidebar-lien">Mes cercles</a></nav>' +
+    '<div class="tb-sidebar-compte-zone"><button class="tb-sidebar-compte"><img class="avatar-cercle avatar-taille-30" src="' + avatarTestImage + '" width="30" height="30" alt=""></button></div></aside>' +
+    navHtml + '<div class="app-page"><header class="mobile-entete-app"><span class="mobile-entete-app-marque">MITARIDALA</span><span class="mobile-entete-app-sous-marque">Madagascar</span><a class="mobile-entete-app-avatar" href="/securite" aria-label="Profil"><img class="avatar-cercle avatar-taille-30" src="' + avatarTestImage + '" width="30" height="30" alt=""></a></header>' +
     '<main class="main-clair main-clair-pleine-largeur" data-test-page="' + name + '"><div class="contenu-clair">' + scenarioContent(name) +
     '</div></main><footer class="pied">MITARIDALA — Aide et contact</footer></div></div></body></html>';
 }
@@ -146,6 +156,13 @@ try {
           escapedContent,
           appPageWidth: appPage ? appPage.scrollWidth : 0,
           appPageClientWidth: appPage ? appPage.clientWidth : 0,
+          sidebarAvatar: r(document.querySelector(".tb-sidebar-compte .avatar-cercle")),
+          headerAvatar: r(document.querySelector(".mobile-entete-app-avatar .avatar-cercle")),
+          avatarSizes: Array.from(document.querySelectorAll(".avatar-size-smoke img")).map((avatar) => {
+            const match = avatar.className.match(/avatar-taille-(24|27|30|32|34|72)/);
+            const rect = avatar.getBoundingClientRect();
+            return { size: match ? Number(match[1]) : 0, width: rect.width, height: rect.height };
+          }),
           navDisplay: getComputedStyle(nav).display,
           navRect: r(nav),
           anchors: anchors.map(r),
@@ -165,6 +182,20 @@ try {
       }
       if (result.anchorCount !== 6 || result.labels.join("|") !== "Accueil|Docs|Quiz|Jeu|Cercles|Profil") {
         failures.push(scenario + " @ " + width + "px: onglets mobiles manquants/désordonnés " + JSON.stringify(result.labels));
+      }
+      for (const avatar of result.avatarSizes) {
+        if (!avatar || avatar.size <= 0 || Math.abs(avatar.width - avatar.size) > 0.5 || Math.abs(avatar.height - avatar.size) > 0.5) {
+          failures.push(scenario + " @ " + width + "px: avatar de profil redimensionné incorrectement " + JSON.stringify(avatar));
+          break;
+        }
+      }
+      const sidebarAvatarInvalid = !result.sidebarAvatar ||
+        Math.abs(result.sidebarAvatar.width - 30) > 0.5 || Math.abs(result.sidebarAvatar.height - 30) > 0.5;
+      const headerAvatarInvalid = width <= 900 && (!result.headerAvatar ||
+        Math.abs(result.headerAvatar.width - 30) > 0.5 || Math.abs(result.headerAvatar.height - 30) > 0.5);
+      const hiddenMobileAvatarVisible = width > 900 && result.headerAvatar && result.headerAvatar.width > 0;
+      if (sidebarAvatarInvalid || headerAvatarInvalid || hiddenMobileAvatarVisible) {
+        failures.push(scenario + " @ " + width + "px: photo de profil trop grande/déformée ou en-tête mobile visible à tort");
       }
       if (width <= 768) {
         if (result.navDisplay === "none" || !result.navRect || result.navRect.width > width + 1 || result.navRect.right > width + 1) {
