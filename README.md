@@ -10,6 +10,7 @@ MITARIDALA rassemble dans un même espace :
 - les cercles d'étude et la messagerie ;
 - la classe virtuelle ;
 - le suivi des activités, notifications et progression ;
+- le jeu cérébral adaptatif, illustré et conçu pour de courtes sessions sur mobile ;
 - un référentiel académique structuré par université, composante, mention, filière et niveau.
 
 > **Idée centrale :** aider un étudiant à passer de « je cherche » à « je comprends », puis à « je pratique » et « je progresse ».
@@ -64,6 +65,24 @@ Les fonctionnalités collaboratives comprennent :
 - réponses et discussions autour des messages ;
 - réactions, mentions et notifications ;
 - classe virtuelle avec vidéo, chat, tableau blanc et devoirs.
+
+### Jeu cérébral immersif
+
+Le **Jeu cérébral** propose des défis courts autour de cinq thèmes : logique et déduction, calcul mental, suites et régularités, langage et analogies, observation et attention.
+
+Le parcours présent dans le code comprend :
+
+- cinq questions par session, trois niveaux de difficulté et une adaptation progressive selon les réponses ;
+- un profil de départ fondé sur les sessions récentes et des recommandations de notions à explorer ;
+- une banque locale bilingue français/malgache en solution de repli lorsque la génération IA est indisponible ;
+- des illustrations servies localement : visuel d’accueil, scènes par thème, mascotte pendant les questions et trophée dans les résultats ;
+- des animations de transition et de feedback, une barre de progression et des corrections après réponse ;
+- une pause et un chronomètre facultatif. Le chronomètre sert d’objectif de rythme et ne retire pas de points ;
+- un réglage pour réduire les animations, complété par la préférence système `prefers-reduced-motion` ;
+- des mises en page adaptées aux petits écrans et des libellés accessibles pour les contrôles essentiels ;
+- le rendu scientifique partagé des questions, choix et corrections.
+
+Les défis mesurent uniquement la performance sur les exercices proposés : ils ne prétendent pas mesurer l’intelligence générale ni fournir de diagnostic médical. Le code et les tests automatisés ne remplacent pas la validation manuelle dans un navigateur ni la vérification après déploiement. Voir [`TODO.md`](TODO.md) pour les contrôles restants.
 
 ---
 
@@ -149,6 +168,9 @@ PostgreSQL reste la source durable. Redis accélère la distribution des tâches
 - Jinja2 et HTML rendu côté serveur ;
 - CSS du projet ;
 - JavaScript ciblé et sans framework obligatoire ;
+- moteur scientifique partagé `app/static/js/rendu_ia.js` pour les réponses IA, quiz, tuteur et jeu cérébral ;
+- rendu Markdown, mathématiques KaTeX, chimie mhchem, coloration du code et assainissement HTML via DOMPurify ;
+- dépendances navigateur embarquées localement, avec mécanisme de repli configuré lorsque des ressources distantes sont nécessaires ;
 - PWA ;
 - interfaces responsive pour ordinateur et mobile.
 
@@ -370,6 +392,8 @@ pytest -q
 ~~~
 
 Pour une vérification proche de la CI, exécutez aussi les tests PostgreSQL avec une base de test dédiée.
+
+Les tests du jeu cérébral couvrent notamment les banques locales bilingues, l’adaptation de difficulté, les réponses uniques, les recommandations, l’affichage responsive, les illustrations locales et le contrat de rendu des formules. Ces tests ne certifient pas à eux seuls le rendu visuel en production. Consultez [`TODO.md`](TODO.md) pour la liste de validation avant release.
 
 ---
 
