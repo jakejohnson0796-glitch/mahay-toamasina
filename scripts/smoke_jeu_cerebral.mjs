@@ -244,7 +244,7 @@ try {
         await page.evaluate(() => {
           document.querySelectorAll('img[loading="lazy"]').forEach((img) => { img.loading = "eager"; });
         });
-        await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0), { timeout: 8000 });
+        await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0), null, { timeout: 8000 });
         const layout = await page.evaluate(() => ({
           viewport: window.innerWidth,
           doc: document.documentElement.scrollWidth,
@@ -330,7 +330,7 @@ try {
   assert.equal(await page.locator("#jeu-chrono-valeur").innerText(), "02:30");
   assert.equal(await page.locator("#form-reponse-jeu fieldset").isDisabled(), false);
   await page.evaluate(() => { window.__jeuTestNow += 3000; });
-  await page.waitForFunction(() => document.querySelector("#jeu-chrono-valeur").textContent === "02:27", { timeout: 2500 });
+  await page.waitForFunction(() => document.querySelector("#jeu-chrono-valeur").textContent === "02:27", null, { timeout: 2500 });
   const activeBeforeExpiry = await page.locator("#form-reponse-jeu fieldset").isDisabled();
   assert.equal(activeBeforeExpiry, false, "Les réponses doivent rester possibles avec le chrono arrivé à son terme.");
   await page.evaluate(() => {
@@ -338,7 +338,7 @@ try {
     const deadline = Number(sessionStorage.getItem("mitaridala:jeu:pause-clock:deadline"));
     window.__jeuTestNow = deadline + 1000;
   });
-  await page.waitForFunction(() => document.querySelector("#jeu-chrono-valeur").textContent === "00:00", { timeout: 2500 });
+  await page.waitForFunction(() => document.querySelector("#jeu-chrono-valeur").textContent === "00:00", null, { timeout: 2500 });
   assert.match(await page.locator("#jeu-chrono-message").innerText(), /Temps cible écoulé/);
   assert.equal(await page.locator("#form-reponse-jeu fieldset").isDisabled(), false);
 
@@ -349,11 +349,11 @@ try {
   assert.equal(await page.evaluate(() => typeof window.rendreReponseIA), "function");
   const fence = String.fromCharCode(96).repeat(3);
   const cases = [
-    ["rendu-math", "Fraction : \\\\( \\\\frac{12}{18} = \\\\frac{2}{3} \\\\) ; racine : \\\\( \\\\sqrt{1000} \\\\approx 31{,}6 \\\\)."],
-    ["rendu-physique", "Physique : \\\\( \\\\vec{F}=m\\\\vec{a} \\\\), unité : \\\\( \\\\mathrm{m/s^2} \\\\)."],
-    ["rendu-chimie", "Réaction : \\\\( \\\\ce{2H2 + O2 -> 2H2O} \\\\)."],
+    ["rendu-math", "Fraction : \\( \\frac{12}{18} = \\frac{2}{3} \\) ; racine : \\( \\sqrt{1000} \\approx 31{,}6 \\)."],
+    ["rendu-physique", "Physique : \\( \\vec{F}=m\\vec{a} \\), unité : \\( \\mathrm{m/s^2} \\)."],
+    ["rendu-chimie", "Réaction : \\( \\ce{2H2 + O2 -> 2H2O} \\)."],
     ["rendu-comptabilite", "Montant : 12 000 Ar. Débit = 12 000 Ar ; crédit = 12 000 Ar."],
-    ["rendu-code", fence + "python\\nprint('Ar = 12 000')\\n" + fence],
+    ["rendu-code", fence + "python\nprint('Ar = 12 000')\n" + fence],
     ["rendu-nonfiable", "Texte utilisateur : <img src=x onerror=alert(1)>"]
   ];
   for (const [id, source] of cases) {
