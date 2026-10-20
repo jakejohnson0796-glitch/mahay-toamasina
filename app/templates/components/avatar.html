@@ -29,6 +29,7 @@ Usage :
 {% macro avatar_utilisateur(utilisateur, taille=32, classe_supplementaire="") %}
 {%- if utilisateur and utilisateur.photo_chemin -%}
 <img src="/profil/photo/{{ utilisateur.id }}" alt="" aria-hidden="true"
+     width="{{ avatar_taille_classe(taille) }}" height="{{ avatar_taille_classe(taille) }}"
      class="avatar-cercle avatar-taille-{{ avatar_taille_classe(taille) }} {{ classe_supplementaire }}">
 {%- else -%}
 <span class="avatar-cercle avatar-initiale avatar-taille-{{ avatar_taille_classe(taille) }} avatar-couleur-{{ couleur_avatar_index(utilisateur.nom if utilisateur else '?') }} {{ classe_supplementaire }}" aria-hidden="true">{{ (utilisateur.nom[0] if utilisateur and utilisateur.nom else '?') | upper }}</span>
