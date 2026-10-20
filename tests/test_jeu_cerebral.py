@@ -169,6 +169,8 @@ def test_profil_ne_essaie_pas_de_mesurer_l_intelligence_et_calibre_la_difficulte
     assert profil["moyenne_recente"] == 86
     assert profil["difficulte_depart"] == "Difficile"
     assert profil["meilleure_piste"] == "calcul"
+    assert profil["notions_a_renforcer"] == []
+    assert profil["notions_bien_reussies"] == []
 
 
 def test_progression_par_notion_agrege_plusieurs_sessions_sans_surinterpreter_un_essai():
@@ -245,6 +247,20 @@ def test_page_jeu_et_templates_compilent():
         "jeu_cerebral_resultat.html",
     ):
         assert env.get_template(template) is not None
+
+
+def test_interface_affiche_la_progression_par_notion_sur_plusieurs_sessions():
+    accueil = (ROOT / "app" / "templates" / "jeu_cerebral.html").read_text(encoding="utf-8")
+    bilan = (ROOT / "app" / "templates" / "jeu_cerebral_resultat.html").read_text(encoding="utf-8")
+
+    assert 'id="jeu-progression-title"' in accueil
+    assert "progression_notion.a_renforcer" in accueil
+    assert "progression_notion.bien_reussies" in accueil
+    assert "progression_notion.a_observer" in accueil
+    assert 'id="jeu-progression-historique-title"' in bilan
+    assert "progression_notion.sessions_analysees" in bilan
+    assert "progression_notion.a_renforcer" in bilan
+    assert "plusieurs réponses observées" in bilan
 
 
 def test_partie_est_visible_uniquement_par_son_proprietaire():
