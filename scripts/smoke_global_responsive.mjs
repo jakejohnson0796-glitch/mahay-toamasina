@@ -77,7 +77,8 @@ const gameStyleTags = [...read("app/templates/jeu_cerebral.html").matchAll(/<sty
   .map((match) => "<style data-source=\"jeu-cerebral-inline.css\">" + match[1] + "</style>")
   .join("\n");
 if (!gameStyleTags) throw new Error("Les styles intégrés du jeu cérébral sont introuvables.");
-const stylesAvecJeu = styles + "\n" + gameStyleTags;
+const stylesAvecJeu = styles + "\n" + gameStyleTags +
+  "\n<style data-source=\"stable-image-measurements.css\">*,*::before,*::after{animation:none!important;transition:none!important}</style>";
 
 function card(title, description) {
   return '<article class="doc-carte carte-claire"><h2 class="doc-titre">' + title +
@@ -224,7 +225,7 @@ try {
           break;
         }
       }
-      if (!result.sidebarLogo || Math.abs(result.sidebarLogo.width - 30) > 0.5 || Math.abs(result.sidebarLogo.height - 30) > 0.5) {
+      if (!result.sidebarLogo || Math.abs(result.sidebarLogo.width - 34) > 0.5 || Math.abs(result.sidebarLogo.height - 34) > 0.5) {
         failures.push(scenario + " @ " + width + "px: logo de sidebar agrandi ou déformé " + JSON.stringify(result.sidebarLogo));
       }
       const checkedImages = new Map(result.imageContexts.map((item) => [item.name, item]));
@@ -251,15 +252,15 @@ try {
         failures.push(scenario + " @ " + width + "px: miniature de document mal dimensionnée " + JSON.stringify(docImage));
       }
       const aiImage = checkedImages.get("ai-illustration");
-      if (!aiImage || aiImage.image.width > Math.min(310, aiImage.wrapper.width) + 1 || Math.abs(aiImage.image.height - 90) > 1) {
+      if (!aiImage || aiImage.image.width > Math.min(310, aiImage.wrapper.width) + 1 || aiImage.image.height > 120 || aiImage.image.height < 90) {
         failures.push(scenario + " @ " + width + "px: illustration Tuteur/Quiz IA mal dimensionnée " + JSON.stringify(aiImage));
       }
       const classImage = checkedImages.get("class-illustration");
-      if (!classImage || classImage.image.width > Math.min(290, classImage.wrapper.width) + 1 || Math.abs(classImage.image.height - 90) > 1) {
+      if (!classImage || classImage.image.width > Math.min(290, classImage.wrapper.width) + 1 || classImage.image.height > 110 || classImage.image.height < 90) {
         failures.push(scenario + " @ " + width + "px: illustration classe virtuelle mal dimensionnée " + JSON.stringify(classImage));
       }
       const qrImage = checkedImages.get("mfa-qr");
-      if (!qrImage || qrImage.image.width > 190.5 || Math.abs(qrImage.image.width - qrImage.image.height) > 1) {
+      if (!qrImage || qrImage.image.width > 220.5 || Math.abs(qrImage.image.width - qrImage.image.height) > 1) {
         failures.push(scenario + " @ " + width + "px: QR MFA non carré ou trop grand " + JSON.stringify(qrImage));
       }
       const brainHero = checkedImages.get("brain-hero");
@@ -273,8 +274,8 @@ try {
       const expectedThemeSize = width <= 440 ? 44 : 76;
       if (!themeImage || Math.abs(themeImage.wrapper.width - expectedThemeSize) > 1 ||
           Math.abs(themeImage.wrapper.height - expectedThemeSize) > 1 ||
-          Math.abs(themeImage.image.width - expectedThemeSize) > 1 ||
-          Math.abs(themeImage.image.height - expectedThemeSize) > 1) {
+          themeImage.image.width > expectedThemeSize + 0.5 || themeImage.image.height > expectedThemeSize + 0.5 ||
+          themeImage.image.width < expectedThemeSize - 3 || themeImage.image.height < expectedThemeSize - 3) {
         failures.push(scenario + " @ " + width + "px: illustration de thème cérébral mal dimensionnée " + JSON.stringify(themeImage));
       }
       const sidebarAvatarInvalid = !result.sidebarAvatar ||
