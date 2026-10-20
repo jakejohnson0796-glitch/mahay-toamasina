@@ -358,8 +358,8 @@ def test_ressources_recommandees_sont_filtrees_par_filiere_statut_et_acces_cercl
     requete_normalisee = requete.casefold()
     assert "document.statut" in requete_normalisee and "approuve" in requete_normalisee
     assert "document.filiere_id = 4" in requete_normalisee
-    assert "document.cercle_id IS NULL" in requete_normalisee
-    assert "document.cercle_id IN (7)" in requete_normalisee
+    assert "document.cercle_id is null" in requete_normalisee
+    assert "document.cercle_id in (7)" in requete_normalisee
 
 
 def test_parcours_route_complet_demarrage_reponses_enregistrement_et_bilan(monkeypatch):
