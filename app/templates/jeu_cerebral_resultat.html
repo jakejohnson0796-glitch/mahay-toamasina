@@ -170,6 +170,41 @@
     </div>
   </section>
 
+  <section class="jeu-result-section" aria-labelledby="jeu-progression-historique-title">
+    <h2 id="jeu-progression-historique-title">{% if langue == "mg" %}Ny fandrosoanao amin'ny lalao maromaro{% else %}Ton évolution sur plusieurs défis{% endif %}</h2>
+    <p class="jeu-result-muted">{% if langue == "mg" %}Ity fijery ity dia manambatra ireo valiny tamin'ny lalao farany tamin'ny fiteny mitovy. Mila valiny maromaro vao sokajiana ho zavatra tokony hamafisina ny lohahevitra iray.{% else %}Ce bilan combine les réponses de tes dernières sessions dans cette langue. Une notion n'est classée « à renforcer » qu'après plusieurs réponses observées.{% endif %}</p>
+    {% if progression_notion.sessions_analysees < 2 %}
+      <div class="jeu-advice" role="note">{% if langue == "mg" %}Manomboka eto ny fanaraha-maso ny fandrosoanao. Rehefa manao fanazaran-tena maromaro ianao dia afaka manavaka tsara kokoa izay efa mahazatra sy izay mbola mila averina.{% else %}Cette session lance ton suivi. Après quelques défis, MITARIDALA pourra mieux distinguer les notions déjà familières de celles qui méritent une nouvelle pratique.{% endif %}</div>
+    {% else %}
+      <div class="jeu-tip-grid">
+        <article class="jeu-tip">
+          <h3>🌱 {% if langue == "mg" %}Azo hamafisina{% else %}À renforcer doucement{% endif %}</h3>
+          {% if progression_notion.a_renforcer %}
+            <div class="jeu-chip-list" data-no-translate>
+              {% for notion in progression_notion.a_renforcer %}
+                <span class="jeu-chip">{{ notion.notion }} · {{ notion.taux_reussite }} % ({{ notion.essais }})</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p>{% if langue == "mg" %}Tsy mbola nisy fahasarotana miverimberina hita tamin'ny valiny.{% else %}Aucune difficulté répétée ne se détache pour le moment.{% endif %}</p>
+          {% endif %}
+        </article>
+        <article class="jeu-tip">
+          <h3>🌟 {% if langue == "mg" %}Efa mahazo aina kokoa{% else %}Bien réussies plusieurs fois{% endif %}</h3>
+          {% if progression_notion.bien_reussies %}
+            <div class="jeu-chip-list" data-no-translate>
+              {% for notion in progression_notion.bien_reussies %}
+                <span class="jeu-chip">{{ notion.notion }} · {{ notion.taux_reussite }} % ({{ notion.essais }})</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p>{% if langue == "mg" %}Mbola mila fanazaran-tena vitsivitsy vao azo hamafisina ireo fironana tsara.{% else %}Quelques réponses supplémentaires aideront à confirmer les notions déjà bien maîtrisées.{% endif %}</p>
+          {% endif %}
+        </article>
+      </div>
+    {% endif %}
+  </section>
+
   <section class="jeu-result-section" aria-labelledby="jeu-reponses-title">
     <h2 id="jeu-reponses-title">{% if langue == "mg" %}Hodinihintsika moramora ireo fanontaniana{% else %}Revenons doucement sur les questions{% endif %}</h2>
     <p class="jeu-result-muted">{% if langue == "mg" %}Ny fanazavana dia manampy hahatakatra ny fomba fisainana, fa tsy ny isa ihany.{% else %}Les explications servent à comprendre le raisonnement, pas seulement à regarder le score.{% endif %}</p>
