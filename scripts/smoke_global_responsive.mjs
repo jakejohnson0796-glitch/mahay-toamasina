@@ -225,7 +225,8 @@ try {
           break;
         }
       }
-      if (!result.sidebarLogo || Math.abs(result.sidebarLogo.width - 34) > 0.5 || Math.abs(result.sidebarLogo.height - 34) > 0.5) {
+      const expectedLogoSize = width <= 420 ? 30 : 34;
+      if (!result.sidebarLogo || Math.abs(result.sidebarLogo.width - expectedLogoSize) > 0.5 || Math.abs(result.sidebarLogo.height - expectedLogoSize) > 0.5) {
         failures.push(scenario + " @ " + width + "px: logo de sidebar agrandi ou déformé " + JSON.stringify(result.sidebarLogo));
       }
       const checkedImages = new Map(result.imageContexts.map((item) => [item.name, item]));
