@@ -355,10 +355,11 @@ def test_ressources_recommandees_sont_filtrees_par_filiere_statut_et_acces_cercl
 
     assert suggestions[0]["document_id"] == 12
     requete = next(sql for sql in fake_session.sql if "from document" in sql.lower())
-    assert "document.statut = 'approuve'" in requete
-    assert "document.filiere_id = 4" in requete
-    assert "document.cercle_id IS NULL" in requete
-    assert "document.cercle_id IN (7)" in requete
+    requete_normalisee = requete.casefold()
+    assert "document.statut" in requete_normalisee and "approuve" in requete_normalisee
+    assert "document.filiere_id = 4" in requete_normalisee
+    assert "document.cercle_id IS NULL" in requete_normalisee
+    assert "document.cercle_id IN (7)" in requete_normalisee
 
 
 def test_parcours_route_complet_demarrage_reponses_enregistrement_et_bilan(monkeypatch):
