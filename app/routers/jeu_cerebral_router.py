@@ -182,6 +182,7 @@ def resultat_jeu_cerebral(
         select(JeuCerebralSession)
         .where(JeuCerebralSession.utilisateur_id == utilisateur.id)
         .where(JeuCerebralSession.date_fin.is_not(None))
+        .where(JeuCerebralSession.langue == partie.langue)
         .order_by(JeuCerebralSession.date_creation.desc())
         .limit(20)
     ).all()
