@@ -410,3 +410,26 @@ table {
     overflow-wrap: anywhere;
   }
 }
+
+
+/*
+ * Avatars de profil : la règle générique img { height: auto } ne doit jamais
+ * leur faire perdre leur forme carrée ni laisser l'image utiliser ses dimensions natives.
+ * Les tailles correspondent aux valeurs explicitement autorisées par avatar_taille_classe().
+ */
+.avatar-cercle[class*="avatar-taille-"] {
+  display: inline-flex;
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  overflow: hidden;
+  object-fit: cover;
+  vertical-align: middle;
+}
+
+.avatar-cercle.avatar-taille-24 { width: 24px; height: 24px; min-width: 24px; max-width: 24px; min-height: 24px; }
+.avatar-cercle.avatar-taille-27 { width: 27px; height: 27px; min-width: 27px; max-width: 27px; min-height: 27px; }
+.avatar-cercle.avatar-taille-30 { width: 30px; height: 30px; min-width: 30px; max-width: 30px; min-height: 30px; }
+.avatar-cercle.avatar-taille-32 { width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; }
+.avatar-cercle.avatar-taille-34 { width: 34px; height: 34px; min-width: 34px; max-width: 34px; min-height: 34px; }
+.avatar-cercle.avatar-taille-72 { width: 72px; height: 72px; min-width: 72px; max-width: 72px; min-height: 72px; }
