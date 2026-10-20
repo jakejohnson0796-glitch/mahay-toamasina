@@ -199,11 +199,20 @@ try {
     }
   });
   const page = await context.newPage();
+  page.on("response", (response) => {
+    if (response.url().includes("/illustrations/logique.svg")) console.log("LOGIQUE_ASSET_RESPONSE", response.status(), response.url());
+  });
+  page.on("requestfailed", (request) => {
+    if (request.url().includes("/illustrations/logique.svg")) console.log("LOGIQUE_ASSET_FAILED", request.url(), request.failure()?.errorText);
+  });
   await page.route("http://jeu.test/**", async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith("/static/")) {
       const relative = path.join("app", url.pathname.slice(1));
       const absolute = path.resolve(ROOT, relative);
+      if (url.pathname.endsWith("/illustrations/logique.svg")) {
+        console.log("LOGIQUE_ASSET_ROUTE", JSON.stringify({ relative, absolute, exists: exists(relative), safe: absolute.startsWith(path.resolve(ROOT, "app/static") + path.sep) }));
+      }
       if (!absolute.startsWith(path.resolve(ROOT, "app/static") + path.sep) || !exists(relative)) {
         await route.fulfill({ status: 404, body: "Not found" });
         return;
