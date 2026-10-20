@@ -297,6 +297,7 @@ try {
   }
 
   // Le réglage est partagé entre l'accueil, la session et l'écran de bilan.
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 390, height: 820 });
   await page.goto("http://jeu.test/home?mode=clair&uid=preferences", { waitUntil: "load" });
   await page.locator("#jeu-reduire-animations").check();
