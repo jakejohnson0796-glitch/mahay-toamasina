@@ -88,7 +88,7 @@ function homeBody() {
     '<div class="jeu-progression-grid"><article class="jeu-progression-card"><h3>À renforcer doucement</h3><ul class="jeu-progression-list"><li><strong>Calcul mental</strong><small>33 % · 3 réponses</small></li></ul></article>' +
     '<article class="jeu-progression-card"><h3>Des réflexes bien installés</h3><ul class="jeu-progression-list"><li><strong>Logique</strong><small>100 % · 2 réponses</small></li></ul></article>' +
     '<article class="jeu-progression-card"><h3>Encore à observer</h3><p>Observation · un seul essai</p></article></div><p class="jeu-progression-note">Une notion doit apparaître plusieurs fois avant d’être classée.</p></section>' +
-    '<section class="jeu-section" aria-labelledby="jeu-choisir-theme"><div class="jeu-section-head"><div>'
+    '<section class="jeu-section" aria-labelledby="jeu-choisir-theme"><div class="jeu-section-head"><div>' +
     '<h2 id="jeu-choisir-theme">Quel terrain de jeu te tente aujourd’hui ?</h2><p>Une session dure quelques minutes.</p></div></div>' +
     '<form method="post" action="/jeu-cerebral/demarrer" id="form-jeu-cerebral">' +
     '<input type="hidden" name="_csrf" value="test-token"><input type="hidden" name="langue" id="jeu-langue" value="fr">' +
