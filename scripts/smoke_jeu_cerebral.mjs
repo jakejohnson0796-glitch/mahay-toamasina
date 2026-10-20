@@ -202,7 +202,7 @@ try {
   await page.route("http://jeu.test/**", async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith("/static/")) {
-      const relative = url.pathname.slice(1);
+      const relative = path.join("app", url.pathname.slice(1));
       const absolute = path.resolve(ROOT, relative);
       if (!absolute.startsWith(path.resolve(ROOT, "app/static") + path.sep) || !exists(relative)) {
         await route.fulfill({ status: 404, body: "Not found" });
