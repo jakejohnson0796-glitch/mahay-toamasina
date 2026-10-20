@@ -19,6 +19,8 @@ const templateContracts = [
   [homeTemplate, /id="jeu-reduire-animations"/, "réduction des animations à l'accueil"],
   [homeTemplate, /id="jeu-progression-title"/, "progression multi-sessions à l'accueil"],
   [homeTemplate, /progression_notion\.a_renforcer/, "notions à renforcer dans le template"],
+  [homeTemplate, /id="jeu-ressources-ciblees-title"/, "ressources liées aux notions faibles"],
+  [homeTemplate, /ressources_recommandees/, "documents correspondants sur l'accueil"],
 
   [sessionTemplate, /id="jeu-pause-toggle"/, "pause"],
   [sessionTemplate, /id="jeu-pause-notice"/, "notice de pause"],
@@ -29,7 +31,9 @@ const templateContracts = [
   [resultTemplate, /class="jeu-answer-list"/, "liste de corrections"],
   [resultTemplate, /id="jeu-reduire-animations-resultat"/, "réduction des animations au résultat"],
   [resultTemplate, /id="jeu-progression-historique-title"/, "bilan de progression longitudinal"],
-  [resultTemplate, /progression_notion\.sessions_analysees/, "historique de progression du résultat"]
+  [resultTemplate, /progression_notion\.sessions_analysees/, "historique de progression du résultat"],
+  [resultTemplate, /id="jeu-ressources-ciblees-title"/, "ressources ciblées dans le bilan"],
+  [resultTemplate, /ressources_recommandees/, "documents correspondants dans le bilan"]
 ];
 for (const [source, pattern, label] of templateContracts) {
   assert.match(source, pattern, "Contrat du template manquant : " + label);
@@ -88,6 +92,8 @@ function homeBody() {
     '<div class="jeu-progression-grid"><article class="jeu-progression-card"><h3>À renforcer doucement</h3><ul class="jeu-progression-list"><li><strong>Calcul mental</strong><small>33 % · 3 réponses</small></li></ul></article>' +
     '<article class="jeu-progression-card"><h3>Des réflexes bien installés</h3><ul class="jeu-progression-list"><li><strong>Logique</strong><small>100 % · 2 réponses</small></li></ul></article>' +
     '<article class="jeu-progression-card"><h3>Encore à observer</h3><p>Observation · un seul essai</p></article></div><p class="jeu-progression-note">Une notion doit apparaître plusieurs fois avant d’être classée.</p></section>' +
+    '<section class="jeu-section" aria-labelledby="jeu-ressources-ciblees-title"><div class="jeu-section-head"><h2 id="jeu-ressources-ciblees-title">Des ressources pour les notions à reprendre</h2><p>Documents approuvés de la bonne filière.</p></div>' +
+    '<div class="jeu-progression-grid"><article class="jeu-progression-card"><h3>Calcul mental et estimation</h3><p><strong>Exercices de calcul mental</strong></p><p>Mathématiques · 2024</p><p><a href="/documents/12/apprendre">Ouvrir cette ressource</a></p></article></div></section>' +
     '<section class="jeu-section" aria-labelledby="jeu-choisir-theme"><div class="jeu-section-head"><div>' +
     '<h2 id="jeu-choisir-theme">Quel terrain de jeu te tente aujourd’hui ?</h2><p>Une session dure quelques minutes.</p></div></div>' +
     '<form method="post" action="/jeu-cerebral/demarrer" id="form-jeu-cerebral">' +
@@ -163,6 +169,8 @@ function resultBody() {
     '<p class="jeu-result-muted">Ces tendances combinent plusieurs sessions dans la même langue.</p><div class="jeu-tip-grid">' +
     '<article class="jeu-tip"><h3>À renforcer doucement</h3><div class="jeu-chip-list"><span class="jeu-chip">Calcul mental · 33 % (3)</span></div></article>' +
     '<article class="jeu-tip"><h3>Bien réussies plusieurs fois</h3><div class="jeu-chip-list"><span class="jeu-chip">Logique · 100 % (2)</span></div></article></div></section>' +
+    '<section class="jeu-result-section" aria-labelledby="jeu-ressources-ciblees-title"><h2 id="jeu-ressources-ciblees-title">Des ressources pour continuer</h2><div class="jeu-tip-grid">' +
+    '<article class="jeu-tip"><h3>Calcul mental et estimation</h3><p><strong>Exercices de calcul mental</strong></p><p>Mathématiques · 2024</p><p><a href="/documents/12/apprendre">Ouvrir cette ressource</a></p></article></div></section>' +
     '<section class="jeu-result-section" aria-labelledby="jeu-reponses-title"><h2 id="jeu-reponses-title">Revenons doucement sur les questions</h2>' +
     '<p class="jeu-result-muted">Les explications servent à comprendre le raisonnement.</p><div class="jeu-answer-list">' +
     '<article class="jeu-answer"><div class="jeu-answer-head"><strong>1. <span data-no-translate data-rendu>Combien font \\(7 \\times 8 + 9\\) ?</span></strong><span class="jeu-answer-state">Juste</span></div>' +
