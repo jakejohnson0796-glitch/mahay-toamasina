@@ -173,6 +173,18 @@ def test_profil_ne_essaie_pas_de_mesurer_l_intelligence_et_calibre_la_difficulte
     assert profil["notions_bien_reussies"] == []
 
 
+def test_profil_compte_toutes_les_sessions_mais_ne_garde_que_cinq_scores_recents():
+    sessions = [
+        SimpleNamespace(score=40 + index, theme_id="calcul")
+        for index in range(8)
+    ]
+    profil = jeu_cerebral.profil_pour_ia(sessions)
+
+    assert profil["sessions_terminees"] == 8
+    assert len(profil["scores_recents"]) == 5
+    assert profil["scores_recents"] == [40, 41, 42, 43, 44]
+
+
 def test_progression_par_notion_agrege_plusieurs_sessions_sans_surinterpreter_un_essai():
     def partie(theme, notions, reponses, langue="fr"):
         questions = [
