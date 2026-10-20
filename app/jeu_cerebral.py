@@ -306,7 +306,10 @@ def progression_sur_plusieurs_sessions(
     sessions_analysees = 0
     reponses_analysees = 0
 
-    for numero_session, partie in enumerate(sessions):
+    for partie in sessions:
+        # Une session abandonnée ne doit pas être comptée comme un bilan terminé.
+        if hasattr(partie, "date_fin") and getattr(partie, "date_fin") is None:
+            continue
         langue_partie = getattr(partie, "langue", None)
         if langue and langue_partie and langue_partie != langue:
             continue
