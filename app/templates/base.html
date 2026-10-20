@@ -110,6 +110,7 @@
 {% if request.url.path.startswith("/securite/2fa/") %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/mfa-setup.js?v={{ version_asset('js/mfa-setup.js') }}" defer></script>
 {% endif %}
+<link rel="stylesheet" href="/static/responsive-universal.css?v={{ version_asset('responsive-universal.css') }}">
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
@@ -347,10 +348,10 @@
       {{ icone("documents", 20) }}<span>Docs</span>
     </a>
     <a href="/quiz" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}>
-    <a href="/jeu-cerebral" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}>
-      🧠<span>Jeu</span>
-    </a>
       {{ icone("quiz", 20) }}<span>Quiz</span>
+    </a>
+    <a href="/jeu-cerebral" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}>
+      <span class="navigation-mobile-icone" aria-hidden="true">🧠</span><span>Jeu</span>
     </a>
     <a href="/cercles" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
       {{ icone("cercles", 20) }}<span>Cercles</span>
