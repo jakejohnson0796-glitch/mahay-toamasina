@@ -10,6 +10,7 @@ MITARIDALA rassemble dans un même espace :
 - les cercles d'étude et la messagerie ;
 - la classe virtuelle ;
 - le suivi des activités, notifications et progression ;
+- le Jeu cérébral illustré pour de courtes sessions de raisonnement ;
 - un référentiel académique structuré par université, composante, mention, filière et niveau.
 
 > **Idée centrale :** aider un étudiant à passer de « je cherche » à « je comprends », puis à « je pratique » et « je progresse ».
@@ -53,6 +54,14 @@ L'IA reste un outil d'accompagnement : une réponse générée peut nécessiter 
 Le système peut générer des quiz à partir de ressources ou d'un contexte d'apprentissage. Les tentatives sont conservées pour permettre le suivi des résultats.
 
 Une partie de la validation des quiz vérifie notamment la cohérence des choix, des explications et des résultats mathématiques ou techniques.
+
+### Jeu cérébral immersif
+
+Le Jeu cérébral permet de s'entraîner à travers cinq thèmes : logique et déduction, calcul mental, suites et régularités, mots et analogies, observation et attention. Les sessions comprennent des questions à choix multiples, des niveaux de difficulté adaptatifs, des corrections et des pistes de révision formulées de manière encourageante.
+
+L'expérience comprend des illustrations locales, des animations, une progression visuelle, une pause et un chronomètre facultatif. Le chrono ne retire aucun point lorsque le temps cible est dépassé. L'utilisateur peut réduire les animations, et l'interface tient compte de la préférence système de mouvement réduit. Une banque de questions locale en français et en malgache assure un mode de secours lorsque la génération IA n'est pas disponible.
+
+Le résultat décrit la performance de la session et suggère des compétences à renforcer ; il ne prétend pas mesurer l'intelligence générale ni établir de diagnostic.
 
 ### Collaboration
 
@@ -149,6 +158,7 @@ PostgreSQL reste la source durable. Redis accélère la distribution des tâches
 - Jinja2 et HTML rendu côté serveur ;
 - CSS du projet ;
 - JavaScript ciblé et sans framework obligatoire ;
+- rendu scientifique partagé via `app/static/js/rendu_ia.js` : Markdown, mathématiques, chimie, code et assainissement du HTML ;
 - PWA ;
 - interfaces responsive pour ordinateur et mobile.
 
@@ -369,7 +379,7 @@ python scripts/verify_deployment_contract.py
 pytest -q
 ~~~
 
-Pour une vérification proche de la CI, exécutez aussi les tests PostgreSQL avec une base de test dédiée.
+Pour une vérification proche de la CI, exécutez aussi les tests PostgreSQL avec une base de test dédiée. Le smoke test Playwright `scripts/smoke_jeu_cerebral.mjs` vérifie l'accueil, la session, le bilan, les préférences de mouvement, le chrono et la pause sur plusieurs largeurs, ainsi qu'un corpus représentatif de rendu scientifique. Ce test complète — sans remplacer — les tests applicatifs et la vérification visuelle réelle.
 
 ---
 
