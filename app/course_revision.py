@@ -143,8 +143,110 @@ _SCHEMA_FICHE = {
 }
 
 
+def _normaliser_notation_math(valeur: str) -> str:
+    """Convertit les commandes LaTeX usuelles en notation texte lisible PDF/Word."""
+    texte = str(valeur or "")
+    # Les expressions simples sont converties avant de retirer les commandes.
+    for _ in range(4):
+        nouveau = re.sub(r"\\frac\{([^{}]+)\}\{([^{}]+)\}", r"(\1)/(\2)", texte)
+        nouveau = re.sub(r"\\sqrt\{([^{}]+)\}", r"sqrt(\1)", nouveau)
+        nouveau = re.sub(r"\\(?:text|mathrm|mathbf|operatorname)\{([^{}]*)\}", r"\1", nouveau)
+        if nouveau == texte:
+            break
+        texte = nouveau
+    commandes = {
+        r"\\times\b": "*",
+        r"\\cdot\b": "*",
+        r"\\div\b": "/",
+        r"\\pm\b": "+/-",
+        r"\\leq?\b": "<=",
+        r"\\geq?\b": ">=",
+        r"\\neq\b": "!=",
+        r"\\approx\b": "approx",
+        r"\\rightarrow\b": "->",
+        r"\\Rightarrow\b": "=>",
+        r"\\pi\b": "pi",
+        r"\\alpha\b": "alpha",
+        r"\\beta\b": "beta",
+        r"\\gamma\b": "gamma",
+        r"\\theta\b": "theta",
+        r"\\lambda\b": "lambda",
+        r"\\mu\b": "mu",
+        r"\\Delta\b": "Delta",
+        r"\\delta\b": "delta",
+        r"\\Omega\b": "ohm",
+        r"\\omega\b": "omega",
+        r"\\infty\b": "infinity",
+        r"\\sum\b": "sum",
+        r"\\int\b": "integral",
+        r"\\left\b": "",
+        r"\\right\b": "",
+    }
+    for motif, remplacement in commandes.items():
+        texte = re.sub(motif, remplacement, texte)
+    texte = re.sub(r"\\(?:[,;!]|quad|qquad|enspace|,|;)", " ", texte)
+    texte = texte.replace(r"\(", "").replace(r"\)", "").replace(r"\[", "").replace(r"\]", "")
+    texte = texte.replace("$", "").replace("{", "").replace("}", "").replace("\\", "")
+    return re.sub(r"\s+", " ", texte).strip()
+
+
 def _normaliser_texte(valeur: Any, limite: int = 1400) -> str:
-    return " ".join(str(valeur or "").split()).strip()[:limite]
+    texte = " ".join(str(valeur or "").split()).strip()
+    texte = _normaliser_notation_math(texte)
+    return texte[:limite]
+
+
+def _texte_pdf_compatible(valeur: Any) -> str:
+    """Évite les erreurs WinAnsi de ReportLab et conserve une notation utile."""
+    texte = _normaliser_notation_math(str(valeur or ""))
+    remplacements = {
+        "√": "sqrt",
+        "≤": "<=",
+        "≥": ">=",
+        "≠": "!=",
+        "≈": " approx ",
+        "×": "*",
+        "·": "*",
+        "−": "-",
+        "→": "->",
+        "⇒": "=>",
+        "α": "alpha",
+        "β": "beta",
+        "γ": "gamma",
+        "θ": "theta",
+        "λ": "lambda",
+        "μ": "mu",
+        "Δ": "Delta",
+        "δ": "delta",
+        "Ω": "ohm",
+        "ω": "omega",
+        "π": "pi",
+        "Σ": "sum",
+        "∑": "sum",
+        "∫": "integral",
+        "∞": "infinity",
+        "²": "^2",
+        "³": "^3",
+        "¹": "^1",
+        "⁴": "^4",
+        "₀": "0",
+        "₁": "1",
+        "₂": "2",
+        "₃": "3",
+        "₄": "4",
+        "₅": "5",
+        "₆": "6",
+        "₇": "7",
+        "₈": "8",
+        "₉": "9",
+    }
+    for caractere, remplacement in remplacements.items():
+        texte = texte.replace(caractere, remplacement)
+    return texte.encode("cp1252", errors="replace").decode("cp1252")
+
+
+def _pdf_escape(valeur: Any) -> str:
+    return escape(_texte_pdf_compatible(valeur))
 
 
 def _cle(valeur: str | None) -> str:
@@ -366,7 +468,9 @@ def _texte_ia_non_fiable(contexte: dict) -> str:
         "Pour les calculs, vérifie les étapes et le résultat ; pour les matières non numériques, "
         "donne un exemple concret et une justification.\n"
         "- Varie compréhension, application et analyse. Évite de répéter trois fois le même exercice.\n"
-        "- Écris les formules en texte lisible ou en LaTeX en ligne très simple, jamais en blocs LaTeX.\n"
+        "- Utilise une notation texte commune aux fichiers PDF et Word : sqrt(x), x^2, <=, >=, a/b, * et des noms comme alpha ou delta.\n"
+        "- N'utilise pas de commandes LaTeX, délimiteurs $, \\( ou \\[ ; les fichiers téléchargés ne sont pas un moteur de composition mathématique.\n"
+        "- Pour une formule complexe, privilégie une explication en mots et vérifie chaque étape plutôt qu'un code mathématique brut.\n"
         "- 'outils_a_retenir' peut contenir formules, définitions, règles, dates ou méthodes selon la matière.\n"
         "- Le plan de révision doit contenir Aujourd'hui, Dans 2 jours et Dans 7 jours.\n"
         "- Retourne un objet JSON conforme au schéma fourni, sans Markdown extérieur.\n\n"
@@ -549,20 +653,20 @@ def generer_pdf(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) ->
     contenu.append(Paragraph("MITARIDALA", styles["MitaridalaTitle"]))
     contenu.append(Paragraph("Carnet de révision intelligent", styles["Heading2"]))
     contenu.append(Paragraph(
-        f"{escape(_normaliser_texte(cours.nom, 160))} · {escape(_normaliser_texte(cours.matiere, 120))} · "
-        f"{escape(_normaliser_texte(cours.niveau, 60))}<br/>"
-        f"Séance : {escape(_normaliser_texte(seance.titre, 160))}<br/>"
-        f"Étudiant : {escape(_normaliser_texte(nom_etudiant, 120))}",
+        f"{_pdf_escape(_normaliser_texte(cours.nom, 160))} · {_pdf_escape(_normaliser_texte(cours.matiere, 120))} · "
+        f"{_pdf_escape(_normaliser_texte(cours.niveau, 60))}<br/>"
+        f"Séance : {_pdf_escape(_normaliser_texte(seance.titre, 160))}<br/>"
+        f"Étudiant : {_pdf_escape(_normaliser_texte(nom_etudiant, 120))}",
         styles["MitaridalaSub"],
     ))
     contenu.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#dbe4ee"), spaceAfter=10))
 
     def paragraphe(texte: str, style: str = "MitaridalaBody"):
-        texte_safe = escape(str(texte or "")).replace("\n", "<br/>")
+        texte_safe = _pdf_escape(str(texte or "")).replace("\n", "<br/>")
         contenu.append(Paragraph(texte_safe, styles[style]))
 
     def section(titre: str):
-        contenu.append(Paragraph(escape(titre), styles["MitaridalaH2"]))
+        contenu.append(Paragraph(_pdf_escape(titre), styles["MitaridalaH2"]))
 
     section("1. Résumé à retenir")
     paragraphe(fiche["resume"])
@@ -573,9 +677,9 @@ def generer_pdf(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) ->
     section("3. Notions essentielles")
     for n, notion in enumerate(fiche["notions"], 1):
         contenu.append(KeepTogether([
-            Paragraph(f"{n}. {escape(notion['titre'])}", styles["Heading3"]),
-            Paragraph(escape(notion["explication"]).replace("\n", "<br/>"), styles["MitaridalaBody"]),
-            Paragraph("<b>Exemple :</b> " + escape(notion["exemple"]).replace("\n", "<br/>"), styles["MitaridalaSmall"]),
+            Paragraph(f"{n}. {_pdf_escape(notion['titre'])}", styles["Heading3"]),
+            Paragraph(_pdf_escape(notion["explication"]).replace("\n", "<br/>"), styles["MitaridalaBody"]),
+            Paragraph("<b>Exemple :</b> " + _pdf_escape(notion["exemple"]).replace("\n", "<br/>"), styles["MitaridalaSmall"]),
         ]))
 
     if fiche["outils_a_retenir"]:
@@ -587,10 +691,10 @@ def generer_pdf(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) ->
     section("5. Exercices avec corrections")
     for n, exercice in enumerate(fiche["exercices"], 1):
         contenu.append(KeepTogether([
-            Paragraph(f"Exercice {n} · {escape(exercice['difficulte'])}", styles["Heading3"]),
-            Paragraph(escape(exercice["enonce"]).replace("\n", "<br/>"), styles["MitaridalaBody"]),
-            Paragraph("<b>Indice :</b> " + escape(exercice["indice"]).replace("\n", "<br/>"), styles["MitaridalaSmall"]),
-            Paragraph("<b>Correction :</b> " + escape(exercice["correction"]).replace("\n", "<br/>"), styles["MitaridalaBody"]),
+            Paragraph(f"Exercice {n} · {_pdf_escape(exercice['difficulte'])}", styles["Heading3"]),
+            Paragraph(_pdf_escape(exercice["enonce"]).replace("\n", "<br/>"), styles["MitaridalaBody"]),
+            Paragraph("<b>Indice :</b> " + _pdf_escape(exercice["indice"]).replace("\n", "<br/>"), styles["MitaridalaSmall"]),
+            Paragraph("<b>Correction :</b> " + _pdf_escape(exercice["correction"]).replace("\n", "<br/>"), styles["MitaridalaBody"]),
         ]))
 
     if fiche["points_a_retravailler"]:
@@ -603,8 +707,8 @@ def generer_pdf(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) ->
     section("8. Auto-évaluation")
     for n, item in enumerate(fiche["auto_evaluation"], 1):
         contenu.append(KeepTogether([
-            Paragraph(f"Question {n}. {escape(item['question'])}", styles["MitaridalaBody"]),
-            Paragraph("<b>Réponse attendue :</b> " + escape(item["reponse"]), styles["MitaridalaSmall"]),
+            Paragraph(f"Question {n}. {_pdf_escape(item['question'])}", styles["MitaridalaBody"]),
+            Paragraph("<b>Réponse attendue :</b> " + _pdf_escape(item["reponse"]), styles["MitaridalaSmall"]),
         ]))
     section("À propos des sources")
     paragraphe(fiche["limites_sources"], "MitaridalaSmall")
