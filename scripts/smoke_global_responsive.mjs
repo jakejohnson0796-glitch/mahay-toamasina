@@ -44,6 +44,24 @@ const avatarSmokeMarkup = avatarSizes.map((size) =>
   '" width="' + size + '" height="' + size + '" alt="">'
 ).join("");
 
+const squareTestImage = "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%2260%22%20height=%2260%22%3E%3C/svg%3E";
+const responsiveImageMarkup =
+  '<section class="image-sizing-smoke" aria-label="Contrôle des images responsives" style="display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;margin:0 0 1rem">' +
+    '<h2 style="font-size:1rem">Contrôle des images</h2>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px;width:100%;min-width:0;max-width:100%">' +
+      '<span data-image-check="participant-avatar" class="avatar-repli" style="width:72px;height:72px"><img src="' + avatarTestImage + '" width="60" height="30" alt=""></span>' +
+      '<article class="doc-carte"><div data-image-check="document-thumbnail" class="doc-carte-visuel"><img src="' + avatarTestImage + '" width="260" height="112" alt=""></div><p>Miniature du document</p></article>' +
+      '<div data-image-check="university-illustration" class="uni-intro-visuel" style="grid-column:1/-1"><div><h3>Annuaire universitaire</h3><p>Illustration adaptative</p></div><img src="' + avatarTestImage + '" width="170" height="120" alt=""></div>' +
+      '<div data-image-check="ai-illustration" class="ai-hero-illustration"><img src="' + avatarTestImage + '" width="310" height="90" alt=""></div>' +
+      '<div data-image-check="class-illustration" class="classe-hero-art"><img src="' + avatarTestImage + '" width="290" height="90" alt=""></div>' +
+      '<div data-image-check="mfa-qr" class="mfa-qr-frame"><img src="' + squareTestImage + '" width="220" height="220" alt=""></div>' +
+      '<section class="jeu-cerebral-page" style="grid-column:1/-1;min-width:0;max-width:100%">' +
+        '<header class="jeu-hero"><div><h1>Illustration du jeu cérébral</h1><p>Test de l’image de couverture.</p></div><div class="jeu-hero-illustration"><div data-image-check="brain-hero" class="jeu-orbite jeu-orbite-avec-image"><img src="' + avatarTestImage + '" width="200" height="165" alt=""></div></div></header>' +
+        '<div class="jeu-theme-grid" style="margin-top:10px"><label class="jeu-theme-option"><input type="radio" checked><span class="jeu-theme-card"><span data-image-check="brain-theme" class="jeu-theme-emoji jeu-theme-image"><img src="' + squareTestImage + '" width="76" height="76" alt=""></span><strong>Thème illustré</strong><span class="jeu-theme-description">Icône du thème.</span></span></label></div>' +
+      '</section>' +
+    '</div>' +
+  '</section>';
+
 const cssPaths = [...base.matchAll(/href="\/static\/([^"?]+\.css)(?:\?[^"]*)?"/g)]
   .map((match) => "app/static/" + match[1])
   .filter((value, index, all) => all.indexOf(value) === index);
@@ -54,6 +72,13 @@ const styles = cssPaths.map((file) => {
   const css = read(file).replace(/<\/style/gi, "<\\/style");
   return "<style data-source=\"" + path.basename(file) + "\">" + css + "</style>";
 }).join("\n");
+
+const gameStyleTags = [...read("app/templates/jeu_cerebral.html").matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)]
+  .map((match) => "<style data-source=\"jeu-cerebral-inline.css\">" + match[1] + "</style>")
+  .join("\n");
+if (!gameStyleTags) throw new Error("Les styles intégrés du jeu cérébral sont introuvables.");
+const stylesAvecJeu = styles + "\n" + gameStyleTags +
+  "\n<style data-source=\"stable-image-measurements.css\">*,*::before,*::after{animation:none!important;transition:none!important}</style>";
 
 function card(title, description) {
   return '<article class="doc-carte carte-claire"><h2 class="doc-titre">' + title +
@@ -92,12 +117,12 @@ function scenarioContent(name) {
 
 function fixture(name, theme) {
   return '<!doctype html><html lang="fr" data-theme="' + theme + '"><head><meta charset="utf-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">' + styles +
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">' + stylesAvecJeu +
     '</head><body><div class="avatar-size-smoke" aria-hidden="true" style="position:absolute;top:0;left:0;visibility:hidden;display:flex;gap:1px">' + avatarSmokeMarkup + '</div>' +
-    '<div class="app-mise-en-page"><aside class="tb-sidebar"><a class="tb-sidebar-logo">MITARIDALA</a><nav class="tb-sidebar-nav"><a class="tb-sidebar-lien">Tableau de bord</a><a class="tb-sidebar-lien">Documents</a><a class="tb-sidebar-lien">Quiz IA</a><a class="tb-sidebar-lien">Mes cercles</a></nav>' +
+    '<div class="app-mise-en-page"><aside class="tb-sidebar"><div class="tb-sidebar-marque"><a href="/" class="sans-decoration"><span class="tb-sidebar-brand-lockup"><img class="tb-sidebar-logo-mark" src="' + squareTestImage + '" width="34" height="34" alt=""><span class="tb-sidebar-brand-copy"><span class="tb-sidebar-logo">MITARIDALA</span><span class="tb-sidebar-lieu">Ton chemin vers la réussite</span></span></span></a></div><nav class="tb-sidebar-nav"><a class="tb-sidebar-lien">Tableau de bord</a><a class="tb-sidebar-lien">Documents</a><a class="tb-sidebar-lien">Quiz IA</a><a class="tb-sidebar-lien">Mes cercles</a></nav>' +
     '<div class="tb-sidebar-compte-zone"><button class="tb-sidebar-compte"><img class="avatar-cercle avatar-taille-30" src="' + avatarTestImage + '" width="30" height="30" alt=""></button></div></aside>' +
     navHtml + '<div class="app-page"><header class="mobile-entete-app"><span class="mobile-entete-app-marque">MITARIDALA</span><span class="mobile-entete-app-sous-marque">Madagascar</span><a class="mobile-entete-app-avatar" href="/securite" aria-label="Profil"><img class="avatar-cercle avatar-taille-30" src="' + avatarTestImage + '" width="30" height="30" alt=""></a></header>' +
-    '<main class="main-clair main-clair-pleine-largeur" data-test-page="' + name + '"><div class="contenu-clair">' + scenarioContent(name) +
+    '<main class="main-clair main-clair-pleine-largeur" data-test-page="' + name + '"><div class="contenu-clair">' + responsiveImageMarkup + scenarioContent(name) +
     '</div></main><footer class="pied">MITARIDALA — Aide et contact</footer></div></div></body></html>';
 }
 
@@ -156,6 +181,17 @@ try {
           escapedContent,
           appPageWidth: appPage ? appPage.scrollWidth : 0,
           appPageClientWidth: appPage ? appPage.clientWidth : 0,
+          sidebarLogo: r(document.querySelector(".tb-sidebar-logo-mark")),
+          imageContexts: Array.from(document.querySelectorAll("[data-image-check]")).map((wrapper) => {
+            const image = wrapper.querySelector("img");
+            return {
+              name: wrapper.getAttribute("data-image-check"),
+              wrapper: r(wrapper),
+              image: r(image),
+              imageMaxWidth: image ? getComputedStyle(image).maxWidth : null,
+              imageObjectFit: image ? getComputedStyle(image).objectFit : null
+            };
+          }),
           sidebarAvatar: r(document.querySelector(".tb-sidebar-compte .avatar-cercle")),
           headerAvatar: r(document.querySelector(".mobile-entete-app-avatar .avatar-cercle")),
           avatarSizes: Array.from(document.querySelectorAll(".avatar-size-smoke img")).map((avatar) => {
@@ -188,6 +224,60 @@ try {
           failures.push(scenario + " @ " + width + "px: avatar de profil redimensionné incorrectement " + JSON.stringify(avatar));
           break;
         }
+      }
+      const expectedLogoSize = width <= 420 ? 30 : 34;
+      if (!result.sidebarLogo || Math.abs(result.sidebarLogo.width - expectedLogoSize) > 0.5 || Math.abs(result.sidebarLogo.height - expectedLogoSize) > 0.5) {
+        failures.push(scenario + " @ " + width + "px: logo de sidebar agrandi ou déformé " + JSON.stringify(result.sidebarLogo));
+      }
+      const checkedImages = new Map(result.imageContexts.map((item) => [item.name, item]));
+      for (const image of result.imageContexts) {
+        if (!image.wrapper || !image.image || image.image.width < 1 || image.image.height < 1) {
+          failures.push(scenario + " @ " + width + "px: image de composant absente ou sans dimension " + JSON.stringify(image));
+          break;
+        }
+        if (image.name !== "brain-hero" &&
+            (image.image.x < image.wrapper.x - 1 || image.image.right > image.wrapper.right + 1)) {
+          failures.push(scenario + " @ " + width + "px: image qui déborde de son conteneur " + JSON.stringify(image));
+          break;
+        }
+      }
+      const participantAvatar = checkedImages.get("participant-avatar");
+      if (!participantAvatar || Math.abs(participantAvatar.wrapper.width - 72) > 0.5 ||
+          Math.abs(participantAvatar.wrapper.height - 72) > 0.5 ||
+          Math.abs(participantAvatar.image.width - 72) > 0.5 || Math.abs(participantAvatar.image.height - 72) > 0.5) {
+        failures.push(scenario + " @ " + width + "px: avatar de participant hors de sa taille prévue");
+      }
+      const docImage = checkedImages.get("document-thumbnail");
+      const expectedDocImageHeight = width <= 480 ? 100 : 112;
+      if (!docImage || docImage.image.width > 260.5 || Math.abs(docImage.image.height - expectedDocImageHeight) > 1) {
+        failures.push(scenario + " @ " + width + "px: miniature de document mal dimensionnée " + JSON.stringify(docImage));
+      }
+      const aiImage = checkedImages.get("ai-illustration");
+      if (!aiImage || aiImage.image.width > Math.min(310, aiImage.wrapper.width) + 1 || aiImage.image.height > 120 || aiImage.image.height < 90) {
+        failures.push(scenario + " @ " + width + "px: illustration Tuteur/Quiz IA mal dimensionnée " + JSON.stringify(aiImage));
+      }
+      const classImage = checkedImages.get("class-illustration");
+      if (!classImage || classImage.image.width > Math.min(290, classImage.wrapper.width) + 1 || classImage.image.height > 110 || classImage.image.height < 90) {
+        failures.push(scenario + " @ " + width + "px: illustration classe virtuelle mal dimensionnée " + JSON.stringify(classImage));
+      }
+      const qrImage = checkedImages.get("mfa-qr");
+      if (!qrImage || qrImage.image.width > 220.5 || Math.abs(qrImage.image.width - qrImage.image.height) > 1) {
+        failures.push(scenario + " @ " + width + "px: QR MFA non carré ou trop grand " + JSON.stringify(qrImage));
+      }
+      const brainHero = checkedImages.get("brain-hero");
+      if (!brainHero || brainHero.wrapper.width < 99 || brainHero.wrapper.width > 211 ||
+          Math.abs(brainHero.wrapper.width - brainHero.wrapper.height) > 1 ||
+          brainHero.image.width > brainHero.wrapper.width * 1.1 ||
+          brainHero.image.height > brainHero.wrapper.height * 1.1) {
+        failures.push(scenario + " @ " + width + "px: couverture du jeu cérébral hors de sa zone prévue " + JSON.stringify(brainHero));
+      }
+      const themeImage = checkedImages.get("brain-theme");
+      const expectedThemeSize = width <= 440 ? 44 : 76;
+      if (!themeImage || Math.abs(themeImage.wrapper.width - expectedThemeSize) > 1 ||
+          Math.abs(themeImage.wrapper.height - expectedThemeSize) > 1 ||
+          themeImage.image.width > expectedThemeSize + 0.5 || themeImage.image.height > expectedThemeSize + 0.5 ||
+          themeImage.image.width < expectedThemeSize - 3 || themeImage.image.height < expectedThemeSize - 3) {
+        failures.push(scenario + " @ " + width + "px: illustration de thème cérébral mal dimensionnée " + JSON.stringify(themeImage));
       }
       const sidebarAvatarInvalid = !result.sidebarAvatar ||
         Math.abs(result.sidebarAvatar.width - 30) > 0.5 || Math.abs(result.sidebarAvatar.height - 30) > 0.5;
