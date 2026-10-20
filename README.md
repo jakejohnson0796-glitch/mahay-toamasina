@@ -150,7 +150,8 @@ PostgreSQL reste la source durable. Redis accélère la distribution des tâches
 - CSS du projet ;
 - JavaScript ciblé et sans framework obligatoire ;
 - PWA ;
-- interfaces responsive pour ordinateur et mobile.
+- couche responsive commune chargée après les styles métier, avec prise en charge des zones de sécurité, de l'orientation et de la navigation tactile ;
+- interfaces adaptatives des pages publiques, étudiantes, collaboratives et administratives. Voir [la convention responsive](docs/responsive-design.md).
 
 ---
 
@@ -358,7 +359,8 @@ La CI du projet contrôle plusieurs niveaux de qualité :
 2. compilation Python de l'application et des tests ;
 3. vérification du contrat de déploiement Render ;
 4. exécution des tests automatisés ;
-5. smoke test PostgreSQL avec migrations et démarrage réel.
+5. smoke test PostgreSQL avec migrations et démarrage réel ;
+6. smoke test Playwright de la navigation mobile et de sept familles de pages à 11 largeurs d'écran.
 
 Pour reproduire les contrôles localement :
 
