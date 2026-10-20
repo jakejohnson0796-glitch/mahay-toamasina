@@ -54,10 +54,13 @@
 
 ## P1 — Relier le jeu à l'apprentissage scolaire
 
+- [x] Agréger jusqu'aux 20 dernières sessions terminées par notion, avec filtrage par langue pour les recommandations de génération.
+- [x] Afficher les notions à renforcer, les notions souvent réussies et les notions à observer dans l'accueil et le bilan.
+- [x] Ne classer une notion comme difficulté répétée qu'après au moins deux réponses ; laisser un seul essai au stade « à observer ».
+- [x] Utiliser les notions faibles récurrentes dans le profil IA lorsque la notion correspond réellement au thème choisi.
 - [ ] Définir une correspondance explicite entre chaque notion du jeu cérébral et une notion de cours/révision lorsqu'un lien fiable existe.
 - [ ] Proposer un exercice ciblé après une erreur, sans rediriger vers une leçon qui ne traite pas la notion concernée.
 - [ ] Ajouter une nouvelle tentative courte après la recommandation, pour mesurer la progression sur la même notion.
-- [ ] Présenter une tendance basée sur plusieurs sessions plutôt que sur une seule partie, avec le nombre de tentatives et une explication simple.
 - [ ] Permettre de désactiver ou réinitialiser l'historique de jeu selon la politique de confidentialité applicable.
 - [ ] Éviter les classements publics qui humilient les élèves ; privilégier des objectifs personnels et des progrès comparés à leurs propres résultats.
 
