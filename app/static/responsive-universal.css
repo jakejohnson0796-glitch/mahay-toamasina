@@ -336,3 +336,77 @@ table {
     padding: 0 !important;
   }
 }
+
+
+/* Correctifs transversaux confirmés par le smoke de largeur. */
+@media (max-width: 768px) {
+  .entete-cercle,
+  .entete-cercle-identite,
+  .entete-cercle-infos {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .entete-cercle-identite {
+    flex: 1 1 12rem;
+    width: 100%;
+  }
+
+  .entete-cercle-infos {
+    flex: 1 1 0%;
+    width: 100%;
+  }
+
+  .entete-cercle-titre {
+    max-width: 100%;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+  }
+
+  .entete-cercle-sous-titre,
+  .cercle-entete-meta,
+  .cercle-entete-meta-item,
+  .cercle-chat-indicateurs {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .entete-cercle-actions {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Les coordonnées grid déjà prévues pour les contrôles du chat doivent
+     s'appliquer : sans display:grid, les indicateurs pouvaient sortir du cadre. */
+  .contenu-clair .barre-composition {
+    display: grid !important;
+    grid-template-columns: minmax(44px, 2.75rem) minmax(44px, 2.75rem) minmax(0, 1fr) minmax(44px, 2.75rem) !important;
+    grid-template-rows: auto auto auto !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-indicateurs,
+  .contenu-clair .barre-composition .cercle-chat-outils {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-indicateurs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .contenu-clair .barre-composition .cercle-chat-indicateurs span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
