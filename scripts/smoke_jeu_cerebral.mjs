@@ -14,7 +14,7 @@ const rendererScript = read("app/static/js/rendu_ia.js");
 
 const templateContracts = [
   [homeTemplate, /id="form-jeu-cerebral"/, "formulaire de lancement"],
-  [homeTemplate, /name="theme" value="calcul"/, "choix de thème"],
+  [homeTemplate, /name="theme" value="\\{\\{ theme\\.id \\}\\}"/, "choix de thème généré par le template"],
   [homeTemplate, /id="jeu-chrono-option"/, "chrono facultatif"],
   [homeTemplate, /id="jeu-reduire-animations"/, "réduction des animations à l'accueil"],
   [sessionTemplate, /id="jeu-pause-toggle"/, "pause"],
