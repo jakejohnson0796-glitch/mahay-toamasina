@@ -6,6 +6,7 @@ pas mesurer l'intelligence générale ni produire un diagnostic médical.
 import json
 import logging
 import random
+import unicodedata
 from typing import Any
 
 from . import ai_quiz
@@ -290,18 +291,152 @@ def difficulte_depart(sessions: list[Any]) -> str:
     return "Moyen"
 
 
-def profil_pour_ia(sessions: list[Any]) -> dict[str, Any]:
+def progression_sur_plusieurs_sessions(
+    sessions: list[Any],
+    *,
+    langue: str | None = None,
+) -> dict[str, Any]:
+    """Agrège les réponses récentes par notion sans tirer de conclusion après un seul essai.
+
+    Les sessions sont attendues dans l'ordre du plus récent au plus ancien. Les données
+    JSON sont traitées comme potentiellement malformées et n'empêchent jamais l'affichage
+    de la page. Le suivi reste distinct d'une note scolaire ou d'une mesure d'intelligence.
+    """
+    statistiques: dict[str, dict[str, Any]] = {}
+    sessions_analysees = 0
+    reponses_analysees = 0
+
+    for numero_session, partie in enumerate(sessions):
+        langue_partie = getattr(partie, "langue", None)
+        if langue and langue_partie and langue_partie != langue:
+            continue
+
+        try:
+            questions = json.loads(getattr(partie, "questions_json", "") or "[]")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(questions, list) or not questions:
+            continue
+
+        etat = lire_etat(getattr(partie, "reponses_json", "{}"))
+        ordre = etat.get("ordre")
+        reponses = etat.get("reponses")
+        if not isinstance(ordre, list) or not isinstance(reponses, list):
+            continue
+
+        session_a_compter = False
+        identifiant_session = getattr(partie, "id", None)
+        jeton_session = ("id", identifiant_session) if identifiant_session is not None else ("objet", id(partie))
+
+        # L'ordre de la session est inversé pour identifier le résultat le plus récent
+        # lorsqu'une même notion a été posée plusieurs fois dans une seule partie.
+        for valeur_index in reversed(ordre):
+            if isinstance(valeur_index, bool):
+                continue
+            try:
+                index = int(valeur_index)
+            except (TypeError, ValueError):
+                continue
+            if not 0 <= index < len(questions) or index >= len(reponses):
+                continue
+
+            question = questions[index]
+            reponse = reponses[index]
+            if not isinstance(question, dict) or isinstance(reponse, bool) or not isinstance(reponse, int):
+                continue
+            index_correct = question.get("index_bonne_reponse")
+            if isinstance(index_correct, bool) or not isinstance(index_correct, int):
+                continue
+            if not 0 <= index_correct < len(question.get("choix") or []):
+                continue
+
+            notion = str(question.get("notion") or question.get("notion_mg") or "").strip()
+            if not notion:
+                theme = THEMES_PAR_ID.get(getattr(partie, "theme_id", ""), THEMES_PAR_ID["logique"])
+                notion = theme["competence"]
+            cle_normalisee = unicodedata.normalize("NFKD", notion.casefold())
+            cle_normalisee = "".join(c for c in cle_normalisee if not unicodedata.combining(c))
+            cle_normalisee = " ".join(cle_normalisee.split())
+            if not cle_normalisee:
+                continue
+
+            element = statistiques.setdefault(
+                cle_normalisee,
+                {
+                    "notion": notion,
+                    "essais": 0,
+                    "bonnes_reponses": 0,
+                    "sessions_vues": set(),
+                    "dernier_resultat": None,
+                },
+            )
+            # Garde le libellé provenant de la session la plus récente.
+            if not element["sessions_vues"]:
+                element["notion"] = notion
+
+            correcte = reponse == index_correct
+            element["essais"] += 1
+            element["bonnes_reponses"] += int(correcte)
+            element["sessions_vues"].add(jeton_session)
+            if element["dernier_resultat"] is None:
+                element["dernier_resultat"] = correcte
+            session_a_compter = True
+            reponses_analysees += 1
+
+        if session_a_compter:
+            sessions_analysees += 1
+
+    notions = []
+    for element in statistiques.values():
+        essais = int(element["essais"])
+        if essais <= 0:
+            continue
+        notions.append({
+            "notion": element["notion"],
+            "essais": essais,
+            "bonnes_reponses": int(element["bonnes_reponses"]),
+            "taux_reussite": round(100 * int(element["bonnes_reponses"]) / essais),
+            "sessions": len(element["sessions_vues"]),
+            "dernier_resultat": element["dernier_resultat"],
+        })
+
+    a_renforcer = sorted(
+        (n for n in notions if n["essais"] >= 2 and n["taux_reussite"] < 60),
+        key=lambda n: (n["taux_reussite"], -n["essais"], n["notion"].casefold()),
+    )[:3]
+    bien_reussies = sorted(
+        (n for n in notions if n["essais"] >= 2 and n["taux_reussite"] >= 80),
+        key=lambda n: (-n["taux_reussite"], -n["essais"], n["notion"].casefold()),
+    )[:3]
+    a_observer = [n for n in notions if n["essais"] == 1][:3]
+
+    return {
+        "sessions_analysees": sessions_analysees,
+        "reponses_analysees": reponses_analysees,
+        "notions_suivies": len(notions),
+        "a_renforcer": a_renforcer,
+        "bien_reussies": bien_reussies,
+        "a_observer": a_observer,
+    }
+
+
+def profil_pour_ia(sessions: list[Any], langue: str = "fr") -> dict[str, Any]:
     scores = [int(s.score) for s in sessions[:5] if getattr(s, "score", None) is not None]
     par_theme: dict[str, list[int]] = {}
     for item in sessions:
         if getattr(item, "score", None) is not None:
             par_theme.setdefault(item.theme_id, []).append(int(item.score))
+    progression = progression_sur_plusieurs_sessions(sessions, langue=langue)
     return {
         "sessions_terminees": len(scores),
         "scores_recents": scores,
         "moyenne_recente": round(sum(scores) / len(scores)) if scores else None,
         "meilleure_piste": max(par_theme, key=lambda k: sum(par_theme[k]) / len(par_theme[k])) if par_theme else None,
         "difficulte_depart": difficulte_depart(sessions),
+        # L'IA ne voit que les libellés des notions à renforcer, pas d'identité ni
+        # de texte libre provenant d'un profil personnel.
+        "notions_a_renforcer": [item["notion"] for item in progression["a_renforcer"]],
+        "notions_bien_reussies": [item["notion"] for item in progression["bien_reussies"]],
     }
 
 
