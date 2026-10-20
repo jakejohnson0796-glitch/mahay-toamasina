@@ -189,13 +189,16 @@ def test_progression_par_notion_agrege_plusieurs_sessions_sans_surinterpreter_un
             theme_id=theme,
             langue=langue,
             score=0,
-            date_fin=None,
+            date_fin="completed",
             questions_json=json.dumps(questions, ensure_ascii=False),
             reponses_json=json.dumps(etat, ensure_ascii=False),
         )
 
     # L'ordre fourni est du plus récent au plus ancien.
+    session_inachevee = partie("calcul", ["Calcul mental"], [1])
+    session_inachevee.date_fin = None
     sessions = [
+        session_inachevee,
         partie("calcul", ["Calcul mental"], [0]),
         partie("calcul", ["Calcul mental", "Logique"], [0, 1]),
         partie("calcul", ["Calcul mental", "Logique", "Observation"], [1, 1, 0]),
@@ -224,6 +227,7 @@ def test_progression_par_notion_filtre_la_langue_pour_personnaliser_la_banque():
         return SimpleNamespace(
             theme_id="logique",
             langue=langue,
+            date_fin="completed",
             questions_json=json.dumps([question], ensure_ascii=False),
             reponses_json=json.dumps({"ordre": [0], "reponses": [reponse]}, ensure_ascii=False),
         )
