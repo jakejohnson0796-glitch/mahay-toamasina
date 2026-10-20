@@ -32,7 +32,6 @@ from reportlab.platypus import (
 
 from sqlmodel import Session, select
 
-from .ai_queue import TYPE_FICHE_REVISION_COURS
 from .config import parametres
 from .database import engine
 from .models import (
