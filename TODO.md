@@ -58,7 +58,11 @@
 - [x] Afficher les notions à renforcer, les notions souvent réussies et les notions à observer dans l'accueil et le bilan.
 - [x] Ne classer une notion comme difficulté répétée qu'après au moins deux réponses ; laisser un seul essai au stade « à observer ».
 - [x] Utiliser les notions faibles récurrentes dans le profil IA lorsque la notion correspond réellement au thème choisi.
-- [ ] Définir une correspondance explicite entre chaque notion du jeu cérébral et une notion de cours/révision lorsqu'un lien fiable existe.
+- [x] Relier une notion faible à un document seulement si le titre ou la matière contient une correspondance explicite ou un synonyme pédagogique contrôlé.
+- [x] Filtrer les ressources recommandées par filière, statut approuvé et appartenance à un cercle privé.
+- [x] Afficher une solution de repli vers la bibliothèque quand aucun document approuvé ne correspond assez précisément.
+- [x] Ajouter un test de parcours des routes : démarrage, cinq réponses, persistance du score et rendu du bilan.
+- [ ] Enrichir et valider avec les équipes pédagogiques la liste de synonymes reliant les notions de logique/calcul aux titres des cours réellement utilisés à Madagascar.
 - [ ] Proposer un exercice ciblé après une erreur, sans rediriger vers une leçon qui ne traite pas la notion concernée.
 - [ ] Ajouter une nouvelle tentative courte après la recommandation, pour mesurer la progression sur la même notion.
 - [ ] Permettre de désactiver ou réinitialiser l'historique de jeu selon la politique de confidentialité applicable.
