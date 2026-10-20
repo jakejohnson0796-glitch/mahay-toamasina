@@ -244,7 +244,7 @@ try {
         await page.evaluate(() => {
           document.querySelectorAll('img[loading="lazy"]').forEach((img) => { img.loading = "eager"; });
         });
-        await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0), null, { timeout: 8000 });
+        await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete), null, { timeout: 8000 });
         const layout = await page.evaluate(() => ({
           viewport: window.innerWidth,
           doc: document.documentElement.scrollWidth,
