@@ -25,6 +25,14 @@
   <div class="erreur" role="alert">Cette séance n'est pas encore en cours.</div>
   {% endif %}
 
+  {% if request.query_params.get("fiche") == "en_cours" %}
+  <div class="info" role="status">Ta fiche de révision n'est pas encore prête. Reviens dans quelques instants : la génération se fait en arrière-plan.</div>
+  {% elif request.query_params.get("fiche") == "indisponible" %}
+  <div class="erreur" role="alert">Cette fiche n'a pas pu être lue. Attends un peu ou relance sa génération depuis la liste des séances si l'option est proposée.</div>
+  {% elif request.query_params.get("fiche") == "relancee" %}
+  <div class="info" role="status">La création de ta fiche de révision a été relancée.</div>
+  {% endif %}
+
   <div class="classe-overview-grid">
     <div class="classe-overview-card"><strong>{{ seances|length }}</strong><span>séances planifiées ou terminées</span></div>
     <div class="classe-overview-card"><strong>{{ devoirs|length }}</strong><span>devoir{{ "s" if devoirs|length != 1 else "" }}</span></div>
@@ -121,6 +129,7 @@
       <p class="classe-section-card-intro">Rejoins une séance uniquement quand elle est en cours.</p>
       <div class="classe-list">
         {% for seance in seances %}
+        {% set fiche_revision = fiches_revision_par_seance.get(seance.id) if not peut_gerer else none %}
         <div class="classe-row classe-row-seance">
           <div class="classe-row-main">
             <strong>{{ seance.titre }}</strong>
@@ -131,8 +140,34 @@
             {% else %}
             <span class="classe-row-status classe-status-done">Terminée</span>
             {% endif %}
+            {% if not peut_gerer and seance.statut.value == "terminee" %}
+            <div class="classe-revision-status" aria-live="polite">
+              {% if fiche_revision and fiche_revision.statut.value == "terminee" %}
+              <span class="classe-revision-ready"><span aria-hidden="true">✓</span> Ta fiche personnalisée est prête</span>
+              {% elif fiche_revision and fiche_revision.statut.value == "echouee" %}
+              <span class="classe-revision-error">La génération a échoué. Tu peux réessayer.</span>
+              {% elif fiche_revision and fiche_revision.statut.value == "en_cours" %}
+              <span>Préparation de ta fiche personnelle en cours…</span>
+              {% elif fiche_revision and fiche_revision.statut.value == "en_attente" %}
+              <span>Ta fiche de révision est dans la file d'attente…</span>
+              {% else %}
+              <span>Préparation de ta fiche personnalisée…</span>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
           <div class="classe-row-actions">
+            {% if not peut_gerer and seance.statut.value == "terminee" and fiche_revision %}
+              {% if fiche_revision.statut.value == "terminee" %}
+              <a class="bouton bouton-secondaire classe-revision-download" href="/classe/revisions/{{ fiche_revision.id }}/telecharger/pdf" aria-label="Télécharger la fiche PDF de {{ seance.titre }}">Télécharger PDF</a>
+              <a class="bouton bouton-secondaire classe-revision-download" href="/classe/revisions/{{ fiche_revision.id }}/telecharger/docx" aria-label="Télécharger la fiche Word de {{ seance.titre }}">Version Word</a>
+              {% elif fiche_revision.statut.value == "echouee" %}
+              <form method="post" action="/classe/revisions/{{ fiche_revision.id }}/relancer">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Réessayer la fiche</button>
+              </form>
+              {% endif %}
+            {% endif %}
             {% if seance.statut.value == "planifiee" and peut_gerer %}
             <form method="post" action="/classe/seances/{{ seance.id }}/demarrer">
               <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -162,4 +197,35 @@
     </section>
   </div>
 </div>
+<style nonce="{{ csp_nonce(request) }}">
+  .classe-revision-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .4rem;
+    color: var(--text-muted, #526176);
+    font-size: .88rem;
+    line-height: 1.45;
+  }
+  .classe-revision-ready {
+    color: var(--success, #176b43);
+    font-weight: 650;
+  }
+  .classe-revision-error {
+    color: var(--danger, #a52626);
+  }
+  .classe-revision-download {
+    min-width: max-content;
+  }
+  @media (max-width: 680px) {
+    .classe-row-seance {
+      min-width: 0;
+    }
+    .classe-revision-download {
+      width: 100%;
+      white-space: normal;
+    }
+  }
+</style>
 {% endblock %}
