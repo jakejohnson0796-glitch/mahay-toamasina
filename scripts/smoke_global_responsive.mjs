@@ -56,7 +56,7 @@ const responsiveImageMarkup =
       '<div data-image-check="class-illustration" class="classe-hero-art"><img src="' + avatarTestImage + '" width="290" height="90" alt=""></div>' +
       '<div data-image-check="mfa-qr" class="mfa-qr-frame"><img src="' + squareTestImage + '" width="220" height="220" alt=""></div>' +
       '<section class="jeu-cerebral-page" style="grid-column:1/-1;min-width:0;max-width:100%">' +
-        '<header class="jeu-hero"><div><h1>Illustration du jeu cérébral</h1><p>Test de l’image de couverture.</p></div><div class="jeu-hero-illustration"><div class="jeu-orbite jeu-orbite-avec-image"><img src="' + avatarTestImage + '" width="200" height="165" alt=""></div></div></header>' +
+        '<header class="jeu-hero"><div><h1>Illustration du jeu cérébral</h1><p>Test de l’image de couverture.</p></div><div class="jeu-hero-illustration"><div data-image-check="brain-hero" class="jeu-orbite jeu-orbite-avec-image"><img src="' + avatarTestImage + '" width="200" height="165" alt=""></div></div></header>' +
         '<div class="jeu-theme-grid" style="margin-top:10px"><label class="jeu-theme-option"><input type="radio" checked><span class="jeu-theme-card"><span data-image-check="brain-theme" class="jeu-theme-emoji jeu-theme-image"><img src="' + squareTestImage + '" width="76" height="76" alt=""></span><strong>Thème illustré</strong><span class="jeu-theme-description">Icône du thème.</span></span></label></div>' +
       '</section>' +
     '</div>' +
@@ -261,6 +261,13 @@ try {
       const qrImage = checkedImages.get("mfa-qr");
       if (!qrImage || qrImage.image.width > 190.5 || Math.abs(qrImage.image.width - qrImage.image.height) > 1) {
         failures.push(scenario + " @ " + width + "px: QR MFA non carré ou trop grand " + JSON.stringify(qrImage));
+      }
+      const brainHero = checkedImages.get("brain-hero");
+      if (!brainHero || brainHero.wrapper.width < 99 || brainHero.wrapper.width > 211 ||
+          Math.abs(brainHero.wrapper.width - brainHero.wrapper.height) > 1 ||
+          brainHero.image.width > brainHero.wrapper.width * 1.1 ||
+          brainHero.image.height > brainHero.wrapper.height * 1.1) {
+        failures.push(scenario + " @ " + width + "px: couverture du jeu cérébral hors de sa zone prévue " + JSON.stringify(brainHero));
       }
       const themeImage = checkedImages.get("brain-theme");
       const expectedThemeSize = width <= 440 ? 44 : 76;
