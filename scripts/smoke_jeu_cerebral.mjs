@@ -280,6 +280,15 @@ try {
           assert.equal(await pause.getAttribute("aria-pressed"), "true");
           assert.equal(await page.locator("#jeu-pause-notice").isVisible(), true);
           assert.equal(await page.locator("#jeu-pause-status").innerText(), "Défi en pause.");
+          console.log("JEU_PAUSE_DEBUG", JSON.stringify(await page.evaluate(() => ({
+            root: !!document.querySelector(".jeu-session-page"),
+            form: !!document.querySelector("#form-reponse-jeu"),
+            formInsideRoot: !!document.querySelector(".jeu-session-page #form-reponse-jeu"),
+            fieldsets: Array.from(document.querySelectorAll("#form-reponse-jeu fieldset")).map((e) => ({ disabled: e.disabled, disabledAttr: e.hasAttribute("disabled"), outer: e.outerHTML.slice(0, 140) })),
+            submit: document.querySelector("#envoyer-reponse") ? { disabled: document.querySelector("#envoyer-reponse").disabled } : null,
+            pause: { pressed: document.querySelector("#jeu-pause-toggle")?.getAttribute("aria-pressed"), noticeHidden: document.querySelector("#jeu-pause-notice")?.hidden },
+            loadedScript: Array.from(document.scripts).map((e) => e.src).filter(Boolean)
+          }))));
           assert.equal(await page.locator("#form-reponse-jeu fieldset").isDisabled(), true);
           assert.equal(await page.locator("#envoyer-reponse").isDisabled(), true);
           await pause.click();
