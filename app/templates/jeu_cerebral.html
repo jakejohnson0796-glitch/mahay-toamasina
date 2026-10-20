@@ -155,6 +155,18 @@
     .jeu-config-option small{display:block;margin-top:.25rem;font-size:.74rem;line-height:1.55;color:var(--content-text-muted)}
     .jeu-config-option:focus-within{outline:2px solid var(--content-link);outline-offset:2px}
     .jeu-cerebral-page.jeu-reduit-mouvement *, .jeu-cerebral-page.jeu-reduit-mouvement *::before, .jeu-cerebral-page.jeu-reduit-mouvement *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;transform:none!important}
+    .jeu-progression-section{margin-top:1.25rem}
+    .jeu-progression-count{font-size:.72rem;color:var(--content-text-muted);white-space:nowrap}
+    .jeu-progression-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}
+    .jeu-progression-card{min-width:0;padding:.9rem;border:1px solid var(--content-border);border-radius:14px;background:var(--content-surface)}
+    .jeu-progression-card h3{font-size:.82rem;line-height:1.4;margin:0 0 .6rem}
+    .jeu-progression-card p{margin:0;color:var(--content-text-muted);font-size:.76rem;line-height:1.6}
+    .jeu-progression-list{display:grid;gap:.6rem;margin:0;padding:0;list-style:none}
+    .jeu-progression-list li{min-width:0;display:grid;gap:.2rem}
+    .jeu-progression-list strong{font-size:.77rem;line-height:1.45;overflow-wrap:anywhere}
+    .jeu-progression-list small{font-size:.69rem;line-height:1.4;color:var(--content-text-muted)}
+    .jeu-progression-note{margin:.7rem 0 0;color:var(--content-text-muted);font-size:.72rem;line-height:1.55}
+    @media(max-width:760px){.jeu-progression-grid{grid-template-columns:1fr}.jeu-progression-count{white-space:normal}}
     @media(max-width:650px){.jeu-config-options{grid-template-columns:1fr}}
     </style>
 
@@ -179,6 +191,55 @@
     <article class="jeu-stat"><span>Sessions terminées</span><strong>{{ profil.sessions_terminees }}</strong><span>chaque séance est un pas</span></article>
     <article class="jeu-stat"><span>Moyenne récente</span><strong>{% if moyenne_recente is not none %}{{ moyenne_recente }} %{% else %}—{% endif %}</strong><span>sur tes derniers défis</span></article>
     <article class="jeu-stat"><span>Départ conseillé</span><strong style="font-size:1.12rem">{% if profil.difficulte_depart == "Facile" %}Tout doux{% elif profil.difficulte_depart == "Difficile" %}Petit défi{% else %}À ton rythme{% endif %}</strong><span>ajusté selon tes dernières parties</span></article>
+  </section>
+
+  <section class="jeu-section jeu-progression-section" aria-labelledby="jeu-progression-title">
+    <div class="jeu-section-head">
+      <div>
+        <h2 id="jeu-progression-title">Ta progression au fil des défis</h2>
+        <p>Les tendances se construisent sur plusieurs réponses, pas sur une seule erreur.</p>
+      </div>
+      <span class="jeu-progression-count">{{ progression_notion.sessions_analysees }} session(s) analysée(s)</span>
+    </div>
+    <div class="jeu-progression-grid">
+      <article class="jeu-progression-card">
+        <h3>À renforcer doucement</h3>
+        {% if progression_notion.a_renforcer %}
+        <ul class="jeu-progression-list">
+          {% for notion in progression_notion.a_renforcer %}
+          <li><strong>{{ notion.notion }}</strong><small>{{ notion.taux_reussite }} % de réussite · {{ notion.essais }} réponses observées</small></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>{% if progression_notion.sessions_analysees == 0 %}Termine quelques défis pour faire apparaître des pistes personnalisées.{% else %}Pas encore de difficulté répétée confirmée. Continue à explorer tranquillement.{% endif %}</p>
+        {% endif %}
+      </article>
+      <article class="jeu-progression-card">
+        <h3>Des réflexes bien installés</h3>
+        {% if progression_notion.bien_reussies %}
+        <ul class="jeu-progression-list">
+          {% for notion in progression_notion.bien_reussies %}
+          <li><strong>{{ notion.notion }}</strong><small>{{ notion.taux_reussite }} % de réussite · {{ notion.essais }} réponses observées</small></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>Les notions réussies plusieurs fois apparaîtront ici avec plus de pratique.</p>
+        {% endif %}
+      </article>
+      <article class="jeu-progression-card">
+        <h3>Encore à observer</h3>
+        {% if progression_notion.a_observer %}
+        <ul class="jeu-progression-list">
+          {% for notion in progression_notion.a_observer %}
+          <li><strong>{{ notion.notion }}</strong><small>{% if notion.dernier_resultat %}Bonne réponse{% else %}À revoir si elle revient{% endif %} · un seul essai</small></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>Quand une notion n'a été vue qu'une fois, elle restera ici avant d'être classée.</p>
+        {% endif %}
+      </article>
+    </div>
+    <p class="jeu-progression-note">Pour éviter les conclusions hâtives, une notion n'est classée « à renforcer » qu'après plusieurs réponses. Ce suivi décrit tes exercices récents ; il ne mesure pas ton intelligence générale.</p>
   </section>
 
   <section class="jeu-section" aria-labelledby="jeu-choisir-theme">
