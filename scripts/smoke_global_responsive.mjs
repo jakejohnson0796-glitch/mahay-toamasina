@@ -121,13 +121,29 @@ try {
         };
         const main = document.querySelector("main");
         const appPage = document.querySelector(".app-page");
+        const mainRect = main ? main.getBoundingClientRect() : null;
+        const escapedContent = main ? Array.from(main.querySelectorAll("*")).filter((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = getComputedStyle(element);
+          if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed" || rect.width < 1 || rect.height < 1) return false;
+          if (!mainRect || (rect.left >= mainRect.left - 1 && rect.right <= mainRect.right + 1)) return false;
+          let parent = element.parentElement;
+          while (parent && parent !== main) {
+            const parentStyle = getComputedStyle(parent);
+            if ((parentStyle.overflowX === "auto" || parentStyle.overflowX === "scroll") && parent.scrollWidth > parent.clientWidth + 2) return false;
+            parent = parent.parentElement;
+          }
+          return true;
+        }).slice(0, 8).map((element) => {
+          const rect = element.getBoundingClientRect();
+          return { tag: element.tagName, id: element.id, className: String(element.className).slice(0, 80), left: Math.round(rect.left), right: Math.round(rect.right) };
+        }) : [];
         return {
           viewport: window.innerWidth,
           rootWidth: document.documentElement.scrollWidth,
           bodyWidth: document.body.scrollWidth,
-          mainWidth: main ? main.scrollWidth : 0,
-          mainClientWidth: main ? main.clientWidth : 0,
           mainRect: r(main),
+          escapedContent,
           appPageWidth: appPage ? appPage.scrollWidth : 0,
           appPageClientWidth: appPage ? appPage.clientWidth : 0,
           navDisplay: getComputedStyle(nav).display,
@@ -144,8 +160,8 @@ try {
       if (result.mainRect && (result.mainRect.x < -1 || result.mainRect.right > width + 1)) {
         failures.push(scenario + " @ " + width + "px: contenu principal hors écran " + JSON.stringify(result.mainRect));
       }
-      if (result.mainWidth > result.mainClientWidth + 3) {
-        failures.push(scenario + " @ " + width + "px: contenu principal plus large que son conteneur (" + result.mainWidth + "/" + result.mainClientWidth + ")");
+      if (result.escapedContent.length) {
+        failures.push(scenario + " @ " + width + "px: éléments visibles débordant hors de la page " + JSON.stringify(result.escapedContent));
       }
       if (result.anchorCount !== 6 || result.labels.join("|") !== "Accueil|Docs|Quiz|Jeu|Cercles|Profil") {
         failures.push(scenario + " @ " + width + "px: onglets mobiles manquants/désordonnés " + JSON.stringify(result.labels));
