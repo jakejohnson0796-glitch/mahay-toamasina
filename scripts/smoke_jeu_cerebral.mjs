@@ -241,10 +241,13 @@ try {
         responsiveStates += 1;
         await page.setViewportSize({ width, height: width <= 430 ? 820 : 960 });
         await page.goto("http://jeu.test/" + type + "?mode=" + mode + "&uid=" + responsiveStates, { waitUntil: "load" });
-        await page.evaluate(() => {
-          document.querySelectorAll('img[loading="lazy"]').forEach((img) => { img.loading = "eager"; });
+        await page.evaluate(async () => {
+          const images = Array.from(document.images);
+          await Promise.all(images.map(async (img) => {
+            img.loading = "eager";
+            try { await img.decode(); } catch (_) { /* reported below using naturalWidth */ }
+          }));
         });
-        await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete), null, { timeout: 8000 });
         const layout = await page.evaluate(() => ({
           viewport: window.innerWidth,
           doc: document.documentElement.scrollWidth,
@@ -263,7 +266,7 @@ try {
           failures.push("Conteneur du jeu hors écran " + type + "/" + mode + "/" + width + "px : " + JSON.stringify(layout.root));
         }
         if (layout.loadedImages.some((img) => img.width < 1 || img.height < 1)) {
-          failures.push("Illustration non chargée " + type + "/" + mode + "/" + width + "px");
+          failures.push("Illustration non chargée " + type + "/" + mode + "/" + width + "px : " + JSON.stringify(layout.loadedImages.filter((img) => img.width < 1 || img.height < 1)));
         }
         if (type === "home") {
           assert.equal(await page.locator('input[name="theme"]').count(), 6, "Les six choix de thèmes doivent apparaître.");
