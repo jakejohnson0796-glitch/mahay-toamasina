@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import json
 from typing import Optional
+from urllib.parse import urlencode
 import mimetypes
 import secrets
 import tempfile
@@ -1078,6 +1079,12 @@ def formulaire_modifier_document(
         return _rediriger_moderation("introuvable")
 
     filieres = session.exec(select(Filiere).order_by(Filiere.nom)).all()
+    champs_formulaire = ("titre", "matiere", "type_document", "annee", "filiere_id")
+    valeurs = (
+        {champ: request.query_params.get(champ, "") for champ in champs_formulaire}
+        if any(champ in request.query_params for champ in champs_formulaire)
+        else None
+    )
     return templates.TemplateResponse(
         "moderation_document_modifier.html",
         {
@@ -1088,7 +1095,7 @@ def formulaire_modifier_document(
             "utilisateur": utilisateur,
             "erreur": request.query_params.get("erreur"),
             "resultat": request.query_params.get("resultat"),
-            "valeurs": None,
+            "valeurs": valeurs,
         },
     )
 
@@ -1123,20 +1130,21 @@ def enregistrer_modification_document(
         "filiere_id": filiere_id or "",
     }
 
-    def afficher_erreur(message: str) -> Response:
-        return templates.TemplateResponse(
-            "moderation_document_modifier.html",
-            {
-                "request": request,
-                "document": document,
-                "filieres": filieres,
-                "types_document": list(TypeDocument),
-                "utilisateur": utilisateur,
-                "erreur": message,
-                "resultat": None,
-                "valeurs": valeurs,
-            },
-            status_code=400,
+    def afficher_erreur(message: str) -> RedirectResponse:
+        # Le JS de confirmation admin suit les redirections, mais présente
+        # une alerte générique pour les réponses 4xx. Un 303 permet donc
+        # d'afficher le message précis et de conserver les champs saisis.
+        valeurs_limitees = {
+            "titre": valeurs["titre"][:240],
+            "matiere": valeurs["matiere"][:120],
+            "type_document": valeurs["type_document"][:40],
+            "annee": valeurs["annee"][:4],
+            "filiere_id": valeurs["filiere_id"][:12],
+        }
+        query = urlencode({"erreur": message, **valeurs_limitees})
+        return RedirectResponse(
+            f"/moderation/{document.id}/modifier?{query}",
+            status_code=303,
         )
 
     metadonnees, erreur = _normaliser_metadonnees_document(
