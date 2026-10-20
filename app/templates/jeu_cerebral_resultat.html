@@ -205,6 +205,29 @@
     {% endif %}
   </section>
 
+  {% if progression_notion.a_renforcer %}
+  <section class="jeu-result-section" aria-labelledby="jeu-ressources-ciblees-title">
+    <h2 id="jeu-ressources-ciblees-title">{% if langue == "mg" %}Loharanon-kevitra hanampy anao{% else %}Des ressources pour continuer{% endif %}</h2>
+    <p class="jeu-result-muted">{% if langue == "mg" %}Ireo loharano eto ambany dia antontan-taratasy nankatoavina, mifanaraka amin'ny filierinao, ary manana lohateny na taranja mifandray mazava amin'ilay hevitra.{% else %}Les ressources affichées sont approuvées, accessibles dans ta filière et explicitement liées à la notion par leur titre ou leur matière.{% endif %}</p>
+    {% if ressources_recommandees %}
+      <div class="jeu-tip-grid">
+        {% for ressource in ressources_recommandees %}
+        <article class="jeu-tip">
+          <h3>{{ ressource.notion }}</h3>
+          <p><strong>{{ ressource.titre }}</strong></p>
+          <p>{{ ressource.matiere }}{% if ressource.annee %} · {{ ressource.annee }}{% endif %}</p>
+          <p class="jeu-result-muted">{% if langue == "mg" %}Valiny {{ ressource.essais }} no nodinihina · {{ ressource.taux_reussite }} % marina{% else %}{{ ressource.essais }} réponses observées · {{ ressource.taux_reussite }} % de réussite{% endif %}</p>
+          <p><a href="/documents/{{ ressource.document_id }}/apprendre">{% if langue == "mg" %}Hanokatra ity loharano ity{% else %}Ouvrir cette ressource{% endif %}</a></p>
+        </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="jeu-advice" role="note">{% if langue == "mg" %}Tsy misy antontan-taratasy nankatoavina manana lohateny mifanaraka tsara amin'ity hevitra ity. Tsy hanome rohy tsy azo antoka izahay; azonao jerena ny tranomboky.{% else %}Aucun document approuvé n'a de titre suffisamment précis pour être lié sans deviner. Tu peux parcourir la bibliothèque et choisir une ressource adaptée.{% endif %}</div>
+      <p><a href="{% if utilisateur.filiere_id %}/documents?filiere_id={{ utilisateur.filiere_id }}{% else %}/documents{% endif %}">{% if langue == "mg" %}Hijery ny antontan-taratasy{% else %}Parcourir les documents disponibles{% endif %}</a></p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="jeu-result-section" aria-labelledby="jeu-reponses-title">
     <h2 id="jeu-reponses-title">{% if langue == "mg" %}Hodinihintsika moramora ireo fanontaniana{% else %}Revenons doucement sur les questions{% endif %}</h2>
     <p class="jeu-result-muted">{% if langue == "mg" %}Ny fanazavana dia manampy hahatakatra ny fomba fisainana, fa tsy ny isa ihany.{% else %}Les explications servent à comprendre le raisonnement, pas seulement à regarder le score.{% endif %}</p>
