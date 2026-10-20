@@ -280,21 +280,12 @@ try {
           assert.equal(await pause.getAttribute("aria-pressed"), "true");
           assert.equal(await page.locator("#jeu-pause-notice").isVisible(), true);
           assert.equal(await page.locator("#jeu-pause-status").innerText(), "Défi en pause.");
-          console.log("JEU_PAUSE_DEBUG", JSON.stringify(await page.evaluate(() => ({
-            root: !!document.querySelector(".jeu-session-page"),
-            form: !!document.querySelector("#form-reponse-jeu"),
-            formInsideRoot: !!document.querySelector(".jeu-session-page #form-reponse-jeu"),
-            fieldsets: Array.from(document.querySelectorAll("#form-reponse-jeu fieldset")).map((e) => ({ disabled: e.disabled, disabledAttr: e.hasAttribute("disabled"), outer: e.outerHTML.slice(0, 140) })),
-            submit: document.querySelector("#envoyer-reponse") ? { disabled: document.querySelector("#envoyer-reponse").disabled } : null,
-            pause: { pressed: document.querySelector("#jeu-pause-toggle")?.getAttribute("aria-pressed"), noticeHidden: document.querySelector("#jeu-pause-notice")?.hidden },
-            loadedScript: Array.from(document.scripts).map((e) => e.src).filter(Boolean)
-          }))));
-          assert.equal(await page.locator("#form-reponse-jeu fieldset").isDisabled(), true);
+          assert.equal(await page.locator("#form-reponse-jeu fieldset").evaluate((element) => element.disabled), true);
           assert.equal(await page.locator("#envoyer-reponse").isDisabled(), true);
           await pause.click();
           assert.equal(await pause.getAttribute("aria-pressed"), "false");
           assert.equal(await page.locator("#jeu-pause-notice").isHidden(), true);
-          assert.equal(await page.locator("#form-reponse-jeu fieldset").isDisabled(), false);
+          assert.equal(await page.locator("#form-reponse-jeu fieldset").evaluate((element) => element.disabled), false);
         }
         if (type === "result") {
           assert.equal(await page.locator(".jeu-result-reward[role=status]").count(), 1);
@@ -332,16 +323,16 @@ try {
   assert.ok(pauseAt > 0, "L'heure de pause doit être conservée.");
   await page.reload({ waitUntil: "load" });
   assert.equal(await page.locator("#jeu-pause-toggle").getAttribute("aria-pressed"), "true");
-  assert.equal(await page.locator("#form-reponse-jeu fieldset").isDisabled(), true);
+  assert.equal(await page.locator("#form-reponse-jeu fieldset").evaluate((element) => element.disabled), true);
   await page.evaluate(() => { window.__jeuTestNow += 12000; });
   await page.locator("#jeu-pause-toggle").click();
   const after = await page.evaluate((prefix) => Number(sessionStorage.getItem(prefix + "deadline")), key);
   assert.equal(after - before, 12000, "Le temps passé en pause ne doit pas consommer le chrono.");
   assert.equal(await page.locator("#jeu-chrono-valeur").innerText(), "02:30");
-  assert.equal(await page.locator("#form-reponse-jeu fieldset").isDisabled(), false);
+  assert.equal(await page.locator("#form-reponse-jeu fieldset").evaluate((element) => element.disabled), false);
   await page.evaluate(() => { window.__jeuTestNow += 3000; });
   await page.waitForFunction(() => document.querySelector("#jeu-chrono-valeur").textContent === "02:27", null, { timeout: 2500 });
-  const activeBeforeExpiry = await page.locator("#form-reponse-jeu fieldset").isDisabled();
+  const activeBeforeExpiry = await page.locator("#form-reponse-jeu fieldset").evaluate((element) => element.disabled);
   assert.equal(activeBeforeExpiry, false, "Les réponses doivent rester possibles avec le chrono arrivé à son terme.");
   await page.evaluate(() => {
     const root = document.querySelector(".jeu-session-page");
@@ -350,7 +341,7 @@ try {
   });
   await page.waitForFunction(() => document.querySelector("#jeu-chrono-valeur").textContent === "00:00", null, { timeout: 2500 });
   assert.match(await page.locator("#jeu-chrono-message").innerText(), /Temps cible écoulé/);
-  assert.equal(await page.locator("#form-reponse-jeu fieldset").isDisabled(), false);
+  assert.equal(await page.locator("#form-reponse-jeu fieldset").evaluate((element) => element.disabled), false);
 
   // Contrôles de rendu réellement produits dans Chromium avec les bibliothèques
   // locales verrouillées et vérifiées par scripts/vendor_frontend_dependencies.py.
