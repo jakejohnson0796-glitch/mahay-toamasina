@@ -63,6 +63,8 @@ L'expérience comprend des illustrations locales, des animations, une progressio
 
 Le résultat décrit la performance de la session et suggère des compétences à renforcer ; il ne prétend pas mesurer l'intelligence générale ni établir de diagnostic.
 
+Le tableau de progression agrège jusqu'aux 20 dernières sessions terminées dans la même langue. Il distingue les notions à renforcer, celles souvent réussies et celles qui demandent encore des observations. Une notion n'est signalée comme à renforcer qu'après plusieurs réponses observées ; un seul essai reste un indice provisoire. Lorsqu'une difficulté répétée correspond au thème choisi, le profil fourni à l'IA peut l'aider à préparer quelques questions ciblées sans imposer de notion hors sujet.
+
 ### Collaboration
 
 Les fonctionnalités collaboratives comprennent :
@@ -379,7 +381,7 @@ python scripts/verify_deployment_contract.py
 pytest -q
 ~~~
 
-Pour une vérification proche de la CI, exécutez aussi les tests PostgreSQL avec une base de test dédiée. Le smoke test Playwright `scripts/smoke_jeu_cerebral.mjs` vérifie l'accueil, la session, le bilan, les préférences de mouvement, le chrono et la pause sur plusieurs largeurs, ainsi qu'un corpus représentatif de rendu scientifique. Ce test complète — sans remplacer — les tests applicatifs et la vérification visuelle réelle.
+Pour une vérification proche de la CI, exécutez aussi les tests PostgreSQL avec une base de test dédiée. Le smoke test Playwright `scripts/smoke_jeu_cerebral.mjs` vérifie l'accueil, la session, le bilan, les panneaux de progression, les préférences de mouvement, le chrono et la pause sur plusieurs largeurs, ainsi qu'un corpus représentatif de rendu scientifique. Les tests applicatifs couvrent aussi l'agrégation par notion, les sessions inachevées et le filtrage par langue. Ce test complète — sans remplacer — les tests applicatifs et la vérification visuelle réelle.
 
 ---
 
