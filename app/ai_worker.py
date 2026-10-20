@@ -18,7 +18,7 @@ from sqlmodel import Session
 
 from .database import engine
 from .models import SessionTuteur
-from . import ai_queue, ai_quiz, quiz, document_summary
+from . import ai_queue, ai_quiz, quiz, document_summary, course_revision
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,14 @@ def traiter_tache(tache) -> None:
         if not tache.document_id:
             raise RuntimeError("Tâche de fiche pédagogique sans document_id.")
         document_summary.generer_et_sauvegarder_fiche_document(tache.document_id)
+        return
+
+    if tache.type_tache == ai_queue.TYPE_FICHE_REVISION_COURS:
+        if not tache.fiche_revision_cours_id:
+            raise RuntimeError("Tâche de fiche de révision sans fiche_revision_cours_id.")
+        course_revision.generer_et_sauvegarder_fiche_revision_cours(
+            tache.fiche_revision_cours_id
+        )
         return
 
     if tache.type_tache == ai_queue.TYPE_VERIFICATION_QUIZ:
