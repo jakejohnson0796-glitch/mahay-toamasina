@@ -40,6 +40,7 @@ from .models import (
     Document,
     EvenementTableauBlanc,
     FicheRevisionCours,
+    Filiere,
     InscriptionCours,
     Notification,
     ProgressionNotion,
@@ -256,6 +257,19 @@ def _cle(valeur: str | None) -> str:
     )
 
 
+def _niveau_cle(valeur: str | None) -> str:
+    cle = _cle(valeur)
+    alias = {
+        "licence 1": "l1", "premiere annee": "l1", "1ere annee": "l1", "1ere annee de licence": "l1",
+        "licence 2": "l2", "deuxieme annee": "l2", "2eme annee": "l2",
+        "licence 3": "l3", "troisieme annee": "l3", "3eme annee": "l3",
+        "master 1": "m1", "master premiere annee": "m1",
+        "master 2": "m2", "master deuxieme annee": "m2",
+        "premiere annee de master": "m1", "deuxieme annee de master": "m2",
+    }
+    return alias.get(cle, cle)
+
+
 def _extraire_texte_objet(donnees: Any) -> str:
     """Extrait seulement les chaînes textuelles explicites d'un élément du tableau."""
     if isinstance(donnees, str):
@@ -321,17 +335,19 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
     ]
 
     documents_approuves = session.exec(
-        select(Document)
+        select(Document, Filiere)
+        .join(Filiere, Document.filiere_id == Filiere.id)
         .where(
             Document.statut == StatutDocument.APPROUVE,
             Document.cercle_id.is_(None),
         )
         .order_by(Document.date_upload.desc())
-        .limit(40)
+        .limit(120)
     ).all()
     matiere_cle = _cle(cours.matiere)
-    supports = []
-    for document in documents_approuves:
+    niveau_cours = _niveau_cle(cours.niveau)
+    supports_candidats = []
+    for document, filiere in documents_approuves:
         doc_matiere = _cle(document.matiere)
         correspond = bool(
             matiere_cle
@@ -340,16 +356,29 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
         )
         if not correspond:
             continue
-        resume = _normaliser_texte(document.resume_ia, 1200)
+        niveau_document = _niveau_cle(filiere.niveau)
+        # Un support de L3 ne doit pas passer pour une ressource de L1.
+        # Les anciennes filières sans niveau restent admissibles, mais viennent
+        # après les supports explicitement alignés sur le niveau du cours.
+        if niveau_cours and niveau_document and niveau_cours != niveau_document:
+            continue
+        resume = _normaliser_texte(document.resume_ia, 850)
         if not resume:
             continue
-        supports.append({
-            "titre": _normaliser_texte(document.titre, 160),
-            "type": document.type_document.value if hasattr(document.type_document, "value") else str(document.type_document),
-            "resume": resume,
-        })
-        if len(supports) >= 3:
-            break
+        supports_candidats.append((
+            0 if niveau_cours and niveau_document == niveau_cours else 1,
+            document.date_upload,
+            {
+                "titre": _normaliser_texte(document.titre, 120),
+                "niveau_source": _normaliser_texte(filiere.niveau, 60) or "Niveau non précisé",
+                "type": document.type_document.value if hasattr(document.type_document, "value") else str(document.type_document),
+                "resume": resume,
+            },
+        ))
+    supports_candidats.sort(key=lambda ligne: (ligne[0], ligne[1]), reverse=False)
+    # Tri avec les correspondances de niveau d'abord, puis les plus récents.
+    supports_candidats.sort(key=lambda ligne: (ligne[0], -ligne[1].timestamp()))
+    supports = [ligne[2] for ligne in supports_candidats[:2]]
 
     progressions = session.exec(
         select(ProgressionNotion)
@@ -448,6 +477,60 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
     return contexte, resume_sources
 
 
+def _borner_contexte(contexte: dict, limite: int = MAX_SOURCE_CHARS) -> dict:
+    """Garde les signaux de personnalisation mais limite les tokens IA."""
+    donnees = json.loads(json.dumps(contexte, ensure_ascii=False))
+
+    def taille() -> int:
+        return len(json.dumps(donnees, ensure_ascii=False, separators=(",", ":")))
+
+    # Les éléments de la liste sont ordonnés du plus ancien au plus récent.
+    # Retirer en priorité les notes supplémentaires et documents secondaires,
+    # avant de sacrifier les signaux de difficultés de l'étudiant.
+    listes = [
+        ("seance", "notes_tableau_blanc"),
+        (None, "consignes_devoirs"),
+        (None, "supports_academiques_approuves"),
+        ("profil_individuel", "resultats_quiz_recents"),
+        ("profil_individuel", "notions_a_retravailler"),
+    ]
+    for parent, cle in listes:
+        liste = donnees.get(parent, {}).get(cle, []) if parent else donnees.get(cle, [])
+        while len(liste) > 1 and taille() > limite:
+            liste.pop(0)
+
+    champs_texte = [
+        ("cours", "description", 350),
+        ("seance", "description", 500),
+        (None, "limites_sources", 350),
+    ]
+    for parent, cle, max_chars in champs_texte:
+        conteneur = donnees.get(parent, {}) if parent else donnees
+        valeur = str(conteneur.get(cle) or "")
+        if len(valeur) > max_chars:
+            conteneur[cle] = valeur[:max_chars] + "…"
+    if taille() > limite:
+        # Coupe progressivement les longues notes/supports tout en conservant
+        # au moins un exemple de chaque famille si possible.
+        for parent, cle, champ, max_chars in [
+            ("seance", "notes_tableau_blanc", None, 420),
+            (None, "supports_academiques_approuves", "resume", 420),
+            (None, "consignes_devoirs", "consigne", 240),
+            ("profil_individuel", "notions_a_retravailler", "notion", 90),
+        ]:
+            liste = donnees.get(parent, {}).get(cle, []) if parent else donnees.get(cle, [])
+            for item in liste:
+                if taille() <= limite:
+                    break
+                if isinstance(item, dict) and champ:
+                    item[champ] = str(item.get(champ) or "")[:max_chars]
+                elif isinstance(item, str):
+                    liste[liste.index(item)] = item[:max_chars]
+    if taille() > limite:
+        raise ValueError("Le contexte de révision dépasse la limite sûre de génération.")
+    return donnees
+
+
 def _texte_ia_non_fiable(contexte: dict) -> str:
     return (
         "Tu es un assistant pédagogique pour MITARIDALA à Madagascar. Génère une fiche de "
@@ -532,6 +615,7 @@ def normaliser_fiche_revision(contenu: Any) -> dict:
 
 
 def _generer_contenu_ia(contexte: dict) -> dict:
+    contexte = _borner_contexte(contexte)
     if not parametres.groq_api_key:
         raise RuntimeError("La génération IA est indisponible : GROQ_API_KEY n'est pas configurée.")
     client = Groq(api_key=parametres.groq_api_key)
