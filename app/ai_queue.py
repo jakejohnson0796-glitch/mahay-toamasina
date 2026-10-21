@@ -789,6 +789,12 @@ def reparer_taches_en_cours_orphelines(
                     fiche_revision.statut = StatutFicheRevisionCours.EN_ATTENTE
                     fiche_revision.date_modification = maintenant
                     session.add(fiche_revision)
+            if tache.type_tache == TYPE_FICHE_REVISION_DOCUMENT and tache.fiche_revision_document_id:
+                fiche_document = session.get(FicheRevisionDocument, tache.fiche_revision_document_id)
+                if fiche_document and fiche_document.statut == StatutFicheRevisionDocument.EN_COURS:
+                    fiche_document.statut = StatutFicheRevisionDocument.EN_ATTENTE
+                    fiche_document.date_modification = maintenant
+                    session.add(fiche_document)
             session.add(tache)
             ids.append(tache.id)
         session.commit()
