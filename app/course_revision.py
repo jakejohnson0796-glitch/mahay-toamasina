@@ -147,6 +147,8 @@ _SCHEMA_FICHE = {
 def _normaliser_notation_math(valeur: str) -> str:
     """Convertit les commandes LaTeX usuelles en notation texte lisible PDF/Word."""
     texte = str(valeur or "")
+    # Le radical unicode est converti avant de supprimer les symboles non supportés.
+    texte = re.sub(r"√\\s*([A-Za-z0-9]+)", r"sqrt(\\1)", texte)
     # Les expressions simples sont converties avant de retirer les commandes.
     for _ in range(4):
         nouveau = re.sub(r"\\frac\{([^{}]+)\}\{([^{}]+)\}", r"(\1)/(\2)", texte)
