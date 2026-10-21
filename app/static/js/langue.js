@@ -146,6 +146,7 @@
     "Apprendre": "Hianatra",
     "Documents": "Tahirin-kevitra",
     "Ta fiche personnalisée est prête": "Efa vonona ny kahie famerenanao lesona manokana",
+    "Ta fiche de révision personnalisée est prête à télécharger. Ouvre ton cours pour récupérer le PDF ou la version Word.": "Efa vonona ny kahie famerenanao lesona. Sokafy ny lesonao mba hisintonana ny PDF na ny Word.",
     "La génération a échoué. Tu peux réessayer.": "Tsy nahomby ny famoronana. Afaka manandrana indray ianao.",
     "Préparation de ta fiche personnelle en cours…": "Eo am-panomanana ny kahie famerenanao lesona manokana…",
     "Ta fiche de révision est dans la file d'attente…": "Miandry ny famoronana ny kahie famerenanao lesona…",
