@@ -16,7 +16,10 @@ from sqlalchemy import or_
 
 from .config import parametres
 from .database import engine
-from .models import Document, SessionTuteur, StatutTacheIA, TacheIA, TentativeQuiz
+from .models import (
+    Cours, Document, FicheRevisionCours, InscriptionCours, Seance, SessionTuteur,
+    StatutFicheRevisionCours, StatutSeance, StatutTacheIA, TacheIA, TentativeQuiz,
+)
 from . import ai_memory, ai_risk
 
 logger = logging.getLogger(__name__)
@@ -24,6 +27,7 @@ logger = logging.getLogger(__name__)
 TYPE_VERIFICATION_QUIZ = "verification_quiz"
 TYPE_VERIFICATION_TUTEUR = "verification_tuteur"
 TYPE_RESUME_DOCUMENT = "resume_document"
+TYPE_FICHE_REVISION_COURS = "fiche_revision_cours"
 DELAIS_REESSAI = (5, 15, 30, 60)
 MAX_ESSAIS = 5
 
@@ -380,6 +384,169 @@ def planifier_verification_quiz(tentative_id: int) -> Optional[int]:
 
 
 
+
+def _assurer_tache_fiche_revision(
+    session: Session,
+    fiche: FicheRevisionCours,
+    forcer: bool = False,
+) -> tuple[Optional[int], bool]:
+    """Garantit une tâche durable sans doubler les traitements actifs."""
+    if fiche.statut == StatutFicheRevisionCours.TERMINEE and fiche.contenu_json != "{}":
+        return None, False
+    if fiche.statut == StatutFicheRevisionCours.ECHOUEE and not forcer:
+        return None, False
+
+    maintenant = datetime.utcnow()
+    tache = session.exec(
+        select(TacheIA)
+        .where(
+            TacheIA.type_tache == TYPE_FICHE_REVISION_COURS,
+            TacheIA.fiche_revision_cours_id == fiche.id,
+        )
+        .limit(1)
+    ).first()
+
+    if tache and tache.statut == StatutTacheIA.EN_COURS and not forcer:
+        return tache.id, False
+
+    if tache and tache.statut == StatutTacheIA.EN_ATTENTE and not forcer:
+        tache.disponible_le = min(tache.disponible_le or maintenant, maintenant)
+        tache.derniere_erreur = None
+        session.add(tache)
+        fiche.statut = StatutFicheRevisionCours.EN_ATTENTE
+        fiche.erreur_generation = None
+        fiche.date_modification = maintenant
+        session.add(fiche)
+        return tache.id, True
+
+    if tache:
+        # Une nouvelle tentative est explicite après un échec. Une tâche déjà
+        # terminée mais sans fiche enregistrée est réparée automatiquement.
+        tache.statut = StatutTacheIA.EN_ATTENTE
+        tache.nombre_essais = 0
+        tache.disponible_le = maintenant
+        tache.prise_en_charge_le = None
+        tache.terminee_le = None
+        tache.derniere_erreur = None
+    else:
+        tache = TacheIA(
+            type_tache=TYPE_FICHE_REVISION_COURS,
+            tentative_quiz_id=None,
+            session_tuteur_id=None,
+            document_id=None,
+            fiche_revision_cours_id=fiche.id,
+            statut=StatutTacheIA.EN_ATTENTE,
+            strategie_verification="fiche_revision_personnalisee",
+            score_risque=0,
+            nombre_essais=0,
+            disponible_le=maintenant,
+            date_creation=maintenant,
+        )
+    fiche.statut = StatutFicheRevisionCours.EN_ATTENTE
+    fiche.erreur_generation = None
+    fiche.date_modification = maintenant
+    session.add(fiche)
+    session.add(tache)
+    session.flush()
+    return tache.id, True
+
+
+def planifier_fiche_revision_cours(
+    seance_id: int,
+    utilisateur_id: int,
+    forcer: bool = False,
+) -> Optional[int]:
+    """Crée/relance la fiche d'un étudiant inscrit à une séance terminée."""
+    id_tache = None
+    fiche_id = None
+    notifier = False
+    try:
+        with Session(engine) as session:
+            seance = session.get(Seance, seance_id)
+            if not seance or seance.statut != StatutSeance.TERMINEE:
+                return None
+            inscription = session.exec(
+                select(InscriptionCours).where(
+                    InscriptionCours.cours_id == seance.cours_id,
+                    InscriptionCours.utilisateur_id == utilisateur_id,
+                )
+            ).first()
+            if not inscription:
+                return None
+
+            fiche = session.exec(
+                select(FicheRevisionCours).where(
+                    FicheRevisionCours.seance_id == seance_id,
+                    FicheRevisionCours.utilisateur_id == utilisateur_id,
+                )
+            ).first()
+            creee = fiche is None
+            if fiche is None:
+                fiche = FicheRevisionCours(
+                    cours_id=seance.cours_id,
+                    seance_id=seance_id,
+                    utilisateur_id=utilisateur_id,
+                    statut=StatutFicheRevisionCours.EN_ATTENTE,
+                )
+                session.add(fiche)
+                session.flush()
+            fiche_id = fiche.id
+            if fiche.statut == StatutFicheRevisionCours.ECHOUEE and not forcer:
+                session.commit()
+                return fiche_id
+            id_tache, notifier = _assurer_tache_fiche_revision(session, fiche, forcer=forcer)
+            session.commit()
+            if creee and id_tache is not None:
+                logger.info(
+                    "Fiche de révision planifiée: cours=%s séance=%s étudiant=%s fiche=%s tâche=%s.",
+                    seance.cours_id, seance_id, utilisateur_id, fiche_id, id_tache,
+                )
+        if id_tache is not None and notifier:
+            notifier_tache(id_tache)
+        return fiche_id
+    except Exception as erreur:
+        logger.exception(
+            "Impossible de planifier la fiche de révision séance=%s étudiant=%s (%s).",
+            seance_id, utilisateur_id, type(erreur).__name__,
+        )
+        return fiche_id
+
+
+def planifier_fiches_revision_cours(
+    cours_id: int,
+    utilisateur_id: Optional[int] = None,
+    seance_id: Optional[int] = None,
+) -> int:
+    """Planifie les fiches manquantes de toutes les séances terminées d'un cours.
+
+    En fin de séance, tous les inscrits sont ciblés. À l'inscription tardive
+    ou au retour d'un étudiant, seul son historique manquant est complété.
+    """
+    with Session(engine) as session:
+        requete = select(Seance).where(
+            Seance.cours_id == cours_id,
+            Seance.statut == StatutSeance.TERMINEE,
+        )
+        if seance_id is not None:
+            requete = requete.where(Seance.id == seance_id)
+        seances = session.exec(requete.order_by(Seance.date_creation)).all()
+        if not seances:
+            return 0
+        if utilisateur_id is not None:
+            ids_etudiants = [int(utilisateur_id)]
+        else:
+            ids_etudiants = session.exec(
+                select(InscriptionCours.utilisateur_id)
+                .where(InscriptionCours.cours_id == cours_id)
+            ).all()
+    total = 0
+    for seance in seances:
+        for etudiant_id in ids_etudiants:
+            if planifier_fiche_revision_cours(seance.id, int(etudiant_id)) is not None:
+                total += 1
+    return total
+
+
 def planifier_verification_tuteur(session_tuteur_id: int) -> Optional[int]:
     """Ajoute une verification Tuteur durable et idempotente a la file."""
     maintenant = datetime.utcnow()
@@ -484,6 +651,12 @@ def reparer_taches_en_cours_orphelines(
             tache.derniere_erreur = (
                 "Reprise automatique après expiration du lease worker."
             )
+            if tache.type_tache == TYPE_FICHE_REVISION_COURS and tache.fiche_revision_cours_id:
+                fiche_revision = session.get(FicheRevisionCours, tache.fiche_revision_cours_id)
+                if fiche_revision and fiche_revision.statut == StatutFicheRevisionCours.EN_COURS:
+                    fiche_revision.statut = StatutFicheRevisionCours.EN_ATTENTE
+                    fiche_revision.date_modification = maintenant
+                    session.add(fiche_revision)
             session.add(tache)
             ids.append(tache.id)
         session.commit()
@@ -584,6 +757,13 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
                     if document.resume_statut_ia_mg not in {"generee", "indisponible"}:
                         document.resume_statut_ia_mg = "indisponible"
                     session.add(document)
+            if tache.type_tache == TYPE_FICHE_REVISION_COURS and tache.fiche_revision_cours_id:
+                fiche_revision = session.get(FicheRevisionCours, tache.fiche_revision_cours_id)
+                if fiche_revision:
+                    fiche_revision.statut = StatutFicheRevisionCours.ECHOUEE
+                    fiche_revision.erreur_generation = tache.derniere_erreur[:500]
+                    fiche_revision.date_modification = datetime.utcnow()
+                    session.add(fiche_revision)
             logger.error(
                 "Tache IA %s abandonnee apres %s essais: %s",
                 tache_id,
@@ -596,6 +776,13 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
             tache.disponible_le = datetime.utcnow() + timedelta(
                 seconds=DELAIS_REESSAI[index_delai]
             )
+            if tache.type_tache == TYPE_FICHE_REVISION_COURS and tache.fiche_revision_cours_id:
+                fiche_revision = session.get(FicheRevisionCours, tache.fiche_revision_cours_id)
+                if fiche_revision:
+                    fiche_revision.statut = StatutFicheRevisionCours.EN_ATTENTE
+                    fiche_revision.erreur_generation = None
+                    fiche_revision.date_modification = datetime.utcnow()
+                    session.add(fiche_revision)
             logger.warning(
                 "Tache IA %s replanifiee dans %ss apres echec (%s/%s).",
                 tache_id,

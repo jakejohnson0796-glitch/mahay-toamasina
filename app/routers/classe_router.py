@@ -19,13 +19,13 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect, UploadFile, File
-from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
+from fastapi.responses import RedirectResponse, FileResponse, JSONResponse, Response
 from sqlmodel import Session, select
 
 from ..database import get_session, engine
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion
+from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
@@ -34,6 +34,7 @@ from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_
 from ..rate_limit import limite_depassee
 from .. import gamification
 from .. import quiz as quiz_module
+from .. import ai_queue, course_revision
 
 router = APIRouter()
 
@@ -190,10 +191,48 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
     if not peut_gerer and not inscrit:
         return RedirectResponse("/classe", status_code=303)
 
+    # Les fiches privées manquantes sont planifiées après une clôture de
+    # lecture, jamais générées dans la requête HTTP. Cela rattrape aussi les
+    # séances déjà terminées avant l'arrivée d'un nouvel étudiant.
+    if not peut_gerer:
+        session.commit()
+        fiches_existantes = session.exec(
+            select(FicheRevisionCours).where(
+                FicheRevisionCours.cours_id == cours_id,
+                FicheRevisionCours.utilisateur_id == utilisateur.id,
+            )
+        ).all()
+        sessions_avec_fiche = {fiche.seance_id for fiche in fiches_existantes}
+        sessions_terminees = session.exec(
+            select(Seance).where(
+                Seance.cours_id == cours_id,
+                Seance.statut == StatutSeance.TERMINEE,
+            )
+        ).all()
+        for seance_terminee in sessions_terminees:
+            if seance_terminee.id not in sessions_avec_fiche:
+                ai_queue.planifier_fiche_revision_cours(
+                    seance_terminee.id,
+                    utilisateur.id,
+                )
+        session.expire_all()
+
     professeur = session.get(Utilisateur, cours.professeur_id)
     seances = session.exec(
         select(Seance).where(Seance.cours_id == cours_id).order_by(Seance.date_creation)
     ).all()
+
+    fiches_revision_par_seance = {}
+    if not peut_gerer:
+        fiches_revision = session.exec(
+            select(FicheRevisionCours).where(
+                FicheRevisionCours.cours_id == cours_id,
+                FicheRevisionCours.utilisateur_id == utilisateur.id,
+            )
+        ).all()
+        fiches_revision_par_seance = {
+            fiche.seance_id: fiche for fiche in fiches_revision
+        }
     nb_etudiants = len(session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all())
     devoirs = session.exec(
         select(Devoir).where(Devoir.cours_id == cours_id).order_by(Devoir.date_creation.desc())
@@ -221,6 +260,7 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
             "peut_gerer": peut_gerer,
             "devoirs": devoirs,
             "mes_rendus_ids": mes_rendus_ids,
+            "fiches_revision_par_seance": fiches_revision_par_seance,
         },
     )
 
@@ -500,6 +540,10 @@ def ajouter_etudiant(
     if not _est_inscrit(session, cours_id, cible.id):
         session.add(InscriptionCours(cours_id=cours_id, utilisateur_id=cible.id))
         session.commit()
+        ai_queue.planifier_fiches_revision_cours(
+            cours_id,
+            utilisateur_id=cible.id,
+        )
 
     return RedirectResponse(f"/classe/{cours_id}/etudiants?ajoute=1", status_code=303)
 
@@ -604,8 +648,168 @@ def terminer_seance(request: Request, seance_id: int, session: Session = Depends
             session.add(p)
 
         session.commit()
+        ai_queue.planifier_fiches_revision_cours(
+            cours.id,
+            seance_id=seance_id,
+        )
 
     return RedirectResponse(f"/classe/{cours.id}", status_code=303)
+
+
+@router.get("/classe/revisions/{fiche_id}")
+def consulter_fiche_revision_cours(
+    request: Request,
+    fiche_id: int,
+    session: Session = Depends(get_session),
+):
+    """Lit la fiche dans le navigateur ; les fiches de progression restent privées."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    fiche = session.get(FicheRevisionCours, fiche_id)
+    if (
+        not fiche
+        or fiche.utilisateur_id != utilisateur.id
+        or not _est_inscrit(session, fiche.cours_id, utilisateur.id)
+    ):
+        return RedirectResponse("/classe", status_code=303)
+
+    if fiche.statut != StatutFicheRevisionCours.TERMINEE or not fiche.contenu_json:
+        return RedirectResponse(
+            f"/classe/{fiche.cours_id}?fiche=en_cours#seances",
+            status_code=303,
+        )
+
+    cours = session.get(Cours, fiche.cours_id)
+    seance = session.get(Seance, fiche.seance_id)
+    if not cours or not seance:
+        return RedirectResponse("/classe", status_code=303)
+
+    try:
+        contenu = course_revision.normaliser_fiche_revision(
+            json.loads(fiche.contenu_json)
+        )
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return RedirectResponse(
+            f"/classe/{cours.id}?fiche=indisponible#seances",
+            status_code=303,
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "classe_revision.html",
+        {
+            "utilisateur": utilisateur,
+            "cours": cours,
+            "seance": seance,
+            "fiche_revision": fiche,
+            "fiche_contenu": contenu,
+        },
+    )
+
+
+@router.get("/classe/revisions/{fiche_id}/telecharger/{format_fichier}")
+def telecharger_fiche_revision_cours(
+    request: Request,
+    fiche_id: int,
+    format_fichier: str,
+    session: Session = Depends(get_session),
+):
+    """Télécharge la fiche personnelle de l'étudiant propriétaire."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    if format_fichier not in {"pdf", "docx"}:
+        return RedirectResponse("/classe", status_code=303)
+
+    fiche = session.get(FicheRevisionCours, fiche_id)
+    if (
+        not fiche
+        or fiche.utilisateur_id != utilisateur.id
+        or not _est_inscrit(session, fiche.cours_id, utilisateur.id)
+    ):
+        # Réponse uniforme : ne révèle pas si une fiche privée existe.
+        return RedirectResponse("/classe", status_code=303)
+
+    if fiche.statut != StatutFicheRevisionCours.TERMINEE or not fiche.contenu_json:
+        return RedirectResponse(
+            f"/classe/{fiche.cours_id}?fiche=en_cours#seances",
+            status_code=303,
+        )
+
+    cours = session.get(Cours, fiche.cours_id)
+    seance = session.get(Seance, fiche.seance_id)
+    if not cours or not seance:
+        return RedirectResponse("/classe", status_code=303)
+
+    try:
+        contenu = json.loads(fiche.contenu_json)
+        contenu = course_revision.normaliser_fiche_revision(contenu)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return RedirectResponse(
+            f"/classe/{cours.id}?fiche=indisponible#seances",
+            status_code=303,
+        )
+
+    if format_fichier == "pdf":
+        octets = course_revision.generer_pdf(
+            contenu, cours, seance, utilisateur.nom
+        )
+        media_type = "application/pdf"
+        extension = "pdf"
+    else:
+        octets = course_revision.generer_docx(
+            contenu, cours, seance, utilisateur.nom
+        )
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        extension = "docx"
+
+    nom_fichier = f"mitaridala-revision-cours-{cours.id}-seance-{seance.id}.{extension}"
+    return Response(
+        content=octets,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{nom_fichier}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.post("/classe/revisions/{fiche_id}/relancer")
+def relancer_fiche_revision_cours(
+    request: Request,
+    fiche_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Autorise uniquement l'étudiant concerné à relancer sa fiche en échec."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    fiche = session.get(FicheRevisionCours, fiche_id)
+    if (
+        not fiche
+        or fiche.utilisateur_id != utilisateur.id
+        or not _est_inscrit(session, fiche.cours_id, utilisateur.id)
+    ):
+        return RedirectResponse("/classe", status_code=303)
+
+    if fiche.statut != StatutFicheRevisionCours.ECHOUEE:
+        return RedirectResponse(f"/classe/{fiche.cours_id}#seances", status_code=303)
+
+    ai_queue.planifier_fiche_revision_cours(
+        fiche.seance_id,
+        utilisateur.id,
+        forcer=True,
+    )
+    return RedirectResponse(
+        f"/classe/{fiche.cours_id}?fiche=relancee#seances",
+        status_code=303,
+    )
 
 
 @router.post("/classe/seances/{seance_id}/rejoindre")

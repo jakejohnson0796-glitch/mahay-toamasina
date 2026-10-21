@@ -1002,6 +1002,7 @@ class TypeNotification(str, Enum):
     DOCUMENT_APPROUVE = "document_approuve"
     DOCUMENT_REJETE = "document_rejete"
     DOCUMENT_SUPPRIME = "document_supprime"
+    FICHE_REVISION_PRETE = "fiche_revision_prete"
 
 
 class Notification(SQLModel, table=True):
@@ -1239,6 +1240,51 @@ class RenduDevoir(SQLModel, table=True):
 # et app/routers/feedback_router.py
 # ============================================================
 
+class StatutFicheRevisionCours(str, Enum):
+    """Cycle de vie d'une fiche de révision personnalisée, créée après une séance."""
+    EN_ATTENTE = "en_attente"
+    EN_COURS = "en_cours"
+    TERMINEE = "terminee"
+    ECHOUEE = "echouee"
+
+
+class FicheRevisionCours(SQLModel, table=True):
+    """Fiche privée générée par IA pour un étudiant et une séance précise.
+
+    Le contenu est conservé en JSON pour permettre les téléchargements PDF
+    et DOCX sans relancer l'IA à chaque demande. Une fiche ne devient jamais
+    visible par un autre étudiant du même cours.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    cours_id: int = Field(foreign_key="cours.id", index=True)
+    seance_id: int = Field(foreign_key="seance.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    statut: StatutFicheRevisionCours = Field(
+        default=StatutFicheRevisionCours.EN_ATTENTE,
+        index=True,
+    )
+    contenu_json: str = Field(default="{}")
+    sources_json: str = Field(default="{}")
+    erreur_generation: Optional[str] = None
+    version_generation: str = Field(default="v1", max_length=24)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+    date_generation: Optional[datetime] = None
+
+    __table_args__ = (
+        UniqueConstraint(
+            "seance_id",
+            "utilisateur_id",
+            name="uq_ficherevision_seance_utilisateur",
+        ),
+        Index(
+            "ix_ficherevision_cours_utilisateur",
+            "cours_id",
+            "utilisateur_id",
+        ),
+    )
+
+
 class CategorieFAQ(str, Enum):
     """Categories fixes pour la V1 (pas de table dediee : le brief
     n'exige pas de gestion dynamique des categories, et une table
@@ -1382,6 +1428,11 @@ class TacheIA(SQLModel, table=True):
         foreign_key="document.id",
         index=True,
     )
+    fiche_revision_cours_id: Optional[int] = Field(
+        default=None,
+        foreign_key="ficherevisioncours.id",
+        index=True,
+    )
     statut: StatutTacheIA = Field(default=StatutTacheIA.EN_ATTENTE, index=True)
     strategie_verification: str = Field(default="standard", index=True)
     score_risque: int = Field(default=0)
@@ -1407,6 +1458,12 @@ class TacheIA(SQLModel, table=True):
             "uq_tache_ia_type_document",
             "type_tache",
             "document_id",
+            unique=True,
+        ),
+        Index(
+            "uq_tache_ia_type_fiche_revision_cours",
+            "type_tache",
+            "fiche_revision_cours_id",
             unique=True,
         ),
         Index(
