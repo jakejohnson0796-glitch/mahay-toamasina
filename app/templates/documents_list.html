@@ -19,6 +19,20 @@
   .doc-depot-personnel{padding:.7rem 0;border-top:1px solid var(--content-border)}
   .doc-depot-personnel h4{margin:0;color:var(--content-text);font-size:.83rem}
   .doc-depot-personnel-meta{margin:.18rem 0 .45rem;color:var(--content-text-muted);font-size:.68rem}
+  .doc-revision-actions{display:grid;gap:.5rem;margin:.4rem 0 .65rem;padding:.72rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);min-width:0}
+  .doc-revision-entete{display:flex;align-items:center;gap:.55rem;min-width:0}
+  .doc-revision-icone{display:grid;place-items:center;flex:0 0 1.85rem;height:1.85rem;border-radius:9px;background:rgba(72,121,97,.15);color:var(--content-link);font-size:1rem}
+  .doc-revision-titre-wrap{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;min-width:0}
+  .doc-revision-titre{font-size:.76rem;color:var(--content-text);line-height:1.35}
+  .doc-revision-statut{display:inline-flex;padding:.12rem .38rem;border:1px solid var(--content-border);border-radius:999px;font-size:.6rem;color:var(--content-text-muted);line-height:1.45}
+  .doc-revision-statut-prete{border-color:rgba(72,121,97,.55);color:var(--content-link)}
+  .doc-revision-statut-erreur{border-color:rgba(184,84,58,.55);color:var(--primary)}
+  .doc-revision-description{margin:0;color:var(--content-text-muted);font-size:.7rem;line-height:1.5;overflow-wrap:anywhere}
+  .doc-revision-consulter{display:flex;width:100%;min-height:2.35rem;justify-content:center;align-items:center;text-align:center;white-space:normal;font-size:.72rem;padding:.45rem .6rem}
+  .doc-revision-telechargements{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem}
+  .doc-revision-telecharger{display:flex;justify-content:center;align-items:center;min-width:0;min-height:2.2rem;padding:.35rem .45rem;font-size:.68rem;text-align:center;white-space:normal}
+  .doc-revision-lien{font-size:.72rem;line-height:1.45;color:var(--content-link);overflow-wrap:anywhere}
+  @media(max-width:560px){.doc-revision-actions{padding:.62rem}.doc-revision-telechargements{grid-template-columns:1fr}.doc-revision-telecharger{width:100%}}
   @media(max-width:560px){.doc-fiche{padding:.65rem}.doc-depots-personnels{padding:.8rem}}
 </style>
 <p class="eyebrow">{% if cercle %}Cercle {{ cercle.nom }}{% else %}Bibliotheque{% endif %}</p>
@@ -193,6 +207,39 @@ session dediee, avec sa propre verification desktop+mobile.
         {% else %}<p>Tsy mbola misy famintinana malagasy voamarina amin’ity tahirin-kevitra ity.</p>{% endif %}
       </div>
     </details>
+    {% if utilisateur and doc.type_document.value == "cours" %}
+    {% set fiche_revision = fiches_revision_documents.get(doc.id) %}
+    <section class="doc-revision-actions" aria-label="Fiche de révision du cours">
+      <div class="doc-revision-entete">
+        <span class="doc-revision-icone" aria-hidden="true">✦</span>
+        <div class="doc-revision-titre-wrap">
+          <strong class="doc-revision-titre">Fiche de révision IA</strong>
+          {% if fiche_revision and fiche_revision.statut.value == "terminee" and fiche_revision.contenu_json not in ["", "{}"] %}
+          <span class="doc-revision-statut doc-revision-statut-prete">Disponible</span>
+          {% elif fiche_revision and fiche_revision.statut.value == "echouee" %}
+          <span class="doc-revision-statut doc-revision-statut-erreur">À vérifier</span>
+          {% elif fiche_revision and fiche_revision.statut.value == "en_cours" %}
+          <span class="doc-revision-statut">En préparation</span>
+          {% else %}
+          <span class="doc-revision-statut">À préparer</span>
+          {% endif %}
+        </div>
+      </div>
+      {% if fiche_revision and fiche_revision.statut.value == "terminee" and fiche_revision.contenu_json not in ["", "{}"] %}
+      <a class="bouton bouton-primaire doc-revision-consulter" href="/documents/{{ doc.id }}/revision">Consulter la fiche de révision</a>
+      <div class="doc-revision-telechargements" aria-label="Télécharger la fiche de révision">
+        <a class="bouton bouton-secondaire doc-revision-telecharger" href="/documents/{{ doc.id }}/revision/telecharger/pdf">Télécharger PDF</a>
+        <a class="bouton bouton-secondaire doc-revision-telecharger" href="/documents/{{ doc.id }}/revision/telecharger/docx">Télécharger Word</a>
+      </div>
+      {% elif fiche_revision and fiche_revision.statut.value == "echouee" %}
+      <p class="doc-revision-description">La fiche n’a pas pu être créée à partir du texte extrait. Ouvre le parcours pour voir l’état et, si tu as déposé ce cours, relancer la génération.</p>
+      <a class="doc-revision-lien" href="/documents/{{ doc.id }}/apprendre#revision-automatique">Voir le statut de la fiche →</a>
+      {% else %}
+      <p class="doc-revision-description">Retrouve les notions essentielles du document, les exercices et les corrections dans un carnet téléchargeable.</p>
+      <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/revision">{% if fiche_revision and fiche_revision.statut.value == "en_cours" %}Voir la préparation{% elif fiche_revision %}Ouvrir la fiche de révision{% else %}Préparer / consulter la fiche{% endif %}</a>
+      {% endif %}
+    </section>
+    {% endif %}
     <div class="doc-actions">
       <a class="bouton bouton-secondaire doc-bouton" href="/documents/{{ doc.id }}/telecharger">Telecharger</a>
       {% if utilisateur %}
