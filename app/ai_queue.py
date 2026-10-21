@@ -294,7 +294,11 @@ def planifier_fiche_revision_document(
                 .where(FicheRevisionDocument.document_id == document_id)
                 .limit(1)
             ).first()
-            if fiche and fiche.statut == StatutFicheRevisionDocument.TERMINEE and fiche.contenu_json != "{}":
+            if (
+                fiche
+                and fiche.statut == StatutFicheRevisionDocument.TERMINEE
+                and fiche.contenu_json not in {"", "{}"}
+            ):
                 return None
             if fiche and fiche.statut == StatutFicheRevisionDocument.ECHOUEE and not forcer:
                 return None
@@ -397,7 +401,123 @@ def planifier_fiches_revision_documents_manquantes(max_documents: int = 3) -> in
             total += 1
     if total:
         logger.info("Fiches de révision document historiques planifiées: %s.", total)
-    return total
+
+    # Cette fonction est appelée périodiquement par le worker IA quand la file
+    # est calme : le rattrapage ne dépend donc pas d'une visite de la bibliothèque.
+    reparations = reparer_fiches_revision_documents_bloquees(max_documents=limite)
+    return total + reparations
+
+
+def reparer_fiches_revision_documents_bloquees(
+    max_documents: int = 5,
+    document_ids: Optional[list[int]] = None,
+) -> int:
+    """Répare les fiches en attente/en cours dont la tâche IA manque ou est terminale.
+
+    Les tâches encore en attente ou en cours ne sont pas renotifiées à chaque
+    affichage de la bibliothèque. Les fiches ayant réellement échoué restent
+    en échec et nécessitent la relance explicite réservée au déposant/admin.
+    """
+    limite = max(1, min(int(max_documents or 1), 10))
+    with Session(engine) as session:
+        requete = (
+            select(
+                FicheRevisionDocument.id,
+                FicheRevisionDocument.document_id,
+                FicheRevisionDocument.statut,
+                FicheRevisionDocument.contenu_json,
+                FicheRevisionDocument.date_modification,
+            )
+            .join(Document, Document.id == FicheRevisionDocument.document_id)
+            .outerjoin(
+                TacheIA,
+                (TacheIA.type_tache == TYPE_FICHE_REVISION_DOCUMENT)
+                & (TacheIA.fiche_revision_document_id == FicheRevisionDocument.id),
+            )
+            .where(
+                Document.statut == StatutDocument.APPROUVE,
+                Document.type_document == TypeDocument.COURS,
+                or_(
+                    (
+                        FicheRevisionDocument.statut.in_([
+                            StatutFicheRevisionDocument.EN_ATTENTE,
+                            StatutFicheRevisionDocument.EN_COURS,
+                        ])
+                        & or_(
+                            TacheIA.id.is_(None),
+                            TacheIA.statut.in_([
+                                StatutTacheIA.ECHOUEE,
+                                StatutTacheIA.TERMINEE,
+                            ]),
+                        )
+                    ),
+                    (
+                        (FicheRevisionDocument.statut == StatutFicheRevisionDocument.TERMINEE)
+                        & (FicheRevisionDocument.contenu_json.in_(["", "{}"]))
+                    ),
+                ),
+            )
+            .distinct()
+            .order_by(FicheRevisionDocument.date_modification, FicheRevisionDocument.id)
+            .limit(limite)
+        )
+        if document_ids is not None:
+            ids_cibles = [int(value) for value in document_ids if value is not None]
+            if not ids_cibles:
+                return 0
+            requete = requete.where(Document.id.in_(ids_cibles))
+        fiches = session.exec(requete).all()
+        if not fiches:
+            return 0
+
+        ids_fiches = [int(fiche_id) for fiche_id, _, _, _, _ in fiches]
+        taches = session.exec(
+            select(TacheIA)
+            .where(
+                TacheIA.type_tache == TYPE_FICHE_REVISION_DOCUMENT,
+                TacheIA.fiche_revision_document_id.in_(ids_fiches),
+            )
+            .order_by(TacheIA.id.desc())
+        ).all()
+
+    # S'il y avait des doublons historiques, on préfère toute tâche active à
+    # une ancienne tâche terminale afin de ne pas remettre un travail en double.
+    taches_par_fiche: dict[int, TacheIA] = {}
+    priorite = {
+        StatutTacheIA.EN_COURS: 3,
+        StatutTacheIA.EN_ATTENTE: 2,
+        StatutTacheIA.TERMINEE: 1,
+        StatutTacheIA.ECHOUEE: 0,
+    }
+    for tache in taches:
+        fiche_id = tache.fiche_revision_document_id
+        if fiche_id is None:
+            continue
+        precedente = taches_par_fiche.get(int(fiche_id))
+        if precedente is None or priorite.get(tache.statut, -1) > priorite.get(precedente.statut, -1):
+            taches_par_fiche[int(fiche_id)] = tache
+
+    reparations = 0
+    for fiche_id, document_id, fiche_statut, contenu_json, _date_modification in fiches:
+        tache = taches_par_fiche.get(int(fiche_id))
+        contenu_absent = str(contenu_json or "").strip() in {"", "{}"}
+        fiche_terminee_incomplete = (
+            fiche_statut == StatutFicheRevisionDocument.TERMINEE and contenu_absent
+        )
+        if (
+            fiche_terminee_incomplete
+            or tache is None
+            or tache.statut in {
+                StatutTacheIA.ECHOUEE,
+                StatutTacheIA.TERMINEE,
+            }
+        ):
+            if planifier_fiche_revision_document(int(document_id)) is not None:
+                reparations += 1
+
+    if reparations:
+        logger.info("Fiches de révision document réparées: %s.", reparations)
+    return reparations
 
 
 def planifier_resumes_documents_manquants(max_documents: int = 3) -> int:
