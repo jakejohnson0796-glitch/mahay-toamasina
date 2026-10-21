@@ -184,15 +184,24 @@ def test_planification_est_idempotente_et_reservee_aux_etudiants_inscrits(monkey
 
     assert ai_queue.planifier_fiche_revision_cours(seance_id, non_inscrit_id) is None
 
-def test_template_classe_detail_compile_avec_la_fiche_personnalisee():
+def test_templates_fiche_revision_compile_et_exposent_les_formats():
     templates_dir = Path(__file__).resolve().parents[1] / "app" / "templates"
-    source = (templates_dir / "classe_detail.html").read_text(encoding="utf-8")
-    template = Environment(loader=FileSystemLoader(str(templates_dir))).get_template("classe_detail.html")
+    environnement = Environment(loader=FileSystemLoader(str(templates_dir)))
+    source_cours = (templates_dir / "classe_detail.html").read_text(encoding="utf-8")
+    source_lecture = (templates_dir / "classe_revision.html").read_text(encoding="utf-8")
+    cours_template = environnement.get_template("classe_detail.html")
+    lecture_template = environnement.get_template("classe_revision.html")
 
-    assert template.name == "classe_detail.html"
-    assert "fiches_revision_par_seance" in source
-    assert "/telecharger/pdf" in source
-    assert "/telecharger/docx" in source
+    assert cours_template.name == "classe_detail.html"
+    assert lecture_template.name == "classe_revision.html"
+    assert "fiches_revision_par_seance" in source_cours
+    assert "Consulter la fiche" in source_cours
+    assert "/telecharger/pdf" in source_cours
+    assert "/telecharger/docx" in source_cours
+    assert "data-rendu" in source_lecture
+    assert "J’ai essayé" in source_lecture
+    assert "/telecharger/pdf" in source_lecture
+    assert "/telecharger/docx" in source_lecture
 
 def test_contexte_ia_est_borne_sans_effacer_la_personnalisation():
     contexte = {
