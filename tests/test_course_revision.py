@@ -65,7 +65,7 @@ def test_normalise_fiche_revision_personnalisee():
 
     notation = course_revision._normaliser_notation_math(r"\frac{1}{2} \times \sqrt{9} \leq \Delta")
     assert notation == "(1)/(2) * sqrt(9) <= Delta"
-    assert course_revision._texte_pdf_compatible("√9 ≤ 3; Δ ≠ 0; x²") == "sqrt9 <= 3; Delta != 0; x^2"
+    assert course_revision._texte_pdf_compatible("√9 ≤ 3; Δ ≠ 0; x²") == "sqrt(9) <= 3; Delta != 0; x^2"
 
 
 def test_refuse_fiche_revision_incomplete():
