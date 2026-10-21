@@ -1556,11 +1556,12 @@ def supprimer_document(
             session.delete(tache)
         session.commit()
 
-    fiche_revision_document = session.exec(
+    fiches_revision_document = session.exec(
         select(FicheRevisionDocument).where(
             FicheRevisionDocument.document_id == document_id
         )
-    ).first()
+    ).all()
+    fiche_revision_document = fiches_revision_document[0] if fiches_revision_document else None
     if fiche_revision_document:
         taches_revision_document = session.exec(
             select(TacheIA).where(
