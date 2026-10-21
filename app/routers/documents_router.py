@@ -3,6 +3,7 @@ Coeur de l'application : consulter, deposer, telecharger des documents,
 et les valider (moderation) avant qu'ils soient publics.
 """
 from pathlib import Path
+from types import SimpleNamespace
 from datetime import datetime
 import json
 from typing import Optional
@@ -800,6 +801,10 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             "document": document,
             "fiche_pedagogique": _charger_fiche_pedagogique(document),
             "fiche_revision_document": fiche_revision_document,
+            "peut_relancer_revision": (
+                utilisateur.role == RoleUtilisateur.ADMIN
+                or document.uploader_id == utilisateur.id
+            ),
             "fiche_validee": _fiche_pedagogique_est_validee(document),
             "fiche_validation_possible": _fiche_pedagogique_peut_etre_validee(document),
             "types_document": list(TypeDocument),
@@ -934,22 +939,27 @@ def telecharger_fiche_revision_document(
             status_code=303,
         )
 
+    filiere = session.get(Filiere, document.filiere_id)
+    cours_export = SimpleNamespace(
+        nom=document.titre,
+        matiere=document.matiere,
+        niveau=(filiere.niveau if filiere else "Niveau non précisé"),
+    )
+    date_reference = fiche.date_generation or fiche.date_creation
+    seance_export = SimpleNamespace(
+        titre=f"Fiche de révision du document {document.reference}",
+        date_fin_reelle=date_reference,
+        date_creation=fiche.date_creation,
+    )
     if format_fichier == "pdf":
         octets = course_revision.generer_pdf(
-            contenu,
-            # Adapter le document source aux métadonnées attendues du générateur.
-            course_revision.document_comme_cours(document),
-            course_revision.document_comme_seance(document, fiche),
-            utilisateur.nom,
+            contenu, cours_export, seance_export, utilisateur.nom
         )
         media_type = "application/pdf"
         extension = "pdf"
     else:
         octets = course_revision.generer_docx(
-            contenu,
-            course_revision.document_comme_cours(document),
-            course_revision.document_comme_seance(document, fiche),
-            utilisateur.nom,
+            contenu, cours_export, seance_export, utilisateur.nom
         )
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         extension = "docx"
