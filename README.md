@@ -32,6 +32,12 @@ Chaque carnet peut contenir un résumé, les objectifs, les notions et exemples 
 
 Depuis la liste des séances, l'étudiant peut télécharger sa fiche au format **PDF** ou **Word (DOCX)**. L'accès est vérifié côté serveur et réservé à son propriétaire. En l'absence de notes ou de transcription de séance, la fiche doit signaler cette limite et présenter un guide général au lieu d'inventer le contenu du direct.
 
+### Fiches de révision automatiques depuis les documents
+
+Lorsqu'un administrateur approuve un document classé **Cours**, MITARIDALA extrait son texte puis met en file une fiche de révision source : résumé orienté examen, notions et exemples, formules/méthodes, exercices avec indices et corrections, points à consolider, auto-évaluation et plan de révision espacée. Le traitement se fait en arrière-plan et les fichiers PDF et Word sont accessibles depuis le hub d'apprentissage du document.
+
+Le carnet est généré une fois par document source, partagé uniquement avec les utilisateurs autorisés à consulter ce document (un document de cercle reste réservé à ses membres). Les contrôles de publication restent prioritaires : un fichier en attente ou rejeté ne déclenche pas de fiche visible. Les documents déjà approuvés sont rattrapés progressivement ; une erreur d'extraction ou un texte insuffisant est signalé au lieu d'être inventé. Les liens de consultation et de téléchargement vérifient à nouveau l'autorisation côté serveur. Si les métadonnées du document changent, la fiche est invalidée puis régénérée.
+
 ### Apprentissage actif
 
 MITARIDALA ne se limite pas à afficher des documents. Les ressources peuvent servir de point de départ pour :
