@@ -220,7 +220,29 @@ def liste_documents(
         ]
         for document_id in cours_sans_fiche[:10]:
             ai_queue.planifier_fiche_revision_document(document_id)
-        if cours_sans_fiche:
+
+        # Répare en petit lot les fiches existantes dont la tâche durable a
+        # disparu ou est terminée/échouée alors que la fiche prétend attendre.
+        # Les tâches saines (en attente/en cours) ne sont pas renotifiées.
+        cours_a_reparer = [
+            int(document.id)
+            for document in documents
+            if document.type_document == TypeDocument.COURS
+            and document.id is not None
+            and (
+                fiche := fiches_revision_documents.get(document.id)
+            ) is not None
+            and fiche.statut in {
+                StatutFicheRevisionDocument.EN_ATTENTE,
+                StatutFicheRevisionDocument.EN_COURS,
+            }
+        ][:5]
+        reparations = ai_queue.reparer_fiches_revision_documents_bloquees(
+            max_documents=5,
+            document_ids=cours_a_reparer,
+        ) if cours_a_reparer else 0
+
+        if cours_sans_fiche or reparations:
             fiches_revision_documents = {
                 fiche.document_id: fiche
                 for fiche in session.exec(
