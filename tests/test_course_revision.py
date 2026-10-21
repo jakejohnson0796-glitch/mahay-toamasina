@@ -239,6 +239,11 @@ def test_normalise_niveaux_academiques_usuels():
     assert course_revision._niveau_cle("L1") == "l1"
     assert course_revision._niveau_cle("Master 2") == "m2"
 
+def test_personnalisation_ne_croise_pas_les_niveaux_academiques():
+    assert course_revision._niveaux_compatibles("Licence 1", "L1")
+    assert course_revision._niveaux_compatibles("L1", None)
+    assert not course_revision._niveaux_compatibles("L1", "L3")
+
 def test_normalise_alias_matiere_pour_personnalisation():
     assert course_revision._matiere_cle("Maths") == "mathematiques"
     assert course_revision._matiere_cle("Mathématique") == "mathematiques"
