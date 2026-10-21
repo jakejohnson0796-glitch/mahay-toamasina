@@ -53,7 +53,6 @@ def test_worker_utilise_le_fallback_postgres_periodique(monkeypatch):
 
 def test_worker_recupere_postgres_si_id_redis_est_perime(monkeypatch):
     tache = SimpleNamespace(id=19)
-    horloges = iter((100.0, 131.0))
     appels = []
 
     monkeypatch.setattr(ai_worker.ai_queue, "redis_configure", lambda: True)
@@ -62,7 +61,7 @@ def test_worker_recupere_postgres_si_id_redis_est_perime(monkeypatch):
         "attendre_tache",
         lambda timeout=15: 999,
     )
-    monkeypatch.setattr(ai_worker.time, "monotonic", lambda: next(horloges))
+    monkeypatch.setattr(ai_worker.time, "monotonic", lambda: 131.0)
 
     def prendre_tache(tache_id=None):
         appels.append(tache_id)
