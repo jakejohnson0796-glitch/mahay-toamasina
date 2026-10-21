@@ -937,6 +937,17 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
             session.add(fiche)
             session.commit()
             return
+        if (
+            document.titre != donnees["titre"]
+            or document.matiere != donnees["matiere"]
+            or document.annee != donnees["annee"]
+            or document.filiere_id != donnees["filiere_id"]
+        ):
+            # Si un administrateur a corrigé les métadonnées pendant l'appel IA,
+            # le worker doit réessayer avec le contexte le plus récent.
+            raise RuntimeError(
+                "Les métadonnées du document ont changé pendant la génération ; nouvelle tentative requise."
+            )
         fiche.contenu_json = json.dumps(contenu, ensure_ascii=False)
         fiche.sources_json = json.dumps(avec_source, ensure_ascii=False)
         fiche.statut = StatutFicheRevisionDocument.TERMINEE
