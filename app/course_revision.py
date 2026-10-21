@@ -272,6 +272,21 @@ def _niveau_cle(valeur: str | None) -> str:
     return alias.get(cle, cle)
 
 
+def _matiere_cle(valeur: str | None) -> str:
+    cle = _cle(valeur)
+    alias = {
+        "math": "mathematiques",
+        "maths": "mathematiques",
+        "mathematique": "mathematiques",
+        "mathematiques": "mathematiques",
+        "mathematiques generales": "mathematiques",
+        "physique chimie": "physique chimie",
+        "physico chimie": "physique chimie",
+        "info": "informatique",
+    }
+    return alias.get(cle, cle)
+
+
 def _extraire_texte_objet(donnees: Any) -> str:
     """Extrait seulement les chaînes textuelles explicites d'un élément du tableau."""
     if isinstance(donnees, str):
@@ -346,11 +361,11 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
         .order_by(Document.date_upload.desc())
         .limit(120)
     ).all()
-    matiere_cle = _cle(cours.matiere)
+    matiere_cle = _matiere_cle(cours.matiere)
     niveau_cours = _niveau_cle(cours.niveau)
     supports_candidats = []
     for document, filiere in documents_approuves:
-        doc_matiere = _cle(document.matiere)
+        doc_matiere = _matiere_cle(document.matiere)
         correspond = bool(
             matiere_cle
             and doc_matiere
@@ -389,7 +404,7 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
     ).all()
     progressions_matiere = [
         p for p in progressions
-        if matiere_cle and _cle(p.matiere) == matiere_cle and p.nb_questions > 0
+        if matiere_cle and _matiere_cle(p.matiere) == matiere_cle and p.nb_questions > 0
     ]
     progressions_matiere.sort(
         key=lambda p: (
@@ -420,7 +435,7 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
     ).all()
     resultats_quiz = []
     for tentative in tentatives:
-        if not matiere_cle or _cle(tentative.matiere) != matiere_cle:
+        if not matiere_cle or _matiere_cle(tentative.matiere) != matiere_cle:
             continue
         if tentative.date_soumission is None or tentative.score is None:
             continue
