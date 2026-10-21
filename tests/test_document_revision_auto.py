@@ -199,6 +199,40 @@ def test_repare_une_fiche_en_attente_dont_la_tache_est_terminale(monkeypatch):
         assert fiche.statut == StatutFicheRevisionDocument.EN_ATTENTE
 
 
+def test_repare_une_fiche_marquee_terminee_mais_sans_contenu(monkeypatch):
+    engine = moteur_sqlite()
+    monkeypatch.setattr(ai_queue, "engine", engine)
+    monkeypatch.setattr(ai_queue, "notifier_tache", lambda _task_id: True)
+
+    with Session(engine) as session:
+        document, _ = creer_document(session)
+        fiche = FicheRevisionDocument(
+            document_id=document.id,
+            statut=StatutFicheRevisionDocument.TERMINEE,
+            contenu_json="{}",
+        )
+        session.add(fiche)
+        session.commit()
+        fiche_id = fiche.id
+        document_id = document.id
+
+    assert ai_queue.reparer_fiches_revision_documents_bloquees(
+        document_ids=[document_id],
+    ) == 1
+
+    with Session(engine) as session:
+        fiche = session.get(FicheRevisionDocument, fiche_id)
+        task = session.exec(
+            select(TacheIA).where(
+                TacheIA.type_tache == ai_queue.TYPE_FICHE_REVISION_DOCUMENT,
+                TacheIA.fiche_revision_document_id == fiche_id,
+            )
+        ).first()
+        assert task is not None
+        assert task.statut == StatutTacheIA.EN_ATTENTE
+        assert fiche.statut == StatutFicheRevisionDocument.EN_ATTENTE
+
+
 def test_ne_replanifie_pas_une_tache_en_attente_ou_une_fiche_en_echec(monkeypatch):
     engine = moteur_sqlite()
     notifications = []
@@ -396,3 +430,6 @@ def test_hub_et_fiche_document_sont_des_templates_compilables():
     assert "La fiche est inscrite dans la file de traitement IA" in source_bibliotheque
     assert "Préparer ma fiche" in source_bibliotheque
     assert "reparer_fiches_revision_documents_bloquees" in source_route
+    assert "Fiche incomplète" in source_bibliotheque
+    assert "Échec à relancer" in source_bibliotheque
+    assert "Le statut est terminé, mais le carnet ne contient pas de fiche exploitable." in source_hub
