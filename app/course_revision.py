@@ -808,7 +808,7 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         kwargs["messages"] = [{
             "role": "user",
             "content": messages[0]["content"] + (
-                "\\n\\nREPRISE CONCISE OBLIGATOIRE : retourne une fiche complète mais compacte. "
+                "\n\nREPRISE CONCISE OBLIGATOIRE : retourne une fiche complète mais compacte. "
                 "Maximum 5 notions, 4 outils, 3 exercices, 3 points à retravailler, "
                 "3 étapes de révision et 3 questions d'auto-évaluation. "
                 "N'omets aucun champ obligatoire. Le champ notion d'un exercice peut être omis."
