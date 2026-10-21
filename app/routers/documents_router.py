@@ -232,10 +232,16 @@ def liste_documents(
             and (
                 fiche := fiches_revision_documents.get(document.id)
             ) is not None
-            and fiche.statut in {
-                StatutFicheRevisionDocument.EN_ATTENTE,
-                StatutFicheRevisionDocument.EN_COURS,
-            }
+            and (
+                fiche.statut in {
+                    StatutFicheRevisionDocument.EN_ATTENTE,
+                    StatutFicheRevisionDocument.EN_COURS,
+                }
+                or (
+                    fiche.statut == StatutFicheRevisionDocument.TERMINEE
+                    and str(fiche.contenu_json or "").strip() in {"", "{}"}
+                )
+            )
         ][:5]
         reparations = ai_queue.reparer_fiches_revision_documents_bloquees(
             max_documents=5,
@@ -843,11 +849,31 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
                 FicheRevisionDocument.document_id == document.id
             )
         ).first()
-        if fiche_revision_document is None:
-            # Les documents de cours déjà approuvés avant la fonctionnalité
-            # sont générés progressivement à leur première consultation.
+        if (
+            fiche_revision_document is None
+            or (
+                fiche_revision_document.statut == StatutFicheRevisionDocument.TERMINEE
+                and str(fiche_revision_document.contenu_json or "").strip() in {"", "{}"}
+            )
+        ):
+            # Les anciens cours et les enregistrements terminés sans contenu
+            # sont planifiés ou réparés à leur première consultation.
             session.commit()
             ai_queue.planifier_fiche_revision_document(document.id)
+            session.expire_all()
+            fiche_revision_document = session.exec(
+                select(FicheRevisionDocument).where(
+                    FicheRevisionDocument.document_id == document.id
+                )
+            ).first()
+        elif fiche_revision_document.statut in {
+            StatutFicheRevisionDocument.EN_ATTENTE,
+            StatutFicheRevisionDocument.EN_COURS,
+        }:
+            ai_queue.reparer_fiches_revision_documents_bloquees(
+                max_documents=1,
+                document_ids=[int(document.id)],
+            )
             session.expire_all()
             fiche_revision_document = session.exec(
                 select(FicheRevisionDocument).where(
@@ -906,9 +932,29 @@ def consulter_fiche_revision_document(
             FicheRevisionDocument.document_id == document_id
         )
     ).first()
-    if fiche is None:
+    if (
+        fiche is None
+        or (
+            fiche.statut == StatutFicheRevisionDocument.TERMINEE
+            and str(fiche.contenu_json or "").strip() in {"", "{}"}
+        )
+    ):
         session.commit()
         ai_queue.planifier_fiche_revision_document(document_id)
+        session.expire_all()
+        fiche = session.exec(
+            select(FicheRevisionDocument).where(
+                FicheRevisionDocument.document_id == document_id
+            )
+        ).first()
+    elif fiche.statut in {
+        StatutFicheRevisionDocument.EN_ATTENTE,
+        StatutFicheRevisionDocument.EN_COURS,
+    }:
+        ai_queue.reparer_fiches_revision_documents_bloquees(
+            max_documents=1,
+            document_ids=[document_id],
+        )
         session.expire_all()
         fiche = session.exec(
             select(FicheRevisionDocument).where(
