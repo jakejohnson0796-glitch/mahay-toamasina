@@ -98,24 +98,26 @@ def traiter_tache(tache) -> None:
 def _obtenir_prochaine_tache(
     dernier_controle_db: float,
 ) -> tuple[object | None, float]:
-    """Attend Redis puis utilise PostgreSQL seulement comme filet de securite."""
-    maintenant = time.monotonic()
-
+    """Attend Redis puis utilise PostgreSQL comme filet de securite durable."""
     # En developpement/local sans Redis, on conserve le comportement
     # historique de la file SQL.
     if not ai_queue.redis_configure():
-        return ai_queue.prendre_tache(), maintenant
+        return ai_queue.prendre_tache(), time.monotonic()
 
     # Chemin principal : attente bloquante Redis, sans requete PostgreSQL.
     tache_id = ai_queue.attendre_tache(timeout=TIMEOUT_ATTENTE_REDIS)
     if tache_id is not None:
         tache = ai_queue.prendre_tache(tache_id)
         if tache is not None:
-            return tache, maintenant
+            return tache, time.monotonic()
 
-    # Filet de securite volontairement lent : rattrape une tache dont la
-    # notification Redis a ete perdue ou si Redis etait temporairement
-    # indisponible. Ce n'est pas le chemin nominal.
+    # Recalculer l'horloge APRES BRPOP : l'attente Redis peut durer 15 secondes.
+    # Ce controle doit avoir son propre compteur, distinct de la reprise des
+    # leases orphelins dans boucle_worker. Sinon le compteur est remis a zero
+    # avant chaque attente et le filet PostgreSQL peut ne jamais se declencher.
+    maintenant = time.monotonic()
+    # On essaie aussi PostgreSQL lorsqu'un ID Redis est ancien, non disponible,
+    # ou deja traite : un message Redis invalide ne doit jamais bloquer la file.
     if maintenant - dernier_controle_db >= INTERVALLE_FILET_SECURITE_DB:
         return ai_queue.prendre_tache(), maintenant
 
@@ -135,7 +137,10 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
         ai_queue.CLE_FILE_REDIS,
     )
 
-    dernier_controle_db = 0.0
+    # Les deux controles ont des horloges distinctes : le controle des leases
+    # ne doit jamais repousser le prochain sondage PostgreSQL de la file.
+    dernier_controle_orphelines = 0.0
+    dernier_controle_file_db = 0.0
     derniere_planification_resume = 0.0
     derniere_planification_revision_document = 0.0
     while arret is None or not arret.is_set():
@@ -145,15 +150,15 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
             # une tache abandonnee par un worker doit pouvoir etre reprise
             # meme si la file continue de recevoir d'autres messages.
             maintenant = time.monotonic()
-            if maintenant - dernier_controle_db >= INTERVALLE_FILET_SECURITE_DB:
+            if maintenant - dernier_controle_orphelines >= INTERVALLE_FILET_SECURITE_DB:
                 ai_queue.reparer_taches_en_cours_orphelines(
                     max_taches=5,
                     age_secondes=600,
                 )
-                dernier_controle_db = maintenant
+                dernier_controle_orphelines = maintenant
 
-            tache, dernier_controle_db = _obtenir_prochaine_tache(
-                dernier_controle_db
+            tache, dernier_controle_file_db = _obtenir_prochaine_tache(
+                dernier_controle_file_db
             )
             if tache is None:
                 if arret is not None and arret.is_set():
