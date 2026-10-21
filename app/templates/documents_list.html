@@ -32,6 +32,51 @@
   .doc-revision-telechargements{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem}
   .doc-revision-telecharger{display:flex;justify-content:center;align-items:center;min-width:0;min-height:2.2rem;padding:.35rem .45rem;font-size:.68rem;text-align:center;white-space:normal}
   .doc-revision-lien{font-size:.72rem;line-height:1.45;color:var(--content-link);overflow-wrap:anywhere}
+
+  /* Les résumés longs restent consultables sans étirer toute la rangée de cartes. */
+  .doc-fiche[open] > [data-fiche-lang]:not([hidden]){
+    max-height:min(18rem,42vh);
+    overflow:auto;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+    padding:.2rem .35rem .25rem 0;
+  }
+  .doc-fiche[open] > [data-fiche-lang]:not([hidden]) p{margin-block:.35rem}
+  .doc-fiche[open] > [data-fiche-lang]:not([hidden]) ul{margin-block:.25rem .55rem}
+  .doc-fiche[open] > [data-fiche-lang]:not([hidden]) .doc-resume-ia{margin-block:.3rem .6rem}
+
+  /* Contraste renforcé : les états de révision restent lisibles dans les deux thèmes. */
+  .doc-revision-actions{background:#f5faf7;border-color:#91aa9e;color:#1b302d}
+  .doc-revision-icone{background:#d9efe3;color:#145b43}
+  .doc-revision-statut{background:#fff;border-color:#78968a;color:#344f45}
+  .doc-revision-statut-prete{background:#def3e6;border-color:#39835b;color:#165b38;font-weight:750}
+  .doc-revision-statut-erreur{background:#fff0ec;border-color:#b95d49;color:#8b3024}
+  .doc-revision-description{color:#3f5b4f}
+  .doc-revision-lien{color:#145f58;text-decoration:underline;text-underline-offset:2px;font-weight:650}
+  .doc-revision-consulter.bouton-primaire{background:#176b64;border-color:#176b64;color:#fff}
+  .doc-actions{flex-wrap:wrap;justify-content:flex-start;align-items:stretch}
+  .doc-actions .doc-quiz-cta{
+    display:inline-flex;align-items:center;justify-content:center;
+    flex:1 1 9rem;min-width:0;min-height:2.55rem;padding:.55rem .75rem;
+    border:1px solid #176b64;border-radius:11px;background:#176b64;
+    color:#fff!important;font-size:.76rem;line-height:1.35;font-weight:800;
+    text-align:center;text-decoration:none;white-space:normal;overflow-wrap:anywhere
+  }
+  .doc-actions .doc-quiz-cta:hover{background:#10564f;border-color:#10564f;color:#fff!important}
+  html[data-theme="sombre"] .doc-revision-actions{background:#142b26;border-color:#547b6e;color:#f0f7f3}
+  html[data-theme="sombre"] .doc-revision-icone{background:#254a3d;color:#a7e5c5}
+  html[data-theme="sombre"] .doc-revision-statut{background:#1d3931;border-color:#648c7d;color:#e4f2eb}
+  html[data-theme="sombre"] .doc-revision-statut-prete{background:#214e39;border-color:#73cc96;color:#d2ffe1}
+  html[data-theme="sombre"] .doc-revision-statut-erreur{background:#532821;border-color:#d98d7d;color:#ffe0d6}
+  html[data-theme="sombre"] .doc-revision-description{color:#d1e3db}
+  html[data-theme="sombre"] .doc-revision-lien{color:#a2e7df}
+  html[data-theme="sombre"] .doc-revision-consulter.bouton-primaire,
+  html[data-theme="sombre"] .doc-actions .doc-quiz-cta{background:#8ed8ce;border-color:#8ed8ce;color:#102a27!important}
+  html[data-theme="sombre"] .doc-actions .doc-quiz-cta:hover{background:#b4e8e1;border-color:#b4e8e1;color:#102a27!important}
+  @media(max-width:560px){
+    .doc-fiche[open] > [data-fiche-lang]:not([hidden]){max-height:min(13rem,36vh)}
+    .doc-actions .doc-quiz-cta{flex-basis:100%}
+  }
   @media(max-width:560px){.doc-revision-actions{padding:.62rem}.doc-revision-telechargements{grid-template-columns:1fr}.doc-revision-telecharger{width:100%}}
   @media(max-width:560px){.doc-fiche{padding:.65rem}.doc-depots-personnels{padding:.8rem}}
 </style>
@@ -244,9 +289,9 @@ session dediee, avec sa propre verification desktop+mobile.
       <a class="bouton bouton-secondaire doc-bouton" href="/documents/{{ doc.id }}/telecharger">Telecharger</a>
       {% if utilisateur %}
       {% if doc.fiche_validation_statut == "validee" %}
-      <a class="doc-lien-quiz" href="/documents/{{ doc.id }}/quiz">Quiz IA &rarr;</a>
+      <a class="doc-lien-quiz doc-quiz-cta" href="/documents/{{ doc.id }}/quiz">Lancer le quiz &rarr;</a>
       {% else %}
-      <a class="doc-lien-fiche-validation" href="/documents/{{ doc.id }}/apprendre#fiche-verification">Vérifier la fiche avant le quiz &rarr;</a>
+      <a class="doc-lien-fiche-validation doc-quiz-cta" href="/documents/{{ doc.id }}/apprendre#fiche-verification">Vérifier puis lancer le quiz &rarr;</a>
       {% endif %}
       <a class="doc-lien-quiz" href="/documents/{{ doc.id }}/apprendre">Parcours &rarr;</a>
       {% endif %}
