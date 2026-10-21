@@ -191,6 +191,22 @@ def liste_documents(
         for document in documents_affiches
     }
 
+    # État du carnet de révision basé sur le document source, distinct
+    # de la fiche pédagogique et du carnet individuel des classes virtuelles.
+    ids_documents_affiches = [
+        document.id for document in documents_affiches if document.id is not None
+    ]
+    fiches_revision_documents = {}
+    if ids_documents_affiches:
+        fiches_revision_documents = {
+            fiche.document_id: fiche
+            for fiche in session.exec(
+                select(FicheRevisionDocument).where(
+                    FicheRevisionDocument.document_id.in_(ids_documents_affiches)
+                )
+            ).all()
+        }
+
     return templates.TemplateResponse(
         "documents_list.html",
         {
@@ -199,6 +215,7 @@ def liste_documents(
             "mes_depots": mes_depots,
             "fiches_documents": fiches_documents,
             "fiches_documents_mg": fiches_documents_mg,
+            "fiches_revision_documents": fiches_revision_documents,
             "filieres": filieres,
             "filiere_id": filiere_id,
             "matiere": matiere or "",
