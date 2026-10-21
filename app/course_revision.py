@@ -375,8 +375,7 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
                 "resume": resume,
             },
         ))
-    supports_candidats.sort(key=lambda ligne: (ligne[0], ligne[1]), reverse=False)
-    # Tri avec les correspondances de niveau d'abord, puis les plus récents.
+    # Priorité aux supports explicitement au niveau du cours, puis aux plus récents.
     supports_candidats.sort(key=lambda ligne: (ligne[0], -ligne[1].timestamp()))
     supports = [ligne[2] for ligne in supports_candidats[:2]]
 
@@ -497,7 +496,12 @@ def _borner_contexte(contexte: dict, limite: int = MAX_SOURCE_CHARS) -> dict:
     for parent, cle in listes:
         liste = donnees.get(parent, {}).get(cle, []) if parent else donnees.get(cle, [])
         while len(liste) > 1 and taille() > limite:
-            liste.pop(0)
+            # Notes chronologiques : écarter les plus anciennes. Les autres
+            # listes sont déjà classées par priorité/récence : garder le début.
+            if parent == "seance" and cle == "notes_tableau_blanc":
+                liste.pop(0)
+            else:
+                liste.pop()
 
     champs_texte = [
         ("cours", "description", 350),
@@ -525,7 +529,8 @@ def _borner_contexte(contexte: dict, limite: int = MAX_SOURCE_CHARS) -> dict:
                 if isinstance(item, dict) and champ:
                     item[champ] = str(item.get(champ) or "")[:max_chars]
                 elif isinstance(item, str):
-                    liste[liste.index(item)] = item[:max_chars]
+                    index_item = liste.index(item)
+                    liste[index_item] = item[:max_chars]
     if taille() > limite:
         raise ValueError("Le contexte de révision dépasse la limite sûre de génération.")
     return donnees
