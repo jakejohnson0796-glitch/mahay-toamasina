@@ -149,6 +149,13 @@ _SCHEMA_FICHE = {
 }
 
 
+def _schema_fiche_revision_sans_notion() -> dict:
+    """Schema de secours si Groq refuse une réponse ayant omis la notion d'un exercice."""
+    schema = json.loads(json.dumps(_SCHEMA_FICHE))
+    schema["properties"]["exercices"]["items"]["properties"].pop("notion", None)
+    return schema
+
+
 def _normaliser_notation_math(valeur: str) -> str:
     """Convertit les commandes LaTeX usuelles en notation texte lisible PDF/Word."""
     texte = str(valeur or "")
@@ -661,7 +668,42 @@ def normaliser_fiche_revision(contenu: Any) -> dict:
     for exercice in fiche["exercices"]:
         if not exercice["enonce"] or not exercice["indice"] or not exercice["correction"]:
             raise ValueError("Un exercice IA est incomplet : énoncé, indice et correction sont requis.")
+        if not exercice["notion"]:
+            exercice["notion"] = _associer_notion_exercice(exercice, fiche["notions"])
     return fiche
+
+
+def _associer_notion_exercice(exercice: dict, notions: list[dict]) -> str:
+    """Associe un exercice à une notion explicite ; n'invente pas de notion inconnue."""
+    stop = {
+        "avec", "dans", "pour", "quelle", "quelles", "quel", "quels", "comment",
+        "calculer", "determine", "determiner", "expliquer", "donner", "faire",
+        "notion", "notions", "cours", "partie", "types", "type", "rappel",
+        "leur", "leurs", "cela", "cette", "ceux", "celles", "etre", "avoir",
+        "sont", "est", "une", "des", "les", "aux", "sur", "par", "entre",
+    }
+
+    def mots(texte: str) -> set[str]:
+        resultat = set()
+        for mot in re.findall(r"[a-z0-9]{3,}", _cle(texte)):
+            resultat.add(mot[:-1] if mot.endswith("s") and len(mot) > 4 else mot)
+        return resultat
+
+    texte_exercice = mots(" ".join(
+        str(exercice.get(cle) or "")
+        for cle in ("enonce", "indice", "correction")
+    ))
+    meilleur_titre = ""
+    meilleur_score = 0
+    for notion in notions:
+        titre = _normaliser_texte(notion.get("titre"), 180)
+        jetons = mots(titre) - stop
+        score = len(jetons & texte_exercice)
+        if titre and score > meilleur_score:
+            meilleur_titre = titre
+            meilleur_score = score
+
+    return meilleur_titre if meilleur_score else "À confirmer à partir du cours"
 
 
 def _texte_ia_document(contexte: dict) -> str:
@@ -725,10 +767,33 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
     elif str(parametres.groq_model or "").startswith("qwen/qwen3.8-27b"):
         kwargs["reasoning_effort"] = "low"
         kwargs["reasoning_format"] = "hidden"
-    completion = ai_ensemble.cost_controller.call(
-        "groq",
-        lambda: client.chat.completions.create(**kwargs),
-    )
+    try:
+        completion = ai_ensemble.cost_controller.call(
+            "groq",
+            lambda: client.chat.completions.create(**kwargs),
+        )
+    except Exception as erreur:
+        # Certains retours Groq stricts omettent parfois uniquement le champ
+        # facultatif de classement pédagogique "notion". Une seconde tentative
+        # sans ce champ dans le schéma évite de perdre tout le carnet ; la
+        # normalisation locale tentera une association prudente aux notions.
+        erreur_texte = str(erreur).casefold()
+        if "notion" not in erreur_texte or "missing properties" not in erreur_texte:
+            raise
+        schema_secours = _schema_fiche_revision_sans_notion()
+        kwargs["response_format"] = ai_ensemble.structured_response_format(
+            parametres.groq_model,
+            schema_secours,
+            "produire_fiche_revision_cours_sans_notion",
+        )
+        logger.warning(
+            "Le modele IA a omis le champ notion d'un exercice ; nouvelle tentative "
+            "avec association locale securisee."
+        )
+        completion = ai_ensemble.cost_controller.call(
+            "groq",
+            lambda: client.chat.completions.create(**kwargs),
+        )
     message = completion.choices[0].message
     contenu_texte = message.content or ""
     try:
