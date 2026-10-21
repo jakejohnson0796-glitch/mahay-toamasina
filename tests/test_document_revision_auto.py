@@ -250,6 +250,7 @@ def test_hub_et_fiche_document_sont_des_templates_compilables():
     environnement = Environment(loader=FileSystemLoader(str(dossier)))
     hub = environnement.get_template("document_parcours.html")
     fiche = environnement.get_template("document_revision.html")
+    bibliotheque = environnement.get_template("documents_list.html")
     source_hub = (dossier / "document_parcours.html").read_text(encoding="utf-8")
     source_fiche = (dossier / "document_revision.html").read_text(encoding="utf-8")
 
@@ -262,3 +263,17 @@ def test_hub_et_fiche_document_sont_des_templates_compilables():
     assert "data-rendu" in source_fiche
     assert "Télécharger la fiche PDF" in source_fiche
     assert "Télécharger la version Word" in source_fiche
+
+    # La bibliothèque doit exposer directement la consultation et les téléchargements,
+    # pas seulement les laisser cachés dans le parcours du document.
+    source_bibliotheque = (dossier / "documents_list.html").read_text(encoding="utf-8")
+    source_route = (
+        Path(__file__).resolve().parents[1] / "app" / "routers" / "documents_router.py"
+    ).read_text(encoding="utf-8")
+    assert bibliotheque.name == "documents_list.html"
+    assert "fiches_revision_documents" in source_route
+    assert "Consulter la fiche de révision" in source_bibliotheque
+    assert "/documents/{{ doc.id }}/revision/telecharger/pdf" in source_bibliotheque
+    assert "/documents/{{ doc.id }}/revision/telecharger/docx" in source_bibliotheque
+    assert 'doc.type_document.value == "cours"' in source_bibliotheque
+    assert "doc-revision-telechargements" in source_bibliotheque
