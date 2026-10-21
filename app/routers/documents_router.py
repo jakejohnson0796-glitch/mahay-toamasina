@@ -18,7 +18,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA
+from ..models import (Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
@@ -27,6 +27,7 @@ from ..dependencies import acces_ia_ou_redirection, acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
 from .. import gamification
 from .. import ai_queue
+from .. import course_revision
 from ..rate_limit import limite_depassee
 from ..document_classifier import classifier_document
 from ..quiz_validation import QuizValidationError, valider_questions
@@ -772,6 +773,25 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
     ):
         return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
 
+    fiche_revision_document = None
+    if document.type_document == TypeDocument.COURS:
+        fiche_revision_document = session.exec(
+            select(FicheRevisionDocument).where(
+                FicheRevisionDocument.document_id == document.id
+            )
+        ).first()
+        if fiche_revision_document is None:
+            # Les documents de cours déjà approuvés avant la fonctionnalité
+            # sont générés progressivement à leur première consultation.
+            session.commit()
+            ai_queue.planifier_fiche_revision_document(document.id)
+            session.expire_all()
+            fiche_revision_document = session.exec(
+                select(FicheRevisionDocument).where(
+                    FicheRevisionDocument.document_id == document.id
+                )
+            ).first()
+
     return templates.TemplateResponse(
         "document_parcours.html",
         {
@@ -779,6 +799,7 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             "utilisateur": utilisateur,
             "document": document,
             "fiche_pedagogique": _charger_fiche_pedagogique(document),
+            "fiche_revision_document": fiche_revision_document,
             "fiche_validee": _fiche_pedagogique_est_validee(document),
             "fiche_validation_possible": _fiche_pedagogique_peut_etre_validee(document),
             "types_document": list(TypeDocument),
@@ -787,6 +808,203 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
                 or document.uploader_id == utilisateur.id
             ),
         },
+    )
+
+
+@router.get("/documents/{document_id}/revision")
+def consulter_fiche_revision_document(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_session),
+):
+    """Affiche le carnet IA fondé sur le texte source d'un cours approuvé."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    document = session.get(Document, document_id)
+    if (
+        not document
+        or document.statut != StatutDocument.APPROUVE
+        or document.type_document != TypeDocument.COURS
+    ):
+        return RedirectResponse("/documents", status_code=303)
+    if document.cercle_id is not None and not _est_membre_cercle(
+        session, document.cercle_id, utilisateur.id
+    ):
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+
+    fiche = session.exec(
+        select(FicheRevisionDocument).where(
+            FicheRevisionDocument.document_id == document_id
+        )
+    ).first()
+    if fiche is None:
+        session.commit()
+        ai_queue.planifier_fiche_revision_document(document_id)
+        session.expire_all()
+        fiche = session.exec(
+            select(FicheRevisionDocument).where(
+                FicheRevisionDocument.document_id == document_id
+            )
+        ).first()
+
+    if fiche is None or fiche.statut in {
+        StatutFicheRevisionDocument.EN_ATTENTE,
+        StatutFicheRevisionDocument.EN_COURS,
+    }:
+        return RedirectResponse(
+            f"/documents/{document_id}/apprendre?revision=en_cours#revision-automatique",
+            status_code=303,
+        )
+    if fiche.statut != StatutFicheRevisionDocument.TERMINEE or not fiche.contenu_json:
+        return RedirectResponse(
+            f"/documents/{document_id}/apprendre?revision=indisponible#revision-automatique",
+            status_code=303,
+        )
+
+    try:
+        contenu = course_revision.normaliser_fiche_revision(
+            json.loads(fiche.contenu_json)
+        )
+        sources = json.loads(fiche.sources_json or "{}")
+        if not isinstance(sources, dict):
+            sources = {}
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return RedirectResponse(
+            f"/documents/{document_id}/apprendre?revision=indisponible#revision-automatique",
+            status_code=303,
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "document_revision.html",
+        {
+            "utilisateur": utilisateur,
+            "document": document,
+            "fiche_revision_document": fiche,
+            "fiche_contenu": contenu,
+            "fiche_sources": sources,
+        },
+    )
+
+
+@router.get("/documents/{document_id}/revision/telecharger/{format_fichier}")
+def telecharger_fiche_revision_document(
+    request: Request,
+    document_id: int,
+    format_fichier: str,
+    session: Session = Depends(get_session),
+):
+    """Télécharge le carnet source dans un format lisible, après recontrôle d'accès."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if format_fichier not in {"pdf", "docx"}:
+        return RedirectResponse("/documents", status_code=303)
+
+    document = session.get(Document, document_id)
+    if (
+        not document
+        or document.statut != StatutDocument.APPROUVE
+        or document.type_document != TypeDocument.COURS
+    ):
+        return RedirectResponse("/documents", status_code=303)
+    if document.cercle_id is not None and not _est_membre_cercle(
+        session, document.cercle_id, utilisateur.id
+    ):
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+
+    fiche = session.exec(
+        select(FicheRevisionDocument).where(
+            FicheRevisionDocument.document_id == document_id
+        )
+    ).first()
+    if not fiche or fiche.statut != StatutFicheRevisionDocument.TERMINEE or not fiche.contenu_json:
+        return RedirectResponse(
+            f"/documents/{document_id}/apprendre?revision=en_cours#revision-automatique",
+            status_code=303,
+        )
+
+    try:
+        contenu = course_revision.normaliser_fiche_revision(json.loads(fiche.contenu_json))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return RedirectResponse(
+            f"/documents/{document_id}/apprendre?revision=indisponible#revision-automatique",
+            status_code=303,
+        )
+
+    if format_fichier == "pdf":
+        octets = course_revision.generer_pdf(
+            contenu,
+            # Adapter le document source aux métadonnées attendues du générateur.
+            course_revision.document_comme_cours(document),
+            course_revision.document_comme_seance(document, fiche),
+            utilisateur.nom,
+        )
+        media_type = "application/pdf"
+        extension = "pdf"
+    else:
+        octets = course_revision.generer_docx(
+            contenu,
+            course_revision.document_comme_cours(document),
+            course_revision.document_comme_seance(document, fiche),
+            utilisateur.nom,
+        )
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        extension = "docx"
+
+    nom_fichier = f"mitaridala-revision-{document.id}-{document.reference}.{extension}"
+    return Response(
+        content=octets,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{nom_fichier}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.post("/documents/{document_id}/revision/relancer")
+def relancer_fiche_revision_document(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Autorise l'auteur ou un administrateur à relancer une fiche qui a échoué."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    document = session.get(Document, document_id)
+    if (
+        not document
+        or document.statut != StatutDocument.APPROUVE
+        or document.type_document != TypeDocument.COURS
+        or (
+            utilisateur.role != RoleUtilisateur.ADMIN
+            and document.uploader_id != utilisateur.id
+        )
+    ):
+        return RedirectResponse("/documents", status_code=303)
+    if document.cercle_id is not None and not _est_membre_cercle(
+        session, document.cercle_id, utilisateur.id
+    ) and utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
+
+    fiche = session.exec(
+        select(FicheRevisionDocument).where(
+            FicheRevisionDocument.document_id == document_id
+        )
+    ).first()
+    if not fiche or fiche.statut != StatutFicheRevisionDocument.ECHOUEE:
+        return RedirectResponse(f"/documents/{document_id}/apprendre#revision-automatique", status_code=303)
+
+    ai_queue.planifier_fiche_revision_document(document_id, forcer=True)
+    return RedirectResponse(
+        f"/documents/{document_id}/apprendre?revision=relancee#revision-automatique",
+        status_code=303,
     )
 
 
@@ -1227,6 +1445,10 @@ def approuver_document(
         acteur_id=utilisateur.id,
     )
     session.commit()
+    if document.type_document == TypeDocument.COURS:
+        # La génération du carnet est durable et asynchrone ; elle ne bloque
+        # jamais la validation ni la mise à disposition du document source.
+        ai_queue.planifier_fiche_revision_document(document.id)
     return _rediriger_moderation("approuve")
 
 
@@ -1300,6 +1522,23 @@ def supprimer_document(
     if taches_document:
         for tache in taches_document:
             session.delete(tache)
+        session.commit()
+
+    fiche_revision_document = session.exec(
+        select(FicheRevisionDocument).where(
+            FicheRevisionDocument.document_id == document_id
+        )
+    ).first()
+    if fiche_revision_document:
+        taches_revision_document = session.exec(
+            select(TacheIA).where(
+                TacheIA.fiche_revision_document_id == fiche_revision_document.id
+            )
+        ).all()
+        for tache in taches_revision_document:
+            session.delete(tache)
+        session.commit()
+        session.delete(fiche_revision_document)
         session.commit()
 
     supprimer_fichier(document.chemin_fichier)
