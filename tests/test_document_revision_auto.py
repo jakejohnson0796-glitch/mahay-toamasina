@@ -204,7 +204,7 @@ def test_fiche_est_generee_depuis_le_texte_reel_et_enregistree(monkeypatch):
         sources = json.loads(fiche.sources_json)
         assert "matrices" in contenu["resume"].lower()
         assert sources["document_id"] == document_id
-        assert sources["caracteres_extraits"] == len(texte_cours)
+        assert sources["caracteres_extraits"] == len(texte_cours.strip())
         notifications = session.exec(
             select(Notification).where(
                 Notification.destinataire_id == uploader_id,
