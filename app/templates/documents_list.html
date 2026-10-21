@@ -264,7 +264,9 @@ session dediee, avec sa propre verification desktop+mobile.
           {% if fiche_revision and fiche_revision.statut.value == "terminee" and fiche_revision.contenu_json not in ["", "{}"] %}
           <span class="doc-revision-statut doc-revision-statut-prete">Disponible</span>
           {% elif fiche_revision and fiche_revision.statut.value == "echouee" %}
-          <span class="doc-revision-statut doc-revision-statut-erreur">À vérifier</span>
+          <span class="doc-revision-statut doc-revision-statut-erreur">Échec à relancer</span>
+          {% elif fiche_revision and fiche_revision.statut.value == "terminee" %}
+          <span class="doc-revision-statut doc-revision-statut-erreur">Fiche incomplète</span>
           {% elif fiche_revision and fiche_revision.statut.value == "en_cours" %}
           <span class="doc-revision-statut">En préparation</span>
           {% elif fiche_revision and fiche_revision.statut.value == "en_attente" %}
@@ -281,8 +283,11 @@ session dediee, avec sa propre verification desktop+mobile.
         <a class="bouton bouton-secondaire doc-revision-telecharger" href="/documents/{{ doc.id }}/revision/telecharger/docx">Télécharger Word</a>
       </div>
       {% elif fiche_revision and fiche_revision.statut.value == "echouee" %}
-      <p class="doc-revision-description">La génération a échoué. Si tu as déposé ce cours, ouvre le parcours pour relancer la fiche ; sinon, signale le problème au déposant ou à un administrateur.</p>
+      <p class="doc-revision-description">La génération a échoué après plusieurs tentatives. Si tu as déposé ce cours, ouvre le parcours pour relancer la fiche ; sinon, signale le problème au déposant ou à un administrateur.</p>
       <a class="doc-revision-lien" href="/documents/{{ doc.id }}/apprendre#revision-automatique">Voir l’échec et les options de relance →</a>
+      {% elif fiche_revision and fiche_revision.statut.value == "terminee" %}
+      <p class="doc-revision-description">Un statut terminé est enregistré, mais le contenu du carnet est vide. La réparation automatique sera tentée et tu peux ouvrir le parcours pour actualiser l’état.</p>
+      <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/revision">Réparer / consulter la fiche</a>
       {% elif fiche_revision and fiche_revision.statut.value == "en_attente" %}
       <p class="doc-revision-description">La fiche est inscrite dans la file de traitement IA et attend son tour. Ce statut ne signifie pas que la génération a échoué.</p>
       <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/apprendre#revision-automatique">Voir l’état de la file</a>
