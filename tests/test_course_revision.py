@@ -1,4 +1,6 @@
 from datetime import datetime
+import json
+from types import SimpleNamespace
 
 import pytest
 from jinja2 import Environment, FileSystemLoader
@@ -66,6 +68,59 @@ def test_normalise_fiche_revision_personnalisee():
     notation = course_revision._normaliser_notation_math(r"\frac{1}{2} \times \sqrt{9} \leq \Delta")
     assert notation == "(1)/(2) * sqrt(9) <= Delta"
     assert course_revision._texte_pdf_compatible("√9 ≤ 3; Δ ≠ 0; x²") == "sqrt(9) <= 3; Delta != 0; x^2"
+
+
+def test_recupere_une_fiche_quand_groq_omet_le_champ_notion(monkeypatch):
+    donnees = fiche_valide()
+    for exercice in donnees["exercices"]:
+        exercice.pop("notion", None)
+
+    class FauxCompletion:
+        def create(self, **kwargs):
+            schema = kwargs["response_format"]["json_schema"]["schema"]
+            assert "notion" not in schema["properties"]["exercices"]["items"]["properties"]
+            message = SimpleNamespace(content=json.dumps(donnees, ensure_ascii=False))
+            return SimpleNamespace(choices=[SimpleNamespace(message=message)])
+
+    class FauxGroq:
+        def __init__(self, api_key):
+            self.chat = SimpleNamespace(completions=FauxCompletion())
+
+    monkeypatch.setattr(course_revision, "Groq", FauxGroq)
+    monkeypatch.setattr(course_revision.parametres, "groq_api_key", "cle-test")
+    monkeypatch.setattr(course_revision.parametres, "groq_model", "openai/gpt-oss-120b")
+
+    appels = {"nombre": 0}
+
+    def appel_avec_erreur_puis_reprise(_provider, operation):
+        appels["nombre"] += 1
+        if appels["nombre"] == 1:
+            raise RuntimeError(
+                "json_validate_failed: jsonschema /exercices/0 missing properties: 'notion'"
+            )
+        return operation()
+
+    monkeypatch.setattr(
+        course_revision.ai_ensemble.cost_controller,
+        "call",
+        appel_avec_erreur_puis_reprise,
+    )
+
+    fiche = course_revision._generer_contenu_ia(
+        {"source_document": {"contenu_extrait": "Cours sur les matrices et déterminants."}},
+        mode_document=True,
+    )
+
+    assert appels["nombre"] == 2
+    assert fiche["exercices"][0]["notion"] == "Déterminant"
+    assert all(exercice["notion"] for exercice in fiche["exercices"])
+
+
+def test_schema_de_secours_ne_requiert_pas_la_notion_de_chaque_exercice():
+    schema = course_revision._schema_fiche_revision_sans_notion()
+
+    assert "notion" not in schema["properties"]["exercices"]["items"]["properties"]
+    assert "notion" in course_revision._SCHEMA_FICHE["properties"]["exercices"]["items"]["properties"]
 
 
 def test_refuse_fiche_revision_incomplete():
