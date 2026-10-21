@@ -51,6 +51,32 @@ def test_worker_utilise_le_fallback_postgres_periodique(monkeypatch):
 
 
 
+def test_worker_recupere_postgres_si_id_redis_est_perime(monkeypatch):
+    tache = SimpleNamespace(id=19)
+    horloges = iter((100.0, 131.0))
+    appels = []
+
+    monkeypatch.setattr(ai_worker.ai_queue, "redis_configure", lambda: True)
+    monkeypatch.setattr(
+        ai_worker.ai_queue,
+        "attendre_tache",
+        lambda timeout=15: 999,
+    )
+    monkeypatch.setattr(ai_worker.time, "monotonic", lambda: next(horloges))
+
+    def prendre_tache(tache_id=None):
+        appels.append(tache_id)
+        return tache if tache_id is None else None
+
+    monkeypatch.setattr(ai_worker.ai_queue, "prendre_tache", prendre_tache)
+
+    resultat, dernier_controle = ai_worker._obtenir_prochaine_tache(100.0)
+
+    assert resultat is tache
+    assert appels == [999, None]
+    assert dernier_controle == 131.0
+
+
 def test_worker_dispatche_une_verification_tuteur(monkeypatch):
     tache = SimpleNamespace(
         type_tache=ai_worker.ai_queue.TYPE_VERIFICATION_TUTEUR,
