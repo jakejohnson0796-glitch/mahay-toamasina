@@ -124,6 +124,119 @@ def test_planifie_une_fiche_une_seule_fois_pour_un_cours_approuve(monkeypatch):
         assert fiche.statut == StatutFicheRevisionDocument.EN_ATTENTE
 
 
+def test_repare_une_fiche_en_attente_sans_tache(monkeypatch):
+    engine = moteur_sqlite()
+    notifications = []
+    monkeypatch.setattr(ai_queue, "engine", engine)
+    monkeypatch.setattr(ai_queue, "notifier_tache", lambda task_id: notifications.append(task_id) or True)
+
+    with Session(engine) as session:
+        document, _ = creer_document(session)
+        fiche = FicheRevisionDocument(
+            document_id=document.id,
+            statut=StatutFicheRevisionDocument.EN_ATTENTE,
+        )
+        session.add(fiche)
+        session.commit()
+        document_id = document.id
+        fiche_id = fiche.id
+
+    reparations = ai_queue.reparer_fiches_revision_documents_bloquees(
+        document_ids=[document_id],
+        max_documents=5,
+    )
+
+    assert reparations == 1
+    with Session(engine) as session:
+        fiche = session.get(FicheRevisionDocument, fiche_id)
+        taches = session.exec(
+            select(TacheIA).where(
+                TacheIA.type_tache == ai_queue.TYPE_FICHE_REVISION_DOCUMENT,
+                TacheIA.fiche_revision_document_id == fiche_id,
+            )
+        ).all()
+        assert fiche.statut == StatutFicheRevisionDocument.EN_ATTENTE
+        assert len(taches) == 1
+        assert taches[0].statut == StatutTacheIA.EN_ATTENTE
+        assert taches[0].id in notifications
+
+
+def test_repare_une_fiche_en_attente_dont_la_tache_est_terminale(monkeypatch):
+    engine = moteur_sqlite()
+    monkeypatch.setattr(ai_queue, "engine", engine)
+    monkeypatch.setattr(ai_queue, "notifier_tache", lambda _task_id: True)
+
+    with Session(engine) as session:
+        document, _ = creer_document(session)
+        document_id = document.id
+
+    task_id = ai_queue.planifier_fiche_revision_document(document_id)
+    assert task_id is not None
+    with Session(engine) as session:
+        task = session.get(TacheIA, task_id)
+        fiche = session.exec(
+            select(FicheRevisionDocument).where(
+                FicheRevisionDocument.document_id == document_id
+            )
+        ).first()
+        task.statut = StatutTacheIA.TERMINEE
+        fiche.statut = StatutFicheRevisionDocument.EN_ATTENTE
+        session.add(task)
+        session.add(fiche)
+        session.commit()
+        fiche_id = fiche.id
+
+    reparations = ai_queue.reparer_fiches_revision_documents_bloquees(
+        document_ids=[document_id],
+    )
+
+    assert reparations == 1
+    with Session(engine) as session:
+        task = session.get(TacheIA, task_id)
+        fiche = session.get(FicheRevisionDocument, fiche_id)
+        assert task.statut == StatutTacheIA.EN_ATTENTE
+        assert task.nombre_essais == 0
+        assert fiche.statut == StatutFicheRevisionDocument.EN_ATTENTE
+
+
+def test_ne_replanifie_pas_une_tache_en_attente_ou_une_fiche_en_echec(monkeypatch):
+    engine = moteur_sqlite()
+    notifications = []
+    monkeypatch.setattr(ai_queue, "engine", engine)
+    monkeypatch.setattr(ai_queue, "notifier_tache", lambda task_id: notifications.append(task_id) or True)
+
+    with Session(engine) as session:
+        document, _ = creer_document(session)
+        document_id = document.id
+
+    task_id = ai_queue.planifier_fiche_revision_document(document_id)
+    assert task_id is not None
+    notification_count = len(notifications)
+    assert ai_queue.reparer_fiches_revision_documents_bloquees(
+        document_ids=[document_id],
+    ) == 0
+    assert len(notifications) == notification_count
+
+    with Session(engine) as session:
+        task = session.get(TacheIA, task_id)
+        fiche = session.exec(
+            select(FicheRevisionDocument).where(
+                FicheRevisionDocument.document_id == document_id
+            )
+        ).first()
+        task.statut = StatutTacheIA.ECHOUEE
+        fiche.statut = StatutFicheRevisionDocument.ECHOUEE
+        session.add(task)
+        session.add(fiche)
+        session.commit()
+
+    assert ai_queue.reparer_fiches_revision_documents_bloquees(
+        document_ids=[document_id],
+    ) == 0
+    with Session(engine) as session:
+        assert session.get(TacheIA, task_id).statut == StatutTacheIA.ECHOUEE
+
+
 @pytest.mark.parametrize(
     ("statut", "type_document"),
     [
@@ -277,3 +390,9 @@ def test_hub_et_fiche_document_sont_des_templates_compilables():
     assert "/documents/{{ doc.id }}/revision/telecharger/docx" in source_bibliotheque
     assert 'doc.type_document.value == "cours"' in source_bibliotheque
     assert "doc-revision-telechargements" in source_bibliotheque
+    assert "doc-revision-statut-attente" in source_bibliotheque
+    assert "En attente" in source_bibliotheque
+    assert "À planifier" in source_bibliotheque
+    assert "La fiche est inscrite dans la file de traitement IA" in source_bibliotheque
+    assert "Préparer ma fiche" in source_bibliotheque
+    assert "reparer_fiches_revision_documents_bloquees" in source_route
