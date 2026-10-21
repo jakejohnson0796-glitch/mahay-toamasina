@@ -50,6 +50,7 @@
   .doc-revision-icone{background:#d9efe3;color:#145b43}
   .doc-revision-statut{background:#fff;border-color:#78968a;color:#344f45}
   .doc-revision-statut-prete{background:#def3e6;border-color:#39835b;color:#165b38;font-weight:750}
+  .doc-revision-statut-attente{background:#fff4d8;border-color:#b98424;color:#754c07;font-weight:700}
   .doc-revision-statut-erreur{background:#fff0ec;border-color:#b95d49;color:#8b3024}
   .doc-revision-description{color:#3f5b4f}
   .doc-revision-lien{color:#145f58;text-decoration:underline;text-underline-offset:2px;font-weight:650}
@@ -67,6 +68,7 @@
   html[data-theme="sombre"] .doc-revision-icone{background:#254a3d;color:#a7e5c5}
   html[data-theme="sombre"] .doc-revision-statut{background:#1d3931;border-color:#648c7d;color:#e4f2eb}
   html[data-theme="sombre"] .doc-revision-statut-prete{background:#214e39;border-color:#73cc96;color:#d2ffe1}
+  html[data-theme="sombre"] .doc-revision-statut-attente{background:#4c3a18;border-color:#d7ac55;color:#ffedbd}
   html[data-theme="sombre"] .doc-revision-statut-erreur{background:#532821;border-color:#d98d7d;color:#ffe0d6}
   html[data-theme="sombre"] .doc-revision-description{color:#d1e3db}
   html[data-theme="sombre"] .doc-revision-lien{color:#a2e7df}
@@ -265,8 +267,10 @@ session dediee, avec sa propre verification desktop+mobile.
           <span class="doc-revision-statut doc-revision-statut-erreur">À vérifier</span>
           {% elif fiche_revision and fiche_revision.statut.value == "en_cours" %}
           <span class="doc-revision-statut">En préparation</span>
+          {% elif fiche_revision and fiche_revision.statut.value == "en_attente" %}
+          <span class="doc-revision-statut doc-revision-statut-attente">En attente</span>
           {% else %}
-          <span class="doc-revision-statut">À préparer</span>
+          <span class="doc-revision-statut">À planifier</span>
           {% endif %}
         </div>
       </div>
@@ -277,11 +281,20 @@ session dediee, avec sa propre verification desktop+mobile.
         <a class="bouton bouton-secondaire doc-revision-telecharger" href="/documents/{{ doc.id }}/revision/telecharger/docx">Télécharger Word</a>
       </div>
       {% elif fiche_revision and fiche_revision.statut.value == "echouee" %}
-      <p class="doc-revision-description">La fiche n’a pas pu être créée à partir du texte extrait. Ouvre le parcours pour voir l’état et, si tu as déposé ce cours, relancer la génération.</p>
-      <a class="doc-revision-lien" href="/documents/{{ doc.id }}/apprendre#revision-automatique">Voir le statut de la fiche →</a>
-      {% else %}
+      <p class="doc-revision-description">La génération a échoué. Si tu as déposé ce cours, ouvre le parcours pour relancer la fiche ; sinon, signale le problème au déposant ou à un administrateur.</p>
+      <a class="doc-revision-lien" href="/documents/{{ doc.id }}/apprendre#revision-automatique">Voir l’échec et les options de relance →</a>
+      {% elif fiche_revision and fiche_revision.statut.value == "en_attente" %}
+      <p class="doc-revision-description">La fiche est inscrite dans la file de traitement IA et attend son tour. Ce statut ne signifie pas que la génération a échoué.</p>
+      <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/apprendre#revision-automatique">Voir l’état de la file</a>
+      {% elif fiche_revision and fiche_revision.statut.value == "en_cours" %}
+      <p class="doc-revision-description">Le service IA travaille sur ce carnet. Le contenu et les téléchargements apparaîtront dès que la génération sera terminée.</p>
+      <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/apprendre#revision-automatique">Voir la préparation</a>
+      {% elif fiche_revision %}
       <p class="doc-revision-description">Retrouve les notions essentielles du document, les exercices et les corrections dans un carnet téléchargeable.</p>
-      <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/revision">{% if fiche_revision and fiche_revision.statut.value == "en_cours" %}Voir la préparation{% elif fiche_revision %}Ouvrir la fiche de révision{% else %}Préparer / consulter la fiche{% endif %}</a>
+      <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/revision">Préparer / consulter la fiche</a>
+      {% else %}
+      <p class="doc-revision-description">Le carnet n’a pas encore été planifié. Ouvre cette action pour demander sa préparation ; le traitement se fera en arrière-plan.</p>
+      <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/revision">Préparer ma fiche</a>
       {% endif %}
     </section>
     {% endif %}
