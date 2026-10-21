@@ -656,6 +656,59 @@ def terminer_seance(request: Request, seance_id: int, session: Session = Depends
     return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
 
+@router.get("/classe/revisions/{fiche_id}")
+def consulter_fiche_revision_cours(
+    request: Request,
+    fiche_id: int,
+    session: Session = Depends(get_session),
+):
+    """Lit la fiche dans le navigateur ; les fiches de progression restent privées."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    fiche = session.get(FicheRevisionCours, fiche_id)
+    if (
+        not fiche
+        or fiche.utilisateur_id != utilisateur.id
+        or not _est_inscrit(session, fiche.cours_id, utilisateur.id)
+    ):
+        return RedirectResponse("/classe", status_code=303)
+
+    if fiche.statut != StatutFicheRevisionCours.TERMINEE or not fiche.contenu_json:
+        return RedirectResponse(
+            f"/classe/{fiche.cours_id}?fiche=en_cours#seances",
+            status_code=303,
+        )
+
+    cours = session.get(Cours, fiche.cours_id)
+    seance = session.get(Seance, fiche.seance_id)
+    if not cours or not seance:
+        return RedirectResponse("/classe", status_code=303)
+
+    try:
+        contenu = course_revision.normaliser_fiche_revision(
+            json.loads(fiche.contenu_json)
+        )
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return RedirectResponse(
+            f"/classe/{cours.id}?fiche=indisponible#seances",
+            status_code=303,
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "classe_revision.html",
+        {
+            "utilisateur": utilisateur,
+            "cours": cours,
+            "seance": seance,
+            "fiche_revision": fiche,
+            "fiche_contenu": contenu,
+        },
+    )
+
+
 @router.get("/classe/revisions/{fiche_id}/telecharger/{format_fichier}")
 def telecharger_fiche_revision_cours(
     request: Request,
