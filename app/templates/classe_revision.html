@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from "components/icone.html" import icone %}
 {% block titre %}Carnet de révision — {{ cours.nom }} — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
@@ -12,7 +11,7 @@
     <p class="fiche-revision-subtitle">{{ cours.nom }} · {{ cours.matiere }} · {{ cours.niveau }}</p>
     <p class="fiche-revision-meta">Séance : <strong>{{ seance.titre }}</strong>{% if fiche_revision.date_generation %} · Générée le {{ fiche_revision.date_generation.strftime("%d/%m/%Y") }}{% endif %}</p>
     <div class="fiche-revision-actions">
-      <a class="bouton bouton-primaire" href="/classe/revisions/{{ fiche_revision.id }}/telecharger/pdf">{{ icone("telecharger", 16) }} Télécharger le PDF</a>
+      <a class="bouton bouton-primaire" href="/classe/revisions/{{ fiche_revision.id }}/telecharger/pdf">↓ Télécharger le PDF</a>
       <a class="bouton bouton-secondaire" href="/classe/revisions/{{ fiche_revision.id }}/telecharger/docx">Version Word</a>
       <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}#seances">Retour aux séances</a>
     </div>
