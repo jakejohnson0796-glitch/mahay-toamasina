@@ -1,7 +1,7 @@
 """Carnets de révision IA personnalisés par étudiant et séance.
 
 Revision ID: f8c2a61d9b40
-Revises: c4f9a1b7d2e6
+Revises: c7d2e5f8a1b4
 """
 from typing import Sequence, Union
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 revision: str = "f8c2a61d9b40"
-down_revision: Union[str, None] = "c4f9a1b7d2e6"
+down_revision: Union[str, None] = "c7d2e5f8a1b4"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
