@@ -1303,11 +1303,7 @@ class FicheRevisionDocument(SQLModel, table=True):
     reste séparé dans FicheRevisionCours.
     """
     id: Optional[int] = Field(default=None, primary_key=True)
-    document_id: int = Field(
-        foreign_key="document.id",
-        index=True,
-        unique=True,
-    )
+    document_id: int = Field(foreign_key="document.id")
     statut: StatutFicheRevisionDocument = Field(
         default=StatutFicheRevisionDocument.EN_ATTENTE,
         index=True,
@@ -1321,6 +1317,10 @@ class FicheRevisionDocument(SQLModel, table=True):
     date_generation: Optional[datetime] = None
 
 
+
+    __table_args__ = (
+        Index("uq_ficherevisiondocument_document", "document_id", unique=True),
+    )
 
 
 class CategorieFAQ(str, Enum):
