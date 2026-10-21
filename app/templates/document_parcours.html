@@ -74,10 +74,16 @@
       {% endif %}
       {% elif fiche_revision_document and fiche_revision_document.statut.value == "en_cours" %}
       <p role="status"><strong>Fiche en cours de préparation…</strong></p>
-      <p>Le document est extrait et la fiche de révision est en train d'être créée.</p>
+      <p>Le document est en cours de traitement. La génération du carnet est indépendante de la vérification pédagogique utilisée pour autoriser le quiz.</p>
+      <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/apprendre#revision-automatique">Actualiser l’état de la fiche</a>
+      {% elif fiche_revision_document and fiche_revision_document.statut.value == "en_attente" %}
+      <p role="status"><strong>Fiche placée dans la file d’attente…</strong></p>
+      <p>Le carnet attend d’être traité par le service IA. Cet état ne bloque pas le quiz si la fiche pédagogique est déjà validée.</p>
+      <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/apprendre#revision-automatique">Actualiser l’état de la fiche</a>
       {% else %}
-      <p role="status"><strong>Préparation automatique en attente…</strong></p>
-      <p>La fiche est mise en file de traitement dès que le cours est approuvé.</p>
+      <p role="status"><strong>Préparation automatique non confirmée</strong></p>
+      <p>Le carnet de révision n’est pas encore disponible. Actualise cette page pour vérifier l’état et relancer sa planification si nécessaire.</p>
+      <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/apprendre#revision-automatique">Actualiser l’état de la fiche</a>
       {% endif %}
     </div>
   </section>
@@ -87,8 +93,12 @@
     <div class="ai-section-head">
       <div>
         <span class="ai-kicker">Vérification pédagogique</span>
-        <h2 id="fiche-verification-title">Vérifier la fiche avant de générer un quiz</h2>
+        <h2 id="fiche-verification-title">{% if fiche_validee %}Fiche pédagogique validée{% else %}Vérifier la fiche avant de générer un quiz{% endif %}</h2>
+        {% if fiche_validee %}
+        <p>Cette fiche a déjà été vérifiée. Tu peux lancer un quiz sans remplir à nouveau ce formulaire.</p>
+        {% else %}
         <p>Le résumé automatique peut contenir des erreurs. Compare-le au fichier original ; la génération du quiz reste bloquée tant que la fiche n'a pas été vérifiée.</p>
+        {% endif %}
       </div>
     </div>
     {% if request.query_params.get("erreur") == "fiche_a_verifier" %}
@@ -110,7 +120,7 @@
     {% else %}
       <p class="ai-panel" role="status">État : fiche en attente de vérification. Son résumé ne sera pas proposé aux autres étudiants tant qu'il n'aura pas été confirmé.</p>
     {% endif %}
-    {% if peut_valider_fiche %}
+    {% if peut_valider_fiche and not fiche_validee %}
       {% if fiche_validation_possible %}
       <form method="post" action="/documents/{{ document.id }}/fiche/valider" class="ai-form ai-panel ai-form-card">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
