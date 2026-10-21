@@ -398,16 +398,19 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
             int(p.nb_reussites or 0),
         )
     )
-    difficultes = [
-        {
-            "notion": _normaliser_texte(p.notion, 150),
-            "score_maitrise": max(0, min(100, int(p.score_maitrise or 0))),
-            "questions_observees": max(0, int(p.nb_questions or 0)),
-            "erreurs_observees": max(0, int(p.nb_erreurs or 0)),
-        }
-        for p in progressions_matiere[:6]
-        if _normaliser_texte(p.notion, 150)
-    ]
+    difficultes = []
+    for progression in progressions_matiere[:6]:
+        notion = _normaliser_texte(progression.notion, 150)
+        if not notion:
+            continue
+        score = max(0, min(100, int(progression.score_maitrise or 0)))
+        priorite = "priorité élevée" if score < 40 else ("à consolider" if score < 70 else "à entretenir")
+        difficultes.append({
+            "notion": notion,
+            # L'IA ne reçoit que le niveau d'action pédagogique, pas les scores
+            # bruts, le volume de réponses ou le nombre d'erreurs de l'étudiant.
+            "priorite_revision": priorite,
+        })
 
     tentatives = session.exec(
         select(TentativeQuiz)
@@ -421,10 +424,16 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
             continue
         if tentative.date_soumission is None or tentative.score is None:
             continue
+        bonnes_reponses = max(0, int(tentative.score))
+        nombre_questions = max(1, int(tentative.nb_questions or 1))
+        taux_reussite = min(1.0, bonnes_reponses / nombre_questions)
+        tendance = (
+            "à consolider" if taux_reussite < 0.5
+            else ("en consolidation" if taux_reussite < 0.8 else "à entretenir")
+        )
         resultats_quiz.append({
-            "score": max(0, int(tentative.score)),
-            "questions": max(1, int(tentative.nb_questions or 1)),
-            "date": tentative.date_soumission.strftime("%d/%m/%Y"),
+            # Seule une tendance qualitative est transmise au fournisseur IA.
+            "tendance": tendance,
         })
         if len(resultats_quiz) >= 4:
             break
@@ -701,8 +710,8 @@ def generer_et_sauvegarder_fiche_revision_cours(fiche_id: int) -> None:
                 destinataire_id=utilisateur_id,
                 type_notification=TypeNotification.FICHE_REVISION_PRETE,
                 contenu=(
-                    "Ta fiche de révision personnalisée est prête à télécharger "
-                    f"pour le cours #{cours_id}, séance #{seance_id}."
+                    "Ta fiche de révision personnalisée est prête à télécharger. "
+                    "Ouvre ton cours pour récupérer le PDF ou la version Word."
                 ),
                 acteur_id=None,
             )
