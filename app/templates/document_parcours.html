@@ -36,6 +36,53 @@
   </section>
 
 
+  {% if document.type_document.value == "cours" %}
+  <section class="ai-section" id="revision-automatique" aria-labelledby="revision-automatique-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Révision assistée par IA</span>
+        <h2 id="revision-automatique-title">Ta fiche de révision automatique</h2>
+        <p>MITARIDALA prépare une fiche à partir du texte du cours approuvé : notions essentielles, exemples, exercices corrigés et plan de révision. Le contenu est conservé pour que tu puisses le consulter et le télécharger sans régénérer le document à chaque fois.</p>
+      </div>
+    </div>
+
+    {% if request.query_params.get("revision") == "en_cours" %}
+    <p class="ai-panel" role="status">La fiche est en préparation. Reviens dans un instant ; la génération se fait en arrière-plan.</p>
+    {% elif request.query_params.get("revision") == "indisponible" %}
+    <p class="ai-panel" role="alert">La fiche n'est pas disponible. Le texte extrait peut être insuffisant ou le service IA temporairement indisponible.</p>
+    {% elif request.query_params.get("revision") == "relancee" %}
+    <p class="ai-panel" role="status">La génération a été relancée.</p>
+    {% endif %}
+
+    <div class="ai-panel ai-form-card document-revision-status">
+      {% if fiche_revision_document and fiche_revision_document.statut.value == "terminee" %}
+      <p role="status"><strong>✓ Fiche prête à consulter</strong></p>
+      <p>Créée à partir du texte du document source. Vérifie toujours les formules et les exemples avec le fichier original ou ton professeur.</p>
+      <div class="ai-hero-actions document-revision-actions">
+        <a class="bouton bouton-primaire" href="/documents/{{ document.id }}/revision">Consulter le carnet de révision</a>
+        <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/revision/telecharger/pdf">Télécharger la fiche PDF</a>
+        <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/revision/telecharger/docx">Télécharger en Word</a>
+      </div>
+      {% elif fiche_revision_document and fiche_revision_document.statut.value == "echouee" %}
+      <p role="alert"><strong>La création automatique a échoué.</strong></p>
+      <p>Le fichier n'a pas fourni assez de texte exploitable ou une erreur technique a empêché la génération. Le système ne fabrique pas un résumé en prétendant l'avoir lu.</p>
+      {% if peut_relancer_revision %}
+      <form method="post" action="/documents/{{ document.id }}/revision/relancer">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <button class="bouton bouton-secondaire" type="submit">Réessayer la génération</button>
+      </form>
+      {% endif %}
+      {% elif fiche_revision_document and fiche_revision_document.statut.value == "en_cours" %}
+      <p role="status"><strong>Fiche en cours de préparation…</strong></p>
+      <p>Le document est extrait et la fiche de révision est en train d'être créée.</p>
+      {% else %}
+      <p role="status"><strong>Préparation automatique en attente…</strong></p>
+      <p>La fiche est mise en file de traitement dès que le cours est approuvé.</p>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
   <section class="ai-section" id="fiche-verification" aria-labelledby="fiche-verification-title">
     <div class="ai-section-head">
       <div>
@@ -173,5 +220,13 @@
       <div class="ai-feature"><strong>Tuteur contextualisé</strong><span>Le Tuteur reçoit seulement des extraits courts et pertinents pour limiter la latence.</span></div>
     </div>
   </section>
+<style nonce="{{ csp_nonce(request) }}">
+  .document-revision-status { min-width: 0; overflow-wrap: anywhere; }
+  .document-revision-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .9rem; }
+  @media (max-width: 680px) {
+    .document-revision-actions { align-items: stretch; }
+    .document-revision-actions a { width: 100%; justify-content: center; white-space: normal; }
+  }
+</style>
 </div>
 {% endblock %}
