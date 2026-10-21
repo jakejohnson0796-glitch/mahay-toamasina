@@ -159,6 +159,7 @@
           <div class="classe-row-actions">
             {% if not peut_gerer and seance.statut.value == "terminee" and fiche_revision %}
               {% if fiche_revision.statut.value == "terminee" %}
+              <a class="bouton bouton-primaire classe-revision-download" href="/classe/revisions/{{ fiche_revision.id }}" aria-label="Consulter la fiche de révision de {{ seance.titre }}">Consulter la fiche</a>
               <a class="bouton bouton-secondaire classe-revision-download" href="/classe/revisions/{{ fiche_revision.id }}/telecharger/pdf" aria-label="Télécharger la fiche PDF de {{ seance.titre }}">Télécharger PDF</a>
               <a class="bouton bouton-secondaire classe-revision-download" href="/classe/revisions/{{ fiche_revision.id }}/telecharger/docx" aria-label="Télécharger la fiche Word de {{ seance.titre }}">Version Word</a>
               {% elif fiche_revision.statut.value == "echouee" %}
