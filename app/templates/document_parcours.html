@@ -106,6 +106,7 @@
     {% endif %}
     {% if fiche_validee %}
       <p class="ai-panel" role="status">Fiche vérifiée le {{ document.fiche_validee_le.strftime("%d/%m/%Y à %H:%M") if document.fiche_validee_le else "—" }}. La génération de quiz est autorisée.</p>
+      <a class="bouton bouton-primaire document-quiz-lancement" href="/documents/{{ document.id }}/quiz">Lancer le Quiz IA maintenant &rarr;</a>
     {% else %}
       <p class="ai-panel" role="status">État : fiche en attente de vérification. Son résumé ne sera pas proposé aux autres étudiants tant qu'il n'aura pas été confirmé.</p>
     {% endif %}
