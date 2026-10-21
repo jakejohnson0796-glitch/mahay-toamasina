@@ -1477,7 +1477,7 @@ def approuver_document(
         acteur_id=utilisateur.id,
     )
     session.commit()
-    if document.type_document == TypeDocument.COURS:
+    if getattr(document, "type_document", None) == TypeDocument.COURS:
         # La génération du carnet est durable et asynchrone ; elle ne bloque
         # jamais la validation ni la mise à disposition du document source.
         ai_queue.planifier_fiche_revision_document(document.id)
