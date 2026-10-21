@@ -17,8 +17,10 @@ from sqlalchemy import or_
 from .config import parametres
 from .database import engine
 from .models import (
-    Cours, Document, FicheRevisionCours, InscriptionCours, Seance, SessionTuteur,
-    StatutFicheRevisionCours, StatutSeance, StatutTacheIA, TacheIA, TentativeQuiz,
+    Cours, Document, FicheRevisionCours, FicheRevisionDocument, InscriptionCours,
+    Seance, SessionTuteur, StatutDocument, StatutFicheRevisionCours,
+    StatutFicheRevisionDocument, StatutSeance, StatutTacheIA, TacheIA,
+    TentativeQuiz, TypeDocument,
 )
 from . import ai_memory, ai_risk
 
@@ -28,6 +30,7 @@ TYPE_VERIFICATION_QUIZ = "verification_quiz"
 TYPE_VERIFICATION_TUTEUR = "verification_tuteur"
 TYPE_RESUME_DOCUMENT = "resume_document"
 TYPE_FICHE_REVISION_COURS = "fiche_revision_cours"
+TYPE_FICHE_REVISION_DOCUMENT = "fiche_revision_document"
 DELAIS_REESSAI = (5, 15, 30, 60)
 MAX_ESSAIS = 5
 
@@ -266,6 +269,135 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
             type(erreur).__name__,
         )
         return None
+
+
+def planifier_fiche_revision_document(
+    document_id: int,
+    forcer: bool = False,
+) -> Optional[int]:
+    """Met en file une fiche téléchargeable depuis le contenu d'un cours approuvé."""
+    tache_id = None
+    notifier = False
+    maintenant = datetime.utcnow()
+    try:
+        with Session(engine) as session:
+            document = session.get(Document, document_id)
+            if (
+                not document
+                or document.statut != StatutDocument.APPROUVE
+                or document.type_document != TypeDocument.COURS
+            ):
+                return None
+
+            fiche = session.exec(
+                select(FicheRevisionDocument)
+                .where(FicheRevisionDocument.document_id == document_id)
+                .limit(1)
+            ).first()
+            if fiche and fiche.statut == StatutFicheRevisionDocument.TERMINEE and fiche.contenu_json != "{}":
+                return None
+            if fiche and fiche.statut == StatutFicheRevisionDocument.ECHOUEE and not forcer:
+                return None
+            if fiche is None:
+                fiche = FicheRevisionDocument(
+                    document_id=document_id,
+                    statut=StatutFicheRevisionDocument.EN_ATTENTE,
+                )
+                session.add(fiche)
+                session.flush()
+
+            tache = session.exec(
+                select(TacheIA)
+                .where(
+                    TacheIA.type_tache == TYPE_FICHE_REVISION_DOCUMENT,
+                    TacheIA.fiche_revision_document_id == fiche.id,
+                )
+                .limit(1)
+            ).first()
+
+            if tache and tache.statut == StatutTacheIA.EN_COURS and not forcer:
+                fiche.statut = StatutFicheRevisionDocument.EN_COURS
+                fiche.date_modification = maintenant
+                session.add(fiche)
+                session.commit()
+                return tache.id
+
+            if tache and tache.statut == StatutTacheIA.EN_ATTENTE and not forcer:
+                tache.disponible_le = min(tache.disponible_le or maintenant, maintenant)
+                tache.derniere_erreur = None
+                notifier = True
+            elif tache:
+                tache.statut = StatutTacheIA.EN_ATTENTE
+                tache.nombre_essais = 0
+                tache.disponible_le = maintenant
+                tache.prise_en_charge_le = None
+                tache.terminee_le = None
+                tache.derniere_erreur = None
+                notifier = True
+            else:
+                tache = TacheIA(
+                    type_tache=TYPE_FICHE_REVISION_DOCUMENT,
+                    tentative_quiz_id=None,
+                    session_tuteur_id=None,
+                    document_id=None,
+                    fiche_revision_cours_id=None,
+                    fiche_revision_document_id=fiche.id,
+                    statut=StatutTacheIA.EN_ATTENTE,
+                    strategie_verification="revision_depuis_document_cours",
+                    score_risque=0,
+                    nombre_essais=0,
+                    disponible_le=maintenant,
+                    date_creation=maintenant,
+                )
+                session.add(tache)
+                notifier = True
+
+            fiche.statut = StatutFicheRevisionDocument.EN_ATTENTE
+            fiche.erreur_generation = None
+            fiche.date_modification = maintenant
+            session.add(fiche)
+            session.add(tache)
+            session.commit()
+            session.refresh(tache)
+            tache_id = tache.id
+
+        if tache_id is not None and notifier:
+            notifier_tache(tache_id)
+        return tache_id
+    except Exception as erreur:
+        logger.exception(
+            "Impossible de planifier la fiche de révision du document de cours #%s (%s).",
+            document_id,
+            type(erreur).__name__,
+        )
+        return None
+
+
+def planifier_fiches_revision_documents_manquantes(max_documents: int = 3) -> int:
+    """Rattrape progressivement les cours approuvés déposés avant cette fonction."""
+    limite = max(1, min(int(max_documents or 1), 10))
+    with Session(engine) as session:
+        ids = session.exec(
+            select(Document.id)
+            .outerjoin(
+                FicheRevisionDocument,
+                FicheRevisionDocument.document_id == Document.id,
+            )
+            .where(
+                Document.statut == StatutDocument.APPROUVE,
+                Document.type_document == TypeDocument.COURS,
+                FicheRevisionDocument.id.is_(None),
+            )
+            .order_by(Document.date_upload, Document.id)
+            .limit(limite)
+        ).all()
+    total = 0
+    for document_id in ids:
+        if planifier_fiche_revision_document(int(document_id)) is not None:
+            total += 1
+    if total:
+        logger.info("Fiches de révision document historiques planifiées: %s.", total)
+    return total
 
 
 def planifier_resumes_documents_manquants(max_documents: int = 3) -> int:
@@ -764,6 +896,13 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
                     fiche_revision.erreur_generation = tache.derniere_erreur[:500]
                     fiche_revision.date_modification = datetime.utcnow()
                     session.add(fiche_revision)
+            if tache.type_tache == TYPE_FICHE_REVISION_DOCUMENT and tache.fiche_revision_document_id:
+                fiche_document = session.get(FicheRevisionDocument, tache.fiche_revision_document_id)
+                if fiche_document:
+                    fiche_document.statut = StatutFicheRevisionDocument.ECHOUEE
+                    fiche_document.erreur_generation = tache.derniere_erreur[:500]
+                    fiche_document.date_modification = datetime.utcnow()
+                    session.add(fiche_document)
             logger.error(
                 "Tache IA %s abandonnee apres %s essais: %s",
                 tache_id,
@@ -783,6 +922,13 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
                     fiche_revision.erreur_generation = None
                     fiche_revision.date_modification = datetime.utcnow()
                     session.add(fiche_revision)
+            if tache.type_tache == TYPE_FICHE_REVISION_DOCUMENT and tache.fiche_revision_document_id:
+                fiche_document = session.get(FicheRevisionDocument, tache.fiche_revision_document_id)
+                if fiche_document:
+                    fiche_document.statut = StatutFicheRevisionDocument.EN_ATTENTE
+                    fiche_document.erreur_generation = None
+                    fiche_document.date_modification = datetime.utcnow()
+                    session.add(fiche_document)
             logger.warning(
                 "Tache IA %s replanifiee dans %ss apres echec (%s/%s).",
                 tache_id,
