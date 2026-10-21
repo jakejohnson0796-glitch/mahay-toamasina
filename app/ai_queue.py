@@ -294,7 +294,11 @@ def planifier_fiche_revision_document(
                 .where(FicheRevisionDocument.document_id == document_id)
                 .limit(1)
             ).first()
-            if fiche and fiche.statut == StatutFicheRevisionDocument.TERMINEE and fiche.contenu_json != "{}":
+            if (
+                fiche
+                and fiche.statut == StatutFicheRevisionDocument.TERMINEE
+                and fiche.contenu_json not in {"", "{}"}
+            ):
                 return None
             if fiche and fiche.statut == StatutFicheRevisionDocument.ECHOUEE and not forcer:
                 return None
@@ -413,15 +417,26 @@ def reparer_fiches_revision_documents_bloquees(
     limite = max(1, min(int(max_documents or 1), 10))
     with Session(engine) as session:
         requete = (
-            select(FicheRevisionDocument.id, FicheRevisionDocument.document_id)
+            select(
+                FicheRevisionDocument.id,
+                FicheRevisionDocument.document_id,
+                FicheRevisionDocument.statut,
+                FicheRevisionDocument.contenu_json,
+            )
             .join(Document, Document.id == FicheRevisionDocument.document_id)
             .where(
                 Document.statut == StatutDocument.APPROUVE,
                 Document.type_document == TypeDocument.COURS,
-                FicheRevisionDocument.statut.in_([
-                    StatutFicheRevisionDocument.EN_ATTENTE,
-                    StatutFicheRevisionDocument.EN_COURS,
-                ]),
+                or_(
+                    FicheRevisionDocument.statut.in_([
+                        StatutFicheRevisionDocument.EN_ATTENTE,
+                        StatutFicheRevisionDocument.EN_COURS,
+                    ]),
+                    (
+                        (FicheRevisionDocument.statut == StatutFicheRevisionDocument.TERMINEE)
+                        & (FicheRevisionDocument.contenu_json.in_(["", "{}"]))
+                    ),
+                ),
             )
             .order_by(FicheRevisionDocument.date_modification, FicheRevisionDocument.id)
             .limit(limite)
@@ -435,7 +450,7 @@ def reparer_fiches_revision_documents_bloquees(
         if not fiches:
             return 0
 
-        ids_fiches = [int(fiche_id) for fiche_id, _ in fiches]
+        ids_fiches = [int(fiche_id) for fiche_id, _, _, _ in fiches]
         taches = session.exec(
             select(TacheIA)
             .where(
@@ -463,12 +478,20 @@ def reparer_fiches_revision_documents_bloquees(
             taches_par_fiche[int(fiche_id)] = tache
 
     reparations = 0
-    for fiche_id, document_id in fiches:
+    for fiche_id, document_id, fiche_statut, contenu_json in fiches:
         tache = taches_par_fiche.get(int(fiche_id))
-        if tache is None or tache.statut in {
-            StatutTacheIA.ECHOUEE,
-            StatutTacheIA.TERMINEE,
-        }:
+        contenu_absent = str(contenu_json or "").strip() in {"", "{}"}
+        fiche_terminee_incomplete = (
+            fiche_statut == StatutFicheRevisionDocument.TERMINEE and contenu_absent
+        )
+        if (
+            fiche_terminee_incomplete
+            or tache is None
+            or tache.statut in {
+                StatutTacheIA.ECHOUEE,
+                StatutTacheIA.TERMINEE,
+            }
+        ):
             if planifier_fiche_revision_document(int(document_id)) is not None:
                 reparations += 1
 
