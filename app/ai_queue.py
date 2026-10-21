@@ -401,7 +401,11 @@ def planifier_fiches_revision_documents_manquantes(max_documents: int = 3) -> in
             total += 1
     if total:
         logger.info("Fiches de révision document historiques planifiées: %s.", total)
-    return total
+
+    # Cette fonction est appelée périodiquement par le worker IA quand la file
+    # est calme : le rattrapage ne dépend donc pas d'une visite de la bibliothèque.
+    reparations = reparer_fiches_revision_documents_bloquees(max_documents=limite)
+    return total + reparations
 
 
 def reparer_fiches_revision_documents_bloquees(
@@ -422,22 +426,35 @@ def reparer_fiches_revision_documents_bloquees(
                 FicheRevisionDocument.document_id,
                 FicheRevisionDocument.statut,
                 FicheRevisionDocument.contenu_json,
+                FicheRevisionDocument.date_modification,
             )
             .join(Document, Document.id == FicheRevisionDocument.document_id)
+            .outerjoin(
+                TacheIA,
+                (TacheIA.type_tache == TYPE_FICHE_REVISION_DOCUMENT)
+                & (TacheIA.fiche_revision_document_id == FicheRevisionDocument.id),
+            )
             .where(
                 Document.statut == StatutDocument.APPROUVE,
                 Document.type_document == TypeDocument.COURS,
                 or_(
-                    FicheRevisionDocument.statut.in_([
-                        StatutFicheRevisionDocument.EN_ATTENTE,
-                        StatutFicheRevisionDocument.EN_COURS,
+                    TacheIA.id.is_(None),
+                    TacheIA.statut.in_([
+                        StatutTacheIA.ECHOUEE,
+                        StatutTacheIA.TERMINEE,
                     ]),
                     (
                         (FicheRevisionDocument.statut == StatutFicheRevisionDocument.TERMINEE)
                         & (FicheRevisionDocument.contenu_json.in_(["", "{}"]))
                     ),
                 ),
+                FicheRevisionDocument.statut.in_([
+                    StatutFicheRevisionDocument.EN_ATTENTE,
+                    StatutFicheRevisionDocument.EN_COURS,
+                    StatutFicheRevisionDocument.TERMINEE,
+                ]),
             )
+            .distinct()
             .order_by(FicheRevisionDocument.date_modification, FicheRevisionDocument.id)
             .limit(limite)
         )
@@ -450,7 +467,7 @@ def reparer_fiches_revision_documents_bloquees(
         if not fiches:
             return 0
 
-        ids_fiches = [int(fiche_id) for fiche_id, _, _, _ in fiches]
+        ids_fiches = [int(fiche_id) for fiche_id, _, _, _, _ in fiches]
         taches = session.exec(
             select(TacheIA)
             .where(
@@ -478,7 +495,7 @@ def reparer_fiches_revision_documents_bloquees(
             taches_par_fiche[int(fiche_id)] = tache
 
     reparations = 0
-    for fiche_id, document_id, fiche_statut, contenu_json in fiches:
+    for fiche_id, document_id, fiche_statut, contenu_json, _date_modification in fiches:
         tache = taches_par_fiche.get(int(fiche_id))
         contenu_absent = str(contenu_json or "").strip() in {"", "{}"}
         fiche_terminee_incomplete = (
