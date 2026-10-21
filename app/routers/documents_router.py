@@ -1423,8 +1423,30 @@ def enregistrer_modification_document(
         document.fiche_pedagogique_mg_json = "{}"
         document.resume_statut_ia_mg = "indisponible"
 
+    fiche_revision_document = session.exec(
+        select(FicheRevisionDocument).where(
+            FicheRevisionDocument.document_id == document.id
+        )
+    ).first()
+    if fiche_revision_document and modification:
+        # Le titre/matière/niveau ont changé : ne servir pas un carnet lié à
+        # d'anciennes métadonnées. Un recalcul sera mis en file après commit
+        # si le document reste un cours approuvé.
+        fiche_revision_document.statut = StatutFicheRevisionDocument.EN_ATTENTE
+        fiche_revision_document.contenu_json = "{}"
+        fiche_revision_document.sources_json = "{}"
+        fiche_revision_document.erreur_generation = None
+        fiche_revision_document.date_modification = datetime.utcnow()
+        session.add(fiche_revision_document)
+
+    est_cours_approuve = (
+        document.statut == StatutDocument.APPROUVE
+        and document.type_document == TypeDocument.COURS
+    )
     session.add(document)
     session.commit()
+    if est_cours_approuve:
+        ai_queue.planifier_fiche_revision_document(document.id)
     return _rediriger_moderation(
         "metadonnees_modifiees" if changement_contexte_pedagogique else "modifie"
     )
