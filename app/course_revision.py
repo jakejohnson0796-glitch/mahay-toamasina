@@ -287,6 +287,13 @@ def _matiere_cle(valeur: str | None) -> str:
     return alias.get(cle, cle)
 
 
+def _niveaux_compatibles(niveau_cours: str | None, niveau_source: str | None) -> bool:
+    """Un niveau manquant est legacy/indéterminé ; deux niveaux connus doivent coïncider."""
+    cours = _niveau_cle(niveau_cours)
+    source = _niveau_cle(niveau_source)
+    return not cours or not source or cours == source
+
+
 def _extraire_texte_objet(donnees: Any) -> str:
     """Extrait seulement les chaînes textuelles explicites d'un élément du tableau."""
     if isinstance(donnees, str):
@@ -377,7 +384,7 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
         # Un support de L3 ne doit pas passer pour une ressource de L1.
         # Les anciennes filières sans niveau restent admissibles, mais viennent
         # après les supports explicitement alignés sur le niveau du cours.
-        if niveau_cours and niveau_document and niveau_cours != niveau_document:
+        if not _niveaux_compatibles(niveau_cours, niveau_document):
             continue
         resume = _normaliser_texte(document.resume_ia, 850)
         if not resume:
@@ -404,7 +411,12 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
     ).all()
     progressions_matiere = [
         p for p in progressions
-        if matiere_cle and _matiere_cle(p.matiere) == matiere_cle and p.nb_questions > 0
+        if (
+            matiere_cle
+            and _matiere_cle(p.matiere) == matiere_cle
+            and p.nb_questions > 0
+            and _niveaux_compatibles(cours.niveau, p.niveau)
+        )
     ]
     progressions_matiere.sort(
         key=lambda p: (
@@ -436,6 +448,8 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
     resultats_quiz = []
     for tentative in tentatives:
         if not matiere_cle or _matiere_cle(tentative.matiere) != matiere_cle:
+            continue
+        if not _niveaux_compatibles(cours.niveau, tentative.niveau):
             continue
         if tentative.date_soumission is None or tentative.score is None:
             continue
