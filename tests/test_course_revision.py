@@ -193,3 +193,39 @@ def test_template_classe_detail_compile_avec_la_fiche_personnalisee():
     assert "fiches_revision_par_seance" in source
     assert "/telecharger/pdf" in source
     assert "/telecharger/docx" in source
+
+def test_contexte_ia_est_borne_sans_effacer_la_personnalisation():
+    contexte = {
+        "cours": {"nom": "Algèbre", "matiere": "Mathématiques", "niveau": "L1", "description": "Cours " * 500},
+        "seance": {
+            "titre": "Matrices",
+            "description": "Notes " * 600,
+            "notes_tableau_blanc": ["Note importante " * 90 for _ in range(28)],
+        },
+        "consignes_devoirs": [{"titre": f"Devoir {n}", "consigne": "Consigne " * 90} for n in range(6)],
+        "supports_academiques_approuves": [
+            {"titre": f"Support {n}", "niveau_source": "L1", "type": "cours", "resume": "Résumé " * 150}
+            for n in range(3)
+        ],
+        "profil_individuel": {
+            "notions_a_retravailler": [
+                {"notion": f"Notion fragile {n}", "score_maitrise": 20 + n, "questions_observees": 10, "erreurs_observees": 8}
+                for n in range(6)
+            ],
+            "resultats_quiz_recents": [{"score": 2, "questions": 5, "date": "20/10/2026"} for _ in range(4)],
+        },
+        "limites_sources": "Transcription non disponible. " * 200,
+    }
+
+    borne = course_revision._borner_contexte(contexte)
+
+    import json
+    assert len(json.dumps(borne, ensure_ascii=False, separators=(",", ":"))) <= course_revision.MAX_SOURCE_CHARS
+    assert borne["profil_individuel"]["notions_a_retravailler"]
+    assert borne["cours"]["matiere"] == "Mathématiques"
+
+
+def test_normalise_niveaux_academiques_usuels():
+    assert course_revision._niveau_cle("Licence 1") == "l1"
+    assert course_revision._niveau_cle("L1") == "l1"
+    assert course_revision._niveau_cle("Master 2") == "m2"
