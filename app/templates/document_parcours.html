@@ -55,7 +55,7 @@
     {% endif %}
 
     <div class="ai-panel ai-form-card document-revision-status">
-      {% if fiche_revision_document and fiche_revision_document.statut.value == "terminee" %}
+      {% if fiche_revision_document and fiche_revision_document.statut.value == "terminee" and fiche_revision_document.contenu_json not in ["", "{}"] %}
       <p role="status"><strong>✓ Fiche prête à consulter</strong></p>
       <p>Créée à partir du texte du document source. Vérifie toujours les formules et les exemples avec le fichier original ou ton professeur.</p>
       <div class="ai-hero-actions document-revision-actions">
@@ -63,6 +63,10 @@
         <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/revision/telecharger/pdf">Télécharger la fiche PDF</a>
         <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/revision/telecharger/docx">Télécharger en Word</a>
       </div>
+      {% elif fiche_revision_document and fiche_revision_document.statut.value == "terminee" %}
+      <p role="alert"><strong>Le statut est terminé, mais le carnet ne contient pas de fiche exploitable.</strong></p>
+      <p>MITARIDALA tente de réparer cet enregistrement. Actualise cette page ; si le problème persiste, demande au déposant ou à un administrateur de relancer la génération.</p>
+      <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/revision">Réparer / actualiser la fiche</a>
       {% elif fiche_revision_document and fiche_revision_document.statut.value == "echouee" %}
       <p role="alert"><strong>La création automatique a échoué.</strong></p>
       <p>Le fichier n'a pas fourni assez de texte exploitable ou une erreur technique a empêché la génération. Le système ne fabrique pas un résumé en prétendant l'avoir lu.</p>
