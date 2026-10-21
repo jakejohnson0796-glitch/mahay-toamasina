@@ -438,21 +438,24 @@ def reparer_fiches_revision_documents_bloquees(
                 Document.statut == StatutDocument.APPROUVE,
                 Document.type_document == TypeDocument.COURS,
                 or_(
-                    TacheIA.id.is_(None),
-                    TacheIA.statut.in_([
-                        StatutTacheIA.ECHOUEE,
-                        StatutTacheIA.TERMINEE,
-                    ]),
+                    (
+                        FicheRevisionDocument.statut.in_([
+                            StatutFicheRevisionDocument.EN_ATTENTE,
+                            StatutFicheRevisionDocument.EN_COURS,
+                        ])
+                        & or_(
+                            TacheIA.id.is_(None),
+                            TacheIA.statut.in_([
+                                StatutTacheIA.ECHOUEE,
+                                StatutTacheIA.TERMINEE,
+                            ]),
+                        )
+                    ),
                     (
                         (FicheRevisionDocument.statut == StatutFicheRevisionDocument.TERMINEE)
                         & (FicheRevisionDocument.contenu_json.in_(["", "{}"]))
                     ),
                 ),
-                FicheRevisionDocument.statut.in_([
-                    StatutFicheRevisionDocument.EN_ATTENTE,
-                    StatutFicheRevisionDocument.EN_COURS,
-                    StatutFicheRevisionDocument.TERMINEE,
-                ]),
             )
             .distinct()
             .order_by(FicheRevisionDocument.date_modification, FicheRevisionDocument.id)
