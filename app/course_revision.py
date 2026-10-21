@@ -62,8 +62,8 @@ from .text_extraction import extraire_texte
 logger = logging.getLogger(__name__)
 
 MAX_SOURCE_CHARS = 7800
-MAX_COMPLETION_TOKENS = 2600
-VERSION_GENERATION = "v1"
+MAX_COMPLETION_TOKENS = 6000
+VERSION_GENERATION = "v2"
 
 _SCHEMA_FICHE = {
     "type": "object",
@@ -607,6 +607,9 @@ def _texte_ia_non_fiable(contexte: dict) -> str:
         "- Chaque exercice doit avoir un énoncé, un indice et une correction réellement expliquée. "
         "Pour les calculs, vérifie les étapes et le résultat ; pour les matières non numériques, "
         "donne un exemple concret et une justification.\n"
+        "- Pour éviter une fiche coupée, reste concis : 5 notions maximum, 4 outils maximum, "
+        "3 ou 4 exercices, 4 points à retravailler maximum et 3 questions d'auto-évaluation. "
+        "Garde le plan de révision à 3 étapes. Chaque champ doit tenir en quelques phrases.\n"
         "- Varie compréhension, application et analyse. Évite de répéter trois fois le même exercice.\n"
         "- Utilise une notation texte commune aux fichiers PDF et Word : sqrt(x), x^2, <=, >=, a/b, * et des noms comme alpha ou delta.\n"
         "- N'utilise pas de commandes LaTeX, délimiteurs $, \\( ou \\[ ; les fichiers téléchargés ne sont pas un moteur de composition mathématique.\n"
@@ -723,6 +726,9 @@ def _texte_ia_document(contexte: dict) -> str:
         "compléter par une supposition.\n"
         "- Fais une synthèse orientée examen : définitions, idées centrales, "
         "formules/règles/méthodes pertinentes à la matière, exemples et erreurs fréquentes.\n"
+        "- Pour éviter une fiche coupée, reste concis : 5 notions maximum, 4 outils maximum, "
+        "3 ou 4 exercices, 4 points à retravailler maximum et 3 questions d'auto-évaluation. "
+        "Garde le plan de révision à 3 étapes. Chaque champ doit tenir en quelques phrases.\n"
         "- Génère des exercices diversifiés avec indice et correction expliquée. "
         "Vérifie les calculs et les réponses ; ne dévoile pas de solution contradictoire.\n"
         "- N'affiche aucune note ou information personnelle d'étudiant. Cette fiche est "
@@ -778,17 +784,42 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         # sans ce champ dans le schéma évite de perdre tout le carnet ; la
         # normalisation locale tentera une association prudente aux notions.
         erreur_texte = str(erreur).casefold()
-        if "notion" not in erreur_texte or "missing properties" not in erreur_texte:
+        erreur_notion = "notion" in erreur_texte and "missing properties" in erreur_texte
+        erreur_troncature = any(
+            marqueur in erreur_texte
+            for marqueur in (
+                "max completion tokens reached",
+                "output was truncated",
+                "missing required content",
+            )
+        )
+        if not (erreur_notion or erreur_troncature):
             raise
+
+        # Reprise unique en mode compact : enlève le champ de classement le plus
+        # souvent omis, puis le normaliseur l'associe aux notions de la source.
+        # Le prompt réduit aussi le volume pour laisser la place aux sections finales.
         schema_secours = _schema_fiche_revision_sans_notion()
         kwargs["response_format"] = ai_ensemble.structured_response_format(
             parametres.groq_model,
             schema_secours,
-            "produire_fiche_revision_cours_sans_notion",
+            "produire_fiche_revision_cours_reprise_compacte",
         )
+        kwargs["messages"] = [{
+            "role": "user",
+            "content": messages[0]["content"] + (
+                "\\n\\nREPRISE CONCISE OBLIGATOIRE : retourne une fiche complète mais compacte. "
+                "Maximum 5 notions, 4 outils, 3 exercices, 3 points à retravailler, "
+                "3 étapes de révision et 3 questions d'auto-évaluation. "
+                "N'omets aucun champ obligatoire. Le champ notion d'un exercice peut être omis."
+            ),
+        }]
+        kwargs["max_completion_tokens"] = MAX_COMPLETION_TOKENS
         logger.warning(
-            "Le modele IA a omis le champ notion d'un exercice ; nouvelle tentative "
-            "avec association locale securisee."
+            "Réponse de fiche IA non conforme ou tronquée ; nouvelle tentative compacte "
+            "(notion absente=%s, troncature=%s).",
+            erreur_notion,
+            erreur_troncature,
         )
         completion = ai_ensemble.cost_controller.call(
             "groq",
