@@ -207,6 +207,29 @@ def liste_documents(
             ).all()
         }
 
+    # Les cours historiques approuvés sans fiche sont préparés automatiquement
+    # lors de la consultation de la bibliothèque. Le lot est borné pour ne pas
+    # créer des centaines de tâches IA en une seule requête (la file est durable).
+    if utilisateur:
+        cours_sans_fiche = [
+            int(document.id)
+            for document in documents
+            if document.type_document == TypeDocument.COURS
+            and document.id is not None
+            and document.id not in fiches_revision_documents
+        ]
+        for document_id in cours_sans_fiche[:10]:
+            ai_queue.planifier_fiche_revision_document(document_id)
+        if cours_sans_fiche:
+            fiches_revision_documents = {
+                fiche.document_id: fiche
+                for fiche in session.exec(
+                    select(FicheRevisionDocument).where(
+                        FicheRevisionDocument.document_id.in_(ids_documents_affiches)
+                    )
+                ).all()
+            }
+
     return templates.TemplateResponse(
         "documents_list.html",
         {
