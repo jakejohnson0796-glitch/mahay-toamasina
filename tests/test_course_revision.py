@@ -70,7 +70,14 @@ def test_normalise_fiche_revision_personnalisee():
     assert course_revision._texte_pdf_compatible("√9 ≤ 3; Δ ≠ 0; x²") == "sqrt(9) <= 3; Delta != 0; x^2"
 
 
-def test_recupere_une_fiche_quand_groq_omet_le_champ_notion(monkeypatch):
+@pytest.mark.parametrize(
+    "erreur_initiale",
+    [
+        "json_validate_failed: jsonschema /exercices/0 missing properties: 'notion'",
+        "max completion tokens reached before generating a valid document: output was truncated and is missing required content",
+    ],
+)
+def test_recupere_une_fiche_si_notion_manquante_ou_sortie_tronquee(monkeypatch, erreur_initiale):
     donnees = fiche_valide()
     for exercice in donnees["exercices"]:
         exercice.pop("notion", None)
@@ -95,9 +102,7 @@ def test_recupere_une_fiche_quand_groq_omet_le_champ_notion(monkeypatch):
     def appel_avec_erreur_puis_reprise(_provider, operation):
         appels["nombre"] += 1
         if appels["nombre"] == 1:
-            raise RuntimeError(
-                "json_validate_failed: jsonschema /exercices/0 missing properties: 'notion'"
-            )
+            raise RuntimeError(erreur_initiale)
         return operation()
 
     monkeypatch.setattr(
@@ -114,6 +119,7 @@ def test_recupere_une_fiche_quand_groq_omet_le_champ_notion(monkeypatch):
     assert appels["nombre"] == 2
     assert fiche["exercices"][0]["notion"] == "Déterminant"
     assert all(exercice["notion"] for exercice in fiche["exercices"])
+    assert course_revision.MAX_COMPLETION_TOKENS == 6000
 
 
 def test_schema_de_secours_ne_requiert_pas_la_notion_de_chaque_exercice():
