@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+{% block titre %}Fiche de révision — {{ document.titre }} — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ai-learning-page document-revision-page">
+  <p class="document-revision-breadcrumb"><a href="/documents/{{ document.id }}/apprendre">← Retour au cours</a> / Fiche de révision</p>
+
+  <header class="document-revision-hero">
+    <span class="ai-kicker">MITARIDALA · RÉVISION À PARTIR D'UN COURS</span>
+    <h1>Fiche de révision intelligente</h1>
+    <p class="document-revision-subtitle">{{ document.titre }}</p>
+    <p class="document-revision-meta">{{ document.matiere }} · {{ document.annee }} · Référence {{ document.reference }}</p>
+    {% if fiche_revision_document.date_generation %}
+    <p class="document-revision-meta">Fiche générée le {{ fiche_revision_document.date_generation.strftime("%d/%m/%Y à %H:%M") }}</p>
+    {% endif %}
+    <div class="document-revision-actions">
+      <a class="bouton bouton-primaire" href="/documents/{{ document.id }}/revision/telecharger/pdf">↓ Télécharger la fiche PDF</a>
+      <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/revision/telecharger/docx">Télécharger la version Word</a>
+      <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/telecharger">Ouvrir le document original</a>
+    </div>
+  </header>
+
+  <aside class="document-revision-notice" role="note">
+    <strong>À vérifier avec la source</strong>
+    <p>Cette fiche a été générée automatiquement depuis le texte extrait du cours. Le rendu PDF/Word peut simplifier certaines notations scientifiques ; compare les formules importantes avec le document original. Les exercices sont conçus à partir des notions détectées, mais ils peuvent nécessiter une validation pédagogique.</p>
+    {% if fiche_sources.get("contenu_tronque") %}
+    <p>Le document était long : seule une partie du texte a été transmise à l'IA. Consulte aussi le document intégral pour éviter de manquer des chapitres.</p>
+    {% endif %}
+  </aside>
+
+  <section class="document-revision-section" aria-labelledby="doc-revision-resume-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number">01</span>
+      <div><h2 id="doc-revision-resume-title">L’essentiel à retenir</h2><p>Une synthèse pour retrouver rapidement les idées centrales.</p></div>
+    </div>
+    <p class="document-revision-body ai-rendered-content" data-rendu>{{ fiche_contenu.resume }}</p>
+  </section>
+
+  <section class="document-revision-section" aria-labelledby="doc-revision-objectifs-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number">02</span>
+      <div><h2 id="doc-revision-objectifs-title">Objectifs de révision</h2><p>Ce que tu devrais pouvoir expliquer ou appliquer après la révision.</p></div>
+    </div>
+    <ul class="document-revision-list">
+      {% for objectif in fiche_contenu.objectifs %}
+      <li><span aria-hidden="true">✓</span><div class="ai-rendered-content" data-rendu>{{ objectif }}</div></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="document-revision-section" aria-labelledby="doc-revision-notions-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number">03</span>
+      <div><h2 id="doc-revision-notions-title">Notions essentielles</h2><p>Les concepts importants, expliqués et illustrés.</p></div>
+    </div>
+    <div class="document-revision-grid">
+      {% for notion in fiche_contenu.notions %}
+      <article class="document-revision-card">
+        <h3>{{ notion.titre }}</h3>
+        <p class="ai-rendered-content" data-rendu>{{ notion.explication }}</p>
+        <div class="document-revision-example"><strong>Exemple</strong><p class="ai-rendered-content" data-rendu>{{ notion.exemple }}</p></div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if fiche_contenu.outils_a_retenir %}
+  <section class="document-revision-section" aria-labelledby="doc-revision-outils-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number">04</span>
+      <div><h2 id="doc-revision-outils-title">Formules, règles et méthodes</h2><p>Repères utiles à mémoriser et à appliquer.</p></div>
+    </div>
+    <div class="document-revision-grid">
+      {% for outil in fiche_contenu.outils_a_retenir %}
+      <article class="document-revision-card">
+        <h3>{{ outil.titre }}</h3>
+        <div class="document-revision-formula ai-rendered-content" data-rendu>{{ outil.contenu }}</div>
+        <p class="ai-rendered-content" data-rendu>{{ outil.explication }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="document-revision-section" aria-labelledby="doc-revision-exercices-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number">05</span>
+      <div><h2 id="doc-revision-exercices-title">Exercices d'entraînement</h2><p>Essaie d'abord seul, ouvre l'indice si besoin, puis consulte la correction.</p></div>
+    </div>
+    <div class="document-revision-exercises">
+      {% for exercice in fiche_contenu.exercices %}
+      <article class="document-revision-exercise">
+        <div class="document-revision-exercise-head"><h3>Exercice {{ loop.index }}</h3><span>{{ exercice.difficulte }}</span></div>
+        <p class="ai-rendered-content" data-rendu>{{ exercice.enonce }}</p>
+        <details><summary>Afficher un indice</summary><p class="ai-rendered-content" data-rendu>{{ exercice.indice }}</p></details>
+        <details><summary>J’ai essayé : afficher la correction expliquée</summary><p class="ai-rendered-content" data-rendu>{{ exercice.correction }}</p>
+        {% if exercice.notion %}<p class="document-revision-note">Notion : <span class="ai-rendered-content" data-rendu>{{ exercice.notion }}</span></p>{% endif %}
+        </details>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if fiche_contenu.points_a_retravailler %}
+  <section class="document-revision-section" aria-labelledby="doc-revision-priorites-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number">06</span>
+      <div><h2 id="doc-revision-priorites-title">Points à retravailler</h2><p>Les éléments que la fiche recommande de revoir en priorité.</p></div>
+    </div>
+    <ul class="document-revision-list">
+      {% for point in fiche_contenu.points_a_retravailler %}
+      <li><span aria-hidden="true">→</span><div class="ai-rendered-content" data-rendu>{{ point }}</div></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="document-revision-section" aria-labelledby="doc-revision-plan-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number">07</span>
+      <div><h2 id="doc-revision-plan-title">Plan de révision espacée</h2><p>Reviens sur les notions en plusieurs courtes sessions pour les retenir durablement.</p></div>
+    </div>
+    <div class="document-revision-plan">
+      {% for etape in fiche_contenu.plan_revision %}
+      <article><strong>{{ etape.moment }}</strong><p class="ai-rendered-content" data-rendu>{{ etape.action }}</p></article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="document-revision-section" aria-labelledby="doc-revision-auto-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number">08</span>
+      <div><h2 id="doc-revision-auto-title">Vérifie ce que tu as compris</h2><p>Essaie de répondre de mémoire avant d'ouvrir la réponse attendue.</p></div>
+    </div>
+    <div class="document-revision-exercises">
+      {% for question in fiche_contenu.auto_evaluation %}
+      <details class="document-revision-selftest"><summary>{{ loop.index }}. <span class="ai-rendered-content" data-rendu>{{ question.question }}</span></summary>
+        <p><strong>Réponse attendue</strong></p><p class="ai-rendered-content" data-rendu>{{ question.reponse }}</p>
+      </details>
+      {% endfor %}
+    </div>
+  </section>
+
+  <aside class="document-revision-notice">
+    <h2>Source et limites</h2>
+    <p class="ai-rendered-content" data-rendu>{{ fiche_contenu.limites_sources }}</p>
+    <p>Le document d'origine reste la référence. L'IA peut commettre des erreurs, notamment sur les équations, les tableaux, les scans peu lisibles ou les détails spécialisés.</p>
+  </aside>
+
+  <footer class="document-revision-actions document-revision-footer">
+    <a class="bouton bouton-primaire" href="/documents/{{ document.id }}/revision/telecharger/pdf">Télécharger ma fiche PDF</a>
+    <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/revision/telecharger/docx">Télécharger la version Word</a>
+    <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/apprendre">Retour au cours</a>
+  </footer>
+</div>
+
+<style nonce="{{ csp_nonce(request) }}">
+  .document-revision-page { width: min(100%, 1040px); margin-inline: auto; min-width: 0; }
+  .document-revision-breadcrumb { color: var(--text-muted, #64748b); }
+  .document-revision-breadcrumb a { color: var(--accent, #245b91); text-decoration: none; }
+  .document-revision-hero, .document-revision-section, .document-revision-notice {
+    background: var(--surface, #fff); color: var(--text, #203044);
+    border: 1px solid var(--border-subtle, #dfe6ef);
+    border-radius: 18px; padding: clamp(1rem, 3vw, 1.7rem); margin-block: 1rem; min-width: 0;
+  }
+  .document-revision-hero { background: linear-gradient(135deg, #f4f8ff, var(--surface, #fff) 75%); }
+  .document-revision-hero h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); line-height: 1.15; margin: .5rem 0; }
+  .document-revision-subtitle { font-weight: 750; font-size: 1.1rem; margin: .4rem 0; }
+  .document-revision-meta { color: var(--text-muted, #64748b); overflow-wrap: anywhere; }
+  .document-revision-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
+  .document-revision-section-head { display: flex; gap: .8rem; align-items: flex-start; margin-bottom: 1rem; }
+  .document-revision-section-head h2, .document-revision-notice h2 { margin: 0 0 .3rem; font-size: clamp(1.15rem, 2.6vw, 1.45rem); }
+  .document-revision-section-head p { margin: 0; color: var(--text-muted, #64748b); line-height: 1.55; }
+  .document-revision-number { flex: 0 0 auto; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: .7rem; background: #eaf2fb; color: #194f82; font-weight: 850; }
+  .document-revision-body { line-height: 1.8; white-space: pre-wrap; }
+  .document-revision-list { display: grid; gap: .65rem; list-style: none; padding: 0; margin: 0; }
+  .document-revision-list li { display: flex; gap: .65rem; align-items: flex-start; line-height: 1.65; min-width: 0; }
+  .document-revision-list li > span:first-child { color: var(--accent, #245b91); font-weight: 850; }
+  .document-revision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+  .document-revision-card { min-width: 0; border: 1px solid var(--border-subtle, #dfe6ef); border-radius: 14px; padding: 1rem; background: var(--surface-muted, #f8fafc); }
+  .document-revision-card h3, .document-revision-exercise h3 { margin: 0 0 .7rem; font-size: 1rem; }
+  .document-revision-card p, .document-revision-exercise p { line-height: 1.65; overflow-wrap: anywhere; }
+  .document-revision-example { border-top: 1px solid var(--border-subtle, #dfe6ef); margin-top: .8rem; padding-top: .7rem; }
+  .document-revision-formula { font-family: var(--font-mono, monospace); overflow-wrap: anywhere; padding: .7rem; border-radius: .6rem; background: var(--surface, white); }
+  .document-revision-exercises { display: grid; gap: .8rem; }
+  .document-revision-exercise { border: 1px solid var(--border-subtle, #dfe6ef); border-radius: 14px; padding: 1rem; min-width: 0; }
+  .document-revision-exercise-head { display: flex; justify-content: space-between; gap: .8rem; align-items: center; }
+  .document-revision-exercise-head span { color: var(--text-muted, #64748b); font-size: .85rem; }
+  .document-revision-exercise details, .document-revision-selftest { border-top: 1px solid var(--border-subtle, #dfe6ef); margin-top: .6rem; padding-top: .7rem; }
+  .document-revision-exercise summary, .document-revision-selftest summary { cursor: pointer; font-weight: 650; line-height: 1.5; }
+  .document-revision-note { color: var(--text-muted, #64748b); font-size: .9rem; }
+  .document-revision-plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+  .document-revision-plan article { border-left: 3px solid var(--accent, #245b91); background: var(--surface-muted, #f8fafc); padding: .8rem; min-width: 0; border-radius: .3rem .8rem .8rem .3rem; }
+  .document-revision-plan p { line-height: 1.6; overflow-wrap: anywhere; }
+  .document-revision-notice { line-height: 1.65; background: var(--surface-muted, #f8fafc); }
+  .document-revision-notice p { margin-block: .45rem; }
+  @media (max-width: 720px) {
+    .document-revision-grid { grid-template-columns: minmax(0, 1fr); }
+    .document-revision-plan { grid-template-columns: minmax(0, 1fr); }
+    .document-revision-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+    .document-revision-actions .bouton { width: 100%; white-space: normal; }
+    .document-revision-section-head { gap: .6rem; }
+  }
+</style>
+{% endblock %}

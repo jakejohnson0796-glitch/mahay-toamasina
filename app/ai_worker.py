@@ -43,6 +43,14 @@ def traiter_tache(tache) -> None:
         )
         return
 
+    if tache.type_tache == ai_queue.TYPE_FICHE_REVISION_DOCUMENT:
+        if not tache.fiche_revision_document_id:
+            raise RuntimeError("Tâche de fiche documentaire sans fiche_revision_document_id.")
+        course_revision.generer_et_sauvegarder_fiche_revision_document(
+            tache.fiche_revision_document_id
+        )
+        return
+
     if tache.type_tache == ai_queue.TYPE_VERIFICATION_QUIZ:
         if not tache.tentative_quiz_id:
             raise RuntimeError("Tache de verification quiz sans tentative_quiz_id.")
@@ -129,6 +137,7 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
 
     dernier_controle_db = 0.0
     derniere_planification_resume = 0.0
+    derniere_planification_revision_document = 0.0
     while arret is None or not arret.is_set():
         tache = None
         try:
@@ -169,6 +178,9 @@ def boucle_worker(arret: Optional[threading.Event] = None) -> None:
                     if maintenant_resume - derniere_planification_resume >= INTERVALLE_FILET_SECURITE_DB:
                         ai_queue.planifier_resumes_documents_manquants(max_documents=3)
                         derniere_planification_resume = maintenant_resume
+                    if maintenant_resume - derniere_planification_revision_document >= 60:
+                        ai_queue.planifier_fiches_revision_documents_manquantes(max_documents=1)
+                        derniere_planification_revision_document = maintenant_resume
                 except Exception:
                     logger.exception("Impossible de reparer la file IA Tuteur.")
 

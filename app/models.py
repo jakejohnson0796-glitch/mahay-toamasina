@@ -1003,6 +1003,7 @@ class TypeNotification(str, Enum):
     DOCUMENT_REJETE = "document_rejete"
     DOCUMENT_SUPPRIME = "document_supprime"
     FICHE_REVISION_PRETE = "fiche_revision_prete"
+    FICHE_REVISION_DOCUMENT_PRETE = "fiche_revision_document_prete"
 
 
 class Notification(SQLModel, table=True):
@@ -1285,6 +1286,43 @@ class FicheRevisionCours(SQLModel, table=True):
     )
 
 
+
+class StatutFicheRevisionDocument(str, Enum):
+    """État du carnet de révision commun construit depuis un document de cours approuvé."""
+    EN_ATTENTE = "en_attente"
+    EN_COURS = "en_cours"
+    TERMINEE = "terminee"
+    ECHOUEE = "echouee"
+
+
+class FicheRevisionDocument(SQLModel, table=True):
+    """Fiche source unique pour un document de cours approuvé.
+
+    Elle est générée une seule fois à partir du document réel puis accessible
+    aux étudiants autorisés à consulter cette ressource. Le profil personnel
+    reste séparé dans FicheRevisionCours.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    document_id: int = Field(foreign_key="document.id")
+    statut: StatutFicheRevisionDocument = Field(
+        default=StatutFicheRevisionDocument.EN_ATTENTE,
+        index=True,
+    )
+    contenu_json: str = Field(default="{}")
+    sources_json: str = Field(default="{}")
+    erreur_generation: Optional[str] = None
+    version_generation: str = Field(default="v1", max_length=24)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+    date_generation: Optional[datetime] = None
+
+
+
+    __table_args__ = (
+        Index("uq_ficherevisiondocument_document", "document_id", unique=True),
+    )
+
+
 class CategorieFAQ(str, Enum):
     """Categories fixes pour la V1 (pas de table dediee : le brief
     n'exige pas de gestion dynamique des categories, et une table
@@ -1433,6 +1471,11 @@ class TacheIA(SQLModel, table=True):
         foreign_key="ficherevisioncours.id",
         index=True,
     )
+    fiche_revision_document_id: Optional[int] = Field(
+        default=None,
+        foreign_key="ficherevisiondocument.id",
+        index=True,
+    )
     statut: StatutTacheIA = Field(default=StatutTacheIA.EN_ATTENTE, index=True)
     strategie_verification: str = Field(default="standard", index=True)
     score_risque: int = Field(default=0)
@@ -1464,6 +1507,12 @@ class TacheIA(SQLModel, table=True):
             "uq_tache_ia_type_fiche_revision_cours",
             "type_tache",
             "fiche_revision_cours_id",
+            unique=True,
+        ),
+        Index(
+            "uq_tache_ia_type_fiche_revision_document",
+            "type_tache",
+            "fiche_revision_document_id",
             unique=True,
         ),
         Index(
