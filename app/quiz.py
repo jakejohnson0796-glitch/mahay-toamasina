@@ -45,7 +45,13 @@ def valider_parametres(matiere: str, niveau: str, difficulte: str, nb_questions:
     return matiere
 
 
-def _generer_quiz_rapide(matiere: str, niveau: str, difficulte: str, nb_questions: int) -> List[Dict]:
+def _generer_quiz_rapide(
+    matiere: str,
+    niveau: str,
+    difficulte: str,
+    nb_questions: int,
+    questions_a_eviter: Optional[List[str]] = None,
+) -> List[Dict]:
     """Genere le quiz et ne fait sur le chemin utilisateur que la validation locale.
 
     La relecture multi-modeles reste utile pour la qualite et la memoire de
@@ -57,6 +63,7 @@ def _generer_quiz_rapide(matiere: str, niveau: str, difficulte: str, nb_question
         niveau,
         difficulte,
         nb_questions,
+        questions_a_eviter=questions_a_eviter,
     )
     return valider_questions(questions_generees, expected_count=nb_questions)
 
@@ -115,6 +122,61 @@ def _verifier_questions_avant_stockage(
         return questions
 
 
+def _questions_vues_recemment(
+    session: Session,
+    utilisateur_id: int,
+    matiere: str,
+    *,
+    limite_tentatives: int = 3,
+    limite_questions: int = 24,
+) -> List[str]:
+    """Récupère les énoncés récents de la même matière pour éviter de les régénérer."""
+    try:
+        lignes = session.exec(
+            select(TentativeQuiz)
+            .where(
+                TentativeQuiz.utilisateur_id == utilisateur_id,
+                TentativeQuiz.matiere == matiere,
+            )
+            .order_by(TentativeQuiz.id.desc())
+            .limit(limite_tentatives)
+        ).all()
+    except Exception:
+        # Certains appels de service et tests utilisent une session minimale.
+        # L'impossibilité de lire l'historique ne doit pas rendre le quiz inaccessible.
+        logger.debug("Historique anti-répétition du quiz indisponible.", exc_info=True)
+        return []
+
+    resultat: List[str] = []
+    empreintes = set()
+    for tentative_precedente in lignes if isinstance(lignes, (list, tuple)) else []:
+        try:
+            contenu = json.loads(tentative_precedente.questions_json or "[]")
+        except (TypeError, ValueError):
+            continue
+        questions_precedentes = (
+            contenu.get("questions", [])
+            if isinstance(contenu, dict)
+            else contenu
+        )
+        if not isinstance(questions_precedentes, list):
+            continue
+        for question_precedente in questions_precedentes:
+            if not isinstance(question_precedente, dict):
+                continue
+            enonce = question_precedente.get("question")
+            if not isinstance(enonce, str) or not enonce.strip():
+                continue
+            empreinte = _empreinte_question({"question": enonce})
+            if not empreinte or empreinte in empreintes:
+                continue
+            empreintes.add(empreinte)
+            resultat.append(enonce.strip()[:220])
+            if len(resultat) >= limite_questions:
+                return resultat
+    return resultat
+
+
 def creer_tentative(
     session: Session,
     utilisateur: Utilisateur,
@@ -130,6 +192,12 @@ def creer_tentative(
     faire attendre l'étudiant pendant les critiques/arbitrages Gemini/Groq.
     """
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
+    questions_a_eviter = _questions_vues_recemment(session, utilisateur.id, matiere)
+    empreintes_deja_vues = {
+        empreinte
+        for question_vu in questions_a_eviter
+        if (empreinte := _empreinte_question({"question": question_vu}))
+    }
     derniere_erreur = None
 
     for essai in range(2):
@@ -139,6 +207,7 @@ def creer_tentative(
                 niveau,
                 difficulte,
                 nb_questions,
+                questions_a_eviter=questions_a_eviter,
             )
             questions_validees = valider_questions(
                 questions_generees,
@@ -148,6 +217,19 @@ def creer_tentative(
             if len(questions_validees) != nb_questions:
                 raise QuizValidationError(
                     "Le nombre de questions générées est incorrect."
+                )
+
+            empreintes_nouvelles = [
+                _empreinte_question(question)
+                for question in questions_validees
+            ]
+            if len(set(empreintes_nouvelles)) != len(empreintes_nouvelles):
+                raise QuizValidationError(
+                    "Le quiz contient des questions identiques."
+                )
+            if empreintes_deja_vues.intersection(empreintes_nouvelles):
+                raise QuizValidationError(
+                    "Le quiz répète une question proposée dans un quiz récent."
                 )
 
             tentative = TentativeQuiz(
