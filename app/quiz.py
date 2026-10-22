@@ -830,32 +830,64 @@ def creer_tentative_ciblee(
     nb_questions: int = 5,
     progression: Optional[ProgressionNotion] = None,
 ) -> TentativeQuiz:
-    """Construit un quiz court centre sur une faiblesse avec difficulté adaptative."""
+    """Construit un quiz court centre sur une faiblesse, sans répéter les derniers énoncés."""
     if progression is not None and progression.utilisateur_id != utilisateur.id:
         progression = None
 
     difficulte_ciblee = difficulte_revision_adaptative(progression)
-
     matiere = valider_parametres(matiere, niveau, difficulte_ciblee, nb_questions)
     notion = (notion or "").strip()[:100]
     if not notion:
         raise QuizValidationError("La notion ciblee est obligatoire.")
-    questions_ciblees = ai_quiz.generer_quiz_cible(
-        matiere,
-        niveau,
-        notion,
-        nb_questions,
-        difficulte=difficulte_ciblee,
-    )
-    questions_ciblees = valider_questions(
-        questions_ciblees,
-        expected_count=nb_questions,
-        strict_coherence=True,
-    )
-    questions_ciblees = preparer_questions_adaptatives(
-        questions_ciblees,
-        difficulte_ciblee,
-    )
+
+    questions_a_eviter = _questions_vues_recemment(session, utilisateur.id, matiere)
+    questions_a_eviter_essai = list(questions_a_eviter)
+    empreintes_deja_vues = {
+        empreinte
+        for enonce in questions_a_eviter
+        if (empreinte := _empreinte_question({"question": enonce}))
+    }
+    derniere_erreur = None
+    questions_ciblees = None
+
+    for _essai in range(2):
+        try:
+            questions_ciblees = ai_quiz.generer_quiz_cible(
+                matiere,
+                niveau,
+                notion,
+                nb_questions,
+                difficulte=difficulte_ciblee,
+                questions_a_eviter=questions_a_eviter_essai,
+            )
+            questions_ciblees = valider_questions(
+                questions_ciblees,
+                expected_count=nb_questions,
+                strict_coherence=True,
+            )
+            empreintes = [_empreinte_question(question) for question in questions_ciblees]
+            if len(set(empreintes)) != len(empreintes) or empreintes_deja_vues.intersection(empreintes):
+                questions_a_eviter_essai.extend(
+                    question["question"] for question in questions_ciblees
+                )
+                empreintes_deja_vues.update(empreintes)
+                raise QuizValidationError(
+                    "Le quiz ciblé répète des questions déjà vues ou des énoncés générés lors d'un essai précédent."
+                )
+            questions_ciblees = preparer_questions_adaptatives(
+                questions_ciblees,
+                difficulte_ciblee,
+            )
+            break
+        except QuizValidationError as erreur:
+            derniere_erreur = erreur
+            questions_ciblees = None
+
+    if questions_ciblees is None:
+        raise QuizValidationError(
+            "Impossible de générer un quiz ciblé varié après deux tentatives."
+        ) from derniere_erreur
+
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
         matiere=matiere,
