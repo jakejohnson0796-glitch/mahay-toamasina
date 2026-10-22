@@ -131,7 +131,8 @@ def demarrer_jeu_cerebral(
     historique = session.exec(
         select(JeuCerebralSession)
         .where(JeuCerebralSession.utilisateur_id == utilisateur.id)
-        .where(JeuCerebralSession.date_fin.is_not(None))
+        # Inclure aussi les sessions abandonnées pour éviter de reproposer
+        # des questions déjà affichées ; profil_pour_ia ignore les scores absents.
         .order_by(JeuCerebralSession.date_creation.desc())
         .limit(8)
     ).all()
