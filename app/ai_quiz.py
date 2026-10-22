@@ -446,6 +446,7 @@ def generer_quiz_cible(
     notion: str,
     nb_questions: int = 5,
     difficulte: str = "Moyen",
+    questions_a_eviter: Optional[List[str]] = None,
 ) -> List[Dict]:
     """Genere un mini-quiz centre sur UNE notion avec une difficulte adaptee."""
     notion = (notion or "").strip()[:100]
@@ -462,6 +463,19 @@ def generer_quiz_cible(
         matiere=matiere,
         niveau=niveau,
     )
+    questions_recentes = [
+        str(question).strip().replace("\n", " ")[:180]
+        for question in (questions_a_eviter or [])
+        if isinstance(question, str) and question.strip()
+    ][:24]
+    consigne_anti_repetition = ""
+    if questions_recentes:
+        consigne_anti_repetition = (
+            "\n\nANTI-RÉPÉTITION OBLIGATOIRE : reste strictement sur la notion cible, "
+            "mais change l'application, le raisonnement et la situation. Ne copie pas, ne paraphrase pas "
+            "et ne change pas seulement les nombres des énoncés suivants :\n"
+            + "\n".join("- " + question for question in questions_recentes)
+        )
     difficultes = _sequence_difficultes_adaptatives(nb_questions, difficulte)
     calendrier_difficulte = ", ".join(
         f"Q{i + 1}={niveau_q}" for i, niveau_q in enumerate(difficultes)
@@ -476,6 +490,7 @@ def generer_quiz_cible(
         f"frequentes liees a cette notion. 4 choix plausibles, une seule "
         f"bonne reponse, une explication courte, une notion courte et precise "
         f"et le champ 'difficulte' correct pour chaque question. Retourne le JSON structure fourni."
+        f"{consigne_anti_repetition}"
         f"{chr(10) + chr(10) + memoire if memoire else ''}"
     )
     consigne_renforcee = (
