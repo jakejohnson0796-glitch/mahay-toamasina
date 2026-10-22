@@ -236,10 +236,13 @@ def test_interface_accueil_du_jeu_utilise_de_vraies_cartes_accessibles_et_respon
     assert "@media(max-width:440px)" in source
     assert "prefers-reduced-motion:reduce" in source
     assert 'name="chronometre" value="1"' in source
+    session_source = (
+        ROOT / "app" / "templates" / "jeu_cerebral_session.html"
+    ).read_text(encoding="utf-8")
     # Ne pas imposer font-size aux spans internes de KaTeX : cela écrase
     # l'échelle des exposants, fractions, racines et matrices dans les choix.
-    assert ".jeu-option > span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}" in source
-    assert ".jeu-option span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}" not in source
+    assert ".jeu-option > span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}" in session_source
+    assert ".jeu-option span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}" not in session_source
     assert 'id="jeu-reduire-animations"' in source
     assert "jeu-cerebral.js?v=" in source
 
