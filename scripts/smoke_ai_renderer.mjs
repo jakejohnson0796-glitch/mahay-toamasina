@@ -867,7 +867,8 @@ window.document.body.appendChild(damagedMatricesHost);
 const damagedMatricesSource = [
   "Exemple : A = beginpmatrix1&2&3&4&5&6endpmatrix est une matrice de type (2,3).",
   "Matrice unité : I_3 = beginpmatrix1&0&0&0&1&0&0&0&1endpmatrix.",
-  "Égalité : A=beginpmatrix1&2&3&4endpmatrix et B=beginpmatrix5&6&7&8endpmatrix."
+  "Égalité : A=beginpmatrix1&2&3&4endpmatrix et B=beginpmatrix5&6&7&8endpmatrix.",
+  "Matrice délimitée : \\(C=\\begin{pmatrix}1&2&3&4&5&6\\end{pmatrix}\\), de type (2,3)."
 ].join("\n");
 const damagedFormulaOffset = formulesRendues.length;
 window.rendreReponseIA(damagedMatricesSource, damagedMatricesHost);
@@ -877,7 +878,8 @@ const matricesAttendues = [
   "\\begin{pmatrix}1&2&3\\\\4&5&6\\end{pmatrix}",
   "\\begin{pmatrix}1&0&0\\\\0&1&0\\\\0&0&1\\end{pmatrix}",
   "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}",
-  "\\begin{pmatrix}5&6\\\\7&8\\end{pmatrix}"
+  "\\begin{pmatrix}5&6\\\\7&8\\end{pmatrix}",
+  "\\begin{pmatrix}1&2&3\\\\4&5&6\\end{pmatrix}"
 ];
 for (const attendue of matricesAttendues) {
   if (!damagedMatrixFormulas.some((formula) =>
