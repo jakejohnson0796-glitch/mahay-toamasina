@@ -519,7 +519,7 @@ def generer_quiz_par_theme(
         niveau=niveau,
     )
     questions_recentes = [
-        str(question).strip().replace("\\n", " ")[:180]
+        str(question).strip().replace("\n", " ")[:180]
         for question in (questions_a_eviter or [])
         if isinstance(question, str) and question.strip()
     ][:24]
@@ -530,7 +530,7 @@ def generer_quiz_par_theme(
             "Ne les recopie pas, ne les paraphrase pas, ne garde pas le même exercice en changeant uniquement "
             "les nombres, noms, valeurs ou l'ordre des choix. Chaque nouvelle question doit tester un autre "
             "raisonnement, une autre situation ou une autre facette de la notion.\n"
-            + "\\n".join("- " + question for question in questions_recentes)
+            + "\n".join("- " + question for question in questions_recentes)
         )
     consigne_base = (
         f"Tu es un professeur a l'Universite de Toamasina (Madagascar). "
