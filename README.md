@@ -14,6 +14,8 @@ MITARIDALA rassemble dans un même espace :
 
 > **Idée centrale :** aider un étudiant à passer de « je cherche » à « je comprends », puis à « je pratique » et « je progresse ».
 
+**Accès rapides** : [application en ligne](https://mitaridala.onrender.com) · [feuille de route TODO](TODO.md) · [convention responsive](docs/responsive-design.md) · [checklist de release](docs/RELEASE_CHECKLIST.md).
+
 ---
 
 ## 1. Ce que MITARIDALA apporte
@@ -67,6 +69,10 @@ L'IA reste un outil d'accompagnement : une réponse générée peut nécessiter 
 Le système peut générer des quiz à partir de ressources ou d'un contexte d'apprentissage. Les tentatives sont conservées pour permettre le suivi des résultats.
 
 Une partie de la validation des quiz vérifie notamment la cohérence des choix, des explications et des résultats mathématiques ou techniques.
+
+### Jeu cérébral
+
+Le jeu cérébral propose des défis courts avec progression de difficulté et retours pédagogiques. L’expérience visuelle est enrichie par des illustrations et des animations ; les interactions doivent rester lisibles sur mobile et l’animation pouvoir être réduite lorsque l’utilisateur préfère moins de mouvement. Les tests du jeu et des illustrations font partie de la suite de régression.
 
 ### Collaboration
 
@@ -164,8 +170,9 @@ PostgreSQL reste la source durable. Redis accélère la distribution des tâches
 - CSS du projet ;
 - JavaScript ciblé et sans framework obligatoire ;
 - PWA ;
-- couche responsive commune chargée après les styles métier, avec prise en charge des zones de sécurité, de l'orientation et de la navigation tactile ;
-- interfaces adaptatives des pages publiques, étudiantes, collaboratives et administratives. Voir [la convention responsive](docs/responsive-design.md).
+- fondation responsive commune, puis couche de finition visuelle globale chargée après les styles métier ;
+- adaptations aux zones de sécurité, à l’orientation, à la navigation tactile, au mode sombre, aux préférences de mouvement réduit et aux modes de contraste renforcé ;
+- interfaces adaptatives des pages publiques, étudiantes, collaboratives et administratives. Les couches partagées comprennent notamment **responsive-universal.css** et **interface-polish.css** ; voir [la convention responsive](docs/responsive-design.md).
 
 ---
 
@@ -367,14 +374,15 @@ Ne committez jamais un fichier .env réel ou un secret.
 
 ## 10. Tests et qualité
 
-La CI du projet contrôle plusieurs niveaux de qualité :
+La CI du projet comporte deux jobs principaux (**test** et **postgres-smoke**) et contrôle plusieurs niveaux de qualité :
 
-1. validation du graphe Alembic ;
+1. validation du graphe Alembic et de l’identité de release ;
 2. compilation Python de l'application et des tests ;
 3. vérification du contrat de déploiement Render ;
-4. exécution des tests automatisés ;
-5. smoke test PostgreSQL avec migrations et démarrage réel ;
-6. smoke test Playwright de la navigation mobile et de sept familles de pages à 11 largeurs d'écran.
+4. exécution des tests automatisés, isolés par fichier ;
+5. smoke test PostgreSQL avec migrations rejouées pour vérifier leur idempotence, puis démarrage réel et vérification du référentiel ;
+6. smoke tests navigateur pour le rendu IA, le sélecteur de langue, les cercles, la voix du Tuteur et le responsive ;
+7. contrôle responsive couvrant sept familles de pages, onze largeurs d’écran (265 à 1440 px) et les thèmes clair/sombre.
 
 Pour reproduire les contrôles localement :
 
@@ -382,6 +390,7 @@ Pour reproduire les contrôles localement :
 python scripts/verify_migrations.py
 python -m compileall -q app tests
 python scripts/verify_deployment_contract.py
+python scripts/verify_release_identity.py
 pytest -q
 ~~~
 
@@ -436,11 +445,13 @@ Avant de proposer une modification :
 1. comprendre le domaine concerné ;
 2. vérifier les dépendances entre routes, modèles, templates et migrations ;
 3. ajouter ou mettre à jour les tests concernés ;
-4. vérifier la compilation ;
+4. vérifier la compilation et les scripts de contrôle applicables ;
 5. vérifier les migrations si le schéma change ;
-6. vérifier le comportement mobile si l'interface est modifiée.
+6. vérifier le comportement mobile, le mode sombre et les préférences de mouvement si l'interface change ;
+7. mettre à jour README.md et TODO.md lorsque les capacités ou les priorités évoluent ;
+8. ne fusionner ni déployer qu’après réussite de la CI, puis vérifier les contrôles post-déploiement.
 
-Une fonctionnalité n'est considérée comme terminée que lorsqu'elle est cohérente avec le reste du parcours.
+Une fonctionnalité n'est considérée comme terminée que lorsque le parcours utilisateur, ses contrôles de sécurité, ses tests et sa documentation sont cohérents.
 
 ---
 
