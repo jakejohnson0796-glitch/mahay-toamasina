@@ -921,13 +921,14 @@ if (multiDisciplineHost.querySelector('code .katex, pre .katex')) {
 // Vérifie la sanitisation réelle du HTML hostile dans le même pipeline.
 // Le texte utile doit rester visible, mais les attributs exécutables et scripts sont retirés.
 // Les options du Quiz IA et du Jeu cérébral rendent les mathématiques en ligne.
-// Ce smoke cible les wrappers utilisés dans ces interfaces.
+// Ces cas reproduisent des formules réelles à l'intérieur des options interactives.
+const slashMath = String.fromCharCode(92);
 const optionMathCases = [
-  String.raw`\\frac{12}{18}=\\frac{2}{3}`,
-  String.raw`\\sqrt{1000}\\approx31{,}6`,
-  String.raw`\\Delta E=\\hbar\\omega`,
-  String.raw`\\ce{2H2 + O2 -> 2H2O}`,
-  String.raw`A=\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}`
+  slashMath + '(' + slashMath + 'frac{12}{18}=' + slashMath + 'frac{2}{3}' + slashMath + ')',
+  slashMath + '(' + slashMath + 'sqrt{1000}' + slashMath + 'approx31{,}6' + slashMath + ')',
+  slashMath + '(' + slashMath + 'Delta E=' + slashMath + 'hbar' + slashMath + 'omega' + slashMath + ')',
+  slashMath + '(' + slashMath + 'ce{2H2 + O2 -> 2H2O}' + slashMath + ')',
+  slashMath + '(A=' + slashMath + 'begin{pmatrix}1&2' + slashMath + slashMath + '3&4' + slashMath + 'end{pmatrix}' + slashMath + ')'
 ];
 for (const family of ['quiz-choice-text', 'jeu-option-math']) {
   const option = window.document.createElement('div');
@@ -947,7 +948,6 @@ for (const family of ['quiz-choice-text', 'jeu-option-math']) {
     throw new Error(family + ' lost an inline math expression');
   }
 }
-
 const securityHost = window.document.createElement('div');
 window.document.body.appendChild(securityHost);
 window.rendreReponseIA(
