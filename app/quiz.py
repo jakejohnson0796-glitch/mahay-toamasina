@@ -193,6 +193,7 @@ def creer_tentative(
     """
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
     questions_a_eviter = _questions_vues_recemment(session, utilisateur.id, matiere)
+    questions_a_eviter_essai = list(questions_a_eviter)
     empreintes_deja_vues = {
         empreinte
         for question_vu in questions_a_eviter
@@ -207,7 +208,7 @@ def creer_tentative(
                 niveau,
                 difficulte,
                 nb_questions,
-                questions_a_eviter=questions_a_eviter,
+                questions_a_eviter=questions_a_eviter_essai,
             )
             questions_validees = valider_questions(
                 questions_generees,
@@ -224,10 +225,16 @@ def creer_tentative(
                 for question in questions_validees
             ]
             if len(set(empreintes_nouvelles)) != len(empreintes_nouvelles):
+                questions_a_eviter_essai.extend(
+                    question["question"] for question in questions_validees
+                )
                 raise QuizValidationError(
                     "Le quiz contient des questions identiques."
                 )
             if empreintes_deja_vues.intersection(empreintes_nouvelles):
+                questions_a_eviter_essai.extend(
+                    question["question"] for question in questions_validees
+                )
                 raise QuizValidationError(
                     "Le quiz répète une question proposée dans un quiz récent."
                 )
