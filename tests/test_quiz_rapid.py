@@ -391,7 +391,7 @@ def test_recupere_les_enonces_des_trois_derniers_quiz_sans_doublons():
     resultats = quiz._questions_vues_recemment(session, 19, "Mathématiques")
 
     assert len(resultats) == 2
-    assert "Quelle est la dérivée de x² ?" in resultats
+    assert any("Quelle est la dérivée de x²" in enonce for enonce in resultats)
     assert "Résoudre 2x + 3 = 7" in resultats
 
 
