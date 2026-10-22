@@ -20,7 +20,7 @@
 <link rel="icon" type="image/svg+xml" href="/static/images/site/mitaridala-mark.svg">
 <link rel="alternate icon" type="image/svg+xml" href="/static/images/site/mitaridala-icon.svg">
 <link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
-<meta name="theme-color" content="#123A68">
+<meta name="theme-color" content="#0D4645">
 <meta name="description" content="MITARIDALA — plateforme éducative malgache pour apprendre, réviser et collaborer. Documents, cercles d’étude, universités et outils d’apprentissage réunis au même endroit.">
 <meta property="og:title" content="MITARIDALA — Madagascar">
 <meta property="og:description" content="Ton chemin vers la réussite : apprendre, réviser et collaborer.">
@@ -111,6 +111,7 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/mfa-setup.js?v={{ version_asset('js/mfa-setup.js') }}" defer></script>
 {% endif %}
 <link rel="stylesheet" href="/static/responsive-universal.css?v={{ version_asset('responsive-universal.css') }}">
+<link rel="stylesheet" href="/static/interface-polish.css?v={{ version_asset('interface-polish.css') }}">
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
