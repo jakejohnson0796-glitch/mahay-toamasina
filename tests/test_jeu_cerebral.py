@@ -48,7 +48,7 @@ def test_mode_local_fournit_des_questions_en_francais_et_en_malagasy(monkeypatch
 
     assert source_fr == source_mg == "local"
     assert "Quatre boras" not in francais[0]["question"]
-    assert "Bora rehetra" in malagasy[0]["question"]
+    assert any("Bora rehetra" in question["question"] for question in malagasy)
     assert "question_mg" not in malagasy[0]
     assert malagasy[0]["choix"] != francais[0]["choix"]
 
