@@ -228,6 +228,7 @@ def creer_tentative(
                 questions_a_eviter_essai.extend(
                     question["question"] for question in questions_validees
                 )
+                empreintes_deja_vues.update(empreintes_nouvelles)
                 raise QuizValidationError(
                     "Le quiz contient des questions identiques."
                 )
@@ -235,6 +236,7 @@ def creer_tentative(
                 questions_a_eviter_essai.extend(
                     question["question"] for question in questions_validees
                 )
+                empreintes_deja_vues.update(empreintes_nouvelles)
                 raise QuizValidationError(
                     "Le quiz répète une question proposée dans un quiz récent."
                 )
