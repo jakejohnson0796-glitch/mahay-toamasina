@@ -140,7 +140,7 @@ def test_renderer_protege_le_dom_katex_contre_un_second_passage():
     assert 'ancetre.classList.contains("katex")' in js
     assert 'ancetre.classList.contains("gm-katex")' in js
     assert 'ancetre.classList.contains("gm-latex-fallback")' in js
-    assert 'cible.dataset.renduVersion = "15"' in js
+    assert 'cible.dataset.renduVersion = "16"' in js
 
 
 def test_renderer_decode_les_sauts_de_ligne_ia_legacy_sans_casser_nabla():

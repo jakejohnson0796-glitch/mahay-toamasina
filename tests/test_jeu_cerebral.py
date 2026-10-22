@@ -47,10 +47,23 @@ def test_mode_local_fournit_des_questions_en_francais_et_en_malagasy(monkeypatch
     )
 
     assert source_fr == source_mg == "local"
-    assert "Quatre boras" not in francais[0]["question"]
-    assert any("Bora rehetra" in question["question"] for question in malagasy)
-    assert "question_mg" not in malagasy[0]
-    assert malagasy[0]["choix"] != francais[0]["choix"]
+    assert all("Quatre boras" not in question["question"] for question in francais)
+    assert all("question_mg" not in question for question in malagasy)
+
+    # Vérifie la traduction sur un exemple déterministe plutôt que de dépendre
+    # du tirage aléatoire des huit questions qui composent la session locale.
+    source_bilingue = next(
+        question
+        for question in jeu_cerebral.BANQUE_LOCALE["logique"]
+        if "Bora rehetra" in question.get("question_mg", "")
+    )
+    question_fr = jeu_cerebral._localiser_question(source_bilingue, "fr")
+    question_mg = jeu_cerebral._localiser_question(source_bilingue, "mg")
+    assert question_fr["question"] == source_bilingue["question"]
+    assert question_mg["question"] == source_bilingue["question_mg"]
+    assert question_mg["choix"] == source_bilingue["choix_mg"]
+    assert question_mg["choix"] != question_fr["choix"]
+    assert "question_mg" not in question_mg
 
 
 def test_indisponibilite_ia_revient_au_mode_local(monkeypatch):

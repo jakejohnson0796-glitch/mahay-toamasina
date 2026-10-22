@@ -123,6 +123,71 @@
       .replace(/\u0008mod\b/g, "\\bmod")
       .replace(/\u0008ig\b/g, "\\big");
 
+    // Répare les fiches anciennes où le transport ou le modèle a supprimé
+    // les antislashs/accolades de begin{pmatrix} et end{pmatrix}.
+    // On reste limité aux environnements appariés, afin de ne pas changer la prose.
+    const motifMatriceDegradee = /(^|[^\w\\])\\?begin\s*\{?\s*(Bmatrix|Vmatrix|pmatrix|bmatrix|vmatrix|matrix|cases|alignedat|aligned|gathered|smallmatrix|array)\s*\}?([\s\S]*?)\\?end\s*\{?\s*(Bmatrix|Vmatrix|pmatrix|bmatrix|vmatrix|matrix|cases|alignedat|aligned|gathered|smallmatrix|array)\s*\}?(?=$|[^\w])/g;
+    resultat = resultat.replace(motifMatriceDegradee, function (match, prefix, environnement, corps, environnementFin, offset, sourceComplete) {
+      if (environnement !== environnementFin) return match;
+
+      const segment = match.slice(prefix.length);
+      const marqueursComplets =
+        segment.startsWith("\\begin{" + environnement + "}") &&
+        segment.endsWith("\\end{" + environnement + "}");
+      let corpsFinal = corps;
+
+      // Dans les anciennes fiches, les séparateurs de ligne ont parfois disparu.
+      // Ne reconstruire que les matrices numériques non ambiguës.
+      const cellules = corps.split("&").map(function (cellule) { return cellule.trim(); });
+      const cellulesSimples = cellules.length > 1 &&
+        cellules.every(function (cellule) { return /^[A-Za-z0-9_.,+−*/^() \t-]+$/.test(cellule); });
+      const cellulesNumeriques = cellulesSimples &&
+        cellules.every(function (cellule) { return /^[-−+]?\d+(?:[.,]\d+)?$/.test(cellule); });
+      const contientSeparateurLigne = /\\\\|\\cr/.test(corps);
+      const estMatrice = /^(?:Bmatrix|Vmatrix|pmatrix|bmatrix|vmatrix|matrix)$/.test(environnement);
+
+      if (estMatrice && cellulesSimples && !contientSeparateurLigne) {
+        const avant = sourceComplete.slice(Math.max(0, offset - 180), offset + prefix.length);
+        const apres = sourceComplete.slice(offset + match.length, offset + match.length + 180);
+        let nombreLignes = 0;
+
+        const motifDimensions = /(?:type|dimensions?)\s*\(\s*(\d+)\s*[,;x×]\s*(\d+)\s*\)/i;
+        const dimensions = motifDimensions.exec(apres) || motifDimensions.exec(avant);
+        if (dimensions && Number(dimensions[1]) * Number(dimensions[2]) === cellules.length) {
+          nombreLignes = Number(dimensions[1]);
+        }
+
+        // La notation I_n identifie sans ambiguïté une matrice identité carrée.
+        if (!nombreLignes) {
+          const identite = /\bI\s*_\s*(?:\{\s*(\d+)\s*\}|(\d+))\s*=\s*$/i.exec(avant);
+          if (identite) {
+            const dimension = Number(identite[1] || identite[2]);
+            if (dimension > 1 && dimension * dimension === cellules.length) nombreLignes = dimension;
+          }
+        }
+
+        // Pour les autres matrices abîmées, un nombre carré de coefficients est
+        // un indice prudent de matrice carrée (2×2, 3×3, 4×4...).
+        if (!nombreLignes && !marqueursComplets && cellulesNumeriques) {
+          const racine = Math.sqrt(cellules.length);
+          if (Number.isInteger(racine) && racine > 1) nombreLignes = racine;
+        }
+
+        if (nombreLignes > 1 && cellules.length % nombreLignes === 0) {
+          const nombreColonnes = cellules.length / nombreLignes;
+          const separateurLigne = String.fromCharCode(92).repeat(2);
+          const lignes = [];
+          for (let i = 0; i < cellules.length; i += nombreColonnes) {
+            lignes.push(cellules.slice(i, i + nombreColonnes).join(" & "));
+          }
+          corpsFinal = lignes.join(" " + separateurLigne + " ");
+        }
+      }
+
+      return prefix + "\\begin{" + environnement + "}" + corpsFinal + "\\end{" + environnement + "}";
+    });
+
+
     // Réparer les séquences d’abord, puis protéger les formules déjà délimitées
     // pour que la récupération des formules nues ne les réécrive pas.
     resultat = resultat.replace(zonesMathProtegees, function (bloc) {
@@ -1082,7 +1147,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "15" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "16" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -1099,7 +1164,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "15";
+    cible.dataset.renduVersion = "16";
     cible.dataset.renduDeps = signature;
     return cible;
   }
