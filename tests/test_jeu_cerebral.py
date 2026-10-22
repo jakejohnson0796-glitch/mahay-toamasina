@@ -324,7 +324,9 @@ def test_banque_locale_elargie_et_rotation_evite_les_motifs_recents():
         for item in questions
     )
     cles = [jeu_cerebral._cle_question(item["question"]) for item in questions]
+    structures = [jeu_cerebral._cle_question(item["question"], structure=True) for item in questions]
     assert len(cles) == len(set(cles))
+    assert len(structures) == len(set(structures))
 
 
 def test_jeu_complete_la_session_si_toutes_les_questions_locales_sont_deja_vues():
