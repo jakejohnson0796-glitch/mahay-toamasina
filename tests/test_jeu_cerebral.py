@@ -33,7 +33,7 @@ def test_tous_les_themes_ont_une_banque_locale_valide_et_suffisante():
     assert set(jeu_cerebral.BANQUE_LOCALE) == set(jeu_cerebral.THEMES_PAR_ID)
     for theme in jeu_cerebral.THEMES:
         questions = jeu_cerebral.BANQUE_LOCALE[theme["id"]]
-        assert len(questions) >= jeu_cerebral.NB_QUESTIONS_SESSION
+        assert len(questions) >= 10
         assert {question["difficulte"] for question in questions} == set(jeu_cerebral.DIFFICULTES)
         valider_questions(questions, expected_count=len(questions), strict_coherence=True)
 
@@ -301,3 +301,44 @@ def test_illustrations_du_jeu_cerebral_sont_locales_et_utilisees():
         assert 0 < fichier.stat().st_size < 20_000, f"Illustration SVG trop volumineuse : {nom}"
     assert "sessionStorage" in (ROOT / "app" / "static" / "js" / "jeu-cerebral.js").read_text(encoding="utf-8")
     assert "loading=\"lazy\"" in session
+
+
+def test_banque_locale_elargie_et_rotation_evite_les_motifs_recents():
+    for theme in jeu_cerebral.THEMES:
+        assert len(jeu_cerebral.BANQUE_LOCALE[theme["id"]]) >= 10
+
+    recent = jeu_cerebral.BANQUE_LOCALE["calcul"][0]["question"]
+    questions, source = jeu_cerebral.generer_banque_questions(
+        "calcul",
+        "fr",
+        {"difficulte_depart": "Moyen"},
+        utiliser_ia=False,
+        questions_a_eviter=[recent],
+    )
+
+    assert source == "local"
+    assert len(questions) >= jeu_cerebral.NB_QUESTIONS_SESSION
+    assert all(
+        jeu_cerebral._cle_question(item["question"], structure=True)
+        != jeu_cerebral._cle_question(recent, structure=True)
+        for item in questions
+    )
+    cles = [jeu_cerebral._cle_question(item["question"]) for item in questions]
+    assert len(cles) == len(set(cles))
+
+
+def test_jeu_complete_la_session_si_toutes_les_questions_locales_sont_deja_vues():
+    historie = [
+        question["question"]
+        for question in jeu_cerebral.BANQUE_LOCALE["logique"]
+    ]
+    questions, source = jeu_cerebral.generer_banque_questions(
+        "logique",
+        "fr",
+        {"difficulte_depart": "Moyen"},
+        utiliser_ia=False,
+        questions_a_eviter=historie,
+    )
+
+    assert len(questions) >= jeu_cerebral.NB_QUESTIONS_SESSION
+    assert source == "local"
