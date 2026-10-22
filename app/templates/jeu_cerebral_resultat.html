@@ -135,7 +135,7 @@
 
   {% if partie.source_generation != "ia" %}
   <div class="jeu-result-section" role="note">
-    <p class="jeu-result-muted" style="margin:0">{% if langue == "mg" %}Fanazaran-tena voaomana no nampiasaina satria tsy nisy ny famoronana IA tamin'ity lalao ity.{% else %}Cette session a utilisé la banque locale de secours, car la génération IA était indisponible ou non autorisée pour cette partie.{% endif %}</p>
+    <p class="jeu-result-muted" style="margin:0">{% if langue == "mg" %}{% if partie.source_generation == "mixte" %}Nampifangaroana fanontaniana IA vaovao sy fanazaran-tena hafa ny lalao mba hampihenana ny famerimberenana.{% else %}Fanazaran-tena voaomana no nampiasaina satria tsy nisy ny famoronana IA tamin'ity lalao ity.{% endif %}{% else %}{% if partie.source_generation == "mixte" %}Cette session mélange des questions IA inédites et des exercices de secours distincts pour limiter les répétitions.{% else %}Cette session a utilisé la banque locale de secours, car la génération IA était indisponible ou non autorisée pour cette partie.{% endif %}{% endif %}</p>
   </div>
   {% endif %}
 
