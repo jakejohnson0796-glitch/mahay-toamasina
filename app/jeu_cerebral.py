@@ -459,11 +459,13 @@ def _questions_fraiches(
 
     fraiches: list[dict[str, Any]] = []
     anciennes: list[dict[str, Any]] = []
+    cles_candidates: set[str] = set()
     for question in candidates:
         cle = _cle_question(str(question.get("question") or ""))
         structure = _cle_question(str(question.get("question") or ""), structure=True)
-        if not cle:
+        if not cle or cle in cles_candidates:
             continue
+        cles_candidates.add(cle)
         if cle in cles_exactes or structure in cles_structure:
             anciennes.append(question)
         else:
@@ -636,12 +638,6 @@ def generer_banque_questions(
         completer_avec_anciennes=False,
     )
 
-    banques_sources = [question for question in questions_ia_fraiches]
-    source = "ia"
-    if len(banques_sources) < NB_QUESTIONS_SESSION:
-        banques_sources = []
-        source = "local"
-
     locales = [dict(question) for question in BANQUE_LOCALE[theme_id]]
     if langue == "mg":
         locales = [_localiser_question(question, langue) for question in locales]
@@ -652,41 +648,40 @@ def generer_banque_questions(
         completer_avec_anciennes=False,
     )
 
-    if banques_sources:
-        # Si seulement 5 à 7 questions IA sont réellement fraîches, elles restent
-        # prioritaires et sont complétées par la banque de secours non répétée.
-        if len(banques_sources) < NB_QUESTIONS_BANQUE_IA:
-            deja = {_cle_question(str(q.get("question") or "")) for q in banques_sources}
-            banques_sources.extend(
-                q for q in locales_fraiches
-                if _cle_question(str(q.get("question") or "")) not in deja
-            )
-            if len(banques_sources) > NB_QUESTIONS_BANQUE_IA:
-                banques_sources = banques_sources[:NB_QUESTIONS_BANQUE_IA]
-            if len(banques_sources) < NB_QUESTIONS_SESSION:
-                source = "mixte"
-            else:
-                source = "mixte"
-        else:
-            source = "ia"
+    # Garder les questions inédites de l'IA même si le modèle n'en fournit que
+    # quelques-unes; compléter avec des exercices locaux différents, au lieu
+    # de jeter le résultat IA et de revenir à la même banque.
+    banques_sources = list(questions_ia_fraiches)
+    cles_presentes = {
+        _cle_question(str(question.get("question") or ""))
+        for question in banques_sources
+    }
+    for question in locales_fraiches:
+        cle = _cle_question(str(question.get("question") or ""))
+        if cle and cle not in cles_presentes:
+            banques_sources.append(question)
+            cles_presentes.add(cle)
+        if len(banques_sources) >= NB_QUESTIONS_BANQUE_IA:
+            break
+
+    if questions_ia_fraiches and len(banques_sources) > len(questions_ia_fraiches):
+        source = "mixte"
+    elif questions_ia_fraiches:
+        source = "ia"
     else:
-        banques_sources = locales_fraiches
         source = "local"
 
     if len(banques_sources) < NB_QUESTIONS_SESSION:
-        # La banque vient d'être enrichie. En situation extrême (toutes les
-        # structures connues ont été vues), on fait tourner les plus anciennes
-        # plutôt que d'échouer ou de relancer toujours le même petit set.
+        # Épuisement rare : complète avec les plus anciennes questions encore
+        # distinctes, en commençant par celles vues le moins récemment.
+        candidats_reemploi = list(questions_ia) + locales
         banques_sources = _questions_fraiches(
-            banques_sources if banques_sources else locales,
+            candidats_reemploi,
             historique,
-            limite=max(NB_QUESTIONS_SESSION, min(NB_QUESTIONS_BANQUE_IA, len(locales))),
+            limite=min(NB_QUESTIONS_BANQUE_IA, len(candidats_reemploi)),
             completer_avec_anciennes=True,
         )
-        if source == "ia" and len(banques_sources) < NB_QUESTIONS_SESSION:
-            source = "local"
-        elif source == "ia":
-            source = "mixte"
+        source = "mixte" if questions_ia_fraiches else "local"
 
     random.shuffle(banques_sources)
     return banques_sources, source
