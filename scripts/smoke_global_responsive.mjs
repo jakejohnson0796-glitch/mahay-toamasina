@@ -68,6 +68,9 @@ const cssPaths = [...base.matchAll(/href="\/static\/([^"?]+\.css)(?:\?[^"]*)?"/g
 if (!cssPaths.includes("app/static/responsive-universal.css")) {
   throw new Error("responsive-universal.css doit être chargé depuis base.html.");
 }
+if (!cssPaths.includes("app/static/interface-polish.css")) {
+  throw new Error("interface-polish.css doit être chargé en dernier depuis base.html.");
+}
 const styles = cssPaths.map((file) => {
   const css = read(file).replace(/<\/style/gi, "<\\/style");
   return "<style data-source=\"" + path.basename(file) + "\">" + css + "</style>";
