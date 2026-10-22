@@ -31,7 +31,7 @@
     .jeu-options{display:grid;gap:.65rem;margin:0;padding:0;border:0}
     .jeu-option{position:relative;display:flex;align-items:flex-start;gap:.75rem;border:1px solid var(--content-border);border-radius:13px;padding:.85rem .9rem;cursor:pointer;background:var(--content-bg);transition:border-color .15s ease,background .15s ease}
     .jeu-option input{width:18px;height:18px;margin:.15rem 0 0;accent-color:var(--content-link);flex:0 0 auto}
-    .jeu-option span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
+    .jeu-option > span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
     .jeu-option:has(input:checked){border-color:var(--content-link);background:color-mix(in srgb,var(--content-link) 7%,var(--content-bg))}
     .jeu-option:focus-within{outline:2px solid var(--content-link);outline-offset:2px}
     .jeu-submit-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-top:1.15rem}
