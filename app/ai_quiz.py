@@ -495,7 +495,13 @@ def generer_quiz_cible(
     return _extraire_questions(completion, expected_count=nb_questions)
 
 
-def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questions: int = 5) -> List[Dict]:
+def generer_quiz_par_theme(
+    matiere: str,
+    niveau: str,
+    difficulte: str,
+    nb_questions: int = 5,
+    questions_a_eviter: Optional[List[str]] = None,
+) -> List[Dict]:
     """
     Genere un quiz a choix multiples directement a partir d'un theme choisi
     par l'etudiant (matiere/niveau/difficulte), sans document source. Meme
@@ -512,6 +518,20 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
         matiere=matiere,
         niveau=niveau,
     )
+    questions_recentes = [
+        str(question).strip().replace("\\n", " ")[:180]
+        for question in (questions_a_eviter or [])
+        if isinstance(question, str) and question.strip()
+    ][:24]
+    consigne_anti_repetition = ""
+    if questions_recentes:
+        consigne_anti_repetition = (
+            "ANTI-REPETITION OBLIGATOIRE : les questions suivantes ont déjà été données à cet étudiant. "
+            "Ne les recopie pas, ne les paraphrase pas, ne garde pas le même exercice en changeant uniquement "
+            "les nombres, noms, valeurs ou l'ordre des choix. Chaque nouvelle question doit tester un autre "
+            "raisonnement, une autre situation ou une autre facette de la notion.\n"
+            + "\\n".join("- " + question for question in questions_recentes)
+        )
     consigne_base = (
         f"Tu es un professeur a l'Universite de Toamasina (Madagascar). "
         f"Genere exactement {nb_questions} questions de revision a choix "
@@ -524,6 +544,7 @@ def generer_quiz_par_theme(matiere: str, niveau: str, difficulte: str, nb_questi
         f"pas de tableau Markdown et n'ajoute aucun prefixe A/B/C/D/E dans 'choix'. "
         f"Reste concis afin de produire "
         f"l'ensemble des questions dans un seul appel. Retourne le JSON structure fourni."
+        f"{chr(10) + chr(10) + consigne_anti_repetition if consigne_anti_repetition else ''}"
         f"{chr(10) + chr(10) + memoire if memoire else ''}"
     )
     consigne_renforcee = (
