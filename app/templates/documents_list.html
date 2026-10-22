@@ -304,14 +304,16 @@ session dediee, avec sa propre verification desktop+mobile.
     </section>
     {% endif %}
     <div class="doc-actions">
-      <a class="bouton bouton-secondaire doc-bouton" href="/documents/{{ doc.id }}/telecharger">Telecharger</a>
       {% if utilisateur %}
+      <a class="bouton bouton-secondaire doc-bouton" href="/documents/{{ doc.id }}/telecharger">Télécharger le document</a>
       {% if doc.fiche_validation_statut == "validee" %}
       <a class="doc-lien-quiz doc-quiz-cta" href="/documents/{{ doc.id }}/quiz">Lancer le quiz &rarr;</a>
       {% else %}
       <a class="doc-lien-fiche-validation doc-quiz-cta" href="/documents/{{ doc.id }}/apprendre#fiche-verification">Vérifier puis lancer le quiz &rarr;</a>
       {% endif %}
       <a class="doc-lien-quiz" href="/documents/{{ doc.id }}/apprendre">Parcours &rarr;</a>
+      {% else %}
+      <a class="bouton bouton-secondaire doc-bouton" href="/connexion">Connectez-vous pour télécharger</a>
       {% endif %}
     </div>
   </div>

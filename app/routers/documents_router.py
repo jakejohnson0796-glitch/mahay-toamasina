@@ -706,13 +706,17 @@ def upload_documents_multiples(
 
 @router.get("/documents/{document_id}/telecharger")
 def telecharger_document(request: Request, document_id: int, session: Session = Depends(get_session)):
-    """Telechargement d'un document approuve.
+    """Téléchargement réservé aux comptes connectés et aux ressources autorisées.
 
-    Les documents generaux restent publics apres moderation. Un document
-    rattache a un cercle, en revanche, reste prive aux membres de ce cercle
-    (meme garde-fou que la liste /documents?cercle_id=...).
+    La bibliothèque peut présenter les métadonnées d'un document approuvé aux
+    visiteurs, mais le fichier lui-même n'est jamais téléchargeable anonymement.
+    Les ressources rattachées à un cercle restent réservées à ses membres.
     """
     utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        # Protéger également l'accès direct à l'URL, pas uniquement le bouton UI.
+        return RedirectResponse("/connexion", status_code=303)
+
     document = session.get(Document, document_id)
 
     if not document or document.statut != StatutDocument.APPROUVE:
@@ -722,11 +726,7 @@ def telecharger_document(request: Request, document_id: int, session: Session = 
         if not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id):
             return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
 
-    host = request.client.host if request.client else "inconnu"
-    if utilisateur:
-        if limite_depassee(f"telechargement-document:user:{utilisateur.id}", 60, 300):
-            return RedirectResponse("/documents?erreur=trop_de_telechargements", status_code=303)
-    elif limite_depassee(f"telechargement-document:ip:{host}", 60, 300):
+    if limite_depassee(f"telechargement-document:user:{utilisateur.id}", 60, 300):
         return RedirectResponse("/documents?erreur=trop_de_telechargements", status_code=303)
 
     document.nb_telechargements += 1
