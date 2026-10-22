@@ -58,7 +58,7 @@ def test_quiz_depuis_document_cree_une_tentative_interactive(monkeypatch):
     monkeypatch.setattr(
         documents_router,
         "generer_quiz_depuis_texte",
-        lambda texte, nb_questions=5: [
+        lambda texte, nb_questions=5, questions_a_eviter=None: [
             {
                 "question": f"Question {i}",
                 "choix": ["A", "B", "C", "D"],
