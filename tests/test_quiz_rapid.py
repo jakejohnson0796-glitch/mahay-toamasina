@@ -416,3 +416,26 @@ def test_prompt_quiz_exclut_les_questions_deja_vues(monkeypatch):
     assert result == _questions()
     assert "ANTI-REPETITION OBLIGATOIRE" in captures["messages"][0]
     assert "Résoudre 2x + 3 = 7" in captures["messages"][0]
+
+
+def test_prompt_quiz_documentaire_exclut_les_enonces_deja_vus(monkeypatch):
+    captures = {}
+    monkeypatch.setattr(ai_quiz, "_obtenir_client", lambda: object())
+
+    def fake_completion(_client, messages, **kwargs):
+        captures["messages"] = messages
+        captures["kwargs"] = kwargs
+        return object(), None
+
+    monkeypatch.setattr(ai_quiz, "_generer_completion_avec_reessai", fake_completion)
+    monkeypatch.setattr(ai_quiz, "_extraire_questions", lambda completion, expected_count: _questions() * expected_count)
+
+    result = ai_quiz.generer_quiz_depuis_texte(
+        "Support universitaire assez long pour produire de bonnes questions et des exercices.",
+        nb_questions=1,
+        questions_a_eviter=["Calculer le déterminant de la matrice A."],
+    )
+
+    assert len(result) == 1
+    assert "ANTI-REPETITION" in captures["messages"][0]
+    assert "Calculer le déterminant de la matrice A." in captures["messages"][0]
