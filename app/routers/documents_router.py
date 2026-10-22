@@ -29,6 +29,7 @@ from ..web_utils import entier_ou_none
 from .. import gamification
 from .. import ai_queue
 from .. import course_revision
+from .. import quiz as quiz_module
 from ..rate_limit import limite_depassee
 from ..document_classifier import classifier_document
 from ..quiz_validation import QuizValidationError, valider_questions
@@ -1282,8 +1283,54 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     try:
         with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
             texte = extraire_texte(str(chemin_local))
-        questions_generees = generer_quiz_depuis_texte(texte, nb_questions=5)
-        questions_verifiees = valider_questions(questions_generees, expected_count=5)
+
+        matiere_quiz = (document.matiere or document.titre or "Document").strip()[:120]
+        questions_a_eviter = quiz_module._questions_vues_recemment(
+            session, utilisateur.id, matiere_quiz
+        )
+        questions_a_eviter_essai = list(questions_a_eviter)
+        empreintes_deja_vues = {
+            empreinte
+            for enonce in questions_a_eviter
+            if (empreinte := quiz_module._empreinte_question({"question": enonce}))
+        }
+        questions_verifiees = None
+        derniere_erreur = None
+        for _essai in range(2):
+            try:
+                questions_generees = generer_quiz_depuis_texte(
+                    texte,
+                    nb_questions=5,
+                    questions_a_eviter=questions_a_eviter_essai,
+                )
+                questions_courantes = valider_questions(
+                    questions_generees, expected_count=5
+                )
+                empreintes = [
+                    quiz_module._empreinte_question(question)
+                    for question in questions_courantes
+                ]
+                if len(set(empreintes)) != len(empreintes):
+                    questions_a_eviter_essai.extend(
+                        question["question"] for question in questions_courantes
+                    )
+                    empreintes_deja_vues.update(empreintes)
+                    raise QuizValidationError("Le quiz du document contient des questions identiques.")
+                if empreintes_deja_vues.intersection(empreintes):
+                    questions_a_eviter_essai.extend(
+                        question["question"] for question in questions_courantes
+                    )
+                    empreintes_deja_vues.update(empreintes)
+                    raise QuizValidationError("Le quiz du document répète une question récente.")
+                questions_verifiees = questions_courantes
+                break
+            except QuizValidationError as erreur:
+                derniere_erreur = erreur
+
+        if questions_verifiees is None:
+            raise QuizValidationError(
+                "Impossible de générer un quiz documentaire suffisamment varié."
+            ) from derniere_erreur
     except (QuizValidationError, ValueError):
         return RedirectResponse("/documents?erreur=generation_quiz", status_code=303)
     except Exception:
@@ -1292,7 +1339,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     niveau = getattr(utilisateur, "niveau", None) or "L1"
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
-        matiere=(document.matiere or document.titre or "Document").strip()[:120],
+        matiere=matiere_quiz,
         niveau=niveau,
         difficulte="Moyen",
         nb_questions=len(questions_verifiees),
