@@ -156,44 +156,44 @@
 </div>
 
 <style nonce="{{ csp_nonce(request) }}">
-  .document-revision-page { width: min(100%, 1040px); margin-inline: auto; min-width: 0; }
-  .document-revision-breadcrumb { color: var(--text-muted, #64748b); }
-  .document-revision-breadcrumb a { color: var(--accent, #245b91); text-decoration: none; }
+  .document-revision-page { width: min(100%, 1040px); margin-inline: auto; min-width: 0; color: var(--content-text, #1B302D); }
+  .document-revision-breadcrumb { color: var(--content-text-muted, #526762); }
+  .document-revision-breadcrumb a { color: var(--content-link, #145F58); text-decoration: underline; text-underline-offset: .16em; }
   .document-revision-hero, .document-revision-section, .document-revision-notice {
-    background: var(--surface, #fff); color: var(--text, #203044);
-    border: 1px solid var(--border-subtle, #dfe6ef);
+    background: var(--content-surface, #FFFDF8); color: var(--content-text, #1B302D);
+    border: 1px solid var(--content-border, #DCE7E2);
     border-radius: 18px; padding: clamp(1rem, 3vw, 1.7rem); margin-block: 1rem; min-width: 0;
   }
-  .document-revision-hero { background: linear-gradient(135deg, #f4f8ff, var(--surface, #fff) 75%); }
+  .document-revision-hero { background: var(--content-surface, #FFFDF8); border-top: 4px solid var(--primary, #176B64); }
   .document-revision-hero h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); line-height: 1.15; margin: .5rem 0; }
   .document-revision-subtitle { font-weight: 750; font-size: 1.1rem; margin: .4rem 0; }
-  .document-revision-meta { color: var(--text-muted, #64748b); overflow-wrap: anywhere; }
+  .document-revision-meta { color: var(--content-text-muted, #526762); overflow-wrap: anywhere; }
   .document-revision-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
   .document-revision-section-head { display: flex; gap: .8rem; align-items: flex-start; margin-bottom: 1rem; }
   .document-revision-section-head h2, .document-revision-notice h2 { margin: 0 0 .3rem; font-size: clamp(1.15rem, 2.6vw, 1.45rem); }
-  .document-revision-section-head p { margin: 0; color: var(--text-muted, #64748b); line-height: 1.55; }
-  .document-revision-number { flex: 0 0 auto; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: .7rem; background: #eaf2fb; color: #194f82; font-weight: 850; }
+  .document-revision-section-head p { margin: 0; color: var(--content-text-muted, #526762); line-height: 1.55; }
+  .document-revision-number { flex: 0 0 auto; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: .7rem; background: color-mix(in srgb, var(--content-surface, #FFFDF8) 90%, var(--primary, #176B64)); color: var(--content-link, #145F58); font-weight: 850; }
   .document-revision-body { line-height: 1.8; white-space: pre-wrap; }
   .document-revision-list { display: grid; gap: .65rem; list-style: none; padding: 0; margin: 0; }
   .document-revision-list li { display: flex; gap: .65rem; align-items: flex-start; line-height: 1.65; min-width: 0; }
-  .document-revision-list li > span:first-child { color: var(--accent, #245b91); font-weight: 850; }
+  .document-revision-list li > span:first-child { color: var(--content-link, #145F58); font-weight: 850; }
   .document-revision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
-  .document-revision-card { min-width: 0; border: 1px solid var(--border-subtle, #dfe6ef); border-radius: 14px; padding: 1rem; background: var(--surface-muted, #f8fafc); }
+  .document-revision-card { min-width: 0; border: 1px solid var(--border-subtle, #dfe6ef); border-radius: 14px; padding: 1rem; background: var(--content-bg, #F3F7F5); }
   .document-revision-card h3, .document-revision-exercise h3 { margin: 0 0 .7rem; font-size: 1rem; }
   .document-revision-card p, .document-revision-exercise p { line-height: 1.65; overflow-wrap: anywhere; }
   .document-revision-example { border-top: 1px solid var(--border-subtle, #dfe6ef); margin-top: .8rem; padding-top: .7rem; }
-  .document-revision-formula { font-family: var(--font-mono, monospace); overflow-wrap: anywhere; padding: .7rem; border-radius: .6rem; background: var(--surface, white); }
+  .document-revision-formula { font-family: var(--font-mono, monospace); overflow-wrap: anywhere; padding: .7rem; border-radius: .6rem; background: var(--content-bg, #F3F7F5); color: var(--content-text, #1B302D); border: 1px solid var(--content-border, #DCE7E2); }
   .document-revision-exercises { display: grid; gap: .8rem; }
   .document-revision-exercise { border: 1px solid var(--border-subtle, #dfe6ef); border-radius: 14px; padding: 1rem; min-width: 0; }
   .document-revision-exercise-head { display: flex; justify-content: space-between; gap: .8rem; align-items: center; }
-  .document-revision-exercise-head span { color: var(--text-muted, #64748b); font-size: .85rem; }
+  .document-revision-exercise-head span { color: var(--content-text-muted, #526762); font-size: .85rem; }
   .document-revision-exercise details, .document-revision-selftest { border-top: 1px solid var(--border-subtle, #dfe6ef); margin-top: .6rem; padding-top: .7rem; }
   .document-revision-exercise summary, .document-revision-selftest summary { cursor: pointer; font-weight: 650; line-height: 1.5; }
-  .document-revision-note { color: var(--text-muted, #64748b); font-size: .9rem; }
+  .document-revision-note { color: var(--content-text-muted, #526762); font-size: .9rem; }
   .document-revision-plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
-  .document-revision-plan article { border-left: 3px solid var(--accent, #245b91); background: var(--surface-muted, #f8fafc); padding: .8rem; min-width: 0; border-radius: .3rem .8rem .8rem .3rem; }
+  .document-revision-plan article { border-left: 3px solid var(--primary, #176B64); background: var(--content-bg, #F3F7F5); color: var(--content-text, #1B302D); padding: .8rem; min-width: 0; border-radius: .3rem .8rem .8rem .3rem; }
   .document-revision-plan p { line-height: 1.6; overflow-wrap: anywhere; }
-  .document-revision-notice { line-height: 1.65; background: var(--surface-muted, #f8fafc); }
+  .document-revision-notice { line-height: 1.65; background: var(--content-bg, #F3F7F5); color: var(--content-text, #1B302D); }
   .document-revision-notice p { margin-block: .45rem; }
   @media (max-width: 720px) {
     .document-revision-grid { grid-template-columns: minmax(0, 1fr); }

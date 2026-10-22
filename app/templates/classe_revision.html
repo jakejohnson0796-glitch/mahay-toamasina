@@ -183,30 +183,31 @@
 </div>
 
 <style nonce="{{ csp_nonce(request) }}">
-  .fiche-revision-page { max-width: 1040px; margin-inline: auto; }
+  .fiche-revision-page { max-width: 1040px; margin-inline: auto; color: var(--content-text, #1B302D); }
   .fiche-revision-hero, .fiche-revision-section, .fiche-revision-limites {
-    background: var(--surface, #fff);
-    border: 1px solid var(--border-subtle, #dfe6ef);
+    background: var(--content-surface, #FFFDF8);
+    color: var(--content-text, #1B302D);
+    border: 1px solid var(--content-border, #DCE7E2);
     border-radius: 18px;
     padding: clamp(1rem, 3vw, 1.7rem);
     margin-block: 1rem;
     min-width: 0;
   }
-  .fiche-revision-hero { background: linear-gradient(135deg, #f5f9ff, #fff 72%); }
-  .fiche-revision-eyebrow { color: #2563a6; font-size: .77rem; font-weight: 800; letter-spacing: .1em; }
+  .fiche-revision-hero { background: var(--content-surface, #FFFDF8); border-top: 4px solid var(--primary, #176B64); }
+  .fiche-revision-eyebrow { color: var(--content-link, #145F58); font-size: .77rem; font-weight: 800; letter-spacing: .1em; }
   .fiche-revision-hero h1 { margin: .6rem 0; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.15; }
   .fiche-revision-subtitle { font-size: 1.08rem; font-weight: 700; margin: .4rem 0; }
-  .fiche-revision-meta { color: var(--text-muted, #526176); line-height: 1.5; }
+  .fiche-revision-meta { color: var(--content-text-muted, #526762); line-height: 1.5; }
   .fiche-revision-actions, .fiche-revision-footer { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.1rem; }
   .fiche-revision-section-head { display: flex; gap: .85rem; align-items: flex-start; margin-bottom: 1rem; }
   .fiche-revision-section-head h2, .fiche-revision-limites h2 { margin: 0 0 .25rem; font-size: clamp(1.12rem, 2.5vw, 1.4rem); }
-  .fiche-revision-section-head p { margin: 0; color: var(--text-muted, #526176); line-height: 1.5; }
-  .fiche-revision-number { flex: 0 0 auto; display: grid; place-items: center; width: 2.3rem; height: 2.3rem; border-radius: 11px; background: #eaf2fb; color: #194f82; font-weight: 800; font-size: .78rem; }
+  .fiche-revision-section-head p { margin: 0; color: var(--content-text-muted, #526762); line-height: 1.5; }
+  .fiche-revision-number { flex: 0 0 auto; display: grid; place-items: center; width: 2.3rem; height: 2.3rem; border-radius: 11px; background: color-mix(in srgb, var(--content-surface, #FFFDF8) 90%, var(--primary, #176B64)); color: var(--content-link, #145F58); font-weight: 800; font-size: .78rem; }
   .fiche-revision-texte { white-space: pre-wrap; line-height: 1.75; font-size: 1.02rem; margin: 0; }
   .fiche-revision-list { display: grid; gap: .65rem; padding: 0; margin: 0; list-style: none; }
   .fiche-revision-list li { display: flex; gap: .65rem; align-items: flex-start; line-height: 1.65; }
   .fiche-revision-check { color: #16714a; font-weight: 900; }
-  .fiche-revision-puce { color: #2563a6; font-weight: 900; }
+  .fiche-revision-puce { color: var(--content-link, #145F58); font-weight: 900; }
   .fiche-revision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
   .fiche-revision-card, .fiche-revision-exercice, .fiche-revision-plan-step {
     border: 1px solid var(--border-subtle, #dfe6ef);
@@ -214,19 +215,19 @@
   }
   .fiche-revision-card h3, .fiche-revision-exercice h3 { margin: 0 0 .6rem; font-size: 1rem; }
   .fiche-revision-card p, .fiche-revision-exercice p, .fiche-revision-plan-step p { line-height: 1.65; margin: .4rem 0; }
-  .fiche-revision-example { border-left: 3px solid #9abbe0; padding: .55rem .75rem; margin-top: .8rem; background: var(--surface-secondary, #f5f8fc); border-radius: 0 9px 9px 0; }
+  .fiche-revision-example { border-left: 3px solid var(--primary, #176B64); padding: .55rem .75rem; margin-top: .8rem; background: var(--content-bg, #F3F7F5); color: var(--content-text, #1B302D); border-radius: 0 9px 9px 0; }
   .fiche-revision-example p { margin-bottom: 0; }
-  .fiche-revision-formule { padding: .8rem; background: var(--surface-secondary, #f5f8fc); border-radius: 9px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .fiche-revision-formule { padding: .8rem; background: var(--content-bg, #F3F7F5); color: var(--content-text, #1B302D); border: 1px solid var(--content-border, #DCE7E2); border-radius: 9px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
   .fiche-revision-exercices { display: grid; gap: .8rem; }
   .fiche-revision-exercice-head { display: flex; justify-content: space-between; gap: .65rem; align-items: center; }
-  .fiche-revision-difficulte { font-size: .77rem; border-radius: 99px; background: var(--surface-secondary, #f2f6fb); padding: .25rem .6rem; white-space: nowrap; }
+  .fiche-revision-difficulte { font-size: .77rem; border-radius: 99px; background: var(--content-bg, #F3F7F5); color: var(--content-text, #1B302D); padding: .25rem .6rem; white-space: nowrap; }
   .fiche-revision-details { border-top: 1px solid var(--border-subtle, #dfe6ef); margin-top: .7rem; padding-top: .7rem; }
   .fiche-revision-details summary { cursor: pointer; font-weight: 700; line-height: 1.5; }
   .fiche-revision-details[open] summary { margin-bottom: .5rem; }
-  .fiche-revision-notion { color: var(--text-muted, #526176); font-size: .9rem; }
+  .fiche-revision-notion { color: var(--content-text-muted, #526762); font-size: .9rem; }
   .fiche-revision-plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
-  .fiche-revision-plan-step strong { color: #1f6195; }
-  .fiche-revision-limites { background: var(--surface-secondary, #f6f8fb); line-height: 1.65; }
+  .fiche-revision-plan-step strong { color: var(--content-link, #145F58); }
+  .fiche-revision-limites { background: var(--content-bg, #F3F7F5); color: var(--content-text, #1B302D); line-height: 1.65; }
   .fiche-revision-limites p:last-child { margin-bottom: 0; }
   @media (max-width: 720px) {
     .fiche-revision-grid, .fiche-revision-plan { grid-template-columns: minmax(0, 1fr); }
