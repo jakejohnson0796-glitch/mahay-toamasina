@@ -859,6 +859,44 @@ if (!scienceRecoveryText.includes('30\u202F≈\u202F32')) {
 }
 
 
+// Régression de fiches historiques : certaines sorties contiennent beginpmatrix
+// sans antislash/accolades et ont perdu les séparateurs de lignes. Le renderer
+// doit les récupérer, sans laisser les marqueurs bruts visibles.
+const damagedMatricesHost = window.document.createElement('div');
+window.document.body.appendChild(damagedMatricesHost);
+const damagedMatricesSource = [
+  "Exemple : A = beginpmatrix1&2&3&4&5&6endpmatrix est une matrice de type (2,3).",
+  "Matrice unité : I_3 = beginpmatrix1&0&0&0&1&0&0&0&1endpmatrix.",
+  "Égalité : A=beginpmatrix1&2&3&4endpmatrix et B=beginpmatrix5&6&7&8endpmatrix."
+].join("\n");
+const damagedFormulaOffset = formulesRendues.length;
+window.rendreReponseIA(damagedMatricesSource, damagedMatricesHost);
+const damagedMatrixFormulas = formulesRendues.slice(damagedFormulaOffset);
+const compactMatrixFormula = (formula) => String(formula).replace(/\s+/g, "");
+const matricesAttendues = [
+  "\\begin{pmatrix}1&2&3\\\\4&5&6\\end{pmatrix}",
+  "\\begin{pmatrix}1&0&0\\\\0&1&0\\\\0&0&1\\end{pmatrix}",
+  "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}",
+  "\\begin{pmatrix}5&6\\\\7&8\\end{pmatrix}"
+];
+for (const attendue of matricesAttendues) {
+  if (!damagedMatrixFormulas.some((formula) =>
+    compactMatrixFormula(formula).includes(compactMatrixFormula(attendue))
+  )) {
+    throw new Error("A malformed historical matrix was not reconstructed correctly: " + attendue +
+      " ; received=" + JSON.stringify(damagedMatrixFormulas));
+  }
+}
+if (damagedMatricesHost.querySelector('.katex-error')) {
+  throw new Error('A malformed historical matrix caused a KaTeX rendering error');
+}
+const damagedMatrixClone = damagedMatricesHost.cloneNode(true);
+damagedMatrixClone.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const damagedMatrixVisible = damagedMatrixClone.textContent || '';
+if (/beginpmatrix|endpmatrix|1&2&3&4&5&6|1&0&0&0&1&0&0&0&1/.test(damagedMatrixVisible)) {
+  throw new Error('Raw or flattened matrix notation remains visible in the revision card');
+}
+
 // Audit multidisciplinaire : matrices, fonctions par morceaux, unités SI,
 // réactions chimiques, montants comptables et opérateurs de programmation.
 const multiDisciplineHost = window.document.createElement('div');
