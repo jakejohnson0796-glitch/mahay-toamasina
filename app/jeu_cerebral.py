@@ -460,12 +460,14 @@ def _questions_fraiches(
     fraiches: list[dict[str, Any]] = []
     anciennes: list[dict[str, Any]] = []
     cles_candidates: set[str] = set()
+    structures_candidates: set[str] = set()
     for question in candidates:
         cle = _cle_question(str(question.get("question") or ""))
         structure = _cle_question(str(question.get("question") or ""), structure=True)
-        if not cle or cle in cles_candidates:
+        if not cle or cle in cles_candidates or not structure or structure in structures_candidates:
             continue
         cles_candidates.add(cle)
+        structures_candidates.add(structure)
         if cle in cles_exactes or structure in cles_structure:
             anciennes.append(question)
         else:
