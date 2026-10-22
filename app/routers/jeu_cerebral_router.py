@@ -72,10 +72,11 @@ def page_jeu_cerebral(request: Request, session: Session = Depends(get_session))
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    # Une session inachevée compte aussi comme « déjà vue » : on n'y puise
+    # pas de score, mais on l'utilise pour éviter de reproposer ses questions.
     historique = session.exec(
         select(JeuCerebralSession)
         .where(JeuCerebralSession.utilisateur_id == utilisateur.id)
-        .where(JeuCerebralSession.date_fin.is_not(None))
         .order_by(JeuCerebralSession.date_creation.desc())
         .limit(8)
     ).all()
