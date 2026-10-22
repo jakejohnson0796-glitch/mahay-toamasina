@@ -291,7 +291,25 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
     original = quiz._generer_quiz_rapide
     original_validator = quiz.valider_questions
     try:
-        questions_cinq = _questions() * 5
+        base = _questions()[0]
+        questions_cinq = []
+        exemples = [
+            ("2 + 2 = ?", ["3", "4", "5"], 1, "Addition"),
+            ("3 + 4 = ?", ["6", "7", "8"], 1, "Addition"),
+            ("5 + 6 = ?", ["10", "11", "12"], 1, "Addition"),
+            ("8 + 3 = ?", ["10", "11", "12"], 1, "Addition"),
+            ("9 + 5 = ?", ["13", "14", "15"], 1, "Addition"),
+        ]
+        for enonce, choix, bonne, notion in exemples:
+            item = dict(base)
+            item.update({
+                "question": enonce,
+                "choix": choix,
+                "index_bonne_reponse": bonne,
+                "explication": f"La réponse de {enonce} est {choix[bonne]}.",
+                "notion": notion,
+            })
+            questions_cinq.append(item)
         quiz._generer_quiz_rapide = lambda *args, **kwargs: questions_cinq
         quiz.valider_questions = lambda questions, **kwargs: questions
 
@@ -351,3 +369,50 @@ def test_quiz_cible_n_utilise_pas_un_budget_inexistant(monkeypatch):
 
     assert result == _questions()[:5]
     assert captured == {"max_completion_tokens": 2048, "expected_count": 5}
+
+
+
+def test_recupere_les_enonces_des_trois_derniers_quiz_sans_doublons():
+    import json
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    historique = [
+        {"question": "Question 1 : Quelle est la dérivée de x² ?"},
+        {"question": "Quelle est la dérivée de x²?"},
+        {"question": "Résoudre 2x + 3 = 7"},
+    ]
+    ancienne_tentative = SimpleNamespace(
+        questions_json=json.dumps(historique, ensure_ascii=False)
+    )
+    session = Mock()
+    session.exec.return_value.all.return_value = [ancienne_tentative]
+
+    resultats = quiz._questions_vues_recemment(session, 19, "Mathématiques")
+
+    assert len(resultats) == 2
+    assert "Quelle est la dérivée de x² ?" in resultats
+    assert "Résoudre 2x + 3 = 7" in resultats
+
+
+def test_prompt_quiz_exclut_les_questions_deja_vues(monkeypatch):
+    captures = {}
+    monkeypatch.setattr(ai_quiz, "_obtenir_client", lambda: object())
+    monkeypatch.setattr(ai_quiz.ai_memory, "contexte_erreurs_recurrentes", lambda **kwargs: "")
+
+    def fake_completion(_client, messages, **kwargs):
+        captures["messages"] = messages
+        captures["kwargs"] = kwargs
+        return object(), None
+
+    monkeypatch.setattr(ai_quiz, "_generer_completion_avec_reessai", fake_completion)
+    monkeypatch.setattr(ai_quiz, "_extraire_questions", lambda completion, expected_count: _questions())
+
+    result = ai_quiz.generer_quiz_par_theme(
+        "Mathématiques", "L1", "Moyen", 1,
+        questions_a_eviter=["Résoudre 2x + 3 = 7"],
+    )
+
+    assert result == _questions()
+    assert "ANTI-REPETITION OBLIGATOIRE" in captures["messages"][0]
+    assert "Résoudre 2x + 3 = 7" in captures["messages"][0]
