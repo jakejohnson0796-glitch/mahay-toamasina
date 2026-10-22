@@ -30,6 +30,23 @@ def _charger_questions(partie: JeuCerebralSession) -> list[dict]:
         return []
 
 
+def _questions_posees(partie: JeuCerebralSession) -> list[str]:
+    """Retourne seulement les questions effectivement présentées pendant cette session."""
+    banque = _charger_questions(partie)
+    etat = jeu_cerebral.lire_etat(partie.reponses_json)
+    ordre = etat.get("ordre") or []
+    resultat: list[str] = []
+    for indice in ordre:
+        try:
+            question = banque[int(indice)]
+        except (TypeError, ValueError, IndexError):
+            continue
+        enonce = question.get("question") if isinstance(question, dict) else None
+        if isinstance(enonce, str) and enonce.strip():
+            resultat.append(enonce.strip()[:220])
+    return resultat
+
+
 def _charger_recommandation(partie: JeuCerebralSession) -> dict:
     try:
         valeur = json.loads(partie.recommandation_json or "{}")
@@ -120,8 +137,19 @@ def demarrer_jeu_cerebral(
     profil = jeu_cerebral.profil_pour_ia(historique)
     difficulte = profil["difficulte_depart"]
 
+    # Ne blacklist que les vrais énoncés vus (pas toute la banque sauvegardée)
+    # et privilégie l'historique du même thème pour ne pas bloquer d'autres jeux.
+    questions_a_eviter: list[str] = []
+    for ancienne_partie in historique:
+        if ancienne_partie.theme_id != theme_id:
+            continue
+        questions_a_eviter.extend(_questions_posees(ancienne_partie))
+        if len(questions_a_eviter) >= 24:
+            questions_a_eviter = questions_a_eviter[:24]
+            break
+
     # Le mini-jeu reste accessible. Si l'accès IA est expiré ou non disponible,
-    # la banque locale bilingue prend le relais et la page l'indique clairement.
+    # la banque locale enrichie prend le relais, en évitant les questions déjà jouées.
     redirection_ia = acces_ia_ou_redirection(utilisateur, session)
     utiliser_ia = redirection_ia is None
     questions, source = jeu_cerebral.generer_banque_questions(
@@ -129,6 +157,7 @@ def demarrer_jeu_cerebral(
         langue,
         profil,
         utiliser_ia=utiliser_ia,
+        questions_a_eviter=questions_a_eviter,
     )
     if len(questions) < jeu_cerebral.NB_QUESTIONS_SESSION:
         logger.error("Banque de jeu cérébral insuffisante pour le thème %s.", theme_id)
