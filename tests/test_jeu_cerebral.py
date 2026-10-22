@@ -8,7 +8,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from app import jeu_cerebral
 from app.models import JeuCerebralSession, Utilisateur
 from app.quiz_validation import valider_questions
-from app.routers.jeu_cerebral_router import _partie_du_proprietaire
+from app.routers.jeu_cerebral_router import _partie_du_proprietaire, _questions_posees
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,7 +33,7 @@ def test_tous_les_themes_ont_une_banque_locale_valide_et_suffisante():
     assert set(jeu_cerebral.BANQUE_LOCALE) == set(jeu_cerebral.THEMES_PAR_ID)
     for theme in jeu_cerebral.THEMES:
         questions = jeu_cerebral.BANQUE_LOCALE[theme["id"]]
-        assert len(questions) >= jeu_cerebral.NB_QUESTIONS_SESSION
+        assert len(questions) >= 20
         assert {question["difficulte"] for question in questions} == set(jeu_cerebral.DIFFICULTES)
         valider_questions(questions, expected_count=len(questions), strict_coherence=True)
 
@@ -48,7 +48,7 @@ def test_mode_local_fournit_des_questions_en_francais_et_en_malagasy(monkeypatch
 
     assert source_fr == source_mg == "local"
     assert "Quatre boras" not in francais[0]["question"]
-    assert "Bora rehetra" in malagasy[0]["question"]
+    assert any("Bora rehetra" in question["question"] for question in malagasy)
     assert "question_mg" not in malagasy[0]
     assert malagasy[0]["choix"] != francais[0]["choix"]
 
@@ -236,6 +236,13 @@ def test_interface_accueil_du_jeu_utilise_de_vraies_cartes_accessibles_et_respon
     assert "@media(max-width:440px)" in source
     assert "prefers-reduced-motion:reduce" in source
     assert 'name="chronometre" value="1"' in source
+    session_source = (
+        ROOT / "app" / "templates" / "jeu_cerebral_session.html"
+    ).read_text(encoding="utf-8")
+    # Ne pas imposer font-size aux spans internes de KaTeX : cela écrase
+    # l'échelle des exposants, fractions, racines et matrices dans les choix.
+    assert ".jeu-option > span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}" in session_source
+    assert ".jeu-option span{font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}" not in session_source
     assert 'id="jeu-reduire-animations"' in source
     assert "jeu-cerebral.js?v=" in source
 
@@ -294,3 +301,61 @@ def test_illustrations_du_jeu_cerebral_sont_locales_et_utilisees():
         assert 0 < fichier.stat().st_size < 20_000, f"Illustration SVG trop volumineuse : {nom}"
     assert "sessionStorage" in (ROOT / "app" / "static" / "js" / "jeu-cerebral.js").read_text(encoding="utf-8")
     assert "loading=\"lazy\"" in session
+
+
+def test_banque_locale_elargie_et_rotation_evite_les_motifs_recents():
+    for theme in jeu_cerebral.THEMES:
+        assert len(jeu_cerebral.BANQUE_LOCALE[theme["id"]]) >= 10
+
+    recent = jeu_cerebral.BANQUE_LOCALE["calcul"][0]["question"]
+    questions, source = jeu_cerebral.generer_banque_questions(
+        "calcul",
+        "fr",
+        {"difficulte_depart": "Moyen"},
+        utiliser_ia=False,
+        questions_a_eviter=[recent],
+    )
+
+    assert source == "local"
+    assert len(questions) >= jeu_cerebral.NB_QUESTIONS_SESSION
+    assert all(
+        jeu_cerebral._cle_question(item["question"], structure=True)
+        != jeu_cerebral._cle_question(recent, structure=True)
+        for item in questions
+    )
+    cles = [jeu_cerebral._cle_question(item["question"]) for item in questions]
+    structures = [jeu_cerebral._cle_question(item["question"], structure=True) for item in questions]
+    assert len(cles) == len(set(cles))
+    assert len(structures) == len(set(structures))
+
+
+def test_jeu_complete_la_session_si_toutes_les_questions_locales_sont_deja_vues():
+    historie = [
+        question["question"]
+        for question in jeu_cerebral.BANQUE_LOCALE["logique"]
+    ]
+    questions, source = jeu_cerebral.generer_banque_questions(
+        "logique",
+        "fr",
+        {"difficulte_depart": "Moyen"},
+        utiliser_ia=False,
+        questions_a_eviter=historie,
+    )
+
+    assert len(questions) >= jeu_cerebral.NB_QUESTIONS_SESSION
+    assert source == "local"
+
+
+def test_historique_du_jeu_ne_retient_que_les_questions_reellement_posees():
+    import json
+
+    banque = _questions_test()
+    partie = SimpleNamespace(
+        questions_json=json.dumps(banque, ensure_ascii=False),
+        reponses_json=json.dumps({"ordre": [3, 1]}, ensure_ascii=False),
+    )
+
+    assert _questions_posees(partie) == [
+        banque[3]["question"],
+        banque[1]["question"],
+    ]

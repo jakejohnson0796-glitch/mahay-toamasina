@@ -1082,7 +1082,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "14" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "15" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -1099,7 +1099,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "14";
+    cible.dataset.renduVersion = "15";
     cible.dataset.renduDeps = signature;
     return cible;
   }

@@ -30,6 +30,23 @@ def _charger_questions(partie: JeuCerebralSession) -> list[dict]:
         return []
 
 
+def _questions_posees(partie: JeuCerebralSession) -> list[str]:
+    """Retourne seulement les questions effectivement présentées pendant cette session."""
+    banque = _charger_questions(partie)
+    etat = jeu_cerebral.lire_etat(partie.reponses_json)
+    ordre = etat.get("ordre") or []
+    resultat: list[str] = []
+    for indice in ordre:
+        try:
+            question = banque[int(indice)]
+        except (TypeError, ValueError, IndexError):
+            continue
+        enonce = question.get("question") if isinstance(question, dict) else None
+        if isinstance(enonce, str) and enonce.strip():
+            resultat.append(enonce.strip()[:220])
+    return resultat
+
+
 def _charger_recommandation(partie: JeuCerebralSession) -> dict:
     try:
         valeur = json.loads(partie.recommandation_json or "{}")
@@ -55,10 +72,11 @@ def page_jeu_cerebral(request: Request, session: Session = Depends(get_session))
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    # Une session inachevée compte aussi comme « déjà vue » : on n'y puise
+    # pas de score, mais on l'utilise pour éviter de reproposer ses questions.
     historique = session.exec(
         select(JeuCerebralSession)
         .where(JeuCerebralSession.utilisateur_id == utilisateur.id)
-        .where(JeuCerebralSession.date_fin.is_not(None))
         .order_by(JeuCerebralSession.date_creation.desc())
         .limit(8)
     ).all()
@@ -113,15 +131,27 @@ def demarrer_jeu_cerebral(
     historique = session.exec(
         select(JeuCerebralSession)
         .where(JeuCerebralSession.utilisateur_id == utilisateur.id)
-        .where(JeuCerebralSession.date_fin.is_not(None))
+        # Inclure aussi les sessions abandonnées pour éviter de reproposer
+        # des questions déjà affichées ; profil_pour_ia ignore les scores absents.
         .order_by(JeuCerebralSession.date_creation.desc())
         .limit(8)
     ).all()
     profil = jeu_cerebral.profil_pour_ia(historique)
     difficulte = profil["difficulte_depart"]
 
+    # Ne blacklist que les vrais énoncés vus (pas toute la banque sauvegardée)
+    # et privilégie l'historique du même thème pour ne pas bloquer d'autres jeux.
+    questions_a_eviter: list[str] = []
+    for ancienne_partie in historique:
+        if ancienne_partie.theme_id != theme_id:
+            continue
+        questions_a_eviter.extend(_questions_posees(ancienne_partie))
+        if len(questions_a_eviter) >= 24:
+            questions_a_eviter = questions_a_eviter[:24]
+            break
+
     # Le mini-jeu reste accessible. Si l'accès IA est expiré ou non disponible,
-    # la banque locale bilingue prend le relais et la page l'indique clairement.
+    # la banque locale enrichie prend le relais, en évitant les questions déjà jouées.
     redirection_ia = acces_ia_ou_redirection(utilisateur, session)
     utiliser_ia = redirection_ia is None
     questions, source = jeu_cerebral.generer_banque_questions(
@@ -129,6 +159,7 @@ def demarrer_jeu_cerebral(
         langue,
         profil,
         utiliser_ia=utiliser_ia,
+        questions_a_eviter=questions_a_eviter,
     )
     if len(questions) < jeu_cerebral.NB_QUESTIONS_SESSION:
         logger.error("Banque de jeu cérébral insuffisante pour le thème %s.", theme_id)
