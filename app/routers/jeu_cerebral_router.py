@@ -14,7 +14,7 @@ from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
 from ..dependencies import acces_ia_ou_redirection
-from ..models import JeuCerebralSession
+from ..models import Document, JeuCerebralSession, MembreCercle, StatutDocument
 from ..rate_limit import limite_depassee
 from ..templating import templates
 
@@ -38,6 +38,36 @@ def _charger_recommandation(partie: JeuCerebralSession) -> dict:
         return {}
 
 
+def _ressources_pour_progression(session: Session, utilisateur, progression: dict) -> list[dict]:
+    """Ne suggère que des documents approuvés et visibles pour cette filière."""
+    notions = progression.get("a_renforcer") or []
+    filiere_id = getattr(utilisateur, "filiere_id", None)
+    if not notions or not filiere_id:
+        return []
+
+    cercles_autorises = session.exec(
+        select(MembreCercle.cercle_id).where(
+            MembreCercle.utilisateur_id == utilisateur.id
+        )
+    ).all()
+    requete = select(Document).where(
+        Document.statut == StatutDocument.APPROUVE,
+        Document.filiere_id == filiere_id,
+    )
+    if cercles_autorises:
+        requete = requete.where(
+            (Document.cercle_id.is_(None))
+            | (Document.cercle_id.in_(cercles_autorises))
+        )
+    else:
+        requete = requete.where(Document.cercle_id.is_(None))
+
+    documents = session.exec(
+        requete.order_by(Document.date_upload.desc()).limit(100)
+    ).all()
+    return jeu_cerebral.trouver_ressources_pour_notion(notions, documents, limite=3)
+
+
 def _partie_du_proprietaire(
     session: Session,
     partie_id: int,
@@ -55,14 +85,18 @@ def page_jeu_cerebral(request: Request, session: Session = Depends(get_session))
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    historique = session.exec(
+    sessions_progression = session.exec(
         select(JeuCerebralSession)
         .where(JeuCerebralSession.utilisateur_id == utilisateur.id)
         .where(JeuCerebralSession.date_fin.is_not(None))
         .order_by(JeuCerebralSession.date_creation.desc())
-        .limit(8)
+        .limit(20)
     ).all()
-    profil = jeu_cerebral.profil_pour_ia(historique)
+    # La page conserve une liste courte, mais l'analyse de progression dispose
+    # d'un historique plus large pour ne pas surinterpréter une seule session.
+    historique = sessions_progression[:8]
+    profil = jeu_cerebral.profil_pour_ia(sessions_progression, langue=None)
+    progression_notion = jeu_cerebral.progression_sur_plusieurs_sessions(sessions_progression)
     moyenne = profil.get("moyenne_recente")
     historique_affiche = [
         {"partie": partie, "theme": jeu_cerebral.obtenir_theme(partie.theme_id)}
@@ -77,6 +111,8 @@ def page_jeu_cerebral(request: Request, session: Session = Depends(get_session))
             "historique": historique,
             "historique_affiche": historique_affiche,
             "profil": profil,
+            "progression_notion": progression_notion,
+            "ressources_recommandees": _ressources_pour_progression(session, utilisateur, progression_notion),
             "moyenne_recente": moyenne,
         },
     )
@@ -114,10 +150,11 @@ def demarrer_jeu_cerebral(
         select(JeuCerebralSession)
         .where(JeuCerebralSession.utilisateur_id == utilisateur.id)
         .where(JeuCerebralSession.date_fin.is_not(None))
+        .where(JeuCerebralSession.langue == langue)
         .order_by(JeuCerebralSession.date_creation.desc())
-        .limit(8)
+        .limit(20)
     ).all()
-    profil = jeu_cerebral.profil_pour_ia(historique)
+    profil = jeu_cerebral.profil_pour_ia(historique, langue=langue)
     difficulte = profil["difficulte_depart"]
 
     # Le mini-jeu reste accessible. Si l'accès IA est expiré ou non disponible,
@@ -173,6 +210,18 @@ def resultat_jeu_cerebral(
     questions = _charger_questions(partie)
     etat = jeu_cerebral.lire_etat(partie.reponses_json)
     recommendation = _charger_recommandation(partie)
+    sessions_progression = session.exec(
+        select(JeuCerebralSession)
+        .where(JeuCerebralSession.utilisateur_id == utilisateur.id)
+        .where(JeuCerebralSession.date_fin.is_not(None))
+        .where(JeuCerebralSession.langue == partie.langue)
+        .order_by(JeuCerebralSession.date_creation.desc())
+        .limit(20)
+    ).all()
+    progression_notion = jeu_cerebral.progression_sur_plusieurs_sessions(
+        sessions_progression,
+        langue=partie.langue,
+    )
     ordre = [int(i) for i in etat.get("ordre", [])]
     reponses = list(etat.get("reponses") or [])
     corrections = []
@@ -201,6 +250,8 @@ def resultat_jeu_cerebral(
             "partie": partie,
             "theme": jeu_cerebral.obtenir_theme(partie.theme_id),
             "recommandation": recommendation,
+            "progression_notion": progression_notion,
+            "ressources_recommandees": _ressources_pour_progression(session, utilisateur, progression_notion),
             "corrections": corrections,
             "langue": partie.langue,
         },

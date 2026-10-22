@@ -53,6 +53,7 @@ jobs:
           node scripts/smoke_global_responsive.mjs
           node scripts/smoke_circle_hierarchy.mjs
           node scripts/smoke_tuteur_voice.mjs
+          node scripts/smoke_jeu_cerebral.mjs
       - name: Lancer les tests (un module par processus)
         run: |
           set -e

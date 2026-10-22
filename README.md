@@ -10,6 +10,7 @@ MITARIDALA rassemble dans un même espace :
 - les cercles d'étude et la messagerie ;
 - la classe virtuelle ;
 - le suivi des activités, notifications et progression ;
+- le Jeu cérébral illustré pour de courtes sessions de raisonnement ;
 - un référentiel académique structuré par université, composante, mention, filière et niveau.
 
 > **Idée centrale :** aider un étudiant à passer de « je cherche » à « je comprends », puis à « je pratique » et « je progresse ».
@@ -67,6 +68,16 @@ L'IA reste un outil d'accompagnement : une réponse générée peut nécessiter 
 Le système peut générer des quiz à partir de ressources ou d'un contexte d'apprentissage. Les tentatives sont conservées pour permettre le suivi des résultats.
 
 Une partie de la validation des quiz vérifie notamment la cohérence des choix, des explications et des résultats mathématiques ou techniques.
+
+### Jeu cérébral immersif
+
+Le Jeu cérébral permet de s'entraîner à travers cinq thèmes : logique et déduction, calcul mental, suites et régularités, mots et analogies, observation et attention. Les sessions comprennent des questions à choix multiples, des niveaux de difficulté adaptatifs, des corrections et des pistes de révision formulées de manière encourageante.
+
+L'expérience comprend des illustrations locales, des animations, une progression visuelle, une pause et un chronomètre facultatif. Le chrono ne retire aucun point lorsque le temps cible est dépassé. L'utilisateur peut réduire les animations, et l'interface tient compte de la préférence système de mouvement réduit. Une banque de questions locale en français et en malgache assure un mode de secours lorsque la génération IA n'est pas disponible.
+
+Le résultat décrit la performance de la session et suggère des compétences à renforcer ; il ne prétend pas mesurer l'intelligence générale ni établir de diagnostic.
+
+Le tableau de progression agrège jusqu'aux 20 dernières sessions terminées dans la même langue. Il distingue les notions à renforcer, celles souvent réussies et celles qui demandent encore des observations. Une notion n'est signalée comme à renforcer qu'après plusieurs réponses observées ; un seul essai reste un indice provisoire. Lorsqu'une difficulté répétée correspond au thème choisi, le profil fourni à l'IA peut l'aider à préparer quelques questions ciblées sans imposer de notion hors sujet. Le jeu propose aussi un document de travail uniquement si son titre ou sa matière correspond explicitement à la notion, si le document est approuvé, s'il appartient à la filière de l'étudiant et si son éventuelle visibilité de cercle l'autorise. Si aucune ressource ne correspond assez précisément, il renvoie vers la bibliothèque sans prétendre qu'un cours générique traite la faiblesse détectée.
 
 ### Collaboration
 
@@ -163,6 +174,7 @@ PostgreSQL reste la source durable. Redis accélère la distribution des tâches
 - Jinja2 et HTML rendu côté serveur ;
 - CSS du projet ;
 - JavaScript ciblé et sans framework obligatoire ;
+- rendu scientifique partagé via `app/static/js/rendu_ia.js` : Markdown, mathématiques, chimie, code et assainissement du HTML ;
 - PWA ;
 - couche responsive commune chargée après les styles métier, avec prise en charge des zones de sécurité, de l'orientation et de la navigation tactile ;
 - interfaces adaptatives des pages publiques, étudiantes, collaboratives et administratives. Voir [la convention responsive](docs/responsive-design.md).
@@ -385,7 +397,7 @@ python scripts/verify_deployment_contract.py
 pytest -q
 ~~~
 
-Pour une vérification proche de la CI, exécutez aussi les tests PostgreSQL avec une base de test dédiée.
+Pour une vérification proche de la CI, exécutez aussi les tests PostgreSQL avec une base de test dédiée. Le smoke test Playwright `scripts/smoke_jeu_cerebral.mjs` vérifie l'accueil, la session, le bilan, les panneaux de progression, les préférences de mouvement, le chrono et la pause sur plusieurs largeurs, ainsi qu'un corpus représentatif de rendu scientifique. Les tests applicatifs couvrent aussi l'agrégation par notion, les sessions inachevées, le filtrage par langue, la prudence des correspondances de ressources et le parcours des routes du début au bilan. Ce test complète — sans remplacer — les tests applicatifs et la vérification visuelle réelle.
 
 ---
 

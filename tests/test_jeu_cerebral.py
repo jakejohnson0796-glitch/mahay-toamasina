@@ -1,13 +1,16 @@
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from sqlalchemy.dialects import sqlite
 from jinja2 import Environment, FileSystemLoader
 from sqlmodel import Session, SQLModel, create_engine
 
 from app import jeu_cerebral
-from app.models import JeuCerebralSession, Utilisateur
+from app.models import Document, JeuCerebralSession, MembreCercle, StatutDocument, Utilisateur
 from app.quiz_validation import valider_questions
+from app.routers import jeu_cerebral_router
 from app.routers.jeu_cerebral_router import _partie_du_proprietaire
 
 
@@ -168,6 +171,304 @@ def test_profil_ne_essaie_pas_de_mesurer_l_intelligence_et_calibre_la_difficulte
     assert profil["moyenne_recente"] == 86
     assert profil["difficulte_depart"] == "Difficile"
     assert profil["meilleure_piste"] == "calcul"
+    assert profil["notions_a_renforcer"] == []
+    assert profil["notions_bien_reussies"] == []
+
+
+def test_profil_compte_toutes_les_sessions_mais_ne_garde_que_cinq_scores_recents():
+    sessions = [
+        SimpleNamespace(score=40 + index, theme_id="calcul")
+        for index in range(8)
+    ]
+    profil = jeu_cerebral.profil_pour_ia(sessions)
+
+    assert profil["sessions_terminees"] == 8
+    assert len(profil["scores_recents"]) == 5
+    assert profil["scores_recents"] == [40, 41, 42, 43, 44]
+
+
+def test_progression_par_notion_agrege_plusieurs_sessions_sans_surinterpreter_un_essai():
+    def partie(theme, notions, reponses, langue="fr"):
+        questions = [
+            {
+                "question": "Question de suivi",
+                "choix": ["Non", "Oui"],
+                "index_bonne_reponse": 1,
+                "notion": notion,
+            }
+            for notion in notions
+        ]
+        etat = {"ordre": list(range(len(questions))), "reponses": reponses}
+        return SimpleNamespace(
+            theme_id=theme,
+            langue=langue,
+            score=0,
+            date_fin="completed",
+            questions_json=json.dumps(questions, ensure_ascii=False),
+            reponses_json=json.dumps(etat, ensure_ascii=False),
+        )
+
+    # L'ordre fourni est du plus récent au plus ancien.
+    session_inachevee = partie("calcul", ["Calcul mental"], [1])
+    session_inachevee.date_fin = None
+    sessions = [
+        session_inachevee,
+        partie("calcul", ["Calcul mental"], [0]),
+        partie("calcul", ["Calcul mental", "Logique"], [0, 1]),
+        partie("calcul", ["Calcul mental", "Logique", "Observation"], [1, 1, 0]),
+        SimpleNamespace(theme_id="calcul", langue="fr", questions_json="{bad", reponses_json="{}"),
+    ]
+
+    progression = jeu_cerebral.progression_sur_plusieurs_sessions(sessions)
+
+    assert progression["sessions_analysees"] == 3
+    assert progression["reponses_analysees"] == 6
+    assert progression["notions_suivies"] == 3
+    assert progression["a_renforcer"][0]["notion"] == "Calcul mental"
+    assert progression["a_renforcer"][0]["essais"] == 3
+    assert progression["a_renforcer"][0]["bonnes_reponses"] == 1
+    assert progression["a_renforcer"][0]["taux_reussite"] == 33
+    assert progression["a_renforcer"][0]["dernier_resultat"] is False
+    assert progression["bien_reussies"][0]["notion"] == "Logique"
+    assert progression["bien_reussies"][0]["taux_reussite"] == 100
+    assert progression["a_observer"][0]["notion"] == "Observation"
+    assert progression["a_observer"][0]["essais"] == 1
+
+
+def test_progression_par_notion_filtre_la_langue_pour_personnaliser_la_banque():
+    def partie(notion, reponse, langue):
+        question = {"question": "Question", "choix": ["Non", "Oui"], "index_bonne_reponse": 1, "notion": notion}
+        return SimpleNamespace(
+            theme_id="logique",
+            langue=langue,
+            date_fin="completed",
+            questions_json=json.dumps([question], ensure_ascii=False),
+            reponses_json=json.dumps({"ordre": [0], "reponses": [reponse]}, ensure_ascii=False),
+        )
+
+    progression = jeu_cerebral.progression_sur_plusieurs_sessions(
+        [partie("Logique", 0, "fr"), partie("Lojika", 1, "mg")],
+        langue="fr",
+    )
+
+    assert progression["sessions_analysees"] == 1
+    assert progression["reponses_analysees"] == 1
+    assert progression["a_observer"][0]["notion"] == "Logique"
+    assert progression["a_observer"][0]["taux_reussite"] == 0
+
+
+def test_ressource_recommandee_exige_un_titre_ou_une_matiere_explicitement_pertinents():
+    notion = {"notion": "Calcul mental et estimation", "essais": 3, "taux_reussite": 33}
+    documents = [
+        SimpleNamespace(
+            id=1,
+            titre="Introduction générale",
+            matiere="Mathématiques",
+            type_document="cours",
+            annee=2025,
+            reference="REF-GENERAL",
+        ),
+        SimpleNamespace(
+            id=2,
+            titre="Exercices de calcul mental",
+            matiere="Mathématiques",
+            type_document="fiche",
+            annee=2024,
+            reference="REF-CALCUL",
+        ),
+    ]
+
+    suggestions = jeu_cerebral.trouver_ressources_pour_notion([notion], documents)
+
+    assert len(suggestions) == 1
+    assert suggestions[0]["document_id"] == 2
+    assert suggestions[0]["notion"] == "Calcul mental et estimation"
+    assert suggestions[0]["reference"] == "REF-CALCUL"
+
+
+def test_recommandation_ressource_ne_devine_pas_une_correspondance_vague():
+    notions = [
+        {"notion": "Observation et attention", "essais": 3, "taux_reussite": 0},
+        {"notion": "Une notion inconnue", "essais": 2, "taux_reussite": 50},
+    ]
+    documents = [
+        SimpleNamespace(
+            id=8,
+            titre="Cours général de mathématiques",
+            matiere="Mathématiques",
+            type_document="cours",
+            annee=2025,
+            reference="REF-MATH",
+        )
+    ]
+
+    assert jeu_cerebral.trouver_ressources_pour_notion(notions, documents) == []
+
+
+def test_ressources_recommandees_sont_filtrees_par_filiere_statut_et_acces_cercle(monkeypatch):
+    from app.routers.jeu_cerebral_router import _ressources_pour_progression
+
+    class Rows:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def all(self):
+            return self.rows
+
+    class QuerySession:
+        def __init__(self, documents):
+            self.documents = documents
+            self.sql = []
+
+        def exec(self, statement):
+            rendered = str(statement.compile(
+                dialect=sqlite.dialect(),
+                compile_kwargs={"literal_binds": True},
+            ))
+            self.sql.append(rendered)
+            if "membrecercle" in rendered.lower():
+                return Rows([7])
+            if "from document" in rendered.lower():
+                return Rows(self.documents)
+            return Rows([])
+
+    document = SimpleNamespace(
+        id=12,
+        titre="Exercices de calcul mental",
+        matiere="Mathématiques",
+        statut=StatutDocument.APPROUVE,
+        filiere_id=4,
+        cercle_id=7,
+        type_document="fiche",
+        annee=2024,
+        reference="REF-12",
+    )
+    fake_session = QuerySession([document])
+    utilisateur = SimpleNamespace(id=3, filiere_id=4)
+    progression = {
+        "a_renforcer": [
+            {"notion": "Calcul mental et estimation", "essais": 3, "taux_reussite": 33}
+        ]
+    }
+
+    suggestions = _ressources_pour_progression(fake_session, utilisateur, progression)
+
+    assert suggestions[0]["document_id"] == 12
+    requete = next(sql for sql in fake_session.sql if "from document" in sql.lower())
+    requete_normalisee = requete.casefold()
+    assert "document.statut" in requete_normalisee and "approuve" in requete_normalisee
+    assert "document.filiere_id = 4" in requete_normalisee
+    assert "document.cercle_id is null" in requete_normalisee
+    assert "document.cercle_id in (7)" in requete_normalisee
+
+
+def test_parcours_route_complet_demarrage_reponses_enregistrement_et_bilan(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+    SQLModel.metadata.create_all(engine)
+    try:
+        with Session(engine) as db:
+            utilisateur = Utilisateur(
+                nom="Test Jeu",
+                telephone="690000991",
+                mot_de_passe_hash="hash",
+            )
+            db.add(utilisateur)
+            db.commit()
+            db.refresh(utilisateur)
+
+            monkeypatch.setattr(
+                jeu_cerebral_router,
+                "utilisateur_courant",
+                lambda _request, _session: utilisateur,
+            )
+            monkeypatch.setattr(jeu_cerebral_router, "limite_depassee", lambda *_args, **_kwargs: False)
+            # Simule une IA non disponible : le flux doit utiliser la banque locale.
+            monkeypatch.setattr(
+                jeu_cerebral_router,
+                "acces_ia_ou_redirection",
+                lambda *_args, **_kwargs: "/abonnement",
+            )
+            questions = _questions_test()
+            monkeypatch.setattr(
+                jeu_cerebral_router.jeu_cerebral,
+                "generer_banque_questions",
+                lambda *_args, **_kwargs: (questions, "local"),
+            )
+            monkeypatch.setattr(
+                jeu_cerebral_router.gamification,
+                "enregistrer_action",
+                lambda *_args, **_kwargs: None,
+            )
+            monkeypatch.setattr(
+                jeu_cerebral_router.templates,
+                "TemplateResponse",
+                lambda _request, template_name, context: SimpleNamespace(
+                    template_name=template_name,
+                    context=context,
+                ),
+            )
+            request = SimpleNamespace(
+                client=SimpleNamespace(host="127.0.0.1"),
+                query_params={},
+            )
+
+            demarrage = jeu_cerebral_router.demarrer_jeu_cerebral(
+                request,
+                theme="calcul",
+                langue="fr",
+                chronometre="1",
+                session=db,
+                _csrf=None,
+            )
+            assert demarrage.status_code == 303
+            partie_id = int(demarrage.headers["location"].rsplit("/", 1)[1])
+            partie = db.get(JeuCerebralSession, partie_id)
+            assert partie is not None
+            assert partie.date_fin is None
+            assert partie.source_generation == "local"
+            assert jeu_cerebral.lire_etat(partie.reponses_json)["chrono_actif"] is True
+
+            for position in range(jeu_cerebral.NB_QUESTIONS_SESSION):
+                ecran = jeu_cerebral_router.page_session_jeu_cerebral(
+                    request,
+                    partie_id=partie_id,
+                    session=db,
+                )
+                assert ecran.template_name == "jeu_cerebral_session.html"
+                partie = db.get(JeuCerebralSession, partie_id)
+                etat = jeu_cerebral.lire_etat(partie.reponses_json)
+                active_index = etat["ordre"][-1]
+                reponse_http = jeu_cerebral_router.repondre_jeu_cerebral(
+                    request,
+                    partie_id=partie_id,
+                    index_question=active_index,
+                    reponse=0,
+                    session=db,
+                    _csrf=None,
+                )
+                assert reponse_http.status_code == 303
+                if position < jeu_cerebral.NB_QUESTIONS_SESSION - 1:
+                    assert reponse_http.headers["location"] == f"/jeu-cerebral/{partie_id}"
+                else:
+                    assert reponse_http.headers["location"] == f"/jeu-cerebral/{partie_id}/resultat"
+
+            db.refresh(partie)
+            assert partie.date_fin is not None
+            assert partie.score == 100
+            assert partie.bonnes_reponses == jeu_cerebral.NB_QUESTIONS_SESSION
+
+            bilan = jeu_cerebral_router.resultat_jeu_cerebral(
+                request,
+                partie_id=partie_id,
+                session=db,
+            )
+            assert bilan.template_name == "jeu_cerebral_resultat.html"
+            assert len(bilan.context["corrections"]) == jeu_cerebral.NB_QUESTIONS_SESSION
+            assert bilan.context["progression_notion"]["sessions_analysees"] == 1
+            assert bilan.context["ressources_recommandees"] == []
+    finally:
+        SQLModel.metadata.drop_all(engine)
+        engine.dispose()
 
 
 def test_page_jeu_et_templates_compilent():
@@ -178,6 +479,20 @@ def test_page_jeu_et_templates_compilent():
         "jeu_cerebral_resultat.html",
     ):
         assert env.get_template(template) is not None
+
+
+def test_interface_affiche_la_progression_par_notion_sur_plusieurs_sessions():
+    accueil = (ROOT / "app" / "templates" / "jeu_cerebral.html").read_text(encoding="utf-8")
+    bilan = (ROOT / "app" / "templates" / "jeu_cerebral_resultat.html").read_text(encoding="utf-8")
+
+    assert 'id="jeu-progression-title"' in accueil
+    assert "progression_notion.a_renforcer" in accueil
+    assert "progression_notion.bien_reussies" in accueil
+    assert "progression_notion.a_observer" in accueil
+    assert 'id="jeu-progression-historique-title"' in bilan
+    assert "progression_notion.sessions_analysees" in bilan
+    assert "progression_notion.a_renforcer" in bilan
+    assert "plusieurs réponses observées" in bilan
 
 
 def test_partie_est_visible_uniquement_par_son_proprietaire():

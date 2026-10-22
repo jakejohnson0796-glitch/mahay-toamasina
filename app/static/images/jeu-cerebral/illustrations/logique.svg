@@ -1,1 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc"><title id="title">Logique et déduction</title><desc id="desc">Des indices reliés à une conclusion par des lignes lumineuses.</desc><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101f52"/><stop offset="1" stop-color="#6545b5"/></linearGradient><linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8be9ff"/><stop offset="1" stop-color="#b4a0ff"/></linearGradient></defs><rect width="320" height="240" rx="28" fill="url(#bg)"/><circle cx="260" cy="38" r="64" fill="#a58cff" opacity=".13"/><circle cx="50" cy="207" r="60" fill="#53e5d2" opacity=".12"/><path d="M80 85 L151 118 L234 72 M151 118 L225 174" fill="none" stroke="#a8f1ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><g><rect x="42" y="50" width="72" height="64" rx="17" fill="#f3fbff"/><circle cx="78" cy="72" r="10" fill="#7b6cf6"/><path d="M59 94h38" stroke="#54c8e5" stroke-width="5" stroke-linecap="round"/><rect x="120" y="88" width="68" height="64" rx="17" fill="#dffcff"/><path d="M140 121l10 10 20-24" fill="none" stroke="#3d8eaf" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><rect x="207" y="36" width="71" height="65" rx="18" fill="#bdf7e8"/><path d="M225 57h35M225 69h23M225 81h29" stroke="#398f84" stroke-width="5" stroke-linecap="round"/><rect x="205" y="146" width="76" height="58" rx="17" fill="url(#card)"/><path d="M225 175l11 11 24-26" fill="none" stroke="#27316d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="78" cy="151" r="5" fill="#f7c96e"/><circle cx="181" cy="47" r="5" fill="#f7c96e"/><circle cx="287" cy="124" r="4" fill="#f7c96e"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" role="img" aria-labelledby="logic-title logic-desc">
+  <title id="logic-title">Logique et déduction</title>
+  <desc id="logic-desc">Des indices reliés à une conclusion par des lignes lumineuses.</desc>
+  <defs>
+    <linearGradient id="logic-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#101f52"/>
+      <stop offset="100%" stop-color="#6545b5"/>
+    </linearGradient>
+    <linearGradient id="logic-result" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8be9ff"/>
+      <stop offset="100%" stop-color="#b4a0ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="240" rx="28" fill="url(#logic-background)"/>
+  <circle cx="260" cy="38" r="64" fill="#a58cff" opacity=".13"/>
+  <circle cx="50" cy="207" r="60" fill="#53e5d2" opacity=".12"/>
+  <path d="M80 85 L151 118 L234 72 M151 118 L225 174" fill="none" stroke="#a8f1ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g>
+    <rect x="42" y="50" width="72" height="64" rx="17" fill="#f3fbff"/>
+    <circle cx="78" cy="72" r="10" fill="#7b6cf6"/>
+    <path d="M59 94 H97" stroke="#54c8e5" stroke-width="5" stroke-linecap="round"/>
+    <rect x="120" y="88" width="68" height="64" rx="17" fill="#dffcff"/>
+    <path d="M140 121 L150 131 L170 107" fill="none" stroke="#3d8eaf" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="207" y="36" width="71" height="65" rx="18" fill="#bdf7e8"/>
+    <path d="M225 57 H260 M225 69 H248 M225 81 H254" stroke="#398f84" stroke-width="5" stroke-linecap="round"/>
+    <rect x="205" y="146" width="76" height="58" rx="17" fill="url(#logic-result)"/>
+    <path d="M225 175 L236 186 L260 160" fill="none" stroke="#27316d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <circle cx="78" cy="151" r="5" fill="#f7c96e"/>
+  <circle cx="181" cy="47" r="5" fill="#f7c96e"/>
+  <circle cx="287" cy="124" r="4" fill="#f7c96e"/>
+</svg>
