@@ -920,6 +920,34 @@ if (multiDisciplineHost.querySelector('code .katex, pre .katex')) {
 
 // Vérifie la sanitisation réelle du HTML hostile dans le même pipeline.
 // Le texte utile doit rester visible, mais les attributs exécutables et scripts sont retirés.
+// Les options du Quiz IA et du Jeu cérébral rendent les mathématiques en ligne.
+// Ce smoke cible les wrappers utilisés dans ces interfaces.
+const optionMathCases = [
+  String.raw`\\frac{12}{18}=\\frac{2}{3}`,
+  String.raw`\\sqrt{1000}\\approx31{,}6`,
+  String.raw`\\Delta E=\\hbar\\omega`,
+  String.raw`\\ce{2H2 + O2 -> 2H2O}`,
+  String.raw`A=\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}`
+];
+for (const family of ['quiz-choice-text', 'jeu-option-math']) {
+  const option = window.document.createElement('div');
+  option.className = family;
+  window.document.body.appendChild(option);
+  for (const expression of optionMathCases) {
+    const row = window.document.createElement('span');
+    row.dataset.rendu = '';
+    row.dataset.renduLigne = '';
+    option.appendChild(row);
+    window.rendreReponseIA(expression, row, { enLigne: true });
+    if (!row.querySelector('.katex') || row.querySelector('.katex-error')) {
+      throw new Error(family + ' failed inline scientific rendering for: ' + expression);
+    }
+  }
+  if (option.querySelectorAll('.katex').length !== optionMathCases.length) {
+    throw new Error(family + ' lost an inline math expression');
+  }
+}
+
 const securityHost = window.document.createElement('div');
 window.document.body.appendChild(securityHost);
 window.rendreReponseIA(
