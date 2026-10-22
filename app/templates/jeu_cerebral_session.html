@@ -187,9 +187,9 @@
   {% if partie.source_generation != "ia" %}
   <div class="jeu-local-note" role="note">
     {% if langue == "mg" %}
-    <strong>Fomba fanazaran-tena vonjimaika.</strong> Tsy mbola azo nampiasaina ny famoronana IA tamin'ity lalao ity, ka fanontaniana voaomana mialoha no ampiasaina. Mbola miova araka ny valinteninao ny filaharan'ny fahasarotana.
+    {% if partie.source_generation == "mixte" %}<strong>Fomba mifangaro sy vaovao.</strong> Misy fanontaniana IA vaovao sy fanazaran-tena hafa eto mba hampihenana ny famerimberenana.{% else %}<strong>Fomba fanazaran-tena vonjimaika.</strong> Tsy mbola azo nampiasaina ny famoronana IA tamin'ity lalao ity, ka fanontaniana voaomana mialoha no ampiasaina.{% endif %} Mbola miova araka ny valinteninao ny filaharan'ny fahasarotana.
     {% else %}
-    <strong>Mode d'entraînement de secours.</strong> La génération IA n'était pas disponible pour cette partie; des questions préparées sont utilisées à la place. L'ordre et le niveau continuent de s'adapter à tes réponses.
+    {% if partie.source_generation == "mixte" %}<strong>Défi renouvelé.</strong> Cette session combine des questions IA inédites et des exercices locaux différents pour limiter les répétitions.{% else %}<strong>Mode d'entraînement de secours.</strong> La génération IA n'était pas disponible pour cette partie ; des questions préparées sont utilisées à la place.{% endif %} L'ordre et le niveau continuent de s'adapter à tes réponses.
     {% endif %}
   </div>
   {% endif %}
