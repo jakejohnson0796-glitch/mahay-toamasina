@@ -54,6 +54,19 @@ def fiche_valide():
     }
 
 
+def test_prompts_fiches_revision_expliquent_les_matrices_en_texte_lisible():
+    contexte = {"cours": {}, "seance": {}, "source_document": {"contenu_extrait": "Matrice de type (2, 3)."}}
+    prompts = [
+        course_revision._texte_ia_non_fiable(contexte),
+        course_revision._texte_ia_document({"source_document": {"contenu_extrait": "Matrice de type (2, 3)."}}),
+    ]
+
+    for prompt in prompts:
+        assert "A = [[1, 2, 3], [4, 5, 6]]" in prompt
+        assert "I₃ = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]" in prompt
+        assert "beginpmatrix/endpmatrix" in prompt
+
+
 def test_normalise_fiche_revision_personnalisee():
     fiche = course_revision.normaliser_fiche_revision(fiche_valide())
 
