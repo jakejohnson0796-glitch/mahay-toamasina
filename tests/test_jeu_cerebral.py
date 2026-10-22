@@ -8,7 +8,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from app import jeu_cerebral
 from app.models import JeuCerebralSession, Utilisateur
 from app.quiz_validation import valider_questions
-from app.routers.jeu_cerebral_router import _partie_du_proprietaire
+from app.routers.jeu_cerebral_router import _partie_du_proprietaire, _questions_posees
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -342,3 +342,18 @@ def test_jeu_complete_la_session_si_toutes_les_questions_locales_sont_deja_vues(
 
     assert len(questions) >= jeu_cerebral.NB_QUESTIONS_SESSION
     assert source == "local"
+
+
+def test_historique_du_jeu_ne_retient_que_les_questions_reellement_posees():
+    import json
+
+    banque = _questions_test()
+    partie = SimpleNamespace(
+        questions_json=json.dumps(banque, ensure_ascii=False),
+        reponses_json=json.dumps({"ordre": [3, 1]}, ensure_ascii=False),
+    )
+
+    assert _questions_posees(partie) == [
+        banque[3]["question"],
+        banque[1]["question"],
+    ]
