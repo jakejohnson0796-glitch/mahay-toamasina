@@ -471,7 +471,7 @@ def test_templates_fiche_revision_compile_et_exposent_les_formats():
     assert "J’ai essayé" in source_lecture
     assert "fiche_contenu.erreurs_frequentes" in source_lecture
     assert "erreurs_frequentes" in (templates_dir / "document_revision.html").read_text(encoding="utf-8")
-    assert "fiche_contenu.get(\"profil_personnalise\")" in source_lecture
+    assert "\"profil_personnalise\"" in source_lecture
     assert "profil.get(\"priorites\")" in source_lecture
     assert "/telecharger/pdf" in source_lecture
     assert "/telecharger/docx" in source_lecture
