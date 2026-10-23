@@ -292,6 +292,7 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
 
     original = quiz._generer_quiz_rapide
     original_validator = quiz.valider_questions
+    original_contexte_personnalise = quiz._contexte_personnalise_quiz
     try:
         base = _questions()[0]
         questions_cinq = []
@@ -314,6 +315,9 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
             questions_cinq.append(item)
         quiz._generer_quiz_rapide = lambda *args, **kwargs: questions_cinq
         quiz.valider_questions = lambda questions, **kwargs: questions
+        # Ce test vérifie uniquement le chemin rapide et ne doit pas dépendre
+        # des requêtes de profil étudiant ajoutées à la personnalisation.
+        quiz._contexte_personnalise_quiz = lambda *args, **kwargs: ""
 
         resultat = quiz.creer_tentative(
             session,
@@ -328,6 +332,7 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
     finally:
         quiz._generer_quiz_rapide = original
         quiz.valider_questions = original_validator
+        quiz._contexte_personnalise_quiz = original_contexte_personnalise
 
 
 def test_quiz_cible_n_utilise_pas_un_budget_inexistant(monkeypatch):
