@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from app import ai_quiz, quiz
 
 
@@ -519,3 +521,93 @@ def test_quiz_general_tient_compte_des_notion_a_consolider_du_profil(monkeypatch
     assert "Déterminant d'ordre 2 (à retravailler)" in capture["prompt"]
     assert "données utilisateur non fiables" in capture["prompt"]
     assert "Ne révèle pas les réponses précédentes" in capture["prompt"]
+
+
+
+def test_profil_quiz_ne_retient_que_les_notion_de_la_matiere_du_compte(monkeypatch):
+    session = SimpleNamespace(
+        exec=lambda _query: SimpleNamespace(
+            all=lambda: [
+                SimpleNamespace(
+                    id=1,
+                    utilisateur_id=17,
+                    matiere="Mathématiques",
+                    niveau="L1",
+                    notion="Déterminant d'ordre 2",
+                    nb_questions=5,
+                    nb_erreurs=4,
+                    score_maitrise=30,
+                ),
+                SimpleNamespace(
+                    id=2,
+                    utilisateur_id=17,
+                    matiere="Physique",
+                    niveau="L1",
+                    notion="Énergie",
+                    nb_questions=4,
+                    nb_erreurs=3,
+                    score_maitrise=25,
+                ),
+                SimpleNamespace(
+                    id=3,
+                    utilisateur_id=17,
+                    matiere="Mathématiques",
+                    niveau="L3",
+                    notion="Diagonalisation",
+                    nb_questions=5,
+                    nb_erreurs=3,
+                    score_maitrise=35,
+                ),
+                SimpleNamespace(
+                    id=4,
+                    utilisateur_id=99,
+                    matiere="Mathématiques",
+                    niveau="L1",
+                    notion="NOTION PRIVÉE D'UN AUTRE COMPTE",
+                    nb_questions=8,
+                    nb_erreurs=7,
+                    score_maitrise=10,
+                ),
+            ]
+        )
+    )
+    monkeypatch.setattr(
+        quiz,
+        "interactions_tuteur_recentes",
+        lambda *_args, **_kwargs: [
+            {
+                "matiere": "Mathématiques",
+                "niveau": "L1",
+                "notion": "Déterminant d'ordre 2",
+                "question": "Pourquoi faut-il soustraire le second produit ?",
+                "reponse_etudiant": "J'ai additionné les deux produits.",
+                "retour_pedagogique": "Vérifie le signe.",
+                "etat_comprehension": "comprehension a retravailler",
+                "date": "23/10/2026",
+            },
+            {
+                "matiere": "Physique",
+                "niveau": "L1",
+                "notion": "Énergie",
+                "question": "HISTORIQUE HORS MATIÈRE",
+                "reponse_etudiant": "",
+                "retour_pedagogique": "",
+                "etat_comprehension": "comprehension non evaluee",
+                "date": "23/10/2026",
+            },
+        ],
+    )
+
+    contexte = quiz._contexte_personnalise_quiz(
+        session,
+        utilisateur_id=17,
+        matiere="Mathématiques",
+        niveau="L1",
+    )
+
+    assert "Déterminant d'ordre 2" in contexte
+    assert "Pourquoi faut-il soustraire le second produit ?" in contexte
+    assert "NOTION PRIVÉE D'UN AUTRE COMPTE" not in contexte
+    assert "HISTORIQUE HORS MATIÈRE" not in contexte
+    assert "Diagonalisation" not in contexte
+    assert "Énergie (à retravailler)" not in contexte
