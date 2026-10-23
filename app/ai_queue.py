@@ -294,13 +294,13 @@ def planifier_fiche_revision_document(
                 .where(FicheRevisionDocument.document_id == document_id)
                 .limit(1)
             ).first()
-            from .course_revision import VERSION_GENERATION
+            from .course_revision import VERSION_GENERATION_DOCUMENT
 
             if (
                 fiche
                 and fiche.statut == StatutFicheRevisionDocument.TERMINEE
                 and fiche.contenu_json not in {"", "{}"}
-                and fiche.version_generation == VERSION_GENERATION
+                and fiche.version_generation == VERSION_GENERATION_DOCUMENT
                 and not forcer
             ):
                 return None
