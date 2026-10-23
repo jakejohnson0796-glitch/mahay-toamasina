@@ -65,3 +65,13 @@ def test_bibliotheque_documents_recherche_tri_couvertures_et_accessibilite():
     assert "repeat(auto-fit, minmax(min(100%, 19rem), 1fr))" in css
     assert "@media (max-width: 640px)" in css
     assert "prefers-reduced-motion: reduce" in css
+
+
+def test_bibliotheque_conserve_recherche_tri_et_cercle_pendant_les_filtres():
+    html = lire("app/templates/documents_list.html")
+
+    assert 'name="q" id="doc-filtre-q"' in html
+    assert 'name="sort" id="doc-filtre-sort"' in html
+    assert 'name="cercle_id" value="{{ cercle.id }}"' in html
+    assert 'champRechercheFiltres.value = rechercheDocuments ? rechercheDocuments.value.trim() : ""' in html
+    assert 'champTriFiltres.value = tri' in html

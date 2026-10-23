@@ -99,6 +99,9 @@
 {% endif %}
 
 <form class="filtres" method="get" action="/documents">
+  <input type="hidden" name="q" id="doc-filtre-q" value="{{ request.query_params.get('q', '') }}">
+  <input type="hidden" name="sort" id="doc-filtre-sort" value="{{ request.query_params.get('sort', 'recent') }}">
+  {% if cercle %}<input type="hidden" name="cercle_id" value="{{ cercle.id }}">{% endif %}
   <div>
     <label for="filiere_id">Filiere</label>
     <select id="filiere_id" name="filiere_id" data-submit-on-change>
@@ -194,9 +197,9 @@
 {% endif %}
 
 <div class="doc-filtres-type">
-  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if not type_document else '' }}">Tous</a>
+  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}&cercle_id={{ cercle.id if cercle else '' }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if not type_document else '' }}">Tous</a>
   {% for t in types_document %}
-  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}&type_document={{ t.value }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if type_document == t.value else '' }}">
+  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}&cercle_id={{ cercle.id if cercle else '' }}&type_document={{ t.value }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if type_document == t.value else '' }}">
     {{ { "annale": "Annales", "corrige": "Corriges", "fiche": "Fiches", "cours": "Cours" }[t.value] }}
   </a>
   {% endfor %}
@@ -388,6 +391,8 @@ session dediee, avec sa propre verification desktop+mobile.
     var triDocuments = document.getElementById("doc-tri");
     var compteurDocuments = document.getElementById("doc-resultats");
     var videDocuments = document.getElementById("doc-recherche-vide");
+    var champRechercheFiltres = document.getElementById("doc-filtre-q");
+    var champTriFiltres = document.getElementById("doc-filtre-sort");
 
     function normaliserTexteDocument(texte) {
       return String(texte || "")
@@ -432,6 +437,8 @@ session dediee, avec sa propre verification desktop+mobile.
           " sur " + cartesDocuments.length;
       }
       if (videDocuments) videDocuments.hidden = nombreVisible > 0;
+      if (champRechercheFiltres) champRechercheFiltres.value = rechercheDocuments ? rechercheDocuments.value.trim() : "";
+      if (champTriFiltres) champTriFiltres.value = tri;
 
       // L'URL mémorise la recherche et le tri pour qu'un changement de catégorie les conserve.
       try {
