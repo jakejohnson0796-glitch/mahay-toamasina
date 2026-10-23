@@ -14,8 +14,10 @@ from app.models import (
     Cours,
     FicheRevisionCours,
     InscriptionCours,
+    ProgressionNotion,
     RoleUtilisateur,
     Seance,
+    SessionTuteur,
     StatutFicheRevisionCours,
     StatutSeance,
     StatutTacheIA,
@@ -419,3 +421,128 @@ def test_normalise_alias_matiere_pour_personnalisation():
     assert course_revision._matiere_cle("Maths") == "mathematiques"
     assert course_revision._matiere_cle("Mathématique") == "mathematiques"
     assert course_revision._matiere_cle("Info") == "informatique"
+
+
+
+def test_fiche_de_cours_integre_le_tutorat_recent_de_son_etudiant(monkeypatch):
+    test_engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(test_engine)
+
+    with Session(test_engine) as session:
+        professeur = Utilisateur(
+            nom="Professeur Mémoire",
+            telephone="+261340000201",
+            mot_de_passe_hash="prof-hash",
+            role=RoleUtilisateur.PROFESSEUR,
+        )
+        etudiant = Utilisateur(
+            nom="Étudiant Mémoire",
+            telephone="+261340000202",
+            mot_de_passe_hash="student-hash",
+            role=RoleUtilisateur.ETUDIANT,
+        )
+        autre = Utilisateur(
+            nom="Autre Étudiant",
+            telephone="+261340000203",
+            mot_de_passe_hash="other-hash",
+            role=RoleUtilisateur.ETUDIANT,
+        )
+        session.add_all([professeur, etudiant, autre])
+        session.commit()
+        session.refresh(professeur)
+        session.refresh(etudiant)
+        session.refresh(autre)
+
+        cours = Cours(
+            nom="Algèbre linéaire",
+            matiere="Mathématiques",
+            niveau="L1",
+            professeur_id=professeur.id,
+            description="Étude des matrices et déterminants.",
+        )
+        session.add(cours)
+        session.commit()
+        session.refresh(cours)
+
+        seance = Seance(
+            cours_id=cours.id,
+            titre="Déterminants",
+            description="Calcul d'un déterminant d'ordre deux.",
+            nom_salle_livekit="revision-memory-room",
+            statut=StatutSeance.TERMINEE,
+            date_fin_reelle=datetime.utcnow(),
+        )
+        session.add(seance)
+        session.commit()
+        session.refresh(seance)
+
+        progression = ProgressionNotion(
+            utilisateur_id=etudiant.id,
+            matiere="Mathématiques",
+            niveau="L1",
+            notion="Déterminant d'ordre 2",
+            nb_questions=3,
+            nb_erreurs=2,
+            score_maitrise=35,
+        )
+        progression_autre = ProgressionNotion(
+            utilisateur_id=autre.id,
+            matiere="Mathématiques",
+            niveau="L1",
+            notion="Déterminant d'ordre 2",
+            nb_questions=3,
+            nb_erreurs=2,
+            score_maitrise=35,
+        )
+        session.add_all([progression, progression_autre])
+        session.commit()
+        session.refresh(progression)
+        session.refresh(progression_autre)
+
+        session.add_all([
+            SessionTuteur(
+                utilisateur_id=etudiant.id,
+                progression_id=progression.id,
+                notion=progression.notion,
+                question="Pourquoi le second produit est-il soustrait ?",
+                comprehension_reponse="J'additionne les deux produits.",
+                comprehension_feedback="Il faut revoir le signe du second produit.",
+                comprehension_validee=False,
+                explication="Explication.",
+                exemple="Exemple.",
+                exercice="Exercice.",
+                correction="Correction.",
+            ),
+            SessionTuteur(
+                utilisateur_id=autre.id,
+                progression_id=progression_autre.id,
+                notion=progression_autre.notion,
+                question="CONVERSATION PRIVÉE D'UN AUTRE ÉTUDIANT.",
+                comprehension_reponse="NE PAS COPIER CETTE RÉPONSE.",
+                comprehension_feedback="Retour d'un autre compte.",
+                comprehension_validee=False,
+                explication="Explication.",
+                exemple="Exemple.",
+                exercice="Exercice.",
+                correction="Correction.",
+            ),
+        ])
+        session.commit()
+
+        fiche = FicheRevisionCours(
+            cours_id=cours.id,
+            seance_id=seance.id,
+            utilisateur_id=etudiant.id,
+        )
+        contexte, sources = course_revision._collecter_sources(session, fiche)
+
+    interactions = contexte["profil_individuel"]["interactions_tuteur_recentes"]
+    assert len(interactions) == 1
+    assert interactions[0]["question"] == "Pourquoi le second produit est-il soustrait ?"
+    assert interactions[0]["etat_comprehension"] == "comprehension a retravailler"
+    assert sources["personnalisation_tuteur"] is True
+    assert "CONVERSATION PRIVÉE D'UN AUTRE ÉTUDIANT." not in str(contexte)

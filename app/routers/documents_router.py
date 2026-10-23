@@ -950,7 +950,7 @@ def consulter_fiche_revision_document(
         ).first()
     elif (
         fiche.statut == StatutFicheRevisionDocument.TERMINEE
-        and fiche.version_generation != course_revision.VERSION_GENERATION
+        and fiche.version_generation != course_revision.VERSION_GENERATION_DOCUMENT
     ):
         # Régénère les fiches existantes une par une, uniquement lors d'une consultation.
         ai_queue.planifier_fiche_revision_document(document_id)
@@ -1048,7 +1048,7 @@ def telecharger_fiche_revision_document(
     ).first()
     if fiche and (
         fiche.statut == StatutFicheRevisionDocument.TERMINEE
-        and fiche.version_generation != course_revision.VERSION_GENERATION
+        and fiche.version_generation != course_revision.VERSION_GENERATION_DOCUMENT
     ):
         ai_queue.planifier_fiche_revision_document(document_id)
         return RedirectResponse(
