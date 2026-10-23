@@ -4,7 +4,7 @@
 {% block titre %}Documents — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
+<div class="contenu-clair page-bibliotheque-documents">
 <style nonce="{{ csp_nonce(request) }}">
   .doc-fiche{margin:.75rem 0;padding:.72rem .78rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);color:var(--content-text)}
   .doc-fiche summary{cursor:pointer;font-size:.76rem;font-weight:750;color:var(--content-text);line-height:1.45}
@@ -171,10 +171,32 @@
 </section>
 {% endif %}
 
+
+{% if documents %}
+<section class="doc-bibliotheque-outils" role="search" aria-label="Rechercher et trier les documents">
+  <label class="doc-bibliotheque-champ" for="doc-recherche">
+    <span>Rechercher dans la bibliothèque</span>
+    <input type="search" id="doc-recherche" value="{{ request.query_params.get('q', '') }}" placeholder="Titre, matière, notion ou mot-clé…" autocomplete="off" aria-controls="doc-grille">
+  </label>
+  <label class="doc-bibliotheque-champ doc-bibliotheque-tri" for="doc-tri">
+    <span>Trier par</span>
+    <select id="doc-tri" aria-label="Trier les documents">
+      <option value="recent" {% if request.query_params.get('sort', 'recent') == 'recent' %}selected{% endif %}>Les plus récents</option>
+      <option value="titre" {% if request.query_params.get('sort', 'recent') == 'titre' %}selected{% endif %}>Titre (A–Z)</option>
+      <option value="matiere" {% if request.query_params.get('sort', 'recent') == 'matiere' %}selected{% endif %}>Matière (A–Z)</option>
+    </select>
+  </label>
+  <div class="doc-bibliotheque-resultats">
+    <strong id="doc-resultats" role="status" aria-live="polite">{{ documents|length }} ressource{% if documents|length != 1 %}s{% endif %}</strong>
+    <span>La recherche examine les titres, les matières, les références et les résumés disponibles.</span>
+  </div>
+</section>
+{% endif %}
+
 <div class="doc-filtres-type">
-  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}" class="doc-chip {{ 'doc-chip-actif' if not type_document else '' }}">Tous</a>
+  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if not type_document else '' }}">Tous</a>
   {% for t in types_document %}
-  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}&type_document={{ t.value }}" class="doc-chip {{ 'doc-chip-actif' if type_document == t.value else '' }}">
+  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}&type_document={{ t.value }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if type_document == t.value else '' }}">
     {{ { "annale": "Annales", "corrige": "Corriges", "fiche": "Fiches", "cours": "Cours" }[t.value] }}
   </a>
   {% endfor %}
@@ -194,10 +216,11 @@ de ~320-470, sans changer le rendu visuel) — a traiter dans une prochaine
 session dediee, avec sa propre verification desktop+mobile.
 #}
 {% if documents %}
-<div class="doc-grille">
+<div class="doc-grille" id="doc-grille">
   {% for doc in documents %}
-  <div class="doc-carte">
-    <div class="doc-carte-visuel" aria-hidden="true">
+  <div class="doc-carte" data-date="{{ doc.date_upload.isoformat() if doc.date_upload else '' }}" data-title="{{ doc.titre|lower }}" data-subject="{{ doc.matiere|lower }}">
+    {% set matiere_couverture = (doc.matiere or '')|lower %}
+    <div class="doc-carte-visuel {% if 'math' in matiere_couverture %}doc-couverture-maths{% elif 'phys' in matiere_couverture %}doc-couverture-physique{% elif 'chim' in matiere_couverture %}doc-couverture-chimie{% elif 'info' in matiere_couverture %}doc-couverture-informatique{% elif 'geo' in matiere_couverture %}doc-couverture-geologie{% elif 'droit' in matiere_couverture %}doc-couverture-droit{% elif 'compt' in matiere_couverture %}doc-couverture-comptabilite{% endif %}" aria-hidden="true">
       {% if doc.type_document.value == "annale" %}
       <img src="/static/images/site/study-books.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
       {% elif doc.type_document.value == "corrige" %}
@@ -216,7 +239,7 @@ session dediee, avec sa propre verification desktop+mobile.
     </div>
     <h3 class="doc-titre">{{ doc.titre }}</h3>
     <p class="doc-meta">{{ doc.matiere }} · {{ doc.annee }}</p>
-    <p class="doc-ref">{{ doc.reference }}</p>
+    <p class="doc-ref" title="{{ doc.reference }}">Réf. {{ doc.reference }}</p>
     {% set fiche = fiches_documents.get(doc.id, {}) %}
     {% set fiche_mg = fiches_documents_mg.get(doc.id, {}) %}
     <details class="doc-fiche">
@@ -319,6 +342,7 @@ session dediee, avec sa propre verification desktop+mobile.
   </div>
   {% endfor %}
 </div>
+<p id="doc-recherche-vide" class="doc-recherche-vide" role="status" hidden>Aucun document ne correspond à cette recherche. Essaie un autre titre, une autre matière ou un mot-clé.</p>
 {% else %}
 <div class="doc-empty-activation">
   {{ etat_vide_constellation(
@@ -354,7 +378,83 @@ session dediee, avec sa propre verification desktop+mobile.
     });
   }
 
+
+  // Recherche instantanée dans les cartes déjà autorisées et rendues par le serveur.
+  // Les filtres backend et le périmètre de visibilité des documents restent inchangés.
+  var grilleDocuments = document.getElementById("doc-grille");
+  if (grilleDocuments) {
+    var cartesDocuments = Array.prototype.slice.call(grilleDocuments.querySelectorAll(".doc-carte"));
+    var rechercheDocuments = document.getElementById("doc-recherche");
+    var triDocuments = document.getElementById("doc-tri");
+    var compteurDocuments = document.getElementById("doc-resultats");
+    var videDocuments = document.getElementById("doc-recherche-vide");
+
+    function normaliserTexteDocument(texte) {
+      return String(texte || "")
+        .normalize("NFD")
+        .replace(/[\\u0300-\\u036f]/g, "")
+        .toLocaleLowerCase("fr");
+    }
+
+    function appliquerRechercheEtTriDocuments() {
+      var terme = normaliserTexteDocument(rechercheDocuments ? rechercheDocuments.value.trim() : "");
+      var tri = triDocuments && ["recent", "titre", "matiere"].indexOf(triDocuments.value) !== -1
+        ? triDocuments.value
+        : "recent";
+
+      cartesDocuments.sort(function (a, b) {
+        if (tri === "titre") {
+          return normaliserTexteDocument(a.dataset.title).localeCompare(
+            normaliserTexteDocument(b.dataset.title), "fr", { numeric: true, sensitivity: "base" }
+          );
+        }
+        if (tri === "matiere") {
+          return normaliserTexteDocument(a.dataset.subject).localeCompare(
+            normaliserTexteDocument(b.dataset.subject), "fr", { numeric: true, sensitivity: "base" }
+          ) || normaliserTexteDocument(a.dataset.title).localeCompare(
+            normaliserTexteDocument(b.dataset.title), "fr", { numeric: true, sensitivity: "base" }
+          );
+        }
+        return String(b.dataset.date || "").localeCompare(String(a.dataset.date || ""));
+      });
+
+      var nombreVisible = 0;
+      cartesDocuments.forEach(function (carte) {
+        var contenu = normaliserTexteDocument(carte.textContent || "");
+        var correspond = !terme || contenu.indexOf(terme) !== -1;
+        carte.style.display = correspond ? "" : "none";
+        if (correspond) nombreVisible += 1;
+        grilleDocuments.appendChild(carte);
+      });
+
+      if (compteurDocuments) {
+        compteurDocuments.textContent = nombreVisible + " ressource" + (nombreVisible === 1 ? "" : "s") +
+          " sur " + cartesDocuments.length;
+      }
+      if (videDocuments) videDocuments.hidden = nombreVisible > 0;
+
+      // L'URL mémorise la recherche et le tri pour qu'un changement de catégorie les conserve.
+      try {
+        var url = new URL(window.location.href);
+        var valeurRecherche = rechercheDocuments ? rechercheDocuments.value.trim() : "";
+        var valeurTri = triDocuments ? triDocuments.value : "recent";
+        if (valeurRecherche) url.searchParams.set("q", valeurRecherche);
+        else url.searchParams.delete("q");
+        if (valeurTri && valeurTri !== "recent") url.searchParams.set("sort", valeurTri);
+        else url.searchParams.delete("sort");
+        window.history.replaceState(window.history.state, "", url.toString());
+      } catch (_erreurUrlDocuments) {
+        // La recherche reste utilisable même si l'historique du navigateur est indisponible.
+      }
+    }
+
+    if (rechercheDocuments) rechercheDocuments.addEventListener("input", appliquerRechercheEtTriDocuments);
+    if (triDocuments) triDocuments.addEventListener("change", appliquerRechercheEtTriDocuments);
+    appliquerRechercheEtTriDocuments();
+  }
+
   // Le clic sur "Quiz IA" declenche une generation par IA synchrone
+
   // (voir /documents/{id}/quiz) qui peut prendre plusieurs secondes
   // sans retour visuel avant cet ajout. On ne bloque pas la navigation
   // (comportement du lien inchange), on donne juste un retour immediat.

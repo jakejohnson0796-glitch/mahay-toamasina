@@ -44,3 +44,24 @@ def test_anciens_cours_sans_fiche_sont_planifies_automatiquement():
 def test_templates_de_la_bibliotheque_et_du_parcours_compilent():
     assert templates.env.get_template("documents_list.html") is not None
     assert templates.env.get_template("document_parcours.html") is not None
+
+
+
+def test_bibliotheque_documents_recherche_tri_couvertures_et_accessibilite():
+    html = lire("app/templates/documents_list.html")
+    base = lire("app/templates/base.html")
+    css = lire("app/static/documents-library.css")
+
+    assert 'class="contenu-clair page-bibliotheque-documents"' in html
+    assert 'id="doc-recherche"' in html
+    assert 'id="doc-tri"' in html
+    assert 'id="doc-resultats" role="status" aria-live="polite"' in html
+    assert 'id="doc-recherche-vide" class="doc-recherche-vide" role="status" hidden' in html
+    assert 'querySelectorAll(".doc-carte")' in html
+    assert 'localeCompare' in html
+    assert 'doc-couverture-maths' in html and 'doc-couverture-physique' in html
+    assert 'request.url.path == "/documents"' in base
+    assert "documents-library.css?v=" in base
+    assert "grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr))" in css
+    assert "@media (max-width: 640px)" in css
+    assert "prefers-reduced-motion: reduce" in css
