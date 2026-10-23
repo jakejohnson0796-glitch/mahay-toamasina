@@ -21,7 +21,7 @@ def interactions_tuteur_recentes(
     sont volontairement pas utilisees pour personnaliser une notion precise.
     """
     try:
-        limite = max(1, min(20, int(limite)))
+        limite = max(1, min(100, int(limite)))
         scan = int(scan_limite) if scan_limite is not None else (limite * 3 if progression_id else 80)
         scan = max(limite, min(120, scan))
     except (TypeError, ValueError):
