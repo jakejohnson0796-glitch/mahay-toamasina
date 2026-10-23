@@ -200,8 +200,9 @@ def _contexte_personnalise_quiz(
         .limit(80)
     ).all()
     faibles = []
-    ids_faibles = set()
     for progression in progressions:
+        if getattr(progression, "utilisateur_id", utilisateur_id) != utilisateur_id:
+            continue
         if unicodedata.normalize("NFKC", str(progression.matiere or "")).casefold().strip() != matiere_cle:
             continue
         niveau_progression = unicodedata.normalize("NFKC", str(progression.niveau or "")).casefold().strip()
@@ -215,8 +216,6 @@ def _contexte_personnalise_quiz(
         score = _score_maitrise_effectif(progression)
         priorite = "à retravailler" if score < 50 else ("à consolider" if score < 75 else "à entretenir")
         faibles.append({"notion": notion, "priorite": priorite})
-        if progression.id is not None:
-            ids_faibles.add(int(progression.id))
         if len(faibles) >= 4:
             break
 
