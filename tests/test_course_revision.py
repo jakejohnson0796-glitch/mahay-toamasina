@@ -17,6 +17,7 @@ from app.models import (
     Seance,
     StatutFicheRevisionCours,
     StatutSeance,
+    StatutTacheIA,
     TacheIA,
     Utilisateur,
 )
@@ -70,7 +71,7 @@ def test_prompts_fiches_revision_prescrivent_une_meilleure_pedagogie_et_un_latex
         assert "erreurs_frequentes" in prompt
         assert "LaTeX" in prompt
         assert r"\begin{pmatrix}" in prompt
-        assert "progression" in prompt.lower()
+        assert "Facile" in prompt and "Difficile" in prompt
 
 
 def test_normalisation_fiche_preserve_le_latex_pour_katex():
@@ -176,6 +177,8 @@ def test_schema_de_secours_ne_requiert_pas_la_notion_de_chaque_exercice():
     schema = course_revision._schema_fiche_revision_sans_notion()
 
     assert "notion" not in schema["properties"]["exercices"]["items"]["properties"]
+    assert "notion" not in schema["properties"]["exercices"]["items"]["required"]
+    assert "erreurs_frequentes" in schema["required"]
     assert "notion" in course_revision._SCHEMA_FICHE["properties"]["exercices"]["items"]["properties"]
 
 
@@ -282,6 +285,35 @@ def test_planification_est_idempotente_et_reservee_aux_etudiants_inscrits(monkey
         assert fiche.statut == StatutFicheRevisionCours.EN_ATTENTE
 
     with Session(test_engine) as session:
+        fiche = session.get(FicheRevisionCours, fiche_id_1)
+        tache = session.exec(
+            select(TacheIA).where(
+                TacheIA.type_tache == ai_queue.TYPE_FICHE_REVISION_COURS
+            )
+        ).one()
+        fiche.statut = StatutFicheRevisionCours.TERMINEE
+        fiche.contenu_json = json.dumps(fiche_valide(), ensure_ascii=False)
+        fiche.version_generation = "v3"
+        tache.statut = StatutTacheIA.TERMINEE
+        tache.terminee_le = datetime.utcnow()
+        session.add(fiche)
+        session.add(tache)
+        session.commit()
+
+    # Une fiche finie sous l'ancien générateur est régénérée lors de sa prochaine
+    # consultation, mais reste idempotente : la même tâche durable est réutilisée.
+    assert ai_queue.planifier_fiche_revision_cours(seance_id, etudiant_id) == fiche_id_1
+    with Session(test_engine) as session:
+        fiche = session.get(FicheRevisionCours, fiche_id_1)
+        assert fiche.version_generation == "v3"
+        assert fiche.statut == StatutFicheRevisionCours.EN_ATTENTE
+        taches = session.exec(
+            select(TacheIA).where(TacheIA.type_tache == ai_queue.TYPE_FICHE_REVISION_COURS)
+        ).all()
+        assert len(taches) == 1
+        assert taches[0].statut == StatutTacheIA.EN_ATTENTE
+
+    with Session(test_engine) as session:
         non_inscrit = Utilisateur(
             nom="Non inscrit",
             telephone="+261340000003",
@@ -311,6 +343,8 @@ def test_templates_fiche_revision_compile_et_exposent_les_formats():
     assert "/telecharger/docx" in source_cours
     assert "data-rendu" in source_lecture
     assert "J’ai essayé" in source_lecture
+    assert "fiche_contenu.erreurs_frequentes" in source_lecture
+    assert "erreurs_frequentes" in (templates_dir / "document_revision.html").read_text(encoding="utf-8")
     assert "/telecharger/pdf" in source_lecture
     assert "/telecharger/docx" in source_lecture
 
