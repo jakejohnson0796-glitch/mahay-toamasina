@@ -1328,12 +1328,30 @@ def personnaliser_fiche_revision_document(
         due = prochaine is None or prochaine <= maintenant
         progressions_matiere.append((progression, score, due))
 
+    def urgence_revision(ligne) -> int:
+        progression, score, due = ligne
+        questions = max(0, int(progression.nb_questions or 0))
+        erreurs = max(0, int(progression.nb_erreurs or 0))
+        urgence = max(0, 75 - score)
+        urgence += 18 if due else 0
+        urgence += 12 if not bool(progression.maitrise_confirmee) else 0
+        urgence += min(erreurs, 5) * 3
+        if questions >= 3 and int(progression.confiance_maitrise or 0) < 40:
+            urgence += 8
+        return urgence
+
+    def date_maj_tri(progression):
+        date = progression.date_maj or maintenant
+        return date.replace(tzinfo=None) if getattr(date, "tzinfo", None) is not None else date
+
+    # Une faiblesse persistante pèse davantage qu'un simple rappel dû sur une notion
+    # déjà maîtrisée. Chaque facteur est explicable et provient des preuves enregistrées.
     progressions_matiere.sort(
         key=lambda ligne: (
-            0 if ligne[2] else 1,
+            -urgence_revision(ligne),
             ligne[1],
             -int(ligne[0].nb_erreurs or 0),
-            ligne[0].date_maj or maintenant,
+            date_maj_tri(ligne[0]),
         )
     )
     prioritaires = [
@@ -1357,17 +1375,34 @@ def personnaliser_fiche_revision_document(
             action = "Refais un exercice de difficulté moyenne, puis vérifie ton raisonnement avec la correction."
         elif due:
             statut = "Révision à faire"
-            raison = "La date de révision prévue est atteinte ou aucune date n'est encore planifiée."
+            raison = (
+                "La date de révision prévue est atteinte."
+                if progression.prochaine_revision_le is not None
+                else "Aucune date de révision n'était planifiée ; un contrôle permet de définir le prochain intervalle."
+            )
             action = "Teste-toi de mémoire avant de relire l'explication ; reprends uniquement l'étape qui bloque."
+        elif bool(progression.maitrise_confirmee):
+            statut = "Acquis à entretenir"
+            raison = "Une preuve de maîtrise est enregistrée et la prochaine révision n'est pas encore due."
+            action = "Essaie une question d'application différente pour entretenir tes acquis sans refaire inutilement toute la leçon."
         else:
             statut = "À confirmer"
-            raison = "Les résultats sont encourageants, mais la maîtrise doit être vérifiée sur une nouvelle question."
+            raison = "Les résultats sont encourageants, mais il manque encore une preuve de maîtrise stable."
             action = "Résous une variante sans indice et explique pourquoi la méthode fonctionne."
+
+        prochaine = progression.prochaine_revision_le
+        if prochaine is not None and getattr(prochaine, "tzinfo", None) is not None:
+            prochaine = prochaine.replace(tzinfo=None)
+        revision_prevue = (
+            "À revoir aujourd'hui" if due
+            else ("Le " + prochaine.strftime("%d/%m/%Y") if prochaine is not None else "À planifier après le diagnostic")
+        )
         priorites.append({
             "notion": _normaliser_texte(progression.notion, 140),
             "statut": statut,
             "raison": raison,
             "action": action,
+            "revision_prevue": revision_prevue,
         })
 
     # Les résultats de quiz restent qualitatifs : aucun score brut n'est envoyé
@@ -1427,7 +1462,19 @@ def personnaliser_fiche_revision_document(
     else:
         tendance_quiz = "Pas encore de quiz soumis sur cette matière et ce niveau : un diagnostic servira à calibrer les prochaines révisions."
 
-    derniere_interaction = interactions[0] if interactions else None
+    interactions_pertinentes = [
+        interaction for interaction in interactions
+        if not priorites or any(
+            _cle(priorite["notion"]) in _cle(interaction.get("notion"))
+            or _cle(interaction.get("notion")) in _cle(priorite["notion"])
+            for priorite in priorites
+        )
+    ]
+    derniere_interaction = (
+        interactions_pertinentes[0]
+        if interactions_pertinentes
+        else (interactions[0] if interactions else None)
+    )
     if derniere_interaction and derniere_interaction.get("etat_comprehension") == "comprehension a retravailler":
         conseil_tuteur = (
             "Tu as déjà signalé une difficulté autour de « "
@@ -1476,6 +1523,7 @@ def personnaliser_fiche_revision_document(
                 return (rang, -communs)
         return (len(priorites) + 1, 0)
 
+    exercices_recommandes = []
     if priorites:
         contenu["exercices"] = sorted(contenu.get("exercices", []), key=cle_exercice)
         contenu["notions"] = sorted(
@@ -1495,34 +1543,58 @@ def personnaliser_fiche_revision_document(
         ]
         points_existants = list(contenu.get("points_a_retravailler") or [])
         contenu["points_a_retravailler"] = list(dict.fromkeys(points_personnels + points_existants))[:8]
-        contenu["plan_revision"] = [
-            {
-                "moment": "Aujourd'hui",
-                "action": (
-                    f"Priorité : {priorites[0]['notion']}. {priorites[0]['action']} "
-                    "Choisis l'exercice associé à cette notion et essaie avant d'ouvrir sa correction."
-                ),
-            },
-            {
-                "moment": "Demain",
-                "action": (
-                    "Refais une question différente sur "
-                    + (priorites[1]["notion"] if len(priorites) > 1 else priorites[0]["notion"])
-                    + " sans aide. Si tu bloques, écris l'étape précise qui manque."
-                ),
-            },
-            {
-                "moment": "Dans 3 jours",
-                "action": "Refais un quiz court avec des questions nouvelles sur les notions ciblées ; vérifie que tu peux justifier la méthode, pas seulement retrouver le résultat.",
-            },
-        ]
+        if all(item["statut"] == "Acquis à entretenir" for item in priorites):
+            contenu["plan_revision"] = [
+                {"moment": "Entretien facultatif", "action": "Aucune difficulté urgente n'est détectée dans les preuves disponibles. Choisis une application nouvelle si tu souhaites approfondir la notion."},
+                {"moment": priorites[0]["revision_prevue"], "action": f"Réactive « {priorites[0]['notion']} » sans relire la fiche, puis vérifie ta démarche avec une correction expliquée."},
+                {"moment": "Dans 7 jours", "action": "Résous une question différente sans indice pour vérifier que l'acquis tient dans le temps."},
+            ]
+        else:
+            notion_demain = priorites[1]["notion"] if len(priorites) > 1 else priorites[0]["notion"]
+            contenu["plan_revision"] = [
+                {"moment": "Aujourd'hui", "action": f"Priorité : {priorites[0]['notion']}. {priorites[0]['action']} Essaie l'exercice ciblé avant d'ouvrir l'indice ou la correction."},
+                {"moment": "Demain", "action": f"Refais une question différente sur {notion_demain} sans aide. Si tu bloques, note l'étape précise qui manque."},
+                {"moment": "Dans 3 jours", "action": "Refais un quiz court avec des questions nouvelles sur les notions ciblées ; justifie la méthode plutôt que de retrouver seulement le résultat."},
+                {"moment": "Dans 7 jours", "action": "Teste la rétention sur au moins une question jamais rencontrée. Si tu réussis sans indice, confirme l'acquis ; sinon, reprogramme une révision."},
+            ]
+        for exercice in contenu.get("exercices", []):
+            rang, _correspondance = cle_exercice(exercice)
+            if rang >= len(priorites):
+                continue
+            priorite = priorites[rang]
+            enonce = _normaliser_texte(exercice.get("enonce"), 1000)
+            if not enonce:
+                continue
+            cle_unique = (rang, _cle(enonce))
+            if any(item["_cle_unique"] == cle_unique for item in exercices_recommandes):
+                continue
+            exercices_recommandes.append({
+                "_cle_unique": cle_unique,
+                "notion": priorite["notion"],
+                "difficulte": _normaliser_texte(exercice.get("difficulte"), 40) or "Progressif",
+                "enonce": enonce,
+                "indice": _normaliser_texte(exercice.get("indice"), 500),
+                "raison": f"Cet exercice cible « {priorite['notion']} », classée « {priorite['statut'].lower()} » dans ton parcours.",
+            })
+            if len(exercices_recommandes) >= 3:
+                break
     else:
         contenu["plan_revision"] = [
             {"moment": "Aujourd'hui", "action": "Fais un premier diagnostic avec les exercices et note les notions que tu ne peux pas expliquer sans regarder la correction."},
             {"moment": "Demain", "action": "Reprends une question ratée ou hésitante et explique la démarche avec tes propres mots."},
-            {"moment": "Dans 3 jours", "action": "Refais un quiz court sur ces notions pour vérifier ce que tu retiens sans indice."},
+            {"moment": "Dans 3 jours", "action": "Refais un quiz court pour vérifier ce que tu retiens sans indice."},
+            {"moment": "Dans 7 jours", "action": "Reteste une question différente pour vérifier la rétention ; si le profil reste vide, lance un quiz de diagnostic."},
         ]
 
+    profil_personnalise["exercices_recommandes"] = [
+        {cle: valeur for cle, valeur in exercice.items() if cle != "_cle_unique"}
+        for exercice in exercices_recommandes
+    ]
+    profil_personnalise["preuves_a_obtenir"] = (
+        ["Réussir une question nouvelle sans indice.", "Expliquer le raisonnement avec ses propres mots.", "Repasser une question dans 7 jours pour vérifier la rétention."]
+        if priorites else
+        ["Faire un diagnostic court sur les objectifs de la fiche.", "Identifier une erreur ou une hésitation à retravailler.", "Refaire une question différente dans 7 jours."]
+    )
     contenu["profil_personnalise"] = profil_personnalise
     return contenu
 
@@ -1589,6 +1661,17 @@ def generer_pdf(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) ->
         paragraphe("Derniers quiz : " + str(profil.get("tendance_quiz", "")))
         paragraphe("Conseil du Tuteur IA : " + str(profil.get("conseil_tuteur", "")))
         paragraphe("À faire en premier : " + str(profil.get("prochaine_action", "")))
+        if profil.get("exercices_recommandes"):
+            section("Exercices conseillés pour toi")
+            paragraphe("Essaie chaque énoncé sans aide ; un indice est fourni sans afficher la correction.")
+            for numero, exercice in enumerate(profil.get("exercices_recommandes", []), 1):
+                paragraphe(f"{numero}. {exercice.get('notion', '')} — {exercice.get('difficulte', '')}", "Heading3")
+                paragraphe(exercice.get("enonce", ""))
+                if exercice.get("indice"):
+                    paragraphe("Indice : " + str(exercice.get("indice", "")), "MitaridalaSmall")
+                paragraphe(exercice.get("raison", ""), "MitaridalaSmall")
+        if profil.get("preuves_a_obtenir"):
+            paragraphe("Preuves à obtenir : " + " ; ".join(profil.get("preuves_a_obtenir", [])), "MitaridalaSmall")
 
     section("1. Résumé à retenir")
     paragraphe(fiche["resume"])
@@ -1729,6 +1812,22 @@ def generer_docx(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) -
         document.add_paragraph(texte_word("Derniers quiz : " + str(profil.get("tendance_quiz", ""))))
         document.add_paragraph(texte_word("Conseil du Tuteur IA : " + str(profil.get("conseil_tuteur", ""))))
         document.add_paragraph(texte_word("À faire en premier : " + str(profil.get("prochaine_action", ""))))
+        if profil.get("exercices_recommandes"):
+            heading("Exercices conseillés pour toi")
+            document.add_paragraph("Essaie chaque énoncé sans aide ; l'indice est facultatif et la correction n'est pas dévoilée ici.")
+            for numero, exercice in enumerate(profil.get("exercices_recommandes", []), 1):
+                document.add_heading(
+                    f"{numero}. {texte_word(exercice.get('notion', ''))} — {texte_word(exercice.get('difficulte', ''))}",
+                    level=2,
+                )
+                document.add_paragraph(texte_word(exercice.get("enonce", "")))
+                if exercice.get("indice"):
+                    p = document.add_paragraph()
+                    p.add_run("Indice : ").bold = True
+                    p.add_run(texte_word(exercice.get("indice", "")))
+                document.add_paragraph(texte_word(exercice.get("raison", "")))
+        if profil.get("preuves_a_obtenir"):
+            document.add_paragraph(texte_word("Preuves à obtenir : " + " ; ".join(profil.get("preuves_a_obtenir", []))))
 
     heading("1. Résumé à retenir")
     document.add_paragraph(texte_word(fiche["resume"]))

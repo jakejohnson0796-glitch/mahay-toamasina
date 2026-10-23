@@ -12,6 +12,7 @@ from app import ai_queue, course_revision
 from app.models import (
     Document,
     FicheRevisionDocument,
+    ProgressionNotion,
     Notification,
     RoleUtilisateur,
     StatutDocument,
@@ -408,6 +409,8 @@ def test_hub_et_fiche_document_sont_des_templates_compilables():
     assert "/documents/{{ document.id }}/revision/telecharger/docx" in source_hub
     assert "source_document" not in source_fiche
     assert "data-rendu" in source_fiche
+    assert "Exercices conseillés pour toi" in source_fiche
+    assert "preuves_a_obtenir" in source_fiche
     assert "Télécharger la fiche PDF" in source_fiche
     assert "Télécharger la version Word" in source_fiche
 
@@ -433,3 +436,110 @@ def test_hub_et_fiche_document_sont_des_templates_compilables():
     assert "Fiche incomplète" in source_bibliotheque
     assert "Échec à relancer" in source_bibliotheque
     assert "Le statut est terminé, mais le carnet ne contient pas de fiche exploitable." in source_hub
+
+
+
+def test_fiche_document_personnalisee_par_etudiant_sans_fuite_ni_mutation():
+    from datetime import timedelta
+
+    engine = moteur_sqlite()
+    with Session(engine) as session:
+        document, etudiant_a = creer_document(session)
+        etudiant_b = Utilisateur(
+            nom="Étudiant B",
+            telephone="+261340099992",
+            mot_de_passe_hash="test-hash-b",
+            role=RoleUtilisateur.ETUDIANT,
+        )
+        session.add(etudiant_b)
+        session.commit()
+        session.refresh(etudiant_b)
+
+        progression_a = ProgressionNotion(
+            utilisateur_id=etudiant_a.id,
+            matiere="Mathématiques",
+            niveau="L1",
+            notion="Déterminant",
+            nb_questions=8,
+            nb_reussites=2,
+            nb_erreurs=6,
+            score_maitrise=25,
+            confiance_maitrise=30,
+            maitrise_confirmee=False,
+            prochaine_revision_le=datetime.utcnow(),
+        )
+        progression_b = ProgressionNotion(
+            utilisateur_id=etudiant_b.id,
+            matiere="Mathématiques",
+            niveau="L1",
+            notion="Produit matriciel",
+            nb_questions=10,
+            nb_reussites=9,
+            nb_erreurs=1,
+            score_maitrise=88,
+            confiance_maitrise=90,
+            maitrise_confirmee=True,
+            prochaine_revision_le=datetime.utcnow() + timedelta(days=5),
+        )
+        session.add_all([progression_a, progression_b])
+        session.commit()
+
+        fiche_source = fixture_fiche()
+        fiche_source_originale = json.dumps(fiche_source, ensure_ascii=False, sort_keys=True)
+        fiche_a = course_revision.personnaliser_fiche_revision_document(
+            session, document, etudiant_a.id, fiche_source
+        )
+        fiche_b = course_revision.personnaliser_fiche_revision_document(
+            session, document, etudiant_b.id, fiche_source
+        )
+
+        profil_a = fiche_a["profil_personnalise"]
+        profil_b = fiche_b["profil_personnalise"]
+
+        assert json.dumps(fiche_source, ensure_ascii=False, sort_keys=True) == fiche_source_originale
+        assert profil_a["priorites"][0]["notion"] == "Déterminant"
+        assert profil_b["priorites"][0]["notion"] == "Produit matriciel"
+        assert "Produit matriciel" not in [p["notion"] for p in profil_a["priorites"]]
+        assert "Déterminant" not in [p["notion"] for p in profil_b["priorites"]]
+        assert fiche_a["exercices"][0]["notion"] == "Déterminant"
+        assert fiche_b["exercices"][0]["notion"] == "Produit matriciel"
+        assert profil_a["exercices_recommandes"][0]["notion"] == "Déterminant"
+        assert profil_b["exercices_recommandes"][0]["notion"] == "Produit matriciel"
+        assert any(item["moment"] == "Dans 7 jours" for item in fiche_a["plan_revision"])
+        assert any(item["moment"].startswith("Le ") for item in fiche_b["plan_revision"])
+        assert "Déterminant" not in profil_b["prochaine_action"]
+        assert "Produit matriciel" not in profil_a["prochaine_action"]
+
+
+def test_fiche_document_personnalisee_exports_priorites_et_exercices():
+    fiche = fixture_fiche()
+    fiche["profil_personnalise"] = {
+        "titre": "Ta fiche personnalisée",
+        "mode": "Adaptée à ton parcours",
+        "message": "Une notion est prioritaire pour toi.",
+        "priorites": [{
+            "notion": "Déterminant",
+            "statut": "À retravailler en premier",
+            "raison": "Les dernières réponses sont fragiles.",
+            "action": "Revois ad-bc avant un nouvel essai.",
+            "revision_prevue": "À revoir aujourd'hui",
+        }],
+        "exercices_recommandes": [{
+            "notion": "Déterminant",
+            "difficulte": "Facile",
+            "enonce": r"Calcule \(det(A)=ad-bc\).",
+            "indice": "Calcule ad puis bc.",
+            "raison": "Exercice ciblé selon ton historique.",
+        }],
+        "preuves_a_obtenir": ["Résoudre une question nouvelle."],
+        "points_forts": [],
+        "tendance_quiz": "Quiz à reprendre en priorité.",
+        "conseil_tuteur": "Explique les étapes avec tes mots.",
+        "prochaine_action": "Commence par le déterminant.",
+    }
+    cours = type("CoursExport", (), {"nom": "Algèbre", "matiere": "Mathématiques", "niveau": "L1"})()
+    seance = type("SeanceExport", (), {"titre": "Matrices", "date_fin_reelle": datetime.utcnow(), "date_creation": datetime.utcnow()})()
+    pdf = course_revision.generer_pdf(fiche, cours, seance, "Étudiant A")
+    docx = course_revision.generer_docx(fiche, cours, seance, "Étudiant A")
+    assert pdf.startswith(b"%PDF")
+    assert docx.startswith(b"PK")

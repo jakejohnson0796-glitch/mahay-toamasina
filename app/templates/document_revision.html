@@ -47,8 +47,40 @@
         <p><strong>{{ priorite.statut }}</strong></p>
         <p class="ai-rendered-content" data-rendu>{{ priorite.raison }}</p>
         <div class="document-revision-example"><strong>Prochaine action</strong><p class="ai-rendered-content" data-rendu>{{ priorite.action }}</p></div>
+        {% if priorite.revision_prevue %}<p class="document-revision-note"><strong>Prochaine vérification :</strong> {{ priorite.revision_prevue }}</p>{% endif %}
       </article>
       {% endfor %}
+    </div>
+    {% endif %}
+    {% if profil.get("exercices_recommandes") %}
+    <div class="document-revision-personal-practice">
+      <h3>Exercices conseillés pour toi</h3>
+      <p>Ces exercices sont choisis à partir de tes notions prioritaires. Essaie d'abord sans aide ; l'indice reste facultatif.</p>
+      <div class="document-revision-exercises">
+        {% for exercice in profil.get("exercices_recommandes", []) %}
+        <article class="document-revision-exercise">
+          <div class="document-revision-exercise-head">
+            <h3>{{ loop.index }} · <span class="ai-rendered-content" data-rendu>{{ exercice.notion }}</span></h3>
+            <span>{{ exercice.difficulte }}</span>
+          </div>
+          <p class="ai-rendered-content" data-rendu>{{ exercice.enonce }}</p>
+          {% if exercice.indice %}
+          <details><summary>Voir un indice</summary><p class="ai-rendered-content" data-rendu>{{ exercice.indice }}</p></details>
+          {% endif %}
+          <p class="document-revision-note ai-rendered-content" data-rendu>{{ exercice.raison }}</p>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if profil.get("preuves_a_obtenir") %}
+    <div class="document-revision-example">
+      <strong>Comment vérifier que tu maîtrises vraiment</strong>
+      <ul class="document-revision-list">
+        {% for preuve in profil.get("preuves_a_obtenir", []) %}
+        <li><span aria-hidden="true">✓</span><div class="ai-rendered-content" data-rendu>{{ preuve }}</div></li>
+        {% endfor %}
+      </ul>
     </div>
     {% endif %}
     {% if profil.get("points_forts") %}
