@@ -45,6 +45,7 @@ from .models import (
     InscriptionCours,
     Notification,
     ProgressionNotion,
+    SessionTuteur,
     Seance,
     StatutDocument,
     StatutFicheRevisionCours,
@@ -56,6 +57,7 @@ from .models import (
     Utilisateur,
 )
 from . import ai_ensemble
+from .apprentissage_memoire import interactions_tuteur_recentes
 from .storage import ouvrir_fichier_local
 from .text_extraction import extraire_texte
 
@@ -63,7 +65,8 @@ logger = logging.getLogger(__name__)
 
 MAX_SOURCE_CHARS = 7800
 MAX_COMPLETION_TOKENS = 6000
-VERSION_GENERATION = "v4"
+VERSION_GENERATION = "v5"
+VERSION_GENERATION_DOCUMENT = "v4"
 
 _SCHEMA_FICHE = {
     "type": "object",
@@ -536,6 +539,30 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
         if len(resultats_quiz) >= 4:
             break
 
+    # La fiche de cours est individuelle : elle peut exploiter les difficultés
+    # observées lors des derniers échanges du même étudiant avec le Tuteur IA.
+    interactions_tuteur = []
+    for interaction in interactions_tuteur_recentes(
+        session,
+        etudiant.id,
+        limite=60,
+        scan_limite=80,
+    ):
+        if not matiere_cle or _matiere_cle(interaction.get("matiere")) != matiere_cle:
+            continue
+        if not _niveaux_compatibles(cours.niveau, interaction.get("niveau")):
+            continue
+        interactions_tuteur.append({
+            "notion": _normaliser_texte(interaction.get("notion"), 120),
+            "question": _normaliser_texte(interaction.get("question"), 240),
+            "etat_comprehension": _normaliser_texte(interaction.get("etat_comprehension"), 80),
+            "reponse_etudiant": _normaliser_texte(interaction.get("reponse_etudiant"), 220),
+            "retour_pedagogique": _normaliser_texte(interaction.get("retour_pedagogique"), 260),
+            "date": interaction.get("date", ""),
+        })
+        if len(interactions_tuteur) >= 3:
+            break
+
     devoirs_utiles = [d for d in consignes_devoirs if d["consigne"]]
     contenu_de_seance_disponible = bool(
         description_seance or notes or supports or devoirs_utiles
@@ -571,6 +598,7 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
         "profil_individuel": {
             "notions_a_retravailler": difficultes,
             "resultats_quiz_recents": resultats_quiz,
+            "interactions_tuteur_recentes": interactions_tuteur,
         },
         "limites_sources": limites_sources,
     }
@@ -580,6 +608,7 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
         "devoirs_utilisables": len(devoirs_utiles),
         "personnalisation_progression": bool(difficultes),
         "personnalisation_quiz": bool(resultats_quiz),
+        "personnalisation_tuteur": bool(interactions_tuteur),
         "limites": limites_sources,
     }
     return contexte, resume_sources
@@ -600,6 +629,7 @@ def _borner_contexte(contexte: dict, limite: int = MAX_SOURCE_CHARS) -> dict:
         (None, "consignes_devoirs"),
         (None, "supports_academiques_approuves"),
         ("profil_individuel", "resultats_quiz_recents"),
+        ("profil_individuel", "interactions_tuteur_recentes"),
         ("profil_individuel", "notions_a_retravailler"),
     ]
     for parent, cle in listes:
@@ -629,6 +659,9 @@ def _borner_contexte(contexte: dict, limite: int = MAX_SOURCE_CHARS) -> dict:
             ("seance", "notes_tableau_blanc", None, 420),
             (None, "supports_academiques_approuves", "resume", 420),
             (None, "consignes_devoirs", "consigne", 240),
+            ("profil_individuel", "interactions_tuteur_recentes", "question", 150),
+            ("profil_individuel", "interactions_tuteur_recentes", "reponse_etudiant", 120),
+            ("profil_individuel", "interactions_tuteur_recentes", "retour_pedagogique", 160),
             ("profil_individuel", "notions_a_retravailler", "notion", 90),
         ]:
             liste = donnees.get(parent, {}).get(cle, []) if parent else donnees.get(cle, [])
@@ -659,6 +692,7 @@ def _texte_ia_non_fiable(contexte: dict) -> str:
         "le titre et le niveau, et mentionne cette limite dans 'limites_sources'.\n"
         "- Utilise les difficultés individuelles pour choisir des rappels et exercices ciblés, "
         "sans afficher des données personnelles ou les scores bruts dans la fiche.\n"
+        "- Utilise les échanges récents du Tuteur IA pour cibler les incompréhensions réelles et varier la méthode, sans recopier les conversations ni exposer les réponses personnelles.\n"
         "- Ne dis jamais que l'étudiant est nul, faible ou en échec ; propose des actions concrètes.\n"
         "- Si aucune difficulté individuelle n'est connue, fournis un parcours équilibré.\n"
         "- Chaque exercice doit avoir un énoncé, un indice et une correction réellement expliquée. "
@@ -1096,7 +1130,7 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
         fiche.statut = StatutFicheRevisionDocument.EN_COURS
         fiche.erreur_generation = None
         fiche.date_modification = datetime.utcnow()
-        fiche.version_generation = VERSION_GENERATION
+        fiche.version_generation = VERSION_GENERATION_DOCUMENT
         session.add(fiche)
         session.commit()
 
