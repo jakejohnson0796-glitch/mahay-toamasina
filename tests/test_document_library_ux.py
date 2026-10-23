@@ -75,3 +75,10 @@ def test_bibliotheque_conserve_recherche_tri_et_cercle_pendant_les_filtres():
     assert 'name="cercle_id" value="{{ cercle.id }}"' in html
     assert 'champRechercheFiltres.value = rechercheDocuments ? rechercheDocuments.value.trim() : ""' in html
     assert 'champTriFiltres.value = tri' in html
+
+
+def test_bibliotheque_n_envoie_pas_un_cercle_vide_dans_les_liens_de_filtre():
+    html = lire("app/templates/documents_list.html")
+
+    assert "{{ '&cercle_id=' ~ cercle.id if cercle else '' }}" in html
+    assert "&cercle_id={{ cercle.id if cercle else '' }}" not in html
