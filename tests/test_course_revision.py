@@ -458,6 +458,7 @@ def test_templates_fiche_revision_compile_et_exposent_les_formats():
     environnement = Environment(loader=FileSystemLoader(str(templates_dir)))
     source_cours = (templates_dir / "classe_detail.html").read_text(encoding="utf-8")
     source_lecture = (templates_dir / "classe_revision.html").read_text(encoding="utf-8")
+    source_document_revision = (templates_dir / "document_revision.html").read_text(encoding="utf-8")
     cours_template = environnement.get_template("classe_detail.html")
     lecture_template = environnement.get_template("classe_revision.html")
 
@@ -471,8 +472,8 @@ def test_templates_fiche_revision_compile_et_exposent_les_formats():
     assert "J’ai essayé" in source_lecture
     assert "fiche_contenu.erreurs_frequentes" in source_lecture
     assert "erreurs_frequentes" in (templates_dir / "document_revision.html").read_text(encoding="utf-8")
-    assert "\"profil_personnalise\"" in source_lecture
-    assert "profil.get(\"priorites\")" in source_lecture
+    assert "\"profil_personnalise\"" in source_document_revision
+    assert "profil.get(\"priorites\")" in source_document_revision
     assert "/telecharger/pdf" in source_lecture
     assert "/telecharger/docx" in source_lecture
 
