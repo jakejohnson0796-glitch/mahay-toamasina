@@ -52,6 +52,7 @@ def _generer_quiz_rapide(
     difficulte: str,
     nb_questions: int,
     questions_a_eviter: Optional[List[str]] = None,
+    contexte_apprentissage: Optional[str] = None,
 ) -> List[Dict]:
     """Genere le quiz et ne fait sur le chemin utilisateur que la validation locale.
 
@@ -65,6 +66,7 @@ def _generer_quiz_rapide(
         difficulte,
         nb_questions,
         questions_a_eviter=questions_a_eviter,
+        contexte_apprentissage=contexte_apprentissage,
     )
     return valider_questions(questions_generees, expected_count=nb_questions)
 
@@ -178,6 +180,73 @@ def _questions_vues_recemment(
     return resultat
 
 
+
+def _contexte_personnalise_quiz(
+    session: Session,
+    utilisateur_id: int,
+    matiere: str,
+    niveau: str,
+) -> str:
+    """Construit un bref profil individuel, limité à la matière et au niveau choisis."""
+    matiere_cle = unicodedata.normalize("NFKC", str(matiere or "")).casefold().strip()
+    niveau_cle = unicodedata.normalize("NFKC", str(niveau or "")).casefold().strip()
+
+    progressions = session.exec(
+        select(ProgressionNotion)
+        .where(ProgressionNotion.utilisateur_id == utilisateur_id)
+        .order_by(ProgressionNotion.score_maitrise, ProgressionNotion.nb_erreurs.desc())
+        .limit(80)
+    ).all()
+    faibles = []
+    ids_faibles = set()
+    for progression in progressions:
+        if unicodedata.normalize("NFKC", str(progression.matiere or "")).casefold().strip() != matiere_cle:
+            continue
+        niveau_progression = unicodedata.normalize("NFKC", str(progression.niveau or "")).casefold().strip()
+        if niveau_progression and niveau_progression != niveau_cle:
+            continue
+        if int(progression.nb_questions or 0) <= 0:
+            continue
+        notion = str(progression.notion or "").strip()[:120]
+        if not notion:
+            continue
+        score = _score_maitrise_effectif(progression)
+        priorite = "à retravailler" if score < 50 else ("à consolider" if score < 75 else "à entretenir")
+        faibles.append({"notion": notion, "priorite": priorite})
+        if progression.id is not None:
+            ids_faibles.add(int(progression.id))
+        if len(faibles) >= 4:
+            break
+
+    interactions = []
+    # Les échanges sont filtrés à nouveau sur la matière/le niveau après la
+    # requête, et restent toujours associés à l'ID de l'étudiant courant.
+    for interaction in interactions_tuteur_recentes(
+        session,
+        utilisateur_id,
+        limite=80,
+        scan_limite=100,
+    ):
+        if unicodedata.normalize("NFKC", str(interaction.get("matiere") or "")).casefold().strip() != matiere_cle:
+            continue
+        niveau_interaction = unicodedata.normalize("NFKC", str(interaction.get("niveau") or "")).casefold().strip()
+        if niveau_interaction and niveau_interaction != niveau_cle:
+            continue
+        interactions.append(interaction)
+        if len(interactions) >= 3:
+            break
+
+    blocs = []
+    if faibles:
+        blocs.append(
+            "NOTIONS DE CET ÉTUDIANT À PRIVILÉGIER : "
+            + "; ".join(f"{item['notion']} ({item['priorite']})" for item in faibles)
+        )
+    memoire = formater_memoire_tuteur(interactions, limite_caracteres=1200)
+    if memoire:
+        blocs.append(memoire)
+    return "\n\n".join(blocs)[:1600]
+
 def creer_tentative(
     session: Session,
     utilisateur: Utilisateur,
@@ -194,6 +263,9 @@ def creer_tentative(
     """
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
     questions_a_eviter = _questions_vues_recemment(session, utilisateur.id, matiere)
+    contexte_apprentissage = _contexte_personnalise_quiz(
+        session, utilisateur.id, matiere, niveau
+    )
     questions_a_eviter_essai = list(questions_a_eviter)
     empreintes_deja_vues = {
         empreinte
@@ -210,6 +282,7 @@ def creer_tentative(
                 difficulte,
                 nb_questions,
                 questions_a_eviter=questions_a_eviter_essai,
+                contexte_apprentissage=contexte_apprentissage,
             )
             questions_validees = valider_questions(
                 questions_generees,
