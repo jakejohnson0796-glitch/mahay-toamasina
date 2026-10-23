@@ -17,6 +17,7 @@ from sqlmodel import Session, select
 from .database import engine
 from .models import TentativeQuiz, Utilisateur, SignalementQuestionQuiz, ProgressionNotion
 from . import ai_quiz
+from .apprentissage_memoire import interactions_tuteur_recentes, formater_memoire_tuteur
 from .quiz_validation import QuizValidationError, valider_questions
 from .ia_transport import normaliser_structure_quiz
 from .config import parametres
@@ -841,6 +842,18 @@ def creer_tentative_ciblee(
         raise QuizValidationError("La notion ciblee est obligatoire.")
 
     questions_a_eviter = _questions_vues_recemment(session, utilisateur.id, matiere)
+    interactions_tuteur = []
+    if progression is not None and progression.id is not None:
+        interactions_tuteur = interactions_tuteur_recentes(
+            session,
+            utilisateur.id,
+            progression_id=progression.id,
+            limite=3,
+        )
+    contexte_apprentissage = formater_memoire_tuteur(
+        interactions_tuteur,
+        limite_caracteres=1600,
+    )
     questions_a_eviter_essai = list(questions_a_eviter)
     empreintes_deja_vues = {
         empreinte
@@ -859,6 +872,7 @@ def creer_tentative_ciblee(
                 nb_questions,
                 difficulte=difficulte_ciblee,
                 questions_a_eviter=questions_a_eviter_essai,
+                contexte_apprentissage=contexte_apprentissage,
             )
             questions_ciblees = valider_questions(
                 questions_ciblees,
