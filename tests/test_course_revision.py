@@ -1,4 +1,5 @@
 from datetime import datetime
+import io
 import json
 from types import SimpleNamespace
 
@@ -105,6 +106,14 @@ def test_export_math_convertit_une_matrice_en_lignes_lisibles():
     assert "[[1, 2], [3, 4]]" in notation
     assert "beginpmatrix" not in notation
     assert "end{pmatrix}" not in notation
+
+
+def test_fiche_valide_respecte_le_contrat_pedagogique_strict():
+    fiche = course_revision.normaliser_fiche_revision(fiche_valide(), exiger_qualite=True)
+    assert len(fiche["erreurs_frequentes"]) == 3
+    assert {exercice["difficulte"] for exercice in fiche["exercices"]} == {
+        "Facile", "Moyen", "Difficile"
+    }
 
 
 def test_validation_qualite_refuse_les_exercices_repetes_et_niveaux_absents():
@@ -219,6 +228,14 @@ def test_exports_pdf_et_docx_non_vides():
     assert len(pdf) > 1200
     assert docx.startswith(b"PK")
     assert len(docx) > 1200
+
+    # Le DOCX ne doit pas réintroduire les environnements bruts qui sont réservés
+    # au navigateur : il doit présenter la matrice sous forme de lignes lisibles.
+    word = course_revision.WordDocument(io.BytesIO(docx))
+    texte_word = "\\n".join(paragraphe.text for paragraphe in word.paragraphs)
+    assert "begin{pmatrix}" not in texte_word
+    assert "[[1, 2], [3, 4]]" in texte_word
+    assert "ne 0" not in texte_word
 
 
 def test_planification_est_idempotente_et_reservee_aux_etudiants_inscrits(monkeypatch, tmp_path):
