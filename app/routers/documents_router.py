@@ -948,6 +948,18 @@ def consulter_fiche_revision_document(
                 FicheRevisionDocument.document_id == document_id
             )
         ).first()
+    elif (
+        fiche.statut == StatutFicheRevisionDocument.TERMINEE
+        and fiche.version_generation != course_revision.VERSION_GENERATION
+    ):
+        # Régénère les fiches existantes une par une, uniquement lors d'une consultation.
+        ai_queue.planifier_fiche_revision_document(document_id)
+        session.expire_all()
+        fiche = session.exec(
+            select(FicheRevisionDocument).where(
+                FicheRevisionDocument.document_id == document_id
+            )
+        ).first()
     elif fiche.statut in {
         StatutFicheRevisionDocument.EN_ATTENTE,
         StatutFicheRevisionDocument.EN_COURS,
@@ -1034,6 +1046,15 @@ def telecharger_fiche_revision_document(
             FicheRevisionDocument.document_id == document_id
         )
     ).first()
+    if fiche and (
+        fiche.statut == StatutFicheRevisionDocument.TERMINEE
+        and fiche.version_generation != course_revision.VERSION_GENERATION
+    ):
+        ai_queue.planifier_fiche_revision_document(document_id)
+        return RedirectResponse(
+            f"/documents/{document_id}/apprendre?revision=en_cours#revision-automatique",
+            status_code=303,
+        )
     if not fiche or fiche.statut != StatutFicheRevisionDocument.TERMINEE or not fiche.contenu_json:
         return RedirectResponse(
             f"/documents/{document_id}/apprendre?revision=en_cours#revision-automatique",
