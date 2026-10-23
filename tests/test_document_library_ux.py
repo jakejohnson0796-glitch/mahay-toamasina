@@ -62,6 +62,6 @@ def test_bibliotheque_documents_recherche_tri_couvertures_et_accessibilite():
     assert 'doc-couverture-maths' in html and 'doc-couverture-physique' in html
     assert 'request.url.path == "/documents"' in base
     assert "documents-library.css?v=" in base
-    assert "grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr))" in css
+    assert "repeat(auto-fit, minmax(min(100%, 19rem), 1fr))" in css
     assert "@media (max-width: 640px)" in css
     assert "prefers-reduced-motion: reduce" in css

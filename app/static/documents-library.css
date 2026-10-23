@@ -210,7 +210,6 @@
   transform: scale(1.035);
 }
 
-.page-bibliotheque-documents .doc-couverture-maths .doc-carte-visuel img,
 .page-bibliotheque-documents .doc-couverture-maths img { filter: hue-rotate(48deg) saturate(1.08); }
 .page-bibliotheque-documents .doc-couverture-physique img { filter: hue-rotate(150deg) saturate(1.1); }
 .page-bibliotheque-documents .doc-couverture-chimie img { filter: hue-rotate(220deg) saturate(1.08); }
