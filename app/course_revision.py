@@ -1575,6 +1575,21 @@ def generer_pdf(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) ->
     def section(titre: str):
         contenu.append(Paragraph(_pdf_escape(titre), styles["MitaridalaH2"]))
 
+    profil = fiche.get("profil_personnalise")
+    if isinstance(profil, dict):
+        section(profil.get("titre", "Ta fiche personnalisée"))
+        paragraphe(profil.get("mode", "Personnalisation en démarrage"), "MitaridalaSmall")
+        paragraphe(profil.get("message", "Cette copie adapte les priorités à ton historique personnel."))
+        for priorite in profil.get("priorites", []):
+            paragraphe(f"{priorite.get('notion', '')} — {priorite.get('statut', '')}", "Heading3")
+            paragraphe(priorite.get("raison", ""))
+            paragraphe("Action : " + str(priorite.get("action", "")))
+        if profil.get("points_forts"):
+            paragraphe("Acquis déjà confirmés : " + ", ".join(profil["points_forts"]))
+        paragraphe("Derniers quiz : " + str(profil.get("tendance_quiz", "")))
+        paragraphe("Conseil du Tuteur IA : " + str(profil.get("conseil_tuteur", "")))
+        paragraphe("À faire en premier : " + str(profil.get("prochaine_action", "")))
+
     section("1. Résumé à retenir")
     paragraphe(fiche["resume"])
     section("2. Objectifs de révision")
@@ -1697,6 +1712,23 @@ def generer_docx(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) -
 
     def bullet(texte):
         document.add_paragraph(texte_word(texte), style="List Bullet")
+
+    profil = fiche.get("profil_personnalise")
+    if isinstance(profil, dict):
+        heading(profil.get("titre", "Ta fiche personnalisée"))
+        document.add_paragraph(texte_word(profil.get("mode", "Personnalisation en démarrage")))
+        document.add_paragraph(texte_word(profil.get("message", "Cette copie adapte les priorités à ton historique personnel.")))
+        for priorite in profil.get("priorites", []):
+            document.add_heading(texte_word(priorite.get("notion", "")) + " — " + texte_word(priorite.get("statut", "")), level=2)
+            document.add_paragraph(texte_word(priorite.get("raison", "")))
+            p = document.add_paragraph()
+            p.add_run("Action : ").bold = True
+            p.add_run(texte_word(priorite.get("action", "")))
+        if profil.get("points_forts"):
+            document.add_paragraph(texte_word("Acquis déjà confirmés : " + ", ".join(profil["points_forts"])))
+        document.add_paragraph(texte_word("Derniers quiz : " + str(profil.get("tendance_quiz", ""))))
+        document.add_paragraph(texte_word("Conseil du Tuteur IA : " + str(profil.get("conseil_tuteur", ""))))
+        document.add_paragraph(texte_word("À faire en premier : " + str(profil.get("prochaine_action", ""))))
 
     heading("1. Résumé à retenir")
     document.add_paragraph(texte_word(fiche["resume"]))
