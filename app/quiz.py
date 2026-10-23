@@ -60,13 +60,15 @@ def _generer_quiz_rapide(
     l'ensemble, mais elle est lancee en arriere-plan apres l'envoi de la
     reponse HTTP. Un etudiant ne doit jamais attendre Qwen + Gemini + arbitre
     pour commencer son quiz."""
+    options_generation = {"questions_a_eviter": questions_a_eviter}
+    if contexte_apprentissage:
+        options_generation["contexte_apprentissage"] = contexte_apprentissage
     questions_generees = ai_quiz.generer_quiz_par_theme(
         matiere,
         niveau,
         difficulte,
         nb_questions,
-        questions_a_eviter=questions_a_eviter,
-        contexte_apprentissage=contexte_apprentissage,
+        **options_generation,
     )
     return valider_questions(questions_generees, expected_count=nb_questions)
 
