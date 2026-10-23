@@ -1263,6 +1263,16 @@ def generer_pdf(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) ->
             paragraphe(outil["titre"], "Heading3")
             paragraphe((outil["contenu"] + " — " + outil["explication"]).strip(" —"))
 
+    if fiche.get("erreurs_frequentes"):
+        section("Erreurs fréquentes à éviter")
+        for erreur in fiche["erreurs_frequentes"]:
+            contenu.append(KeepTogether([
+                Paragraph("<b>À éviter :</b> " + _pdf_escape(erreur["erreur"]), styles["MitaridalaBody"]),
+                Paragraph("<b>Pourquoi :</b> " + _pdf_escape(erreur["pourquoi"]), styles["MitaridalaSmall"]),
+                Paragraph("<b>Comment faire mieux :</b> " + _pdf_escape(erreur["comment_eviter"]), styles["MitaridalaBody"]),
+                Spacer(1, 3),
+            ]))
+
     section("5. Exercices avec corrections")
     for n, exercice in enumerate(fiche["exercices"], 1):
         contenu.append(KeepTogether([
@@ -1349,37 +1359,51 @@ def generer_docx(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) -
     def heading(texte):
         document.add_heading(texte, level=1)
 
+    def texte_word(valeur):
+        """Convertit les formules en notation lisible sans toucher au LaTeX du contenu web."""
+        return _normaliser_notation_math(str(valeur or ""))
+
     def bullet(texte):
-        document.add_paragraph(str(texte), style="List Bullet")
+        document.add_paragraph(texte_word(texte), style="List Bullet")
 
     heading("1. Résumé à retenir")
-    document.add_paragraph(fiche["resume"])
+    document.add_paragraph(texte_word(fiche["resume"]))
     heading("2. Objectifs de révision")
     for element in fiche["objectifs"]:
         bullet(element)
     heading("3. Notions essentielles")
     for n, notion in enumerate(fiche["notions"], 1):
-        document.add_heading(f"{n}. {notion['titre']}", level=2)
-        document.add_paragraph(notion["explication"])
+        document.add_heading(f"{n}. {texte_word(notion['titre'])}", level=2)
+        document.add_paragraph(texte_word(notion["explication"]))
         p = document.add_paragraph()
         p.add_run("Exemple : ").bold = True
-        p.add_run(notion["exemple"])
+        p.add_run(texte_word(notion["exemple"]))
     if fiche["outils_a_retenir"]:
         heading("4. Formules, règles et méthodes")
         for outil in fiche["outils_a_retenir"]:
-            document.add_heading(outil["titre"], level=2)
-            document.add_paragraph(outil["contenu"])
-            document.add_paragraph(outil["explication"])
+            document.add_heading(texte_word(outil["titre"]), level=2)
+            document.add_paragraph(texte_word(outil["contenu"]))
+            document.add_paragraph(texte_word(outil["explication"]))
+    if fiche.get("erreurs_frequentes"):
+        heading("Erreurs fréquentes à éviter")
+        for erreur in fiche["erreurs_frequentes"]:
+            document.add_heading(texte_word(erreur["erreur"]), level=2)
+            p = document.add_paragraph()
+            p.add_run("Pourquoi : ").bold = True
+            p.add_run(texte_word(erreur["pourquoi"]))
+            p = document.add_paragraph()
+            p.add_run("Comment faire mieux : ").bold = True
+            p.add_run(texte_word(erreur["comment_eviter"]))
     heading("5. Exercices avec corrections")
     for n, exercice in enumerate(fiche["exercices"], 1):
-        document.add_heading(f"Exercice {n} · {exercice['difficulte']}", level=2)
-        document.add_paragraph(exercice["enonce"])
+        document.add_heading(f"Exercice {n} · {texte_word(exercice['difficulte'])}", level=2)
+        document.add_paragraph(texte_word(exercice["enonce"]))
         p = document.add_paragraph()
         p.add_run("Indice : ").bold = True
-        p.add_run(exercice["indice"])
+        p.add_run(texte_word(exercice["indice"]))
         p = document.add_paragraph()
         p.add_run("Correction : ").bold = True
-        p.add_run(exercice["correction"])
+        p.add_run(texte_word(exercice["correction"]))
     if fiche["points_a_retravailler"]:
         heading("6. Les points à retravailler en priorité")
         for element in fiche["points_a_retravailler"]:
@@ -1387,18 +1411,18 @@ def generer_docx(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) -
     heading("7. Plan de révision")
     for item in fiche["plan_revision"]:
         p = document.add_paragraph()
-        p.add_run(item["moment"] + " : ").bold = True
-        p.add_run(item["action"])
+        p.add_run(texte_word(item["moment"]) + " : " ).bold = True
+        p.add_run(texte_word(item["action"]))
     heading("8. Auto-évaluation")
     for n, item in enumerate(fiche["auto_evaluation"], 1):
         p = document.add_paragraph()
         p.add_run(f"Question {n}. ").bold = True
-        p.add_run(item["question"])
+        p.add_run(texte_word(item["question"]))
         p = document.add_paragraph()
         p.add_run("Réponse attendue : ").bold = True
-        p.add_run(item["reponse"])
+        p.add_run(texte_word(item["reponse"]))
     heading("À propos des sources")
-    document.add_paragraph(fiche["limites_sources"])
+    document.add_paragraph(texte_word(fiche["limites_sources"]))
     p = document.add_paragraph(
         "Support d'apprentissage généré avec l'IA. Vérifie les points importants avec le cours et le professeur."
     )
