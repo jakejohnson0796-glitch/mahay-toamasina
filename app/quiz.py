@@ -947,7 +947,10 @@ def creer_tentative_ciblee(
                 nb_questions,
                 difficulte=difficulte_ciblee,
                 questions_a_eviter=questions_a_eviter_essai,
-                contexte_apprentissage=contexte_apprentissage,
+                **(
+                    {"contexte_apprentissage": contexte_apprentissage}
+                    if contexte_apprentissage else {}
+                ),
             )
             questions_ciblees = valider_questions(
                 questions_ciblees,
