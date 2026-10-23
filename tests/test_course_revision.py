@@ -88,6 +88,15 @@ def test_normalisation_fiche_preserve_le_latex_pour_katex():
     assert "beginpmatrix1&2" not in fiche["resume"]
 
 
+def test_normalisation_fiche_preserve_les_sequences_latex_legacy_reparables():
+    # Le caractère contrôle est un vestige du décodage JSON de « \begin ».
+    ancienne_formule = "Matrice " + "\x08egin{pmatrix}1&2\\\\3&4\\end{pmatrix}"
+    normalisee = course_revision._normaliser_texte(ancienne_formule)
+
+    assert "\x08egin{pmatrix}" in normalisee
+    assert "egin{pmatrix}" in normalisee
+
+
 def test_export_math_convertit_une_matrice_en_lignes_lisibles():
     notation = course_revision._normaliser_notation_math(
         r"A=\begin{pmatrix}1&2\\3&4\end{pmatrix}, \det(A)=\frac{1}{2}"
@@ -202,7 +211,7 @@ def test_exports_pdf_et_docx_non_vides():
     )
 
     # Les symboles mathématiques reçus par l'IA ne doivent pas faire échouer ReportLab.
-    fiche["notions"][0]["explication"] = r"Vérifie \\(A=\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\) et \\(\\det(A)\\ne 0\\)."
+    fiche["notions"][0]["explication"] = r"Vérifie \(A=\begin{pmatrix}1&2\\3&4\end{pmatrix}\) et \(\det(A)\ne 0\)."
     pdf = course_revision.generer_pdf(fiche, cours, seance, "Étudiant Test")
     docx = course_revision.generer_docx(fiche, cours, seance, "Étudiant Test")
 
