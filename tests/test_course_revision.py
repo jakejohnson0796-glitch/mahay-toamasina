@@ -218,7 +218,7 @@ def test_fiche_documentaire_est_personnalisee_par_etudiant_sans_fuite_de_donnees
     assert "NOTION PRIVÉE DE L'ÉTUDIANT B" not in json.dumps(fiche_a, ensure_ascii=False)
     assert "Déterminant d'ordre 2" not in json.dumps(fiche_b, ensure_ascii=False)
     assert "Tuteur IA" in profil_a["conseil_tuteur"]
-    assert "aujourd'hui" in fiche_a["plan_revision"][0]["action"].casefold()
+    assert "priorité" in fiche_a["plan_revision"][0]["action"].casefold()
     assert "profil_personnalise" not in fiche_source
     assert json.dumps(fiche_source, ensure_ascii=False) == source_json_avant
 
