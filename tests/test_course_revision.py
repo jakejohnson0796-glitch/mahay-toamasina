@@ -125,6 +125,104 @@ def test_validation_qualite_refuse_les_exercices_repetes_et_niveaux_absents():
         course_revision.normaliser_fiche_revision(donnees, exiger_qualite=True)
 
 
+def test_fiche_documentaire_est_personnalisee_par_etudiant_sans_fuite_de_donnees():
+    test_engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(test_engine)
+
+    with Session(test_engine) as session:
+        etudiant_a = Utilisateur(
+            nom="Étudiant A",
+            telephone="+261340000301",
+            mot_de_passe_hash="hash-a",
+            role=RoleUtilisateur.ETUDIANT,
+        )
+        etudiant_b = Utilisateur(
+            nom="Étudiant B",
+            telephone="+261340000302",
+            mot_de_passe_hash="hash-b",
+            role=RoleUtilisateur.ETUDIANT,
+        )
+        session.add_all([etudiant_a, etudiant_b])
+        session.commit()
+        session.refresh(etudiant_a)
+        session.refresh(etudiant_b)
+
+        progression_a = ProgressionNotion(
+            utilisateur_id=etudiant_a.id,
+            matiere="Mathématiques",
+            niveau="L1",
+            notion="Déterminant d'ordre 2",
+            nb_questions=6,
+            nb_reussites=2,
+            nb_erreurs=4,
+            score_maitrise=28,
+            maitrise_confirmee=False,
+            prochaine_revision_le=datetime.utcnow(),
+        )
+        progression_b = ProgressionNotion(
+            utilisateur_id=etudiant_b.id,
+            matiere="Mathématiques",
+            niveau="L1",
+            notion="NOTION PRIVÉE DE L'ÉTUDIANT B",
+            nb_questions=6,
+            nb_reussites=1,
+            nb_erreurs=5,
+            score_maitrise=18,
+            maitrise_confirmee=False,
+        )
+        session.add_all([progression_a, progression_b])
+        session.commit()
+        session.refresh(progression_a)
+
+        session.add(
+            SessionTuteur(
+                utilisateur_id=etudiant_a.id,
+                progression_id=progression_a.id,
+                notion=progression_a.notion,
+                question="Pourquoi faut-il soustraire les deux produits ?",
+                comprehension_reponse="J'additionne les deux produits.",
+                comprehension_feedback="Le signe du second produit est à revoir.",
+                comprehension_validee=False,
+                explication="Explication de test.",
+                exemple="Exemple de test.",
+                exercice="Exercice de test.",
+                correction="Correction de test.",
+            )
+        )
+        session.commit()
+
+        document = SimpleNamespace(
+            id=700,
+            filiere_id=None,
+            matiere="Mathématiques",
+            titre="Matrices et déterminants",
+        )
+        fiche_source = course_revision.normaliser_fiche_revision(fiche_valide())
+        source_json_avant = json.dumps(fiche_source, ensure_ascii=False)
+
+        fiche_a = course_revision.personnaliser_fiche_revision_document(
+            session, document, etudiant_a.id, fiche_source
+        )
+        fiche_b = course_revision.personnaliser_fiche_revision_document(
+            session, document, etudiant_b.id, fiche_source
+        )
+
+    profil_a = fiche_a["profil_personnalise"]
+    profil_b = fiche_b["profil_personnalise"]
+    assert profil_a["mode"] == "Adaptée à ton parcours"
+    assert profil_a["priorites"][0]["notion"] == "Déterminant d'ordre 2"
+    assert "NOTION PRIVÉE DE L'ÉTUDIANT B" not in json.dumps(fiche_a, ensure_ascii=False)
+    assert "Déterminant d'ordre 2" not in json.dumps(fiche_b, ensure_ascii=False)
+    assert "Tuteur IA" in profil_a["conseil_tuteur"]
+    assert "aujourd'hui" in fiche_a["plan_revision"][0]["action"].casefold()
+    assert "profil_personnalise" not in fiche_source
+    assert json.dumps(fiche_source, ensure_ascii=False) == source_json_avant
+
+
 def test_normalise_fiche_revision_personnalisee():
     fiche = course_revision.normaliser_fiche_revision(fiche_valide())
 
@@ -373,6 +471,8 @@ def test_templates_fiche_revision_compile_et_exposent_les_formats():
     assert "J’ai essayé" in source_lecture
     assert "fiche_contenu.erreurs_frequentes" in source_lecture
     assert "erreurs_frequentes" in (templates_dir / "document_revision.html").read_text(encoding="utf-8")
+    assert "fiche_contenu.get(\"profil_personnalise\")" in source_lecture
+    assert "profil.get(\"priorites\")" in source_lecture
     assert "/telecharger/pdf" in source_lecture
     assert "/telecharger/docx" in source_lecture
 
