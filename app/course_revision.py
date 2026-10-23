@@ -1281,6 +1281,252 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
     )
 
 
+def personnaliser_fiche_revision_document(
+    session: Session,
+    document: Document,
+    utilisateur_id: int,
+    contenu_source: dict,
+) -> dict:
+    """Construit une copie privée de la fiche documentaire pour l'étudiant courant.
+
+    Le contenu source partagé n'est jamais modifié ni réenregistré. La personnalisation
+    repose sur ses seules progressions, ses quiz soumis et ses échanges de tutorat,
+    alignés sur la matière et le niveau du document.
+    """
+    # JSON round-trip : copie isolée des listes et dictionnaires de la fiche partagée.
+    contenu = json.loads(json.dumps(contenu_source, ensure_ascii=False))
+    filiere = session.get(Filiere, document.filiere_id) if document.filiere_id else None
+    matiere_cle = _matiere_cle(document.matiere)
+    niveau_document = filiere.niveau if filiere else None
+    maintenant = datetime.utcnow()
+
+    progressions = session.exec(
+        select(ProgressionNotion)
+        .where(ProgressionNotion.utilisateur_id == utilisateur_id)
+        .order_by(ProgressionNotion.score_maitrise, ProgressionNotion.nb_erreurs.desc())
+        .limit(100)
+    ).all()
+
+    progressions_matiere = []
+    for progression in progressions:
+        if not matiere_cle or _matiere_cle(progression.matiere) != matiere_cle:
+            continue
+        if not _niveaux_compatibles(niveau_document, progression.niveau):
+            continue
+        if int(progression.nb_questions or 0) <= 0:
+            continue
+        score = int(progression.score_maitrise or 0)
+        if score <= 0:
+            score = round(
+                int(progression.nb_reussites or 0) * 100
+                / max(1, int(progression.nb_questions or 0))
+            )
+        score = max(0, min(100, score))
+        prochaine = progression.prochaine_revision_le
+        if prochaine is not None and getattr(prochaine, "tzinfo", None) is not None:
+            prochaine = prochaine.replace(tzinfo=None)
+        due = prochaine is None or prochaine <= maintenant
+        progressions_matiere.append((progression, score, due))
+
+    progressions_matiere.sort(
+        key=lambda ligne: (
+            0 if ligne[2] else 1,
+            ligne[1],
+            -int(ligne[0].nb_erreurs or 0),
+            ligne[0].date_maj or maintenant,
+        )
+    )
+    prioritaires = [
+        ligne for ligne in progressions_matiere
+        if ligne[1] < 75 or ligne[2] or not bool(ligne[0].maitrise_confirmee)
+    ][:4]
+    if not prioritaires and progressions_matiere:
+        # L'étudiant a de bons résultats : proposer une confirmation espacée,
+        # sans inventer de faiblesse.
+        prioritaires = progressions_matiere[:2]
+
+    priorites = []
+    for progression, score, due in prioritaires:
+        if score < 50:
+            statut = "À retravailler en premier"
+            raison = "Les réponses enregistrées montrent que cette notion reste fragile."
+            action = "Repars de la définition, fais un exercice facile sans regarder la correction, puis explique chaque étape."
+        elif score < 75:
+            statut = "À consolider"
+            raison = "Les résultats disponibles ne montrent pas encore une maîtrise assez stable."
+            action = "Refais un exercice de difficulté moyenne, puis vérifie ton raisonnement avec la correction."
+        elif due:
+            statut = "Révision à faire"
+            raison = "La date de révision prévue est atteinte ou aucune date n'est encore planifiée."
+            action = "Teste-toi de mémoire avant de relire l'explication ; reprends uniquement l'étape qui bloque."
+        else:
+            statut = "À confirmer"
+            raison = "Les résultats sont encourageants, mais la maîtrise doit être vérifiée sur une nouvelle question."
+            action = "Résous une variante sans indice et explique pourquoi la méthode fonctionne."
+        priorites.append({
+            "notion": _normaliser_texte(progression.notion, 140),
+            "statut": statut,
+            "raison": raison,
+            "action": action,
+        })
+
+    # Les résultats de quiz restent qualitatifs : aucun score brut n'est envoyé
+    # à un fournisseur IA ni affiché comme une probabilité de maîtrise.
+    tentatives = session.exec(
+        select(TentativeQuiz)
+        .where(
+            TentativeQuiz.utilisateur_id == utilisateur_id,
+            TentativeQuiz.date_soumission.is_not(None),
+        )
+        .order_by(TentativeQuiz.date_soumission.desc())
+        .limit(20)
+    ).all()
+    quiz_recents = []
+    for tentative in tentatives:
+        if not matiere_cle or _matiere_cle(tentative.matiere) != matiere_cle:
+            continue
+        if not _niveaux_compatibles(niveau_document, tentative.niveau):
+            continue
+        nombre = max(1, int(tentative.nb_questions or 1))
+        taux = max(0.0, min(1.0, int(tentative.score or 0) / nombre))
+        quiz_recents.append(taux)
+        if len(quiz_recents) >= 3:
+            break
+
+    interactions = []
+    for interaction in interactions_tuteur_recentes(
+        session, utilisateur_id, limite=80, scan_limite=100
+    ):
+        if not matiere_cle or _matiere_cle(interaction.get("matiere")) != matiere_cle:
+            continue
+        if not _niveaux_compatibles(niveau_document, interaction.get("niveau")):
+            continue
+        interactions.append(interaction)
+        if len(interactions) >= 4:
+            break
+
+    notions_fortes = [
+        _normaliser_texte(progression.notion, 140)
+        for progression, score, _due in progressions_matiere
+        if score >= 80 and bool(progression.maitrise_confirmee)
+    ][:3]
+
+    if quiz_recents:
+        tendance_quiz = (
+            "Tes derniers quiz sont à reprendre en priorité."
+            if quiz_recents[0] < 0.5
+            else "Tes derniers quiz montrent des acquis à consolider."
+            if quiz_recents[0] < 0.8
+            else "Tes derniers quiz sont encourageants ; vérifie aussi la rétention quelques jours plus tard."
+        )
+        if len(quiz_recents) >= 2:
+            if quiz_recents[0] > quiz_recents[1] + 0.1:
+                tendance_quiz += " Le résultat le plus récent progresse par rapport au précédent."
+            elif quiz_recents[0] + 0.1 < quiz_recents[1]:
+                tendance_quiz += " Le résultat récent a baissé : reprends les étapes avant d'augmenter la difficulté."
+    else:
+        tendance_quiz = "Pas encore de quiz soumis sur cette matière et ce niveau : un diagnostic servira à calibrer les prochaines révisions."
+
+    derniere_interaction = interactions[0] if interactions else None
+    if derniere_interaction and derniere_interaction.get("etat_comprehension") == "comprehension a retravailler":
+        conseil_tuteur = (
+            "Tu as déjà signalé une difficulté autour de « "
+            + _normaliser_texte(derniere_interaction.get("notion"), 100)
+            + " ». Dans le Tuteur IA, reformule la méthode avec tes propres mots avant de consulter la correction."
+        )
+    elif derniere_interaction:
+        conseil_tuteur = (
+            "Pour « " + _normaliser_texte(derniere_interaction.get("notion"), 100)
+            + " », demande au Tuteur IA une question différente et essaie d'expliquer ton raisonnement sans indice."
+        )
+    else:
+        conseil_tuteur = "Après ton diagnostic, utilise le Tuteur IA pour faire expliquer l'étape précise qui te pose problème."
+
+    profil_actif = bool(progressions_matiere or quiz_recents or interactions)
+    profil_personnalise = {
+        "titre": "Ta fiche personnalisée",
+        "mode": "Adaptée à ton parcours" if profil_actif else "Personnalisation en démarrage",
+        "message": (
+            "Les priorités, l'ordre des entraînements et le calendrier ci-dessous utilisent uniquement ton historique personnel. "
+            "Le cours source commun reste inchangé."
+            if profil_actif else
+            "Ton historique sur cette matière est encore trop limité pour établir des points faibles fiables. "
+            "Cette fiche commence par un diagnostic, puis s'adaptera aux réponses que tu enregistreras."
+        ),
+        "priorites": priorites,
+        "points_forts": notions_fortes,
+        "tendance_quiz": tendance_quiz,
+        "conseil_tuteur": conseil_tuteur,
+        "prochaine_action": (
+            "Commence par « " + priorites[0]["notion"] + " » : applique l'action proposée, puis fais un quiz ciblé."
+            if priorites else
+            "Commence par les objectifs et les exercices de cette fiche ; termine par un quiz de diagnostic pour construire ton profil."
+        ),
+    }
+
+    def cle_exercice(exercice: dict) -> tuple[int, int]:
+        texte = _cle(" ".join(str(exercice.get(cle) or "") for cle in ("notion", "enonce")))
+        for rang, priorite in enumerate(priorites):
+            cible = _cle(priorite["notion"])
+            if cible and (cible in texte or texte in cible):
+                return (rang, 0)
+            jetons = {mot for mot in cible.split() if len(mot) >= 5}
+            communs = len(jetons.intersection(texte.split()))
+            if communs:
+                return (rang, -communs)
+        return (len(priorites) + 1, 0)
+
+    if priorites:
+        contenu["exercices"] = sorted(contenu.get("exercices", []), key=cle_exercice)
+        contenu["notions"] = sorted(
+            contenu.get("notions", []),
+            key=lambda notion: min(
+                (
+                    rang for rang, priorite in enumerate(priorites)
+                    if _cle(priorite["notion"]) in _cle(notion.get("titre"))
+                    or _cle(notion.get("titre")) in _cle(priorite["notion"])
+                ),
+                default=len(priorites) + 1,
+            ),
+        )
+        points_personnels = [
+            f"{item['notion']} — {item['statut']}. {item['raison']}"
+            for item in priorites
+        ]
+        points_existants = list(contenu.get("points_a_retravailler") or [])
+        contenu["points_a_retravailler"] = list(dict.fromkeys(points_personnels + points_existants))[:8]
+        contenu["plan_revision"] = [
+            {
+                "moment": "Aujourd'hui",
+                "action": (
+                    f"Priorité : {priorites[0]['notion']}. {priorites[0]['action']} "
+                    "Choisis l'exercice associé à cette notion et essaie avant d'ouvrir sa correction."
+                ),
+            },
+            {
+                "moment": "Demain",
+                "action": (
+                    "Refais une question différente sur "
+                    + (priorites[1]["notion"] if len(priorites) > 1 else priorites[0]["notion"])
+                    + " sans aide. Si tu bloques, écris l'étape précise qui manque."
+                ),
+            },
+            {
+                "moment": "Dans 3 jours",
+                "action": "Refais un quiz court avec des questions nouvelles sur les notions ciblées ; vérifie que tu peux justifier la méthode, pas seulement retrouver le résultat.",
+            },
+        ]
+    else:
+        contenu["plan_revision"] = [
+            {"moment": "Aujourd'hui", "action": "Fais un premier diagnostic avec les exercices et note les notions que tu ne peux pas expliquer sans regarder la correction."},
+            {"moment": "Demain", "action": "Reprends une question ratée ou hésitante et explique la démarche avec tes propres mots."},
+            {"moment": "Dans 3 jours", "action": "Refais un quiz court sur ces notions pour vérifier ce que tu retiens sans indice."},
+        ]
+
+    contenu["profil_personnalise"] = profil_personnalise
+    return contenu
+
+
 def _points_contenu(fiche: dict, cle: str) -> list[str]:
     return [str(x) for x in (fiche.get(cle) or []) if str(x).strip()]
 
