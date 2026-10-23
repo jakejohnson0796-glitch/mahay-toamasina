@@ -20,6 +20,7 @@ from .. import ai_queue, ai_quiz
 from ..rate_limit import limite_depassee
 from .. import quiz as quiz_module
 from .. import gamification
+from ..apprentissage_memoire import interactions_tuteur_recentes, formater_memoire_tuteur
 
 router = APIRouter()
 
@@ -62,6 +63,23 @@ def _contexte_progression_tuteur(progression: ProgressionNotion) -> str:
         "ne redonne pas mécaniquement la même explication, et termine par un exercice "
         "court permettant de vérifier la compréhension."
     )
+
+
+def _contexte_historique_tuteur(
+    session: Session,
+    utilisateur_id: int,
+    progression: Optional[ProgressionNotion],
+) -> str:
+    """Réutilise les échanges antérieurs du même étudiant sur cette notion."""
+    if not progression or progression.id is None:
+        return ""
+    interactions = interactions_tuteur_recentes(
+        session,
+        utilisateur_id,
+        progression_id=progression.id,
+        limite=3,
+    )
+    return formater_memoire_tuteur(interactions, limite_caracteres=1700)
 
 
 def _extrait_document_pertinent(document: Document, question: str) -> tuple[str, list[str]]:
@@ -258,6 +276,11 @@ def demander_tuteur(
             f"{question}\n\n"
             f"{_contexte_progression_tuteur(progression)}"
         )
+        memoire_tuteur = _contexte_historique_tuteur(
+            session, utilisateur.id, progression
+        )
+        if memoire_tuteur:
+            question_pour_ia = f"{question_pour_ia}\n\n{memoire_tuteur}"
 
     if document_source:
         extrait_document, references_source = _extrait_document_pertinent(document_source, question)
