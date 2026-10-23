@@ -545,7 +545,7 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
     for interaction in interactions_tuteur_recentes(
         session,
         etudiant.id,
-        limite=60,
+        limite=80,
         scan_limite=80,
     ):
         if not matiere_cle or _matiere_cle(interaction.get("matiere")) != matiere_cle:
