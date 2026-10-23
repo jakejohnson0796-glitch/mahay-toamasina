@@ -294,10 +294,14 @@ def planifier_fiche_revision_document(
                 .where(FicheRevisionDocument.document_id == document_id)
                 .limit(1)
             ).first()
+            from .course_revision import VERSION_GENERATION
+
             if (
                 fiche
                 and fiche.statut == StatutFicheRevisionDocument.TERMINEE
                 and fiche.contenu_json not in {"", "{}"}
+                and fiche.version_generation == VERSION_GENERATION
+                and not forcer
             ):
                 return None
             if fiche and fiche.statut == StatutFicheRevisionDocument.ECHOUEE and not forcer:
@@ -643,7 +647,15 @@ def _assurer_tache_fiche_revision(
     forcer: bool = False,
 ) -> tuple[Optional[int], bool]:
     """Garantit une tâche durable sans doubler les traitements actifs."""
-    if fiche.statut == StatutFicheRevisionCours.TERMINEE and fiche.contenu_json != "{}":
+    from .course_revision import VERSION_GENERATION
+
+    version_obsolete = fiche.version_generation != VERSION_GENERATION
+    if (
+        fiche.statut == StatutFicheRevisionCours.TERMINEE
+        and fiche.contenu_json != "{}"
+        and not forcer
+        and not version_obsolete
+    ):
         return None, False
     if fiche.statut == StatutFicheRevisionCours.ECHOUEE and not forcer:
         return None, False
