@@ -12,7 +12,7 @@ from typing import Any, Awaitable, Callable
 
 # Contrat utilisé par version_asset() et par les dépendances vendor épinglées.
 _VERSION_IMMUABLE = re.compile(
-    r"(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{12}|[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?)"
+    r"(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{12}|[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?)"
 )
 
 
