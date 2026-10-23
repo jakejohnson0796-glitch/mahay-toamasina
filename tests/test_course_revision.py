@@ -31,13 +31,18 @@ def fiche_valide():
             {"titre": "Déterminant", "explication": "Il aide à savoir si une matrice carrée est inversible.", "exemple": "Pour une matrice 2 × 2, ad - bc."},
             {"titre": "Produit", "explication": "Les dimensions internes doivent coïncider.", "exemple": "Une matrice 2 × 3 peut multiplier une matrice 3 × 1."},
         ],
+        "erreurs_frequentes": [
+            {"erreur": "Confondre lignes et colonnes", "pourquoi": "Cela inverse les dimensions d'une matrice.", "comment_eviter": "Compte séparément les lignes puis les colonnes."},
+            {"erreur": "Inverser les termes du déterminant", "pourquoi": "Le signe du résultat peut changer.", "comment_eviter": "Applique la formule ad - bc dans le même ordre."},
+            {"erreur": "Multiplier des matrices sans vérifier les dimensions", "pourquoi": "Le produit peut ne pas être défini.", "comment_eviter": "Vérifie que les colonnes de A égalent les lignes de B."},
+        ],
         "outils_a_retenir": [
             {"titre": "Déterminant 2 × 2", "contenu": "det(A) = ad - bc", "explication": "A = [[a,b],[c,d]]."}
         ],
         "exercices": [
             {"enonce": "Calcule le déterminant de [[2,1],[3,4]].", "difficulte": "Facile", "indice": "Calcule ad - bc.", "correction": "2×4 - 1×3 = 8 - 3 = 5.", "notion": "Déterminant"},
             {"enonce": "Pourquoi les dimensions doivent-elles coïncider pour un produit AB ?", "difficulte": "Moyen", "indice": "Compare le nombre de colonnes de A au nombre de lignes de B.", "correction": "Les dimensions internes doivent être égales pour définir chaque produit scalaire de ligne par colonne.", "notion": "Produit matriciel"},
-            {"enonce": "Que signifie un déterminant nul ?", "difficulte": "Moyen", "indice": "Pense à l'inversibilité.", "correction": "La matrice carrée n'est pas inversible.", "notion": "Inversibilité"},
+            {"enonce": "Que signifie un déterminant nul ?", "difficulte": "Difficile", "indice": "Pense à l'inversibilité.", "correction": "La matrice carrée n'est pas inversible.", "notion": "Inversibilité"},
         ],
         "points_a_retravailler": ["Bien vérifier les dimensions avant de calculer un produit."],
         "plan_revision": [
@@ -54,17 +59,49 @@ def fiche_valide():
     }
 
 
-def test_prompts_fiches_revision_expliquent_les_matrices_en_texte_lisible():
+def test_prompts_fiches_revision_prescrivent_une_meilleure_pedagogie_et_un_latex_sain():
     contexte = {"cours": {}, "seance": {}, "source_document": {"contenu_extrait": "Matrice de type (2, 3)."}}
-    prompts = [
-        course_revision._texte_ia_non_fiable(contexte),
-        course_revision._texte_ia_document({"source_document": {"contenu_extrait": "Matrice de type (2, 3)."}}),
-    ]
+    prompt_personnel = course_revision._texte_ia_non_fiable(contexte)
+    prompt_document = course_revision._texte_ia_document(
+        {"source_document": {"contenu_extrait": "Matrice de type (2, 3)."}}
+    )
 
-    for prompt in prompts:
-        assert "A = [[1, 2, 3], [4, 5, 6]]" in prompt
-        assert "I₃ = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]" in prompt
-        assert "beginpmatrix/endpmatrix" in prompt
+    for prompt in (prompt_personnel, prompt_document):
+        assert "erreurs_frequentes" in prompt
+        assert "LaTeX" in prompt
+        assert r"\begin{pmatrix}" in prompt
+        assert "progression" in prompt.lower()
+
+
+def test_normalisation_fiche_preserve_le_latex_pour_katex():
+    donnees = fiche_valide()
+    formule = r"Calcul : \(A=\begin{pmatrix}1&2\\3&4\end{pmatrix}\) et \(\det(A)=\frac{1}{2}\)."
+    donnees["resume"] = formule
+    donnees["notions"][0]["explication"] = formule
+
+    fiche = course_revision.normaliser_fiche_revision(donnees)
+
+    assert r"\begin{pmatrix}" in fiche["resume"]
+    assert r"\\3&4" in fiche["resume"]
+    assert r"\frac{1}{2}" in fiche["notions"][0]["explication"]
+    assert "beginpmatrix1&2" not in fiche["resume"]
+
+
+def test_export_math_convertit_une_matrice_en_lignes_lisibles():
+    notation = course_revision._normaliser_notation_math(
+        r"A=\begin{pmatrix}1&2\\3&4\end{pmatrix}, \det(A)=\frac{1}{2}"
+    )
+    assert "A=" in notation
+    assert "[[1, 2], [3, 4]]" in notation
+    assert "beginpmatrix" not in notation
+    assert "end{pmatrix}" not in notation
+
+
+def test_validation_qualite_refuse_les_exercices_repetes_et_niveaux_absents():
+    donnees = fiche_valide()
+    donnees["exercices"][2]["difficulte"] = "Moyen"
+    with pytest.raises(ValueError, match="trois niveaux"):
+        course_revision.normaliser_fiche_revision(donnees, exiger_qualite=True)
 
 
 def test_normalise_fiche_revision_personnalisee():
@@ -162,7 +199,7 @@ def test_exports_pdf_et_docx_non_vides():
     )
 
     # Les symboles mathématiques reçus par l'IA ne doivent pas faire échouer ReportLab.
-    fiche["notions"][0]["explication"] = "Vérifie √9 ≤ 3 et Δ ≠ 0."
+    fiche["notions"][0]["explication"] = r"Vérifie \\(A=\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\) et \\(\\det(A)\\ne 0\\)."
     pdf = course_revision.generer_pdf(fiche, cours, seance, "Étudiant Test")
     docx = course_revision.generer_docx(fiche, cours, seance, "Étudiant Test")
 
