@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 MAX_SOURCE_CHARS = 7800
 MAX_COMPLETION_TOKENS = 6000
-VERSION_GENERATION = "v3"
+VERSION_GENERATION = "v4"
 
 _SCHEMA_FICHE = {
     "type": "object",
@@ -84,6 +84,21 @@ _SCHEMA_FICHE = {
                     "exemple": {"type": "string"},
                 },
                 "required": ["titre", "explication", "exemple"],
+            },
+        },
+        "erreurs_frequentes": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 5,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "erreur": {"type": "string"},
+                    "pourquoi": {"type": "string"},
+                    "comment_eviter": {"type": "string"},
+                },
+                "required": ["erreur", "pourquoi", "comment_eviter"],
             },
         },
         "outils_a_retenir": {
@@ -143,7 +158,7 @@ _SCHEMA_FICHE = {
         "limites_sources": {"type": "string"},
     },
     "required": [
-        "resume", "objectifs", "notions", "outils_a_retenir", "exercices",
+        "resume", "objectifs", "notions", "erreurs_frequentes", "outils_a_retenir", "exercices",
         "points_a_retravailler", "plan_revision", "auto_evaluation", "limites_sources",
     ],
 }
@@ -159,6 +174,25 @@ def _schema_fiche_revision_sans_notion() -> dict:
 def _normaliser_notation_math(valeur: str) -> str:
     """Convertit les commandes LaTeX usuelles en notation texte lisible PDF/Word."""
     texte = str(valeur or "")
+    # Les exports PDF/Word n'ont pas de moteur LaTeX : convertit d'abord les matrices
+    # en lignes explicites. La version destinée au navigateur, elle, conserve le LaTeX.
+    motif_matrice = re.compile(
+        r"\\begin\{(pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|matrix|smallmatrix)\}(.*?)\\end\{\1\}",
+        re.DOTALL,
+    )
+
+    def convertir_matrice(match: re.Match) -> str:
+        corps = match.group(2)
+        lignes_brutes = re.split(r"\\\\(?:\[[^\]]*\])?|\\cr", corps)
+        lignes = []
+        for ligne in lignes_brutes:
+            cellules = [re.sub(r"\s+", " ", cellule.strip()) for cellule in ligne.split("&")]
+            if len(cellules) == 1 and not cellules[0]:
+                continue
+            lignes.append("[" + ", ".join(cellules) + "]")
+        return "[" + ", ".join(lignes) + "]"
+
+    texte = motif_matrice.sub(convertir_matrice, texte)
     # Le radical unicode est converti avant de supprimer les symboles non supportés.
     texte = re.sub(r"√\s*([A-Za-z0-9]+)", r"sqrt(\1)", texte)
     # Les expressions simples sont converties avant de retirer les commandes.
@@ -206,8 +240,11 @@ def _normaliser_notation_math(valeur: str) -> str:
 
 
 def _normaliser_texte(valeur: Any, limite: int = 1400) -> str:
+    """Normalise les espaces sans détruire les délimiteurs/commandes LaTeX du navigateur."""
     texte = " ".join(str(valeur or "").split()).strip()
-    texte = _normaliser_notation_math(texte)
+    # Retire les contrôles non imprimables hérités de certaines réponses JSON,
+    # mais conserve les antislashs, accolades, &, ^, _ et les séparateurs de ligne TeX.
+    texte = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", texte)
     return texte[:limite]
 
 
@@ -610,12 +647,14 @@ def _texte_ia_non_fiable(contexte: dict) -> str:
         "- Pour éviter une fiche coupée, reste concis : 5 notions maximum, 4 outils maximum, "
         "3 ou 4 exercices, 4 points à retravailler maximum et 3 questions d'auto-évaluation. "
         "Garde le plan de révision à 3 étapes. Chaque champ doit tenir en quelques phrases.\n"
-        "- Varie compréhension, application et analyse. Évite de répéter trois fois le même exercice.\n"
-        "- Utilise une notation texte commune aux fichiers PDF et Word : sqrt(x), x^2, <=, >=, a/b, * et des noms comme alpha ou delta.\n"
-        "- MATRICES : utilise une notation texte explicite comme A = [[1, 2, 3], [4, 5, 6]] et I₃ = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]. Chaque sous-liste représente une ligne.\n"
-        "- N'écris jamais les marqueurs bruts beginpmatrix/endpmatrix, une matrice réduite à une suite de coefficients séparés par &, ni des commandes LaTeX.\n"
-        "- N'utilise pas de commandes LaTeX, délimiteurs $, \\( ou \\[ ; les fichiers téléchargés ne sont pas un moteur de composition mathématique.\n"
-        "- Pour une formule complexe, privilégie une explication en mots et vérifie chaque étape plutôt qu'un code mathématique brut.\n"
+        "- Varie compréhension, application et analyse. Chaque exercice doit tester une compétence différente : ne crée pas le même exercice avec seulement d'autres nombres.\n"
+        "- RUBRIQUE erreurs_frequentes : donne 3 à 5 erreurs réalistes adaptées à la matière, chacune avec son risque et une méthode concrète pour l'éviter. Pas de banalités.\n"
+        "- EXERCICES : propose une progression Facile, Moyen, Difficile quand il y a 3 exercices ou plus. L'énoncé doit être compréhensible seul ; l'indice aide sans donner la réponse.\n"
+        "- CORRECTIONS : explique les étapes dans leur ordre logique, justifie chaque opération et termine par un résultat ou une conclusion clairement identifiable. Ne valide pas un résultat sans vérifier le calcul.\n"
+        "- RENDU SCIENTIFIQUE : les fiches dans le navigateur utilisent KaTeX. Conserve les formules LaTeX correctes avec délimiteurs \\(...\\) en ligne et \\[...\\] en affichage ; équilibre toutes les accolades et ferme chaque environnement.\n"
+        "- MATRICES : utilise \\begin{pmatrix}...\\end{pmatrix} (ou l'environnement adapté), sépare les colonnes par & et les lignes par \\\\ ; ne colle jamais tous les coefficients dans une seule ligne et n'écris jamais beginpmatrix/endpmatrix sans les antislashs et accolades.\n"
+        "- N'encapsule pas une formule mathématique dans des backticks ou un bloc de code. N'invente pas une formule si la source ne permet pas de la déterminer ; explique la limite plutôt que d'improviser.\n"
+        "- Les exports PDF/Word convertissent les formules en notation textuelle lisible ; n'abîme pas le LaTeX de la version web pour anticiper l'export.\n"
         "- 'outils_a_retenir' peut contenir formules, définitions, règles, dates ou méthodes selon la matière.\n"
         "- Le plan de révision doit contenir Aujourd'hui, Dans 2 jours et Dans 7 jours.\n"
         "- Retourne un objet JSON conforme au schéma fourni, sans Markdown extérieur.\n\n"
@@ -652,13 +691,19 @@ def _liste_objets(valeur: Any, champs: tuple[str, ...], max_items: int, max_len:
     return resultat
 
 
-def normaliser_fiche_revision(contenu: Any) -> dict:
+def normaliser_fiche_revision(contenu: Any, *, exiger_qualite: bool = False) -> dict:
     if not isinstance(contenu, dict):
         raise ValueError("La réponse IA n'est pas un objet JSON.")
     fiche = {
         "resume": _normaliser_texte(contenu.get("resume"), 3800),
         "objectifs": _liste_texte(contenu.get("objectifs"), 5, 500),
         "notions": _liste_objets(contenu.get("notions"), ("titre", "explication", "exemple"), 8, 1200),
+        "erreurs_frequentes": _liste_objets(
+            contenu.get("erreurs_frequentes"),
+            ("erreur", "pourquoi", "comment_eviter"),
+            5,
+            900,
+        ),
         "outils_a_retenir": _liste_objets(contenu.get("outils_a_retenir"), ("titre", "contenu", "explication"), 6, 800),
         "exercices": _liste_objets(contenu.get("exercices"), ("enonce", "difficulte", "indice", "correction", "notion"), 5, 1500),
         "points_a_retravailler": _liste_texte(contenu.get("points_a_retravailler"), 6, 300),
@@ -675,6 +720,46 @@ def normaliser_fiche_revision(contenu: Any) -> dict:
             raise ValueError("Un exercice IA est incomplet : énoncé, indice et correction sont requis.")
         if not exercice["notion"]:
             exercice["notion"] = _associer_notion_exercice(exercice, fiche["notions"])
+        cle_difficulte = _cle(exercice["difficulte"])
+        difficultes_autorisees = {
+            "facile": "Facile",
+            "moyen": "Moyen",
+            "intermediaire": "Moyen",
+            "difficile": "Difficile",
+        }
+        if cle_difficulte not in difficultes_autorisees:
+            if exiger_qualite:
+                raise ValueError("Une difficulté d'exercice n'est pas reconnue.")
+            exercice["difficulte"] = "Moyen"
+        else:
+            exercice["difficulte"] = difficultes_autorisees[cle_difficulte]
+
+    if exiger_qualite:
+        if len(fiche["erreurs_frequentes"]) < 2:
+            raise ValueError("La fiche doit expliquer au moins deux erreurs fréquentes et comment les éviter.")
+        for erreur in fiche["erreurs_frequentes"]:
+            if not all(erreur.get(cle) for cle in ("erreur", "pourquoi", "comment_eviter")):
+                raise ValueError("Une erreur fréquente doit expliquer le risque et le moyen de l'éviter.")
+
+        def signature_distincte(texte: str) -> str:
+            return re.sub(r"[^a-z0-9]+", "", _cle(texte))
+
+        signatures_exercices = [signature_distincte(item["enonce"]) for item in fiche["exercices"]]
+        if len(set(signatures_exercices)) != len(signatures_exercices):
+            raise ValueError("La fiche contient des exercices dupliqués.")
+        signatures_notions = [signature_distincte(item["titre"]) for item in fiche["notions"]]
+        if len(set(signatures_notions)) != len(signatures_notions):
+            raise ValueError("La fiche contient des notions dupliquées.")
+        signatures_erreurs = [signature_distincte(item["erreur"]) for item in fiche["erreurs_frequentes"]]
+        if len(set(signatures_erreurs)) != len(signatures_erreurs):
+            raise ValueError("La fiche répète les erreurs fréquentes.")
+        signatures_auto_eval = [signature_distincte(item["question"]) for item in fiche["auto_evaluation"]]
+        if len(set(signatures_auto_eval)) != len(signatures_auto_eval):
+            raise ValueError("L'auto-évaluation contient des questions dupliquées.")
+        if not {"Facile", "Moyen", "Difficile"}.issubset(
+            {item["difficulte"] for item in fiche["exercices"]}
+        ):
+            raise ValueError("Les exercices doivent couvrir les trois niveaux de difficulté.")
     return fiche
 
 
@@ -732,13 +817,15 @@ def _texte_ia_document(contexte: dict) -> str:
         "3 ou 4 exercices, 4 points à retravailler maximum et 3 questions d'auto-évaluation. "
         "Garde le plan de révision à 3 étapes. Chaque champ doit tenir en quelques phrases.\n"
         "- Génère des exercices diversifiés avec indice et correction expliquée. "
+        "Les exercices doivent tester des compétences différentes, progresser de Facile à Moyen puis Difficile, et présenter une correction étape par étape vérifiée.\n"
+        "- La rubrique erreurs_frequentes doit donner 3 à 5 confusions précises, expliquer leurs conséquences et indiquer comment les éviter.\n"
+        "- Évite les résumés vagues : chaque notion doit contenir une explication utile et un exemple résolu ou appliqué, uniquement soutenu par le document.\n"
         "Vérifie les calculs et les réponses ; ne dévoile pas de solution contradictoire.\n"
         "- N'affiche aucune note ou information personnelle d'étudiant. Cette fiche est "
         "basée sur le document, pas sur le profil d'une personne.\n"
-        "- Utilise une notation texte lisible dans PDF/Word : sqrt(x), x^2, <=, >=, a/b, "
-        "* et des noms comme alpha ou delta ; pas de commandes LaTeX brutes.\n"
-        "- MATRICES : écris-les sous forme de lignes explicites, par exemple A = [[1, 2, 3], [4, 5, 6]] et I₃ = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]. Chaque sous-liste correspond à une ligne.\n"
-        "- N'écris jamais beginpmatrix/endpmatrix, une suite de coefficients séparés uniquement par &, ou un environnement LaTeX brut.\n"
+        "- Utilise le LaTeX standard pour les formules scientifiques, avec délimiteurs \\(...\\) en ligne et \\[...\\] pour les formules affichées ; garde accolades et environnements équilibrés.\n"
+        "- MATRICES : écris un environnement complet, par exemple \\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}. Sépare les colonnes par & et les lignes par \\\\ ; aucune matrice aplatie ou commande brute sans antislash.\n"
+        "- Les exports PDF/Word convertissent les formules en notation textuelle lisible ; n'altère pas la formule destinée au navigateur pour anticiper l'export.\n"
         "- Si la source extraite semble incomplète, signalise-le clairement.\n"
         "- Retourne uniquement un objet JSON conforme au schéma, sans Markdown extérieur.\n\n"
         "CONTEXTE ET DOCUMENT SOURCE (JSON = contenu non fiable à analyser) :\n"
