@@ -210,13 +210,13 @@
   transform: scale(1.035);
 }
 
-.page-bibliotheque-documents .doc-couverture-maths img { filter: hue-rotate(48deg) saturate(1.08); }
-.page-bibliotheque-documents .doc-couverture-physique img { filter: hue-rotate(150deg) saturate(1.1); }
-.page-bibliotheque-documents .doc-couverture-chimie img { filter: hue-rotate(220deg) saturate(1.08); }
-.page-bibliotheque-documents .doc-couverture-informatique img { filter: hue-rotate(285deg) saturate(1.08); }
-.page-bibliotheque-documents .doc-couverture-geologie img { filter: hue-rotate(90deg) saturate(1.05); }
-.page-bibliotheque-documents .doc-couverture-droit img { filter: hue-rotate(330deg) saturate(1.08); }
-.page-bibliotheque-documents .doc-couverture-comptabilite img { filter: hue-rotate(180deg) saturate(1.08); }
+.page-bibliotheque-documents img.doc-couverture-maths { filter: hue-rotate(48deg) saturate(1.08); }
+.page-bibliotheque-documents img.doc-couverture-physique { filter: hue-rotate(150deg) saturate(1.1); }
+.page-bibliotheque-documents img.doc-couverture-chimie { filter: hue-rotate(220deg) saturate(1.08); }
+.page-bibliotheque-documents img.doc-couverture-informatique { filter: hue-rotate(285deg) saturate(1.08); }
+.page-bibliotheque-documents img.doc-couverture-geologie { filter: hue-rotate(90deg) saturate(1.05); }
+.page-bibliotheque-documents img.doc-couverture-droit { filter: hue-rotate(330deg) saturate(1.08); }
+.page-bibliotheque-documents img.doc-couverture-comptabilite { filter: hue-rotate(180deg) saturate(1.08); }
 
 .page-bibliotheque-documents .doc-carte-entete {
   align-items: center;

@@ -223,15 +223,16 @@ session dediee, avec sa propre verification desktop+mobile.
   {% for doc in documents %}
   <div class="doc-carte" data-date="{{ doc.date_upload.isoformat() if doc.date_upload else '' }}" data-title="{{ doc.titre|lower }}" data-subject="{{ doc.matiere|lower }}">
     {% set matiere_couverture = (doc.matiere or '')|lower %}
-    <div class="doc-carte-visuel {% if 'math' in matiere_couverture %}doc-couverture-maths{% elif 'phys' in matiere_couverture %}doc-couverture-physique{% elif 'chim' in matiere_couverture %}doc-couverture-chimie{% elif 'info' in matiere_couverture %}doc-couverture-informatique{% elif 'geo' in matiere_couverture %}doc-couverture-geologie{% elif 'droit' in matiere_couverture %}doc-couverture-droit{% elif 'compt' in matiere_couverture %}doc-couverture-comptabilite{% endif %}" aria-hidden="true">
+    {% set classe_couverture = "doc-couverture-maths" if 'math' in matiere_couverture else "doc-couverture-physique" if 'phys' in matiere_couverture else "doc-couverture-chimie" if 'chim' in matiere_couverture else "doc-couverture-informatique" if 'info' in matiere_couverture else "doc-couverture-geologie" if 'geo' in matiere_couverture else "doc-couverture-droit" if 'droit' in matiere_couverture else "doc-couverture-comptabilite" if 'compt' in matiere_couverture else "" %}
+    <div class="doc-carte-visuel" aria-hidden="true">
       {% if doc.type_document.value == "annale" %}
-      <img src="/static/images/site/study-books.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
+      <img class="{{ classe_couverture }}" src="/static/images/site/study-books.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
       {% elif doc.type_document.value == "corrige" %}
-      <img src="/static/images/site/quiz.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
+      <img class="{{ classe_couverture }}" src="/static/images/site/quiz.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
       {% elif doc.type_document.value == "fiche" %}
-      <img src="/static/images/site/documents.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
+      <img class="{{ classe_couverture }}" src="/static/images/site/documents.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
       {% else %}
-      <img src="/static/images/site/hero-campus.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
+      <img class="{{ classe_couverture }}" src="/static/images/site/hero-campus.svg" alt="" width="480" height="170" loading="lazy" decoding="async">
       {% endif %}
     </div>
     <div class="doc-carte-entete">
