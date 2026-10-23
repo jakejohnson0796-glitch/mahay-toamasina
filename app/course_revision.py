@@ -88,7 +88,7 @@ _SCHEMA_FICHE = {
         },
         "erreurs_frequentes": {
             "type": "array",
-            "minItems": 2,
+            "minItems": 3,
             "maxItems": 5,
             "items": {
                 "type": "object",
@@ -168,6 +168,9 @@ def _schema_fiche_revision_sans_notion() -> dict:
     """Schema de secours si Groq refuse une réponse ayant omis la notion d'un exercice."""
     schema = json.loads(json.dumps(_SCHEMA_FICHE))
     schema["properties"]["exercices"]["items"]["properties"].pop("notion", None)
+    requis = schema["properties"]["exercices"]["items"].get("required", [])
+    if "notion" in requis:
+        requis.remove("notion")
     return schema
 
 
@@ -735,8 +738,8 @@ def normaliser_fiche_revision(contenu: Any, *, exiger_qualite: bool = False) -> 
             exercice["difficulte"] = difficultes_autorisees[cle_difficulte]
 
     if exiger_qualite:
-        if len(fiche["erreurs_frequentes"]) < 2:
-            raise ValueError("La fiche doit expliquer au moins deux erreurs fréquentes et comment les éviter.")
+        if len(fiche["erreurs_frequentes"]) < 3:
+            raise ValueError("La fiche doit expliquer au moins trois erreurs fréquentes et comment les éviter.")
         for erreur in fiche["erreurs_frequentes"]:
             if not all(erreur.get(cle) for cle in ("erreur", "pourquoi", "comment_eviter")):
                 raise ValueError("Une erreur fréquente doit expliquer le risque et le moyen de l'éviter.")
@@ -922,7 +925,35 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         donnees = json.loads(contenu_texte)
     except (TypeError, ValueError) as erreur:
         raise ValueError("Le modèle IA a renvoyé un contenu JSON invalide.") from erreur
-    return normaliser_fiche_revision(donnees)
+    try:
+        return normaliser_fiche_revision(donnees, exiger_qualite=True)
+    except ValueError as erreur_qualite:
+        # Une réponse JSON valide peut tout de même être pauvre (questions répétées,
+        # niveaux manquants, erreurs fréquentes vides). On demande une seule reprise
+        # ciblée, au lieu d'enregistrer un carnet qui respecte la forme mais pas le fond.
+        logger.warning("Fiche IA rejetée par le contrôle pédagogique ; reprise unique (%s).", erreur_qualite)
+        kwargs["messages"] = [{
+            "role": "user",
+            "content": messages[0]["content"] + (
+                "\n\nREPRISE QUALITÉ OBLIGATOIRE : la sortie précédente n'a pas satisfait "
+                "le contrôle pédagogique local. Corrige les points suivants : "
+                + str(erreur_qualite)
+                + ". Retourne une fiche complète, trois erreurs fréquentes réellement distinctes "
+                "avec explication et prévention, trois exercices uniques et les trois difficultés "
+                "Facile/Moyen/Difficile. Vérifie les corrections et conserve les formules LaTeX "
+                "bien délimitées. Ne retire aucun champ requis."
+            ),
+        }]
+        completion = ai_ensemble.cost_controller.call(
+            "groq",
+            lambda: client.chat.completions.create(**kwargs),
+        )
+        message_reprise = completion.choices[0].message
+        try:
+            donnees_reprises = json.loads(message_reprise.content or "")
+        except (TypeError, ValueError) as erreur_json:
+            raise ValueError("La reprise pédagogique du modèle n'a pas renvoyé un JSON valide.") from erreur_json
+        return normaliser_fiche_revision(donnees_reprises, exiger_qualite=True)
 
 
 def generer_et_sauvegarder_fiche_revision_cours(fiche_id: int) -> None:
