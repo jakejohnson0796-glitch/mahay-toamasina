@@ -675,6 +675,18 @@ def consulter_fiche_revision_cours(
     ):
         return RedirectResponse("/classe", status_code=303)
 
+    if (
+        fiche.statut == StatutFicheRevisionCours.TERMINEE
+        and fiche.version_generation != course_revision.VERSION_GENERATION
+    ):
+        # Une seule fiche est régénérée quand l'étudiant l'ouvre ; les autres
+        # fiches historiques ne sont pas toutes remises en file à la fois.
+        ai_queue.planifier_fiche_revision_cours(fiche.seance_id, utilisateur.id)
+        session.expire_all()
+        fiche = session.get(FicheRevisionCours, fiche_id)
+        if not fiche:
+            return RedirectResponse("/classe", status_code=303)
+
     if fiche.statut != StatutFicheRevisionCours.TERMINEE or not fiche.contenu_json:
         return RedirectResponse(
             f"/classe/{fiche.cours_id}?fiche=en_cours#seances",
@@ -732,6 +744,18 @@ def telecharger_fiche_revision_cours(
     ):
         # Réponse uniforme : ne révèle pas si une fiche privée existe.
         return RedirectResponse("/classe", status_code=303)
+
+    if (
+        fiche.statut == StatutFicheRevisionCours.TERMINEE
+        and fiche.version_generation != course_revision.VERSION_GENERATION
+    ):
+        # Une seule fiche est régénérée quand l'étudiant l'ouvre ; les autres
+        # fiches historiques ne sont pas toutes remises en file à la fois.
+        ai_queue.planifier_fiche_revision_cours(fiche.seance_id, utilisateur.id)
+        session.expire_all()
+        fiche = session.get(FicheRevisionCours, fiche_id)
+        if not fiche:
+            return RedirectResponse("/classe", status_code=303)
 
     if fiche.statut != StatutFicheRevisionCours.TERMINEE or not fiche.contenu_json:
         return RedirectResponse(
