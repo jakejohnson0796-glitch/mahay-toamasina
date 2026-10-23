@@ -83,6 +83,29 @@
   </section>
   {% endif %}
 
+  {% if fiche_contenu.erreurs_frequentes %}
+  <section class="document-revision-section document-revision-mistakes" aria-labelledby="doc-revision-mistakes-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number" aria-hidden="true">!</span>
+      <div>
+        <h2 id="doc-revision-mistakes-title">Erreurs fréquentes à éviter</h2>
+        <p>Les confusions courantes, leurs conséquences et les gestes pour les éviter.</p>
+      </div>
+    </div>
+    <div class="document-revision-grid">
+      {% for erreur in fiche_contenu.erreurs_frequentes %}
+      <article class="document-revision-card document-revision-mistake">
+        <h3 class="ai-rendered-content" data-rendu>{{ erreur.erreur }}</h3>
+        <p><strong>Pourquoi c'est une erreur</strong></p>
+        <p class="ai-rendered-content" data-rendu>{{ erreur.pourquoi }}</p>
+        <p><strong>Comment l'éviter</strong></p>
+        <p class="ai-rendered-content" data-rendu>{{ erreur.comment_eviter }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <section class="document-revision-section" aria-labelledby="doc-revision-exercices-title">
     <div class="document-revision-section-head">
       <span class="document-revision-number">05</span>

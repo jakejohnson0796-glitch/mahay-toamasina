@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 MAX_SOURCE_CHARS = 7800
 MAX_COMPLETION_TOKENS = 6000
-VERSION_GENERATION = "v3"
+VERSION_GENERATION = "v4"
 
 _SCHEMA_FICHE = {
     "type": "object",
@@ -84,6 +84,21 @@ _SCHEMA_FICHE = {
                     "exemple": {"type": "string"},
                 },
                 "required": ["titre", "explication", "exemple"],
+            },
+        },
+        "erreurs_frequentes": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 5,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "erreur": {"type": "string"},
+                    "pourquoi": {"type": "string"},
+                    "comment_eviter": {"type": "string"},
+                },
+                "required": ["erreur", "pourquoi", "comment_eviter"],
             },
         },
         "outils_a_retenir": {
@@ -143,7 +158,7 @@ _SCHEMA_FICHE = {
         "limites_sources": {"type": "string"},
     },
     "required": [
-        "resume", "objectifs", "notions", "outils_a_retenir", "exercices",
+        "resume", "objectifs", "notions", "erreurs_frequentes", "outils_a_retenir", "exercices",
         "points_a_retravailler", "plan_revision", "auto_evaluation", "limites_sources",
     ],
 }
@@ -153,12 +168,34 @@ def _schema_fiche_revision_sans_notion() -> dict:
     """Schema de secours si Groq refuse une réponse ayant omis la notion d'un exercice."""
     schema = json.loads(json.dumps(_SCHEMA_FICHE))
     schema["properties"]["exercices"]["items"]["properties"].pop("notion", None)
+    requis = schema["properties"]["exercices"]["items"].get("required", [])
+    if "notion" in requis:
+        requis.remove("notion")
     return schema
 
 
 def _normaliser_notation_math(valeur: str) -> str:
     """Convertit les commandes LaTeX usuelles en notation texte lisible PDF/Word."""
     texte = str(valeur or "")
+    # Les exports PDF/Word n'ont pas de moteur LaTeX : convertit d'abord les matrices
+    # en lignes explicites. La version destinée au navigateur, elle, conserve le LaTeX.
+    motif_matrice = re.compile(
+        r"\\begin\{(pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|matrix|smallmatrix)\}(.*?)\\end\{\1\}",
+        re.DOTALL,
+    )
+
+    def convertir_matrice(match: re.Match) -> str:
+        corps = match.group(2)
+        lignes_brutes = re.split(r"\\\\(?:\[[^\]]*\])?|\\cr", corps)
+        lignes = []
+        for ligne in lignes_brutes:
+            cellules = [re.sub(r"\s+", " ", cellule.strip()) for cellule in ligne.split("&")]
+            if len(cellules) == 1 and not cellules[0]:
+                continue
+            lignes.append("[" + ", ".join(cellules) + "]")
+        return "[" + ", ".join(lignes) + "]"
+
+    texte = motif_matrice.sub(convertir_matrice, texte)
     # Le radical unicode est converti avant de supprimer les symboles non supportés.
     texte = re.sub(r"√\s*([A-Za-z0-9]+)", r"sqrt(\1)", texte)
     # Les expressions simples sont converties avant de retirer les commandes.
@@ -176,6 +213,21 @@ def _normaliser_notation_math(valeur: str) -> str:
         r"\\pm\b": "+/-",
         r"\\leq?\b": "<=",
         r"\\geq?\b": ">=",
+        r"\\ne\b": "!=",
+        r"\\equiv\b": "equivalent to",
+        r"\\in\b": "in",
+        r"\\notin\b": "not in",
+        r"\\det\b": "det",
+        r"\\log\b": "log",
+        r"\\ln\b": "ln",
+        r"\\sin\b": "sin",
+        r"\\cos\b": "cos",
+        r"\\tan\b": "tan",
+        r"\\max\b": "max",
+        r"\\min\b": "min",
+        r"\\lim\b": "lim",
+        r"\\partial\b": "d",
+        r"\\nabla\b": "nabla",
         r"\\neq\b": "!=",
         r"\\approx\b": "approx",
         r"\\rightarrow\b": "->",
@@ -206,8 +258,13 @@ def _normaliser_notation_math(valeur: str) -> str:
 
 
 def _normaliser_texte(valeur: Any, limite: int = 1400) -> str:
-    texte = " ".join(str(valeur or "").split()).strip()
-    texte = _normaliser_notation_math(texte)
+    """Nettoie le texte sans détruire le LaTeX, y compris les séquences JSON legacy."""
+    texte = str(valeur or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    # \b, \t et \f peuvent être les traces d'anciens JSON mal échappés de
+    # \begin, \times, \text ou \frac : on les préserve pour le renderer de réparation.
+    # Les autres contrôles sont supprimés, mais pas les accolades ni les antislashs.
+    texte = re.sub(r"[\x00-\x07\x0b\x0e-\x1f]", "", texte)
+    texte = re.sub(r"[ ]{2,}", " ", texte)
     return texte[:limite]
 
 
@@ -610,12 +667,14 @@ def _texte_ia_non_fiable(contexte: dict) -> str:
         "- Pour éviter une fiche coupée, reste concis : 5 notions maximum, 4 outils maximum, "
         "3 ou 4 exercices, 4 points à retravailler maximum et 3 questions d'auto-évaluation. "
         "Garde le plan de révision à 3 étapes. Chaque champ doit tenir en quelques phrases.\n"
-        "- Varie compréhension, application et analyse. Évite de répéter trois fois le même exercice.\n"
-        "- Utilise une notation texte commune aux fichiers PDF et Word : sqrt(x), x^2, <=, >=, a/b, * et des noms comme alpha ou delta.\n"
-        "- MATRICES : utilise une notation texte explicite comme A = [[1, 2, 3], [4, 5, 6]] et I₃ = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]. Chaque sous-liste représente une ligne.\n"
-        "- N'écris jamais les marqueurs bruts beginpmatrix/endpmatrix, une matrice réduite à une suite de coefficients séparés par &, ni des commandes LaTeX.\n"
-        "- N'utilise pas de commandes LaTeX, délimiteurs $, \\( ou \\[ ; les fichiers téléchargés ne sont pas un moteur de composition mathématique.\n"
-        "- Pour une formule complexe, privilégie une explication en mots et vérifie chaque étape plutôt qu'un code mathématique brut.\n"
+        "- Varie compréhension, application et analyse. Chaque exercice doit tester une compétence différente : ne crée pas le même exercice avec seulement d'autres nombres.\n"
+        "- RUBRIQUE erreurs_frequentes : donne 3 à 5 erreurs réalistes adaptées à la matière, chacune avec son risque et une méthode concrète pour l'éviter. Pas de banalités.\n"
+        "- EXERCICES : propose une progression Facile, Moyen, Difficile quand il y a 3 exercices ou plus. L'énoncé doit être compréhensible seul ; l'indice aide sans donner la réponse.\n"
+        "- CORRECTIONS : explique les étapes dans leur ordre logique, justifie chaque opération et termine par un résultat ou une conclusion clairement identifiable. Ne valide pas un résultat sans vérifier le calcul.\n"
+        "- RENDU SCIENTIFIQUE : les fiches dans le navigateur utilisent KaTeX. Conserve les formules LaTeX correctes avec délimiteurs \\(...\\) en ligne et \\[...\\] en affichage ; équilibre toutes les accolades et ferme chaque environnement.\n"
+        "- MATRICES : utilise \\begin{pmatrix}...\\end{pmatrix} (ou l'environnement adapté), sépare les colonnes par & et les lignes par \\\\ ; ne colle jamais tous les coefficients dans une seule ligne et n'écris jamais beginpmatrix/endpmatrix sans les antislashs et accolades.\n"
+        "- N'encapsule pas une formule mathématique dans des backticks ou un bloc de code. N'invente pas une formule si la source ne permet pas de la déterminer ; explique la limite plutôt que d'improviser.\n"
+        "- Les exports PDF/Word convertissent les formules en notation textuelle lisible ; n'abîme pas le LaTeX de la version web pour anticiper l'export.\n"
         "- 'outils_a_retenir' peut contenir formules, définitions, règles, dates ou méthodes selon la matière.\n"
         "- Le plan de révision doit contenir Aujourd'hui, Dans 2 jours et Dans 7 jours.\n"
         "- Retourne un objet JSON conforme au schéma fourni, sans Markdown extérieur.\n\n"
@@ -652,13 +711,19 @@ def _liste_objets(valeur: Any, champs: tuple[str, ...], max_items: int, max_len:
     return resultat
 
 
-def normaliser_fiche_revision(contenu: Any) -> dict:
+def normaliser_fiche_revision(contenu: Any, *, exiger_qualite: bool = False) -> dict:
     if not isinstance(contenu, dict):
         raise ValueError("La réponse IA n'est pas un objet JSON.")
     fiche = {
         "resume": _normaliser_texte(contenu.get("resume"), 3800),
         "objectifs": _liste_texte(contenu.get("objectifs"), 5, 500),
         "notions": _liste_objets(contenu.get("notions"), ("titre", "explication", "exemple"), 8, 1200),
+        "erreurs_frequentes": _liste_objets(
+            contenu.get("erreurs_frequentes"),
+            ("erreur", "pourquoi", "comment_eviter"),
+            5,
+            900,
+        ),
         "outils_a_retenir": _liste_objets(contenu.get("outils_a_retenir"), ("titre", "contenu", "explication"), 6, 800),
         "exercices": _liste_objets(contenu.get("exercices"), ("enonce", "difficulte", "indice", "correction", "notion"), 5, 1500),
         "points_a_retravailler": _liste_texte(contenu.get("points_a_retravailler"), 6, 300),
@@ -675,6 +740,81 @@ def normaliser_fiche_revision(contenu: Any) -> dict:
             raise ValueError("Un exercice IA est incomplet : énoncé, indice et correction sont requis.")
         if not exercice["notion"]:
             exercice["notion"] = _associer_notion_exercice(exercice, fiche["notions"])
+        cle_difficulte = _cle(exercice["difficulte"])
+        difficultes_autorisees = {
+            "facile": "Facile",
+            "moyen": "Moyen",
+            "intermediaire": "Moyen",
+            "difficile": "Difficile",
+        }
+        if cle_difficulte not in difficultes_autorisees:
+            if exiger_qualite:
+                raise ValueError("Une difficulté d'exercice n'est pas reconnue.")
+            exercice["difficulte"] = "Moyen"
+        else:
+            exercice["difficulte"] = difficultes_autorisees[cle_difficulte]
+
+    if exiger_qualite:
+        # Préflight léger des formules : la page web doit recevoir du LaTeX intact
+        # et bien apparié. Cela empêche d'enregistrer des chaînes beginpmatrix nues
+        # ou des environnements ouverts qui se transformeraient en texte illisible.
+        def textes_recursifs(valeur):
+            if isinstance(valeur, dict):
+                for enfant in valeur.values():
+                    yield from textes_recursifs(enfant)
+            elif isinstance(valeur, list):
+                for enfant in valeur:
+                    yield from textes_recursifs(enfant)
+            elif isinstance(valeur, str):
+                yield valeur
+
+        environnements_latex = (
+            "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix",
+            "matrix", "smallmatrix", "cases", "aligned", "alignedat", "array",
+        )
+        for texte_formule in textes_recursifs(fiche):
+            if re.search(
+                r"(?<!\\)\b(?:begin|end)(?:pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|smallmatrix|array)\b",
+                texte_formule,
+            ):
+                raise ValueError("Une formule contient un marqueur matriciel brut au lieu d'un environnement LaTeX.")
+            for environnement in environnements_latex:
+                motif_ouverture = r"\\begin\{" + re.escape(environnement) + r"\}(?:\{[^{}]*\})?"
+                motif_fermeture = r"\\end\{" + re.escape(environnement) + r"\}"
+                if len(re.findall(motif_ouverture, texte_formule)) != len(
+                    re.findall(motif_fermeture, texte_formule)
+                ):
+                    raise ValueError("Un environnement LaTeX n'est pas fermé : " + environnement)
+            if texte_formule.count(r"\(") != texte_formule.count(r"\)"):
+                raise ValueError("Une formule en ligne n'a pas ses délimiteurs LaTeX appariés.")
+            if texte_formule.count(r"\[") != texte_formule.count(r"\]"):
+                raise ValueError("Une formule affichée n'a pas ses délimiteurs LaTeX appariés.")
+
+        if len(fiche["erreurs_frequentes"]) < 3:
+            raise ValueError("La fiche doit expliquer au moins trois erreurs fréquentes et comment les éviter.")
+        for erreur in fiche["erreurs_frequentes"]:
+            if not all(erreur.get(cle) for cle in ("erreur", "pourquoi", "comment_eviter")):
+                raise ValueError("Une erreur fréquente doit expliquer le risque et le moyen de l'éviter.")
+
+        def signature_distincte(texte: str) -> str:
+            return re.sub(r"[^a-z0-9]+", "", _cle(texte))
+
+        signatures_exercices = [signature_distincte(item["enonce"]) for item in fiche["exercices"]]
+        if len(set(signatures_exercices)) != len(signatures_exercices):
+            raise ValueError("La fiche contient des exercices dupliqués.")
+        signatures_notions = [signature_distincte(item["titre"]) for item in fiche["notions"]]
+        if len(set(signatures_notions)) != len(signatures_notions):
+            raise ValueError("La fiche contient des notions dupliquées.")
+        signatures_erreurs = [signature_distincte(item["erreur"]) for item in fiche["erreurs_frequentes"]]
+        if len(set(signatures_erreurs)) != len(signatures_erreurs):
+            raise ValueError("La fiche répète les erreurs fréquentes.")
+        signatures_auto_eval = [signature_distincte(item["question"]) for item in fiche["auto_evaluation"]]
+        if len(set(signatures_auto_eval)) != len(signatures_auto_eval):
+            raise ValueError("L'auto-évaluation contient des questions dupliquées.")
+        if not {"Facile", "Moyen", "Difficile"}.issubset(
+            {item["difficulte"] for item in fiche["exercices"]}
+        ):
+            raise ValueError("Les exercices doivent couvrir les trois niveaux de difficulté.")
     return fiche
 
 
@@ -732,13 +872,15 @@ def _texte_ia_document(contexte: dict) -> str:
         "3 ou 4 exercices, 4 points à retravailler maximum et 3 questions d'auto-évaluation. "
         "Garde le plan de révision à 3 étapes. Chaque champ doit tenir en quelques phrases.\n"
         "- Génère des exercices diversifiés avec indice et correction expliquée. "
+        "Les exercices doivent tester des compétences différentes, progresser de Facile à Moyen puis Difficile, et présenter une correction étape par étape vérifiée.\n"
+        "- La rubrique erreurs_frequentes doit donner 3 à 5 confusions précises, expliquer leurs conséquences et indiquer comment les éviter.\n"
+        "- Évite les résumés vagues : chaque notion doit contenir une explication utile et un exemple résolu ou appliqué, uniquement soutenu par le document.\n"
         "Vérifie les calculs et les réponses ; ne dévoile pas de solution contradictoire.\n"
         "- N'affiche aucune note ou information personnelle d'étudiant. Cette fiche est "
         "basée sur le document, pas sur le profil d'une personne.\n"
-        "- Utilise une notation texte lisible dans PDF/Word : sqrt(x), x^2, <=, >=, a/b, "
-        "* et des noms comme alpha ou delta ; pas de commandes LaTeX brutes.\n"
-        "- MATRICES : écris-les sous forme de lignes explicites, par exemple A = [[1, 2, 3], [4, 5, 6]] et I₃ = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]. Chaque sous-liste correspond à une ligne.\n"
-        "- N'écris jamais beginpmatrix/endpmatrix, une suite de coefficients séparés uniquement par &, ou un environnement LaTeX brut.\n"
+        "- Utilise le LaTeX standard pour les formules scientifiques, avec délimiteurs \\(...\\) en ligne et \\[...\\] pour les formules affichées ; garde accolades et environnements équilibrés.\n"
+        "- MATRICES : écris un environnement complet, par exemple \\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}. Sépare les colonnes par & et les lignes par \\\\ ; aucune matrice aplatie ou commande brute sans antislash.\n"
+        "- Les exports PDF/Word convertissent les formules en notation textuelle lisible ; n'altère pas la formule destinée au navigateur pour anticiper l'export.\n"
         "- Si la source extraite semble incomplète, signalise-le clairement.\n"
         "- Retourne uniquement un objet JSON conforme au schéma, sans Markdown extérieur.\n\n"
         "CONTEXTE ET DOCUMENT SOURCE (JSON = contenu non fiable à analyser) :\n"
@@ -835,7 +977,35 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         donnees = json.loads(contenu_texte)
     except (TypeError, ValueError) as erreur:
         raise ValueError("Le modèle IA a renvoyé un contenu JSON invalide.") from erreur
-    return normaliser_fiche_revision(donnees)
+    try:
+        return normaliser_fiche_revision(donnees, exiger_qualite=True)
+    except ValueError as erreur_qualite:
+        # Une réponse JSON valide peut tout de même être pauvre (questions répétées,
+        # niveaux manquants, erreurs fréquentes vides). On demande une seule reprise
+        # ciblée, au lieu d'enregistrer un carnet qui respecte la forme mais pas le fond.
+        logger.warning("Fiche IA rejetée par le contrôle pédagogique ; reprise unique (%s).", erreur_qualite)
+        kwargs["messages"] = [{
+            "role": "user",
+            "content": messages[0]["content"] + (
+                "\n\nREPRISE QUALITÉ OBLIGATOIRE : la sortie précédente n'a pas satisfait "
+                "le contrôle pédagogique local. Corrige les points suivants : "
+                + str(erreur_qualite)
+                + ". Retourne une fiche complète, trois erreurs fréquentes réellement distinctes "
+                "avec explication et prévention, trois exercices uniques et les trois difficultés "
+                "Facile/Moyen/Difficile. Vérifie les corrections et conserve les formules LaTeX "
+                "bien délimitées. Ne retire aucun champ requis."
+            ),
+        }]
+        completion = ai_ensemble.cost_controller.call(
+            "groq",
+            lambda: client.chat.completions.create(**kwargs),
+        )
+        message_reprise = completion.choices[0].message
+        try:
+            donnees_reprises = json.loads(message_reprise.content or "")
+        except (TypeError, ValueError) as erreur_json:
+            raise ValueError("La reprise pédagogique du modèle n'a pas renvoyé un JSON valide.") from erreur_json
+        return normaliser_fiche_revision(donnees_reprises, exiger_qualite=True)
 
 
 def generer_et_sauvegarder_fiche_revision_cours(fiche_id: int) -> None:
@@ -1145,6 +1315,16 @@ def generer_pdf(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) ->
             paragraphe(outil["titre"], "Heading3")
             paragraphe((outil["contenu"] + " — " + outil["explication"]).strip(" —"))
 
+    if fiche.get("erreurs_frequentes"):
+        section("Erreurs fréquentes à éviter")
+        for erreur in fiche["erreurs_frequentes"]:
+            contenu.append(KeepTogether([
+                Paragraph("<b>À éviter :</b> " + _pdf_escape(erreur["erreur"]), styles["MitaridalaBody"]),
+                Paragraph("<b>Pourquoi :</b> " + _pdf_escape(erreur["pourquoi"]), styles["MitaridalaSmall"]),
+                Paragraph("<b>Comment faire mieux :</b> " + _pdf_escape(erreur["comment_eviter"]), styles["MitaridalaBody"]),
+                Spacer(1, 3),
+            ]))
+
     section("5. Exercices avec corrections")
     for n, exercice in enumerate(fiche["exercices"], 1):
         contenu.append(KeepTogether([
@@ -1231,37 +1411,51 @@ def generer_docx(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) -
     def heading(texte):
         document.add_heading(texte, level=1)
 
+    def texte_word(valeur):
+        """Convertit les formules en notation lisible sans toucher au LaTeX du contenu web."""
+        return _normaliser_notation_math(str(valeur or ""))
+
     def bullet(texte):
-        document.add_paragraph(str(texte), style="List Bullet")
+        document.add_paragraph(texte_word(texte), style="List Bullet")
 
     heading("1. Résumé à retenir")
-    document.add_paragraph(fiche["resume"])
+    document.add_paragraph(texte_word(fiche["resume"]))
     heading("2. Objectifs de révision")
     for element in fiche["objectifs"]:
         bullet(element)
     heading("3. Notions essentielles")
     for n, notion in enumerate(fiche["notions"], 1):
-        document.add_heading(f"{n}. {notion['titre']}", level=2)
-        document.add_paragraph(notion["explication"])
+        document.add_heading(f"{n}. {texte_word(notion['titre'])}", level=2)
+        document.add_paragraph(texte_word(notion["explication"]))
         p = document.add_paragraph()
         p.add_run("Exemple : ").bold = True
-        p.add_run(notion["exemple"])
+        p.add_run(texte_word(notion["exemple"]))
     if fiche["outils_a_retenir"]:
         heading("4. Formules, règles et méthodes")
         for outil in fiche["outils_a_retenir"]:
-            document.add_heading(outil["titre"], level=2)
-            document.add_paragraph(outil["contenu"])
-            document.add_paragraph(outil["explication"])
+            document.add_heading(texte_word(outil["titre"]), level=2)
+            document.add_paragraph(texte_word(outil["contenu"]))
+            document.add_paragraph(texte_word(outil["explication"]))
+    if fiche.get("erreurs_frequentes"):
+        heading("Erreurs fréquentes à éviter")
+        for erreur in fiche["erreurs_frequentes"]:
+            document.add_heading(texte_word(erreur["erreur"]), level=2)
+            p = document.add_paragraph()
+            p.add_run("Pourquoi : ").bold = True
+            p.add_run(texte_word(erreur["pourquoi"]))
+            p = document.add_paragraph()
+            p.add_run("Comment faire mieux : ").bold = True
+            p.add_run(texte_word(erreur["comment_eviter"]))
     heading("5. Exercices avec corrections")
     for n, exercice in enumerate(fiche["exercices"], 1):
-        document.add_heading(f"Exercice {n} · {exercice['difficulte']}", level=2)
-        document.add_paragraph(exercice["enonce"])
+        document.add_heading(f"Exercice {n} · {texte_word(exercice['difficulte'])}", level=2)
+        document.add_paragraph(texte_word(exercice["enonce"]))
         p = document.add_paragraph()
         p.add_run("Indice : ").bold = True
-        p.add_run(exercice["indice"])
+        p.add_run(texte_word(exercice["indice"]))
         p = document.add_paragraph()
         p.add_run("Correction : ").bold = True
-        p.add_run(exercice["correction"])
+        p.add_run(texte_word(exercice["correction"]))
     if fiche["points_a_retravailler"]:
         heading("6. Les points à retravailler en priorité")
         for element in fiche["points_a_retravailler"]:
@@ -1269,18 +1463,18 @@ def generer_docx(fiche: dict, cours: Cours, seance: Seance, nom_etudiant: str) -
     heading("7. Plan de révision")
     for item in fiche["plan_revision"]:
         p = document.add_paragraph()
-        p.add_run(item["moment"] + " : ").bold = True
-        p.add_run(item["action"])
+        p.add_run(texte_word(item["moment"]) + " : " ).bold = True
+        p.add_run(texte_word(item["action"]))
     heading("8. Auto-évaluation")
     for n, item in enumerate(fiche["auto_evaluation"], 1):
         p = document.add_paragraph()
         p.add_run(f"Question {n}. ").bold = True
-        p.add_run(item["question"])
+        p.add_run(texte_word(item["question"]))
         p = document.add_paragraph()
         p.add_run("Réponse attendue : ").bold = True
-        p.add_run(item["reponse"])
+        p.add_run(texte_word(item["reponse"]))
     heading("À propos des sources")
-    document.add_paragraph(fiche["limites_sources"])
+    document.add_paragraph(texte_word(fiche["limites_sources"]))
     p = document.add_paragraph(
         "Support d'apprentissage généré avec l'IA. Vérifie les points importants avec le cours et le professeur."
     )
