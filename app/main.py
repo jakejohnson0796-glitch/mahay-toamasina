@@ -21,6 +21,7 @@ from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router
 from .security_headers import EnTetesSecuriteMiddleware
+from .static_cache import VersionedStaticAssetCacheMiddleware
 from .admin_security import AdminActionConfirmationMiddleware
 from .production_guard import valider_configuration_production
 from .seed_faq import peupler_faq_initiale
@@ -73,6 +74,7 @@ app.add_middleware(
     session_cookie="__Host-session" if parametres.environnement == "production" else "session",
 )
 app.add_middleware(EnTetesSecuriteMiddleware, https_actif=parametres.environnement == "production")
+app.add_middleware(VersionedStaticAssetCacheMiddleware)
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
