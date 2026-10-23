@@ -1,6 +1,6 @@
 # TODO — Feuille de route MITARIDALA
 
-**Mise à jour : 22 octobre 2026**  
+**Mise à jour : 23 octobre 2026**  
 **Référence :** branche principale après les améliorations des fiches de révision, de la file IA et de l’interface globale.
 
 Ce document est le backlog de référence du dépôt. Les cases cochées correspondent à des travaux déjà intégrés et couverts par les contrôles indiqués. Les cases ouvertes décrivent des améliorations à réaliser ou à approfondir ; elles ne signifient pas automatiquement qu’une régression est actuellement observée.
@@ -28,6 +28,7 @@ Ces tâches doivent passer avant les nouvelles fonctionnalités ambitieuses.
 - [ ] **Auditer la visibilité opérationnelle de la file IA.** Vérifier que les diagnostics permettent de repérer une tâche trop ancienne, ses tentatives, son dernier état et une erreur exploitable sans exposer de secrets ; compléter l’interface ou les alertes là où il manque une information.
 - [ ] **Standardiser le contrôle après déploiement.** Vérifier les endpoints /health et /ready, les migrations, le démarrage du worker, les erreurs récentes et le téléchargement d’une fiche depuis un vrai navigateur ; consigner le SHA déployé et garder le commit de retour arrière disponible.
 - [ ] **Stabiliser les scénarios de vérification IA qui échouent à juste titre.** Construire des tests déterministes pour séparer une erreur réelle de correction, une sortie JSON invalide, des choix de quiz identiques et un seuil de confiance trop strict. Ne pas masquer une erreur pédagogique pour faire passer le test.
+- [ ] **Valider en CI les fiches documentaires personnalisées par étudiant.** Vérifier que les priorités viennent uniquement des quiz, progressions et échanges du compte connecté, que la fiche source commune ne change pas et que l'affichage ainsi que les exports PDF/DOCX contiennent le même plan personnalisé.
 
 ## 3. Priorité P1 — Qualité pédagogique, mobile et cohérence des données
 

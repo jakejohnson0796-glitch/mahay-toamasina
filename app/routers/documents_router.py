@@ -1002,6 +1002,12 @@ def consulter_fiche_revision_document(
             status_code=303,
         )
 
+    # La fiche conservée en base reste commune et immuable. Chaque affichage reçoit
+    # une copie adaptée au compte courant, à ses notions fragiles et à ses quiz.
+    contenu = course_revision.personnaliser_fiche_revision_document(
+        session, document, utilisateur.id, contenu
+    )
+
     return templates.TemplateResponse(
         request,
         "document_revision.html",
@@ -1068,6 +1074,11 @@ def telecharger_fiche_revision_document(
             f"/documents/{document_id}/apprendre?revision=indisponible#revision-automatique",
             status_code=303,
         )
+
+    # Les exports PDF et Word reçoivent la même version privée que le navigateur.
+    contenu = course_revision.personnaliser_fiche_revision_document(
+        session, document, utilisateur.id, contenu
+    )
 
     filiere = session.get(Filiere, document.filiere_id)
     cours_export = SimpleNamespace(
