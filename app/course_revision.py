@@ -243,11 +243,13 @@ def _normaliser_notation_math(valeur: str) -> str:
 
 
 def _normaliser_texte(valeur: Any, limite: int = 1400) -> str:
-    """Normalise les espaces sans détruire les délimiteurs/commandes LaTeX du navigateur."""
-    texte = " ".join(str(valeur or "").split()).strip()
-    # Retire les contrôles non imprimables hérités de certaines réponses JSON,
-    # mais conserve les antislashs, accolades, &, ^, _ et les séparateurs de ligne TeX.
-    texte = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", texte)
+    """Nettoie le texte sans détruire le LaTeX, y compris les séquences JSON legacy."""
+    texte = str(valeur or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    # \b, \t et \f peuvent être les traces d'anciens JSON mal échappés de
+    # \begin, \times, \text ou \frac : on les préserve pour le renderer de réparation.
+    # Les autres contrôles sont supprimés, mais pas les accolades ni les antislashs.
+    texte = re.sub(r"[\x00-\x07\x0b\x0e-\x1f]", "", texte)
+    texte = re.sub(r"[ ]{2,}", " ", texte)
     return texte[:limite]
 
 
@@ -738,6 +740,41 @@ def normaliser_fiche_revision(contenu: Any, *, exiger_qualite: bool = False) -> 
             exercice["difficulte"] = difficultes_autorisees[cle_difficulte]
 
     if exiger_qualite:
+        # Préflight léger des formules : la page web doit recevoir du LaTeX intact
+        # et bien apparié. Cela empêche d'enregistrer des chaînes beginpmatrix nues
+        # ou des environnements ouverts qui se transformeraient en texte illisible.
+        def textes_recursifs(valeur):
+            if isinstance(valeur, dict):
+                for enfant in valeur.values():
+                    yield from textes_recursifs(enfant)
+            elif isinstance(valeur, list):
+                for enfant in valeur:
+                    yield from textes_recursifs(enfant)
+            elif isinstance(valeur, str):
+                yield valeur
+
+        environnements_latex = (
+            "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix",
+            "matrix", "smallmatrix", "cases", "aligned", "alignedat", "array",
+        )
+        for texte_formule in textes_recursifs(fiche):
+            if re.search(
+                r"(?<!\\)\b(?:begin|end)(?:pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|smallmatrix|array)\b",
+                texte_formule,
+            ):
+                raise ValueError("Une formule contient un marqueur matriciel brut au lieu d'un environnement LaTeX.")
+            for environnement in environnements_latex:
+                motif_ouverture = r"\\begin\{" + re.escape(environnement) + r"\}(?:\{[^{}]*\})?"
+                motif_fermeture = r"\\end\{" + re.escape(environnement) + r"\}"
+                if len(re.findall(motif_ouverture, texte_formule)) != len(
+                    re.findall(motif_fermeture, texte_formule)
+                ):
+                    raise ValueError("Un environnement LaTeX n'est pas fermé : " + environnement)
+            if texte_formule.count(r"\(") != texte_formule.count(r"\)"):
+                raise ValueError("Une formule en ligne n'a pas ses délimiteurs LaTeX appariés.")
+            if texte_formule.count(r"\[") != texte_formule.count(r"\]"):
+                raise ValueError("Une formule affichée n'a pas ses délimiteurs LaTeX appariés.")
+
         if len(fiche["erreurs_frequentes"]) < 3:
             raise ValueError("La fiche doit expliquer au moins trois erreurs fréquentes et comment les éviter.")
         for erreur in fiche["erreurs_frequentes"]:
