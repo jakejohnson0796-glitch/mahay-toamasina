@@ -29,6 +29,40 @@
     {% endif %}
   </aside>
 
+  {% set profil = fiche_contenu.get("profil_personnalise", {}) %}
+  <section class="document-revision-section document-revision-personal" aria-labelledby="doc-revision-personal-title">
+    <div class="document-revision-section-head">
+      <span class="document-revision-number" aria-hidden="true">★</span>
+      <div>
+        <h2 id="doc-revision-personal-title">{{ profil.get("titre", "Ta fiche personnalisée") }}</h2>
+        <p>{{ profil.get("mode", "Personnalisation en démarrage") }}</p>
+      </div>
+    </div>
+    <p class="document-revision-body ai-rendered-content" data-rendu>{{ profil.get("message", "Cette copie adapte les priorités à ton historique personnel.") }}</p>
+    {% if profil.get("priorites") %}
+    <div class="document-revision-grid">
+      {% for priorite in profil.get("priorites", []) %}
+      <article class="document-revision-card">
+        <h3 class="ai-rendered-content" data-rendu>{{ priorite.notion }}</h3>
+        <p><strong>{{ priorite.statut }}</strong></p>
+        <p class="ai-rendered-content" data-rendu>{{ priorite.raison }}</p>
+        <div class="document-revision-example"><strong>Prochaine action</strong><p class="ai-rendered-content" data-rendu>{{ priorite.action }}</p></div>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if profil.get("points_forts") %}
+    <p><strong>Acquis déjà confirmés :</strong>
+      {% for notion in profil.get("points_forts", []) %}
+      <span class="ai-rendered-content" data-rendu>{{ notion }}</span>{% if not loop.last %}, {% endif %}
+      {% endfor %}
+    </p>
+    {% endif %}
+    <p><strong>Lecture de tes derniers quiz :</strong> <span class="ai-rendered-content" data-rendu>{{ profil.get("tendance_quiz", "") }}</span></p>
+    <p><strong>Conseil du Tuteur IA :</strong> <span class="ai-rendered-content" data-rendu>{{ profil.get("conseil_tuteur", "") }}</span></p>
+    <p><strong>À faire en premier :</strong> <span class="ai-rendered-content" data-rendu>{{ profil.get("prochaine_action", "") }}</span></p>
+  </section>
+
   <section class="document-revision-section" aria-labelledby="doc-revision-resume-title">
     <div class="document-revision-section-head">
       <span class="document-revision-number">01</span>
