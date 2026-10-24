@@ -323,6 +323,7 @@ def _initialiser_donnees_apres_demarrage() -> None:
             f"{rapport_cercles_scolaires['cibles']} cible(s), "
             f"{rapport_cercles_scolaires['crees']} créé(s), "
             f"{rapport_cercles_scolaires['reactives']} réactivé(s), "
+            f"{rapport_cercles_scolaires['actualises']} mis à jour, "
             f"{rapport_cercles_scolaires['archives']} archivé(s), "
             f"{rapport_cercles_scolaires['preserves']} préservé(s), "
             f"{rapport_cercles_scolaires['existants']} déjà présent(s)."
