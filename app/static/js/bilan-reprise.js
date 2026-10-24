@@ -73,6 +73,10 @@
       activityDocument: "Document consulté",
       activityTuteur: "Tuteur IA",
       activityGame: "Jeu cérébral",
+      activityCircle: "Participation à un cercle",
+      activityJoinedCircle: "Cercle rejoint",
+      activityClass: "Classe virtuelle",
+      activityShared: "Ressource partagée",
       quizScore: "{score}/{total} bonnes réponses · {percent} %",
       quizDone: "Quiz terminé",
       docDetail: "{subject} · consulté",
@@ -161,6 +165,10 @@
       activityDocument: "Tahirin-kevitra nodinihina",
       activityTuteur: "Mpampianatra IA",
       activityGame: "Lalao fanazaran-tsaina",
+      activityCircle: "Fandraisana anjara amin'ny vondrona",
+      activityJoinedCircle: "Vondrona nidirana",
+      activityClass: "Kilasy virtoaly",
+      activityShared: "Loharano nozaraina",
       quizScore: "Valiny marina {score}/{total} · {percent} %",
       quizDone: "Vita ny quiz",
       docDetail: "{subject} · nodinihina",
@@ -337,6 +345,13 @@
         titre = text("activityGame") + (item.theme ? " · " + item.theme : "");
         detail = item.score == null ? text("gameDone") : format(text("gameScore"), { score: item.score });
         badge = item.score == null ? "" : String(item.score) + " %";
+        break;
+      case "collaboration":
+        if (item.action === "cercle") titre = text("activityCircle");
+        else if (item.action === "cercle_rejoint") titre = text("activityJoinedCircle");
+        else if (item.action === "classe") titre = text("activityClass");
+        else if (item.action === "document") titre = text("activityShared");
+        else titre = text("activityCircle");
         break;
       default:
         titre = item.titre || text("activityDocument");
