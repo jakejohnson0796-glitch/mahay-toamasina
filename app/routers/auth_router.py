@@ -213,13 +213,15 @@ def inscription(
         cycle = ""
     else:
         if cycle not in {"college", "lycee", "universite"}:
+            # Anciennes intégrations et formulaires encore ouverts peuvent
+            # poster sans le nouveau champ. On conserve une réponse formulaire
+            # classique avec le message, tout en refusant toujours la création.
             return templates.TemplateResponse(
                 request, "register.html",
                 _contexte_formulaire_inscription(
                     session,
                     "Choisissez votre cycle : collège, lycée ou université.",
                 ),
-                status_code=400,
             )
 
         if cycle == "universite":
