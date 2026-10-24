@@ -173,7 +173,7 @@
           <div class="ai-quiz-manual" data-quiz-manual>
             <div class="ai-field">
               <label for="matiere">Matière</label>
-              <select id="matiere" name="matiere" disabled>
+              <select id="matiere" name="matiere">
                 <option value="">— choisir dans la liste —</option>
                 {% for m in matieres %}
                 <option value="{{ m }}" data-no-translate>{{ m }}</option>
@@ -184,13 +184,13 @@
 
             <div class="ai-field">
               <label for="matiere_libre">Sujet ou module précis (facultatif)</label>
-              <input type="text" id="matiere_libre" name="matiere_libre" maxlength="160" placeholder="Ex. Déterminant d'une matrice" disabled>
+              <input type="text" id="matiere_libre" name="matiere_libre" maxlength="160" placeholder="Ex. Déterminant d'une matrice">
               <p class="ai-field-help">Avec une matière sélectionnée, le quiz reste dans cette matière et cible ce module. Sans matière, le texte devient le sujet principal.</p>
             </div>
 
             <div class="ai-field">
               <label for="difficulte">Difficulté</label>
-              <select id="difficulte" name="difficulte" disabled>
+              <select id="difficulte" name="difficulte">
                 <option value="auto" selected>Automatique selon mes progrès</option>
                 {% for d in difficultes %}
                 <option value="{{ d }}" data-no-translate>{{ d }}</option>
