@@ -607,7 +607,7 @@
     ecrire(KEY_ACTIVITY, maintenant);
     ecrire(KEY_SUMMARY, maintenant);
     ecrire(KEY_SUMMARY_FOR, maintenant);
-    derniereEcritureActivite = maintenant;
+    derniereEcritureActivite = maintenant - ACTIVITY_WRITE_MS;
     supprimerVerrouSiProprietaire(jetonVerrou);
     jetonVerrou = "";
     if (focusAvantOuverture && typeof focusAvantOuverture.focus === "function") {
@@ -643,7 +643,8 @@
       tenterOuvrirBilan(derniere, raison, lireNombre(KEY_SUMMARY));
       return;
     }
-    enregistrerActivite(true);
+    // Un chargement de page n'est pas une activité d'apprentissage. Seules
+    // les interactions réelles actualisent l'horodatage ci-dessous.
   }
 
   function evenementActivite() {
