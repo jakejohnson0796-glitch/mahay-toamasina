@@ -25,6 +25,7 @@ branch_labels = None
 depends_on = None
 
 SOURCE_CARTOGRAPHIE = "https://www.metfp.gov.mg/cartographie"
+SOURCE_REFERENTIELS = "https://www.metfp.gov.mg/formation/ressource"
 
 # Codes stables internes pour normaliser les intitulés affichés par le METFP.
 # Les libellés sont conservés tels qu'ils figurent dans la cartographie autant
@@ -124,12 +125,12 @@ ETABLISSEMENTS = [
     ("LTP ALAROBIA VATOSOLA", "ANALAMANGA", "lycee_technique", "Alarobia Vatosola", ["INDMECANIQUE", "GESTION_COMPTABLE", "BTPCHEF"]),
     ("LTP ANOSIVOLA", "ANALAMANGA", "lycee_technique", None, ["INDSTRUCTURE", "BTPCHEF", "BTPDESSIN"]),
     ("LTP MAHAMASINA", "ANALAMANGA", "lycee_technique", "Mahamasina", ["BTPCHEF", "BTPDESSIN", "BTPCARRELEUR", "BTPMENUISIER", "AGRICULTURE_PLOMBIER"]),
-    ("CNFPPSH", "ANALAMANGA", "centre_formation_specialise", None, ["ELEVAGE_AGENT", "ELEVAGE_TECHNICIEN", "ELEVAGE_PORC", "ELEVAGE_AVICULTEUR", "ELEVAGE_APICULTEUR", "COIFFURE_AIDE", "ENERGIE_PHOTOVOLTAIQUE", "INDSTRUCTURE", "INDTOLIER", "INDELECTRONIQUE", "TEXTILE_COUTURE", "TEXTILE_TAILLEUR", "TEXTILE_VANNERIE", "TEXTILE_TISSERAND"]),
+    ("Centre National de Formation Professionnelle des Personnes en Situation de Handicap (CNFPPSH)", "ANALAMANGA", "centre_formation_specialise", None, ["ELEVAGE_AGENT", "ELEVAGE_TECHNICIEN", "ELEVAGE_PORC", "ELEVAGE_AVICULTEUR", "ELEVAGE_APICULTEUR", "COIFFURE_AIDE", "ENERGIE_PHOTOVOLTAIQUE", "INDSTRUCTURE", "INDTOLIER", "INDELECTRONIQUE", "TEXTILE_COUTURE", "TEXTILE_TAILLEUR", "TEXTILE_VANNERIE", "TEXTILE_TISSERAND"]),
     ("LTP AMBOVOMBE", "ANDROY", "lycee_technique", "Ambovombe", ["AGRICULTURE_AGENT", "ELEVAGE_TECHNICIEN", "INDMECANIQUE", "GESTION_COMPTABLE", "TEXTILE_COUTURE", "TEXTILE_VANNERIE", "BTPCHEF", "BTPTOPGRAPHE", "BTPMENUISIER", "BTPELECTRICIEN", "BTPPOSEUR", "RESTO_RESTAURATEUR", "SOUDURE"]),
     ("LTP TSIHOMBE", "ANDROY", "lycee_technique", "Tsihombe", ["GESTION_COMPTABLE", "BTPCHEF"]),
     ("CFP EJEDA", "ATSIMO ANDREFANA", "centre_formation", "Ejeda", ["INDTOLIER", "BTPMENUISIER", "SOUDURE"]),
     ("LTP ANKAZOABO", "ATSIMO ANDREFANA", "lycee_technique", "Ankazoabo", ["GESTION_COMPTABLE", "BTPCHEF"]),
-    ("CRFPPV MIARY TOLIARA", "ATSIMO ANDREFANA", "centre_formation_specialise", "Miary Toliara", ["TEXTILE_COUTURE", "TEXTILE_TAILLEUR"]),
+    ("Centre Régional de Formation Professionnelle des Personnes Vulnérables (CRFPPV) Miary Toliara", "ATSIMO ANDREFANA", "centre_formation_specialise", "Miary Toliara", ["TEXTILE_COUTURE", "TEXTILE_TAILLEUR"]),
     ("CFPF TOLIARA", "ATSIMO ANDREFANA", "centre_formation_specialise", "Toliara", ["GESTION_COMPTABLE", "TEXTILE_COUTURE", "TEXTILE_BRODERIE", "RESTO_PATISSIER"]),
     ("CFPF FARAFANGANA", "ATSIMO ATSINANANA", "centre_formation_specialise", "Farafangana", ["TEXTILE_COUTURE", "RESTO_CUISINIER"]),
     ("CFP AMPAGNARENA", "ATSIMO ATSINANANA", "centre_formation", "Ampagnarena", ["AGRICULTURE_AGENT", "AGRICULTURE_MARAICHERE", "AGRICULTURE_EXPLOITANT", "AGRICULTURE_JARDINIER", "AGRICULTURE_RIZICULTEUR", "AGRICULTURE_FRUIT", "AGRICULTURE_MECANICIEN_INDUSTRIEL", "AGRICULTURE_PLOMBIER", "AGRICULTURE_CHARIOT", "ELEVAGE_AGENT", "ELEVAGE_TECHNICIEN", "ELEVAGE_PORC", "ELEVAGE_AVICULTEUR", "ELEVAGE_APICULTEUR"]),
@@ -202,7 +203,7 @@ ETABLISSEMENTS.extend([
     ("LTP MIANDRIVAZO", "MENABE", "lycee_technique", "Miandrivazo", ["COIFFURE_AIDE", "GESTION_COMPTABLE", "BTPMENUISIER", "RESTO_PATISSIER", "SOUDURE"]),
     ("CFPF MANANJARY", "VATOVAVY", "centre_formation_specialise", "Mananjary", ["TEXTILE_COUTURE", "TEXTILE_BRODERIE", "RESTO_PATISSIER", "RESTO_RESTAURATEUR", "RESTO_CUISINIER"]),
     ("LTP MANANJARY", "VATOVAVY", "lycee_technique", "Mananjary", ["INDSTRUCTURE", "INDMECANIQUE", "BTPCHEF", "BTPMENUISIER"]),
-    ("CRFPPV MAHAJANGA", "BOENY", "centre_formation_specialise", "Mahajanga", ["AGRICULTURE_MAINTENANCE_EQUIPEMENT", "TEXTILE_COUTURE", "TEXTILE_TAILLEUR"]),
+    ("Centre Régional de Formation Professionnelle des Personnes Vulnérables (CRFPPV) Mahajanga", "BOENY", "centre_formation_specialise", "Mahajanga", ["AGRICULTURE_MAINTENANCE_EQUIPEMENT", "TEXTILE_COUTURE", "TEXTILE_TAILLEUR"]),
     ("CFP FIADANANA", "AMORON'I MANIA", "centre_formation", "Fiadanana", ["AGRICULTURE_AGENT", "ELEVAGE_TECHNICIEN", "BTPCHEF", "BTPCOMMIS", "RESTO_PATISSIER"]),
     ("CFPF FANDRIANA", "AMORON'I MANIA", "centre_formation_specialise", "Fandriana", ["COIFFURE_AIDE", "TEXTILE_COUTURE", "TEXTILE_BRODERIE", "RESTO_PATISSIER", "RESTO_CHARCUTIER"]),
     ("LTP MIARINAVARATRA", "AMORON'I MANIA", "lycee_technique", "Miarinavaratra", ["ELEVAGE_TECHNICIEN", "AGRICULTURE_RIZICULTEUR", "ELEVAGE_AVICULTEUR", "GESTION_COMPTABLE", "BTPCHEF"]),
@@ -302,7 +303,7 @@ def upgrade() -> None:
                     "secteur": secteur or None,
                     "filiere": filiere or None,
                     "metier": metier,
-                    "source": SOURCE_CARTOGRAPHIE,
+                    "source": SOURCE_REFERENTIELS if code in {"IND_TECH_METIER_IMPRESSION", "ENERGIE_PHOTOVOLTAIQUE", "IND_ENERGIE_SOLAIRE", "HOTEL_BARMAN", "HOTEL_FEMME_CHAMBRE", "RESTO_CUISINIER"} else SOURCE_CARTOGRAPHIE,
                     "created": now,
                     "updated": now,
                 },
