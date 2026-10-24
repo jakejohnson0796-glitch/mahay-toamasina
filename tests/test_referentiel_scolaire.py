@@ -260,7 +260,7 @@ def test_demande_professeur_ne_donne_pas_le_role_effectif_professeur():
 
 def test_quiz_cible_reconnait_la_classe_scolaire_sans_basculer_en_l1():
     engine, session = _session()
-    _, niveau, serie = _school_catalogue(session)
+    referentiel, niveau, serie = _school_catalogue(session)
     user = _user(session, niveau_id=niveau.id, option_id=serie.id)
 
     contexte = quiz_router._contexte_scolaire_quiz(user, session)
@@ -268,8 +268,10 @@ def test_quiz_cible_reconnait_la_classe_scolaire_sans_basculer_en_l1():
     assert contexte == {
         "niveau": "Terminale",
         "cycle_education": "lycee",
+        "referentiel_id": referentiel.id,
         "niveau_scolaire_id": niveau.id,
         "option_scolaire_id": serie.id,
+        "etablissement_scolaire_id": None,
     }
     assert quiz_module.valider_parametres(
         "Mathématiques", contexte["niveau"], "Moyen", 5
