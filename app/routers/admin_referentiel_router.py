@@ -12,6 +12,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
+from sqlalchemy import or_
 from sqlmodel import Session, select
 
 from ..database import get_session
