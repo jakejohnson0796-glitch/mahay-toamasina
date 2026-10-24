@@ -109,6 +109,13 @@
     const blocScolaire = document.getElementById("bloc-scolaire");
     const blocCyclesEnseignes = document.getElementById("bloc-cycles-enseignes");
     const champsCyclesEnseignes = Array.from(document.querySelectorAll('input[name="cycles_enseignes"]'));
+    const cyclePrincipalHint = document.getElementById("cycle-principal-hint");
+    let dernierCyclePrincipal = cycleSelect ? cycleSelect.value : "";
+    const nomsCycles = {
+      college: "Collège",
+      lycee: "Lycée",
+      universite: "Université / enseignement supérieur"
+    };
     const progress = document.querySelector("[data-auth-progress]");
     if (!roleSelect || !blocAcademique || !progress) return;
 
@@ -188,12 +195,36 @@
       const estUniversitaire = profilActif && cycleSelect && cycleSelect.value === "universite";
       const estScolaire = profilActif && cycleSelect && ["college", "lycee"].includes(cycleSelect.value);
       const estProfesseur = roleSelect.value === "professeur";
+      const cyclePrincipalActuel = cycleSelect ? cycleSelect.value : "";
+
+      // Quand le cycle principal change, l'ancienne sélection n'est pas
+      // transférée silencieusement vers la liste des cycles supplémentaires.
+      if (dernierCyclePrincipal && dernierCyclePrincipal !== cyclePrincipalActuel) {
+        const ancienCycle = champsCyclesEnseignes.find(function (champ) {
+          return champ.value === dernierCyclePrincipal;
+        });
+        if (ancienCycle) ancienCycle.checked = false;
+      }
+      dernierCyclePrincipal = cyclePrincipalActuel;
 
       blocAcademique.hidden = !profilActif;
       if (blocCyclesEnseignes) blocCyclesEnseignes.hidden = !estProfesseur;
       champsCyclesEnseignes.forEach(function (champ) {
-        champ.disabled = !estProfesseur;
+        const estCyclePrincipal = Boolean(
+          estProfesseur && cyclePrincipalActuel && champ.value === cyclePrincipalActuel
+        );
+        if (estCyclePrincipal) champ.checked = true;
+        champ.disabled = !estProfesseur || estCyclePrincipal;
+        const libelle = champ.closest("label");
+        if (libelle) {
+          libelle.classList.toggle("is-cycle-principal", estCyclePrincipal);
+        }
       });
+      if (cyclePrincipalHint) {
+        cyclePrincipalHint.textContent = nomsCycles[cyclePrincipalActuel]
+          ? "Cycle principal inclus automatiquement : " + nomsCycles[cyclePrincipalActuel] + "."
+          : "Le cycle principal sera inclus automatiquement.";
+      }
       if (cycleSelect) {
         cycleSelect.disabled = !profilActif;
         cycleSelect.required = profilActif;
