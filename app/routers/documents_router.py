@@ -1649,14 +1649,17 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     cycle_quiz = getattr(utilisateur, "cycle_education", None)
     niveau_scolaire_quiz_id = None
     option_scolaire_quiz_id = None
-    if document.portee_academique == "scolaire":
+    portee_document = getattr(document, "portee_academique", "universitaire")
+    document_niveau_scolaire_id = getattr(document, "niveau_scolaire_id", None)
+    document_option_scolaire_id = getattr(document, "option_scolaire_id", None)
+    if portee_document == "scolaire":
         niveau_scolaire_quiz = (
-            session.get(NiveauScolaire, document.niveau_scolaire_id)
-            if document.niveau_scolaire_id else None
+            session.get(NiveauScolaire, document_niveau_scolaire_id)
+            if document_niveau_scolaire_id else None
         )
         option_scolaire_quiz = (
-            session.get(OptionScolaire, document.option_scolaire_id)
-            if document.option_scolaire_id else None
+            session.get(OptionScolaire, document_option_scolaire_id)
+            if document_option_scolaire_id else None
         )
         if (
             not niveau_scolaire_quiz
