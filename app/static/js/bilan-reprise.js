@@ -80,6 +80,7 @@
       activityJoinedCircle: "Cercle rejoint",
       activityClass: "Classe virtuelle",
       activityShared: "Ressource partagée",
+      activityRevision: "Révision effectuée",
       quizScore: "{score}/{total} bonnes réponses · {percent} %",
       quizDone: "Quiz terminé",
       docDetail: "{subject} · téléchargé",
@@ -173,6 +174,7 @@
       activityJoinedCircle: "Vondrona nidirana",
       activityClass: "Kilasy virtoaly",
       activityShared: "Loharano nozaraina",
+      activityRevision: "Famerenana natao",
       quizScore: "Valiny marina {score}/{total} · {percent} %",
       quizDone: "Vita ny quiz",
       docDetail: "{subject} · nalaina",
@@ -355,6 +357,7 @@
         else if (item.action === "cercle_rejoint") titre = text("activityJoinedCircle");
         else if (item.action === "classe") titre = text("activityClass");
         else if (item.action === "document") titre = text("activityShared");
+        else if (item.action === "revision") titre = text("activityRevision");
         else titre = text("activityCircle");
         break;
       default:
