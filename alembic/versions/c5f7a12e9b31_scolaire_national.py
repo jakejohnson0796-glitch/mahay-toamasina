@@ -183,7 +183,9 @@ def _seed_catalogue_scolaire(conn):
         "1ERE_A": base_men + "RAPS-1%C3%A8re-A_2024_2025.pdf",
         "1ERE_C": base_men + "RAPS-1%C3%A8re-C_2024_2025.pdf",
         "1ERE_D": base_men + "RAPS-1%C3%A8re-D_2024_2025.pdf",
+        "1ERE_L": base_men + "RAPE-T11-L_2024_2025.pdf",
         "TERM_A": base_men + "RAPS-Tle-A_2024_2025.pdf",
+        "TERM_C": base_men + "RAPS-Tle-C_2024_2025.pdf",
         "TERM_D": base_men + "RAPS-Tle-D_2024_2025.pdf",
         "1ERE_S": base_men + "RAPE-T11-S_2024_2025.pdf",
         "TERM_S": base_men + "RAPE-T12-S_2024_2025.pdf",
@@ -312,6 +314,26 @@ def _seed_catalogue_scolaire(conn):
             "TERM", code_matiere, sources_programmes["TERM_D"],
             code_serie="D", statut="verifie",
         )
+
+    # Quelques matières de séries supplémentaires sont publiées seulement
+    # lorsque le PDF officiel les identifie directement. Les autres matières
+    # de ces séries restent en attente de recoupement et ne sont pas affichées.
+    associer_matiere(
+        "1ERE", "MATHEMATIQUES", sources_programmes["1ERE_A"],
+        code_serie="A", statut="verifie",
+    )
+    associer_matiere(
+        "1ERE", "MATHEMATIQUES", sources_programmes["1ERE_C"],
+        code_serie="C", statut="verifie",
+    )
+    associer_matiere(
+        "TERM", "PHILOSOPHIE", sources_programmes["TERM_C"],
+        code_serie="C", statut="verifie",
+    )
+    associer_matiere(
+        "1ERE", "FRANCAIS", sources_programmes["1ERE_L"],
+        code_serie="L", statut="verifie",
+    )
 
     # Sommaires RAPE 2024-2025 de Première/Terminale S et OSE. Les matières
     # optionnelles nouvelles ne sont pas propagées aux séries A/C/D.
