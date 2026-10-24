@@ -591,6 +591,42 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
       <p class="stat-label" style="margin:0.35rem 0 0;">Astuce : tu peux combiner le mot-clé et le niveau, par exemple « finance L3 » ou « droit doctorat 2 ».</p>
     </div>
     <div>
+      <label for="recherche_portee_academique">Parcours scolaire / universitaire</label>
+      <select id="recherche_portee_academique" name="portee_academique">
+        <option value="" {% if not recherche_portee_academique %}selected{% endif %}>Tous les cercles</option>
+        <option value="scolaire" {% if recherche_portee_academique == "scolaire" %}selected{% endif %}>Collège / lycée</option>
+        <option value="universitaire" {% if recherche_portee_academique == "universitaire" %}selected{% endif %}>Université</option>
+        <option value="transversal" {% if recherche_portee_academique == "transversal" %}selected{% endif %}>Transversal / libre</option>
+      </select>
+    </div>
+    <div>
+      <label for="recherche_niveau_scolaire_id">Classe scolaire</label>
+      <select id="recherche_niveau_scolaire_id" name="niveau_scolaire_id">
+        <option value="">Toutes les classes</option>
+        {% for niveau_scolaire in niveaux_scolaires %}
+        <option value="{{ niveau_scolaire.id }}" {% if recherche_niveau_scolaire_id == niveau_scolaire.id %}selected{% endif %}>{{ niveau_scolaire.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="recherche_option_scolaire_id">Série / option</label>
+      <select id="recherche_option_scolaire_id" name="option_scolaire_id">
+        <option value="">Toutes les séries/options</option>
+        {% for option_scolaire in options_scolaires %}
+        <option value="{{ option_scolaire.id }}" {% if recherche_option_scolaire_id == option_scolaire.id %}selected{% endif %}>{{ option_scolaire.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="recherche_etablissement_scolaire_id">Établissement</label>
+      <select id="recherche_etablissement_scolaire_id" name="etablissement_scolaire_id">
+        <option value="">Tous les établissements</option>
+        {% for etablissement in etablissements_scolaires %}
+        <option value="{{ etablissement.id }}" {% if recherche_etablissement_scolaire_id == etablissement.id %}selected{% endif %}>{{ etablissement.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
       <label for="recherche_domaine_id">Domaine</label>
       <select id="recherche_domaine_id" name="domaine_id">
         <option value="">Tous les domaines</option>
@@ -635,7 +671,7 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
     {% endif %}
     <div class="actions-recherche-cercles">
       <button class="bouton bouton-primaire" type="submit">Rechercher</button>
-      {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_disponibles %}
+      {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_portee_academique or recherche_niveau_scolaire_id or recherche_option_scolaire_id or recherche_etablissement_scolaire_id or recherche_disponibles %}
       <a class="bouton bouton-secondaire" href="/cercles">Réinitialiser</a>
       {% endif %}
     </div>
@@ -647,6 +683,12 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
   <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Choisis un niveau valide (Licence, Master ou Doctorat).</div>{% endif %}
+  {% if request.query_params.get("erreur") == "classe_scolaire_requise" %}<div class="erreur">Choisis le cycle collège/lycée et une classe.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "classe_scolaire_invalide" %}<div class="erreur">La classe sélectionnée n'est pas disponible dans le référentiel vérifié.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "option_scolaire_invalide" %}<div class="erreur">La série ou option ne correspond pas à la classe choisie.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "etablissement_scolaire_invalide" %}<div class="erreur">L'établissement choisi n'est pas dans le catalogue vérifié.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "cible_scolaire_incoherente" %}<div class="erreur">Un cercle scolaire ne peut pas avoir de niveau universitaire en même temps.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "portee_invalide" %}<div class="erreur">Choisis un type de cercle valide.</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_requis" %}<div class="erreur">Pour créer un cercle lié à une mention ou à un parcours, choisis aussi le niveau.</div>{% endif %}
   {% if request.query_params.get("erreur") == "mention_ou_parcours_requis" %}<div class="erreur">Choisis une mention ou un parcours pour le niveau sélectionné, ou efface le niveau pour créer un groupe libre.</div>{% endif %}
   {% if request.query_params.get("erreur") == "parcours_hors_mention" %}<div class="erreur">Le parcours choisi ne correspond pas à la mention sélectionnée. Choisis un parcours de cette mention.</div>{% endif %}
@@ -662,8 +704,15 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
     <input type="text" id="nom" name="nom" required placeholder="ex: Revision Droit civil S3">
 
     <label for="description">Description (facultatif)</label>
-    <input type="text" id="description" name="description" placeholder="ex: Prep du partiel de janvier">
+    <input type="text" id="description" name="description" placeholder="ex: Préparation des devoirs et révisions">
 
+    <label for="creation_portee_academique">Type de cercle</label>
+    <select id="creation_portee_academique" name="portee_academique">
+      <option value="universitaire" selected>Université / enseignement supérieur</option>
+      <option value="scolaire">Collège / lycée</option>
+    </select>
+
+    <div id="creation-bloc-universitaire" data-university-scope>
     <label for="creation_mention_id">Mention (facultative pour un parcours ; à renseigner pour un cercle de tronc commun)</label>
     <select id="creation_mention_id" name="mention_id">
       <option value="">— aucune / groupe libre —</option>
@@ -688,8 +737,31 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
       Aucun parcours specifique a ce niveau pour cette mention : ce sera un cercle de tronc commun.
     </p>
 
-    <label for="raison">Raison (obligatoire pour toute demande de cercle national)</label>
-    <textarea id="raison" name="raison" rows="2" placeholder="ex: Plusieurs etudiants de cette filiere et ce niveau, dans differentes universites, souhaitent un espace commun pour partager cours et revisions."></textarea>
+    </div>
+    <div id="creation-bloc-scolaire" data-school-scope hidden>
+      <label for="creation_cycle_scolaire">Cycle scolaire</label>
+      <select id="creation_cycle_scolaire" name="cycle_scolaire" disabled>
+        <option value="">Choisissez collège ou lycée</option>
+        <option value="college">Collège · 6e à 3e</option>
+        <option value="lycee">Lycée · Seconde à Terminale</option>
+      </select>
+      <label for="creation_niveau_scolaire_id">Classe</label>
+      <select id="creation_niveau_scolaire_id" name="niveau_scolaire_id" disabled>
+        <option value="">Choisissez d’abord le cycle scolaire</option>
+      </select>
+      <label for="creation_option_scolaire_id">Série / option (facultatif)</label>
+      <select id="creation_option_scolaire_id" name="option_scolaire_id" disabled>
+        <option value="">Aucune série / option précisée</option>
+      </select>
+      <label for="creation_etablissement_scolaire_id">Établissement (facultatif)</label>
+      <select id="creation_etablissement_scolaire_id" name="etablissement_scolaire_id" disabled>
+        <option value="">Cercle national, sans établissement particulier</option>
+      </select>
+      <p class="stat-label">Sans établissement précis, le cercle est national pour la classe ou l’option. Avec un établissement vérifié, le ciblage est local.</p>
+    </div>
+
+    <label for="raison" id="creation-label-raison">Raison (obligatoire pour toute demande de cercle national universitaire)</label>
+    <textarea id="raison" name="raison" rows="2" placeholder="Explique pourquoi cet espace est utile pour les révisions et le partage de cours."></textarea>
 
     <button class="bouton bouton-primaire bouton-form" type="submit">Creer le cercle</button>
   </form>
@@ -756,7 +828,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
           ] %}
           {% set image_cercle = images_cercle[loop.index0 % images_cercle|length] %}
           <img loading="lazy" src="{{ image_cercle.url }}" alt="{{ image_cercle.alt }}">
-          <span class="cercle-card-premium-type">{% if info.type_cercle == "parcours" %}Parcours national{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}Référentiel à vérifier{% endif %}</span>
+          <span class="cercle-card-premium-type">{% if info.type_cercle == "scolaire" %}Cercle collège / lycée{% elif info.type_cercle == "parcours" %}Parcours national{% elif info.type_cercle == "tronc_commun" %}Tronc commun{% elif info.type_cercle == "libre" %}Groupe libre{% else %}Référentiel à vérifier{% endif %}</span>
         </div>
         <div class="cercle-card-premium-identite-texte">
           <div class="carte-claire-corps">
@@ -779,6 +851,10 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
           {% if info.mention %}<span aria-hidden="true"> · </span><span>{{ info.mention.nom }}</span>{% endif %}
           <span aria-hidden="true"> · </span><span>Tronc commun</span>
           <span class="puce-niveau">{{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) }}</span>
+          {% elif info.type_cercle == "scolaire" %}
+          {% if info.niveau_scolaire %}<span class="puce-niveau">{{ info.niveau_scolaire.libelle }}</span>{% endif %}
+          {% if info.option_scolaire %}<span>{{ info.option_scolaire.libelle }}</span>{% endif %}
+          {% if info.etablissement_scolaire %}<span>{{ info.etablissement_scolaire.nom }}</span>{% else %}<span>National</span>{% endif %}
           {% elif info.type_cercle == "libre" %}
           <span>Groupe libre</span>
           {% else %}
@@ -806,7 +882,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
     </div>
   </article>
   {% else %}
-  {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_disponibles %}
+  {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_portee_academique or recherche_niveau_scolaire_id or recherche_option_scolaire_id or recherche_etablissement_scolaire_id or recherche_disponibles %}
   {{ etat_vide_constellation(titre="Aucun résultat", texte="Aucun cercle ne correspond à ces critères. Modifie un filtre ou réinitialise la recherche.") }}
   {% else %}
   {{ etat_vide_constellation(titre="Aucun cercle pour le moment", texte="Les cercles apparaissent ici dès qu’ils sont actifs.") }}
