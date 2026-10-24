@@ -1,0 +1,610 @@
+/* Bilan de reprise — un tableau de bord de poche, lisible en clair/sombre. */
+.bilan-reprise-fond[hidden] { display: none !important; }
+
+.bilan-reprise-fond {
+  position: fixed;
+  z-index: 12000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(.5rem, 2.2vw, 1.4rem);
+  color: var(--content-text, #173b38);
+}
+
+.bilan-reprise-voile {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 26, 25, .68);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  animation: bilan-reprise-fondu .2s ease both;
+}
+
+.bilan-reprise-dialogue {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(1060px, 100%);
+  max-height: min(92dvh, 900px);
+  overflow: hidden;
+  border: 1px solid var(--content-border, #d9e6e1);
+  border-radius: 25px;
+  background: var(--content-surface, #fff);
+  color: var(--content-text, #173b38);
+  box-shadow: 0 28px 100px rgba(0, 20, 18, .34);
+  animation: bilan-reprise-entree .28s cubic-bezier(.2,.75,.25,1) both;
+  outline: none;
+}
+
+.bilan-reprise-entete {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: 1.1rem clamp(1rem, 2.5vw, 1.8rem);
+  border-bottom: 1px solid var(--content-border, #d9e6e1);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(43, 147, 127, .13), transparent 22rem),
+    var(--content-surface, #fff);
+}
+
+.bilan-reprise-marque {
+  display: grid;
+  width: 2.85rem;
+  height: 2.85rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(43, 147, 127, .22);
+  border-radius: 15px;
+  background: #e1f5ee;
+  color: #11675d;
+  font-size: 1.3rem;
+}
+
+.bilan-reprise-entete-texte { min-width: 0; flex: 1; }
+
+.bilan-reprise-surtitre {
+  display: block;
+  color: #247d70;
+  font-size: .63rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  line-height: 1.45;
+}
+
+.bilan-reprise-entete h2 {
+  margin: .15rem 0 0;
+  color: var(--content-text, #173b38);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 850;
+  letter-spacing: -.045em;
+  line-height: 1.2;
+}
+
+.bilan-reprise-fermer {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--content-border, #d9e6e1);
+  border-radius: 12px;
+  background: var(--content-bg, #f5f9f7);
+  color: var(--content-text-muted, #60756f);
+  font: inherit;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: background .15s ease, transform .15s ease;
+}
+
+.bilan-reprise-fermer:hover {
+  background: rgba(43, 147, 127, .12);
+  transform: rotate(5deg);
+}
+
+.bilan-reprise-corps {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(.9rem, 2.2vw, 1.45rem) clamp(.9rem, 2.4vw, 1.7rem) 1rem;
+  scrollbar-gutter: stable;
+}
+
+.bilan-reprise-intro {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .91rem;
+  line-height: 1.65;
+}
+
+.bilan-reprise-periode {
+  margin: .45rem 0 1rem;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .69rem;
+  font-weight: 700;
+}
+
+.bilan-reprise-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .65rem;
+  margin: 0 0 1.15rem;
+}
+
+.bilan-reprise-stat {
+  min-width: 0;
+  padding: .8rem .9rem;
+  border: 1px solid var(--content-border, #d9e6e1);
+  border-radius: 15px;
+  background: linear-gradient(140deg, var(--content-surface, #fff), var(--content-bg, #f5f9f7));
+}
+
+.bilan-reprise-stat-valeur {
+  display: block;
+  color: var(--content-text, #173b38);
+  font-size: clamp(1.3rem, 2.6vw, 1.8rem);
+  font-weight: 900;
+  letter-spacing: -.055em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bilan-reprise-stat-libelle {
+  display: block;
+  margin-top: .4rem;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .68rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.bilan-reprise-grille {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: .8rem;
+}
+
+.bilan-reprise-section {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--content-border, #d9e6e1);
+  border-radius: 18px;
+  background: var(--content-surface, #fff);
+}
+
+.bilan-reprise-section-entete {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  margin-bottom: .85rem;
+}
+
+.bilan-reprise-numero {
+  display: grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(34, 130, 115, .11);
+  color: #20796d;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .65rem;
+  font-weight: 800;
+}
+
+.bilan-reprise-section h3,
+.bilan-reprise-aides h3 {
+  margin: 0;
+  color: var(--content-text, #173b38);
+  font-size: .94rem;
+  font-weight: 850;
+  letter-spacing: -.025em;
+  line-height: 1.35;
+}
+
+.bilan-reprise-section-entete p {
+  margin: .18rem 0 0;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .68rem;
+  line-height: 1.45;
+}
+
+.bilan-reprise-liste {
+  display: grid;
+  align-content: start;
+  gap: .55rem;
+  min-width: 0;
+}
+
+.bilan-reprise-element {
+  min-width: 0;
+  padding: .7rem .75rem;
+  border: 1px solid var(--content-border, #d9e6e1);
+  border-radius: 12px;
+  background: var(--content-bg, #f5f9f7);
+}
+
+.bilan-reprise-element-entete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .55rem;
+}
+
+.bilan-reprise-element strong {
+  display: block;
+  min-width: 0;
+  color: var(--content-text, #173b38);
+  font-size: .75rem;
+  font-weight: 800;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.bilan-reprise-element p {
+  margin: .28rem 0 0;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .68rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.bilan-reprise-element small {
+  display: block;
+  margin-top: .35rem;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .61rem;
+  line-height: 1.4;
+}
+
+.bilan-reprise-etat {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  max-width: 48%;
+  padding: .24rem .42rem;
+  border-radius: 999px;
+  background: rgba(34, 130, 115, .12);
+  color: #1a7468;
+  font-size: .58rem;
+  font-weight: 850;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.bilan-reprise-etat[data-etat="a_renforcer"],
+.bilan-reprise-etat[data-etat="en_consolidation"] {
+  background: rgba(210, 151, 44, .15);
+  color: #8a5d0a;
+}
+
+.bilan-reprise-etat[data-etat="solide_a_confirmer"] {
+  background: rgba(93, 113, 195, .13);
+  color: #4e5eaa;
+}
+
+.bilan-reprise-vide {
+  padding: .85rem;
+  border: 1px dashed var(--content-border, #d9e6e1);
+  border-radius: 12px;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .72rem;
+  line-height: 1.6;
+}
+
+.bilan-reprise-mission {
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(221, 183, 101, .16), transparent 19rem),
+    var(--content-surface, #fff);
+}
+
+.bilan-reprise-mission-carte {
+  padding: .9rem;
+  border: 1px solid rgba(39, 139, 123, .24);
+  border-radius: 14px;
+  background: linear-gradient(140deg, rgba(43, 147, 127, .09), rgba(43, 147, 127, .025));
+}
+
+.bilan-reprise-mission-carte h4 {
+  margin: 0;
+  color: var(--content-text, #173b38);
+  font-size: .9rem;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.bilan-reprise-mission-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: .5rem 0;
+}
+
+.bilan-reprise-mission-meta span {
+  display: inline-flex;
+  padding: .25rem .45rem;
+  border: 1px solid var(--content-border, #d9e6e1);
+  border-radius: 999px;
+  background: var(--content-surface, #fff);
+  color: var(--content-text-muted, #5b706a);
+  font-size: .6rem;
+  font-weight: 800;
+}
+
+.bilan-reprise-mission-carte p {
+  margin: .4rem 0 0;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .72rem;
+  line-height: 1.6;
+}
+
+.bilan-reprise-aides {
+  margin-top: .85rem;
+  padding: 1rem;
+  border: 1px solid var(--content-border, #d9e6e1);
+  border-radius: 18px;
+  background: var(--content-bg, #f5f9f7);
+}
+
+.bilan-reprise-aides-copy {
+  margin-bottom: .75rem;
+}
+
+.bilan-reprise-aides-copy .bilan-reprise-surtitre {
+  margin-bottom: .25rem;
+}
+
+.bilan-reprise-aides-copy p {
+  margin: .25rem 0 0;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .7rem;
+  line-height: 1.5;
+}
+
+.bilan-reprise-outils {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .55rem;
+}
+
+.bilan-reprise-outil {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .35rem;
+  padding: .7rem .75rem;
+  border: 1px solid var(--content-border, #d9e6e1);
+  border-radius: 12px;
+  background: var(--content-surface, #fff);
+  color: var(--content-text, #173b38);
+  text-decoration: none;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+
+.bilan-reprise-outil strong {
+  font-size: .7rem;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.bilan-reprise-outil span {
+  color: var(--content-text-muted, #5b706a);
+  font-size: .63rem;
+  line-height: 1.5;
+}
+
+.bilan-reprise-outil:hover,
+.bilan-reprise-outil:focus-visible {
+  border-color: #4aab9b;
+  box-shadow: 0 7px 18px rgba(24, 101, 91, .08);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.bilan-reprise-pied {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .7rem;
+  margin-top: .9rem;
+  padding-top: .9rem;
+  border-top: 1px solid var(--content-border, #d9e6e1);
+}
+
+.bilan-reprise-pied p {
+  flex: 1 1 290px;
+  margin: 0;
+  color: var(--content-text-muted, #5b706a);
+  font-size: .68rem;
+  line-height: 1.55;
+}
+
+.bilan-reprise-bouton-principal,
+.bilan-reprise-bouton-secondaire {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  min-height: 2.7rem;
+  padding: .72rem .95rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 850;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bilan-reprise-bouton-principal {
+  background: linear-gradient(120deg, #126d64, #238b7a);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(18, 109, 100, .2);
+}
+
+.bilan-reprise-bouton-principal:hover {
+  color: #fff;
+  filter: brightness(1.06);
+  text-decoration: none;
+  box-shadow: 0 10px 23px rgba(18, 109, 100, .25);
+}
+
+.bilan-reprise-bouton-secondaire {
+  border-color: var(--content-border, #d9e6e1);
+  background: var(--content-surface, #fff);
+  color: var(--content-text-muted, #5b706a);
+}
+
+.bilan-reprise-bouton-secondaire:hover {
+  color: var(--content-text, #173b38);
+  border-color: #4aab9b;
+}
+
+.bilan-reprise-fermer:focus-visible,
+.bilan-reprise-bouton-principal:focus-visible,
+.bilan-reprise-bouton-secondaire:focus-visible,
+.bilan-reprise-outil:focus-visible {
+  outline: 3px solid rgba(49, 159, 142, .34);
+  outline-offset: 3px;
+}
+
+body.bilan-reprise-ouvert { overflow: hidden; }
+
+html[data-theme="sombre"] .bilan-reprise-dialogue {
+  --content-surface: #172c29;
+  --content-bg: #1c3430;
+  --content-text: #eff8f4;
+  --content-text-muted: #c0d1ca;
+  --content-border: #33514a;
+  background: #172c29;
+  color: #eff8f4;
+}
+
+html[data-theme="sombre"] .bilan-reprise-entete {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(70, 175, 154, .16), transparent 22rem),
+    #172c29;
+}
+
+html[data-theme="sombre"] .bilan-reprise-surtitre,
+html[data-theme="sombre"] .bilan-reprise-numero {
+  color: #9cddd0;
+}
+
+html[data-theme="sombre"] .bilan-reprise-marque {
+  background: #244c43;
+  border-color: #35675c;
+  color: #b1ede0;
+}
+
+html[data-theme="sombre"] .bilan-reprise-fermer,
+html[data-theme="sombre"] .bilan-reprise-stat,
+html[data-theme="sombre"] .bilan-reprise-section,
+html[data-theme="sombre"] .bilan-reprise-element,
+html[data-theme="sombre"] .bilan-reprise-aides,
+html[data-theme="sombre"] .bilan-reprise-outil,
+html[data-theme="sombre"] .bilan-reprise-bouton-secondaire {
+  background-color: #1c3430;
+  color: #eff8f4;
+  border-color: #33514a;
+}
+
+html[data-theme="sombre"] .bilan-reprise-stat,
+html[data-theme="sombre"] .bilan-reprise-mission-carte {
+  background: linear-gradient(140deg, #203d37, #192f2b);
+}
+
+html[data-theme="sombre"] .bilan-reprise-numero {
+  background: #254a41;
+}
+
+html[data-theme="sombre"] .bilan-reprise-etat {
+  background: rgba(78, 170, 150, .18);
+  color: #b4eee0;
+}
+
+html[data-theme="sombre"] .bilan-reprise-etat[data-etat="a_renforcer"],
+html[data-theme="sombre"] .bilan-reprise-etat[data-etat="en_consolidation"] {
+  background: rgba(224, 172, 77, .18);
+  color: #f3d49a;
+}
+
+html[data-theme="sombre"] .bilan-reprise-etat[data-etat="solide_a_confirmer"] {
+  background: rgba(142, 147, 235, .2);
+  color: #d1d3ff;
+}
+
+html[data-theme="sombre"] .bilan-reprise-mission-carte {
+  border-color: #3d7467;
+}
+
+html[data-theme="sombre"] .bilan-reprise-mission-meta span {
+  background: #1a302c;
+  color: #c0d1ca;
+  border-color: #33514a;
+}
+
+html[data-theme="sombre"] .bilan-reprise-bouton-principal {
+  background: linear-gradient(120deg, #8ed8ce, #b1e9dc);
+  color: #15352f;
+}
+
+@keyframes bilan-reprise-fondu {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bilan-reprise-entree {
+  from { opacity: 0; transform: translateY(14px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 780px) {
+  .bilan-reprise-dialogue {
+    width: min(680px, 100%);
+    max-height: 95dvh;
+    border-radius: 20px;
+  }
+
+  .bilan-reprise-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bilan-reprise-grille { grid-template-columns: minmax(0, 1fr); }
+  .bilan-reprise-outils { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .bilan-reprise-fond { padding: .35rem; align-items: end; }
+  .bilan-reprise-dialogue { max-height: 97dvh; border-radius: 19px 19px 14px 14px; }
+  .bilan-reprise-entete { padding: .8rem .8rem; gap: .65rem; }
+  .bilan-reprise-marque { width: 2.35rem; height: 2.35rem; border-radius: 12px; }
+  .bilan-reprise-entete h2 { font-size: 1.18rem; }
+  .bilan-reprise-fermer { width: 2.25rem; height: 2.25rem; }
+  .bilan-reprise-corps { padding: .75rem .75rem .85rem; }
+  .bilan-reprise-intro { font-size: .8rem; }
+  .bilan-reprise-stat { padding: .7rem; border-radius: 12px; }
+  .bilan-reprise-stat-valeur { font-size: 1.45rem; }
+  .bilan-reprise-section { padding: .8rem; border-radius: 15px; }
+  .bilan-reprise-pied { align-items: stretch; flex-direction: column; }
+  .bilan-reprise-pied p { flex-basis: auto; }
+  .bilan-reprise-bouton-principal,
+  .bilan-reprise-bouton-secondaire { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bilan-reprise-voile,
+  .bilan-reprise-dialogue,
+  .bilan-reprise-fermer,
+  .bilan-reprise-outil {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .bilan-reprise-outil:hover,
+  .bilan-reprise-fermer:hover {
+    transform: none !important;
+  }
+}
