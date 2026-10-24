@@ -886,8 +886,15 @@
     matiere: document.getElementById("matiere"),
     type: document.getElementById("type_document"),
     annee: document.getElementById("annee"),
-    filiere: document.getElementById("filiere_id")
+    portee: document.getElementById("portee_academique"),
+    filiere: document.getElementById("filiere_id"),
+    cycleScolaire: document.getElementById("cycle_scolaire"),
+    niveauScolaire: document.getElementById("niveau_scolaire_id"),
+    optionScolaire: document.getElementById("option_scolaire_id"),
+    etablissementScolaire: document.getElementById("etablissement_scolaire_id")
   };
+  const blocFiliere = document.getElementById("bloc-filiere-universitaire");
+  const blocScolaire = document.getElementById("bloc-cible-scolaire");
 
   const resume = {
     titre: document.getElementById("resume-titre"),
@@ -930,14 +937,23 @@
 
   function messageErreur() {
     const erreurs = [];
+    const scolaire = valeur(fields.portee) === "scolaire";
     const auto = Boolean(classificationAuto && classificationAuto.checked);
     const fichiers = fichiersSelectionnes();
-    if (!auto) {
+
+    if (scolaire && auto) {
+      erreurs.push("la détection automatique n'est disponible que pour les documents universitaires");
+    } else if (!auto) {
       if (!valeur(fields.titre)) erreurs.push("ajoutez un titre");
       if (!valeur(fields.matiere)) erreurs.push("indiquez la matière");
       if (!valeur(fields.annee)) erreurs.push("indiquez l'année");
       if (!valeur(fields.type)) erreurs.push("choisissez le type de document");
-      if (!valeur(fields.filiere)) erreurs.push("choisissez une filière");
+      if (scolaire) {
+        if (!valeur(fields.cycleScolaire)) erreurs.push("choisissez le cycle scolaire");
+        if (!valeur(fields.niveauScolaire)) erreurs.push("choisissez la classe");
+      } else if (!valeur(fields.filiere)) {
+        erreurs.push("choisissez une filière universitaire");
+      }
     } else if (detectionEnCours && fichiers.length <= 1) {
       erreurs.push("attendez la fin de la détection automatique");
     }
@@ -947,8 +963,10 @@
       return erreurs;
     }
     if (fichiers.length > 5) erreurs.push("sélectionnez au maximum 5 fichiers par envoi");
-    if (fichiers.length > 1 && !auto) {
-      erreurs.push("activez la détection automatique pour classer chaque fichier séparément");
+    if (fichiers.length > 1 && (!auto || scolaire)) {
+      erreurs.push(scolaire
+        ? "envoyez un document scolaire à la fois"
+        : "activez la détection automatique pour classer chaque fichier séparément");
     }
     fichiers.forEach(function (fichier) {
       const ext = (fichier.name || "").split(".").pop().toLowerCase();
@@ -962,8 +980,19 @@
     resume.matiere.textContent = valeur(fields.matiere) || "—";
     resume.type.textContent = LABELS[fields.type.value] || "—";
     resume.annee.textContent = valeur(fields.annee) || "—";
-    const option = fields.filiere && fields.filiere.selectedOptions ? fields.filiere.selectedOptions[0] : null;
-    resume.filiere.textContent = option && valeur(fields.filiere) ? option.textContent : "—";
+    if (valeur(fields.portee) === "scolaire") {
+      const cycleOption = fields.cycleScolaire && fields.cycleScolaire.selectedOptions ? fields.cycleScolaire.selectedOptions[0] : null;
+      const classeOption = fields.niveauScolaire && fields.niveauScolaire.selectedOptions ? fields.niveauScolaire.selectedOptions[0] : null;
+      const serieOption = fields.optionScolaire && fields.optionScolaire.selectedOptions ? fields.optionScolaire.selectedOptions[0] : null;
+      resume.filiere.textContent = [
+        cycleOption && valeur(fields.cycleScolaire) ? cycleOption.textContent : "",
+        classeOption && valeur(fields.niveauScolaire) ? classeOption.textContent : "",
+        serieOption && valeur(fields.optionScolaire) ? serieOption.textContent : ""
+      ].filter(Boolean).join(" · ") || "—";
+    } else {
+      const option = fields.filiere && fields.filiere.selectedOptions ? fields.filiere.selectedOptions[0] : null;
+      resume.filiere.textContent = option && valeur(fields.filiere) ? option.textContent : "—";
+    }
 
     const fichiers = fichiersSelectionnes();
     if (!fichiers.length) {
@@ -1005,12 +1034,38 @@
     return ok;
   }
   function appliquerModeDetectionAuto() {
-    const auto = Boolean(classificationAuto && classificationAuto.checked);
-    [fields.titre, fields.matiere, fields.annee, fields.type, fields.filiere].forEach(function (field) {
+    const scolaire = valeur(fields.portee) === "scolaire";
+    if (classificationAuto) {
+      classificationAuto.disabled = scolaire;
+      if (scolaire) classificationAuto.checked = false;
+    }
+    const auto = Boolean(classificationAuto && classificationAuto.checked && !scolaire);
+
+    [fields.titre, fields.matiere, fields.annee, fields.type].forEach(function (field) {
       if (!field) return;
-      if (auto) field.removeAttribute("required");
-      else field.setAttribute("required", "required");
+      field.required = !auto;
     });
+    if (fields.filiere) fields.filiere.required = !auto && !scolaire;
+    if (fields.cycleScolaire) {
+      fields.cycleScolaire.required = scolaire;
+      fields.cycleScolaire.disabled = !scolaire;
+    }
+    if (fields.niveauScolaire) fields.niveauScolaire.required = scolaire;
+    if (fields.optionScolaire) fields.optionScolaire.required = false;
+    if (fields.etablissementScolaire) fields.etablissementScolaire.required = false;
+
+    if (blocFiliere) blocFiliere.hidden = scolaire;
+    if (blocScolaire) blocScolaire.hidden = !scolaire;
+
+    // Les métadonnées scolaires sont validées à la main pour éviter qu'un
+    // classifieur universitaire ne produise une fausse filière scolaire.
+    if (input) {
+      input.multiple = !scolaire;
+      if (scolaire && input.files && input.files.length > 1) {
+        input.value = "";
+        setDetection("Le dépôt scolaire se fait un document à la fois pour garantir son bon classement.", "warning");
+      }
+    }
     if (classificationAuto) classificationAuto.setAttribute("aria-checked", String(auto));
   }
   function remplirDetection(d) {
@@ -1023,6 +1078,12 @@
   }
   async function detecterFichier() {
     const version = ++detectionVersion;
+    if (valeur(fields.portee) === "scolaire") {
+      detectionEnCours = false;
+      setDetection("Complétez manuellement la classe et, si disponible, la série ou l’option scolaire.", "warning");
+      maj();
+      return;
+    }
     const fichiers = fichiersSelectionnes();
     if (fichiers.length > 1) {
       detectionEnCours = false;
@@ -1106,6 +1167,20 @@
     field.addEventListener("input", maj);
     field.addEventListener("change", maj);
   });
+  if (fields.portee) {
+    fields.portee.addEventListener("change", function () {
+      detectionVersion++;
+      detectionEnCours = false;
+      appliquerModeDetectionAuto();
+      setDetection(
+        valeur(fields.portee) === "scolaire"
+          ? "Pour les documents scolaires, choisissez le cycle et la classe ; la détection automatique universitaire est désactivée."
+          : "",
+        valeur(fields.portee) === "scolaire" ? "warning" : ""
+      );
+      maj();
+    });
+  }
   // Empêche le navigateur d'ouvrir un PDF/une image en remplacement de la page
   // lorsqu'un fichier est déposé en dehors de la zone prévue. Les glisser-déposer
   // de texte ou d'autres éléments ne sont pas interceptés.
