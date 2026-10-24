@@ -1,11 +1,13 @@
 """Non-regression tests for the secondary-school referential and circle targeting."""
 from sqlalchemy import event
+import pytest
 from sqlalchemy.exc import IntegrityError
 from types import SimpleNamespace
 from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import (
     CercleEtude,
+    CycleEnseigne,
     Document,
     MatiereScolaire,
     NiveauScolaire,
@@ -613,5 +615,54 @@ def test_document_scolaire_est_valide_sans_filiere_universitaire():
     assert document.id is not None
     assert document.filiere_id is None
     assert document.niveau_scolaire_id == niveau.id
+    session.close()
+    engine.dispose()
+
+
+def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automatique():
+    engine, session = _session()
+    user = Utilisateur(
+        nom="Professeur multi-cycle",
+        telephone="0340000098",
+        mot_de_passe_hash="hash",
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="professeur",
+        cycle_education="college",
+        statut_verification_enseignant="en_attente",
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    session.add_all([
+        CycleEnseigne(utilisateur_id=user.id, cycle_education="college"),
+        CycleEnseigne(utilisateur_id=user.id, cycle_education="lycee"),
+        CycleEnseigne(utilisateur_id=user.id, cycle_education="universite"),
+    ])
+    session.commit()
+
+    cycles = session.exec(
+        select(CycleEnseigne).where(CycleEnseigne.utilisateur_id == user.id)
+    ).all()
+    assert {row.cycle_education for row in cycles} == {
+        "college", "lycee", "universite"
+    }
+    session.refresh(user)
+    assert user.role == RoleUtilisateur.ETUDIANT
+    assert user.statut_verification_enseignant == "en_attente"
+
+    with pytest.raises(IntegrityError):
+        session.add(
+            CycleEnseigne(utilisateur_id=user.id, cycle_education="college")
+        )
+        session.commit()
+    session.rollback()
+
+    with pytest.raises(IntegrityError):
+        session.add(
+            CycleEnseigne(utilisateur_id=user.id, cycle_education="primaire")
+        )
+        session.commit()
+    session.rollback()
     session.close()
     engine.dispose()
