@@ -169,7 +169,7 @@ def upgrade():
     )
     op.create_index("ix_optionscolaire_referentiel_id", "optionscolaire", ["referentiel_id"])
     op.create_index("ix_optionscolaire_niveau_id", "optionscolaire", ["niveau_id"])
-    op.create_index("ix_optionscolaire_est_actif", "optionscolaire", ["est_actif"])
+    op.create_index("ix_optionscolaire_est_active", "optionscolaire", ["est_active"])
     op.create_index("ix_optionscolaire_statut_validation", "optionscolaire", ["statut_validation"])
     op.create_index("ix_optionscolaire_type_option", "optionscolaire", ["type_option"])
 
