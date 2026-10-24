@@ -223,7 +223,7 @@ def creer_etablissement_scolaire(
         return _erreur("nom_etablissement_requis")
     if type_etablissement not in {
         "college", "lycee", "college_lycee", "lycee_technique", "professionnel",
-        "centre_formation_professionnelle", "centre_formation_professionnelle_specialise",
+        "centre_formation", "centre_formation_specialise",
     }:
         return _erreur("type_etablissement_invalide")
     if secteur not in {"public", "prive", "inconnu"}:
