@@ -15,18 +15,42 @@ router = APIRouter()
 
 
 def _notification_vue(notification: Notification) -> dict:
+    type_value = notification.type_notification.value
+    type_labels = {
+        "reponse_message": "Réponse à ton message",
+        "reponse_thread": "Nouvelle réponse",
+        "reaction": "Réaction",
+        "mention": "Mention",
+        "reponse_feedback": "Réponse à ton avis",
+        "inactivite_3_jours": "Reprise après une pause",
+        "nouvelle_inscription": "Nouvelle inscription",
+        "nouveau_document": "Document à modérer",
+        "document_approuve": "Document approuvé",
+        "document_rejete": "Document refusé",
+        "document_supprime": "Document supprimé",
+        "fiche_revision_prete": "Fiche de révision prête",
+        "fiche_revision_document_prete": "Fiche de cours disponible",
+    }
     lien = None
     if notification.cercle_id:
         lien = f"/cercles/{notification.cercle_id}"
-    elif notification.type_notification.value == "nouvelle_inscription":
+    elif type_value == "nouvelle_inscription":
         lien = "/admin/utilisateurs"
-    elif notification.type_notification.value == "nouveau_document":
+    elif type_value == "nouveau_document":
         lien = "/moderation"
-    elif notification.type_notification.value in {"document_approuve", "document_rejete", "document_supprime"}:
+    elif type_value in {"document_approuve", "document_rejete", "document_supprime"}:
         lien = "/documents"
-    elif notification.type_notification.value == "inactivite_3_jours":
+    elif type_value == "inactivite_3_jours":
         lien = "/dashboard"
-    return {"notification": notification, "lien": lien}
+    elif type_value == "reponse_feedback":
+        lien = "/feedback"
+    elif type_value in {"fiche_revision_prete", "fiche_revision_document_prete"}:
+        lien = "/mes-revisions"
+    return {
+        "notification": notification,
+        "lien": lien,
+        "type_label": type_labels.get(type_value, type_value.replace("_", " ").capitalize()),
+    }
 
 
 @router.get("/notifications")

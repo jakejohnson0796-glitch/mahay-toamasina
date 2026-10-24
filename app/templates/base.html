@@ -124,6 +124,9 @@
 {% if request.url.path == "/quiz" %}
 <link rel="stylesheet" href="/static/quiz-visual-refresh.css?v={{ version_asset('quiz-visual-refresh.css') }}">
 {% endif %}
+{% if request.url.path in ["/notifications", "/mes-revisions", "/defis", "/a-propos"] %}
+<link rel="stylesheet" href="/static/feature-pages-refresh.css?v={{ version_asset('feature-pages-refresh.css') }}">
+{% endif %}
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
@@ -582,6 +585,9 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/langue.js?v={{ version_asset('js/langue.js') }}" defer></script>
 {% if request.session.get("user_id") %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/bilan-reprise.js?v={{ version_asset('js/bilan-reprise.js') }}" defer></script>
+{% endif %}
+{% if request.url.path == "/notifications" %}
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/notifications-center.js?v={{ version_asset('js/notifications-center.js') }}" defer></script>
 {% endif %}
 
 </body>

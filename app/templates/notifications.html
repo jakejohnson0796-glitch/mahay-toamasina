@@ -1,32 +1,61 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
 {% block titre %}Notifications — MITARIDALA{% endblock %}
-{% block main_classe %}main-clair{% endblock %}
+{% block main_classe %}main-clair page-notifications{% endblock %}
 {% block contenu %}
-<div class="contenu-clair hub-page">
-  <section class="hub-hero">
-    <div>
-      <p class="eyebrow">Centre de notifications</p>
-      <h1>Ce qui s'est passé pendant que tu n'étais pas là.</h1>
-      <p class="hub-hero-sous-titre">Retrouve ici les événements importants liés à ton apprentissage et à tes cercles.</p>
+<div class="contenu-clair hub-page notification-center" data-notifications-center>
+  <section class="hub-hero notifications-hero" aria-labelledby="notifications-title">
+    <div class="notifications-hero-copy">
+      <p class="eyebrow notification-eyebrow">Centre de notifications</p>
+      <h1 id="notifications-title">Garde le fil de ce qui compte.</h1>
+      <p class="hub-hero-sous-titre">Les nouvelles liées à tes cours, tes ressources et tes cercles sont réunies ici. Retrouve ce qui demande ton attention, puis retourne directement à l'action.</p>
+      <div class="notification-hero-stats" aria-label="Résumé des notifications">
+        <div class="notification-hero-stat">
+          <strong>{{ notifications|length }}</strong>
+          <span>Événements récents</span>
+        </div>
+        <div class="notification-hero-stat">
+          <strong>{{ nb_notifications_non_lues }}</strong>
+          <span>à lire</span>
+        </div>
+      </div>
     </div>
     {% if nb_notifications_non_lues %}
-    <form method="post" action="/notifications/lire-toutes">
+    <form class="notifications-mark-all" method="post" action="/notifications/lire-toutes">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-      <button class="bouton bouton-secondaire" type="submit">Tout marquer comme lu</button>
+      <button class="bouton bouton-primaire" type="submit">Tout marquer comme lu</button>
     </form>
     {% endif %}
   </section>
 
   {% if notifications %}
+  <section class="notification-controls" aria-label="Rechercher et filtrer les notifications">
+    <div class="notification-filter-group" role="group" aria-label="Filtrer les notifications">
+      <button class="notification-filter is-active" type="button" data-notification-filter="all" aria-pressed="true">
+        Toutes <span>{{ notifications|length }}</span>
+      </button>
+      <button class="notification-filter" type="button" data-notification-filter="unread" aria-pressed="false">
+        Non lues <span>{{ nb_notifications_non_lues }}</span>
+      </button>
+      <button class="notification-filter" type="button" data-notification-filter="read" aria-pressed="false">
+        Lues <span>{{ notifications|length - nb_notifications_non_lues }}</span>
+      </button>
+    </div>
+    <label class="notification-search-wrap" for="notification-search">
+      <span>Rechercher dans les notifications</span>
+      <input id="notification-search" type="search" data-notification-search placeholder="Ex. fiche de révision, cercle…" autocomplete="off">
+    </label>
+  </section>
+  <p class="notification-result-count" data-notification-result-count aria-live="polite">{{ notifications|length }} notification{{ "s" if notifications|length != 1 else "" }} affichée{{ "s" if notifications|length != 1 else "" }}</p>
+
   <section class="notifications-liste" aria-label="Notifications">
     {% for item in notifications %}
       {% set n = item.notification %}
-      <article class="notification-carte{% if not n.lu %} notification-non-lue{% endif %}">
+      <article class="notification-carte{% if not n.lu %} notification-non-lue{% endif %}" data-notification-card data-unread="{{ 'true' if not n.lu else 'false' }}">
         <div class="notification-point" aria-hidden="true"></div>
         <div class="notification-corps">
           <div class="notification-meta">
-            <span>{{ n.type_notification.value|replace("_", " ")|capitalize }}</span>
+            <span class="notification-type">{{ item.type_label }}</span>
             <time datetime="{{ n.date_creation.isoformat() }}">{{ n.date_creation.strftime("%d/%m/%Y %H:%M") }}</time>
           </div>
           <p>{{ n.contenu }}</p>
@@ -48,11 +77,13 @@
       </article>
     {% endfor %}
   </section>
+  <p class="notification-filter-empty" data-notification-filter-empty hidden>Aucune notification ne correspond à cette recherche.</p>
   {% else %}
-  <section class="hub-vide">
+  <section class="hub-vide notifications-empty-state">
     <div class="hub-vide-icone">{{ icone("aide", 24) }}</div>
-    <h2>Tu es à jour</h2>
-    <p>Aucune notification à afficher pour le moment.</p>
+    <h2>Tout est calme pour le moment</h2>
+    <p>Aucune notification à afficher. Les informations importantes apparaîtront ici dès qu'il y aura du nouveau.</p>
+    <a class="bouton bouton-primaire" href="/dashboard">Revenir à mon tableau de bord</a>
   </section>
   {% endif %}
 </div>
