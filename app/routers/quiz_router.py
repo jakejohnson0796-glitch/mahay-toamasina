@@ -210,12 +210,23 @@ def _niveau_quiz_par_defaut(utilisateur, contexte_scolaire=None, progressions=No
     return "L1"
 
 
-def _suggestion_quiz(matieres: List[str], progressions: List[ProgressionNotion]) -> dict:
-    """Choisit une priorité pédagogique à partir des notions faibles/échues."""
+def _suggestion_quiz(
+    matieres: List[str],
+    progressions: List[ProgressionNotion],
+    niveau: Optional[str] = None,
+) -> dict:
+    """Choisit une priorité pédagogique au bon niveau du parcours."""
     par_casse = {str(matiere).casefold(): matiere for matiere in matieres if matiere}
     for progression in progressions:
         matiere = getattr(progression, "matiere", None)
         if not matiere:
+            continue
+        niveau_progression = getattr(progression, "niveau", None)
+        if (
+            niveau
+            and niveau_progression
+            and str(niveau_progression).casefold() != str(niveau).casefold()
+        ):
             continue
         matiere_affichee = par_casse.get(matiere.casefold())
         if not matiere_affichee:
@@ -295,7 +306,7 @@ def page_config_quiz(request: Request, session: Session = Depends(get_session)):
         progressions,
         getattr(derniere_tentative, "niveau", None),
     )
-    suggestion_quiz = _suggestion_quiz(matieres, progressions)
+    suggestion_quiz = _suggestion_quiz(matieres, progressions, niveau_quiz)
     return templates.TemplateResponse(
         request,
         "quiz_config.html",
@@ -372,7 +383,7 @@ def generer_quiz(
         progressions,
         getattr(derniere_tentative, "niveau", None),
     )
-    suggestion = _suggestion_quiz(matieres_disponibles, progressions)
+    suggestion = _suggestion_quiz(matieres_disponibles, progressions, niveau)
 
     progression_cible = None
     sujet_cible = None
