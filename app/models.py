@@ -832,6 +832,10 @@ class CercleEtude(SQLModel, table=True):
     option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
     etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
     matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
+    # True uniquement pour les cercles scolaires provisionnés par le
+    # synchroniseur du référentiel. Permet de réconcilier les cibles
+    # automatiquement sans archiver un cercle créé et géré par les usagers.
+    synchronise_referentiel: bool = Field(default=False, index=True)
     statut: StatutCercle = Field(default=StatutCercle.ACTIF)
     createur_id: int = Field(foreign_key="utilisateur.id", index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
