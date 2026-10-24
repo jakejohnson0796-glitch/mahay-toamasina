@@ -30,6 +30,8 @@
     <a href="#option-create">Séries et options</a>
     <a href="#matiere-create">Matières</a>
     <a href="#programme-create">Programmes</a>
+    <a href="#etfp-catalogue">Filières ETFP</a>
+    <a href="#etfp-offres">Offres par établissement</a>
   </nav>
 
   {% if referentiel %}
@@ -68,6 +70,22 @@
     {% elif code == "option_introuvable" %}Série/option introuvable.
     {% elif code == "matiere_introuvable" %}Matière introuvable.
     {% elif code == "programme_scolaire_introuvable" %}Rattachement de programme introuvable.
+    {% elif code == "etfp_metier_requis" %}Le métier ou l'intitulé de formation est obligatoire.
+    {% elif code == "etfp_parcours_deja_existant" %}Ce parcours ETFP existe déjà.
+    {% elif code == "etfp_parcours_introuvable" %}Parcours ETFP introuvable.
+    {% elif code == "etablissement_non_verifie" %}L'établissement doit être actif et vérifié avant de publier une offre.
+    {% elif code == "offre_type_invalide" %}Le type d'offre choisi est invalide.
+    {% elif code == "offre_annee_invalide" %}L'année doit être au format AAAA-AAAA, avec deux années consécutives.
+    {% elif code == "offre_niveau_invalide" %}La classe est absente, inactive ou non vérifiée.
+    {% elif code == "offre_cible_invalide" %}Une offre « classe » ne doit pas contenir de série, matière ou formation.
+    {% elif code == "offre_serie_invalide" %}La série ne correspond pas à la classe ou n'est pas vérifiée.
+    {% elif code == "offre_matiere_invalide" %}La matière est inactive ou non vérifiée.
+    {% elif code == "offre_formation_invalide" %}La formation ETFP doit être active et vérifiée.
+    {% elif code == "offre_matiere_sans_programme" %}Cette matière n'est pas rattachée à un programme scolaire vérifié pour cette classe/série.
+    {% elif code == "offre_deja_existante" %}Cette offre est déjà enregistrée pour cet établissement et cette année.
+    {% elif code == "offre_etablissement_introuvable" %}Offre d'établissement introuvable.
+    {% elif code == "offre_etablissement_ajoutee" %}Offre ajoutée en attente de vérification.
+    {% elif code == "offre_etablissement_validee" %}Offre vérifiée et publiée pour l'année indiquée.
     {% else %}La modification n'a pas pu être enregistrée. Vérifie les champs et réessaie.{% endif %}
   </div>
   {% endif %}
@@ -83,6 +101,10 @@
     {% elif ok == "matiere_validee" %}Matière validée.
     {% elif ok == "programme_scolaire_ajoute" %}Rattachement de programme ajouté en attente de validation.
     {% elif ok == "programme_scolaire_valide" %}Rattachement de programme validé.
+    {% elif ok == "etfp_parcours_ajoute" %}Parcours ETFP ajouté en attente de validation.
+    {% elif ok == "etfp_parcours_valide" %}Parcours ETFP vérifié et publié.
+    {% elif ok == "offre_etablissement_ajoutee" %}Offre ajoutée en attente de vérification.
+    {% elif ok == "offre_etablissement_validee" %}Offre vérifiée et publiée.
     {% elif ok == "cercles_synchronises" %}Synchronisation terminée : {{ request.query_params.get("crees", "0") }} cercle(s) créé(s), {{ request.query_params.get("reactives", "0") }} réactivé(s), {{ request.query_params.get("actualises", "0") }} libellé(s) mis à jour, {{ request.query_params.get("archives", "0") }} archivé(s), {{ request.query_params.get("preserves", "0") }} cercle(s) conservé(s) avec membres ou contenu.
     {% else %}Modification enregistrée.{% endif %}
   </strong></p>
@@ -329,5 +351,156 @@
       </tbody>
     </table>
   </section>
+
+
+  <section id="etfp-catalogue" aria-labelledby="etfp-catalogue-titre">
+    <h3 id="etfp-catalogue-titre">Filières techniques et professionnelles</h3>
+    <p>Le catalogue ETFP est distinct des séries du lycée général. Les intitulés proviennent de la cartographie du METFP ; un référentiel de formation précise les compétences et la certification. N'ajoute ou ne publie un parcours qu'avec sa source officielle.</p>
+    <form method="post" action="/admin/referentiel/scolaire/parcours-etfp/creer" class="carte-formulaire">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="etfp-secteur">Secteur</label>
+      <input id="etfp-secteur" name="secteur" maxlength="120" placeholder="Ex. Industriel, Gestion, Développement rural">
+      <label for="etfp-filiere">Filière / spécialité</label>
+      <input id="etfp-filiere" name="filiere" maxlength="180" placeholder="Ex. Structure métallique, Gestion comptable">
+      <label for="etfp-metier">Métier / intitulé de formation</label>
+      <input id="etfp-metier" name="metier" maxlength="180" required placeholder="Ex. Technicien en ouvrage métallique">
+      <label for="etfp-source">Source officielle HTTPS (METFP)</label>
+      <input id="etfp-source" name="source_officielle" type="url" maxlength="500" required value="https://www.metfp.gov.mg/cartographie">
+      <p>Les nouvelles entrées restent inactives et en attente jusqu'à validation par un administrateur.</p>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Ajouter le parcours ETFP</button>
+    </form>
+    <h4>Catalogue disponible ({{ parcours_etfp|length }})</h4>
+    <table class="table-manifeste">
+      <thead><tr><th>Secteur / filière</th><th>Métier / formation</th><th>État</th><th>Source / action</th></tr></thead>
+      <tbody>
+      {% for p in parcours_etfp %}
+        <tr>
+          <td>{{ p.secteur or "Secteur à compléter" }}<br><span class="stat-label">{{ p.filiere or "Filière à compléter" }}</span></td>
+          <td>{{ p.metier }}</td>
+          <td>{{ "Vérifié et actif" if p.statut_validation == "verifie" and p.est_actif else "À vérifier" if p.statut_validation != "verifie" else "Inactif" }}</td>
+          <td>
+            <a href="{{ p.source_officielle }}" target="_blank" rel="noopener noreferrer">Source</a>
+            {% if p.statut_validation != "verifie" or not p.est_actif %}
+            <form method="post" action="/admin/referentiel/scolaire/parcours-etfp/{{ p.id }}/valider">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Valider</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucun parcours ETFP enregistré.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="stat-label">La cartographie est une source de repérage des établissements et métiers ; elle ne garantit pas qu'une formation ouvre pendant chaque année scolaire.</p>
+  </section>
+
+  <section id="etfp-offres" aria-labelledby="etfp-offres-titre">
+    <h3 id="etfp-offres-titre">Offres réellement proposées par établissement</h3>
+    <p>Chaque établissement peut proposer une classe, une série, une matière ou une formation ETFP. Une offre n'est publiée qu'après vérification de l'établissement, de la source et de l'année scolaire. Une offre importée depuis la cartographie commence toujours en attente.</p>
+    <form method="post" action="/admin/referentiel/scolaire/offres/creer" class="carte-formulaire">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="offre-etablissement">Établissement vérifié</label>
+      <select id="offre-etablissement" name="etablissement_id" required>
+        <option value="">Choisir un établissement…</option>
+        {% for e in etablissements if e.est_actif and e.est_verifie %}
+        <option value="{{ e.id }}">{{ e.nom }} · {{ e.region or "Région à préciser" }}</option>
+        {% endfor %}
+      </select>
+      <label for="offre-type">Type d'offre</label>
+      <select id="offre-type" name="type_offre" required>
+        <option value="classe">Classe (collège / lycée)</option>
+        <option value="serie">Série / option</option>
+        <option value="matiere">Matière réellement enseignée</option>
+        <option value="formation">Formation technique / professionnelle (ETFP)</option>
+      </select>
+      <label for="offre-niveau">Classe (requis pour classe, série ou matière)</label>
+      <select id="offre-niveau" name="niveau_id">
+        <option value="">Choisir une classe…</option>
+        {% for n in niveaux if n.est_actif and n.statut_validation == "verifie" %}
+        <option value="{{ n.id }}">{{ n.libelle }} · {{ "Collège" if n.cycle == "college" else "Lycée" }}</option>
+        {% endfor %}
+      </select>
+      <label for="offre-option">Série / option (pour une offre de série ou de matière)</label>
+      <select id="offre-option" name="option_id">
+        <option value="">Tronc commun / aucune série</option>
+        {% for o in options if o.est_active and o.statut_validation == "verifie" %}
+        <option value="{{ o.id }}">{{ niveaux_map[o.niveau_id].libelle if o.niveau_id in niveaux_map else "Classe inconnue" }} · {{ o.libelle }}</option>
+        {% endfor %}
+      </select>
+      <label for="offre-matiere">Matière (pour une offre de matière)</label>
+      <select id="offre-matiere" name="matiere_id">
+        <option value="">Choisir une matière…</option>
+        {% for m in matieres if m.est_active and m.statut_validation == "verifie" %}
+        <option value="{{ m.id }}">{{ m.libelle }}</option>
+        {% endfor %}
+      </select>
+      <label for="offre-etfp">Formation ETFP (pour une offre de formation)</label>
+      <select id="offre-etfp" name="parcours_etfp_id">
+        <option value="">Choisir une formation…</option>
+        {% for p in parcours_etfp if p.est_active and p.statut_validation == "verifie" %}
+        <option value="{{ p.id }}">{{ p.secteur or "Secteur à compléter" }} · {{ p.filiere or "Filière à compléter" }} · {{ p.metier }}</option>
+        {% endfor %}
+      </select>
+      <label for="offre-annee">Année scolaire</label>
+      <input id="offre-annee" name="annee_scolaire" required pattern="[0-9]{4}-[0-9]{4}" placeholder="2026-2027">
+      <label for="offre-source">Source officielle qui confirme l'offre</label>
+      <input id="offre-source" name="source_officielle" type="url" maxlength="500" required placeholder="URL du ministère ou document officiel">
+      <p>Pour vérifier une offre par établissement, la source doit prouver l'existence de l'établissement et la disponibilité de cette formation pendant l'année choisie.</p>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer l'offre en attente</button>
+    </form>
+    <h4>Offres recensées ({{ offres_etablissement|length }})</h4>
+    <table class="table-manifeste">
+      <thead><tr><th>Établissement</th><th>Offre</th><th>Année</th><th>État</th><th>Source / validation</th></tr></thead>
+      <tbody>
+      {% for o in offres_etablissement %}
+        <tr>
+          <td>
+            {% if o.etablissement_id in etablissements_map %}
+              <strong>{{ etablissements_map[o.etablissement_id].nom }}</strong><br>
+              <span class="stat-label">{{ etablissements_map[o.etablissement_id].region or "Région à préciser" }}</span>
+            {% else %}Établissement inconnu{% endif %}
+          </td>
+          <td>
+            {% if o.type_offre == "formation" %}
+              {% if o.parcours_etfp_id in parcours_etfp_map %}
+                {{ parcours_etfp_map[o.parcours_etfp_id].secteur or "ETFP" }} · {{ parcours_etfp_map[o.parcours_etfp_id].filiere or "Filière à préciser" }} · {{ parcours_etfp_map[o.parcours_etfp_id].metier }}
+              {% else %}Formation ETFP inconnue{% endif %}
+            {% elif o.type_offre == "matiere" %}
+              {{ niveaux_map[o.niveau_scolaire_id].libelle if o.niveau_scolaire_id in niveaux_map else "Classe inconnue" }}
+              {% if o.option_scolaire_id and o.option_scolaire_id in options_map %} · {{ options_map[o.option_scolaire_id].libelle }}{% endif %}
+              · {{ matieres_map[o.matiere_scolaire_id].libelle if o.matiere_scolaire_id in matieres_map else "Matière inconnue" }}
+            {% elif o.type_offre == "serie" %}
+              {{ niveaux_map[o.niveau_scolaire_id].libelle if o.niveau_scolaire_id in niveaux_map else "Classe inconnue" }}
+              · {{ options_map[o.option_scolaire_id].libelle if o.option_scolaire_id in options_map else "Série inconnue" }}
+            {% else %}
+              Classe · {{ niveaux_map[o.niveau_scolaire_id].libelle if o.niveau_scolaire_id in niveaux_map else "Classe inconnue" }}
+            {% endif %}
+            <br><span class="stat-label">{{ o.type_offre|capitalize }}</span>
+          </td>
+          <td>{{ o.annee_scolaire or "Année non confirmée" }}</td>
+          <td>{{ "Vérifiée" if o.statut_validation == "verifie" else "À vérifier" }} · {{ "Active" if o.est_active else "Archivée" }}</td>
+          <td>
+            <a href="{{ o.source_officielle }}" target="_blank" rel="noopener noreferrer">Source</a>
+            {% if o.statut_validation != "verifie" %}
+            <form method="post" action="/admin/referentiel/scolaire/offres/{{ o.id }}/valider" class="form-validation-offre">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <label for="offre-validation-annee-{{ o.id }}">Année confirmée</label>
+              <input id="offre-validation-annee-{{ o.id }}" name="annee_scolaire" value="{{ o.annee_scolaire or '' }}" required pattern="[0-9]{4}-[0-9]{4}" placeholder="2026-2027">
+              <label for="offre-validation-source-{{ o.id }}">Source</label>
+              <input id="offre-validation-source-{{ o.id }}" name="source_officielle" value="{{ o.source_officielle }}" required type="url">
+              <button class="bouton bouton-secondaire" type="submit">Valider l'offre</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">Aucune offre par établissement n'est recensée.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
 </div>
 {% endblock %}
