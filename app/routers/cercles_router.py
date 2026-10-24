@@ -1167,41 +1167,69 @@ def creer_cercle(
             ):
                 return RedirectResponse("/cercles?erreur=etablissement_scolaire_invalide", status_code=303)
 
-        # Ne jamais laisser des identifiants universitaires envoyés en
-        # parallèle par un client altérer la cible scolaire.
+        # Un identifiant universitaire envoyé en même temps que la cible
+        # scolaire indique un formulaire manipulé ou incohérent : on refuse.
         if mention_id_nettoye or filiere_id_nettoye or niveau_nettoye:
             return RedirectResponse("/cercles?erreur=cible_scolaire_incoherente", status_code=303)
 
         nom_nettoye = " ".join((nom or "").split())[:120]
         if len(nom_nettoye) < 3:
             return RedirectResponse("/cercles?erreur=nom_cercle_invalide", status_code=303)
+        raison_nettoyee = " ".join((raison or "").split())[:1000]
+        if not raison_nettoyee:
+            return RedirectResponse("/cercles?erreur=raison_requise", status_code=303)
 
-        cercle = CercleEtude(
-            nom=nom_nettoye,
-            description=(description or "").strip()[:2000] or None,
+        # Une demande identique portant le même nom et la même cible ne doit
+        # pas être empilée. L'administrateur vérifie la demande avant que le
+        # cercle ne devienne visible et rejoignable.
+        demande_existante = session.exec(
+            select(DemandeCreationCercle).where(
+                DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
+                DemandeCreationCercle.portee_academique == "scolaire",
+                DemandeCreationCercle.niveau_scolaire_id == niveau_scolaire.id,
+                DemandeCreationCercle.option_scolaire_id == (option_scolaire.id if option_scolaire else None),
+                DemandeCreationCercle.etablissement_scolaire_id == (
+                    etablissement_scolaire.id if etablissement_scolaire else None
+                ),
+                DemandeCreationCercle.nom.ilike(nom_nettoye),
+            )
+        ).first()
+        if demande_existante:
+            return RedirectResponse("/cercles?erreur=demande_deja_en_attente", status_code=303)
+
+        cercle_existant = session.exec(
+            select(CercleEtude).where(
+                CercleEtude.statut == StatutCercle.ACTIF,
+                CercleEtude.portee_academique == "scolaire",
+                CercleEtude.niveau_scolaire_id == niveau_scolaire.id,
+                CercleEtude.option_scolaire_id == (option_scolaire.id if option_scolaire else None),
+                CercleEtude.etablissement_scolaire_id == (
+                    etablissement_scolaire.id if etablissement_scolaire else None
+                ),
+                CercleEtude.nom.ilike(nom_nettoye),
+            )
+        ).first()
+        if cercle_existant:
+            return RedirectResponse(
+                f"/cercles/{cercle_existant.id}?erreur=cercle_existe_deja",
+                status_code=303,
+            )
+
+        session.add(DemandeCreationCercle(
+            utilisateur_id=utilisateur.id,
+            mention_id=None,
+            filiere_id=None,
+            niveau=None,
             portee_academique="scolaire",
             niveau_scolaire_id=niveau_scolaire.id,
             option_scolaire_id=option_scolaire.id if option_scolaire else None,
             etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
-            createur_id=utilisateur.id,
-        )
-        session.add(cercle)
-        session.commit()
-        session.refresh(cercle)
-        session.add(MembreCercle(
-            cercle_id=cercle.id,
-            utilisateur_id=utilisateur.id,
-            role=RoleMembreCercle.CREATEUR,
+            nom=nom_nettoye,
+            description=(description or "").strip()[:2000] or None,
+            raison=raison_nettoyee,
         ))
-        gamification.enregistrer_action(
-            session,
-            utilisateur.id,
-            "cercle_rejoint",
-            source_type="cercle",
-            source_key=str(cercle.id),
-        )
         session.commit()
-        return RedirectResponse(f"/cercles/{cercle.id}", status_code=303)
+        return RedirectResponse("/cercles?ok=demande_creation_envoyee", status_code=303)
 
     if portee not in {"universitaire", "transversal"}:
         return RedirectResponse("/cercles?erreur=portee_invalide", status_code=303)
