@@ -184,6 +184,43 @@ def liste_documents(
         requete = requete.where(Document.type_document == type_document)
     documents = session.exec(requete.order_by(Document.date_upload.desc())).all()
     filieres = session.exec(select(Filiere)).all()
+    referentiel_scolaire_courant = session.exec(
+        select(ReferentielScolaire).order_by(
+            ReferentielScolaire.date_creation.desc(),
+            ReferentielScolaire.id.desc(),
+        )
+    ).first()
+    if referentiel_scolaire_courant:
+        niveaux_scolaires = session.exec(
+            select(NiveauScolaire)
+            .where(
+                NiveauScolaire.referentiel_id == referentiel_scolaire_courant.id,
+                NiveauScolaire.est_actif == True,  # noqa: E712
+                NiveauScolaire.statut_validation == "verifie",
+            )
+            .order_by(NiveauScolaire.ordre)
+        ).all()
+        options_scolaires = session.exec(
+            select(OptionScolaire)
+            .where(
+                OptionScolaire.referentiel_id == referentiel_scolaire_courant.id,
+                OptionScolaire.est_active == True,  # noqa: E712
+                OptionScolaire.statut_validation == "verifie",
+            )
+            .order_by(OptionScolaire.libelle)
+        ).all()
+    else:
+        niveaux_scolaires = []
+        options_scolaires = []
+    etablissements_scolaires = session.exec(
+        select(EtablissementScolaire)
+        .where(
+            EtablissementScolaire.est_actif == True,  # noqa: E712
+            EtablissementScolaire.est_verifie == True,  # noqa: E712
+        )
+        .order_by(EtablissementScolaire.nom)
+        .limit(200)
+    ).all()
 
     # Les dépôts non encore publics ne sont visibles qu’à leur déposant.
     mes_depots = []
@@ -282,6 +319,9 @@ def liste_documents(
             "fiches_documents_mg": fiches_documents_mg,
             "fiches_revision_documents": fiches_revision_documents,
             "filieres": filieres,
+            "niveaux_scolaires": niveaux_scolaires,
+            "options_scolaires": options_scolaires,
+            "etablissements_scolaires": etablissements_scolaires,
             "filiere_id": filiere_id,
             "portee_academique": portee_academique or "",
             "niveau_scolaire_id": niveau_scolaire_id,
