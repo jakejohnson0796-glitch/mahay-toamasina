@@ -166,6 +166,7 @@ def synchroniser_cercles_scolaires(
         f"?ok=cercles_synchronises&cibles={int(rapport['cibles'] or 0)}"
         f"&crees={int(rapport['crees'] or 0)}"
         f"&reactives={int(rapport['reactives'] or 0)}"
+        f"&actualises={int(rapport['actualises'] or 0)}"
         f"&archives={int(rapport['archives'] or 0)}"
         f"&preserves={int(rapport['preserves'] or 0)}",
         status_code=303,
