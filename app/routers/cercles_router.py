@@ -405,6 +405,40 @@ def _supprimer_cercle_et_contenu(session: Session, cercle_id: int) -> bool:
     return True
 
 
+def _matiere_scolaire_verifiee_pour_cible(
+    session: Session,
+    *,
+    referentiel_id: int,
+    niveau_id: int,
+    matiere_id: int,
+    option_scolaire: Optional[OptionScolaire] = None,
+) -> Optional[MatiereScolaire]:
+    """Retourne une matière uniquement si un programme vérifié autorise cette cible."""
+    matiere = session.get(MatiereScolaire, matiere_id)
+    if not matiere or not matiere.est_active or matiere.statut_validation != "verifie":
+        return None
+
+    options_compatibles = {option_scolaire.id} if option_scolaire else set()
+    if option_scolaire and option_scolaire.parent_option_id:
+        options_compatibles.add(option_scolaire.parent_option_id)
+    requete = select(ProgrammeMatiereScolaire.id).where(
+        ProgrammeMatiereScolaire.referentiel_id == referentiel_id,
+        ProgrammeMatiereScolaire.niveau_id == niveau_id,
+        ProgrammeMatiereScolaire.matiere_id == matiere.id,
+        ProgrammeMatiereScolaire.statut_validation == "verifie",
+    )
+    if options_compatibles:
+        requete = requete.where(
+            or_(
+                ProgrammeMatiereScolaire.option_id.is_(None),
+                ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+            )
+        )
+    else:
+        requete = requete.where(ProgrammeMatiereScolaire.option_id.is_(None))
+    return matiere if session.exec(requete).first() else None
+
+
 @router.get("/cercles")
 def liste_cercles(
     request: Request,
@@ -1244,34 +1278,14 @@ def creer_cercle(
 
         matiere_scolaire = None
         if matiere_scolaire_id is not None:
-            matiere_scolaire = session.get(MatiereScolaire, matiere_scolaire_id)
-            if (
-                not matiere_scolaire
-                or not matiere_scolaire.est_active
-                or matiere_scolaire.statut_validation != "verifie"
-            ):
-                return RedirectResponse("/cercles?erreur=matiere_scolaire_invalide", status_code=303)
-            options_compatibles = {option_scolaire.id} if option_scolaire else set()
-            if option_scolaire and option_scolaire.parent_option_id:
-                options_compatibles.add(option_scolaire.parent_option_id)
-            requete_programme_matiere = select(ProgrammeMatiereScolaire.id).where(
-                ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
-                ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
-                ProgrammeMatiereScolaire.matiere_id == matiere_scolaire.id,
-                ProgrammeMatiereScolaire.statut_validation == "verifie",
+            matiere_scolaire = _matiere_scolaire_verifiee_pour_cible(
+                session,
+                referentiel_id=referentiel_courant.id,
+                niveau_id=niveau_scolaire.id,
+                matiere_id=matiere_scolaire_id,
+                option_scolaire=option_scolaire,
             )
-            if options_compatibles:
-                requete_programme_matiere = requete_programme_matiere.where(
-                    or_(
-                        ProgrammeMatiereScolaire.option_id.is_(None),
-                        ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
-                    )
-                )
-            else:
-                requete_programme_matiere = requete_programme_matiere.where(
-                    ProgrammeMatiereScolaire.option_id.is_(None)
-                )
-            if not session.exec(requete_programme_matiere).first():
+            if not matiere_scolaire:
                 return RedirectResponse("/cercles?erreur=matiere_scolaire_invalide", status_code=303)
 
         # Un identifiant universitaire envoyé en même temps que la cible
