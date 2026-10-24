@@ -317,6 +317,17 @@ def construire_bilan(
         moment_depart, JeuCerebralSession.date_fin != None,  # noqa: E711
     )
 
+    actions_collaboration = session.exec(
+        select(ActionGamification)
+        .where(
+            ActionGamification.utilisateur_id == utilisateur_id,
+            ActionGamification.date_creation >= moment_depart,
+            ActionGamification.action.in_(("cercle", "cercle_rejoint", "classe", "document")),
+        )
+        .order_by(ActionGamification.date_creation.desc())
+        .limit(NB_ACTIVITES_AFFICHER)
+    ).all()
+
     activites: list[dict] = []
     for tentative in quiz:
         pourcentage = round(100 * tentative.score / tentative.nb_questions) if tentative.score is not None and tentative.nb_questions else 0
@@ -354,6 +365,14 @@ def construire_bilan(
             "bonnes_reponses": jeu.bonnes_reponses,
             "nb_questions": jeu.nb_questions,
             "_moment": jeu.date_fin or jeu.date_creation,
+        })
+    for evenement in actions_collaboration:
+        # Ces activités sont stockées par le système de points, sans stocker
+        # ni révéler le contenu brut des messages ou documents partagés.
+        activites.append({
+            "type": "collaboration",
+            "action": str(evenement.action or ""),
+            "_moment": evenement.date_creation,
         })
     activites.sort(key=lambda item: item["_moment"], reverse=True)
     activites = activites[:NB_ACTIVITES_AFFICHER]
