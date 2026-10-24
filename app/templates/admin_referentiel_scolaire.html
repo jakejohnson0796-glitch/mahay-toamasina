@@ -244,11 +244,11 @@
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
       <label for="programme-niveau">Classe</label>
       <select id="programme-niveau" name="niveau_id" required>{% for n in niveaux %}<option value="{{ n.id }}">{{ n.libelle }}</option>{% endfor %}</select>
-      <label for="programme-option">Série (facultatif pour le tronc commun)</label>
+      <label for="programme-option">Série / option (facultatif pour le tronc commun)</label>
       <select id="programme-option" name="option_id">
         <option value="">Tronc commun</option>
-        {% for o in options if o.parent_option_id is none %}
-        <option value="{{ o.id }}">{{ niveaux_map[o.niveau_id].libelle if o.niveau_id in niveaux_map else "Classe inconnue" }} · {{ o.libelle }}</option>
+        {% for o in options if o.est_active and o.statut_validation == "verifie" %}
+        <option value="{{ o.id }}">{{ niveaux_map[o.niveau_id].libelle if o.niveau_id in niveaux_map else "Classe inconnue" }} · {% if o.parent_option_id and o.parent_option_id in options_map %}{{ options_map[o.parent_option_id].libelle }} → {% endif %}{{ o.libelle }}</option>
         {% endfor %}
       </select>
       <label for="programme-matiere">Matière</label>
