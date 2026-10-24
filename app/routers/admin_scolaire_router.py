@@ -388,6 +388,233 @@ def valider_parcours_etfp(
     return _rediriger("etfp_parcours_valide", entree.id)
 
 
+
+@router.post("/admin/referentiel/scolaire/offres/creer")
+def creer_offre_etablissement(
+    request: Request,
+    etablissement_id: int = Form(...),
+    type_offre: str = Form(...),
+    niveau_id: str = Form(default=""),
+    option_id: str = Form(default=""),
+    matiere_id: str = Form(default=""),
+    parcours_etfp_id: str = Form(default=""),
+    annee_scolaire: str = Form(...),
+    source_officielle: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+    institution = session.get(EtablissementScolaire, etablissement_id)
+    if not institution or not institution.est_actif or not institution.est_verifie:
+        return _erreur("etablissement_non_verifie")
+    if type_offre not in {"classe", "serie", "matiere", "formation"}:
+        return _erreur("offre_type_invalide")
+    annee = annee_scolaire.strip()
+    match_annee = re.fullmatch(r"(\d{4})-(\d{4})", annee)
+    if not match_annee or int(match_annee.group(2)) != int(match_annee.group(1)) + 1:
+        return _erreur("offre_annee_invalide")
+    source = source_officielle.strip()[:500]
+    if not _url_source_valide(source):
+        return _erreur("source_https_requise")
+
+    niveau_pk = _entier_optionnel(niveau_id)
+    option_pk = _entier_optionnel(option_id)
+    matiere_pk = _entier_optionnel(matiere_id)
+    parcours_pk = _entier_optionnel(parcours_etfp_id)
+    referentiel = _referentiel_courant(session)
+    niveau = session.get(NiveauScolaire, niveau_pk) if niveau_pk else None
+    option = session.get(OptionScolaire, option_pk) if option_pk else None
+    matiere = session.get(MatiereScolaire, matiere_pk) if matiere_pk else None
+    parcours = session.get(ParcoursTechniqueProfessionnel, parcours_pk) if parcours_pk else None
+
+    if type_offre in {"classe", "serie", "matiere"}:
+        if (
+            not referentiel or not niveau
+            or niveau.referentiel_id != referentiel.id
+            or not niveau.est_actif or niveau.statut_validation != "verifie"
+        ):
+            return _erreur("offre_niveau_invalide")
+        if type_offre == "classe" and (option_pk or matiere_pk or parcours_pk):
+            return _erreur("offre_cible_invalide")
+        if type_offre == "serie" and (
+            not option or option.niveau_id != niveau.id
+            or option.referentiel_id != referentiel.id
+            or not option.est_active or option.statut_validation != "verifie"
+            or matiere_pk or parcours_pk
+        ):
+            return _erreur("offre_serie_invalide")
+        if type_offre == "matiere":
+            if (
+                not matiere or not matiere.est_active
+                or matiere.statut_validation != "verifie" or parcours_pk
+            ):
+                return _erreur("offre_matiere_invalide")
+            if option_pk and (
+                not option or option.niveau_id != niveau.id
+                or option.referentiel_id != referentiel.id
+                or not option.est_active or option.statut_validation != "verifie"
+            ):
+                return _erreur("offre_serie_invalide")
+            compatible_options = [option_pk] if option_pk else []
+            if option and option.parent_option_id:
+                compatible_options.append(option.parent_option_id)
+            clauses = [ProgrammeMatiereScolaire.option_id.is_(None)]
+            clauses.extend(
+                ProgrammeMatiereScolaire.option_id == identifiant
+                for identifiant in compatible_options
+            )
+            programmes = session.exec(
+                select(ProgrammeMatiereScolaire).where(
+                    ProgrammeMatiereScolaire.referentiel_id == referentiel.id,
+                    ProgrammeMatiereScolaire.niveau_id == niveau.id,
+                    ProgrammeMatiereScolaire.matiere_id == matiere.id,
+                    ProgrammeMatiereScolaire.statut_validation == "verifie",
+                    or_(*clauses),
+                )
+            ).all()
+            if not programmes:
+                return _erreur("offre_matiere_sans_programme")
+    else:
+        if (
+            not parcours or not parcours.est_actif
+            or parcours.statut_validation != "verifie"
+            or niveau_pk or option_pk or matiere_pk
+        ):
+            return _erreur("offre_formation_invalide")
+
+    if type_offre == "classe":
+        code_offre = _code_interne("CLASSE", niveau.code)
+    elif type_offre == "serie":
+        code_offre = _code_interne("SERIE", niveau.code, option.code)
+    elif type_offre == "matiere":
+        code_offre = _code_interne(
+            "MATIERE", niveau.code, option.code if option else "TRONC-COMMUN", matiere.code
+        )
+    else:
+        code_offre = _code_interne("FORMATION", parcours.code)
+
+    doublon = session.exec(
+        select(OffreEtablissementScolaire).where(
+            OffreEtablissementScolaire.etablissement_id == etablissement_id,
+            OffreEtablissementScolaire.code_offre == code_offre,
+            OffreEtablissementScolaire.annee_scolaire == annee,
+            OffreEtablissementScolaire.est_active == True,  # noqa: E712
+        )
+    ).first()
+    if doublon:
+        return _erreur("offre_deja_existante")
+    entree = OffreEtablissementScolaire(
+        etablissement_id=etablissement_id,
+        code_offre=code_offre,
+        type_offre=type_offre,
+        niveau_scolaire_id=niveau_pk,
+        option_scolaire_id=option_pk,
+        matiere_scolaire_id=matiere_pk,
+        parcours_etfp_id=parcours_pk,
+        annee_scolaire=annee,
+        source_officielle=source,
+        statut_validation="a_verifier",
+        est_active=True,
+        date_creation=datetime.utcnow(),
+        date_maj=datetime.utcnow(),
+    )
+    session.add(entree)
+    session.commit()
+    session.refresh(entree)
+    return _rediriger("offre_etablissement_ajoutee", entree.id)
+
+
+@router.post("/admin/referentiel/scolaire/offres/{offre_id}/valider")
+def valider_offre_etablissement(
+    request: Request,
+    offre_id: int,
+    annee_scolaire: str = Form(...),
+    source_officielle: str = Form(default=""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+    entree = session.get(OffreEtablissementScolaire, offre_id)
+    if not entree or not entree.est_active:
+        return _erreur("offre_etablissement_introuvable")
+    annee = annee_scolaire.strip()
+    match = re.fullmatch(r"(\d{4})-(\d{4})", annee)
+    if not match or int(match.group(2)) != int(match.group(1)) + 1:
+        return _erreur("offre_annee_invalide")
+    institution = session.get(EtablissementScolaire, entree.etablissement_id)
+    if not institution or not institution.est_active or not institution.est_verifie:
+        return _erreur("etablissement_non_verifie")
+    source = (source_officielle.strip() or entree.source_officielle).strip()[:500]
+    if not _url_source_valide(source):
+        return _erreur("source_https_requise")
+
+    if entree.type_offre == "formation":
+        parcours = session.get(ParcoursTechniqueProfessionnel, entree.parcours_etfp_id)
+        if not parcours or not parcours.est_active or parcours.statut_validation != "verifie":
+            return _erreur("offre_formation_invalide")
+    else:
+        referentiel = _referentiel_courant(session)
+        niveau = session.get(NiveauScolaire, entree.niveau_scolaire_id)
+        if (
+            not referentiel or not niveau
+            or niveau.referentiel_id != referentiel.id
+            or not niveau.est_actif or niveau.statut_validation != "verifie"
+        ):
+            return _erreur("offre_niveau_invalide")
+        if entree.type_offre == "serie":
+            option = session.get(OptionScolaire, entree.option_scolaire_id)
+            if (
+                not option or option.niveau_id != niveau.id
+                or not option.est_active or option.statut_validation != "verifie"
+            ):
+                return _erreur("offre_serie_invalide")
+        if entree.type_offre == "matiere":
+            matiere = session.get(MatiereScolaire, entree.matiere_scolaire_id)
+            if not matiere or not matiere.est_active or matiere.statut_validation != "verifie":
+                return _erreur("offre_matiere_invalide")
+            compatible = [ProgrammeMatiereScolaire.option_id.is_(None)]
+            if entree.option_scolaire_id:
+                compatible.append(
+                    ProgrammeMatiereScolaire.option_id == entree.option_scolaire_id
+                )
+            programmes = session.exec(
+                select(ProgrammeMatiereScolaire).where(
+                    ProgrammeMatiereScolaire.referentiel_id == referentiel.id,
+                    ProgrammeMatiereScolaire.niveau_id == niveau.id,
+                    ProgrammeMatiereScolaire.matiere_id == matiere.id,
+                    ProgrammeMatiereScolaire.statut_validation == "verifie",
+                    or_(*compatible),
+                )
+            ).all()
+            if not programmes:
+                return _erreur("offre_matiere_sans_programme")
+
+    doublon = session.exec(
+        select(OffreEtablissementScolaire).where(
+            OffreEtablissementScolaire.etablissement_id == entree.etablissement_id,
+            OffreEtablissementScolaire.code_offre == entree.code_offre,
+            OffreEtablissementScolaire.annee_scolaire == annee,
+            OffreEtablissementScolaire.est_active == True,  # noqa: E712
+            OffreEtablissementScolaire.id != entree.id,
+        )
+    ).first()
+    if doublon:
+        return _erreur("offre_deja_existante")
+    entree.annee_scolaire = annee
+    entree.source_officielle = source
+    entree.statut_validation = "verifie"
+    entree.valide_par_id = admin.id
+    entree.date_validation = datetime.utcnow()
+    entree.date_maj = datetime.utcnow()
+    session.add(entree)
+    session.commit()
+    return _rediriger("offre_etablissement_validee", entree.id)
+
+
 @router.post("/admin/referentiel/scolaire/options/creer")
 def creer_option_scolaire(
     request: Request,
