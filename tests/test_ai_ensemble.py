@@ -192,6 +192,32 @@ def test_controller_refuse_retry_apres_429(monkeypatch):
     assert ai_ensemble.cost_controller.available("groq")
 
 
+def test_controller_transmet_le_delai_du_cooldown_sans_appel_reseau():
+    ai_ensemble.cost_controller.clear_failure("groq")
+
+    class RateLimitError(Exception):
+        status_code = 429
+
+    ai_ensemble.cost_controller.record_failure(
+        "groq", RateLimitError("rate limit; try again in 2m")
+    )
+    called = {"value": False}
+
+    def operation():
+        called["value"] = True
+        raise AssertionError("Aucun appel réseau ne doit être envoyé pendant le cooldown.")
+
+    try:
+        ai_ensemble.cost_controller.call("groq", operation)
+        raise AssertionError("Le cooldown actif doit être signalé.")
+    except ai_ensemble.ProviderCooldown as erreur:
+        assert erreur.cooldown_active is True
+        assert erreur.retry_after_seconds >= 100
+
+    assert called["value"] is False
+    ai_ensemble.cost_controller.clear_failure("groq")
+
+
 
 def test_resume_audit_ne_journalise_pas_le_contenu_des_problemes():
     audit = {
