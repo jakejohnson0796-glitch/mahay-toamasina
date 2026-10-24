@@ -1262,7 +1262,7 @@ def test_catalogue_public_pagine_offres_et_etablissements_sans_perdre_les_filtre
     )
     html_premiere_page = premiere_page.body.decode("utf-8")
     assert premiere_page.status_code == 200
-    assert "55 offre(s) confirmée(s)" in html_premiere_page
+    assert "50 offre(s) affichée(s) sur 55 confirmée(s)" in html_premiere_page
     assert "Page 1 sur 2" in html_premiere_page
     assert "LTP Pagination 000" in html_premiere_page
     assert "LTP Pagination 054" not in html_premiere_page
