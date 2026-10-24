@@ -229,8 +229,8 @@ def upgrade() -> None:
         ),
         sa.UniqueConstraint("code", name="uq_parcourstechniqueprofessionnel_code"),
     )
-    for column in ("code", "secteur", "filiere", "metier", "statut_validation", "est_actif"):
-        op.create_index(f"ix_parcourstechniqueprofessionnel_{column}", "parcourstechniqueprofessionnel", [column], unique=(column=="code"))
+    for column in ("secteur", "filiere", "metier", "statut_validation", "est_actif"):
+        op.create_index(f"ix_parcourstechniqueprofessionnel_{column}", "parcourstechniqueprofessionnel", [column])
 
     op.create_table(
         "offreetablissementsscolaire",
