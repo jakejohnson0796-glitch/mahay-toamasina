@@ -1140,7 +1140,7 @@ def test_offre_etablissement_refuse_le_melange_formation_et_classe():
     institution = EtablissementScolaire(
         nom="Centre test",
         code="ETFP-TEST-MIXTE",
-        type_etablissement="centre_formation_professionnelle",
+        type_etablissement="centre_formation",
         secteur="inconnu",
         region="ATSINANANA",
         source_officielle="https://www.metfp.gov.mg/cartographie",
