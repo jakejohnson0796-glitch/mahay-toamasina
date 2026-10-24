@@ -219,7 +219,7 @@ def upgrade() -> None:
     op.create_index(
         "uq_offre_etablissement_code_active",
         "offreetablissementsscolaire",
-        ["etablissement_id", "code_offre"],
+        ["etablissement_id", "code_offre", "annee_scolaire"],
         unique=True,
         postgresql_where=sa.text("est_active = TRUE"),
         sqlite_where=sa.text("est_active = 1"),
