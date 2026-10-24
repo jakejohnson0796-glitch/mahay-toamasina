@@ -335,7 +335,6 @@ def creer_tentative(
                     question["question"] for question in questions_validees
                 )
                 empreintes_deja_vues.update(empreintes_nouvelles)
-                structures_deja_vues.update(structures_nouvelles)
                 raise QuizValidationError(
                     "Le quiz contient des questions identiques."
                 )
@@ -344,7 +343,6 @@ def creer_tentative(
                     question["question"] for question in questions_validees
                 )
                 empreintes_deja_vues.update(empreintes_nouvelles)
-                structures_deja_vues.update(structures_nouvelles)
                 raise QuizValidationError(
                     "Le quiz répète une question proposée dans un quiz récent."
                 )
@@ -353,18 +351,31 @@ def creer_tentative(
                     question["question"] for question in questions_validees
                 )
                 empreintes_deja_vues.update(empreintes_nouvelles)
-                structures_deja_vues.update(structures_nouvelles)
                 raise QuizValidationError(
                     "Le quiz contient des exercices de même structure qui ne diffèrent que par les nombres."
                 )
-            if structures_deja_vues.intersection(structures_nouvelles):
+            structures_reprises = structures_deja_vues.intersection(structures_nouvelles)
+            if _trop_de_structures_reutilisees(nb_questions, len(structures_reprises)):
                 questions_a_eviter_essai.extend(
                     question["question"] for question in questions_validees
                 )
                 empreintes_deja_vues.update(empreintes_nouvelles)
-                structures_deja_vues.update(structures_nouvelles)
+                logger.info(
+                    "Anti-répétition quiz : %s/%s structures récentes réutilisées "
+                    "(seuil=%s), nouvelle génération demandée.",
+                    len(structures_reprises),
+                    nb_questions,
+                    _seuil_structures_reutilisees(nb_questions),
+                )
                 raise QuizValidationError(
-                    "Le quiz reprend un exercice récent en ne changeant que les nombres."
+                    "Trop de questions reprennent la structure d'exercices récents."
+                )
+            if structures_reprises:
+                logger.debug(
+                    "Anti-répétition quiz : %s structure(s) commune(s) avec l'historique "
+                    "sur %s questions ; chevauchement isolé accepté.",
+                    len(structures_reprises),
+                    nb_questions,
                 )
 
             tentative = TentativeQuiz(
@@ -597,6 +608,23 @@ def _structure_question(question: dict) -> str:
     texte = re.sub(r"(?<!\w)[+-]?\d+(?:[.,]\d+)?%?", "#", texte)
     texte = re.sub(r"\s+", " ", texte).strip().strip(" \t\r\n.:;!?")
     return texte
+
+
+def _seuil_structures_reutilisees(nb_questions: int) -> int:
+    """Nombre de signatures proches tolérées avant de demander une nouvelle génération.
+
+    La signature structurelle masque les nombres, donc elle est volontairement
+    moins stricte que l'empreinte exacte. Un seul énoncé semblable parmi cinq
+    peut être un faux positif ; le modèle reste invité à varier chaque exercice,
+    mais un chevauchement isolé ne doit pas rendre tout le quiz inutilisable.
+    """
+    nb = max(0, int(nb_questions or 0))
+    return max(2, (nb * 3 + 9) // 10) if nb else 1
+
+
+def _trop_de_structures_reutilisees(nb_questions: int, nombre_structures: int) -> bool:
+    """Déclenche une nouvelle génération seulement si le chevauchement est significatif."""
+    return max(0, int(nombre_structures or 0)) >= _seuil_structures_reutilisees(nb_questions)
 
 
 def _lire_preuves_apprentissage(progression: ProgressionNotion) -> Dict[str, set[str]]:
