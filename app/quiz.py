@@ -263,6 +263,7 @@ def creer_tentative(
     cycle_education: Optional[str] = None,
     niveau_scolaire_id: Optional[int] = None,
     option_scolaire_id: Optional[int] = None,
+    sujet_cible: Optional[str] = None,
 ) -> TentativeQuiz:
     """Genere et publie rapidement un quiz après validation locale.
 
@@ -275,6 +276,20 @@ def creer_tentative(
     contexte_apprentissage = _contexte_personnalise_quiz(
         session, utilisateur.id, matiere, niveau
     )
+    sujet_cible = (sujet_cible or "").strip()
+    if sujet_cible:
+        if len(sujet_cible) > 160:
+            raise QuizValidationError("Le sujet ciblé ne peut pas dépasser 160 caractères.")
+        bloc_sujet_cible = (
+            "SUJET OU MODULE PRÉCIS À PRIVILÉGIER DANS CETTE MATIÈRE : "
+            + sujet_cible
+            + ". Construis les questions autour de ce sujet, sans sortir du programme ni révéler les réponses."
+        )
+        contexte_apprentissage = (
+            f"{contexte_apprentissage}\\n\\n{bloc_sujet_cible}"
+            if contexte_apprentissage
+            else bloc_sujet_cible
+        )
     questions_a_eviter_essai = list(questions_a_eviter)
     empreintes_deja_vues = {
         empreinte
