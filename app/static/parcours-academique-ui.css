@@ -452,3 +452,9 @@ html[data-theme="sombre"] .cercles-page-shell .cercles-parcours-numero {
     transition: none;
   }
 }
+
+.interface-referentiel-scolaire .referentiel-scolaire-etat .etat-catalogue.is-complet {
+  background: rgba(134, 213, 166, .15);
+  border-color: rgba(134, 213, 166, .42);
+  color: #C5F2D6;
+}
