@@ -94,7 +94,7 @@
       rows.forEach(function (row) {
         const selected = String(row.id) === String(currentOption);
         currentWasAdded = currentWasAdded || selected;
-        addOption(option, row.id, row.libelle, selected);
+        addOption(option, row.id, row.libelle_affiche || row.libelle, selected);
       });
       if (!currentWasAdded) option.value = "";
       option.disabled = false;
