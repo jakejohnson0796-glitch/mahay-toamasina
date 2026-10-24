@@ -193,7 +193,10 @@ def _resumer_mission(mission: dict, acces_ia: bool) -> dict:
             else "Pratiquer avec un quiz ciblé, puis vérifier si la maîtrise tient."
         )
         return {
+            "type": "active",
             "active": True,
+            "etape": str(mission.get("etape_courante") or ("comprendre" if action == "tuteur" else "pratiquer")),
+            "action": str(action or "quiz"),
             "titre": str(mission.get("titre") or "Poursuivre ta mission"),
             "matiere": str(mission.get("matiere") or ""),
             "notion": str(mission.get("notion") or ""),
