@@ -6,13 +6,15 @@ Le catalogue indique explicitement quand l'inventaire est partiel.
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, or_, select
 
 from ..database import get_session
 from ..models import (
     EtablissementScolaire,
+    MatiereScolaire,
     NiveauScolaire,
     OptionScolaire,
+    ProgrammeMatiereScolaire,
     ReferentielScolaire,
 )
 
@@ -178,6 +180,86 @@ def lister_options_scolaires(
         .order_by(OptionScolaire.parent_option_id, OptionScolaire.libelle)
     ).all()
     return [_donnees_option(option, options) for option in options]
+
+
+@router.get("/niveaux/{niveau_id}/matieres")
+def lister_matieres_scolaires(
+    niveau_id: int,
+    option_id: Optional[int] = Query(default=None, ge=1),
+    session: Session = Depends(get_session),
+):
+    """Liste les matières vérifiées pour une classe et une série/option."""
+    referentiel = _referentiel_actif(session)
+    niveau = session.get(NiveauScolaire, niveau_id)
+    if (
+        not referentiel
+        or not niveau
+        or niveau.referentiel_id != referentiel.id
+        or not niveau.est_actif
+        or niveau.statut_validation != "verifie"
+    ):
+        return []
+
+    options_compatibles: list[int] = []
+    if option_id is not None:
+        option = session.get(OptionScolaire, option_id)
+        if (
+            not option
+            or option.referentiel_id != referentiel.id
+            or option.niveau_id != niveau.id
+            or not option.est_active
+            or option.statut_validation != "verifie"
+        ):
+            return []
+        options_compatibles.append(option.id)
+        if option.parent_option_id is not None:
+            parent = session.get(OptionScolaire, option.parent_option_id)
+            if (
+                not parent
+                or parent.referentiel_id != referentiel.id
+                or parent.niveau_id != niveau.id
+                or parent.parent_option_id is not None
+                or not parent.est_active
+                or parent.statut_validation != "verifie"
+            ):
+                return []
+            options_compatibles.append(parent.id)
+
+    requete = (
+        select(ProgrammeMatiereScolaire, MatiereScolaire)
+        .join(MatiereScolaire, MatiereScolaire.id == ProgrammeMatiereScolaire.matiere_id)
+        .where(
+            ProgrammeMatiereScolaire.referentiel_id == referentiel.id,
+            ProgrammeMatiereScolaire.niveau_id == niveau.id,
+            ProgrammeMatiereScolaire.statut_validation == "verifie",
+            MatiereScolaire.est_active == True,  # noqa: E712
+            MatiereScolaire.statut_validation == "verifie",
+        )
+    )
+    if options_compatibles:
+        requete = requete.where(
+            or_(
+                ProgrammeMatiereScolaire.option_id.is_(None),
+                ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+            )
+        )
+    else:
+        requete = requete.where(ProgrammeMatiereScolaire.option_id.is_(None))
+
+    rows = session.exec(requete.order_by(MatiereScolaire.libelle)).all()
+    par_id: dict[int, dict] = {}
+    for programme, matiere in rows:
+        entry = par_id.setdefault(matiere.id, {
+            "id": matiere.id,
+            "code": matiere.code,
+            "libelle": matiere.libelle,
+            "libelle_malagasy": matiere.libelle_malagasy,
+            "obligatoire": programme.obligatoire,
+            "source_officielle": programme.source_officielle or matiere.source_officielle,
+        })
+        if programme.obligatoire:
+            entry["obligatoire"] = True
+    return sorted(par_id.values(), key=lambda item: item["libelle"].casefold())
 
 
 @router.get("/etablissements")
