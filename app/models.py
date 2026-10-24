@@ -1017,6 +1017,7 @@ class DemandeCreationCercle(SQLModel, table=True):
     niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
     option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
     etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     nom: str
     description: Optional[str] = None
     raison: str
@@ -1050,7 +1051,75 @@ class DemandeCreationCercle(SQLModel, table=True):
             sqlite_where=text(
                 "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
                 "AND filiere_id IS NULL AND niveau IS NOT NULL"
-            ),
+                Index(
+            "ix_demande_creation_scolaire_unique_000",
+            "niveau_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_001",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_010",
+            "niveau_scolaire_id",
+            "etablissement_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_011",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "etablissement_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_100",
+            "niveau_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_101",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_110",
+            "niveau_scolaire_id",
+            "etablissement_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_111",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "etablissement_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+    ),
             postgresql_where=text(
                 "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
                 "AND filiere_id IS NULL AND niveau IS NOT NULL"
