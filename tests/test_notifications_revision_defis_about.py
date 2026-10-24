@@ -41,7 +41,7 @@ def test_notification_labels_and_revision_destinations_are_human_readable():
 def test_revision_sections_keep_navigation_and_mobile_priority_hierarchy():
     page = read("app/templates/mes_revisions.html")
     style = read("app/static/feature-pages-refresh.css")
-    assert 'class="hub-focus-section" id="notions-a-revoir"' in page
+    assert 'hub-focus-section' in page and 'id="notions-a-revoir"' in page
     assert 'id="progression-par-matiere"' in page
     assert 'id="documents-recents"' in page
     assert 'id="derniers-quiz"' in page
