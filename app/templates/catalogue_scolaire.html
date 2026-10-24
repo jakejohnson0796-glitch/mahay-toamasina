@@ -61,7 +61,7 @@
         <a class="bouton bouton-secondaire" href="/catalogue-scolaire">Effacer les filtres</a>
       </div>
     </form>
-    <h3>{{ offres|length }} offre(s) confirmée(s){% if annee_selectionnee %} · {{ annee_selectionnee }}{% endif %}</h3>
+    <h3>{{ offres|length }} offre(s) affichée(s) sur {{ offres_total }} confirmée(s){% if annee_selectionnee %} · {{ annee_selectionnee }}{% endif %}</h3>
     {% if offres %}
     <div class="catalogue-offres-liste">
       {% for offre in offres %}
@@ -79,6 +79,20 @@
       <h4>Aucune offre confirmée pour ces filtres</h4>
       <p>Ce résultat ne signifie pas que les établissements n’enseignent rien : leur offre locale doit encore être documentée ou validée pour une année scolaire précise. Les éléments en attente ne sont volontairement pas présentés comme des offres confirmées.</p>
     </div>
+    {% endif %}
+    {% if pages_offres > 1 %}
+    <nav class="catalogue-pagination" aria-label="Pagination des offres confirmées">
+      <p>Page {{ page_offres }} sur {{ pages_offres }} · {{ offres_total }} offre(s) confirmée(s)</p>
+      <form method="get" action="/catalogue-scolaire">
+        <input type="hidden" name="q" value="{{ q }}">
+        <input type="hidden" name="region" value="{{ region_selectionnee }}">
+        <input type="hidden" name="page_etablissements" value="{{ page_etablissements }}">
+        {% if type_offre_selectionne %}<input type="hidden" name="type_offre" value="{{ type_offre_selectionne }}">{% endif %}
+        {% if annee_selectionnee %}<input type="hidden" name="annee_scolaire" value="{{ annee_selectionnee }}">{% endif %}
+        {% if page_offres > 1 %}<button class="bouton bouton-secondaire" type="submit" name="page_offres" value="{{ page_offres - 1 }}">Précédent</button>{% endif %}
+        {% if page_offres < pages_offres %}<button class="bouton bouton-primaire" type="submit" name="page_offres" value="{{ page_offres + 1 }}">Suivant</button>{% endif %}
+      </form>
+    </nav>
     {% endif %}
   </section>
 
@@ -136,6 +150,20 @@
       <p>Aucun établissement ne correspond à cette recherche.</p>
       {% endfor %}
     </div>
+    {% if pages_etablissements > 1 %}
+    <nav class="catalogue-pagination" aria-label="Pagination des établissements">
+      <p>Page {{ page_etablissements }} sur {{ pages_etablissements }} · {{ nb_etablissements }} établissement(s) répertorié(s)</p>
+      <form method="get" action="/catalogue-scolaire">
+        <input type="hidden" name="q" value="{{ q }}">
+        <input type="hidden" name="region" value="{{ region_selectionnee }}">
+        <input type="hidden" name="page_offres" value="{{ page_offres }}">
+        {% if type_offre_selectionne %}<input type="hidden" name="type_offre" value="{{ type_offre_selectionne }}">{% endif %}
+        {% if annee_selectionnee %}<input type="hidden" name="annee_scolaire" value="{{ annee_selectionnee }}">{% endif %}
+        {% if page_etablissements > 1 %}<button class="bouton bouton-secondaire" type="submit" name="page_etablissements" value="{{ page_etablissements - 1 }}">Précédent</button>{% endif %}
+        {% if page_etablissements < pages_etablissements %}<button class="bouton bouton-primaire" type="submit" name="page_etablissements" value="{{ page_etablissements + 1 }}">Suivant</button>{% endif %}
+      </form>
+    </nav>
+    {% endif %}
   </section>
 </div>
 {% endblock %}

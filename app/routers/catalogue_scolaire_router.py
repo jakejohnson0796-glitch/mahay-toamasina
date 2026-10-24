@@ -4,6 +4,7 @@ Le catalogue public ne montre que les établissements et offres vérifiés.
 Le statut partiel du référentiel reste visible tant que la couverture nationale
 et les offres réelles par établissement n'ont pas été complétées.
 """
+from math import ceil
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -24,6 +25,9 @@ from ..templating import templates
 
 router = APIRouter()
 
+PAGE_SIZE = 50
+MAX_PAGE = 10000
+
 
 def _referentiel_courant(session: Session) -> Optional[ReferentielScolaire]:
     return session.exec(
@@ -41,6 +45,8 @@ def page_catalogue_scolaire(
     region: Optional[str] = Query(default=None, max_length=100),
     type_offre: Optional[str] = Query(default=None, pattern="^(classe|serie|matiere|formation)$"),
     annee_scolaire: Optional[str] = Query(default=None, pattern=r"^\d{4}-\d{4}$"),
+    page_offres: int = Query(default=1, ge=1, le=MAX_PAGE),
+    page_etablissements: int = Query(default=1, ge=1, le=MAX_PAGE),
     session: Session = Depends(get_session),
 ):
     referentiel = _referentiel_courant(session)
@@ -156,12 +162,20 @@ def page_catalogue_scolaire(
                 ParcoursTechniqueProfessionnel.metier.ilike(terme),
             )
         )
+    nb_offres_total = session.execute(
+        requete.with_only_columns(
+            func.count(OffreEtablissementScolaire.id),
+            maintain_column_froms=True,
+        ).order_by(None)
+    ).scalar_one()
+    pages_offres = max(1, ceil(nb_offres_total / PAGE_SIZE))
+    page_offres = min(page_offres, pages_offres)
     rows = session.exec(
         requete.order_by(
             EtablissementScolaire.region,
             EtablissementScolaire.nom,
             OffreEtablissementScolaire.type_offre,
-        ).limit(100)
+        ).offset((page_offres - 1) * PAGE_SIZE).limit(PAGE_SIZE)
     ).all()
 
     offres = []
@@ -216,8 +230,18 @@ def page_catalogue_scolaire(
                 EtablissementScolaire.commune.ilike(terme),
             )
         )
+    nb_etablissements_total = session.execute(
+        etab_requete.with_only_columns(
+            func.count(EtablissementScolaire.id),
+            maintain_column_froms=True,
+        ).order_by(None)
+    ).scalar_one()
+    pages_etablissements = max(1, ceil(nb_etablissements_total / PAGE_SIZE))
+    page_etablissements = min(page_etablissements, pages_etablissements)
     etablissements = session.exec(
-        etab_requete.order_by(EtablissementScolaire.region, EtablissementScolaire.nom).limit(100)
+        etab_requete.order_by(EtablissementScolaire.region, EtablissementScolaire.nom)
+        .offset((page_etablissements - 1) * PAGE_SIZE)
+        .limit(PAGE_SIZE)
     ).all()
     regions = session.exec(
         select(EtablissementScolaire.region)
@@ -255,6 +279,12 @@ def page_catalogue_scolaire(
             "region_selectionnee": region or "",
             "type_offre_selectionne": type_offre or "",
             "nb_programmes_verifies": nb_programmes_verifies,
-            "nb_etablissements": len(etablissements),
+            "nb_etablissements": nb_etablissements_total,
+            "offres_total": nb_offres_total,
+            "page_offres": page_offres,
+            "pages_offres": pages_offres,
+            "page_etablissements": page_etablissements,
+            "pages_etablissements": pages_etablissements,
+            "taille_page_catalogue": PAGE_SIZE,
         },
     )

@@ -33,7 +33,7 @@ from app.models import (
 )
 from app import quiz as quiz_module
 from app.cercles_scolaires import assurer_cercles_scolaires
-from app.routers import admin_scolaire_router, auth_router, cercles_router, documents_router, quiz_router, scolaire_router, tuteur_router
+from app.routers import admin_scolaire_router, auth_router, catalogue_scolaire_router, cercles_router, documents_router, quiz_router, scolaire_router, tuteur_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
     profil_correspond_au_cercle,
@@ -1175,5 +1175,114 @@ def test_offre_etablissement_refuse_le_melange_formation_et_classe():
     with pytest.raises(IntegrityError):
         session.commit()
     session.rollback()
+    session.close()
+    engine.dispose()
+
+
+def test_catalogue_public_pagine_offres_et_etablissements_sans_perdre_les_filtres():
+    from starlette.requests import Request
+
+    engine, session = _session()
+    referentiel, niveau, option = _school_catalogue(session)
+    source_men = "https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/"
+    source_metfp = "https://www.metfp.gov.mg/cartographie/"
+    parcours = ParcoursTechniqueProfessionnel(
+        code="ETFP-PAGINATION-TEST",
+        secteur="Gestion",
+        filiere="Gestion comptable",
+        metier="Agent test",
+        source_officielle=source_metfp,
+        statut_validation="verifie",
+        est_actif=True,
+    )
+    session.add(parcours)
+    session.commit()
+    session.refresh(parcours)
+
+    etablissements = [
+        EtablissementScolaire(
+            nom=f"LTP Pagination {index:03d}",
+            code=f"ETFP-PAGINATION-{index:03d}",
+            type_etablissement="lycee_technique",
+            secteur="public",
+            region="ANALAMANGA",
+            commune="Antananarivo",
+            source_officielle=source_metfp,
+            est_verifie=True,
+            est_actif=True,
+        )
+        for index in range(55)
+    ]
+    session.add_all(etablissements)
+    session.commit()
+    for institution in etablissements:
+        session.refresh(institution)
+
+    session.add_all([
+        OffreEtablissementScolaire(
+            etablissement_id=institution.id,
+            code_offre=f"FORMATION-PAGINATION-{index:03d}",
+            type_offre="formation",
+            parcours_etfp_id=parcours.id,
+            annee_scolaire="2026-2027",
+            source_officielle=source_metfp,
+            statut_validation="verifie",
+            est_active=True,
+        )
+        for index, institution in enumerate(etablissements)
+    ])
+    session.commit()
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.3"},
+        "http_version": "1.1",
+        "method": "GET",
+        "scheme": "http",
+        "path": "/catalogue-scolaire",
+        "raw_path": b"/catalogue-scolaire",
+        "query_string": b"",
+        "headers": [],
+        "client": ("testclient", 12345),
+        "server": ("testserver", 80),
+        "session": {},
+        "state": {},
+    }
+    request = Request(scope)
+
+    premiere_page = catalogue_scolaire_router.page_catalogue_scolaire(
+        request=request,
+        q=None,
+        region="ANALAMANGA",
+        type_offre="formation",
+        annee_scolaire="2026-2027",
+        page_offres=1,
+        page_etablissements=1,
+        session=session,
+    )
+    html_premiere_page = premiere_page.body.decode("utf-8")
+    assert premiere_page.status_code == 200
+    assert "50 offre(s) affichée(s) sur 55 confirmée(s)" in html_premiere_page
+    assert "Page 1 sur 2" in html_premiere_page
+    assert "LTP Pagination 000" in html_premiere_page
+    assert "LTP Pagination 054" not in html_premiere_page
+
+    seconde_page = catalogue_scolaire_router.page_catalogue_scolaire(
+        request=request,
+        q=None,
+        region="ANALAMANGA",
+        type_offre="formation",
+        annee_scolaire="2026-2027",
+        page_offres=999,  # Une page hors limites est ramenée à la dernière page valide.
+        page_etablissements=999,
+        session=session,
+    )
+    html_seconde_page = seconde_page.body.decode("utf-8")
+    assert seconde_page.status_code == 200
+    assert "5 offre(s) affichée(s) sur 55 confirmée(s)" in html_seconde_page
+    assert "LTP Pagination 054" in html_seconde_page
+    assert 'name="type_offre" value="formation"' in html_seconde_page
+    assert 'name="annee_scolaire" value="2026-2027"' in html_seconde_page
+
     session.close()
     engine.dispose()
