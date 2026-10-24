@@ -92,7 +92,7 @@
       }
 
       data.forEach(function (item) {
-        addOption(option, item.id, item.libelle, { code: item.code });
+        addOption(option, item.id, item.libelle_affiche || item.libelle, { code: item.code });
       });
       option.disabled = false;
     }
