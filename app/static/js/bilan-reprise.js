@@ -34,6 +34,7 @@
   var focusAvantOuverture = null;
   var derniereEcritureActivite = 0;
   var jetonVerrou = "";
+  var epoqueBilan = 0;
 
   var TEXTES = {
     fr: {
@@ -563,6 +564,7 @@
     if (verrou > maintenant) return;
 
     tentativeOuverture = true;
+    var epoqueRequete = epoqueBilan;
     jetonVerrou = String(maintenant + LOCK_MS);
     ecrire(KEY_LOCK, jetonVerrou);
     var depart = lastSummary || (snapshotActivite ? snapshotActivite - 24 * 60 * 60 * 1000 : maintenant - 24 * 60 * 60 * 1000);
@@ -577,6 +579,7 @@
       if (!reponse.ok) throw new Error("bilan indisponible");
       return reponse.json();
     }).then(function (data) {
+      if (epoqueRequete !== epoqueBilan) throw new Error("ouverture du bilan interrompue");
       if (!data || !data.stats || !data.mission) throw new Error("bilan incomplet");
       data._a_un_bilan_precedent = Boolean(lastSummary);
       renderBilan(data, depart);
@@ -716,17 +719,20 @@
     document.addEventListener(nom, evenementActivite, { passive: true, capture: true });
   });
   window.addEventListener("pagehide", function () {
-    if (!ouvert) return;
-    // Fermer la page sans bouton de fermeture n'achève pas le bilan.
+    if (!ouvert && !tentativeOuverture) return;
+    // Quitter pendant le chargement ou l affichage ne termine pas le bilan.
+    epoqueBilan += 1;
     ouvert = false;
+    tentativeOuverture = false;
     root.hidden = true;
     root.setAttribute("aria-hidden", "true");
     document.body.classList.remove("bilan-reprise-ouvert");
     supprimerVerrouSiProprietaire(jetonVerrou);
     jetonVerrou = "";
+    ongletDejaActif = false;
     try { window.sessionStorage.removeItem(KEY_TAB); } catch (_erreur) {}
   });
-  document.addEventListener("visibilitychange", function () {
+    document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible") verifierRetour("visibilite");
   });
   window.addEventListener("pageshow", function () {
