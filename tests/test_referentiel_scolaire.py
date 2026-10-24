@@ -9,8 +9,11 @@ from app.models import (
     CercleEtude,
     CycleEnseigne,
     Document,
+    Faculte,
+    Filiere,
     MatiereScolaire,
     Mention,
+    Universite,
     NiveauScolaire,
     OptionScolaire,
     ProgrammeMatiereScolaire,
@@ -913,6 +916,104 @@ def test_la_base_refuse_de_melanger_cible_scolaire_et_universitaire():
         ))
         session.commit()
     session.rollback()
+
+    session.close()
+    engine.dispose()
+
+def test_recherche_des_cercles_separe_les_cibles_scolaires_des_universitaires():
+    engine, session = _session()
+    referentiel, niveau_scolaire, option = _school_catalogue(session)
+    admin = _admin_sync_cercles(session, telephone="0340000204")
+    eleve = _user(
+        session,
+        niveau_id=niveau_scolaire.id,
+        option_id=option.id,
+        telephone="0340000205",
+    )
+
+    universite = Universite(nom="Université de test — séparation")
+    session.add(universite)
+    session.commit()
+    session.refresh(universite)
+    faculte = Faculte(nom="Faculté de test", universite_id=universite.id)
+    mention = Mention(nom="Mention de test — séparation")
+    session.add_all([faculte, mention])
+    session.commit()
+    session.refresh(faculte)
+    session.refresh(mention)
+    filiere = Filiere(
+        nom="Parcours de test",
+        faculte_id=faculte.id,
+        mention_id=mention.id,
+        niveau="L1",
+    )
+    session.add(filiere)
+    session.commit()
+    session.refresh(filiere)
+
+    cercle_scolaire = CercleEtude(
+        nom="Lycée — Terminale — Série D",
+        createur_id=admin.id,
+        portee_academique="scolaire",
+        niveau_scolaire_id=niveau_scolaire.id,
+        option_scolaire_id=option.id,
+        statut=StatutCercle.ACTIF,
+    )
+    cercle_universitaire = CercleEtude(
+        nom="Mention de test — Parcours — L1",
+        createur_id=admin.id,
+        portee_academique="universitaire",
+        mention_id=mention.id,
+        filiere_id=filiere.id,
+        niveau="L1",
+        statut=StatutCercle.ACTIF,
+    )
+    cercle_transversal = CercleEtude(
+        nom="Groupe inter-cycles",
+        createur_id=admin.id,
+        portee_academique="transversal",
+        statut=StatutCercle.ACTIF,
+    )
+    session.add_all([cercle_scolaire, cercle_universitaire, cercle_transversal])
+    session.commit()
+    session.refresh(cercle_scolaire)
+    session.refresh(cercle_universitaire)
+    session.refresh(cercle_transversal)
+
+    ids_visibles_eleve = set(session.exec(
+        select(CercleEtude.id).where(
+            condition_cercles_disponibles(eleve, session)
+        )
+    ).all())
+    assert cercle_scolaire.id in ids_visibles_eleve
+    assert cercle_transversal.id in ids_visibles_eleve
+    assert cercle_universitaire.id not in ids_visibles_eleve
+
+    etudiant_universitaire = Utilisateur(
+        nom="Étudiant universitaire de test",
+        telephone="0340000206",
+        mot_de_passe_hash="hash",
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="eleve",
+        cycle_education="universite",
+        universite_id=universite.id,
+        faculte_id=faculte.id,
+        mention_id=mention.id,
+        filiere_id=filiere.id,
+        niveau="L1",
+    )
+    session.add(etudiant_universitaire)
+    session.commit()
+    session.refresh(etudiant_universitaire)
+
+    ids_visibles_universitaire = set(session.exec(
+        select(CercleEtude.id).where(
+            condition_cercles_disponibles(etudiant_universitaire, session)
+        )
+    ).all())
+    assert cercle_universitaire.id in ids_visibles_universitaire
+    assert cercle_transversal.id in ids_visibles_universitaire
+    assert cercle_scolaire.id not in ids_visibles_universitaire
 
     session.close()
     engine.dispose()
