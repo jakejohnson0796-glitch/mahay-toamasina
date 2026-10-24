@@ -107,6 +107,8 @@
     const cycleSelect = document.getElementById("cycle_education");
     const blocUniversite = document.getElementById("bloc-universite");
     const blocScolaire = document.getElementById("bloc-scolaire");
+    const blocCyclesEnseignes = document.getElementById("bloc-cycles-enseignes");
+    const champsCyclesEnseignes = Array.from(document.querySelectorAll('input[name="cycles_enseignes"]'));
     const progress = document.querySelector("[data-auth-progress]");
     if (!roleSelect || !blocAcademique || !progress) return;
 
@@ -160,6 +162,13 @@
       if (!cycleValide()) return false;
 
       if (cycleSelect.value === "universite") {
+        // Un candidat professeur peut déclarer un cycle universitaire sans
+        // prétendre être étudiant dans une filière donnée. Si un parcours
+        // est commencé, le backend exige toujours qu'il soit cohérent.
+        if (
+          roleSelect.value === "professeur" &&
+          champsUniversitaires.every(function (champ) { return !champ.value.trim(); })
+        ) return true;
         return champsUniversitaires.every(function (champ) {
           return champ.value.trim().length > 0 && !champ.disabled;
         });
@@ -178,8 +187,13 @@
       const profilActif = estProfilAvecParcours();
       const estUniversitaire = profilActif && cycleSelect && cycleSelect.value === "universite";
       const estScolaire = profilActif && cycleSelect && ["college", "lycee"].includes(cycleSelect.value);
+      const estProfesseur = roleSelect.value === "professeur";
 
       blocAcademique.hidden = !profilActif;
+      if (blocCyclesEnseignes) blocCyclesEnseignes.hidden = !estProfesseur;
+      champsCyclesEnseignes.forEach(function (champ) {
+        champ.disabled = !estProfesseur;
+      });
       if (cycleSelect) {
         cycleSelect.disabled = !profilActif;
         cycleSelect.required = profilActif;
@@ -188,7 +202,7 @@
       if (blocScolaire) blocScolaire.hidden = !estScolaire;
 
       champsUniversitaires.forEach(function (champ) {
-        champ.required = Boolean(estUniversitaire);
+        champ.required = Boolean(estUniversitaire && !estProfesseur);
       });
       if (niveauScolaire) {
         niveauScolaire.required = Boolean(estScolaire && roleSelect.value !== "professeur");
