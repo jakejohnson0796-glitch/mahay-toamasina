@@ -10,12 +10,13 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
 from ..models import (
+    CercleEtude,
     EtablissementScolaire,
     MatiereScolaire,
     NiveauScolaire,
@@ -23,8 +24,10 @@ from ..models import (
     ProgrammeMatiereScolaire,
     ReferentielScolaire,
     RoleUtilisateur,
+    StatutCercle,
     Utilisateur,
 )
+from ..cercles_scolaires import assurer_cercles_scolaires
 from ..templating import templates
 
 router = APIRouter()
@@ -112,6 +115,19 @@ def page_referentiel_scolaire(
     niveaux_map = {item.id: item for item in niveaux}
     options_map = {item.id: item for item in options}
     matieres_map = {item.id: item for item in matieres}
+    cercles_scolaires_actifs = session.exec(
+        select(func.count()).select_from(CercleEtude).where(
+            CercleEtude.portee_academique == "scolaire",
+            CercleEtude.statut == StatutCercle.ACTIF,
+        )
+    ).one()
+    cercles_scolaires_synchronises = session.exec(
+        select(func.count()).select_from(CercleEtude).where(
+            CercleEtude.portee_academique == "scolaire",
+            CercleEtude.synchronise_referentiel == True,  # noqa: E712
+            CercleEtude.statut == StatutCercle.ACTIF,
+        )
+    ).one()
 
     return templates.TemplateResponse(
         request,
@@ -127,7 +143,32 @@ def page_referentiel_scolaire(
             "matieres_map": matieres_map,
             "etablissements": etablissements,
             "programmes": programmes,
+            "cercles_scolaires_actifs": cercles_scolaires_actifs,
+            "cercles_scolaires_synchronises": cercles_scolaires_synchronises,
         },
+    )
+
+
+@router.post("/admin/referentiel/scolaire/cercles/synchroniser")
+def synchroniser_cercles_scolaires(
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Déclenche manuellement la réconciliation idempotente des cercles scolaires."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    rapport = assurer_cercles_scolaires(session)
+    return RedirectResponse(
+        "/admin/referentiel/scolaire"
+        f"?ok=cercles_synchronises&cibles={int(rapport['cibles'] or 0)}"
+        f"&crees={int(rapport['crees'] or 0)}"
+        f"&reactives={int(rapport['reactives'] or 0)}"
+        f"&archives={int(rapport['archives'] or 0)}"
+        f"&preserves={int(rapport['preserves'] or 0)}",
+        status_code=303,
     )
 
 
@@ -336,6 +377,7 @@ def valider_option_scolaire(
     entree.statut_validation = "verifie"
     session.add(entree)
     session.commit()
+    assurer_cercles_scolaires(session)
     return _rediriger("option_validee", entree.id)
 
 
@@ -394,6 +436,7 @@ def valider_matiere_scolaire(
     entree.statut_validation = "verifie"
     session.add(entree)
     session.commit()
+    assurer_cercles_scolaires(session)
     return _rediriger("matiere_validee", entree.id)
 
 
@@ -535,4 +578,5 @@ def valider_association_programme_scolaire(
     entree.statut_validation = "verifie"
     session.add(entree)
     session.commit()
+    assurer_cercles_scolaires(session)
     return _rediriger("programme_scolaire_valide", entree.id)
