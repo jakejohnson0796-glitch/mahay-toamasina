@@ -405,14 +405,16 @@ def downgrade():
         for col in ("etablissement_scolaire_id", "option_scolaire_id", "niveau_scolaire_id", "portee_academique"):
             batch.drop_column(col)
 
+    # Les index doivent être supprimés AVANT le batch SQLite qui reconstruit
+    # la table ; sinon Alembic tente de recréer un index sur une colonne retirée.
+    for col in ("niveau_scolaire_id", "option_scolaire_id"):
+        op.drop_index(f"ix_tentativequiz_{col}", table_name="tentativequiz")
     with op.batch_alter_table("tentativequiz") as batch:
         batch.drop_constraint("fk_tentativequiz_option_scolaire", type_="foreignkey")
         batch.drop_constraint("fk_tentativequiz_niveau_scolaire", type_="foreignkey")
         batch.drop_column("option_scolaire_id")
         batch.drop_column("niveau_scolaire_id")
         batch.drop_column("cycle_education")
-    for col in ("niveau_scolaire_id", "option_scolaire_id"):
-        op.drop_index(f"ix_tentativequiz_{col}", table_name="tentativequiz")
 
     op.drop_index("ix_cercle_scolaire_cible_actif", table_name="cercleetude")
     for table in ("cours", "cercleetude"):
