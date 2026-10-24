@@ -165,10 +165,12 @@
         });
       }
 
-      // Le niveau est le seul élément obligatoire pour le cycle scolaire.
-      // Série/option et établissement restent facultatifs si le catalogue
-      // local n'est pas encore exhaustif ou si la famille ne souhaite pas
-      // préciser l'établissement.
+      // Un élève doit préciser sa classe. Un professeur peut déclarer
+      // enseigner au collège/lycée sans devoir choisir une seule classe ;
+      // le niveau reste facultatif et sert alors de spécialité indicative.
+      if (roleSelect.value === "professeur" && (!niveauScolaire || !niveauScolaire.value)) {
+        return !optionScolaire || !optionScolaire.value;
+      }
       return Boolean(niveauScolaire && niveauScolaire.value && !niveauScolaire.disabled);
     }
 
@@ -189,7 +191,13 @@
         champ.required = Boolean(estUniversitaire);
       });
       if (niveauScolaire) {
-        niveauScolaire.required = Boolean(estScolaire);
+        niveauScolaire.required = Boolean(estScolaire && roleSelect.value !== "professeur");
+      }
+      const labelNiveau = document.querySelector('label[for="niveau_scolaire_id"]');
+      if (labelNiveau) {
+        labelNiveau.textContent = roleSelect.value === "professeur"
+          ? "Niveau enseigné (facultatif)"
+          : "Classe (obligatoire)";
       }
       if (optionScolaire) optionScolaire.required = false;
       if (etablissementScolaire) etablissementScolaire.required = false;
