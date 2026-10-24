@@ -91,6 +91,20 @@ PARCOURS = {
     "IND_TEC_METALLIQUE": ("Industriel", "STRUCTURE METALLIQUE", "Technicien en ouvrage métallique"),
     "IND_ENERGIE_SOLAIRE": ("AUTRES", "ENERGIE RENOUVELABLE", "INSTALLATEUR EN PHOTOVOLTAIQUE"),
     "IND_TECH_METIER_IMPRESSION": ("Industriel", "MAINTENANCE INDUSTRIELLE", "Agent de Maintenance en Système d’Impression"),
+    "TOURISME_ACCOMPAGNATEUR": ("Tourisme - Hôtellerie - Restauration", "TOURISME", "ACCOMPAGNATEUR TOURISTIQUE"),
+    "TOURISME_GUIDE": ("Tourisme - Hôtellerie - Restauration", "TOURISME", "GUIDE INTERPRETE"),
+    "TOURISME_AGENT_ACCUEIL": ("Tourisme - Hôtellerie - Restauration", "TOURISME", "AGENTS D'ACCEUIL TOURISTIQUE"),
+    "HOTEL_FEMME_CHAMBRE": ("Tourisme - Hôtellerie - Restauration", "HOTELLERIE", "FEMME /VALET DE CHAMBRE"),
+    "HOTEL_CONCIERGE": ("Tourisme - Hôtellerie - Restauration", "HOTELLERIE", "CONCIERGE D'HOTEL"),
+    "HOTEL_AGENT_ACCUEIL": ("Tourisme - Hôtellerie - Restauration", "HOTELLERIE", "AGENT D'ACCUEIL"),
+    "HOTEL_HOTESSE_SALLE": ("Tourisme - Hôtellerie - Restauration", "HOTELLERIE", "HOTESSE DE SALLE"),
+    "HOTEL_BARMAN": ("Tourisme - Hôtellerie - Restauration", "HOTELLERIE", "BARMAN"),
+    "RESTO_TRAITEUR": ("", "", "Traiteur"),
+    "RESTO_CHARCUTIER": ("Tourisme - Hôtellerie - Restauration", "RESTAURATION", "Charcutier"),
+    "BTP_FORGERON": ("", "", "Forgeron"),
+    "AGRICULTURE_LAITIER": ("", "", "Ouvrier d’exploitation laitière"),
+    "AGRICULTURE_MAINTENANCE_EQUIPEMENT": ("Developpement Rural", "MAINTENANCE DES EQUIPEMENTS ET MATERIELS AGRICOLE", "TECHNICIEN EN MAINTENANCE DES EQUIPEMENTS ET MATERIELS AGRICOLE"),
+    "MECANICIEN_AUTOMOBILE": ("", "", "Mécanicien d’automobiles"),
 }
 
 # Snapshot of facility names clearly displayed on the official METFP map at
@@ -158,7 +172,36 @@ ETABLISSEMENTS = [
     ("LTP AMBALAVAO", "HAUTE MATSIATRA", "lycee_technique", "Ambalavao", ["GESTION_COMPTABLE", "BTPCHEF"]),
     ("CFP FIANARANTSOA", "HAUTE MATSIATRA", "centre_formation_professionnelle", "Fianarantsoa", ["TEXTILE_COUTURE", "RESTO_CUISINIER"]),
     ("CFPF TSIANOLONDROA", "HAUTE MATSIATRA", "centre_formation_professionnelle_specialise", "Tsianolondroa", ["TEXTILE_COUTURE", "TEXTILE_BRODERIE"]),
+
 ]
+
+# Complément du snapshot de cartographie officielle pour toutes les régions
+# absentes de l'extraction initiale. Même règle de prudence : les offres
+# importées restent à vérifier pour chaque année scolaire.
+ETABLISSEMENTS.extend([
+    ("CFP MAROATSETRA", "AMBATOSOA", "centre_formation_professionnelle", "Maroantsetra", ["BTPCHEF", "BTPDESSIN", "BTPCARRELEUR", "BTPARCHITECTE", "BTPDECORATEUR", "BTPTOPGRAPHE", "BTPCOMMIS", "BTPMENUISIER", "BTPELECTRICIEN", "BTPPOSEUR", "BTPALUMINIUM", "BTPPLOMBIER", "BTPPLATRIER", "BTPCONDUCTEUR_GRUE", "BTPCONDUCTEUR_ENGIN"]),
+    ("LTP MAROANTSETRA", "AMBATOSOA", "lycee_technique", "Maroantsetra", ["AGRICULTURE_MARAICHERE", "INDSTRUCTURE", "GESTION_COMPTABLE", "BTPCHEF", "BTPMENUISIER", "BTPELECTRICIEN", "SOUDURE", "ELEVAGE_AVICULTEUR"]),
+    ("CFP AMBATOFINANDRAHANA", "AMORON'I MANIA", "centre_formation_professionnelle", "Ambatofinandrahana", ["TEXTILE_COUTURE", "BTPCHEF", "BTPMENUISIER", "RESTO_PATISSIER"]),
+    ("LTP AMBATOFINANDRAHANA", "AMORON'I MANIA", "lycee_technique", "Ambatofinandrahana", ["BTPPOSEUR", "BTPALUMINIUM", "BTPPLOMBIER", "BTPPLATRIER", "BTPCONDUCTEUR_GRUE", "BTPCONDUCTEUR_ENGIN"]),
+    ("CFP TSIVORY", "ANOSY", "centre_formation_professionnelle", "Tsivory", ["AGRICULTURE_AGENT", "AGRICULTURE_MARAICHERE", "AGRICULTURE_EXPLOITANT", "AGRICULTURE_JARDINIER", "AGRICULTURE_RIZICULTEUR", "AGRICULTURE_FRUIT", "AGRICULTURE_MECANICIEN_INDUSTRIEL", "AGRICULTURE_PLOMBIER", "AGRICULTURE_CHARIOT", "ELEVAGE_AGENT", "ELEVAGE_TECHNICIEN", "ELEVAGE_PORC", "ELEVAGE_AVICULTEUR", "ELEVAGE_APICULTEUR"]),
+    ("CFPF BETROKA", "ANOSY", "centre_formation_professionnelle_specialise", "Betroka", ["TEXTILE_COUTURE"]),
+    ("CFPF FORT-DAUPHIN", "ANOSY", "centre_formation_professionnelle_specialise", "Tolagnaro", ["TOURISME_ACCOMPAGNATEUR", "TOURISME_GUIDE", "TOURISME_AGENT_ACCUEIL", "HOTEL_FEMME_CHAMBRE", "HOTEL_CONCIERGE", "HOTEL_AGENT_ACCUEIL", "HOTEL_HOTESSE_SALLE", "HOTEL_BARMAN", "RESTO_PATISSIER", "RESTO_COMMIS", "RESTO_RESTAURATEUR"]),
+    ("LTP TOLAGNARO", "ANOSY", "lycee_technique", "Tolagnaro", ["INDMECANIQUE", "GESTION_ENTREPRISE", "TEXTILE_COUTURE", "BTPCHEF", "RESTO_PATISSIER", "MECANICIEN_AUTOMOBILE"]),
+    ("CFP IAKORA", "IHOROMBE", "centre_formation_professionnelle", "Iakora", ["BTPCHEF", "RESTO_PATISSIER", "AGRICULTURE_OVINS", "AGRICULTURE_BOVINS"]),
+    ("LTP ANDOHANILAKAKA", "IHOROMBE", "lycee_technique", "Andohanilakaka", ["GESTION_COMPTABLE", "BTPCHEF", "BTPDESSIN", "RESTO_PATISSIER"]),
+    ("LTP IHOSY", "IHOROMBE", "lycee_technique", "Ihosy", ["GESTION_COMPTABLE", "BTPCHEF", "BTPDESSIN", "BTPPOSEUR", "RESTO_PATISSIER", "BTPMENUISIER"]),
+    ("LTP ARIVONIMAMO", "ITASY", "lycee_technique", "Arivonimamo", ["AGRICULTURE_AGENT", "ELEVAGE_TECHNICIEN", "GESTION_COMPTABLE"]),
+    ("LTP MIARINARIVO", "ITASY", "lycee_technique", "Miarinarivo", ["AGRICULTURE_AGENT", "ELEVAGE_TECHNICIEN", "AGRICULTURE_MARAICHERE", "GESTION_COMPTABLE", "INDTECH_INDUSTRIEL", "BTPCHEF"]),
+    ("LTP SOAVINANDRIANA", "ITASY", "lycee_technique", "Soavinandriana", ["AGRICULTURE_AGENT", "ELEVAGE_TECHNICIEN", "AGRICULTURE_MARAICHERE", "ELEVAGE_AVICULTEUR", "ELEVAGE_APICULTEUR", "GESTION_ENTREPRISE", "BTPCHEF", "BTPELECTRICIEN"]),
+    ("LTP MAINTIRANO", "MELAKY", "lycee_technique", "Maintirano", ["GESTION_COMPTABLE", "BTPCHEF"]),
+    ("LTP BELO SUR TSIRIBIHINA", "MENABE", "lycee_technique", "Belo sur Tsiribihina", ["AGRICULTURE_AGENT", "INDSTRUCTURE", "BTPCHEF", "BTPMENUISIER", "SOUDURE"]),
+    ("LTP MAHABO", "MENABE", "lycee_technique", "Mahabo", ["AGRICULTURE_AGENT", "ELEVAGE_TECHNICIEN", "GESTION_COMPTABLE", "SOUDURE"]),
+    ("CFP MANJA", "MENABE", "centre_formation_professionnelle", "Manja", ["AGRICULTURE_AGENT", "ELEVAGE_AGENT", "TEXTILE_COUTURE", "BTPMENUISIER", "RESTO_PATISSIER"]),
+    ("LTP MIANDRIVAZO", "MENABE", "lycee_technique", "Miandrivazo", ["COIFFURE_AIDE", "GESTION_COMPTABLE", "BTPMENUISIER", "RESTO_PATISSIER", "SOUDURE"]),
+    ("CFPF MANANJARY", "VATOVAVY", "centre_formation_professionnelle_specialise", "Mananjary", ["TEXTILE_COUTURE", "TEXTILE_BRODERIE", "RESTO_PATISSIER", "RESTO_RESTAURATEUR", "RESTO_CUISINIER"]),
+    ("LTP MANANJARY", "VATOVAVY", "lycee_technique", "Mananjary", ["INDSTRUCTURE", "INDMECANIQUE", "BTPCHEF", "BTPMENUISIER"]),
+    ("CRFPPV MAHAJANGA", "BOENY", "centre_formation_professionnelle_specialise", "Mahajanga", ["AGRICULTURE_MAINTENANCE_EQUIPEMENT", "TEXTILE_COUTURE", "TEXTILE_TAILLEUR"]),
+])
 
 def _slug(value: str) -> str:
     value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
