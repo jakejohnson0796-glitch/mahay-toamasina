@@ -721,14 +721,17 @@
               </select>
             </div>
 
-            <div id="bloc-cible-scolaire" class="document-upload-field full" data-school-scope hidden>
+            <div id="bloc-cible-scolaire" class="document-upload-field full" data-school-scope hidden
+                 data-current-level="{{ cercle.niveau_scolaire_id if cercle and cercle.niveau_scolaire_id else utilisateur.niveau_scolaire_id or '' }}"
+                 data-current-option="{{ cercle.option_scolaire_id if cercle and cercle.option_scolaire_id else utilisateur.option_scolaire_id or '' }}"
+                 data-current-establishment="{{ cercle.etablissement_scolaire_id if cercle and cercle.etablissement_scolaire_id else utilisateur.etablissement_scolaire_id or '' }}">
               <div class="document-upload-grid">
                 <div class="document-upload-field">
                   <label for="cycle_scolaire">Cycle scolaire <span>Obligatoire</span></label>
                   <select id="cycle_scolaire" name="cycle_scolaire" disabled>
                     <option value="">Choisissez collège ou lycée</option>
-                    <option value="college" {% if utilisateur.cycle_education == "college" or (cercle and cercle.niveau_scolaire_id and utilisateur.cycle_education != "lycee") %}selected{% endif %}>Collège</option>
-                    <option value="lycee" {% if utilisateur.cycle_education == "lycee" or (cercle and cercle.niveau_scolaire_id and utilisateur.cycle_education == "lycee") %}selected{% endif %}>Lycée</option>
+                    <option value="college" {% if (niveau_cercle_scolaire and niveau_cercle_scolaire.cycle == "college") or (not niveau_cercle_scolaire and utilisateur.cycle_education == "college") %}selected{% endif %}>Collège</option>
+                    <option value="lycee" {% if (niveau_cercle_scolaire and niveau_cercle_scolaire.cycle == "lycee") or (not niveau_cercle_scolaire and utilisateur.cycle_education == "lycee") %}selected{% endif %}>Lycée</option>
                   </select>
                 </div>
                 <div class="document-upload-field">
@@ -1272,5 +1275,6 @@
   maj();
 })();
 </script>
+<script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/cascade-scolaire-documents.js') }}?v={{ version_asset('js/cascade-scolaire-documents.js') }}" defer></script>
 </div>
 {% endblock %}
