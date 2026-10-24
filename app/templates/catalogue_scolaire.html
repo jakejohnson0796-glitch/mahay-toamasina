@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block titre %}Catalogue scolaire national — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair interface-referentiel-scolaire catalogue-public-scolaire">
+  <p class="eyebrow"><a href="/cercles">← Cercles d’étude</a></p>
+  <header class="referentiel-scolaire-hero" aria-labelledby="titre-catalogue-public">
+    <div>
+      <span class="referentiel-scolaire-kicker">MITARIDALA · Orientation scolaire</span>
+      <h1 id="titre-catalogue-public">Catalogue scolaire et formations</h1>
+      <p>Explore les classes du collège et du lycée, les séries générales, les métiers de l’enseignement technique et les formations professionnelles. Une offre d’établissement n’apparaît comme confirmée que si sa source et son année ont été vérifiées.</p>
+    </div>
+    <div class="referentiel-scolaire-etat">
+      <span class="etat-catalogue">{% if referentiel and referentiel.statut == "complet" %}Catalogue complet{% else %}Catalogue partiel{% endif %}</span>
+      <strong>{{ referentiel.annee_scolaire if referentiel else "Version non initialisée" }}</strong>
+      <small>{{ parcours_etfp|length }} intitulés ETFP vérifiés dans le catalogue national</small>
+    </div>
+  </header>
+
+  <section aria-labelledby="catalogue-etat">
+    <h2 id="catalogue-etat">Ce que couvre le catalogue</h2>
+    <div class="grille-statistiques">
+      <div class="carte-statistique"><strong>{{ niveaux|length }}</strong><span>Classes générales vérifiées</span></div>
+      <div class="carte-statistique"><strong>{{ options|length }}</strong><span>Séries et options vérifiées</span></div>
+      <div class="carte-statistique"><strong>{{ nb_programmes_verifies }}</strong><span>Associations de programme vérifiées</span></div>
+      <div class="carte-statistique"><strong>{{ nb_etablissements }}</strong><span>Établissements officiels dans ce résultat</span></div>
+    </div>
+    <p class="stat-label">Ce catalogue reste un inventaire partiel : les listes officielles disponibles ne donnent pas encore toutes les écoles et toutes leurs offres pour l’année en cours. La présence d’un établissement dans le répertoire ne confirme pas à elle seule qu’une série, une matière ou une formation ouvre cette année.</p>
+  </section>
+
+  <section aria-labelledby="catalogue-offres">
+    <h2 id="catalogue-offres">Offres confirmées par établissement</h2>
+    <p>Recherche uniquement parmi les classes, séries, matières et formations dont l’établissement, l’année scolaire et la source ont été confirmés.</p>
+    <form method="get" action="/catalogue-scolaire" class="carte-formulaire">
+      <label for="catalogue-q">Mot-clé</label>
+      <input id="catalogue-q" name="q" value="{{ q }}" maxlength="100" placeholder="Établissement, métier, matière, série…">
+      <label for="catalogue-region">Région</label>
+      <select id="catalogue-region" name="region">
+        <option value="">Toutes les régions</option>
+        {% for r in regions %}
+        <option value="{{ r }}" {% if region_selectionnee == r %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+      <label for="catalogue-type">Type d’offre</label>
+      <select id="catalogue-type" name="type_offre">
+        <option value="">Tous les types</option>
+        <option value="classe" {% if type_offre_selectionne == "classe" %}selected{% endif %}>Classe</option>
+        <option value="serie" {% if type_offre_selectionne == "serie" %}selected{% endif %}>Série / option</option>
+        <option value="matiere" {% if type_offre_selectionne == "matiere" %}selected{% endif %}>Matière enseignée</option>
+        <option value="formation" {% if type_offre_selectionne == "formation" %}selected{% endif %}>Formation technique / professionnelle</option>
+      </select>
+      <label for="catalogue-annee">Année scolaire confirmée</label>
+      <select id="catalogue-annee" name="annee_scolaire">
+        <option value="">La plus récente disponible</option>
+        {% for a in annees %}
+        <option value="{{ a }}" {% if annee_selectionnee == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+      <div class="catalogue-filtres-actions">
+        <button class="bouton bouton-primaire" type="submit">Rechercher</button>
+        <a class="bouton bouton-secondaire" href="/catalogue-scolaire">Effacer les filtres</a>
+      </div>
+    </form>
+    <h3>{{ offres|length }} offre(s) confirmée(s){% if annee_selectionnee %} · {{ annee_selectionnee }}{% endif %}</h3>
+    {% if offres %}
+    <div class="catalogue-offres-liste">
+      {% for offre in offres %}
+      <article class="catalogue-offre-carte">
+        <span class="catalogue-offre-type">{{ {"classe":"Classe","serie":"Série / option","matiere":"Matière enseignée","formation":"Formation ETFP"}.get(offre.type, offre.type) }}</span>
+        <h4>{{ offre.cible }}</h4>
+        <p><strong>{{ offre.etablissement }}</strong></p>
+        <p class="stat-label">{{ offre.region or "Région à préciser" }}{% if offre.commune %} · {{ offre.commune }}{% endif %} · Année {{ offre.annee }}</p>
+        <a href="{{ offre.source }}" target="_blank" rel="noopener noreferrer">Consulter la source officielle</a>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="catalogue-etat-vide">
+      <h4>Aucune offre confirmée pour ces filtres</h4>
+      <p>Ce résultat ne signifie pas que les établissements n’enseignent rien : leur offre locale doit encore être documentée ou validée pour une année scolaire précise. Les éléments en attente ne sont volontairement pas présentés comme des offres confirmées.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="catalogue-classes">
+    <h2 id="catalogue-classes">Classes et séries du secondaire général</h2>
+    <p>Ces niveaux et séries sont issus des ressources de programmes du ministère. Leur disponibilité dans un établissement précis nécessite une offre locale vérifiée.</p>
+    <div class="catalogue-niveaux-liste">
+      {% for n in niveaux %}
+      <article class="catalogue-niveau-carte">
+        <span>{{ "Collège" if n.cycle == "college" else "Lycée" }} · {{ n.code }}</span>
+        <h4>{{ n.libelle }}</h4>
+        {% set options_niveau = options|selectattr("niveau_id", "equalto", n.id)|list %}
+        {% if options_niveau %}
+        <p>{% for o in options_niveau %}{{ o.libelle }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+        {% else %}
+        <p class="stat-label">Classe sans série distincte dans le catalogue général.</p>
+        {% endif %}
+        {% if n.source_officielle %}<a href="{{ n.source_officielle }}" target="_blank" rel="noopener noreferrer">Programme officiel</a>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="catalogue-etfp">
+    <h2 id="catalogue-etfp">Métiers et filières techniques/professionnelles</h2>
+    <p>Les intitulés ci-dessous proviennent de la cartographie du METFP. Ils décrivent des métiers recensés dans le pays, mais pas nécessairement les sessions ouvertes cette année dans chaque centre.</p>
+    <div class="catalogue-etfp-liste">
+      {% for p in parcours_etfp %}
+      <article class="catalogue-etfp-carte">
+        <span>{{ p.secteur or "Secteur à préciser" }}</span>
+        <h4>{{ p.metier }}</h4>
+        <p>{{ p.filiere or "Filière non précisée dans la source" }}</p>
+        <a href="{{ p.source_officielle }}" target="_blank" rel="noopener noreferrer">Cartographie METFP</a>
+      </article>
+      {% else %}
+      <p>Aucun métier vérifié n’est disponible pour le moment.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="catalogue-etablissements">
+    <h2 id="catalogue-etablissements">Établissements de formation répertoriés</h2>
+    <p>Ce répertoire reprend les établissements visibles dans la cartographie officielle ETFP. Pour consulter une offre réelle, utilise les offres confirmées ci-dessus ; une fiche d’établissement sans offre confirmée ne garantit pas une ouverture de formation cette année.</p>
+    <div class="catalogue-etablissements-liste">
+      {% for e in etablissements %}
+      <article class="catalogue-etablissement-carte">
+        <div>
+          <h4>{{ e.nom }}</h4>
+          <p>{{ e.type_etablissement|replace("_", " ")|capitalize }} · {{ e.region or "Région à préciser" }}</p>
+          {% if e.commune %}<p class="stat-label">{{ e.commune }}</p>{% endif %}
+        </div>
+        {% if e.source_officielle %}<a href="{{ e.source_officielle }}" target="_blank" rel="noopener noreferrer">Source</a>{% endif %}
+      </article>
+      {% else %}
+      <p>Aucun établissement ne correspond à cette recherche.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
