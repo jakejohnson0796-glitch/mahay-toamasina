@@ -125,3 +125,28 @@ def test_quiz_personnalise_transmet_le_module_cible_au_generateur(monkeypatch):
 
     assert "Contexte de progression" in contexte["contexte_apprentissage"]
     assert "Déterminants d'ordre 2" in contexte["contexte_apprentissage"]
+
+
+
+def test_recommandation_ignore_une_notion_d_un_ancien_niveau():
+    ancienne = SimpleNamespace(
+        matiere="Mathématiques",
+        notion="Notion d'une ancienne classe",
+        niveau="L1",
+        score_maitrise=20,
+    )
+    actuelle = SimpleNamespace(
+        matiere="Français",
+        notion="Accord du participe passé",
+        niveau="L2",
+        score_maitrise=45,
+    )
+
+    proposition = _suggestion_quiz(
+        ["Mathématiques", "Français"],
+        [ancienne, actuelle],
+        niveau="L2",
+    )
+
+    assert proposition["matiere"] == "Français"
+    assert proposition["notion"] == "Accord du participe passé"
