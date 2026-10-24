@@ -1347,22 +1347,24 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
                     quiz_module._empreinte_question(question)
                     for question in questions_courantes
                 ]
+                structures = [
+                    quiz_module._structure_question(question)
+                    for question in questions_courantes
+                ]
                 if len(set(empreintes)) != len(empreintes):
                     questions_a_eviter_essai.extend(
                         question["question"] for question in questions_courantes
                     )
                     empreintes_deja_vues.update(empreintes)
+                    structures_deja_vues.update(structures)
                     raise QuizValidationError("Le quiz du document contient des questions identiques.")
                 if empreintes_deja_vues.intersection(empreintes):
                     questions_a_eviter_essai.extend(
                         question["question"] for question in questions_courantes
                     )
                     empreintes_deja_vues.update(empreintes)
+                    structures_deja_vues.update(structures)
                     raise QuizValidationError("Le quiz du document répète une question récente.")
-                structures = [
-                    quiz_module._structure_question(question)
-                    for question in questions_courantes
-                ]
                 if len(set(structures)) != len(structures):
                     questions_a_eviter_essai.extend(
                         question["question"] for question in questions_courantes
