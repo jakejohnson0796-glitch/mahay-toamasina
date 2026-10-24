@@ -230,6 +230,20 @@ def generer_quiz(
         # Le serveur impose la classe du profil : un formulaire modifié ne
         # peut pas lancer un quiz scolaire pour un autre niveau.
         niveau = contexte_scolaire["niveau"]
+        matieres_scolaires = _matieres_scolaires_disponibles(session, contexte_scolaire)
+        correspondance_matiere = next(
+            (
+                item for item in matieres_scolaires
+                if item.casefold() == matiere_choisie.casefold()
+            ),
+            None,
+        )
+        if not correspondance_matiere:
+            return RedirectResponse(
+                "/quiz?erreur=matiere_scolaire_indisponible",
+                status_code=303,
+            )
+        matiere_choisie = correspondance_matiere
     elif niveau not in quiz_module.NIVEAUX:
         return RedirectResponse("/quiz?erreur=parametres_invalides", status_code=303)
 
@@ -309,8 +323,13 @@ def page_reflexion(request: Request, matiere: Optional[str] = None, session: Ses
         _matieres_scolaires_disponibles(session, contexte_scolaire)
         if contexte_scolaire else _matieres_disponibles(session)
     )
-    if contexte_scolaire and matiere and matiere not in matieres:
-        matiere = None
+    if contexte_scolaire:
+        if not matieres:
+            return RedirectResponse("/quiz?erreur=aucune_matiere_scolaire", status_code=303)
+        if matiere:
+            matiere = next((item for item in matieres if item.casefold() == matiere.casefold()), None)
+        if not matiere:
+            matiere = matieres[0]
     theme = theme_service.get_theme_du_jour(matiere=matiere or None)
 
     return templates.TemplateResponse(
@@ -461,6 +480,12 @@ def generer_quiz_cible(
                 status_code=303,
             )
         niveau = contexte_scolaire["niveau"]
+        matieres_scolaires = _matieres_scolaires_disponibles(session, contexte_scolaire)
+        if not any(item.casefold() == progression.matiere.casefold() for item in matieres_scolaires):
+            return RedirectResponse(
+                "/mes-revisions?erreur=matiere_scolaire_indisponible",
+                status_code=303,
+            )
     else:
         niveau = progression.niveau or utilisateur.niveau or "L1"
         if niveau not in quiz_module.NIVEAUX:
@@ -526,9 +551,9 @@ def generer_examen(
         _matieres_scolaires_disponibles(session, contexte_scolaire)
         if contexte_scolaire else _matieres_disponibles(session)
     )
-    matiere = random.choice(matieres) if matieres else (
-        "Mathématiques" if contexte_scolaire else "Culture generale"
-    )
+    if contexte_scolaire and not matieres:
+        return RedirectResponse("/quiz?erreur=aucune_matiere_scolaire", status_code=303)
+    matiere = random.choice(matieres) if matieres else "Culture generale"
     niveau = contexte_scolaire["niveau"] if contexte_scolaire else random.choice(quiz_module.NIVEAUX)
     difficulte = random.choice(quiz_module.DIFFICULTES)
 
