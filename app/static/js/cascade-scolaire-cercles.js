@@ -207,6 +207,8 @@
       document.getElementById("recherche_filiere_id")
     ].filter(Boolean);
     const schoolFields = [schoolLevel, schoolOption, schoolEstablishment, schoolMatter].filter(Boolean);
+    const schoolGroup = document.getElementById("filtres-scolaires");
+    const universityGroup = document.getElementById("filtres-universitaires");
     const form = scope ? scope.closest("form") : null;
     if (!scope) return;
 
@@ -220,6 +222,10 @@
       schoolFields.forEach(function (field) {
         field.disabled = university || transversal;
       });
+      // Masque également le groupe inactif : les champs désactivés ne doivent
+      // pas rester visuellement présents et faire croire qu'ils concernent ce cycle.
+      if (schoolGroup) schoolGroup.hidden = university || transversal;
+      if (universityGroup) universityGroup.hidden = school || transversal;
     }
 
     universityFields.forEach(function (field) {
