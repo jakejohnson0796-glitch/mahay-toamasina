@@ -616,6 +616,8 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
         <option value="transversal" {% if recherche_portee_academique == "transversal" %}selected{% endif %}>Transversal / libre</option>
       </select>
     </div>
+    <fieldset id="filtres-scolaires" class="groupe-filtres-cercles"{% if recherche_portee_academique in ["universitaire", "transversal"] %} hidden{% endif %}>
+      <legend>Collège et lycée</legend>
     <div>
       <label for="recherche_niveau_scolaire_id">Classe scolaire</label>
       <select id="recherche_niveau_scolaire_id" name="niveau_scolaire_id">
@@ -652,6 +654,9 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
         {% endfor %}
       </select>
     </div>
+    </fieldset>
+    <fieldset id="filtres-universitaires" class="groupe-filtres-cercles"{% if recherche_portee_academique in ["scolaire", "transversal"] %} hidden{% endif %}>
+      <legend>Université</legend>
     <div>
       <label for="recherche_domaine_id">Domaine</label>
       <select id="recherche_domaine_id" name="domaine_id">
@@ -687,6 +692,7 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
         {% if filiere_recherchee %}<option value="{{ filiere_recherchee.id }}" data-no-translate selected>{{ filiere_recherchee.nom }}</option>{% endif %}
       </select>
     </div>
+    </fieldset>
     {% if utilisateur %}
     <div class="filtre-disponibles">
       <label style="display:flex;align-items:center;gap:0.45rem;">
