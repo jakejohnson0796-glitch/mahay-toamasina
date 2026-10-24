@@ -778,8 +778,19 @@ def test_synchronisation_cercles_scolaires_cree_une_hierarchie_separee_et_idempo
     assert any(cercle.option_scolaire_id == serie.id and cercle.matiere_scolaire_id is None for cercle in cercles)
     assert any(cercle.option_scolaire_id == serie.id and cercle.matiere_scolaire_id == matiere.id for cercle in cercles)
 
+    # Une mise à jour du référentiel doit propager les libellés dans les
+    # cercles gérés automatiquement sans créer de nouvelle identité.
+    niveau.libelle = "Terminale générale"
+    session.add(niveau)
+    session.commit()
+    renommes = assurer_cercles_scolaires(session)
+    assert renommes["crees"] == 0
+    assert renommes["actualises"] == 3
+    assert all("Terminale générale" in cercle.nom for cercle in cercles)
+
     deuxieme = assurer_cercles_scolaires(session)
     assert deuxieme["crees"] == 0
+    assert deuxieme["actualises"] == 0
     assert deuxieme["existants"] == 3
     assert session.get(CercleEtude, transversal.id).portee_academique == "transversal"
     assert session.get(CercleEtude, transversal.id).synchronise_referentiel is False
