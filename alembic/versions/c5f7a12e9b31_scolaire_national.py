@@ -24,7 +24,7 @@ def _seed_catalogue_scolaire(conn):
     Il ne prétend pas recenser toutes les filières techniques/professionnelles,
     ni leur disponibilité dans chaque établissement.
     """
-    code = "MEN-programmes-2026-initial"
+    code = "MEN-RAPS-2024-2025-initial"
     row = conn.execute(
         sa.text("SELECT id FROM referentielscolaire WHERE code = :code"),
         {"code": code},
@@ -40,8 +40,8 @@ def _seed_catalogue_scolaire(conn):
             ),
             {
                 "code": code,
-                "libelle": "Programmes scolaires MEN — inventaire général initial",
-                "annee": "2026-2027",
+                "libelle": "Référentiel scolaire initial — sources MEN disponibles 2024-2025",
+                "annee": "2024-2025",
                 "source": SOURCE_PROGRAMMES + " | " + SOURCE_LYCEE,
             },
         )
@@ -123,25 +123,24 @@ def _seed_catalogue_scolaire(conn):
     # parent_option_id reste disponible pour les options futures, à valider
     # explicitement par l'administration depuis une source officielle.
 
-    # Catalogue de matières dérivé des programmes MEN. Les associations
-    # communes du collège proviennent des programmes par classe ; pour le
-    # lycée, seuls les noyaux communs et quelques matières de série sont
-    # préremplis. Le référentiel reste marqué « partiel » et les séries
-    # techniques/professionnelles ne sont pas déclarées exhaustives.
+    # Les noms de matières ci-dessous sont repris des sommaires RAPS/RAPE du
+    # MEN disponibles pour 2024-2025. Les associations non recoupées avec un
+    # sommaire précis restent "a_verifier" et ne sont pas proposées aux élèves.
     matieres = [
         ("MALAGASY", "Malagasy", "Malagasy"),
         ("FRANCAIS", "Français", "Frantsay"),
         ("ANGLAIS", "Anglais", "Anglisy"),
         ("EDUCATION_CIVIQUE", "Éducation civique", "Fanabeazana olom-pirenena"),
+        ("EDUCATION_CITOYENNETE", "Éducation à la citoyenneté", "Fanabeazana olom-pirenena"),
         ("HISTOIRE", "Histoire", "Tantara"),
         ("GEOGRAPHIE", "Géographie", "Jeografia"),
         ("MATHEMATIQUES", "Mathématiques", "Matematika"),
         ("PHYSIQUE_CHIMIE", "Sciences physiques et chimiques", "Fizika sy Simia"),
-        ("SCIENCES_NATURELLES", "Sciences naturelles", "Siansa voajanahary"),
         ("SVT", "Sciences de la vie et de la Terre", "Siansa momba ny aina sy ny tany"),
         ("EPS", "Éducation physique et sportive", "Fanabeazana ara-batana sy ara-panatanjahantena"),
         ("PHILOSOPHIE", "Philosophie", "Filôzôfia"),
         ("SES", "Sciences économiques et sociales", "Siansa ara-toekarena sy sosialy"),
+        ("TICE", "Technologies de l'information et de la communication en éducation", "Teknolojian'ny fampahalalam-baovao sy fifandraisana"),
     ]
     for code_matiere, libelle, malagasy in matieres:
         conn.execute(
@@ -155,11 +154,7 @@ def _seed_catalogue_scolaire(conn):
                 "code": code_matiere,
                 "libelle": libelle,
                 "malagasy": malagasy,
-                "source": SOURCE_PROGRAMMES if code_matiere in {
-                    "MALAGASY", "FRANCAIS", "ANGLAIS", "EDUCATION_CIVIQUE", "HISTOIRE",
-                    "GEOGRAPHIE", "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SCIENCES_NATURELLES",
-                    "SVT", "EPS", "PHILOSOPHIE", "SES",
-                } else SOURCE_LYCEE,
+                "source": SOURCE_PROGRAMMES,
             },
         )
 
@@ -175,94 +170,183 @@ def _seed_catalogue_scolaire(conn):
         ).all()
     }
 
-    matieres_college = [
-        "MALAGASY", "FRANCAIS", "ANGLAIS", "EDUCATION_CIVIQUE", "HISTOIRE",
-        "GEOGRAPHIE", "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SCIENCES_NATURELLES", "EPS",
-    ]
-    matieres_lycee_communes = [
-        "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
-        "PHYSIQUE_CHIMIE", "SVT", "HISTOIRE", "GEOGRAPHIE", "EPS",
-    ]
-    for code_niveau in ("6E", "5E", "4E", "3E"):
-        niveau_id = ids_niveaux.get(code_niveau)
-        if not niveau_id:
-            continue
-        for code_matiere in matieres_college:
-            matiere_id = ids_matieres[code_matiere]
-            conn.execute(
-                sa.text(
-                    "INSERT INTO programmematierescolaire "
-                    "(referentiel_id, niveau_id, option_id, matiere_id, obligatoire, source_officielle, statut_validation) "
-                    "SELECT :ref, :niveau, NULL, :matiere, TRUE, :source, 'verifie' "
-                    "WHERE NOT EXISTS (SELECT 1 FROM programmematierescolaire "
-                    "WHERE referentiel_id=:ref AND niveau_id=:niveau AND option_id IS NULL AND matiere_id=:matiere)"
-                ),
-                {
-                    "ref": referentiel_id,
-                    "niveau": niveau_id,
-                    "matiere": matiere_id,
-                    "source": SOURCE_PROGRAMMES,
-                },
-            )
+    # Liens vers les documents officiels qui ont été retrouvés. Les séries
+    # L/S/OSE sont présentes dans la filière de programmes RAPE, déployée
+    # progressivement ; A/C/D restent recensées comme programmes historiques.
+    base_men = "https://www.education.gov.mg/wp-content/uploads/2024/09/"
+    sources_programmes = {
+        "6E": base_men + "RAPS-6%C3%A8me_2024_2025.pdf",
+        "5E": base_men + "RAPS-5%C3%A8me_2024_2025.pdf",
+        "4E": base_men + "RAPS-4%C3%A8me_2024_2025.pdf",
+        "3E": base_men + "RAPS-3%C3%A8me_2024_2025.pdf",
+        "1ERE_A": base_men + "RAPS-1%C3%A8re-A_2024_2025.pdf",
+        "1ERE_C": base_men + "RAPS-1%C3%A8re-C_2024_2025.pdf",
+        "1ERE_D": base_men + "RAPS-1%C3%A8re-D_2024_2025.pdf",
+        "TERM_A": base_men + "RAPS-Tle-A_2024_2025.pdf",
+        "TERM_D": base_men + "RAPS-Tle-D_2024_2025.pdf",
+        "1ERE_S": base_men + "RAPE-T11-S_2024_2025.pdf",
+        "TERM_S": base_men + "RAPE-T12-S_2024_2025.pdf",
+        "1ERE_OSE": base_men + "RAPE-T11-OSE_2024_2025.pdf",
+        "TERM_OSE": base_men + "RAPE-T12-OSE_2024_2025.pdf",
+    }
 
-    for code_niveau in ("2NDE", "1ERE", "TERM"):
+    def associer_matiere(
+        code_niveau,
+        code_matiere,
+        source,
+        code_serie=None,
+        statut="a_verifier",
+        obligatoire=True,
+    ):
         niveau_id = ids_niveaux.get(code_niveau)
-        if not niveau_id:
-            continue
-        for code_matiere in matieres_lycee_communes:
-            matiere_id = ids_matieres[code_matiere]
-            conn.execute(
-                sa.text(
-                    "INSERT INTO programmematierescolaire "
-                    "(referentiel_id, niveau_id, option_id, matiere_id, obligatoire, source_officielle, statut_validation) "
-                    "SELECT :ref, :niveau, NULL, :matiere, TRUE, :source, 'verifie' "
-                    "WHERE NOT EXISTS (SELECT 1 FROM programmematierescolaire "
-                    "WHERE referentiel_id=:ref AND niveau_id=:niveau AND option_id IS NULL AND matiere_id=:matiere)"
-                ),
-                {
-                    "ref": referentiel_id,
-                    "niveau": niveau_id,
-                    "matiere": matiere_id,
-                    "source": SOURCE_LYCEE,
-                },
-            )
-
-    for code_niveau in ("1ERE", "TERM"):
-        niveau_id = ids_niveaux.get(code_niveau)
-        if not niveau_id:
-            continue
-        for code_serie, codes_matieres in {
-            "L": ["PHILOSOPHIE"],
-            "S": ["PHILOSOPHIE"],
-            "OSE": ["SES"],
-        }.items():
-            serie = conn.execute(
+        matiere_id = ids_matieres.get(code_matiere)
+        if not niveau_id or not matiere_id:
+            return
+        option_id = None
+        if code_serie:
+            option = conn.execute(
                 sa.text(
                     "SELECT id FROM optionscolaire "
-                    "WHERE referentiel_id=:ref AND niveau_id=:niveau AND code=:code AND parent_option_id IS NULL"
+                    "WHERE referentiel_id=:ref AND niveau_id=:niveau "
+                    "AND code=:code AND parent_option_id IS NULL"
                 ),
                 {"ref": referentiel_id, "niveau": niveau_id, "code": code_serie},
             ).first()
-            if not serie:
-                continue
-            for code_matiere in codes_matieres:
-                matiere_id = ids_matieres[code_matiere]
-                conn.execute(
-                    sa.text(
-                        "INSERT INTO programmematierescolaire "
-                        "(referentiel_id, niveau_id, option_id, matiere_id, obligatoire, source_officielle, statut_validation) "
-                        "SELECT :ref, :niveau, :option, :matiere, TRUE, :source, 'verifie' "
-                        "WHERE NOT EXISTS (SELECT 1 FROM programmematierescolaire "
-                        "WHERE referentiel_id=:ref AND niveau_id=:niveau AND option_id=:option AND matiere_id=:matiere)"
-                    ),
-                    {
-                        "ref": referentiel_id,
-                        "niveau": niveau_id,
-                        "option": serie[0],
-                        "matiere": matiere_id,
-                        "source": SOURCE_PROGRAMMES,
-                    },
-                )
+            if not option:
+                return
+            option_id = option[0]
+            condition_option = "option_id=:option"
+        else:
+            condition_option = "option_id IS NULL"
+        conn.execute(
+            sa.text(
+                "INSERT INTO programmematierescolaire "
+                "(referentiel_id, niveau_id, option_id, matiere_id, obligatoire, source_officielle, statut_validation) "
+                "SELECT :ref, :niveau, :option, :matiere, :obligatoire, :source, :statut "
+                "WHERE NOT EXISTS (SELECT 1 FROM programmematierescolaire "
+                "WHERE referentiel_id=:ref AND niveau_id=:niveau AND "
+                + condition_option
+                + " AND matiere_id=:matiere)"
+            ),
+            {
+                "ref": referentiel_id,
+                "niveau": niveau_id,
+                "option": option_id,
+                "matiere": matiere_id,
+                "obligatoire": obligatoire,
+                "source": source,
+                "statut": statut,
+            },
+        )
+
+    # Les sommaires RAPS de 6e, 4e et 3e énumèrent explicitement ces dix
+    # disciplines. Pour la 5e, le PDF officiel est présent mais son sommaire
+    # doit être recoupé avant publication de la liste.
+    matieres_college = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "EDUCATION_CIVIQUE", "EPS",
+    ]
+    for code_niveau in ("6E", "5E", "4E", "3E"):
+        source = sources_programmes[code_niveau]
+        statut = "a_verifier" if code_niveau == "5E" else "verifie"
+        for code_matiere in matieres_college:
+            associer_matiere(
+                code_niveau, code_matiere, source,
+                statut=statut,
+            )
+
+    # Les documents de Seconde A/C/D sont listés par le MEN, mais les matières
+    # exactes ne sont pas attribuées automatiquement : ces lignes sont proposées
+    # à l'admin en attente de validation depuis un sommaire par série.
+    candidats_seconde = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "EDUCATION_CIVIQUE", "EPS",
+    ]
+    for code_serie in ("A", "C", "D"):
+        for code_matiere in candidats_seconde:
+            associer_matiere(
+                "2NDE", code_matiere, SOURCE_LYCEE,
+                code_serie=code_serie, statut="a_verifier",
+            )
+
+    # Les associations sans série pour Première/Terminale sont des candidats,
+    # pas une déclaration de tronc commun. L'admin peut les recouper avant
+    # de les publier, ce qui évite d'attribuer une matière à la mauvaise série.
+    candidats_lycee = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "EPS",
+        "PHILOSOPHIE", "SES", "EDUCATION_CITOYENNETE", "TICE",
+    ]
+    for code_niveau in ("1ERE", "TERM"):
+        for code_matiere in candidats_lycee:
+            associer_matiere(
+                code_niveau, code_matiere,
+                SOURCE_PROGRAMMES,
+                statut="a_verifier",
+            )
+
+    # Programmes historiques avec sommaires disponibles : seuls les contenus
+    # explicitement présents dans les documents cités sont publiés par défaut.
+    programme_1ere_d = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "EPS",
+    ]
+    programme_term_a = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "MATHEMATIQUES",
+        "PHYSIQUE_CHIMIE", "SVT", "EPS", "PHILOSOPHIE",
+    ]
+    programme_term_d = programme_1ere_d + ["PHILOSOPHIE"]
+    for code_matiere in programme_1ere_d:
+        associer_matiere(
+            "1ERE", code_matiere, sources_programmes["1ERE_D"],
+            code_serie="D", statut="verifie",
+        )
+    for code_matiere in programme_term_a:
+        associer_matiere(
+            "TERM", code_matiere, sources_programmes["TERM_A"],
+            code_serie="A", statut="verifie",
+        )
+    for code_matiere in programme_term_d:
+        associer_matiere(
+            "TERM", code_matiere, sources_programmes["TERM_D"],
+            code_serie="D", statut="verifie",
+        )
+
+    # Sommaires RAPE 2024-2025 de Première/Terminale S et OSE. Les matières
+    # optionnelles nouvelles ne sont pas propagées aux séries A/C/D.
+    programme_t11_s_ose = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES",
+        "EDUCATION_CITOYENNETE", "PHILOSOPHIE", "EPS", "TICE",
+    ]
+    programme_t12_s = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE", "EPS",
+    ]
+    programme_t12_ose = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE",
+    ]
+    for code_matiere in programme_t11_s_ose:
+        associer_matiere(
+            "1ERE", code_matiere, sources_programmes["1ERE_S"],
+            code_serie="S", statut="verifie",
+        )
+        associer_matiere(
+            "1ERE", code_matiere, sources_programmes["1ERE_OSE"],
+            code_serie="OSE", statut="verifie",
+        )
+    for code_matiere in programme_t12_s:
+        associer_matiere(
+            "TERM", code_matiere, sources_programmes["TERM_S"],
+            code_serie="S", statut="verifie",
+        )
+    for code_matiere in programme_t12_ose:
+        associer_matiere(
+            "TERM", code_matiere, sources_programmes["TERM_OSE"],
+            code_serie="OSE", statut="verifie",
+        )
+
 
 
 def upgrade():
