@@ -18,7 +18,7 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, ProgrammeUniversitaire, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, DemandeCreationCercle, StatutDemandeCreationCercle, DemandeChangementFiliere, StatutDemandeChangementFiliere
+from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, ProgrammeUniversitaire, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, DemandeCreationCercle, StatutDemandeCreationCercle, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from ..referentiel import NIVEAUX
 from .. import referentiel_academique
 from ..cercles_referentiel import assurer_cercles_pour_filiere, assurer_cercles_referentiel
@@ -392,6 +392,7 @@ def page_demandes_creation(request: Request, session: Session = Depends(get_sess
     niveaux_scolaires = {n.id: n for n in session.exec(select(NiveauScolaire)).all()}
     options_scolaires = {o.id: o for o in session.exec(select(OptionScolaire)).all()}
     etablissements_scolaires = {e.id: e for e in session.exec(select(EtablissementScolaire)).all()}
+    matieres_scolaires = {m.id: m for m in session.exec(select(MatiereScolaire)).all()}
 
     return templates.TemplateResponse(
         request,
@@ -405,6 +406,7 @@ def page_demandes_creation(request: Request, session: Session = Depends(get_sess
             "niveaux_scolaires": niveaux_scolaires,
             "options_scolaires": options_scolaires,
             "etablissements_scolaires": etablissements_scolaires,
+            "matieres_scolaires": matieres_scolaires,
         },
     )
 
@@ -444,6 +446,40 @@ def approuver_demande_creation(
             session.get(EtablissementScolaire, demande.etablissement_scolaire_id)
             if demande.etablissement_scolaire_id else None
         )
+        matiere_scolaire = (
+            session.get(MatiereScolaire, demande.matiere_scolaire_id)
+            if demande.matiere_scolaire_id else None
+        )
+        matiere_valide = demande.matiere_scolaire_id is None
+        if (
+            matiere_scolaire
+            and matiere_scolaire.est_active
+            and matiere_scolaire.statut_validation == "verifie"
+            and niveau_scolaire
+            and referentiel_courant
+        ):
+            options_compatibles = {option_scolaire.id} if option_scolaire else set()
+            if option_scolaire and option_scolaire.parent_option_id:
+                options_compatibles.add(option_scolaire.parent_option_id)
+            requete_matiere = select(ProgrammeMatiereScolaire.id).where(
+                ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                ProgrammeMatiereScolaire.matiere_id == matiere_scolaire.id,
+                ProgrammeMatiereScolaire.statut_validation == "verifie",
+            )
+            if options_compatibles:
+                requete_matiere = requete_matiere.where(
+                    or_(
+                        ProgrammeMatiereScolaire.option_id.is_(None),
+                        ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                    )
+                )
+            else:
+                requete_matiere = requete_matiere.where(
+                    ProgrammeMatiereScolaire.option_id.is_(None)
+                )
+            matiere_valide = bool(session.exec(requete_matiere).first())
+
         cible_valide = bool(
             referentiel_courant
             and niveau_scolaire
@@ -478,6 +514,7 @@ def approuver_demande_creation(
                     and etablissement_scolaire.est_verifie
                 )
             )
+            and matiere_valide
         )
         if not cible_valide:
             demande.statut = StatutDemandeCreationCercle.REJETEE
@@ -498,6 +535,9 @@ def approuver_demande_creation(
                 CercleEtude.option_scolaire_id == (option_scolaire.id if option_scolaire else None),
                 CercleEtude.etablissement_scolaire_id == (
                     etablissement_scolaire.id if etablissement_scolaire else None
+                ),
+                CercleEtude.matiere_scolaire_id == (
+                    matiere_scolaire.id if matiere_scolaire else None
                 ),
                 CercleEtude.nom.ilike(demande.nom),
             )
@@ -521,6 +561,7 @@ def approuver_demande_creation(
             niveau_scolaire_id=niveau_scolaire.id,
             option_scolaire_id=option_scolaire.id if option_scolaire else None,
             etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
+            matiere_scolaire_id=matiere_scolaire.id if matiere_scolaire else None,
             statut=StatutCercle.ACTIF,
             createur_id=demande.utilisateur_id,
         )
