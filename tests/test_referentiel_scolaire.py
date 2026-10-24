@@ -18,7 +18,7 @@ from app.models import (
     TypeDocument,
     Utilisateur,
 )
-from app.routers import scolaire_router
+from app.routers import admin_scolaire_router, scolaire_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
     profil_correspond_au_cercle,
@@ -208,6 +208,27 @@ def test_demande_professeur_ne_donne_pas_le_role_effectif_professeur():
     assert teacher_request.role == RoleUtilisateur.ETUDIANT
     session.close()
     engine.dispose()
+
+
+def test_source_admin_accepte_uniquement_le_domaine_officiel_men():
+    assert admin_scolaire_router._url_source_valide(
+        "https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/"
+    )
+    assert admin_scolaire_router._url_source_valide(
+        "https://docs.education.gov.mg/programmes/"
+    )
+    assert not admin_scolaire_router._url_source_valide(
+        "https://example.com/faux-programme"
+    )
+    assert not admin_scolaire_router._url_source_valide(
+        "https://education.gov.mg.example.com/faux"
+    )
+    assert not admin_scolaire_router._url_source_valide(
+        "http://www.education.gov.mg/faux"
+    )
+    assert not admin_scolaire_router._url_source_valide(
+        "javascript:alert(1)"
+    )
 
 
 def test_api_scolaire_n_expose_que_le_referentiel_verifie():
