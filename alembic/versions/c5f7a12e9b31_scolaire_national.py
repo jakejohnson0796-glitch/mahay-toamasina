@@ -600,11 +600,44 @@ def upgrade():
         batch.add_column(sa.Column("niveau_scolaire_id", sa.Integer(), nullable=True))
         batch.add_column(sa.Column("option_scolaire_id", sa.Integer(), nullable=True))
         batch.add_column(sa.Column("etablissement_scolaire_id", sa.Integer(), nullable=True))
+        batch.add_column(sa.Column("matiere_scolaire_id", sa.Integer(), nullable=True))
         batch.create_foreign_key("fk_demandecercle_niveau_scolaire", "niveauscolaire", ["niveau_scolaire_id"], ["id"])
         batch.create_foreign_key("fk_demandecercle_option_scolaire", "optionscolaire", ["option_scolaire_id"], ["id"])
         batch.create_foreign_key("fk_demandecercle_etablissement_scolaire", "etablissementscolaire", ["etablissement_scolaire_id"], ["id"])
-    for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id"):
+        batch.create_foreign_key("fk_demandecercle_matiere_scolaire", "matierescolaire", ["matiere_scolaire_id"], ["id"])
+    for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
         op.create_index(f"ix_demandecreationcercle_{col}", "demandecreationcercle", [col])
+
+    # Une demande scolaire active n'a qu'une cible identique en attente,
+    # y compris quand les dimensions facultatives sont NULL (SQLite inclus).
+    dimensions_demande_scolaire = [
+        "option_scolaire_id",
+        "etablissement_scolaire_id",
+        "matiere_scolaire_id",
+    ]
+    for masque in range(8):
+        colonnes = ["niveau_scolaire_id"] + [
+            colonne for bit, colonne in enumerate(dimensions_demande_scolaire)
+            if masque & (1 << bit)
+        ]
+        conditions = [
+            "statut = 'EN_ATTENTE'",
+            "portee_academique = 'scolaire'",
+            "niveau_scolaire_id IS NOT NULL",
+        ]
+        conditions.extend(
+            f"{colonne} IS {'NOT ' if masque & (1 << bit) else ''}NULL"
+            for bit, colonne in enumerate(dimensions_demande_scolaire)
+        )
+        condition = " AND ".join(conditions)
+        op.create_index(
+            f"ix_demande_creation_scolaire_unique_{masque:03b}",
+            "demandecreationcercle",
+            colonnes,
+            unique=True,
+            postgresql_where=sa.text(condition),
+            sqlite_where=sa.text(condition),
+        )
 
     with op.batch_alter_table("tentativequiz") as batch:
         batch.add_column(sa.Column("cycle_education", sa.String(length=20), nullable=True))
@@ -625,12 +658,14 @@ def upgrade():
 
 
 def downgrade():
-    for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id"):
+    for masque in range(8):
+        op.drop_index(f"ix_demande_creation_scolaire_unique_{masque:03b}", table_name="demandecreationcercle")
+    for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
         op.drop_index(f"ix_demandecreationcercle_{col}", table_name="demandecreationcercle")
     with op.batch_alter_table("demandecreationcercle") as batch:
-        for name in ("fk_demandecercle_etablissement_scolaire", "fk_demandecercle_option_scolaire", "fk_demandecercle_niveau_scolaire"):
+        for name in ("fk_demandecercle_matiere_scolaire", "fk_demandecercle_etablissement_scolaire", "fk_demandecercle_option_scolaire", "fk_demandecercle_niveau_scolaire"):
             batch.drop_constraint(name, type_="foreignkey")
-        for col in ("etablissement_scolaire_id", "option_scolaire_id", "niveau_scolaire_id", "portee_academique"):
+        for col in ("matiere_scolaire_id", "etablissement_scolaire_id", "option_scolaire_id", "niveau_scolaire_id", "portee_academique"):
             batch.drop_column(col)
 
     # Les index doivent être supprimés AVANT le batch SQLite qui reconstruit
