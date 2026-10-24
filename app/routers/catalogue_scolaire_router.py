@@ -86,7 +86,7 @@ def page_catalogue_scolaire(
             EtablissementScolaire.id == OffreEtablissementScolaire.etablissement_id,
         )
         .where(
-            OffreEtablissementScolaire.est_actif == True,  # noqa: E712
+            OffreEtablissementScolaire.est_active == True,  # noqa: E712
             OffreEtablissementScolaire.statut_validation == "verifie",
             OffreEtablissementScolaire.annee_scolaire.is_not(None),
             EtablissementScolaire.est_actif == True,  # noqa: E712
@@ -127,7 +127,7 @@ def page_catalogue_scolaire(
             ParcoursTechniqueProfessionnel.id == OffreEtablissementScolaire.parcours_etfp_id,
         )
         .where(
-            OffreEtablissementScolaire.est_actif == True,  # noqa: E712
+            OffreEtablissementScolaire.est_active == True,  # noqa: E712
             OffreEtablissementScolaire.statut_validation == "verifie",
             EtablissementScolaire.est_actif == True,  # noqa: E712
             EtablissementScolaire.est_verifie == True,  # noqa: E712
