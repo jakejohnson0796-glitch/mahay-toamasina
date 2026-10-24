@@ -157,6 +157,147 @@ def _seed_catalogue_scolaire(conn):
                 },
             )
 
+    # Catalogue de matières dérivé des programmes MEN. Les associations
+    # communes du collège proviennent des programmes par classe ; pour le
+    # lycée, seuls les noyaux communs et quelques matières de série sont
+    # préremplis. Le référentiel reste marqué « partiel » et les séries
+    # techniques/professionnelles ne sont pas déclarées exhaustives.
+    matieres = [
+        ("MALAGASY", "Malagasy", "Malagasy"),
+        ("FRANCAIS", "Français", "Frantsay"),
+        ("ANGLAIS", "Anglais", "Anglisy"),
+        ("EDUCATION_CIVIQUE", "Éducation civique", "Fanabeazana olom-pirenena"),
+        ("HISTOIRE", "Histoire", "Tantara"),
+        ("GEOGRAPHIE", "Géographie", "Jeografia"),
+        ("MATHEMATIQUES", "Mathématiques", "Matematika"),
+        ("PHYSIQUE_CHIMIE", "Sciences physiques et chimiques", "Fizika sy Simia"),
+        ("SCIENCES_NATURELLES", "Sciences naturelles", "Siansa voajanahary"),
+        ("SVT", "Sciences de la vie et de la Terre", "Siansa momba ny aina sy ny tany"),
+        ("EPS", "Éducation physique et sportive", "Fanabeazana ara-batana sy ara-panatanjahantena"),
+        ("PHILOSOPHIE", "Philosophie", "Filôzôfia"),
+        ("SES", "Sciences économiques et sociales", "Siansa ara-toekarena sy sosialy"),
+    ]
+    for code_matiere, libelle, malagasy in matieres:
+        conn.execute(
+            sa.text(
+                "INSERT INTO matierescolaire "
+                "(code, libelle, libelle_malagasy, source_officielle, statut_validation, est_active) "
+                "SELECT :code, :libelle, :malagasy, :source, 'verifie', TRUE "
+                "WHERE NOT EXISTS (SELECT 1 FROM matierescolaire WHERE code=:code)"
+            ),
+            {
+                "code": code_matiere,
+                "libelle": libelle,
+                "malagasy": malagasy,
+                "source": SOURCE_PROGRAMMES if code_matiere in {
+                    "MALAGASY", "FRANCAIS", "ANGLAIS", "EDUCATION_CIVIQUE", "HISTOIRE",
+                    "GEOGRAPHIE", "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SCIENCES_NATURELLES",
+                    "SVT", "EPS", "PHILOSOPHIE", "SES",
+                } else SOURCE_LYCEE,
+            },
+        )
+
+    ids_matieres = {
+        row[0]: row[1]
+        for row in conn.execute(sa.text("SELECT code, id FROM matierescolaire")).all()
+    }
+    ids_niveaux = {
+        row[0]: row[1]
+        for row in conn.execute(
+            sa.text("SELECT code, id FROM niveauscolaire WHERE referentiel_id=:ref"),
+            {"ref": referentiel_id},
+        ).all()
+    }
+
+    matieres_college = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "EDUCATION_CIVIQUE", "HISTOIRE",
+        "GEOGRAPHIE", "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SCIENCES_NATURELLES", "EPS",
+    ]
+    matieres_lycee_communes = [
+        "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+        "PHYSIQUE_CHIMIE", "SVT", "HISTOIRE", "GEOGRAPHIE", "EPS",
+    ]
+    for code_niveau in ("6E", "5E", "4E", "3E"):
+        niveau_id = ids_niveaux.get(code_niveau)
+        if not niveau_id:
+            continue
+        for code_matiere in matieres_college:
+            matiere_id = ids_matieres[code_matiere]
+            conn.execute(
+                sa.text(
+                    "INSERT INTO programmematierescolaire "
+                    "(referentiel_id, niveau_id, option_id, matiere_id, obligatoire, source_officielle, statut_validation) "
+                    "SELECT :ref, :niveau, NULL, :matiere, TRUE, :source, 'verifie' "
+                    "WHERE NOT EXISTS (SELECT 1 FROM programmematierescolaire "
+                    "WHERE referentiel_id=:ref AND niveau_id=:niveau AND option_id IS NULL AND matiere_id=:matiere)"
+                ),
+                {
+                    "ref": referentiel_id,
+                    "niveau": niveau_id,
+                    "matiere": matiere_id,
+                    "source": SOURCE_PROGRAMMES,
+                },
+            )
+
+    for code_niveau in ("2NDE", "1ERE", "TERM"):
+        niveau_id = ids_niveaux.get(code_niveau)
+        if not niveau_id:
+            continue
+        for code_matiere in matieres_lycee_communes:
+            matiere_id = ids_matieres[code_matiere]
+            conn.execute(
+                sa.text(
+                    "INSERT INTO programmematierescolaire "
+                    "(referentiel_id, niveau_id, option_id, matiere_id, obligatoire, source_officielle, statut_validation) "
+                    "SELECT :ref, :niveau, NULL, :matiere, TRUE, :source, 'verifie' "
+                    "WHERE NOT EXISTS (SELECT 1 FROM programmematierescolaire "
+                    "WHERE referentiel_id=:ref AND niveau_id=:niveau AND option_id IS NULL AND matiere_id=:matiere)"
+                ),
+                {
+                    "ref": referentiel_id,
+                    "niveau": niveau_id,
+                    "matiere": matiere_id,
+                    "source": SOURCE_LYCEE,
+                },
+            )
+
+    for code_niveau in ("1ERE", "TERM"):
+        niveau_id = ids_niveaux.get(code_niveau)
+        if not niveau_id:
+            continue
+        for code_serie, codes_matieres in {
+            "L": ["PHILOSOPHIE"],
+            "S": ["PHILOSOPHIE"],
+            "OSE": ["SES"],
+        }.items():
+            serie = conn.execute(
+                sa.text(
+                    "SELECT id FROM optionscolaire "
+                    "WHERE referentiel_id=:ref AND niveau_id=:niveau AND code=:code AND parent_option_id IS NULL"
+                ),
+                {"ref": referentiel_id, "niveau": niveau_id, "code": code_serie},
+            ).first()
+            if not serie:
+                continue
+            for code_matiere in codes_matieres:
+                matiere_id = ids_matieres[code_matiere]
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO programmematierescolaire "
+                        "(referentiel_id, niveau_id, option_id, matiere_id, obligatoire, source_officielle, statut_validation) "
+                        "SELECT :ref, :niveau, :option, :matiere, TRUE, :source, 'verifie' "
+                        "WHERE NOT EXISTS (SELECT 1 FROM programmematierescolaire "
+                        "WHERE referentiel_id=:ref AND niveau_id=:niveau AND option_id=:option AND matiere_id=:matiere)"
+                    ),
+                    {
+                        "ref": referentiel_id,
+                        "niveau": niveau_id,
+                        "option": serie[0],
+                        "matiere": matiere_id,
+                        "source": SOURCE_PROGRAMMES,
+                    },
+                )
+
 
 def upgrade():
     op.create_table(
