@@ -43,7 +43,7 @@ def _notification_vue(notification: Notification) -> dict:
     elif type_value == "inactivite_3_jours":
         lien = "/dashboard"
     elif type_value == "reponse_feedback":
-        lien = "/mes-avis"
+        lien = "/feedback"
     elif type_value in {"fiche_revision_prete", "fiche_revision_document_prete"}:
         lien = "/mes-revisions"
     return {
