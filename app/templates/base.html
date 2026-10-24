@@ -112,7 +112,7 @@
 {% endif %}
 <link rel="stylesheet" href="/static/responsive-universal.css?v={{ version_asset('responsive-universal.css') }}">
 <link rel="stylesheet" href="/static/interface-polish.css?v={{ version_asset('interface-polish.css') }}">
-{% if request.url.path.startswith("/cercles") or request.url.path == "/admin/referentiel/scolaire" %}
+{% if request.url.path.startswith("/cercles") or request.url.path in ["/admin/referentiel/scolaire", "/catalogue-scolaire"] %}
 <link rel="stylesheet" href="/static/parcours-academique-ui.css?v={{ version_asset('parcours-academique-ui.css') }}">
 {% endif %}
 {% if request.url.path == "/documents" %}
