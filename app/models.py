@@ -855,11 +855,11 @@ class CercleEtude(SQLModel, table=True):
         Index(
             "ix_cercle_scolaire_cible_actif",
             "niveau_scolaire_id",
-            text("COALESCE(option_scolaire_id, 0)"),
-            text("COALESCE(etablissement_scolaire_id, 0)"),
-            text("COALESCE(matiere_scolaire_id, 0)"),
-            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"),
-            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"),
+            "option_scolaire_id",
+            "etablissement_scolaire_id",
+            "matiere_scolaire_id",
+            sqlite_where=text("portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"),
+            postgresql_where=text("portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"),
         ),
     )
 
