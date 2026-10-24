@@ -42,6 +42,14 @@ def _utilisateur_membre_cercle(session: Session, cercle_id: Optional[int], utili
     ).first() is not None
 
 
+def _enseignant_sans_classe_scolaire(utilisateur) -> bool:
+    return (
+        getattr(utilisateur, "profil_souhaite", None) == "professeur"
+        and getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not getattr(utilisateur, "niveau_scolaire_id", None)
+    )
+
+
 def _contexte_scolaire_tuteur(utilisateur, session: Session) -> Optional[dict]:
     """Valide le parcours collège/lycée avant de l'utiliser dans le Tuteur IA."""
     cycle = getattr(utilisateur, "cycle_education", None)
@@ -50,7 +58,7 @@ def _contexte_scolaire_tuteur(utilisateur, session: Session) -> Optional[dict]:
 
     niveau_id = getattr(utilisateur, "niveau_scolaire_id", None)
     if not niveau_id:
-        return {}
+        return None if _enseignant_sans_classe_scolaire(utilisateur) else {}
     referentiels = session.exec(
         select(ReferentielScolaire).order_by(
             ReferentielScolaire.date_creation.desc(),
@@ -267,7 +275,11 @@ def page_tuteur(request: Request, session: Session = Depends(get_session)):
         return redirection
 
     contexte_scolaire = _contexte_scolaire_tuteur(utilisateur, session)
-    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"} and not contexte_scolaire:
+    if (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not contexte_scolaire
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    ):
         return RedirectResponse(
             "/profil/academique?erreur=profil_scolaire_incomplet",
             status_code=303,
