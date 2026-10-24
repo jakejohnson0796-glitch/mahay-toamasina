@@ -1,0 +1,175 @@
+/* MITARIDALA — harmonisation ciblée, thème-aware et responsive. */
+:where(.page-notifications,.page-mes-revisions,.page-defis,.page-a-propos){min-width:0;padding-top:clamp(.6rem,1.8vw,1.35rem)}
+:where(.page-notifications,.page-mes-revisions) .hub-page{width:min(100% - 2rem,1200px);max-width:1200px;margin-inline:auto;padding:.75rem 0 4rem}
+:where(.page-notifications,.page-mes-revisions) .hub-hero{align-items:center;gap:clamp(1rem,3vw,2.25rem);padding:clamp(1rem,2.4vw,1.8rem) 0}
+:where(.page-notifications,.page-mes-revisions) .hub-hero h1{font-size:clamp(2rem,4vw,3.35rem);line-height:1.03;letter-spacing:-.035em;text-wrap:balance}
+:where(.page-notifications,.page-mes-revisions) .hub-hero-sous-titre{max-width:68ch;font-size:clamp(.94rem,1.25vw,1.05rem);line-height:1.7}
+:where(.page-notifications,.page-mes-revisions) .hub-section{margin-top:1.1rem;padding:clamp(1rem,2vw,1.5rem);border-radius:20px}
+:where(.page-notifications,.page-mes-revisions) .hub-section-entete h2{font-size:clamp(1.25rem,2vw,1.65rem);line-height:1.2;text-wrap:balance}
+:where(.page-notifications,.page-mes-revisions) .hub-section-sous-titre{font-size:.9rem;line-height:1.65}
+:where(.page-notifications,.page-mes-revisions) .hub-ligne{gap:.8rem;padding:.85rem 0}
+:where(.page-notifications,.page-mes-revisions) .hub-ligne-texte strong{font-size:.92rem;line-height:1.4}
+:where(.page-notifications,.page-mes-revisions) .hub-ligne-texte small{font-size:.78rem;line-height:1.5}
+:where(.page-notifications,.page-mes-revisions,.page-defis,.page-a-propos) :is(a,button,input,select,textarea):focus-visible{outline:3px solid color-mix(in srgb,var(--accent,#2f8f89) 66%,white);outline-offset:3px}
+
+/* Notifications : recherche, filtres et compteurs conservent leur état accessible. */
+.page-notifications .notifications-hero{border-bottom:0;padding-bottom:1.1rem}
+.page-notifications .notifications-hero-copy{min-width:0;flex:1 1 auto}
+.page-notifications .notification-eyebrow{margin-bottom:.45rem}
+.page-notifications .notification-hero-stats{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.1rem}
+.page-notifications .notification-hero-stat{display:grid;gap:.15rem;min-width:8.2rem;padding:.7rem .85rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-surface)}
+.page-notifications .notification-hero-stat strong{color:var(--content-text);font-size:1.35rem;line-height:1.1}
+.page-notifications .notification-hero-stat span{color:var(--content-text-muted);font-size:.78rem}
+.page-notifications .notifications-mark-all{flex:0 0 auto;margin:0}
+.page-notifications .notifications-mark-all button{min-height:2.8rem}
+.page-notifications .notification-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);align-items:center;gap:.85rem;margin:.8rem 0 1rem;padding:.85rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}
+.page-notifications .notification-filter-group{display:flex;flex-wrap:wrap;gap:.4rem;min-width:0}
+.page-notifications .notification-filter{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:2.6rem;padding:.5rem .8rem;border:1px solid var(--content-border);border-radius:11px;background:var(--content-bg);color:var(--content-text);font:inherit;font-size:.86rem;font-weight:750;cursor:pointer}
+.page-notifications .notification-filter span{display:inline-grid;min-width:1.4rem;min-height:1.4rem;place-items:center;padding-inline:.22rem;border-radius:999px;background:var(--content-surface);color:var(--content-text-muted);font-size:.72rem}
+.page-notifications .notification-filter[aria-pressed="true"]{border-color:color-mix(in srgb,var(--accent,#2f8f89) 55%,var(--content-border));background:color-mix(in srgb,var(--accent,#2f8f89) 10%,var(--content-surface));color:var(--content-text)}
+.page-notifications .notification-search-wrap{display:grid;gap:.32rem;min-width:0}
+.page-notifications .notification-search-wrap span{color:var(--content-text-muted);font-size:.74rem;font-weight:750}
+.page-notifications .notification-search-wrap input{width:100%;min-width:0;min-height:2.65rem;padding:.65rem .8rem;border:1px solid var(--content-border);border-radius:11px;background:var(--content-bg);color:var(--content-text);font:inherit;font-size:.9rem}
+.page-notifications .notification-result-count{margin:.55rem 0 0;color:var(--content-text-muted);font-size:.82rem}
+.page-notifications .notifications-liste{gap:.75rem;margin-top:.75rem}
+.page-notifications .notification-carte{align-items:flex-start;gap:.9rem;padding:clamp(.9rem,2vw,1.25rem);border-radius:16px;transition:border-color .16s ease,box-shadow .16s ease}
+.page-notifications .notification-carte:hover{border-color:color-mix(in srgb,var(--accent,#2f8f89) 34%,var(--content-border))}
+.page-notifications .notification-carte.notification-non-lue{border-inline-start:4px solid var(--accent,#2f8f89);background:color-mix(in srgb,var(--accent,#2f8f89) 4%,var(--content-surface))}
+.page-notifications .notification-point{width:.62rem;height:.62rem;margin-top:.45rem}
+.page-notifications .notification-meta{flex-wrap:wrap;align-items:center;gap:.4rem .85rem;margin-bottom:.5rem;font-size:.8rem}
+.page-notifications .notification-type{display:inline-flex;align-items:center;min-height:1.65rem;padding:.25rem .55rem;border:1px solid var(--content-border);border-radius:999px;background:var(--content-bg);color:var(--content-text);font-size:.76rem;font-weight:800}
+.page-notifications .notification-meta time{font-variant-numeric:tabular-nums}
+.page-notifications .notification-corps p{font-size:.98rem;line-height:1.65;overflow-wrap:anywhere}
+.page-notifications .notification-actions{gap:.55rem;margin-top:.85rem}
+.page-notifications .notification-actions form{margin:0}
+.page-notifications .notification-actions .bouton{min-height:2.55rem}
+.page-notifications [hidden]{display:none!important}
+.page-notifications .notification-filter-empty{margin-top:.7rem;padding:1.25rem;border:1px dashed var(--content-border);border-radius:14px;background:var(--content-bg);color:var(--content-text-muted);text-align:center}
+
+/* Révisions : plus d'air entre la priorité, le diagnostic et l'historique. */
+.page-mes-revisions .hub-hero-revisions{padding-top:1.2rem;padding-bottom:1.2rem}
+.page-mes-revisions .hub-hero-side{width:min(360px,40%);gap:.65rem;padding:1.15rem}
+.page-mes-revisions .hub-hero-side strong{font-size:clamp(1.1rem,1.8vw,1.35rem);line-height:1.35}
+.page-mes-revisions .hub-hero-side>span:not(.hub-hero-side-icon){font-size:.9rem;line-height:1.6}
+.page-mes-revisions .learning-command{gap:.55rem;margin-block:1rem}
+.page-mes-revisions .learning-command-item{min-width:0;min-height:5rem;padding:.8rem;border-radius:14px}
+.page-mes-revisions .learning-command-item strong{font-size:.96rem}
+.page-mes-revisions .learning-command-item small{font-size:.78rem;line-height:1.45}
+.page-mes-revisions .mission-entry-strip{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:1rem 0;padding:1rem 1.1rem;border:1px solid color-mix(in srgb,var(--accent,#2f8f89) 24%,var(--content-border));border-radius:16px;background:color-mix(in srgb,var(--accent,#2f8f89) 5%,var(--content-surface));color:var(--content-text)}
+.page-mes-revisions .mission-entry-strip>div{display:grid;gap:.35rem;min-width:0}
+.page-mes-revisions .mission-entry-strip strong{font-size:1rem;line-height:1.45}
+.page-mes-revisions .mission-entry-strip span:not(.eyebrow){color:var(--content-text-muted);font-size:.86rem;line-height:1.55}
+.page-mes-revisions .hub-kpi-label,.page-mes-revisions .hub-notion-date,.page-mes-revisions .hub-maitrise-message,.page-mes-revisions .hub-maitrise-preuves span{line-height:1.5}
+.page-mes-revisions .hub-notion-carte h3,.page-mes-revisions .hub-maitrise-top h3{overflow-wrap:anywhere;text-wrap:pretty}
+.page-mes-revisions .hub-notion-actions .bouton,.page-mes-revisions .hub-illusion-action .bouton{min-height:2.55rem}
+.page-mes-revisions .hub-deux-colonnes{gap:1rem;margin-top:1.15rem}
+.page-mes-revisions .hub-deux-colonnes>.hub-section{padding:clamp(.9rem,1.7vw,1.35rem)}
+.page-mes-revisions .hub-vide-compact{line-height:1.6}
+
+/* Défis : priorité aux objectifs quotidiens et aux états lisibles. */
+.page-defis .gamification-page{width:min(100% - 2rem,1280px);padding:.75rem 0 4rem}
+.page-defis .gam-hero{grid-template-columns:minmax(0,1.4fr) minmax(280px,.7fr);gap:clamp(1rem,2.4vw,2rem);padding:clamp(1.2rem,3vw,2.35rem);border-radius:24px}
+.page-defis .gam-kicker{font-size:.72rem;letter-spacing:.09em;line-height:1.5}
+.page-defis .gam-hero h1{max-width:15ch;font-size:clamp(2.25rem,4.6vw,4rem);line-height:1.02;text-wrap:balance}
+.page-defis .gam-hero p{font-size:.98rem;line-height:1.7}
+.page-defis .gam-hero-actions{gap:.6rem}
+.page-defis .gam-level-card{gap:.7rem;min-width:0;padding:clamp(1rem,2vw,1.4rem)}
+.page-defis .gam-label{font-size:.7rem}
+.page-defis .gam-level-card strong{font-size:clamp(1.65rem,2.8vw,2.2rem)}
+.page-defis .gam-muted{color:rgba(255,255,255,.78);font-size:.8rem;line-height:1.5;overflow-wrap:anywhere}
+.page-defis .gam-progress{height:.65rem}
+.page-defis .gam-streak{font-size:.9rem}
+.page-defis .gam-jump-nav{display:flex;flex-wrap:wrap;gap:.55rem;margin:.9rem 0 1rem;padding:.65rem;border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface)}
+.page-defis .gam-jump-nav a{display:inline-flex;align-items:center;justify-content:center;min-height:2.6rem;padding:.55rem .8rem;border:1px solid transparent;border-radius:10px;color:var(--content-text);font-size:.86rem;font-weight:800;text-decoration:none}
+.page-defis .gam-jump-nav a:hover{border-color:var(--content-border);background:var(--content-bg)}
+.page-defis .gam-layout{gap:1rem;margin-top:0;align-items:start}
+.page-defis .gam-panel{padding:clamp(.9rem,1.8vw,1.35rem);border-radius:18px}
+.page-defis .gam-panel-head{align-items:flex-start;gap:.8rem}
+.page-defis .gam-panel-head h2{font-size:clamp(1.15rem,1.8vw,1.45rem);line-height:1.25}
+.page-defis .gam-panel-head p{font-size:.85rem;line-height:1.55}
+.page-defis .gam-counter,.page-defis .gam-complete{font-size:.72rem;line-height:1.4}
+.page-defis .gam-mission{gap:.8rem;padding:.9rem}
+.page-defis .gam-mission-check{width:2.1rem;height:2.1rem;font-size:.88rem}
+.page-defis .gam-mission-body strong,.page-defis .gam-week-row strong{font-size:.92rem;line-height:1.4}
+.page-defis .gam-mission-body span,.page-defis .gam-week-row div:nth-child(2) span{font-size:.82rem;line-height:1.55}
+.page-defis .gam-mission-action b{font-size:.8rem}
+.page-defis .gam-mission-action a,.page-defis .gam-done-label{font-size:.78rem}
+.page-defis .gam-badges,.page-defis .gam-actions-grid{gap:.7rem}
+.page-defis .gam-badge{padding:.9rem;gap:.75rem}
+.page-defis .gam-badge-icon{width:2.8rem;height:2.8rem;font-size:1.35rem}
+.page-defis .gam-badge-body strong,.page-defis .gam-actions-grid strong{font-size:.9rem;line-height:1.4}
+.page-defis .gam-badge-body span,.page-defis .gam-actions-grid span{font-size:.8rem;line-height:1.55}
+.page-defis .gam-badge-body small,.page-defis .gam-badge-status{font-size:.7rem}
+.page-defis .gam-rank-row strong{font-size:.84rem;line-height:1.4}
+.page-defis .gam-rank-row small,.page-defis .gam-rank-row>b,.page-defis .gam-ranking-me span{font-size:.76rem}
+.page-defis .gam-ranking-me strong{font-size:1.8rem}
+.page-defis .gam-empty{font-size:.86rem;line-height:1.6}
+.page-defis .gam-next h3{font-size:1.15rem;line-height:1.35}
+.page-defis .gam-next p{font-size:.86rem;line-height:1.65}
+
+/* À propos : table des matières + confort de lecture. */
+.page-a-propos .public-page{width:min(100% - 2rem,1240px);padding:.75rem 0 3.5rem}
+.page-a-propos .public-hero{grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:clamp(1rem,2.5vw,2rem);padding:clamp(1.35rem,3.3vw,2.8rem);border-radius:26px}
+.page-a-propos .public-hero h1{max-width:15ch;font-size:clamp(2.4rem,5vw,4.5rem);line-height:1.02;text-wrap:balance}
+.page-a-propos .public-hero p{font-size:1rem;line-height:1.75}
+.page-a-propos .public-metric{min-height:6.1rem;padding:.9rem}
+.page-a-propos .public-metric span{font-size:.78rem;line-height:1.5}
+.page-a-propos .about-toc{display:flex;flex-wrap:wrap;gap:.5rem;margin:.85rem 0 1.25rem;padding:.7rem;border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface);box-shadow:var(--refonte-shadow-sm)}
+.page-a-propos .about-toc a{display:inline-flex;align-items:center;min-height:2.5rem;padding:.55rem .8rem;border:1px solid transparent;border-radius:10px;color:var(--content-text);font-size:.84rem;font-weight:800;text-decoration:none}
+.page-a-propos .about-toc a:hover{border-color:var(--content-border);background:var(--content-bg)}
+.page-a-propos .public-section{scroll-margin-top:1rem;margin-top:clamp(1.1rem,2.4vw,1.7rem)}
+.page-a-propos .public-section-head h2,.page-a-propos .public-final h2{font-size:clamp(1.45rem,2.6vw,2rem);line-height:1.2;text-wrap:balance}
+.page-a-propos .public-section-head p{max-width:75ch;font-size:.9rem;line-height:1.65}
+.page-a-propos .public-card{padding:clamp(.9rem,1.6vw,1.2rem);border-radius:16px}
+.page-a-propos .public-card h3,.page-a-propos .public-story h3{font-size:1.08rem;line-height:1.35}
+.page-a-propos .public-card p,.page-a-propos .public-story p,.page-a-propos .public-final p{color:var(--content-text-muted);font-size:.93rem;line-height:1.75}
+.page-a-propos .public-story{gap:1rem;padding-block:1rem}
+.page-a-propos .public-story-marker{flex:0 0 auto}
+.page-a-propos .public-principle{padding:.95rem;border-radius:14px}
+.page-a-propos .public-principle strong{font-size:.9rem}
+.page-a-propos .public-principle span{font-size:.84rem;line-height:1.65}
+.page-a-propos .public-final{gap:1.1rem;margin-top:1.5rem;padding:clamp(1.2rem,3vw,2rem);border-radius:22px}
+
+@media(max-width:900px){
+  .page-defis .gam-hero,.page-a-propos .public-hero{grid-template-columns:minmax(0,1fr)}
+  .page-mes-revisions .hub-hero-revisions{grid-template-columns:minmax(0,1fr) minmax(250px,34%)}
+  .page-notifications .notification-controls{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:700px){
+  :where(.page-notifications,.page-mes-revisions) .hub-page,.page-defis .gamification-page,.page-a-propos .public-page{width:min(100% - 1.25rem,100%)}
+  :where(.page-notifications,.page-mes-revisions) .hub-hero h1{font-size:clamp(1.9rem,8vw,2.65rem)}
+  .page-notifications .notifications-hero{display:grid;align-items:start}
+  .page-notifications .notifications-mark-all{justify-self:start}
+  .page-notifications .notification-controls{padding:.7rem}
+  .page-notifications .notification-filter-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .page-notifications .notification-filter{gap:.25rem;padding:.45rem .25rem;font-size:.78rem}
+  .page-notifications .notification-filter span{min-width:1.2rem;min-height:1.2rem;font-size:.68rem}
+  .page-notifications .notification-search-wrap input{font-size:16px}
+  .page-notifications .notification-carte{gap:.65rem;padding:.85rem}
+  .page-notifications .notification-meta{align-items:flex-start;flex-direction:column;gap:.3rem}
+  .page-notifications .notification-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .page-notifications .notification-actions .bouton{width:100%;min-height:2.8rem;padding-inline:.5rem;font-size:.8rem}
+  .page-mes-revisions .hub-hero-revisions{display:grid;grid-template-columns:minmax(0,1fr)}
+  .page-mes-revisions .hub-hero-side{width:100%;margin-top:.5rem}
+  .page-mes-revisions .mission-entry-strip{align-items:stretch;flex-direction:column}
+  .page-mes-revisions .mission-entry-strip .bouton{align-self:flex-start}
+  .page-mes-revisions .learning-command{display:grid;grid-template-columns:minmax(0,1fr)}
+  .page-mes-revisions .learning-command-arrow{display:none}
+  .page-mes-revisions .learning-command-item{min-height:4.2rem}
+  .page-defis .gam-layout{grid-template-columns:minmax(0,1fr)}
+  .page-defis .gam-hero{padding:1.15rem}
+  .page-defis .gam-hero h1{font-size:clamp(2.1rem,9vw,3.05rem)}
+  .page-defis .gam-jump-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .page-defis .gam-jump-nav a{padding-inline:.5rem;font-size:.78rem}
+  .page-defis .gam-panel-head{flex-direction:column}
+  .page-defis .gam-mission{grid-template-columns:2.1rem minmax(0,1fr)}
+  .page-defis .gam-mission-action{grid-column:2;justify-items:start}
+  .page-defis .gam-badges,.page-defis .gam-actions-grid{grid-template-columns:minmax(0,1fr)}
+  .page-a-propos .public-page{padding-top:.25rem}
+  .page-a-propos .public-hero{padding:1.1rem;border-radius:18px}
+  .page-a-propos .public-hero h1{font-size:clamp(2.1rem,9vw,3.1rem)}
+  .page-a-propos .about-toc{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;padding:.5rem}
+  .page-a-propos .about-toc a{flex:0 0 auto;font-size:.8rem}
+  .page-a-propos .public-grid-2,.page-a-propos .public-grid-3,.page-a-propos .public-principles{grid-template-columns:minmax(0,1fr)}
+}
+@media(prefers-reduced-motion:reduce){.page-notifications .notification-carte{transition:none}}
