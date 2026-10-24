@@ -7,10 +7,12 @@ Les API publiques ne publient que les lignes actives et vérifiées.
 from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
+import re
+import unicodedata
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, or_
 
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
@@ -21,6 +23,8 @@ from ..models import (
     MatiereScolaire,
     NiveauScolaire,
     OptionScolaire,
+    OffreEtablissementScolaire,
+    ParcoursTechniqueProfessionnel,
     ProgrammeMatiereScolaire,
     ReferentielScolaire,
     RoleUtilisateur,
@@ -59,9 +63,10 @@ def _url_source_valide(source: str | None) -> bool:
     except ValueError:
         return False
     hostname = (parsed.hostname or "").lower().rstrip(".")
-    domaine_officiel = (
-        hostname == "education.gov.mg"
-        or hostname.endswith(".education.gov.mg")
+    domaines_officiels = ("education.gov.mg", "metfp.gov.mg")
+    domaine_officiel = any(
+        hostname == domaine or hostname.endswith("." + domaine)
+        for domaine in domaines_officiels
     )
     return parsed.scheme == "https" and domaine_officiel
 
@@ -111,10 +116,28 @@ def page_referentiel_scolaire(
             ProgrammeMatiereScolaire.id,
         )
     ).all()
+    parcours_etfp = session.exec(
+        select(ParcoursTechniqueProfessionnel).order_by(
+            ParcoursTechniqueProfessionnel.statut_validation,
+            ParcoursTechniqueProfessionnel.secteur,
+            ParcoursTechniqueProfessionnel.filiere,
+            ParcoursTechniqueProfessionnel.metier,
+        )
+    ).all()
+    offres_etablissement = session.exec(
+        select(OffreEtablissementScolaire).order_by(
+            OffreEtablissementScolaire.statut_validation,
+            OffreEtablissementScolaire.etablissement_id,
+            OffreEtablissementScolaire.type_offre,
+            OffreEtablissementScolaire.id,
+        )
+    ).all()
 
     niveaux_map = {item.id: item for item in niveaux}
     options_map = {item.id: item for item in options}
     matieres_map = {item.id: item for item in matieres}
+    etablissements_map = {item.id: item for item in etablissements}
+    parcours_etfp_map = {item.id: item for item in parcours_etfp}
     cercles_scolaires_actifs = session.exec(
         select(func.count()).select_from(CercleEtude).where(
             CercleEtude.portee_academique == "scolaire",
@@ -142,7 +165,11 @@ def page_referentiel_scolaire(
             "matieres": matieres,
             "matieres_map": matieres_map,
             "etablissements": etablissements,
+            "etablissements_map": etablissements_map,
             "programmes": programmes,
+            "parcours_etfp": parcours_etfp,
+            "parcours_etfp_map": parcours_etfp_map,
+            "offres_etablissement": offres_etablissement,
             "cercles_scolaires_actifs": cercles_scolaires_actifs,
             "cercles_scolaires_synchronises": cercles_scolaires_synchronises,
         },
@@ -194,7 +221,10 @@ def creer_etablissement_scolaire(
     code = "".join(ch for ch in code.strip().upper() if ch.isalnum() or ch in "-_")[:40]
     if len(nom) < 3:
         return _erreur("nom_etablissement_requis")
-    if type_etablissement not in {"college", "lycee", "college_lycee", "lycee_technique", "professionnel"}:
+    if type_etablissement not in {
+        "college", "lycee", "college_lycee", "lycee_technique", "professionnel",
+        "centre_formation_professionnelle", "centre_formation_professionnelle_specialise",
+    }:
         return _erreur("type_etablissement_invalide")
     if secteur not in {"public", "prive", "inconnu"}:
         return _erreur("secteur_invalide")
