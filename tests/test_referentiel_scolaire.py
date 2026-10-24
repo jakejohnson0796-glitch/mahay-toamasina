@@ -19,10 +19,13 @@ from app.models import (
     StatutDocument,
     StatutDemandeCreationCercle,
     DemandeCreationCercle,
+    MembreCercle,
+    RoleMembreCercle,
     TypeDocument,
     Utilisateur,
 )
 from app import quiz as quiz_module
+from app.cercles_scolaires import assurer_cercles_scolaires
 from app.routers import admin_scolaire_router, auth_router, cercles_router, documents_router, quiz_router, scolaire_router, tuteur_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
@@ -709,3 +712,160 @@ def test_depot_document_non_scolaire_n_est_pas_bloque_par_la_matiere_du_cercle()
     assert documents_router._matiere_cercle_coherente(cercle_universitaire, 18) is True
     assert documents_router._matiere_cercle_coherente(cercle_sans_matiere, 18) is True
     assert documents_router._matiere_cercle_coherente(None, 18) is True
+
+def _admin_sync_cercles(session: Session, telephone: str = "0340000200") -> Utilisateur:
+    admin = Utilisateur(
+        nom="Admin synchronisation",
+        telephone=telephone,
+        mot_de_passe_hash="hash",
+        role=RoleUtilisateur.ADMIN,
+    )
+    session.add(admin)
+    session.commit()
+    session.refresh(admin)
+    return admin
+
+
+def test_synchronisation_cercles_scolaires_cree_une_hierarchie_separee_et_idempotente():
+    engine, session = _session()
+    referentiel, niveau, serie = _school_catalogue(session)
+    admin = _admin_sync_cercles(session)
+
+    matiere = MatiereScolaire(
+        code="MATHS_SYNC_TEST",
+        libelle="Mathématiques",
+        source_officielle=referentiel.source_officielle,
+        statut_validation="verifie",
+        est_active=True,
+    )
+    session.add(matiere)
+    session.commit()
+    session.refresh(matiere)
+    session.add(ProgrammeMatiereScolaire(
+        referentiel_id=referentiel.id,
+        niveau_id=niveau.id,
+        option_id=serie.id,
+        matiere_id=matiere.id,
+        obligatoire=True,
+        source_officielle=referentiel.source_officielle,
+        statut_validation="verifie",
+    ))
+    transversal = CercleEtude(
+        nom="Groupe transverse conservé",
+        createur_id=admin.id,
+        portee_academique="transversal",
+        statut=StatutCercle.ACTIF,
+    )
+    session.add(transversal)
+    session.commit()
+    session.refresh(transversal)
+
+    premier = assurer_cercles_scolaires(session)
+    assert premier["cibles"] == 3  # classe, série, matière de la série
+    assert premier["crees"] == 3
+
+    cercles = session.exec(select(CercleEtude).where(
+        CercleEtude.portee_academique == "scolaire",
+        CercleEtude.statut == StatutCercle.ACTIF,
+    )).all()
+    assert len(cercles) == 3
+    assert all(cercle.synchronise_referentiel for cercle in cercles)
+    assert all(cercle.mention_id is None and cercle.filiere_id is None for cercle in cercles)
+    assert all(cercle.niveau is None for cercle in cercles)
+    assert {cercle.niveau_scolaire_id for cercle in cercles} == {niveau.id}
+    assert any(cercle.option_scolaire_id is None and cercle.matiere_scolaire_id is None for cercle in cercles)
+    assert any(cercle.option_scolaire_id == serie.id and cercle.matiere_scolaire_id is None for cercle in cercles)
+    assert any(cercle.option_scolaire_id == serie.id and cercle.matiere_scolaire_id == matiere.id for cercle in cercles)
+
+    deuxieme = assurer_cercles_scolaires(session)
+    assert deuxieme["crees"] == 0
+    assert deuxieme["existants"] == 3
+    assert session.get(CercleEtude, transversal.id).portee_academique == "transversal"
+    assert session.get(CercleEtude, transversal.id).synchronise_referentiel is False
+
+    session.close()
+    engine.dispose()
+
+
+def test_synchronisation_archive_les_cibles_obsoletes_sans_membres_et_preserve_les_cercles_utilises():
+    engine, session = _session()
+    referentiel, niveau, serie = _school_catalogue(session)
+    admin = _admin_sync_cercles(session, telephone="0340000201")
+    matiere = MatiereScolaire(
+        code="PHYSIQUE_SYNC_TEST",
+        libelle="Physique",
+        source_officielle=referentiel.source_officielle,
+        statut_validation="verifie",
+        est_active=True,
+    )
+    session.add(matiere)
+    session.commit()
+    session.refresh(matiere)
+    programme = ProgrammeMatiereScolaire(
+        referentiel_id=referentiel.id,
+        niveau_id=niveau.id,
+        option_id=serie.id,
+        matiere_id=matiere.id,
+        obligatoire=True,
+        source_officielle=referentiel.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(programme)
+    session.commit()
+
+    assurer_cercles_scolaires(session)
+    cercle_serie = session.exec(select(CercleEtude).where(
+        CercleEtude.portee_academique == "scolaire",
+        CercleEtude.niveau_scolaire_id == niveau.id,
+        CercleEtude.option_scolaire_id == serie.id,
+        CercleEtude.matiere_scolaire_id.is_(None),
+        CercleEtude.statut == StatutCercle.ACTIF,
+    )).one()
+    cercle_matiere = session.exec(select(CercleEtude).where(
+        CercleEtude.portee_academique == "scolaire",
+        CercleEtude.niveau_scolaire_id == niveau.id,
+        CercleEtude.option_scolaire_id == serie.id,
+        CercleEtude.matiere_scolaire_id == matiere.id,
+        CercleEtude.statut == StatutCercle.ACTIF,
+    )).one()
+
+    membre = _user(
+        session, niveau_id=niveau.id, option_id=serie.id,
+        telephone="0340000202",
+    )
+    session.add(MembreCercle(
+        cercle_id=cercle_serie.id,
+        utilisateur_id=membre.id,
+        role=RoleMembreCercle.MEMBRE,
+    ))
+    serie.est_active = False
+    session.add(serie)
+    session.commit()
+
+    rapport = assurer_cercles_scolaires(session)
+    session.refresh(cercle_serie)
+    session.refresh(cercle_matiere)
+    assert cercle_serie.statut == StatutCercle.ACTIF
+    assert cercle_matiere.statut == StatutCercle.ARCHIVE
+    assert rapport["preserves"] == 1
+    assert rapport["archives"] == 1
+
+    # La remise en vigueur de la série réactive le cercle matière archivé
+    # au lieu de créer une nouvelle ligne ou de dupliquer son identité.
+    serie.est_active = True
+    session.add(serie)
+    session.commit()
+    rapport_retour = assurer_cercles_scolaires(session)
+    session.refresh(cercle_matiere)
+    assert cercle_matiere.statut == StatutCercle.ACTIF
+    assert rapport_retour["reactives"] == 1
+    assert session.exec(select(CercleEtude).where(
+        CercleEtude.portee_academique == "scolaire",
+        CercleEtude.niveau_scolaire_id == niveau.id,
+        CercleEtude.option_scolaire_id == serie.id,
+        CercleEtude.matiere_scolaire_id == matiere.id,
+        CercleEtude.statut == StatutCercle.ACTIF,
+    )).all().__len__() == 1
+
+    session.close()
+    engine.dispose()
