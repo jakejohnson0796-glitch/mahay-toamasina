@@ -314,9 +314,19 @@ def formulaire_upload(request: Request, cercle_id: Optional[int] = None, session
             return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
         cercle = session.get(CercleEtude, cercle_id)
     filieres = session.exec(select(Filiere)).all()
+    niveau_cercle_scolaire = (
+        session.get(NiveauScolaire, cercle.niveau_scolaire_id)
+        if cercle and cercle.niveau_scolaire_id else None
+    )
     return templates.TemplateResponse(
         "document_upload.html",
-        {"request": request, "filieres": filieres, "cercle": cercle, "utilisateur": utilisateur},
+        {
+            "request": request,
+            "filieres": filieres,
+            "cercle": cercle,
+            "niveau_cercle_scolaire": niveau_cercle_scolaire,
+            "utilisateur": utilisateur,
+        },
     )
 
 
