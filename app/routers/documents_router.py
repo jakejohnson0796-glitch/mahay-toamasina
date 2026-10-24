@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
+from ..models import (Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
@@ -461,6 +461,7 @@ def upload_document(
     cycle_scolaire: Optional[str] = Form(default=None),
     niveau_scolaire_id: Optional[int] = Form(default=None),
     option_scolaire_id: Optional[int] = Form(default=None),
+    matiere_scolaire_id: Optional[int] = Form(default=None),
     etablissement_scolaire_id: Optional[int] = Form(default=None),
     cercle_id: Optional[int] = Form(default=None),
     classification_auto: bool = Form(default=False),
@@ -498,6 +499,7 @@ def upload_document(
 
     niveau_scolaire = None
     option_scolaire = None
+    matiere_scolaire = None
     etablissement_scolaire = None
     referentiel_courant = None
 
@@ -552,6 +554,34 @@ def upload_document(
             ):
                 return RedirectResponse("/documents?erreur=option_scolaire_invalide", status_code=303)
 
+        if matiere_scolaire_id is not None:
+            matiere_scolaire = session.get(MatiereScolaire, matiere_scolaire_id)
+            options_compatibles = []
+            if option_scolaire:
+                options_compatibles.append(option_scolaire.id)
+                if option_scolaire.parent_option_id:
+                    options_compatibles.append(option_scolaire.parent_option_id)
+            association_requete = select(ProgrammeMatiereScolaire).where(
+                ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                ProgrammeMatiereScolaire.matiere_id == matiere_scolaire_id,
+                ProgrammeMatiereScolaire.statut_validation == "verifie",
+                or_(
+                    ProgrammeMatiereScolaire.option_id.is_(None),
+                    ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                ),
+            )
+            associations_matiere = session.exec(association_requete).all()
+            if (
+                not matiere_scolaire
+                or not matiere_scolaire.est_active
+                or matiere_scolaire.statut_validation != "verifie"
+                or not associations_matiere
+            ):
+                return RedirectResponse("/documents?erreur=matiere_scolaire_invalide", status_code=303)
+            # L'identifiant du référentiel est la source de vérité du libellé.
+            matiere = matiere_scolaire.libelle
+
         if etablissement_scolaire_id is not None:
             etablissement_scolaire = session.get(EtablissementScolaire, etablissement_scolaire_id)
             if (
@@ -565,10 +595,12 @@ def upload_document(
         if cercle:
             if cercle.niveau_scolaire_id and cercle.niveau_scolaire_id != niveau_scolaire.id:
                 return RedirectResponse("/documents?erreur=classe_cercle_incompatible", status_code=303)
-            if cercle.option_scolaire_id and (
-                not option_scolaire or cercle.option_scolaire_id != option_scolaire.id
-            ):
-                return RedirectResponse("/documents?erreur=option_cercle_incompatible", status_code=303)
+            if cercle.option_scolaire_id:
+                options_compatibles_cercle = {option_scolaire.id} if option_scolaire else set()
+                if option_scolaire and option_scolaire.parent_option_id:
+                    options_compatibles_cercle.add(option_scolaire.parent_option_id)
+                if cercle.option_scolaire_id not in options_compatibles_cercle:
+                    return RedirectResponse("/documents?erreur=option_cercle_incompatible", status_code=303)
             if cercle.etablissement_scolaire_id:
                 if etablissement_scolaire and etablissement_scolaire.id != cercle.etablissement_scolaire_id:
                     return RedirectResponse("/documents?erreur=etablissement_cercle_incompatible", status_code=303)
@@ -579,7 +611,7 @@ def upload_document(
 
         filiere_id = None
     else:
-        if any(value is not None for value in (niveau_scolaire_id, option_scolaire_id, etablissement_scolaire_id)):
+        if any(value is not None for value in (niveau_scolaire_id, option_scolaire_id, matiere_scolaire_id, etablissement_scolaire_id)):
             return RedirectResponse("/documents?erreur=cible_universitaire_incoherente", status_code=303)
         cycle_scolaire = None
 
@@ -671,6 +703,7 @@ def upload_document(
         portee_academique=portee,
         niveau_scolaire_id=niveau_scolaire.id if niveau_scolaire else None,
         option_scolaire_id=option_scolaire.id if option_scolaire else None,
+        matiere_scolaire_id=matiere_scolaire.id if matiere_scolaire else None,
         etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
         cercle_id=cercle_id,
         uploader_id=utilisateur.id,
