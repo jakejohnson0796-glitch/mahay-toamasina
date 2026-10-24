@@ -149,7 +149,7 @@ class ParcoursTechniqueProfessionnel(SQLModel, table=True):
     l'année scolaire concernée.
     """
     id: Optional[int] = Field(default=None, primary_key=True)
-    code: str = Field(index=True, unique=True, max_length=120)
+    code: str = Field(unique=True, max_length=120)
     secteur: Optional[str] = Field(default=None, index=True, max_length=120)
     filiere: Optional[str] = Field(default=None, index=True, max_length=180)
     metier: Optional[str] = Field(default=None, index=True, max_length=180)
