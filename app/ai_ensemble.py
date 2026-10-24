@@ -409,7 +409,7 @@ def _groq_structured_tool(
                 model,
                 attempt,
                 tool_name,
-                detail.replace("\\n", " ")[:500],
+                detail.replace("\n", " ")[:500],
             )
             return None
 
