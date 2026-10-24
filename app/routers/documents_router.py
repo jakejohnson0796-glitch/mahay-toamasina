@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Document, Filiere, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
+from ..models import (Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
@@ -75,9 +75,10 @@ def _fiche_pedagogique_est_validee(document: Document) -> bool:
     return str(getattr(document, "fiche_validation_statut", "a_verifier") or "a_verifier") == "validee"
 
 
-def generer_reference(filiere: Filiere, annee: int, session: Session) -> str:
-    """Reference unique sans charger/compter toute la table des documents."""
-    prefixe = "".join(c for c in filiere.nom.upper() if c.isalpha())[:3] or "DOC"
+def generer_reference(filiere: Optional[Filiere], annee: int, session: Session) -> str:
+    """Référence unique commune aux cibles universitaires et scolaires."""
+    nom_cible = filiere.nom.upper() if filiere else "SCO"
+    prefixe = "".join(c for c in nom_cible if c.isalpha())[:3] or "DOC"
     jeton = secrets.token_hex(4).upper()
     return f"MG-{prefixe}-{annee}-{jeton}"
 
@@ -135,6 +136,10 @@ def liste_documents(
     matiere: Optional[str] = None,
     type_document: Optional[TypeDocument] = None,
     cercle_id: Optional[int] = None,
+    portee_academique: Optional[str] = None,
+    niveau_scolaire_id: Optional[int] = None,
+    option_scolaire_id: Optional[int] = None,
+    etablissement_scolaire_id: Optional[int] = None,
     session: Session = Depends(get_session),
 ):
     filiere_id = entier_ou_none(filiere_id)
@@ -163,6 +168,14 @@ def liste_documents(
         requete = requete.where(
             (Document.cercle_id.is_(None)) | (Document.cercle_id.in_(cercles_autorises))
         )
+    if portee_academique in {"universitaire", "scolaire"}:
+        requete = requete.where(Document.portee_academique == portee_academique)
+    if niveau_scolaire_id is not None:
+        requete = requete.where(Document.niveau_scolaire_id == niveau_scolaire_id)
+    if option_scolaire_id is not None:
+        requete = requete.where(Document.option_scolaire_id == option_scolaire_id)
+    if etablissement_scolaire_id is not None:
+        requete = requete.where(Document.etablissement_scolaire_id == etablissement_scolaire_id)
     if filiere_id:
         requete = requete.where(Document.filiere_id == filiere_id)
     if matiere:
@@ -270,6 +283,10 @@ def liste_documents(
             "fiches_revision_documents": fiches_revision_documents,
             "filieres": filieres,
             "filiere_id": filiere_id,
+            "portee_academique": portee_academique or "",
+            "niveau_scolaire_id": niveau_scolaire_id,
+            "option_scolaire_id": option_scolaire_id,
+            "etablissement_scolaire_id": etablissement_scolaire_id,
             "matiere": matiere or "",
             "type_document": type_document.value if type_document else "",
             "types_document": list(TypeDocument),
@@ -389,6 +406,11 @@ def upload_document(
     type_document: Optional[TypeDocument] = Form(default=None),
     annee: Optional[int] = Form(default=None),
     filiere_id: Optional[int] = Form(default=None),
+    portee_academique: str = Form(default="universitaire"),
+    cycle_scolaire: Optional[str] = Form(default=None),
+    niveau_scolaire_id: Optional[int] = Form(default=None),
+    option_scolaire_id: Optional[int] = Form(default=None),
+    etablissement_scolaire_id: Optional[int] = Form(default=None),
     cercle_id: Optional[int] = Form(default=None),
     classification_auto: bool = Form(default=False),
     fichier: UploadFile = File(...),
