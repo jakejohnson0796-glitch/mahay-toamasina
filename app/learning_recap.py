@@ -322,7 +322,7 @@ def construire_bilan(
         .where(
             ActionGamification.utilisateur_id == utilisateur_id,
             ActionGamification.date_creation >= moment_depart,
-            ActionGamification.action.in_(("cercle", "cercle_rejoint", "classe", "document")),
+            ActionGamification.action.in_(("cercle", "cercle_rejoint", "classe", "document", "revision")),
         )
         .order_by(ActionGamification.date_creation.desc())
         .limit(NB_ACTIVITES_AFFICHER)
