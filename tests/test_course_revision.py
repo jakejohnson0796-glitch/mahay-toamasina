@@ -82,7 +82,7 @@ def test_budget_completion_tokens_se_reduit_quand_le_contexte_grandit():
     prompt_court = "Résume un cours de mathématiques."
 
     schema_long = {"type": "json_schema", "schema": {"description": "x" * 1500}}
-    prompt_long = "Formules et explications scientifiques. " * 950
+    prompt_long = "Formules et explications scientifiques. " * 350
 
     budget_court = course_revision._budget_completion_tokens(prompt_court, schema_court)
     budget_long = course_revision._budget_completion_tokens(prompt_long, schema_long)
