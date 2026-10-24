@@ -117,45 +117,11 @@ def _seed_catalogue_scolaire(conn):
                 },
             )
 
-    # Transition actuelle du baccalauréat : les options sont liées à leur
-    # série parent plutôt que proposées comme séries indépendantes. Les
-    # anciennes séries A/C/D restent distinctes pour les établissements
-    # qui conservent encore le programme antérieur.
-    options_filles_terminale = {
-        "L": [("OPT_A1", "Option A1"), ("OPT_A2", "Option A2"), ("OPT_L", "Option L")],
-        "S": [("OPT_C", "Option C"), ("OPT_D", "Option D"), ("OPT_S", "Option S")],
-    }
-    terminale_id = conn.execute(
-        sa.text("SELECT id FROM niveauscolaire WHERE referentiel_id=:ref AND code='TERM'"),
-        {"ref": referentiel_id},
-    ).scalar_one()
-    for code_serie, options in options_filles_terminale.items():
-        serie = conn.execute(
-            sa.text(
-                "SELECT id FROM optionscolaire "
-                "WHERE referentiel_id=:ref AND niveau_id=:niveau AND code=:code AND parent_option_id IS NULL"
-            ),
-            {"ref": referentiel_id, "niveau": terminale_id, "code": code_serie},
-        ).first()
-        if not serie:
-            continue
-        for code_option, libelle_option in options:
-            conn.execute(
-                sa.text(
-                    "INSERT INTO optionscolaire "
-                    "(referentiel_id, niveau_id, parent_option_id, code, libelle, type_option, est_active, source_officielle, statut_validation) "
-                    "SELECT :ref, :niveau, :parent, :code, :libelle, 'option', TRUE, :source, 'verifie' "
-                    "WHERE NOT EXISTS (SELECT 1 FROM optionscolaire WHERE niveau_id=:niveau AND code=:code)"
-                ),
-                {
-                    "ref": referentiel_id,
-                    "niveau": terminale_id,
-                    "parent": serie[0],
-                    "code": code_option,
-                    "libelle": libelle_option,
-                    "source": SOURCE_PROGRAMMES,
-                },
-            )
+    # Le MEN indique que les anciennes séries A1/A2 convergent vers L,
+    # et C/D vers S. Elles ne sont donc pas réintroduites comme options filles
+    # de L/S sans source réglementaire qui justifie une telle hiérarchie.
+    # parent_option_id reste disponible pour les options futures, à valider
+    # explicitement par l'administration depuis une source officielle.
 
     # Catalogue de matières dérivé des programmes MEN. Les associations
     # communes du collège proviennent des programmes par classe ; pour le
