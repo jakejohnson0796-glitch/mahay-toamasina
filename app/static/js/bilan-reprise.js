@@ -17,7 +17,7 @@
   var languageSelect = document.getElementById("select-langue");
 
   var QUIET_MS = 3 * 60 * 60 * 1000;
-  var LOCK_MS = 60 * 1000;
+  var LOCK_MS = 5 * 60 * 1000;
   var ACTIVITY_WRITE_MS = 15 * 1000;
   var prefix = "mitaridala:bilan-reprise:v1:" + userKey + ":";
   var KEY_ACTIVITY = prefix + "derniere-activite";
@@ -572,12 +572,13 @@
       return reponse.json();
     }).then(function (data) {
       if (!data || !data.stats || !data.mission) throw new Error("bilan incomplet");
-      var maintenantOuverture = Date.now();
-      ecrire(KEY_SUMMARY_FOR, recapPour);
-      ecrire(KEY_SUMMARY, maintenantOuverture);
       renderBilan(data, depart);
       focusAvantOuverture = document.activeElement;
       ouvert = true;
+      // Le bilan n'est marqué comme vu qu'à la fermeture explicite. Si
+      // l'onglet est rechargé/fermé pendant son affichage, il sera reproposé.
+      jetonVerrou = String(Date.now() + LOCK_MS);
+      ecrire(KEY_LOCK, jetonVerrou);
       root.hidden = false;
       root.setAttribute("aria-hidden", "false");
       document.body.classList.add("bilan-reprise-ouvert");
@@ -587,7 +588,7 @@
       try { window.sessionStorage.removeItem(KEY_TAB); } catch (_erreur) {}
     }).finally(function () {
       tentativeOuverture = false;
-      supprimerVerrouSiProprietaire(jetonVerrou);
+      if (!ouvert) supprimerVerrouSiProprietaire(jetonVerrou);
     });
   }
 
@@ -602,6 +603,8 @@
     ecrire(KEY_SUMMARY, maintenant);
     ecrire(KEY_SUMMARY_FOR, maintenant);
     derniereEcritureActivite = maintenant;
+    supprimerVerrouSiProprietaire(jetonVerrou);
+    jetonVerrou = "";
     if (focusAvantOuverture && typeof focusAvantOuverture.focus === "function") {
       focusAvantOuverture.focus({ preventScroll: true });
     }
@@ -639,7 +642,13 @@
   }
 
   function evenementActivite() {
-    if (ouvert || tentativeOuverture || document.visibilityState !== "visible") return;
+    if (ouvert) {
+      // Maintient le verrou pendant que l'utilisateur lit/interagit avec le bilan.
+      jetonVerrou = String(Date.now() + LOCK_MS);
+      ecrire(KEY_LOCK, jetonVerrou);
+      return;
+    }
+    if (tentativeOuverture || document.visibilityState !== "visible") return;
     verifierRetour("interaction");
     if (!ouvert && !tentativeOuverture) enregistrerActivite(false);
   }
@@ -698,11 +707,23 @@
   ["pointerdown", "keydown", "touchstart", "scroll"].forEach(function (nom) {
     document.addEventListener(nom, evenementActivite, { passive: true, capture: true });
   });
+  window.addEventListener("pagehide", function () {
+    if (!ouvert) return;
+    // Fermer la page sans bouton de fermeture n'achève pas le bilan.
+    ouvert = false;
+    root.hidden = true;
+    root.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("bilan-reprise-ouvert");
+    supprimerVerrouSiProprietaire(jetonVerrou);
+    jetonVerrou = "";
+    try { window.sessionStorage.removeItem(KEY_TAB); } catch (_erreur) {}
+  });
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible") verifierRetour("visibilite");
   });
   window.addEventListener("pageshow", function () {
-    verifierRetour("visibilite");
+    if (!ongletDejaActif) verifierRetour("chargement");
+    else verifierRetour("visibilite");
   });
   if (languageSelect) {
     languageSelect.addEventListener("change", function () {
