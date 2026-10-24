@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE_MIGRATION = ROOT / "alembic" / "versions" / "b7d4e9c2a610_offres_etfp_etablissements.py"
 D2_MIGRATION = ROOT / "alembic" / "versions" / "d2a7c5e9f840_ajout_cfp_foulpointe.py"
 E3_MIGRATION = ROOT / "alembic" / "versions" / "e3b9c6a1d740_completer_etfp_analamanga_vakinankaratra.py"
+E4_MIGRATION = ROOT / "alembic" / "versions" / "f2d8c1a4e630_etablissements_etfp_anosy.py"
 
 
 def _charger(path: Path, module_name: str):
@@ -66,6 +67,7 @@ def test_snapshot_etfp_regional_est_additif_idempotent_et_ne_publie_pas_les_offr
             base = _charger(BASE_MIGRATION, "migration_catalogue_etfp_base")
             d2 = _charger(D2_MIGRATION, "migration_etfp_d2")
             e3 = _charger(E3_MIGRATION, "migration_etfp_e3")
+            e4 = _charger(E4_MIGRATION, "migration_etfp_e4")
 
             # Représente les taxonomies normalisées introduites dans la base par b7.
             codes_base = set()
@@ -96,6 +98,9 @@ def test_snapshot_etfp_regional_est_additif_idempotent_et_ne_publie_pas_les_offr
                 # Deux passages de E3 simulent plusieurs redémarrages après le rattrapage.
                 e3.upgrade()
                 e3.upgrade()
+                # La migration Anosy peut elle aussi être relancée sans doublon.
+                e4.upgrade()
+                e4.upgrade()
 
             establishments = connection.execute(
                 sa.text(
@@ -104,7 +109,7 @@ def test_snapshot_etfp_regional_est_additif_idempotent_et_ne_publie_pas_les_offr
                 )
             ).mappings().all()
             by_name = {row["nom"]: row for row in establishments}
-            assert len(by_name) == 15
+            assert len(by_name) == 18
             assert by_name["CFP FOULPOINTE"]["region"] == "ATSINANANA"
             assert by_name["LTP BERAVINA"]["region"] == "HAUTE MATSIATRA"
             expected_regions = {
@@ -121,6 +126,9 @@ def test_snapshot_etfp_regional_est_additif_idempotent_et_ne_publie_pas_les_offr
                 "LTP FARATSIHO": "VAKINANKARATRA",
                 "CFP ANKAZOMIRIOTRA": "VAKINANKARATRA",
                 "LTP MANDOTO": "VAKINANKARATRA",
+                "LTP BETROKA": "ANOSY",
+                "CFPF ISOANALA": "ANOSY",
+                "LTA AMPASY NAHAMPOANA": "ANOSY",
             }
             for name, region in expected_regions.items():
                 assert by_name[name]["region"] == region
@@ -136,6 +144,7 @@ def test_snapshot_etfp_regional_est_additif_idempotent_et_ne_publie_pas_les_offr
             assert "RESTAURATEUR-DE-MEUBLES" in pathway_codes
             assert "JARDINIER-PAYSAGISTE" in pathway_codes
             assert "BOULANGER-PATISSIER" in pathway_codes
+            assert "OUVRIER-DE-FERME-D-ELEVAGE" in pathway_codes
             assert all(row["statut_validation"] == "verifie" for row in pathways)
 
             offers = connection.execute(
@@ -145,7 +154,7 @@ def test_snapshot_etfp_regional_est_additif_idempotent_et_ne_publie_pas_les_offr
                     "JOIN etablissementscolaire e ON e.id=o.etablissement_id"
                 )
             ).mappings().all()
-            assert len(offers) == 87
+            assert len(offers) == 117
             expected_offers = {
                 "CFP FOULPOINTE": 9,
                 "LTP BERAVINA": 23,
@@ -162,6 +171,9 @@ def test_snapshot_etfp_regional_est_additif_idempotent_et_ne_publie_pas_les_offr
                 "LTP FARATSIHO": 4,
                 "CFP ANKAZOMIRIOTRA": 6,
                 "LTP MANDOTO": 7,
+                "LTP BETROKA": 16,
+                "CFPF ISOANALA": 9,
+                "LTA AMPASY NAHAMPOANA": 5,
             }
             for name, expected in expected_offers.items():
                 records = [row for row in offers if row["etablissement"] == name]
