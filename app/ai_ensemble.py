@@ -385,6 +385,22 @@ def _groq_structured_tool(
             logger.warning("Groq en cooldown: %s", erreur)
             return None
         except Exception as erreur:
+            detail = str(erreur)
+            detail_minuscule = detail.lower()
+            if (
+                "json_validate_failed" in detail_minuscule
+                or "failed to generate json" in detail_minuscule
+            ):
+                # Rejouer la meme requete Qwen avec le meme schema strict produit
+                # souvent le meme HTTP 400. On laisse la fonction appelante
+                # essayer un modele de secours, sans consigner failed_generation.
+                logger.warning(
+                    "Modele Groq %s a produit une sortie incompatible avec le schema %s; "
+                    "passage au modele de secours si disponible.",
+                    model,
+                    tool_name,
+                )
+                return None
             if attempt < 2:
                 time.sleep(0.5)
                 continue
@@ -393,7 +409,7 @@ def _groq_structured_tool(
                 model,
                 attempt,
                 tool_name,
-                erreur,
+                detail.replace("\\n", " ")[:500],
             )
             return None
 
@@ -560,6 +576,43 @@ OUTIL_CRITIQUE_QUIZ = {
 }
 
 
+def _critique_quiz_conforme(
+    avis: Optional[Dict[str, Any]],
+    nombre_questions: int,
+) -> bool:
+    """Valide le contrat du critique avant d'utiliser son avis dans l'ensemble."""
+    if not isinstance(avis, dict):
+        return False
+    if not isinstance(avis.get("confiant"), bool):
+        return False
+    problemes = avis.get("problemes")
+    if not isinstance(problemes, list) or not all(isinstance(item, str) for item in problemes):
+        return False
+    questions = avis.get("questions")
+    if not isinstance(questions, list) or len(questions) != nombre_questions:
+        return False
+    for question in questions:
+        if not isinstance(question, dict):
+            return False
+        if not isinstance(question.get("question"), str) or not question["question"].strip():
+            return False
+        if not isinstance(question.get("explication"), str):
+            return False
+        if not isinstance(question.get("notion"), str):
+            return False
+        choix = question.get("choix")
+        if (
+            not isinstance(choix, list)
+            or not 3 <= len(choix) <= 5
+            or not all(isinstance(option, str) and option.strip() for option in choix)
+        ):
+            return False
+        index = question.get("index_bonne_reponse")
+        if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(choix):
+            return False
+    return True
+
+
 def critiquer_quiz_groq(
     questions: List[Dict[str, Any]],
     matiere: str,
@@ -586,13 +639,53 @@ def critiquer_quiz_groq(
         f"{json.dumps(questions, ensure_ascii=False)}"
     )
     prompt += _suffixe_format_prompt(quiz=True)
-    return _groq_structured_tool(
+    critique = _groq_structured_tool(
         model=parametres.groq_critic_model,
         tool=OUTIL_CRITIQUE_QUIZ,
         tool_name="critiquer_quiz",
         prompt=prompt,
         reasoning_effort="medium",
     )
+    if _critique_quiz_conforme(critique, len(questions)):
+        return critique
+
+    # Qwen peut échouer à produire le JSON conforme malgré le schema strict.
+    # Le quiz a déjà été livré et ne doit pas être annulé : le modèle principal
+    # tente une critique de secours, avec un contrat de réponse explicite.
+    if not parametres.groq_model or parametres.groq_model == parametres.groq_critic_model:
+        logger.warning("Critique quiz indisponible ou invalide; aucun modèle de secours distinct.")
+        return None
+
+    logger.warning(
+        "Critique quiz invalide via %s; tentative de secours avec %s.",
+        parametres.groq_critic_model,
+        parametres.groq_model,
+    )
+    prompt_secours = (
+        prompt
+        + "\\n\\nSECOURS DE FORMAT : retourne uniquement les clés exactes "
+        + '"questions", "confiant" et "problemes". '
+        + "Ne crée aucun champ comme 'erreleurs' ou 'indices'. "
+        + "questions doit contenir exactement le même nombre de questions, dans le même ordre. "
+        + "Chaque question doit avoir les clés question, choix, index_bonne_reponse, "
+        + "explication et notion. Conserve le quiz si tu ne peux pas confirmer une correction; "
+        + "dans ce cas, mets confiant=false et indique un problème court."
+    )
+    secours = _groq_structured_tool(
+        model=parametres.groq_model,
+        tool=OUTIL_CRITIQUE_QUIZ,
+        tool_name="critiquer_quiz_secours",
+        prompt=prompt_secours,
+        max_completion_tokens=4096,
+        reasoning_effort="low",
+    )
+    if _critique_quiz_conforme(secours, len(questions)):
+        logger.info("Critique quiz complétée avec le modèle principal de secours.")
+        return secours
+    logger.warning(
+        "Critique quiz indisponible : modèles critique et secours n'ont pas produit un contrat valide."
+    )
+    return None
 
 
 GEMINI_QUIZ_SCHEMA = {
