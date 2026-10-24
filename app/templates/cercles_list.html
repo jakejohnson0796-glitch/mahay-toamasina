@@ -491,6 +491,7 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
             {% if info.type_cercle == "scolaire" %}
               {% if info.niveau_scolaire %}{{ info.niveau_scolaire.libelle }}{% endif %}
               {% if info.option_scolaire %} · {{ info.option_scolaire.libelle }}{% endif %}
+              {% if info.matiere_scolaire %} · {{ info.matiere_scolaire.libelle }}{% endif %}
               {% if info.etablissement_scolaire %} · {{ info.etablissement_scolaire.nom }}{% else %} · National{% endif %}
             {% else %}
               {% if info.mention %}{{ info.mention.nom }}{% endif %}
@@ -633,6 +634,15 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
       </select>
     </div>
     <div>
+      <label for="recherche_matiere_scolaire_id">Matière scolaire</label>
+      <select id="recherche_matiere_scolaire_id" name="matiere_scolaire_id">
+        <option value="">Toutes les matières</option>
+        {% for matiere in matieres_scolaires %}
+        <option value="{{ matiere.id }}" {% if recherche_matiere_scolaire_id == matiere.id %}selected{% endif %}>{{ matiere.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
       <label for="recherche_domaine_id">Domaine</label>
       <select id="recherche_domaine_id" name="domaine_id">
         <option value="">Tous les domaines</option>
@@ -677,7 +687,7 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
     {% endif %}
     <div class="actions-recherche-cercles">
       <button class="bouton bouton-primaire" type="submit">Rechercher</button>
-      {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_portee_academique or recherche_niveau_scolaire_id or recherche_option_scolaire_id or recherche_etablissement_scolaire_id or recherche_disponibles %}
+      {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_portee_academique or recherche_niveau_scolaire_id or recherche_option_scolaire_id or recherche_etablissement_scolaire_id or recherche_matiere_scolaire_id or recherche_disponibles %}
       <a class="bouton bouton-secondaire" href="/cercles">Réinitialiser</a>
       {% endif %}
     </div>
@@ -693,6 +703,7 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
   {% if request.query_params.get("erreur") == "classe_scolaire_invalide" %}<div class="erreur">La classe sélectionnée n'est pas disponible dans le référentiel vérifié.</div>{% endif %}
   {% if request.query_params.get("erreur") == "option_scolaire_invalide" %}<div class="erreur">La série ou option ne correspond pas à la classe choisie.</div>{% endif %}
   {% if request.query_params.get("erreur") == "etablissement_scolaire_invalide" %}<div class="erreur">L'établissement choisi n'est pas dans le catalogue vérifié.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "matiere_scolaire_invalide" %}<div class="erreur">La matière doit être publiée dans le programme vérifié de la classe et de la série choisies.</div>{% endif %}
   {% if request.query_params.get("erreur") == "cible_scolaire_incoherente" %}<div class="erreur">Un cercle scolaire ne peut pas avoir de niveau universitaire en même temps.</div>{% endif %}
   {% if request.query_params.get("erreur") == "portee_invalide" %}<div class="erreur">Choisis un type de cercle valide.</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_requis" %}<div class="erreur">Pour créer un cercle lié à une mention ou à un parcours, choisis aussi le niveau.</div>{% endif %}
@@ -763,7 +774,11 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
       <select id="creation_etablissement_scolaire_id" name="etablissement_scolaire_id" disabled>
         <option value="">Cercle national, sans établissement particulier</option>
       </select>
-      <p class="stat-label">Sans établissement précis, le cercle est national pour la classe ou l’option. Avec un établissement vérifié, le ciblage est local.</p>
+      <label for="creation_matiere_scolaire_id">Matière (facultative)</label>
+      <select id="creation_matiere_scolaire_id" name="matiere_scolaire_id" disabled>
+        <option value="">Toutes les matières / classe entière</option>
+      </select>
+      <p class="stat-label">Sans établissement précis, le cercle est national pour la classe ou l’option. Avec un établissement vérifié, le ciblage est local. Une matière n’est proposée que si le programme de la classe ou série est vérifié.</p>
     </div>
 
     <label for="raison" id="creation-label-raison">Raison (obligatoire pour toute demande de cercle national universitaire)</label>
@@ -860,6 +875,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
           {% elif info.type_cercle == "scolaire" %}
           {% if info.niveau_scolaire %}<span class="puce-niveau">{{ info.niveau_scolaire.libelle }}</span>{% endif %}
           {% if info.option_scolaire %}<span>{{ info.option_scolaire.libelle }}</span>{% endif %}
+          {% if info.matiere_scolaire %}<span>{{ info.matiere_scolaire.libelle }}</span>{% endif %}
           {% if info.etablissement_scolaire %}<span>{{ info.etablissement_scolaire.nom }}</span>{% else %}<span>National</span>{% endif %}
           {% elif info.type_cercle == "libre" %}
           <span>Groupe libre</span>
@@ -888,7 +904,7 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
     </div>
   </article>
   {% else %}
-  {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_portee_academique or recherche_niveau_scolaire_id or recherche_option_scolaire_id or recherche_etablissement_scolaire_id or recherche_disponibles %}
+  {% if recherche_q or recherche_domaine_id or recherche_mention_id or recherche_niveau or recherche_filiere_id or recherche_tronc_commun or recherche_portee_academique or recherche_niveau_scolaire_id or recherche_option_scolaire_id or recherche_etablissement_scolaire_id or recherche_matiere_scolaire_id or recherche_disponibles %}
   {{ etat_vide_constellation(titre="Aucun résultat", texte="Aucun cercle ne correspond à ces critères. Modifie un filtre ou réinitialise la recherche.") }}
   {% else %}
   {{ etat_vide_constellation(titre="Aucun cercle pour le moment", texte="Les cercles apparaissent ici dès qu’ils sont actifs.") }}
