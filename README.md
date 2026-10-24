@@ -272,7 +272,7 @@ Matière et programme
 Établissement scolaire (facultatif)
 ~~~
 
-La plateforme évite autant que possible de déduire automatiquement une classification académique lorsqu'elle est ambiguë. Les références collégiennes/lycéennes ont une version, une source et un statut explicite **partiel** ; elles ne prétendent pas être exhaustives pour le technique/professionnel ou pour chaque établissement du pays.
+La plateforme évite autant que possible de déduire automatiquement une classification académique lorsqu'elle est ambiguë. La version initiale du catalogue est datée **2024-2025**, car c'est l'année des PDF RAPS/RAPE officiels effectivement retrouvés pendant cette revue (par exemple les répartitions de 6e, 3e, Terminale A/D et Terminale S/OSE). Elle n'est donc pas présentée comme un référentiel déjà confirmé pour 2026-2027. Le statut reste **partiel** ; les associations de matières non recoupées avec un sommaire par classe/série restent en attente de validation et ne sont pas proposées aux élèves. Le catalogue ne prétend pas être exhaustif pour le technique/professionnel ou pour chaque établissement du pays.
 
 Les sources de base incluent les pages du [MEN sur le collège](https://www.education.gov.mg/systeme-educatif/college/), le [lycée](https://www.education.gov.mg/systeme-educatif/lycee/), la [répartition annuelle du programme scolaire](https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/) et la [répartition annuelle du programme d'études](https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/). Les séries nouvelles L, S et OSE coexistent dans les sources avec certaines séries historiques en raison du déploiement progressif ; les options filles ne sont jamais inventées par le code.
 
