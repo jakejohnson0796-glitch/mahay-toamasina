@@ -457,10 +457,11 @@ def inscription(
         version_conditions_acceptees=VERSION_CONDITIONS,
         derniere_activite_le=datetime.utcnow(),
     )
+    # Enregistrer le compte et ses déclarations de cycles dans la même
+    # transaction : une erreur d'intégrité ne doit pas laisser un compte
+    # enseignant partiellement créé sans les cycles déclarés.
     session.add(utilisateur)
-    session.commit()
-    session.refresh(utilisateur)
-
+    session.flush()
     if est_demande_enseignant:
         for cycle_enseigne in sorted(cycles_enseignes_a_enregistrer):
             session.add(
@@ -469,7 +470,8 @@ def inscription(
                     cycle_education=cycle_enseigne,
                 )
             )
-        session.commit()
+    session.commit()
+    session.refresh(utilisateur)
 
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         subscription.creer_essai_gratuit(session, utilisateur)
