@@ -182,6 +182,6 @@ def test_snapshot_etfp_regional_est_additif_idempotent_et_ne_publie_pas_les_offr
                 assert all(row["statut_validation"] == "a_verifier" for row in records)
                 assert all(row["annee_scolaire"] is None for row in records)
                 assert len({row["code_offre"] for row in records}) == expected
-            assert len({(row["etablissement"], row["code_offre"]) for row in offers}) == 87
+            assert len({(row["etablissement"], row["code_offre"]) for row in offers}) == 117
     finally:
         engine.dispose()
