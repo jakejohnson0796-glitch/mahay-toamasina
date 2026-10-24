@@ -325,6 +325,17 @@ def upgrade():
     for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
         op.create_index(f"ix_cours_{col}", "cours", [col])
 
+    with op.batch_alter_table("demandecreationcercle") as batch:
+        batch.add_column(sa.Column("portee_academique", sa.String(length=20), server_default="universitaire", nullable=False))
+        batch.add_column(sa.Column("niveau_scolaire_id", sa.Integer(), nullable=True))
+        batch.add_column(sa.Column("option_scolaire_id", sa.Integer(), nullable=True))
+        batch.add_column(sa.Column("etablissement_scolaire_id", sa.Integer(), nullable=True))
+        batch.create_foreign_key("fk_demandecercle_niveau_scolaire", "niveauscolaire", ["niveau_scolaire_id"], ["id"])
+        batch.create_foreign_key("fk_demandecercle_option_scolaire", "optionscolaire", ["option_scolaire_id"], ["id"])
+        batch.create_foreign_key("fk_demandecercle_etablissement_scolaire", "etablissementscolaire", ["etablissement_scolaire_id"], ["id"])
+    for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id"):
+        op.create_index(f"ix_demandecreationcercle_{col}", "demandecreationcercle", [col])
+
     with op.batch_alter_table("tentativequiz") as batch:
         batch.add_column(sa.Column("cycle_education", sa.String(length=20), nullable=True))
         batch.add_column(sa.Column("niveau_scolaire_id", sa.Integer(), nullable=True))
@@ -344,6 +355,14 @@ def upgrade():
 
 
 def downgrade():
+    for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id"):
+        op.drop_index(f"ix_demandecreationcercle_{col}", table_name="demandecreationcercle")
+    with op.batch_alter_table("demandecreationcercle") as batch:
+        for name in ("fk_demandecercle_etablissement_scolaire", "fk_demandecercle_option_scolaire", "fk_demandecercle_niveau_scolaire"):
+            batch.drop_constraint(name, type_="foreignkey")
+        for col in ("etablissement_scolaire_id", "option_scolaire_id", "niveau_scolaire_id", "portee_academique"):
+            batch.drop_column(col)
+
     with op.batch_alter_table("tentativequiz") as batch:
         batch.drop_constraint("fk_tentativequiz_option_scolaire", type_="foreignkey")
         batch.drop_constraint("fk_tentativequiz_niveau_scolaire", type_="foreignkey")
