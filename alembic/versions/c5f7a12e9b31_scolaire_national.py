@@ -140,7 +140,7 @@ def _seed_catalogue_scolaire(conn):
         ("EPS", "Éducation physique et sportive", "Fanabeazana ara-batana sy ara-panatanjahantena"),
         ("PHILOSOPHIE", "Philosophie", "Filôzôfia"),
         ("SES", "Sciences économiques et sociales", "Siansa ara-toekarena sy sosialy"),
-        ("TICE", "Technologies de l'information et de la communication en éducation", "Teknolojian'ny fampahalalam-baovao sy fifandraisana"),
+        ("TICE", "Technologie de l'information et de la communication en éducation (TICE)", "Teknolojian'ny fampahalalam-baovao sy fifandraisana"),
     ]
     for code_matiere, libelle, malagasy in matieres:
         conn.execute(
