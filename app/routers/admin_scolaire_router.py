@@ -36,6 +36,38 @@ from ..templating import templates
 
 router = APIRouter()
 
+# Dénombrement du répertoire officiel de la cartographie METFP observé le
+# 24/10/2026. Ce n'est PAS une mesure des formations ouvertes cette année.
+# Le rapprochement est affiché à l'administration afin de rendre les lacunes visibles.
+SOURCE_METFP_COUVERTURE = "https://www.metfp.gov.mg/cartographie"
+DATE_SNAPSHOT_METFP = "2026-10-24"
+ETABLISSEMENTS_ATTENDUS_PAR_REGION = {
+    "ALAOTRA MANGORO": 5,
+    "AMBATOSOA": 2,
+    "AMORON'I MANIA": 13,
+    "ANALAMANGA": 22,
+    "ANALANJIROFO": 4,
+    "ANDROY": 2,
+    "ANOSY": 8,
+    "ATSIMO ANDREFANA": 7,
+    "ATSIMO ATSINANANA": 5,
+    "ATSINANANA": 5,
+    "BETSIBOKA": 1,
+    "BOENY": 9,
+    "BONGOLAVA": 3,
+    "DIANA": 7,
+    "FITOVINANY": 3,
+    "HAUTE MATSIATRA": 4,
+    "IHOROMBE": 3,
+    "ITASY": 3,
+    "MELAKY": 1,
+    "MENABE": 4,
+    "SAVA": 7,
+    "SOFIA": 6,
+    "VAKINANKARATRA": 10,
+    "VATOVAVY": 2,
+}
+
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
@@ -133,6 +165,46 @@ def page_referentiel_scolaire(
         )
     ).all()
 
+    lignes_couverture = session.exec(
+        select(
+            EtablissementScolaire.region,
+            func.count(func.distinct(func.lower(func.trim(EtablissementScolaire.nom)))),
+        )
+        .where(
+            EtablissementScolaire.region.is_not(None),
+            EtablissementScolaire.est_actif == True,  # noqa: E712
+            EtablissementScolaire.est_verifie == True,  # noqa: E712
+        )
+        .group_by(EtablissementScolaire.region)
+    ).all()
+    recenses_par_region = {
+        str(region).strip().upper(): int(total)
+        for region, total in lignes_couverture
+        if region
+    }
+    couverture_regions = [
+        {
+            "region": region,
+            "attendus": attendu,
+            "recenses": recenses_par_region.get(region, 0),
+            "restants": max(0, attendu - recenses_par_region.get(region, 0)),
+            "statut": (
+                "À compléter"
+                if recenses_par_region.get(region, 0) < attendu
+                else (
+                    "Écart à examiner"
+                    if recenses_par_region.get(region, 0) > attendu
+                    else "Compte rapproché"
+                )
+            ),
+        }
+        for region, attendu in ETABLISSEMENTS_ATTENDUS_PAR_REGION.items()
+    ]
+    etablissements_attendus_total = sum(ETABLISSEMENTS_ATTENDUS_PAR_REGION.values())
+    etablissements_recenses_total = sum(row["recenses"] for row in couverture_regions)
+    couverture_regions_manquantes = sum(row["restants"] for row in couverture_regions)
+    regions_a_examiner = sum(row["statut"] == "Écart à examiner" for row in couverture_regions)
+
     niveaux_map = {item.id: item for item in niveaux}
     options_map = {item.id: item for item in options}
     matieres_map = {item.id: item for item in matieres}
@@ -170,6 +242,13 @@ def page_referentiel_scolaire(
             "parcours_etfp": parcours_etfp,
             "parcours_etfp_map": parcours_etfp_map,
             "offres_etablissement": offres_etablissement,
+            "couverture_regions": couverture_regions,
+            "source_metfp_couverture": SOURCE_METFP_COUVERTURE,
+            "date_snapshot_metfp": DATE_SNAPSHOT_METFP,
+            "etablissements_attendus_total": etablissements_attendus_total,
+            "etablissements_recenses_total": etablissements_recenses_total,
+            "couverture_regions_manquantes": couverture_regions_manquantes,
+            "regions_a_examiner": regions_a_examiner,
             "cercles_scolaires_actifs": cercles_scolaires_actifs,
             "cercles_scolaires_synchronises": cercles_scolaires_synchronises,
         },
