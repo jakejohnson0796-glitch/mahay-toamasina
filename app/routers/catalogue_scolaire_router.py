@@ -167,7 +167,7 @@ def page_catalogue_scolaire(
             func.count(OffreEtablissementScolaire.id),
             maintain_column_froms=True,
         ).order_by(None)
-    ).one()
+    ).scalar_one()
     pages_offres = max(1, ceil(nb_offres_total / PAGE_SIZE))
     page_offres = min(page_offres, pages_offres)
     rows = session.exec(
@@ -235,7 +235,7 @@ def page_catalogue_scolaire(
             func.count(EtablissementScolaire.id),
             maintain_column_froms=True,
         ).order_by(None)
-    ).one()
+    ).scalar_one()
     pages_etablissements = max(1, ceil(nb_etablissements_total / PAGE_SIZE))
     page_etablissements = min(page_etablissements, pages_etablissements)
     etablissements = session.exec(
