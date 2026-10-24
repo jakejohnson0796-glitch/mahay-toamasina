@@ -280,12 +280,19 @@ Un candidat professeur peut déclarer plusieurs cycles d'enseignement (collège,
 
 Pour les administrateurs, la gestion du catalogue scolaire est disponible dans `/admin/referentiel/scolaire`. Les nouvelles matières, options, associations programme/classe et établissements sont enregistrées en attente ; elles ne doivent être proposées aux élèves qu'après vérification d'une source HTTPS du domaine officiel `education.gov.mg`.
 
+Les sources de base incluent aussi la [cartographie officielle METFP](https://www.metfp.gov.mg/cartographie) (implantation des établissements ETFP dans les 24 régions) et les [référentiels de formation, compétences, certification et évaluation](https://www.metfp.gov.mg/formation/ressource). Ces deux catégories ne prouvent pas la même chose : la cartographie indique les établissements, secteurs, filières et métiers recensés ; un référentiel détaille une formation ; aucune de ces pages ne suffit à confirmer qu'une session ouvre pendant une année scolaire précise.
+
+Le chantier ETFP ajoute un catalogue national de parcours/métiers et une table d'offres par établissement nommée offreetablissementscolaire. L'instantané de départ est partiel et ne remplace pas une extraction exhaustive des 24 régions. Les établissements provenant de la cartographie sont sourcés ; chaque classe, série, matière ou formation est enregistrée séparément, avec une année scolaire et une source de preuve. Les offres initialement proposées par la cartographie restent **à vérifier** et ne sont pas publiées automatiquement : leur publication exige la confirmation administrative de l'année et de l'offre locale réelle. Les états « répertorié », « référentiel de formation trouvé » et « offre ouverte cette année » ne doivent jamais être confondus. L'interface d'administration est dans /admin/referentiel/scolaire ; la page publique est /catalogue-scolaire.
+
 Les API publiques principales sont :
 
 - `GET /api/scolaire/niveaux?cycle=college|lycee`
 - `GET /api/scolaire/niveaux/{id}/options`
 - `GET /api/scolaire/niveaux/{id}/matieres?option_id={id}`
 - `GET /api/scolaire/etablissements`
+- GET /api/scolaire/etfp/parcours?q={mot}&secteur={secteur}
+- GET /api/scolaire/offres?region={region}&type_offre=formation&annee_scolaire=2026-2027
+- GET /api/scolaire/etablissements/{id}/offres?annee_scolaire=2026-2027
 
 Les cercles sont synchronisés de façon séparée par portée : le provisionneur universitaire conserve l'identité mention/parcours/niveau ; le provisionneur scolaire génère les cercles nationaux des classes vérifiées, séries/options validées et matières dont le rattachement de programme est vérifié. La synchronisation scolaire est idempotente, se lance au démarrage et après validation du catalogue, et peut être relancée par un administrateur dans `/admin/referentiel/scolaire`. Les cercles auto-gérés sont explicitement marqués ; leurs titres/descriptions sont actualisés quand le référentiel change. Une cible devenue obsolète n'est archivée automatiquement que si elle ne contient pas de membres non-admin ni de contenu important. Les cibles scolaires ne peuvent pas mélanger les colonnes universitaires en base. Les cercles locaux d'établissement attendent un catalogue vérifié des classes réellement proposées par chaque établissement.
 

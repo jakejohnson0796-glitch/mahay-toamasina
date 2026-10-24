@@ -504,3 +504,154 @@ html[data-theme="sombre"] .cercles-page-shell .cercles-parcours-numero {
     padding: .75rem;
   }
 }
+
+
+/* Catalogue public scolaire / ETFP : cartes et filtres fluides sur mobile. */
+.catalogue-public-scolaire .grille-statistiques {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.catalogue-public-scolaire .catalogue-filtres-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+  margin-top: 1rem;
+}
+.catalogue-public-scolaire .catalogue-filtres-actions .bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.65rem;
+  padding: .65rem .9rem;
+  text-decoration: none;
+}
+.catalogue-public-scolaire .catalogue-offres-liste,
+.catalogue-public-scolaire .catalogue-niveaux-liste,
+.catalogue-public-scolaire .catalogue-etfp-liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 245px), 1fr));
+  gap: .8rem;
+  margin-top: 1rem;
+}
+.catalogue-public-scolaire .catalogue-offre-carte,
+.catalogue-public-scolaire .catalogue-niveau-carte,
+.catalogue-public-scolaire .catalogue-etfp-carte {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .4rem;
+  padding: 1rem;
+  border: 1px solid var(--content-border);
+  border-radius: 14px;
+  background: var(--content-bg);
+}
+.catalogue-public-scolaire .catalogue-offre-carte h4,
+.catalogue-public-scolaire .catalogue-niveau-carte h4,
+.catalogue-public-scolaire .catalogue-etfp-carte h4 {
+  margin: .2rem 0;
+  color: var(--content-text);
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.catalogue-public-scolaire .catalogue-offre-carte p,
+.catalogue-public-scolaire .catalogue-niveau-carte p,
+.catalogue-public-scolaire .catalogue-etfp-carte p {
+  margin: 0;
+  color: var(--content-text-muted);
+  font-size: .82rem;
+  line-height: 1.55;
+}
+.catalogue-public-scolaire .catalogue-offre-type,
+.catalogue-public-scolaire .catalogue-etfp-carte > span,
+.catalogue-public-scolaire .catalogue-niveau-carte > span {
+  padding: .25rem .48rem;
+  border: 1px solid var(--content-border);
+  border-radius: 999px;
+  color: var(--content-text-muted);
+  font-size: .7rem;
+  font-weight: 800;
+}
+.catalogue-public-scolaire .catalogue-offre-carte a,
+.catalogue-public-scolaire .catalogue-niveau-carte a,
+.catalogue-public-scolaire .catalogue-etfp-carte a,
+.catalogue-public-scolaire .catalogue-etablissement-carte a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  margin-top: auto;
+  color: var(--content-link);
+  font-size: .78rem;
+  font-weight: 800;
+  text-underline-offset: 3px;
+}
+.catalogue-public-scolaire .catalogue-etablissements-liste {
+  display: grid;
+  gap: .55rem;
+  margin-top: 1rem;
+}
+.catalogue-public-scolaire .catalogue-etablissement-carte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .65rem 1rem;
+  padding: .8rem 1rem;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+  background: var(--content-bg);
+}
+.catalogue-public-scolaire .catalogue-etablissement-carte h4 {
+  margin: 0 0 .15rem;
+  font-size: .92rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.catalogue-public-scolaire .catalogue-etablissement-carte p {
+  margin: 0;
+  color: var(--content-text-muted);
+  font-size: .78rem;
+}
+.catalogue-public-scolaire .catalogue-etat-vide {
+  padding: 1rem;
+  border: 1px dashed var(--content-border);
+  border-radius: 14px;
+  background: var(--content-bg);
+}
+.catalogue-public-scolaire .catalogue-etat-vide h4 {
+  margin: 0 0 .35rem;
+  font-size: 1rem;
+}
+.catalogue-public-scolaire .catalogue-etat-vide p {
+  margin: 0;
+  color: var(--content-text-muted);
+  line-height: 1.6;
+}
+html[data-theme="sombre"] .catalogue-public-scolaire .catalogue-etat-vide,
+html[data-theme="sombre"] .catalogue-public-scolaire .catalogue-offre-carte,
+html[data-theme="sombre"] .catalogue-public-scolaire .catalogue-niveau-carte,
+html[data-theme="sombre"] .catalogue-public-scolaire .catalogue-etfp-carte,
+html[data-theme="sombre"] .catalogue-public-scolaire .catalogue-etablissement-carte {
+  background: var(--content-bg);
+}
+@media (max-width: 850px) {
+  .catalogue-public-scolaire .grille-statistiques {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .catalogue-public-scolaire .grille-statistiques {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalogue-public-scolaire .catalogue-filtres-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalogue-public-scolaire .catalogue-filtres-actions .bouton {
+    width: 100%;
+  }
+  .catalogue-public-scolaire .catalogue-etablissement-carte {
+    align-items: flex-start;
+  }
+}

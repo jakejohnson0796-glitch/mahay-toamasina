@@ -38,6 +38,8 @@ Ne pas coder tout le système scolaire en conditions `if/else` ou dans une liste
 | `matierescolaire` | Matières normalisées, libellé français et, si validé, libellé malagasy. |
 | `programmematierescolaire` | Association niveau / série-option / matière, caractère obligatoire ou facultatif, année et source. |
 | `etablissementscolaire` | Collège, lycée, établissement mixte ou établissement technique : nom, statut public/privé, commune, district, région, source et état de vérification. |
+| `parcourstechniqueprofessionnel` | Taxonomie séparée des secteurs, filières et métiers ETFP, sourcée et validée séparément du catalogue général du collège/lycée. |
+| `offreetablissementscolaire` | Offre réellement proposée par un établissement pour une année scolaire : classe, série, matière ou formation ETFP, source officielle, état de validation, date et administrateur validateur. |
 | `cycleenseigne` | Cycles déclarés par un candidat professeur (collège, lycée, université), une ligne par compte et cycle ; ne donne aucun droit sans validation administrative. |
 | `demandeverificationenseignant` | Demande, portée d'enseignement, pièces facultatives privées, statut, décision et audit. |
 
@@ -181,5 +183,38 @@ Les migrations doivent fonctionner sur SQLite de test et PostgreSQL de productio
 **Lot D — Apprentissage** : programmes matière par matière, quiz et fiches alignés sur le programme, Tuteur IA informé du niveau sans surinterpréter les contenus, progression et révisions distinctes par utilisateur.
 
 **Lot E — Assurance qualité** : tests complets, performance sur mobile, accessibilité, vérification des sources du référentiel, CI, puis déploiement contrôlé.
+
+
+
+## 10. Extension ETFP et vérification de l'offre par établissement
+
+### Sources et niveaux de preuve
+
+- [Cartographie METFP](https://www.metfp.gov.mg/cartographie) : répertoire public d'implantation par région qui affiche les établissements, secteurs, filières et métiers.
+- [Référentiels et ressources pédagogiques METFP](https://www.metfp.gov.mg/formation/ressource) : référentiels de compétences, de formation, de certification et d'évaluation. La page est mise à jour indépendamment de la cartographie.
+- [Programmes scolaires MEN](https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/) : source séparée pour les classes du collège/lycée général et les matières.
+
+Les données doivent conserver quatre états sémantiques distincts :
+
+1. **Établissement répertorié** : un nom et une région ont été retrouvés dans une source officielle.
+2. **Parcours/métier répertorié** : un intitulé de secteur, filière ou métier est attesté dans la cartographie ou un référentiel.
+3. **Offre rattachée à un établissement** : une source relie explicitement cet établissement à cette classe, matière, série ou formation.
+4. **Offre ouverte pour une année scolaire** : une preuve officielle récente confirme que cette offre est effectivement proposée durant l'année sélectionnée.
+
+La migration d'amorçage importe des entrées de repérage à partir de la cartographie METFP. Les offres associées à ces entrées restent en statut « à vérifier », sans année confirmée et invisibles dans la page publique des offres. Les administrateurs doivent indiquer une année au format AAAA-AAAA, vérifier la source, puis valider explicitement l'offre. Une offre obsolète est archivée au lieu d'être supprimée. Le catalogue national et les offres par établissement restent au statut partiel tant que les régions, secteurs, filières, métiers et implantations n'ont pas été rapprochés de la source région par région.
+
+### Contrôles d'acceptation supplémentaires
+
+- La migration est compatible avec la tête Alembic actuelle et respecte le nom des tables SQLModel ; les contrôles de contrainte empêchent de mélanger une classe générale et une formation ETFP dans une même offre.
+- Un établissement ou un parcours non vérifié ne peut pas être utilisé pour créer une offre publiée.
+- Une matière d'établissement doit être rattachée à un programme scolaire vérifié pour la classe/série.
+- Une offre ne peut pas être validée sans année scolaire consécutive et source officielle HTTPS acceptée.
+- Les API de catalogue n'affichent que des offres actives, vérifiées pour l'année demandée ou la plus récente disponible.
+- Les tests couvrent la non-publication des offres en attente, l'absence de mélange des portées et la préservation des données existantes.
+- La page publique /catalogue-scolaire distingue le catalogue général, le répertoire des établissements et les seules offres confirmées.
+
+### Tâches restant explicitement ouvertes
+
+Le relevé amorcé n'est pas un recensement exhaustif. Il reste à comparer les 24 régions avec les nombres affichés par METFP, à corriger les doublons et libellés, à documenter les établissements et filières manquants, à intégrer plus largement les référentiels de formation/certification publiés et à confirmer l'offre annuelle réelle avec une source adaptée. Aucun rapport ne doit qualifier la liste de complète tant que ce rapprochement n'est pas démontré.
 
 La règle principale : **la base de données décrit fidèlement les programmes réels ; l'IA et l'interface consomment ce référentiel, elles ne l'inventent pas.**

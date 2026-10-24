@@ -112,7 +112,7 @@
 {% endif %}
 <link rel="stylesheet" href="/static/responsive-universal.css?v={{ version_asset('responsive-universal.css') }}">
 <link rel="stylesheet" href="/static/interface-polish.css?v={{ version_asset('interface-polish.css') }}">
-{% if request.url.path.startswith("/cercles") or request.url.path == "/admin/referentiel/scolaire" %}
+{% if request.url.path.startswith("/cercles") or request.url.path in ["/admin/referentiel/scolaire", "/catalogue-scolaire"] %}
 <link rel="stylesheet" href="/static/parcours-academique-ui.css?v={{ version_asset('parcours-academique-ui.css') }}">
 {% endif %}
 {% if request.url.path == "/documents" %}
@@ -210,6 +210,7 @@
         <span class="tb-icone">{{ icone("cercles", 17) }}</span> Mes cercles
         {% if nb_cercles_rejoints %}<span class="tb-sidebar-badge">{{ nb_cercles_rejoints }}</span>{% endif %}
       </a>
+      <a href="/catalogue-scolaire" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/catalogue-scolaire' else '' }}" {{ 'aria-current="page"' if request.url.path == '/catalogue-scolaire' else '' }}><span class="tb-icone">🎓</span> Catalogue scolaire</a>
       <a href="/classe" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}><span class="tb-icone">{{ icone("classe", 17) }}</span> Classe virtuelle</a>
 
       <p class="tb-sidebar-groupe">Compte</p>
@@ -320,6 +321,7 @@
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
       <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
       <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}><span class="tb-icone">{{ icone("cercles", 17) }}</span> Cercles d’étude</a>
+      <a href="/catalogue-scolaire" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/catalogue-scolaire' else '' }}" {{ 'aria-current="page"' if request.url.path == '/catalogue-scolaire' else '' }}><span class="tb-icone">🎓</span> Catalogue scolaire</a>
       <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
       <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
       <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
