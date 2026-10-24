@@ -505,6 +505,6 @@ def construire_bilan(
         "mission": mission,
         "methodes": methodes,
         "acces_ia": acces_ia,
-        "has_activity": bool(nb_quiz or nb_documents or nb_tuteur or nb_jeux),
+        "has_activity": bool(nb_quiz or nb_documents or nb_tuteur or nb_jeux or actions_collaboration),
         "has_learning_data": bool(progressions),
     }
