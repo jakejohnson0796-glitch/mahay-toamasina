@@ -385,6 +385,35 @@
     </div>
   </section>
 
+
+  <section id="couverture-nationale-metpf" aria-labelledby="couverture-nationale-titre">
+    <h3 id="couverture-nationale-titre">Contrôle de couverture nationale METFP</h3>
+    <p>Rapprochement indicatif de l'inventaire d'établissements actifs et vérifiés avec le nombre affiché dans la cartographie officielle consultée le {{ date_snapshot_metpf }}. Ce compteur mesure les établissements répertoriés — il ne confirme jamais l'ouverture réelle des formations cette année.</p>
+    <div class="grille-statistiques">
+      <div class="carte-statistique"><strong>{{ etablissements_recenses_total }} / {{ etablissements_attendus_total }}</strong><span>Établissements répertoriés dans cet instantané</span></div>
+      <div class="carte-statistique"><strong>{{ couverture_regions_manquantes }}</strong><span>Entrées au minimum encore à rapprocher</span></div>
+      <div class="carte-statistique"><strong>{{ regions_a_examiner }}</strong><span>Régions où l'import dépasse le compte de référence</span></div>
+    </div>
+    <p class="stat-label">Les chiffres « attendus » sont un instantané de la cartographie, pas un registre réglementaire immuable. Un nom différent, un doublon ou une actualisation du site peut provoquer un écart : vérifier la liste officielle avant d'ajouter, fusionner ou supprimer une entrée.</p>
+    <p><a href="{{ source_metfp_couverture }}" rel="noopener noreferrer" target="_blank">Ouvrir la cartographie officielle METFP</a></p>
+    <div class="table-manifeste-conteneur">
+      <table class="table-manifeste">
+        <thead><tr><th>Région</th><th>Établissements dans la source</th><th>Actifs et vérifiés en base</th><th>Écart indicatif</th><th>État</th></tr></thead>
+        <tbody>
+        {% for item in couverture_regions %}
+          <tr>
+            <td>{{ item.region }}</td>
+            <td>{{ item.attendus }}</td>
+            <td>{{ item.recenses }}</td>
+            <td>{% if item.restants > 0 %}{{ item.restants }} à rapprocher{% elif item.statut == "Écart à examiner" %}+{{ item.recenses - item.attendus }} au-dessus{% else %}0{% endif %}</td>
+            <td>{{ item.statut }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <section id="etfp-catalogue" aria-labelledby="etfp-catalogue-titre">
     <h3 id="etfp-catalogue-titre">Filières techniques et professionnelles</h3>
     <p>Le catalogue ETFP est distinct des séries du lycée général. Les intitulés proviennent de la cartographie du METFP ; un référentiel de formation précise les compétences et la certification. N'ajoute ou ne publie un parcours qu'avec sa source officielle.</p>
