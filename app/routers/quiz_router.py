@@ -12,7 +12,10 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
-from ..models import Document, MissionApprentissage, StatutDocument, TentativeQuiz, ProgressionNotion
+from ..models import (
+    Document, MissionApprentissage, StatutDocument, TentativeQuiz, ProgressionNotion,
+    NiveauScolaire, OptionScolaire, ReferentielScolaire,
+)
 from .. import quiz as quiz_module
 from .. import adaptive_learning
 from .. import ai_queue
@@ -30,6 +33,62 @@ def _matieres_disponibles(session: Session) -> List[str]:
         select(Document.matiere).where(Document.statut == StatutDocument.APPROUVE).distinct()
     ).all()
     return sorted(valeurs)
+
+
+def _contexte_scolaire_quiz(utilisateur, session: Session) -> Optional[dict]:
+    """Retourne une classe scolaire validée ou refuse le profil scolaire incomplet."""
+    if getattr(utilisateur, "cycle_education", None) not in {"college", "lycee"}:
+        return None
+    niveau_id = getattr(utilisateur, "niveau_scolaire_id", None)
+    if not niveau_id:
+        return {}
+    referentiels = session.exec(
+        select(ReferentielScolaire).order_by(
+            ReferentielScolaire.date_creation.desc(),
+            ReferentielScolaire.id.desc(),
+        )
+    ).all()
+    referentiel = referentiels[0] if referentiels else None
+    niveau = session.get(NiveauScolaire, niveau_id)
+    if (
+        not referentiel
+        or not niveau
+        or niveau.referentiel_id != referentiel.id
+        or not niveau.est_actif
+        or niveau.statut_validation != "verifie"
+        or niveau.cycle != utilisateur.cycle_education
+        or niveau.libelle.casefold() not in quiz_module.NIVEAUX_SCOLAIRES_NORMALISES
+    ):
+        return {}
+
+    option_id = getattr(utilisateur, "option_scolaire_id", None)
+    option = session.get(OptionScolaire, option_id) if option_id else None
+    if option_id and (
+        not option
+        or option.referentiel_id != referentiel.id
+        or option.niveau_id != niveau.id
+        or not option.est_active
+        or option.statut_validation != "verifie"
+    ):
+        return {}
+    if option and option.parent_option_id:
+        parent = session.get(OptionScolaire, option.parent_option_id)
+        if (
+            not parent
+            or parent.referentiel_id != referentiel.id
+            or parent.niveau_id != niveau.id
+            or parent.parent_option_id is not None
+            or not parent.est_active
+            or parent.statut_validation != "verifie"
+        ):
+            return {}
+
+    return {
+        "niveau": niveau.libelle,
+        "cycle_education": niveau.cycle,
+        "niveau_scolaire_id": niveau.id,
+        "option_scolaire_id": option.id if option else None,
+    }
 
 
 @router.get("/quiz")
@@ -280,9 +339,19 @@ def generer_quiz_cible(
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/mes-revisions?erreur=trop_de_generations", status_code=303)
 
-    niveau = progression.niveau or utilisateur.niveau or "L1"
-    if niveau not in quiz_module.NIVEAUX:
-        niveau = "L1"
+    contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
+    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}:
+        if not contexte_scolaire:
+            return RedirectResponse(
+                "/mes-revisions?erreur=profil_scolaire_incomplet",
+                status_code=303,
+            )
+        niveau = contexte_scolaire["niveau"]
+    else:
+        niveau = progression.niveau or utilisateur.niveau or "L1"
+        if niveau not in quiz_module.NIVEAUX:
+            niveau = "L1"
+        contexte_scolaire = None
 
     try:
         tentative = quiz_module.creer_tentative_ciblee(
@@ -293,6 +362,9 @@ def generer_quiz_cible(
             progression.notion,
             nb_questions=5,
             progression=progression,
+            cycle_education=contexte_scolaire["cycle_education"] if contexte_scolaire else None,
+            niveau_scolaire_id=contexte_scolaire["niveau_scolaire_id"] if contexte_scolaire else None,
+            option_scolaire_id=contexte_scolaire["option_scolaire_id"] if contexte_scolaire else None,
         )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
