@@ -153,6 +153,10 @@ def _matieres_scolaires_disponibles(session: Session, contexte: dict) -> List[st
                 Document.etablissement_scolaire_id == etablissement_id,
             )
         )
+    else:
+        # Sans établissement sélectionné, ne pas mélanger les documents
+        # réservés à une école précise dans la liste de matières du quiz.
+        docs = docs.where(Document.etablissement_scolaire_id.is_(None))
     valeurs.update(
         matiere for matiere in session.exec(docs).all()
         if matiere and matiere.strip()
@@ -294,6 +298,19 @@ def page_reflexion(request: Request, matiere: Optional[str] = None, session: Ses
     if redirection:
         return redirection
 
+    contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
+    est_profil_scolaire = getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+    if est_profil_scolaire and not contexte_scolaire:
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
+    matieres = (
+        _matieres_scolaires_disponibles(session, contexte_scolaire)
+        if contexte_scolaire else _matieres_disponibles(session)
+    )
+    if contexte_scolaire and matiere and matiere not in matieres:
+        matiere = None
     theme = theme_service.get_theme_du_jour(matiere=matiere or None)
 
     return templates.TemplateResponse(
@@ -302,7 +319,7 @@ def page_reflexion(request: Request, matiere: Optional[str] = None, session: Ses
         {
             "utilisateur": utilisateur,
             "theme": theme,
-            "matieres": _matieres_disponibles(session),
+            "matieres": matieres,
             "matiere_selectionnee": matiere or "",
         },
     )
