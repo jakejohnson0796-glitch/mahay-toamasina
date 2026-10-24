@@ -286,12 +286,27 @@ def inscription(
 
             if option_scolaire_id_nettoye is not None:
                 option_scolaire_obj = session.get(OptionScolaire, option_scolaire_id_nettoye)
+                parent_option_obj = (
+                    session.get(OptionScolaire, option_scolaire_obj.parent_option_id)
+                    if option_scolaire_obj and option_scolaire_obj.parent_option_id else None
+                )
                 if (
                     not option_scolaire_obj
                     or option_scolaire_obj.niveau_id != niveau_scolaire_obj.id
                     or option_scolaire_obj.referentiel_id != referentiel_courant.id
                     or not option_scolaire_obj.est_active
                     or option_scolaire_obj.statut_validation != "verifie"
+                    or (
+                        option_scolaire_obj.parent_option_id is not None
+                        and (
+                            not parent_option_obj
+                            or parent_option_obj.niveau_id != niveau_scolaire_obj.id
+                            or parent_option_obj.referentiel_id != referentiel_courant.id
+                            or parent_option_obj.parent_option_id is not None
+                            or not parent_option_obj.est_active
+                            or parent_option_obj.statut_validation != "verifie"
+                        )
+                    )
                 ):
                     return templates.TemplateResponse(
                         request, "register.html",
