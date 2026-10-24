@@ -131,6 +131,17 @@ def _document_scolaire_compatible(document: Document, contexte: dict) -> bool:
         return False
     return True
 
+def _document_compatible_au_tuteur(document: Document, utilisateur, contexte_scolaire: Optional[dict]) -> bool:
+    """Empêche le mélange des ressources scolaires et universitaires."""
+    portee = getattr(document, "portee_academique", "universitaire")
+    if contexte_scolaire:
+        return portee == "scolaire" and _document_scolaire_compatible(document, contexte_scolaire)
+    if _enseignant_sans_classe_scolaire(utilisateur):
+        # Un enseignant du secondaire peut travailler sur plusieurs classes ;
+        # le cercle d'appartenance donne ici la portée autorisée.
+        return portee == "scolaire"
+    return portee != "scolaire"
+
 
 def _contexte_progression_tuteur(progression: ProgressionNotion) -> str:
     """Construit un contexte pédagogique compact à partir de la mémoire de la notion."""
@@ -378,12 +389,10 @@ def demander_tuteur(
             candidat
             and candidat.statut == StatutDocument.APPROUVE
             and _utilisateur_membre_cercle(session, candidat.cercle_id, utilisateur.id)
-            and (
-                getattr(candidat, "portee_academique", "universitaire") != "scolaire"
-                or (
-                    contexte_scolaire
-                    and _document_scolaire_compatible(candidat, contexte_scolaire)
-                )
+            and _document_compatible_au_tuteur(
+                candidat,
+                utilisateur,
+                contexte_scolaire,
             )
         ):
             if candidat.fiche_validation_statut != "validee":
