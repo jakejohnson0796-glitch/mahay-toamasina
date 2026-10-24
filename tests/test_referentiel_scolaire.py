@@ -10,6 +10,7 @@ from app.models import (
     CycleEnseigne,
     Document,
     MatiereScolaire,
+    Mention,
     NiveauScolaire,
     OptionScolaire,
     ProgrammeMatiereScolaire,
@@ -866,6 +867,41 @@ def test_synchronisation_archive_les_cibles_obsoletes_sans_membres_et_preserve_l
         CercleEtude.matiere_scolaire_id == matiere.id,
         CercleEtude.statut == StatutCercle.ACTIF,
     )).all().__len__() == 1
+
+    session.close()
+    engine.dispose()
+
+def test_la_base_refuse_de_melanger_cible_scolaire_et_universitaire():
+    engine, session = _session()
+    _, niveau, _ = _school_catalogue(session)
+    admin = _admin_sync_cercles(session, telephone="0340000203")
+    mention = Mention(nom="Mention de test séparation")
+    session.add(mention)
+    session.commit()
+    session.refresh(mention)
+
+    # Une cible scolaire ne peut pas stocker une mention universitaire.
+    with pytest.raises(IntegrityError):
+        session.add(CercleEtude(
+            nom="Cible mélangée",
+            createur_id=admin.id,
+            portee_academique="scolaire",
+            niveau_scolaire_id=niveau.id,
+            mention_id=mention.id,
+        ))
+        session.commit()
+    session.rollback()
+
+    # Une demande scolaire doit impérativement référencer une classe.
+    with pytest.raises(IntegrityError):
+        session.add(DemandeCreationCercle(
+            utilisateur_id=admin.id,
+            portee_academique="scolaire",
+            nom="Demande sans classe",
+            raison="Test de contrainte.",
+        ))
+        session.commit()
+    session.rollback()
 
     session.close()
     engine.dispose()
