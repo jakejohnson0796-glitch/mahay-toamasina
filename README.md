@@ -250,7 +250,7 @@ La récupération dépend donc d'une adresse email enregistrée sur le compte et
 
 ## 7. Référentiel académique
 
-Le référentiel structure progressivement :
+Le référentiel est séparé par portée afin d'éviter de mélanger les identifiants et parcours scolaires et universitaires.
 
 ~~~text
 Université
@@ -261,10 +261,31 @@ Mention
    ↓
 Filière / parcours
    ↓
-Niveau
+Niveau universitaire
+
+Collège (6e, 5e, 4e, 3e) / Lycée (Seconde, Première, Terminale)
+   ↓
+Série / option
+   ↓
+Matière et programme
+   ↓
+Établissement scolaire (facultatif)
 ~~~
 
-La plateforme évite autant que possible de déduire automatiquement une classification académique lorsqu'elle est ambiguë.
+La plateforme évite autant que possible de déduire automatiquement une classification académique lorsqu'elle est ambiguë. Les références collégiennes/lycéennes ont une version, une source et un statut explicite **partiel** ; elles ne prétendent pas être exhaustives pour le technique/professionnel ou pour chaque établissement du pays.
+
+Les sources de base incluent les pages du [MEN sur le collège](https://www.education.gov.mg/systeme-educatif/college/), le [lycée](https://www.education.gov.mg/systeme-educatif/lycee/), la [répartition annuelle du programme scolaire](https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/) et la [répartition annuelle du programme d'études](https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/). Les séries nouvelles L, S et OSE coexistent dans les sources avec certaines séries historiques en raison du déploiement progressif ; les options filles ne sont jamais inventées par le code.
+
+Pour les administrateurs, la gestion du catalogue scolaire est disponible dans `/admin/referentiel/scolaire`. Les nouvelles matières, options, associations programme/classe et établissements sont enregistrées en attente ; elles ne doivent être proposées aux élèves qu'après vérification d'une source HTTPS du domaine officiel `education.gov.mg`.
+
+Les API publiques principales sont :
+
+- `GET /api/scolaire/niveaux?cycle=college|lycee`
+- `GET /api/scolaire/niveaux/{id}/options`
+- `GET /api/scolaire/niveaux/{id}/matieres?option_id={id}`
+- `GET /api/scolaire/etablissements`
+
+Le dépôt des documents et leur quiz peuvent être associés à une classe et à une série scolaires sans attribuer de fausse filière universitaire. Les fiches de révision utilisent ce niveau scolaire lorsqu'il est disponible.
 
 La source de données est synchronisée au démarrage lorsque le référentiel versionné est présent. Les anciennes données peuvent être réconciliées et les doublons historiques traités de manière idempotente.
 
