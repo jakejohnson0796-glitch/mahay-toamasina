@@ -436,6 +436,10 @@ def approuver_demande_creation(
         referentiel_courant = referentiels_scolaires[0] if referentiels_scolaires else None
         niveau_scolaire = session.get(NiveauScolaire, demande.niveau_scolaire_id) if demande.niveau_scolaire_id else None
         option_scolaire = session.get(OptionScolaire, demande.option_scolaire_id) if demande.option_scolaire_id else None
+        parent_option_scolaire = (
+            session.get(OptionScolaire, option_scolaire.parent_option_id)
+            if option_scolaire and option_scolaire.parent_option_id else None
+        )
         etablissement_scolaire = (
             session.get(EtablissementScolaire, demande.etablissement_scolaire_id)
             if demande.etablissement_scolaire_id else None
@@ -453,6 +457,17 @@ def approuver_demande_creation(
                     and option_scolaire.niveau_id == niveau_scolaire.id
                     and option_scolaire.est_active
                     and option_scolaire.statut_validation == "verifie"
+                    and (
+                        option_scolaire.parent_option_id is None
+                        or (
+                            parent_option_scolaire
+                            and parent_option_scolaire.referentiel_id == referentiel_courant.id
+                            and parent_option_scolaire.niveau_id == niveau_scolaire.id
+                            and parent_option_scolaire.parent_option_id is None
+                            and parent_option_scolaire.est_active
+                            and parent_option_scolaire.statut_validation == "verifie"
+                        )
+                    )
                 )
             )
             and (
