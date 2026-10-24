@@ -33,6 +33,108 @@ class StatutDocument(str, Enum):
     REJETE = "rejete"
 
 
+class ReferentielScolaire(SQLModel, table=True):
+    """Version sourcée et validable du catalogue scolaire national.
+
+    Les versions anciennes restent en base afin que les profils, documents
+    et résultats puissent conserver le référentiel utilisé au moment de
+    leur création. Un statut partiel signale explicitement qu'un inventaire
+    n'est pas encore exhaustif (notamment pour le technique/professionnel).
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    code: str = Field(index=True, unique=True, max_length=40)
+    libelle: str
+    annee_scolaire: Optional[str] = Field(default=None, max_length=20)
+    source_officielle: str
+    statut: str = Field(default="partiel", index=True, max_length=20)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_validation: Optional[datetime] = None
+    valide_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+
+
+class NiveauScolaire(SQLModel, table=True):
+    """Classe normalisée, indépendante des niveaux universitaires L1-D3."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    referentiel_id: int = Field(foreign_key="referentielscolaire.id", index=True)
+    code: str = Field(index=True, max_length=20)
+    libelle: str
+    cycle: str = Field(index=True, max_length=20)  # college / lycee
+    ordre: int
+    est_actif: bool = Field(default=True, index=True)
+    source_officielle: Optional[str] = None
+    statut_validation: str = Field(default="verifie", index=True, max_length=20)
+
+    __table_args__ = (
+        UniqueConstraint("referentiel_id", "code", name="uq_niveauscolaire_referentiel_code"),
+    )
+
+
+class OptionScolaire(SQLModel, table=True):
+    """Série, option ou filière scolaire attachée à un niveau précis."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    referentiel_id: int = Field(foreign_key="referentielscolaire.id", index=True)
+    niveau_id: int = Field(foreign_key="niveauscolaire.id", index=True)
+    code: str = Field(max_length=30)
+    libelle: str
+    type_option: str = Field(default="serie", index=True, max_length=30)
+    est_active: bool = Field(default=True, index=True)
+    source_officielle: Optional[str] = None
+    statut_validation: str = Field(default="a_verifier", index=True, max_length=20)
+
+    __table_args__ = (
+        UniqueConstraint("niveau_id", "code", name="uq_optionscolaire_niveau_code"),
+    )
+
+
+class MatiereScolaire(SQLModel, table=True):
+    """Catalogue normalisé des matières ; les associations par niveau/série
+    sont portées par ProgrammeMatiereScolaire et non encodées en dur."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    code: str = Field(index=True, unique=True, max_length=40)
+    libelle: str
+    libelle_malagasy: Optional[str] = None
+    source_officielle: Optional[str] = None
+    statut_validation: str = Field(default="a_verifier", index=True, max_length=20)
+    est_active: bool = Field(default=True, index=True)
+
+
+class ProgrammeMatiereScolaire(SQLModel, table=True):
+    """Association versionnée niveau / série-option / matière."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    referentiel_id: int = Field(foreign_key="referentielscolaire.id", index=True)
+    niveau_id: int = Field(foreign_key="niveauscolaire.id", index=True)
+    option_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    matiere_id: int = Field(foreign_key="matierescolaire.id", index=True)
+    obligatoire: bool = Field(default=True)
+    source_officielle: Optional[str] = None
+    statut_validation: str = Field(default="a_verifier", index=True, max_length=20)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "referentiel_id", "niveau_id", "option_id", "matiere_id",
+            name="uq_programmematiere_referentiel_niveau_option_matiere",
+        ),
+    )
+
+
+class EtablissementScolaire(SQLModel, table=True):
+    """Établissement du secondaire. Le catalogue peut être progressivement
+    enrichi ; une entrée non vérifiée ne doit pas être présentée comme officielle."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nom: str = Field(index=True)
+    code: Optional[str] = Field(default=None, unique=True, index=True)
+    type_etablissement: str = Field(default="college_lycee", index=True, max_length=30)
+    secteur: str = Field(default="inconnu", index=True, max_length=20)  # public / prive / inconnu
+    region: Optional[str] = Field(default=None, index=True)
+    district: Optional[str] = Field(default=None, index=True)
+    commune: Optional[str] = Field(default=None, index=True)
+    source_officielle: Optional[str] = None
+    est_verifie: bool = Field(default=False, index=True)
+    est_actif: bool = Field(default=True, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_maj: datetime = Field(default_factory=datetime.utcnow)
+
+
 class StatutAbonnement(str, Enum):
     EN_ATTENTE_PAIEMENT = "en_attente_paiement"
     ACTIF = "actif"
@@ -226,6 +328,18 @@ class Utilisateur(SQLModel, table=True):
     # ce champ a False). Jamais True par defaut a l'inscription.
     doit_changer_mot_de_passe: bool = Field(default=False)
     role: RoleUtilisateur = Field(default=RoleUtilisateur.ETUDIANT)
+    # Profil pédagogique choisi à l'inscription : distinct des permissions
+    # effectives (role). Une demande professeur ne confère aucun privilège.
+    profil_souhaite: str = Field(default="eleve", index=True, max_length=20)
+    cycle_education: Optional[str] = Field(default=None, index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    statut_verification_enseignant: str = Field(default="non_concerne", index=True, max_length=20)
+    demande_enseignant_le: Optional[datetime] = None
+    verification_enseignant_le: Optional[datetime] = None
+    verification_enseignant_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    motif_refus_enseignant: Optional[str] = None
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
     # Composante choisie explicitement dans le profil. Indispensable pour
     # les etudiants en tronc commun, car aucune Filiere ne permet sinon de
@@ -369,7 +483,14 @@ class Document(SQLModel, table=True):
     matiere: str
     type_document: TypeDocument
     annee: int
-    filiere_id: int = Field(foreign_key="filiere.id")
+    # Nullable pour autoriser les ressources scolaires : une ressource doit
+    # désormais être classée par le référentiel universitaire OU scolaire.
+    filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id", index=True)
+    portee_academique: str = Field(default="universitaire", index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     uploader_id: int = Field(foreign_key="utilisateur.id")
     chemin_fichier: str
     statut: StatutDocument = Field(default=StatutDocument.EN_ATTENTE, index=True)
@@ -543,6 +664,9 @@ class TentativeQuiz(SQLModel, table=True):
     utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
     matiere: str
     niveau: str
+    cycle_education: Optional[str] = Field(default=None, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
     difficulte: str
     nb_questions: int
     questions_json: str  # [{question, choix[], index_bonne_reponse, explication}, ...]
@@ -686,6 +810,13 @@ class CercleEtude(SQLModel, table=True):
     # tant que non verifie manuellement) restent valides sans mention.
     mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
     niveau: Optional[str] = None
+    # Un cercle peut relever du référentiel universitaire, scolaire ou être
+    # explicitement transversal ; les colonnes historiques restent intactes.
+    portee_academique: str = Field(default="universitaire", index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     statut: StatutCercle = Field(default=StatutCercle.ACTIF)
     createur_id: int = Field(foreign_key="utilisateur.id", index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
@@ -1113,6 +1244,12 @@ class Cours(SQLModel, table=True):
     nom: str
     matiere: str
     niveau: str
+    # Champs scolaires distincts de la chaîne universitaire déjà utilisée.
+    portee_academique: str = Field(default="universitaire", index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     description: Optional[str] = None
     professeur_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
