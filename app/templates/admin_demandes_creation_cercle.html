@@ -9,7 +9,7 @@
 
 {% if request.query_params.get("ok") == "approuvee" %}<p><strong>Demande approuvee, cercle cree.</strong></p>{% endif %}
 {% if request.query_params.get("ok") == "rejetee" %}<p><strong>Demande rejetée.</strong></p>{% endif %}
-{% if request.query_params.get("erreur") == "cible_scolaire_invalide" %}<div class="erreur">Le référentiel scolaire a changé ou la cible a été désactivée. La demande a été rejetée ; vérifie la classe, la série et l’établissement.</div>{% endif %}
+{% if request.query_params.get("erreur") == "cible_scolaire_invalide" %}<div class="erreur">Le référentiel scolaire a changé ou la cible a été désactivée. La demande a été rejetée ; vérifie la classe, la série, la matière et l’établissement.</div>{% endif %}
 {% if request.query_params.get("erreur") == "doublon_survenu_entre_temps" %}
 <div class="erreur">
   Un cercle equivalent a ete cree entre-temps par une autre demande — celle-ci a ete automatiquement rejetee
@@ -37,6 +37,7 @@
           <strong>Collège / lycée</strong><br>
           <span data-no-translate>{{ niveaux_scolaires[d.niveau_scolaire_id].libelle if d.niveau_scolaire_id in niveaux_scolaires else "Classe inconnue" }}</span>
           {% if d.option_scolaire_id %}<br><span data-no-translate>{{ options_scolaires[d.option_scolaire_id].libelle if d.option_scolaire_id in options_scolaires else "Option inconnue" }}</span>{% endif %}
+          {% if d.matiere_scolaire_id %}<br><span data-no-translate>{{ matieres_scolaires[d.matiere_scolaire_id].libelle if d.matiere_scolaire_id in matieres_scolaires else "Matière inconnue" }}</span>{% endif %}
           {% if d.etablissement_scolaire_id %}<br><span data-no-translate>{{ etablissements_scolaires[d.etablissement_scolaire_id].nom if d.etablissement_scolaire_id in etablissements_scolaires else "Établissement inconnu" }}</span>{% else %}<br><span>Portée nationale</span>{% endif %}
         {% else %}
           <span data-no-translate>{{ mentions[d.mention_id].nom if d.mention_id in mentions else "—" }}</span> /
