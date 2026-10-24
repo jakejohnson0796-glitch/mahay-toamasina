@@ -39,18 +39,20 @@
     const level = document.getElementById("creation_niveau_scolaire_id");
     const option = document.getElementById("creation_option_scolaire_id");
     const establishment = document.getElementById("creation_etablissement_scolaire_id");
+    const subject = document.getElementById("creation_matiere_scolaire_id");
     const reason = document.getElementById("raison");
     const reasonLabel = document.getElementById("creation-label-raison");
     const uniMention = document.getElementById("creation_mention_id");
     const uniLevel = document.getElementById("creation_niveau");
     const uniFiliere = document.getElementById("creation_filiere_id");
 
-    if (!scope || !universityBlock || !schoolBlock || !cycle || !level || !option || !establishment) {
+    if (!scope || !universityBlock || !schoolBlock || !cycle || !level || !option || !establishment || !subject) {
       return;
     }
 
     let levelRequest = 0;
     let optionRequest = 0;
+    let subjectRequest = 0;
     let establishmentLoaded = false;
 
     function isSchool() {
@@ -84,9 +86,12 @@
         reset(level, "Choisissez d’abord le cycle scolaire", true);
         reset(option, "Choisissez d’abord la classe", true);
         reset(establishment, "Cercle national, sans établissement particulier", true);
+        subjectRequest++;
+        reset(subject, "Toutes les matières / classe entière", true);
       } else {
         loadEstablishments();
         if (cycle.value) loadLevels();
+        if (level.value) loadSubjects();
       }
     }
 
@@ -120,6 +125,28 @@
       option.disabled = false;
     }
 
+    async function loadSubjects() {
+      const ticket = ++subjectRequest;
+      reset(subject, level.value ? "Chargement des matières vérifiées…" : "Choisissez d’abord la classe", true);
+      if (!isSchool() || !level.value || level.disabled) {
+        return;
+      }
+      const query = option.value ? "?option_id=" + encodeURIComponent(option.value) : "";
+      const rows = await getJSON(
+        "/api/scolaire/niveaux/" + encodeURIComponent(level.value) + "/matieres" + query
+      );
+      if (ticket !== subjectRequest) return;
+      reset(subject, "Toutes les matières / classe entière", false);
+      if (!rows || !rows.length) {
+        subject.disabled = false;
+        return;
+      }
+      rows.forEach(function (row) {
+        addOption(subject, row.id, row.libelle);
+      });
+      subject.disabled = false;
+    }
+
     async function loadEstablishments() {
       if (establishmentLoaded) {
         establishment.disabled = !isSchool();
@@ -140,7 +167,11 @@
 
     scope.addEventListener("change", applyScope);
     cycle.addEventListener("change", loadLevels);
-    level.addEventListener("change", loadOptions);
+    level.addEventListener("change", function () {
+      loadOptions();
+      loadSubjects();
+    });
+    option.addEventListener("change", loadSubjects);
     [uniMention, uniLevel, uniFiliere].filter(Boolean).forEach(function (field) {
       field.addEventListener("change", applyScope);
     });
@@ -168,13 +199,14 @@
     const schoolLevel = document.getElementById("recherche_niveau_scolaire_id");
     const schoolOption = document.getElementById("recherche_option_scolaire_id");
     const schoolEstablishment = document.getElementById("recherche_etablissement_scolaire_id");
+    const schoolMatter = document.getElementById("recherche_matiere_scolaire_id");
     const universityFields = [
       document.getElementById("recherche_domaine_id"),
       document.getElementById("recherche_mention_id"),
       document.getElementById("recherche_niveau"),
       document.getElementById("recherche_filiere_id")
     ].filter(Boolean);
-    const schoolFields = [schoolLevel, schoolOption, schoolEstablishment].filter(Boolean);
+    const schoolFields = [schoolLevel, schoolOption, schoolEstablishment, schoolMatter].filter(Boolean);
     const form = scope ? scope.closest("form") : null;
     if (!scope) return;
 
@@ -202,6 +234,31 @@
         updateFilters();
       });
     });
+    let searchSubjectRequest = 0;
+    async function updateSearchSubjects() {
+      if (!schoolMatter || !schoolLevel || !schoolLevel.value) return;
+      const ticket = ++searchSubjectRequest;
+      const prior = schoolMatter.value;
+      const query = schoolOption && schoolOption.value
+        ? "?option_id=" + encodeURIComponent(schoolOption.value)
+        : "";
+      const rows = await getJSON(
+        "/api/scolaire/niveaux/" + encodeURIComponent(schoolLevel.value) + "/matieres" + query
+      );
+      if (!rows || ticket !== searchSubjectRequest) return;
+      reset(schoolMatter, "Toutes les matières", false);
+      rows.forEach(function (row) {
+        addOption(schoolMatter, row.id, row.libelle);
+      });
+      if (prior && rows.some(function (row) { return String(row.id) === prior; })) {
+        schoolMatter.value = prior;
+      }
+    }
+
+    if (schoolLevel) schoolLevel.addEventListener("change", updateSearchSubjects);
+    if (schoolOption) schoolOption.addEventListener("change", updateSearchSubjects);
+    if (schoolLevel && schoolLevel.value) updateSearchSubjects();
+
     scope.addEventListener("change", updateFilters);
     if (form) {
       form.addEventListener("submit", function () {
