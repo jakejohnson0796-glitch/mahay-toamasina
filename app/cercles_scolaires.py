@@ -275,7 +275,7 @@ def assurer_cercles_scolaires(session: Session) -> dict[str, int | str | None]:
     if not referentiel:
         return {
             "referentiel_id": None, "cibles": 0, "crees": 0,
-            "reactives": 0, "archives": 0, "preserves": 0, "existants": 0,
+            "reactives": 0, "actualises": 0, "archives": 0, "preserves": 0, "existants": 0,
         }
     admin = session.exec(
         select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.ADMIN)
@@ -285,7 +285,7 @@ def assurer_cercles_scolaires(session: Session) -> dict[str, int | str | None]:
         logger.warning("Synchronisation scolaire reportée : aucun compte admin créateur.")
         return {
             "referentiel_id": referentiel.id, "cibles": 0, "crees": 0,
-            "reactives": 0, "archives": 0, "preserves": 0, "existants": 0,
+            "reactives": 0, "actualises": 0, "archives": 0, "preserves": 0, "existants": 0,
         }
 
     cibles = _construire_cibles_scolaires(session, referentiel)
@@ -294,6 +294,7 @@ def assurer_cercles_scolaires(session: Session) -> dict[str, int | str | None]:
         "cibles": len(cibles),
         "crees": 0,
         "reactives": 0,
+        "actualises": 0,
         "archives": 0,
         "preserves": 0,
         "existants": 0,
@@ -309,9 +310,26 @@ def assurer_cercles_scolaires(session: Session) -> dict[str, int | str | None]:
             ).order_by(CercleEtude.id)
         ).all()
         if actifs:
-            # Un cercle créé manuellement peut déjà représenter cette cible.
-            # On le conserve tel quel : on ne revendique pas son cycle de vie.
-            stats["existants"] = int(stats["existants"]) + 1
+            # Un cercle manuel existant est réutilisé sans que le synchroniseur
+            # s'approprie son cycle de vie. En revanche, un cercle déjà géré par
+            # le référentiel doit refléter les nouveaux libellés des données.
+            cercle_actif = actifs[0]
+            if cercle_actif.synchronise_referentiel:
+                modifie = False
+                if cercle_actif.nom != cible["nom"]:
+                    cercle_actif.nom = cible["nom"]
+                    modifie = True
+                if cercle_actif.description != cible["description"]:
+                    cercle_actif.description = cible["description"]
+                    modifie = True
+                if modifie:
+                    session.add(cercle_actif)
+                    session.commit()
+                    stats["actualises"] = int(stats["actualises"]) + 1
+                else:
+                    stats["existants"] = int(stats["existants"]) + 1
+            else:
+                stats["existants"] = int(stats["existants"]) + 1
             continue
 
         archives = session.exec(
@@ -409,8 +427,8 @@ def assurer_cercles_scolaires(session: Session) -> dict[str, int | str | None]:
         stats["archives"] = int(stats["archives"]) + 1
 
     logger.info(
-        "Synchronisation cercles scolaires: ref=%s cibles=%s crees=%s reactives=%s archives=%s preserves=%s existants=%s",
+        "Synchronisation cercles scolaires: ref=%s cibles=%s crees=%s reactives=%s actualises=%s archives=%s preserves=%s existants=%s",
         stats["referentiel_id"], stats["cibles"], stats["crees"],
-        stats["reactives"], stats["archives"], stats["preserves"], stats["existants"],
+        stats["reactives"], stats["actualises"], stats["archives"], stats["preserves"], stats["existants"],
     )
     return stats
