@@ -41,7 +41,7 @@ def _seed_catalogue_scolaire(conn):
             {
                 "code": code,
                 "libelle": "Programmes scolaires MEN — inventaire général initial",
-                "annee": None,
+                "annee": "2026-2027",
                 "source": SOURCE_PROGRAMMES + " | " + SOURCE_LYCEE,
             },
         )
@@ -117,6 +117,46 @@ def _seed_catalogue_scolaire(conn):
                 },
             )
 
+    # Transition actuelle du baccalauréat : les options sont liées à leur
+    # série parent plutôt que proposées comme séries indépendantes. Les
+    # anciennes séries A/C/D restent distinctes pour les établissements
+    # qui conservent encore le programme antérieur.
+    options_filles_terminale = {
+        "L": [("OPT_A1", "Option A1"), ("OPT_A2", "Option A2"), ("OPT_L", "Option L")],
+        "S": [("OPT_C", "Option C"), ("OPT_D", "Option D"), ("OPT_S", "Option S")],
+    }
+    terminale_id = conn.execute(
+        sa.text("SELECT id FROM niveauscolaire WHERE referentiel_id=:ref AND code='TERM'"),
+        {"ref": referentiel_id},
+    ).scalar_one()
+    for code_serie, options in options_filles_terminale.items():
+        serie = conn.execute(
+            sa.text(
+                "SELECT id FROM optionscolaire "
+                "WHERE referentiel_id=:ref AND niveau_id=:niveau AND code=:code AND parent_option_id IS NULL"
+            ),
+            {"ref": referentiel_id, "niveau": terminale_id, "code": code_serie},
+        ).first()
+        if not serie:
+            continue
+        for code_option, libelle_option in options:
+            conn.execute(
+                sa.text(
+                    "INSERT INTO optionscolaire "
+                    "(referentiel_id, niveau_id, parent_option_id, code, libelle, type_option, est_active, source_officielle, statut_validation) "
+                    "SELECT :ref, :niveau, :parent, :code, :libelle, 'option', TRUE, :source, 'verifie' "
+                    "WHERE NOT EXISTS (SELECT 1 FROM optionscolaire WHERE niveau_id=:niveau AND code=:code)"
+                ),
+                {
+                    "ref": referentiel_id,
+                    "niveau": terminale_id,
+                    "parent": serie[0],
+                    "code": code_option,
+                    "libelle": libelle_option,
+                    "source": SOURCE_PROGRAMMES,
+                },
+            )
+
 
 def upgrade():
     op.create_table(
@@ -159,6 +199,7 @@ def upgrade():
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("referentiel_id", sa.Integer(), sa.ForeignKey("referentielscolaire.id"), nullable=False),
         sa.Column("niveau_id", sa.Integer(), sa.ForeignKey("niveauscolaire.id"), nullable=False),
+        sa.Column("parent_option_id", sa.Integer(), sa.ForeignKey("optionscolaire.id"), nullable=True),
         sa.Column("code", sa.String(length=30), nullable=False),
         sa.Column("libelle", sa.String(), nullable=False),
         sa.Column("type_option", sa.String(length=30), server_default="serie", nullable=False),
@@ -169,6 +210,7 @@ def upgrade():
     )
     op.create_index("ix_optionscolaire_referentiel_id", "optionscolaire", ["referentiel_id"])
     op.create_index("ix_optionscolaire_niveau_id", "optionscolaire", ["niveau_id"])
+    op.create_index("ix_optionscolaire_parent_option_id", "optionscolaire", ["parent_option_id"])
     op.create_index("ix_optionscolaire_est_active", "optionscolaire", ["est_active"])
     op.create_index("ix_optionscolaire_statut_validation", "optionscolaire", ["statut_validation"])
     op.create_index("ix_optionscolaire_type_option", "optionscolaire", ["type_option"])
@@ -406,7 +448,7 @@ def downgrade():
         "etablissementscolaire": ["nom", "code", "type_etablissement", "secteur", "region", "district", "commune", "est_verifie", "est_actif"],
         "programmematierescolaire": ["referentiel_id", "niveau_id", "option_id", "matiere_id", "statut_validation"],
         "matierescolaire": ["code", "est_active", "statut_validation"],
-        "optionscolaire": ["referentiel_id", "niveau_id", "est_active", "statut_validation", "type_option"],
+        "optionscolaire": ["referentiel_id", "niveau_id", "parent_option_id", "est_active", "statut_validation", "type_option"],
         "niveauscolaire": ["referentiel_id", "code", "cycle", "est_actif", "statut_validation"],
         "referentielscolaire": ["code", "statut"],
     }.items():
