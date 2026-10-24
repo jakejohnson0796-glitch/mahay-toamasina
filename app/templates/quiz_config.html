@@ -5,20 +5,7 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 
 {% block contenu %}
-<style nonce="{{ csp_nonce(request) }}">
-  .ai-quiz-modes { display: grid; gap: .65rem; min-width: 0; padding: 0; margin: 0 0 1rem; border: 0; }
-  .ai-quiz-modes legend { font-weight: 700; margin-bottom: .7rem; }
-  .ai-quiz-mode { display: flex; align-items: flex-start; gap: .7rem; padding: .85rem; border: 1px solid var(--bordure, #47433e); border-radius: 14px; cursor: pointer; background: var(--surface, rgba(255,255,255,.02)); transition: border-color .18s ease, background .18s ease; }
-  .ai-quiz-mode.is-selected { border-color: var(--couleur-primaire, #d99a7b); background: color-mix(in srgb, var(--couleur-primaire, #d99a7b) 10%, transparent); }
-  .ai-quiz-mode input { margin-top: .2rem; accent-color: var(--couleur-primaire, #d99a7b); flex: 0 0 auto; }
-  .ai-quiz-mode span { display: grid; gap: .25rem; min-width: 0; }
-  .ai-quiz-mode small { color: var(--texte-secondaire, #b9b5af); line-height: 1.45; }
-  .ai-quiz-profile-note { display: flex; align-items: flex-start; gap: .55rem; padding: .75rem .85rem; border-radius: 12px; margin-bottom: 1rem; background: var(--surface-subtle, rgba(255,255,255,.035)); line-height: 1.5; }
-  .ai-quiz-profile-note > span:first-child { color: var(--couleur-primaire, #d99a7b); font-weight: 800; }
-  .ai-quiz-manual { display: grid; gap: .9rem; }
-  .ai-quiz-manual[hidden] { display: none !important; }
-  @media (prefers-reduced-motion: reduce) { .ai-quiz-mode { transition: none; } }
-</style>
+
 <div class="ai-learning-page">
   <section class="ai-hero" aria-labelledby="quiz-hero-title">
     <div>
