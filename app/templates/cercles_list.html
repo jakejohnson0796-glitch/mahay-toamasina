@@ -275,17 +275,17 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
   <div class="cercles-hero-contenu">
     <span class="cercles-hero-kicker">À l’échelle de Madagascar · Cercles d’étude</span>
     <h1 id="titre-hero-cercles" class="cercles-hero-titre">Réviser ensemble.<br>Progresser plus vite.</h1>
-    <p class="cercles-hero-sous-titre">Trouve un espace de travail autour de ta mention, de ton parcours et de ton niveau, puis retrouve les autres étudiants au même endroit.</p>
+    <p class="cercles-hero-sous-titre">Que tu sois au collège, au lycée ou à l’université, choisis ton cycle puis filtre par classe, série, mention, parcours ou matière. Les cercles transversaux restent accessibles à tous les profils.</p>
     <div class="cercles-hero-actions">
       <a class="bouton bouton-primaire" href="#formulaire-recherche-cercles">Explorer les cercles</a>
       <a class="bouton bouton-secondaire" href="#resultats-cercles">Voir les résultats</a>
     </div>
   </div>
   <div class="cercles-hero-stats" aria-label="Principes de la recherche">
-    <div class="cercles-hero-stat"><strong>01</strong><span>Mention + niveau</span></div>
-    <div class="cercles-hero-stat"><strong>02</strong><span>Parcours précis</span></div>
-    <div class="cercles-hero-stat"><strong>03</strong><span>Groupes nationaux</span></div>
-    <div class="cercles-hero-stat"><strong>04</strong><span>Chat en direct</span></div>
+    <div class="cercles-hero-stat"><strong>01</strong><span>Classe ou niveau</span></div>
+    <div class="cercles-hero-stat"><strong>02</strong><span>Série ou parcours</span></div>
+    <div class="cercles-hero-stat"><strong>03</strong><span>Matière ou cycle</span></div>
+    <div class="cercles-hero-stat"><strong>04</strong><span>Entraide entre membres</span></div>
   </div>
 </section>
 <style nonce="{{ csp_nonce(request) }}">
@@ -311,16 +311,29 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
   <a class="cercles-raccourci" href="#creer-cercle">➕ Créer</a>
 </div>
 
-<section class="cercles-inspiration" aria-label="Inspiration de travail">
-  <div class="cercles-inspiration-texte">
-    <p class="stat-label">Coin bibliothèque</p>
-    <h3>Un vrai univers d'étude, pas seulement une liste.</h3>
-    <p class="stat-label">Des visuels de livres et de travail académique accompagnent les cartes pour donner à la page un visage plus éditorial et plus chaleureux.</p>
+<section class="cercles-parcours-section" aria-labelledby="titre-parcours-cercles">
+  <div class="cercles-parcours-intro">
+    <div>
+      <h2 id="titre-parcours-cercles">Choisis ton parcours</h2>
+      <p>Commence par ton cycle d’étude : les filtres et résultats seront mieux ciblés.</p>
+    </div>
   </div>
-  <div class="cercles-inspiration-livres">
-    <div class="photo"><img loading="lazy" src="/static/images/cercles/livre-1.svg" alt="Livre relié posé sur un support"></div>
-    <div class="photo"><img loading="lazy" src="/static/images/cercles/livre-2.svg" alt="Table de travail avec livre et carnet"></div>
-    <div class="photo"><img loading="lazy" src="/static/images/cercles/livre-3.svg" alt="Livres et lecture"></div>
+  <div class="cercles-parcours-choix">
+    <a class="cercles-parcours-carte{% if recherche_portee_academique == "scolaire" %} is-active{% endif %}" href="/cercles?portee_academique=scolaire"{% if recherche_portee_academique == "scolaire" %} aria-current="page"{% endif %}>
+      <span class="cercles-parcours-numero" aria-hidden="true">01</span>
+      <span class="cercles-parcours-texte"><strong>Collège et lycée</strong><small>De la 6e à la Terminale : classe, série, matière ou établissement vérifié.</small></span>
+      <span class="cercles-parcours-action">Explorer →</span>
+    </a>
+    <a class="cercles-parcours-carte{% if recherche_portee_academique == "universitaire" %} is-active{% endif %}" href="/cercles?portee_academique=universitaire"{% if recherche_portee_academique == "universitaire" %} aria-current="page"{% endif %}>
+      <span class="cercles-parcours-numero" aria-hidden="true">02</span>
+      <span class="cercles-parcours-texte"><strong>Université</strong><small>Par domaine, mention, parcours et niveau d’étude.</small></span>
+      <span class="cercles-parcours-action">Explorer →</span>
+    </a>
+    <a class="cercles-parcours-carte{% if recherche_portee_academique == "transversal" %} is-active{% endif %}" href="/cercles?portee_academique=transversal"{% if recherche_portee_academique == "transversal" %} aria-current="page"{% endif %}>
+      <span class="cercles-parcours-numero" aria-hidden="true">03</span>
+      <span class="cercles-parcours-texte"><strong>Transversal et libre</strong><small>Des espaces de collaboration entre profils et cycles différents.</small></span>
+      <span class="cercles-parcours-action">Explorer →</span>
+    </a>
   </div>
 </section>
 
@@ -329,12 +342,9 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
   <circle cx="190" cy="30" r="75" fill="none" stroke="currentColor" stroke-width="1"/>
   <circle cx="190" cy="30" r="110" fill="none" stroke="currentColor" stroke-width="1"/>
 </svg>
-<p class="eyebrow">S'entraider entre etudiants</p>
-<h2>Cercles d'etude</h2>
-<p>
-  Des salons de discussion pour reviser a plusieurs — par filiere ou en
-  groupe libre. Les messages restent entre les membres du cercle.
-</p>
+<p class="eyebrow">Des espaces adaptés à chaque cycle</p>
+<h2>Des cercles bien séparés, un même espace d’entraide</h2>
+<p>Les cercles collège/lycée suivent les classes, séries et matières vérifiées. Les cercles universitaires suivent les mentions et parcours. Les groupes transversaux permettent de travailler entre cycles sans mélanger les référentiels.</p>
 
 <div class="theme-jour">
   <p class="theme-jour-etiquette">Theme du jour · {{ theme_du_jour.date_affichee }}</p>
