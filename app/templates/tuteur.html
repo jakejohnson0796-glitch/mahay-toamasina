@@ -71,7 +71,7 @@
           <form method="post" action="/tuteur/demander">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
             <input type="hidden" name="progression_id" value="{{ n.id }}">
-            <input type="hidden" name="question" value="Explique-moi {{ n.notion }} en {{ n.matiere }} comme à un étudiant qui a déjà fait des erreurs sur cette notion. Donne-moi une méthode, un exemple et un exercice progressif.">
+            <input type="hidden" name="question" value="Explique-moi {{ n.notion }} en {{ n.matiere }} comme à un apprenant qui a déjà fait des erreurs sur cette notion. Donne-moi une méthode, un exemple et un exercice progressif.">
             <button class="bouton bouton-secondaire" type="submit">Comprendre</button>
           </form>
           <form method="post" action="/quiz/cible">
@@ -109,6 +109,8 @@
           <div class="erreur" role="alert">Écris une question avant d'envoyer.</div>
           {% elif request.query_params.get("erreur") == "trop_de_questions" %}
           <div class="erreur" role="alert">Trop de questions rapprochées. Attends quelques instants avant de continuer.</div>
+          {% elif request.query_params.get("erreur") == "notion_hors_niveau_scolaire" %}
+          <div class="erreur" role="alert">Cette notion provient d'un autre niveau. Choisis une notion liée à ta classe pour éviter de mélanger les parcours.</div>
           {% endif %}
 
           <form method="post" action="/tuteur/demander" class="ai-form" data-tuteur-form>
