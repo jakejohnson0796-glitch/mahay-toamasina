@@ -1,0 +1,454 @@
+/* MITARIDALA — interface académique (cercles + administration du catalogue).
+   Composants ciblés : séparation des parcours, lisibilité, responsive et thème sombre. */
+
+.cercles-page-shell .cercles-parcours-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: .8rem 1.5rem;
+  margin: 0 0 .85rem;
+}
+.cercles-page-shell .cercles-parcours-intro h2 {
+  margin: 0;
+  color: var(--content-text);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+}
+.cercles-page-shell .cercles-parcours-intro p {
+  max-width: 60ch;
+  margin: .2rem 0 0;
+  color: var(--content-text-muted);
+  font-size: .88rem;
+  line-height: 1.55;
+}
+.cercles-page-shell .cercles-parcours-choix {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .85rem;
+  margin: 0 0 1.35rem;
+}
+.cercles-page-shell .cercles-parcours-carte {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: start;
+  gap: .72rem;
+  min-width: 0;
+  min-height: 132px;
+  padding: 1rem;
+  border: 1px solid var(--content-border);
+  border-radius: 15px;
+  background: var(--content-surface);
+  color: var(--content-text);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
+}
+.cercles-page-shell .cercles-parcours-carte:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+}
+.cercles-page-shell .cercles-parcours-carte:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+.cercles-page-shell .cercles-parcours-carte.is-active {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-sm);
+  background: var(--content-bg);
+}
+.cercles-page-shell .cercles-parcours-numero {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--refonte-sable-200);
+  color: var(--refonte-ocean-900);
+  font: 800 .82rem/1 var(--font-code);
+}
+html[data-theme="sombre"] .cercles-page-shell .cercles-parcours-numero {
+  background: var(--refonte-sable-200);
+  color: var(--content-text);
+}
+.cercles-page-shell .cercles-parcours-texte {
+  min-width: 0;
+}
+.cercles-page-shell .cercles-parcours-texte strong {
+  display: block;
+  margin: .05rem 0 .2rem;
+  font-size: .98rem;
+  line-height: 1.3;
+}
+.cercles-page-shell .cercles-parcours-texte small {
+  display: block;
+  color: var(--content-text-muted);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+.cercles-page-shell .cercles-parcours-action {
+  grid-column: 2;
+  align-self: end;
+  color: var(--content-link);
+  font-size: .78rem;
+  font-weight: 800;
+}
+.cercles-page-shell .cercles-parcours-carte.is-active .cercles-parcours-action::after {
+  content: " · sélectionné";
+  color: var(--content-text-muted);
+  font-weight: 600;
+}
+.cercles-page-shell .carte-recherche-cercles {
+  scroll-margin-top: 1rem;
+}
+.cercles-page-shell #formulaire-recherche-cercles > div {
+  min-width: 0;
+}
+.cercles-page-shell #formulaire-recherche-cercles .stat-label {
+  line-height: 1.45;
+}
+.cercles-page-shell .theme-jour {
+  border-radius: 14px;
+}
+.cercles-page-shell #creer-cercle {
+  display: grid;
+  gap: .48rem;
+}
+.cercles-page-shell #creer-cercle > label {
+  margin-top: .3rem;
+  font-weight: 750;
+  color: var(--content-text);
+}
+.cercles-page-shell #creer-cercle input,
+.cercles-page-shell #creer-cercle select,
+.cercles-page-shell #creer-cercle textarea {
+  width: 100%;
+  min-width: 0;
+}
+.cercles-page-shell #creer-cercle [data-school-scope],
+.cercles-page-shell #creer-cercle [data-university-scope] {
+  padding: .9rem;
+  margin: .2rem 0;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+  background: var(--content-bg);
+}
+.cercles-page-shell #creer-cercle [hidden] {
+  display: none !important;
+}
+.cercles-page-shell .cercle-card-premium:focus-within {
+  border-color: var(--primary) !important;
+}
+.cercles-page-shell .cercle-card-premium .carte-claire-actions a:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.interface-referentiel-scolaire {
+  width: min(100%, 1320px);
+  margin: 0 auto;
+  padding: clamp(.8rem, 2.5vw, 1.6rem);
+}
+.interface-referentiel-scolaire .referentiel-scolaire-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
+  gap: 1.3rem;
+  align-items: center;
+  margin: .4rem 0 1rem;
+  padding: clamp(1.25rem, 3.2vw, 2.2rem);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 95% 10%, rgba(142,216,206,.2), transparent 12rem),
+    linear-gradient(130deg, var(--refonte-ocean-950), var(--refonte-ocean-800));
+  box-shadow: var(--shadow-md);
+  color: #fff;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  color: #BDE7DE;
+  font: 800 .68rem/1.4 var(--font-code);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-hero h1 {
+  margin: .55rem 0 .6rem;
+  max-width: 22ch;
+  color: #fff;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-hero p {
+  max-width: 68ch;
+  margin: 0;
+  color: rgba(255,255,255,.84);
+  font-size: .93rem;
+  line-height: 1.65;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-etat {
+  display: grid;
+  gap: .35rem;
+  justify-items: start;
+  padding: 1rem;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 14px;
+  background: rgba(255,255,255,.07);
+}
+.interface-referentiel-scolaire .referentiel-scolaire-etat small {
+  color: rgba(255,255,255,.76);
+  font-size: .75rem;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-etat strong {
+  color: #fff;
+  font-size: 1.05rem;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-etat .etat-catalogue {
+  display: inline-flex;
+  align-items: center;
+  padding: .25rem .52rem;
+  border-radius: 999px;
+  background: rgba(243,209,141,.15);
+  border: 1px solid rgba(243,209,141,.4);
+  color: #FFE2A2;
+  font-size: .7rem;
+  font-weight: 800;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-nav {
+  position: sticky;
+  top: .5rem;
+  z-index: 5;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: .45rem;
+  max-width: 100%;
+  margin: 0 0 1rem;
+  padding: .5rem;
+  overflow-x: auto;
+  border: 1px solid var(--content-border);
+  border-radius: 13px;
+  background: var(--content-surface);
+  box-shadow: var(--shadow-sm);
+  scrollbar-width: thin;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 2.45rem;
+  padding: .5rem .75rem;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--content-text-muted);
+  font-size: .78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.interface-referentiel-scolaire .referentiel-scolaire-nav a:hover,
+.interface-referentiel-scolaire .referentiel-scolaire-nav a:focus-visible {
+  border-color: var(--content-border);
+  background: var(--content-bg);
+  color: var(--content-text);
+}
+.interface-referentiel-scolaire > section {
+  min-width: 0;
+  margin: 1rem 0;
+  padding: clamp(1rem, 2.3vw, 1.5rem);
+  border: 1px solid var(--content-border);
+  border-radius: 16px;
+  background: var(--content-surface);
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 5rem;
+}
+.interface-referentiel-scolaire > section > h3 {
+  margin: 0 0 .8rem;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+}
+.interface-referentiel-scolaire > section > p {
+  max-width: 90ch;
+  line-height: 1.62;
+}
+.interface-referentiel-scolaire .carte-formulaire {
+  padding: clamp(1rem, 2.3vw, 1.5rem);
+  border: 1px solid var(--content-border);
+  border-radius: 14px;
+  background: var(--content-bg);
+  box-shadow: none;
+}
+.interface-referentiel-scolaire .carte-formulaire:focus-within {
+  border-color: var(--primary);
+}
+.interface-referentiel-scolaire .grille-statistiques {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+  margin: .9rem 0;
+}
+.interface-referentiel-scolaire .carte-statistique {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  min-width: 0;
+  padding: .9rem;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+  background: var(--content-surface);
+}
+.interface-referentiel-scolaire .carte-statistique strong {
+  color: var(--content-text);
+  font-size: clamp(1.35rem, 2.5vw, 1.9rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.interface-referentiel-scolaire .carte-statistique span {
+  color: var(--content-text-muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.interface-referentiel-scolaire form label {
+  display: block;
+  margin: .65rem 0 .28rem;
+  color: var(--content-text);
+  font-size: .84rem;
+  font-weight: 750;
+}
+.interface-referentiel-scolaire input:not([type="hidden"]),
+.interface-referentiel-scolaire select,
+.interface-referentiel-scolaire textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.8rem;
+  padding: .65rem .75rem;
+  border: 1px solid var(--content-border);
+  border-radius: 10px;
+  background: var(--content-surface);
+  color: var(--content-text);
+}
+.interface-referentiel-scolaire input:focus-visible,
+.interface-referentiel-scolaire select:focus-visible,
+.interface-referentiel-scolaire textarea:focus-visible,
+.interface-referentiel-scolaire button:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+.interface-referentiel-scolaire button.bouton {
+  min-height: 2.65rem;
+  margin-top: .7rem;
+  border-radius: 10px;
+  font-weight: 800;
+}
+.interface-referentiel-scolaire table.table-manifeste {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+  background: var(--content-surface);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.interface-referentiel-scolaire table.table-manifeste th,
+.interface-referentiel-scolaire table.table-manifeste td {
+  min-width: 7rem;
+  padding: .72rem .75rem;
+  border-bottom: 1px solid var(--content-border);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.45;
+  font-size: .8rem;
+}
+.interface-referentiel-scolaire table.table-manifeste th {
+  position: sticky;
+  top: 0;
+  background: var(--content-bg);
+  color: var(--content-text-muted);
+  font-size: .72rem;
+  font-weight: 800;
+}
+.interface-referentiel-scolaire table.table-manifeste tr:last-child td {
+  border-bottom: 0;
+}
+.interface-referentiel-scolaire table.table-manifeste form {
+  display: inline-block;
+  margin: .35rem .35rem 0 0;
+}
+.interface-referentiel-scolaire .erreur,
+.interface-referentiel-scolaire [role="status"] {
+  padding: .8rem 1rem;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+.interface-referentiel-scolaire section[id] {
+  scroll-margin-top: 5.2rem;
+}
+@media (max-width: 850px) {
+  .cercles-page-shell .cercles-parcours-choix {
+    grid-template-columns: 1fr;
+    gap: .65rem;
+  }
+  .cercles-page-shell .cercles-parcours-carte {
+    min-height: 0;
+    grid-template-columns: 2.35rem minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    align-items: center;
+    gap: .7rem;
+    padding: .8rem;
+  }
+  .cercles-page-shell .cercles-parcours-numero {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+  .cercles-page-shell .cercles-parcours-action {
+    grid-column: auto;
+    font-size: .75rem;
+  }
+  .interface-referentiel-scolaire .referentiel-scolaire-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .interface-referentiel-scolaire .referentiel-scolaire-etat {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    width: 100%;
+  }
+}
+@media (max-width: 520px) {
+  .cercles-page-shell .cercles-parcours-intro {
+    align-items: flex-start;
+  }
+  .cercles-page-shell .cercles-parcours-action {
+    max-width: 5.8rem;
+    text-align: right;
+    line-height: 1.35;
+  }
+  .interface-referentiel-scolaire {
+    padding-inline: .7rem;
+  }
+  .interface-referentiel-scolaire .referentiel-scolaire-hero {
+    padding: 1rem;
+    border-radius: 15px;
+  }
+  .interface-referentiel-scolaire .referentiel-scolaire-hero h1 {
+    font-size: 1.75rem;
+  }
+  .interface-referentiel-scolaire .referentiel-scolaire-nav {
+    position: relative;
+    top: auto;
+  }
+  .interface-referentiel-scolaire .referentiel-scolaire-etat {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .interface-referentiel-scolaire .grille-statistiques {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cercles-page-shell .cercles-parcours-carte {
+    transition: none;
+  }
+}
