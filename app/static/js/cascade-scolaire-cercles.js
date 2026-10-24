@@ -70,11 +70,11 @@
       cycle.required = school;
       level.required = school;
       if (reason) {
-        reason.required = !school && Boolean(uniMention && uniMention.value && uniLevel && uniLevel.value);
+        reason.required = school || Boolean(uniMention && uniMention.value && uniLevel && uniLevel.value);
       }
       if (reasonLabel) {
         reasonLabel.textContent = school
-          ? "Raison (facultative)"
+          ? "Raison (obligatoire pour soumettre un cercle scolaire)"
           : "Raison (obligatoire pour toute demande de cercle national universitaire)";
       }
 
@@ -165,21 +165,51 @@
 
   function initSearch() {
     const scope = document.getElementById("recherche_portee_academique");
-    const level = document.getElementById("recherche_niveau_scolaire_id");
-    const option = document.getElementById("recherche_option_scolaire_id");
-    const establishment = document.getElementById("recherche_etablissement_scolaire_id");
+    const schoolLevel = document.getElementById("recherche_niveau_scolaire_id");
+    const schoolOption = document.getElementById("recherche_option_scolaire_id");
+    const schoolEstablishment = document.getElementById("recherche_etablissement_scolaire_id");
+    const universityFields = [
+      document.getElementById("recherche_domaine_id"),
+      document.getElementById("recherche_mention_id"),
+      document.getElementById("recherche_niveau"),
+      document.getElementById("recherche_filiere_id")
+    ].filter(Boolean);
+    const schoolFields = [schoolLevel, schoolOption, schoolEstablishment].filter(Boolean);
+    const form = scope ? scope.closest("form") : null;
     if (!scope) return;
 
     function updateFilters() {
       const school = scope.value === "scolaire";
-      if (level) level.disabled = !school && Boolean(scope.value === "universitaire" || scope.value === "transversal");
-      if (option) option.disabled = !school && Boolean(scope.value === "universitaire" || scope.value === "transversal");
-      if (establishment) establishment.disabled = !school && Boolean(scope.value === "universitaire" || scope.value === "transversal");
+      const university = scope.value === "universitaire";
+      const transversal = scope.value === "transversal";
+      universityFields.forEach(function (field) {
+        field.disabled = school || transversal;
+      });
+      schoolFields.forEach(function (field) {
+        field.disabled = university || transversal;
+      });
     }
+
+    universityFields.forEach(function (field) {
+      field.addEventListener("change", function () {
+        if (field.value && !scope.value) scope.value = "universitaire";
+        updateFilters();
+      });
+    });
+    schoolFields.forEach(function (field) {
+      field.addEventListener("change", function () {
+        if (field.value && scope.value !== "scolaire") scope.value = "scolaire";
+        updateFilters();
+      });
+    });
     scope.addEventListener("change", updateFilters);
+    if (form) {
+      form.addEventListener("submit", function () {
+        updateFilters();
+      });
+    }
     updateFilters();
   }
-
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
       initCreation();
