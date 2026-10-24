@@ -273,6 +273,11 @@ def creer_tentative(
         for question_vu in questions_a_eviter
         if (empreinte := _empreinte_question({"question": question_vu}))
     }
+    structures_deja_vues = {
+        structure
+        for question_vu in questions_a_eviter
+        if (structure := _structure_question({"question": question_vu}))
+    }
     derniere_erreur = None
 
     for essai in range(2):
@@ -314,6 +319,28 @@ def creer_tentative(
                 empreintes_deja_vues.update(empreintes_nouvelles)
                 raise QuizValidationError(
                     "Le quiz répète une question proposée dans un quiz récent."
+                )
+
+            structures_nouvelles = [
+                _structure_question(question) for question in questions_validees
+            ]
+            if len(set(structures_nouvelles)) != len(structures_nouvelles):
+                questions_a_eviter_essai.extend(
+                    question["question"] for question in questions_validees
+                )
+                empreintes_deja_vues.update(empreintes_nouvelles)
+                structures_deja_vues.update(structures_nouvelles)
+                raise QuizValidationError(
+                    "Le quiz contient des exercices de même structure qui ne diffèrent que par les nombres."
+                )
+            if structures_deja_vues.intersection(structures_nouvelles):
+                questions_a_eviter_essai.extend(
+                    question["question"] for question in questions_validees
+                )
+                empreintes_deja_vues.update(empreintes_nouvelles)
+                structures_deja_vues.update(structures_nouvelles)
+                raise QuizValidationError(
+                    "Le quiz reprend un exercice récent en ne changeant que les nombres."
                 )
 
             tentative = TentativeQuiz(
@@ -526,6 +553,23 @@ def _empreinte_question(question: dict) -> str:
     if not texte:
         return ""
     return hashlib.sha256(texte.encode("utf-8")).hexdigest()
+
+
+def _structure_question(question: dict) -> str:
+    """Repère un exercice recyclé avec seulement ses valeurs numériques changées.
+
+    La signature exacte reste utilisée pour préserver les valeurs dans le texte.
+    Cette seconde signature masque les nombres mais conserve les opérateurs et
+    les symboles : une addition et une multiplication ne sont donc pas confondues.
+    """
+    texte = question.get("question", "")
+    if not isinstance(texte, str):
+        return ""
+    texte = unicodedata.normalize("NFKC", texte).casefold()
+    texte = re.sub(r"^(?:question\s*)?\d{1,3}\s*[).:–—-]\s*", "", texte)
+    texte = re.sub(r"(?<!\w)[+-]?\d+(?:[.,]\d+)?%?", "#", texte)
+    texte = re.sub(r"\s+", " ", texte).strip().strip(" \t\r\n.:;!?")
+    return texte
 
 
 def _lire_preuves_apprentissage(progression: ProgressionNotion) -> Dict[str, set[str]]:
@@ -934,6 +978,11 @@ def creer_tentative_ciblee(
         for enonce in questions_a_eviter
         if (empreinte := _empreinte_question({"question": enonce}))
     }
+    structures_deja_vues = {
+        structure
+        for enonce in questions_a_eviter
+        if (structure := _structure_question({"question": enonce}))
+    }
     derniere_erreur = None
     questions_ciblees = None
 
@@ -964,6 +1013,16 @@ def creer_tentative_ciblee(
                 empreintes_deja_vues.update(empreintes)
                 raise QuizValidationError(
                     "Le quiz ciblé répète des questions déjà vues ou des énoncés générés lors d'un essai précédent."
+                )
+            structures = [_structure_question(question) for question in questions_ciblees]
+            if len(set(structures)) != len(structures) or structures_deja_vues.intersection(structures):
+                questions_a_eviter_essai.extend(
+                    question["question"] for question in questions_ciblees
+                )
+                empreintes_deja_vues.update(empreintes)
+                structures_deja_vues.update(structures)
+                raise QuizValidationError(
+                    "Le quiz ciblé reprend une question récente en ne changeant que les nombres."
                 )
             questions_ciblees = preparer_questions_adaptatives(
                 questions_ciblees,
