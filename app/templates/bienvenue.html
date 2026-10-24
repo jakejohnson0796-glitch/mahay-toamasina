@@ -11,6 +11,17 @@
       <span class="onboarding-kicker">Ton premier pas</span>
       <h1>Bienvenue{% if utilisateur.nom %}, {{ utilisateur.nom.split(" ")[0] }}{% endif %} 👋</h1>
       <p>Tu n'as pas besoin d'attendre qu'il y ait beaucoup de documents. Commence à apprendre maintenant, puis aide ta promotion à construire la bibliothèque.</p>
+      {% if utilisateur.profil_souhaite == "professeur" and utilisateur.statut_verification_enseignant == "en_attente" %}
+      <div class="info" role="status">
+        <strong>Demande de profil enseignant enregistrée.</strong>
+        Ton compte reste utilisable pour apprendre, mais les outils réservés aux professeurs seront activés uniquement après vérification par l’administration.
+      </div>
+      {% elif utilisateur.profil_souhaite == "professeur" and utilisateur.statut_verification_enseignant == "refuse" %}
+      <div class="info" role="status">
+        <strong>La demande de profil enseignant n’a pas été approuvée.</strong>
+        Tu peux continuer à utiliser l’espace d’apprentissage. Contacte l’administration si tu penses qu’il s’agit d’une erreur.
+      </div>
+      {% endif %}
       {% if onboarding_termine %}
       <div class="onboarding-success">✓ Ton parcours de démarrage est terminé. Continue avec le défi du jour.</div>
       {% endif %}
