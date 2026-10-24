@@ -27,6 +27,7 @@ from .production_guard import valider_configuration_production
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
+from .cercles_scolaires import assurer_cercles_scolaires
 from .referentiel_reconciliation import reconcilier
 from scripts.dedupliquer_cercles_nationaux import deduplicquer as deduplicquer_cercles_nationaux
 from scripts.import_academic_data import importer as importer_referentiel_academique
@@ -312,7 +313,21 @@ def _initialiser_donnees_apres_demarrage() -> None:
         )
         if nb_cercles_crees:
             print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
-    
+
+        # La synchronisation scolaire est distincte de la synchronisation
+        # universitaire : elle utilise uniquement les classes/options/matières
+        # vérifiées et conserve les cercles manuels avec du contenu ou des membres.
+        rapport_cercles_scolaires = assurer_cercles_scolaires(session)
+        print(
+            "[DEBUG DATABASE] Synchronisation cercles scolaires — "
+            f"{rapport_cercles_scolaires['cibles']} cible(s), "
+            f"{rapport_cercles_scolaires['crees']} créé(s), "
+            f"{rapport_cercles_scolaires['reactives']} réactivé(s), "
+            f"{rapport_cercles_scolaires['archives']} archivé(s), "
+            f"{rapport_cercles_scolaires['preserves']} préservé(s), "
+            f"{rapport_cercles_scolaires['existants']} déjà présent(s)."
+        )
+
         # Fusionne les cercles nationaux "doublons" restants (un par
         # universite au lieu d'un seul, bug historique corrige dans
         # cercles_referentiel.py mais dont les doublons d'AVANT la
