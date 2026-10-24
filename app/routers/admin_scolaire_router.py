@@ -309,6 +309,17 @@ def valider_option_scolaire(
     entree = session.get(OptionScolaire, option_id)
     if not entree:
         return _erreur("option_introuvable")
+    referentiel = _referentiel_courant(session)
+    niveau = session.get(NiveauScolaire, entree.niveau_id)
+    if (
+        not referentiel
+        or entree.referentiel_id != referentiel.id
+        or not niveau
+        or niveau.referentiel_id != referentiel.id
+        or not niveau.est_actif
+        or niveau.statut_validation != "verifie"
+    ):
+        return _erreur("niveau_scolaire_invalide")
     if not _url_source_valide(entree.source_officielle):
         return _erreur("source_https_requise")
     if entree.parent_option_id is not None:
@@ -479,12 +490,23 @@ def valider_association_programme_scolaire(
     entree = session.get(ProgrammeMatiereScolaire, programme_id)
     if not entree:
         return _erreur("programme_scolaire_introuvable")
-    if not _url_source_valide(entree.source_officielle):
-        return _erreur("source_https_requise")
+    referentiel = _referentiel_courant(session)
     niveau = session.get(NiveauScolaire, entree.niveau_id)
     matiere = session.get(MatiereScolaire, entree.matiere_id)
-    if not niveau or not niveau.est_actif or not matiere or not matiere.est_active:
+    if (
+        not referentiel
+        or entree.referentiel_id != referentiel.id
+        or not niveau
+        or niveau.referentiel_id != referentiel.id
+        or not niveau.est_actif
+        or niveau.statut_validation != "verifie"
+        or not matiere
+        or not matiere.est_active
+        or matiere.statut_validation != "verifie"
+    ):
         return _erreur("programme_scolaire_reference_invalide")
+    if not _url_source_valide(entree.source_officielle):
+        return _erreur("source_https_requise")
     if entree.option_id is not None:
         option = session.get(OptionScolaire, entree.option_id)
         parent = (
