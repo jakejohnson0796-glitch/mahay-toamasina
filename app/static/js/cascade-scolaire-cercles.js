@@ -116,7 +116,7 @@
       if (ticket !== optionRequest) return;
       reset(option, "— Aucune série/option précisée —", false);
       if (!rows || !rows.length) return;
-      rows.forEach(function (row) { addOption(option, row.id, row.libelle); });
+      rows.forEach(function (row) { addOption(option, row.id, row.libelle_affiche || row.libelle); });
       option.disabled = false;
     }
 
