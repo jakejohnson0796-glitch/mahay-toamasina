@@ -39,6 +39,21 @@ def _donnees_niveau(niveau: NiveauScolaire) -> dict:
     }
 
 
+def _donnees_option(option: OptionScolaire, toutes_options: list[OptionScolaire]) -> dict:
+    parents = {item.id: item for item in toutes_options}
+    parent = parents.get(option.parent_option_id) if option.parent_option_id else None
+    libelle_affiche = f"{parent.libelle} → {option.libelle}" if parent else option.libelle
+    return {
+        "id": option.id,
+        "code": option.code,
+        "libelle": option.libelle,
+        "libelle_affiche": libelle_affiche,
+        "type_option": option.type_option,
+        "parent_option_id": option.parent_option_id,
+        "source_officielle": option.source_officielle,
+    }
+
+
 @router.get("/referentiel")
 def obtenir_referentiel_scolaire(session: Session = Depends(get_session)):
     referentiel = _referentiel_actif(session)
@@ -71,20 +86,11 @@ def obtenir_referentiel_scolaire(session: Session = Depends(get_session)):
                 OptionScolaire.est_active == True,  # noqa: E712
                 OptionScolaire.statut_validation == "verifie",
             )
-            .order_by(OptionScolaire.libelle)
+            .order_by(OptionScolaire.parent_option_id, OptionScolaire.libelle)
         ).all()
         resultats.append({
             **_donnees_niveau(niveau),
-            "options": [
-                {
-                    "id": option.id,
-                    "code": option.code,
-                    "libelle": option.libelle,
-                    "type_option": option.type_option,
-                    "source_officielle": option.source_officielle,
-                }
-                for option in options
-            ],
+            "options": [_donnees_option(option, options) for option in options],
         })
 
     sources = sorted({
@@ -169,18 +175,9 @@ def lister_options_scolaires(
             OptionScolaire.est_active == True,  # noqa: E712
             OptionScolaire.statut_validation == "verifie",
         )
-        .order_by(OptionScolaire.libelle)
+        .order_by(OptionScolaire.parent_option_id, OptionScolaire.libelle)
     ).all()
-    return [
-        {
-            "id": option.id,
-            "code": option.code,
-            "libelle": option.libelle,
-            "type_option": option.type_option,
-            "source_officielle": option.source_officielle,
-        }
-        for option in options
-    ]
+    return [_donnees_option(option, options) for option in options]
 
 
 @router.get("/etablissements")
