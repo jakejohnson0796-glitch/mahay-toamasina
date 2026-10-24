@@ -322,18 +322,17 @@ def construire_bilan(
         pourcentage = round(100 * tentative.score / tentative.nb_questions) if tentative.score is not None and tentative.nb_questions else 0
         activites.append({
             "type": "quiz",
-            "titre": f"Quiz · {tentative.matiere or 'Matière non précisée'}",
-            "detail": (
-                f"{tentative.score}/{tentative.nb_questions} bonnes réponses · {pourcentage} %"
-                if tentative.score is not None else "Quiz terminé"
-            ),
+            "matiere": str(tentative.matiere or "Matière non précisée")[:120],
+            "score": tentative.score,
+            "nb_questions": int(tentative.nb_questions or 0),
+            "pourcentage": pourcentage,
             "_moment": tentative.date_soumission or tentative.date_creation,
         })
     for consultation, document in consultations:
         activites.append({
             "type": "document",
             "titre": str(document.titre or "Document consulté")[:150],
-            "detail": f"{document.matiere or 'Matière non précisée'} · consulté",
+            "matiere": str(document.matiere or "Matière non précisée")[:120],
             "_moment": consultation.date_consultation,
         })
     for seance in seances_tuteur:
@@ -342,17 +341,18 @@ def construire_bilan(
         detail = question[:140] + ("…" if len(question) > 140 else "")
         activites.append({
             "type": "tuteur",
-            "titre": f"Tuteur IA · {notion}" if notion else "Échange avec le Tuteur IA",
-            "detail": detail or "Explication consultée",
+            "notion": notion[:120],
+            "question": detail or "",
             "_moment": seance.date_creation,
         })
     for jeu in jeux:
         theme = str(jeu.theme_id or "Défi").replace("_", " ").strip().capitalize()
-        score = f"{int(jeu.score)} %" if jeu.score is not None else "Session terminée"
         activites.append({
             "type": "jeu",
-            "titre": f"Jeu cérébral · {theme}",
-            "detail": score,
+            "theme": theme[:80],
+            "score": jeu.score,
+            "bonnes_reponses": jeu.bonnes_reponses,
+            "nb_questions": jeu.nb_questions,
             "_moment": jeu.date_fin or jeu.date_creation,
         })
     activites.sort(key=lambda item: item["_moment"], reverse=True)
