@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
 {% block titre %}Mes révisions — MITARIDALA{% endblock %}
-{% block main_classe %}main-clair{% endblock %}
+{% block main_classe %}main-clair page-mes-revisions{% endblock %}
 {% block contenu %}
 <div class="contenu-clair hub-page">
   <section class="hub-hero hub-hero-revisions">
@@ -144,11 +144,11 @@
     </div>
   </section>
 
-  <section class="hub-section hub-progression-section">
+  <section class="hub-section hub-progression-section" id="progression-par-matiere">
     <div class="hub-section-entete">
       <div>
         <p class="eyebrow">Comprendre tes résultats</p>
-        <h2>Progression par matière</h2>
+        <h2 id="progression-matiere-title">Progression par matière</h2>
         <p class="hub-section-sous-titre">Repère en un coup d'œil ce qui est solide, en cours d'acquisition ou à renforcer.</p>
       </div>
       <a class="hub-section-entete-action" href="/quiz">Faire un nouveau quiz <span aria-hidden="true">→</span></a>
@@ -398,7 +398,7 @@
   {% endif %}
 
   <div class="hub-deux-colonnes">
-    <section class="hub-section">
+    <section class="hub-section" id="documents-recents">
       <div class="hub-section-entete"><div><p class="eyebrow">Historique</p><h2>Documents récents</h2></div><a href="/documents">Bibliothèque →</a></div>
       {% if consultations %}
       <div class="hub-liste">
@@ -415,7 +415,7 @@
       {% endif %}
     </section>
 
-    <section class="hub-section">
+    <section class="hub-section" id="derniers-quiz">
       <div class="hub-section-entete"><div><p class="eyebrow">Résultats</p><h2>Derniers quiz</h2></div><a href="/quiz">Quiz IA →</a></div>
       {% if quiz %}
       <div class="hub-liste">
