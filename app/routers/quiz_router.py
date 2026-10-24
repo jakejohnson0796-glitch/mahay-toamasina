@@ -36,13 +36,21 @@ def _matieres_disponibles(session: Session) -> List[str]:
     return sorted(valeurs)
 
 
+def _enseignant_sans_classe_scolaire(utilisateur) -> bool:
+    return (
+        getattr(utilisateur, "profil_souhaite", None) == "professeur"
+        and getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not getattr(utilisateur, "niveau_scolaire_id", None)
+    )
+
+
 def _contexte_scolaire_quiz(utilisateur, session: Session) -> Optional[dict]:
     """Retourne une classe scolaire validée ou refuse le profil scolaire incomplet."""
     if getattr(utilisateur, "cycle_education", None) not in {"college", "lycee"}:
         return None
     niveau_id = getattr(utilisateur, "niveau_scolaire_id", None)
     if not niveau_id:
-        return {}
+        return None if _enseignant_sans_classe_scolaire(utilisateur) else {}
     referentiels = session.exec(
         select(ReferentielScolaire).order_by(
             ReferentielScolaire.date_creation.desc(),
@@ -172,7 +180,10 @@ def page_config_quiz(request: Request, session: Session = Depends(get_session)):
         return redirection
 
     contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
-    est_profil_scolaire = getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+    est_profil_scolaire = (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    )
     if est_profil_scolaire and not contexte_scolaire:
         return RedirectResponse(
             "/profil/academique?erreur=profil_scolaire_incomplet",
@@ -221,12 +232,7 @@ def generer_quiz(
         return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
 
     contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
-    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}:
-        if not contexte_scolaire:
-            return RedirectResponse(
-                "/profil/academique?erreur=profil_scolaire_incomplet",
-                status_code=303,
-            )
+    if contexte_scolaire:
         # Le serveur impose la classe du profil : un formulaire modifié ne
         # peut pas lancer un quiz scolaire pour un autre niveau.
         niveau = contexte_scolaire["niveau"]
@@ -244,6 +250,14 @@ def generer_quiz(
                 status_code=303,
             )
         matiere_choisie = correspondance_matiere
+    elif (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    ):
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
     elif niveau not in quiz_module.NIVEAUX:
         return RedirectResponse("/quiz?erreur=parametres_invalides", status_code=303)
 
@@ -313,7 +327,10 @@ def page_reflexion(request: Request, matiere: Optional[str] = None, session: Ses
         return redirection
 
     contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
-    est_profil_scolaire = getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+    est_profil_scolaire = (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    )
     if est_profil_scolaire and not contexte_scolaire:
         return RedirectResponse(
             "/profil/academique?erreur=profil_scolaire_incomplet",
@@ -473,12 +490,7 @@ def generer_quiz_cible(
         return RedirectResponse("/mes-revisions?erreur=trop_de_generations", status_code=303)
 
     contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
-    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}:
-        if not contexte_scolaire:
-            return RedirectResponse(
-                "/mes-revisions?erreur=profil_scolaire_incomplet",
-                status_code=303,
-            )
+    if contexte_scolaire:
         niveau = contexte_scolaire["niveau"]
         matieres_scolaires = _matieres_scolaires_disponibles(session, contexte_scolaire)
         if not any(item.casefold() == progression.matiere.casefold() for item in matieres_scolaires):
@@ -486,6 +498,14 @@ def generer_quiz_cible(
                 "/mes-revisions?erreur=matiere_scolaire_indisponible",
                 status_code=303,
             )
+    elif (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    ):
+        return RedirectResponse(
+            "/mes-revisions?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
     else:
         niveau = progression.niveau or utilisateur.niveau or "L1"
         if niveau not in quiz_module.NIVEAUX:
@@ -542,7 +562,11 @@ def generer_examen(
         return RedirectResponse("/quiz?erreur=trop_de_generations", status_code=303)
 
     contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
-    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"} and not contexte_scolaire:
+    if (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not contexte_scolaire
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    ):
         return RedirectResponse(
             "/profil/academique?erreur=profil_scolaire_incomplet",
             status_code=303,
