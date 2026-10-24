@@ -285,7 +285,7 @@ Les API publiques principales sont :
 - `GET /api/scolaire/niveaux/{id}/matieres?option_id={id}`
 - `GET /api/scolaire/etablissements`
 
-Le dépôt des documents et leur quiz peuvent être associés à une classe et à une série scolaires sans attribuer de fausse filière universitaire. Les fiches de révision utilisent ce niveau scolaire lorsqu'il est disponible.
+Le dépôt des documents et leur quiz peuvent être associés à une classe et à une série scolaires sans attribuer de fausse filière universitaire. Les fiches de révision utilisent ce niveau scolaire lorsqu'il est disponible. Les cercles scolaires peuvent aussi cibler une matière précise : la sélection est alimentée par l'API des matières vérifiées, la demande conserve la matière lors de l'approbation, et la recherche prend en charge le filtre matière. Une matière reste facultative pour les cercles généraux de classe/série.
 
 La source de données est synchronisée au démarrage lorsque le référentiel versionné est présent. Les anciennes données peuvent être réconciliées et les doublons historiques traités de manière idempotente.
 
