@@ -26,7 +26,6 @@ from .models import (
     DemandeAdhesionCercle,
     DemandeCreationCercle,
     Document,
-    EtablissementScolaire,
     MatiereScolaire,
     MessageCercle,
     MembreCercle,
@@ -49,7 +48,6 @@ def _libelle_cycle(cycle: str) -> str:
 
 
 def _option_valide(
-    session: Session,
     option: OptionScolaire,
     *,
     referentiel_id: int,
@@ -95,7 +93,6 @@ def _options_compatibles(
         if option.id is not None
         and option.niveau_id in niveaux_valides
         and _option_valide(
-            session,
             option,
             referentiel_id=referentiel_id,
             niveau_id=option.niveau_id,
@@ -129,15 +126,6 @@ def _construire_cibles_scolaires(
         )
     ).all()
     matieres_valides = {m.id: m for m in matieres if m.id is not None}
-    etablissements_valides = {
-        e.id: e for e in session.exec(
-            select(EtablissementScolaire).where(
-                EtablissementScolaire.est_actif == True,  # noqa: E712
-                EtablissementScolaire.est_verifie == True,  # noqa: E712
-            )
-        ).all() if e.id is not None
-    }
-
     cibles: dict[
         tuple[Optional[int], Optional[int], Optional[int], Optional[int]], dict
     ] = {}
@@ -402,7 +390,7 @@ def assurer_cercles_scolaires(session: Session) -> dict[str, int | str | None]:
 
     # N'archive que les cercles scolaires gérés par ce synchroniseur. Un
     # cercle manuel n'est jamais archivé parce qu'un programme est modifié.
-    cercles_gérés = session.exec(
+    cercles_geres = session.exec(
         select(CercleEtude).where(
             CercleEtude.portee_academique == "scolaire",
             CercleEtude.synchronise_referentiel == True,  # noqa: E712
