@@ -400,18 +400,23 @@ def construire_bilan(
         if not (score < 70 or erreurs >= 2 or due):
             continue
         if due:
+            raison_code = "revision_due"
             raison = "Révision prévue : c'est le bon moment pour réactiver cette notion."
         elif score < 50:
+            raison_code = "score_low"
             raison = f"Score de maîtrise à {score} % : reprends la méthode avec un exemple guidé."
         elif erreurs >= 2:
+            raison_code = "repeated_errors"
             raison = f"{erreurs} erreurs enregistrées : identifie l'étape qui bloque avant de refaire un quiz."
         else:
+            raison_code = "score_stabilize"
             raison = f"Score de maîtrise à {score} % : quelques questions ciblées aideront à stabiliser l'acquis."
         renforcer.append({
             "matiere": str(progression.matiere or "Matière non précisée")[:120],
             "notion": str(progression.notion or "Notion à revoir")[:160],
             "score": score,
             "erreurs": erreurs,
+            "raison_code": raison_code,
             "raison": raison,
             "date": _iso_utc(progression.date_maj),
             "_priority": (0 if due else 1, score, -erreurs, _utc_naif(progression.date_maj)),
