@@ -377,7 +377,7 @@ def _requete_offres_verifiees():
             ParcoursTechniqueProfessionnel.id == OffreEtablissementScolaire.parcours_etfp_id,
         )
         .where(
-            OffreEtablissementScolaire.est_actif == True,  # noqa: E712
+            OffreEtablissementScolaire.est_active == True,  # noqa: E712
             OffreEtablissementScolaire.statut_validation == "verifie",
             EtablissementScolaire.est_actif == True,  # noqa: E712
             EtablissementScolaire.est_verifie == True,  # noqa: E712
@@ -445,7 +445,7 @@ def rechercher_offres_etablissement(
                 EtablissementScolaire.id == OffreEtablissementScolaire.etablissement_id,
             )
             .where(
-                OffreEtablissementScolaire.est_actif == True,  # noqa: E712
+                OffreEtablissementScolaire.est_active == True,  # noqa: E712
                 OffreEtablissementScolaire.statut_validation == "verifie",
                 OffreEtablissementScolaire.annee_scolaire.is_not(None),
                 EtablissementScolaire.est_actif == True,  # noqa: E712
@@ -505,7 +505,7 @@ def lister_offres_etablissement(
             select(OffreEtablissementScolaire.annee_scolaire)
             .where(
                 OffreEtablissementScolaire.etablissement_id == institution.id,
-                OffreEtablissementScolaire.est_actif == True,  # noqa: E712
+                OffreEtablissementScolaire.est_active == True,  # noqa: E712
                 OffreEtablissementScolaire.statut_validation == "verifie",
                 OffreEtablissementScolaire.annee_scolaire.is_not(None),
             )
