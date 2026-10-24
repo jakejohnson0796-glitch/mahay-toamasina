@@ -1300,9 +1300,9 @@ def creer_cercle(
         if not raison_nettoyee:
             return RedirectResponse("/cercles?erreur=raison_requise", status_code=303)
 
-        # Une demande identique portant le même nom et la même cible ne doit
-        # pas être empilée. L'administrateur vérifie la demande avant que le
-        # cercle ne devienne visible et rejoignable.
+        # Une cible nationale ne peut avoir qu'une demande en attente,
+        # même si le demandeur propose un autre nom. Cette règle correspond
+        # aux index uniques et évite une IntegrityError en cas de doublon.
         demandes_existantes = session.exec(
             select(DemandeCreationCercle).where(
                 DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
@@ -1315,7 +1315,6 @@ def creer_cercle(
                 DemandeCreationCercle.matiere_scolaire_id == (
                     matiere_scolaire.id if matiere_scolaire else None
                 ),
-                DemandeCreationCercle.nom.ilike(nom_nettoye),
             )
         ).all()
         demande_existante = demandes_existantes[0] if demandes_existantes else None
@@ -1334,7 +1333,6 @@ def creer_cercle(
                 CercleEtude.matiere_scolaire_id == (
                     matiere_scolaire.id if matiere_scolaire else None
                 ),
-                CercleEtude.nom.ilike(nom_nettoye),
             )
         ).all()
         cercle_existant = cercles_existants[0] if cercles_existants else None
