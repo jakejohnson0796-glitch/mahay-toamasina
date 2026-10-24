@@ -1,3 +1,6 @@
+import logging
+from typing import Optional
+
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlmodel import Session
@@ -10,6 +13,7 @@ from .. import dashboard as dashboard_module
 from .. import learning_recap
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/dashboard")
