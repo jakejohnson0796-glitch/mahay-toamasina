@@ -13,7 +13,9 @@ from ..models import (
     EtablissementScolaire,
     MatiereScolaire,
     NiveauScolaire,
+    OffreEtablissementScolaire,
     OptionScolaire,
+    ParcoursTechniqueProfessionnel,
     ProgrammeMatiereScolaire,
     ReferentielScolaire,
 )
@@ -297,3 +299,224 @@ def rechercher_etablissements_scolaires(
         }
         for item in etablissements
     ]
+
+
+@router.get("/etfp/parcours")
+def lister_parcours_etfp(
+    q: Optional[str] = Query(default=None, max_length=100),
+    secteur: Optional[str] = Query(default=None, max_length=120),
+    limite: int = Query(default=50, ge=1, le=100),
+    session: Session = Depends(get_session),
+):
+    """Catalogue national ETFP : uniquement les parcours validés avec une source."""
+    requete = select(ParcoursTechniqueProfessionnel).where(
+        ParcoursTechniqueProfessionnel.est_actif == True,  # noqa: E712
+        ParcoursTechniqueProfessionnel.statut_validation == "verifie",
+    )
+    if q and q.strip():
+        terme = f"%{q.strip()}%"
+        requete = requete.where(
+            or_(
+                ParcoursTechniqueProfessionnel.secteur.ilike(terme),
+                ParcoursTechniqueProfessionnel.filiere.ilike(terme),
+                ParcoursTechniqueProfessionnel.metier.ilike(terme),
+            )
+        )
+    if secteur and secteur.strip():
+        requete = requete.where(
+            ParcoursTechniqueProfessionnel.secteur.ilike(secteur.strip())
+        )
+    lignes = session.exec(
+        requete.order_by(
+            ParcoursTechniqueProfessionnel.secteur,
+            ParcoursTechniqueProfessionnel.filiere,
+            ParcoursTechniqueProfessionnel.metier,
+        ).limit(limite)
+    ).all()
+    return [
+        {
+            "id": item.id,
+            "code": item.code,
+            "secteur": item.secteur,
+            "filiere": item.filiere,
+            "metier": item.metier,
+            "source_officielle": item.source_officielle,
+        }
+        for item in lignes
+    ]
+
+
+def _requete_offres_verifiees():
+    return (
+        select(
+            OffreEtablissementScolaire,
+            EtablissementScolaire,
+            NiveauScolaire,
+            OptionScolaire,
+            MatiereScolaire,
+            ParcoursTechniqueProfessionnel,
+        )
+        .join(
+            EtablissementScolaire,
+            EtablissementScolaire.id == OffreEtablissementScolaire.etablissement_id,
+        )
+        .outerjoin(
+            NiveauScolaire,
+            NiveauScolaire.id == OffreEtablissementScolaire.niveau_scolaire_id,
+        )
+        .outerjoin(
+            OptionScolaire,
+            OptionScolaire.id == OffreEtablissementScolaire.option_scolaire_id,
+        )
+        .outerjoin(
+            MatiereScolaire,
+            MatiereScolaire.id == OffreEtablissementScolaire.matiere_scolaire_id,
+        )
+        .outerjoin(
+            ParcoursTechniqueProfessionnel,
+            ParcoursTechniqueProfessionnel.id == OffreEtablissementScolaire.parcours_etfp_id,
+        )
+        .where(
+            OffreEtablissementScolaire.est_active == True,  # noqa: E712
+            OffreEtablissementScolaire.statut_validation == "verifie",
+            EtablissementScolaire.est_active == True,  # noqa: E712
+            EtablissementScolaire.est_verifie == True,  # noqa: E712
+        )
+    )
+
+
+def _payload_offre(row) -> dict:
+    offre, institution, niveau, option, matiere, parcours = row
+    if offre.type_offre == "formation":
+        cible = {
+            "secteur": parcours.secteur if parcours else None,
+            "filiere": parcours.filiere if parcours else None,
+            "metier": parcours.metier if parcours else None,
+        }
+    elif offre.type_offre == "serie":
+        cible = {
+            "classe": niveau.libelle if niveau else None,
+            "serie": option.libelle if option else None,
+        }
+    elif offre.type_offre == "matiere":
+        cible = {
+            "classe": niveau.libelle if niveau else None,
+            "serie": option.libelle if option else None,
+            "matiere": matiere.libelle if matiere else None,
+        }
+    else:
+        cible = {"classe": niveau.libelle if niveau else None}
+    return {
+        "id": offre.id,
+        "type_offre": offre.type_offre,
+        "annee_scolaire": offre.annee_scolaire,
+        "source_officielle": offre.source_officielle,
+        "etablissement": {
+            "id": institution.id,
+            "nom": institution.nom,
+            "type": institution.type_etablissement,
+            "secteur": institution.secteur,
+            "region": institution.region,
+            "district": institution.district,
+            "commune": institution.commune,
+        },
+        "cible": cible,
+    }
+
+
+@router.get("/offres")
+def rechercher_offres_etablissement(
+    q: Optional[str] = Query(default=None, max_length=100),
+    region: Optional[str] = Query(default=None, max_length=100),
+    commune: Optional[str] = Query(default=None, max_length=100),
+    type_offre: Optional[str] = Query(default=None, pattern="^(classe|serie|matiere|formation)$"),
+    annee_scolaire: Optional[str] = Query(default=None, pattern=r"^\d{4}-\d{4}$"),
+    limite: int = Query(default=30, ge=1, le=100),
+    session: Session = Depends(get_session),
+):
+    """Offres effectivement validées pour l'année la plus récente, par défaut."""
+    requete = _requete_offres_verifiees()
+    annee = annee_scolaire
+    if not annee:
+        annee = session.exec(
+            select(OffreEtablissementScolaire.annee_scolaire)
+            .join(
+                EtablissementScolaire,
+                EtablissementScolaire.id == OffreEtablissementScolaire.etablissement_id,
+            )
+            .where(
+                OffreEtablissementScolaire.est_active == True,  # noqa: E712
+                OffreEtablissementScolaire.statut_validation == "verifie",
+                OffreEtablissementScolaire.annee_scolaire.is_not(None),
+                EtablissementScolaire.est_active == True,  # noqa: E712
+                EtablissementScolaire.est_verifie == True,  # noqa: E712
+            )
+            .order_by(OffreEtablissementScolaire.annee_scolaire.desc())
+        ).first()
+    if not annee:
+        return []
+    requete = requete.where(OffreEtablissementScolaire.annee_scolaire == annee)
+    if type_offre:
+        requete = requete.where(OffreEtablissementScolaire.type_offre == type_offre)
+    if region and region.strip():
+        requete = requete.where(EtablissementScolaire.region.ilike(region.strip()))
+    if commune and commune.strip():
+        requete = requete.where(EtablissementScolaire.commune.ilike(commune.strip()))
+    if q and q.strip():
+        terme = f"%{q.strip()}%"
+        requete = requete.where(
+            or_(
+                EtablissementScolaire.nom.ilike(terme),
+                EtablissementScolaire.region.ilike(terme),
+                NiveauScolaire.libelle.ilike(terme),
+                OptionScolaire.libelle.ilike(terme),
+                MatiereScolaire.libelle.ilike(terme),
+                ParcoursTechniqueProfessionnel.secteur.ilike(terme),
+                ParcoursTechniqueProfessionnel.filiere.ilike(terme),
+                ParcoursTechniqueProfessionnel.metier.ilike(terme),
+            )
+        )
+    rows = session.exec(
+        requete.order_by(
+            EtablissementScolaire.region,
+            EtablissementScolaire.nom,
+            OffreEtablissementScolaire.type_offre,
+        ).limit(limite)
+    ).all()
+    return [_payload_offre(row) for row in rows]
+
+
+@router.get("/etablissements/{etablissement_id}/offres")
+def lister_offres_etablissement(
+    etablissement_id: int,
+    annee_scolaire: Optional[str] = Query(default=None, pattern=r"^\d{4}-\d{4}$"),
+    session: Session = Depends(get_session),
+):
+    """Offres validées d'un établissement ; par défaut, année la plus récente."""
+    institution = session.get(EtablissementScolaire, etablissement_id)
+    if not institution or not institution.est_active or not institution.est_verifie:
+        return []
+    requete = _requete_offres_verifiees().where(
+        EtablissementScolaire.id == institution.id
+    )
+    annee = annee_scolaire
+    if not annee:
+        annee = session.exec(
+            select(OffreEtablissementScolaire.annee_scolaire)
+            .where(
+                OffreEtablissementScolaire.etablissement_id == institution.id,
+                OffreEtablissementScolaire.est_active == True,  # noqa: E712
+                OffreEtablissementScolaire.statut_validation == "verifie",
+                OffreEtablissementScolaire.annee_scolaire.is_not(None),
+            )
+            .order_by(OffreEtablissementScolaire.annee_scolaire.desc())
+        ).first()
+    if not annee:
+        return []
+    rows = session.exec(
+        requete.where(OffreEtablissementScolaire.annee_scolaire == annee).order_by(
+            OffreEtablissementScolaire.type_offre,
+            OffreEtablissementScolaire.code_offre,
+        )
+    ).all()
+    return [_payload_offre(row) for row in rows]
