@@ -45,6 +45,7 @@ jobs:
           node scripts/smoke_ai_renderer.mjs
           node scripts/smoke_language_switcher.mjs
           node --check app/static/js/bilan-reprise.js
+          node scripts/smoke_bilan_reprise.mjs
 
       - name: Smoke navigateur responsive des cercles
         run: |
