@@ -5,10 +5,11 @@
 {% block contenu %}
 <div class="contenu-clair">
 <p class="eyebrow"><a href="/admin/referentiel">&larr; Referentiel academique</a></p>
-<h2>Demandes de creation de cercle national</h2>
+<h2>Demandes de création de cercles</h2>
 
 {% if request.query_params.get("ok") == "approuvee" %}<p><strong>Demande approuvee, cercle cree.</strong></p>{% endif %}
-{% if request.query_params.get("ok") == "rejetee" %}<p><strong>Demande rejetee.</strong></p>{% endif %}
+{% if request.query_params.get("ok") == "rejetee" %}<p><strong>Demande rejetée.</strong></p>{% endif %}
+{% if request.query_params.get("erreur") == "cible_scolaire_invalide" %}<div class="erreur">Le référentiel scolaire a changé ou la cible a été désactivée. La demande a été rejetée ; vérifie la classe, la série et l’établissement.</div>{% endif %}
 {% if request.query_params.get("erreur") == "doublon_survenu_entre_temps" %}
 <div class="erreur">
   Un cercle equivalent a ete cree entre-temps par une autre demande — celle-ci a ete automatiquement rejetee
@@ -20,7 +21,7 @@
   <thead>
     <tr>
       <th>Demandeur</th>
-      <th>Mention / Filiere / Niveau</th>
+      <th>Référentiel / cible</th>
       <th>Nom propose</th>
       <th>Raison</th>
       <th>Statut</th>
@@ -32,9 +33,16 @@
     <tr>
       <td><span data-no-translate>{{ utilisateurs[d.utilisateur_id].nom if d.utilisateur_id in utilisateurs else "—" }}</span></td>
       <td>
-        <span data-no-translate>{{ mentions[d.mention_id].nom if d.mention_id in mentions else "—" }}</span> /
-        <span data-no-translate>{{ filieres[d.filiere_id].nom if d.filiere_id in filieres else ("Tronc commun" if not d.filiere_id else "—") }}</span> /
-        {{ d.niveau or "—" }}
+        {% if d.portee_academique == "scolaire" %}
+          <strong>Collège / lycée</strong><br>
+          <span data-no-translate>{{ niveaux_scolaires[d.niveau_scolaire_id].libelle if d.niveau_scolaire_id in niveaux_scolaires else "Classe inconnue" }}</span>
+          {% if d.option_scolaire_id %}<br><span data-no-translate>{{ options_scolaires[d.option_scolaire_id].libelle if d.option_scolaire_id in options_scolaires else "Option inconnue" }}</span>{% endif %}
+          {% if d.etablissement_scolaire_id %}<br><span data-no-translate>{{ etablissements_scolaires[d.etablissement_scolaire_id].nom if d.etablissement_scolaire_id in etablissements_scolaires else "Établissement inconnu" }}</span>{% else %}<br><span>Portée nationale</span>{% endif %}
+        {% else %}
+          <span data-no-translate>{{ mentions[d.mention_id].nom if d.mention_id in mentions else "—" }}</span> /
+          <span data-no-translate>{{ filieres[d.filiere_id].nom if d.filiere_id in filieres else ("Tronc commun" if not d.filiere_id else "—") }}</span> /
+          {{ d.niveau or "—" }}
+        {% endif %}
       </td>
       <td><span data-no-translate>{{ d.nom }}</span>{% if d.description %}<br><span class="stat-label" data-no-translate>{{ d.description }}</span>{% endif %}</td>
       <td><span data-no-translate>{{ d.raison }}</span></td>
