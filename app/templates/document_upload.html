@@ -703,6 +703,57 @@
 
           <div class="document-upload-grid">
             <div class="document-upload-field full">
+              <label for="portee_academique">Type de parcours <span>Obligatoire</span></label>
+              <select id="portee_academique" name="portee_academique" required>
+                <option value="universitaire" {% if not (cercle and cercle.portee_academique == "scolaire") and utilisateur.cycle_education not in ["college", "lycee"] %}selected{% endif %}>Université / enseignement supérieur</option>
+                <option value="scolaire" {% if (cercle and cercle.portee_academique == "scolaire") or utilisateur.cycle_education in ["college", "lycee"] %}selected{% endif %}>Collège / lycée</option>
+              </select>
+              <small>Le document sera classé dans le bon référentiel : une classe scolaire n’est jamais enregistrée comme une filière universitaire.</small>
+            </div>
+
+            <div id="bloc-filiere-universitaire" class="document-upload-field full" data-university-scope>
+              <label for="filiere_id">Filière universitaire <span>Obligatoire</span></label>
+              <select id="filiere_id" name="filiere_id" required>
+                <option value="">Choisir une filière — la détection automatique peut la proposer</option>
+                {% for filiere in filieres %}
+                <option value="{{ filiere.id }}" data-no-translate>{{ filiere.nom }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div id="bloc-cible-scolaire" class="document-upload-field full" data-school-scope hidden>
+              <div class="document-upload-grid">
+                <div class="document-upload-field">
+                  <label for="cycle_scolaire">Cycle scolaire <span>Obligatoire</span></label>
+                  <select id="cycle_scolaire" name="cycle_scolaire" disabled>
+                    <option value="">Choisissez collège ou lycée</option>
+                    <option value="college" {% if utilisateur.cycle_education == "college" or (cercle and cercle.niveau_scolaire_id and utilisateur.cycle_education != "lycee") %}selected{% endif %}>Collège</option>
+                    <option value="lycee" {% if utilisateur.cycle_education == "lycee" or (cercle and cercle.niveau_scolaire_id and utilisateur.cycle_education == "lycee") %}selected{% endif %}>Lycée</option>
+                  </select>
+                </div>
+                <div class="document-upload-field">
+                  <label for="niveau_scolaire_id">Classe <span>Obligatoire</span></label>
+                  <select id="niveau_scolaire_id" name="niveau_scolaire_id" disabled>
+                    <option value="">Choisissez d’abord le cycle</option>
+                  </select>
+                </div>
+                <div class="document-upload-field">
+                  <label for="option_scolaire_id">Série / option</label>
+                  <select id="option_scolaire_id" name="option_scolaire_id" disabled>
+                    <option value="">Aucune série / option précisée</option>
+                  </select>
+                </div>
+                <div class="document-upload-field">
+                  <label for="etablissement_scolaire_id">Établissement (facultatif)</label>
+                  <select id="etablissement_scolaire_id" name="etablissement_scolaire_id" disabled>
+                    <option value="">Ne pas préciser pour le moment</option>
+                  </select>
+                </div>
+              </div>
+              <p>Seules les classes et options vérifiées sont proposées. Le catalogue des établissements est progressif : l’établissement reste facultatif.</p>
+            </div>
+
+            <div class="document-upload-field full">
               <label for="titre">Titre <span>Obligatoire</span></label>
               <input type="text" id="titre" name="titre" required maxlength="180" placeholder="Ex. Partiel de Droit civil — S3">
             </div>
@@ -728,22 +779,12 @@
               </select>
             </div>
 
-            <div class="document-upload-field">
-              <label for="filiere_id">Filière <span>Obligatoire</span></label>
-              <select id="filiere_id" name="filiere_id" required>
-                <option value="">Choisir une filière — la détection automatique peut la proposer</option>
-                {% for filiere in filieres %}
-                <option value="{{ filiere.id }}" data-no-translate>{{ filiere.nom }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
             <div class="document-upload-field full">
               <div class="document-upload-auto-box">
                 <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
                 <label class="document-upload-auto-copy" for="classification_auto">
-                  <strong>Détection automatique</strong>
-                  <span>Détecte le titre, la matière, le type, l’année et la filière à partir du fichier. Si une clé IA est configurée, seul un extrait borné sert à l’analyse.</span>
+                  <strong>Détection automatique (université)</strong>
+                  <span>Détecte le titre, la matière, le type, l’année et la filière universitaire. Le dépôt scolaire est classé manuellement pour éviter toute confusion entre classes et filières.</span>
                 </label>
               </div>
             </div>
@@ -785,7 +826,7 @@
                 <strong id="resume-annee">—</strong>
               </div>
               <div class="document-upload-preview-item">
-                <small>Filière</small>
+                <small>Filière / classe</small>
                 <strong id="resume-filiere">—</strong>
               </div>
               <div class="document-upload-preview-item">
