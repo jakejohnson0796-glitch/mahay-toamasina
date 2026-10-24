@@ -397,7 +397,7 @@ def assurer_cercles_scolaires(session: Session) -> dict[str, int | str | None]:
             CercleEtude.statut == StatutCercle.ACTIF,
         )
     ).all()
-    for cercle in cercles_gérés:
+    for cercle in cercles_geres:
         cle = (
             cercle.niveau_scolaire_id,
             cercle.option_scolaire_id,
