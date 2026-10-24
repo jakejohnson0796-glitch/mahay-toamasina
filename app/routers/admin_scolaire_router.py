@@ -615,6 +615,28 @@ def valider_offre_etablissement(
     return _rediriger("offre_etablissement_validee", entree.id)
 
 
+
+@router.post("/admin/referentiel/scolaire/offres/{offre_id}/desactiver")
+def desactiver_offre_etablissement(
+    request: Request,
+    offre_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Archive une offre devenue obsolète sans effacer sa trace."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+    entree = session.get(OffreEtablissementScolaire, offre_id)
+    if not entree:
+        return _erreur("offre_etablissement_introuvable")
+    entree.est_active = False
+    entree.date_maj = datetime.utcnow()
+    session.add(entree)
+    session.commit()
+    return _rediriger("offre_etablissement_archivee", entree.id)
+
+
 @router.post("/admin/referentiel/scolaire/options/creer")
 def creer_option_scolaire(
     request: Request,
