@@ -443,23 +443,37 @@ def upgrade():
         batch.create_foreign_key("fk_cercle_matiere_scolaire", "matierescolaire", ["matiere_scolaire_id"], ["id"])
     for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
         op.create_index(f"ix_cercleetude_{col}", "cercleetude", [col])
-    op.create_index(
-        "ix_cercle_scolaire_cible_actif",
-        "cercleetude",
-        [
-            "niveau_scolaire_id",
-            "option_scolaire_id",
-            "etablissement_scolaire_id",
-            "matiere_scolaire_id",
-        ],
-        unique=False,
-        postgresql_where=sa.text(
-            "portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"
-        ),
-        sqlite_where=sa.text(
-            "portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"
-        ),
-    )
+    # Huit index partiels uniques remplacent l'index à COALESCE (expression).
+    # Ils couvrent chaque combinaison NULL/non-NULL des trois dimensions
+    # facultatives, en restant réversibles par Alembic sur SQLite.
+    dimensions_optionnelles = [
+        "option_scolaire_id",
+        "etablissement_scolaire_id",
+        "matiere_scolaire_id",
+    ]
+    for masque in range(8):
+        colonnes = ["niveau_scolaire_id"] + [
+            colonne for bit, colonne in enumerate(dimensions_optionnelles)
+            if masque & (1 << bit)
+        ]
+        conditions = [
+            "statut = 'ACTIF'",
+            "portee_academique = 'scolaire'",
+            "niveau_scolaire_id IS NOT NULL",
+        ]
+        conditions.extend(
+            f"{colonne} IS {'NOT ' if masque & (1 << bit) else ''}NULL"
+            for bit, colonne in enumerate(dimensions_optionnelles)
+        )
+        condition = " AND ".join(conditions)
+        op.create_index(
+            f"ix_cercle_scolaire_unique_{masque:03b}",
+            "cercleetude",
+            colonnes,
+            unique=True,
+            postgresql_where=sa.text(condition),
+            sqlite_where=sa.text(condition),
+        )
 
     with op.batch_alter_table("cours") as batch:
         batch.add_column(sa.Column("portee_academique", sa.String(length=20), server_default="universitaire", nullable=False))
@@ -523,7 +537,8 @@ def downgrade():
         batch.drop_column("niveau_scolaire_id")
         batch.drop_column("cycle_education")
 
-    op.drop_index("ix_cercle_scolaire_cible_actif", table_name="cercleetude")
+    for masque in range(8):
+        op.drop_index(f"ix_cercle_scolaire_unique_{masque:03b}", table_name="cercleetude")
     for table in ("cours", "cercleetude"):
         for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
             op.drop_index(f"ix_{table}_{col}", table_name=table)
