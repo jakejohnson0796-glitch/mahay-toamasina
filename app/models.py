@@ -212,6 +212,7 @@ class OffreEtablissementScolaire(SQLModel, table=True):
             "uq_offre_etablissement_code_active",
             "etablissement_id",
             "code_offre",
+            "annee_scolaire",
             unique=True,
             postgresql_where=text("est_active = TRUE"),
             sqlite_where=text("est_active = 1"),
