@@ -427,12 +427,13 @@ def approuver_demande_creation(
     if demande.portee_academique == "scolaire":
         # Le référentiel scolaire est indépendant de la chaîne universitaire.
         # On revalide toutes les références juste avant l'approbation.
-        referentiel_courant = session.exec(
+        referentiels_scolaires = session.exec(
             select(ReferentielScolaire).order_by(
                 ReferentielScolaire.date_creation.desc(),
                 ReferentielScolaire.id.desc(),
             )
-        ).first()
+        ).all()
+        referentiel_courant = referentiels_scolaires[0] if referentiels_scolaires else None
         niveau_scolaire = session.get(NiveauScolaire, demande.niveau_scolaire_id) if demande.niveau_scolaire_id else None
         option_scolaire = session.get(OptionScolaire, demande.option_scolaire_id) if demande.option_scolaire_id else None
         etablissement_scolaire = (
