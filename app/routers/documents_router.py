@@ -1326,6 +1326,11 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
             for enonce in questions_a_eviter
             if (empreinte := quiz_module._empreinte_question({"question": enonce}))
         }
+        structures_deja_vues = {
+            structure
+            for enonce in questions_a_eviter
+            if (structure := quiz_module._structure_question({"question": enonce}))
+        }
         questions_verifiees = None
         derniere_erreur = None
         for _essai in range(2):
@@ -1354,6 +1359,28 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
                     )
                     empreintes_deja_vues.update(empreintes)
                     raise QuizValidationError("Le quiz du document répète une question récente.")
+                structures = [
+                    quiz_module._structure_question(question)
+                    for question in questions_courantes
+                ]
+                if len(set(structures)) != len(structures):
+                    questions_a_eviter_essai.extend(
+                        question["question"] for question in questions_courantes
+                    )
+                    empreintes_deja_vues.update(empreintes)
+                    structures_deja_vues.update(structures)
+                    raise QuizValidationError(
+                        "Le quiz du document contient plusieurs variantes numériques du même exercice."
+                    )
+                if structures_deja_vues.intersection(structures):
+                    questions_a_eviter_essai.extend(
+                        question["question"] for question in questions_courantes
+                    )
+                    empreintes_deja_vues.update(empreintes)
+                    structures_deja_vues.update(structures)
+                    raise QuizValidationError(
+                        "Le quiz du document reprend un exercice récent en changeant seulement les nombres."
+                    )
                 questions_verifiees = questions_courantes
                 break
             except QuizValidationError as erreur:
