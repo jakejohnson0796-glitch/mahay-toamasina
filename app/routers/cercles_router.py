@@ -29,6 +29,7 @@ from ..csrf import verifier_csrf
 from ..models import (
     CercleEtude, Domaine, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
     NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire,
+    MatiereScolaire, ProgrammeMatiereScolaire,
     RoleUtilisateur, RoleMembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
     StatutDemandeCreationCercle, StatutCercle, ThemeDuJour, Document,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
@@ -416,6 +417,7 @@ def liste_cercles(
     niveau_scolaire_id: Optional[int] = None,
     option_scolaire_id: Optional[int] = None,
     etablissement_scolaire_id: Optional[int] = None,
+    matiere_scolaire_id: Optional[int] = None,
     disponibles: Optional[str] = None,
     page: int = 1,
     session: Session = Depends(get_session),
@@ -483,7 +485,9 @@ def liste_cercles(
     portee_nettoyee = (portee_academique or "").strip().lower() or None
     if portee_nettoyee not in {None, "universitaire", "scolaire", "transversal"}:
         portee_nettoyee = "__filtre_invalide__"
-    if any(value is not None for value in (niveau_scolaire_id, option_scolaire_id, etablissement_scolaire_id)):
+    if any(value is not None for value in (
+        niveau_scolaire_id, option_scolaire_id, etablissement_scolaire_id, matiere_scolaire_id
+    )):
         portee_nettoyee = "scolaire"
 
     # Cohérence stricte de la cascade : Parcours -> Mention -> Domaine.
@@ -553,6 +557,7 @@ def liste_cercles(
         or niveau_scolaire_id
         or option_scolaire_id
         or etablissement_scolaire_id
+        or matiere_scolaire_id
         or afficher_disponibles_seulement
     )
 
@@ -645,6 +650,35 @@ def liste_cercles(
         requete = requete.where(CercleEtude.option_scolaire_id == option_scolaire_id)
     if etablissement_scolaire_id is not None:
         requete = requete.where(CercleEtude.etablissement_scolaire_id == etablissement_scolaire_id)
+    if matiere_scolaire_id is not None:
+        # Une matière est un filtre scolaire : la cible doit appartenir au
+        # catalogue courant et être publiée dans un programme vérifié.
+        referentiels_matieres = session.exec(
+            select(ReferentielScolaire).order_by(
+                ReferentielScolaire.date_creation.desc(),
+                ReferentielScolaire.id.desc(),
+            )
+        ).all()
+        referentiel_matieres = referentiels_matieres[0] if referentiels_matieres else None
+        matiere_valide = session.get(MatiereScolaire, matiere_scolaire_id)
+        mapping_valide = (
+            session.exec(
+                select(ProgrammeMatiereScolaire.id).where(
+                    ProgrammeMatiereScolaire.referentiel_id == referentiel_matieres.id,
+                    ProgrammeMatiereScolaire.matiere_id == matiere_scolaire_id,
+                    ProgrammeMatiereScolaire.statut_validation == "verifie",
+                    ProgrammeMatiereScolaire.niveau_id == niveau_scolaire_id
+                    if niveau_scolaire_id is not None else ProgrammeMatiereScolaire.niveau_id.is_not(None),
+                )
+            ).first()
+            if referentiel_matieres and matiere_valide
+            and matiere_valide.est_active and matiere_valide.statut_validation == "verifie"
+            else None
+        )
+        if not mapping_valide:
+            requete = requete.where(CercleEtude.id == -1)
+        else:
+            requete = requete.where(CercleEtude.matiere_scolaire_id == matiere_scolaire_id)
 
     condition_disponibilite = None
     if afficher_disponibles_seulement and not _est_admin(utilisateur):
@@ -728,9 +762,25 @@ def liste_cercles(
             )
             .order_by(OptionScolaire.libelle)
         ).all()
+        matieres_scolaires = session.exec(
+            select(MatiereScolaire)
+            .join(
+                ProgrammeMatiereScolaire,
+                ProgrammeMatiereScolaire.matiere_id == MatiereScolaire.id,
+            )
+            .where(
+                ProgrammeMatiereScolaire.referentiel_id == referentiel_scolaire_courant.id,
+                ProgrammeMatiereScolaire.statut_validation == "verifie",
+                MatiereScolaire.est_active == True,  # noqa: E712
+                MatiereScolaire.statut_validation == "verifie",
+            )
+            .distinct()
+            .order_by(MatiereScolaire.libelle)
+        ).all()
     else:
         niveaux_scolaires = []
         options_scolaires = []
+        matieres_scolaires = []
     etablissements_scolaires = session.exec(
         select(EtablissementScolaire)
         .where(
@@ -985,6 +1035,7 @@ def liste_cercles(
             "niveau_scolaire_id": niveau_scolaire_id,
             "option_scolaire_id": option_scolaire_id,
             "etablissement_scolaire_id": etablissement_scolaire_id,
+            "matiere_scolaire_id": matiere_scolaire_id,
             "disponibles": "1" if afficher_disponibles_seulement else None,
         }.items() if v not in (None, "")
     })
@@ -998,6 +1049,7 @@ def liste_cercles(
             "mentions": mentions,
             "niveaux_scolaires": niveaux_scolaires,
             "options_scolaires": options_scolaires,
+            "matieres_scolaires": matieres_scolaires,
             "etablissements_scolaires": etablissements_scolaires,
             "filiere_recherchee": filiere_recherchee,
             "niveaux": NIVEAUX,
@@ -1039,6 +1091,7 @@ def creer_cercle(
     niveau_scolaire_id: Optional[int] = Form(None),
     option_scolaire_id: Optional[int] = Form(None),
     etablissement_scolaire_id: Optional[int] = Form(None),
+    matiere_scolaire_id: Optional[int] = Form(None),
     raison: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
