@@ -23,7 +23,7 @@ from app.models import (
     Utilisateur,
 )
 from app import quiz as quiz_module
-from app.routers import admin_scolaire_router, auth_router, cercles_router, quiz_router, scolaire_router, tuteur_router
+from app.routers import admin_scolaire_router, auth_router, cercles_router, documents_router, quiz_router, scolaire_router, tuteur_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
     profil_correspond_au_cercle,
@@ -684,3 +684,28 @@ def test_normaliser_cycles_enseignes_refuse_une_valeur_inconnue():
 
 def test_normaliser_cycles_enseignes_ne_confere_pas_de_cycle_par_defaut():
     assert auth_router.normaliser_cycles_enseignes(None, None) == set()
+
+def test_depot_document_respecte_la_matiere_ciblee_par_un_cercle_scolaire():
+    cercle = SimpleNamespace(
+        portee_academique="scolaire",
+        matiere_scolaire_id=17,
+    )
+    assert documents_router._matiere_cercle_coherente(cercle, 17) is True
+    # Un formulaire sans identifiant peut hériter de la matière du cercle ;
+    # le routeur la réhydrate ensuite depuis le référentiel vérifié.
+    assert documents_router._matiere_cercle_coherente(cercle, None) is True
+    assert documents_router._matiere_cercle_coherente(cercle, 18) is False
+
+
+def test_depot_document_non_scolaire_n_est_pas_bloque_par_la_matiere_du_cercle():
+    cercle_universitaire = SimpleNamespace(
+        portee_academique="universitaire",
+        matiere_scolaire_id=17,
+    )
+    cercle_sans_matiere = SimpleNamespace(
+        portee_academique="scolaire",
+        matiere_scolaire_id=None,
+    )
+    assert documents_router._matiere_cercle_coherente(cercle_universitaire, 18) is True
+    assert documents_router._matiere_cercle_coherente(cercle_sans_matiere, 18) is True
+    assert documents_router._matiere_cercle_coherente(None, 18) is True
