@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 
 DIFFICULTES = ["Facile", "Moyen", "Difficile"]
 NB_QUESTIONS_POSSIBLES = [5, 10, 15, 20]
+# Libellés des classes du référentiel scolaire versionné. Ils sont acceptés
+# par le moteur IA sans les mélanger à la liste universitaire NIVEAUX.
+NIVEAUX_SCOLAIRES = {"6e", "5e", "4e", "3e", "Seconde", "Première", "Terminale"}
+NIVEAUX_SCOLAIRES_NORMALISES = {niveau.casefold() for niveau in NIVEAUX_SCOLAIRES}
 
 
 LONGUEUR_MAX_MATIERE = 120
@@ -37,7 +41,8 @@ def valider_parametres(matiere: str, niveau: str, difficulte: str, nb_questions:
     matiere = (matiere or "").strip()
     if not matiere or len(matiere) > LONGUEUR_MAX_MATIERE:
         raise QuizValidationError(f"La matiere doit contenir entre 1 et {LONGUEUR_MAX_MATIERE} caracteres.")
-    if niveau not in NIVEAUX:
+    niveau_normalise = str(niveau or "").strip().casefold()
+    if niveau not in NIVEAUX and niveau_normalise not in NIVEAUX_SCOLAIRES_NORMALISES:
         raise QuizValidationError("Niveau de quiz invalide.")
     if difficulte not in DIFFICULTES:
         raise QuizValidationError("Difficulte de quiz invalide.")
@@ -949,6 +954,9 @@ def creer_tentative_ciblee(
     notion: str,
     nb_questions: int = 5,
     progression: Optional[ProgressionNotion] = None,
+    cycle_education: Optional[str] = None,
+    niveau_scolaire_id: Optional[int] = None,
+    option_scolaire_id: Optional[int] = None,
 ) -> TentativeQuiz:
     """Construit un quiz court centre sur une faiblesse, sans répéter les derniers énoncés."""
     if progression is not None and progression.utilisateur_id != utilisateur.id:
@@ -1044,6 +1052,9 @@ def creer_tentative_ciblee(
         utilisateur_id=utilisateur.id,
         matiere=matiere,
         niveau=niveau,
+        cycle_education=cycle_education,
+        niveau_scolaire_id=niveau_scolaire_id,
+        option_scolaire_id=option_scolaire_id,
         difficulte=difficulte_ciblee,
         nb_questions=len(questions_ciblees),
         questions_json=json.dumps(
