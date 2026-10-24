@@ -112,6 +112,9 @@
 {% endif %}
 <link rel="stylesheet" href="/static/responsive-universal.css?v={{ version_asset('responsive-universal.css') }}">
 <link rel="stylesheet" href="/static/interface-polish.css?v={{ version_asset('interface-polish.css') }}">
+{% if request.url.path == "/documents" %}
+<link rel="stylesheet" href="/static/documents-library.css?v={{ version_asset('documents-library.css') }}">
+{% endif %}
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
