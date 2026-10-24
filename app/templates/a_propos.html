@@ -2,7 +2,7 @@
 {% from "components/icone.html" import icone %}
 
 {% block titre %}À propos — MITARIDALA{% endblock %}
-{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur page-a-propos{% endblock %}
 {% block contenu %}
 <div class="public-page">
 
@@ -32,7 +32,17 @@
     </aside>
   </section>
 
-  <section class="public-section">
+  <nav class="about-toc" aria-label="Explorer les sections de MITARIDALA">
+    <a href="#about-mission">Notre mission</a>
+    <a href="#about-parcours">Parcours étudiant</a>
+    <a href="#about-ecosysteme">Fonctionnalités</a>
+    <a href="#about-acces">Accès</a>
+    <a href="#about-ia">IA responsable</a>
+    <a href="#about-confiance">Confiance et sécurité</a>
+    <a href="#about-communaute">Communauté</a>
+  </nav>
+
+  <section class="public-section" id="about-mission">
     <div class="public-section-head">
       <div>
         <h2>Pourquoi MITARIDALA existe</h2>
@@ -102,7 +112,7 @@
     </div>
   </section>
 
-  <section class="public-section">
+  <section class="public-section" id="about-parcours">
     <div class="public-section-head">
       <div>
         <h2>Le parcours étudiant, du premier clic à la progression</h2>
@@ -118,7 +128,7 @@
     </div>
   </section>
 
-  <section class="public-section">
+  <section class="public-section" id="about-ecosysteme">
     <div class="public-section-head">
       <div>
         <h2>Comment fonctionne l'écosystème</h2>
@@ -144,7 +154,7 @@
     </div>
   </section>
 
-  <section class="public-section">
+  <section class="public-section" id="about-acces">
     <div class="public-section-head">
       <div>
         <h2>Des accès clairement séparés</h2>
@@ -165,7 +175,7 @@
     </div>
   </section>
 
-  <section class="public-section">
+  <section class="public-section" id="about-ia">
     <div class="public-section-head">
       <div>
         <h2>Notre approche de l'intelligence artificielle</h2>
@@ -185,7 +195,7 @@
     </div>
   </section>
 
-  <section class="public-section">
+  <section class="public-section" id="about-confiance">
     <div class="public-section-head">
       <div>
         <h2>Confiance, sécurité et modération</h2>
@@ -222,7 +232,7 @@
     </div>
   </section>
 
-  <section class="public-section">
+  <section class="public-section" id="about-communaute">
     <div class="public-section-head">
       <div>
         <h2>Construire avec la communauté</h2>
