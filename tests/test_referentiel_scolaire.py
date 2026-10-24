@@ -23,7 +23,7 @@ from app.models import (
     Utilisateur,
 )
 from app import quiz as quiz_module
-from app.routers import admin_scolaire_router, cercles_router, quiz_router, scolaire_router, tuteur_router
+from app.routers import admin_scolaire_router, auth_router, cercles_router, quiz_router, scolaire_router, tuteur_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
     profil_correspond_au_cercle,
@@ -666,3 +666,21 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
     session.rollback()
     session.close()
     engine.dispose()
+
+def test_normaliser_cycles_enseignes_inclut_le_cycle_principal_et_dedoublonne():
+    cycles = auth_router.normaliser_cycles_enseignes(
+        " college ",
+        ["LYCEE", "lycee", " universite ", ""],
+    )
+    assert cycles == {"college", "lycee", "universite"}
+
+
+def test_normaliser_cycles_enseignes_refuse_une_valeur_inconnue():
+    assert auth_router.normaliser_cycles_enseignes(
+        "lycee",
+        ["college", "primaire"],
+    ) is None
+
+
+def test_normaliser_cycles_enseignes_ne_confere_pas_de_cycle_par_defaut():
+    assert auth_router.normaliser_cycles_enseignes(None, None) == set()
