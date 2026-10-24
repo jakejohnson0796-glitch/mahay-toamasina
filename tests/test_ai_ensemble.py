@@ -306,3 +306,101 @@ def test_strategie_renforcee_force_larbitrage(monkeypatch):
     assert confiant is True
     assert audit["arbitration"] == "groq_arbiter"
     assert called["value"] is True
+
+
+def test_critique_quiz_rejette_les_champs_inconnus_ou_absents():
+    assert ai_ensemble._critique_quiz_conforme(
+        {"confiant": False, "erreleurs": [{"indice": "Question 1"}]},
+        1,
+    ) is False
+
+    assert ai_ensemble._critique_quiz_conforme(
+        {"questions": _questions(), "confiant": True, "problemes": []},
+        1,
+    ) is True
+
+
+def test_critique_quiz_bascule_vers_le_modele_principal_si_qwen_echoue(monkeypatch):
+    monkeypatch.setattr(ai_ensemble.parametres, "groq_critic_model", "qwen/qwen3.8-27b")
+    monkeypatch.setattr(ai_ensemble.parametres, "groq_model", "openai/gpt-oss-120b")
+    avis_secours = {
+        "questions": _questions(),
+        "confiant": False,
+        "problemes": ["Vérifier l'index de la bonne réponse."],
+    }
+    appels = []
+
+    def fake_structured_tool(**kwargs):
+        appels.append(kwargs)
+        return None if len(appels) == 1 else avis_secours
+
+    monkeypatch.setattr(ai_ensemble, "_groq_structured_tool", fake_structured_tool)
+
+    resultat = ai_ensemble.critiquer_quiz_groq(
+        _questions(),
+        "Mathématiques",
+        "L1",
+    )
+
+    assert resultat == avis_secours
+    assert [appel["model"] for appel in appels] == [
+        "qwen/qwen3.8-27b",
+        "openai/gpt-oss-120b",
+    ]
+    assert appels[1]["tool_name"] == "critiquer_quiz_secours"
+    assert appels[1]["max_completion_tokens"] == 4096
+
+
+def test_critique_quiz_bascule_au_secours_si_qwen_retourne_un_mauvais_contrat(monkeypatch):
+    monkeypatch.setattr(ai_ensemble.parametres, "groq_critic_model", "qwen/qwen3.8-27b")
+    monkeypatch.setattr(ai_ensemble.parametres, "groq_model", "openai/gpt-oss-120b")
+    avis_malforme = {
+        "confiant": False,
+        "erreleurs": [{"indice": "Question.Question.Question"}],
+    }
+    avis_secours = {
+        "questions": _questions(),
+        "confiant": True,
+        "problemes": [],
+    }
+    appels = []
+
+    def fake_structured_tool(**kwargs):
+        appels.append(kwargs)
+        return avis_malforme if len(appels) == 1 else avis_secours
+
+    monkeypatch.setattr(ai_ensemble, "_groq_structured_tool", fake_structured_tool)
+
+    resultat = ai_ensemble.critiquer_quiz_groq(
+        _questions(),
+        "Mathématiques",
+        "L1",
+    )
+
+    assert resultat == avis_secours
+    assert len(appels) == 2
+
+
+def test_json_validate_failed_ne_rejoue_pas_deux_fois_le_meme_schema(monkeypatch):
+    monkeypatch.setattr(ai_ensemble, "_groq_client", lambda: object())
+    appels = []
+
+    def fail_json_schema(provider, operation):
+        appels.append(provider)
+        raise RuntimeError(
+            "Error code 400: Failed to generate JSON; code=json_validate_failed; "
+            "failed_generation={malformed}"
+        )
+
+    monkeypatch.setattr(ai_ensemble.cost_controller, "call", fail_json_schema)
+
+    resultat = ai_ensemble._groq_structured_tool(
+        model="qwen/qwen3.8-27b",
+        tool=ai_ensemble.OUTIL_CRITIQUE_QUIZ,
+        tool_name="critiquer_quiz",
+        prompt="Controle ceci.",
+        reasoning_effort="medium",
+    )
+
+    assert resultat is None
+    assert appels == ["groq"]
