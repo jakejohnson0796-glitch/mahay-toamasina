@@ -399,6 +399,6 @@ def downgrade() -> None:
     for column in ("etablissement_id", "type_offre", "niveau_scolaire_id", "option_scolaire_id", "matiere_scolaire_id", "parcours_etfp_id", "annee_scolaire", "statut_validation", "est_active", "valide_par_id"):
         op.drop_index(f"ix_offreetablissementsscolaire_{column}", table_name="offreetablissementsscolaire")
     op.drop_table("offreetablissementsscolaire")
-    for column in ("code", "secteur", "filiere", "metier", "statut_validation", "est_actif"):
+    for column in ("secteur", "filiere", "metier", "statut_validation", "est_actif"):
         op.drop_index(f"ix_parcourstechniqueprofessionnel_{column}", table_name="parcourstechniqueprofessionnel")
     op.drop_table("parcourstechniqueprofessionnel")
