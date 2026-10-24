@@ -61,7 +61,7 @@
       statTuteur: "Séances avec le Tuteur IA",
       statGames: "Jeux cérébraux terminés",
       noActivity: "Aucune activité terminée n'a été enregistrée sur cette période. Tu peux reprendre à partir de la mission proposée ci-dessous.",
-      noLearning: "Aucune nouvelle notion n'a été évaluée sur cette période. Voici les priorités déjà présentes dans ta progression.",
+      noLearning: "Aucune nouvelle notion n'a été évaluée depuis ta dernière reprise. Les priorités existantes figurent dans la section « À renforcer ».",
       noProgress: "Tu n'as pas encore assez de résultats pour tirer une conclusion fiable. Un premier quiz aidera à repérer tes points forts et tes besoins.",
       noStrengthen: "Aucune priorité urgente ne ressort de tes données. Tu peux réviser une notion ou explorer un nouveau sujet.",
       mastery: "Maîtrise confirmée",
@@ -149,7 +149,7 @@
       statTuteur: "Fotoana niarahana tamin'ny Mpampianatra IA",
       statGames: "Lalao fanazaran-tsaina vita",
       noActivity: "Tsy misy asa vita voarakitra tamin'ity fotoana ity. Afaka manohy amin'ny iraka atolotra etsy ambany ianao.",
-      noLearning: "Tsy nisy lohahevitra vaovao nohadihadiana tamin'ity fotoana ity. Ireto kosa ny laharam-pahamehana efa hita tamin'ny fandrosoanao.",
+      noLearning: "Tsy nisy lohahevitra vaovao nodinihina hatramin'ny fiverenanao farany. Hita ao amin'ny fizarana « Hohamafisina » ireo laharam-pahamehana efa misy.",
       noProgress: "Mbola tsy ampy ny valiny hahazoana tsoa-kevitra azo antoka. Hanampy hamantatra ny tanjakao sy izay ilainao hamafisina ny quiz voalohany.",
       noStrengthen: "Tsy misy laharam-pahamehana maika hita amin'ny angona. Afaka mamerina lohahevitra iray na mianatra vaovao ianao.",
       mastery: "Voamarina ny fahaizana",
@@ -517,7 +517,7 @@
     donneesCourantes = data;
     momentDepartCourant = depart || 0;
     appliquerTextesFixes();
-    document.getElementById("bilan-reprise-periode").textContent = dureeDepuis(lireNombre(KEY_SUMMARY) || momentDepartCourant);
+    document.getElementById("bilan-reprise-periode").textContent = dureeDepuis(momentDepartCourant);
     renderStats(data.stats || {});
     renderActivites(data);
     renderApprentissages(data);
@@ -542,8 +542,8 @@
     if (verrou > maintenant) return;
 
     tentativeOuverture = true;
-    jetonVerrou = String(maintenant) + "-" + String(Math.random()).slice(2);
-    ecrire(KEY_LOCK, maintenant + LOCK_MS);
+    jetonVerrou = String(maintenant + LOCK_MS);
+    ecrire(KEY_LOCK, jetonVerrou);
     var depart = lastSummary || (snapshotActivite ? snapshotActivite - 24 * 60 * 60 * 1000 : maintenant - 24 * 60 * 60 * 1000);
     var url = endpoint + "?depuis=" + encodeURIComponent(String(depart));
 
