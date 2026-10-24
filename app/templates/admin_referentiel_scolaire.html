@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% block titre %}Référentiel scolaire national — Admin MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair interface-referentiel-scolaire">
+  <p class="eyebrow referentiel-retour"><a href="/admin/referentiel">← Référentiel académique</a></p>
+  <header class="referentiel-scolaire-hero" aria-labelledby="titre-referentiel-scolaire">
+    <div>
+      <span class="referentiel-scolaire-kicker">MITARIDALA · Administration</span>
+      <h1 id="titre-referentiel-scolaire">Référentiel scolaire national</h1>
+      <p>Organise les classes, séries/options, matières, programmes et établissements. Chaque entrée doit être vérifiée avant d’être publiée aux élèves et aux enseignants ; les cercles scolaires et universitaires restent gérés séparément.</p>
+    </div>
+    <div class="referentiel-scolaire-etat" aria-label="État du catalogue scolaire">
+      {% if referentiel %}
+      <span class="etat-catalogue{% if referentiel.statut == "complet" %} is-complet{% endif %}">{% if referentiel.statut == "complet" %}Catalogue complet{% else %}Catalogue partiel{% endif %}</span>
+      <strong>{{ referentiel.annee_scolaire or "Année à préciser" }}</strong>
+      <small>Code : <span data-no-translate>{{ referentiel.code }}</span></small>
+      {% else %}
+      <span class="etat-catalogue">Catalogue non initialisé</span>
+      <strong>À configurer</strong>
+      <small>Référentiel scolaire indisponible</small>
+      {% endif %}
+    </div>
+  </header>
+  <nav class="referentiel-scolaire-nav" aria-label="Accès rapide au référentiel scolaire">
+    <a href="#scolaire-cercles-sync">Cercles</a>
+    <a href="#classes">Classes</a>
+    <a href="#etablissement-create">Ajouter un établissement</a>
+    <a href="#etablissements-list">Établissements</a>
+    <a href="#option-create">Séries et options</a>
+    <a href="#matiere-create">Matières</a>
+    <a href="#programme-create">Programmes</a>
+  </nav>
+
+  {% if referentiel %}
+  <section class="carte-formulaire" aria-labelledby="scolaire-version">
+    <h3 id="scolaire-version">Version active du catalogue</h3>
+    <p><strong data-no-translate>{{ referentiel.libelle }}</strong></p>
+    <p>Code : <code data-no-translate>{{ referentiel.code }}</code> · Année : {{ referentiel.annee_scolaire or "non précisée" }}</p>
+    <p>État : <strong>{{ "complet" if referentiel.statut == "complet" else "partiel — à compléter" }}</strong></p>
+    <p>Source : <a href="{{ referentiel.source_officielle }}" rel="noopener noreferrer" target="_blank">Consulter la source du référentiel</a></p>
+    {% if referentiel.statut != "complet" %}
+    <p>Ne marque pas ce catalogue complet tant que les programmes techniques/professionnels, les matières par série et les établissements n'ont pas été recoupés avec des sources officielles.</p>
+    {% endif %}
+  </section>
+  {% else %}
+  <div class="erreur">Aucun référentiel scolaire n'est initialisé.</div>
+  {% endif %}
+
+  {% if request.query_params.get("erreur") %}
+  <div class="erreur" role="alert">
+    {% set code = request.query_params.get("erreur") %}
+    {% if code == "source_https_requise" %}Une source HTTPS est obligatoire avant de valider une entrée.
+    {% elif code == "nom_etablissement_requis" %}Le nom de l'établissement est obligatoire.
+    {% elif code == "code_etablissement_deja_utilise" %}Ce code d'établissement est déjà utilisé.
+    {% elif code == "type_etablissement_invalide" %}Le type d'établissement est invalide.
+    {% elif code == "secteur_invalide" %}Le secteur est invalide.
+    {% elif code == "niveau_scolaire_invalide" %}La classe choisie n'appartient pas au référentiel actif.
+    {% elif code == "option_champs_requis" %}Le code et le libellé de la série/option sont obligatoires.
+    {% elif code == "type_option_invalide" %}Le type de série/option est invalide.
+    {% elif code in ["option_parente_invalide", "option_parente_non_validee"] %}La série parente est invalide ou n'a pas encore été validée.
+    {% elif code == "option_deja_existante" %}Ce code de série/option existe déjà pour cette classe.
+    {% elif code == "matiere_champs_requis" %}Le code et le libellé de la matière sont obligatoires.
+    {% elif code == "matiere_deja_existante" %}Cette matière existe déjà.
+    {% elif code in ["programme_scolaire_reference_invalide", "programme_scolaire_deja_existant"] %}Le rattachement matière/classe/série est invalide ou existe déjà.
+    {% elif code in ["option_scolaire_invalide", "programme_scolaire_introuvable"] %}La série/option ou le rattachement demandé est introuvable.
+    {% elif code == "etablissement_introuvable" %}Établissement introuvable.
+    {% elif code == "option_introuvable" %}Série/option introuvable.
+    {% elif code == "matiere_introuvable" %}Matière introuvable.
+    {% elif code == "programme_scolaire_introuvable" %}Rattachement de programme introuvable.
+    {% else %}La modification n'a pas pu être enregistrée. Vérifie les champs et réessaie.{% endif %}
+  </div>
+  {% endif %}
+  {% if request.query_params.get("ok") %}
+  <p role="status"><strong>
+    {% set ok = request.query_params.get("ok") %}
+    {% if ok == "etablissement_ajoute" %}Établissement ajouté en attente de validation.
+    {% elif ok == "etablissement_valide" %}Établissement vérifié et publié dans les sélecteurs.
+    {% elif ok == "etablissement_desactive" %}Établissement désactivé.
+    {% elif ok == "option_ajoutee" %}Série/option ajoutée en attente de validation.
+    {% elif ok == "option_validee" %}Série/option validée.
+    {% elif ok == "matiere_ajoutee" %}Matière ajoutée en attente de validation.
+    {% elif ok == "matiere_validee" %}Matière validée.
+    {% elif ok == "programme_scolaire_ajoute" %}Rattachement de programme ajouté en attente de validation.
+    {% elif ok == "programme_scolaire_valide" %}Rattachement de programme validé.
+    {% elif ok == "cercles_synchronises" %}Synchronisation terminée : {{ request.query_params.get("crees", "0") }} cercle(s) créé(s), {{ request.query_params.get("reactives", "0") }} réactivé(s), {{ request.query_params.get("actualises", "0") }} libellé(s) mis à jour, {{ request.query_params.get("archives", "0") }} archivé(s), {{ request.query_params.get("preserves", "0") }} cercle(s) conservé(s) avec membres ou contenu.
+    {% else %}Modification enregistrée.{% endif %}
+  </strong></p>
+  {% endif %}
+
+  <section class="carte-formulaire" aria-labelledby="scolaire-cercles-sync">
+    <h3 id="scolaire-cercles-sync">Cercles d’étude synchronisés</h3>
+    <p>Les cercles universitaires restent gérés par leur référentiel académique. Cette synchronisation scolaire crée les cercles nationaux des classes vérifiées, des séries/options vérifiées et des matières dont le programme a été validé.</p>
+    <div class="grille-statistiques" role="group" aria-label="État des cercles scolaires">
+      <div class="carte-statistique"><strong>{{ cercles_scolaires_actifs }}</strong><span>Cercles scolaires actifs</span></div>
+      <div class="carte-statistique"><strong>{{ cercles_scolaires_synchronises }}</strong><span>Gérés par le référentiel</span></div>
+    </div>
+    <p>Les cercles manuels, transversaux et universitaires ne sont pas modifiés. Un cercle synchronisé devenu obsolète est archivé seulement s’il n’a ni membres non administrateurs ni contenu important. Les cercles locaux d’établissement ne sont pas créés automatiquement tant que l’offre réelle de chaque classe par établissement n’est pas vérifiée.</p>
+    <form method="post" action="/admin/referentiel/scolaire/cercles/synchroniser">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-primaire" type="submit">Synchroniser les cercles scolaires</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="classes">
+    <h3 id="classes">Classes disponibles</h3>
+    <table class="table-manifeste">
+      <thead><tr><th>Classe</th><th>Cycle</th><th>Validation</th><th>Source</th></tr></thead>
+      <tbody>
+      {% for niveau in niveaux %}
+        <tr>
+          <td>{{ niveau.libelle }} <span class="stat-label" data-no-translate>({{ niveau.code }})</span></td>
+          <td>{{ "Collège" if niveau.cycle == "college" else "Lycée" }}</td>
+          <td>{{ "Active" if niveau.est_actif else "Inactive" }} · {{ niveau.statut_validation }}</td>
+          <td>{% if niveau.source_officielle %}<a href="{{ niveau.source_officielle }}" target="_blank" rel="noopener noreferrer">Source</a>{% else %}—{% endif %}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucune classe trouvée.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="stat-label">Les niveaux principaux sont versionnés par migration. Les options et associations complémentaires peuvent être ajoutées ci-dessous.</p>
+  </section>
+
+  <section aria-labelledby="etablissement-create">
+    <h3 id="etablissement-create">Ajouter un établissement</h3>
+    <form method="post" action="/admin/referentiel/scolaire/etablissements/creer" class="carte-formulaire">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="etab-nom">Nom officiel</label>
+      <input id="etab-nom" name="nom" maxlength="180" required>
+      <label for="etab-code">Code officiel (facultatif)</label>
+      <input id="etab-code" name="code" maxlength="40" placeholder="Code si disponible">
+      <label for="etab-type">Type</label>
+      <select id="etab-type" name="type_etablissement" required>
+        <option value="college_lycee">Collège et lycée</option>
+        <option value="college">Collège</option>
+        <option value="lycee">Lycée</option>
+        <option value="lycee_technique">Lycée technique</option>
+        <option value="professionnel">Établissement professionnel</option>
+      </select>
+      <label for="etab-secteur">Secteur</label>
+      <select id="etab-secteur" name="secteur">
+        <option value="inconnu">À vérifier</option>
+        <option value="public">Public</option>
+        <option value="prive">Privé</option>
+      </select>
+      <label for="etab-region">Région</label><input id="etab-region" name="region" maxlength="120">
+      <label for="etab-district">District</label><input id="etab-district" name="district" maxlength="120">
+      <label for="etab-commune">Commune</label><input id="etab-commune" name="commune" maxlength="120">
+      <label for="etab-source">Source officielle HTTPS</label><input id="etab-source" name="source_officielle" type="url" placeholder="https://..." maxlength="500">
+      <p>Le nouvel établissement reste en attente jusqu'à sa validation ci-dessous.</p>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Ajouter l'établissement</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="etablissements-list">
+    <h3 id="etablissements-list">Établissements catalogués ({{ etablissements|length }})</h3>
+    <table class="table-manifeste">
+      <thead><tr><th>Établissement</th><th>Localité</th><th>Statut</th><th>Source / action</th></tr></thead>
+      <tbody>
+      {% for e in etablissements %}
+        <tr>
+          <td><strong data-no-translate>{{ e.nom }}</strong><br><span class="stat-label">{{ e.type_etablissement }} · {{ e.secteur }}</span></td>
+          <td data-no-translate>{{ [e.commune, e.district, e.region]|select|join(" · ") or "Localité à préciser" }}</td>
+          <td>{{ "Vérifié" if e.est_verifie else "En attente" }} · {{ "Actif" if e.est_actif else "Désactivé" }}</td>
+          <td>
+            {% if e.source_officielle %}<a href="{{ e.source_officielle }}" target="_blank" rel="noopener noreferrer">Source</a>{% else %}<span class="stat-label">Source manquante</span>{% endif %}
+            {% if not e.est_verifie %}
+            <form method="post" action="/admin/referentiel/scolaire/etablissements/{{ e.id }}/valider">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Valider</button>
+            </form>
+            {% elif e.est_actif %}
+            <form method="post" action="/admin/referentiel/scolaire/etablissements/{{ e.id }}/desactiver">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Désactiver</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucun établissement recensé. Le catalogue n'est pas exhaustif.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="option-create">
+    <h3 id="option-create">Ajouter une série ou option scolaire</h3>
+    <form method="post" action="/admin/referentiel/scolaire/options/creer" class="carte-formulaire">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="option-niveau">Classe</label>
+      <select id="option-niveau" name="niveau_id" required>
+        {% for n in niveaux %}<option value="{{ n.id }}">{{ n.libelle }}</option>{% endfor %}
+      </select>
+      <label for="option-parent">Série parente (facultatif pour une série)</label>
+      <select id="option-parent" name="parent_option_id">
+        <option value="">— Série principale —</option>
+        {% for o in options if o.parent_option_id is none %}
+        <option value="{{ o.id }}">{{ niveaux_map[o.niveau_id].libelle if o.niveau_id in niveaux_map else "Classe inconnue" }} · {{ o.libelle }}</option>
+        {% endfor %}
+      </select>
+      <label for="option-code">Code</label><input id="option-code" name="code" maxlength="30" required placeholder="Ex. OPT_A1">
+      <label for="option-libelle">Libellé</label><input id="option-libelle" name="libelle" maxlength="160" required placeholder="Ex. Option A1">
+      <label for="option-type">Type</label>
+      <select id="option-type" name="type_option">
+        <option value="serie">Série</option><option value="option">Option</option>
+        <option value="filiere">Filière</option><option value="specialite">Spécialité</option>
+      </select>
+      <label for="option-source">Source officielle HTTPS</label><input id="option-source" name="source_officielle" type="url" maxlength="500" placeholder="https://...">
+      <p>Les options non vérifiées n'apparaissent pas aux élèves.</p>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Ajouter la série / option</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="options-list">
+    <h3 id="options-list">Séries et options ({{ options|length }})</h3>
+    <table class="table-manifeste">
+      <thead><tr><th>Classe</th><th>Série / option</th><th>Statut</th><th>Source / action</th></tr></thead>
+      <tbody>
+      {% for o in options %}
+        <tr>
+          <td>{{ niveaux_map[o.niveau_id].libelle if o.niveau_id in niveaux_map else "Classe inconnue" }}</td>
+          <td>
+            {% if o.parent_option_id and o.parent_option_id in options_map %}{{ options_map[o.parent_option_id].libelle }} → {% endif %}
+            <strong data-no-translate>{{ o.libelle }}</strong> <span class="stat-label">({{ o.code }})</span>
+          </td>
+          <td>{{ "Vérifiée" if o.statut_validation == "verifie" else "En attente" }} · {{ "Active" if o.est_active else "Inactive" }}</td>
+          <td>
+            {% if o.source_officielle %}<a href="{{ o.source_officielle }}" target="_blank" rel="noopener noreferrer">Source</a>{% else %}<span class="stat-label">Source manquante</span>{% endif %}
+            {% if not o.est_active or o.statut_validation != "verifie" %}
+            <form method="post" action="/admin/referentiel/scolaire/options/{{ o.id }}/valider">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Valider</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="matiere-create">
+    <h3 id="matiere-create">Ajouter une matière</h3>
+    <form method="post" action="/admin/referentiel/scolaire/matieres/creer" class="carte-formulaire">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="matiere-code">Code stable</label><input id="matiere-code" name="code" maxlength="40" required placeholder="Ex. SCIENCES_NATURELLES">
+      <label for="matiere-libelle">Libellé français</label><input id="matiere-libelle" name="libelle" maxlength="160" required>
+      <label for="matiere-mg">Libellé malagasy (facultatif)</label><input id="matiere-mg" name="libelle_malagasy" maxlength="160">
+      <label for="matiere-source">Source officielle HTTPS</label><input id="matiere-source" name="source_officielle" type="url" maxlength="500" placeholder="https://...">
+      <button class="bouton bouton-primaire bouton-form" type="submit">Ajouter la matière</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="matieres-list">
+    <h3 id="matieres-list">Matières ({{ matieres|length }})</h3>
+    <table class="table-manifeste">
+      <thead><tr><th>Matière</th><th>Code / malagasy</th><th>Statut</th><th>Source / action</th></tr></thead>
+      <tbody>
+      {% for m in matieres %}
+        <tr>
+          <td data-no-translate><strong>{{ m.libelle }}</strong></td>
+          <td><span data-no-translate>{{ m.code }}</span><br>{{ m.libelle_malagasy or "—" }}</td>
+          <td>{{ "Vérifiée" if m.statut_validation == "verifie" else "En attente" }} · {{ "Active" if m.est_active else "Inactive" }}</td>
+          <td>
+            {% if m.source_officielle %}<a href="{{ m.source_officielle }}" target="_blank" rel="noopener noreferrer">Source</a>{% else %}<span class="stat-label">Source manquante</span>{% endif %}
+            {% if not m.est_active or m.statut_validation != "verifie" %}
+            <form method="post" action="/admin/referentiel/scolaire/matieres/{{ m.id }}/valider">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Valider</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="programme-create">
+    <h3 id="programme-create">Rattacher une matière à une classe ou une série</h3>
+    <form method="post" action="/admin/referentiel/scolaire/programmes/creer" class="carte-formulaire">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="programme-niveau">Classe</label>
+      <select id="programme-niveau" name="niveau_id" required>{% for n in niveaux %}<option value="{{ n.id }}">{{ n.libelle }}</option>{% endfor %}</select>
+      <label for="programme-option">Série / option (facultatif pour le tronc commun)</label>
+      <select id="programme-option" name="option_id">
+        <option value="">Tronc commun</option>
+        {% for o in options if o.est_active and o.statut_validation == "verifie" %}
+        <option value="{{ o.id }}">{{ niveaux_map[o.niveau_id].libelle if o.niveau_id in niveaux_map else "Classe inconnue" }} · {% if o.parent_option_id and o.parent_option_id in options_map %}{{ options_map[o.parent_option_id].libelle }} → {% endif %}{{ o.libelle }}</option>
+        {% endfor %}
+      </select>
+      <label for="programme-matiere">Matière</label>
+      <select id="programme-matiere" name="matiere_id" required>{% for m in matieres %}<option value="{{ m.id }}">{{ m.libelle }}</option>{% endfor %}</select>
+      <label for="programme-obligatoire">Présence dans le programme</label>
+      <select id="programme-obligatoire" name="obligatoire"><option value="oui">Obligatoire</option><option value="non">Facultative / optionnelle</option></select>
+      <label for="programme-source">Source officielle HTTPS</label><input id="programme-source" name="source_officielle" type="url" maxlength="500" placeholder="https://...">
+      <button class="bouton bouton-primaire bouton-form" type="submit">Ajouter le rattachement</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="programmes-list">
+    <h3 id="programmes-list">Matières par niveau/série ({{ programmes|length }})</h3>
+    <table class="table-manifeste">
+      <thead><tr><th>Classe / série</th><th>Matière</th><th>Validation</th><th>Source / action</th></tr></thead>
+      <tbody>
+      {% for p in programmes %}
+        <tr>
+          <td>{{ niveaux_map[p.niveau_id].libelle if p.niveau_id in niveaux_map else "Classe inconnue" }}
+            {% if p.option_id and p.option_id in options_map %} · {{ options_map[p.option_id].libelle }}{% else %} · Tronc commun{% endif %}
+            <br><span class="stat-label">{{ "Obligatoire" if p.obligatoire else "Optionnelle" }}</span>
+          </td>
+          <td>{% if p.matiere_id in matieres_map %}{{ matieres_map[p.matiere_id].libelle }}{% else %}Matière inconnue{% endif %}</td>
+          <td>{{ "Vérifiée" if p.statut_validation == "verifie" else "En attente" }}</td>
+          <td>
+            {% if p.source_officielle %}<a href="{{ p.source_officielle }}" target="_blank" rel="noopener noreferrer">Source</a>{% else %}<span class="stat-label">Source manquante</span>{% endif %}
+            {% if p.statut_validation != "verifie" %}
+            <form method="post" action="/admin/referentiel/scolaire/programmes/{{ p.id }}/valider">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Valider</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucun rattachement dans le programme.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

@@ -113,14 +113,15 @@
               </div>
 
               <div class="auth-field">
-                <label for="role">Vous êtes <span class="auth-required" aria-hidden="true">*</span></label>
+                <label for="role">Votre profil <span class="auth-required" aria-hidden="true">*</span></label>
                 <div class="auth-input-wrap">
-                  <select id="role" name="role">
-                    <option value="etudiant" selected>Étudiant(e)</option>
+                  <select id="role" name="role" required>
+                    <option value="etudiant" selected>Élève / étudiant(e)</option>
+                    <option value="professeur">Professeur / enseignant(e)</option>
                     <option value="sponsor">Répétiteur / sponsor</option>
                   </select>
                 </div>
-                <div class="auth-role-note">Les étudiants renseignent leur parcours académique. Les répétiteurs / sponsors créent un compte sans ces informations.</div>
+                <div class="auth-role-note">Le profil enseignant est soumis à validation avant l'activation des outils réservés aux professeurs. Le choix de profil ne donne jamais de droits administratifs.</div>
               </div>
             </div>
 
@@ -132,7 +133,61 @@
                 </div>
               </div>
 
-              <div class="auth-academic-grid">
+              <div class="auth-field">
+                <label for="cycle_education">Vous étudiez / enseignez à <span class="auth-required" aria-hidden="true">*</span></label>
+                <div class="auth-input-wrap">
+                  <select id="cycle_education" name="cycle_education" disabled required>
+                    <option value="">— Choisissez votre cycle —</option>
+                    <option value="college">Collège · 6e à 3e</option>
+                    <option value="lycee">Lycée · Seconde à Terminale</option>
+                    <option value="universite">Université / enseignement supérieur</option>
+                  </select>
+                </div>
+                <p class="auth-help">Les niveaux, séries et filières sont proposés selon le cycle. Le référentiel scolaire initial est partiel et sera enrichi à partir de sources officielles vérifiées.</p>
+              </div>
+
+              <div id="bloc-cycles-enseignes" class="auth-field" hidden>
+                <label>Autres cycles dans lesquels vous enseignez</label>
+                <fieldset class="auth-teaching-cycles" aria-describedby="cycles-enseignes-aide">
+                  <legend class="visually-hidden">Cycles d’enseignement supplémentaires</legend>
+                  <label><input type="checkbox" name="cycles_enseignes" value="college" disabled> Collège</label>
+                  <label><input type="checkbox" name="cycles_enseignes" value="lycee" disabled> Lycée</label>
+                  <label><input type="checkbox" name="cycles_enseignes" value="universite" disabled> Université / enseignement supérieur</label>
+                </fieldset>
+                <p class="auth-help" id="cycles-enseignes-aide">Le cycle principal choisi juste au-dessus est inclus automatiquement. Cochez les autres cycles où vous enseignez. Cette déclaration reste soumise à validation administrative et ne donne aucun droit supplémentaire.</p>
+                <p class="auth-help" id="cycle-principal-hint" aria-live="polite">Le cycle principal sera inclus automatiquement.</p>
+              </div>
+
+              <div id="bloc-scolaire" class="auth-academic-grid" data-scolaire-section hidden>
+                <div class="auth-field">
+                  <label for="niveau_scolaire_id">Classe <span class="auth-required" aria-hidden="true">*</span></label>
+                  <div class="auth-input-wrap">
+                    <select id="niveau_scolaire_id" name="niveau_scolaire_id" disabled>
+                      <option value="">— Choisissez d’abord votre cycle —</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="auth-field">
+                  <label for="option_scolaire_id">Série / option</label>
+                  <div class="auth-input-wrap">
+                    <select id="option_scolaire_id" name="option_scolaire_id" disabled>
+                      <option value="">— Aucune série obligatoire pour cette classe —</option>
+                    </select>
+                  </div>
+                  <p class="auth-help">N’apparaît que lorsqu’une option vérifiée existe pour la classe choisie.</p>
+                </div>
+                <div class="auth-field">
+                  <label for="etablissement_scolaire_id">Établissement (facultatif)</label>
+                  <div class="auth-input-wrap">
+                    <select id="etablissement_scolaire_id" name="etablissement_scolaire_id" disabled>
+                      <option value="">— Je préfère ne pas préciser pour l’instant —</option>
+                    </select>
+                  </div>
+                  <p class="auth-help">Les établissements ne sont proposés que lorsqu’ils ont été vérifiés. Vous pourrez compléter ce champ plus tard.</p>
+                </div>
+              </div>
+
+              <div id="bloc-universite" class="auth-academic-grid" data-university-section hidden>
                 <div class="auth-field">
                   <label for="universite_id">Université <span class="auth-required" aria-hidden="true">*</span></label>
                   <div class="auth-input-wrap">
@@ -203,7 +258,7 @@
           </form>
 
           <p class="auth-switch">Déjà inscrit(e) ? <a href="/connexion"><strong>Se connecter</strong></a></p>
-          <p class="auth-footer-note">Les champs du parcours académique sont nécessaires uniquement pour les étudiants.</p>
+          <p class="auth-footer-note">Le parcours est demandé aux élèves/étudiants et aux enseignants. Les droits réservés aux professeurs sont activés après validation administrative.</p>
         </div>
       </div>
     </div>
@@ -211,4 +266,5 @@
 </div>
 <script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/auth-ui.js') }}?v={{ version_asset('js/auth-ui.js') }}"></script>
 <script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/cascade-academique.js') }}?v={{ version_asset('js/cascade-academique.js') }}"></script>
+<script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/cascade-scolaire.js') }}?v={{ version_asset('js/cascade-scolaire.js') }}"></script>
 {% endblock %}

@@ -34,13 +34,61 @@
 
   <div class="ops-table-wrap">
     <table class="ops-table">
-      <thead><tr><th>Compte</th><th>Téléphone</th><th>Rôle</th><th>Création</th><th>Ancienneté</th><th>État</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Compte</th><th>Téléphone</th><th>Rôle effectif</th><th>Profil / parcours</th><th>Création</th><th>Ancienneté</th><th>État</th><th>Actions</th></tr></thead>
       <tbody>
         {% for u in utilisateurs %}
         <tr>
           <td>{{ avatar_utilisateur(u, taille=28) }} <strong>{{ u.nom }}</strong></td>
           <td>{{ u.telephone }}</td>
           <td><span class="ops-badge">{{ u.role.value }}</span></td>
+          <td>
+            <strong>
+              {% if u.profil_souhaite == "professeur" %}Professeur demandé
+              {% elif u.profil_souhaite == "sponsor" %}Répétiteur / sponsor
+              {% else %}Élève / étudiant{% endif %}
+            </strong>
+            {% if u.profil_souhaite == "professeur" %}
+              <small class="ops-table-date">
+                {% if u.statut_verification_enseignant == "en_attente" %}Validation en attente
+                {% elif u.statut_verification_enseignant == "approuve" %}Profil enseignant validé
+                {% elif u.statut_verification_enseignant == "refuse" %}Demande refusée
+                {% elif u.statut_verification_enseignant == "retire" %}Rôle enseignant retiré
+                {% else %}Statut non renseigné{% endif %}
+              </small>
+            {% endif %}
+            {% if u.cycle_education %}
+              <small class="ops-table-date">
+                {% if u.cycle_education == "college" %}Collège
+                {% elif u.cycle_education == "lycee" %}Lycée
+                {% elif u.cycle_education == "universite" %}Université{% endif %}
+              </small>
+            {% endif %}
+            {% set cycles_declares = cycles_enseignes_par_utilisateur.get(u.id, []) %}
+            {% if u.profil_souhaite == "professeur" and cycles_declares %}
+              <small class="ops-table-date">
+                Cycles déclarés :
+                {% for cycle_declare in cycles_declares %}
+                  {% if cycle_declare == "college" %}Collège
+                  {% elif cycle_declare == "lycee" %}Lycée
+                  {% elif cycle_declare == "universite" %}Université{% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </small>
+            {% endif %}
+            {% if u.niveau_scolaire_id %}
+              {% for niveau_scolaire in niveaux_scolaires %}
+                {% if niveau_scolaire.id == u.niveau_scolaire_id %}
+                  <small class="ops-table-date">{{ niveau_scolaire.libelle }}</small>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+            {% if u.option_scolaire_id %}
+              {% for option_scolaire in options_scolaires %}
+                {% if option_scolaire.id == u.option_scolaire_id %}
+                  <small class="ops-table-date">{{ option_scolaire.libelle }}</small>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </td>
           <td><span class="ops-table-date">{{ u.date_creation.strftime("%d/%m/%Y") }}</span></td>
           <td><span class="ops-badge ops-age-badge">{{ jours_depuis_creation(u) }} j</span></td>
           <td>{% if u.banni %}<span class="ops-badge is-alert">Banni</span>{% else %}<span class="ops-badge is-success">Actif</span>{% endif %}</td>
@@ -48,7 +96,18 @@
             {% if u.id != utilisateur.id %}
             <div class="ops-actions">
               {% if u.role.value == "etudiant" %}
-              <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Promouvoir</button></form>
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">
+                  {% if u.profil_souhaite == "professeur" and u.statut_verification_enseignant == "en_attente" %}Valider enseignant{% else %}Attribuer rôle professeur{% endif %}
+                </button>
+              </form>
+              {% if u.profil_souhaite == "professeur" and u.statut_verification_enseignant == "en_attente" %}
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-professeur" data-confirm-message="Refuser la demande de profil enseignant de {{ u.nom }} ?">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
+              </form>
+              {% endif %}
               {% elif u.role.value in ["professeur","admin"] %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" {% if u.role.value == "admin" %}data-confirm-message="Retirer le statut admin de {{ u.nom }} ?"{% endif %}><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Rétrograder</button></form>
               {% endif %}
@@ -63,7 +122,7 @@
             {% else %}<span class="stat-label">Votre compte</span>{% endif %}
           </td>
         </tr>
-        {% else %}<tr><td colspan="7">Aucun utilisateur trouvé.</td></tr>{% endfor %}
+        {% else %}<tr><td colspan="8">Aucun utilisateur trouvé.</td></tr>{% endfor %}
       </tbody>
     </table>
   </div>

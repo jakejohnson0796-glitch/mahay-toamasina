@@ -12,13 +12,14 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
+from sqlalchemy import or_
 from sqlmodel import Session, select
 
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, ProgrammeUniversitaire, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, DemandeCreationCercle, StatutDemandeCreationCercle, DemandeChangementFiliere, StatutDemandeChangementFiliere
+from ..models import Utilisateur, RoleUtilisateur, Mention, Universite, Faculte, Filiere, ProgrammeUniversitaire, CercleEtude, MembreCercle, RoleMembreCercle, StatutCercle, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, DemandeCreationCercle, StatutDemandeCreationCercle, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from ..referentiel import NIVEAUX
 from .. import referentiel_academique
 from ..cercles_referentiel import assurer_cercles_pour_filiere, assurer_cercles_referentiel
@@ -389,6 +390,10 @@ def page_demandes_creation(request: Request, session: Session = Depends(get_sess
     filieres = {f.id: f for f in session.exec(select(Filiere)).all()}
     mentions = {m.id: m for m in session.exec(select(Mention)).all()}
     facultes = {f.id: f for f in session.exec(select(Faculte)).all()}
+    niveaux_scolaires = {n.id: n for n in session.exec(select(NiveauScolaire)).all()}
+    options_scolaires = {o.id: o for o in session.exec(select(OptionScolaire)).all()}
+    etablissements_scolaires = {e.id: e for e in session.exec(select(EtablissementScolaire)).all()}
+    matieres_scolaires = {m.id: m for m in session.exec(select(MatiereScolaire)).all()}
 
     return templates.TemplateResponse(
         request,
@@ -399,6 +404,10 @@ def page_demandes_creation(request: Request, session: Session = Depends(get_sess
             "utilisateurs": utilisateurs,
             "filieres": filieres,
             "mentions": mentions,
+            "niveaux_scolaires": niveaux_scolaires,
+            "options_scolaires": options_scolaires,
+            "etablissements_scolaires": etablissements_scolaires,
+            "matieres_scolaires": matieres_scolaires,
         },
     )
 
@@ -417,6 +426,162 @@ def approuver_demande_creation(
     demande = session.get(DemandeCreationCercle, demande_id)
     if not demande or demande.statut != StatutDemandeCreationCercle.EN_ATTENTE:
         return RedirectResponse("/admin/referentiel/demandes-creation", status_code=303)
+
+    if demande.portee_academique == "scolaire":
+        # Le référentiel scolaire est indépendant de la chaîne universitaire.
+        # On revalide toutes les références juste avant l'approbation.
+        referentiels_scolaires = session.exec(
+            select(ReferentielScolaire).order_by(
+                ReferentielScolaire.date_creation.desc(),
+                ReferentielScolaire.id.desc(),
+            )
+        ).all()
+        referentiel_courant = referentiels_scolaires[0] if referentiels_scolaires else None
+        niveau_scolaire = session.get(NiveauScolaire, demande.niveau_scolaire_id) if demande.niveau_scolaire_id else None
+        option_scolaire = session.get(OptionScolaire, demande.option_scolaire_id) if demande.option_scolaire_id else None
+        parent_option_scolaire = (
+            session.get(OptionScolaire, option_scolaire.parent_option_id)
+            if option_scolaire and option_scolaire.parent_option_id else None
+        )
+        etablissement_scolaire = (
+            session.get(EtablissementScolaire, demande.etablissement_scolaire_id)
+            if demande.etablissement_scolaire_id else None
+        )
+        matiere_scolaire = (
+            session.get(MatiereScolaire, demande.matiere_scolaire_id)
+            if demande.matiere_scolaire_id else None
+        )
+        matiere_valide = demande.matiere_scolaire_id is None
+        if (
+            matiere_scolaire
+            and matiere_scolaire.est_active
+            and matiere_scolaire.statut_validation == "verifie"
+            and niveau_scolaire
+            and referentiel_courant
+        ):
+            options_compatibles = {option_scolaire.id} if option_scolaire else set()
+            if option_scolaire and option_scolaire.parent_option_id:
+                options_compatibles.add(option_scolaire.parent_option_id)
+            requete_matiere = select(ProgrammeMatiereScolaire.id).where(
+                ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                ProgrammeMatiereScolaire.matiere_id == matiere_scolaire.id,
+                ProgrammeMatiereScolaire.statut_validation == "verifie",
+            )
+            if options_compatibles:
+                requete_matiere = requete_matiere.where(
+                    or_(
+                        ProgrammeMatiereScolaire.option_id.is_(None),
+                        ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                    )
+                )
+            else:
+                requete_matiere = requete_matiere.where(
+                    ProgrammeMatiereScolaire.option_id.is_(None)
+                )
+            matiere_valide = bool(session.exec(requete_matiere).first())
+
+        cible_valide = bool(
+            referentiel_courant
+            and niveau_scolaire
+            and niveau_scolaire.referentiel_id == referentiel_courant.id
+            and niveau_scolaire.est_actif
+            and niveau_scolaire.statut_validation == "verifie"
+            and (
+                not option_scolaire
+                or (
+                    option_scolaire.referentiel_id == referentiel_courant.id
+                    and option_scolaire.niveau_id == niveau_scolaire.id
+                    and option_scolaire.est_active
+                    and option_scolaire.statut_validation == "verifie"
+                    and (
+                        option_scolaire.parent_option_id is None
+                        or (
+                            parent_option_scolaire
+                            and parent_option_scolaire.referentiel_id == referentiel_courant.id
+                            and parent_option_scolaire.niveau_id == niveau_scolaire.id
+                            and parent_option_scolaire.parent_option_id is None
+                            and parent_option_scolaire.est_active
+                            and parent_option_scolaire.statut_validation == "verifie"
+                        )
+                    )
+                )
+            )
+            and (
+                not demande.etablissement_scolaire_id
+                or (
+                    etablissement_scolaire
+                    and etablissement_scolaire.est_actif
+                    and etablissement_scolaire.est_verifie
+                )
+            )
+            and matiere_valide
+        )
+        if not cible_valide:
+            demande.statut = StatutDemandeCreationCercle.REJETEE
+            demande.date_traitement = datetime.utcnow()
+            demande.traite_par_id = admin.id
+            session.add(demande)
+            session.commit()
+            return RedirectResponse(
+                "/admin/referentiel/demandes-creation?erreur=cible_scolaire_invalide",
+                status_code=303,
+            )
+
+        doublon = session.exec(
+            select(CercleEtude).where(
+                CercleEtude.statut == StatutCercle.ACTIF,
+                CercleEtude.portee_academique == "scolaire",
+                CercleEtude.niveau_scolaire_id == niveau_scolaire.id,
+                CercleEtude.option_scolaire_id == (option_scolaire.id if option_scolaire else None),
+                CercleEtude.etablissement_scolaire_id == (
+                    etablissement_scolaire.id if etablissement_scolaire else None
+                ),
+                CercleEtude.matiere_scolaire_id == (
+                    matiere_scolaire.id if matiere_scolaire else None
+                ),
+            )
+        ).first()
+        if doublon:
+            demande.statut = StatutDemandeCreationCercle.REJETEE
+            demande.date_traitement = datetime.utcnow()
+            demande.traite_par_id = admin.id
+            demande.cercle_cree_id = doublon.id
+            session.add(demande)
+            session.commit()
+            return RedirectResponse(
+                f"/admin/referentiel/demandes-creation?erreur=doublon_survenu_entre_temps&cercle_existant={doublon.id}",
+                status_code=303,
+            )
+
+        cercle = CercleEtude(
+            nom=demande.nom,
+            description=demande.description,
+            portee_academique="scolaire",
+            niveau_scolaire_id=niveau_scolaire.id,
+            option_scolaire_id=option_scolaire.id if option_scolaire else None,
+            etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
+            matiere_scolaire_id=matiere_scolaire.id if matiere_scolaire else None,
+            statut=StatutCercle.ACTIF,
+            createur_id=demande.utilisateur_id,
+        )
+        session.add(cercle)
+        session.commit()
+        session.refresh(cercle)
+        session.add(MembreCercle(
+            cercle_id=cercle.id,
+            utilisateur_id=demande.utilisateur_id,
+            role=RoleMembreCercle.CREATEUR,
+        ))
+        session.commit()
+
+        demande.statut = StatutDemandeCreationCercle.APPROUVEE
+        demande.date_traitement = datetime.utcnow()
+        demande.traite_par_id = admin.id
+        demande.cercle_cree_id = cercle.id
+        session.add(demande)
+        session.commit()
+        return RedirectResponse("/admin/referentiel/demandes-creation?ok=approuvee", status_code=303)
 
     # Re-verification du doublon AU MOMENT DE L'APPROBATION : une
     # autre demande equivalente a pu etre approuvee entre-temps, ou un

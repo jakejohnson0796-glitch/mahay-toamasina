@@ -104,22 +104,42 @@
   function initialiserRoleEtProgression() {
     const roleSelect = document.getElementById("role");
     const blocAcademique = document.getElementById("bloc-academique");
+    const cycleSelect = document.getElementById("cycle_education");
+    const blocUniversite = document.getElementById("bloc-universite");
+    const blocScolaire = document.getElementById("bloc-scolaire");
+    const blocCyclesEnseignes = document.getElementById("bloc-cycles-enseignes");
+    const champsCyclesEnseignes = Array.from(document.querySelectorAll('input[name="cycles_enseignes"]'));
+    const cyclePrincipalHint = document.getElementById("cycle-principal-hint");
+    let dernierCyclePrincipal = cycleSelect ? cycleSelect.value : "";
+    const nomsCycles = {
+      college: "Collège",
+      lycee: "Lycée",
+      universite: "Université / enseignement supérieur"
+    };
     const progress = document.querySelector("[data-auth-progress]");
     if (!roleSelect || !blocAcademique || !progress) return;
 
-    const champsAcademiquesRequis = [
+    const champsUniversitaires = [
       document.getElementById("universite_id"),
       document.getElementById("composante_id"),
       document.getElementById("mention_id"),
       document.getElementById("niveau")
     ].filter(Boolean);
 
+    const champsScolaires = [
+      document.getElementById("niveau_scolaire_id"),
+      document.getElementById("option_scolaire_id"),
+      document.getElementById("etablissement_scolaire_id")
+    ].filter(Boolean);
+
+    const niveauScolaire = document.getElementById("niveau_scolaire_id");
+    const optionScolaire = document.getElementById("option_scolaire_id");
+    const etablissementScolaire = document.getElementById("etablissement_scolaire_id");
     const champsCompte = [
       document.getElementById("nom"),
       document.getElementById("telephone_local"),
       document.getElementById("mot_de_passe")
     ].filter(Boolean);
-
     const etapes = Array.from(progress.querySelectorAll("[data-step]"));
 
     function setEtapeActive(numero) {
@@ -136,22 +156,100 @@
       });
     }
 
+    function estProfilAvecParcours() {
+      return roleSelect.value === "etudiant" || roleSelect.value === "professeur";
+    }
+
+    function cycleValide() {
+      return Boolean(cycleSelect && ["college", "lycee", "universite"].includes(cycleSelect.value));
+    }
+
     function academiqueComplete() {
-      return champsAcademiquesRequis.every(function (champ) {
-        return champ.value.trim().length > 0;
-      });
+      if (!estProfilAvecParcours()) return true;
+      if (!cycleValide()) return false;
+
+      if (cycleSelect.value === "universite") {
+        // Un candidat professeur peut déclarer un cycle universitaire sans
+        // prétendre être étudiant dans une filière donnée. Si un parcours
+        // est commencé, le backend exige toujours qu'il soit cohérent.
+        if (
+          roleSelect.value === "professeur" &&
+          champsUniversitaires.every(function (champ) { return !champ.value.trim(); })
+        ) return true;
+        return champsUniversitaires.every(function (champ) {
+          return champ.value.trim().length > 0 && !champ.disabled;
+        });
+      }
+
+      // Un élève doit préciser sa classe. Un professeur peut déclarer
+      // enseigner au collège/lycée sans devoir choisir une seule classe ;
+      // le niveau reste facultatif et sert alors de spécialité indicative.
+      if (roleSelect.value === "professeur" && (!niveauScolaire || !niveauScolaire.value)) {
+        return !optionScolaire || !optionScolaire.value;
+      }
+      return Boolean(niveauScolaire && niveauScolaire.value && !niveauScolaire.disabled);
     }
 
     function actualiser() {
-      const estEtudiant = roleSelect.value === "etudiant";
-      blocAcademique.hidden = !estEtudiant;
-      champsAcademiquesRequis.forEach(function (champ) {
-        champ.required = estEtudiant;
+      const profilActif = estProfilAvecParcours();
+      const estUniversitaire = profilActif && cycleSelect && cycleSelect.value === "universite";
+      const estScolaire = profilActif && cycleSelect && ["college", "lycee"].includes(cycleSelect.value);
+      const estProfesseur = roleSelect.value === "professeur";
+      const cyclePrincipalActuel = cycleSelect ? cycleSelect.value : "";
+
+      // Quand le cycle principal change, l'ancienne sélection n'est pas
+      // transférée silencieusement vers la liste des cycles supplémentaires.
+      if (dernierCyclePrincipal && dernierCyclePrincipal !== cyclePrincipalActuel) {
+        const ancienCycle = champsCyclesEnseignes.find(function (champ) {
+          return champ.value === dernierCyclePrincipal;
+        });
+        if (ancienCycle) ancienCycle.checked = false;
+      }
+      dernierCyclePrincipal = cyclePrincipalActuel;
+
+      blocAcademique.hidden = !profilActif;
+      if (blocCyclesEnseignes) blocCyclesEnseignes.hidden = !estProfesseur;
+      champsCyclesEnseignes.forEach(function (champ) {
+        const estCyclePrincipal = Boolean(
+          estProfesseur && cyclePrincipalActuel && champ.value === cyclePrincipalActuel
+        );
+        if (estCyclePrincipal) champ.checked = true;
+        champ.disabled = !estProfesseur || estCyclePrincipal;
+        const libelle = champ.closest("label");
+        if (libelle) {
+          libelle.classList.toggle("is-cycle-principal", estCyclePrincipal);
+        }
       });
+      if (cyclePrincipalHint) {
+        cyclePrincipalHint.textContent = nomsCycles[cyclePrincipalActuel]
+          ? "Cycle principal inclus automatiquement : " + nomsCycles[cyclePrincipalActuel] + "."
+          : "Le cycle principal sera inclus automatiquement.";
+      }
+      if (cycleSelect) {
+        cycleSelect.disabled = !profilActif;
+        cycleSelect.required = profilActif;
+      }
+      if (blocUniversite) blocUniversite.hidden = !estUniversitaire;
+      if (blocScolaire) blocScolaire.hidden = !estScolaire;
+
+      champsUniversitaires.forEach(function (champ) {
+        champ.required = Boolean(estUniversitaire && !estProfesseur);
+      });
+      if (niveauScolaire) {
+        niveauScolaire.required = Boolean(estScolaire && roleSelect.value !== "professeur");
+      }
+      const labelNiveau = document.querySelector('label[for="niveau_scolaire_id"]');
+      if (labelNiveau) {
+        labelNiveau.textContent = roleSelect.value === "professeur"
+          ? "Niveau enseigné (facultatif)"
+          : "Classe (obligatoire)";
+      }
+      if (optionScolaire) optionScolaire.required = false;
+      if (etablissementScolaire) etablissementScolaire.required = false;
 
       if (!compteComplet()) {
         setEtapeActive(1);
-      } else if (estEtudiant && !academiqueComplete()) {
+      } else if (profilActif && !academiqueComplete()) {
         setEtapeActive(2);
       } else {
         setEtapeActive(3);
@@ -159,17 +257,17 @@
     }
 
     roleSelect.addEventListener("change", actualiser);
+    if (cycleSelect) cycleSelect.addEventListener("change", actualiser);
     champsCompte.forEach(function (champ) {
       champ.addEventListener("input", actualiser);
       champ.addEventListener("change", actualiser);
     });
-    champsAcademiquesRequis.forEach(function (champ) {
+    champsUniversitaires.concat(champsScolaires).forEach(function (champ) {
       champ.addEventListener("change", actualiser);
     });
 
     actualiser();
   }
-
   function initialiser() {
     initialiserTelephone();
     initialiserMotDePasse();

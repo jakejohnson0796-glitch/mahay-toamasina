@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import utilisateur_courant, hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
@@ -87,6 +87,32 @@ def _telephone_rate_key(telephone: str) -> str:
         return "invalide:" + hashlib.sha256(brute.encode("utf-8")).hexdigest()[:16]
 
 
+CYCLES_ENSEIGNEMENT_VALIDES = frozenset({"college", "lycee", "universite"})
+
+
+def normaliser_cycles_enseignes(
+    cycle_principal: Optional[str],
+    cycles_selectionnes: Optional[list[str]],
+) -> Optional[set[str]]:
+    """Valide et normalise les cycles déclarés par un candidat enseignant.
+
+    Renvoie None si un cycle transmis est inconnu ; sinon renvoie un ensemble
+    dédupliqué et normalisé, incluant systématiquement le cycle principal
+    lorsqu'il est valide. Cette fonction ne confère aucun rôle/permission.
+    """
+    cycles = {
+        str(valeur).strip().lower()
+        for valeur in (cycles_selectionnes or [])
+        if str(valeur).strip()
+    }
+    if not cycles.issubset(CYCLES_ENSEIGNEMENT_VALIDES):
+        return None
+    cycle = (cycle_principal or "").strip().lower()
+    if cycle in CYCLES_ENSEIGNEMENT_VALIDES:
+        cycles.add(cycle)
+    return cycles
+
+
 def _contexte_formulaire_inscription(session: Session, erreur: Optional[str] = None) -> dict:
     """Regroupe le contexte commun aux (re)rendus de register.html — la
     liste des Composante/Filiere n'y figure plus : elles sont chargees
@@ -120,6 +146,11 @@ def inscription(
     universite_id: Optional[str] = Form(None),
     composante_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
+    cycle_education: Optional[str] = Form(None),
+    niveau_scolaire_id: Optional[str] = Form(None),
+    option_scolaire_id: Optional[str] = Form(None),
+    etablissement_scolaire_id: Optional[str] = Form(None),
+    cycles_enseignes: Optional[list[str]] = Form(None),
     accepter_conditions: str = Form(""),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -128,6 +159,9 @@ def inscription(
     filiere_id_nettoye = entier_ou_none(filiere_id)
     universite_id_nettoye = entier_ou_none(universite_id)
     composante_id_nettoye = entier_ou_none(composante_id)
+    niveau_scolaire_id_nettoye = entier_ou_none(niveau_scolaire_id)
+    option_scolaire_id_nettoye = entier_ou_none(option_scolaire_id)
+    etablissement_scolaire_id_nettoye = entier_ou_none(etablissement_scolaire_id)
 
     # La case obligatoire côté navigateur est doublée d'un contrôle serveur :
     # un POST direct ne peut pas créer de compte sans accepter les conditions.
@@ -165,49 +199,221 @@ def inscription(
             _contexte_formulaire_inscription(session, "Trop de tentatives d'inscription depuis cette adresse. Reessayez plus tard."),
         )
 
-    # SECURITE : le formulaire public (register.html) ne propose que
-    # "etudiant" et "sponsor" dans son <select>, mais rien n'empeche un
-    # appel direct (curl/Postman/devtools) d'envoyer role=admin. Sans ce
-    # garde-fou, n'importe qui obtiendrait un compte administrateur
-    # complet en un seul POST non authentifie. Un compte ADMIN ne doit
-    # jamais pouvoir naitre de l'auto-inscription : il est cree a la main
-    # via app/creer_admin.py (execute par un operateur de confiance ayant
-    # deja acces au serveur), jamais via cette route publique.
-    if role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.SPONSOR):
+    # Le rôle effectif reste une autorisation de sécurité. L'auto-inscription
+    # peut demander un profil enseignant, mais elle ne peut jamais accorder
+    # RoleUtilisateur.PROFESSEUR ni ADMIN : seul le workflow de validation
+    # administrative le fera après vérification.
+    profil_demande = (
+        "professeur" if role == RoleUtilisateur.PROFESSEUR
+        else "sponsor" if role == RoleUtilisateur.SPONSOR
+        else "eleve"
+    )
+    est_demande_enseignant = profil_demande == "professeur"
+    if role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR, RoleUtilisateur.SPONSOR):
+        role = RoleUtilisateur.ETUDIANT
+        profil_demande = "eleve"
+        est_demande_enseignant = False
+    if est_demande_enseignant:
         role = RoleUtilisateur.ETUDIANT
 
-    # §7-9 du brief refonte academique nationale, revu le 10/09/2026
-    # (Filiere.niveau) : pour un(e) ETUDIANT(E), universite/mention/niveau
-    # deviennent obligatoires et VALIDES cote backend (jamais uniquement
-    # cote JS, qui peut etre contourne par un appel direct) -- filiere_id,
-    # lui, reste FACULTATIF : un etudiant en tronc commun (aucun parcours
-    # nomme a son niveau) n'a justement rien a choisir de plus. Un
-    # sponsor/repetiteur n'a pas de parcours academique a declarer — ces
-    # 4 champs restent optionnels pour ce role, comme avant.
-    if role == RoleUtilisateur.ETUDIANT:
-        erreur_academique = referentiel_academique.erreur_choix_academique(
-            session,
-            universite_id_nettoye,
-            composante_id_nettoye,
-            mention_id_nettoye,
-            filiere_id_nettoye,
-            niveau,
-            set(NIVEAUX),
-        )
-        if erreur_academique:
+    # Compatibilité avec les anciens formulaires/tests et liens : un choix
+    # universitaire historique est interprété comme le cycle université si
+    # le nouvel attribut cycle_education n'est pas encore envoyé.
+    cycle = (cycle_education or "").strip().lower()
+
+    if not cycle and universite_id_nettoye is not None:
+        cycle = "universite"
+
+    # Les cycles enseignés sont une relation distincte du cycle principal du
+    # profil. La normalisation est testée indépendamment du formulaire pour
+    # éviter qu'une nouvelle valeur arbitraire soit enregistrée en base.
+    cycles_enseignes_a_enregistrer: set[str] = set()
+    if est_demande_enseignant:
+        cycles_normalises = normaliser_cycles_enseignes(cycle, cycles_enseignes)
+        if cycles_normalises is None:
             return templates.TemplateResponse(
                 request, "register.html",
-                _contexte_formulaire_inscription(session, erreur_academique),
+                _contexte_formulaire_inscription(
+                    session, "La liste des cycles enseignés contient une valeur invalide."
+                ),
+                status_code=400,
             )
-    else:
-        # Un sponsor n'a pas de parcours academique : on ignore ces
-        # champs meme si un appel direct les fournissait, plutot que de
-        # les valider pour un role qui n'en a pas besoin.
+        cycles_enseignes_a_enregistrer = cycles_normalises
+
+    niveau_scolaire_obj = None
+    option_scolaire_obj = None
+    etablissement_scolaire_obj = None
+
+    if role == RoleUtilisateur.SPONSOR:
+        # Les comptes sponsor n'ont pas de rattachement pédagogique.
         universite_id_nettoye = None
         composante_id_nettoye = None
         mention_id_nettoye = None
         filiere_id_nettoye = None
         niveau = None
+        niveau_scolaire_id_nettoye = None
+        option_scolaire_id_nettoye = None
+        etablissement_scolaire_id_nettoye = None
+        cycle = ""
+    else:
+        if cycle not in {"college", "lycee", "universite"}:
+            # Anciennes intégrations et formulaires encore ouverts peuvent
+            # poster sans le nouveau champ. On conserve une réponse formulaire
+            # classique avec le message, tout en refusant toujours la création.
+            return templates.TemplateResponse(
+                request, "register.html",
+                _contexte_formulaire_inscription(
+                    session,
+                    "Choisissez votre cycle : collège, lycée ou université.",
+                ),
+            )
+
+        if cycle == "universite":
+            # Un candidat enseignant peut déclarer un périmètre universitaire
+            # sans devoir se réinscrire comme étudiant d'une filière précise.
+            # S'il renseigne une partie du parcours, les règles universitaires
+            # habituelles restent intégralement appliquées.
+            parcours_universitaire_renseigne = any((
+                universite_id_nettoye is not None,
+                composante_id_nettoye is not None,
+                mention_id_nettoye is not None,
+                filiere_id_nettoye is not None,
+                bool((niveau or "").strip()),
+            ))
+            if not (est_demande_enseignant and not parcours_universitaire_renseigne):
+                erreur_academique = referentiel_academique.erreur_choix_academique(
+                    session,
+                    universite_id_nettoye,
+                    composante_id_nettoye,
+                    mention_id_nettoye,
+                    filiere_id_nettoye,
+                    niveau,
+                    set(NIVEAUX),
+                )
+                if erreur_academique:
+                    return templates.TemplateResponse(
+                        request, "register.html",
+                        _contexte_formulaire_inscription(session, erreur_academique),
+                        status_code=400,
+                    )
+            else:
+                universite_id_nettoye = None
+                composante_id_nettoye = None
+                mention_id_nettoye = None
+                filiere_id_nettoye = None
+                niveau = None
+            niveau_scolaire_id_nettoye = None
+            option_scolaire_id_nettoye = None
+            etablissement_scolaire_id_nettoye = None
+        else:
+            # Un profil collège/lycée ne doit pas être détourné en filière
+            # universitaire : les deux référentiels sont disjoints et sont
+            # validés côté serveur même si le navigateur est manipulé.
+            universite_id_nettoye = None
+            composante_id_nettoye = None
+            mention_id_nettoye = None
+            filiere_id_nettoye = None
+            niveau = None
+
+            if niveau_scolaire_id_nettoye is None and not est_demande_enseignant:
+                return templates.TemplateResponse(
+                    request, "register.html",
+                    _contexte_formulaire_inscription(
+                        session, "Choisissez votre classe pour continuer."
+                    ),
+                    status_code=400,
+                )
+
+            referentiels_scolaires = session.exec(
+                select(ReferentielScolaire).order_by(
+                    ReferentielScolaire.date_creation.desc(),
+                    ReferentielScolaire.id.desc(),
+                )
+            ).all()
+            referentiel_courant = referentiels_scolaires[0] if referentiels_scolaires else None
+            if niveau_scolaire_id_nettoye is not None:
+                niveau_scolaire_obj = session.get(NiveauScolaire, niveau_scolaire_id_nettoye)
+                if (
+                    not niveau_scolaire_obj
+                    or not referentiel_courant
+                    or niveau_scolaire_obj.referentiel_id != referentiel_courant.id
+                    or not niveau_scolaire_obj.est_actif
+                    or niveau_scolaire_obj.statut_validation != "verifie"
+                    or niveau_scolaire_obj.cycle != cycle
+                ):
+                    return templates.TemplateResponse(
+                        request, "register.html",
+                        _contexte_formulaire_inscription(
+                            session, "La classe choisie n'est pas disponible dans le référentiel validé."
+                        ),
+                        status_code=400,
+                    )
+            else:
+                niveau_scolaire_obj = None
+                # Une série/option n'a de sens que lorsqu'un niveau précis est
+                # choisi. Un profil enseignant peut ne renseigner qu'un cycle.
+                if option_scolaire_id_nettoye is not None:
+                    return templates.TemplateResponse(
+                        request, "register.html",
+                        _contexte_formulaire_inscription(
+                            session, "Choisissez un niveau avant de préciser une série ou option."
+                        ),
+                        status_code=400,
+                    )
+                option_scolaire_obj = None
+
+            if option_scolaire_id_nettoye is not None:
+                option_scolaire_obj = session.get(OptionScolaire, option_scolaire_id_nettoye)
+                parent_option_obj = (
+                    session.get(OptionScolaire, option_scolaire_obj.parent_option_id)
+                    if option_scolaire_obj and option_scolaire_obj.parent_option_id else None
+                )
+                if (
+                    not niveau_scolaire_obj
+                    or not referentiel_courant
+                    or not option_scolaire_obj
+                    or option_scolaire_obj.niveau_id != niveau_scolaire_obj.id
+                    or option_scolaire_obj.referentiel_id != referentiel_courant.id
+                    or not option_scolaire_obj.est_active
+                    or option_scolaire_obj.statut_validation != "verifie"
+                    or (
+                        option_scolaire_obj.parent_option_id is not None
+                        and (
+                            not parent_option_obj
+                            or parent_option_obj.niveau_id != niveau_scolaire_obj.id
+                            or parent_option_obj.referentiel_id != referentiel_courant.id
+                            or parent_option_obj.parent_option_id is not None
+                            or not parent_option_obj.est_active
+                            or parent_option_obj.statut_validation != "verifie"
+                        )
+                    )
+                ):
+                    return templates.TemplateResponse(
+                        request, "register.html",
+                        _contexte_formulaire_inscription(
+                            session, "La série ou option ne correspond pas à la classe choisie."
+                        ),
+                        status_code=400,
+                    )
+            else:
+                option_scolaire_obj = None
+
+            if etablissement_scolaire_id_nettoye is not None:
+                etablissement_scolaire_obj = session.get(
+                    EtablissementScolaire, etablissement_scolaire_id_nettoye
+                )
+                if (
+                    not etablissement_scolaire_obj
+                    or not etablissement_scolaire_obj.est_actif
+                    or not etablissement_scolaire_obj.est_verifie
+                ):
+                    return templates.TemplateResponse(
+                        request, "register.html",
+                        _contexte_formulaire_inscription(
+                            session, "L'établissement choisi n'est pas dans le catalogue vérifié."
+                        ),
+                        status_code=400,
+                    )
 
     # SECURITE : le backend est la source de verite pour la validation du
     # numero, jamais le frontend seul — un numero avec des lettres, un
@@ -235,6 +441,13 @@ def inscription(
         telephone=telephone_normalise,
         mot_de_passe_hash=hacher_mot_de_passe(mot_de_passe),
         role=role,
+        profil_souhaite=profil_demande,
+        cycle_education=cycle or None,
+        niveau_scolaire_id=(niveau_scolaire_obj.id if niveau_scolaire_obj else None),
+        option_scolaire_id=(option_scolaire_obj.id if option_scolaire_obj else None),
+        etablissement_scolaire_id=(etablissement_scolaire_obj.id if etablissement_scolaire_obj else None),
+        statut_verification_enseignant=("en_attente" if est_demande_enseignant else "non_concerne"),
+        demande_enseignant_le=(datetime.utcnow() if est_demande_enseignant else None),
         mention_id=mention_id_nettoye,
         filiere_id=filiere_id_nettoye,
         faculte_id=composante_id_nettoye,
@@ -244,7 +457,19 @@ def inscription(
         version_conditions_acceptees=VERSION_CONDITIONS,
         derniere_activite_le=datetime.utcnow(),
     )
+    # Enregistrer le compte et ses déclarations de cycles dans la même
+    # transaction : une erreur d'intégrité ne doit pas laisser un compte
+    # enseignant partiellement créé sans les cycles déclarés.
     session.add(utilisateur)
+    session.flush()
+    if est_demande_enseignant:
+        for cycle_enseigne in sorted(cycles_enseignes_a_enregistrer):
+            session.add(
+                CycleEnseigne(
+                    utilisateur_id=utilisateur.id,
+                    cycle_education=cycle_enseigne,
+                )
+            )
     session.commit()
     session.refresh(utilisateur)
 

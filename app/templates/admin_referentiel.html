@@ -5,7 +5,8 @@
 {% block contenu %}
 <div class="contenu-clair">
 <p class="eyebrow"><a href="/admin">&larr; Administration</a></p>
-<h2>Referentiel academique</h2>
+<h2>Référentiel académique</h2>
+<p><a class="bouton bouton-secondaire" href="/admin/referentiel/scolaire">Gérer le catalogue collège / lycée →</a></p>
 
 {% if request.query_params.get("erreur") == "nom_requis" %}<div class="erreur">Le nom de la mention est requis.</div>{% endif %}
 {% if request.query_params.get("erreur") == "mention_existe_deja" %}<div class="erreur">Cette mention existe deja.</div>{% endif %}

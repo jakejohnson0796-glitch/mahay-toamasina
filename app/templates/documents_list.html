@@ -103,16 +103,51 @@
   <input type="hidden" name="sort" id="doc-filtre-sort" value="{{ request.query_params.get('sort', 'recent') }}">
   {% if cercle %}<input type="hidden" name="cercle_id" value="{{ cercle.id }}">{% endif %}
   <div>
-    <label for="filiere_id">Filiere</label>
+    <label for="portee_academique">Cycle / portée</label>
+    <select id="portee_academique" name="portee_academique" data-submit-on-change>
+      <option value="" {% if not portee_academique %}selected{% endif %}>Tous les cycles</option>
+      <option value="scolaire" {% if portee_academique == "scolaire" %}selected{% endif %}>Collège / lycée</option>
+      <option value="universitaire" {% if portee_academique == "universitaire" %}selected{% endif %}>Université</option>
+    </select>
+  </div>
+  <div>
+    <label for="filiere_id">Filière universitaire</label>
     <select id="filiere_id" name="filiere_id" data-submit-on-change>
-      <option value="">Toutes les filieres</option>
+      <option value="">Toutes les filières</option>
       {% for filiere in filieres %}
       <option value="{{ filiere.id }}" {% if filiere_id == filiere.id %}selected{% endif %}>{{ filiere.nom }}</option>
       {% endfor %}
     </select>
   </div>
   <div>
-    <label for="matiere">Matiere</label>
+    <label for="niveau_scolaire_id">Classe</label>
+    <select id="niveau_scolaire_id" name="niveau_scolaire_id" data-submit-on-change>
+      <option value="">Toutes les classes</option>
+      {% for niveau_scolaire in niveaux_scolaires %}
+      <option value="{{ niveau_scolaire.id }}" {% if niveau_scolaire_id == niveau_scolaire.id %}selected{% endif %}>{{ niveau_scolaire.libelle }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="option_scolaire_id">Série / option</label>
+    <select id="option_scolaire_id" name="option_scolaire_id" data-submit-on-change>
+      <option value="">Toutes les séries/options</option>
+      {% for option_scolaire in options_scolaires %}
+      <option value="{{ option_scolaire.id }}" {% if option_scolaire_id == option_scolaire.id %}selected{% endif %}>{{ option_scolaire.libelle }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="etablissement_scolaire_id">Établissement vérifié</label>
+    <select id="etablissement_scolaire_id" name="etablissement_scolaire_id" data-submit-on-change>
+      <option value="">Tous les établissements</option>
+      {% for etablissement in etablissements_scolaires %}
+      <option value="{{ etablissement.id }}" {% if etablissement_scolaire_id == etablissement.id %}selected{% endif %}>{{ etablissement.nom }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="matiere">Matière</label>
     <input type="text" id="matiere" name="matiere" value="{{ matiere }}" placeholder="ex: Droit civil">
   </div>
   <div>
@@ -129,6 +164,12 @@
   <article class="doc-depot-personnel">
     <h4>{{ doc.titre }}</h4>
     <p class="doc-depot-personnel-meta">{{ doc.matiere }} · {{ doc.type_document.value }} · {{ doc.annee }} · Statut : {{ doc.statut.value }}</p>
+    {% if doc.portee_academique == "scolaire" %}
+      <p class="doc-depot-personnel-meta">Parcours scolaire :
+        {% for niveau_scolaire in niveaux_scolaires %}{% if niveau_scolaire.id == doc.niveau_scolaire_id %}{{ niveau_scolaire.libelle }}{% endif %}{% endfor %}
+        {% for option_scolaire in options_scolaires %}{% if option_scolaire.id == doc.option_scolaire_id %} · {{ option_scolaire.libelle }}{% endif %}{% endfor %}
+      </p>
+    {% endif %}
     {% set fiche_mg = fiches_documents_mg.get(doc.id, {}) %}
     <details class="doc-fiche">
       <summary>Résumé et fiche pédagogique{% if doc.fiche_validation_statut != "validee" %} · en attente de vérification{% endif %}</summary>
@@ -197,9 +238,9 @@
 {% endif %}
 
 <div class="doc-filtres-type">
-  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}{{ '&cercle_id=' ~ cercle.id if cercle else '' }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if not type_document else '' }}">Tous</a>
+  <a href="?filiere_id={{ filiere_id or '' }}&portee_academique={{ portee_academique|urlencode }}&niveau_scolaire_id={{ niveau_scolaire_id or '' }}&option_scolaire_id={{ option_scolaire_id or '' }}&etablissement_scolaire_id={{ etablissement_scolaire_id or '' }}&matiere={{ matiere|urlencode }}{{ '&cercle_id=' ~ cercle.id if cercle else '' }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if not type_document else '' }}">Tous</a>
   {% for t in types_document %}
-  <a href="?filiere_id={{ filiere_id or '' }}&matiere={{ matiere }}{{ '&cercle_id=' ~ cercle.id if cercle else '' }}&type_document={{ t.value }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if type_document == t.value else '' }}">
+  <a href="?filiere_id={{ filiere_id or '' }}&portee_academique={{ portee_academique|urlencode }}&niveau_scolaire_id={{ niveau_scolaire_id or '' }}&option_scolaire_id={{ option_scolaire_id or '' }}&etablissement_scolaire_id={{ etablissement_scolaire_id or '' }}&matiere={{ matiere|urlencode }}{{ '&cercle_id=' ~ cercle.id if cercle else '' }}&type_document={{ t.value }}&q={{ request.query_params.get('q', '')|urlencode }}&sort={{ request.query_params.get('sort', 'recent')|urlencode }}" class="doc-chip {{ 'doc-chip-actif' if type_document == t.value else '' }}">
     {{ { "annale": "Annales", "corrige": "Corriges", "fiche": "Fiches", "cours": "Cours" }[t.value] }}
   </a>
   {% endfor %}
@@ -243,6 +284,13 @@ session dediee, avec sa propre verification desktop+mobile.
     </div>
     <h3 class="doc-titre">{{ doc.titre }}</h3>
     <p class="doc-meta">{{ doc.matiere }} · {{ doc.annee }}</p>
+    {% if doc.portee_academique == "scolaire" %}
+      <p class="doc-meta doc-meta-cible">
+        {% for niveau_scolaire in niveaux_scolaires %}{% if niveau_scolaire.id == doc.niveau_scolaire_id %}{{ niveau_scolaire.libelle }}{% endif %}{% endfor %}
+        {% for option_scolaire in options_scolaires %}{% if option_scolaire.id == doc.option_scolaire_id %} · {{ option_scolaire.libelle }}{% endif %}{% endfor %}
+        {% for etablissement in etablissements_scolaires %}{% if etablissement.id == doc.etablissement_scolaire_id %} · {{ etablissement.nom }}{% endif %}{% endfor %}
+      </p>
+    {% endif %}
     <p class="doc-ref" title="{{ doc.reference }}">Réf. {{ doc.reference }}</p>
     {% set fiche = fiches_documents.get(doc.id, {}) %}
     {% set fiche_mg = fiches_documents_mg.get(doc.id, {}) %}

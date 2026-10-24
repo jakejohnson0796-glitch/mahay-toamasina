@@ -19,7 +19,7 @@ from sqlmodel import Session, select, func
 from .config import parametres
 from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
-from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router
+from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, admin_scolaire_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router, scolaire_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .static_cache import VersionedStaticAssetCacheMiddleware
 from .admin_security import AdminActionConfirmationMiddleware
@@ -27,6 +27,7 @@ from .production_guard import valider_configuration_production
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
 from .cercles_referentiel import assurer_cercles_referentiel
+from .cercles_scolaires import assurer_cercles_scolaires
 from .referentiel_reconciliation import reconcilier
 from scripts.dedupliquer_cercles_nationaux import deduplicquer as deduplicquer_cercles_nationaux
 from scripts.import_academic_data import importer as importer_referentiel_academique
@@ -88,11 +89,13 @@ app.include_router(quiz_router.router)
 app.include_router(jeu_cerebral_router.router)
 app.include_router(admin_router.router)
 app.include_router(admin_referentiel_router.router)
+app.include_router(admin_scolaire_router.router)
 app.include_router(tuteur_router.router)
 app.include_router(classe_router.router)
 app.include_router(faq_router.router)
 app.include_router(feedback_router.router)
 app.include_router(academique_router.router)
+app.include_router(scolaire_router.router)
 app.include_router(mode_emploi_router.router)
 app.include_router(notifications_router.router)
 app.include_router(revisions_router.router)
@@ -310,7 +313,22 @@ def _initialiser_donnees_apres_demarrage() -> None:
         )
         if nb_cercles_crees:
             print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
-    
+
+        # La synchronisation scolaire est distincte de la synchronisation
+        # universitaire : elle utilise uniquement les classes/options/matières
+        # vérifiées et conserve les cercles manuels avec du contenu ou des membres.
+        rapport_cercles_scolaires = assurer_cercles_scolaires(session)
+        print(
+            "[DEBUG DATABASE] Synchronisation cercles scolaires — "
+            f"{rapport_cercles_scolaires['cibles']} cible(s), "
+            f"{rapport_cercles_scolaires['crees']} créé(s), "
+            f"{rapport_cercles_scolaires['reactives']} réactivé(s), "
+            f"{rapport_cercles_scolaires['actualises']} mis à jour, "
+            f"{rapport_cercles_scolaires['archives']} archivé(s), "
+            f"{rapport_cercles_scolaires['preserves']} préservé(s), "
+            f"{rapport_cercles_scolaires['existants']} déjà présent(s)."
+        )
+
         # Fusionne les cercles nationaux "doublons" restants (un par
         # universite au lieu d'un seul, bug historique corrige dans
         # cercles_referentiel.py mais dont les doublons d'AVANT la

@@ -18,7 +18,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant, verifier_mot_de_passe
 from ..models import (
-    Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, RoleMembreCercle, MessageCercle, SignalementMessage,
+    Utilisateur, RoleUtilisateur, NiveauScolaire, OptionScolaire, CycleEnseigne, CercleEtude, MembreCercle, RoleMembreCercle, MessageCercle, SignalementMessage,
     DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
@@ -574,6 +574,20 @@ def page_utilisateurs(request: Request, q: Optional[str] = None, session: Sessio
         terme = f"%{q.strip()}%"
         requete = requete.where((Utilisateur.nom.ilike(terme)) | (Utilisateur.telephone.ilike(terme)))
     utilisateurs = session.exec(requete).all()
+    niveaux_scolaires = session.exec(
+        select(NiveauScolaire).order_by(NiveauScolaire.ordre, NiveauScolaire.libelle)
+    ).all()
+    options_scolaires = session.exec(
+        select(OptionScolaire).order_by(OptionScolaire.libelle)
+    ).all()
+    cycles_enseignes = session.exec(
+        select(CycleEnseigne).order_by(CycleEnseigne.cycle_education)
+    ).all()
+    cycles_enseignes_par_utilisateur: dict[int, list[str]] = {}
+    for declaration in cycles_enseignes:
+        cycles_enseignes_par_utilisateur.setdefault(
+            declaration.utilisateur_id, []
+        ).append(declaration.cycle_education)
 
     # Mot de passe temporaire genere par la requete PRECEDENTE (redirection
     # juste apres reinitialiser_mot_de_passe_admin() ci-dessous) : stocke
@@ -589,6 +603,8 @@ def page_utilisateurs(request: Request, q: Optional[str] = None, session: Sessio
         "admin_utilisateurs.html",
         {
             "utilisateur": admin, "utilisateurs": utilisateurs, "recherche": q or "",
+            "niveaux_scolaires": niveaux_scolaires, "options_scolaires": options_scolaires,
+            "cycles_enseignes_par_utilisateur": cycles_enseignes_par_utilisateur,
             "mot_de_passe_temporaire": mot_de_passe_temporaire,
             "utilisateur_reinitialise_id": utilisateur_reinitialise_id,
         },
@@ -667,8 +683,59 @@ def promouvoir_professeur(request: Request, utilisateur_id: int, session: Sessio
         return RedirectResponse("/", status_code=303)
 
     cible = session.get(Utilisateur, utilisateur_id)
-    if cible and cible.role == RoleUtilisateur.ETUDIANT:
+    if cible and not cible.banni and cible.role == RoleUtilisateur.ETUDIANT:
+        # Attribution du rôle effectif par un admin : le profil déclaré
+        # seul ne suffit jamais. La décision est datée et auditée sur le compte.
         cible.role = RoleUtilisateur.PROFESSEUR
+        cible.profil_souhaite = "professeur"
+        cible.statut_verification_enseignant = "approuve"
+        cible.verification_enseignant_le = datetime.utcnow()
+        cible.verification_enseignant_par_id = admin.id
+        cible.motif_refus_enseignant = None
+        if cible.cycle_education in {"college", "lycee", "universite"}:
+            declaration_existante = session.exec(
+                select(CycleEnseigne).where(
+                    CycleEnseigne.utilisateur_id == cible.id,
+                    CycleEnseigne.cycle_education == cible.cycle_education,
+                )
+            ).first()
+            if not declaration_existante:
+                session.add(
+                    CycleEnseigne(
+                        utilisateur_id=cible.id,
+                        cycle_education=cible.cycle_education,
+                    )
+                )
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
+@router.post("/admin/utilisateurs/{utilisateur_id}/refuser-professeur")
+def refuser_demande_professeur(
+    request: Request,
+    utilisateur_id: int,
+    motif: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Refuse une demande de profil enseignant sans octroyer de permission."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if (
+        cible
+        and cible.profil_souhaite == "professeur"
+        and cible.statut_verification_enseignant == "en_attente"
+        and cible.role == RoleUtilisateur.ETUDIANT
+    ):
+        cible.statut_verification_enseignant = "refuse"
+        cible.verification_enseignant_le = datetime.utcnow()
+        cible.verification_enseignant_par_id = admin.id
+        cible.motif_refus_enseignant = (motif.strip()[:500] or None)
         session.add(cible)
         session.commit()
 
@@ -694,6 +761,9 @@ def retrograder_etudiant(request: Request, utilisateur_id: int, session: Session
 
     if cible.role == RoleUtilisateur.PROFESSEUR:
         cible.role = RoleUtilisateur.ETUDIANT
+        cible.statut_verification_enseignant = "retire"
+        cible.verification_enseignant_le = datetime.utcnow()
+        cible.verification_enseignant_par_id = admin.id
         session.add(cible)
         session.commit()
     elif cible.role == RoleUtilisateur.ADMIN:

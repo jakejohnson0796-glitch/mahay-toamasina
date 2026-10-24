@@ -42,6 +42,8 @@ from .models import (
     FicheRevisionCours,
     FicheRevisionDocument,
     Filiere,
+    NiveauScolaire,
+    OptionScolaire,
     InscriptionCours,
     Notification,
     ProgressionNotion,
@@ -1168,12 +1170,38 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
             "annee": document.annee,
             "chemin_fichier": document.chemin_fichier,
             "filiere_id": document.filiere_id,
+            "portee_academique": document.portee_academique,
+            "niveau_scolaire_id": document.niveau_scolaire_id,
+            "option_scolaire_id": document.option_scolaire_id,
+            "matiere_scolaire_id": document.matiere_scolaire_id,
             "date_upload": document.date_upload,
-        "resume_ia": document.resume_ia,
+            "resume_ia": document.resume_ia,
         }
-        filiere = session.get(Filiere, document.filiere_id)
+        filiere = session.get(Filiere, document.filiere_id) if document.filiere_id else None
         donnees["filiere"] = filiere.nom if filiere else ""
         donnees["niveau"] = filiere.niveau if filiere else ""
+        if document.portee_academique == "scolaire":
+            niveau_scolaire = (
+                session.get(NiveauScolaire, document.niveau_scolaire_id)
+                if document.niveau_scolaire_id else None
+            )
+            option_scolaire = (
+                session.get(OptionScolaire, document.option_scolaire_id)
+                if document.option_scolaire_id else None
+            )
+            parent_option = (
+                session.get(OptionScolaire, option_scolaire.parent_option_id)
+                if option_scolaire and option_scolaire.parent_option_id else None
+            )
+            donnees["niveau"] = niveau_scolaire.libelle if niveau_scolaire else "Niveau scolaire non précisé"
+            if option_scolaire:
+                label_option = (
+                    f"{parent_option.libelle} → {option_scolaire.libelle}"
+                    if parent_option else option_scolaire.libelle
+                )
+                donnees["filiere"] = f"Scolaire · {label_option}"
+            else:
+                donnees["filiere"] = "Parcours scolaire"
         fiche.statut = StatutFicheRevisionDocument.EN_COURS
         fiche.erreur_generation = None
         fiche.date_modification = datetime.utcnow()
@@ -1266,6 +1294,11 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
         "matiere": donnees["matiere"],
         "annee": donnees["annee"],
         "filiere": donnees["filiere"],
+        "portee_academique": donnees["portee_academique"],
+        "niveau_scolaire_id": donnees["niveau_scolaire_id"],
+        "option_scolaire_id": donnees["option_scolaire_id"],
+        "matiere_scolaire_id": donnees["matiere_scolaire_id"],
+        "niveau_scolaire": donnees["niveau"],
         "caracteres_extraits": len(texte_source),
         "caracteres_transmis": len(texte_fourni),
         "contenu_tronque": contenu_tronque,
@@ -1293,6 +1326,10 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
             or document.matiere != donnees["matiere"]
             or document.annee != donnees["annee"]
             or document.filiere_id != donnees["filiere_id"]
+            or document.portee_academique != donnees["portee_academique"]
+            or document.niveau_scolaire_id != donnees["niveau_scolaire_id"]
+            or document.option_scolaire_id != donnees["option_scolaire_id"]
+            or document.matiere_scolaire_id != donnees["matiere_scolaire_id"]
         ):
             # Si un administrateur a corrigé les métadonnées pendant l'appel IA,
             # le worker doit réessayer avec le contexte le plus récent.
@@ -1342,9 +1379,20 @@ def personnaliser_fiche_revision_document(
     """
     # JSON round-trip : copie isolée des listes et dictionnaires de la fiche partagée.
     contenu = json.loads(json.dumps(contenu_source, ensure_ascii=False))
-    filiere = session.get(Filiere, document.filiere_id) if document.filiere_id else None
+    filiere_id = getattr(document, "filiere_id", None)
+    niveau_scolaire_id = getattr(document, "niveau_scolaire_id", None)
+    portee_academique = getattr(document, "portee_academique", "universitaire")
+    filiere = session.get(Filiere, filiere_id) if filiere_id else None
+    niveau_scolaire = (
+        session.get(NiveauScolaire, niveau_scolaire_id)
+        if niveau_scolaire_id else None
+    )
     matiere_cle = _matiere_cle(document.matiere)
-    niveau_document = filiere.niveau if filiere else None
+    niveau_document = (
+        niveau_scolaire.libelle
+        if portee_academique == "scolaire" and niveau_scolaire
+        else filiere.niveau if filiere else None
+    )
     maintenant = datetime.utcnow()
 
     progressions = session.exec(

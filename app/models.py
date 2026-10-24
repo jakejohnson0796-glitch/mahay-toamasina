@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Optional
 
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Index, text, UniqueConstraint
+from sqlalchemy import CheckConstraint, Index, text, UniqueConstraint, Column, ForeignKey, Integer
 
 
 class RoleUtilisateur(str, Enum):
@@ -31,6 +31,113 @@ class StatutDocument(str, Enum):
     EN_ATTENTE = "en_attente"   # vient d'etre depose, pas encore visible publiquement
     APPROUVE = "approuve"       # valide par un moderateur, visible dans le manifeste
     REJETE = "rejete"
+
+
+class ReferentielScolaire(SQLModel, table=True):
+    """Version sourcée et validable du catalogue scolaire national.
+
+    Les versions anciennes restent en base afin que les profils, documents
+    et résultats puissent conserver le référentiel utilisé au moment de
+    leur création. Un statut partiel signale explicitement qu'un inventaire
+    n'est pas encore exhaustif (notamment pour le technique/professionnel).
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    code: str = Field(index=True, unique=True, max_length=40)
+    libelle: str
+    annee_scolaire: Optional[str] = Field(default=None, max_length=20)
+    source_officielle: str
+    statut: str = Field(default="partiel", index=True, max_length=20)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_validation: Optional[datetime] = None
+    valide_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+
+
+class NiveauScolaire(SQLModel, table=True):
+    """Classe normalisée, indépendante des niveaux universitaires L1-D3."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    referentiel_id: int = Field(foreign_key="referentielscolaire.id", index=True)
+    code: str = Field(index=True, max_length=20)
+    libelle: str
+    cycle: str = Field(index=True, max_length=20)  # college / lycee
+    ordre: int
+    est_actif: bool = Field(default=True, index=True)
+    source_officielle: Optional[str] = None
+    statut_validation: str = Field(default="verifie", index=True, max_length=20)
+
+    __table_args__ = (
+        UniqueConstraint("referentiel_id", "code", name="uq_niveauscolaire_referentiel_code"),
+    )
+
+
+class OptionScolaire(SQLModel, table=True):
+    """Série, option ou filière scolaire attachée à un niveau précis."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    referentiel_id: int = Field(foreign_key="referentielscolaire.id", index=True)
+    niveau_id: int = Field(foreign_key="niveauscolaire.id", index=True)
+    # Les options transitoires du baccalauréat peuvent dépendre d'une série :
+    # ex. Série L → Option A1/A2/L ; Série S → Option C/D/S.
+    parent_option_id: Optional[int] = Field(
+        default=None, foreign_key="optionscolaire.id", index=True
+    )
+    code: str = Field(max_length=30)
+    libelle: str
+    type_option: str = Field(default="serie", index=True, max_length=30)
+    est_active: bool = Field(default=True, index=True)
+    source_officielle: Optional[str] = None
+    statut_validation: str = Field(default="a_verifier", index=True, max_length=20)
+
+    __table_args__ = (
+        UniqueConstraint("niveau_id", "code", name="uq_optionscolaire_niveau_code"),
+    )
+
+
+class MatiereScolaire(SQLModel, table=True):
+    """Catalogue normalisé des matières ; les associations par niveau/série
+    sont portées par ProgrammeMatiereScolaire et non encodées en dur."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    code: str = Field(index=True, unique=True, max_length=40)
+    libelle: str
+    libelle_malagasy: Optional[str] = None
+    source_officielle: Optional[str] = None
+    statut_validation: str = Field(default="a_verifier", index=True, max_length=20)
+    est_active: bool = Field(default=True, index=True)
+
+
+class ProgrammeMatiereScolaire(SQLModel, table=True):
+    """Association versionnée niveau / série-option / matière."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    referentiel_id: int = Field(foreign_key="referentielscolaire.id", index=True)
+    niveau_id: int = Field(foreign_key="niveauscolaire.id", index=True)
+    option_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    matiere_id: int = Field(foreign_key="matierescolaire.id", index=True)
+    obligatoire: bool = Field(default=True)
+    source_officielle: Optional[str] = None
+    statut_validation: str = Field(default="a_verifier", index=True, max_length=20)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "referentiel_id", "niveau_id", "option_id", "matiere_id",
+            name="uq_programmematiere_referentiel_niveau_option_matiere",
+        ),
+    )
+
+
+class EtablissementScolaire(SQLModel, table=True):
+    """Établissement du secondaire. Le catalogue peut être progressivement
+    enrichi ; une entrée non vérifiée ne doit pas être présentée comme officielle."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nom: str = Field(index=True)
+    code: Optional[str] = Field(default=None, unique=True, index=True)
+    type_etablissement: str = Field(default="college_lycee", index=True, max_length=30)
+    secteur: str = Field(default="inconnu", index=True, max_length=20)  # public / prive / inconnu
+    region: Optional[str] = Field(default=None, index=True)
+    district: Optional[str] = Field(default=None, index=True)
+    commune: Optional[str] = Field(default=None, index=True)
+    source_officielle: Optional[str] = None
+    est_verifie: bool = Field(default=False, index=True)
+    est_actif: bool = Field(default=True, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_maj: datetime = Field(default_factory=datetime.utcnow)
 
 
 class StatutAbonnement(str, Enum):
@@ -226,6 +333,18 @@ class Utilisateur(SQLModel, table=True):
     # ce champ a False). Jamais True par defaut a l'inscription.
     doit_changer_mot_de_passe: bool = Field(default=False)
     role: RoleUtilisateur = Field(default=RoleUtilisateur.ETUDIANT)
+    # Profil pédagogique choisi à l'inscription : distinct des permissions
+    # effectives (role). Une demande professeur ne confère aucun privilège.
+    profil_souhaite: str = Field(default="eleve", index=True, max_length=20)
+    cycle_education: Optional[str] = Field(default=None, index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    statut_verification_enseignant: str = Field(default="non_concerne", index=True, max_length=20)
+    demande_enseignant_le: Optional[datetime] = None
+    verification_enseignant_le: Optional[datetime] = None
+    verification_enseignant_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    motif_refus_enseignant: Optional[str] = None
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
     # Composante choisie explicitement dans le profil. Indispensable pour
     # les etudiants en tronc commun, car aucune Filiere ne permet sinon de
@@ -369,7 +488,14 @@ class Document(SQLModel, table=True):
     matiere: str
     type_document: TypeDocument
     annee: int
-    filiere_id: int = Field(foreign_key="filiere.id")
+    # Nullable pour autoriser les ressources scolaires : une ressource doit
+    # désormais être classée par le référentiel universitaire OU scolaire.
+    filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id", index=True)
+    portee_academique: str = Field(default="universitaire", index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     uploader_id: int = Field(foreign_key="utilisateur.id")
     chemin_fichier: str
     statut: StatutDocument = Field(default=StatutDocument.EN_ATTENTE, index=True)
@@ -395,6 +521,16 @@ class Document(SQLModel, table=True):
     fiche_validation_statut: str = Field(default="a_verifier", index=True)
     fiche_validee_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     fiche_validee_le: Optional[datetime] = None
+
+    __table_args__ = (
+        CheckConstraint(
+            "(portee_academique = 'universitaire' AND filiere_id IS NOT NULL "
+            "AND niveau_scolaire_id IS NULL) OR "
+            "(portee_academique = 'scolaire' AND filiere_id IS NULL "
+            "AND niveau_scolaire_id IS NOT NULL)",
+            name="ck_document_portee_academique_cible",
+        ),
+    )
 
 
 class ProgressionNotion(SQLModel, table=True):
@@ -543,6 +679,9 @@ class TentativeQuiz(SQLModel, table=True):
     utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
     matiere: str
     niveau: str
+    cycle_education: Optional[str] = Field(default=None, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
     difficulte: str
     nb_questions: int
     questions_json: str  # [{question, choix[], index_bonne_reponse, explication}, ...]
@@ -686,6 +825,17 @@ class CercleEtude(SQLModel, table=True):
     # tant que non verifie manuellement) restent valides sans mention.
     mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
     niveau: Optional[str] = None
+    # Un cercle peut relever du référentiel universitaire, scolaire ou être
+    # explicitement transversal ; les colonnes historiques restent intactes.
+    portee_academique: str = Field(default="universitaire", index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
+    # True uniquement pour les cercles scolaires provisionnés par le
+    # synchroniseur du référentiel. Permet de réconcilier les cibles
+    # automatiquement sans archiver un cercle créé et géré par les usagers.
+    synchronise_referentiel: bool = Field(default=False, index=True)
     statut: StatutCercle = Field(default=StatutCercle.ACTIF)
     createur_id: int = Field(foreign_key="utilisateur.id", index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
@@ -697,6 +847,17 @@ class CercleEtude(SQLModel, table=True):
     # de production, plutot que de ne connaitre l'index que via la
     # migration.
     __table_args__ = (
+        CheckConstraint(
+            "(portee_academique = 'scolaire' AND mention_id IS NULL AND filiere_id IS NULL "
+            "AND niveau IS NULL AND niveau_scolaire_id IS NOT NULL) OR "
+            "(portee_academique = 'universitaire' AND niveau_scolaire_id IS NULL "
+            "AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL "
+            "AND matiere_scolaire_id IS NULL) OR "
+            "(portee_academique = 'transversal' AND mention_id IS NULL AND filiere_id IS NULL "
+            "AND niveau IS NULL AND niveau_scolaire_id IS NULL AND option_scolaire_id IS NULL "
+            "AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL)",
+            name="ck_cercle_portee_cible_separee",
+        ),
         Index(
             "ix_cercle_national_unique_actif",
             "mention_id", "filiere_id", "niveau",
@@ -710,6 +871,74 @@ class CercleEtude(SQLModel, table=True):
             unique=True,
             sqlite_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NULL AND niveau IS NOT NULL"),
             postgresql_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NULL AND niveau IS NOT NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_000",
+            "niveau_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_001",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_010",
+            "niveau_scolaire_id",
+            "etablissement_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_011",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "etablissement_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_100",
+            "niveau_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_101",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_110",
+            "niveau_scolaire_id",
+            "etablissement_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_111",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "etablissement_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
         ),
     )
 
@@ -798,10 +1027,16 @@ class DemandeCreationCercle(SQLModel, table=True):
     mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id", index=True)
     niveau: Optional[str] = None
+    # Portée scolaire séparée du workflow universitaire existant.
+    portee_academique: str = Field(default="universitaire", index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     nom: str
     description: Optional[str] = None
     raison: str
-    statut: StatutDemandeCreationCercle = Field(default=StatutDemandeCreationCercle.EN_ATTENTE)
+    statut: StatutDemandeCreationCercle = Field(default=StatutDemandeCreationCercle.EN_ATTENTE, index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_traitement: Optional[datetime] = None
     traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
@@ -811,6 +1046,17 @@ class DemandeCreationCercle(SQLModel, table=True):
     cercle_cree_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id", index=True)
 
     __table_args__ = (
+        CheckConstraint(
+            "(portee_academique = 'scolaire' AND mention_id IS NULL AND filiere_id IS NULL "
+            "AND niveau IS NULL AND niveau_scolaire_id IS NOT NULL) OR "
+            "(portee_academique = 'universitaire' AND niveau_scolaire_id IS NULL "
+            "AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL "
+            "AND matiere_scolaire_id IS NULL) OR "
+            "(portee_academique = 'transversal' AND mention_id IS NULL AND filiere_id IS NULL "
+            "AND niveau IS NULL AND niveau_scolaire_id IS NULL AND option_scolaire_id IS NULL "
+            "AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL)",
+            name="ck_demandecreationcercle_portee_cible_separee",
+        ),
         Index(
             "ix_demande_creation_unique_nationale_attente",
             "mention_id", "filiere_id", "niveau",
@@ -836,6 +1082,74 @@ class DemandeCreationCercle(SQLModel, table=True):
                 "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
                 "AND filiere_id IS NULL AND niveau IS NOT NULL"
             ),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_000",
+            "niveau_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_001",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_010",
+            "niveau_scolaire_id",
+            "etablissement_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_011",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "etablissement_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_100",
+            "niveau_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_101",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_110",
+            "niveau_scolaire_id",
+            "etablissement_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_demande_creation_scolaire_unique_111",
+            "niveau_scolaire_id",
+            "option_scolaire_id",
+            "etablissement_scolaire_id",
+            "matiere_scolaire_id",
+            unique=True,
+            sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
         ),
     )
 
@@ -1113,6 +1427,12 @@ class Cours(SQLModel, table=True):
     nom: str
     matiere: str
     niveau: str
+    # Champs scolaires distincts de la chaîne universitaire déjà utilisée.
+    portee_academique: str = Field(default="universitaire", index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     description: Optional[str] = None
     professeur_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
@@ -1520,5 +1840,39 @@ class TacheIA(SQLModel, table=True):
             "statut",
             "disponible_le",
             "id",
+        ),
+    )
+
+ 
+class CycleEnseigne(SQLModel, table=True):
+    """Cycles dans lesquels un candidat enseignant déclare pouvoir enseigner.
+
+    La portée est normalisée séparément du cycle principal du profil : un
+    même professeur peut déclarer collège, lycée et université sans écraser
+    son rattachement principal ni recevoir de droits avant validation admin.
+    """
+    __tablename__ = "cycleenseigne"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("utilisateur.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+    )
+    cycle_education: str = Field(index=True, max_length=20)
+    date_declaration: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "cycle_education IN ('college', 'lycee', 'universite')",
+            name="ck_cycleenseigne_cycle",
+        ),
+        UniqueConstraint(
+            "utilisateur_id",
+            "cycle_education",
+            name="uq_cycleenseigne_utilisateur_cycle",
         ),
     )

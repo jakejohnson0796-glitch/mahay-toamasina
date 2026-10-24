@@ -1,6 +1,6 @@
 # TODO — Feuille de route MITARIDALA
 
-**Mise à jour : 23 octobre 2026**  
+**Mise à jour : 24 octobre 2026**  
 **Référence :** branche principale après les améliorations des fiches de révision, de la file IA et de l’interface globale.
 
 Ce document est le backlog de référence du dépôt. Les cases cochées correspondent à des travaux déjà intégrés et couverts par les contrôles indiqués. Les cases ouvertes décrivent des améliorations à réaliser ou à approfondir ; elles ne signifient pas automatiquement qu’une régression est actuellement observée.
@@ -47,13 +47,30 @@ Ces tâches doivent passer avant les nouvelles fonctionnalités ambitieuses.
 - [ ] **Éviter les régressions de documentation.** Faire correspondre le README, le fichier .env.example, la configuration Render et la checklist de release ; toute variable retirée ou renommée doit être documentée.
 - [ ] **Organiser une revue périodique des dépendances.** Mettre à jour avec tests, vérifier les changements incompatibles et conserver un chemin de retour arrière plutôt que de mettre à jour toutes les dépendances sans validation.
 
+## Nouveau chantier structurant — collège, lycée et université
+
+Le cahier des charges technique est consigné dans [docs/extension-college-lycee-universite.md](docs/extension-college-lycee-universite.md). Ce chantier est une extension majeure du référentiel, pas une simple option du formulaire.
+
+**État au 24 octobre 2026 :** l'implémentation initiale est en cours sur la branche `feature/parcours-scolaire-national`. Les migrations, l'API des classes/options/matières, le rattachement des documents et le panneau d'administration scolaire ont été ajoutés, mais le chantier n'est pas marqué terminé tant que la matrice de tests et les contrôles de release n'ont pas réussi.
+
+- [ ] **Lot A — Référentiel scolaire sourcé et versionné.** Schéma et import idempotent créés ; vérifier encore les sources matière par matière, le statut du catalogue partiel et l'absence de données devinées avant clôture.
+- [ ] **Lot A — Parcours d'inscription adapté.** Le parcours étudiant reste séparé du parcours universitaire ; les demandes professeurs peuvent déclarer plusieurs cycles, et le cycle principal est explicite dans le formulaire. Le helper de normalisation est couvert unitairement, mais il faut encore tester le POST réel pour élève collège, élève lycée, étudiant universitaire, professeur mono/multi-cycle, sponsor et anciens formulaires.
+- [ ] **Lot B — Compléter les demandes de profil enseignant.** Le rôle reste ETUDIANT jusqu'à décision administrative, et la table relationnelle `cycleenseigne` permet de déclarer plusieurs cycles sans confondre déclaration et autorisation. Ajouter/valider la granularité par classe, série, matière et établissement, les preuves privées éventuelles et les tests des décisions admin.
+- [ ] **Lot C — Documents multi-référentiels.** Rattachement scolaire ajouté aux formulaires et contrôles serveur ; un cercle scolaire mono-matière impose désormais sa matière aux documents déposés et une incohérence est refusée. Continuer les tests de bout en bout (cibles, modération, fiches/quiz, filtres et téléchargements privés), sans élargir la migration de `Document.filiere_id` avant audit.
+- [ ] **Lot C — Cercles collège/lycée et synchronisation multi-référentiels.** Le service synchronise maintenant les cercles nationaux par classe vérifiée, série/option et matière validée, séparément du provisionneur universitaire ; les cibles sont contraintes en base et le synchroniseur archive prudemment les cercles auto-gérés devenus obsolètes. Terminer les tests CI de migration, l'intégration de la création/adhésion et la revue des cas locaux par établissement avant la release.
+- [ ] **Lot D — Apprentissage par programme.** API des matières scolaires, sélecteur de matières du quiz et contexte de quiz/fiches ajoutés ; compléter les tests Tuteur IA/quiz/fiches de révision pour éviter de mélanger les niveaux et résultats entre comptes.
+- [ ] **Lot E — Validation avant mise en ligne.** Vérifier les sources du catalogue, tests SQLite/PostgreSQL, tests navigateur des cycles, CI verte, puis contrôle de santé et parcours après déploiement.
+
+**Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
+
 ## 5. Ordre recommandé pour la prochaine itération
 
 1. Scénario PostgreSQL de bout en bout pour une fiche de cours, y compris les contrôles d’accès et les formats exportés.
 2. Diagnostic des tâches IA anciennes et validation post-déploiement reproductible.
 3. Matrice de régression du rendu mathématique et de la qualité des quiz.
-4. Parcours navigateur mobile sur les fonctions les plus utilisées.
-5. Revue du référentiel, du jeu cérébral et de l’accessibilité.
+4. Terminer la validation du référentiel collège/lycée, du multi-cycle professeur et de la synchronisation des cercles, sans casser l'université existante.
+5. Parcours navigateur mobile sur les fonctions les plus utilisées.
+6. Revue du référentiel académique, du jeu cérébral et de l’accessibilité.
 
 ## 6. Critères de clôture d’une tâche
 

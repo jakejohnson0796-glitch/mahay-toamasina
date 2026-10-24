@@ -82,6 +82,10 @@
       Les paramètres du quiz sont invalides. Vérifie les choix puis réessaie.
     {% elif erreur == "generation_invalide" %}
       La génération n'a pas pu produire un quiz valide. Réessaie avec une autre combinaison.
+    {% elif erreur == "matiere_scolaire_indisponible" %}
+      Cette matière n'est pas disponible dans le programme vérifié de ta classe. Choisis une matière de la liste.
+    {% elif erreur == "aucune_matiere_scolaire" %}
+      Aucune matière scolaire n'est encore validée pour cette classe. Signale-le à l'administrateur pour compléter le référentiel.
     {% else %}
       Une erreur est survenue pendant la préparation du quiz.
     {% endif %}

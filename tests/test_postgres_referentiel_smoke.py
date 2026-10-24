@@ -26,6 +26,11 @@ from app.models import (
     Faculte,
     Filiere,
     Mention,
+    MatiereScolaire,
+    NiveauScolaire,
+    OptionScolaire,
+    ProgrammeMatiereScolaire,
+    ReferentielScolaire,
     ProgrammeUniversitaire,
     Universite,
     Utilisateur,
@@ -156,6 +161,75 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         assert programmes
         filiere_ids = {fil.id for fil in filieres}
         assert all(programme.filiere_id in filiere_ids for programme in programmes)
+
+        # Contrôle aussi le catalogue scolaire seedé par la migration :
+        # Sciences naturelles reste le libellé du collège, lié à la source
+        # officielle 6e 2024-2025, sans être confondu avec SVT au lycée.
+        referentiel_scolaire = session.exec(
+            select(ReferentielScolaire).where(
+                ReferentielScolaire.code == "MEN-RAPS-2024-2025-initial"
+            )
+        ).one()
+        sixieme = session.exec(
+            select(NiveauScolaire).where(
+                NiveauScolaire.referentiel_id == referentiel_scolaire.id,
+                NiveauScolaire.code == "6E",
+            )
+        ).one()
+        sciences_naturelles = session.exec(
+            select(MatiereScolaire).where(MatiereScolaire.code == "SCIENCES_NATURELLES")
+        ).one()
+        association_sciences = session.exec(
+            select(ProgrammeMatiereScolaire).where(
+                ProgrammeMatiereScolaire.referentiel_id == referentiel_scolaire.id,
+                ProgrammeMatiereScolaire.niveau_id == sixieme.id,
+                ProgrammeMatiereScolaire.option_id.is_(None),
+                ProgrammeMatiereScolaire.matiere_id == sciences_naturelles.id,
+            )
+        ).one()
+        assert association_sciences.statut_validation == "verifie"
+        assert association_sciences.source_officielle.startswith(
+            "https://www.education.gov.mg/wp-content/uploads/2024/09/"
+        )
+        assert "RAPS-6%C3%A8me_2024_2025.pdf" in association_sciences.source_officielle
+
+        # Les séries A/C/L ne doivent pas rester entièrement inutilisables :
+        # ces quelques matières sont activées seulement si leur PDF précis
+        # confirme directement le contenu.
+        for code_niveau, code_serie, code_matiere, fichier in [
+            ("1ERE", "A", "MATHEMATIQUES", "RAPS-1%C3%A8re-A_2024_2025.pdf"),
+            ("1ERE", "C", "MATHEMATIQUES", "RAPS-1%C3%A8re-C_2024_2025.pdf"),
+            ("TERM", "C", "PHILOSOPHIE", "RAPS-Tle-C_2024_2025.pdf"),
+            ("1ERE", "L", "FRANCAIS", "RAPE-T11-L_2024_2025.pdf"),
+        ]:
+            niveau_cible = session.exec(
+                select(NiveauScolaire).where(
+                    NiveauScolaire.referentiel_id == referentiel_scolaire.id,
+                    NiveauScolaire.code == code_niveau,
+                )
+            ).one()
+            serie = session.exec(
+                select(OptionScolaire).where(
+                    OptionScolaire.referentiel_id == referentiel_scolaire.id,
+                    OptionScolaire.niveau_id == niveau_cible.id,
+                    OptionScolaire.code == code_serie,
+                    OptionScolaire.parent_option_id.is_(None),
+                )
+            ).one()
+            matiere_cible = session.exec(
+                select(MatiereScolaire).where(MatiereScolaire.code == code_matiere)
+            ).one()
+            association = session.exec(
+                select(ProgrammeMatiereScolaire).where(
+                    ProgrammeMatiereScolaire.referentiel_id == referentiel_scolaire.id,
+                    ProgrammeMatiereScolaire.niveau_id == niveau_cible.id,
+                    ProgrammeMatiereScolaire.option_id == serie.id,
+                    ProgrammeMatiereScolaire.matiere_id == matiere_cible.id,
+                )
+            ).one()
+            assert association.statut_validation == "verifie"
+            assert fichier in association.source_officielle
+
         createur = session.exec(select(Utilisateur)).first()
         if createur is None:
             createur = Utilisateur(

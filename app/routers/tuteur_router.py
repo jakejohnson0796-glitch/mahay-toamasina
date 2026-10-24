@@ -12,7 +12,10 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
-from ..models import Document, MembreCercle, MissionApprentissage, SessionTuteur, ProgressionNotion, StatutDocument
+from ..models import (
+    Document, MembreCercle, MissionApprentissage, SessionTuteur, ProgressionNotion,
+    StatutDocument, NiveauScolaire, OptionScolaire, ReferentielScolaire,
+)
 from ..storage import ouvrir_fichier_local
 from ..text_extraction import extraire_texte, extraire_passages_avec_sources
 from ..ia_transport import normaliser_structure_tuteur
@@ -37,6 +40,107 @@ def _utilisateur_membre_cercle(session: Session, cercle_id: Optional[int], utili
             MembreCercle.utilisateur_id == utilisateur_id,
         )
     ).first() is not None
+
+
+def _enseignant_sans_classe_scolaire(utilisateur) -> bool:
+    return (
+        getattr(utilisateur, "profil_souhaite", None) == "professeur"
+        and getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not getattr(utilisateur, "niveau_scolaire_id", None)
+    )
+
+
+def _contexte_scolaire_tuteur(utilisateur, session: Session) -> Optional[dict]:
+    """Valide le parcours collège/lycée avant de l'utiliser dans le Tuteur IA."""
+    cycle = getattr(utilisateur, "cycle_education", None)
+    if cycle not in {"college", "lycee"}:
+        return None
+
+    niveau_id = getattr(utilisateur, "niveau_scolaire_id", None)
+    if not niveau_id:
+        return None if _enseignant_sans_classe_scolaire(utilisateur) else {}
+    referentiels = session.exec(
+        select(ReferentielScolaire).order_by(
+            ReferentielScolaire.date_creation.desc(),
+            ReferentielScolaire.id.desc(),
+        )
+    ).all()
+    referentiel = referentiels[0] if referentiels else None
+    niveau = session.get(NiveauScolaire, niveau_id)
+    if (
+        not referentiel
+        or not niveau
+        or niveau.referentiel_id != referentiel.id
+        or not niveau.est_actif
+        or niveau.statut_validation != "verifie"
+        or niveau.cycle != cycle
+    ):
+        return {}
+
+    option_id = getattr(utilisateur, "option_scolaire_id", None)
+    option = session.get(OptionScolaire, option_id) if option_id else None
+    parent = (
+        session.get(OptionScolaire, option.parent_option_id)
+        if option and option.parent_option_id else None
+    )
+    if option_id and (
+        not option
+        or option.referentiel_id != referentiel.id
+        or option.niveau_id != niveau.id
+        or not option.est_active
+        or option.statut_validation != "verifie"
+        or (
+            option.parent_option_id is not None
+            and (
+                not parent
+                or parent.referentiel_id != referentiel.id
+                or parent.niveau_id != niveau.id
+                or parent.parent_option_id is not None
+                or not parent.est_active
+                or parent.statut_validation != "verifie"
+            )
+        )
+    ):
+        return {}
+
+    options_compatibles = {option.id} if option else set()
+    if parent:
+        options_compatibles.add(parent.id)
+    return {
+        "niveau": niveau.libelle,
+        "cycle_education": niveau.cycle,
+        "niveau_scolaire_id": niveau.id,
+        "option_scolaire_id": option.id if option else None,
+        "options_compatibles": options_compatibles,
+        "etablissement_scolaire_id": getattr(utilisateur, "etablissement_scolaire_id", None),
+    }
+
+
+def _document_scolaire_compatible(document: Document, contexte: dict) -> bool:
+    """Évite de tutoriser un document d'une autre classe/série/école."""
+    if getattr(document, "portee_academique", "universitaire") != "scolaire":
+        return True
+    if getattr(document, "niveau_scolaire_id", None) != contexte.get("niveau_scolaire_id"):
+        return False
+    option_id = getattr(document, "option_scolaire_id", None)
+    if option_id and option_id not in contexte.get("options_compatibles", set()):
+        return False
+    etablissement_id = getattr(document, "etablissement_scolaire_id", None)
+    profil_etablissement_id = contexte.get("etablissement_scolaire_id")
+    if etablissement_id and etablissement_id != profil_etablissement_id:
+        return False
+    return True
+
+def _document_compatible_au_tuteur(document: Document, utilisateur, contexte_scolaire: Optional[dict]) -> bool:
+    """Empêche le mélange des ressources scolaires et universitaires."""
+    portee = getattr(document, "portee_academique", "universitaire")
+    if contexte_scolaire:
+        return portee == "scolaire" and _document_scolaire_compatible(document, contexte_scolaire)
+    if _enseignant_sans_classe_scolaire(utilisateur):
+        # Un enseignant du secondaire peut travailler sur plusieurs classes ;
+        # le cercle d'appartenance donne ici la portée autorisée.
+        return portee == "scolaire"
+    return portee != "scolaire"
 
 
 def _contexte_progression_tuteur(progression: ProgressionNotion) -> str:
@@ -181,6 +285,17 @@ def page_tuteur(request: Request, session: Session = Depends(get_session)):
     if redirection:
         return redirection
 
+    contexte_scolaire = _contexte_scolaire_tuteur(utilisateur, session)
+    if (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not contexte_scolaire
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    ):
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
+
     historique = session.exec(
         select(SessionTuteur)
         .where(SessionTuteur.utilisateur_id == utilisateur.id)
@@ -216,6 +331,13 @@ def demander_tuteur(
     if redirection:
         return redirection
 
+    contexte_scolaire = _contexte_scolaire_tuteur(utilisateur, session)
+    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"} and not contexte_scolaire:
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
+
     host = request.client.host if request.client else "inconnu"
     if limite_depassee(f"ia-tuteur:user:{utilisateur.id}", 10, 300) or limite_depassee(f"ia-tuteur:ip:{host}", 30, 300):
         return RedirectResponse("/tuteur?erreur=trop_de_questions", status_code=303)
@@ -249,6 +371,15 @@ def demander_tuteur(
                 or quiz_module.revision_due(candidat_progression)
             )
         ):
+            # Un ancien résultat universitaire ne doit pas guider un profil
+            # scolaire, ni mélanger les difficultés de deux classes.
+            if contexte_scolaire:
+                niveau_progression = (candidat_progression.niveau or "").strip().casefold()
+                if niveau_progression and niveau_progression != contexte_scolaire["niveau"].casefold():
+                    return RedirectResponse(
+                        "/tuteur?erreur=notion_hors_niveau_scolaire",
+                        status_code=303,
+                    )
             progression = candidat_progression
 
     document_source = None
@@ -258,6 +389,11 @@ def demander_tuteur(
             candidat
             and candidat.statut == StatutDocument.APPROUVE
             and _utilisateur_membre_cercle(session, candidat.cercle_id, utilisateur.id)
+            and _document_compatible_au_tuteur(
+                candidat,
+                utilisateur,
+                contexte_scolaire,
+            )
         ):
             if candidat.fiche_validation_statut != "validee":
                 return RedirectResponse(
@@ -306,12 +442,30 @@ def demander_tuteur(
             "utilise le document comme source de contenu et l'historique comme source de personnalisation."
         )
 
-    reponse = ai_quiz.generer_reponse_tuteur(
-        question_pour_ia,
-        notion=progression.notion if progression else None,
-        matiere=matiere_pour_ia,
-        verifier=False,
-    )
+    if contexte_scolaire:
+        question_pour_ia = (
+            "CONTEXTE PÉDAGOGIQUE VALIDÉ — "
+            f"élève de {contexte_scolaire['cycle_education']} en classe "
+            f"{contexte_scolaire['niveau']}. Adapte les prérequis, les exemples "
+            "et les exercices au programme de cette classe ; n'utilise pas de "
+            "notions universitaires non expliquées.\n\n"
+            + question_pour_ia
+        )
+        reponse = ai_quiz.generer_reponse_tuteur(
+            question_pour_ia,
+            notion=progression.notion if progression else None,
+            matiere=matiere_pour_ia,
+            niveau=contexte_scolaire["niveau"],
+            cycle_education=contexte_scolaire["cycle_education"],
+            verifier=False,
+        )
+    else:
+        reponse = ai_quiz.generer_reponse_tuteur(
+            question_pour_ia,
+            notion=progression.notion if progression else None,
+            matiere=matiere_pour_ia,
+            verifier=False,
+        )
     # La génération initiale est déjà livrée. La relecture multi-modèles
     # est toujours une tâche durable et ne dépend plus du cycle de vie HTTP.
     reponse.pop("_statut_verification", None)
