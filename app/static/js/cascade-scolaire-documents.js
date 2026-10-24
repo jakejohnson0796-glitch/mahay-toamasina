@@ -37,6 +37,9 @@
     const level = document.getElementById("niveau_scolaire_id");
     const option = document.getElementById("option_scolaire_id");
     const establishment = document.getElementById("etablissement_scolaire_id");
+    const subjectSelect = document.getElementById("matiere_scolaire_select");
+    const subjectId = document.getElementById("matiere_scolaire_id");
+    const subjectText = document.getElementById("matiere");
     const block = document.getElementById("bloc-cible-scolaire");
     if (!scope || !cycle || !level || !option || !establishment || !block) return;
 
@@ -44,6 +47,7 @@
     const currentOption = block.dataset.currentOption || "";
     let levelsRequest = 0;
     let optionsRequest = 0;
+    let subjectsRequest = 0;
     let establishmentLoaded = false;
 
     function isSchoolScope() {
@@ -87,6 +91,7 @@
       reset(option, "— Aucune série/option précisée —", false);
       if (!Array.isArray(rows) || !rows.length) {
         option.disabled = false;
+        await loadSubjects();
         return;
       }
 
@@ -98,6 +103,36 @@
       });
       if (!currentWasAdded) option.value = "";
       option.disabled = false;
+      await loadSubjects();
+    }
+
+    async function loadSubjects() {
+      const requestId = ++subjectsRequest;
+      if (subjectId) subjectId.value = "";
+      if (!subjectSelect) return;
+      reset(
+        subjectSelect,
+        isSchoolScope() && level.value
+          ? "Chargement des matières vérifiées…"
+          : "Disponible pour les parcours collège/lycée",
+        true
+      );
+      if (!isSchoolScope() || !level.value || level.disabled) return;
+
+      let url = "/api/scolaire/niveaux/" + encodeURIComponent(level.value) + "/matieres";
+      if (option.value) url += "?option_id=" + encodeURIComponent(option.value);
+      const rows = await getJSON(url);
+      if (requestId !== subjectsRequest) return;
+
+      reset(subjectSelect, "— Choisissez une matière (facultatif) —", false);
+      if (!Array.isArray(rows) || !rows.length) {
+        reset(subjectSelect, "Aucune matière vérifiée : utilisez la saisie libre", true);
+        return;
+      }
+      rows.forEach(function (row) {
+        addOption(subjectSelect, row.id, row.libelle, false);
+      });
+      subjectSelect.disabled = false;
     }
 
     async function loadEstablishments() {
@@ -123,8 +158,11 @@
       if (!visible) {
         levelsRequest++;
         optionsRequest++;
+        subjectsRequest++;
         reset(level, "Choisissez d’abord le cycle", true);
         reset(option, "Choisissez d’abord la classe", true);
+        reset(subjectSelect, "Disponible pour les parcours collège/lycée", true);
+        if (subjectId) subjectId.value = "";
         return;
       }
       if (cycle.value) loadLevels();
@@ -134,9 +172,34 @@
     cycle.addEventListener("change", function () {
       level.value = "";
       option.value = "";
+      if (subjectId) subjectId.value = "";
       loadLevels();
     });
-    level.addEventListener("change", loadOptions);
+    level.addEventListener("change", function () {
+      if (subjectId) subjectId.value = "";
+      loadOptions();
+    });
+    option.addEventListener("change", loadSubjects);
+    if (subjectSelect) {
+      subjectSelect.addEventListener("change", function () {
+        const selected = subjectSelect.selectedOptions && subjectSelect.selectedOptions[0];
+        if (subjectId) subjectId.value = subjectSelect.value || "";
+        if (subjectText && subjectSelect.value && selected) {
+          subjectText.value = selected.textContent;
+          subjectText.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      });
+    }
+    if (subjectText) {
+      subjectText.addEventListener("input", function () {
+        if (!subjectId || !subjectId.value || !subjectSelect) return;
+        const selected = subjectSelect.selectedOptions && subjectSelect.selectedOptions[0];
+        if (!selected || subjectText.value !== selected.textContent) {
+          subjectId.value = "";
+          subjectSelect.value = "";
+        }
+      });
+    }
 
     if (isSchoolScope()) {
       cycle.disabled = false;
