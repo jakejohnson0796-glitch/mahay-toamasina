@@ -48,13 +48,19 @@ def _referentiel_courant(session: Session) -> Optional[ReferentielScolaire]:
 
 
 def _url_source_valide(source: str | None) -> bool:
+    """N'accepte que des pages HTTPS du ministère malgache de l'Éducation."""
     if not source:
         return False
     try:
         parsed = urlparse(source.strip())
     except ValueError:
         return False
-    return parsed.scheme == "https" and bool(parsed.netloc)
+    hostname = (parsed.hostname or "").lower().rstrip(".")
+    domaine_officiel = (
+        hostname == "education.gov.mg"
+        or hostname.endswith(".education.gov.mg")
+    )
+    return parsed.scheme == "https" and domaine_officiel
 
 
 def _rediriger(etat: str, identifiant: int | None = None) -> RedirectResponse:
