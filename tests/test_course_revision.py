@@ -97,6 +97,14 @@ def test_budget_completion_tokens_se_reduit_quand_le_contexte_grandit():
     assert entree_estimee + budget_long <= course_revision.BUDGET_TPM_PRUDENT
 
 
+def test_budget_completion_tokens_refuse_un_contexte_trop_volumineux():
+    with pytest.raises(ValueError, match="contexte de la fiche est trop volumineux"):
+        course_revision._budget_completion_tokens(
+            "Données de cours. " * 1500,
+            {"type": "json_schema", "schema": {"type": "object"}},
+        )
+
+
 def test_normalisation_fiche_preserve_le_latex_pour_katex():
     donnees = fiche_valide()
     formule = r"Calcul : \(A=\begin{pmatrix}1&2\\3&4\end{pmatrix}\) et \(\det(A)=\frac{1}{2}\)."
