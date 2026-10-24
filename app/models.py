@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Optional
 
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Index, text, UniqueConstraint
+from sqlalchemy import CheckConstraint, Index, text, UniqueConstraint
 
 
 class RoleUtilisateur(str, Enum):
@@ -517,6 +517,16 @@ class Document(SQLModel, table=True):
     fiche_validee_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     fiche_validee_le: Optional[datetime] = None
 
+    __table_args__ = (
+        CheckConstraint(
+            "(portee_academique = 'universitaire' AND filiere_id IS NOT NULL "
+            "AND niveau_scolaire_id IS NULL) OR "
+            "(portee_academique = 'scolaire' AND filiere_id IS NULL "
+            "AND niveau_scolaire_id IS NOT NULL)",
+            name="ck_document_portee_academique_cible",
+        ),
+    )
+
 
 class ProgressionNotion(SQLModel, table=True):
     """Etat d'apprentissage d'une notion pour un etudiant.
@@ -841,6 +851,16 @@ class CercleEtude(SQLModel, table=True):
             unique=True,
             sqlite_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NULL AND niveau IS NOT NULL"),
             postgresql_where=text("statut = 'ACTIF' AND mention_id IS NOT NULL AND filiere_id IS NULL AND niveau IS NOT NULL"),
+        ),
+        Index(
+            "ix_cercle_scolaire_unique_actif",
+            "niveau_scolaire_id",
+            text("COALESCE(option_scolaire_id, 0)"),
+            text("COALESCE(etablissement_scolaire_id, 0)"),
+            text("COALESCE(matiere_scolaire_id, 0)"),
+            unique=True,
+            sqlite_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"),
+            postgresql_where=text("statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"),
         ),
     )
 
