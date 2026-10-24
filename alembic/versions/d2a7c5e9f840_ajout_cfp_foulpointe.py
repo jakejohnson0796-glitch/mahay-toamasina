@@ -187,10 +187,118 @@ PARCOURS = [
         "metier": "HOTESSE DE SALLE"
     },
     {
+        "code": "TEXTILE-HABILLEMENT-ACCESSOIRES-COUPE-ET-COUTURE-COUTURIER-E",
+        "secteur": "Textile - Habillement - Accessoires",
+        "filiere": "COUPE ET COUTURE",
+        "metier": "COUTURIER (E)"
+    },
+    {
+        "code": "ART-ET-TECHNIQUE-COIFFURE-AIDE-COFFEUSE",
+        "secteur": "Art et Technique",
+        "filiere": "COIFFURE",
+        "metier": "AIDE COFFEUSE"
+    },
+    {
+        "code": "TEXTILE-HABILLEMENT-ACCESSOIRES-BRODERIE-BRODEUR-BRODEUSE",
+        "secteur": "Textile - Habillement - Accessoires",
+        "filiere": "BRODERIE",
+        "metier": "BRODEUR / BRODEUSE"
+    },
+    {
+        "code": "TOURISME-HOTELLERIE-RESTAURATION-RESTAURATION-COMMIS-DE-CUISINE",
+        "secteur": "Tourisme - Hôtellerie - Restauration",
+        "filiere": "RESTAURATION",
+        "metier": "COMMIS DE CUISINE"
+    },
+    {
+        "code": "INDUSTRIEL-MAINTENANCE-INDUSTRIELLE-MAINTENANCIER-INDUSTRIEL",
+        "secteur": "Industriel",
+        "filiere": "MAINTENANCE INDUSTRIELLE",
+        "metier": "Maintenancier industriel"
+    },
+    {
+        "code": "INDUSTRIEL-STRUCTURE-METALLIQUE-TECHNICIEN-EN-OUVRAGE-METALLIQUE",
+        "secteur": "Industriel",
+        "filiere": "STRUCTURE METALLIQUE",
+        "metier": "Technicien en ouvrage métallique"
+    },
+    {
+        "code": "INDUSTRIEL-MECANIQUE-GENERALE-MECANICIEN-AUTO-MOTO",
+        "secteur": "Industriel",
+        "filiere": "MECANIQUE GENERALE",
+        "metier": "Mécanicien auto moto"
+    },
+    {
+        "code": "INDUSTRIEL-MECANIQUE-GENERALE-TECHNICIEN-METAUX-EN-FEUILLE",
+        "secteur": "Industriel",
+        "filiere": "MECANIQUE GENERALE",
+        "metier": "Technicien métaux en feuille"
+    },
+    {
+        "code": "MECANICIEN-D-AUTOMOBILES",
+        "secteur": None,
+        "filiere": None,
+        "metier": "Mécanicien d’automobiles"
+    },
+    {
+        "code": "DEVELOPPEMENT-RURAL-AGRICULTURE-AGENT-D-AGRICULTURE",
+        "secteur": "Developpement Rural",
+        "filiere": "AGRICULTURE",
+        "metier": "AGENT D'AGRICULTURE"
+    },
+    {
+        "code": "DEVELOPPEMENT-RURAL-ELEVAGE-TECHNICIEN-D-ELEVAGE",
+        "secteur": "Developpement Rural",
+        "filiere": "ELEVAGE",
+        "metier": "TECHNICIEN D'ELEVAGE"
+    },
+    {
+        "code": "GESTION-MANAGEMENT-ET-GESTION-D-ENTREPRISE-TECHNICIEN-SUPERIEUR-EN-MANAGEMENT-ET-GESTION-D-ENTREPRISE",
+        "secteur": "Gestion",
+        "filiere": "MANAGEMENT ET GESTION D'ENTREPRISE",
+        "metier": "TECHNICIEN SUPERIEUR EN MANAGEMENT ET GESTION D'ENTREPRISE"
+    },
+    {
+        "code": "INDUSTRIEL-GENIE-INDUSTRIEL-ET-ENERGIE-RENOUVELABLE-TECHNICIEN-EN-GENIE-INDUSTRIEL",
+        "secteur": "Industriel",
+        "filiere": "GENIE INDUSTRIEL ET ENERGIE RENOUVELABLE",
+        "metier": "Technicien en génie industriel"
+    },
+    {
+        "code": "DEVELOPPEMENT-RURAL-ELEVAGE-AVICULTEUR",
+        "secteur": "Developpement Rural",
+        "filiere": "ELEVAGE",
+        "metier": "AVICULTEUR"
+    },
+    {
+        "code": "PRODUCTEUR-DE-LEGUMES",
+        "secteur": None,
+        "filiere": None,
+        "metier": "Producteur de légumes"
+    },
+    {
         "code": "RESTAURATEUR-DE-MEUBLES",
         "secteur": None,
         "filiere": None,
         "metier": "Restaurateur de meubles"
+    },
+    {
+        "code": "INDUSTRIEL-IMPRIMERIE-TECHNICIEN-EN-IMPRIMERIE",
+        "secteur": "Industriel",
+        "filiere": "IMPRIMERIE",
+        "metier": "Technicien en imprimerie"
+    },
+    {
+        "code": "TECHNOLOGUE-EN-EQUIPEMENTS-AUDIOVISUELS",
+        "secteur": None,
+        "filiere": None,
+        "metier": "Technologue en équipements audiovisuels"
+    },
+    {
+        "code": "JARDINIER-PAYSAGISTE",
+        "secteur": None,
+        "filiere": None,
+        "metier": "Jardinier paysagiste"
     }
 ]
 
@@ -239,6 +347,123 @@ ETABLISSEMENTS = [
             "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-AGENT-D-ACCUEIL",
             "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-HOTESSE-DE-SALLE",
             "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-BARMAN"
+        ]
+    },
+    {
+        "nom": "LTP ANKAZOBE",
+        "region": "ANALAMANGA",
+        "type": "lycee_technique",
+        "commune": "Ankazobe",
+        "keys": [
+            "GESTION-GESTION-COMPTABLE-AGENT-COMPTABLE",
+            "TEXTILE-HABILLEMENT-ACCESSOIRES-COUPE-ET-COUTURE-COUTURIER-E",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CHEF-D-EQUIPE-DE-CHANTIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-MENUSIER-EN-BOIS"
+        ]
+    },
+    {
+        "nom": "CFP MASINDRAY",
+        "region": "ANALAMANGA",
+        "type": "centre_formation",
+        "commune": "Masindray",
+        "keys": [
+            "TEXTILE-HABILLEMENT-ACCESSOIRES-COUPE-ET-COUTURE-COUTURIER-E",
+            "ART-ET-TECHNIQUE-COIFFURE-AIDE-COFFEUSE",
+            "TEXTILE-HABILLEMENT-ACCESSOIRES-BRODERIE-BRODEUR-BRODEUSE",
+            "TOURISME-HOTELLERIE-RESTAURATION-RESTAURATION-COMMIS-DE-CUISINE",
+            "JARDINIER-PAYSAGISTE"
+        ]
+    },
+    {
+        "nom": "CFP AMPASAMPITO",
+        "region": "ANALAMANGA",
+        "type": "centre_formation",
+        "commune": "Ampasampito",
+        "keys": [
+            "INDUSTRIEL-IMPRIMERIE-TECHNICIEN-EN-IMPRIMERIE"
+        ]
+    },
+    {
+        "nom": "LTP ALAROBIA",
+        "region": "ANALAMANGA",
+        "type": "lycee_technique",
+        "commune": "Alarobia",
+        "keys": [
+            "INDUSTRIEL-FABRICATION-MECANIQUE-FRAISEUR",
+            "INDUSTRIEL-MAINTENANCE-INDUSTRIELLE-MAINTENANCIER-INDUSTRIEL",
+            "TECHNOLOGUE-EN-EQUIPEMENTS-AUDIOVISUELS"
+        ]
+    },
+    {
+        "nom": "LTP AMPASAPITO",
+        "region": "ANALAMANGA",
+        "type": "lycee_technique",
+        "commune": "Ampasapito",
+        "keys": [
+            "INDUSTRIEL-STRUCTURE-METALLIQUE-TECHNICIEN-EN-OUVRAGE-METALLIQUE",
+            "INDUSTRIEL-MECANIQUE-GENERALE-MECANICIEN-AUTO-MOTO",
+            "INDUSTRIEL-MECANIQUE-GENERALE-TECHNICIEN-METAUX-EN-FEUILLE",
+            "MECANICIEN-D-AUTOMOBILES"
+        ]
+    },
+    {
+        "nom": "LTP ANKAZONDANDY",
+        "region": "ANALAMANGA",
+        "type": "lycee_technique",
+        "commune": "Ankazondandy",
+        "keys": [
+            "DEVELOPPEMENT-RURAL-AGRICULTURE-AGENT-D-AGRICULTURE",
+            "DEVELOPPEMENT-RURAL-ELEVAGE-TECHNICIEN-D-ELEVAGE",
+            "GESTION-GESTION-COMPTABLE-AGENT-COMPTABLE",
+            "GESTION-MANAGEMENT-ET-GESTION-D-ENTREPRISE-TECHNICIEN-SUPERIEUR-EN-MANAGEMENT-ET-GESTION-D-ENTREPRISE",
+            "INDUSTRIEL-GENIE-INDUSTRIEL-ET-ENERGIE-RENOUVELABLE-TECHNICIEN-EN-GENIE-INDUSTRIEL",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-POSEUR-DE-PAVE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-MENUISIER-ALUMINIUM",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-AIDE-PLOMBIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-PLATRIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CONDUCTEUR-DE-GRUE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CONDUCTEUR-D-ENGIN"
+        ]
+    },
+    {
+        "nom": "LTP FARATSIHO",
+        "region": "VAKINANKARATRA",
+        "type": "lycee_technique",
+        "commune": "Faratsiho",
+        "keys": [
+            "DEVELOPPEMENT-RURAL-AGRICULTURE-AGENT-D-AGRICULTURE",
+            "DEVELOPPEMENT-RURAL-ELEVAGE-TECHNICIEN-D-ELEVAGE",
+            "GESTION-GESTION-COMPTABLE-AGENT-COMPTABLE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CHEF-D-EQUIPE-DE-CHANTIER"
+        ]
+    },
+    {
+        "nom": "CFP ANKAZOMIRIOTRA",
+        "region": "VAKINANKARATRA",
+        "type": "centre_formation",
+        "commune": "Ankazomiriotra",
+        "keys": [
+            "INDUSTRIEL-STRUCTURE-METALLIQUE-TECHNICIEN-EN-OUVRAGE-METALLIQUE",
+            "TEXTILE-HABILLEMENT-ACCESSOIRES-COUPE-ET-COUTURE-COUTURIER-E",
+            "TEXTILE-HABILLEMENT-ACCESSOIRES-BRODERIE-BRODEUR-BRODEUSE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CHEF-D-EQUIPE-DE-CHANTIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-COMMIS-DE-CHANTIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-MENUSIER-EN-BOIS"
+        ]
+    },
+    {
+        "nom": "LTP MANDOTO",
+        "region": "VAKINANKARATRA",
+        "type": "lycee_technique",
+        "commune": "Mandoto",
+        "keys": [
+            "DEVELOPPEMENT-RURAL-AGRICULTURE-AGENT-D-AGRICULTURE",
+            "DEVELOPPEMENT-RURAL-ELEVAGE-TECHNICIEN-D-ELEVAGE",
+            "GESTION-GESTION-COMPTABLE-AGENT-COMPTABLE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CHEF-D-EQUIPE-DE-CHANTIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-POSEUR-DE-PAVE",
+            "DEVELOPPEMENT-RURAL-ELEVAGE-AVICULTEUR",
+            "PRODUCTEUR-DE-LEGUMES"
         ]
     }
 ]
