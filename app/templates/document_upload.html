@@ -762,8 +762,16 @@
             </div>
 
             <div class="document-upload-field">
-              <label for="matiere">Matière <span>Obligatoire</span></label>
-              <input type="text" id="matiere" name="matiere" required maxlength="120" placeholder="Ex. Droit civil">
+              <label for="matiere_scolaire_select">Matière du référentiel scolaire</label>
+              <select id="matiere_scolaire_select" disabled>
+                <option value="">Choisissez une classe pour charger les matières vérifiées</option>
+              </select>
+              <input type="hidden" id="matiere_scolaire_id" name="matiere_scolaire_id" value="">
+              <small>Pour le collège et le lycée, choisissez une matière vérifiée si elle est disponible. La saisie libre reste possible pour un cours non encore recensé.</small>
+            </div>
+            <div class="document-upload-field">
+              <label for="matiere">Matière / intitulé libre <span>Obligatoire</span></label>
+              <input type="text" id="matiere" name="matiere" required maxlength="120" placeholder="Ex. Mathématiques — fonctions">
             </div>
 
             <div class="document-upload-field">
