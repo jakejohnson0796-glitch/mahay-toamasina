@@ -74,3 +74,54 @@ def test_config_quiz_compile_et_ne_demande_plus_de_niveau_manuel():
     assert 'value="recommande"' in source
     assert 'value="hasard"' in source
     assert 'value="matiere"' in source
+
+
+
+def test_quiz_personnalise_transmet_le_module_cible_au_generateur(monkeypatch):
+    questions = [
+        {
+            "question": f"Question de contrôle {index}",
+            "choix": ["Réponse A", "Réponse B", "Réponse C"],
+            "index_bonne_reponse": 0,
+            "explication": "La réponse A est celle du contrôle.",
+            "notion": f"Notion {index}",
+        }
+        for index in range(1, 6)
+    ]
+    contexte = {}
+
+    class FakeSession:
+        def add(self, objet):
+            self.objet = objet
+
+        def commit(self):
+            pass
+
+        def refresh(self, objet):
+            objet.id = 101
+
+    monkeypatch.setattr(quiz, "valider_parametres", lambda matiere, niveau, difficulte, nb: matiere)
+    monkeypatch.setattr(quiz, "_questions_vues_recemment", lambda *args, **kwargs: [])
+    monkeypatch.setattr(quiz, "_contexte_personnalise_quiz", lambda *args, **kwargs: "Contexte de progression")
+    monkeypatch.setattr(quiz, "valider_questions", lambda questions, **kwargs: questions)
+    monkeypatch.setattr(quiz, "_empreinte_question", lambda question: question["question"])
+    monkeypatch.setattr(quiz, "_structure_question", lambda question: question["question"])
+
+    def generer(*args, **kwargs):
+        contexte.update(kwargs)
+        return questions
+
+    monkeypatch.setattr(quiz, "_generer_quiz_rapide", generer)
+
+    quiz.creer_tentative(
+        FakeSession(),
+        SimpleNamespace(id=7),
+        "Mathématiques",
+        "L1",
+        "Facile",
+        5,
+        sujet_cible="Déterminants d'ordre 2",
+    )
+
+    assert "Contexte de progression" in contexte["contexte_apprentissage"]
+    assert "Déterminants d'ordre 2" in contexte["contexte_apprentissage"]
