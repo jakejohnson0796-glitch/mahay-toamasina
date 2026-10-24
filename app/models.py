@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Optional
 
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import CheckConstraint, Index, text, UniqueConstraint
+from sqlalchemy import CheckConstraint, Index, text, UniqueConstraint, Column, ForeignKey, Integer
 
 
 class RoleUtilisateur(str, Enum):
@@ -1814,5 +1814,39 @@ class TacheIA(SQLModel, table=True):
             "statut",
             "disponible_le",
             "id",
+        ),
+    )
+
+ 
+class CycleEnseigne(SQLModel, table=True):
+    """Cycles dans lesquels un candidat enseignant déclare pouvoir enseigner.
+
+    La portée est normalisée séparément du cycle principal du profil : un
+    même professeur peut déclarer collège, lycée et université sans écraser
+    son rattachement principal ni recevoir de droits avant validation admin.
+    """
+    __tablename__ = "cycleenseigne"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("utilisateur.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+    )
+    cycle_education: str = Field(index=True, max_length=20)
+    date_declaration: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "cycle_education IN ('college', 'lycee', 'universite')",
+            name="ck_cycleenseigne_cycle",
+        ),
+        UniqueConstraint(
+            "utilisateur_id",
+            "cycle_education",
+            name="uq_cycleenseigne_utilisateur_cycle",
         ),
     )
