@@ -42,6 +42,7 @@ def test_notifications_and_new_navigation_have_malagasy_translations():
     language = read("app/static/js/langue.js")
     for source in (
         "Garde le fil de ce qui compte.",
+        "Événements récents",
         "Les nouvelles liées à tes cours, tes ressources et tes cercles sont réunies ici. Retrouve ce qui demande ton attention, puis retourne directement à l'action.",
         "Rechercher dans les notifications",
         "Aucune notification ne correspond à cette recherche.",
