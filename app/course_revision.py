@@ -1379,15 +1379,18 @@ def personnaliser_fiche_revision_document(
     """
     # JSON round-trip : copie isolée des listes et dictionnaires de la fiche partagée.
     contenu = json.loads(json.dumps(contenu_source, ensure_ascii=False))
-    filiere = session.get(Filiere, document.filiere_id) if document.filiere_id else None
+    filiere_id = getattr(document, "filiere_id", None)
+    niveau_scolaire_id = getattr(document, "niveau_scolaire_id", None)
+    portee_academique = getattr(document, "portee_academique", "universitaire")
+    filiere = session.get(Filiere, filiere_id) if filiere_id else None
     niveau_scolaire = (
-        session.get(NiveauScolaire, document.niveau_scolaire_id)
-        if document.niveau_scolaire_id else None
+        session.get(NiveauScolaire, niveau_scolaire_id)
+        if niveau_scolaire_id else None
     )
     matiere_cle = _matiere_cle(document.matiere)
     niveau_document = (
         niveau_scolaire.libelle
-        if document.portee_academique == "scolaire" and niveau_scolaire
+        if portee_academique == "scolaire" and niveau_scolaire
         else filiere.niveau if filiere else None
     )
     maintenant = datetime.utcnow()
