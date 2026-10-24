@@ -22,7 +22,7 @@ from typing import Optional
 
 from sqlmodel import Session, and_, or_, select
 
-from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire, RoleUtilisateur, Utilisateur
+from .models import CercleEtude, Domaine, Faculte, Filiere, Mention, Universite, ProgrammeUniversitaire, OptionScolaire, RoleUtilisateur, Utilisateur
 from .referentiel import NIVEAUX
 from .texte_normalise import normaliser as _normaliser_nom_parcours
 
@@ -567,8 +567,18 @@ def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, s
             or utilisateur.niveau_scolaire_id != cercle.niveau_scolaire_id
         ):
             return False
-        if cercle.option_scolaire_id and cercle.option_scolaire_id != utilisateur.option_scolaire_id:
-            return False
+        if cercle.option_scolaire_id:
+            option_utilisateur = (
+                session.get(OptionScolaire, utilisateur.option_scolaire_id)
+                if utilisateur.option_scolaire_id else None
+            )
+            options_compatibles = {
+                utilisateur.option_scolaire_id,
+                option_utilisateur.parent_option_id if option_utilisateur else None,
+            }
+            options_compatibles.discard(None)
+            if cercle.option_scolaire_id not in options_compatibles:
+                return False
         if (
             cercle.etablissement_scolaire_id
             and cercle.etablissement_scolaire_id != utilisateur.etablissement_scolaire_id
@@ -629,6 +639,12 @@ def condition_cercles_disponibles(
             or_(
                 CercleEtude.option_scolaire_id.is_(None),
                 CercleEtude.option_scolaire_id == utilisateur.option_scolaire_id,
+                CercleEtude.option_scolaire_id == (
+                    session.get(OptionScolaire, utilisateur.option_scolaire_id).parent_option_id
+                    if utilisateur.option_scolaire_id
+                    and session.get(OptionScolaire, utilisateur.option_scolaire_id)
+                    else None
+                ),
             ),
             or_(
                 CercleEtude.etablissement_scolaire_id.is_(None),
