@@ -948,10 +948,15 @@ class DemandeCreationCercle(SQLModel, table=True):
     mention_id: Optional[int] = Field(default=None, foreign_key="mention.id")
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id", index=True)
     niveau: Optional[str] = None
+    # Portée scolaire séparée du workflow universitaire existant.
+    portee_academique: str = Field(default="universitaire", index=True, max_length=20)
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
     nom: str
     description: Optional[str] = None
     raison: str
-    statut: StatutDemandeCreationCercle = Field(default=StatutDemandeCreationCercle.EN_ATTENTE)
+    statut: StatutDemandeCreationCercle = Field(default=StatutDemandeCreationCercle.EN_ATTENTE, index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_traitement: Optional[datetime] = None
     traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
