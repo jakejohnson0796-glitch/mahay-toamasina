@@ -286,7 +286,7 @@ def creer_tentative(
             + ". Construis les questions autour de ce sujet, sans sortir du programme ni révéler les réponses."
         )
         contexte_apprentissage = (
-            f"{contexte_apprentissage}\\n\\n{bloc_sujet_cible}"
+            f"{contexte_apprentissage}\n\n{bloc_sujet_cible}"
             if contexte_apprentissage
             else bloc_sujet_cible
         )
