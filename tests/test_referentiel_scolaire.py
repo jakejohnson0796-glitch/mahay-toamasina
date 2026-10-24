@@ -5,8 +5,10 @@ from sqlmodel import SQLModel, Session, create_engine, select
 from app.models import (
     CercleEtude,
     Document,
+    MatiereScolaire,
     NiveauScolaire,
     OptionScolaire,
+    ProgrammeMatiereScolaire,
     ReferentielScolaire,
     RoleUtilisateur,
     StatutCercle,
@@ -138,6 +140,26 @@ def test_option_de_bac_est_rattachee_a_sa_serie_parente_pour_les_cercles():
     session.add(option)
     session.commit()
     session.refresh(option)
+    matiere = MatiereScolaire(
+        code="PHILOSOPHIE_TEST",
+        libelle="Philosophie",
+        source_officielle="https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/",
+        statut_validation="verifie",
+        est_active=True,
+    )
+    session.add(matiere)
+    session.commit()
+    session.refresh(matiere)
+    session.add(ProgrammeMatiereScolaire(
+        referentiel_id=serie.referentiel_id,
+        niveau_id=niveau.id,
+        option_id=serie.id,
+        matiere_id=matiere.id,
+        obligatoire=True,
+        source_officielle=matiere.source_officielle,
+        statut_validation="verifie",
+    ))
+    session.commit()
 
     user = _user(session, niveau_id=niveau.id, option_id=option.id)
     cercle = CercleEtude(
@@ -161,6 +183,11 @@ def test_option_de_bac_est_rattachee_a_sa_serie_parente_pour_les_cercles():
     option_payload = next(item for item in payload if item["id"] == option.id)
     assert option_payload["parent_option_id"] == serie.id
     assert option_payload["libelle_affiche"] == "Série D → Option D"
+
+    matieres = scolaire_router.lister_matieres_scolaires(
+        niveau.id, option_id=option.id, session=session
+    )
+    assert any(item["code"] == "PHILOSOPHIE_TEST" for item in matieres)
 
     session.close()
     engine.dispose()
