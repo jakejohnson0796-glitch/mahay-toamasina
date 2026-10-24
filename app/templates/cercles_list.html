@@ -915,5 +915,6 @@ Correctif audit visuel (point 5, "cartes de cercles trop repetitives") :
 
 <!-- Cascade de recherche nationale : Domaine -> Mention -> Niveau -> Parcours. -->
 <script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/cercles-list.js') }}?v={{ version_asset('js/cercles-list.js') }}"></script>
+<script nonce="{{ csp_nonce(request) }}" src="{{ url_for('static', path='js/cascade-scolaire-cercles.js') }}?v={{ version_asset('js/cascade-scolaire-cercles.js') }}" defer></script>
 
 {% endblock %}
