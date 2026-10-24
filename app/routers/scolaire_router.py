@@ -21,10 +21,11 @@ router = APIRouter(prefix="/api/scolaire", tags=["référentiel scolaire"])
 
 def _referentiel_actif(session: Session) -> Optional[ReferentielScolaire]:
     """Dernière version importée ; les anciennes versions restent consultables."""
-    return session.exec(
+    rows = session.exec(
         select(ReferentielScolaire)
         .order_by(ReferentielScolaire.date_creation.desc(), ReferentielScolaire.id.desc())
-    ).first()
+    ).all()
+    return rows[0] if rows else None
 
 
 def _donnees_niveau(niveau: NiveauScolaire) -> dict:
