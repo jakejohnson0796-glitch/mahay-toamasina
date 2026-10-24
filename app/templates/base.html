@@ -104,6 +104,9 @@
 <link rel="stylesheet" href="/static/dashboard-polish.css?v={{ version_asset('dashboard-polish.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/global-design-system.css?v={{ version_asset('global-design-system.css') }}">
+{% if request.session.get("user_id") %}
+<link rel="stylesheet" href="/static/bilan-reprise.css?v={{ version_asset('bilan-reprise.css') }}">
+{% endif %}
 {% if request.url.path.startswith("/securite") %}
 <link rel="stylesheet" href="/static/mfa.css?v={{ version_asset('mfa.css') }}">
 {% endif %}
@@ -464,6 +467,109 @@
   </div>
 </div>
 
+{% if request.session.get("user_id") %}
+<div
+  class="bilan-reprise-fond"
+  id="bilan-reprise-fond"
+  data-no-translate
+  data-user-key="{{ request.session.get('user_id') }}"
+  data-endpoint="/api/apprentissage/bilan-reprise"
+  hidden
+  aria-hidden="true"
+>
+  <div class="bilan-reprise-voile" data-bilan-fermer aria-hidden="true"></div>
+  <section
+    class="bilan-reprise-dialogue"
+    id="bilan-reprise-dialogue"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bilan-reprise-titre"
+    aria-describedby="bilan-reprise-intro"
+    tabindex="-1"
+  >
+    <header class="bilan-reprise-entete">
+      <div class="bilan-reprise-marque" aria-hidden="true">✦</div>
+      <div class="bilan-reprise-entete-texte">
+        <span class="bilan-reprise-surtitre" data-bilan-i18n="eyebrow">TON POINT DE REPRISE</span>
+        <h2 id="bilan-reprise-titre" data-bilan-i18n="title">Content de te revoir</h2>
+      </div>
+      <button type="button" class="bilan-reprise-fermer" id="bilan-reprise-fermer" data-bilan-i18n-aria="closeLabel" aria-label="Fermer le bilan">×</button>
+    </header>
+
+    <div class="bilan-reprise-corps">
+      <p class="bilan-reprise-intro" id="bilan-reprise-intro" data-bilan-i18n="intro">Retrouvons ce que tu as travaillé, ce qui devient plus solide et la meilleure prochaine étape.</p>
+      <p class="bilan-reprise-periode" id="bilan-reprise-periode"></p>
+
+      <div class="bilan-reprise-stats" id="bilan-reprise-stats" data-bilan-i18n-aria="statsLabel" aria-label="Activités récentes"></div>
+
+      <div class="bilan-reprise-grille">
+        <section class="bilan-reprise-section">
+          <div class="bilan-reprise-section-entete">
+            <span class="bilan-reprise-numero">01</span>
+            <div>
+              <h3 data-bilan-i18n="activityTitle">Ce que tu as fait</h3>
+              <p data-bilan-i18n="activitySub">Les activités réellement enregistrées</p>
+            </div>
+          </div>
+          <div class="bilan-reprise-liste" id="bilan-reprise-activites"></div>
+        </section>
+
+        <section class="bilan-reprise-section">
+          <div class="bilan-reprise-section-entete">
+            <span class="bilan-reprise-numero">02</span>
+            <div>
+              <h3 data-bilan-i18n="learnedTitle">Ce que tu as appris</h3>
+              <p data-bilan-i18n="learnedSub">Les notions travaillées et leur état actuel</p>
+            </div>
+          </div>
+          <div class="bilan-reprise-liste" id="bilan-reprise-apprentissages"></div>
+        </section>
+
+        <section class="bilan-reprise-section">
+          <div class="bilan-reprise-section-entete">
+            <span class="bilan-reprise-numero">03</span>
+            <div>
+              <h3 data-bilan-i18n="strengthenTitle">À renforcer</h3>
+              <p data-bilan-i18n="strengthenSub">Les priorités sorties de ta progression</p>
+            </div>
+          </div>
+          <div class="bilan-reprise-liste" id="bilan-reprise-renforcer"></div>
+        </section>
+
+        <section class="bilan-reprise-section bilan-reprise-mission">
+          <div class="bilan-reprise-section-entete">
+            <span class="bilan-reprise-numero">04</span>
+            <div>
+              <h3 data-bilan-i18n="missionTitle">Ta prochaine mission</h3>
+              <p data-bilan-i18n="missionSub">Une étape réaliste, adaptée à tes résultats</p>
+            </div>
+          </div>
+          <div id="bilan-reprise-mission"></div>
+        </section>
+      </div>
+
+      <section class="bilan-reprise-aides">
+        <div class="bilan-reprise-aides-copy">
+          <span class="bilan-reprise-surtitre" data-bilan-i18n="toolsLabel">TES OUTILS</span>
+          <h3 data-bilan-i18n="toolsTitle">Comment MITARIDALA peut t'aider</h3>
+          <p data-bilan-i18n="toolsSub">Choisis une méthode selon ce dont tu as besoin maintenant.</p>
+        </div>
+        <div class="bilan-reprise-outils" id="bilan-reprise-methodes"></div>
+      </section>
+
+      <footer class="bilan-reprise-pied">
+        <p data-bilan-i18n="reassurance">Pas besoin de tout faire d'un coup. Une petite étape bien comprise vaut mieux qu'une longue séance précipitée.</p>
+        <button type="button" class="bilan-reprise-bouton-secondaire" id="bilan-reprise-continuer" data-bilan-i18n="close">Continuer plus tard</button>
+        <a class="bilan-reprise-bouton-principal" id="bilan-reprise-action" href="/session-apprentissage" hidden>
+          <span id="bilan-reprise-action-texte" data-bilan-i18n="mainAction">Commencer ma mission</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      </footer>
+    </div>
+  </section>
+</div>
+{% endif %}
+
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/navigation.js?v={{ version_asset('js/navigation.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/theme.js?v={{ version_asset('js/theme.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/modale.js?v={{ version_asset('js/modale.js') }}" defer></script>
@@ -474,6 +580,9 @@
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/langue.js?v={{ version_asset('js/langue.js') }}" defer></script>
+{% if request.session.get("user_id") %}
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/bilan-reprise.js?v={{ version_asset('js/bilan-reprise.js') }}" defer></script>
+{% endif %}
 
 </body>
 </html>
