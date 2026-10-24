@@ -43,7 +43,20 @@ _GEMINI_COOLDOWN_SECONDS = 60.0
 
 
 class ProviderCooldown(Exception):
-    """Provider temporairement indisponible; evite les retries immediats."""
+    """Fournisseur en limite; porte le délai et indique si aucun appel n'a été envoyé."""
+
+    def __init__(
+        self,
+        message: str,
+        retry_after_seconds: float = 60.0,
+        cooldown_active: bool = False,
+    ) -> None:
+        super().__init__(message)
+        try:
+            self.retry_after_seconds = max(0.0, float(retry_after_seconds))
+        except (TypeError, ValueError):
+            self.retry_after_seconds = 60.0
+        self.cooldown_active = bool(cooldown_active)
 
 
 class AICostQualityController:
@@ -98,9 +111,12 @@ class AICostQualityController:
             delay = 60.0
         return max(15.0, min(float(delay), 900.0))
 
-    def available(self, provider: str) -> bool:
+    def remaining_cooldown(self, provider: str) -> float:
         with self._lock:
-            return time.time() >= self._cooldowns.get(provider, 0.0)
+            return max(0.0, self._cooldowns.get(provider, 0.0) - time.time())
+
+    def available(self, provider: str) -> bool:
+        return self.remaining_cooldown(provider) <= 0.0
 
     def record_failure(self, provider: str, error: BaseException) -> float:
         delay = self.cooldown_seconds(error)
@@ -116,15 +132,22 @@ class AICostQualityController:
             self._cooldowns.pop(provider, None)
 
     def call(self, provider: str, operation):
-        if not self.available(provider):
-            raise ProviderCooldown(f"{provider} cooldown actif")
+        restant = self.remaining_cooldown(provider)
+        if restant > 0.0:
+            raise ProviderCooldown(
+                f"{provider} cooldown actif; prochaine tentative dans environ {restant:.0f}s",
+                retry_after_seconds=restant,
+                cooldown_active=True,
+            )
         try:
             result = operation()
         except Exception as error:
             if self.is_rate_limited(error):
                 delay = self.record_failure(provider, error)
                 raise ProviderCooldown(
-                    f"{provider} limite; prochaine tentative dans environ {delay:.0f}s"
+                    f"{provider} limite; prochaine tentative dans environ {delay:.0f}s",
+                    retry_after_seconds=delay,
+                    cooldown_active=False,
                 ) from error
             raise
         self.clear_failure(provider)
