@@ -122,6 +122,50 @@ def test_cercle_scolaire_correspond_au_niveau_et_a_la_serie():
     engine.dispose()
 
 
+def test_option_de_bac_est_rattachee_a_sa_serie_parente_pour_les_cercles():
+    engine, session = _session()
+    _, niveau, serie = _school_catalogue(session)
+    option = OptionScolaire(
+        referentiel_id=serie.referentiel_id,
+        niveau_id=niveau.id,
+        parent_option_id=serie.id,
+        code="OPT_D",
+        libelle="Option D",
+        type_option="option",
+        est_active=True,
+        statut_validation="verifie",
+    )
+    session.add(option)
+    session.commit()
+    session.refresh(option)
+
+    user = _user(session, niveau_id=niveau.id, option_id=option.id)
+    cercle = CercleEtude(
+        nom="Révisions de la série",
+        createur_id=user.id,
+        statut=StatutCercle.ACTIF,
+        portee_academique="scolaire",
+        niveau_scolaire_id=niveau.id,
+        option_scolaire_id=serie.id,
+    )
+    session.add(cercle)
+    session.commit()
+    session.refresh(cercle)
+
+    assert profil_correspond_au_cercle(user, cercle, session) is True
+    assert session.exec(
+        select(CercleEtude).where(condition_cercles_disponibles(user, session))
+    ).all() == [cercle]
+
+    payload = scolaire_router.lister_options_scolaires(niveau.id, session=session)
+    option_payload = next(item for item in payload if item["id"] == option.id)
+    assert option_payload["parent_option_id"] == serie.id
+    assert option_payload["libelle_affiche"] == "Série D → Option D"
+
+    session.close()
+    engine.dispose()
+
+
 def test_demande_professeur_ne_donne_pas_le_role_effectif_professeur():
     engine, session = _session()
     _, niveau, option = _school_catalogue(session)
