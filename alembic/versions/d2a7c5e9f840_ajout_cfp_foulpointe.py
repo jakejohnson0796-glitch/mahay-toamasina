@@ -56,14 +56,14 @@ PARCOURS = [
     },
     {
         "code": "CUISINIER",
-        "secteur": null,
-        "filiere": null,
+        "secteur": None,
+        "filiere": None,
         "metier": "Cuisinier"
     },
     {
         "code": "TRAITEUR",
-        "secteur": null,
-        "filiere": null,
+        "secteur": None,
+        "filiere": None,
         "metier": "Traiteur"
     },
     {
@@ -188,8 +188,8 @@ PARCOURS = [
     },
     {
         "code": "RESTAURATEUR-DE-MEUBLES",
-        "secteur": null,
-        "filiere": null,
+        "secteur": None,
+        "filiere": None,
         "metier": "Restaurateur de meubles"
     }
 ]
@@ -214,7 +214,7 @@ ETABLISSEMENTS = [
         "nom": "LTP BERAVINA",
         "region": "HAUTE MATSIATRA",
         "type": "lycee_technique",
-        "commune": null,
+        "commune": None,
         "keys": [
             "GESTION-GESTION-COMPTABLE-AGENT-COMPTABLE",
             "INDUSTRIEL-FABRICATION-MECANIQUE-FRAISEUR",
