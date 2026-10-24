@@ -211,7 +211,10 @@ def _resumer_mission(mission: dict, acces_ia: bool) -> dict:
         }
     if toutes_confirmees:
         return {
+            "type": "toutes_confirmees",
             "active": False,
+            "etape": "terminee",
+            "action": "quiz",
             "titre": str(mission.get("titre") or "Prêt pour une nouvelle notion"),
             "matiere": "",
             "notion": "",
@@ -222,7 +225,10 @@ def _resumer_mission(mission: dict, acces_ia: bool) -> dict:
             "libelle_action": "Explorer une nouvelle notion" if acces_ia else "Voir les options d'accès",
         }
     return {
+        "type": "nouvelle",
         "active": False,
+        "etape": "comprendre",
+        "action": "quiz",
         "titre": "Préparer ta prochaine mission",
         "matiere": "",
         "notion": "",
