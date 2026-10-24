@@ -80,6 +80,12 @@ PARCOURS_A_AJOUTER = [
         "metier": "Jardinier paysagiste",
     },
     {
+        "code": "TOURISME-HOTELLERIE-RESTAURATION-RESTAURATION-RESTAURATEUR-VILLAGEOIS",
+        "secteur": "Tourisme - Hôtellerie - Restauration",
+        "filiere": "RESTAURATION",
+        "metier": "RESTAURATEUR VILLAGEOIS",
+    },
+    {
         "code": "DEVELOPPEMENT-RURAL-ELEVAGE-ELEVEUR-DE-PORC",
         "secteur": "Developpement Rural",
         "filiere": "ELEVAGE",
