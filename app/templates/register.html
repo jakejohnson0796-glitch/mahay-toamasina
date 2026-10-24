@@ -146,6 +146,17 @@
                 <p class="auth-help">Les niveaux, séries et filières sont proposés selon le cycle. Le référentiel scolaire initial est partiel et sera enrichi à partir de sources officielles vérifiées.</p>
               </div>
 
+              <div id="bloc-cycles-enseignes" class="auth-field" hidden>
+                <label>Autres cycles dans lesquels vous enseignez</label>
+                <fieldset class="auth-teaching-cycles" aria-describedby="cycles-enseignes-aide">
+                  <legend class="visually-hidden">Cycles d’enseignement supplémentaires</legend>
+                  <label><input type="checkbox" name="cycles_enseignes" value="college" disabled> Collège</label>
+                  <label><input type="checkbox" name="cycles_enseignes" value="lycee" disabled> Lycée</label>
+                  <label><input type="checkbox" name="cycles_enseignes" value="universite" disabled> Université / enseignement supérieur</label>
+                </fieldset>
+                <p class="auth-help" id="cycles-enseignes-aide">Le cycle choisi juste au-dessus est ajouté automatiquement. Cochez ici les autres cycles où vous enseignez. Cette déclaration reste soumise à validation administrative et ne donne aucun droit supplémentaire.</p>
+              </div>
+
               <div id="bloc-scolaire" class="auth-academic-grid" data-scolaire-section hidden>
                 <div class="auth-field">
                   <label for="niveau_scolaire_id">Classe <span class="auth-required" aria-hidden="true">*</span></label>
