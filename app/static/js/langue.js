@@ -2945,6 +2945,7 @@
     "Une plateforme malgache pensée pour apprendre, pratiquer et collaborer.": "Sehatra malagasy natao hianarana, hanaovana fanazaran-tena ary hiaraha-miasa.",
     "Apprendre ensemble": "Miara-mianatra",
     "Un espace commun pour apprendre, partager et progresser.": "Toerana iombonana hianarana, hifanakalozana ary handrosoana.",
+    "Événements récents": "Vaovao farany",
     "Garde le fil de ce qui compte.": "Araho ireo vaovao manan-danja.",
     "Les nouvelles liées à tes cours, tes ressources et tes cercles sont réunies ici. Retrouve ce qui demande ton attention, puis retourne directement à l'action.": "Atambatra eto ny vaovao momba ny lesonao, ny loharano ampiasainao ary ny vondrona fianaranao. Jereo izay mila ny sainao, dia tohizo avy hatrany ny asa.",
     "Résumé des notifications": "Famintinana ny fampandrenesana",
