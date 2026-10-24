@@ -488,9 +488,15 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
         <article class="cercles-visibilite-card">
           <h5>{{ info.cercle.nom }}</h5>
           <p class="cercles-visibilite-meta">
-            {% if info.mention %}{{ info.mention.nom }}{% endif %}
-            {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
-            {% if info.cercle.niveau %} · {{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) }}{% endif %}
+            {% if info.type_cercle == "scolaire" %}
+              {% if info.niveau_scolaire %}{{ info.niveau_scolaire.libelle }}{% endif %}
+              {% if info.option_scolaire %} · {{ info.option_scolaire.libelle }}{% endif %}
+              {% if info.etablissement_scolaire %} · {{ info.etablissement_scolaire.nom }}{% else %} · National{% endif %}
+            {% else %}
+              {% if info.mention %}{{ info.mention.nom }}{% endif %}
+              {% if info.filiere %} · {{ info.filiere.nom }}{% endif %}
+              {% if info.cercle.niveau %} · {{ niveaux_libelles.get(info.cercle.niveau, info.cercle.niveau) }}{% endif %}
+            {% endif %}
             · {{ info.nb_membres }} membre{{ "s" if info.nb_membres != 1 else "" }}
           </p>
           <span class="puce-statut">Tu es membre</span>
