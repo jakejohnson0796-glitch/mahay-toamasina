@@ -703,6 +703,9 @@
     }
   }
 
+  // Capture l etat initial avant toute initialisation afin que le premier
+  // marqueur de derniere activite ne declenche pas son propre bilan.
+  var avaitUneActiviteAvantCeChargement = lireNombre(KEY_ACTIVITY) > 0;
   var ongletDejaActif = false;
   try {
     ongletDejaActif = window.sessionStorage.getItem(KEY_TAB) === "1";
@@ -739,8 +742,8 @@
     if (document.visibilityState === "visible") verifierRetour("visibilite");
   });
   window.addEventListener("pageshow", function () {
-    if (!ongletDejaActif) verifierRetour("chargement");
-    else verifierRetour("visibilite");
+    if (!ongletDejaActif && avaitUneActiviteAvantCeChargement) verifierRetour("chargement");
+    else if (ongletDejaActif) verifierRetour("visibilite");
   });
   if (languageSelect) {
     languageSelect.addEventListener("change", function () {
