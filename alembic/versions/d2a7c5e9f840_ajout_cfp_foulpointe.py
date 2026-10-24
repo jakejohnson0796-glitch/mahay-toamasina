@@ -201,12 +201,12 @@ ETABLISSEMENTS = [
         "type": "centre_formation",
         "commune": "Foulpointe",
         "keys": [
-            "BTPMENUISIER",
-            "HOTEL_FEMME_CHAMBRE",
-            "HOTEL_BARMAN",
-            "RESTO_PATISSIER",
-            "METIER_CUISINIER",
-            "RESTO_TRAITEUR",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-MENUSIER-EN-BOIS",
+            "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-FEMME-VALET-DE-CHAMBRE",
+            "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-BARMAN",
+            "TOURISME-HOTELLERIE-RESTAURATION-RESTAURATION-PATISSIER",
+            "CUISINIER",
+            "TRAITEUR",
             "RESTAURATEUR-DE-MEUBLES"
         ]
     },
@@ -216,29 +216,29 @@ ETABLISSEMENTS = [
         "type": "lycee_technique",
         "commune": null,
         "keys": [
-            "GESTION_COMPTABLE",
-            "INDFRAISEUR",
-            "INDELECTRONIQUE",
-            "BTPCHEF",
-            "BTPDESSIN",
-            "BTPCARRELEUR",
-            "BTPARCHITECTE",
-            "BTPDECORATEUR",
-            "BTPTOPGRAPHE",
-            "BTPCOMMIS",
-            "BTPMENUISIER",
-            "BTPELECTRICIEN",
-            "BTPPOSEUR",
-            "BTPALUMINIUM",
-            "BTPPLOMBIER",
-            "BTPPLATRIER",
-            "BTPCONDUCTEUR_GRUE",
-            "BTPCONDUCTEUR_ENGIN",
-            "HOTEL_FEMME_CHAMBRE",
-            "HOTEL_CONCIERGE",
-            "HOTEL_AGENT_ACCUEIL",
-            "HOTEL_HOTESSE_SALLE",
-            "HOTEL_BARMAN"
+            "GESTION-GESTION-COMPTABLE-AGENT-COMPTABLE",
+            "INDUSTRIEL-FABRICATION-MECANIQUE-FRAISEUR",
+            "INDUSTRIEL-ELECTRONIQUE-ELECTRONICIEN",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CHEF-D-EQUIPE-DE-CHANTIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-DISSANATEUR-PROJETEUR-METREUR",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CARRELEUR",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-ARCHITECTE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-DECORATEUR-D-INTERIEUR",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-TOPOGRAPHE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-COMMIS-DE-CHANTIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-MENUSIER-EN-BOIS",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-ELECTRICIEN-BATIMENT",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-POSEUR-DE-PAVE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-MENUISIER-ALUMINIUM",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-AIDE-PLOMBIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-PLATRIER",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CONDUCTEUR-DE-GRUE",
+            "GENIE-CIVIL-BATIMENT-ET-TRAVAUX-PUBLIC-CONDUCTEUR-D-ENGIN",
+            "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-FEMME-VALET-DE-CHAMBRE",
+            "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-CONCIERGE-D-HOTEL",
+            "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-AGENT-D-ACCUEIL",
+            "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-HOTESSE-DE-SALLE",
+            "TOURISME-HOTELLERIE-RESTAURATION-HOTELLERIE-BARMAN"
         ]
     }
 ]
@@ -369,29 +369,7 @@ def upgrade() -> None:
 
         # Les offres restent en attente tant que l'année et la réalité locale n'ont pas été confirmées.
         for code_parcours in etablissement["keys"]:
-            if code_parcours == "RESTAURATEUR-DE-MEUBLES":
-                chemin_id = chemin_ids[code_parcours]
-            else:
-                # Les codes historiques sont construits depuis le triplet officiel normalisé.
-                chemin_id = conn.execute(
-                    sa.text(
-                        "SELECT id FROM parcourstechniqueprofessionnel WHERE code=:code"
-                    ),
-                    {"code": next(p["code"] for p in PARCOURS if p["code"] == _slug("-".join(
-                        part for part in (
-                            next(x["secteur"] for x in PARCOURS if x["code"] == next(
-                                y["code"] for y in PARCOURS if y["code"] == code_parcours
-                            )),
-                        ) if part
-                    )))},
-                ).scalar() if False else None
-
-            # All pathway IDs are cached by normalized code.
-            if chemin_id is None:
-                chemin_id = conn.execute(
-                    sa.text("SELECT id FROM parcourstechniqueprofessionnel WHERE code=:code"),
-                    {"code": code_parcours},
-                ).scalar()
+            chemin_id = chemin_ids.get(code_parcours)
             if chemin_id is None:
                 raise RuntimeError(f"Parcours officiel absent avant l'ajout de l'offre : {code_parcours}")
 
