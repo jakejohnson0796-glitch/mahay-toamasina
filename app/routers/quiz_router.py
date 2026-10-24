@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
-from sqlmodel import Session, select
+from sqlmodel import Session, or_, select
 
 from ..database import get_session
 from ..templating import templates
@@ -14,7 +14,8 @@ from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
 from ..models import (
     Document, MissionApprentissage, StatutDocument, TentativeQuiz, ProgressionNotion,
-    NiveauScolaire, OptionScolaire, ReferentielScolaire,
+    NiveauScolaire, OptionScolaire, ReferentielScolaire, MatiereScolaire,
+    ProgrammeMatiereScolaire,
 )
 from .. import quiz as quiz_module
 from .. import adaptive_learning
@@ -86,9 +87,77 @@ def _contexte_scolaire_quiz(utilisateur, session: Session) -> Optional[dict]:
     return {
         "niveau": niveau.libelle,
         "cycle_education": niveau.cycle,
+        "referentiel_id": referentiel.id,
         "niveau_scolaire_id": niveau.id,
         "option_scolaire_id": option.id if option else None,
+        "etablissement_scolaire_id": getattr(utilisateur, "etablissement_scolaire_id", None),
     }
+
+
+def _matieres_scolaires_disponibles(session: Session, contexte: dict) -> List[str]:
+    """Matières validées du programme scolaire et des cours approuvés de la classe."""
+    option_ids = set()
+    option_id = contexte.get("option_scolaire_id")
+    if option_id:
+        option_ids.add(option_id)
+        option = session.get(OptionScolaire, option_id)
+        if option and option.parent_option_id:
+            option_ids.add(option.parent_option_id)
+
+    requete = (
+        select(MatiereScolaire.libelle)
+        .join(
+            ProgrammeMatiereScolaire,
+            ProgrammeMatiereScolaire.matiere_id == MatiereScolaire.id,
+        )
+        .where(
+            ProgrammeMatiereScolaire.referentiel_id == contexte["referentiel_id"],
+            ProgrammeMatiereScolaire.niveau_id == contexte["niveau_scolaire_id"],
+            ProgrammeMatiereScolaire.statut_validation == "verifie",
+            MatiereScolaire.est_active == True,  # noqa: E712
+            MatiereScolaire.statut_validation == "verifie",
+        )
+    )
+    if option_ids:
+        requete = requete.where(
+            or_(
+                ProgrammeMatiereScolaire.option_id.is_(None),
+                ProgrammeMatiereScolaire.option_id.in_(option_ids),
+            )
+        )
+    else:
+        requete = requete.where(ProgrammeMatiereScolaire.option_id.is_(None))
+    valeurs = set(session.exec(requete).all())
+
+    # Les documents scolaires approuvés complètent le programme tant qu'un
+    # rattachement matière/classe est encore en cours de vérification.
+    docs = select(Document.matiere).where(
+        Document.statut == StatutDocument.APPROUVE,
+        Document.portee_academique == "scolaire",
+        Document.niveau_scolaire_id == contexte["niveau_scolaire_id"],
+    )
+    if option_ids:
+        docs = docs.where(
+            or_(
+                Document.option_scolaire_id.is_(None),
+                Document.option_scolaire_id.in_(option_ids),
+            )
+        )
+    else:
+        docs = docs.where(Document.option_scolaire_id.is_(None))
+    etablissement_id = contexte.get("etablissement_scolaire_id")
+    if etablissement_id:
+        docs = docs.where(
+            or_(
+                Document.etablissement_scolaire_id.is_(None),
+                Document.etablissement_scolaire_id == etablissement_id,
+            )
+        )
+    valeurs.update(
+        matiere for matiere in session.exec(docs).all()
+        if matiere and matiere.strip()
+    )
+    return sorted(valeurs, key=str.casefold)
 
 
 @router.get("/quiz")
@@ -98,13 +167,25 @@ def page_config_quiz(request: Request, session: Session = Depends(get_session)):
     if redirection:
         return redirection
 
+    contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
+    est_profil_scolaire = getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+    if est_profil_scolaire and not contexte_scolaire:
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
+    niveaux = [contexte_scolaire["niveau"]] if contexte_scolaire else quiz_module.NIVEAUX
+    matieres = (
+        _matieres_scolaires_disponibles(session, contexte_scolaire)
+        if contexte_scolaire else _matieres_disponibles(session)
+    )
     return templates.TemplateResponse(
         request,
         "quiz_config.html",
         {
             "utilisateur": utilisateur,
-            "matieres": _matieres_disponibles(session),
-            "niveaux": quiz_module.NIVEAUX,
+            "matieres": matieres,
+            "niveaux": niveaux,
             "difficultes": quiz_module.DIFFICULTES,
             "nb_questions_possibles": quiz_module.NB_QUESTIONS_POSSIBLES,
         },
@@ -135,6 +216,19 @@ def generer_quiz(
     if not matiere_choisie:
         return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
 
+    contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
+    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}:
+        if not contexte_scolaire:
+            return RedirectResponse(
+                "/profil/academique?erreur=profil_scolaire_incomplet",
+                status_code=303,
+            )
+        # Le serveur impose la classe du profil : un formulaire modifié ne
+        # peut pas lancer un quiz scolaire pour un autre niveau.
+        niveau = contexte_scolaire["niveau"]
+    elif niveau not in quiz_module.NIVEAUX:
+        return RedirectResponse("/quiz?erreur=parametres_invalides", status_code=303)
+
     nb_questions = nb_questions if nb_questions in quiz_module.NB_QUESTIONS_POSSIBLES else 10
     try:
         matiere_choisie = quiz_module.valider_parametres(matiere_choisie, niveau, difficulte, nb_questions)
@@ -149,6 +243,9 @@ def generer_quiz(
             niveau,
             difficulte,
             nb_questions,
+            cycle_education=contexte_scolaire["cycle_education"] if contexte_scolaire else None,
+            niveau_scolaire_id=contexte_scolaire["niveau_scolaire_id"] if contexte_scolaire else None,
+            option_scolaire_id=contexte_scolaire["option_scolaire_id"] if contexte_scolaire else None,
         )
     except quiz_module.QuizValidationError as erreur:
         logger.warning(
@@ -402,13 +499,33 @@ def generer_examen(
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/quiz?erreur=trop_de_generations", status_code=303)
 
-    matieres = _matieres_disponibles(session)
-    matiere = random.choice(matieres) if matieres else "Culture generale"
-    niveau = random.choice(quiz_module.NIVEAUX)
+    contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
+    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"} and not contexte_scolaire:
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
+    matieres = (
+        _matieres_scolaires_disponibles(session, contexte_scolaire)
+        if contexte_scolaire else _matieres_disponibles(session)
+    )
+    matiere = random.choice(matieres) if matieres else (
+        "Mathématiques" if contexte_scolaire else "Culture generale"
+    )
+    niveau = contexte_scolaire["niveau"] if contexte_scolaire else random.choice(quiz_module.NIVEAUX)
     difficulte = random.choice(quiz_module.DIFFICULTES)
 
     try:
-        tentative = quiz_module.creer_tentative_examen(session, utilisateur, matiere, niveau, difficulte)
+        tentative = quiz_module.creer_tentative_examen(
+            session,
+            utilisateur,
+            matiere,
+            niveau,
+            difficulte,
+            cycle_education=contexte_scolaire["cycle_education"] if contexte_scolaire else None,
+            niveau_scolaire_id=contexte_scolaire["niveau_scolaire_id"] if contexte_scolaire else None,
+            option_scolaire_id=contexte_scolaire["option_scolaire_id"] if contexte_scolaire else None,
+        )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
 
