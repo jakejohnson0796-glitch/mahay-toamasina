@@ -2970,7 +2970,6 @@
     "Fiche de cours disponible": "Azo jerena ny fiche de cours",
     "Non lues": "Tsy mbola novakiana",
     "Lues": "Efa novakiana",
-    "à lire": "hovakiana",
     "Mes badges": "Ny badge-ko",
     "Gagner des XP": "Mahazo XP",
     "Accès rapide aux défis": "Fidirana haingana amin'ny fanamby",
