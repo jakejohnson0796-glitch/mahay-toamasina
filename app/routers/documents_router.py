@@ -52,6 +52,13 @@ def _est_membre_cercle(session: Session, cercle_id: int, utilisateur_id: int) ->
     )
 
 
+def _matiere_cercle_coherente(cercle: Optional[CercleEtude], matiere_scolaire_id: Optional[int]) -> bool:
+    """Vérifie qu'un dépôt mono-matière ne contourne pas la cible du cercle."""
+    if not cercle or cercle.portee_academique != "scolaire" or not cercle.matiere_scolaire_id:
+        return True
+    return matiere_scolaire_id is None or matiere_scolaire_id == cercle.matiere_scolaire_id
+
+
 def _charger_fiche_pedagogique_json(contenu: str) -> dict:
     """Charge sans risque les informations détaillées d’une fiche IA."""
     try:
@@ -608,6 +615,42 @@ def upload_document(
                 if not etablissement_scolaire or not etablissement_scolaire.est_actif or not etablissement_scolaire.est_verifie:
                     return RedirectResponse("/documents?erreur=etablissement_cercle_invalide", status_code=303)
                 etablissement_scolaire_id = etablissement_scolaire.id
+
+            # Un cercle ciblé sur une matière ne doit ni accepter un dépôt
+            # d'une autre matière ni perdre sa cible quand le formulaire
+            # n'envoie pas d'identifiant matière (ex. champ désactivé).
+            if cercle.matiere_scolaire_id:
+                if not _matiere_cercle_coherente(cercle, matiere_scolaire_id):
+                    return RedirectResponse("/documents?erreur=matiere_cercle_incompatible", status_code=303)
+                if matiere_scolaire_id is None:
+                    matiere_cible = session.get(MatiereScolaire, cercle.matiere_scolaire_id)
+                    options_cibles = []
+                    if option_scolaire:
+                        options_cibles.append(option_scolaire.id)
+                        if option_scolaire.parent_option_id:
+                            options_cibles.append(option_scolaire.parent_option_id)
+                    association_cible = session.exec(
+                        select(ProgrammeMatiereScolaire).where(
+                            ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                            ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                            ProgrammeMatiereScolaire.matiere_id == cercle.matiere_scolaire_id,
+                            ProgrammeMatiereScolaire.statut_validation == "verifie",
+                            or_(
+                                ProgrammeMatiereScolaire.option_id.is_(None),
+                                ProgrammeMatiereScolaire.option_id.in_(options_cibles),
+                            ),
+                        )
+                    ).first()
+                    if (
+                        not matiere_cible
+                        or not matiere_cible.est_active
+                        or matiere_cible.statut_validation != "verifie"
+                        or not association_cible
+                    ):
+                        return RedirectResponse("/documents?erreur=matiere_cercle_invalide", status_code=303)
+                    matiere_scolaire = matiere_cible
+                    matiere_scolaire_id = matiere_cible.id
+                    matiere = matiere_cible.libelle
 
         filiere_id = None
     else:
