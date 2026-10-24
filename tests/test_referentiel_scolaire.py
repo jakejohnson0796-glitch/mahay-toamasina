@@ -285,6 +285,31 @@ def test_quiz_cible_reconnait_la_classe_scolaire_sans_basculer_en_l1():
     engine.dispose()
 
 
+def test_professeur_sans_classe_peut_garder_un_parcours_scolaire_general():
+    engine, session = _session()
+    teacher = Utilisateur(
+        nom="Demande de professeur sans classe",
+        telephone="0340000100",
+        mot_de_passe_hash="hash",
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="professeur",
+        cycle_education="lycee",
+        niveau_scolaire_id=None,
+        statut_verification_enseignant="en_attente",
+    )
+    session.add(teacher)
+    session.commit()
+    session.refresh(teacher)
+
+    assert quiz_router._enseignant_sans_classe_scolaire(teacher) is True
+    assert quiz_router._contexte_scolaire_quiz(teacher, session) is None
+    assert tuteur_router._enseignant_sans_classe_scolaire(teacher) is True
+    assert tuteur_router._contexte_scolaire_tuteur(teacher, session) is None
+
+    session.close()
+    engine.dispose()
+
+
 def test_quiz_cible_refuse_un_profil_scolaire_sans_classe_validee():
     engine, session = _session()
     user = Utilisateur(
