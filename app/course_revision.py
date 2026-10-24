@@ -91,10 +91,13 @@ def _budget_completion_tokens(
         MAX_COMPLETION_TOKENS,
         max(MIN_COMPLETION_TOKENS, int(maximum or MAX_COMPLETION_TOKENS)),
     )
-    budget = min(
-        plafond_sortie,
-        max(MIN_COMPLETION_TOKENS, BUDGET_TPM_PRUDENT - jetons_entree_estimes),
-    )
+    budget_disponible = BUDGET_TPM_PRUDENT - jetons_entree_estimes
+    if budget_disponible < MIN_COMPLETION_TOKENS:
+        raise ValueError(
+            "Le contexte de la fiche est trop volumineux pour le budget IA prudent ; "
+            "réduis la source ou le schéma avant de relancer."
+        )
+    budget = min(plafond_sortie, budget_disponible)
     logger.info(
         "Budget fiche IA: entree_estimee=%s jetons, sortie_max=%s jetons.",
         jetons_entree_estimes,
