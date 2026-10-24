@@ -19,7 +19,7 @@ from sqlmodel import Session, select, func
 from .config import parametres
 from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
-from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router
+from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router, scolaire_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .static_cache import VersionedStaticAssetCacheMiddleware
 from .admin_security import AdminActionConfirmationMiddleware
@@ -93,6 +93,7 @@ app.include_router(classe_router.router)
 app.include_router(faq_router.router)
 app.include_router(feedback_router.router)
 app.include_router(academique_router.router)
+app.include_router(scolaire_router.router)
 app.include_router(mode_emploi_router.router)
 app.include_router(notifications_router.router)
 app.include_router(revisions_router.router)
