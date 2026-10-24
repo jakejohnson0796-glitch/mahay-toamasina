@@ -375,9 +375,11 @@ def generer_quiz(
     suggestion = _suggestion_quiz(matieres_disponibles, progressions)
 
     progression_cible = None
+    sujet_cible = None
     if mode_quiz == "recommande":
         matiere_choisie = suggestion["matiere"]
         progression_cible = suggestion["progression"]
+        sujet_cible = suggestion["notion"] or None
         difficulte_choisie = suggestion["difficulte"]
     elif mode_quiz == "hasard":
         if not matieres_disponibles:
@@ -389,10 +391,21 @@ def generer_quiz(
         matiere_choisie = (matiere_libre or "").strip() or (matiere or "").strip()
         if not matiere_choisie:
             return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
+        matiere_selectionnee = (matiere or "").strip()
+        sujet_libre = (matiere_libre or "").strip()
+        if matiere_selectionnee and sujet_libre:
+            # La matière reste dans le périmètre du parcours (notamment au
+            # collège/lycée) et le texte libre précise le module à travailler.
+            matiere_choisie = matiere_selectionnee
+            sujet_cible = sujet_libre
+        else:
+            matiere_choisie = sujet_libre or matiere_selectionnee
+        if not matiere_choisie:
+            return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
         progression_cible = next(
             (
                 progression for progression in progressions
-                if getattr(progression, "matiere", "").casefold() == matiere_choisie.casefold()
+                if (getattr(progression, "matiere", None) or "").casefold() == matiere_choisie.casefold()
             ),
             None,
         )
@@ -445,6 +458,7 @@ def generer_quiz(
             cycle_education=contexte_scolaire["cycle_education"] if contexte_scolaire else None,
             niveau_scolaire_id=contexte_scolaire["niveau_scolaire_id"] if contexte_scolaire else None,
             option_scolaire_id=contexte_scolaire["option_scolaire_id"] if contexte_scolaire else None,
+            sujet_cible=sujet_cible,
         )
     except quiz_module.QuizValidationError as erreur:
         logger.warning(
