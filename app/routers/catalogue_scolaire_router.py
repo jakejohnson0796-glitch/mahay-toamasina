@@ -219,6 +219,16 @@ def page_catalogue_scolaire(
     etablissements = session.exec(
         etab_requete.order_by(EtablissementScolaire.region, EtablissementScolaire.nom).limit(100)
     ).all()
+    regions = session.exec(
+        select(EtablissementScolaire.region)
+        .where(
+            EtablissementScolaire.est_active == True,  # noqa: E712
+            EtablissementScolaire.est_verifie == True,  # noqa: E712
+            EtablissementScolaire.region.is_not(None),
+        )
+        .distinct()
+        .order_by(EtablissementScolaire.region)
+    ).all()
 
     nb_programmes_verifies = session.exec(
         select(func.count()).select_from(ProgrammeMatiereScolaire).where(
@@ -237,6 +247,7 @@ def page_catalogue_scolaire(
             "matieres": matieres,
             "parcours_etfp": parcours_etfp,
             "etablissements": etablissements,
+            "regions": regions,
             "offres": offres,
             "annees": years,
             "annee_selectionnee": annee,
