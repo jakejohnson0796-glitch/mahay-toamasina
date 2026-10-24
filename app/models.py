@@ -1051,7 +1051,13 @@ class DemandeCreationCercle(SQLModel, table=True):
             sqlite_where=text(
                 "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
                 "AND filiere_id IS NULL AND niveau IS NOT NULL"
-                Index(
+            ),
+            postgresql_where=text(
+                "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
+                "AND filiere_id IS NULL AND niveau IS NOT NULL"
+            ),
+        ),
+        Index(
             "ix_demande_creation_scolaire_unique_000",
             "niveau_scolaire_id",
             unique=True,
@@ -1118,12 +1124,6 @@ class DemandeCreationCercle(SQLModel, table=True):
             unique=True,
             sqlite_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
             postgresql_where=text("statut = 'EN_ATTENTE' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL AND option_scolaire_id IS NOT NULL AND etablissement_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NOT NULL"),
-        ),
-    ),
-            postgresql_where=text(
-                "statut = 'EN_ATTENTE' AND mention_id IS NOT NULL "
-                "AND filiere_id IS NULL AND niveau IS NOT NULL"
-            ),
         ),
     )
 
