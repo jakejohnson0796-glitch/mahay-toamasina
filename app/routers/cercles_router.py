@@ -687,8 +687,9 @@ def liste_cercles(
     if etablissement_scolaire_id is not None:
         requete = requete.where(CercleEtude.etablissement_scolaire_id == etablissement_scolaire_id)
     if matiere_scolaire_id is not None:
-        # Une matière est un filtre scolaire : la cible doit appartenir au
-        # catalogue courant et être publiée dans un programme vérifié.
+        # Un filtre matière doit correspondre au programme vérifié de la
+        # classe et, si renseignée, de la série. Une série sans classe permet
+        # de déduire son propre niveau, jamais d'élargir le résultat.
         referentiels_matieres = session.exec(
             select(ReferentielScolaire).order_by(
                 ReferentielScolaire.date_creation.desc(),
@@ -696,21 +697,58 @@ def liste_cercles(
             )
         ).all()
         referentiel_matieres = referentiels_matieres[0] if referentiels_matieres else None
-        matiere_valide = session.get(MatiereScolaire, matiere_scolaire_id)
-        mapping_valide = (
-            session.exec(
-                select(ProgrammeMatiereScolaire.id).where(
-                    ProgrammeMatiereScolaire.referentiel_id == referentiel_matieres.id,
-                    ProgrammeMatiereScolaire.matiere_id == matiere_scolaire_id,
-                    ProgrammeMatiereScolaire.statut_validation == "verifie",
-                    ProgrammeMatiereScolaire.niveau_id == niveau_scolaire_id
-                    if niveau_scolaire_id is not None else ProgrammeMatiereScolaire.niveau_id.is_not(None),
+        matiere_filtre = session.get(MatiereScolaire, matiere_scolaire_id)
+        niveau_filtre_id = niveau_scolaire_id
+        option_filtre = None
+        if option_scolaire_id is not None:
+            option_filtre = session.get(OptionScolaire, option_scolaire_id)
+            if (
+                not referentiel_matieres
+                or not option_filtre
+                or option_filtre.referentiel_id != referentiel_matieres.id
+                or not option_filtre.est_active
+                or option_filtre.statut_validation != "verifie"
+                or (
+                    niveau_filtre_id is not None
+                    and option_filtre.niveau_id != niveau_filtre_id
                 )
-            ).first()
-            if referentiel_matieres and matiere_valide
-            and matiere_valide.est_active and matiere_valide.statut_validation == "verifie"
-            else None
-        )
+            ):
+                option_filtre = None
+                niveau_filtre_id = -1
+            elif niveau_filtre_id is None:
+                niveau_filtre_id = option_filtre.niveau_id
+
+        mapping_valide = False
+        if (
+            referentiel_matieres
+            and matiere_filtre
+            and matiere_filtre.est_active
+            and matiere_filtre.statut_validation == "verifie"
+            and niveau_filtre_id != -1
+        ):
+            if niveau_filtre_id is not None:
+                niveau_filtre = session.get(NiveauScolaire, niveau_filtre_id)
+                if (
+                    niveau_filtre
+                    and niveau_filtre.referentiel_id == referentiel_matieres.id
+                    and niveau_filtre.est_actif
+                    and niveau_filtre.statut_validation == "verifie"
+                ):
+                    mapping_valide = _matiere_scolaire_verifiee_pour_cible(
+                        session,
+                        referentiel_id=referentiel_matieres.id,
+                        niveau_id=niveau_filtre.id,
+                        matiere_id=matiere_scolaire_id,
+                        option_scolaire=option_filtre,
+                    ) is not None
+            else:
+                mapping_valide = bool(session.exec(
+                    select(ProgrammeMatiereScolaire.id).where(
+                        ProgrammeMatiereScolaire.referentiel_id == referentiel_matieres.id,
+                        ProgrammeMatiereScolaire.matiere_id == matiere_scolaire_id,
+                        ProgrammeMatiereScolaire.statut_validation == "verifie",
+                    )
+                ).first())
         if not mapping_valide:
             requete = requete.where(CercleEtude.id == -1)
         else:
