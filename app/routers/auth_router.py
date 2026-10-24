@@ -87,6 +87,32 @@ def _telephone_rate_key(telephone: str) -> str:
         return "invalide:" + hashlib.sha256(brute.encode("utf-8")).hexdigest()[:16]
 
 
+CYCLES_ENSEIGNEMENT_VALIDES = frozenset({"college", "lycee", "universite"})
+
+
+def normaliser_cycles_enseignes(
+    cycle_principal: Optional[str],
+    cycles_selectionnes: Optional[list[str]],
+) -> Optional[set[str]]:
+    """Valide et normalise les cycles déclarés par un candidat enseignant.
+
+    Renvoie None si un cycle transmis est inconnu ; sinon renvoie un ensemble
+    dédupliqué et normalisé, incluant systématiquement le cycle principal
+    lorsqu'il est valide. Cette fonction ne confère aucun rôle/permission.
+    """
+    cycles = {
+        str(valeur).strip().lower()
+        for valeur in (cycles_selectionnes or [])
+        if str(valeur).strip()
+    }
+    if not cycles.issubset(CYCLES_ENSEIGNEMENT_VALIDES):
+        return None
+    cycle = (cycle_principal or "").strip().lower()
+    if cycle in CYCLES_ENSEIGNEMENT_VALIDES:
+        cycles.add(cycle)
+    return cycles
+
+
 def _contexte_formulaire_inscription(session: Session, erreur: Optional[str] = None) -> dict:
     """Regroupe le contexte commun aux (re)rendus de register.html — la
     liste des Composante/Filiere n'y figure plus : elles sont chargees
@@ -195,18 +221,16 @@ def inscription(
     # le nouvel attribut cycle_education n'est pas encore envoyé.
     cycle = (cycle_education or "").strip().lower()
 
+    if not cycle and universite_id_nettoye is not None:
+        cycle = "universite"
+
     # Les cycles enseignés sont une relation distincte du cycle principal du
-    # profil. Cela permet à un candidat professeur de déclarer plusieurs
-    # périmètres sans transformer ses déclarations en autorisations.
+    # profil. La normalisation est testée indépendamment du formulaire pour
+    # éviter qu'une nouvelle valeur arbitraire soit enregistrée en base.
     cycles_enseignes_a_enregistrer: set[str] = set()
     if est_demande_enseignant:
-        cycles_autorises = {"college", "lycee", "universite"}
-        cycles_declares = {
-            str(valeur).strip().lower()
-            for valeur in (cycles_enseignes or [])
-            if str(valeur).strip()
-        }
-        if not cycles_declares.issubset(cycles_autorises):
+        cycles_normalises = normaliser_cycles_enseignes(cycle, cycles_enseignes)
+        if cycles_normalises is None:
             return templates.TemplateResponse(
                 request, "register.html",
                 _contexte_formulaire_inscription(
@@ -214,16 +238,7 @@ def inscription(
                 ),
                 status_code=400,
             )
-        if cycle in cycles_autorises:
-            cycles_declares.add(cycle)
-        cycles_enseignes_a_enregistrer = cycles_declares
-
-    if not cycle and universite_id_nettoye is not None:
-        cycle = "universite"
-    if est_demande_enseignant and cycle in {"college", "lycee", "universite"}:
-        # Compatibilité des anciens formulaires : le cycle principal doit
-        # aussi exister dans la table relationnelle même sans cases répétées.
-        cycles_enseignes_a_enregistrer.add(cycle)
+        cycles_enseignes_a_enregistrer = cycles_normalises
 
     niveau_scolaire_obj = None
     option_scolaire_obj = None
