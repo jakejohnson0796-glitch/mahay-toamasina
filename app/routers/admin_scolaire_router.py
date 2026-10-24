@@ -412,11 +412,27 @@ def creer_association_programme_scolaire(
         except ValueError:
             return _erreur("option_scolaire_invalide")
         option = session.get(OptionScolaire, option_pk)
+        parent = (
+            session.get(OptionScolaire, option.parent_option_id)
+            if option and option.parent_option_id else None
+        )
         if (
             not option
             or option.referentiel_id != referentiel.id
             or option.niveau_id != niveau.id
-            or option.parent_option_id is not None
+            or not option.est_active
+            or option.statut_validation != "verifie"
+            or (
+                option.parent_option_id is not None
+                and (
+                    not parent
+                    or parent.referentiel_id != referentiel.id
+                    or parent.niveau_id != niveau.id
+                    or parent.parent_option_id is not None
+                    or not parent.est_active
+                    or parent.statut_validation != "verifie"
+                )
+            )
         ):
             return _erreur("option_scolaire_invalide")
     existantes = session.exec(
@@ -465,7 +481,28 @@ def valider_association_programme_scolaire(
         return _erreur("programme_scolaire_reference_invalide")
     if entree.option_id is not None:
         option = session.get(OptionScolaire, entree.option_id)
-        if not option or not option.est_active or option.statut_validation != "verifie":
+        parent = (
+            session.get(OptionScolaire, option.parent_option_id)
+            if option and option.parent_option_id else None
+        )
+        if (
+            not option
+            or option.referentiel_id != entree.referentiel_id
+            or option.niveau_id != entree.niveau_id
+            or not option.est_active
+            or option.statut_validation != "verifie"
+            or (
+                option.parent_option_id is not None
+                and (
+                    not parent
+                    or parent.referentiel_id != entree.referentiel_id
+                    or parent.niveau_id != entree.niveau_id
+                    or parent.parent_option_id is not None
+                    or not parent.est_active
+                    or parent.statut_validation != "verifie"
+                )
+            )
+        ):
             return _erreur("option_scolaire_invalide")
     entree.statut_validation = "verifie"
     session.add(entree)
