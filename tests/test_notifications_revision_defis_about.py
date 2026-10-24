@@ -38,6 +38,24 @@ def test_notification_labels_and_revision_destinations_are_human_readable():
     assert 'lien = "/feedback"' in router
 
 
+def test_notifications_and_new_navigation_have_malagasy_translations():
+    language = read("app/static/js/langue.js")
+    for source in (
+        "Garde le fil de ce qui compte.",
+        "Les nouvelles liées à tes cours, tes ressources et tes cercles sont réunies ici. Retrouve ce qui demande ton attention, puis retourne directement à l'action.",
+        "Rechercher dans les notifications",
+        "Aucune notification ne correspond à cette recherche.",
+        "Fiche de révision prête",
+        "Fiche de cours disponible",
+        "Mission du jour",
+        "Mes badges",
+        "Gagner des XP",
+        "Parcours étudiant",
+        "IA responsable",
+    ):
+        assert f'"{source}":' in language
+
+
 def test_revision_sections_keep_navigation_and_mobile_priority_hierarchy():
     page = read("app/templates/mes_revisions.html")
     style = read("app/static/feature-pages-refresh.css")
