@@ -111,6 +111,24 @@ Pour les documents :
 - téléchargements privés vérifiés côté serveur, tout particulièrement pour les documents de cercle ou de classe ;
 - fiches de révision, quiz et Tuteur IA héritent de la cible réelle du cours, pas d'une valeur globale ou d'un niveau inventé.
 
+### Synchronisation des cercles et séparation des portées
+
+La hiérarchie des cercles doit correspondre à une cible métier canonique, pas au texte du titre :
+
+- **Université** : identité nationale selon mention + parcours normalisé + niveau, gérée par `cercles_referentiel.py`. Les identifiants de filière universitaires ne sont jamais réutilisés comme identifiants de classes.
+- **Scolaire** : identité selon classe + série/option éventuelle + matière éventuelle + établissement éventuel. Le service `cercles_scolaires.py` synchronise automatiquement les cibles scolaires vérifiées.
+- **Transversal** : groupe libre, sans cible scolaire ou universitaire implicite.
+
+Le synchroniseur scolaire assure les cercles nationaux généraux de chaque classe active vérifiée, les cercles des séries/options vérifiées et les cercles matière uniquement lorsque l'association classe/série/matière du programme est vérifiée. Il est idempotent et s'exécute au démarrage, puis après validation d'une option, d'une matière ou d'un rattachement de programme. L'administration peut aussi le relancer depuis `/admin/referentiel/scolaire`.
+
+Une colonne `synchronise_referentiel` distingue les cercles scolaires gérés automatiquement des cercles créés manuellement. Le synchroniseur ne supprime pas de cercles : il archive seulement une cible automatique devenue invalide si elle n'a aucun membre non-administrateur ni contenu important. Si elle a des membres, messages, documents ou historique de demande, elle reste active pour revue humaine. Un cercle manuel déjà présent pour la même cible est réutilisé sans que le synchroniseur s'en approprie le cycle de vie.
+
+Des contraintes de base de données empêchent une cible de portée `scolaire` d'avoir une mention, une filière ou un niveau universitaire, et empêchent les portées `universitaire` et `transversal` de porter des identifiants de classe/série/matière scolaire. Les formulaires et routes continuent aussi de vérifier les combinaisons au serveur.
+
+Les cercles d'établissement ne sont pas provisionnés automatiquement : l'entité établissement n'indique pas encore quelles classes/séries y sont réellement enseignées. Il faut ajouter une relation vérifiée « établissement → offre scolaire (classe/série/matière) » avant de générer de façon fiable les cercles locaux, plutôt que de supposer qu'un établissement propose toutes les classes du catalogue national.
+
+**Tests d'acceptation complémentaires :** synchronisation idempotente ; cibles distinctes classe/série/matière ; non-interférence avec les cercles transversaux et universitaires ; rejeu de la migration SQLite/PostgreSQL ; archivage non destructif ; réactivation sans doublon d'une cible revalidée.
+
 ## 6. Migration sans régression
 
 1. Inspecter les données actuelles et relever les comptes, cercles, documents, classes virtuelles et filtres qui supposent une filière universitaire obligatoire.
