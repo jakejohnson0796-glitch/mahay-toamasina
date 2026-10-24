@@ -644,4 +644,3 @@ def test_structure_question_detecte_changement_de_nombres_mais_conserve_les_oper
     assert quiz._structure_question({"question": "Calcule 12 + 5."}) != quiz._structure_question(
         {"question": "Calcule 12 - 5."}
     )
-\n
