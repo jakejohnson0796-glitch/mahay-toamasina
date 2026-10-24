@@ -645,15 +645,24 @@ def upload_documents_multiples(
     type_document: Optional[TypeDocument] = Form(default=None),
     annee: Optional[int] = Form(default=None),
     filiere_id: Optional[int] = Form(default=None),
+    portee_academique: str = Form(default="universitaire"),
     cercle_id: Optional[int] = Form(default=None),
     classification_auto: bool = Form(default=False),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    """Dépose un lot de fichiers, avec classification indépendante de chaque document."""
+    """Dépose un lot universitaire. Les cibles scolaires restent mono-fichier tant que le classifieur scolaire n'est pas disponible."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+
+    portee = (portee_academique or "universitaire").strip().lower()
+    if portee not in {"universitaire", "scolaire"}:
+        return RedirectResponse("/documents?erreur=portee_invalide", status_code=303)
+    if portee == "scolaire":
+        # Ne jamais laisser un envoi multiple scolaire tomber sur le moteur
+        # de classification universitaire par omission de métadonnées.
+        return RedirectResponse("/documents?erreur=depot_scolaire_mono_fichier", status_code=303)
 
     filieres_disponibles = session.exec(select(Filiere)).all()
     cercle = session.get(CercleEtude, cercle_id) if cercle_id is not None else None
