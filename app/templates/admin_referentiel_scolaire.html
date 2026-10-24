@@ -2,10 +2,35 @@
 {% block titre %}Référentiel scolaire national — Admin MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="contenu-clair">
-  <p class="eyebrow"><a href="/admin/referentiel">← Référentiel académique</a></p>
-  <h2>Référentiel scolaire national</h2>
-  <p>Gère les classes, séries/options, matières et établissements du collège et du lycée. Les nouvelles entrées restent masquées des utilisateurs jusqu'à leur validation avec une source HTTPS.</p>
+<div class="contenu-clair interface-referentiel-scolaire">
+  <p class="eyebrow referentiel-retour"><a href="/admin/referentiel">← Référentiel académique</a></p>
+  <header class="referentiel-scolaire-hero" aria-labelledby="titre-referentiel-scolaire">
+    <div>
+      <span class="referentiel-scolaire-kicker">MITARIDALA · Administration</span>
+      <h1 id="titre-referentiel-scolaire">Référentiel scolaire national</h1>
+      <p>Organise les classes, séries/options, matières, programmes et établissements. Chaque entrée doit être vérifiée avant d’être publiée aux élèves et aux enseignants ; les cercles scolaires et universitaires restent gérés séparément.</p>
+    </div>
+    <div class="referentiel-scolaire-etat" aria-label="État du catalogue scolaire">
+      {% if referentiel %}
+      <span class="etat-catalogue{% if referentiel.statut == "complet" %} is-complet{% endif %}">{% if referentiel.statut == "complet" %}Catalogue complet{% else %}Catalogue partiel{% endif %}</span>
+      <strong>{{ referentiel.annee_scolaire or "Année à préciser" }}</strong>
+      <small>Code : <span data-no-translate>{{ referentiel.code }}</span></small>
+      {% else %}
+      <span class="etat-catalogue">Catalogue non initialisé</span>
+      <strong>À configurer</strong>
+      <small>Référentiel scolaire indisponible</small>
+      {% endif %}
+    </div>
+  </header>
+  <nav class="referentiel-scolaire-nav" aria-label="Accès rapide au référentiel scolaire">
+    <a href="#scolaire-cercles-sync">Cercles</a>
+    <a href="#classes">Classes</a>
+    <a href="#etablissement-create">Ajouter un établissement</a>
+    <a href="#etablissements-list">Établissements</a>
+    <a href="#option-create">Séries et options</a>
+    <a href="#matiere-create">Matières</a>
+    <a href="#programme-create">Programmes</a>
+  </nav>
 
   {% if referentiel %}
   <section class="carte-formulaire" aria-labelledby="scolaire-version">
