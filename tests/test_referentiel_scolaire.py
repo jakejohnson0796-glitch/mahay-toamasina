@@ -356,6 +356,32 @@ def test_tuteur_ia_utilise_la_classe_et_refuse_un_document_d_un_autre_niveau():
     assert tuteur_router._document_scolaire_compatible(meme_niveau, contexte)
     assert not tuteur_router._document_scolaire_compatible(autre_niveau, contexte)
 
+    document_universitaire = SimpleNamespace(portee_academique="universitaire")
+    assert tuteur_router._document_compatible_au_tuteur(meme_niveau, user, contexte)
+    assert not tuteur_router._document_compatible_au_tuteur(
+        document_universitaire, user, contexte
+    )
+
+    enseignant = Utilisateur(
+        nom="Enseignant secondaire",
+        telephone="0340000101",
+        mot_de_passe_hash="hash",
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="professeur",
+        cycle_education="lycee",
+        niveau_scolaire_id=None,
+        statut_verification_enseignant="en_attente",
+    )
+    session.add(enseignant)
+    session.commit()
+    session.refresh(enseignant)
+    assert tuteur_router._document_compatible_au_tuteur(
+        meme_niveau, enseignant, None
+    )
+    assert not tuteur_router._document_compatible_au_tuteur(
+        document_universitaire, enseignant, None
+    )
+
     session.close()
     engine.dispose()
 
