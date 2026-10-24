@@ -644,3 +644,91 @@ def test_structure_question_detecte_changement_de_nombres_mais_conserve_les_oper
     assert quiz._structure_question({"question": "Calcule 12 + 5."}) != quiz._structure_question(
         {"question": "Calcule 12 - 5."}
     )
+
+
+def test_le_controle_structurel_tolere_un_seul_chevauchement_sur_cinq_questions():
+    assert not quiz._trop_de_structures_reutilisees(5, 1)
+    assert quiz._trop_de_structures_reutilisees(5, 2)
+    assert not quiz._trop_de_structures_reutilisees(10, 2)
+    assert quiz._trop_de_structures_reutilisees(10, 3)
+
+
+def test_un_exercice_de_structure_proche_dans_l_historique_ne_bloque_pas_le_quiz(monkeypatch):
+    import json
+
+    class FakeSession:
+        def add(self, objet):
+            self.objet = objet
+
+        def commit(self):
+            pass
+
+        def refresh(self, objet):
+            objet.id = 123
+
+    questions = [
+        {
+            "question": "Calcule 2 + 4.",
+            "choix": ["5", "6", "7", "8"],
+            "index_bonne_reponse": 1,
+            "explication": "2 + 4 = 6.",
+            "notion": "Addition",
+        },
+        {
+            "question": "Quelle est la dérivée de x² ?",
+            "choix": ["x", "2x", "x²", "2"],
+            "index_bonne_reponse": 1,
+            "explication": "La dérivée de x² est 2x.",
+            "notion": "Dérivation",
+        },
+        {
+            "question": "Quelle fraction représente une moitié ?",
+            "choix": ["1/2", "1/3", "2/3", "3/4"],
+            "index_bonne_reponse": 0,
+            "explication": "Une moitié s'écrit 1/2.",
+            "notion": "Fractions",
+        },
+        {
+            "question": "Quel est le produit de 3 par 5 ?",
+            "choix": ["8", "12", "15", "20"],
+            "index_bonne_reponse": 2,
+            "explication": "3 multiplié par 5 donne 15.",
+            "notion": "Multiplication",
+        },
+        {
+            "question": "Que désigne le dénominateur d'une fraction ?",
+            "choix": [
+                "Le nombre de parts égales de l'unité",
+                "Le nombre de fractions",
+                "La somme du numérateur et du dénominateur",
+                "Le reste d'une division",
+            ],
+            "index_bonne_reponse": 0,
+            "explication": "Le dénominateur indique en combien de parts égales l'unité est divisée.",
+            "notion": "Fractions",
+        },
+    ]
+    appels = {"nombre": 0}
+
+    monkeypatch.setattr(quiz, "_questions_vues_recemment", lambda *args, **kwargs: ["Calcule 5 + 3."])
+    monkeypatch.setattr(quiz, "_contexte_personnalise_quiz", lambda *args, **kwargs: "")
+    monkeypatch.setattr(quiz, "valider_questions", lambda questions, **kwargs: questions)
+
+    def generer(*args, **kwargs):
+        appels["nombre"] += 1
+        return questions
+
+    monkeypatch.setattr(quiz, "_generer_quiz_rapide", generer)
+
+    tentative = quiz.creer_tentative(
+        FakeSession(),
+        SimpleNamespace(id=42),
+        "Mathématiques",
+        "L1",
+        "Facile",
+        5,
+    )
+
+    assert appels["nombre"] == 1
+    assert tentative.nb_questions == 5
+    assert json.loads(tentative.questions_json)[0]["question"] == "Calcule 2 + 4."
