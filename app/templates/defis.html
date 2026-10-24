@@ -2,7 +2,7 @@
 {% from "components/icone.html" import icone %}
 
 {% block titre %}Défis & Récompenses — MITARIDALA{% endblock %}
-{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur page-defis{% endblock %}
 
 {% block contenu %}
 <div class="gamification-page">
@@ -28,14 +28,22 @@
         <strong>{{ gamification.total_xp }} XP</strong>
         <span class="gam-muted">{{ gamification.xp_dans_niveau }} / {{ gamification.xp_prochain }} XP vers le prochain niveau</span>
       </div>
-      <div class="gam-progress"><span style="width: {{ (gamification.xp_dans_niveau * 100 // gamification.xp_prochain) }}%"></span></div>
+      {% set progression_xp = (gamification.xp_dans_niveau * 100 // gamification.xp_prochain) if gamification.xp_prochain else 0 %}
+      <div class="gam-progress" role="progressbar" aria-label="Progression vers le niveau suivant" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progression_xp }}"><span style="width: {{ progression_xp }}%"></span></div>
       <div class="gam-streak">🔥 {{ gamification.streak }} jour{{ "s" if gamification.streak != 1 else "" }} consécutif{{ "s" if gamification.streak != 1 else "" }}</div>
     </div>
   </section>
 
+  <nav class="gam-jump-nav" aria-label="Accès rapide aux défis">
+    <a href="#missions-du-jour">Mission du jour</a>
+    <a href="#badges">Mes badges</a>
+    <a href="#gagner-xp">Gagner des XP</a>
+    <a href="/mes-revisions">Mes révisions →</a>
+  </nav>
+
   <section class="gam-layout">
     <main>
-      <section class="gam-panel">
+      <section class="gam-panel" id="missions-du-jour">
         <div class="gam-panel-head">
           <div>
             <span class="gam-kicker">Objectif du jour</span>
@@ -103,7 +111,7 @@
       </section>
       {% endif %}
 
-      <section class="gam-panel">
+      <section class="gam-panel" id="badges">
         <div class="gam-panel-head">
           <div>
             <span class="gam-kicker">Collection</span>
@@ -132,7 +140,7 @@
         </div>
       </section>
 
-      <section class="gam-panel">
+      <section class="gam-panel" id="gagner-xp">
         <div class="gam-panel-head">
           <div>
             <span class="gam-kicker">Habitudes</span>
