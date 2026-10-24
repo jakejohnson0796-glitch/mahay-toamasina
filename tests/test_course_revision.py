@@ -77,6 +77,26 @@ def test_prompts_fiches_revision_prescrivent_une_meilleure_pedagogie_et_un_latex
         assert "Facile" in prompt and "Difficile" in prompt
 
 
+def test_budget_completion_tokens_se_reduit_quand_le_contexte_grandit():
+    schema_court = {"type": "json_schema", "schema": {"type": "object"}}
+    prompt_court = "Résume un cours de mathématiques."
+
+    schema_long = {"type": "json_schema", "schema": {"description": "x" * 1500}}
+    prompt_long = "Formules et explications scientifiques. " * 950
+
+    budget_court = course_revision._budget_completion_tokens(prompt_court, schema_court)
+    budget_long = course_revision._budget_completion_tokens(prompt_long, schema_long)
+    caracteres_entree = len(prompt_long) + len(
+        json.dumps(schema_long, ensure_ascii=False, separators=(",", ":"))
+    )
+    entree_estimee = (caracteres_entree + 2) // 3
+
+    assert course_revision.MAX_COMPLETION_TOKENS == 3000
+    assert course_revision.MIN_COMPLETION_TOKENS <= budget_long < budget_court
+    assert budget_court <= course_revision.MAX_COMPLETION_TOKENS
+    assert entree_estimee + budget_long <= course_revision.BUDGET_TPM_PRUDENT
+
+
 def test_normalisation_fiche_preserve_le_latex_pour_katex():
     donnees = fiche_valide()
     formule = r"Calcul : \(A=\begin{pmatrix}1&2\\3&4\end{pmatrix}\) et \(\det(A)=\frac{1}{2}\)."
@@ -288,7 +308,7 @@ def test_recupere_une_fiche_si_notion_manquante_ou_sortie_tronquee(monkeypatch, 
     assert appels["nombre"] == 2
     assert fiche["exercices"][0]["notion"] == "Déterminant"
     assert all(exercice["notion"] for exercice in fiche["exercices"])
-    assert course_revision.MAX_COMPLETION_TOKENS == 6000
+    assert course_revision.MAX_COMPLETION_TOKENS == 3000
 
 
 def test_schema_de_secours_ne_requiert_pas_la_notion_de_chaque_exercice():
