@@ -140,6 +140,92 @@ class EtablissementScolaire(SQLModel, table=True):
     date_maj: datetime = Field(default_factory=datetime.utcnow)
 
 
+class ParcoursTechniqueProfessionnel(SQLModel, table=True):
+    """Intitulé national normalisé d'une filière ou d'un métier ETFP.
+
+    Le triplet secteur/filière/métier conserve la terminologie du catalogue
+    officiel METFP. La disponibilité dans un établissement est portée
+    séparément par OffreEtablissementScolaire et doit être vérifiée pour
+    l'année scolaire concernée.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    code: str = Field(index=True, unique=True, max_length=120)
+    secteur: Optional[str] = Field(default=None, index=True, max_length=120)
+    filiere: Optional[str] = Field(default=None, index=True, max_length=180)
+    metier: Optional[str] = Field(default=None, index=True, max_length=180)
+    source_officielle: str = Field(max_length=500)
+    statut_validation: str = Field(default="a_verifier", index=True, max_length=20)
+    est_actif: bool = Field(default=True, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_maj: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "length(trim(coalesce(filiere, ''))) > 0 OR "
+            "length(trim(coalesce(metier, ''))) > 0",
+            name="ck_parcours_etfp_filiere_ou_metier",
+        ),
+    )
+
+
+class OffreEtablissementScolaire(SQLModel, table=True):
+    """Offre réellement proposée par un établissement pour un parcours donné.
+
+    Les noms de classes/séries/matières et les filières ETFP ne suffisent pas
+    à prouver leur disponibilité locale. Chaque offre possède sa propre
+    source, son statut de vérification et peut être archivée sans supprimer
+    l'historique.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    etablissement_id: int = Field(foreign_key="etablissementscolaire.id", index=True)
+    code_offre: str = Field(max_length=160)
+    type_offre: str = Field(index=True, max_length=20)  # classe / serie / matiere / formation
+    niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
+    option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
+    parcours_etfp_id: Optional[int] = Field(default=None, foreign_key="parcourstechniqueprofessionnel.id", index=True)
+    annee_scolaire: Optional[str] = Field(default=None, max_length=20, index=True)
+    source_officielle: str = Field(max_length=500)
+    statut_validation: str = Field(default="a_verifier", index=True, max_length=20)
+    est_active: bool = Field(default=True, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_maj: datetime = Field(default_factory=datetime.utcnow)
+    valide_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
+    date_validation: Optional[datetime] = None
+
+    __table_args__ = (
+        CheckConstraint(
+            "(type_offre = 'classe' AND niveau_scolaire_id IS NOT NULL "
+            "AND option_scolaire_id IS NULL AND matiere_scolaire_id IS NULL "
+            "AND parcours_etfp_id IS NULL) OR "
+            "(type_offre = 'serie' AND niveau_scolaire_id IS NOT NULL "
+            "AND option_scolaire_id IS NOT NULL AND matiere_scolaire_id IS NULL "
+            "AND parcours_etfp_id IS NULL) OR "
+            "(type_offre = 'matiere' AND niveau_scolaire_id IS NOT NULL "
+            "AND matiere_scolaire_id IS NOT NULL AND parcours_etfp_id IS NULL) OR "
+            "(type_offre = 'formation' AND niveau_scolaire_id IS NULL "
+            "AND option_scolaire_id IS NULL AND matiere_scolaire_id IS NULL "
+            "AND parcours_etfp_id IS NOT NULL)",
+            name="ck_offre_etablissement_cible_type",
+        ),
+        Index(
+            "uq_offre_etablissement_code_active",
+            "etablissement_id",
+            "code_offre",
+            unique=True,
+            postgresql_where=text("est_active = TRUE"),
+            sqlite_where=text("est_active = 1"),
+        ),
+        Index(
+            "ix_offre_etablissement_statut_type",
+            "etablissement_id",
+            "statut_validation",
+            "type_offre",
+            "est_active",
+        ),
+    )
+
+
 class StatutAbonnement(str, Enum):
     EN_ATTENTE_PAIEMENT = "en_attente_paiement"
     ACTIF = "actif"
