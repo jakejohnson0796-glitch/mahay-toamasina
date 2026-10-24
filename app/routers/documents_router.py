@@ -14,7 +14,7 @@ import tempfile
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse, Response
-from sqlmodel import Session, select
+from sqlmodel import Session, or_, select
 
 from ..database import get_session
 from ..templating import templates
