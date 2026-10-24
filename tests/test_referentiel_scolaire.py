@@ -237,6 +237,9 @@ def test_option_de_bac_est_rattachee_a_sa_serie_parente_pour_les_cercles():
     )
     assert any(item["code"] == "PHILOSOPHIE_TEST" for item in matieres)
 
+    contexte_quiz = quiz_router._contexte_scolaire_quiz(user, session)
+    assert quiz_router._matieres_scolaires_disponibles(session, contexte_quiz) == ["Philosophie"]
+
     session.close()
     engine.dispose()
 
