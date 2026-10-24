@@ -276,6 +276,8 @@ La plateforme évite autant que possible de déduire automatiquement une classif
 
 Les sources de base incluent les pages du [MEN sur le collège](https://www.education.gov.mg/systeme-educatif/college/), le [lycée](https://www.education.gov.mg/systeme-educatif/lycee/), la [répartition annuelle du programme scolaire](https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/) et la [répartition annuelle du programme d'études](https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/). Les séries nouvelles L, S et OSE coexistent dans les sources avec certaines séries historiques en raison du déploiement progressif ; les options filles ne sont jamais inventées par le code.
 
+Un candidat professeur peut déclarer plusieurs cycles d'enseignement (collège, lycée et/ou université). Ces déclarations sont enregistrées dans la relation `cycleenseigne`, séparément du cycle principal du profil, et la validation administrative reste obligatoire avant d'accorder le rôle effectif de professeur. Le formulaire met le cycle principal en évidence et évite de le compter comme une sélection supplémentaire. La granularité par classe, série, matière et établissement reste à compléter avant de présenter cette portée comme une affectation détaillée.
+
 Pour les administrateurs, la gestion du catalogue scolaire est disponible dans `/admin/referentiel/scolaire`. Les nouvelles matières, options, associations programme/classe et établissements sont enregistrées en attente ; elles ne doivent être proposées aux élèves qu'après vérification d'une source HTTPS du domaine officiel `education.gov.mg`.
 
 Les API publiques principales sont :
@@ -285,7 +287,7 @@ Les API publiques principales sont :
 - `GET /api/scolaire/niveaux/{id}/matieres?option_id={id}`
 - `GET /api/scolaire/etablissements`
 
-Le dépôt des documents et leur quiz peuvent être associés à une classe et à une série scolaires sans attribuer de fausse filière universitaire. Les fiches de révision utilisent ce niveau scolaire lorsqu'il est disponible. Les cercles scolaires peuvent aussi cibler une matière précise : la sélection est alimentée par l'API des matières vérifiées, la demande conserve la matière lors de l'approbation, et la recherche prend en charge le filtre matière. Une matière reste facultative pour les cercles généraux de classe/série.
+Le dépôt des documents et leur quiz peuvent être associés à une classe et à une série scolaires sans attribuer de fausse filière universitaire. Les fiches de révision utilisent ce niveau scolaire lorsqu'il est disponible. Les cercles scolaires peuvent aussi cibler une matière précise : la sélection est alimentée par l'API des matières vérifiées, la demande conserve la matière lors de l'approbation, et la recherche prend en charge le filtre matière. Une matière reste facultative pour les cercles généraux de classe/série. Lorsqu'un cercle scolaire est ciblé sur une matière, le dépôt de documents hérite de cette matière si le formulaire n'en envoie pas, et le serveur refuse un document classé dans une autre matière.
 
 La source de données est synchronisée au démarrage lorsque le référentiel versionné est présent. Les anciennes données peuvent être réconciliées et les doublons historiques traités de manière idempotente.
 
