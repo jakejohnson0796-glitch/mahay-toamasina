@@ -1306,11 +1306,33 @@ def telecharger_fiche_revision_document(
         session, document, utilisateur.id, contenu
     )
 
-    filiere = session.get(Filiere, document.filiere_id)
+    filiere = session.get(Filiere, document.filiere_id) if document.filiere_id else None
+    niveau_export = filiere.niveau if filiere else "Niveau non précisé"
+    if document.portee_academique == "scolaire":
+        niveau_scolaire = (
+            session.get(NiveauScolaire, document.niveau_scolaire_id)
+            if document.niveau_scolaire_id else None
+        )
+        option_scolaire = (
+            session.get(OptionScolaire, document.option_scolaire_id)
+            if document.option_scolaire_id else None
+        )
+        parent_option = (
+            session.get(OptionScolaire, option_scolaire.parent_option_id)
+            if option_scolaire and option_scolaire.parent_option_id else None
+        )
+        partie_scolaire = niveau_scolaire.libelle if niveau_scolaire else "Niveau scolaire non précisé"
+        if option_scolaire:
+            etiquette_option = (
+                f"{parent_option.libelle} → {option_scolaire.libelle}"
+                if parent_option else option_scolaire.libelle
+            )
+            partie_scolaire += f" · {etiquette_option}"
+        niveau_export = partie_scolaire
     cours_export = SimpleNamespace(
         nom=document.titre,
         matiere=document.matiere,
-        niveau=(filiere.niveau if filiere else "Niveau non précisé"),
+        niveau=niveau_export,
     )
     date_reference = fiche.date_generation or fiche.date_creation
     seance_export = SimpleNamespace(
