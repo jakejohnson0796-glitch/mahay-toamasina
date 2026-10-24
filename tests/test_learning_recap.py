@@ -132,7 +132,7 @@ def test_bilan_reprise_agrège_les_sources_reelles_et_isole_les_comptes(monkeypa
     bilan = learning_recap.construire_bilan(
         session,
         user,
-        depuis=int(depuis.timestamp() * 1000),
+        depuis=depuis.isoformat(),
         maintenant=now,
     )
 
