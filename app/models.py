@@ -847,6 +847,17 @@ class CercleEtude(SQLModel, table=True):
     # de production, plutot que de ne connaitre l'index que via la
     # migration.
     __table_args__ = (
+        CheckConstraint(
+            "(portee_academique = 'scolaire' AND mention_id IS NULL AND filiere_id IS NULL "
+            "AND niveau IS NULL AND niveau_scolaire_id IS NOT NULL) OR "
+            "(portee_academique = 'universitaire' AND niveau_scolaire_id IS NULL "
+            "AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL "
+            "AND matiere_scolaire_id IS NULL) OR "
+            "(portee_academique = 'transversal' AND mention_id IS NULL AND filiere_id IS NULL "
+            "AND niveau IS NULL AND niveau_scolaire_id IS NULL AND option_scolaire_id IS NULL "
+            "AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL)",
+            name="ck_cercle_portee_cible_separee",
+        ),
         Index(
             "ix_cercle_national_unique_actif",
             "mention_id", "filiere_id", "niveau",
@@ -1035,6 +1046,17 @@ class DemandeCreationCercle(SQLModel, table=True):
     cercle_cree_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id", index=True)
 
     __table_args__ = (
+        CheckConstraint(
+            "(portee_academique = 'scolaire' AND mention_id IS NULL AND filiere_id IS NULL "
+            "AND niveau IS NULL AND niveau_scolaire_id IS NOT NULL) OR "
+            "(portee_academique = 'universitaire' AND niveau_scolaire_id IS NULL "
+            "AND option_scolaire_id IS NULL AND etablissement_scolaire_id IS NULL "
+            "AND matiere_scolaire_id IS NULL) OR "
+            "(portee_academique = 'transversal' AND mention_id IS NULL AND filiere_id IS NULL "
+            "AND niveau IS NULL AND niveau_scolaire_id IS NULL AND option_scolaire_id IS NULL "
+            "AND etablissement_scolaire_id IS NULL AND matiere_scolaire_id IS NULL)",
+            name="ck_demandecreationcercle_portee_cible_separee",
+        ),
         Index(
             "ix_demande_creation_unique_nationale_attente",
             "mention_id", "filiere_id", "niveau",
