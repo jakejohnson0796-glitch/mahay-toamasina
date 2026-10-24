@@ -1,6 +1,6 @@
 # TODO — Feuille de route MITARIDALA
 
-**Mise à jour : 23 octobre 2026**  
+**Mise à jour : 24 octobre 2026**  
 **Référence :** branche principale après les améliorations des fiches de révision, de la file IA et de l’interface globale.
 
 Ce document est le backlog de référence du dépôt. Les cases cochées correspondent à des travaux déjà intégrés et couverts par les contrôles indiqués. Les cases ouvertes décrivent des améliorations à réaliser ou à approfondir ; elles ne signifient pas automatiquement qu’une régression est actuellement observée.
@@ -51,13 +51,15 @@ Ces tâches doivent passer avant les nouvelles fonctionnalités ambitieuses.
 
 Le cahier des charges technique est consigné dans [docs/extension-college-lycee-universite.md](docs/extension-college-lycee-universite.md). Ce chantier est une extension majeure du référentiel, pas une simple option du formulaire.
 
-- [ ] **Lot A — Référentiel scolaire sourcé et versionné.** Créer les tables niveaux, séries/options, matières/programmes et établissements; importer d'abord les classes et séries explicitement documentées par le ministère; rendre l'import idempotent et conserver la source, l'année de référence et le statut de vérification.
-- [ ] **Lot A — Parcours d'inscription adapté.** Proposer élève/étudiant, professeur/enseignant ou sponsor, puis collège/lycée/université. L'inscription collège/lycée ne doit plus demander une université; le parcours universitaire actuel doit rester intact.
+**État au 24 octobre 2026 :** l'implémentation initiale est en cours sur la branche `feature/parcours-scolaire-national`. Les migrations, l'API des classes/options/matières, le rattachement des documents et le panneau d'administration scolaire ont été ajoutés, mais le chantier n'est pas marqué terminé tant que la matrice de tests et les contrôles de release n'ont pas réussi.
+
+- [ ] **Lot A — Référentiel scolaire sourcé et versionné.** Schéma et import idempotent créés ; vérifier encore les sources matière par matière, le statut du catalogue partiel et l'absence de données devinées avant clôture.
+- [ ] **Lot A — Parcours d'inscription adapté.** La sélection classe/cycle scolaire est séparée du parcours universitaire ; tester inscription élève, demande professeur, sponsor et compatibilité des anciens formulaires.
 - [ ] **Lot B — Demandes de profil enseignant.** Enregistrer une demande et sa portée d'enseignement sans attribuer automatiquement le rôle PROFESSEUR. Ajouter le traitement admin et la trace de décision avant d'ouvrir les outils réservés.
-- [ ] **Lot C — Documents multi-référentiels.** Classer les documents scolaires sans fausse filière universitaire; adapter upload, filtres, modération, détails et téléchargements privés avant de rendre `Document.filiere_id` nullable.
-- [ ] **Lot C — Cercles collège/lycée.** Ajouter les cercles nationaux par classe/série et les cercles locaux par établissement, sans collision avec les identifiants et index des cercles universitaires.
-- [ ] **Lot D — Apprentissage par programme.** Relier matières, quiz, fiches de révision et Tuteur IA au niveau / à la série appropriés, avec tests de qualité et sans mélanger les résultats entre comptes.
-- [ ] **Lot E — Validation avant mise en ligne.** Tests de migration SQLite et PostgreSQL, tests de sécurité document/cercle, tests navigateur pour chaque cycle, vérification des sources du catalogue, CI verte, puis contrôle santé et parcours après déploiement.
+- [ ] **Lot C — Documents multi-référentiels.** Rattachement scolaire ajouté aux formulaires, contrôles serveur et quiz documentaire ; tester filtres, modération, détails et téléchargements privés avant toute modification de `Document.filiere_id`.
+- [ ] **Lot C — Cercles collège/lycée.** Ciblage scolaire ajouté par classe/série/établissement/matière ; vérifier les index uniques et tester les duplications/retours arrière SQLite en plus du smoke PostgreSQL.
+- [ ] **Lot D — Apprentissage par programme.** API des matières scolaires, contexte de quiz et adaptation du niveau des fiches ajoutés ; compléter les tests Tuteur IA/quiz/fiches de révision pour éviter de mélanger les niveaux et résultats entre comptes.
+- [ ] **Lot E — Validation avant mise en ligne.** Vérifier les sources du catalogue, tests SQLite/PostgreSQL, tests navigateur des cycles, CI verte, puis contrôle de santé et parcours après déploiement.
 
 **Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
 
