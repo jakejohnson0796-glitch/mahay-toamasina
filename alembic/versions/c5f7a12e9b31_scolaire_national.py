@@ -136,6 +136,7 @@ def _seed_catalogue_scolaire(conn):
         ("GEOGRAPHIE", "Géographie", "Jeografia"),
         ("MATHEMATIQUES", "Mathématiques", "Matematika"),
         ("PHYSIQUE_CHIMIE", "Sciences physiques et chimiques", "Fizika sy Simia"),
+        ("SCIENCES_NATURELLES", "Sciences naturelles", "Siansa voajanahary"),
         ("SVT", "Sciences de la vie et de la Terre", "Siansa momba ny aina sy ny tany"),
         ("EPS", "Éducation physique et sportive", "Fanabeazana ara-batana sy ara-panatanjahantena"),
         ("PHILOSOPHIE", "Philosophie", "Filôzôfia"),
@@ -244,7 +245,7 @@ def _seed_catalogue_scolaire(conn):
     # doit être recoupé avant publication de la liste.
     matieres_college = [
         "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
-        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "EDUCATION_CIVIQUE", "EPS",
+        "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SCIENCES_NATURELLES", "EDUCATION_CIVIQUE", "EPS",
     ]
     for code_niveau in ("6E", "5E", "4E", "3E"):
         source = sources_programmes[code_niveau]
