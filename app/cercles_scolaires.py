@@ -335,7 +335,8 @@ def assurer_cercles_scolaires(session: Session) -> dict[str, int | str | None]:
                     select(CercleEtude.id).where(
                         *conditions,
                         CercleEtude.statut == StatutCercle.ACTIF,
-                    ).first() is None:
+                    ).limit(1)
+                ).first() is None:
                     raise
                 continue
             stats["reactives"] = int(stats["reactives"]) + 1
