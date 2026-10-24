@@ -1,6 +1,7 @@
 """Non-regression tests for the secondary-school referential and circle targeting."""
 from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
+from types import SimpleNamespace
 from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import (
@@ -20,7 +21,7 @@ from app.models import (
     Utilisateur,
 )
 from app import quiz as quiz_module
-from app.routers import admin_scolaire_router, quiz_router, scolaire_router
+from app.routers import admin_scolaire_router, quiz_router, scolaire_router, tuteur_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
     profil_correspond_au_cercle,
@@ -299,6 +300,36 @@ def test_quiz_cible_refuse_un_profil_scolaire_sans_classe_validee():
     session.refresh(user)
 
     assert quiz_router._contexte_scolaire_quiz(user, session) == {}
+
+    session.close()
+    engine.dispose()
+
+
+def test_tuteur_ia_utilise_la_classe_et_refuse_un_document_d_un_autre_niveau():
+    engine, session = _session()
+    _, niveau, serie = _school_catalogue(session)
+    user = _user(session, niveau_id=niveau.id, option_id=serie.id)
+
+    contexte = tuteur_router._contexte_scolaire_tuteur(user, session)
+    assert contexte["niveau"] == "Terminale"
+    assert contexte["cycle_education"] == "lycee"
+    assert contexte["niveau_scolaire_id"] == niveau.id
+    assert serie.id in contexte["options_compatibles"]
+
+    meme_niveau = SimpleNamespace(
+        portee_academique="scolaire",
+        niveau_scolaire_id=niveau.id,
+        option_scolaire_id=serie.id,
+        etablissement_scolaire_id=None,
+    )
+    autre_niveau = SimpleNamespace(
+        portee_academique="scolaire",
+        niveau_scolaire_id=niveau.id + 10,
+        option_scolaire_id=serie.id,
+        etablissement_scolaire_id=None,
+    )
+    assert tuteur_router._document_scolaire_compatible(meme_niveau, contexte)
+    assert not tuteur_router._document_scolaire_compatible(autre_niveau, contexte)
 
     session.close()
     engine.dispose()
