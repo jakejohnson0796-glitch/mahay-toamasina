@@ -625,7 +625,7 @@ def valider_offre_etablissement(
     if not match or int(match.group(2)) != int(match.group(1)) + 1:
         return _erreur("offre_annee_invalide")
     institution = session.get(EtablissementScolaire, entree.etablissement_id)
-    if not institution or not institution.est_active or not institution.est_verifie:
+    if not institution or not institution.est_actif or not institution.est_verifie:
         return _erreur("etablissement_non_verifie")
     source = (source_officielle.strip() or entree.source_officielle).strip()[:500]
     if not _url_source_valide(source):
