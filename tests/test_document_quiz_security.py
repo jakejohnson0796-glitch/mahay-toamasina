@@ -60,13 +60,19 @@ def test_quiz_depuis_document_cree_une_tentative_interactive(monkeypatch):
         "generer_quiz_depuis_texte",
         lambda texte, nb_questions=5, questions_a_eviter=None: [
             {
-                "question": f"Question {i}",
+                "question": enonce,
                 "choix": ["A", "B", "C", "D"],
                 "index_bonne_reponse": 0,
                 "explication": "Explication",
                 "notion": "Algèbre",
             }
-            for i in range(nb_questions)
+            for enonce in [
+                "Quelle est la trace de A = [[1,0],[0,3]] ?",
+                "Calcule le déterminant de B = [[1,2],[3,4]].",
+                "Combien vaut le produit 3 × 4 ?",
+                "Quelle est la dérivée de x² ?",
+                "Quel nombre suit la suite 2, 4, 6 ?",
+            ][:nb_questions]
         ],
     )
     monkeypatch.setattr(documents_router.ai_queue, "planifier_verification_quiz", lambda tentative_id: 9)
