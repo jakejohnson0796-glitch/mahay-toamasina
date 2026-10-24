@@ -577,6 +577,7 @@ def liste_cercles(
         .outerjoin(NiveauScolaire, NiveauScolaire.id == CercleEtude.niveau_scolaire_id)
         .outerjoin(OptionScolaire, OptionScolaire.id == CercleEtude.option_scolaire_id)
         .outerjoin(EtablissementScolaire, EtablissementScolaire.id == CercleEtude.etablissement_scolaire_id)
+        .outerjoin(MatiereScolaire, MatiereScolaire.id == CercleEtude.matiere_scolaire_id)
         .where(CercleEtude.statut == StatutCercle.ACTIF)
         .where(or_(mention_effective_id.is_(None), Mention.est_active == True))  # noqa: E712
         .where(or_(Mention.domaine_id.is_(None), Domaine.est_active == True))  # noqa: E712
@@ -594,6 +595,7 @@ def liste_cercles(
         + " " + func.coalesce(NiveauScolaire.libelle, "")
         + " " + func.coalesce(OptionScolaire.libelle, "")
         + " " + func.coalesce(EtablissementScolaire.nom, "")
+        + " " + func.coalesce(MatiereScolaire.libelle, "")
         + " "
         + func.coalesce(
             case(
@@ -867,6 +869,7 @@ def liste_cercles(
             "niveau_scolaire": next((n for n in niveaux_scolaires if n.id == cercle.niveau_scolaire_id), None),
             "option_scolaire": next((o for o in options_scolaires if o.id == cercle.option_scolaire_id), None),
             "etablissement_scolaire": next((e for e in etablissements_scolaires if e.id == cercle.etablissement_scolaire_id), None),
+            "matiere_scolaire": next((m for m in matieres_scolaires if m.id == cercle.matiere_scolaire_id), None),
             "nb_membres": nb_membres_par_cercle.get(cercle.id, 0),
             "est_membre": cercle.id in cercles_ou_accessibles,
             "en_attente": bool(utilisateur and cercle.id not in cercles_ou_accessibles and cercle.id in cercles_en_attente),
@@ -961,6 +964,7 @@ def liste_cercles(
                 "niveau_scolaire": next((n for n in niveaux_scolaires if n.id == cercle.niveau_scolaire_id), None),
                 "option_scolaire": next((o for o in options_scolaires if o.id == cercle.option_scolaire_id), None),
                 "etablissement_scolaire": next((e for e in etablissements_scolaires if e.id == cercle.etablissement_scolaire_id), None),
+                "matiere_scolaire": next((m for m in matieres_scolaires if m.id == cercle.matiere_scolaire_id), None),
                 "nb_membres": compte_membres.get(cercle.id, 0),
                 "est_membre": cercle.id in membres_moi,
                 "type_cercle": referentiel_academique.type_cercle(cercle, session),
@@ -1068,6 +1072,7 @@ def liste_cercles(
             "recherche_niveau_scolaire_id": niveau_scolaire_id,
             "recherche_option_scolaire_id": option_scolaire_id,
             "recherche_etablissement_scolaire_id": etablissement_scolaire_id,
+            "recherche_matiere_scolaire_id": matiere_scolaire_id,
             "recherche_disponibles": afficher_disponibles_seulement,
             "page": page_nettoyee,
             "total_pages": total_pages,
