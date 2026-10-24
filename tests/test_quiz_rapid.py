@@ -732,3 +732,66 @@ def test_un_exercice_de_structure_proche_dans_l_historique_ne_bloque_pas_le_quiz
     assert appels["nombre"] == 1
     assert tentative.nb_questions == 5
     assert json.loads(tentative.questions_json)[0]["question"] == "Calcule 2 + 4."
+
+
+def test_le_second_essai_ne_reutilise_pas_les_structures_d_un_essai_refuse(monkeypatch):
+    class FakeSession:
+        def add(self, objet):
+            self.objet = objet
+
+        def commit(self):
+            pass
+
+        def refresh(self, objet):
+            objet.id = 124
+
+    def q(question, notion):
+        return {
+            "question": question,
+            "choix": ["Réponse A", "Réponse B", "Réponse C", "Réponse D"],
+            "index_bonne_reponse": 0,
+            "explication": "Correction de contrôle.",
+            "notion": notion,
+        }
+
+    premier_essai = [
+        q("Calcule 2 + 4.", "Addition"),
+        q("Résous 4x + 2 = 14.", "Équation"),
+        q("Quel est le produit de 3 par 5 ?", "Multiplication"),
+        q("Quelle fraction représente une moitié ?", "Fractions"),
+        q("Quelle est la dérivée de x² ?", "Dérivation"),
+    ]
+    second_essai = [
+        # Même type que le quiz rejeté, mais pas comme un exercice historique
+        # déjà montré à l'étudiant : il ne doit pas être bloqué à nouveau.
+        q("Quel est le produit de 4 par 6 ?", "Multiplication"),
+        q("Quel nombre suit la suite 3, 6, 9 ?", "Suites"),
+        q("Quelle fraction équivaut à un tiers ?", "Fractions"),
+        q("Comment calcule-t-on l'aire d'un rectangle ?", "Géométrie"),
+        q("Combien vaut 2 au cube ?", "Puissances"),
+    ]
+    historique = ["Calcule 5 + 3.", "Résous 2x + 3 = 7."]
+    appels = {"nombre": 0}
+
+    monkeypatch.setattr(quiz, "_questions_vues_recemment", lambda *args, **kwargs: historique)
+    monkeypatch.setattr(quiz, "_contexte_personnalise_quiz", lambda *args, **kwargs: "")
+    monkeypatch.setattr(quiz, "valider_questions", lambda questions, **kwargs: questions)
+
+    def generer(*args, **kwargs):
+        appels["nombre"] += 1
+        return premier_essai if appels["nombre"] == 1 else second_essai
+
+    monkeypatch.setattr(quiz, "_generer_quiz_rapide", generer)
+
+    tentative = quiz.creer_tentative(
+        FakeSession(),
+        SimpleNamespace(id=43),
+        "Mathématiques",
+        "L1",
+        "Facile",
+        5,
+    )
+
+    assert appels["nombre"] == 2
+    assert tentative.nb_questions == 5
+    assert __import__("json").loads(tentative.questions_json)[0]["question"] == second_essai[0]["question"]
