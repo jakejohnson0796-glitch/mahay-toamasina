@@ -57,7 +57,7 @@ Le cahier des charges technique est consigné dans [docs/extension-college-lycee
 - [ ] **Lot A — Parcours d'inscription adapté.** Le parcours étudiant reste séparé du parcours universitaire ; les demandes professeurs peuvent déclarer plusieurs cycles, et le cycle principal est explicite dans le formulaire. Le helper de normalisation est couvert unitairement, mais il faut encore tester le POST réel pour élève collège, élève lycée, étudiant universitaire, professeur mono/multi-cycle, sponsor et anciens formulaires.
 - [ ] **Lot B — Compléter les demandes de profil enseignant.** Le rôle reste ETUDIANT jusqu'à décision administrative, et la table relationnelle `cycleenseigne` permet de déclarer plusieurs cycles sans confondre déclaration et autorisation. Ajouter/valider la granularité par classe, série, matière et établissement, les preuves privées éventuelles et les tests des décisions admin.
 - [ ] **Lot C — Documents multi-référentiels.** Rattachement scolaire ajouté aux formulaires et contrôles serveur ; un cercle scolaire mono-matière impose désormais sa matière aux documents déposés et une incohérence est refusée. Continuer les tests de bout en bout (cibles, modération, fiches/quiz, filtres et téléchargements privés), sans élargir la migration de `Document.filiere_id` avant audit.
-- [ ] **Lot C — Cercles collège/lycée.** Le formulaire, la recherche, la demande d'approbation et les index de cibles permettent désormais le ciblage par classe/série/établissement/matière ; terminer les tests de bout en bout et le contrôle des doublons/retours arrière SQLite avec le smoke PostgreSQL.
+- [ ] **Lot C — Cercles collège/lycée et synchronisation multi-référentiels.** Le service synchronise maintenant les cercles nationaux par classe vérifiée, série/option et matière validée, séparément du provisionneur universitaire ; les cibles sont contraintes en base et le synchroniseur archive prudemment les cercles auto-gérés devenus obsolètes. Terminer les tests CI de migration, l'intégration de la création/adhésion et la revue des cas locaux par établissement avant la release.
 - [ ] **Lot D — Apprentissage par programme.** API des matières scolaires, sélecteur de matières du quiz et contexte de quiz/fiches ajoutés ; compléter les tests Tuteur IA/quiz/fiches de révision pour éviter de mélanger les niveaux et résultats entre comptes.
 - [ ] **Lot E — Validation avant mise en ligne.** Vérifier les sources du catalogue, tests SQLite/PostgreSQL, tests navigateur des cycles, CI verte, puis contrôle de santé et parcours après déploiement.
 
@@ -68,7 +68,7 @@ Le cahier des charges technique est consigné dans [docs/extension-college-lycee
 1. Scénario PostgreSQL de bout en bout pour une fiche de cours, y compris les contrôles d’accès et les formats exportés.
 2. Diagnostic des tâches IA anciennes et validation post-déploiement reproductible.
 3. Matrice de régression du rendu mathématique et de la qualité des quiz.
-4. Conception puis implémentation progressive du référentiel collège/lycée et du profil d'inscription (cahier des charges lié ci-dessus), sans casser l'université existante.
+4. Terminer la validation du référentiel collège/lycée, du multi-cycle professeur et de la synchronisation des cercles, sans casser l'université existante.
 5. Parcours navigateur mobile sur les fonctions les plus utilisées.
 6. Revue du référentiel académique, du jeu cérébral et de l’accessibilité.
 
