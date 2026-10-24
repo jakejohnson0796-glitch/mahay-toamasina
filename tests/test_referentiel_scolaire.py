@@ -73,10 +73,10 @@ def _school_catalogue(session: Session):
     return referentiel, niveau, option
 
 
-def _user(session: Session, *, niveau_id: int, option_id: int | None, cycle="lycee", profile="eleve"):
+def _user(session: Session, *, niveau_id: int, option_id: int | None, cycle="lycee", profile="eleve", telephone="0340000001"):
     user = Utilisateur(
         nom="Élève de test",
-        telephone="0340000001",
+        telephone=telephone,
         mot_de_passe_hash="hash",
         role=RoleUtilisateur.ETUDIANT,
         profil_souhaite=profile,
@@ -113,7 +113,7 @@ def test_cercle_scolaire_correspond_au_niveau_et_a_la_serie():
         select(CercleEtude).where(condition_cercles_disponibles(user, session))
     ).all() == [cercle]
 
-    sans_serie = _user(session, niveau_id=niveau.id, option_id=None)
+    sans_serie = _user(session, niveau_id=niveau.id, option_id=None, telephone="0340000002")
     assert profil_correspond_au_cercle(sans_serie, cercle, session) is False
     session.close()
     engine.dispose()
