@@ -74,6 +74,11 @@ class OptionScolaire(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     referentiel_id: int = Field(foreign_key="referentielscolaire.id", index=True)
     niveau_id: int = Field(foreign_key="niveauscolaire.id", index=True)
+    # Les options transitoires du baccalauréat peuvent dépendre d'une série :
+    # ex. Série L → Option A1/A2/L ; Série S → Option C/D/S.
+    parent_option_id: Optional[int] = Field(
+        default=None, foreign_key="optionscolaire.id", index=True
+    )
     code: str = Field(max_length=30)
     libelle: str
     type_option: str = Field(default="serie", index=True, max_length=30)
