@@ -299,6 +299,95 @@ def desactiver_etablissement_scolaire(
     return _rediriger("etablissement_desactive", entree.id)
 
 
+
+
+def _code_interne(*parties: str) -> str:
+    brut = "-".join(part for part in parties if part)
+    ascii_brut = unicodedata.normalize("NFKD", brut).encode("ascii", "ignore").decode("ascii")
+    code = re.sub(r"[^A-Za-z0-9]+", "-", ascii_brut).strip("-").upper()
+    return code[:160]
+
+
+def _entier_optionnel(valeur: str) -> int | None:
+    if not valeur.strip():
+        return None
+    try:
+        return int(valeur)
+    except (TypeError, ValueError):
+        return None
+
+
+@router.post("/admin/referentiel/scolaire/parcours-etfp/creer")
+def creer_parcours_etfp(
+    request: Request,
+    secteur: str = Form(default=""),
+    filiere: str = Form(default=""),
+    metier: str = Form(...),
+    source_officielle: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+    secteur = " ".join(secteur.split())[:120]
+    filiere = " ".join(filiere.split())[:180]
+    metier = " ".join(metier.split())[:180]
+    source = source_officielle.strip()[:500]
+    if not metier:
+        return _erreur("etfp_metier_requis")
+    if not _url_source_valide(source):
+        return _erreur("source_https_requise")
+    code = _code_interne(secteur, filiere, metier)
+    existing = session.exec(
+        select(ParcoursTechniqueProfessionnel).where(
+            ParcoursTechniqueProfessionnel.code == code
+        )
+    ).first()
+    if existing:
+        return _erreur("etfp_parcours_deja_existant")
+    entree = ParcoursTechniqueProfessionnel(
+        code=code,
+        secteur=secteur or None,
+        filiere=filiere or None,
+        metier=metier,
+        source_officielle=source,
+        statut_validation="a_verifier",
+        est_actif=False,
+        date_creation=datetime.utcnow(),
+        date_maj=datetime.utcnow(),
+    )
+    session.add(entree)
+    session.commit()
+    session.refresh(entree)
+    return _rediriger("etfp_parcours_ajoute", entree.id)
+
+
+@router.post("/admin/referentiel/scolaire/parcours-etfp/{parcours_id}/valider")
+def valider_parcours_etfp(
+    request: Request,
+    parcours_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+    entree = session.get(ParcoursTechniqueProfessionnel, parcours_id)
+    if not entree:
+        return _erreur("etfp_parcours_introuvable")
+    if not _url_source_valide(entree.source_officielle):
+        return _erreur("source_https_requise")
+    if not (entree.filiere or entree.metier):
+        return _erreur("etfp_metier_requis")
+    entree.statut_validation = "verifie"
+    entree.est_actif = True
+    entree.date_maj = datetime.utcnow()
+    session.add(entree)
+    session.commit()
+    return _rediriger("etfp_parcours_valide", entree.id)
+
+
 @router.post("/admin/referentiel/scolaire/options/creer")
 def creer_option_scolaire(
     request: Request,
