@@ -1030,6 +1030,11 @@ def creer_cercle(
     mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
+    portee_academique: str = Form(default="universitaire"),
+    cycle_scolaire: Optional[str] = Form(None),
+    niveau_scolaire_id: Optional[int] = Form(None),
+    option_scolaire_id: Optional[int] = Form(None),
+    etablissement_scolaire_id: Optional[int] = Form(None),
     raison: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -1111,6 +1116,92 @@ def creer_cercle(
         )
 
     niveau_nettoye = (niveau or "").strip() or None
+    portee = (portee_academique or "universitaire").strip().lower()
+
+    # Création d'un cercle scolaire : classe/option/établissement viennent
+    # du référentiel validé. Ils sont stockés indépendamment du schéma
+    # universitaire Domaine -> Mention -> Filière -> Niveau.
+    if portee == "scolaire":
+        cycle_scolaire_nettoye = (cycle_scolaire or "").strip().lower()
+        if cycle_scolaire_nettoye not in {"college", "lycee"} or niveau_scolaire_id is None:
+            return RedirectResponse("/cercles?erreur=classe_scolaire_requise", status_code=303)
+        referentiel_courant = session.exec(
+            select(ReferentielScolaire).order_by(
+                ReferentielScolaire.date_creation.desc(),
+                ReferentielScolaire.id.desc(),
+            )
+        ).first()
+        niveau_scolaire = session.get(NiveauScolaire, niveau_scolaire_id)
+        if (
+            not referentiel_courant
+            or not niveau_scolaire
+            or niveau_scolaire.referentiel_id != referentiel_courant.id
+            or not niveau_scolaire.est_actif
+            or niveau_scolaire.statut_validation != "verifie"
+            or niveau_scolaire.cycle != cycle_scolaire_nettoye
+        ):
+            return RedirectResponse("/cercles?erreur=classe_scolaire_invalide", status_code=303)
+
+        option_scolaire = None
+        if option_scolaire_id is not None:
+            option_scolaire = session.get(OptionScolaire, option_scolaire_id)
+            if (
+                not option_scolaire
+                or option_scolaire.referentiel_id != referentiel_courant.id
+                or option_scolaire.niveau_id != niveau_scolaire.id
+                or not option_scolaire.est_active
+                or option_scolaire.statut_validation != "verifie"
+            ):
+                return RedirectResponse("/cercles?erreur=option_scolaire_invalide", status_code=303)
+
+        etablissement_scolaire = None
+        if etablissement_scolaire_id is not None:
+            etablissement_scolaire = session.get(EtablissementScolaire, etablissement_scolaire_id)
+            if (
+                not etablissement_scolaire
+                or not etablissement_scolaire.est_actif
+                or not etablissement_scolaire.est_verifie
+            ):
+                return RedirectResponse("/cercles?erreur=etablissement_scolaire_invalide", status_code=303)
+
+        # Ne jamais laisser des identifiants universitaires envoyés en
+        # parallèle par un client altérer la cible scolaire.
+        if mention_id_nettoye or filiere_id_nettoye or niveau_nettoye:
+            return RedirectResponse("/cercles?erreur=cible_scolaire_incoherente", status_code=303)
+
+        nom_nettoye = " ".join((nom or "").split())[:120]
+        if len(nom_nettoye) < 3:
+            return RedirectResponse("/cercles?erreur=nom_cercle_invalide", status_code=303)
+
+        cercle = CercleEtude(
+            nom=nom_nettoye,
+            description=(description or "").strip()[:2000] or None,
+            portee_academique="scolaire",
+            niveau_scolaire_id=niveau_scolaire.id,
+            option_scolaire_id=option_scolaire.id if option_scolaire else None,
+            etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
+            createur_id=utilisateur.id,
+        )
+        session.add(cercle)
+        session.commit()
+        session.refresh(cercle)
+        session.add(MembreCercle(
+            cercle_id=cercle.id,
+            utilisateur_id=utilisateur.id,
+            role=RoleMembreCercle.CREATEUR,
+        ))
+        gamification.enregistrer_action(
+            session,
+            utilisateur.id,
+            "cercle_rejoint",
+            source_type="cercle",
+            source_key=str(cercle.id),
+        )
+        session.commit()
+        return RedirectResponse(f"/cercles/{cercle.id}", status_code=303)
+
+    if portee not in {"universitaire", "transversal"}:
+        return RedirectResponse("/cercles?erreur=portee_invalide", status_code=303)
 
     # Un choix academique partiel ne doit jamais devenir silencieusement un
     # groupe libre : les trois situations sont distinctes pour l'utilisateur.
