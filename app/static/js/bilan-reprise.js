@@ -30,6 +30,7 @@
   var tentativeOuverture = false;
   var donneesCourantes = null;
   var momentDepartCourant = 0;
+  var aUnBilanPrecedentCourant = false;
   var focusAvantOuverture = null;
   var derniereEcritureActivite = 0;
   var jetonVerrou = "";
@@ -531,8 +532,11 @@
   function renderBilan(data, depart) {
     donneesCourantes = data;
     momentDepartCourant = depart || 0;
+    aUnBilanPrecedentCourant = Boolean(data._a_un_bilan_precedent);
     appliquerTextesFixes();
-    document.getElementById("bilan-reprise-periode").textContent = dureeDepuis(momentDepartCourant);
+    document.getElementById("bilan-reprise-periode").textContent = aUnBilanPrecedentCourant
+      ? dureeDepuis(momentDepartCourant)
+      : text("periodRecent");
     renderStats(data.stats || {});
     renderActivites(data);
     renderApprentissages(data);
@@ -572,6 +576,7 @@
       return reponse.json();
     }).then(function (data) {
       if (!data || !data.stats || !data.mission) throw new Error("bilan incomplet");
+      data._a_un_bilan_precedent = Boolean(lastSummary);
       renderBilan(data, depart);
       focusAvantOuverture = document.activeElement;
       ouvert = true;
