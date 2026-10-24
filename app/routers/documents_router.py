@@ -1646,10 +1646,47 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
         return RedirectResponse("/documents?erreur=generation_quiz", status_code=303)
 
     niveau = getattr(utilisateur, "niveau", None) or "L1"
+    cycle_quiz = getattr(utilisateur, "cycle_education", None)
+    niveau_scolaire_quiz_id = None
+    option_scolaire_quiz_id = None
+    if document.portee_academique == "scolaire":
+        niveau_scolaire_quiz = (
+            session.get(NiveauScolaire, document.niveau_scolaire_id)
+            if document.niveau_scolaire_id else None
+        )
+        option_scolaire_quiz = (
+            session.get(OptionScolaire, document.option_scolaire_id)
+            if document.option_scolaire_id else None
+        )
+        if (
+            not niveau_scolaire_quiz
+            or not niveau_scolaire_quiz.est_actif
+            or niveau_scolaire_quiz.statut_validation != "verifie"
+            or (
+                option_scolaire_quiz
+                and (
+                    not option_scolaire_quiz.est_active
+                    or option_scolaire_quiz.statut_validation != "verifie"
+                    or option_scolaire_quiz.niveau_id != niveau_scolaire_quiz.id
+                )
+            )
+        ):
+            return RedirectResponse(
+                f"/documents/{document.id}/apprendre?erreur=referentiel_scolaire_indisponible",
+                status_code=303,
+            )
+        niveau = niveau_scolaire_quiz.libelle
+        cycle_quiz = niveau_scolaire_quiz.cycle
+        niveau_scolaire_quiz_id = niveau_scolaire_quiz.id
+        option_scolaire_quiz_id = option_scolaire_quiz.id if option_scolaire_quiz else None
+
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
         matiere=matiere_quiz,
         niveau=niveau,
+        cycle_education=cycle_quiz,
+        niveau_scolaire_id=niveau_scolaire_quiz_id,
+        option_scolaire_id=option_scolaire_quiz_id,
         difficulte="Moyen",
         nb_questions=len(questions_verifiees),
         questions_json=json.dumps(questions_verifiees, ensure_ascii=False),
