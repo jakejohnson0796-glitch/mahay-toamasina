@@ -85,9 +85,9 @@ def _seed_catalogue_scolaire(conn):
         "TERM": ["A", "C", "D", "L", "OSE", "S"],
     }
     labels = {
-        "A": "Série A",
-        "C": "Série C",
-        "D": "Série D",
+        "A": "Série A (programme antérieur)",
+        "C": "Série C (programme antérieur)",
+        "D": "Série D (programme antérieur)",
         "L": "Série L",
         "OSE": "Série OSE",
         "S": "Série S",
