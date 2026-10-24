@@ -19,7 +19,8 @@ from app.models import (
     TypeDocument,
     Utilisateur,
 )
-from app.routers import admin_scolaire_router, scolaire_router
+from app import quiz as quiz_module
+from app.routers import admin_scolaire_router, quiz_router, scolaire_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
     profil_correspond_au_cercle,
@@ -253,6 +254,47 @@ def test_demande_professeur_ne_donne_pas_le_role_effectif_professeur():
     assert teacher_request.profil_souhaite == "professeur"
     assert teacher_request.statut_verification_enseignant == "en_attente"
     assert teacher_request.role == RoleUtilisateur.ETUDIANT
+    session.close()
+    engine.dispose()
+
+
+def test_quiz_cible_reconnait_la_classe_scolaire_sans_basculer_en_l1():
+    engine, session = _session()
+    _, niveau, serie = _school_catalogue(session)
+    user = _user(session, niveau_id=niveau.id, option_id=serie.id)
+
+    contexte = quiz_router._contexte_scolaire_quiz(user, session)
+
+    assert contexte == {
+        "niveau": "Terminale",
+        "cycle_education": "lycee",
+        "niveau_scolaire_id": niveau.id,
+        "option_scolaire_id": serie.id,
+    }
+    assert quiz_module.valider_parametres(
+        "Mathématiques", contexte["niveau"], "Moyen", 5
+    ) == "Mathématiques"
+
+    session.close()
+    engine.dispose()
+
+
+def test_quiz_cible_refuse_un_profil_scolaire_sans_classe_validee():
+    engine, session = _session()
+    user = Utilisateur(
+        nom="Profil lycée incomplet",
+        telephone="0340000099",
+        mot_de_passe_hash="hash",
+        role=RoleUtilisateur.ETUDIANT,
+        cycle_education="lycee",
+        niveau_scolaire_id=None,
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    assert quiz_router._contexte_scolaire_quiz(user, session) == {}
+
     session.close()
     engine.dispose()
 
