@@ -295,7 +295,7 @@ def upgrade():
     for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
         op.create_index(f"ix_cercleetude_{col}", "cercleetude", [col])
     op.create_index(
-        "ix_cercle_scolaire_unique_actif",
+        "ix_cercle_scolaire_cible_actif",
         "cercleetude",
         [
             "niveau_scolaire_id",
@@ -353,7 +353,7 @@ def downgrade():
     for col in ("niveau_scolaire_id", "option_scolaire_id"):
         op.drop_index(f"ix_tentativequiz_{col}", table_name="tentativequiz")
 
-    op.drop_index("ix_cercle_scolaire_unique_actif", table_name="cercleetude")
+    op.drop_index("ix_cercle_scolaire_cible_actif", table_name="cercleetude")
     for table in ("cours", "cercleetude"):
         for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
             op.drop_index(f"ix_{table}_{col}", table_name=table)
