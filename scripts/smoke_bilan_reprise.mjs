@@ -109,6 +109,13 @@ function creerDom(storageEntries, language = "fr") {
   return { dom, window, appels };
 }
 
+// A brand-new browser/account must not receive a recap before it has history.
+const brandNew = creerDom({}, "fr");
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (brandNew.appels.length !== 0 || !brandNew.window.document.getElementById("bilan-reprise-fond").hidden) {
+  throw new Error("A first visit without prior activity must not open the recap.");
+}
+
 const first = creerDom(seed, "mg");
 await new Promise((resolve) => setTimeout(resolve, 0));
 const root = first.window.document.getElementById("bilan-reprise-fond");
