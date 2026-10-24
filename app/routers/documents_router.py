@@ -184,12 +184,13 @@ def liste_documents(
         requete = requete.where(Document.type_document == type_document)
     documents = session.exec(requete.order_by(Document.date_upload.desc())).all()
     filieres = session.exec(select(Filiere)).all()
-    referentiel_scolaire_courant = session.exec(
+    referentiels_scolaires = session.exec(
         select(ReferentielScolaire).order_by(
             ReferentielScolaire.date_creation.desc(),
             ReferentielScolaire.id.desc(),
         )
-    ).first()
+    ).all()
+    referentiel_scolaire_courant = referentiels_scolaires[0] if referentiels_scolaires else None
     if referentiel_scolaire_courant:
         niveaux_scolaires = session.exec(
             select(NiveauScolaire)
@@ -507,12 +508,13 @@ def upload_document(
         if cycle_scolaire not in {"college", "lycee"} or niveau_scolaire_id is None:
             return RedirectResponse("/documents?erreur=classe_scolaire_requise", status_code=303)
 
-        referentiel_courant = session.exec(
+        referentiels_scolaires = session.exec(
             select(ReferentielScolaire).order_by(
                 ReferentielScolaire.date_creation.desc(),
                 ReferentielScolaire.id.desc(),
             )
-        ).first()
+        ).all()
+        referentiel_courant = referentiels_scolaires[0] if referentiels_scolaires else None
         niveau_scolaire = session.get(NiveauScolaire, niveau_scolaire_id)
         if (
             not referentiel_courant
