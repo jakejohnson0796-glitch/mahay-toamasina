@@ -84,6 +84,7 @@
     {% elif code == "offre_matiere_sans_programme" %}Cette matière n'est pas rattachée à un programme scolaire vérifié pour cette classe/série.
     {% elif code == "offre_deja_existante" %}Cette offre est déjà enregistrée pour cet établissement et cette année.
     {% elif code == "offre_etablissement_introuvable" %}Offre d'établissement introuvable.
+    {% elif code == "offre_etablissement_archivee" %}Offre archivée ; son historique est conservé.
     {% elif code == "offre_etablissement_ajoutee" %}Offre ajoutée en attente de vérification.
     {% elif code == "offre_etablissement_validee" %}Offre vérifiée et publiée pour l'année indiquée.
     {% else %}La modification n'a pas pu être enregistrée. Vérifie les champs et réessaie.{% endif %}
@@ -493,6 +494,12 @@
               <label for="offre-validation-source-{{ o.id }}">Source</label>
               <input id="offre-validation-source-{{ o.id }}" name="source_officielle" value="{{ o.source_officielle }}" required type="url">
               <button class="bouton bouton-secondaire" type="submit">Valider l'offre</button>
+            </form>
+            {% endif %}
+            {% if o.est_active %}
+            <form method="post" action="/admin/referentiel/scolaire/offres/{{ o.id }}/desactiver" class="form-archiver-offre">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Archiver</button>
             </form>
             {% endif %}
           </td>
