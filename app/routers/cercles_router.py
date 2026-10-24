@@ -28,6 +28,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (
     CercleEtude, Domaine, MembreCercle, MessageCercle, SignalementMessage, Filiere, Mention, Universite, Utilisateur,
+    NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire,
     RoleUtilisateur, RoleMembreCercle, DemandeAdhesionCercle, StatutDemandeAdhesion, DemandeCreationCercle,
     StatutDemandeCreationCercle, StatutCercle, ThemeDuJour, Document,
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
@@ -411,6 +412,10 @@ def liste_cercles(
     mention_id: Optional[str] = None,
     filiere_id: Optional[str] = None,
     niveau: Optional[str] = None,
+    portee_academique: Optional[str] = None,
+    niveau_scolaire_id: Optional[int] = None,
+    option_scolaire_id: Optional[int] = None,
+    etablissement_scolaire_id: Optional[int] = None,
     disponibles: Optional[str] = None,
     page: int = 1,
     session: Session = Depends(get_session),
@@ -475,6 +480,11 @@ def liste_cercles(
     filiere_id_nettoye = entier_ou_none(filiere_id) if filiere_id != "tronc_commun" else None
     recherche_tronc_commun = filiere_id == "tronc_commun"
     niveau_nettoye = niveau if niveau in NIVEAUX else None
+    portee_nettoyee = (portee_academique or "").strip().lower() or None
+    if portee_nettoyee not in {None, "universitaire", "scolaire", "transversal"}:
+        portee_nettoyee = "__filtre_invalide__"
+    if any(value is not None for value in (niveau_scolaire_id, option_scolaire_id, etablissement_scolaire_id)):
+        portee_nettoyee = "scolaire"
 
     # Cohérence stricte de la cascade : Parcours -> Mention -> Domaine.
     # Un paramètre incohérent ne doit jamais élargir les résultats.
@@ -539,6 +549,10 @@ def liste_cercles(
         or filiere_id_nettoye
         or recherche_tronc_commun
         or niveau_nettoye
+        or portee_nettoyee
+        or niveau_scolaire_id
+        or option_scolaire_id
+        or etablissement_scolaire_id
         or afficher_disponibles_seulement
     )
 
@@ -555,6 +569,9 @@ def liste_cercles(
         .outerjoin(Filiere, Filiere.id == CercleEtude.filiere_id)
         .outerjoin(Mention, Mention.id == mention_effective_id)
         .outerjoin(Domaine, Domaine.id == Mention.domaine_id)
+        .outerjoin(NiveauScolaire, NiveauScolaire.id == CercleEtude.niveau_scolaire_id)
+        .outerjoin(OptionScolaire, OptionScolaire.id == CercleEtude.option_scolaire_id)
+        .outerjoin(EtablissementScolaire, EtablissementScolaire.id == CercleEtude.etablissement_scolaire_id)
         .where(CercleEtude.statut == StatutCercle.ACTIF)
         .where(or_(mention_effective_id.is_(None), Mention.est_active == True))  # noqa: E712
         .where(or_(Mention.domaine_id.is_(None), Domaine.est_active == True))  # noqa: E712
@@ -569,6 +586,9 @@ def liste_cercles(
         + " " + func.coalesce(Mention.nom, "")
         + " " + func.coalesce(CercleEtude.niveau, "")
         + " " + func.coalesce(Filiere.nom, "")
+        + " " + func.coalesce(NiveauScolaire.libelle, "")
+        + " " + func.coalesce(OptionScolaire.libelle, "")
+        + " " + func.coalesce(EtablissementScolaire.nom, "")
         + " "
         + func.coalesce(
             case(
@@ -614,6 +634,17 @@ def liste_cercles(
 
     if niveau_nettoye:
         requete = requete.where(CercleEtude.niveau == niveau_nettoye)
+
+    if portee_nettoyee == "__filtre_invalide__":
+        requete = requete.where(CercleEtude.id == -1)
+    elif portee_nettoyee:
+        requete = requete.where(CercleEtude.portee_academique == portee_nettoyee)
+    if niveau_scolaire_id is not None:
+        requete = requete.where(CercleEtude.niveau_scolaire_id == niveau_scolaire_id)
+    if option_scolaire_id is not None:
+        requete = requete.where(CercleEtude.option_scolaire_id == option_scolaire_id)
+    if etablissement_scolaire_id is not None:
+        requete = requete.where(CercleEtude.etablissement_scolaire_id == etablissement_scolaire_id)
 
     condition_disponibilite = None
     if afficher_disponibles_seulement and not _est_admin(utilisateur):
@@ -670,6 +701,43 @@ def liste_cercles(
             or_(Mention.domaine_id.is_(None), Domaine.est_active == True),  # noqa: E712
         )
         .order_by(Mention.nom)
+    ).all()
+    referentiel_scolaire_courant = session.exec(
+        select(ReferentielScolaire).order_by(
+            ReferentielScolaire.date_creation.desc(),
+            ReferentielScolaire.id.desc(),
+        )
+    ).first()
+    if referentiel_scolaire_courant:
+        niveaux_scolaires = session.exec(
+            select(NiveauScolaire)
+            .where(
+                NiveauScolaire.referentiel_id == referentiel_scolaire_courant.id,
+                NiveauScolaire.est_actif == True,  # noqa: E712
+                NiveauScolaire.statut_validation == "verifie",
+            )
+            .order_by(NiveauScolaire.ordre)
+        ).all()
+        options_scolaires = session.exec(
+            select(OptionScolaire)
+            .where(
+                OptionScolaire.referentiel_id == referentiel_scolaire_courant.id,
+                OptionScolaire.est_active == True,  # noqa: E712
+                OptionScolaire.statut_validation == "verifie",
+            )
+            .order_by(OptionScolaire.libelle)
+        ).all()
+    else:
+        niveaux_scolaires = []
+        options_scolaires = []
+    etablissements_scolaires = session.exec(
+        select(EtablissementScolaire)
+        .where(
+            EtablissementScolaire.est_actif == True,  # noqa: E712
+            EtablissementScolaire.est_verifie == True,  # noqa: E712
+        )
+        .order_by(EtablissementScolaire.nom)
+        .limit(200)
     ).all()
 
     filiere_ids = {c.filiere_id for c in cercles if c.filiere_id}
@@ -745,6 +813,9 @@ def liste_cercles(
             "domaine": domaine,
             "mention": mention,
             "filiere": filiere,
+            "niveau_scolaire": next((n for n in niveaux_scolaires if n.id == cercle.niveau_scolaire_id), None),
+            "option_scolaire": next((o for o in options_scolaires if o.id == cercle.option_scolaire_id), None),
+            "etablissement_scolaire": next((e for e in etablissements_scolaires if e.id == cercle.etablissement_scolaire_id), None),
             "nb_membres": nb_membres_par_cercle.get(cercle.id, 0),
             "est_membre": cercle.id in cercles_ou_accessibles,
             "en_attente": bool(utilisateur and cercle.id not in cercles_ou_accessibles and cercle.id in cercles_en_attente),
@@ -906,6 +977,10 @@ def liste_cercles(
             "mention_id": mention_id_nettoye,
             "filiere_id": "tronc_commun" if recherche_tronc_commun else filiere_id_nettoye,
             "niveau": niveau_nettoye,
+            "portee_academique": portee_nettoyee,
+            "niveau_scolaire_id": niveau_scolaire_id,
+            "option_scolaire_id": option_scolaire_id,
+            "etablissement_scolaire_id": etablissement_scolaire_id,
             "disponibles": "1" if afficher_disponibles_seulement else None,
         }.items() if v not in (None, "")
     })
@@ -917,6 +992,9 @@ def liste_cercles(
             "cercles_avec_info": cercles_avec_info,
             "domaines": domaines,
             "mentions": mentions,
+            "niveaux_scolaires": niveaux_scolaires,
+            "options_scolaires": options_scolaires,
+            "etablissements_scolaires": etablissements_scolaires,
             "filiere_recherchee": filiere_recherchee,
             "niveaux": NIVEAUX,
             "niveaux_libelles": NIVEAUX_LIBELLES,
@@ -930,6 +1008,10 @@ def liste_cercles(
             "recherche_filiere_id": filiere_id_nettoye,
             "recherche_tronc_commun": recherche_tronc_commun,
             "recherche_niveau": niveau_nettoye,
+            "recherche_portee_academique": portee_nettoyee,
+            "recherche_niveau_scolaire_id": niveau_scolaire_id,
+            "recherche_option_scolaire_id": option_scolaire_id,
+            "recherche_etablissement_scolaire_id": etablissement_scolaire_id,
             "recherche_disponibles": afficher_disponibles_seulement,
             "page": page_nettoyee,
             "total_pages": total_pages,
