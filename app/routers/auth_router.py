@@ -220,6 +220,10 @@ def inscription(
 
     if not cycle and universite_id_nettoye is not None:
         cycle = "universite"
+    if est_demande_enseignant and cycle in {"college", "lycee", "universite"}:
+        # Compatibilité des anciens formulaires : le cycle principal doit
+        # aussi exister dans la table relationnelle même sans cases répétées.
+        cycles_enseignes_a_enregistrer.add(cycle)
 
     niveau_scolaire_obj = None
     option_scolaire_obj = None
