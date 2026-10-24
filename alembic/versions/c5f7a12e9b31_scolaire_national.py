@@ -269,6 +269,13 @@ def upgrade():
         batch.create_foreign_key("fk_document_option_scolaire", "optionscolaire", ["option_scolaire_id"], ["id"])
         batch.create_foreign_key("fk_document_etablissement_scolaire", "etablissementscolaire", ["etablissement_scolaire_id"], ["id"])
         batch.create_foreign_key("fk_document_matiere_scolaire", "matierescolaire", ["matiere_scolaire_id"], ["id"])
+        batch.create_check_constraint(
+            "ck_document_portee_academique_cible",
+            "(portee_academique = 'universitaire' AND filiere_id IS NOT NULL "
+            "AND niveau_scolaire_id IS NULL) OR "
+            "(portee_academique = 'scolaire' AND filiere_id IS NULL "
+            "AND niveau_scolaire_id IS NOT NULL)",
+        )
     op.create_index("ix_document_portee_academique", "document", ["portee_academique"])
     op.create_index("ix_document_niveau_scolaire_id", "document", ["niveau_scolaire_id"])
     op.create_index("ix_document_option_scolaire_id", "document", ["option_scolaire_id"])
@@ -287,6 +294,23 @@ def upgrade():
         batch.create_foreign_key("fk_cercle_matiere_scolaire", "matierescolaire", ["matiere_scolaire_id"], ["id"])
     for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
         op.create_index(f"ix_cercleetude_{col}", "cercleetude", [col])
+    op.create_index(
+        "ix_cercle_scolaire_unique_actif",
+        "cercleetude",
+        [
+            "niveau_scolaire_id",
+            sa.text("COALESCE(option_scolaire_id, 0)"),
+            sa.text("COALESCE(etablissement_scolaire_id, 0)"),
+            sa.text("COALESCE(matiere_scolaire_id, 0)"),
+        ],
+        unique=True,
+        postgresql_where=sa.text(
+            "statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"
+        ),
+        sqlite_where=sa.text(
+            "statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"
+        ),
+    )
 
     with op.batch_alter_table("cours") as batch:
         batch.add_column(sa.Column("portee_academique", sa.String(length=20), server_default="universitaire", nullable=False))
@@ -329,6 +353,7 @@ def downgrade():
     for col in ("niveau_scolaire_id", "option_scolaire_id"):
         op.drop_index(f"ix_tentativequiz_{col}", table_name="tentativequiz")
 
+    op.drop_index("ix_cercle_scolaire_unique_actif", table_name="cercleetude")
     for table in ("cours", "cercleetude"):
         for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
             op.drop_index(f"ix_{table}_{col}", table_name=table)
@@ -340,6 +365,7 @@ def downgrade():
     for col in ("portee_academique", "niveau_scolaire_id", "option_scolaire_id", "etablissement_scolaire_id", "matiere_scolaire_id"):
         op.drop_index(f"ix_document_{col}", table_name="document")
     with op.batch_alter_table("document") as batch:
+        batch.drop_constraint("ck_document_portee_academique_cible", type_="check")
         for name in ("fk_document_matiere_scolaire", "fk_document_etablissement_scolaire", "fk_document_option_scolaire", "fk_document_niveau_scolaire"):
             batch.drop_constraint(name, type_="foreignkey")
         batch.drop_column("matiere_scolaire_id")
