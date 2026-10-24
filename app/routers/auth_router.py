@@ -251,7 +251,7 @@ def inscription(
             filiere_id_nettoye = None
             niveau = None
 
-            if niveau_scolaire_id_nettoye is None:
+            if niveau_scolaire_id_nettoye is None and not est_demande_enseignant:
                 return templates.TemplateResponse(
                     request, "register.html",
                     _contexte_formulaire_inscription(
@@ -260,7 +260,6 @@ def inscription(
                     status_code=400,
                 )
 
-            niveau_scolaire_obj = session.get(NiveauScolaire, niveau_scolaire_id_nettoye)
             referentiels_scolaires = session.exec(
                 select(ReferentielScolaire).order_by(
                     ReferentielScolaire.date_creation.desc(),
@@ -268,21 +267,36 @@ def inscription(
                 )
             ).all()
             referentiel_courant = referentiels_scolaires[0] if referentiels_scolaires else None
-            if (
-                not niveau_scolaire_obj
-                or not referentiel_courant
-                or niveau_scolaire_obj.referentiel_id != referentiel_courant.id
-                or not niveau_scolaire_obj.est_actif
-                or niveau_scolaire_obj.statut_validation != "verifie"
-                or niveau_scolaire_obj.cycle != cycle
-            ):
-                return templates.TemplateResponse(
-                    request, "register.html",
-                    _contexte_formulaire_inscription(
-                        session, "La classe choisie n'est pas disponible dans le référentiel validé."
-                    ),
-                    status_code=400,
-                )
+            if niveau_scolaire_id_nettoye is not None:
+                niveau_scolaire_obj = session.get(NiveauScolaire, niveau_scolaire_id_nettoye)
+                if (
+                    not niveau_scolaire_obj
+                    or not referentiel_courant
+                    or niveau_scolaire_obj.referentiel_id != referentiel_courant.id
+                    or not niveau_scolaire_obj.est_actif
+                    or niveau_scolaire_obj.statut_validation != "verifie"
+                    or niveau_scolaire_obj.cycle != cycle
+                ):
+                    return templates.TemplateResponse(
+                        request, "register.html",
+                        _contexte_formulaire_inscription(
+                            session, "La classe choisie n'est pas disponible dans le référentiel validé."
+                        ),
+                        status_code=400,
+                    )
+            else:
+                niveau_scolaire_obj = None
+                # Une série/option n'a de sens que lorsqu'un niveau précis est
+                # choisi. Un profil enseignant peut ne renseigner qu'un cycle.
+                if option_scolaire_id_nettoye is not None:
+                    return templates.TemplateResponse(
+                        request, "register.html",
+                        _contexte_formulaire_inscription(
+                            session, "Choisissez un niveau avant de préciser une série ou option."
+                        ),
+                        status_code=400,
+                    )
+                option_scolaire_obj = None
 
             if option_scolaire_id_nettoye is not None:
                 option_scolaire_obj = session.get(OptionScolaire, option_scolaire_id_nettoye)
@@ -291,7 +305,9 @@ def inscription(
                     if option_scolaire_obj and option_scolaire_obj.parent_option_id else None
                 )
                 if (
-                    not option_scolaire_obj
+                    not niveau_scolaire_obj
+                    or not referentiel_courant
+                    or not option_scolaire_obj
                     or option_scolaire_obj.niveau_id != niveau_scolaire_obj.id
                     or option_scolaire_obj.referentiel_id != referentiel_courant.id
                     or not option_scolaire_obj.est_active
