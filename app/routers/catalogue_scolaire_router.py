@@ -162,7 +162,7 @@ def page_catalogue_scolaire(
                 ParcoursTechniqueProfessionnel.metier.ilike(terme),
             )
         )
-    nb_offres_total = session.exec(
+    nb_offres_total = session.execute(
         requete.with_only_columns(
             func.count(OffreEtablissementScolaire.id),
             maintain_column_froms=True,
@@ -230,7 +230,7 @@ def page_catalogue_scolaire(
                 EtablissementScolaire.commune.ilike(terme),
             )
         )
-    nb_etablissements_total = session.exec(
+    nb_etablissements_total = session.execute(
         etab_requete.with_only_columns(
             func.count(EtablissementScolaire.id),
             maintain_column_froms=True,
