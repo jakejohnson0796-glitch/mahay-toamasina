@@ -69,4 +69,4 @@ def test_bilan_utilise_des_traces_reelles_et_ne_depend_pas_d_une_generation_ia()
     assert "generer_reponse_tuteur" not in service
     assert "OpenAI" not in service
     assert "Groq" not in service
-    assert 'ActionGamification.action.in_(("cercle", "cercle_rejoint", "classe", "document"))' in service
+    assert 'ActionGamification.action.in_(("cercle", "cercle_rejoint", "classe", "document", "revision"))' in service
