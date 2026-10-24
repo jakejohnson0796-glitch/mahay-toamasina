@@ -415,13 +415,19 @@ def erreur_selection_creation_cercle(
 
 
 def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
-    """Classifie un cercle en s'appuyant sur le référentiel effectif si disponible.
+    """Classifie les cercles universitaires, scolaires et transversaux.
 
-    Un cercle historique peut avoir mention_id=NULL alors que son parcours
-    référence une Mention valide. La mention du parcours fait alors foi.
-    Toute contradiction explicite entre mention, parcours ou niveau devient
-    « incomplet » au lieu d'être présentée comme un cercle national valide.
+    Le référentiel scolaire est indépendant de la hiérarchie
+    domaine/mention/filière. Un cercle de classe n'est donc jamais traité
+    comme un cercle libre simplement parce que ses colonnes universitaires
+    sont vides.
     """
+    portee = (getattr(cercle, "portee_academique", None) or "universitaire").strip().lower()
+    if portee == "scolaire":
+        if not getattr(cercle, "niveau_scolaire_id", None):
+            return "incomplet"
+        return "scolaire"
+
     if not cercle.mention_id and not cercle.filiere_id and not cercle.niveau:
         return "libre"
 
@@ -444,9 +450,15 @@ def type_cercle(cercle: CercleEtude, session: Optional[Session] = None) -> str:
 
 
 def cercle_est_national(cercle: CercleEtude, session: Optional[Session] = None) -> bool:
-    """Vrai uniquement pour les cercles nationaux complets :
-    parcours spécialisé ou tronc commun."""
-    return type_cercle(cercle, session) in {"tronc_commun", "parcours"}
+    """Un cercle scolaire sans établissement est national pour son niveau.
+
+    Les cercles rattachés à un établissement restent locaux et conservent
+    un workflow d'adhésion explicite.
+    """
+    nature = type_cercle(cercle, session)
+    if nature in {"tronc_commun", "parcours"}:
+        return True
+    return nature == "scolaire" and not getattr(cercle, "etablissement_scolaire_id", None)
 
 
 def parcours_cercle_offert(
@@ -541,12 +553,28 @@ def tronc_commun_offert(
 
 
 def profil_correspond_au_cercle(utilisateur: Utilisateur, cercle: CercleEtude, session: Session) -> bool:
-    """Test canonique d'éligibilité, y compris pour les cercles historiques."""
+    """Test canonique d'éligibilité pour un cercle scolaire ou universitaire."""
     nature = type_cercle(cercle, session)
     if nature == "libre":
         return True
     if nature == "incomplet":
         return False
+
+    if nature == "scolaire":
+        if (
+            utilisateur.cycle_education not in {"college", "lycee"}
+            or not utilisateur.niveau_scolaire_id
+            or utilisateur.niveau_scolaire_id != cercle.niveau_scolaire_id
+        ):
+            return False
+        if cercle.option_scolaire_id and cercle.option_scolaire_id != utilisateur.option_scolaire_id:
+            return False
+        if (
+            cercle.etablissement_scolaire_id
+            and cercle.etablissement_scolaire_id != utilisateur.etablissement_scolaire_id
+        ):
+            return False
+        return True
 
     filiere_cercle = session.get(Filiere, cercle.filiere_id) if cercle.filiere_id else None
     mention_id_effectif = cercle.mention_id or (filiere_cercle.mention_id if filiere_cercle else None)
