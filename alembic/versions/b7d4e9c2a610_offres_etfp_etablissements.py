@@ -233,7 +233,7 @@ def upgrade() -> None:
         op.create_index(f"ix_parcourstechniqueprofessionnel_{column}", "parcourstechniqueprofessionnel", [column])
 
     op.create_table(
-        "offreetablissementsscolaire",
+        "offreetablissementscolaire",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("etablissement_id", sa.Integer(), sa.ForeignKey("etablissementscolaire.id"), nullable=False),
         sa.Column("code_offre", sa.String(length=160), nullable=False),
@@ -259,10 +259,10 @@ def upgrade() -> None:
         ),
     )
     for column in ("etablissement_id", "type_offre", "niveau_scolaire_id", "option_scolaire_id", "matiere_scolaire_id", "parcours_etfp_id", "annee_scolaire", "statut_validation", "est_active", "valide_par_id"):
-        op.create_index(f"ix_offreetablissementsscolaire_{column}", "offreetablissementsscolaire", [column])
+        op.create_index(f"ix_offreetablissementscolaire_{column}", "offreetablissementscolaire", [column])
     op.create_index(
         "uq_offre_etablissement_code_active",
-        "offreetablissementsscolaire",
+        "offreetablissementscolaire",
         ["etablissement_id", "code_offre", "annee_scolaire"],
         unique=True,
         postgresql_where=sa.text("est_active = TRUE"),
@@ -270,7 +270,7 @@ def upgrade() -> None:
     )
     op.create_index(
         "ix_offre_etablissement_statut_type",
-        "offreetablissementsscolaire",
+        "offreetablissementscolaire",
         ["etablissement_id", "statut_validation", "type_offre", "est_active"],
     )
 
@@ -367,7 +367,7 @@ def upgrade() -> None:
             code_offre = "FORMATION:" + _slug(code)
             existe = conn.execute(
                 sa.text(
-                    "SELECT id FROM offreetablissementsscolaire "
+                    "SELECT id FROM offreetablissementscolaire "
                     "WHERE etablissement_id=:etablissement AND code_offre=:code AND est_active=TRUE"
                 ),
                 {"etablissement": etablissement_id, "code": code_offre},
@@ -376,7 +376,7 @@ def upgrade() -> None:
                 continue
             conn.execute(
                 sa.text(
-                    "INSERT INTO offreetablissementsscolaire "
+                    "INSERT INTO offreetablissementscolaire "
                     "(etablissement_id, code_offre, type_offre, parcours_etfp_id, annee_scolaire, "
                     "source_officielle, statut_validation, est_active, date_creation, date_maj) "
                     "VALUES (:etablissement, :code, 'formation', :parcours, NULL, :source, "
@@ -394,11 +394,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_offre_etablissement_statut_type", table_name="offreetablissementsscolaire")
-    op.drop_index("uq_offre_etablissement_code_active", table_name="offreetablissementsscolaire")
+    op.drop_index("ix_offre_etablissement_statut_type", table_name="offreetablissementscolaire")
+    op.drop_index("uq_offre_etablissement_code_active", table_name="offreetablissementscolaire")
     for column in ("etablissement_id", "type_offre", "niveau_scolaire_id", "option_scolaire_id", "matiere_scolaire_id", "parcours_etfp_id", "annee_scolaire", "statut_validation", "est_active", "valide_par_id"):
-        op.drop_index(f"ix_offreetablissementsscolaire_{column}", table_name="offreetablissementsscolaire")
-    op.drop_table("offreetablissementsscolaire")
+        op.drop_index(f"ix_offreetablissementscolaire_{column}", table_name="offreetablissementscolaire")
+    op.drop_table("offreetablissementscolaire")
     for column in ("secteur", "filiere", "metier", "statut_validation", "est_actif"):
         op.drop_index(f"ix_parcourstechniqueprofessionnel_{column}", table_name="parcourstechniqueprofessionnel")
     op.drop_table("parcourstechniqueprofessionnel")
