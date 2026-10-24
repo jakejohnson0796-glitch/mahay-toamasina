@@ -304,11 +304,15 @@ def creer_tentative(
                 _empreinte_question(question)
                 for question in questions_validees
             ]
+            structures_nouvelles = [
+                _structure_question(question) for question in questions_validees
+            ]
             if len(set(empreintes_nouvelles)) != len(empreintes_nouvelles):
                 questions_a_eviter_essai.extend(
                     question["question"] for question in questions_validees
                 )
                 empreintes_deja_vues.update(empreintes_nouvelles)
+                structures_deja_vues.update(structures_nouvelles)
                 raise QuizValidationError(
                     "Le quiz contient des questions identiques."
                 )
@@ -317,13 +321,10 @@ def creer_tentative(
                     question["question"] for question in questions_validees
                 )
                 empreintes_deja_vues.update(empreintes_nouvelles)
+                structures_deja_vues.update(structures_nouvelles)
                 raise QuizValidationError(
                     "Le quiz répète une question proposée dans un quiz récent."
                 )
-
-            structures_nouvelles = [
-                _structure_question(question) for question in questions_validees
-            ]
             if len(set(structures_nouvelles)) != len(structures_nouvelles):
                 questions_a_eviter_essai.extend(
                     question["question"] for question in questions_validees
@@ -1006,15 +1007,16 @@ def creer_tentative_ciblee(
                 strict_coherence=True,
             )
             empreintes = [_empreinte_question(question) for question in questions_ciblees]
+            structures = [_structure_question(question) for question in questions_ciblees]
             if len(set(empreintes)) != len(empreintes) or empreintes_deja_vues.intersection(empreintes):
                 questions_a_eviter_essai.extend(
                     question["question"] for question in questions_ciblees
                 )
                 empreintes_deja_vues.update(empreintes)
+                structures_deja_vues.update(structures)
                 raise QuizValidationError(
                     "Le quiz ciblé répète des questions déjà vues ou des énoncés générés lors d'un essai précédent."
                 )
-            structures = [_structure_question(question) for question in questions_ciblees]
             if len(set(structures)) != len(structures) or structures_deja_vues.intersection(structures):
                 questions_a_eviter_essai.extend(
                     question["question"] for question in questions_ciblees
