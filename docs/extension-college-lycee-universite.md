@@ -21,7 +21,7 @@ Le choix « professeur » dans un formulaire public est une **demande de profil*
 - Un compte demandant à enseigner est enregistré avec `profil_souhaite=professeur` et un statut de validation `en_attente`.
 - Les fonctions privilégiées (créer/administrer une classe virtuelle, publier au nom d'un établissement, gérer des élèves) restent bloquées jusqu'à approbation administrative.
 - L'approbation, le refus, l'auteur de la décision et la date sont historisés. Un utilisateur ne peut ni envoyer `role=admin` ni s'approuver lui-même via une requête manipulée.
-- Un professeur peut enseigner plusieurs classes, séries et matières : ne pas enfermer cette relation dans une unique colonne sur l'utilisateur.
+- Les cycles enseignés sont stockés dans une table relationnelle distincte et plusieurs cycles peuvent être déclarés. La granularité classe/série/matière et les justificatifs privés restent une étape suivante ; une déclaration de cycle ne constitue pas une autorisation.
 - Les profils déjà existants restent valides. Le profil universitaire actuel est conservé et les nouveaux champs scolaires restent nuls jusqu'à ce que la personne complète son profil.
 
 ## 3. Référentiel scolaire : données versionnées et sourcées
@@ -38,6 +38,7 @@ Ne pas coder tout le système scolaire en conditions `if/else` ou dans une liste
 | `matierescolaire` | Matières normalisées, libellé français et, si validé, libellé malagasy. |
 | `programmematierescolaire` | Association niveau / série-option / matière, caractère obligatoire ou facultatif, année et source. |
 | `etablissementscolaire` | Collège, lycée, établissement mixte ou établissement technique : nom, statut public/privé, commune, district, région, source et état de vérification. |
+| `cycleenseigne` | Cycles déclarés par un candidat professeur (collège, lycée, université), une ligne par compte et cycle ; ne donne aucun droit sans validation administrative. |
 | `demandeverificationenseignant` | Demande, portée d'enseignement, pièces facultatives privées, statut, décision et audit. |
 
 Les codes constituent des identifiants de données ; les libellés peuvent changer sans casser les comptes ou liens. Utiliser des contraintes d'unicité et des clés étrangères, des index pour les recherches, une pagination côté serveur, et des champs `est_actif` / `valide_a_partir_de` / `valide_jusqua` pour ne pas supprimer l'historique.
@@ -52,6 +53,10 @@ Le Ministère de l'Éducation nationale publie une répartition annuelle par cla
 - Portail officiel MESUPRES : https://mesupres.gov.mg/
 
 Ne pas confondre le catalogue de l'enseignement général avec les parcours techniques et professionnels. Ceux-ci demandent un inventaire sourcé auprès du ministère compétent et une validation humaine. Une option dont la source ou l'actualité n'est pas vérifiée doit être marquée **à vérifier** et ne doit pas apparaître comme « officielle et actuelle » dans le formulaire public.
+
+### Première tranche déjà ajoutée sur la branche du chantier
+
+Le formulaire permet maintenant à un candidat professeur de choisir un cycle principal et de déclarer d'autres cycles. La table `cycleenseigne` enregistre ces déclarations séparément, avec une contrainte d'unicité par utilisateur et cycle ; la migration reprend aussi le cycle principal des demandes enseignantes déjà enregistrées. Le compte conserve le rôle `ETUDIANT` tant que l'administrateur n'a pas validé la demande. Cette étape ne remplace pas encore une affectation détaillée par classe, série, matière et établissement : ce niveau doit rester dans la feuille de route et être validé avant de restreindre les fonctions professorales.
 
 ## 4. Parcours d'inscription cible
 
