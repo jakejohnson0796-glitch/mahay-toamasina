@@ -458,3 +458,49 @@ html[data-theme="sombre"] .cercles-page-shell .cercles-parcours-numero {
   border-color: rgba(134, 213, 166, .42);
   color: #C5F2D6;
 }
+
+/* Filtres Cercles : séparation visuelle et fonctionnelle des cycles. */
+.cercles-page-shell .groupe-filtres-cercles {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem .9rem;
+  min-width: 0;
+  margin: .1rem 0;
+  padding: .85rem;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+  background: var(--content-bg);
+}
+.cercles-page-shell .groupe-filtres-cercles[hidden] {
+  display: none !important;
+}
+.cercles-page-shell .groupe-filtres-cercles legend {
+  max-width: 100%;
+  padding: 0 .45rem;
+  color: var(--content-text);
+  font-size: .8rem;
+  font-weight: 850;
+}
+.cercles-page-shell .groupe-filtres-cercles > div {
+  min-width: 0;
+}
+.cercles-page-shell .groupe-filtres-cercles label {
+  display: block;
+  margin-bottom: .35rem;
+  color: var(--content-text);
+  font-size: .76rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+.cercles-page-shell .groupe-filtres-cercles select {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .cercles-page-shell .groupe-filtres-cercles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .7rem;
+    padding: .75rem;
+  }
+}
