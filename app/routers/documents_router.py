@@ -528,12 +528,27 @@ def upload_document(
 
         if option_scolaire_id is not None:
             option_scolaire = session.get(OptionScolaire, option_scolaire_id)
+            parent_option = (
+                session.get(OptionScolaire, option_scolaire.parent_option_id)
+                if option_scolaire and option_scolaire.parent_option_id else None
+            )
             if (
                 not option_scolaire
                 or option_scolaire.referentiel_id != referentiel_courant.id
                 or option_scolaire.niveau_id != niveau_scolaire.id
                 or not option_scolaire.est_active
                 or option_scolaire.statut_validation != "verifie"
+                or (
+                    option_scolaire.parent_option_id is not None
+                    and (
+                        not parent_option
+                        or parent_option.referentiel_id != referentiel_courant.id
+                        or parent_option.niveau_id != niveau_scolaire.id
+                        or parent_option.parent_option_id is not None
+                        or not parent_option.est_active
+                        or parent_option.statut_validation != "verifie"
+                    )
+                )
             ):
                 return RedirectResponse("/documents?erreur=option_scolaire_invalide", status_code=303)
 
