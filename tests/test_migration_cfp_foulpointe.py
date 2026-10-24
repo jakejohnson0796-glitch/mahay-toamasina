@@ -1,4 +1,4 @@
-"""Vérifie l'ajout idempotent du CFP Foulpointe et le statut prudent de ses offres."""
+"""Vérifie l'ajout idempotent du CFP Foulpointe et du LTP Beravina."""
 import importlib.util
 from pathlib import Path
 
@@ -16,14 +16,14 @@ MIGRATION_PATH = (
 
 
 def _charger_migration():
-    spec = importlib.util.spec_from_file_location("migration_cfp_foulpointe", MIGRATION_PATH)
+    spec = importlib.util.spec_from_file_location("migration_etfp_sites_confirmes", MIGRATION_PATH)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-def test_cfp_foulpointe_et_offres_sont_ajoutes_sans_doublon_et_restent_en_attente():
+def test_sites_et_offres_sont_ajoutes_sans_doublon_et_restent_en_attente():
     engine = sa.create_engine("sqlite://")
     try:
         with engine.begin() as connection:
@@ -79,7 +79,7 @@ def test_cfp_foulpointe_et_offres_sont_ajoutes_sans_doublon_et_restent_en_attent
                     est_active BOOLEAN NOT NULL,
                     date_creation TIMESTAMP,
                     date_maj TIMESTAMP,
-                    UNIQUE(etablissement_id, code_offre)
+                    UNIQUE(etablissement_id, code_offre, annee_scolaire)
                 )
                 """
             )
@@ -94,44 +94,57 @@ def test_cfp_foulpointe_et_offres_sont_ajoutes_sans_doublon_et_restent_en_attent
                     {**pathway, "source": migration.SOURCE_CARTOGRAPHIE},
                 )
 
-            # Simule deux démarrages successifs sur une base existante.
+            # Deux exécutions simulent le redémarrage et le rattrapage sur une base existante.
             with Operations.context(MigrationContext.configure(connection)):
                 migration.upgrade()
                 migration.upgrade()
 
-            establishment_rows = connection.execute(
+            institutions = connection.execute(
                 sa.text(
                     "SELECT nom, region, commune, type_etablissement, est_verifie, est_actif "
-                    "FROM etablissementscolaire"
+                    "FROM etablissementscolaire ORDER BY nom"
                 )
             ).mappings().all()
-            assert len(establishment_rows) == 1
-            assert establishment_rows[0]["nom"] == "CFP FOULPOINTE"
-            assert establishment_rows[0]["region"] == "ATSINANANA"
-            assert establishment_rows[0]["commune"] == "Foulpointe"
-            assert establishment_rows[0]["type_etablissement"] == "centre_formation"
-            assert establishment_rows[0]["est_verifie"] == 1
-            assert establishment_rows[0]["est_actif"] == 1
+            assert len(institutions) == 2
+            by_name = {row["nom"]: row for row in institutions}
 
-            pathway_rows = connection.execute(
+            assert by_name["CFP FOULPOINTE"]["region"] == "ATSINANANA"
+            assert by_name["CFP FOULPOINTE"]["commune"] == "Foulpointe"
+            assert by_name["CFP FOULPOINTE"]["type_etablissement"] == "centre_formation"
+            assert by_name["CFP FOULPOINTE"]["est_verifie"] == 1
+            assert by_name["CFP FOULPOINTE"]["est_actif"] == 1
+
+            assert by_name["LTP BERAVINA"]["region"] == "HAUTE MATSIATRA"
+            assert by_name["LTP BERAVINA"]["commune"] is None
+            assert by_name["LTP BERAVINA"]["type_etablissement"] == "lycee_technique"
+            assert by_name["LTP BERAVINA"]["est_verifie"] == 1
+            assert by_name["LTP BERAVINA"]["est_actif"] == 1
+
+            new_pathways = connection.execute(
                 sa.text(
                     "SELECT code, statut_validation FROM parcourstechniqueprofessionnel "
                     "WHERE code='RESTAURATEUR-DE-MEUBLES'"
                 )
             ).mappings().all()
-            assert len(pathway_rows) == 1
-            assert pathway_rows[0]["statut_validation"] == "verifie"
+            assert len(new_pathways) == 1
+            assert new_pathways[0]["statut_validation"] == "verifie"
 
-            offer_rows = connection.execute(
+            offers = connection.execute(
                 sa.text(
-                    "SELECT code_offre, statut_validation, annee_scolaire, type_offre "
-                    "FROM offreetablissementscolaire ORDER BY code_offre"
+                    "SELECT e.nom AS etablissement, o.code_offre, o.statut_validation, "
+                    "o.annee_scolaire, o.type_offre "
+                    "FROM offreetablissementscolaire o "
+                    "JOIN etablissementscolaire e ON e.id=o.etablissement_id "
+                    "ORDER BY e.nom, o.code_offre"
                 )
             ).mappings().all()
-            assert len(offer_rows) == 7
-            assert all(row["type_offre"] == "formation" for row in offer_rows)
-            assert all(row["statut_validation"] == "a_verifier" for row in offer_rows)
-            assert all(row["annee_scolaire"] is None for row in offer_rows)
-            assert len({row["code_offre"] for row in offer_rows}) == 7
+            assert len(offers) == 30
+            for name, expected in (("CFP FOULPOINTE", 7), ("LTP BERAVINA", 23)):
+                records = [row for row in offers if row["etablissement"] == name]
+                assert len(records) == expected
+                assert all(row["type_offre"] == "formation" for row in records)
+                assert all(row["statut_validation"] == "a_verifier" for row in records)
+                assert all(row["annee_scolaire"] is None for row in records)
+                assert len({row["code_offre"] for row in records}) == expected
     finally:
         engine.dispose()
