@@ -47,13 +47,28 @@ Ces tâches doivent passer avant les nouvelles fonctionnalités ambitieuses.
 - [ ] **Éviter les régressions de documentation.** Faire correspondre le README, le fichier .env.example, la configuration Render et la checklist de release ; toute variable retirée ou renommée doit être documentée.
 - [ ] **Organiser une revue périodique des dépendances.** Mettre à jour avec tests, vérifier les changements incompatibles et conserver un chemin de retour arrière plutôt que de mettre à jour toutes les dépendances sans validation.
 
+## Nouveau chantier structurant — collège, lycée et université
+
+Le cahier des charges technique est consigné dans [docs/extension-college-lycee-universite.md](docs/extension-college-lycee-universite.md). Ce chantier est une extension majeure du référentiel, pas une simple option du formulaire.
+
+- [ ] **Lot A — Référentiel scolaire sourcé et versionné.** Créer les tables niveaux, séries/options, matières/programmes et établissements; importer d'abord les classes et séries explicitement documentées par le ministère; rendre l'import idempotent et conserver la source, l'année de référence et le statut de vérification.
+- [ ] **Lot A — Parcours d'inscription adapté.** Proposer élève/étudiant, professeur/enseignant ou sponsor, puis collège/lycée/université. L'inscription collège/lycée ne doit plus demander une université; le parcours universitaire actuel doit rester intact.
+- [ ] **Lot B — Demandes de profil enseignant.** Enregistrer une demande et sa portée d'enseignement sans attribuer automatiquement le rôle PROFESSEUR. Ajouter le traitement admin et la trace de décision avant d'ouvrir les outils réservés.
+- [ ] **Lot C — Documents multi-référentiels.** Classer les documents scolaires sans fausse filière universitaire; adapter upload, filtres, modération, détails et téléchargements privés avant de rendre `Document.filiere_id` nullable.
+- [ ] **Lot C — Cercles collège/lycée.** Ajouter les cercles nationaux par classe/série et les cercles locaux par établissement, sans collision avec les identifiants et index des cercles universitaires.
+- [ ] **Lot D — Apprentissage par programme.** Relier matières, quiz, fiches de révision et Tuteur IA au niveau / à la série appropriés, avec tests de qualité et sans mélanger les résultats entre comptes.
+- [ ] **Lot E — Validation avant mise en ligne.** Tests de migration SQLite et PostgreSQL, tests de sécurité document/cercle, tests navigateur pour chaque cycle, vérification des sources du catalogue, CI verte, puis contrôle santé et parcours après déploiement.
+
+**Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
+
 ## 5. Ordre recommandé pour la prochaine itération
 
 1. Scénario PostgreSQL de bout en bout pour une fiche de cours, y compris les contrôles d’accès et les formats exportés.
 2. Diagnostic des tâches IA anciennes et validation post-déploiement reproductible.
 3. Matrice de régression du rendu mathématique et de la qualité des quiz.
-4. Parcours navigateur mobile sur les fonctions les plus utilisées.
-5. Revue du référentiel, du jeu cérébral et de l’accessibilité.
+4. Conception puis implémentation progressive du référentiel collège/lycée et du profil d'inscription (cahier des charges lié ci-dessus), sans casser l'université existante.
+5. Parcours navigateur mobile sur les fonctions les plus utilisées.
+6. Revue du référentiel académique, du jeu cérébral et de l’accessibilité.
 
 ## 6. Critères de clôture d’une tâche
 
