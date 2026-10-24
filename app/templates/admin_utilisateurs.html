@@ -63,6 +63,17 @@
                 {% elif u.cycle_education == "universite" %}Université{% endif %}
               </small>
             {% endif %}
+            {% set cycles_declares = cycles_enseignes_par_utilisateur.get(u.id, []) %}
+            {% if u.profil_souhaite == "professeur" and cycles_declares %}
+              <small class="ops-table-date">
+                Cycles déclarés :
+                {% for cycle_declare in cycles_declares %}
+                  {% if cycle_declare == "college" %}Collège
+                  {% elif cycle_declare == "lycee" %}Lycée
+                  {% elif cycle_declare == "universite" %}Université{% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </small>
+            {% endif %}
             {% if u.niveau_scolaire_id %}
               {% for niveau_scolaire in niveaux_scolaires %}
                 {% if niveau_scolaire.id == u.niveau_scolaire_id %}
