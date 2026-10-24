@@ -1,5 +1,6 @@
 """Non-regression tests for the secondary-school referential and circle targeting."""
 from sqlalchemy import event
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import (
@@ -120,6 +121,52 @@ def test_cercle_scolaire_correspond_au_niveau_et_a_la_serie():
 
     sans_serie = _user(session, niveau_id=niveau.id, option_id=None, telephone="0340000002")
     assert profil_correspond_au_cercle(sans_serie, cercle, session) is False
+    session.close()
+    engine.dispose()
+
+
+def test_cibles_scolaires_actives_identiques_restent_uniques_avec_champs_optionnels_nuls():
+    engine, session = _session()
+    _, niveau, serie = _school_catalogue(session)
+    user = _user(session, niveau_id=niveau.id, option_id=serie.id)
+    original = CercleEtude(
+        nom="Cercle cible unique",
+        createur_id=user.id,
+        statut=StatutCercle.ACTIF,
+        portee_academique="scolaire",
+        niveau_scolaire_id=niveau.id,
+        option_scolaire_id=serie.id,
+        etablissement_scolaire_id=None,
+        matiere_scolaire_id=None,
+    )
+    session.add(original)
+    session.commit()
+
+    doublon = CercleEtude(
+        nom="Doublon cible",
+        createur_id=user.id,
+        statut=StatutCercle.ACTIF,
+        portee_academique="scolaire",
+        niveau_scolaire_id=niveau.id,
+        option_scolaire_id=serie.id,
+        etablissement_scolaire_id=None,
+        matiere_scolaire_id=None,
+    )
+    session.add(doublon)
+    try:
+        session.commit()
+        raise AssertionError("Les index uniques doivent bloquer un cercle cible scolaire en double.")
+    except IntegrityError:
+        session.rollback()
+
+    cercles = session.exec(
+        select(CercleEtude).where(
+            CercleEtude.portee_academique == "scolaire",
+            CercleEtude.niveau_scolaire_id == niveau.id,
+            CercleEtude.option_scolaire_id == serie.id,
+        )
+    ).all()
+    assert len(cercles) == 1
     session.close()
     engine.dispose()
 
