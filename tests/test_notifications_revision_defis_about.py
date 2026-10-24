@@ -35,7 +35,7 @@ def test_notification_labels_and_revision_destinations_are_human_readable():
     assert '"fiche_revision_document_prete": "Fiche de cours disponible"' in router
     assert "item.type_label" in page
     assert 'lien = "/mes-revisions"' in router
-    assert 'lien = "/mes-avis"' in router
+    assert 'lien = "/feedback"' in router
 
 
 def test_revision_sections_keep_navigation_and_mobile_priority_hierarchy():
