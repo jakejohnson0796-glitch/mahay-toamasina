@@ -6,6 +6,9 @@ import { chromium } from "playwright";
 const root = process.cwd();
 const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
 const script = read("app/static/js/cercles-list.js");
+const schoolSearchScript = read("app/static/js/cascade-scolaire-cercles.js");
+const academicUiCss = read("app/static/parcours-academique-ui.css");
+const baseTemplate = read("app/templates/base.html");
 const template = read("app/templates/cercles_list.html");
 
 assert.match(
@@ -18,6 +21,13 @@ assert.doesNotMatch(
   /id="creation-info-tronc-commun" style="display:none;"/,
   "Un style en ligne empêcherait le hint d'apparaître après hidden=false."
 );
+
+assert.match(template, /<fieldset id="filtres-scolaires"/, "Les filtres collège/lycée doivent être groupés.");
+assert.match(template, /<fieldset id="filtres-universitaires"/, "Les filtres universitaires doivent être groupés séparément.");
+assert.match(schoolSearchScript, /schoolGroup\.hidden = university \|\| transversal/, "Le groupe scolaire doit se masquer pour les autres parcours.");
+assert.match(schoolSearchScript, /universityGroup\.hidden = school \|\| transversal/, "Le groupe universitaire doit se masquer pour les autres parcours.");
+assert.match(academicUiCss, /\.groupe-filtres-cercles\[hidden\]/, "Le groupe hidden doit rester masqué malgré les styles de page.");
+assert.match(baseTemplate, /parcours-academique-ui\.css/, "Les styles de parcours doivent être chargés par la page.");
 
 const html = `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"></head><body>
@@ -147,13 +157,83 @@ try {
   );
   assert.ok(apiCalls >= 4, "Les deux cascades doivent pouvoir réessayer une requête en échec.");
 
+  // Vérifie le basculement réel des filtres scolaire/universitaire.
+  const filterPage = await browser.newPage();
+  await filterPage.setContent(`
+    <!doctype html><html lang="fr"><body>
+      <form id="formulaire-recherche-cercles">
+        <select id="recherche_portee_academique">
+          <option value="">Tous</option><option value="scolaire">Collège / lycée</option>
+          <option value="universitaire">Université</option><option value="transversal">Transversal</option>
+        </select>
+        <fieldset id="filtres-scolaires" class="groupe-filtres-cercles">
+          <select id="recherche_niveau_scolaire_id"><option value="">Classe</option></select>
+          <select id="recherche_option_scolaire_id"><option value="">Série</option></select>
+          <select id="recherche_etablissement_scolaire_id"><option value="">Établissement</option></select>
+          <select id="recherche_matiere_scolaire_id"><option value="">Matière</option></select>
+        </fieldset>
+        <fieldset id="filtres-universitaires" class="groupe-filtres-cercles">
+          <select id="recherche_domaine_id"><option value="">Domaine</option></select>
+          <select id="recherche_mention_id"><option value="">Mention</option></select>
+          <select id="recherche_niveau"><option value="">Niveau</option></select>
+          <select id="recherche_filiere_id"><option value="">Parcours</option></select>
+        </fieldset>
+      </form>
+    </body></html>`);
+  await filterPage.addScriptTag({ content: schoolSearchScript });
+  await filterPage.locator("#recherche_portee_academique").selectOption("scolaire");
+  const filtresScolaires = await filterPage.evaluate(() => ({
+    scolaireMasque: document.querySelector("#filtres-scolaires").hidden,
+    universitaireMasque: document.querySelector("#filtres-universitaires").hidden,
+    scolaireDesactive: document.querySelector("#recherche_niveau_scolaire_id").disabled,
+    universitaireDesactive: document.querySelector("#recherche_domaine_id").disabled
+  }));
+  assert.deepEqual(filtresScolaires, {
+    scolaireMasque: false, universitaireMasque: true,
+    scolaireDesactive: false, universitaireDesactive: true
+  });
+  await filterPage.locator("#recherche_portee_academique").selectOption("universitaire");
+  const filtresUniversitaires = await filterPage.evaluate(() => ({
+    scolaireMasque: document.querySelector("#filtres-scolaires").hidden,
+    universitaireMasque: document.querySelector("#filtres-universitaires").hidden,
+    scolaireDesactive: document.querySelector("#recherche_niveau_scolaire_id").disabled,
+    universitaireDesactive: document.querySelector("#recherche_domaine_id").disabled
+  }));
+  assert.deepEqual(filtresUniversitaires, {
+    scolaireMasque: true, universitaireMasque: false,
+    scolaireDesactive: true, universitaireDesactive: false
+  });
+  await filterPage.locator("#recherche_portee_academique").selectOption("transversal");
+  const filtresTransversaux = await filterPage.evaluate(() => ({
+    scolairesMasques: document.querySelector("#filtres-scolaires").hidden,
+    universitairesMasques: document.querySelector("#filtres-universitaires").hidden,
+    classeDesactivee: document.querySelector("#recherche_niveau_scolaire_id").disabled,
+    domaineDesactive: document.querySelector("#recherche_domaine_id").disabled
+  }));
+  assert.deepEqual(filtresTransversaux, {
+    scolairesMasques: true, universitairesMasques: true,
+    classeDesactivee: true, domaineDesactive: true
+  });
+  await filterPage.locator("#recherche_portee_academique").selectOption("");
+  const filtresTous = await filterPage.evaluate(() => ({
+    scolairesMasques: document.querySelector("#filtres-scolaires").hidden,
+    universitairesMasques: document.querySelector("#filtres-universitaires").hidden,
+    classeDesactivee: document.querySelector("#recherche_niveau_scolaire_id").disabled,
+    domaineDesactive: document.querySelector("#recherche_domaine_id").disabled
+  }));
+  assert.deepEqual(filtresTous, {
+    scolairesMasques: false, universitairesMasques: false,
+    classeDesactivee: false, domaineDesactive: false
+  });
+
   console.log(JSON.stringify({
     checks: [
       "erreur API distincte d'une réponse vide",
       "soumission bloquée durant une panne du référentiel",
       "tronc commun affiché uniquement après une réponse vide valide",
       "hint réellement visible",
-      "recherche réessayable après une panne"
+      "recherche réessayable après une panne",
+      "filtres scolaire/universitaire/transversal réellement séparés et réinitialisables"
     ],
     apiCalls
   }, null, 2));
