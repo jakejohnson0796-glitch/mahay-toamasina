@@ -58,7 +58,7 @@
     {% elif ok == "matiere_validee" %}Matière validée.
     {% elif ok == "programme_scolaire_ajoute" %}Rattachement de programme ajouté en attente de validation.
     {% elif ok == "programme_scolaire_valide" %}Rattachement de programme validé.
-    {% elif ok == "cercles_synchronises" %}Synchronisation terminée : {{ request.query_params.get("crees", "0") }} cercle(s) créé(s), {{ request.query_params.get("reactives", "0") }} réactivé(s), {{ request.query_params.get("archives", "0") }} archivé(s), {{ request.query_params.get("preserves", "0") }} cercle(s) conservé(s) avec membres ou contenu.
+    {% elif ok == "cercles_synchronises" %}Synchronisation terminée : {{ request.query_params.get("crees", "0") }} cercle(s) créé(s), {{ request.query_params.get("reactives", "0") }} réactivé(s), {{ request.query_params.get("actualises", "0") }} libellé(s) mis à jour, {{ request.query_params.get("archives", "0") }} archivé(s), {{ request.query_params.get("preserves", "0") }} cercle(s) conservé(s) avec membres ou contenu.
     {% else %}Modification enregistrée.{% endif %}
   </strong></p>
   {% endif %}
