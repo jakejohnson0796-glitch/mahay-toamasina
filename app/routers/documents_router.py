@@ -422,28 +422,120 @@ def upload_document(
         return RedirectResponse("/connexion", status_code=303)
 
     host = request.client.host if request.client else "inconnu"
-    if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(f"upload-document:ip:{host}", 40, 3600):
+    if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(
+        f"upload-document:ip:{host}", 40, 3600
+    ):
         return RedirectResponse("/documents?erreur=trop_de_depots", status_code=303)
 
-    if cercle_id is not None and not _est_membre_cercle(session, cercle_id, utilisateur.id):
-        cercle_id = None
+    portee = (portee_academique or "universitaire").strip().lower()
+    if portee not in {"universitaire", "scolaire"}:
+        return RedirectResponse("/documents?erreur=portee_invalide", status_code=303)
 
-    # Sans détection automatique, les métadonnées restent obligatoires.
+    cercle = None
+    if cercle_id is not None:
+        cercle = session.get(CercleEtude, cercle_id)
+        if not cercle or not _est_membre_cercle(session, cercle_id, utilisateur.id):
+            return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+        if cercle.portee_academique in {"universitaire", "scolaire"} and cercle.portee_academique != portee:
+            return RedirectResponse("/documents?erreur=portee_cercle_invalide", status_code=303)
+
+    # La classification IA actuelle ne dispose que du référentiel universitaire.
+    # On refuse explicitement le mode auto scolaire plutôt que de créer une
+    # fausse filière ou une ressource mal classée.
+    if portee == "scolaire" and classification_auto:
+        return RedirectResponse("/documents?erreur=classification_scolaire_non_disponible", status_code=303)
+
+    niveau_scolaire = None
+    option_scolaire = None
+    etablissement_scolaire = None
+    referentiel_courant = None
+
+    if portee == "scolaire":
+        if filiere_id is not None:
+            return RedirectResponse("/documents?erreur=cible_scolaire_incoherente", status_code=303)
+        cycle_scolaire = (cycle_scolaire or "").strip().lower()
+        if cycle_scolaire not in {"college", "lycee"} or niveau_scolaire_id is None:
+            return RedirectResponse("/documents?erreur=classe_scolaire_requise", status_code=303)
+
+        referentiel_courant = session.exec(
+            select(ReferentielScolaire).order_by(
+                ReferentielScolaire.date_creation.desc(),
+                ReferentielScolaire.id.desc(),
+            )
+        ).first()
+        niveau_scolaire = session.get(NiveauScolaire, niveau_scolaire_id)
+        if (
+            not referentiel_courant
+            or not niveau_scolaire
+            or niveau_scolaire.referentiel_id != referentiel_courant.id
+            or not niveau_scolaire.est_actif
+            or niveau_scolaire.statut_validation != "verifie"
+            or niveau_scolaire.cycle != cycle_scolaire
+        ):
+            return RedirectResponse("/documents?erreur=classe_scolaire_invalide", status_code=303)
+
+        if option_scolaire_id is not None:
+            option_scolaire = session.get(OptionScolaire, option_scolaire_id)
+            if (
+                not option_scolaire
+                or option_scolaire.referentiel_id != referentiel_courant.id
+                or option_scolaire.niveau_id != niveau_scolaire.id
+                or not option_scolaire.est_active
+                or option_scolaire.statut_validation != "verifie"
+            ):
+                return RedirectResponse("/documents?erreur=option_scolaire_invalide", status_code=303)
+
+        if etablissement_scolaire_id is not None:
+            etablissement_scolaire = session.get(EtablissementScolaire, etablissement_scolaire_id)
+            if (
+                not etablissement_scolaire
+                or not etablissement_scolaire.est_actif
+                or not etablissement_scolaire.est_verifie
+            ):
+                return RedirectResponse("/documents?erreur=etablissement_scolaire_invalide", status_code=303)
+
+        # Un document déposé depuis un cercle scolaire doit suivre son ciblage.
+        if cercle:
+            if cercle.niveau_scolaire_id and cercle.niveau_scolaire_id != niveau_scolaire.id:
+                return RedirectResponse("/documents?erreur=classe_cercle_incompatible", status_code=303)
+            if cercle.option_scolaire_id and (
+                not option_scolaire or cercle.option_scolaire_id != option_scolaire.id
+            ):
+                return RedirectResponse("/documents?erreur=option_cercle_incompatible", status_code=303)
+            if cercle.etablissement_scolaire_id:
+                if etablissement_scolaire and etablissement_scolaire.id != cercle.etablissement_scolaire_id:
+                    return RedirectResponse("/documents?erreur=etablissement_cercle_incompatible", status_code=303)
+                etablissement_scolaire = session.get(EtablissementScolaire, cercle.etablissement_scolaire_id)
+                if not etablissement_scolaire or not etablissement_scolaire.est_actif or not etablissement_scolaire.est_verifie:
+                    return RedirectResponse("/documents?erreur=etablissement_cercle_invalide", status_code=303)
+                etablissement_scolaire_id = etablissement_scolaire.id
+
+        filiere_id = None
+    else:
+        if any(value is not None for value in (niveau_scolaire_id, option_scolaire_id, etablissement_scolaire_id)):
+            return RedirectResponse("/documents?erreur=cible_universitaire_incoherente", status_code=303)
+        cycle_scolaire = None
+
+    # Les métadonnées restent obligatoires hors détection automatique.
     if not classification_auto:
-        if not (titre or "").strip() or not (matiere or "").strip() or type_document is None or annee is None or filiere_id is None:
+        if not (titre or "").strip() or not (matiere or "").strip() or type_document is None or annee is None:
             return RedirectResponse("/documents?erreur=metadonnees_manquantes", status_code=303)
+        if portee == "universitaire" and filiere_id is None:
+            return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
         if annee < 2000 or annee > 2100:
             return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
 
-    # La référence utilisée pour le stockage peut être provisoire : en mode
-    # automatique, la filière/année définitives ne sont connues qu'après
-    # analyse du fichier.
-    filiere_depart = session.get(Filiere, filiere_id) if filiere_id is not None else None
     filieres_disponibles = session.exec(select(Filiere)).all()
-    if not filieres_disponibles:
+    if portee == "universitaire" and not filieres_disponibles:
+        return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
+    if classification_auto and not filieres_disponibles:
         return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
 
-    filiere_reference = filiere_depart or filieres_disponibles[0]
+    filiere_depart = session.get(Filiere, filiere_id) if filiere_id is not None else None
+    if portee == "universitaire":
+        filiere_reference = filiere_depart or filieres_disponibles[0]
+    else:
+        filiere_reference = None
     annee_reference = annee or datetime.utcnow().year
     reference_stockage = generer_reference(filiere_reference, annee_reference, session)
     nom_fichier_original = fichier.filename or "document"
@@ -451,7 +543,6 @@ def upload_document(
     try:
         chemin_stocke = sauvegarder_fichier(fichier, reference_stockage)
     except FichierInvalide as erreur:
-        cercle = session.get(CercleEtude, cercle_id) if cercle_id else None
         return templates.TemplateResponse(
             "document_upload.html",
             {
@@ -463,8 +554,6 @@ def upload_document(
             },
         )
 
-    # Détection automatique : extraction locale puis IA facultative.
-    # En cas d'échec, le dépôt ne doit jamais devenir une 500.
     if classification_auto:
         try:
             with ouvrir_fichier_local(chemin_stocke) as chemin_local:
@@ -485,16 +574,18 @@ def upload_document(
             type_document = classification.type_document or type_document
             annee = classification.annee or annee
             filiere_id = classification.filiere_id or filiere_id
-        except Exception as erreur:
-            # On garde les valeurs saisies comme secours et on nettoie les
-            # détails : le contenu du document ne doit pas apparaître dans
-            # les logs de classification.
+        except Exception:
+            # Le dépôt peut continuer avec les métadonnées manuelles, sans exposer
+            # le contenu du fichier dans les logs.
             pass
 
     filiere = session.get(Filiere, filiere_id) if filiere_id is not None else None
-    if not filiere:
+    if portee == "universitaire" and not filiere:
         supprimer_fichier(chemin_stocke)
         return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
+    if portee == "scolaire" and filiere_id is not None:
+        supprimer_fichier(chemin_stocke)
+        return RedirectResponse("/documents?erreur=cible_scolaire_incoherente", status_code=303)
     if annee is None or annee < 2000 or annee > 2100:
         supprimer_fichier(chemin_stocke)
         return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
@@ -509,7 +600,11 @@ def upload_document(
         matiere=matiere.strip(),
         type_document=type_document,
         annee=annee,
-        filiere_id=filiere_id,
+        filiere_id=filiere.id if filiere else None,
+        portee_academique=portee,
+        niveau_scolaire_id=niveau_scolaire.id if niveau_scolaire else None,
+        option_scolaire_id=option_scolaire.id if option_scolaire else None,
+        etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
         cercle_id=cercle_id,
         uploader_id=utilisateur.id,
         chemin_fichier=chemin_stocke,
@@ -518,14 +613,14 @@ def upload_document(
     session.add(document)
     session.commit()
 
-    # La fiche est créée hors requête HTTP : son échec ne bloque pas le dépôt.
+    # La fiche pédagogique est créée hors requête HTTP ; un échec IA ne doit
+    # pas empêcher l'enregistrement ni la modération du document.
     try:
         ai_queue.planifier_resume_document(document.id)
     except Exception:
         pass
 
     _notifier_admins_nouveau_document(session, document, utilisateur)
-
     gamification.enregistrer_action(
         session,
         utilisateur.id,
@@ -538,7 +633,7 @@ def upload_document(
     suffixe = "&classe=auto" if classification_auto else ""
     if cercle_id:
         return RedirectResponse(f"/documents?cercle_id={cercle_id}&envoye=1{suffixe}", status_code=303)
-    return RedirectResponse(f"/documents?envoye=1{suffixe}", status_code=303)
+    return RedirectResponse(f"/documents?envoye=1&portee_academique={portee}{suffixe}", status_code=303)
 
 
 @router.post("/documents/upload-multiple")
