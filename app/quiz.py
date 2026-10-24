@@ -260,6 +260,9 @@ def creer_tentative(
     niveau: str,
     difficulte: str,
     nb_questions: int,
+    cycle_education: Optional[str] = None,
+    niveau_scolaire_id: Optional[int] = None,
+    option_scolaire_id: Optional[int] = None,
 ) -> TentativeQuiz:
     """Genere et publie rapidement un quiz après validation locale.
 
@@ -353,6 +356,9 @@ def creer_tentative(
                 utilisateur_id=utilisateur.id,
                 matiere=matiere,
                 niveau=niveau,
+                cycle_education=cycle_education,
+                niveau_scolaire_id=niveau_scolaire_id,
+                option_scolaire_id=option_scolaire_id,
                 difficulte=difficulte,
                 nb_questions=len(questions_validees),
                 questions_json=json.dumps(questions_validees, ensure_ascii=False),
@@ -1182,13 +1188,28 @@ SECONDES_PAR_QUESTION_EXAMEN = 90
 NB_QUESTIONS_EXAMEN = 10
 
 
-def creer_tentative_examen(session: Session, utilisateur: Utilisateur, matiere: str, niveau: str, difficulte: str) -> TentativeQuiz:
-    """Cree une tentative en 'mode examen' : meme generation rapide et
-    validation locale que creer_tentative(), mais marquee avec un
-    chronometre. La relecture multi-modeles est placee ensuite dans la file
-    IA dediee par le router. La matiere/niveau/difficulte sont deja tires au
-    sort par l'appelant (voir quiz_router.py)."""
-    tentative = creer_tentative(session, utilisateur, matiere, niveau, difficulte, NB_QUESTIONS_EXAMEN)
+def creer_tentative_examen(
+    session: Session,
+    utilisateur: Utilisateur,
+    matiere: str,
+    niveau: str,
+    difficulte: str,
+    cycle_education: Optional[str] = None,
+    niveau_scolaire_id: Optional[int] = None,
+    option_scolaire_id: Optional[int] = None,
+) -> TentativeQuiz:
+    """Cree une tentative en 'mode examen' avec un niveau validé par le routeur."""
+    tentative = creer_tentative(
+        session,
+        utilisateur,
+        matiere,
+        niveau,
+        difficulte,
+        NB_QUESTIONS_EXAMEN,
+        cycle_education=cycle_education,
+        niveau_scolaire_id=niveau_scolaire_id,
+        option_scolaire_id=option_scolaire_id,
+    )
     tentative.mode_examen = True
     tentative.duree_secondes = NB_QUESTIONS_EXAMEN * SECONDES_PAR_QUESTION_EXAMEN
     session.add(tentative)
