@@ -702,12 +702,13 @@ def liste_cercles(
         )
         .order_by(Mention.nom)
     ).all()
-    referentiel_scolaire_courant = session.exec(
+    referentiels_scolaires = session.exec(
         select(ReferentielScolaire).order_by(
             ReferentielScolaire.date_creation.desc(),
             ReferentielScolaire.id.desc(),
         )
-    ).first()
+    ).all()
+    referentiel_scolaire_courant = referentiels_scolaires[0] if referentiels_scolaires else None
     if referentiel_scolaire_courant:
         niveaux_scolaires = session.exec(
             select(NiveauScolaire)
@@ -1128,12 +1129,13 @@ def creer_cercle(
         cycle_scolaire_nettoye = (cycle_scolaire or "").strip().lower()
         if cycle_scolaire_nettoye not in {"college", "lycee"} or niveau_scolaire_id is None:
             return RedirectResponse("/cercles?erreur=classe_scolaire_requise", status_code=303)
-        referentiel_courant = session.exec(
+        referentiels_scolaires = session.exec(
             select(ReferentielScolaire).order_by(
                 ReferentielScolaire.date_creation.desc(),
                 ReferentielScolaire.id.desc(),
             )
-        ).first()
+        ).all()
+        referentiel_courant = referentiels_scolaires[0] if referentiels_scolaires else None
         niveau_scolaire = session.get(NiveauScolaire, niveau_scolaire_id)
         if (
             not referentiel_courant
@@ -1182,7 +1184,7 @@ def creer_cercle(
         # Une demande identique portant le même nom et la même cible ne doit
         # pas être empilée. L'administrateur vérifie la demande avant que le
         # cercle ne devienne visible et rejoignable.
-        demande_existante = session.exec(
+        demandes_existantes = session.exec(
             select(DemandeCreationCercle).where(
                 DemandeCreationCercle.statut == StatutDemandeCreationCercle.EN_ATTENTE,
                 DemandeCreationCercle.portee_academique == "scolaire",
@@ -1193,11 +1195,12 @@ def creer_cercle(
                 ),
                 DemandeCreationCercle.nom.ilike(nom_nettoye),
             )
-        ).first()
+        ).all()
+        demande_existante = demandes_existantes[0] if demandes_existantes else None
         if demande_existante:
             return RedirectResponse("/cercles?erreur=demande_deja_en_attente", status_code=303)
 
-        cercle_existant = session.exec(
+        cercles_existants = session.exec(
             select(CercleEtude).where(
                 CercleEtude.statut == StatutCercle.ACTIF,
                 CercleEtude.portee_academique == "scolaire",
@@ -1208,7 +1211,8 @@ def creer_cercle(
                 ),
                 CercleEtude.nom.ilike(nom_nettoye),
             )
-        ).first()
+        ).all()
+        cercle_existant = cercles_existants[0] if cercles_existants else None
         if cercle_existant:
             return RedirectResponse(
                 f"/cercles/{cercle_existant.id}?erreur=cercle_existe_deja",
