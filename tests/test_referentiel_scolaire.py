@@ -21,7 +21,7 @@ from app.models import (
     Utilisateur,
 )
 from app import quiz as quiz_module
-from app.routers import admin_scolaire_router, quiz_router, scolaire_router, tuteur_router
+from app.routers import admin_scolaire_router, cercles_router, quiz_router, scolaire_router, tuteur_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
     profil_correspond_au_cercle,
@@ -169,6 +169,144 @@ def test_cibles_scolaires_actives_identiques_restent_uniques_avec_champs_optionn
         )
     ).all()
     assert len(cercles) == 1
+    session.close()
+    engine.dispose()
+
+
+def test_matiere_de_cercle_est_limitee_au_programme_verifie_de_la_classe_et_serie():
+    engine, session = _session()
+    referentiel, niveau, serie = _school_catalogue(session)
+    matiere_validee = MatiereScolaire(
+        code="MATIERE_VERIFIEE",
+        libelle="Mathématiques",
+        source_officielle="https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/",
+        statut_validation="verifie",
+        est_active=True,
+    )
+    matiere_en_attente = MatiereScolaire(
+        code="MATIERE_EN_ATTENTE",
+        libelle="Philosophie",
+        source_officielle="https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/",
+        statut_validation="a_verifier",
+        est_active=False,
+    )
+    session.add_all([matiere_validee, matiere_en_attente])
+    session.commit()
+    session.refresh(matiere_validee)
+    session.refresh(matiere_en_attente)
+    session.add_all([
+        ProgrammeMatiereScolaire(
+            referentiel_id=referentiel.id,
+            niveau_id=niveau.id,
+            option_id=serie.id,
+            matiere_id=matiere_validee.id,
+            obligatoire=True,
+            source_officielle=matiere_validee.source_officielle,
+            statut_validation="verifie",
+        ),
+        ProgrammeMatiereScolaire(
+            referentiel_id=referentiel.id,
+            niveau_id=niveau.id,
+            option_id=serie.id,
+            matiere_id=matiere_en_attente.id,
+            obligatoire=True,
+            source_officielle=matiere_en_attente.source_officielle,
+            statut_validation="a_verifier",
+        ),
+    ])
+    session.commit()
+
+    assert cercles_router._matiere_scolaire_verifiee_pour_cible(
+        session,
+        referentiel_id=referentiel.id,
+        niveau_id=niveau.id,
+        matiere_id=matiere_validee.id,
+        option_scolaire=serie,
+    ) == matiere_validee
+    assert cercles_router._matiere_scolaire_verifiee_pour_cible(
+        session,
+        referentiel_id=referentiel.id,
+        niveau_id=niveau.id,
+        matiere_id=matiere_en_attente.id,
+        option_scolaire=serie,
+    ) is None
+    # Un mapping validé pour une autre classe ne doit jamais être réutilisé.
+    autre_niveau = NiveauScolaire(
+        referentiel_id=referentiel.id,
+        code="1ERE_TEST",
+        libelle="Première",
+        cycle="lycee",
+        ordre=6,
+        est_actif=True,
+        source_officielle=referentiel.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(autre_niveau)
+    session.commit()
+    session.refresh(autre_niveau)
+    assert cercles_router._matiere_scolaire_verifiee_pour_cible(
+        session,
+        referentiel_id=referentiel.id,
+        niveau_id=autre_niveau.id,
+        matiere_id=matiere_validee.id,
+        option_scolaire=None,
+    ) is None
+
+    session.close()
+    engine.dispose()
+
+
+def test_cercles_et_demandes_scolaires_peuvent_cibler_des_matieres_distinctes():
+    engine, session = _session()
+    referentiel, niveau, serie = _school_catalogue(session)
+    user = _user(session, niveau_id=niveau.id, option_id=serie.id)
+    matieres = [
+        MatiereScolaire(code="MATIERE_A", libelle="Mathématiques", statut_validation="verifie", est_active=True),
+        MatiereScolaire(code="MATIERE_B", libelle="Philosophie", statut_validation="verifie", est_active=True),
+    ]
+    session.add_all(matieres)
+    session.commit()
+    for item in matieres:
+        session.refresh(item)
+
+    for item in matieres:
+        session.add(CercleEtude(
+            nom=f"Révisions {item.code}",
+            createur_id=user.id,
+            statut=StatutCercle.ACTIF,
+            portee_academique="scolaire",
+            niveau_scolaire_id=niveau.id,
+            option_scolaire_id=serie.id,
+            matiere_scolaire_id=item.id,
+        ))
+        session.add(DemandeCreationCercle(
+            utilisateur_id=user.id,
+            portee_academique="scolaire",
+            niveau_scolaire_id=niveau.id,
+            option_scolaire_id=serie.id,
+            matiere_scolaire_id=item.id,
+            nom=f"Demande {item.code}",
+            raison="Besoin de réviser cette matière.",
+        ))
+    session.commit()
+
+    circles = session.exec(
+        select(CercleEtude).where(
+            CercleEtude.portee_academique == "scolaire",
+            CercleEtude.niveau_scolaire_id == niveau.id,
+            CercleEtude.option_scolaire_id == serie.id,
+        )
+    ).all()
+    requests = session.exec(
+        select(DemandeCreationCercle).where(
+            DemandeCreationCercle.portee_academique == "scolaire",
+            DemandeCreationCercle.niveau_scolaire_id == niveau.id,
+            DemandeCreationCercle.option_scolaire_id == serie.id,
+        )
+    ).all()
+    assert {circle.matiere_scolaire_id for circle in circles} == {item.id for item in matieres}
+    assert {request.matiere_scolaire_id for request in requests} == {item.id for item in matieres}
+
     session.close()
     engine.dispose()
 
