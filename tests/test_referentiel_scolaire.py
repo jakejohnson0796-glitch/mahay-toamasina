@@ -11,9 +11,12 @@ from app.models import (
     RoleUtilisateur,
     StatutCercle,
     StatutDocument,
+    StatutDemandeCreationCercle,
+    DemandeCreationCercle,
     TypeDocument,
     Utilisateur,
 )
+from app.routers import scolaire_router
 from app.referentiel_academique import (
     condition_cercles_disponibles,
     profil_correspond_au_cercle,
@@ -132,6 +135,49 @@ def test_demande_professeur_ne_donne_pas_le_role_effectif_professeur():
     assert teacher_request.profil_souhaite == "professeur"
     assert teacher_request.statut_verification_enseignant == "en_attente"
     assert teacher_request.role == RoleUtilisateur.ETUDIANT
+    session.close()
+    engine.dispose()
+
+
+def test_api_scolaire_n_expose_que_le_referentiel_verifie():
+    engine, session = _session()
+    referentiel, niveau, option = _school_catalogue(session)
+
+    payload = scolaire_router.obtenir_referentiel_scolaire(session=session)
+    classes = scolaire_router.lister_niveaux_scolaires(cycle="lycee", session=session)
+    options = scolaire_router.lister_options_scolaires(niveau.id, session=session)
+
+    assert payload["version"]["code"] == referentiel.code
+    assert payload["complet"] is False
+    assert any(item["code"] == "TERM" for item in classes)
+    assert [item["code"] for item in options] == ["D"]
+    session.close()
+    engine.dispose()
+
+
+def test_demande_creation_cercle_scolaire_est_stockee_en_attente():
+    engine, session = _session()
+    _, niveau, option = _school_catalogue(session)
+    user = _user(session, niveau_id=niveau.id, option_id=option.id)
+    demande = DemandeCreationCercle(
+        utilisateur_id=user.id,
+        mention_id=None,
+        filiere_id=None,
+        niveau=None,
+        portee_academique="scolaire",
+        niveau_scolaire_id=niveau.id,
+        option_scolaire_id=option.id,
+        nom="Révisions de Terminale D",
+        raison="Groupe national pour préparer le baccalauréat.",
+    )
+    session.add(demande)
+    session.commit()
+    session.refresh(demande)
+
+    assert demande.statut == StatutDemandeCreationCercle.EN_ATTENTE
+    assert demande.portee_academique == "scolaire"
+    assert demande.niveau_scolaire_id == niveau.id
+    assert demande.filiere_id is None
     session.close()
     engine.dispose()
 
