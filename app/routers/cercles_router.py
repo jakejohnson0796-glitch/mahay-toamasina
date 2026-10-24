@@ -1359,6 +1359,11 @@ def creer_cercle(
         nom=nom,
         description=description or None,
         filiere_id=filiere_id_nettoye,
+        portee_academique=(
+            "transversal"
+            if not mention_id_nettoye and not filiere_id_nettoye and not niveau_nettoye
+            else "universitaire"
+        ),
         createur_id=utilisateur.id,
     )
     session.add(cercle)
