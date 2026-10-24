@@ -285,3 +285,62 @@ def test_file_ia_reprend_une_tache_orpheline(monkeypatch):
         assert tache.disponible_le is not None
 
     assert notifications == [tache_id]
+
+
+def test_file_ia_ne_consomme_pas_les_essais_pendant_un_cooldown_actif(monkeypatch):
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    monkeypatch.setattr(ai_queue, "engine", engine)
+
+    with Session(engine) as session:
+        utilisateur = Utilisateur(
+            nom="TestCooldown",
+            telephone="690000099",
+            mot_de_passe_hash="hash",
+        )
+        session.add(utilisateur)
+        session.commit()
+        session.refresh(utilisateur)
+
+        tentative = TentativeQuiz(
+            utilisateur_id=utilisateur.id,
+            matiere="Mathematiques",
+            niveau="L1",
+            difficulte="Moyen",
+            nb_questions=1,
+            questions_json="[]",
+        )
+        session.add(tentative)
+        session.commit()
+        session.refresh(tentative)
+        tentative_id = tentative.id
+
+    tache_id = ai_queue.planifier_verification_quiz(tentative_id)
+    tache = ai_queue.prendre_tache(tache_id)
+    assert tache is not None
+    assert tache.nombre_essais == 1
+
+    from app.ai_ensemble import ProviderCooldown
+
+    avant = datetime.utcnow()
+    ai_queue.echouer_tache(
+        tache_id,
+        ProviderCooldown(
+            "groq cooldown actif",
+            retry_after_seconds=75,
+            cooldown_active=True,
+        ),
+    )
+
+    with Session(engine) as session:
+        finale = session.get(TacheIA, tache_id)
+        assert finale is not None
+        assert finale.statut == StatutTacheIA.EN_ATTENTE
+        assert finale.nombre_essais == 0
+        assert finale.disponible_le is not None
+        delai = (finale.disponible_le - avant).total_seconds()
+        assert 75 <= delai <= 82
+
