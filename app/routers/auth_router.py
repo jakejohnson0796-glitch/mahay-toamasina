@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import utilisateur_courant, hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
@@ -124,6 +124,7 @@ def inscription(
     niveau_scolaire_id: Optional[str] = Form(None),
     option_scolaire_id: Optional[str] = Form(None),
     etablissement_scolaire_id: Optional[str] = Form(None),
+    cycles_enseignes: Optional[list[str]] = Form(None),
     accepter_conditions: str = Form(""),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -193,6 +194,30 @@ def inscription(
     # universitaire historique est interprété comme le cycle université si
     # le nouvel attribut cycle_education n'est pas encore envoyé.
     cycle = (cycle_education or "").strip().lower()
+
+    # Les cycles enseignés sont une relation distincte du cycle principal du
+    # profil. Cela permet à un candidat professeur de déclarer plusieurs
+    # périmètres sans transformer ses déclarations en autorisations.
+    cycles_enseignes_a_enregistrer: set[str] = set()
+    if est_demande_enseignant:
+        cycles_autorises = {"college", "lycee", "universite"}
+        cycles_declares = {
+            str(valeur).strip().lower()
+            for valeur in (cycles_enseignes or [])
+            if str(valeur).strip()
+        }
+        if not cycles_declares.issubset(cycles_autorises):
+            return templates.TemplateResponse(
+                request, "register.html",
+                _contexte_formulaire_inscription(
+                    session, "La liste des cycles enseignés contient une valeur invalide."
+                ),
+                status_code=400,
+            )
+        if cycle in cycles_autorises:
+            cycles_declares.add(cycle)
+        cycles_enseignes_a_enregistrer = cycles_declares
+
     if not cycle and universite_id_nettoye is not None:
         cycle = "universite"
 
@@ -225,21 +250,39 @@ def inscription(
             )
 
         if cycle == "universite":
-            erreur_academique = referentiel_academique.erreur_choix_academique(
-                session,
-                universite_id_nettoye,
-                composante_id_nettoye,
-                mention_id_nettoye,
-                filiere_id_nettoye,
-                niveau,
-                set(NIVEAUX),
-            )
-            if erreur_academique:
-                return templates.TemplateResponse(
-                    request, "register.html",
-                    _contexte_formulaire_inscription(session, erreur_academique),
-                    status_code=400,
+            # Un candidat enseignant peut déclarer un périmètre universitaire
+            # sans devoir se réinscrire comme étudiant d'une filière précise.
+            # S'il renseigne une partie du parcours, les règles universitaires
+            # habituelles restent intégralement appliquées.
+            parcours_universitaire_renseigne = any((
+                universite_id_nettoye is not None,
+                composante_id_nettoye is not None,
+                mention_id_nettoye is not None,
+                filiere_id_nettoye is not None,
+                bool((niveau or "").strip()),
+            ))
+            if not (est_demande_enseignant and not parcours_universitaire_renseigne):
+                erreur_academique = referentiel_academique.erreur_choix_academique(
+                    session,
+                    universite_id_nettoye,
+                    composante_id_nettoye,
+                    mention_id_nettoye,
+                    filiere_id_nettoye,
+                    niveau,
+                    set(NIVEAUX),
                 )
+                if erreur_academique:
+                    return templates.TemplateResponse(
+                        request, "register.html",
+                        _contexte_formulaire_inscription(session, erreur_academique),
+                        status_code=400,
+                    )
+            else:
+                universite_id_nettoye = None
+                composante_id_nettoye = None
+                mention_id_nettoye = None
+                filiere_id_nettoye = None
+                niveau = None
             niveau_scolaire_id_nettoye = None
             option_scolaire_id_nettoye = None
             etablissement_scolaire_id_nettoye = None
@@ -398,6 +441,16 @@ def inscription(
     session.add(utilisateur)
     session.commit()
     session.refresh(utilisateur)
+
+    if est_demande_enseignant:
+        for cycle_enseigne in sorted(cycles_enseignes_a_enregistrer):
+            session.add(
+                CycleEnseigne(
+                    utilisateur_id=utilisateur.id,
+                    cycle_education=cycle_enseigne,
+                )
+            )
+        session.commit()
 
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         subscription.creer_essai_gratuit(session, utilisateur)
