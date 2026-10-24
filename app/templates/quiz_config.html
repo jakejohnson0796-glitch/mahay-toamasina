@@ -5,15 +5,29 @@
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 
 {% block contenu %}
+<style nonce="{{ csp_nonce(request) }}">
+  .ai-quiz-modes { display: grid; gap: .65rem; min-width: 0; padding: 0; margin: 0 0 1rem; border: 0; }
+  .ai-quiz-modes legend { font-weight: 700; margin-bottom: .7rem; }
+  .ai-quiz-mode { display: flex; align-items: flex-start; gap: .7rem; padding: .85rem; border: 1px solid var(--bordure, #47433e); border-radius: 14px; cursor: pointer; background: var(--surface, rgba(255,255,255,.02)); transition: border-color .18s ease, background .18s ease; }
+  .ai-quiz-mode.is-selected { border-color: var(--couleur-primaire, #d99a7b); background: color-mix(in srgb, var(--couleur-primaire, #d99a7b) 10%, transparent); }
+  .ai-quiz-mode input { margin-top: .2rem; accent-color: var(--couleur-primaire, #d99a7b); flex: 0 0 auto; }
+  .ai-quiz-mode span { display: grid; gap: .25rem; min-width: 0; }
+  .ai-quiz-mode small { color: var(--texte-secondaire, #b9b5af); line-height: 1.45; }
+  .ai-quiz-profile-note { display: flex; align-items: flex-start; gap: .55rem; padding: .75rem .85rem; border-radius: 12px; margin-bottom: 1rem; background: var(--surface-subtle, rgba(255,255,255,.035)); line-height: 1.5; }
+  .ai-quiz-profile-note > span:first-child { color: var(--couleur-primaire, #d99a7b); font-weight: 800; }
+  .ai-quiz-manual { display: grid; gap: .9rem; }
+  .ai-quiz-manual[hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { .ai-quiz-mode { transition: none; } }
+</style>
 <div class="ai-learning-page">
   <section class="ai-hero" aria-labelledby="quiz-hero-title">
     <div>
       <span class="ai-kicker">Apprentissage assisté · Quiz IA</span>
       <h1 id="quiz-hero-title">Transforme ton cours en entraînement.</h1>
       <p>
-        Configure un quiz adapté à ton niveau, pratique immédiatement, puis analyse
-        tes réponses. Le même espace rassemble génération, examen blanc, historique
-        et réflexion.
+        Entraîne-toi à partir de ton parcours et de tes résultats. Le niveau est
+        déduit de ton profil ; tu peux suivre la recommandation, tirer un quiz au hasard,
+        ou choisir toi-même une matière et sa difficulté.
       </p>
       <div class="ai-hero-actions">
         <a href="#generer">Créer un quiz</a>
@@ -29,7 +43,7 @@
       <div class="ai-stat-grid">
         <div class="ai-stat-card"><strong>{{ nb_questions_possibles|length }}</strong><span>formats de longueur disponibles</span></div>
         <div class="ai-stat-card"><strong>{{ difficultes|length }}</strong><span>niveaux de difficulté</span></div>
-        <div class="ai-stat-card"><strong>{{ niveaux|length }}</strong><span>niveaux académiques</span></div>
+        <div class="ai-stat-card"><strong>{{ niveau_quiz }}</strong><span>niveau issu de ton parcours</span></div>
         <div class="ai-stat-card"><strong>15 min</strong><span>durée du mode examen</span></div>
       </div>
     </div>
@@ -55,7 +69,7 @@
   <nav class="ai-quicknav" aria-label="Navigation Quiz IA">
     <a href="#generer">
       <span class="ai-quicknav-icon">{{ icone("quiz", 17) }}</span>
-      <span><strong>Générer</strong><span>Choisir matière, niveau et difficulté.</span></span>
+      <span><strong>Générer</strong><span>Suivre tes progrès ou choisir un sujet.</span></span>
     </a>
     <a href="/quiz/historique">
       <span class="ai-quicknav-icon">{{ icone("dashboard", 17) }}</span>
@@ -75,11 +89,13 @@
   <div class="erreur" role="alert">
     {% set erreur = request.query_params.get("erreur") %}
     {% if erreur == "matiere_requise" %}
-      Choisis une matière ou renseigne une matière libre.
+      Aucun sujet n'est encore disponible. Choisis une matière ou renseigne un sujet précis.
     {% elif erreur == "trop_de_generations" %}
       Trop de générations rapprochées. Attends un peu avant de relancer un quiz.
     {% elif erreur == "parametres_invalides" %}
       Les paramètres du quiz sont invalides. Vérifie les choix puis réessaie.
+    {% elif erreur == "mode_quiz_invalide" %}
+      Le mode d'entraînement choisi n'est pas reconnu. Sélectionne un mode et réessaie.
     {% elif erreur == "generation_invalide" %}
       La génération n'a pas pu produire un quiz valide. Réessaie avec une autre combinaison.
     {% elif erreur == "matiere_scolaire_indisponible" %}
@@ -96,7 +112,7 @@
     <div class="ai-section-head">
       <div>
         <h2 id="generer-titre">Créer un quiz personnalisé</h2>
-        <p>Choisis le contexte d'apprentissage. Tu peux partir d'une matière existante ou taper un sujet précis.</p>
+        <p>À chaque séance, pars de ta prochaine priorité ou choisis librement ton entraînement.</p>
       </div>
       <span class="ai-badge">génération contrôlée</span>
     </div>
@@ -105,8 +121,8 @@
       <article class="ai-panel ai-form-card">
         <div class="ai-form-header">
           <div>
-            <h3>Paramètres du quiz</h3>
-            <p>Utilise des réglages simples pour obtenir un entraînement cohérent avec ton niveau.</p>
+            <h3>Quel entraînement te convient maintenant ?</h3>
+            <p>Ton parcours fixe automatiquement le niveau. La recommandation privilégie tes notions fragiles ou à revoir.</p>
           </div>
           <span class="ai-badge">{{ nb_questions_possibles[0] }}–{{ nb_questions_possibles[-1] }} questions</span>
         </div>
@@ -114,50 +130,83 @@
         <form method="post" action="/quiz/generer" class="ai-form" data-ai-generation-form>
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
 
-          <div class="ai-field">
-            <label for="matiere">Matière</label>
-            <select id="matiere" name="matiere">
-              <option value="">— choisir dans la liste —</option>
-              {% for m in matieres %}
-              <option value="{{ m }}" data-no-translate>{{ m }}</option>
-              {% endfor %}
-            </select>
-            <p class="ai-field-help">Les matières proposées viennent des documents approuvés disponibles sur la plateforme.</p>
+          <fieldset class="ai-quiz-modes">
+            <legend>Choisis une façon de t'entraîner</legend>
+            <label class="ai-quiz-mode is-selected">
+              <input type="radio" name="mode_quiz" value="recommande" checked>
+              <span>
+                <strong>Recommandé pour moi</strong>
+                <small>
+                  {% if suggestion_quiz.basee_sur_progression %}
+                    À revoir : {{ suggestion_quiz.matiere }}{% if suggestion_quiz.notion %} · {{ suggestion_quiz.notion }}{% endif %}.
+                    Difficulté adaptée à tes résultats.
+                  {% elif suggestion_quiz.matiere %}
+                    Continue ton parcours avec {{ suggestion_quiz.matiere }}. La recommandation s'affinera avec tes réponses.
+                  {% else %}
+                    Complète ton premier sujet depuis un document de cours approuvé ou précise-le dans le mode personnalisé.
+                  {% endif %}
+                </small>
+              </span>
+            </label>
+            <label class="ai-quiz-mode">
+              <input type="radio" name="mode_quiz" value="hasard">
+              <span>
+                <strong>Quiz au hasard</strong>
+                <small>Le sujet et la difficulté sont tirés au sort parmi les matières disponibles pour ton parcours.</small>
+              </span>
+            </label>
+            <label class="ai-quiz-mode">
+              <input type="radio" name="mode_quiz" value="matiere">
+              <span>
+                <strong>Choisir une matière</strong>
+                <small>Choisis un sujet et une difficulté, ou laisse la difficulté s'adapter à ta progression.</small>
+              </span>
+            </label>
+          </fieldset>
+
+          <div class="ai-quiz-profile-note">
+            <span aria-hidden="true">✓</span>
+            <span><strong>Parcours reconnu :</strong> niveau {{ niveau_quiz }}.
+              Tu n'as pas besoin de le sélectionner à chaque quiz.</span>
           </div>
 
-          <div class="ai-field">
-            <label for="matiere_libre">Ou préciser un autre sujet</label>
-            <input type="text" id="matiere_libre" name="matiere_libre" maxlength="160" placeholder="Ex. Droit des obligations">
-            <p class="ai-field-help">La matière libre prend la priorité lorsqu'elle est renseignée.</p>
-          </div>
-
-          <div class="ai-field-grid">
+          <div class="ai-quiz-manual" data-quiz-manual>
             <div class="ai-field">
-              <label for="niveau">Niveau</label>
-              <select id="niveau" name="niveau" required>
-                {% for n in niveaux %}
-                <option value="{{ n }}" data-no-translate>{{ n }}</option>
+              <label for="matiere">Matière</label>
+              <select id="matiere" name="matiere">
+                <option value="">— choisir dans la liste —</option>
+                {% for m in matieres %}
+                <option value="{{ m }}" data-no-translate>{{ m }}</option>
                 {% endfor %}
               </select>
+              <p class="ai-field-help">Les matières proposées sont issues du programme scolaire vérifié ou de tes cours et progrès enregistrés.</p>
+            </div>
+
+            <div class="ai-field">
+              <label for="matiere_libre">Sujet ou module précis (facultatif)</label>
+              <input type="text" id="matiere_libre" name="matiere_libre" maxlength="160" placeholder="Ex. Déterminant d'une matrice">
+              <p class="ai-field-help">Avec une matière sélectionnée, le quiz reste dans cette matière et cible ce module. Sans matière, le texte devient le sujet principal.</p>
             </div>
 
             <div class="ai-field">
               <label for="difficulte">Difficulté</label>
-              <select id="difficulte" name="difficulte" required>
+              <select id="difficulte" name="difficulte">
+                <option value="auto" selected>Automatique selon mes progrès</option>
                 {% for d in difficultes %}
                 <option value="{{ d }}" data-no-translate>{{ d }}</option>
                 {% endfor %}
               </select>
+              <p class="ai-field-help">Le mode automatique adapte la difficulté au niveau de maîtrise de cette matière.</p>
             </div>
+          </div>
 
-            <div class="ai-field">
-              <label for="nb_questions">Questions</label>
-              <select id="nb_questions" name="nb_questions">
-                {% for n in nb_questions_possibles %}
-                <option value="{{ n }}" {{ "selected" if n == 10 else "" }}>{{ n }}</option>
-                {% endfor %}
-              </select>
-            </div>
+          <div class="ai-field">
+            <label for="nb_questions">Nombre de questions</label>
+            <select id="nb_questions" name="nb_questions">
+              {% for n in nb_questions_possibles %}
+              <option value="{{ n }}" {{ "selected" if n == 10 else "" }}>{{ n }}</option>
+              {% endfor %}
+            </select>
           </div>
 
           <div class="ai-inline-actions">
@@ -204,4 +253,27 @@
     </div>
   </section>
 </div>
+  <script nonce="{{ csp_nonce(request) }}">
+    (() => {
+      const form = document.querySelector('[data-ai-generation-form][action="/quiz/generer"]');
+      if (!form) return;
+      const radios = Array.from(form.querySelectorAll('input[name="mode_quiz"]'));
+      const manual = form.querySelector('[data-quiz-manual]');
+      const updateMode = () => {
+        const mode = radios.find((radio) => radio.checked)?.value || 'recommande';
+        if (manual) {
+          manual.hidden = mode !== 'matiere';
+          manual.querySelectorAll('input, select').forEach((control) => {
+            control.disabled = mode !== 'matiere';
+          });
+        }
+        radios.forEach((radio) => {
+          const label = radio.closest('.ai-quiz-mode');
+          if (label) label.classList.toggle('is-selected', radio.checked);
+        });
+      };
+      radios.forEach((radio) => radio.addEventListener('change', updateMode));
+      updateMode();
+    })();
+  </script>
 {% endblock %}

@@ -172,6 +172,96 @@ def _matieres_scolaires_disponibles(session: Session, contexte: dict) -> List[st
     return sorted(valeurs, key=str.casefold)
 
 
+def _niveau_quiz_par_defaut(utilisateur, contexte_scolaire=None, progressions=None, historique_niveau=None) -> str:
+    """Déduit le niveau sans demander une nouvelle saisie à chaque quiz.
+
+    Le profil scolaire vérifié est prioritaire. Pour l'université, le niveau
+    du profil prime, puis les progressions récentes et le dernier quiz.
+    """
+    progressions = progressions or []
+    if contexte_scolaire and contexte_scolaire.get("niveau"):
+        return contexte_scolaire["niveau"]
+
+    cycle = getattr(utilisateur, "cycle_education", None)
+    if cycle in {"college", "lycee"}:
+        niveaux_scolaires = quiz_module.NIVEAUX_SCOLAIRES_NORMALISES
+        if historique_niveau and str(historique_niveau).casefold() in niveaux_scolaires:
+            return historique_niveau
+        for progression in progressions:
+            niveau = getattr(progression, "niveau", None)
+            if niveau and str(niveau).casefold() in niveaux_scolaires:
+                return niveau
+        # Les enseignants du secondaire peuvent s'entraîner sans classe
+        # individuelle. Le cycle suffit pour éviter de leur attribuer L1.
+        return "6e" if cycle == "college" else "Seconde"
+
+    niveau_profil = getattr(utilisateur, "niveau", None)
+    if niveau_profil in quiz_module.NIVEAUX:
+        return niveau_profil
+    for progression in progressions:
+        niveau = getattr(progression, "niveau", None)
+        if niveau in quiz_module.NIVEAUX:
+            return niveau
+    if historique_niveau in quiz_module.NIVEAUX:
+        return historique_niveau
+    # Compatibilité des anciens comptes sans niveau renseigné : un défaut
+    # explicite évite de bloquer la première séance; aucune donnée de profil
+    # n'est écrasée par ce choix de génération.
+    return "L1"
+
+
+def _suggestion_quiz(
+    matieres: List[str],
+    progressions: List[ProgressionNotion],
+    niveau: Optional[str] = None,
+) -> dict:
+    """Choisit une priorité pédagogique au bon niveau du parcours."""
+    par_casse = {str(matiere).casefold(): matiere for matiere in matieres if matiere}
+    for progression in progressions:
+        matiere = getattr(progression, "matiere", None)
+        if not matiere:
+            continue
+        niveau_progression = getattr(progression, "niveau", None)
+        if (
+            niveau
+            and niveau_progression
+            and str(niveau_progression).casefold() != str(niveau).casefold()
+        ):
+            continue
+        matiere_affichee = par_casse.get(matiere.casefold())
+        if not matiere_affichee:
+            continue
+        notion = (getattr(progression, "notion", None) or "").strip()
+        return {
+            "matiere": matiere_affichee,
+            "notion": notion,
+            "difficulte": quiz_module.difficulte_revision_adaptative(progression),
+            "progression": progression,
+            "basee_sur_progression": True,
+        }
+    return {
+        "matiere": matieres[0] if matieres else "",
+        "notion": "",
+        "difficulte": "Moyen",
+        "progression": None,
+        "basee_sur_progression": False,
+    }
+
+
+def _derniere_tentative_utilisateur(session: Session, utilisateur_id: int) -> Optional[TentativeQuiz]:
+    """Lit la dernière tentative sans dépendre du statut de correction."""
+    try:
+        return session.exec(
+            select(TentativeQuiz)
+            .where(TentativeQuiz.utilisateur_id == utilisateur_id)
+            .order_by(TentativeQuiz.id.desc())
+            .limit(1)
+        ).first()
+    except Exception:
+        logger.debug("Historique de niveau du quiz indisponible.", exc_info=True)
+        return None
+
+
 @router.get("/quiz")
 def page_config_quiz(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
@@ -189,11 +279,34 @@ def page_config_quiz(request: Request, session: Session = Depends(get_session)):
             "/profil/academique?erreur=profil_scolaire_incomplet",
             status_code=303,
         )
-    niveaux = [contexte_scolaire["niveau"]] if contexte_scolaire else quiz_module.NIVEAUX
-    matieres = (
-        _matieres_scolaires_disponibles(session, contexte_scolaire)
-        if contexte_scolaire else _matieres_disponibles(session)
+
+    progressions = quiz_module.notions_a_revoir(session, utilisateur.id, limit=8)
+    if contexte_scolaire:
+        matieres = _matieres_scolaires_disponibles(session, contexte_scolaire)
+        niveaux = [contexte_scolaire["niveau"]]
+    else:
+        matieres = _matieres_disponibles(session)
+        # Les matières déjà travaillées restent proposées même si elles ne
+        # proviennent pas d'un document approuvé récent (profil universitaire).
+        matieres = sorted(
+            set(matieres)
+            | {
+                progression.matiere
+                for progression in progressions
+                if getattr(progression, "matiere", None)
+            },
+            key=str.casefold,
+        )
+        niveaux = quiz_module.NIVEAUX
+
+    derniere_tentative = _derniere_tentative_utilisateur(session, utilisateur.id)
+    niveau_quiz = _niveau_quiz_par_defaut(
+        utilisateur,
+        contexte_scolaire,
+        progressions,
+        getattr(derniere_tentative, "niveau", None),
     )
+    suggestion_quiz = _suggestion_quiz(matieres, progressions, niveau_quiz)
     return templates.TemplateResponse(
         request,
         "quiz_config.html",
@@ -201,6 +314,8 @@ def page_config_quiz(request: Request, session: Session = Depends(get_session)):
             "utilisateur": utilisateur,
             "matieres": matieres,
             "niveaux": niveaux,
+            "niveau_quiz": niveau_quiz,
+            "suggestion_quiz": suggestion_quiz,
             "difficultes": quiz_module.DIFFICULTES,
             "nb_questions_possibles": quiz_module.NB_QUESTIONS_POSSIBLES,
         },
@@ -212,8 +327,9 @@ def generer_quiz(
     request: Request,
     matiere: Optional[str] = Form(None),
     matiere_libre: Optional[str] = Form(None),
-    niveau: str = Form(...),
-    difficulte: str = Form(...),
+    mode_quiz: Optional[str] = Form(None),
+    niveau: Optional[str] = Form(None),
+    difficulte: Optional[str] = Form("auto"),
     nb_questions: int = Form(10),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -227,19 +343,99 @@ def generer_quiz(
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/quiz?erreur=trop_de_generations", status_code=303)
 
-    matiere_choisie = (matiere_libre or "").strip() or (matiere or "").strip()
-    if not matiere_choisie:
-        return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
+    # Les formulaires ouverts avant la refonte continuent de fonctionner :
+    # une matière explicite correspond à l'ancien mode personnalisé.
+    if mode_quiz is None:
+        mode_quiz = "matiere" if ((matiere_libre or "").strip() or (matiere or "").strip() or niveau) else "recommande"
+    if mode_quiz not in {"recommande", "hasard", "matiere"}:
+        return RedirectResponse("/quiz?erreur=mode_quiz_invalide", status_code=303)
 
     contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
+    if (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+        and not contexte_scolaire
+    ):
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
+
+    progressions = quiz_module.notions_a_revoir(session, utilisateur.id, limit=8)
     if contexte_scolaire:
-        # Le serveur impose la classe du profil : un formulaire modifié ne
-        # peut pas lancer un quiz scolaire pour un autre niveau.
+        matieres_disponibles = _matieres_scolaires_disponibles(session, contexte_scolaire)
+    else:
+        matieres_disponibles = _matieres_disponibles(session)
+        matieres_disponibles = sorted(
+            set(matieres_disponibles)
+            | {
+                progression.matiere
+                for progression in progressions
+                if getattr(progression, "matiere", None)
+            },
+            key=str.casefold,
+        )
+
+    derniere_tentative = _derniere_tentative_utilisateur(session, utilisateur.id)
+    niveau = _niveau_quiz_par_defaut(
+        utilisateur,
+        contexte_scolaire,
+        progressions,
+        getattr(derniere_tentative, "niveau", None),
+    )
+    suggestion = _suggestion_quiz(matieres_disponibles, progressions, niveau)
+
+    progression_cible = None
+    sujet_cible = None
+    if mode_quiz == "recommande":
+        matiere_choisie = suggestion["matiere"]
+        progression_cible = suggestion["progression"]
+        sujet_cible = suggestion["notion"] or None
+        difficulte_choisie = suggestion["difficulte"]
+    elif mode_quiz == "hasard":
+        if not matieres_disponibles:
+            erreur = "aucune_matiere_scolaire" if contexte_scolaire else "matiere_requise"
+            return RedirectResponse(f"/quiz?erreur={erreur}", status_code=303)
+        matiere_choisie = random.choice(matieres_disponibles)
+        difficulte_choisie = random.choice(quiz_module.DIFFICULTES)
+    else:
+        matiere_choisie = (matiere_libre or "").strip() or (matiere or "").strip()
+        if not matiere_choisie:
+            return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
+        matiere_selectionnee = (matiere or "").strip()
+        sujet_libre = (matiere_libre or "").strip()
+        if matiere_selectionnee and sujet_libre:
+            # La matière reste dans le périmètre du parcours (notamment au
+            # collège/lycée) et le texte libre précise le module à travailler.
+            matiere_choisie = matiere_selectionnee
+            sujet_cible = sujet_libre
+        else:
+            matiere_choisie = sujet_libre or matiere_selectionnee
+        if not matiere_choisie:
+            return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
+        progression_cible = next(
+            (
+                progression for progression in progressions
+                if (getattr(progression, "matiere", None) or "").casefold() == matiere_choisie.casefold()
+            ),
+            None,
+        )
+        if (difficulte or "auto").strip() == "auto":
+            difficulte_choisie = quiz_module.difficulte_revision_adaptative(progression_cible)
+        else:
+            difficulte_choisie = (difficulte or "").strip()
+
+    if not matiere_choisie:
+        erreur = "aucune_matiere_scolaire" if contexte_scolaire else "matiere_requise"
+        return RedirectResponse(f"/quiz?erreur={erreur}", status_code=303)
+
+    if contexte_scolaire:
+        # Le serveur impose le niveau réellement sélectionné dans le profil;
+        # le navigateur ne peut pas provoquer un quiz d'une autre classe.
         niveau = contexte_scolaire["niveau"]
-        matieres_scolaires = _matieres_scolaires_disponibles(session, contexte_scolaire)
         correspondance_matiere = next(
             (
-                item for item in matieres_scolaires
+                item for item in matieres_disponibles
                 if item.casefold() == matiere_choisie.casefold()
             ),
             None,
@@ -250,20 +446,15 @@ def generer_quiz(
                 status_code=303,
             )
         matiere_choisie = correspondance_matiere
-    elif (
-        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
-        and not _enseignant_sans_classe_scolaire(utilisateur)
-    ):
-        return RedirectResponse(
-            "/profil/academique?erreur=profil_scolaire_incomplet",
-            status_code=303,
-        )
-    elif niveau not in quiz_module.NIVEAUX:
-        return RedirectResponse("/quiz?erreur=parametres_invalides", status_code=303)
 
     nb_questions = nb_questions if nb_questions in quiz_module.NB_QUESTIONS_POSSIBLES else 10
     try:
-        matiere_choisie = quiz_module.valider_parametres(matiere_choisie, niveau, difficulte, nb_questions)
+        matiere_choisie = quiz_module.valider_parametres(
+            matiere_choisie,
+            niveau,
+            difficulte_choisie,
+            nb_questions,
+        )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/quiz?erreur=parametres_invalides", status_code=303)
 
@@ -273,21 +464,23 @@ def generer_quiz(
             utilisateur,
             matiere_choisie,
             niveau,
-            difficulte,
+            difficulte_choisie,
             nb_questions,
             cycle_education=contexte_scolaire["cycle_education"] if contexte_scolaire else None,
             niveau_scolaire_id=contexte_scolaire["niveau_scolaire_id"] if contexte_scolaire else None,
             option_scolaire_id=contexte_scolaire["option_scolaire_id"] if contexte_scolaire else None,
+            sujet_cible=sujet_cible,
         )
     except quiz_module.QuizValidationError as erreur:
         logger.warning(
             "Generation quiz invalide: user=%s matiere=%s niveau=%s difficulte=%s "
-            "nb_questions=%s erreur=%s",
+            "nb_questions=%s mode=%s erreur=%s",
             utilisateur.id,
             matiere_choisie,
             niveau,
-            difficulte,
+            difficulte_choisie,
             nb_questions,
+            mode_quiz,
             erreur,
         )
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
@@ -296,7 +489,7 @@ def generer_quiz(
     # Sur Render Free, le worker tourne dans le Web et consomme Redis.
     tache_ia_id = ai_queue.planifier_verification_quiz(tentative.id)
     print(
-        f"[AI QUEUE] Route /quiz/generer quiz={tentative.id} tache_ia={tache_ia_id}.",
+        f"[AI QUEUE] Route /quiz/generer quiz={tentative.id} tache_ia={tache_ia_id} mode={mode_quiz}.",
         flush=True,
     )
     return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
