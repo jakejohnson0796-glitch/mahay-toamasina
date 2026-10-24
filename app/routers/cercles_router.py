@@ -1237,6 +1237,38 @@ def creer_cercle(
             ):
                 return RedirectResponse("/cercles?erreur=etablissement_scolaire_invalide", status_code=303)
 
+        matiere_scolaire = None
+        if matiere_scolaire_id is not None:
+            matiere_scolaire = session.get(MatiereScolaire, matiere_scolaire_id)
+            if (
+                not matiere_scolaire
+                or not matiere_scolaire.est_active
+                or matiere_scolaire.statut_validation != "verifie"
+            ):
+                return RedirectResponse("/cercles?erreur=matiere_scolaire_invalide", status_code=303)
+            options_compatibles = {option_scolaire.id} if option_scolaire else set()
+            if option_scolaire and option_scolaire.parent_option_id:
+                options_compatibles.add(option_scolaire.parent_option_id)
+            requete_programme_matiere = select(ProgrammeMatiereScolaire.id).where(
+                ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                ProgrammeMatiereScolaire.matiere_id == matiere_scolaire.id,
+                ProgrammeMatiereScolaire.statut_validation == "verifie",
+            )
+            if options_compatibles:
+                requete_programme_matiere = requete_programme_matiere.where(
+                    or_(
+                        ProgrammeMatiereScolaire.option_id.is_(None),
+                        ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                    )
+                )
+            else:
+                requete_programme_matiere = requete_programme_matiere.where(
+                    ProgrammeMatiereScolaire.option_id.is_(None)
+                )
+            if not session.exec(requete_programme_matiere).first():
+                return RedirectResponse("/cercles?erreur=matiere_scolaire_invalide", status_code=303)
+
         # Un identifiant universitaire envoyé en même temps que la cible
         # scolaire indique un formulaire manipulé ou incohérent : on refuse.
         if mention_id_nettoye or filiere_id_nettoye or niveau_nettoye:
@@ -1261,6 +1293,9 @@ def creer_cercle(
                 DemandeCreationCercle.etablissement_scolaire_id == (
                     etablissement_scolaire.id if etablissement_scolaire else None
                 ),
+                DemandeCreationCercle.matiere_scolaire_id == (
+                    matiere_scolaire.id if matiere_scolaire else None
+                ),
                 DemandeCreationCercle.nom.ilike(nom_nettoye),
             )
         ).all()
@@ -1276,6 +1311,9 @@ def creer_cercle(
                 CercleEtude.option_scolaire_id == (option_scolaire.id if option_scolaire else None),
                 CercleEtude.etablissement_scolaire_id == (
                     etablissement_scolaire.id if etablissement_scolaire else None
+                ),
+                CercleEtude.matiere_scolaire_id == (
+                    matiere_scolaire.id if matiere_scolaire else None
                 ),
                 CercleEtude.nom.ilike(nom_nettoye),
             )
@@ -1296,6 +1334,7 @@ def creer_cercle(
             niveau_scolaire_id=niveau_scolaire.id,
             option_scolaire_id=option_scolaire.id if option_scolaire else None,
             etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
+            matiere_scolaire_id=matiere_scolaire.id if matiere_scolaire else None,
             nom=nom_nettoye,
             description=(description or "").strip()[:2000] or None,
             raison=raison_nettoyee,
