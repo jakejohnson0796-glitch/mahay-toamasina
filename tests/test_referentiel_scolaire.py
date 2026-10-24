@@ -16,6 +16,8 @@ from app.models import (
     Universite,
     NiveauScolaire,
     OptionScolaire,
+    OffreEtablissementScolaire,
+    ParcoursTechniqueProfessionnel,
     ProgrammeMatiereScolaire,
     ReferentielScolaire,
     RoleUtilisateur,
@@ -1015,5 +1017,162 @@ def test_recherche_des_cercles_separe_les_cibles_scolaires_des_universitaires():
     assert cercle_transversal.id in ids_visibles_universitaire
     assert cercle_scolaire.id not in ids_visibles_universitaire
 
+    session.close()
+    engine.dispose()
+
+
+def test_catalogue_etfp_et_offres_etablissement_ne_publient_que_les_lignes_verifiees():
+    engine, session = _session()
+    referentiel, niveau, option = _school_catalogue(session)
+    source_men = "https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/"
+    source_metfp = "https://www.metfp.gov.mg/cartographie/"
+
+    etablissement = EtablissementScolaire(
+        nom="LTP Toamasina",
+        code="METFP-ATSINANANA-LTP-TOAMASINA-TEST",
+        type_etablissement="lycee_technique",
+        secteur="inconnu",
+        region="ATSINANANA",
+        commune="Toamasina",
+        source_officielle=source_metfp,
+        est_verifie=True,
+        est_actif=True,
+    )
+    matiere = MatiereScolaire(
+        code="MATHS-ETFP-TEST",
+        libelle="Mathématiques",
+        source_officielle=source_men,
+        statut_validation="verifie",
+        est_active=True,
+    )
+    parcours_verifie = ParcoursTechniqueProfessionnel(
+        code="TEST-AGENT-COMPTABLE",
+        secteur="Gestion",
+        filiere="Gestion comptable",
+        metier="Agent comptable",
+        source_officielle=source_metfp,
+        statut_validation="verifie",
+        est_actif=True,
+    )
+    parcours_attente = ParcoursTechniqueProfessionnel(
+        code="TEST-FORMATION-ATTENTE",
+        secteur="Industriel",
+        filiere="Electronique",
+        metier="Technicien test",
+        source_officielle=source_metfp,
+        statut_validation="a_verifier",
+        est_actif=False,
+    )
+    session.add_all([etablissement, matiere, parcours_verifie, parcours_attente])
+    session.commit()
+    session.refresh(etablissement)
+    session.refresh(matiere)
+    session.refresh(parcours_verifie)
+    session.refresh(parcours_attente)
+
+    programme = ProgrammeMatiereScolaire(
+        referentiel_id=referentiel.id,
+        niveau_id=niveau.id,
+        option_id=None,
+        matiere_id=matiere.id,
+        obligatoire=True,
+        source_officielle=source_men,
+        statut_validation="verifie",
+    )
+    session.add(programme)
+    session.commit()
+
+    offre_matiere = OffreEtablissementScolaire(
+        etablissement_id=etablissement.id,
+        code_offre="MATIERE-TERM-TEST",
+        type_offre="matiere",
+        niveau_scolaire_id=niveau.id,
+        option_scolaire_id=None,
+        matiere_scolaire_id=matiere.id,
+        parcours_etfp_id=None,
+        annee_scolaire="2026-2027",
+        source_officielle=source_men,
+        statut_validation="verifie",
+        est_active=True,
+    )
+    offre_attente = OffreEtablissementScolaire(
+        etablissement_id=etablissement.id,
+        code_offre="FORMATION-ATTENTE-TEST",
+        type_offre="formation",
+        parcours_etfp_id=parcours_attente.id,
+        annee_scolaire="2026-2027",
+        source_officielle=source_metfp,
+        statut_validation="a_verifier",
+        est_active=True,
+    )
+    session.add_all([offre_matiere, offre_attente])
+    session.commit()
+
+    from app.routers.scolaire_router import lister_parcours_etfp, rechercher_offres_etablissement
+
+    parcours_publics = lister_parcours_etfp(
+        q=None, secteur=None, limite=50, session=session
+    )
+    assert [item["id"] for item in parcours_publics] == [parcours_verifie.id]
+
+    offres_publiques = rechercher_offres_etablissement(
+        q=None,
+        region="ATSINANANA",
+        commune=None,
+        type_offre=None,
+        annee_scolaire=None,
+        limite=30,
+        session=session,
+    )
+    assert len(offres_publiques) == 1
+    assert offres_publiques[0]["etablissement"]["nom"] == "LTP Toamasina"
+    assert offres_publiques[0]["annee_scolaire"] == "2026-2027"
+    assert offres_publiques[0]["cible"]["matiere"] == "Mathématiques"
+
+    session.close()
+    engine.dispose()
+
+
+def test_offre_etablissement_refuse_le_melange_formation_et_classe():
+    engine, session = _session()
+    _, niveau, _ = _school_catalogue(session)
+    institution = EtablissementScolaire(
+        nom="Centre test",
+        code="ETFP-TEST-MIXTE",
+        type_etablissement="centre_formation_professionnelle",
+        secteur="inconnu",
+        region="ATSINANANA",
+        source_officielle="https://www.metfp.gov.mg/cartographie",
+        est_verifie=True,
+        est_actif=True,
+    )
+    parcours = ParcoursTechniqueProfessionnel(
+        code="TEST-PARC",
+        secteur="Gestion",
+        filiere="Gestion comptable",
+        metier="Agent comptable",
+        source_officielle="https://www.metfp.gov.mg/cartographie",
+        statut_validation="verifie",
+        est_actif=True,
+    )
+    session.add_all([institution, parcours])
+    session.commit()
+    session.refresh(institution)
+    session.refresh(parcours)
+    invalide = OffreEtablissementScolaire(
+        etablissement_id=institution.id,
+        code_offre="FORMATION-CLASSE-INVALIDE",
+        type_offre="formation",
+        niveau_scolaire_id=niveau.id,
+        parcours_etfp_id=parcours.id,
+        annee_scolaire="2026-2027",
+        source_officielle="https://www.metfp.gov.mg/cartographie",
+        statut_validation="a_verifier",
+        est_active=True,
+    )
+    session.add(invalide)
+    with pytest.raises(IntegrityError):
+        session.commit()
+    session.rollback()
     session.close()
     engine.dispose()
