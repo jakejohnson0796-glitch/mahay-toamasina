@@ -655,3 +655,50 @@ html[data-theme="sombre"] .catalogue-public-scolaire .catalogue-etablissement-ca
     align-items: flex-start;
   }
 }
+
+
+.catalogue-public-scolaire .catalogue-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .7rem 1rem;
+  margin-top: 1rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--content-border);
+  border-radius: 12px;
+  background: var(--content-bg);
+}
+.catalogue-public-scolaire .catalogue-pagination p {
+  margin: 0;
+  color: var(--content-text-muted);
+  font-size: .8rem;
+  font-weight: 700;
+}
+.catalogue-public-scolaire .catalogue-pagination form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  margin: 0;
+}
+.catalogue-public-scolaire .catalogue-pagination .bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.55rem;
+  padding: .55rem .85rem;
+  text-decoration: none;
+}
+@media (max-width: 520px) {
+  .catalogue-public-scolaire .catalogue-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .catalogue-public-scolaire .catalogue-pagination form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .catalogue-public-scolaire .catalogue-pagination .bouton {
+    width: 100%;
+  }
+}
