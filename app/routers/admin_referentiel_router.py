@@ -540,7 +540,6 @@ def approuver_demande_creation(
                 CercleEtude.matiere_scolaire_id == (
                     matiere_scolaire.id if matiere_scolaire else None
                 ),
-                CercleEtude.nom.ilike(demande.nom),
             )
         ).first()
         if doublon:
