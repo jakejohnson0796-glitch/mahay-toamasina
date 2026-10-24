@@ -299,16 +299,16 @@ def upgrade():
         "cercleetude",
         [
             "niveau_scolaire_id",
-            sa.text("COALESCE(option_scolaire_id, 0)"),
-            sa.text("COALESCE(etablissement_scolaire_id, 0)"),
-            sa.text("COALESCE(matiere_scolaire_id, 0)"),
+            "option_scolaire_id",
+            "etablissement_scolaire_id",
+            "matiere_scolaire_id",
         ],
-        unique=True,
+        unique=False,
         postgresql_where=sa.text(
-            "statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"
+            "portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"
         ),
         sqlite_where=sa.text(
-            "statut = 'ACTIF' AND portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"
+            "portee_academique = 'scolaire' AND niveau_scolaire_id IS NOT NULL"
         ),
     )
 
