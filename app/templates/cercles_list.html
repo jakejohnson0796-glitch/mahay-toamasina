@@ -714,8 +714,8 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
 
     <label for="creation_portee_academique">Type de cercle</label>
     <select id="creation_portee_academique" name="portee_academique">
-      <option value="universitaire" selected>Université / enseignement supérieur</option>
-      <option value="scolaire">Collège / lycée</option>
+      <option value="universitaire" {% if utilisateur.cycle_education not in ["college", "lycee"] %}selected{% endif %}>Université / enseignement supérieur</option>
+      <option value="scolaire" {% if utilisateur.cycle_education in ["college", "lycee"] %}selected{% endif %}>Collège / lycée</option>
     </select>
 
     <div id="creation-bloc-universitaire" data-university-scope>
