@@ -1007,12 +1007,28 @@ def terminer_tache(tache_id: int) -> None:
 
 
 def echouer_tache(tache_id: int, erreur: Exception) -> None:
+    # Un cooldown actif signifie que l'appel IA n'est même pas parti. Ce cas
+    # doit attendre le délai fournisseur sans consommer une tentative métier.
+    cooldown = None
+    try:
+        from .ai_ensemble import ProviderCooldown
+
+        if isinstance(erreur, ProviderCooldown):
+            cooldown = erreur
+    except ImportError:
+        pass
+
     with Session(engine) as session:
         tache = session.get(TacheIA, tache_id)
         if not tache:
             return
 
         tache.derniere_erreur = f"{type(erreur).__name__}: {erreur}"[:1000]
+        if cooldown is not None and cooldown.cooldown_active:
+            # _verrouiller_tache incrémente avant le traitement ; annuler cette
+            # incrémentation quand l'appel a été refusé avant le réseau.
+            tache.nombre_essais = max(0, tache.nombre_essais - 1)
+
         if tache.nombre_essais >= MAX_ESSAIS:
             tache.statut = StatutTacheIA.ECHOUEE
             tache.terminee_le = datetime.utcnow()
@@ -1048,10 +1064,19 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
                 tache.derniere_erreur,
             )
         else:
-            index_delai = min(tache.nombre_essais - 1, len(DELAIS_REESSAI) - 1)
+            if cooldown is not None:
+                # Respecter Retry-After (avec une petite marge) évite de faire
+                # échouer plusieurs fois une tâche pendant le même cooldown.
+                delai_reessai = int(
+                    min(max(float(cooldown.retry_after_seconds) + 2.0, 5.0), 902.0)
+                )
+            else:
+                index_delai = min(max(tache.nombre_essais - 1, 0), len(DELAIS_REESSAI) - 1)
+                delai_reessai = DELAIS_REESSAI[index_delai]
+
             tache.statut = StatutTacheIA.EN_ATTENTE
             tache.disponible_le = datetime.utcnow() + timedelta(
-                seconds=DELAIS_REESSAI[index_delai]
+                seconds=delai_reessai
             )
             if tache.type_tache == TYPE_FICHE_REVISION_COURS and tache.fiche_revision_cours_id:
                 fiche_revision = session.get(FicheRevisionCours, tache.fiche_revision_cours_id)
@@ -1070,7 +1095,7 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
             logger.warning(
                 "Tache IA %s replanifiee dans %ss apres echec (%s/%s).",
                 tache_id,
-                DELAIS_REESSAI[index_delai],
+                delai_reessai,
                 tache.nombre_essais,
                 MAX_ESSAIS,
             )

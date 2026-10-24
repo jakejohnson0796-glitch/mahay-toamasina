@@ -296,24 +296,43 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
     try:
         base = _questions()[0]
         questions_cinq = []
-        exemples = [
+        exemples_repetitifs = [
             ("2 + 2 = ?", ["3", "4", "5"], 1, "Addition"),
             ("3 + 4 = ?", ["6", "7", "8"], 1, "Addition"),
             ("5 + 6 = ?", ["10", "11", "12"], 1, "Addition"),
             ("8 + 3 = ?", ["10", "11", "12"], 1, "Addition"),
             ("9 + 5 = ?", ["13", "14", "15"], 1, "Addition"),
         ]
-        for enonce, choix, bonne, notion in exemples:
-            item = dict(base)
-            item.update({
-                "question": enonce,
-                "choix": choix,
-                "index_bonne_reponse": bonne,
-                "explication": f"La réponse de {enonce} est {choix[bonne]}.",
-                "notion": notion,
-            })
-            questions_cinq.append(item)
-        quiz._generer_quiz_rapide = lambda *args, **kwargs: questions_cinq
+        exemples_frais = [
+            ("Quelle valeur obtient-on avec 3² ?", ["6", "9", "12"], 1, "Puissance"),
+            ("Quel nombre suit la suite 2, 4, 6, ... ?", ["7", "8", "9"], 1, "Suite"),
+            ("Quel est le produit de 3 par 4 ?", ["7", "12", "14"], 1, "Multiplication"),
+            ("Quelle fraction équivaut à une moitié ?", ["1/2", "1/3", "2/3"], 0, "Fractions"),
+            ("Quelle est la trace de la matrice A = [[1,0],[0,3]] ?", ["1", "3", "4"], 2, "Trace"),
+        ]
+
+        def fabriquer(exemples):
+            resultat = []
+            for enonce, choix, bonne, notion in exemples:
+                item = dict(base)
+                item.update({
+                    "question": enonce,
+                    "choix": choix,
+                    "index_bonne_reponse": bonne,
+                    "explication": f"La réponse de {enonce} est {choix[bonne]}.",
+                    "notion": notion,
+                })
+                resultat.append(item)
+            return resultat
+
+        appels_generation = {"nombre": 0}
+
+        def generer(*args, **kwargs):
+            appels_generation["nombre"] += 1
+            exemples = exemples_repetitifs if appels_generation["nombre"] == 1 else exemples_frais
+            return fabriquer(exemples)
+
+        quiz._generer_quiz_rapide = generer
         quiz.valider_questions = lambda questions, **kwargs: questions
         # Ce test vérifie uniquement le chemin rapide et ne doit pas dépendre
         # des requêtes de profil étudiant ajoutées à la personnalisation.
@@ -328,7 +347,8 @@ def test_creer_tentative_ne_bloque_plus_sur_la_relecture_multi_modeles():
             5,
         )
         assert resultat.nb_questions == 5
-        assert json.loads(resultat.questions_json)[0]["question"] == "2 + 2 = ?"
+        assert appels_generation["nombre"] == 2
+        assert json.loads(resultat.questions_json)[0]["question"] == "Quelle valeur obtient-on avec 3² ?"
     finally:
         quiz._generer_quiz_rapide = original
         quiz.valider_questions = original_validator
@@ -616,3 +636,11 @@ def test_profil_quiz_ne_retient_que_les_notion_de_la_matiere_du_compte(monkeypat
     assert "HISTORIQUE HORS MATIÈRE" not in contexte
     assert "Diagonalisation" not in contexte
     assert "Énergie (à retravailler)" not in contexte
+
+def test_structure_question_detecte_changement_de_nombres_mais_conserve_les_operateurs():
+    assert quiz._structure_question({"question": "Calcule 12 + 5."}) == quiz._structure_question(
+        {"question": "Calcule 8 + 9."}
+    )
+    assert quiz._structure_question({"question": "Calcule 12 + 5."}) != quiz._structure_question(
+        {"question": "Calcule 12 - 5."}
+    )

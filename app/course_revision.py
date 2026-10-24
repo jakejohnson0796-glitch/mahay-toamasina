@@ -64,9 +64,47 @@ from .text_extraction import extraire_texte
 logger = logging.getLogger(__name__)
 
 MAX_SOURCE_CHARS = 7800
-MAX_COMPLETION_TOKENS = 6000
+# Plafond de sortie : la fiche reste riche, mais ne réserve plus 6 000 jetons
+# avant même de compter le prompt et le schéma JSON.
+MAX_COMPLETION_TOKENS = 3000
+BUDGET_TPM_PRUDENT = 7400
+MIN_COMPLETION_TOKENS = 1024
 VERSION_GENERATION = "v5"
 VERSION_GENERATION_DOCUMENT = "v4"
+
+
+def _budget_completion_tokens(
+    prompt: str,
+    response_format: dict,
+    maximum: int = MAX_COMPLETION_TOKENS,
+) -> int:
+    """Borne la sortie en tenant compte du prompt et du schéma JSON.
+
+    Sans tokenizer propre au modèle, trois caractères par jeton constitue une
+    estimation volontairement prudente pour les prompts français, le LaTeX et
+    les schémas JSON. Une marge reste disponible sous le plafond TPM configuré
+    par défaut ; le budget diminue automatiquement quand le contexte grandit.
+    """
+    schema = json.dumps(response_format, ensure_ascii=False, separators=(",", ":"))
+    jetons_entree_estimes = (len(str(prompt or "")) + len(schema) + 2) // 3
+    plafond_sortie = min(
+        MAX_COMPLETION_TOKENS,
+        max(MIN_COMPLETION_TOKENS, int(maximum or MAX_COMPLETION_TOKENS)),
+    )
+    budget_disponible = BUDGET_TPM_PRUDENT - jetons_entree_estimes
+    if budget_disponible < MIN_COMPLETION_TOKENS:
+        raise ValueError(
+            "Le contexte de la fiche est trop volumineux pour le budget IA prudent ; "
+            "réduis la source ou le schéma avant de relancer."
+        )
+    budget = min(plafond_sortie, budget_disponible)
+    logger.info(
+        "Budget fiche IA: entree_estimee=%s jetons, sortie_max=%s jetons.",
+        jetons_entree_estimes,
+        budget,
+    )
+    return budget
+
 
 _SCHEMA_FICHE = {
     "type": "object",
@@ -942,7 +980,7 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
     }]
     kwargs = {
         "model": parametres.groq_model,
-        "max_completion_tokens": MAX_COMPLETION_TOKENS,
+        "max_completion_tokens": _budget_completion_tokens(messages[0]["content"], reponse_structuree),
         "temperature": 0.2,
         "response_format": reponse_structuree,
         "messages": messages,
@@ -994,7 +1032,11 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
                 "N'omets aucun champ obligatoire. Le champ notion d'un exercice peut être omis."
             ),
         }]
-        kwargs["max_completion_tokens"] = MAX_COMPLETION_TOKENS
+        kwargs["max_completion_tokens"] = _budget_completion_tokens(
+            kwargs["messages"][0]["content"],
+            kwargs["response_format"],
+            maximum=MAX_COMPLETION_TOKENS - 400,
+        )
         logger.warning(
             "Réponse de fiche IA non conforme ou tronquée ; nouvelle tentative compacte "
             "(notion absente=%s, troncature=%s).",
@@ -1030,6 +1072,11 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
                 "bien délimitées. Ne retire aucun champ requis."
             ),
         }]
+        kwargs["max_completion_tokens"] = _budget_completion_tokens(
+            kwargs["messages"][0]["content"],
+            kwargs["response_format"],
+            maximum=MAX_COMPLETION_TOKENS - 400,
+        )
         completion = ai_ensemble.cost_controller.call(
             "groq",
             lambda: client.chat.completions.create(**kwargs),
