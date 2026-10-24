@@ -9,6 +9,7 @@ from app.models import (
     CercleEtude,
     CycleEnseigne,
     Document,
+    EtablissementScolaire,
     Faculte,
     Filiere,
     MatiereScolaire,
