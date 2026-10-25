@@ -487,7 +487,7 @@ def readiness() -> Response:
             "release": parametres.release_commit,
             "renderer": "direct-katex-v3",
             "initialisation_etat": etat_initialisation,
-                "initialisation_etape": etape_initialisation,
+            "initialisation_etape": etape_initialisation,
         },
     )
 
