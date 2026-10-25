@@ -6,7 +6,8 @@ deja /admin/abonnements (validation des paiements) — on ne duplique pas
 cette partie, juste on y renvoie depuis la page d'accueil admin.
 """
 import json
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form
@@ -51,6 +52,143 @@ def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return None
     return utilisateur
+
+
+_TACHE_IA_LIBELLES = {
+    "verification_quiz": "Vérification de quiz",
+    "verification_tuteur": "Vérification du Tuteur IA",
+    "resume_document": "Résumé de document",
+    "fiche_revision_cours": "Fiche de révision de cours",
+    "fiche_revision_document": "Fiche de révision de document",
+}
+
+
+def _datetime_utc_naif(valeur):
+    """Normalise une date en UTC naïf pour comparer les DateTime du modèle."""
+    if not isinstance(valeur, datetime):
+        return None
+    if valeur.tzinfo is not None:
+        return valeur.astimezone(timezone.utc).replace(tzinfo=None)
+    return valeur
+
+
+def _age_tache_label(secondes):
+    secondes = max(0, int(secondes or 0))
+    if secondes < 60:
+        return f"{secondes} s"
+    minutes = secondes // 60
+    if minutes < 60:
+        return f"{minutes} min"
+    heures, minutes_restantes = divmod(minutes, 60)
+    if heures < 24:
+        return f"{heures} h {minutes_restantes:02d} min"
+    jours, heures_restantes = divmod(heures, 24)
+    return f"{jours} j {heures_restantes} h"
+
+
+def _date_tache_label(valeur):
+    valeur = _datetime_utc_naif(valeur)
+    return valeur.strftime("%d/%m/%Y %H:%M UTC") if valeur else "date inconnue"
+
+
+def _resume_erreur_tache_ia(erreur):
+    """Classe une erreur sans exposer le message brut du fournisseur ou le contenu du cours."""
+    if not erreur:
+        return None
+    texte = re.sub(r"\s+", " ", str(erreur)).casefold()
+    if any(mot in texte for mot in ("rate limit", "rate_limit", "429", "quota", "tpm", "token per minute")):
+        return "Limite de débit ou quota IA atteint. Détail brut masqué."
+    if any(mot in texte for mot in ("timeout", "timed out", "délai dépassé", "delai depasse")):
+        return "Délai d'attente dépassé. Détail brut masqué."
+    if any(mot in texte for mot in ("json", "schema", "schéma", "validation_error", "sortie structurée")):
+        return "Réponse IA invalide ou hors du format attendu. Détail brut masqué."
+    if any(mot in texte for mot in ("connection", "connexion", "network", "http error", "service unavailable")):
+        return "Erreur de connexion au fournisseur IA. Détail brut masqué."
+    if any(mot in texte for mot in ("texte extrait insuffisant", "source insuffisante", "extraction insuffisante")):
+        return "Le texte source est insuffisant pour produire le résultat. Détail brut masqué."
+    return "Erreur de traitement. Le détail brut est masqué pour protéger les données et les secrets."
+
+
+def _preparer_taches_ia_recentes(lignes, maintenant=None):
+    """Construit une vue exploitable de tous les types de tâches sans messages sensibles."""
+    maintenant = _datetime_utc_naif(maintenant or datetime.utcnow()) or datetime.utcnow()
+    etiquettes_statut = {
+        "en_attente": "En attente",
+        "en_cours": "En cours",
+        "terminee": "Terminée",
+        "echouee": "Échouée",
+    }
+    resultats = []
+    for tache, quiz in lignes:
+        statut = getattr(getattr(tache, "statut", None), "value", getattr(tache, "statut", "inconnu"))
+        statut = str(statut or "inconnu")
+        type_tache = str(getattr(tache, "type_tache", "") or "")
+        type_label = _TACHE_IA_LIBELLES.get(type_tache, type_tache.replace("_", " ").capitalize() or "Tâche IA")
+        if quiz is not None:
+            cible = (
+                f"Quiz #{quiz.id} · {getattr(quiz, 'matiere', None) or 'Matière non précisée'}"
+                f" · {getattr(quiz, 'niveau', None) or 'Niveau non précisé'}"
+            )
+            difficulte = getattr(quiz, "difficulte", None)
+            if difficulte:
+                cible += f" · {difficulte}"
+        elif getattr(tache, "session_tuteur_id", None):
+            cible = f"Session Tuteur #{tache.session_tuteur_id}"
+        elif getattr(tache, "fiche_revision_document_id", None):
+            cible = f"Fiche de révision de document #{tache.fiche_revision_document_id}"
+        elif getattr(tache, "fiche_revision_cours_id", None):
+            cible = f"Fiche de révision de cours #{tache.fiche_revision_cours_id}"
+        elif getattr(tache, "document_id", None):
+            cible = f"Document #{tache.document_id}"
+        else:
+            cible = "Référence associée non disponible"
+
+        creation = _datetime_utc_naif(getattr(tache, "date_creation", None))
+        age_secondes = max(0, int((maintenant - creation).total_seconds())) if creation else 0
+        age_minutes = age_secondes // 60
+        detail_etat = ""
+        alerte = False
+        disponible = _datetime_utc_naif(getattr(tache, "disponible_le", None))
+        prise = _datetime_utc_naif(getattr(tache, "prise_en_charge_le", None))
+        terminee = _datetime_utc_naif(getattr(tache, "terminee_le", None))
+
+        if statut == "en_attente":
+            if disponible and disponible > maintenant:
+                detail_etat = f"Nouvel essai prévu le {_date_tache_label(disponible)}."
+            else:
+                detail_etat = f"En attente depuis {_age_tache_label(age_secondes)}."
+                alerte = age_minutes >= 10
+                if alerte:
+                    detail_etat += " À surveiller : attente supérieure à 10 minutes."
+        elif statut == "en_cours":
+            if prise:
+                duree_prise = max(0, int((maintenant - prise).total_seconds()))
+                detail_etat = f"Prise en charge depuis {_age_tache_label(duree_prise)}."
+                alerte = duree_prise >= 20 * 60
+                if alerte:
+                    detail_etat += " À vérifier : traitement en cours depuis plus de 20 minutes."
+            else:
+                detail_etat = "Aucune heure de prise en charge enregistrée."
+                alerte = True
+        elif statut in {"terminee", "echouee"} and terminee:
+            detail_etat = f"Clôturée le {_date_tache_label(terminee)}."
+
+        resultats.append({
+            "id": getattr(tache, "id", None),
+            "type_label": type_label,
+            "cible": cible,
+            "statut": statut,
+            "statut_label": etiquettes_statut.get(statut, statut.replace("_", " ").capitalize()),
+            "strategie_verification": getattr(tache, "strategie_verification", None) or "—",
+            "score_risque": getattr(tache, "score_risque", 0),
+            "nombre_essais": getattr(tache, "nombre_essais", 0),
+            "cree_le": _date_tache_label(creation),
+            "age_label": _age_tache_label(age_secondes),
+            "detail_etat": detail_etat,
+            "erreur_resume": _resume_erreur_tache_ia(getattr(tache, "derniere_erreur", None)),
+            "alerte": alerte,
+        })
+    return resultats
 
 
 @router.get("/admin/securite")
@@ -273,12 +411,13 @@ def page_admin_ia(request: Request, session: Session = Depends(get_session)):
         .limit(20)
     ).all()
 
-    taches_recentes = session.exec(
+    lignes_taches_recentes = session.exec(
         select(TacheIA, TentativeQuiz)
-        .where(TacheIA.tentative_quiz_id == TentativeQuiz.id)
+        .outerjoin(TentativeQuiz, TacheIA.tentative_quiz_id == TentativeQuiz.id)
         .order_by(TacheIA.id.desc())
-        .limit(20)
+        .limit(30)
     ).all()
+    taches_recentes = _preparer_taches_ia_recentes(lignes_taches_recentes)
 
     resume = ai_metrics.resume_global()
 
