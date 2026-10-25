@@ -396,3 +396,127 @@ def test_rls_auto_enable_acl_migration_restricts_api_roles_and_keeps_ddl_trigger
             assert rls_enabled is True
         finally:
             transaction.rollback()
+
+
+@pytest.mark.skipif(
+    not os.environ.get("DATABASE_URL", "").startswith(("postgresql://", "postgresql+psycopg2://")),
+    reason="Contrôle des privilèges Data API réservé à PostgreSQL",
+)
+def test_postgres_api_roles_have_no_blanket_table_sequence_or_default_grants():
+    """Les rôles Data API ne peuvent pas contourner les politiques RLS."""
+    from sqlalchemy import text
+
+    from app.database import engine
+
+    with engine.connect() as connection:
+        transaction = connection.begin()
+        try:
+            existing = connection.execute(
+                text(
+                    """
+                    SELECT
+                      COUNT(*) FILTER (
+                        WHERE has_table_privilege('anon', c.oid, 'SELECT')
+                           OR has_table_privilege('anon', c.oid, 'INSERT')
+                           OR has_table_privilege('anon', c.oid, 'UPDATE')
+                           OR has_table_privilege('anon', c.oid, 'DELETE')
+                           OR has_table_privilege('anon', c.oid, 'TRUNCATE')
+                           OR has_table_privilege('anon', c.oid, 'REFERENCES')
+                           OR has_table_privilege('anon', c.oid, 'TRIGGER')
+                      ) AS anon_tables,
+                      COUNT(*) FILTER (
+                        WHERE has_table_privilege('authenticated', c.oid, 'SELECT')
+                           OR has_table_privilege('authenticated', c.oid, 'INSERT')
+                           OR has_table_privilege('authenticated', c.oid, 'UPDATE')
+                           OR has_table_privilege('authenticated', c.oid, 'DELETE')
+                           OR has_table_privilege('authenticated', c.oid, 'TRUNCATE')
+                           OR has_table_privilege('authenticated', c.oid, 'REFERENCES')
+                           OR has_table_privilege('authenticated', c.oid, 'TRIGGER')
+                      ) AS authenticated_tables
+                    FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')
+                    """
+                )
+            ).one()
+            assert existing.anon_tables == 0
+            assert existing.authenticated_tables == 0
+
+            sequence_privileges = connection.execute(
+                text(
+                    """
+                    SELECT
+                      COUNT(*) FILTER (
+                        WHERE has_sequence_privilege('anon', c.oid, 'USAGE')
+                           OR has_sequence_privilege('anon', c.oid, 'SELECT')
+                           OR has_sequence_privilege('anon', c.oid, 'UPDATE')
+                      ) AS anon_sequences,
+                      COUNT(*) FILTER (
+                        WHERE has_sequence_privilege('authenticated', c.oid, 'USAGE')
+                           OR has_sequence_privilege('authenticated', c.oid, 'SELECT')
+                           OR has_sequence_privilege('authenticated', c.oid, 'UPDATE')
+                      ) AS authenticated_sequences
+                    FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = 'public' AND c.relkind = 'S'
+                    """
+                )
+            ).one()
+            assert sequence_privileges.anon_sequences == 0
+            assert sequence_privileges.authenticated_sequences == 0
+
+            defaults = connection.execute(
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM pg_default_acl d
+                    CROSS JOIN LATERAL aclexplode(d.defaclacl) a
+                    JOIN pg_roles r ON r.oid = a.grantee
+                    WHERE d.defaclrole = (
+                        SELECT oid FROM pg_roles WHERE rolname = 'postgres'
+                      )
+                      AND d.defaclnamespace = 'public'::regnamespace
+                      AND r.rolname IN ('anon', 'authenticated')
+                    """
+                )
+            ).scalar_one()
+            assert defaults == 0
+
+            # DDL de test transactionnel : confirme que les prochains objets
+            # n'héritent pas de droits de données ou d'exécution RPC.
+            connection.exec_driver_sql(
+                "CREATE TABLE public._mitaridala_api_acl_probe "
+                "(id BIGSERIAL PRIMARY KEY, contenu TEXT)"
+            )
+            connection.exec_driver_sql(
+                """
+                CREATE FUNCTION public._mitaridala_api_acl_probe_fn()
+                RETURNS integer
+                LANGUAGE sql
+                AS $$ SELECT 1 $$
+                """
+            )
+
+            nouveaux_objets = connection.execute(
+                text(
+                    """
+                    SELECT
+                      has_table_privilege('anon', 'public._mitaridala_api_acl_probe', 'SELECT') AS anon_select,
+                      has_table_privilege('authenticated', 'public._mitaridala_api_acl_probe', 'TRUNCATE') AS auth_truncate,
+                      has_sequence_privilege('anon', 'public._mitaridala_api_acl_probe_id_seq', 'USAGE') AS anon_sequence_usage,
+                      has_function_privilege('anon', 'public._mitaridala_api_acl_probe_fn()', 'EXECUTE') AS anon_function_execute,
+                      has_function_privilege('authenticated', 'public._mitaridala_api_acl_probe_fn()', 'EXECUTE') AS auth_function_execute,
+                      has_table_privilege('postgres', 'public.document', 'SELECT') AS app_owner_select,
+                      has_table_privilege('service_role', 'public.document', 'SELECT') AS service_role_select
+                    """
+                )
+            ).one()
+            assert nouveaux_objets.anon_select is False
+            assert nouveaux_objets.auth_truncate is False
+            assert nouveaux_objets.anon_sequence_usage is False
+            assert nouveaux_objets.anon_function_execute is False
+            assert nouveaux_objets.auth_function_execute is False
+            assert nouveaux_objets.app_owner_select is True
+            assert nouveaux_objets.service_role_select is True
+        finally:
+            transaction.rollback()
