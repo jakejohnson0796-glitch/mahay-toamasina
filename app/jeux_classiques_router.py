@@ -137,7 +137,7 @@ def repondre(request: Request, reponse: str = Form(""), choix: int = Form(-1), s
         if q is None: return RedirectResponse("/jeux-classiques", status_code=303)
         correcte = choix == q["bonne"]
         etat["score"] = int(etat.get("score",0)) + int(correcte)
-        etat["feedback"] = {"correcte":correcte,"explication":q["explication"],"bonne":q["choix"][q["bonne"]]}
+        etat["feedback"] = {"correcte":correcte,"explication":q["explication"]}
         etat["tour"] = tour + 1
     elif mode == "chiffres":
         correcte, msg = calculer(reponse, etat.get("nombres",[]), int(etat.get("cible",0)))
