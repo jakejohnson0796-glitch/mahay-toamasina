@@ -49,7 +49,7 @@
     <h2 id="verification-tuteur-title">Pourquoi la réponse est-elle « à revoir » ?</h2>
     <p>La réponse reste disponible pour apprendre, mais les correcteurs indépendants n'ont pas confirmé tous les points avec assez de confiance. Ce statut n'est ni une note ni une pénalité.</p>
     {% if session_tuteur.erreur_verification_ia %}
-    <p><strong>Diagnostic des points à reprendre :</strong></p>
+    <p><strong>Points à reprendre — diagnostic :</strong></p>
     <div class="ai-markdown-content" data-rendu>{{ session_tuteur.erreur_verification_ia }}</div>
     {% endif %}
     <p><strong>Pour mieux sécuriser la réponse :</strong></p>
