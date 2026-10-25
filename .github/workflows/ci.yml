@@ -74,6 +74,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mahay_ci
       SUPABASE_BUCKET: documents
       GIT_COMMIT: ${{ github.sha }}
+      MITARIDALA_MIGRATION_CONCURRENCY_SMOKE: "1"
     services:
       postgres:
         image: postgres:16
