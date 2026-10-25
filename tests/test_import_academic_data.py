@@ -50,8 +50,6 @@ class TestImportStrictToamasina(unittest.TestCase):
             )
             session.add(offre)
             session.commit()
-            universite_id = universite.id
-            filiere_tronc_id = filiere_tronc.id
 
         fd, source_name = tempfile.mkstemp(suffix=".json")
         os.close(fd)
@@ -133,6 +131,8 @@ class TestImportStrictToamasina(unittest.TestCase):
             )
             session.add(offre)
             session.commit()
+            universite_id = universite.id
+            filiere_tronc_id = filiere_tronc.id
 
         fd, source_name = tempfile.mkstemp(suffix=".json")
         os.close(fd)
