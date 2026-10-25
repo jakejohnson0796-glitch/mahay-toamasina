@@ -280,3 +280,119 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
 
     assert nb_domaines >= len(domaines_source)
     assert nb_mentions >= len(mentions_par_nom)
+
+
+
+@pytest.mark.skipif(
+    not os.environ.get("DATABASE_URL", "").startswith(("postgresql://", "postgresql+psycopg2://")),
+    reason="Test de permissions réservé à PostgreSQL",
+)
+def test_rls_auto_enable_acl_migration_restricts_api_roles_and_keeps_ddl_trigger():
+    """La migration retire les RPC grants sans casser l'événement DDL."""
+    import importlib.util
+
+    from app.database import engine
+
+    migration_path = (
+        Path(__file__).resolve().parent.parent
+        / "alembic"
+        / "versions"
+        / "f3a9c1d8e742_restreindre_execute_rls_auto_enable.py"
+    )
+    spec = importlib.util.spec_from_file_location("migration_rls_auto_enable_acl", migration_path)
+    assert spec is not None and spec.loader is not None
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+
+    with engine.connect() as connection:
+        transaction = connection.begin()
+        try:
+            # Le test s'exécute dans une transaction toujours annulée. Il ne
+            # modifie donc ni les rôles ni les objets persistants de la base.
+            is_superuser = connection.exec_driver_sql(
+                "SELECT rolsuper FROM pg_roles WHERE rolname = current_user"
+            ).scalar()
+            if not is_superuser:
+                pytest.skip("Le smoke PostgreSQL doit pouvoir créer un event trigger.")
+
+            function_exists = connection.exec_driver_sql(
+                "SELECT to_regprocedure('public.rls_auto_enable()') IS NOT NULL"
+            ).scalar()
+            if function_exists:
+                pytest.skip("Fonction déjà présente : ne pas modifier une configuration Supabase réelle.")
+
+            trigger_exists = connection.exec_driver_sql(
+                "SELECT EXISTS (SELECT 1 FROM pg_event_trigger "
+                "WHERE evtname = '_mitaridala_test_rls_auto_enable')"
+            ).scalar()
+            if trigger_exists:
+                pytest.skip("Le déclencheur de test existe déjà.")
+
+            for role in ("anon", "authenticated", "service_role"):
+                exists = connection.execute(
+                    __import__("sqlalchemy").text(
+                        "SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :role)"
+                    ),
+                    {"role": role},
+                ).scalar()
+                if not exists:
+                    connection.exec_driver_sql(f'CREATE ROLE "{role}" NOLOGIN')
+
+            connection.exec_driver_sql(
+                """
+                CREATE FUNCTION public.rls_auto_enable()
+                RETURNS event_trigger
+                LANGUAGE plpgsql
+                SECURITY DEFINER
+                SET search_path TO 'pg_catalog'
+                AS $function$
+                DECLARE cmd record;
+                BEGIN
+                  FOR cmd IN
+                    SELECT *
+                    FROM pg_event_trigger_ddl_commands()
+                    WHERE command_tag IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
+                      AND object_type IN ('table', 'partitioned table')
+                  LOOP
+                    IF cmd.schema_name = 'public' THEN
+                      EXECUTE format(
+                        'ALTER TABLE IF EXISTS %s ENABLE ROW LEVEL SECURITY',
+                        cmd.object_identity
+                      );
+                    END IF;
+                  END LOOP;
+                END;
+                $function$;
+                """
+            )
+            connection.exec_driver_sql(
+                "CREATE EVENT TRIGGER _mitaridala_test_rls_auto_enable "
+                "ON ddl_command_end EXECUTE FUNCTION public.rls_auto_enable()"
+            )
+            connection.exec_driver_sql(
+                "GRANT EXECUTE ON FUNCTION public.rls_auto_enable() "
+                "TO PUBLIC, anon, authenticated, service_role"
+            )
+
+            migration._revoquer_execution(connection)
+
+            permissions = connection.exec_driver_sql(
+                """
+                SELECT
+                  has_function_privilege('anon', 'public.rls_auto_enable()', 'EXECUTE'),
+                  has_function_privilege('authenticated', 'public.rls_auto_enable()', 'EXECUTE'),
+                  has_function_privilege('service_role', 'public.rls_auto_enable()', 'EXECUTE')
+                """
+            ).one()
+            assert tuple(permissions) == (False, False, False)
+
+            connection.exec_driver_sql(
+                "CREATE TABLE public._mitaridala_rls_auto_enable_probe (id integer)"
+            )
+            rls_enabled = connection.exec_driver_sql(
+                "SELECT relrowsecurity FROM pg_class "
+                "WHERE oid = 'public._mitaridala_rls_auto_enable_probe'::regclass"
+            ).scalar()
+            assert rls_enabled is True
+        finally:
+            transaction.rollback()
