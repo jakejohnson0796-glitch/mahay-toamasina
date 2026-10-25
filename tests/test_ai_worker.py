@@ -147,7 +147,8 @@ def test_worker_transmet_la_strategie_renforcee_a_la_verification_tuteur(monkeyp
                 erreur_verification_ia=None,
             )
 
-    monkeypatch.setattr(ai_worker, "Session", lambda _engine: FakeSession())
+    fake_session = FakeSession()
+    monkeypatch.setattr(ai_worker, "Session", lambda _engine: fake_session)
     ai_worker.traiter_tache(tache)
 
     assert appelees == [(30, "renforcee")]
@@ -195,7 +196,7 @@ def test_worker_rejete_une_verification_tuteur_en_echec(monkeypatch):
     monkeypatch.setattr(
         ai_worker.ai_quiz,
         "verifier_session_tuteur_en_arriere_plan",
-        lambda session_id: None,
+        lambda session_id, strategie="legere": None,
     )
 
     class FakeSession:
