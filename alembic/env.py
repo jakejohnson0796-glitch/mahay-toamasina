@@ -61,20 +61,55 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+# Lock shared by all MITARIDALA releases targeting the same PostgreSQL DB.
+# Render can overlap instances during a zero-downtime deploy; both may run
+# Alembic at startup. A session advisory lock makes the next instance re-read
+# alembic_version only after the first migration transaction has committed.
+_MIGRATION_ADVISORY_LOCK_ID = 5569075053750469697
+
+
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+    """Run migrations online, serializing concurrent PostgreSQL startups."""
+    import time
 
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
     with engine.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        use_advisory_lock = connection.dialect.name == "postgresql"
+        if use_advisory_lock:
+            # Use try-locks rather than a blocking lock call: the application
+            # engine has a short statement_timeout, which should not abort a
+            # migration merely because another instance is already upgrading.
+            deadline = time.monotonic() + 120.0
+            while True:
+                acquired = connection.exec_driver_sql(
+                    f"SELECT pg_try_advisory_lock({_MIGRATION_ADVISORY_LOCK_ID})"
+                ).scalar_one()
+                connection.commit()
+                if acquired:
+                    break
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        "Un autre processus conserve le verrou de migration Alembic depuis plus de 120 secondes."
+                    )
+                time.sleep(0.2)
 
-        with context.begin_transaction():
-            context.run_migrations()
+        try:
+            context.configure(
+                connection=connection, target_metadata=target_metadata
+            )
+
+            with context.begin_transaction():
+                context.run_migrations()
+        finally:
+            if use_advisory_lock:
+                # Roll back any failed migration transaction before unlocking.
+                if connection.in_transaction():
+                    connection.rollback()
+                unlocked = connection.exec_driver_sql(
+                    f"SELECT pg_advisory_unlock({_MIGRATION_ADVISORY_LOCK_ID})"
+                ).scalar_one()
+                connection.commit()
+                if not unlocked:
+                    raise RuntimeError("Le verrou advisory Alembic n'a pas été libéré.")
 
 
 if context.is_offline_mode():

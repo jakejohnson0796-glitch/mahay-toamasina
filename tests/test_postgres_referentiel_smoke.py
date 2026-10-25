@@ -599,3 +599,81 @@ def test_postgres_indexes_all_uncovered_foreign_keys():
         or " USING btree " not in actual[name].indexdef
     ]
     assert not mismatched, f"Index de clés étrangères incorrects : {mismatched}"
+
+
+@pytest.mark.skipif(
+    os.environ.get("MITARIDALA_MIGRATION_CONCURRENCY_SMOKE") != "1"
+    or not os.environ.get("DATABASE_URL", "").startswith(
+        ("postgresql://", "postgresql+psycopg2://")
+    ),
+    reason="Test concurrent réservé à la base PostgreSQL jetable de CI",
+)
+def test_postgres_concurrent_alembic_upgrades_are_serialized():
+    """Rejoue deux upgrades simultanés après retour au parent de la migration d'index."""
+    from concurrent.futures import ThreadPoolExecutor
+    import subprocess
+    import sys
+
+    from sqlalchemy import text
+
+    from app.database import engine
+
+    env = os.environ.copy()
+    alembic = [sys.executable, "-m", "alembic"]
+
+    with engine.connect() as connection:
+        revision = connection.execute(
+            text("SELECT version_num FROM public.alembic_version")
+        ).scalar_one()
+    assert revision == "c4e8a1d9b7f2", (
+        "Le test concurrent doit démarrer sur la migration finale d'index."
+    )
+
+    downgrade = subprocess.run(
+        [*alembic, "downgrade", "f6b1a2c9d4e7"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert downgrade.returncode == 0, (
+        "Le retour contrôlé au parent de la migration a échoué :\n"
+        f"{downgrade.stdout}\n{downgrade.stderr}"
+    )
+
+    def upgrade():
+        return subprocess.run(
+            [*alembic, "upgrade", "head"],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+
+    # Two distinct processes have separate DB connections, like overlapping
+    # Render instances starting the same release at the same time.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda _index: upgrade(), range(2)))
+
+    failures = [
+        f"exit={result.returncode}\n{result.stdout}\n{result.stderr}"
+        for result in results
+        if result.returncode != 0
+    ]
+    assert not failures, "Les upgrades Alembic concurrents ont échoué :\n" + "\n---\n".join(failures)
+
+    with engine.connect() as connection:
+        revision = connection.execute(
+            text("SELECT version_num FROM public.alembic_version")
+        ).scalar_one()
+        index_count = connection.execute(
+            text(
+                "SELECT COUNT(*) FROM pg_indexes "
+                "WHERE schemaname = 'public' AND indexname LIKE 'ix_fk_%'"
+            )
+        ).scalar_one()
+
+    assert revision == "c4e8a1d9b7f2"
+    assert index_count == 41
