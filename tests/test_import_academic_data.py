@@ -95,5 +95,93 @@ class TestImportStrictToamasina(unittest.TestCase):
             source.unlink(missing_ok=True)
 
 
+    def test_tronc_commun_technique_ne_desactive_pas_une_offre_active(self):
+        moteur = create_engine("sqlite://", connect_args={"check_same_thread": False})
+        SQLModel.metadata.create_all(moteur)
+
+        with Session(moteur) as session:
+            universite = Universite(nom="Université de Toamasina")
+            session.add(universite)
+            session.commit()
+            session.refresh(universite)
+
+            faculte = Faculte(
+                nom="Droit, Economie, Gestion, Mathematiques et Informatique (DEGMIA)",
+                universite_id=universite.id,
+            )
+            mention = Mention(nom="Sciences Économiques")
+            session.add_all([faculte, mention])
+            session.commit()
+            session.refresh(faculte)
+            session.refresh(mention)
+
+            filiere_tronc = Filiere(
+                nom="Tronc commun",
+                faculte_id=faculte.id,
+                mention_id=mention.id,
+                niveau="L1",
+            )
+            session.add(filiere_tronc)
+            session.commit()
+            session.refresh(filiere_tronc)
+            offre = ProgrammeUniversitaire(
+                universite_id=universite.id,
+                filiere_id=filiere_tronc.id,
+                est_active=True,
+            )
+            session.add(offre)
+            session.commit()
+            universite_id = universite.id
+            filiere_tronc_id = filiere_tronc.id
+
+        fd, source_name = tempfile.mkstemp(suffix=".json")
+        os.close(fd)
+        source = Path(source_name)
+        try:
+            source.write_text(
+                json.dumps(
+                    {
+                        "formations": [
+                            {
+                                "universite": "Université de Toamasina",
+                                "ville": "Toamasina",
+                                "composante": "Faculté DEG",
+                                "domaine": "Sciences économiques",
+                                "mention": "Sciences Économiques",
+                                "niveau": "L1",
+                                "type": "Tronc commun",
+                                "parcours": "Tronc commun",
+                                "debut_specialisation": None,
+                                "fin_specialisation": None,
+                                "statut": "Vérifié",
+                                "source": "test",
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            ancien_moteur = import_academic_data.engine
+            import_academic_data.engine = moteur
+            try:
+                import_academic_data.importer(str(source))
+            finally:
+                import_academic_data.engine = ancien_moteur
+
+            with Session(moteur) as session:
+                offre_rechargee = session.exec(
+                    select(ProgrammeUniversitaire).where(
+                        ProgrammeUniversitaire.universite_id == universite_id,
+                        ProgrammeUniversitaire.filiere_id == filiere_tronc_id,
+                    )
+                ).one()
+                self.assertTrue(offre_rechargee.est_active)
+        finally:
+            source.unlink(missing_ok=True)
+
+
+
 if __name__ == "__main__":
     unittest.main()
