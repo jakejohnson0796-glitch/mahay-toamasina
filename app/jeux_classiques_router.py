@@ -40,12 +40,26 @@ def mot_valide(mot, lettres):
         disponibles.remove(lettre)
     return True
 
+def tirer_lettres():
+    """Tire neuf lettres en garantissant qu'un mot du dictionnaire est réalisable."""
+    mot_solution = random.choice(sorted(MOTS))
+    lettres = list(mot_solution)
+    voyelles = list("AAAAEEEEIIIOU")
+    consonnes = list("BBCCDDFFGGHLLLMMNNNPRRRSSSTTV")
+    while len(lettres) < 9:
+        pool = voyelles if random.random() < 0.48 else consonnes
+        lettres.append(random.choice(pool))
+    random.shuffle(lettres)
+    return lettres
+
 def calculer(expression, nombres, cible):
     """Vérifie les calculs avec une grammaire arithmétique restreinte, sans eval."""
+    expression = (expression or "").strip().replace("×", "*").replace("÷", "/").replace("−", "-")
     if len(expression) > 100 or not re.fullmatch(r"[0-9+*/().\-\s]+", expression):
         return False, "Expression invalide : utilise les nombres tirés et +, -, × ou ÷."
-    tokens = re.findall(r"\d+|[()+*/-]", expression.replace(" ",""))
-    if "".join(tokens) != expression.replace(" ","") or not tokens:
+    compact = expression.replace(" ","")
+    tokens = re.findall(r"\d+|[()+*/-]", compact)
+    if "".join(tokens) != compact or not tokens:
         return False, "Expression mathématique invalide."
     pos = 0
     utilises = []
@@ -117,11 +131,7 @@ def demarrer(request: Request, mode: str = Form(...), session: Session = Depends
         # Construire la cible depuis le tirage garantit au moins une solution exacte.
         etat["cible"] = (etat["nombres"][0] + etat["nombres"][1]) * etat["nombres"][2]
     else:
-        voyelles = list("AAAAEEEEIIIOU")
-        consonnes = list("BBCCDDFFGGHLLLMMNNNPRRRSSSTTV")
-        lettres = [random.choice(voyelles) for _ in range(4)] + [random.choice(consonnes) for _ in range(5)]
-        random.shuffle(lettres)
-        etat["lettres"] = lettres
+        etat["lettres"] = tirer_lettres()
     request.session["jeux_classiques"] = etat
     return RedirectResponse("/jeux-classiques", status_code=303)
 
