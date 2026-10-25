@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titre %}Jeux classiques — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<style nonce="{{ csp_nonce(request) }}">
+.jeux-classiques{max-width:1100px;margin:auto;padding:clamp(1rem,3vw,2rem);color:var(--content-text)}
+.jeux-hero,.jeu-carte,.jeu-zone{border:1px solid var(--content-border);border-radius:20px;background:var(--content-surface);padding:clamp(1rem,2.5vw,1.5rem);min-width:0}
+.jeux-hero{background:linear-gradient(135deg,var(--content-surface),color-mix(in srgb,var(--content-link) 9%,var(--content-surface)));margin-bottom:1rem}
+.jeux-hero h1{font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.1;margin:.3rem 0}
+.jeux-hero p,.jeu-muted{color:var(--content-text-muted);line-height:1.65}
+.jeux-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.jeu-carte h2{margin:.4rem 0;font-size:1.15rem}.jeu-emoji{font-size:2rem}
+.jeu-bouton{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:.75rem 1rem;border:0;border-radius:11px;background:var(--content-link);color:var(--content-bg);font-weight:800;text-decoration:none;cursor:pointer}
+.jeu-bouton:focus-visible,input:focus-visible{outline:3px solid var(--content-link);outline-offset:3px}
+.jeu-choix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin:1rem 0}
+.jeu-choix label,.jeu-tile{border:1px solid var(--content-border);border-radius:12px;padding:.8rem;overflow-wrap:anywhere}
+.jeu-chiffres{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0}
+.jeu-tile{font-weight:850;font-size:1.2rem;min-width:42px;text-align:center;background:var(--content-bg)}
+.jeu-feedback{border-left:4px solid var(--content-link);padding:.8rem 1rem;margin:1rem 0;background:var(--content-bg);border-radius:8px}
+.jeu-form{display:flex;gap:.7rem;flex-wrap:wrap;align-items:end}.jeu-form label{flex:1 1 220px}.jeu-form input[type=text]{width:100%;min-height:44px;padding:.7rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text)}
+@media(max-width:760px){.jeux-grille{grid-template-columns:1fr}.jeu-choix{grid-template-columns:1fr}.jeux-classiques{padding:1rem}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+<div class="jeux-classiques">
+  <header class="jeux-hero">
+    <p class="jeu-muted">APPRENDRE EN JOUANT</p>
+    <h1>Les jeux classiques</h1>
+    <p>Entraîne ta culture générale, ton calcul mental et ton vocabulaire. Les parties sont courtes, les réponses sont vérifiées et les explications t'aident à progresser.</p>
+  </header>
+  {% set partie = partie or {} %}
+  {% if not partie.get('mode') %}
+  <div class="jeux-grille">
+    <article class="jeu-carte"><div class="jeu-emoji" aria-hidden="true">🏆</div><h2>Questions pour un champion</h2><p class="jeu-muted">Cinq questions de culture générale, sciences, logique et connaissances sur Madagascar.</p><form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="champion"><button class="jeu-bouton" type="submit">Jouer au quiz</button></form></article>
+    <article class="jeu-carte"><div class="jeu-emoji" aria-hidden="true">🔢</div><h2>Le compte est bon</h2><p class="jeu-muted">Utilise les six nombres tirés et les opérations pour atteindre la cible.</p><form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="chiffres"><button class="jeu-bouton" type="submit">Jouer aux chiffres</button></form></article>
+    <article class="jeu-carte"><div class="jeu-emoji" aria-hidden="true">🔤</div><h2>Le mot le plus long</h2><p class="jeu-muted">Compose un mot à partir des neuf lettres tirées sans réutiliser une lettre.</p><form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="lettres"><button class="jeu-bouton" type="submit">Jouer aux lettres</button></form></article>
+  </div>
+  {% elif partie.get('mode') == 'champion' %}
+  {% set tour = partie.get('tour', 0) %}
+  {% if tour < partie.get('ids', [])|length %}
+    {% set qid = partie.get('ids')[tour] %}
+    {% set question = (questions|selectattr('id','equalto',qid)|list|first) %}
+    <section class="jeu-zone"><p class="jeu-muted">Question {{ tour + 1 }} / {{ partie.get('ids')|length }} · Score : {{ partie.get('score',0) }}</p><h2>{{ question.question }}</h2><p class="jeu-muted">Thème : {{ question.theme }}</p>
+      {% if partie.get('feedback') %}<div class="jeu-feedback" role="status"><strong>{{ "Bonne réponse !" if partie.feedback.correcte else "Pas tout à fait." }}</strong><p>{{ partie.feedback.explication }}</p></div>{% endif %}
+      <form method="post" action="/jeux-classiques/repondre"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><div class="jeu-choix">{% for option in question.choix %}<label><input type="radio" name="choix" value="{{ loop.index0 }}" required> {{ option }}</label>{% endfor %}</div><button class="jeu-bouton" type="submit">Valider ma réponse</button></form>
+    </section>
+  {% else %}<section class="jeu-zone"><h2>Partie terminée !</h2><p>Score final : <strong>{{ partie.get('score',0) }} / {{ partie.get('ids',[])|length }}</strong></p><p class="jeu-muted">Recommence pour découvrir une nouvelle sélection de questions.</p><a class="jeu-bouton" href="/jeux-classiques">Retour aux jeux</a></section>{% endif %}
+  {% elif partie.get('mode') == 'chiffres' %}
+  <section class="jeu-zone"><p class="jeu-muted">LE COMPTE EST BON</p><h2>Cible : {{ partie.get('cible') }}</h2><div class="jeu-chiffres" aria-label="Nombres disponibles">{% for n in partie.get('nombres',[]) %}<span class="jeu-tile">{{ n }}</span>{% endfor %}</div><p>Écris une expression avec +, -, × et ÷. Chaque nombre ne peut être utilisé qu'une fois.</p>{% if partie.get('feedback') %}<div class="jeu-feedback" role="status">{{ partie.feedback.explication }}</div>{% endif %}{% if not partie.get('termine') %}<form class="jeu-form" method="post" action="/jeux-classiques/repondre"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><label>Ton calcul<input type="text" name="reponse" maxlength="100" required placeholder="Ex. (100 - 25) × 4"></label><button class="jeu-bouton" type="submit">Vérifier</button></form>{% endif %}<p><a href="/jeux-classiques">Changer de jeu</a></p></section>
+  {% elif partie.get('mode') == 'lettres' %}
+  <section class="jeu-zone"><p class="jeu-muted">LE MOT LE PLUS LONG</p><h2>Compose un mot avec ces lettres</h2><div class="jeu-chiffres" aria-label="Lettres disponibles">{% for lettre in partie.get('lettres',[]) %}<span class="jeu-tile">{{ lettre }}</span>{% endfor %}</div>{% if partie.get('feedback') %}<div class="jeu-feedback" role="status">{{ partie.feedback.explication }}</div>{% endif %}{% if not partie.get('termine') %}<form class="jeu-form" method="post" action="/jeux-classiques/repondre"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><label>Ton mot<input type="text" name="reponse" maxlength="30" required autocomplete="off" placeholder="Écris ton mot"></label><button class="jeu-bouton" type="submit">Vérifier le mot</button></form>{% endif %}<p class="jeu-muted">Version initiale : dictionnaire de mots courants intégré, qui sera enrichi et validé.</p><p><a href="/jeux-classiques">Changer de jeu</a></p></section>
+  {% endif %}
+</div>
+{% endblock %}
