@@ -213,4 +213,4 @@ def test_template_explique_le_statut_et_limite_la_relance_a_un_seul_controle():
     assert "Points à reprendre" in template
     assert "Faire une vérification renforcée (une seule fois)" in template
     assert 'action="/tuteur/{{ session_tuteur.id }}/relancer-verification"' in template
-    assert "n'est pas relancée en boucle" in template
+    assert "ne sera pas relancé en boucle" in template
