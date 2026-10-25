@@ -120,20 +120,24 @@
     <div class="ops-new-users-head">
       <div>
         <span class="ops-kicker">File IA</span>
-        <h2 id="ia-taches-title">20 dernières tâches</h2>
+        <h2 id="ia-taches-title">30 dernières tâches</h2>
+        <p>Les tâches de quiz, Tuteur IA, documents et fiches de révision sont réunies ici. Les erreurs affichées sont résumées afin de ne pas exposer les données sensibles.</p>
       </div>
     </div>
     {% if taches_recentes %}
     <div class="ops-new-users-list">
-      {% for tache, quiz in taches_recentes %}
+      {% for tache in taches_recentes %}
       <article class="ops-new-user">
         <div class="ops-new-user-main">
-          <strong>Tâche #{{ tache.id }} · Quiz #{{ quiz.id }}</strong>
-          <span>{{ quiz.matiere }} · {{ quiz.niveau }} · {{ quiz.difficulte }}</span>
-          <span>Stratégie {{ tache.strategie_verification }} · risque {{ tache.score_risque }} · essai {{ tache.nombre_essais }}</span>
+          <strong>Tâche #{{ tache.id }} · {{ tache.type_label }}</strong>
+          <span>{{ tache.cible }}</span>
+          <span>Créée le {{ tache.cree_le }} · Âge : {{ tache.age_label }}</span>
+          <span>Stratégie {{ tache.strategie_verification }} · risque {{ tache.score_risque }} · essais {{ tache.nombre_essais }}</span>
+          {% if tache.detail_etat %}<span>{{ tache.detail_etat }}</span>{% endif %}
+          {% if tache.erreur_resume %}<span><strong>Dernière erreur (résumé) :</strong> {{ tache.erreur_resume }}</span>{% endif %}
         </div>
         <div class="ops-new-user-actions">
-          <span class="ops-badge{% if tache.statut.value == 'echouee' %} is-alert{% elif tache.statut.value == 'terminee' %} is-success{% endif %}">{{ tache.statut.value }}</span>
+          <span class="ops-badge{% if tache.statut == 'echouee' or tache.alerte %} is-alert{% elif tache.statut == 'terminee' %} is-success{% endif %}">{{ tache.statut_label }}</span>
         </div>
       </article>
       {% endfor %}
