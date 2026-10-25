@@ -70,7 +70,7 @@ def traiter_tache(tache) -> None:
                 raise RuntimeError(
                     f"Session Tuteur #{tache.session_tuteur_id} introuvable avant traitement."
                 )
-            if session_tuteur.statut_verification_ia == "terminee":
+            if session_tuteur.statut_verification_ia in {"terminee", "a_revoir"}:
                 return
 
         ai_quiz.verifier_session_tuteur_en_arriere_plan(
