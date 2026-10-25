@@ -48,9 +48,14 @@
     <span class="ai-kicker">Transparence de la vérification</span>
     <h2 id="verification-tuteur-title">Pourquoi la réponse est-elle « à revoir » ?</h2>
     <p>La réponse reste disponible pour apprendre, mais les correcteurs indépendants n'ont pas confirmé tous les points avec assez de confiance. Ce statut n'est ni une note ni une pénalité.</p>
-    {% if session_tuteur.erreur_verification_ia %}
+    {% if session_tuteur.erreur_verification_ia and "Points à reprendre :" in session_tuteur.erreur_verification_ia %}
     <p><strong>Points à reprendre — diagnostic :</strong></p>
     <div class="ai-markdown-content" data-rendu>{{ session_tuteur.erreur_verification_ia }}</div>
+    {% else %}
+    <div class="ai-panel" role="status" aria-live="polite">
+      <strong>Diagnostic détaillé non disponible pour cette ancienne session.</strong>
+      <p>Le contrôle précédent n'a pas conservé les détails permettant d'identifier les étapes exactes à reprendre. La réponse reste utile pour apprendre, mais sa vérification n'est pas confirmée. Pour un contrôle plus précis, pose une nouvelle question en indiquant les données de l'énoncé et l'étape qui te semble incertaine.</p>
+    </div>
     {% endif %}
     <p><strong>Pour mieux sécuriser la réponse :</strong></p>
     <ul>

@@ -206,6 +206,17 @@ def test_relance_tuteur_refuse_les_taches_ayant_deja_consomme_plusieurs_essais(m
     assert notifications == []
 
 
+def test_template_distingue_un_diagnostic_historique_non_detaille():
+    template = (ROOT / "app" / "templates" / "tuteur_reponse.html").read_text(encoding="utf-8")
+
+    assert '"Points à reprendre :" in session_tuteur.erreur_verification_ia' in template
+    assert "Diagnostic détaillé non disponible pour cette ancienne session." in template
+    assert "n'a pas conservé les détails permettant d'identifier les étapes exactes" in template
+    # Les sessions historiques au message générique ne doivent pas être
+    # présentées comme si les correcteurs avaient ciblé un point précis.
+    assert 'if session_tuteur.erreur_verification_ia and "Points à reprendre :" in session_tuteur.erreur_verification_ia' in template
+
+
 def test_template_explique_le_statut_et_limite_la_relance_a_un_seul_controle():
     template = (ROOT / "app" / "templates" / "tuteur_reponse.html").read_text(encoding="utf-8")
 
