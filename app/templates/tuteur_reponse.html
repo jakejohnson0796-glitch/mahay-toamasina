@@ -31,13 +31,13 @@
   </div>
 
   {% if request.query_params.get("verification") == "relancee" %}
-  <section class="ai-target-context ai-panel" role="status" aria-live="polite" id="verification-tuteur">
+  <section class="ai-target-context ai-panel" role="status" aria-live="polite" id="verification-tuteur-message">
     <span class="ai-kicker">Contrôle renforcé demandé</span>
     <strong>Une nouvelle vérification est dans la file.</strong>
     <p>Cette relance utilise un contrôle plus exigeant. Elle sera exécutée une seule fois ; actualise cette page dans un instant pour voir le résultat.</p>
   </section>
   {% elif request.query_params.get("verification") == "non_disponible" %}
-  <section class="ai-target-context ai-panel" role="status" aria-live="polite" id="verification-tuteur">
+  <section class="ai-target-context ai-panel" role="status" aria-live="polite" id="verification-tuteur-message">
     <strong>Pas de nouvelle vérification automatique pour cette session.</strong>
     <p>Pour éviter les mêmes appels en boucle, cette action est réservée à une première vérification non concluante, avec un diagnostic disponible. Reformule ta question ou précise l'énoncé dans une nouvelle session.</p>
   </section>
@@ -49,6 +49,7 @@
     <h2 id="verification-tuteur-title">Pourquoi la réponse est-elle « à revoir » ?</h2>
     <p>La réponse reste disponible pour apprendre, mais les correcteurs indépendants n'ont pas confirmé tous les points avec assez de confiance. Ce statut n'est ni une note ni une pénalité.</p>
     {% if session_tuteur.erreur_verification_ia %}
+    <p><strong>Diagnostic des points à reprendre :</strong></p>
     <div class="ai-markdown-content" data-rendu>{{ session_tuteur.erreur_verification_ia }}</div>
     {% endif %}
     <p><strong>Pour mieux sécuriser la réponse :</strong></p>
