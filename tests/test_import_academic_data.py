@@ -50,6 +50,8 @@ class TestImportStrictToamasina(unittest.TestCase):
             )
             session.add(offre)
             session.commit()
+            universite_id = universite.id
+            filiere_tronc_id = filiere_tronc.id
 
         fd, source_name = tempfile.mkstemp(suffix=".json")
         os.close(fd)
@@ -171,8 +173,8 @@ class TestImportStrictToamasina(unittest.TestCase):
             with Session(moteur) as session:
                 offre_rechargee = session.exec(
                     select(ProgrammeUniversitaire).where(
-                        ProgrammeUniversitaire.universite_id == universite.id,
-                        ProgrammeUniversitaire.filiere_id == filiere_tronc.id,
+                        ProgrammeUniversitaire.universite_id == universite_id,
+                        ProgrammeUniversitaire.filiere_id == filiere_tronc_id,
                     )
                 ).one()
                 self.assertTrue(offre_rechargee.est_active)
