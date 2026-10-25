@@ -32,6 +32,35 @@ def test_diagnostic_tuteur_reformule_les_points_sans_restituer_le_texte_du_criti
     assert "secret" not in resume
 
 
+def test_diagnostic_tuteur_propose_une_methode_adaptee_a_la_matiere():
+    audit = {
+        "critics": [
+            {
+                "avis": {
+                    "confiant": False,
+                    "problemes": ["Le calcul et les unités doivent être revérifiés."],
+                    "ameliorations": [],
+                }
+            }
+        ]
+    }
+
+    cas = [
+        ("Mathématiques", "refais les calculs au brouillon"),
+        ("Physique", "écris la formule et les unités"),
+        ("Informatique", "note les valeurs des variables"),
+        ("Comptabilité", "vérifie les débits et crédits"),
+    ]
+    for matiere, methode_attendue in cas:
+        diagnostic = ai_quiz._diagnostic_pedagogique_verification_tuteur(
+            audit,
+            matiere=matiere,
+        )
+        assert methode_attendue in diagnostic.lower()
+        assert "Points à reprendre :" in diagnostic
+        assert len(diagnostic) <= 900
+
+
 def test_verification_tuteur_a_revoir_enregistre_un_diagnostic_sûr(monkeypatch):
     audit = {
         "models": ["critic-a"],
