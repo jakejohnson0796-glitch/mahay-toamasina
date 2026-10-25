@@ -72,6 +72,21 @@ services:
       - key: LIVEKIT_API_SECRET
         sync: false
 
+  # Le service MITARIDALA existe déjà dans le workspace Render.
+  # Le Blueprint doit gérer ce service existant (nom identique), sans créer
+  # un deuxième service ni remplacer ses variables d'environnement.
+  # Les variables omises sont conservées lors du sync Render.
+  - type: web
+    name: mitaridala
+    runtime: docker
+    plan: free
+    region: frankfurt
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    # Les aperçus de PR sont volontairement désactivés pour ce service :
+    # l'application démarre un worker IA et réconcilie des données au démarrage.
+
   # File IA rapide. PostgreSQL reste la source durable des taches.
   # noeviction evite que Redis supprime silencieusement une tache de la file.
   - type: keyvalue
