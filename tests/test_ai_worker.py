@@ -114,6 +114,40 @@ def test_worker_dispatche_une_verification_tuteur(monkeypatch):
     assert appelees == [27]
 
 
+def test_worker_accepte_une_verification_tuteur_a_revoir_sans_retry(monkeypatch):
+    tache = SimpleNamespace(
+        type_tache=ai_worker.ai_queue.TYPE_VERIFICATION_TUTEUR,
+        session_tuteur_id=29,
+    )
+
+    monkeypatch.setattr(
+        ai_worker.ai_quiz,
+        "verifier_session_tuteur_en_arriere_plan",
+        lambda session_id: None,
+    )
+
+    class FakeSession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def get(self, _model, _session_id):
+            return SimpleNamespace(
+                statut_verification_ia="a_revoir",
+                erreur_verification_ia=(
+                    "La vérification multi-modèles n'a pas obtenu un niveau de confiance suffisant."
+                ),
+            )
+
+    monkeypatch.setattr(ai_worker, "Session", lambda _engine: FakeSession())
+
+    # « À revoir » est un résultat final qui nécessite une revue pédagogique,
+    # pas un échec d'infrastructure qui doit relancer la même tâche.
+    assert ai_worker.traiter_tache(tache) is None
+
+
 def test_worker_rejete_une_verification_tuteur_en_echec(monkeypatch):
     tache = SimpleNamespace(
         type_tache=ai_worker.ai_queue.TYPE_VERIFICATION_TUTEUR,
