@@ -738,7 +738,7 @@ def relancer_verification_tuteur_session(
 
     ai_queue.notifier_tache(tache.id)
     return RedirectResponse(
-        f"/tuteur/{session_id}?verification=relancee#verification-tuteur",
+        f"/tuteur/{session_id}?verification=relancee#verification-tuteur-message",
         status_code=303,
     )
 
