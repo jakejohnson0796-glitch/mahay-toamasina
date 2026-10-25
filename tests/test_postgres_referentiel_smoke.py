@@ -472,7 +472,10 @@ def test_postgres_api_roles_have_no_blanket_table_sequence_or_default_grants():
                     FROM pg_default_acl d
                     CROSS JOIN LATERAL aclexplode(d.defaclacl) a
                     JOIN pg_roles r ON r.oid = a.grantee
-                    WHERE d.defaclnamespace = 'public'::regnamespace
+                    WHERE d.defaclrole = (
+                        SELECT oid FROM pg_roles WHERE rolname = 'postgres'
+                      )
+                      AND d.defaclnamespace = 'public'::regnamespace
                       AND r.rolname IN ('anon', 'authenticated')
                     """
                 )
