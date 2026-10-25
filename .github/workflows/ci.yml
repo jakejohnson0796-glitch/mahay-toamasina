@@ -105,6 +105,13 @@ jobs:
           conn = psycopg2.connect(os.environ["DATABASE_URL"])
           conn.autocommit = True
           cur = conn.cursor()
+          # Emule les rôles Data API Supabase pendant le smoke PostgreSQL.
+          # Ils doivent exister avant les migrations pour tester les grants
+          # actuels et par défaut, sans créer de comptes capables de se connecter.
+          for role in ("anon", "authenticated", "service_role"):
+              cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (role,))
+              if cur.fetchone() is None:
+                  cur.execute(f'CREATE ROLE "{role}" NOLOGIN')
           cur.execute("CREATE SCHEMA IF NOT EXISTS storage")
           cur.execute(
               """
