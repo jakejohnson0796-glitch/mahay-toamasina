@@ -28,6 +28,12 @@ _INDEXES: tuple[tuple[str, str, str], ...] = (
 
 def upgrade() -> None:
     bind = op.get_bind()
+    # The duplicate indexes were observed on Supabase/PostgreSQL. Historical
+    # SQLite migrations/model metadata do not necessarily create them, and
+    # SQLite has no separate "public" schema.
+    if bind.dialect.name != "postgresql":
+        return
+
     inspector = sa.inspect(bind)
     for index_name, table_name, _column in _INDEXES:
         existing = {
@@ -42,6 +48,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     bind = op.get_bind()
+    if bind.dialect.name != "postgresql":
+        return
+
     inspector = sa.inspect(bind)
     for index_name, table_name, column_name in reversed(_INDEXES):
         existing = {
