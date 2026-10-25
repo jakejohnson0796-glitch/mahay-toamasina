@@ -6,6 +6,7 @@ Lancer avec :  uvicorn app.main:app --reload
 """
 import asyncio
 import threading
+import time
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -159,6 +160,7 @@ async def au_demarrage() -> None:
     # l'import du referentiel, le seed et la maintenance des cercles.
     print("[DEBUG DATABASE] Migrations OK — lancement de l'initialisation des donnees en arriere-plan.")
     app.state.initialisation_etat = "en_cours"
+    app.state.initialisation_etape = "en_attente"
     initialisation = asyncio.create_task(asyncio.to_thread(_initialiser_donnees_apres_demarrage))
     app.state.initialisation_donnees = initialisation
 
@@ -169,13 +171,17 @@ async def au_demarrage() -> None:
             app.state.initialisation_etat = "annulee"
         except Exception as erreur_initialisation:
             app.state.initialisation_etat = "erreur"
+            if not str(getattr(app.state, "initialisation_etape", "")).startswith("erreur:"):
+                app.state.initialisation_etape = "erreur:initialisation"
             print(
                 "[ERREUR DATABASE] Initialisation des donnees en arriere-plan "
-                f"echouee : {type(erreur_initialisation).__name__}: {erreur_initialisation}"
+                f"echouee : {type(erreur_initialisation).__name__}: {erreur_initialisation}",
+                flush=True,
             )
         else:
             app.state.initialisation_etat = "ok"
-            print("[DEBUG DATABASE] Initialisation des donnees terminee.")
+            app.state.initialisation_etape = "terminee"
+            print("[DEBUG DATABASE] Initialisation des donnees terminee.", flush=True)
 
     initialisation.add_done_callback(_notifier_fin_initialisation)
 
@@ -225,8 +231,33 @@ async def arreter_worker_ia() -> None:
             print("[DEBUG AI QUEUE] Worker IA arrete proprement.")
 
 
+def _executer_etape_initialisation(nom: str, action):
+    """Journalise une étape de maintenance avec durée, sans exposer de données."""
+    debut = time.monotonic()
+    app.state.initialisation_etape = nom
+    print(f"[INIT DATA] Debut etape: {nom}", flush=True)
+    try:
+        resultat = action()
+    except Exception as erreur:
+        duree = time.monotonic() - debut
+        app.state.initialisation_etape = f"erreur:{nom}"
+        print(
+            f"[INIT DATA] Echec etape: {nom} apres {duree:.1f}s "
+            f"({type(erreur).__name__})",
+            flush=True,
+        )
+        raise
+    duree = time.monotonic() - debut
+    app.state.initialisation_etape = f"terminee:{nom}"
+    print(f"[INIT DATA] Fin etape: {nom} duree={duree:.1f}s", flush=True)
+    return resultat
+
+
 def _initialiser_donnees_apres_demarrage() -> None:
-    print("[DEBUG DATABASE] Verification des donnees initiales...")
+    debut_total = time.monotonic()
+    app.state.initialisation_etape = "demarrage"
+    print("[INIT DATA] Initialisation des donnees demarree.", flush=True)
+    print("[DEBUG DATABASE] Verification des donnees initiales...", flush=True)
     with Session(engine) as session:
         # Le referentiel academique national est synchronise a chaque premier
         # lancement et a chaque redemarrage si la source versionnee est presente.
@@ -246,7 +277,10 @@ def _initialiser_donnees_apres_demarrage() -> None:
         )
         if chemin_referentiel is not None:
             try:
-                rapport_referentiel = importer_referentiel_academique(str(chemin_referentiel))
+                rapport_referentiel = _executer_etape_initialisation(
+                    "import_referentiel",
+                    lambda: importer_referentiel_academique(str(chemin_referentiel)),
+                )
                 print(
                     "[DEBUG ACADEMIQUE] Referentiel national synchronise — "
                     f"source={chemin_referentiel.name}, "
@@ -268,8 +302,12 @@ def _initialiser_donnees_apres_demarrage() -> None:
                 "[DEBUG ACADEMIQUE] Source du referentiel national absente — "
                 "synchronisation ignoree."
             )
-        peupler_faq_initiale(session)
-        assurer_compte_admin(session)
+        _executer_etape_initialisation(
+            "faq_initiale", lambda: peupler_faq_initiale(session)
+        )
+        _executer_etape_initialisation(
+            "compte_admin", lambda: assurer_compte_admin(session)
+        )
         # Apres assurer_compte_admin : un cercle genere automatiquement a
         # besoin d'un createur_id valide (voir cercles_referentiel.py).
         # 1) Répare d'abord les doublons de cercles historiques afin que
@@ -280,8 +318,11 @@ def _initialiser_donnees_apres_demarrage() -> None:
         # nettoyage fusionne les doublons mais ne doit pas archiver les seuls
         # cercles d'un parcours pour cette raison transitoire ; la verification
         # stricte et l'archivage des vraies offres retirees ont lieu apres.
-        rapport_dedup_avant = deduplicquer_cercles_nationaux(
-            session, verifier_offres_actives=False
+        rapport_dedup_avant = _executer_etape_initialisation(
+            "dedoublonnage_cercles_pre",
+            lambda: deduplicquer_cercles_nationaux(
+                session, verifier_offres_actives=False
+            ),
         )
         if rapport_dedup_avant.groupes_fusionnes or rapport_dedup_avant.cercles_archives:
             print(
@@ -293,9 +334,9 @@ def _initialiser_donnees_apres_demarrage() -> None:
         # 2) Réconciliation stricte de l'offre Toamasina avec la source
         # canonique : fusion des Filiere équivalentes, désactivation des
         # anciennes offres absentes et activation des seules lignes publiables.
-        rapport_reconciliation = reconcilier(
-            session,
-            str(chemin_referentiel),
+        rapport_reconciliation = _executer_etape_initialisation(
+            "reconciliation_referentiel",
+            lambda: reconcilier(session, str(chemin_referentiel)),
         )
         print(
             "[DEBUG ACADEMIQUE] Réconciliation Toamasina — "
@@ -308,9 +349,12 @@ def _initialiser_donnees_apres_demarrage() -> None:
         # 3) Les identités de tronc commun viennent du référentiel
         # canonique, pas d'une déduction heuristique.
         identites_tronc = rapport_reconciliation.tronc_commun
-        nb_cercles_crees = assurer_cercles_referentiel(
-            session,
-            identites_tronc=identites_tronc,
+        nb_cercles_crees = _executer_etape_initialisation(
+            "cercles_universitaires",
+            lambda: assurer_cercles_referentiel(
+                session,
+                identites_tronc=identites_tronc,
+            ),
         )
         if nb_cercles_crees:
             print(f"[DEBUG DATABASE] {nb_cercles_crees} cercle(s) national/nationaux provisionne(s) automatiquement.")
@@ -318,7 +362,10 @@ def _initialiser_donnees_apres_demarrage() -> None:
         # La synchronisation scolaire est distincte de la synchronisation
         # universitaire : elle utilise uniquement les classes/options/matières
         # vérifiées et conserve les cercles manuels avec du contenu ou des membres.
-        rapport_cercles_scolaires = assurer_cercles_scolaires(session)
+        rapport_cercles_scolaires = _executer_etape_initialisation(
+            "cercles_scolaires",
+            lambda: assurer_cercles_scolaires(session),
+        )
         print(
             "[DEBUG DATABASE] Synchronisation cercles scolaires — "
             f"{rapport_cercles_scolaires['cibles']} cible(s), "
@@ -340,15 +387,24 @@ def _initialiser_donnees_apres_demarrage() -> None:
         # d'acces shell pour lancer un script a la demande. Idempotent
         # (un groupe deja fusionne n'est plus retouche), donc sans
         # risque de le rejouer a chaque redemarrage.
-        rapport_dedup = deduplicquer_cercles_nationaux(session)
+        rapport_dedup = _executer_etape_initialisation(
+            "dedoublonnage_cercles_final",
+            lambda: deduplicquer_cercles_nationaux(session),
+        )
         if rapport_dedup.cercles_archives:
             print(
                 f"[DEBUG DATABASE] {len(rapport_dedup.cercles_archives)} cercle(s) national/nationaux "
                 f"doublon(s) fusionne(s) et archive(s) ({rapport_dedup.membres_reassignes} membre(s) reassigne(s))."
             )
-    print("[DEBUG DATABASE] Donnees initiales OK.")
     (BASE_DIR.parent / "uploads").mkdir(exist_ok=True)
-    print("[DEBUG DATABASE] Demarrage termine.")
+    duree_totale = time.monotonic() - debut_total
+    app.state.initialisation_etape = "terminee"
+    print(
+        f"[INIT DATA] Initialisation terminee en {duree_totale:.1f}s.",
+        flush=True,
+    )
+    print("[DEBUG DATABASE] Donnees initiales OK.", flush=True)
+    print("[DEBUG DATABASE] Demarrage termine.", flush=True)
 
 
 
@@ -376,6 +432,8 @@ def health() -> dict:
         "renderer": "direct-katex-v3",
         "ai_worker_configured": bool(parametres.redis_url),
         "ai_worker_alive": bool(thread and thread.is_alive()),
+        "initialisation_etat": getattr(app.state, "initialisation_etat", "inconnu"),
+        "initialisation_etape": getattr(app.state, "initialisation_etape", "inconnu"),
     }
 
 
@@ -383,6 +441,7 @@ def health() -> dict:
 def readiness() -> Response:
     """Readiness : schema DB migre et initialisation des donnees terminee."""
     etat_initialisation = getattr(app.state, "initialisation_etat", "inconnu")
+    etape_initialisation = getattr(app.state, "initialisation_etape", "inconnu")
 
     try:
         with engine.connect() as connexion:
@@ -394,6 +453,7 @@ def readiness() -> Response:
                 "status": "not_ready",
                 "reason": "database_unavailable",
                 "initialisation_etat": etat_initialisation,
+                "initialisation_etape": etape_initialisation,
                 "detail": type(erreur).__name__,
             },
         )
@@ -405,6 +465,7 @@ def readiness() -> Response:
                 "status": "not_ready",
                 "reason": "initialisation_failed",
                 "initialisation_etat": etat_initialisation,
+                "initialisation_etape": etape_initialisation,
             },
         )
 
@@ -415,6 +476,7 @@ def readiness() -> Response:
                 "status": "not_ready",
                 "reason": "initialisation_in_progress",
                 "initialisation_etat": etat_initialisation,
+                "initialisation_etape": etape_initialisation,
             },
         )
 
@@ -425,6 +487,7 @@ def readiness() -> Response:
             "release": parametres.release_commit,
             "renderer": "direct-katex-v3",
             "initialisation_etat": etat_initialisation,
+                "initialisation_etape": etape_initialisation,
         },
     )
 
