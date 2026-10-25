@@ -86,7 +86,7 @@ def test_worker_dispatche_une_verification_tuteur(monkeypatch):
     monkeypatch.setattr(
         ai_worker.ai_quiz,
         "verifier_session_tuteur_en_arriere_plan",
-        lambda session_id: appelees.append(session_id),
+        lambda session_id, strategie="legere": appelees.append((session_id, strategie)),
     )
 
     class FakeSession:
@@ -111,8 +111,47 @@ def test_worker_dispatche_une_verification_tuteur(monkeypatch):
 
     ai_worker.traiter_tache(tache)
 
-    assert appelees == [27]
+    assert appelees == [(27, "legere")]
 
+
+
+
+def test_worker_transmet_la_strategie_renforcee_a_la_verification_tuteur(monkeypatch):
+    tache = SimpleNamespace(
+        type_tache=ai_worker.ai_queue.TYPE_VERIFICATION_TUTEUR,
+        session_tuteur_id=30,
+        strategie_verification="renforcee",
+    )
+    appelees = []
+
+    monkeypatch.setattr(
+        ai_worker.ai_quiz,
+        "verifier_session_tuteur_en_arriere_plan",
+        lambda session_id, strategie="legere": appelees.append((session_id, strategie)),
+    )
+
+    class FakeSession:
+        def __init__(self):
+            self.calls = 0
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def get(self, _model, _session_id):
+            self.calls += 1
+            return SimpleNamespace(
+                statut_verification_ia="en_cours" if self.calls == 1 else "terminee",
+                erreur_verification_ia=None,
+            )
+
+    fake_session = FakeSession()
+    monkeypatch.setattr(ai_worker, "Session", lambda _engine: fake_session)
+    ai_worker.traiter_tache(tache)
+
+    assert appelees == [(30, "renforcee")]
 
 def test_worker_accepte_une_verification_tuteur_a_revoir_sans_retry(monkeypatch):
     tache = SimpleNamespace(
@@ -123,7 +162,7 @@ def test_worker_accepte_une_verification_tuteur_a_revoir_sans_retry(monkeypatch)
     monkeypatch.setattr(
         ai_worker.ai_quiz,
         "verifier_session_tuteur_en_arriere_plan",
-        lambda session_id: None,
+        lambda session_id, strategie="legere": None,
     )
 
     class FakeSession:
@@ -157,7 +196,7 @@ def test_worker_rejete_une_verification_tuteur_en_echec(monkeypatch):
     monkeypatch.setattr(
         ai_worker.ai_quiz,
         "verifier_session_tuteur_en_arriere_plan",
-        lambda session_id: None,
+        lambda session_id, strategie="legere": None,
     )
 
     class FakeSession:

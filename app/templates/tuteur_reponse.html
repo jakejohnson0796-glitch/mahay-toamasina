@@ -30,6 +30,46 @@
     <a class="ai-answer-back" href="/tuteur">Nouvelle question</a>
   </div>
 
+  {% if request.query_params.get("verification") == "relancee" %}
+  <section class="ai-target-context ai-panel" role="status" aria-live="polite" id="verification-tuteur-message">
+    <span class="ai-kicker">Contrôle renforcé demandé</span>
+    <strong>Une nouvelle vérification est dans la file.</strong>
+    <p>Cette relance utilise un contrôle plus exigeant. Elle sera exécutée une seule fois ; actualise cette page dans un instant pour voir le résultat.</p>
+  </section>
+  {% elif request.query_params.get("verification") == "non_disponible" %}
+  <section class="ai-target-context ai-panel" role="status" aria-live="polite" id="verification-tuteur-message">
+    <strong>Pas de nouvelle vérification automatique pour cette session.</strong>
+    <p>Pour éviter les mêmes appels en boucle, cette action est réservée à une première vérification non concluante, avec un diagnostic disponible. Reformule ta question ou précise l'énoncé dans une nouvelle session.</p>
+  </section>
+  {% endif %}
+
+  {% if session_tuteur.statut_verification_ia == "a_revoir" %}
+  <section class="ai-target-context ai-panel" aria-labelledby="verification-tuteur-title" id="verification-tuteur">
+    <span class="ai-kicker">Transparence de la vérification</span>
+    <h2 id="verification-tuteur-title">Pourquoi la réponse est-elle « à revoir » ?</h2>
+    <p>La réponse reste disponible pour apprendre, mais les correcteurs indépendants n'ont pas confirmé tous les points avec assez de confiance. Ce statut n'est ni une note ni une pénalité.</p>
+    {% if session_tuteur.erreur_verification_ia %}
+    <p><strong>Points à reprendre — diagnostic :</strong></p>
+    <div class="ai-markdown-content" data-rendu>{{ session_tuteur.erreur_verification_ia }}</div>
+    {% endif %}
+    <p><strong>Pour mieux sécuriser la réponse :</strong></p>
+    <ul>
+      <li>reprends les calculs ou les étapes du raisonnement une par une ;</li>
+      <li>vérifie que l'exemple illustre bien l'explication ;</li>
+      <li>compare l'énoncé de l'exercice et sa correction en gardant les mêmes données.</li>
+    </ul>
+    {% if peut_relancer_verification %}
+    <form method="post" action="/tuteur/{{ session_tuteur.id }}/relancer-verification" class="ai-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-primaire" type="submit">Faire une vérification renforcée (une seule fois)</button>
+    </form>
+    <p class="ai-answer-muted">Cette action est proposée parce qu'un premier avis pédagogique est disponible mais non concluant. Le second contrôle utilisera une stratégie plus exigeante et ne sera pas relancé en boucle.</p>
+    {% else %}
+    <p class="ai-answer-muted">Une nouvelle vérification automatique n'est pas proposée pour cette session : une tentative a déjà été consommée ou le diagnostic ne justifie pas un nouvel appel. Pour éviter de répéter le même contrôle, pose une nouvelle question en précisant l'énoncé exact ou les étapes à vérifier.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="tuteur-lecture" data-tuteur-lecture aria-label="Lecture vocale de la réponse">
     <div class="tuteur-lecture-entete">
       <span class="tuteur-lecture-icone" aria-hidden="true">🔊</span>
