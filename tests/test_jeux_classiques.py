@@ -1,4 +1,4 @@
-from app.jeux_classiques import evaluer_expression, mot_valide, normaliser_texte, tirer_lettres, QUESTIONS
+from app.jeux_classiques_router import evaluer_expression, mot_valide, normaliser_texte, tirer_lettres, QUESTIONS
 
 
 def test_banque_champion_a_des_ids_uniques_et_des_reponses_valides():
