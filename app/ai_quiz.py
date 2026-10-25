@@ -1146,6 +1146,64 @@ def generer_reponse_tuteur(
     return reponse_finale
 
 
+def _diagnostic_pedagogique_verification_tuteur(audit: Dict[str, Any]) -> str:
+    """Produit un retour étudiant à partir de catégories fixes, jamais du texte brut du modèle."""
+    critiques = (audit or {}).get("critics") or []
+    textes = []
+    for critique in critiques:
+        avis = (critique or {}).get("avis") or {}
+        for champ in ("problemes", "ameliorations"):
+            valeurs = avis.get(champ) or []
+            if isinstance(valeurs, list):
+                textes.extend(str(valeur) for valeur in valeurs if valeur)
+
+    source = " ".join(textes).casefold()
+    points = []
+    categories = [
+        (
+            ("calcul", "signe", "unité", "unite", "dimension", "matrice", "fraction",
+             "équation", "equation", "numérique", "numerique", "résultat", "resultat"),
+            "Les calculs, les signes et les résultats chiffrés doivent être revérifiés.",
+        ),
+        (
+            ("cohérence", "coherence", "contradiction", "correspond", "exercice", "correction"),
+            "La cohérence entre l'explication, l'exercice et sa correction reste à confirmer.",
+        ),
+        (
+            ("explication", "étape", "etape", "justification", "démonstr", "demonstr", "raisonnement"),
+            "Certaines étapes de l'explication ou du raisonnement doivent être plus explicites.",
+        ),
+        (
+            ("exemple", "application"),
+            "Le lien entre l'exemple et la notion travaillée doit être mieux établi.",
+        ),
+        (
+            ("fait", "logique", "exact", "définition", "definition", "preuve"),
+            "L'exactitude de certaines affirmations ou justifications n'a pas pu être confirmée.",
+        ),
+    ]
+    for mots_cles, libelle in categories:
+        if any(mot in source for mot in mots_cles):
+            points.append(libelle)
+    if not points:
+        points.append(
+            "Les vérificateurs ne sont pas parvenus à confirmer toutes les parties de la réponse."
+        )
+
+    details = " ".join(points[:3])
+    conseil = (
+        "Pour la suite, reprends les étapes une par une et vérifie que l'exercice "
+        "et sa correction utilisent exactement les mêmes données."
+    )
+    return (
+        "La vérification n'a pas confirmé tous les points pédagogiques. "
+        "Points à reprendre : "
+        + details
+        + " Conseil : "
+        + conseil
+    )[:900]
+
+
 def verifier_reponse_tuteur_structuree(
     reponse_initiale: Dict[str, str],
     *,
@@ -1188,13 +1246,22 @@ def verifier_reponse_tuteur_structuree(
         reponse_finale["_verification_ok"] = (
             bool(confiant_tuteur) or not parametres.ai_ensemble_enabled
         )
-        reponse_finale["_statut_verification"] = (
-            "terminee" if reponse_finale["_verification_ok"] else "a_revoir"
-        )
-        reponse_finale["_erreur_verification"] = (
-            None if reponse_finale["_verification_ok"]
-            else "La vérification multi-modèles n'a pas obtenu un niveau de confiance suffisant."
-        )
+        if reponse_finale["_verification_ok"]:
+            reponse_finale["_statut_verification"] = "terminee"
+            reponse_finale["_erreur_verification"] = None
+        elif not (audit or {}).get("critics"):
+            # Aucun retour exploitable n'a été obtenu : il s'agit d'une vérification
+            # indisponible, pas d'un désaccord pédagogique. Le worker peut réessayer.
+            reponse_finale["_statut_verification"] = "echouee"
+            reponse_finale["_erreur_verification"] = (
+                "Les vérificateurs indépendants n'ont pas fourni d'avis exploitable. "
+                "La réponse reste disponible, mais elle n'est pas validée. Réessaie plus tard."
+            )
+        else:
+            reponse_finale["_statut_verification"] = "a_revoir"
+            reponse_finale["_erreur_verification"] = (
+                _diagnostic_pedagogique_verification_tuteur(audit)
+            )
         return reponse_finale
     except Exception as erreur:
         logger.warning("Verification multi-modeles du tuteur echouee: %s", erreur)
@@ -1269,7 +1336,7 @@ def reparer_verifications_tuteur_en_attente(
         )
     return planifiees
 
-def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
+def verifier_session_tuteur_en_arriere_plan(session_id: int, strategie: str = "legere") -> None:
     """Verifie une session deja livree et remplace son contenu si necessaire."""
     from sqlmodel import Session
     from .database import engine
@@ -1304,7 +1371,7 @@ def verifier_session_tuteur_en_arriere_plan(session_id: int) -> None:
                 question=session_tuteur.question,
                 notion=session_tuteur.notion,
                 matiere=matiere,
-                strategie="legere",
+                strategie=strategie or "legere",
             )
             session_tuteur.explication = finale.get("explication") or initiale["explication"]
             session_tuteur.exemple = finale.get("exemple") or initiale["exemple"]
