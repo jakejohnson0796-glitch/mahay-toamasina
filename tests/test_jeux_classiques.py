@@ -1,4 +1,4 @@
-from app.jeux_classiques_router import QUESTIONS, calculer, mot_valide, normaliser
+from app.jeux_classiques_router import MOTS, QUESTIONS, calculer, mot_valide, normaliser, tirer_lettres
 
 
 def test_banque_questions_coherente():
@@ -18,8 +18,16 @@ def test_mot_lettres_disponibles():
     assert not mot_valide("ARBRE", list("ARBE"))
 
 
-def test_calcul_atteint_cible():
-    assert calculer("(100 - 25) * 4", [100, 25, 4, 3, 2, 1], 300)[0]
+def test_tirage_lettres_contient_au_moins_un_mot_jouable():
+    for _ in range(50):
+        lettres = tirer_lettres()
+        assert len(lettres) == 9
+        assert any(mot_valide(mot, lettres) for mot in MOTS)
+
+
+def test_calcul_atteint_cible_et_accepte_symboles_typographiques():
+    assert calculer("(100 - 25) × 4", [100, 25, 4, 3, 2, 1], 300)[0]
+    assert calculer("100 ÷ 25 + 4", [100, 25, 4, 3, 2, 1], 8)[0]
 
 
 def test_calcul_refuse_nombres_non_tires():
