@@ -354,11 +354,11 @@ def test_rls_auto_enable_acl_migration_restricts_api_roles_and_keeps_ddl_trigger
                     WHERE command_tag IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
                       AND object_type IN ('table', 'partitioned table')
                   LOOP
-                    IF cmd.schema_name = 'public' THEN
-                      EXECUTE format(
-                        'ALTER TABLE IF EXISTS %s ENABLE ROW LEVEL SECURITY',
-                        cmd.object_identity
-                      );
+                    IF cmd.schema_name = 'public'
+                       AND cmd.object_identity = 'public._mitaridala_rls_auto_enable_probe' THEN
+                      EXECUTE
+                        'ALTER TABLE public._mitaridala_rls_auto_enable_probe '
+                        'ENABLE ROW LEVEL SECURITY';
                     END IF;
                   END LOOP;
                 END;
