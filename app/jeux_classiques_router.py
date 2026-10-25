@@ -114,7 +114,8 @@ def demarrer(request: Request, mode: str = Form(...), session: Session = Depends
         etat["ids"] = [q["id"] for q in random.sample(QUESTIONS, 5)]
     elif mode == "chiffres":
         etat["nombres"] = random.sample([1,2,3,4,5,6,7,8,9,10,25,50,75,100], 6)
-        etat["cible"] = random.randint(100,999)
+        # Construire la cible depuis le tirage garantit au moins une solution exacte.
+        etat["cible"] = (etat["nombres"][0] + etat["nombres"][1]) * etat["nombres"][2]
     else:
         voyelles = list("AAAAEEEEIIIOU")
         consonnes = list("BBCCDDFFGGHLLLMMNNNPRRRSSSTTV")
