@@ -110,7 +110,7 @@ def test_resume_erreur_tache_ia_ne_restitue_jamais_le_message_brut():
 
     assert resume
     assert "secret-et-contenu-cours" not in resume
-    assert "JSON invalide" in resume
+    assert "Réponse IA invalide" in resume
 
 
 def test_page_supervision_taches_compile_et_presente_age_et_diagnostic_sans_brut():
