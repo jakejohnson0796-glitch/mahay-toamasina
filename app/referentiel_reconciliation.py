@@ -250,7 +250,7 @@ def _trouver_faculte_canonique(
     if not candidats:
         faculte = Faculte(nom=nom_canonique, universite_id=universite_id)
         session.add(faculte)
-        session.commit()
+        session.flush()
         session.refresh(faculte)
         return faculte
 
@@ -267,7 +267,7 @@ def _trouver_faculte_canonique(
         session.add(faculte)
         rapport.composantes_canonicalisees += 1
 
-    session.commit()
+    session.flush()
     return faculte
 
 
@@ -296,7 +296,7 @@ def _trouver_mention_canonique(
             exact.domaine_id = domaine_id
         exact.est_active = True
         session.add(exact)
-        session.commit()
+        session.flush()
         return exact
 
     candidats = [
@@ -305,13 +305,16 @@ def _trouver_mention_canonique(
     ]
     if not candidats:
         mention = Mention(nom=nom_canonique, domaine_id=domaine_id)
-        session.add(mention)
         try:
-            session.commit()
+            # Le SAVEPOINT permet de traiter une création concurrente sans
+            # annuler les modifications de toute la réconciliation. Aucun
+            # commit n'est fait ici : dry_run doit pouvoir tout annuler.
+            with session.begin_nested():
+                session.add(mention)
+                session.flush()
         except IntegrityError:
-            # Une autre initialisation peut avoir créé la même mention
-            # juste avant notre commit. Reprendre la ligne existante.
-            session.rollback()
+            # Une initialisation concurrente peut avoir créé la mention
+            # canonique entre la recherche et l'insertion.
             mention = session.exec(
                 select(Mention).where(Mention.nom == nom_canonique)
             ).first()
@@ -321,7 +324,7 @@ def _trouver_mention_canonique(
                 mention.domaine_id = domaine_id
             mention.est_active = True
             session.add(mention)
-            session.commit()
+            session.flush()
             return mention
         session.refresh(mention)
         rapport.mentions_creees += 1
@@ -339,7 +342,7 @@ def _trouver_mention_canonique(
         cible.domaine_id = domaine_id
     cible.est_active = True
     session.add(cible)
-    session.commit()
+    session.flush()
     return cible
 
 
@@ -379,7 +382,7 @@ def _filiere_canonique(
     if not candidats:
         filiere = Filiere(nom=nom, faculte_id=faculte_id, mention_id=mention_id, niveau=niveau)
         session.add(filiere)
-        session.commit()
+        session.flush()
         session.refresh(filiere)
         return filiere
 
@@ -397,7 +400,7 @@ def _filiere_canonique(
     if cible.nom != nom:
         cible.nom = nom
         session.add(cible)
-    session.commit()
+    session.flush()
     return cible
 
 
@@ -472,7 +475,7 @@ def reconcilier(
             if dom is None:
                 dom = Domaine(nom=ligne["domaine"])
                 session.add(dom)
-                session.commit()
+                session.flush()
                 session.refresh(dom)
                 domaines[cle_dom] = dom
 
@@ -517,7 +520,7 @@ def reconcilier(
                             est_active=True,
                         )
                     )
-                session.commit()
+                session.flush()
                 rapport.offres_activees += 1
             rapport.tronc_commun.add((mention.id, niveau))
             continue
@@ -547,7 +550,7 @@ def reconcilier(
                         est_active=True,
                     )
                 )
-            session.commit()
+            session.flush()
             rapport.offres_activees += 1
         for extra in offres:
             if actif is not None and extra.id != actif.id and extra.est_active:
