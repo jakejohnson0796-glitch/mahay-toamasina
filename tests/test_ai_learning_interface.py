@@ -192,10 +192,13 @@ def test_tuteur_livre_la_reponse_avant_la_verification():
     assert "background_tasks.add_task(" not in route
 
 
-def test_verification_tuteur_background_peut_etre_legere():
+def test_verification_tuteur_background_utilise_la_strategie_de_la_file():
     code = lire("app/ai_quiz.py")
+    worker = lire("app/ai_worker.py")
     ensemble = lire("app/ai_ensemble.py")
-    assert 'strategie="legere"' in code
+    assert 'strategie: str = "legere"' in code
+    assert 'strategie=strategie or "legere"' in code
+    assert 'strategie=getattr(tache, "strategie_verification", None) or "legere"' in worker
     assert 'strategie: str = "standard"' in ensemble
     assert 'secondary_reviewer_needed(' in ensemble
 
