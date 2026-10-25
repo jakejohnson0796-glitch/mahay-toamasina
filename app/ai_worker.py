@@ -74,7 +74,8 @@ def traiter_tache(tache) -> None:
                 return
 
         ai_quiz.verifier_session_tuteur_en_arriere_plan(
-            tache.session_tuteur_id
+            tache.session_tuteur_id,
+            strategie=getattr(tache, "strategie_verification", None) or "legere",
         )
         with Session(engine) as session:
             session_tuteur = session.get(SessionTuteur, tache.session_tuteur_id)
