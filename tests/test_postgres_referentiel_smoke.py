@@ -625,7 +625,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "c4e8a1d9b7f2", (
+    assert revision == "d5e9c7a1b3f6", (
         "Le test concurrent doit démarrer sur la migration finale d'index."
     )
 
@@ -675,5 +675,56 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "c4e8a1d9b7f2"
+    assert revision == "d5e9c7a1b3f6"
     assert index_count == 41
+
+
+@pytest.mark.skipif(
+    not os.environ.get("DATABASE_URL", "").startswith(
+        ("postgresql://", "postgresql+psycopg2://")
+    ),
+    reason="Contrôle des index uniques réservé à PostgreSQL",
+)
+def test_postgres_duplicate_unique_code_indexes_are_removed():
+    """Le UNIQUE constraint couvre déjà le code; pas de deuxième index identique."""
+    from sqlalchemy import text
+
+    from app.database import engine
+
+    redundant = [
+        ("etablissementscolaire", "ix_etablissementscolaire_code", "uq_etablissementscolaire_code"),
+        ("matierescolaire", "ix_matierescolaire_code", "uq_matierescolaire_code"),
+        ("referentielscolaire", "ix_referentielscolaire_code", "uq_referentielscolaire_code"),
+    ]
+
+    with engine.connect() as connection:
+        remaining_indexes = connection.execute(
+            text(
+                "SELECT indexname FROM pg_indexes "
+                "WHERE schemaname = 'public' AND indexname = ANY(:names)"
+            ),
+            {"names": [item[1] for item in redundant]},
+        ).scalars().all()
+        assert not remaining_indexes, (
+            "Index uniques redondants encore présents : "
+            f"{sorted(remaining_indexes)}"
+        )
+
+        constraints = connection.execute(
+            text(
+                "SELECT c.relname AS table_name, con.conname "
+                "FROM pg_constraint con "
+                "JOIN pg_class c ON c.oid = con.conrelid "
+                "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND con.contype = 'u' "
+                "AND con.conname = ANY(:names)"
+            ),
+            {"names": [item[2] for item in redundant]},
+        ).all()
+
+    actual = {(row.table_name, row.conname) for row in constraints}
+    expected = {(table, constraint) for table, _index, constraint in redundant}
+    assert actual == expected, (
+        "Les contraintes UNIQUE protégées ne correspondent pas aux attentes : "
+        f"attendu={sorted(expected)}, obtenu={sorted(actual)}"
+    )
