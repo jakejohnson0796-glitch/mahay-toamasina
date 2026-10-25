@@ -42,7 +42,7 @@ class ReferentielScolaire(SQLModel, table=True):
     n'est pas encore exhaustif (notamment pour le technique/professionnel).
     """
     id: Optional[int] = Field(default=None, primary_key=True)
-    code: str = Field(index=True, unique=True, max_length=40)
+    code: str = Field(unique=True, max_length=40)
     libelle: str
     annee_scolaire: Optional[str] = Field(default=None, max_length=20)
     source_officielle: str
@@ -95,7 +95,7 @@ class MatiereScolaire(SQLModel, table=True):
     """Catalogue normalisé des matières ; les associations par niveau/série
     sont portées par ProgrammeMatiereScolaire et non encodées en dur."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    code: str = Field(index=True, unique=True, max_length=40)
+    code: str = Field(unique=True, max_length=40)
     libelle: str
     libelle_malagasy: Optional[str] = None
     source_officielle: Optional[str] = None
@@ -127,7 +127,7 @@ class EtablissementScolaire(SQLModel, table=True):
     enrichi ; une entrée non vérifiée ne doit pas être présentée comme officielle."""
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str = Field(index=True)
-    code: Optional[str] = Field(default=None, unique=True, index=True)
+    code: Optional[str] = Field(default=None, unique=True)
     type_etablissement: str = Field(default="college_lycee", index=True, max_length=30)
     secteur: str = Field(default="inconnu", index=True, max_length=20)  # public / prive / inconnu
     region: Optional[str] = Field(default=None, index=True)
