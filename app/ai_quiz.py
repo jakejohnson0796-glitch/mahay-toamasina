@@ -1146,8 +1146,15 @@ def generer_reponse_tuteur(
     return reponse_finale
 
 
-def _diagnostic_pedagogique_verification_tuteur(audit: Dict[str, Any]) -> str:
-    """Produit un retour étudiant à partir de catégories fixes, jamais du texte brut du modèle."""
+def _diagnostic_pedagogique_verification_tuteur(
+    audit: Dict[str, Any],
+    matiere: Optional[str] = None,
+) -> str:
+    """Retourne un diagnostic fixe et une méthode de reprise adaptée à la matière.
+
+    Les textes libres des modèles servent uniquement à sélectionner des catégories;
+    ils ne sont jamais restitués à l'étudiant.
+    """
     critiques = (audit or {}).get("critics") or []
     textes = []
     for critique in critiques:
@@ -1190,19 +1197,41 @@ def _diagnostic_pedagogique_verification_tuteur(audit: Dict[str, Any]) -> str:
             "Les vérificateurs ne sont pas parvenus à confirmer toutes les parties de la réponse."
         )
 
+    matiere_normalisee = str(matiere or "").casefold()
+    if any(mot in matiere_normalisee for mot in ("math", "algèbre", "algebre", "géométr", "geometr")):
+        conseil = (
+            "Méthode de reprise en mathématiques : refais les calculs au brouillon sans regarder "
+            "la correction, puis vérifie chaque signe, opération et résultat intermédiaire."
+        )
+    elif any(mot in matiere_normalisee for mot in ("physique", "chimie")):
+        conseil = (
+            "Méthode de reprise en sciences : écris la formule et les unités avant le calcul, "
+            "mets les grandeurs dans un même système d'unités, puis contrôle les dimensions du résultat."
+        )
+    elif any(mot in matiere_normalisee for mot in ("informatique", "programmation", "algorithm")):
+        conseil = (
+            "Méthode de reprise en informatique : exécute le raisonnement étape par étape sur un "
+            "petit exemple, note les valeurs des variables et compare la sortie obtenue à la sortie attendue."
+        )
+    elif any(mot in matiere_normalisee for mot in ("comptab", "comptabilité", "comptabilite")):
+        conseil = (
+            "Méthode de reprise en comptabilité : reprends chaque écriture ligne par ligne, vérifie "
+            "les débits et crédits, puis contrôle les totaux avant de valider la conclusion."
+        )
+    else:
+        conseil = (
+            "Méthode de reprise : reprends une étape à la fois, explique pourquoi elle est valide, "
+            "puis compare les données de l'exercice à celles utilisées dans la correction."
+        )
+
     details = " ".join(points[:3])
-    conseil = (
-        "Pour la suite, reprends les étapes une par une et vérifie que l'exercice "
-        "et sa correction utilisent exactement les mêmes données."
-    )
     return (
         "La vérification n'a pas confirmé tous les points pédagogiques. "
         "Points à reprendre : "
         + details
-        + " Conseil : "
+        + " "
         + conseil
     )[:900]
-
 
 def verifier_reponse_tuteur_structuree(
     reponse_initiale: Dict[str, str],
@@ -1260,7 +1289,7 @@ def verifier_reponse_tuteur_structuree(
         else:
             reponse_finale["_statut_verification"] = "a_revoir"
             reponse_finale["_erreur_verification"] = (
-                _diagnostic_pedagogique_verification_tuteur(audit)
+                _diagnostic_pedagogique_verification_tuteur(audit, matiere=matiere)
             )
         return reponse_finale
     except Exception as erreur:
