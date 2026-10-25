@@ -33,7 +33,7 @@ from .referentiel_reconciliation import reconcilier
 from scripts.dedupliquer_cercles_nationaux import deduplicquer as deduplicquer_cercles_nationaux
 from scripts.import_academic_data import importer as importer_referentiel_academique
 from .auth import utilisateur_courant
-from . import ai_worker
+from . import ai_worker, jeux_classiques_router
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -88,6 +88,7 @@ app.include_router(abonnement_router.router)
 app.include_router(dashboard_router.router)
 app.include_router(quiz_router.router)
 app.include_router(jeu_cerebral_router.router)
+app.include_router(jeux_classiques_router.router)
 app.include_router(admin_router.router)
 app.include_router(admin_referentiel_router.router)
 app.include_router(admin_scolaire_router.router)
