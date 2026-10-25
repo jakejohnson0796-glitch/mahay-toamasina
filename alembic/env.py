@@ -61,20 +61,44 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+# Lock shared by all MITARIDALA releases targeting the same PostgreSQL DB.
+# Render can overlap instances during a zero-downtime deploy; both may run
+# Alembic at startup. The session advisory lock makes the next instance re-read
+# alembic_version only after the first migration transaction has committed.
+_MIGRATION_ADVISORY_LOCK_ID = 5569075053750469697
+
+
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
+    """Run migrations online, serializing concurrent PostgreSQL startups."""
     with engine.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        use_advisory_lock = connection.dialect.name == "postgresql"
+        if use_advisory_lock:
+            connection.exec_driver_sql(
+                f"SELECT pg_advisory_lock({_MIGRATION_ADVISORY_LOCK_ID})"
+            )
+            # Session-level locks survive COMMIT; close the implicit transaction
+            # before Alembic starts its own migration transaction.
+            connection.commit()
 
-        with context.begin_transaction():
-            context.run_migrations()
+        try:
+            context.configure(
+                connection=connection, target_metadata=target_metadata
+            )
+
+            with context.begin_transaction():
+                context.run_migrations()
+        finally:
+            if use_advisory_lock:
+                # Restore a clean connection after rollback, then release the
+                # lock explicitly so pooled connections cannot retain it.
+                if connection.in_transaction():
+                    connection.rollback()
+                unlocked = connection.exec_driver_sql(
+                    f"SELECT pg_advisory_unlock({_MIGRATION_ADVISORY_LOCK_ID})"
+                ).scalar_one()
+                connection.commit()
+                if not unlocked:
+                    raise RuntimeError("Le verrou advisory Alembic n'a pas été libéré.")
 
 
 if context.is_offline_mode():
