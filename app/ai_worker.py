@@ -82,14 +82,19 @@ def traiter_tache(tache) -> None:
                 raise RuntimeError(
                     f"Session Tuteur #{tache.session_tuteur_id} introuvable après traitement."
                 )
-            if session_tuteur.statut_verification_ia != "terminee":
-                raise RuntimeError(
-                    session_tuteur.erreur_verification_ia
-                    or (
-                        f"Verification Tuteur #{tache.session_tuteur_id} "
-                        f"terminee avec statut {session_tuteur.statut_verification_ia!r}."
-                    )
+            statut_verification = session_tuteur.statut_verification_ia
+            if statut_verification in {"terminee", "a_revoir"}:
+                # « a_revoir » est un résultat pédagogique valide mais non concluant :
+                # il doit rester visible pour révision, sans être traité comme une panne
+                # technique ni épuiser les cinq tentatives de la file durable.
+                return
+            raise RuntimeError(
+                session_tuteur.erreur_verification_ia
+                or (
+                    f"Verification Tuteur #{tache.session_tuteur_id} "
+                    f"terminee avec statut {statut_verification!r}."
                 )
+            )
         return
 
     raise RuntimeError(f"Type de tache IA inconnu: {tache.type_tache}")
