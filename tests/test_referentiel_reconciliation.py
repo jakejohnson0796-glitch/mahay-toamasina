@@ -285,5 +285,40 @@ class TestReferentielReconciliation(unittest.TestCase):
             path.unlink(missing_ok=True)
 
 
+    def test_dry_run_annule_aussi_les_ecritures_intermediaires(self):
+        engine = nouvel_engine()
+        path = source_temporaire([
+            {
+                "universite": "Université de Toamasina",
+                "ville": "Toamasina",
+                "composante": "Faculté DEG",
+                "domaine": "Domaine temporaire de test",
+                "mention": "Mention temporaire de test",
+                "niveau": "L1",
+                "type": "Spécialisation",
+                "parcours": "Parcours temporaire de test",
+                "statut": "Vérifié",
+            }
+        ])
+        try:
+            with Session(engine) as s:
+                universite = Universite(nom="Université de Toamasina")
+                s.add(universite)
+                s.commit()
+                s.refresh(universite)
+
+                rapport = reconcilier(s, str(path), dry_run=True)
+
+                self.assertEqual(rapport.offres_activees, 1)
+                self.assertEqual(s.exec(select(Faculte)).all(), [])
+                self.assertEqual(s.exec(select(Domaine)).all(), [])
+                self.assertEqual(s.exec(select(Mention)).all(), [])
+                self.assertEqual(s.exec(select(Filiere)).all(), [])
+                self.assertEqual(s.exec(select(ProgrammeUniversitaire)).all(), [])
+        finally:
+            path.unlink(missing_ok=True)
+
+
+
 if __name__ == "__main__":
     unittest.main()
