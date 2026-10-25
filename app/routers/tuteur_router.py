@@ -15,6 +15,7 @@ from ..dependencies import acces_ia_ou_redirection
 from ..models import (
     Document, MembreCercle, MissionApprentissage, SessionTuteur, ProgressionNotion,
     StatutDocument, NiveauScolaire, OptionScolaire, ReferentielScolaire,
+    TacheIA, StatutTacheIA,
 )
 from ..storage import ouvrir_fichier_local
 from ..text_extraction import extraire_texte, extraire_passages_avec_sources
@@ -29,6 +30,42 @@ router = APIRouter()
 
 NB_HISTORIQUE_AFFICHE = 10
 MAX_EXTRAIT_DOCUMENT = 6000
+
+
+def _verification_tuteur_peut_etre_relancee(session_tuteur, tache) -> bool:
+    """Autorise une unique relance renforcée après un désaccord réellement observé."""
+    if not session_tuteur or not tache:
+        return False
+    if getattr(session_tuteur, "statut_verification_ia", None) != "a_revoir":
+        return False
+    diagnostic = str(getattr(session_tuteur, "erreur_verification_ia", "") or "")
+    if "Points à reprendre :" not in diagnostic:
+        # Une vérification indisponible, une ancienne session sans diagnostic
+        # ou un message technique ne justifient pas un nouvel appel automatique.
+        return False
+    statut_tache = getattr(getattr(tache, "statut", None), "value", getattr(tache, "statut", None))
+    if statut_tache != StatutTacheIA.TERMINEE.value:
+        return False
+    # La première vérification consomme une tentative. Une seule relance plus
+    # exigeante est permise; l'ancienne tâche reste l'unique tâche de cette session.
+    return int(getattr(tache, "nombre_essais", 0) or 0) == 1
+
+
+def _tache_verification_tuteur(session: Session, session_id: int, verrouiller: bool = False):
+    requete = (
+        select(TacheIA)
+        .where(
+            TacheIA.type_tache == ai_queue.TYPE_VERIFICATION_TUTEUR,
+            TacheIA.session_tuteur_id == session_id,
+        )
+        .order_by(TacheIA.id.desc())
+        .limit(1)
+    )
+    if verrouiller:
+        requete = requete.with_for_update()
+    return session.exec(requete).first()
+
+
 
 
 def _utilisateur_membre_cercle(session: Session, cercle_id: Optional[int], utilisateur_id: int) -> bool:
@@ -644,6 +681,68 @@ def verifier_comprehension_tuteur_session(
     return RedirectResponse(f"/tuteur/{session_id}#comprehension-tuteur", status_code=303)
 
 
+@router.post("/tuteur/{session_id}/relancer-verification")
+def relancer_verification_tuteur_session(
+    request: Request,
+    session_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Relance une seule fois la vérification quand un désaccord pédagogique est documenté."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    session_tuteur = session.exec(
+        select(SessionTuteur)
+        .where(
+            SessionTuteur.id == session_id,
+            SessionTuteur.utilisateur_id == utilisateur.id,
+        )
+        .with_for_update()
+    ).first()
+    if not session_tuteur:
+        return RedirectResponse("/tuteur", status_code=303)
+
+    tache = _tache_verification_tuteur(session, session_id, verrouiller=True)
+    if not _verification_tuteur_peut_etre_relancee(session_tuteur, tache):
+        return RedirectResponse(
+            f"/tuteur/{session_id}?verification=non_disponible#verification-tuteur",
+            status_code=303,
+        )
+
+    if limite_depassee(f"ia-tuteur-reverification:user:{utilisateur.id}", 1, 3600):
+        return RedirectResponse(
+            f"/tuteur/{session_id}?erreur=trop_de_questions#verification-tuteur",
+            status_code=303,
+        )
+
+    maintenant = datetime.utcnow()
+    # Conserver nombre_essais=1 permet de distinguer la première vérification
+    # de cette unique relance renforcée. Après ce passage, le compteur vaudra 2
+    # et le bouton ne sera plus proposé, même si le résultat reste « à revoir ».
+    tache.statut = StatutTacheIA.EN_ATTENTE
+    tache.strategie_verification = "renforcee"
+    tache.disponible_le = maintenant
+    tache.prise_en_charge_le = None
+    tache.terminee_le = None
+    tache.derniere_erreur = None
+
+    session_tuteur.statut_verification_ia = "en_attente"
+    session_tuteur.date_verification_ia = None
+    session_tuteur.erreur_verification_ia = None
+    session.add(tache)
+    session.add(session_tuteur)
+    session.commit()
+
+    ai_queue.notifier_tache(tache.id)
+    return RedirectResponse(
+        f"/tuteur/{session_id}?verification=relancee#verification-tuteur",
+        status_code=303,
+    )
+
+
 @router.get("/tuteur/{session_id}")
 def page_reponse_tuteur(request: Request, session_id: int, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
@@ -669,9 +768,19 @@ def page_reponse_tuteur(request: Request, session_id: int, session: Session = De
             MissionApprentissage.derniere_session_tuteur_id == session_tuteur.id,
         )
     ).first()
+    tache_verification = (
+        _tache_verification_tuteur(session, session_tuteur.id)
+        if session_tuteur.statut_verification_ia == "a_revoir"
+        else None
+    )
+    peut_relancer_verification = _verification_tuteur_peut_etre_relancee(
+        session_tuteur,
+        tache_verification,
+    )
     session_vue = dict(
         utilisateur=utilisateur,
         session_tuteur=session_tuteur,
+        peut_relancer_verification=peut_relancer_verification,
         progression_tuteur=progression,
         mission_adaptative=mission_adaptative,
         contenu_tuteur=normaliser_structure_tuteur({
