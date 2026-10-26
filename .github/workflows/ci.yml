@@ -55,6 +55,7 @@ jobs:
           npx playwright install --with-deps chromium
           node scripts/smoke_circle_layout.mjs
           node scripts/smoke_global_responsive.mjs
+          node scripts/smoke_back_navigation.mjs
           node scripts/smoke_circle_hierarchy.mjs
           node scripts/smoke_tuteur_voice.mjs
           node scripts/smoke_revision_contrast.mjs
