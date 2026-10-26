@@ -19,7 +19,7 @@ const navigateur = await chromium.launch({ headless: true });
 const page = await navigateur.newPage({ viewport: { width: 320, height: 800 } });
 const html = (fallback) => `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">` +
-  `<style>${css.replace(/<\\/style/gi, "<\\\\/style")}</style></head><body>
+  `<style>${css}</style></head><body>
   <main style="padding:12px;max-width:100%;box-sizing:border-box">
     <nav class="navigation-retour-globale" aria-label="Navigation de la page">
       <a class="navigation-retour-bouton" data-navigation-retour href="${fallback}" title="Revenir à la page précédente">
