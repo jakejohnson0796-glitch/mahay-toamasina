@@ -4,6 +4,7 @@
   align-items: center;
   width: 100%;
   min-width: 0;
+  padding-inline: var(--gm-page-gutter, var(--gm-universal-gutter, 1rem));
   margin: 0 auto clamp(.55rem, 1.2vw, .9rem);
   position: relative;
   z-index: 1;
