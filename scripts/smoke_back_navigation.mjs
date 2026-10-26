@@ -25,7 +25,7 @@ const html = (fallback) => `<!doctype html>
       <a class="navigation-retour-bouton" data-navigation-retour href="${fallback}" title="Revenir à la page précédente">
         <span class="navigation-retour-fleche" aria-hidden="true">←</span> <span>Retour</span>
       </a>
-    </nav><h1>Page de test</h1>
+    </nav><a id="test-go-next" href="/quiz/42">Ouvrir le quiz</a><h1>Page de test</h1>
   </main><script>${js}</script></body></html>`;
 
 await contexte.route("https://mitaridala.test/**", async (route) => {
@@ -39,7 +39,8 @@ const page = await contexte.newPage();
 try {
   // Historique interne : le bouton revient à la page précédente du même site.
   await page.goto("https://mitaridala.test/previous");
-  await page.goto("https://mitaridala.test/quiz/42");
+  await page.locator("#test-go-next").click();
+  await page.waitForURL("https://mitaridala.test/quiz/42");
   assert.equal((await page.locator("[data-navigation-retour]").innerText()).replace(/\s+/g, " ").trim(), "← Retour");
   const bounds = await page.locator("[data-navigation-retour]").evaluate((el) => {
     const r = el.getBoundingClientRect();
