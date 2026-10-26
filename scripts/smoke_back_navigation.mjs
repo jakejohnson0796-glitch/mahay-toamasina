@@ -23,7 +23,7 @@ const html = (fallback) => `<!doctype html>
   <main style="padding:12px;max-width:100%;box-sizing:border-box">
     <nav class="navigation-retour-globale" aria-label="Navigation de la page">
       <a class="navigation-retour-bouton" data-navigation-retour href="${fallback}" title="Revenir à la page précédente">
-        <span class="navigation-retour-fleche" aria-hidden="true">←</span><span>Retour</span>
+        <span class="navigation-retour-fleche" aria-hidden="true">←</span> <span>Retour</span>
       </a>
     </nav><h1>Page de test</h1>
   </main><script>${js}</script></body></html>`;
