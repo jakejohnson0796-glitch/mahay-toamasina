@@ -285,7 +285,7 @@
           const fin = expression.slice(-1);
           if (operation === '(') {
             if (/[0-9)]/.test(fin)) expression += ' × ';
-            else if (fin && !/[+\-−×÷*/(]$/.test(fin)) expression += ' ';
+            else if (fin && !estSigneOuParentheseOuverture(fin)) expression += ' ';
             input.value = expression + '(';
           } else if (operation === ')') {
             const ouverts = (expression.match(/\(/g) || []).length;
