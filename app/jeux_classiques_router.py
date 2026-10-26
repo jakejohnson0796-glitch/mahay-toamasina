@@ -430,6 +430,338 @@ def calculer(expression, nombres, cible):
         return False, "Expression invalide. Vérifie les nombres, les parenthèses et les opérations."
 
 
+
+def _normaliser_code_tournoi(code):
+    return re.sub(r"[^A-Z2-9]", "", (code or "").upper())[:8]
+
+
+def _obtenir_tournoi(session, code):
+    code = _normaliser_code_tournoi(code)
+    if not code:
+        return None
+    return session.exec(select(TournoiChampion).where(TournoiChampion.code == code)).first()
+
+
+def _trouver_participant(session, tournoi_id, utilisateur_id):
+    return session.exec(
+        select(ParticipantTournoiChampion).where(
+            ParticipantTournoiChampion.tournoi_id == tournoi_id,
+            ParticipantTournoiChampion.utilisateur_id == utilisateur_id,
+        )
+    ).first()
+
+
+def _contexte_tournoi(request, session, tournoi, utilisateur):
+    participants_db = session.exec(
+        select(ParticipantTournoiChampion)
+        .where(ParticipantTournoiChampion.tournoi_id == tournoi.id)
+        .order_by(ParticipantTournoiChampion.date_adhesion, ParticipantTournoiChampion.id)
+    ).all()
+    participants = []
+    for participant in participants_db:
+        membre = session.get(Utilisateur, participant.utilisateur_id)
+        participants.append({
+            "id": participant.utilisateur_id,
+            "nom": membre.nom if membre else "Joueur",
+            "score": participant.score,
+            "bonnes_reponses": participant.bonnes_reponses,
+            "est_createur": participant.utilisateur_id == tournoi.createur_id,
+        })
+
+    paquet = json.loads(tournoi.questions_json or "[]")
+    index_question = int(tournoi.index_question or 0)
+    question = None
+    correction = None
+    a_repondu = False
+    mon_choix = None
+    tout_le_monde_a_repondu = False
+    if tournoi.statut == "en_cours" and 0 <= index_question < len(paquet):
+        donnees_question = paquet[index_question]
+        reponses = session.exec(
+            select(ReponseTournoiChampion).where(
+                ReponseTournoiChampion.tournoi_id == tournoi.id,
+                ReponseTournoiChampion.question_index == index_question,
+            )
+        ).all()
+        reponse_courante = next(
+            (rep for rep in reponses if rep.utilisateur_id == utilisateur.id),
+            None,
+        )
+        a_repondu = reponse_courante is not None
+        mon_choix = reponse_courante.choix if reponse_courante else None
+        tout_le_monde_a_repondu = bool(participants_db) and len(reponses) >= len(participants_db)
+        question = {
+            "theme": donnees_question["theme"],
+            "question": donnees_question["question"],
+            "choix": donnees_question["choix"],
+            "difficulte": donnees_question["difficulte"],
+            "type_question": donnees_question["type_question"],
+        }
+        if tout_le_monde_a_repondu:
+            correction = {
+                "bonne_texte": donnees_question["choix"][donnees_question["bonne"]],
+                "explication": donnees_question["explication"],
+            }
+
+    # Le classement est déterminé par le score, puis par le nombre de bonnes réponses.
+    classement = sorted(
+        participants,
+        key=lambda p: (p["score"], p["bonnes_reponses"], p["nom"].casefold()),
+        reverse=True,
+    )
+    return {
+        "utilisateur": utilisateur,
+        "tournoi": tournoi,
+        "code": tournoi.code,
+        "participants": participants,
+        "classement": classement,
+        "question": question,
+        "question_index": index_question,
+        "numero_question": min(index_question + 1, len(paquet)),
+        "nombre_questions": len(paquet),
+        "a_repondu": a_repondu,
+        "mon_choix": mon_choix,
+        "tout_le_monde_a_repondu": tout_le_monde_a_repondu,
+        "correction": correction,
+        "erreur": request.query_params.get("erreur", ""),
+        "est_createur": utilisateur.id == tournoi.createur_id,
+    }
+
+
+@router.get("/tournoi")
+def accueil_tournoi(request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "jeux_classiques_tournoi.html",
+        {
+            "utilisateur": utilisateur,
+            "erreur": request.query_params.get("erreur", ""),
+            "difficultes": [
+                ("facile", "Facile", "Pour se familiariser avec les énigmes"),
+                ("moyen", "Moyen", "Un vrai défi de logique"),
+                ("difficile", "Difficile", "Des énigmes plus exigeantes"),
+            ],
+            "mode": "accueil",
+        },
+    )
+
+
+@router.post("/tournoi/creer", dependencies=[Depends(verifier_csrf)])
+def creer_tournoi(
+    request: Request,
+    difficulte: str = Form("moyen"),
+    session: Session = Depends(get_session),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if difficulte not in {"facile", "moyen", "difficile"}:
+        difficulte = "moyen"
+    code = ""
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    for _ in range(20):
+        candidat = "".join(secrets.choice(alphabet) for _ in range(6))
+        if not _obtenir_tournoi(session, candidat):
+            code = candidat
+            break
+    if not code:
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=creation", status_code=303)
+
+    tournoi = TournoiChampion(
+        code=code,
+        createur_id=utilisateur.id,
+        difficulte=difficulte,
+        statut="attente",
+        questions_json=json.dumps(
+            preparer_questions_tournoi(difficulte),
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
+        nb_questions=QUESTIONS_PAR_PARTIE,
+    )
+    session.add(tournoi)
+    session.flush()
+    session.add(
+        ParticipantTournoiChampion(
+            tournoi_id=tournoi.id,
+            utilisateur_id=utilisateur.id,
+        )
+    )
+    session.commit()
+    return RedirectResponse(f"/jeux-classiques/tournoi/{code}", status_code=303)
+
+
+@router.post("/tournoi/rejoindre", dependencies=[Depends(verifier_csrf)])
+def rejoindre_tournoi(
+    request: Request,
+    code: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    code = _normaliser_code_tournoi(code)
+    tournoi = _obtenir_tournoi(session, code)
+    if not tournoi:
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=code", status_code=303)
+
+    participant = _trouver_participant(session, tournoi.id, utilisateur.id)
+    if participant:
+        return RedirectResponse(f"/jeux-classiques/tournoi/{code}", status_code=303)
+    if tournoi.statut != "attente":
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=demarre", status_code=303)
+    participants = session.exec(
+        select(ParticipantTournoiChampion).where(
+            ParticipantTournoiChampion.tournoi_id == tournoi.id
+        )
+    ).all()
+    if len(participants) >= 8:
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=complet", status_code=303)
+
+    session.add(ParticipantTournoiChampion(tournoi_id=tournoi.id, utilisateur_id=utilisateur.id))
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+    return RedirectResponse(f"/jeux-classiques/tournoi/{code}", status_code=303)
+
+
+@router.get("/tournoi/{code}")
+def voir_tournoi(code: str, request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    tournoi = _obtenir_tournoi(session, code)
+    if not tournoi or not _trouver_participant(session, tournoi.id, utilisateur.id):
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=acces", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "jeux_classiques_tournoi.html",
+        _contexte_tournoi(request, session, tournoi, utilisateur) | {"mode": "salon"},
+    )
+
+
+@router.post("/tournoi/{code}/demarrer", dependencies=[Depends(verifier_csrf)])
+def demarrer_tournoi(code: str, request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    tournoi = _obtenir_tournoi(session, code)
+    if not tournoi or tournoi.createur_id != utilisateur.id:
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=acces", status_code=303)
+    if tournoi.statut != "attente":
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
+    nombre = session.exec(
+        select(ParticipantTournoiChampion).where(
+            ParticipantTournoiChampion.tournoi_id == tournoi.id
+        )
+    ).all()
+    if len(nombre) < 2:
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}?erreur=minimum", status_code=303)
+    tournoi.statut = "en_cours"
+    tournoi.date_demarrage = datetime.utcnow()
+    session.add(tournoi)
+    session.commit()
+    return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
+
+
+@router.post("/tournoi/{code}/repondre", dependencies=[Depends(verifier_csrf)])
+def repondre_tournoi(
+    code: str,
+    request: Request,
+    choix: int = Form(-1),
+    session: Session = Depends(get_session),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    tournoi = _obtenir_tournoi(session, code)
+    if not tournoi:
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=code", status_code=303)
+    participant = _trouver_participant(session, tournoi.id, utilisateur.id)
+    if not participant:
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=acces", status_code=303)
+    paquet = json.loads(tournoi.questions_json or "[]")
+    index_question = int(tournoi.index_question or 0)
+    if tournoi.statut != "en_cours" or not 0 <= index_question < len(paquet):
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
+    donnees_question = paquet[index_question]
+    if choix < 0 or choix >= len(donnees_question["choix"]):
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}?erreur=choix", status_code=303)
+
+    deja_repondu = session.exec(
+        select(ReponseTournoiChampion).where(
+            ReponseTournoiChampion.tournoi_id == tournoi.id,
+            ReponseTournoiChampion.utilisateur_id == utilisateur.id,
+            ReponseTournoiChampion.question_index == index_question,
+        )
+    ).first()
+    if deja_repondu:
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
+
+    correcte = choix == int(donnees_question["bonne"])
+    nouvelle_serie = participant.serie + 1 if correcte else 0
+    points = (POINTS_QUESTION + (BONUS_SERIE if nouvelle_serie % 3 == 0 else 0)) if correcte else 0
+    reponse = ReponseTournoiChampion(
+        tournoi_id=tournoi.id,
+        utilisateur_id=utilisateur.id,
+        question_index=index_question,
+        choix=choix,
+        correcte=correcte,
+        points=points,
+    )
+    session.add(reponse)
+    try:
+        # La contrainte unique protège aussi contre les doubles clics simultanés.
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
+    participant.score += points
+    participant.bonnes_reponses += int(correcte)
+    participant.serie = nouvelle_serie
+    session.add(participant)
+    session.commit()
+    return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
+
+
+@router.post("/tournoi/{code}/suivant", dependencies=[Depends(verifier_csrf)])
+def question_suivante_tournoi(code: str, request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    tournoi = _obtenir_tournoi(session, code)
+    if not tournoi or tournoi.createur_id != utilisateur.id:
+        return RedirectResponse("/jeux-classiques/tournoi?erreur=acces", status_code=303)
+    if tournoi.statut != "en_cours":
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
+
+    participants = session.exec(
+        select(ParticipantTournoiChampion).where(
+            ParticipantTournoiChampion.tournoi_id == tournoi.id
+        )
+    ).all()
+    reponses = session.exec(
+        select(ReponseTournoiChampion).where(
+            ReponseTournoiChampion.tournoi_id == tournoi.id,
+            ReponseTournoiChampion.question_index == tournoi.index_question,
+        )
+    ).all()
+    if not participants or len(reponses) < len(participants):
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}?erreur=attente", status_code=303)
+
+    tournoi.index_question += 1
+    paquet = json.loads(tournoi.questions_json or "[]")
+    if tournoi.index_question >= len(paquet):
+        tournoi.statut = "termine"
+        tournoi.date_fin = datetime.utcnow()
+    session.add(tournoi)
+    session.commit()
+    return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
+
 @router.get("")
 def accueil(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
@@ -448,11 +780,18 @@ def accueil(request: Request, session: Session = Depends(get_session)):
 
 
 @router.post("/demarrer", dependencies=[Depends(verifier_csrf)])
-def demarrer(request: Request, mode: str = Form(...), session: Session = Depends(get_session)):
+def demarrer(
+    request: Request,
+    mode: str = Form(...),
+    difficulte: str = Form("moyen"),
+    session: Session = Depends(get_session),
+):
     if not utilisateur_courant(request, session):
         return RedirectResponse("/connexion", status_code=303)
-    if mode == "champion":
-        etat = creer_partie_champion()
+    if difficulte not in {"facile", "moyen", "difficile"}:
+        difficulte = "moyen"
+    if mode in {"champion", "champion_bot"}:
+        etat = creer_partie_champion(mode=mode, difficulte=difficulte)
     elif mode == "chiffres":
         nombres, cible, solution, indice = tirer_chiffres()
         etat = {
@@ -517,11 +856,11 @@ def repondre(
         return RedirectResponse("/connexion", status_code=303)
     etat = request.session.get("jeux_classiques") or {}
     mode = etat.get("mode")
-    if mode not in {"champion", "chiffres", "lettres"}:
+    if mode not in {"champion", "champion_bot", "chiffres", "lettres"}:
         effacer_partie_classique(request.session)
         return RedirectResponse("/jeux-classiques", status_code=303)
 
-    if mode == "champion":
+    if mode in {"champion", "champion_bot"}:
         ids = etat.get("ids", [])
         tour = int(etat.get("tour", 0))
         if tour >= len(ids) or "bonne_active" not in etat:
@@ -544,11 +883,31 @@ def repondre(
             etat["points"] = int(etat.get("points", 0)) + points_ajoutes
         else:
             etat["serie"] = 0
-        etat["feedback"] = {
+        feedback = {
             "correcte": correcte,
             "explication": question["explication"],
             "points_ajoutes": points_ajoutes,
         }
+        if mode == "champion_bot":
+            bot_correcte, bot_choix = simuler_reponse_bot(
+                int(etat["bonne_active"]),
+                len(etat.get("choix_actifs", [])),
+                etat.get("difficulte", "moyen"),
+            )
+            if bot_correcte:
+                etat["bot_correctes"] = int(etat.get("bot_correctes", 0)) + 1
+                etat["bot_serie"] = int(etat.get("bot_serie", 0)) + 1
+                bonus_bot = BONUS_SERIE if etat["bot_serie"] % 3 == 0 else 0
+                etat["bot_score"] = int(etat.get("bot_score", 0)) + POINTS_QUESTION + bonus_bot
+            else:
+                etat["bot_serie"] = 0
+                bonus_bot = 0
+            feedback.update({
+                "bot_correcte": bot_correcte,
+                "bot_choix": bot_choix,
+                "bot_points_ajoutes": (POINTS_QUESTION + bonus_bot) if bot_correcte else 0,
+            })
+        etat["feedback"] = feedback
         etat["tour"] = tour + 1
         preparer_question_active(etat)
     elif mode == "chiffres":
