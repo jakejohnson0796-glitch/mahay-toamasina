@@ -20,14 +20,24 @@
       }
 
       var secours = lien.getAttribute("href") || "/";
-      // Le repli doit rester une URL relative au site, jamais une destination externe.
-      if (secours.indexOf("//") === 0 || /^[a-z][a-z0-9+.-]*:/i.test(secours)) return;
+      var pageActuelle = new URL(window.location.href);
+      var urlSecours;
+      try {
+        urlSecours = new URL(secours, pageActuelle);
+      } catch (erreur) {
+        evenement.preventDefault();
+        return;
+      }
+      // Le repli doit rester sur l'origine du site, même pour un chemin mal formé.
+      if (urlSecours.origin !== pageActuelle.origin) {
+        evenement.preventDefault();
+        return;
+      }
 
       if (!document.referrer || window.history.length < 2) return;
 
       try {
-        var originePrecedente = new URL(document.referrer, window.location.href);
-        var pageActuelle = new URL(window.location.href);
+        var originePrecedente = new URL(document.referrer, pageActuelle);
         var urlPrecedente = originePrecedente.pathname + originePrecedente.search + originePrecedente.hash;
         var urlActuelle = pageActuelle.pathname + pageActuelle.search + pageActuelle.hash;
 
