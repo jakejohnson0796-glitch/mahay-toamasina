@@ -2,6 +2,7 @@ import random
 from pathlib import Path
 
 from app.jeux_classiques_router import (
+    ENIGMES,
     MOTS,
     QUESTIONS,
     calculer,
@@ -11,6 +12,9 @@ from app.jeux_classiques_router import (
     mot_valide,
     normaliser,
     preparer_question_active,
+    preparer_questions_tournoi,
+    selectionner_questions_champion,
+    simuler_reponse_bot,
     tirer_chiffres,
     tirer_lettres,
     tirer_tirage_lettres,
@@ -18,7 +22,9 @@ from app.jeux_classiques_router import (
 
 
 def test_banque_questions_variee_et_coherente():
-    assert len(QUESTIONS) >= 60
+    assert len(QUESTIONS) >= 80
+    assert len(ENIGMES) >= 18
+    assert {q["difficulte"] for q in ENIGMES} == {"facile", "moyen", "difficile"}
     assert len({q["id"] for q in QUESTIONS}) == len(QUESTIONS)
     for question in QUESTIONS:
         assert question["question"].strip()
@@ -125,3 +131,59 @@ def test_template_propose_navigation_et_tentatives():
     assert "Rejouer" in template
     assert "tentatives_max" in template
     assert "progress" in template
+
+
+
+def test_chaque_partie_competitive_contient_des_enigmes_du_niveau_choisi():
+    for difficulte in ("facile", "moyen", "difficile"):
+        questions = selectionner_questions_champion(difficulte, random.Random(31))
+        enigmes = [q for q in questions if q["type_question"] == "enigme"]
+        assert len(questions) == 10
+        assert len(enigmes) == 4
+        assert all(q["difficulte"] == difficulte for q in enigmes)
+        assert len({q["id"] for q in questions}) == 10
+
+
+def test_bot_a_des_probabilites_distinctes_par_difficulte():
+    class RNGFixe:
+        def random(self):
+            return 0.5
+
+        def choice(self, values):
+            return values[0]
+
+    facile = simuler_reponse_bot(2, 4, "facile", RNGFixe())
+    moyen = simuler_reponse_bot(2, 4, "moyen", RNGFixe())
+    difficile = simuler_reponse_bot(2, 4, "difficile", RNGFixe())
+    assert facile[0] is False and facile[1] != 2
+    assert moyen == (True, 2)
+    assert difficile == (True, 2)
+
+
+def test_tournoi_fige_les_propositions_et_la_bonne_reponse():
+    paquet = preparer_questions_tournoi("difficile", random.Random(17))
+    assert len(paquet) == 10
+    assert sum(q["type_question"] == "enigme" for q in paquet) == 4
+    for item in paquet:
+        assert len(item["choix"]) == 4
+        original = next(q for q in QUESTIONS if q["id"] == item["id"])
+        assert item["choix"][item["bonne"]] == original["choix"][original["bonne"]]
+        assert item["explication"] == original["explication"]
+
+
+def test_interface_propose_bot_trois_niveaux_et_tournoi_multijoueur():
+    racine = Path(__file__).resolve().parents[1]
+    page_jeu = (racine / "app" / "templates" / "jeux_classiques.html").read_text(encoding="utf-8")
+    page_tournoi = (racine / "app" / "templates" / "jeux_classiques_tournoi.html").read_text(encoding="utf-8")
+    migration = (racine / "alembic" / "versions" / "bca6e2d8f143_tournoi_questions_champion.py").read_text(encoding="utf-8")
+
+    assert 'name="mode" value="champion_bot"' in page_jeu
+    assert 'option value="facile"' in page_jeu
+    assert 'option value="moyen"' in page_jeu
+    assert 'option value="difficile"' in page_jeu
+    assert "/jeux-classiques/tournoi" in page_jeu
+    assert 'action="/jeux-classiques/tournoi/creer"' in page_tournoi
+    assert 'action="/jeux-classiques/tournoi/rejoindre"' in page_tournoi
+    assert "Actualiser le salon" in page_tournoi
+    assert 'down_revision: Union[str, None] = "d5e9c7a1b3f6"' in migration
+    assert "uq_reponse_tournoi_joueur_manche" in migration

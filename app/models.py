@@ -810,6 +810,73 @@ class JeuCerebralSession(SQLModel, table=True):
 
 
 
+class TournoiChampion(SQLModel, table=True):
+    """Salon persistant d'un tournoi Questions pour un champion."""
+    __tablename__ = "tournoichampion"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    code: str = Field(max_length=8, index=True, unique=True)
+    createur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    difficulte: str = Field(default="moyen", max_length=12)
+    statut: str = Field(default="attente", index=True, max_length=16)
+    questions_json: str
+    index_question: int = Field(default=0)
+    nb_questions: int = Field(default=10)
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    date_demarrage: Optional[datetime] = None
+    date_fin: Optional[datetime] = None
+
+    __table_args__ = (
+        Index("ix_tournoichampion_statut_date", "statut", "date_creation"),
+    )
+
+
+class ParticipantTournoiChampion(SQLModel, table=True):
+    """Un joueur humain inscrit à un tournoi."""
+    __tablename__ = "participanttournoichampion"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    tournoi_id: int = Field(foreign_key="tournoichampion.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    score: int = Field(default=0)
+    bonnes_reponses: int = Field(default=0)
+    serie: int = Field(default=0)
+    date_adhesion: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tournoi_id",
+            "utilisateur_id",
+            name="uq_participant_tournoi_utilisateur",
+        ),
+        Index("ix_participant_tournoi_adhesion", "tournoi_id", "date_adhesion"),
+    )
+
+
+class ReponseTournoiChampion(SQLModel, table=True):
+    """Réponse immuable d'un joueur à une manche, unique même sur double clic."""
+    __tablename__ = "reponsetournoichampion"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    tournoi_id: int = Field(foreign_key="tournoichampion.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    question_index: int = Field(index=True)
+    choix: int
+    correcte: bool = Field(default=False)
+    points: int = Field(default=0)
+    date_reponse: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tournoi_id",
+            "utilisateur_id",
+            "question_index",
+            name="uq_reponse_tournoi_joueur_manche",
+        ),
+        Index("ix_reponse_tournoi_manche", "tournoi_id", "question_index"),
+    )
+
+
 class MissionApprentissage(SQLModel, table=True):
     """État persistant de la mission adaptative courante d'un étudiant."""
     id: Optional[int] = Field(default=None, primary_key=True)

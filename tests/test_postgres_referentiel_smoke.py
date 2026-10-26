@@ -609,7 +609,7 @@ def test_postgres_indexes_all_uncovered_foreign_keys():
     reason="Test concurrent réservé à la base PostgreSQL jetable de CI",
 )
 def test_postgres_concurrent_alembic_upgrades_are_serialized():
-    """Rejoue deux upgrades simultanés après retour au parent de la migration d'index."""
+    """Rejoue deux upgrades simultanés depuis l'ancêtre commun des dernières migrations."""
     from concurrent.futures import ThreadPoolExecutor
     import subprocess
     import sys
@@ -625,8 +625,8 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "d5e9c7a1b3f6", (
-        "Le test concurrent doit démarrer sur la migration finale d'index."
+    assert revision == "bca6e2d8f143", (
+        "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
     downgrade = subprocess.run(
@@ -675,7 +675,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "d5e9c7a1b3f6"
+    assert revision == "bca6e2d8f143"
     assert index_count == 41
 
 

@@ -58,6 +58,11 @@
 .jeu-resultat span{display:block;color:var(--content-text-muted);font-size:.85rem;margin-top:.25rem}
 .jeu-finish{border-color:color-mix(in srgb,var(--content-link) 45%,var(--content-border))}
 .jeu-navigation-bas{display:flex;gap:.65rem;flex-wrap:wrap;margin-top:1.2rem}
+.jeu-liens-tournoi{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.65rem}
+.jeu-lien{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:44px;padding:.65rem .85rem;border:1px solid var(--content-border);border-radius:11px;color:var(--content-text);font-weight:800;text-decoration:none}
+.jeu-lien:hover{border-color:var(--content-link);color:var(--content-link)}
+.jeu-niveau{display:grid;gap:.35rem;margin:.5rem 0 .7rem;font-weight:750}
+.jeu-niveau select{min-height:44px;border:1px solid var(--content-border);border-radius:10px;padding:.65rem;background:var(--content-bg);color:var(--content-text)}
 @media(max-width:800px){.jeux-grille{grid-template-columns:1fr}.jeu-carte{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:.9rem;align-items:start}.jeu-carte .jeu-emoji{grid-row:span 2}.jeu-carte h2{align-self:end}.jeu-carte p,.jeu-carte form{grid-column:1/-1}.jeu-carte .jeu-bouton{width:100%}}
 @media(max-width:520px){.jeux-classiques{padding:.85rem}.jeu-choix{grid-template-columns:1fr}.jeu-resultat{grid-template-columns:1fr}.jeu-resultat article{display:flex;align-items:center;justify-content:space-between;gap:1rem}.jeu-resultat strong{font-size:1.2rem}.jeu-bouton{width:100%}.jeu-actions-navigation form{width:100%}.jeu-actions-navigation .jeu-bouton{width:100%}.jeu-zone-actions{align-items:stretch}.jeu-zone-actions form{flex:1 1 100%}.jeu-zone-actions .jeu-bouton{width:100%}}
 @media(prefers-reduced-motion:reduce){.jeux-classiques *, .jeux-classiques *::before,.jeux-classiques *::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
@@ -88,8 +93,23 @@
     <article class="jeu-carte">
       <div class="jeu-emoji" aria-hidden="true">🏆</div>
       <h2>Questions pour un champion</h2>
-      <p class="jeu-muted">10 questions tirées d'une banque variée : Madagascar, sciences, logique, langues, histoire et informatique. Les propositions sont mélangées à chaque partie.</p>
-      <form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="champion"><button class="jeu-bouton" type="submit">Lancer le quiz <span aria-hidden="true">→</span></button></form>
+      <p class="jeu-muted">10 manches avec des connaissances, des énigmes et des pièges de logique. Joue en solo, défie un bot de niveau facile, moyen ou difficile, ou crée un tournoi jusqu'à 8 joueurs.</p>
+      <form method="post" action="/jeux-classiques/demarrer">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="champion">
+        <button class="jeu-bouton jeu-bouton-secondaire" type="submit">Jouer en solo</button>
+      </form>
+      <form method="post" action="/jeux-classiques/demarrer">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="champion_bot">
+        <label class="jeu-niveau">Défier un bot
+          <select name="difficulte">
+            <option value="facile">Facile — débutant</option>
+            <option value="moyen" selected>Moyen — confirmé</option>
+            <option value="difficile">Difficile — expert</option>
+          </select>
+        </label>
+        <button class="jeu-bouton" type="submit">Lancer le duel <span aria-hidden="true">→</span></button>
+      </form>
+      <div class="jeu-liens-tournoi"><a class="jeu-lien" href="/jeux-classiques/tournoi">🏁 Tournoi multijoueur</a></div>
     </article>
     <article class="jeu-carte">
       <div class="jeu-emoji" aria-hidden="true">🔢</div>
@@ -104,22 +124,23 @@
       <form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="lettres"><button class="jeu-bouton" type="submit">Lancer les lettres <span aria-hidden="true">→</span></button></form>
     </article>
   </div>
-  {% elif partie.get('mode') == 'champion' %}
+  {% elif partie.get('mode') in ['champion', 'champion_bot'] %}
     {% set tour = partie.get('tour', 0) %}
     {% set nombre_questions = partie.get('ids', [])|length %}
     {% if tour < nombre_questions %}
       {% set qid = partie.get('ids')[tour] %}
       {% set question = (questions|selectattr('id','equalto',qid)|list|first) %}
       <section class="jeu-zone">
-        <div class="jeu-statistiques"><span class="jeu-chip">🏆 Questions pour un champion</span><span class="jeu-chip">⭐ {{ partie.get('points',0) }} points</span><span class="jeu-chip">✅ {{ partie.get('score',0) }} bonnes réponses</span><span class="jeu-chip">🔥 Série : {{ partie.get('serie',0) }}</span></div>
+        <div class="jeu-statistiques"><span class="jeu-chip">🏆 Questions pour un champion</span><span class="jeu-chip">⭐ {{ partie.get('points',0) }} points</span><span class="jeu-chip">✅ {{ partie.get('score',0) }} bonnes réponses</span><span class="jeu-chip">🔥 Série : {{ partie.get('serie',0) }}</span>{% if partie.get('mode') == 'champion_bot' %}<span class="jeu-chip">🤖 {{ partie.get('bot_nom') }} : {{ partie.get('bot_score',0) }} pts</span><span class="jeu-chip">Niveau {{ partie.get('difficulte','moyen') }}</span>{% endif %}</div>
         <div class="jeu-progression"><div class="jeu-progression-ligne"><span>Question {{ tour + 1 }} sur {{ nombre_questions }}</span><span>{{ ((tour / nombre_questions) * 100)|round|int }} % terminé</span></div><progress value="{{ tour }}" max="{{ nombre_questions }}" aria-label="Progression du quiz"></progress></div>
-        <p class="jeu-muted">Thème : {{ question.theme }}</p>
+        <p class="jeu-muted">Thème : {{ question.theme }}{% if question.type_question == 'enigme' %} · 🧩 Énigme{% endif %} · Difficulté : {{ question.difficulte|capitalize }}</p>
         <h2>{{ question.question }}</h2>
         {% if partie.get('feedback') and tour > 0 %}
         <div class="jeu-feedback" data-correct="{{ 'true' if partie.feedback.correcte else 'false' }}" role="status" aria-live="polite">
           <strong>{{ "Bonne réponse !" if partie.feedback.correcte else "On apprend aussi en se trompant." }}</strong>
           <p>{{ partie.feedback.explication }}</p>
           {% if partie.feedback.get('points_ajoutes',0) %}<p>+{{ partie.feedback.points_ajoutes }} points ajoutés.</p>{% endif %}
+          {% if partie.get('mode') == 'champion_bot' %}<p>{% if partie.feedback.get('bot_correcte') %}🤖 {{ partie.get('bot_nom') }} a aussi trouvé la réponse (+{{ partie.feedback.get('bot_points_ajoutes',0) }} points).{% else %}🤖 {{ partie.get('bot_nom') }} s'est trompé sur cette manche.{% endif %} Score du duel : toi {{ partie.get('points',0) }} — bot {{ partie.get('bot_score',0) }}.</p>{% endif %}
         </div>
         {% endif %}
         <form method="post" action="/jeux-classiques/repondre">
@@ -137,17 +158,18 @@
       </section>
     {% else %}
       <section class="jeu-zone jeu-finish">
-        <span class="jeux-eyebrow">Partie terminée</span><h2>Bien joué, défi terminé !</h2>
+        <span class="jeux-eyebrow">Partie terminée</span><h2>{% if partie.get('mode') == 'champion_bot' %}{% if partie.get('points',0) > partie.get('bot_score',0) %}Victoire ! Tu as battu le bot.{% elif partie.get('points',0) == partie.get('bot_score',0) %}Égalité !{% else %}Le bot remporte cette manche.{% endif %}{% else %}Bien joué, défi terminé !{% endif %}</h2>
         <p class="jeu-muted">Relis l'explication finale et regarde les progrès de cette partie.</p>
         <div class="jeu-resultat">
           <article><strong>{{ partie.get('score',0) }}/{{ nombre_questions }}</strong><span>Bonnes réponses</span></article>
           <article><strong>{{ partie.get('points',0) }}</strong><span>Points gagnés</span></article>
           <article><strong>{{ partie.get('meilleure_serie',0) }}</strong><span>Meilleure série</span></article>
+          {% if partie.get('mode') == 'champion_bot' %}<article><strong>{{ partie.get('bot_score',0) }}</strong><span>Points de {{ partie.get('bot_nom') }}</span></article>{% endif %}
         </div>
         {% if partie.get('feedback') %}<div class="jeu-feedback" data-correct="{{ 'true' if partie.feedback.correcte else 'false' }}" role="status"><strong>Correction de la dernière question</strong><p>{{ partie.feedback.explication }}</p></div>{% endif %}
         <p>La banque comporte plusieurs thèmes : une nouvelle partie te proposera une autre sélection de questions.</p>
         <div class="jeu-navigation-bas">
-          <form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="champion"><button class="jeu-bouton" type="submit">Rejouer le quiz</button></form>
+          <form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="{{ partie.get('mode') }}"><input type="hidden" name="difficulte" value="{{ partie.get('difficulte','moyen') }}"><button class="jeu-bouton" type="submit">Rejouer {{ "le duel" if partie.get('mode') == 'champion_bot' else "le quiz" }}</button></form>
           <form method="post" action="/jeux-classiques/changer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="jeu-bouton jeu-bouton-secondaire" type="submit">Choisir un autre jeu</button></form>
         </div>
       </section>

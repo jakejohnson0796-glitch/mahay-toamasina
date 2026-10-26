@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block titre %}Tournoi — Questions pour un champion · MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<style nonce="{{ csp_nonce(request) }}">
+.tournoi-page{max-width:1080px;margin:auto;padding:clamp(1rem,3vw,2rem);color:var(--content-text)}
+.tournoi-hero,.tournoi-carte,.tournoi-zone{min-width:0;border:1px solid var(--content-border);border-radius:20px;background:var(--content-surface);padding:clamp(1rem,2.5vw,1.5rem);margin-bottom:1rem}
+.tournoi-hero{background:linear-gradient(135deg,var(--content-surface),color-mix(in srgb,var(--content-link) 10%,var(--content-surface)))}
+.tournoi-eyebrow{display:inline-flex;gap:.4rem;align-items:center;font-size:.78rem;font-weight:850;text-transform:uppercase;letter-spacing:.1em;color:var(--content-link)}
+.tournoi-hero h1{font-size:clamp(1.75rem,4vw,2.6rem);line-height:1.1;margin:.45rem 0}
+.tournoi-muted{color:var(--content-text-muted);line-height:1.6}
+.tournoi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.tournoi-carte h2,.tournoi-zone h2{margin:.3rem 0 .65rem;font-size:clamp(1.25rem,3vw,1.7rem)}
+.tournoi-form{display:grid;gap:.75rem;margin-top:1rem}
+.tournoi-form label{display:grid;gap:.35rem;font-weight:750}
+.tournoi-form input,.tournoi-form select{width:100%;min-height:48px;box-sizing:border-box;padding:.7rem;border:1px solid var(--content-border);border-radius:11px;background:var(--content-bg);color:var(--content-text)}
+.tournoi-button{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:46px;padding:.7rem 1rem;border:1px solid transparent;border-radius:12px;background:var(--content-link);color:var(--content-bg);font-weight:850;text-align:center;text-decoration:none;cursor:pointer}
+.tournoi-button:hover{filter:brightness(.96)}
+.tournoi-button-secondary{background:var(--content-surface);color:var(--content-text);border-color:var(--content-border)}
+.tournoi-button:focus-visible,.tournoi-page input:focus-visible,.tournoi-page select:focus-visible{outline:3px solid var(--content-link);outline-offset:3px}
+.tournoi-actions{display:flex;gap:.65rem;flex-wrap:wrap;align-items:center;margin-top:1rem}
+.tournoi-actions-between{justify-content:space-between}
+.tournoi-fieldset{border:0;padding:0;margin:0;min-width:0}
+.tournoi-legend{display:block;width:100%;padding:0;margin-bottom:.25rem}
+.tournoi-actions form{margin:0}
+.tournoi-code{display:inline-flex;align-items:center;justify-content:center;padding:.55rem .9rem;border:1px dashed var(--content-link);border-radius:12px;font-size:1.4rem;font-weight:950;letter-spacing:.15em;background:var(--content-bg);font-variant-numeric:tabular-nums}
+.tournoi-status{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--content-border);border-radius:999px;padding:.35rem .7rem;font-size:.85rem;font-weight:800}
+.tournoi-erreur{margin:0 0 1rem;padding:.8rem 1rem;border-left:4px solid #b45309;border-radius:0 10px 10px 0;background:var(--content-bg);line-height:1.5}
+.tournoi-joueurs{list-style:none;margin:1rem 0;padding:0;display:grid;gap:.55rem}
+.tournoi-joueurs li{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.75rem;border:1px solid var(--content-border);background:var(--content-bg);border-radius:12px;min-width:0}
+.tournoi-joueurs li span{overflow-wrap:anywhere}
+.tournoi-joueurs strong{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tournoi-question{font-size:clamp(1.15rem,2.5vw,1.5rem);line-height:1.5;margin:.7rem 0 1rem}
+.tournoi-choix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:1rem 0}
+.tournoi-choix label{display:flex;align-items:flex-start;gap:.55rem;border:1px solid var(--content-border);border-radius:12px;padding:.85rem;background:var(--content-bg);cursor:pointer;overflow-wrap:anywhere}
+.tournoi-choix input{margin-top:.25rem;accent-color:var(--content-link);flex:0 0 auto}
+.tournoi-progression{display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;font-weight:800;font-size:.9rem}
+.tournoi-progression progress{display:block;width:100%;height:.65rem;margin:.5rem 0 1rem;accent-color:var(--content-link)}
+.tournoi-feedback{padding:.85rem 1rem;background:var(--content-bg);border-left:4px solid var(--content-link);border-radius:0 12px 12px 0;line-height:1.6}
+.tournoi-vainqueur{font-size:1.15rem;font-weight:900}
+@media(max-width:680px){.tournoi-page{padding:.85rem}.tournoi-grid{grid-template-columns:1fr}.tournoi-choix{grid-template-columns:1fr}.tournoi-actions form,.tournoi-actions .tournoi-button{width:100%}.tournoi-joueurs li{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){.tournoi-page *,.tournoi-page *::before,.tournoi-page *::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+<div class="tournoi-page">
+  <header class="tournoi-hero">
+    <span class="tournoi-eyebrow">🏁 Compétition de logique</span>
+    <h1>Tournoi — Questions pour un champion</h1>
+    <p class="tournoi-muted">Défie tes amis sur la même série de questions et d'énigmes. Chaque joueur répond une fois par manche ; la correction apparaît quand tout le salon a répondu. Jusqu'à 8 joueurs par tournoi.</p>
+    <div class="tournoi-actions"><a class="tournoi-button tournoi-button-secondary" href="/jeux-classiques">← Retour aux jeux classiques</a></div>
+  </header>
+
+  {% if erreur %}
+  <p class="tournoi-erreur" role="alert">
+    {% if erreur == "code" %}Ce code de tournoi est introuvable. Vérifie les six caractères.{% elif erreur == "demarre" %}Ce tournoi a déjà commencé : il n'accepte plus de nouveaux joueurs.{% elif erreur == "complet" %}Ce tournoi est complet (8 joueurs maximum).{% elif erreur == "acces" %}Tu n'es pas inscrit à ce salon ou tu ne peux pas effectuer cette action.{% elif erreur == "minimum" %}Il faut au moins deux joueurs pour démarrer le tournoi.{% elif erreur == "attente" %}Tous les participants n'ont pas encore répondu à cette manche.{% elif erreur == "choix" %}Choisis une réponse valide avant de la soumettre.{% elif erreur == "creation" %}Le salon n'a pas pu être créé. Réessaie.{% else %}Une action n'a pas pu être réalisée. Actualise le salon et réessaie.{% endif %}
+  </p>
+  {% endif %}
+
+  {% if mode == "accueil" %}
+  <div class="tournoi-grid">
+    <section class="tournoi-carte">
+      <span class="tournoi-eyebrow">Créer un salon</span>
+      <h2>Invite tes amis</h2>
+      <p class="tournoi-muted">Tu deviens l'hôte : choisis le niveau des énigmes, partage le code de six caractères, attends au moins un autre joueur puis démarre.</p>
+      <form class="tournoi-form" method="post" action="/jeux-classiques/tournoi/creer">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label>Difficulté des énigmes
+          <select name="difficulte">
+            {% for valeur, nom, description in difficultes %}
+            <option value="{{ valeur }}" {% if valeur == "moyen" %}selected{% endif %}>{{ nom }} — {{ description }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="tournoi-button" type="submit">Créer le tournoi</button>
+      </form>
+    </section>
+    <section class="tournoi-carte">
+      <span class="tournoi-eyebrow">Rejoindre un salon</span>
+      <h2>Entrer un code</h2>
+      <p class="tournoi-muted">Demande le code à la personne qui a créé le tournoi. Les salons en cours ne sont plus ouverts aux nouveaux joueurs.</p>
+      <form class="tournoi-form" method="post" action="/jeux-classiques/tournoi/rejoindre">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label>Code du tournoi
+          <input type="text" name="code" maxlength="8" minlength="6" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ex. K7RM4Q">
+        </label>
+        <button class="tournoi-button" type="submit">Rejoindre le tournoi</button>
+      </form>
+    </section>
+  </div>
+  {% else %}
+  <section class="tournoi-zone">
+    <div class="tournoi-actions tournoi-actions-between">
+      <div>
+        <span class="tournoi-eyebrow">Code à partager</span>
+        <div class="tournoi-code">{{ code }}</div>
+      </div>
+      <span class="tournoi-status">{% if tournoi.statut == "attente" %}🟡 En attente{% elif tournoi.statut == "en_cours" %}🟢 En cours{% else %}🏆 Terminé{% endif %}</span>
+    </div>
+    <p class="tournoi-muted">Niveau des énigmes : <strong>{{ tournoi.difficulte|capitalize }}</strong>. Manche {{ numero_question }} sur {{ nombre_questions }}.</p>
+    <div class="tournoi-grid">
+      <section>
+        <h2>Joueurs et classement</h2>
+        <ol class="tournoi-joueurs">
+          {% for joueur in classement %}
+          <li><span>{% if loop.first and tournoi.statut == "termine" %}🏆 {% endif %}{{ joueur.nom }}{% if joueur.est_createur %} <small>(hôte)</small>{% endif %}</span><strong>{{ joueur.score }} pts · {{ joueur.bonnes_reponses }} bonnes</strong></li>
+          {% endfor %}
+        </ol>
+        {% if tournoi.statut == "attente" %}
+          <p class="tournoi-muted">{{ participants|length }}/8 joueurs inscrits. {% if participants|length < 2 %}Il faut au moins deux joueurs : partage le code pour commencer.{% else %}Vous pouvez commencer le tournoi.{% endif %}</p>
+          {% if est_createur %}
+          <form method="post" action="/jeux-classiques/tournoi/{{ code }}/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="tournoi-button" type="submit" {% if participants|length < 2 %}disabled{% endif %}>Démarrer le tournoi</button></form>
+          {% else %}
+          <p class="tournoi-muted">L'hôte démarrera la partie quand tout le monde sera prêt.</p>
+          {% endif %}
+        {% endif %}
+      </section>
+
+      <section>
+        {% if tournoi.statut == "en_cours" and question %}
+          <div class="tournoi-progression"><span>Manche {{ numero_question }}/{{ nombre_questions }}</span><span>{{ (question.difficulte)|capitalize }}{% if question.type_question == "enigme" %} · 🧩 Énigme{% endif %}</span></div>
+          <progress value="{{ question_index }}" max="{{ nombre_questions }}" aria-label="Progression du tournoi"></progress>
+          <h2>{{ question.theme }}</h2>
+          <p class="tournoi-question">{{ question.question }}</p>
+          {% if not tout_le_monde_a_repondu and not a_repondu %}
+          <p class="tournoi-muted">Choisis ta réponse. Elle sera verrouillée pour cette manche ; la correction attendra les autres joueurs.</p>
+          <form method="post" action="/jeux-classiques/tournoi/{{ code }}/repondre">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <fieldset class="tournoi-fieldset">
+              <legend class="tournoi-muted tournoi-legend">Une seule réponse possible</legend>
+              <div class="tournoi-choix">
+                {% for option in question.choix %}
+                <label><input type="radio" name="choix" value="{{ loop.index0 }}" required><span>{{ option }}</span></label>
+                {% endfor %}
+              </div>
+            </fieldset>
+            <button class="tournoi-button" type="submit">Valider ma réponse</button>
+          </form>
+          {% elif not tout_le_monde_a_repondu %}
+          <div class="tournoi-feedback" role="status"><strong>Réponse enregistrée.</strong><p>Ta réponse est verrouillée. Attends les autres joueurs pour découvrir la correction et le classement de la manche.</p></div>
+          {% else %}
+          <div class="tournoi-feedback" role="status"><strong>Bonne réponse : {{ correction.bonne_texte }}</strong><p>{{ correction.explication }}</p></div>
+          {% if est_createur %}
+          <form method="post" action="/jeux-classiques/tournoi/{{ code }}/suivant" class="tournoi-actions">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <button class="tournoi-button" type="submit">{% if question_index + 1 >= nombre_questions %}Terminer et afficher le vainqueur{% else %}Passer à la manche suivante →{% endif %}</button>
+          </form>
+          {% else %}
+          <p class="tournoi-muted">La correction est révélée. L'hôte peut lancer la manche suivante.</p>
+          {% endif %}
+          {% endif %}
+          <p class="tournoi-muted">Le salon n'actualise pas les réponses en temps réel : utilise le bouton ci-dessous pour voir qui a répondu.</p>
+          <div class="tournoi-actions"><a class="tournoi-button tournoi-button-secondary" href="/jeux-classiques/tournoi/{{ code }}">↻ Actualiser le salon</a></div>
+        {% elif tournoi.statut == "termine" %}
+          <span class="tournoi-eyebrow">🏆 Fin du tournoi</span>
+          <h2>Résultats finaux</h2>
+          {% if classement %}
+            <p class="tournoi-vainqueur">Vainqueur : {{ classement[0].nom }} avec {{ classement[0].score }} points.</p>
+          {% endif %}
+          <p class="tournoi-muted">Le classement final est conservé tant que le salon existe. Crée un nouveau tournoi pour une revanche avec d'autres énigmes.</p>
+          <div class="tournoi-actions">
+            <a class="tournoi-button" href="/jeux-classiques/tournoi">Nouvelle partie</a>
+            <a class="tournoi-button tournoi-button-secondary" href="/jeux-classiques">Autres jeux</a>
+          </div>
+        {% else %}
+          <h2>En attente du départ</h2>
+          <p class="tournoi-muted">Reste dans ce salon ; l'hôte peut lancer la partie dès qu'un autre joueur rejoint le code.</p>
+          <div class="tournoi-actions"><a class="tournoi-button tournoi-button-secondary" href="/jeux-classiques/tournoi/{{ code }}">↻ Actualiser le salon</a></div>
+        {% endif %}
+      </section>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
