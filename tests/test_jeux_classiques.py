@@ -1,4 +1,14 @@
-from app.jeux_classiques_router import MOTS, QUESTIONS, calculer, mot_valide, normaliser, tirer_lettres
+from pathlib import Path
+
+from app.jeux_classiques_router import (
+    MOTS,
+    QUESTIONS,
+    calculer,
+    effacer_partie_classique,
+    mot_valide,
+    normaliser,
+    tirer_lettres,
+)
 
 
 def test_banque_questions_coherente():
@@ -37,3 +47,31 @@ def test_calcul_refuse_nombres_non_tires():
 def test_calcul_refuse_expression_invalide_et_division_zero():
     assert not calculer("import os", [1, 2, 3], 0)[0]
     assert not calculer("4 / 0", [4, 2], 2)[0]
+
+
+def test_changer_jeu_efface_uniquement_la_partie_courante():
+    donnees_session = {
+        "user_id": 42,
+        "autre_preference": "fr",
+        "jeux_classiques": {"mode": "champion", "score": 3, "tour": 4},
+    }
+
+    effacer_partie_classique(donnees_session)
+
+    assert "jeux_classiques" not in donnees_session
+    assert donnees_session["user_id"] == 42
+    assert donnees_session["autre_preference"] == "fr"
+
+
+def test_template_affiche_une_action_reelle_pour_changer_de_jeu():
+    template = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "templates"
+        / "jeux_classiques.html"
+    ).read_text(encoding="utf-8")
+
+    assert 'action="/jeux-classiques/changer"' in template
+    assert 'name="_csrf"' in template
+    assert "Changer de jeu" in template
+    assert "Choisir un autre jeu" in template
