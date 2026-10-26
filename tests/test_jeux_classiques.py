@@ -187,3 +187,26 @@ def test_interface_propose_bot_trois_niveaux_et_tournoi_multijoueur():
     assert "Actualiser le salon" in page_tournoi
     assert 'down_revision: Union[str, None] = "d5e9c7a1b3f6"' in migration
     assert "uq_reponse_tournoi_joueur_manche" in migration
+
+def test_interface_compte_est_bon_propose_un_clavier_de_calcul_interactif():
+    template = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "templates"
+        / "jeux_classiques.html"
+    ).read_text(encoding="utf-8")
+
+    assert 'data-compte-calculatrice' in template
+    assert 'data-expression-input' in template
+    assert 'data-numero="{{ n }}"' in template
+    assert 'data-operation="+"' in template
+    assert 'data-operation="−"' in template
+    assert 'data-operation="×"' in template
+    assert 'data-operation="÷"' in template
+    assert 'data-operation="("' in template
+    assert 'data-operation=")"' in template
+    assert 'data-calcul-action="annuler"' in template
+    assert 'data-calcul-action="effacer"' in template
+    assert 'name="reponse"' in template
+    assert 'csp_nonce(request)' in template
+
