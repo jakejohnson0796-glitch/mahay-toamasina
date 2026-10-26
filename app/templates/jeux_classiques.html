@@ -41,6 +41,30 @@
 .jeu-choix label:has(input:checked){border-color:var(--content-link);box-shadow:inset 0 0 0 1px var(--content-link)}
 .jeu-choix input{margin-top:.25rem;flex:0 0 auto;accent-color:var(--content-link)}
 .jeu-chiffres{display:flex;gap:.55rem;flex-wrap:wrap;margin:1rem 0}
+.jeu-calculatrice{display:grid;gap:1rem;margin:1rem 0 1.15rem;padding:clamp(.8rem,2vw,1.15rem);border:1px solid var(--content-border);border-radius:18px;background:linear-gradient(160deg,var(--content-bg),color-mix(in srgb,var(--content-link) 4%,var(--content-bg)))}
+.jeu-cible-entete{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap}
+.jeu-cible-badge{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:.45rem .8rem;border:1px solid color-mix(in srgb,var(--content-link) 35%,var(--content-border));border-radius:12px;background:color-mix(in srgb,var(--content-link) 12%,var(--content-surface));font-weight:900;color:var(--content-text)}
+.jeu-cible-entete h2{margin:0}
+.jeu-calcul-aide{margin:0;color:var(--content-text-muted);font-size:.94rem;line-height:1.55}
+.jeu-touches-nombres{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.55rem}
+.jeu-touche-nombre,.jeu-touche-operation,.jeu-touche-action{display:inline-flex;align-items:center;justify-content:center;min-height:52px;min-width:0;padding:.7rem .5rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-surface);color:var(--content-text);font:inherit;font-weight:900;cursor:pointer;transition:transform .12s ease,border-color .12s ease,background .12s ease}
+.jeu-touche-nombre{font-size:1.12rem;background:color-mix(in srgb,var(--content-link) 7%,var(--content-surface))}
+.jeu-touche-nombre:hover:not(:disabled),.jeu-touche-operation:hover:not(:disabled),.jeu-touche-action:hover:not(:disabled){border-color:var(--content-link);transform:translateY(-1px)}
+.jeu-touche-nombre:disabled{opacity:.32;cursor:not-allowed;text-decoration:line-through}
+.jeu-touche-nombre:focus-visible,.jeu-touche-operation:focus-visible,.jeu-touche-action:focus-visible{outline:3px solid var(--content-link);outline-offset:3px}
+.jeu-calcul-label{display:block;font-weight:850;margin-bottom:.4rem}
+.jeu-expression-input{display:block;width:100%;min-height:56px;padding:.85rem 1rem;border:1px solid var(--content-link);border-radius:13px;background:var(--content-surface);color:var(--content-text);font-size:1.12rem;font-weight:800;letter-spacing:.02em;box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
+.jeu-calcul-statut{margin:.45rem 0 0;color:var(--content-text-muted);font-size:.88rem;line-height:1.5;min-height:1.25em}
+.jeu-panneau-operateurs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.55rem}
+.jeu-touche-operation{font-size:1.25rem;background:var(--content-surface)}
+.jeu-touche-operation[data-operation="="]{background:var(--content-link);color:var(--content-bg);border-color:transparent}
+.jeu-actions-calcul{display:flex;gap:.6rem;flex-wrap:wrap}
+.jeu-touche-action{min-height:44px;padding:.6rem .85rem;font-size:.9rem;background:transparent}
+.jeu-form-calcul{align-items:stretch;margin-top:.8rem}
+.jeu-form-calcul label{flex:1 1 100%;min-width:0}
+.jeu-form-calcul .jeu-bouton{min-height:50px}
+@media(max-width:520px){.jeu-touches-nombres{grid-template-columns:repeat(3,minmax(0,1fr))}.jeu-panneau-operateurs{grid-template-columns:repeat(4,minmax(0,1fr))}.jeu-touche-nombre,.jeu-touche-operation{min-height:50px}.jeu-actions-calcul>*{flex:1 1 auto}.jeu-form-calcul .jeu-bouton{width:100%}}
+@media(prefers-reduced-motion:reduce){.jeu-touche-nombre,.jeu-touche-operation,.jeu-touche-action{transition:none}}
 .jeu-tile{display:grid;place-items:center;min-width:3rem;min-height:3.3rem;font-size:1.25rem;font-weight:900;background:var(--content-bg);font-variant-numeric:tabular-nums}
 .jeu-feedback{border-left:4px solid var(--content-link);padding:.8rem 1rem;margin:1rem 0;background:var(--content-bg);border-radius:0 12px 12px 0;overflow-wrap:anywhere}
 .jeu-feedback strong{display:block;margin-bottom:.2rem}
@@ -178,24 +202,128 @@
   {% elif partie.get('mode') == 'chiffres' %}
     <section class="jeu-zone">
       <div class="jeu-statistiques"><span class="jeu-chip">🔢 Le compte est bon</span><span class="jeu-chip">⭐ {{ partie.get('points',0) }} points</span><span class="jeu-chip">Tentative {{ [partie.get('tentatives',0), tentatives_max]|min }} / {{ tentatives_max }}</span></div>
-      <h2>Atteins la cible : <span>{{ partie.get('cible') }}</span></h2>
+      <div class="jeu-cible-entete"><span class="jeu-cible-badge">🎯 Cible à atteindre</span><h2>{{ partie.get('cible') }}</h2></div>
       <p class="jeu-muted">Utilise seulement les nombres tirés. Chaque nombre peut être utilisé au plus autant de fois qu'il apparaît. La division doit donner un résultat entier.</p>
-      <div class="jeu-chiffres" aria-label="Nombres disponibles">
-        {% for n in partie.get('nombres',[]) %}<span class="jeu-tile">{{ n }}</span>{% endfor %}
+      <div class="jeu-calculatrice" data-compte-calculatrice>
+        <p class="jeu-calcul-aide">Clique sur les nombres disponibles, puis sur une opération. Chaque nombre du tirage peut être utilisé une seule fois par occurrence. Tu peux aussi saisir ton calcul au clavier.</p>
+        <div class="jeu-touches-nombres" role="group" aria-label="Choisir un nombre du tirage">
+          {% for n in partie.get('nombres',[]) %}<button type="button" class="jeu-touche-nombre" data-numero="{{ n }}" aria-label="Ajouter le nombre {{ n }}">{{ n }}</button>{% endfor %}
+        </div>
+        <div class="jeu-panneau-operateurs" role="group" aria-label="Opérations et parenthèses">
+          <button type="button" class="jeu-touche-operation" data-operation="+" aria-label="Addition">+</button>
+          <button type="button" class="jeu-touche-operation" data-operation="−" aria-label="Soustraction">−</button>
+          <button type="button" class="jeu-touche-operation" data-operation="×" aria-label="Multiplication">×</button>
+          <button type="button" class="jeu-touche-operation" data-operation="÷" aria-label="Division entière">÷</button>
+          <button type="button" class="jeu-touche-operation" data-operation="(" aria-label="Ouvrir une parenthèse">(</button>
+          <button type="button" class="jeu-touche-operation" data-operation=")" aria-label="Fermer une parenthèse">)</button>
+        </div>
+        <div class="jeu-actions-calcul">
+          <button type="button" class="jeu-touche-action" data-calcul-action="annuler">↶ Annuler le dernier élément</button>
+          <button type="button" class="jeu-touche-action" data-calcul-action="effacer">Effacer le calcul</button>
+        </div>
+        <p class="jeu-calcul-statut" data-calcul-statut role="status" aria-live="polite">Commence par sélectionner un nombre.</p>
       </div>
       {% if partie.get('feedback') %}<div class="jeu-feedback" data-correct="{{ 'true' if partie.feedback.correcte else 'false' }}" role="status" aria-live="polite"><strong>{{ "Cible atteinte !" if partie.feedback.correcte else "Essai enregistré" }}</strong><p>{{ partie.feedback.explication }}</p></div>{% endif %}
       {% if partie.get('indice_affiche') and not partie.get('termine') %}<p class="jeu-indice"><strong>Indice :</strong> {{ partie.get('indice') }}</p>{% endif %}
       {% if not partie.get('termine') %}
-      <form class="jeu-form" method="post" action="/jeux-classiques/repondre">
+      <form class="jeu-form jeu-form-calcul" method="post" action="/jeux-classiques/repondre" data-calcul-form>
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-        <label>Ton calcul<input type="text" name="reponse" maxlength="100" required autocomplete="off" placeholder="Ex. (25 + 50) × 2"></label>
-        <button class="jeu-bouton" type="submit">Vérifier le calcul</button>
+        <label for="jeu-expression" class="jeu-calcul-label">Ton calcul</label>
+        <input id="jeu-expression" class="jeu-expression-input" type="text" name="reponse" maxlength="100" required autocomplete="off" inputmode="text" spellcheck="false" data-expression-input placeholder="Ex. 50 × 3 − 25 − 5" aria-describedby="jeu-calcul-info">
+        <span id="jeu-calcul-info" class="jeu-calcul-statut">Les divisions doivent donner un nombre entier.</span>
+        <button class="jeu-bouton" type="submit">✓ Vérifier le calcul</button>
       </form>
       <div class="jeu-zone-actions">
         {% if partie.get('tentatives',0) > 0 and not partie.get('indice_affiche') %}
         <form method="post" action="/jeux-classiques/indice"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="jeu-bouton jeu-bouton-secondaire" type="submit">Voir un indice (score réduit)</button></form>
         {% endif %}
       </div>
+      <script nonce="{{ csp_nonce(request) }}">
+      (() => {
+        const root = document.querySelector('[data-compte-calculatrice]');
+        if (!root || root.dataset.initialise === 'oui') return;
+        root.dataset.initialise = 'oui';
+        const input = root.parentElement.querySelector('[data-expression-input]');
+        const status = root.querySelector('[data-calcul-statut]');
+        const numberButtons = Array.from(root.querySelectorAll('[data-numero]'));
+        const operatorButtons = Array.from(root.querySelectorAll('[data-operation]'));
+        const actionButtons = Array.from(root.querySelectorAll('[data-calcul-action]'));
+        if (!input || !status) return;
+
+        const tirer = () => input.value.trimEnd();
+        const dernierCaractere = () => tirer().slice(-1);
+        const estSigneOuParentheseOuverture = caractere => ['+', '-', '−', '×', '÷', '*', '/', '('].includes(caractere);
+        function actualiser(annonce) {
+          const valeursUtilisees = (input.value.match(/\d+/g) || []);
+          const tirage = {};
+          const utilisees = {};
+          numberButtons.forEach(button => {
+            const valeur = button.dataset.numero;
+            tirage[valeur] = (tirage[valeur] || 0) + 1;
+          });
+          valeursUtilisees.forEach(valeur => {
+            utilisees[valeur] = (utilisees[valeur] || 0) + 1;
+          });
+          numberButtons.forEach(button => {
+            button.disabled = (utilisees[button.dataset.numero] || 0) >= tirage[button.dataset.numero];
+          });
+          if (annonce) status.textContent = annonce;
+          else if (!input.value.trim()) status.textContent = 'Commence par sélectionner un nombre.';
+          else status.textContent = 'Calcul en cours : ' + input.value.trim();
+        }
+        function ajouterNombre(valeur) {
+          let expression = tirer();
+          const fin = expression.slice(-1);
+          if (/[0-9)]/.test(fin)) expression += ' × ';
+          else if (fin && !estSigneOuParentheseOuverture(fin)) expression += ' ';
+          input.value = expression + valeur;
+          actualiser();
+          input.focus();
+        }
+        function ajouterOperation(operation) {
+          let expression = tirer();
+          const fin = expression.slice(-1);
+          if (operation === '(') {
+            if (/[0-9)]/.test(fin)) expression += ' × ';
+            else if (fin && !estSigneOuParentheseOuverture(fin)) expression += ' ';
+            input.value = expression + '(';
+          } else if (operation === ')') {
+            const ouverts = (expression.match(/\(/g) || []).length;
+            const fermes = (expression.match(/\)/g) || []).length;
+            if (!/[0-9)]/.test(fin) || ouverts <= fermes) {
+              actualiser('Ferme une parenthèse seulement après un nombre et s’il en reste une ouverte.');
+              return;
+            }
+            input.value = expression + ')';
+          } else if (/[0-9)]/.test(fin)) {
+            input.value = expression + ' ' + operation + ' ';
+          } else {
+            actualiser('Choisis d’abord un nombre avant une opération.');
+            return;
+          }
+          actualiser();
+          input.focus();
+        }
+        function annulerDernierElement() {
+          let expression = tirer();
+          if (!expression) return;
+          if (estSigneOuParentheseOuverture(expression.slice(-1))) expression = expression.slice(0, -1).trimEnd();
+          else if (expression.endsWith(')')) expression = expression.slice(0, -1).trimEnd();
+          else expression = expression.replace(/\d+$/, '').trimEnd();
+          input.value = expression;
+          actualiser();
+          input.focus();
+        }
+        numberButtons.forEach(button => button.addEventListener('click', () => ajouterNombre(button.dataset.numero)));
+        operatorButtons.forEach(button => button.addEventListener('click', () => ajouterOperation(button.dataset.operation)));
+        actionButtons.forEach(button => button.addEventListener('click', () => {
+          if (button.dataset.calculAction === 'annuler') annulerDernierElement();
+          else { input.value = ''; actualiser(); input.focus(); }
+        }));
+        input.addEventListener('input', () => actualiser());
+        actualiser();
+      })();
+      </script>
       {% else %}
       <div class="jeu-resultat">
         <article><strong>{{ "Réussi" if partie.get('score',0) else "À réessayer" }}</strong><span>Résultat</span></article>
