@@ -12,6 +12,12 @@ from .auth import utilisateur_courant
 from .csrf import verifier_csrf
 from .database import get_session
 from .templating import templates
+from .models import (
+    ParticipantTournoiChampion,
+    ReponseTournoiChampion,
+    TournoiChampion,
+    Utilisateur,
+)
 
 router = APIRouter(prefix="/jeux-classiques", tags=["jeux-classiques"])
 
@@ -20,7 +26,16 @@ TENTATIVES_MAX = 3
 POINTS_QUESTION = 10
 BONUS_SERIE = 5
 
-def _q(identifiant, theme, question, choix, bonne, explication):
+def _q(
+    identifiant,
+    theme,
+    question,
+    choix,
+    bonne,
+    explication,
+    difficulte="moyen",
+    type_question="culture",
+):
     return {
         "id": identifiant,
         "theme": theme,
@@ -28,6 +43,8 @@ def _q(identifiant, theme, question, choix, bonne, explication):
         "choix": choix,
         "bonne": bonne,
         "explication": explication,
+        "difficulte": difficulte,
+        "type_question": type_question,
     }
 
 
@@ -104,6 +121,31 @@ QUESTIONS = [
     _q("pluie", "Météorologie", "Comment appelle-t-on les gouttes d'eau qui tombent des nuages ?", ["La rosée", "La pluie", "Le brouillard", "La vapeur"], 1, "La pluie est une précipitation liquide constituée de gouttes d'eau."),
     _q("recyclage", "Environnement", "Quel geste aide à réduire les déchets ?", ["Jeter tous les objets dans la nature", "Réutiliser ou recycler quand c'est approprié", "Brûler tous les plastiques", "Gaspiller l'eau"], 1, "La réutilisation et le recyclage adaptés contribuent à réduire les déchets."),
 ]
+
+
+# Énigmes dédiées au mode compétition : les indices et les explications sont
+# volontairement conservés côté serveur et révélés après la réponse.
+ENIGMES = [
+    _q("enigme-aiguilles", "Énigme", "J'ai deux aiguilles, mais je ne couds jamais. Je peux te dire quand partir. Qui suis-je ?", ["Une horloge", "Un hérisson", "Une boussole", "Un sapin"], 0, "Les aiguilles d'une horloge indiquent l'heure.", "facile", "enigme"),
+    _q("enigme-serviette", "Énigme", "Plus je sèche, plus je deviens mouillée. Que suis-je ?", ["Une éponge sèche", "Une serviette", "Une rivière", "Une bougie"], 1, "Une serviette se mouille en absorbant l'eau qu'elle retire d'une surface.", "facile", "enigme"),
+    _q("enigme-enfants", "Énigme", "Un père a quatre filles. Chaque fille a le même frère. Combien d'enfants a-t-il ?", ["4", "5", "8", "9"], 1, "Les quatre filles partagent un seul frère : quatre filles et un garçon, donc cinq enfants.", "facile", "enigme"),
+    _q("enigme-trous", "Énigme", "Je suis rempli de trous, mais je peux retenir l'eau. Que suis-je ?", ["Un filet", "Une éponge", "Un panier", "Une passoire"], 1, "Les petits trous d'une éponge retiennent l'eau dans ses pores.", "facile", "enigme"),
+    _q("enigme-silence", "Énigme", "Si tu prononces mon nom, je disparais. Qui suis-je ?", ["L'obscurité", "Le silence", "Le temps", "Un secret"], 1, "Dès que tu parles pour dire « silence », tu brises le silence.", "facile", "enigme"),
+    _q("enigme-grandpere", "Énigme", "Deux pères et deux fils mangent trois mangues ; chacun en mange une. Comment est-ce possible ?", ["Une mangue est coupée en trois", "Ils sont trois : grand-père, père et fils", "L'un ne mange pas", "Il y a quatre personnes"], 1, "Le grand-père est père, le père est à la fois fils et père, et le dernier est fils : trois personnes.", "facile", "enigme"),
+    _q("enigme-timbre", "Énigme", "Je peux faire le tour du monde tout en restant dans un coin. Que suis-je ?", ["Une carte", "Un timbre", "Une boussole", "Une fenêtre"], 1, "Un timbre peut voyager sur une enveloppe autour du monde tout en restant dans le coin de celle-ci.", "moyen", "enigme"),
+    _q("enigme-oeuf", "Énigme", "On me casse avant de m'utiliser, mais on ne me considère pas comme abîmé. Qui suis-je ?", ["Un œuf", "Un miroir", "Un verre", "Un bâton"], 0, "On casse la coquille d'un œuf pour l'utiliser en cuisine.", "moyen", "enigme"),
+    _q("enigme-escalier", "Énigme", "Je monte et je descends, mais je reste toujours à la même place. Qui suis-je ?", ["Un ascenseur en mouvement", "Un escalier", "Un nuage", "Une balançoire"], 1, "L'escalier permet de monter et descendre tout en restant fixe.", "moyen", "enigme"),
+    _q("enigme-trou", "Énigme", "Plus tu m'enlèves de matière, plus je deviens grand. Que suis-je ?", ["Un trou", "Un arbre", "Une boîte", "Une ombre"], 0, "Plus on retire de terre, plus le trou creusé est grand.", "moyen", "enigme"),
+    _q("enigme-course", "Logique", "Dans une course, tu dépasses la personne qui est en deuxième position. À quelle place te retrouves-tu ?", ["Première", "Deuxième", "Troisième", "Dernière"], 1, "Tu prends la place de la personne dépassée : tu es donc deuxième.", "moyen", "enigme"),
+    _q("enigme-mois", "Logique", "Certains mois ont 30 jours et d'autres 31. Combien de mois ont au moins 28 jours ?", ["1", "2", "6", "12"], 3, "Les douze mois ont tous au moins 28 jours.", "moyen", "enigme"),
+    _q("enigme-jour", "Logique", "Un homme dit : « Avant-hier, j'avais 17 ans ; l'année prochaine, j'aurai 20 ans. » Comment cela peut-il être vrai ?", ["Il ment", "Son anniversaire est le 31 décembre et nous sommes le 1er janvier", "Il a deux anniversaires par an", "C'est impossible"], 1, "Le 30 décembre il avait 17 ans, le 31 décembre il a eu 18 ans ; cette année il aura 19 ans et l'année prochaine 20 ans. Nous sommes le 1er janvier.", "difficile", "enigme"),
+    _q("enigme-ages", "Logique", "Un père a 42 ans et son fils 12 ans. Dans combien d'années le père aura-t-il exactement deux fois l'âge du fils ?", ["6", "12", "18", "20"], 2, "42 + x = 2 × (12 + x), donc 42 + x = 24 + 2x et x = 18.", "difficile", "enigme"),
+    _q("enigme-suite", "Logique", "Quelle est la suite logique : 1, 11, 21, 1211, 111221, … ?", ["312211", "211221", "121122", "111222"], 0, "Chaque terme décrit le précédent : 111221 signifie trois 1, deux 2, un 1, soit 312211.", "difficile", "enigme"),
+    _q("enigme-chiffre", "Mathématiques", "Je suis un nombre à deux chiffres. La somme de mes chiffres vaut 9 et mon chiffre des dizaines vaut deux fois celui des unités. Qui suis-je ?", ["36", "63", "72", "81"], 1, "Si l'unité vaut 3, la dizaine vaut 6 : 6 + 3 = 9. Le nombre est 63.", "difficile", "enigme"),
+    _q("enigme-interrupteurs", "Logique", "Trois interrupteurs sont dehors ; une ampoule est dans une pièce fermée. Tu peux entrer une seule fois. Quelle méthode permet d'identifier le bon interrupteur ?", ["Allumer les trois et entrer", "Allumer A quelques minutes, l'éteindre, allumer B et entrer ; lumière = B, chaleur = A, sinon C", "Allumer A et B puis entrer", "C'est impossible"], 1, "La lumière indique B ; une ampoule éteinte mais chaude indique A ; une ampoule froide et éteinte indique C.", "difficile", "enigme"),
+    _q("enigme-jour-semaine", "Logique", "Si avant-hier était jeudi, quel jour serons-nous après-demain ?", ["Dimanche", "Lundi", "Mardi", "Mercredi"], 1, "Avant-hier jeudi signifie aujourd'hui samedi ; après-demain sera lundi.", "difficile", "enigme"),
+]
+QUESTIONS.extend(ENIGMES)
 
 # Dictionnaire embarqué pour rester utilisable sans service externe.
 # Il contient des mots courants et quelques mots utiles dans le contexte malgache.
@@ -187,21 +229,78 @@ def preparer_question_active(etat, rng=None):
     etat["question_active_id"] = question_id
 
 
-def creer_partie_champion(rng=None):
-    """Crée une série sans répétition de questions à l'intérieur d'une même partie."""
+def selectionner_questions_champion(difficulte="moyen", rng=None, nombre=QUESTIONS_PAR_PARTIE):
+    """Mélange connaissances et énigmes d'un niveau donné sans répéter de question."""
     generateur = rng or random
-    nombre = min(QUESTIONS_PAR_PARTIE, len(QUESTIONS))
+    difficulte = difficulte if difficulte in {"facile", "moyen", "difficile"} else "moyen"
+    banque_enigmes = [q for q in ENIGMES if q["difficulte"] == difficulte]
+    banque_culture = [q for q in QUESTIONS if q["type_question"] != "enigme"]
+    nombre_enigmes = min(4, len(banque_enigmes), nombre)
+    selection = generateur.sample(banque_enigmes, nombre_enigmes)
+    selection += generateur.sample(banque_culture, min(nombre - len(selection), len(banque_culture)))
+    if len(selection) < nombre:
+        deja = {q["id"] for q in selection}
+        restantes = [q for q in QUESTIONS if q["id"] not in deja]
+        selection += generateur.sample(restantes, min(nombre - len(selection), len(restantes)))
+    generateur.shuffle(selection)
+    return selection
+
+
+def creer_partie_champion(rng=None, mode="champion", difficulte="moyen"):
+    """Prépare une partie solo ou contre le bot, avec au moins quatre énigmes."""
+    generateur = rng or random
+    questions = selectionner_questions_champion(difficulte, generateur, QUESTIONS_PAR_PARTIE)
     etat = {
-        "mode": "champion",
+        "mode": mode,
+        "difficulte": difficulte if difficulte in {"facile", "moyen", "difficile"} else "moyen",
         "score": 0,
         "points": 0,
         "tour": 0,
         "serie": 0,
         "meilleure_serie": 0,
-        "ids": [question["id"] for question in generateur.sample(QUESTIONS, nombre)],
+        "ids": [question["id"] for question in questions],
     }
+    if mode == "champion_bot":
+        etat.update({
+            "bot_nom": {"facile": "Mora (débutant)", "moyen": "Koto (confirmé)", "difficile": "Haja (expert)"}[etat["difficulte"]],
+            "bot_score": 0,
+            "bot_correctes": 0,
+            "bot_serie": 0,
+        })
     preparer_question_active(etat, generateur)
     return etat
+
+
+def simuler_reponse_bot(bonne, nombre_choix, difficulte="moyen", rng=None):
+    """Simule un adversaire avec une probabilité de réussite calibrée par niveau."""
+    generateur = rng or random
+    probabilite = {"facile": 0.42, "moyen": 0.68, "difficile": 0.90}.get(difficulte, 0.68)
+    if generateur.random() < probabilite:
+        return True, bonne
+    mauvaises = [index for index in range(nombre_choix) if index != bonne]
+    return False, generateur.choice(mauvaises)
+
+
+def preparer_questions_tournoi(difficulte="moyen", rng=None, nombre=QUESTIONS_PAR_PARTIE):
+    """Fige les questions, l'ordre des propositions et la correction pour tout le salon."""
+    generateur = rng or random
+    paquet = []
+    for question in selectionner_questions_champion(difficulte, generateur, nombre):
+        paires = list(enumerate(question["choix"]))
+        generateur.shuffle(paires)
+        choix = [option for _, option in paires]
+        bonne = next(i for i, (original, _) in enumerate(paires) if original == question["bonne"])
+        paquet.append({
+            "id": question["id"],
+            "theme": question["theme"],
+            "question": question["question"],
+            "choix": choix,
+            "bonne": bonne,
+            "explication": question["explication"],
+            "difficulte": question["difficulte"],
+            "type_question": question["type_question"],
+        })
+    return paquet
 
 
 def mot_valide(mot, lettres):
