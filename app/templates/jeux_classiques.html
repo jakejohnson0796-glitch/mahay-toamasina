@@ -252,8 +252,7 @@
 
         const tirer = () => input.value.trimEnd();
         const dernierCaractere = () => tirer().slice(-1);
-        const aNombreOuParentheseFermante = () => /[0-9)]/.test(dernierCaractere());
-        const compter = (valeurs, cible) => valeurs.filter(valeur => valeur === cible).length;
+        const estSigneOuParentheseOuverture = caractere => ['+', '-', '−', '×', '÷', '*', '/', '('].includes(caractere);
         function actualiser(annonce) {
           const valeursUtilisees = (input.value.match(/\d+/g) || []);
           const tirage = {};
@@ -276,7 +275,7 @@
           let expression = tirer();
           const fin = expression.slice(-1);
           if (/[0-9)]/.test(fin)) expression += ' × ';
-          else if (fin && !/[+\-−×÷*/(]$/.test(fin)) expression += ' ';
+          else if (fin && !estSigneOuParentheseOuverture(fin)) expression += ' ';
           input.value = expression + valeur;
           actualiser();
           input.focus();
@@ -308,7 +307,7 @@
         function annulerDernierElement() {
           let expression = tirer();
           if (!expression) return;
-          if (/[+\-−×÷*/(]$/.test(expression)) expression = expression.slice(0, -1).trimEnd();
+          if (estSigneOuParentheseOuverture(expression.slice(-1))) expression = expression.slice(0, -1).trimEnd();
           else if (expression.endsWith(')')) expression = expression.slice(0, -1).trimEnd();
           else expression = expression.replace(/\d+$/, '').trimEnd();
           input.value = expression;
