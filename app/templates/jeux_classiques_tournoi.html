@@ -19,6 +19,9 @@
 .tournoi-button-secondary{background:var(--content-surface);color:var(--content-text);border-color:var(--content-border)}
 .tournoi-button:focus-visible,.tournoi-page input:focus-visible,.tournoi-page select:focus-visible{outline:3px solid var(--content-link);outline-offset:3px}
 .tournoi-actions{display:flex;gap:.65rem;flex-wrap:wrap;align-items:center;margin-top:1rem}
+.tournoi-actions-between{justify-content:space-between}
+.tournoi-fieldset{border:0;padding:0;margin:0;min-width:0}
+.tournoi-legend{display:block;width:100%;padding:0;margin-bottom:.25rem}
 .tournoi-actions form{margin:0}
 .tournoi-code{display:inline-flex;align-items:center;justify-content:center;padding:.55rem .9rem;border:1px dashed var(--content-link);border-radius:12px;font-size:1.4rem;font-weight:950;letter-spacing:.15em;background:var(--content-bg);font-variant-numeric:tabular-nums}
 .tournoi-status{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--content-border);border-radius:999px;padding:.35rem .7rem;font-size:.85rem;font-weight:800}
@@ -85,7 +88,7 @@
   </div>
   {% else %}
   <section class="tournoi-zone">
-    <div class="tournoi-actions" style="justify-content:space-between">
+    <div class="tournoi-actions tournoi-actions-between">
       <div>
         <span class="tournoi-eyebrow">Code à partager</span>
         <div class="tournoi-code">{{ code }}</div>
@@ -121,8 +124,8 @@
           <p class="tournoi-muted">Choisis ta réponse. Elle sera verrouillée pour cette manche ; la correction attendra les autres joueurs.</p>
           <form method="post" action="/jeux-classiques/tournoi/{{ code }}/repondre">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-            <fieldset style="border:0;padding:0;margin:0;min-width:0">
-              <legend class="tournoi-muted">Une seule réponse possible</legend>
+            <fieldset class="tournoi-fieldset">
+              <legend class="tournoi-muted tournoi-legend">Une seule réponse possible</legend>
               <div class="tournoi-choix">
                 {% for option in question.choix %}
                 <label><input type="radio" name="choix" value="{{ loop.index0 }}" required><span>{{ option }}</span></label>
