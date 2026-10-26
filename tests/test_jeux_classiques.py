@@ -210,3 +210,21 @@ def test_interface_compte_est_bon_propose_un_clavier_de_calcul_interactif():
     assert 'name="reponse"' in template
     assert 'csp_nonce(request)' in template
 
+def test_interface_mot_le_plus_long_propose_un_tirage_interactif():
+    template = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "templates"
+        / "jeux_classiques.html"
+    ).read_text(encoding="utf-8")
+
+    assert 'data-mot-long' in template
+    assert 'data-lettre="{{ lettre|upper }}"' in template
+    assert 'data-mot-input' in template
+    assert 'data-mot-action="annuler"' in template
+    assert 'data-mot-action="effacer"' in template
+    assert "normaliserLettres" in template
+    assert "points si le mot est accepté" in template
+    assert 'action="/jeux-classiques/repondre"' in template
+    assert 'csp_nonce(request)' in template
+
