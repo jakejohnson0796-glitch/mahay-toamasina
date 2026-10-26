@@ -35,6 +35,8 @@
 .jeu-progression progress{display:block;width:100%;height:.65rem;accent-color:var(--content-link);border:0;border-radius:999px;overflow:hidden}
 .jeu-choix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:1.1rem 0}
 .jeu-choix label,.jeu-tile{border:1px solid var(--content-border);border-radius:14px;padding:.85rem;overflow-wrap:anywhere}
+.jeu-fieldset{border:0;padding:0;margin:0;min-width:0}
+.jeu-legend{display:block;width:100%;padding:0;margin-bottom:.2rem}
 .jeu-choix label{display:flex;align-items:flex-start;gap:.6rem;min-width:0;cursor:pointer;background:var(--content-bg);transition:border-color .12s ease}
 .jeu-choix label:has(input:checked){border-color:var(--content-link);box-shadow:inset 0 0 0 1px var(--content-link)}
 .jeu-choix input{margin-top:.25rem;flex:0 0 auto;accent-color:var(--content-link)}
@@ -122,8 +124,8 @@
         {% endif %}
         <form method="post" action="/jeux-classiques/repondre">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <fieldset style="border:0;padding:0;margin:0;min-width:0">
-            <legend class="jeu-muted">Choisis une seule réponse, puis valide.</legend>
+          <fieldset class="jeu-fieldset">
+            <legend class="jeu-muted jeu-legend">Choisis une seule réponse, puis valide.</legend>
             <div class="jeu-choix">
               {% for option in partie.get('choix_actifs', question.choix) %}
               <label><input type="radio" name="choix" value="{{ loop.index0 }}" required><span>{{ option }}</span></label>
