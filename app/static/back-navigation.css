@@ -1,0 +1,78 @@
+/* Navigation de retour globale : composant partagé par les pages MITARIDALA. */
+.navigation-retour-globale {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto clamp(.55rem, 1.2vw, .9rem);
+  position: relative;
+  z-index: 1;
+}
+
+.navigation-retour-bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: .55rem .95rem;
+  border: 1px solid var(--content-border, #dce7e2);
+  border-radius: 999px;
+  background: var(--content-surface, #fff);
+  color: var(--content-text, #1b302d);
+  box-shadow: var(--shadow-sm, 0 2px 6px rgba(12, 47, 43, .06));
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.navigation-retour-bouton:hover {
+  border-color: var(--content-link, #145f58);
+  background: color-mix(in srgb, var(--content-link, #145f58) 5%, var(--content-surface, #fff));
+  box-shadow: var(--shadow-md, 0 5px 14px rgba(16, 54, 48, .08));
+}
+
+.navigation-retour-bouton:active {
+  transform: translateX(-1px);
+}
+
+.navigation-retour-bouton:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--content-link, #145f58) 45%, transparent);
+  outline-offset: 3px;
+}
+
+.navigation-retour-fleche {
+  flex: 0 0 auto;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .navigation-retour-globale {
+    margin-block-end: .65rem;
+  }
+
+  .navigation-retour-bouton {
+    min-height: 44px;
+    padding-inline: .85rem;
+    font-size: .9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navigation-retour-bouton {
+    transition: none;
+  }
+
+  .navigation-retour-bouton:active {
+    transform: none;
+  }
+}
