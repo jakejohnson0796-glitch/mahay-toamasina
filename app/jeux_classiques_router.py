@@ -1,41 +1,211 @@
 """Routes des jeux classiques (culture générale, chiffres et lettres)."""
+import itertools
 import random
 import re
 import unicodedata
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session
+
 from .auth import utilisateur_courant
 from .csrf import verifier_csrf
 from .database import get_session
 from .templating import templates
 
 router = APIRouter(prefix="/jeux-classiques", tags=["jeux-classiques"])
+
+QUESTIONS_PAR_PARTIE = 10
+TENTATIVES_MAX = 3
+POINTS_QUESTION = 10
+BONUS_SERIE = 5
+
+def _q(identifiant, theme, question, choix, bonne, explication):
+    return {
+        "id": identifiant,
+        "theme": theme,
+        "question": question,
+        "choix": choix,
+        "bonne": bonne,
+        "explication": explication,
+    }
+
+
+# Banque locale : une sélection différente est tirée à chaque partie.
+# Les questions et leurs corrections sont indépendantes du rendu scientifique.
 QUESTIONS = [
- {"id":"capitale","theme":"Madagascar","question":"Quelle est la capitale de Madagascar ?","choix":["Toamasina","Antananarivo","Mahajanga","Fianarantsoa"],"bonne":1,"explication":"Antananarivo est la capitale de Madagascar."},
- {"id":"ocean","theme":"Géographie","question":"Dans quel océan se trouve Madagascar ?","choix":["Atlantique","Pacifique","Indien","Arctique"],"bonne":2,"explication":"Madagascar se trouve dans l'océan Indien."},
- {"id":"eau","theme":"Sciences","question":"Quelle est la formule chimique de l'eau ?","choix":["CO₂","H₂O","O₂","NaCl"],"bonne":1,"explication":"Une molécule d'eau contient deux atomes d'hydrogène et un atome d'oxygène."},
- {"id":"premier","theme":"Mathématiques","question":"Lequel de ces nombres est premier ?","choix":["21","27","29","33"],"bonne":2,"explication":"29 n'a que deux diviseurs positifs : 1 et 29."},
- {"id":"equateur","theme":"Géographie","question":"Quelle ligne sépare les hémisphères Nord et Sud ?","choix":["Le tropique du Cancer","Greenwich","L'équateur","Le cercle polaire"],"bonne":2,"explication":"L'équateur est à latitude zéro."},
- {"id":"siecle","theme":"Histoire","question":"Combien d'années compte un siècle ?","choix":["10","50","100","1 000"],"bonne":2,"explication":"Un siècle correspond à 100 années."},
- {"id":"suite","theme":"Logique","question":"Quelle est la suite : 2, 4, 8, 16, … ?","choix":["18","24","30","32"],"bonne":3,"explication":"Chaque terme est multiplié par deux."},
- {"id":"vitesse","theme":"Physique","question":"Quelle unité mesure une vitesse dans le système international ?","choix":["mètre","mètre par seconde","kilogramme","newton"],"bonne":1,"explication":"L'unité SI est le mètre par seconde (m/s)."},
- {"id":"photosynthese","theme":"Biologie","question":"Quel gaz les plantes utilisent-elles pour la photosynthèse ?","choix":["Dioxyde de carbone","Hélium","Hydrogène","Néon"],"bonne":0,"explication":"Les plantes utilisent notamment le dioxyde de carbone et l'eau."},
- {"id":"verbe","theme":"Langue","question":"Quel est l'infinitif de « nous finissons » ?","choix":["Finir","Fini","Finissant","Finissait"],"bonne":0,"explication":"« Finissons » est une forme conjuguée du verbe finir."}
+    _q("capitale", "Madagascar", "Quelle est la capitale de Madagascar ?", ["Toamasina", "Antananarivo", "Mahajanga", "Fianarantsoa"], 1, "Antananarivo est la capitale de Madagascar."),
+    _q("ocean", "Géographie", "Dans quel océan se trouve Madagascar ?", ["Atlantique", "Pacifique", "Indien", "Arctique"], 2, "Madagascar se trouve dans l'océan Indien."),
+    _q("eau", "Sciences", "Quelle est la formule chimique de l'eau ?", ["CO₂", "H₂O", "O₂", "NaCl"], 1, "Une molécule d'eau contient deux atomes d'hydrogène et un atome d'oxygène."),
+    _q("premier", "Mathématiques", "Lequel de ces nombres est premier ?", ["21", "27", "29", "33"], 2, "29 n'a que deux diviseurs positifs : 1 et 29."),
+    _q("equateur", "Géographie", "Quelle ligne sépare les hémisphères Nord et Sud ?", ["Le tropique du Cancer", "Greenwich", "L'équateur", "Le cercle polaire"], 2, "L'équateur correspond à la latitude zéro."),
+    _q("siecle", "Histoire", "Combien d'années compte un siècle ?", ["10", "50", "100", "1 000"], 2, "Un siècle correspond à 100 années."),
+    _q("suite", "Logique", "Quelle est la suite : 2, 4, 8, 16, … ?", ["18", "24", "30", "32"], 3, "Chaque terme est multiplié par deux."),
+    _q("vitesse", "Physique", "Quelle unité mesure une vitesse dans le système international ?", ["Le mètre", "Le mètre par seconde", "Le kilogramme", "Le newton"], 1, "L'unité SI de la vitesse est le mètre par seconde (m/s)."),
+    _q("photosynthese", "Biologie", "Quel gaz les plantes utilisent-elles notamment pour la photosynthèse ?", ["Le dioxyde de carbone", "L'hélium", "L'hydrogène", "Le néon"], 0, "La photosynthèse utilise notamment du dioxyde de carbone et de l'eau."),
+    _q("verbe", "Langue", "Quel est l'infinitif de « nous finissons » ?", ["Finir", "Fini", "Finissant", "Finissait"], 0, "« Finissons » est une forme conjuguée du verbe finir."),
+    _q("canal-mozambique", "Madagascar", "Quel canal sépare Madagascar du continent africain ?", ["Le canal de Suez", "Le canal de Panama", "Le canal du Mozambique", "Le détroit de Gibraltar"], 2, "Le canal du Mozambique se trouve entre Madagascar et la côte africaine."),
+    _q("ariary", "Madagascar", "Quelle est la monnaie de Madagascar ?", ["L'ariary", "Le rand", "Le shilling", "Le franc CFA"], 0, "L'ariary est la monnaie de Madagascar."),
+    _q("drapeau", "Madagascar", "Quelles couleurs figurent sur le drapeau malgache ?", ["Bleu, blanc, rouge", "Blanc, rouge, vert", "Vert, jaune, noir", "Rouge, jaune, bleu"], 1, "Le drapeau malgache comporte une bande blanche verticale et deux bandes horizontales rouge et verte."),
+    _q("continent", "Géographie", "À quel continent Madagascar est-il rattaché ?", ["Europe", "Asie", "Afrique", "Amérique du Sud"], 2, "Madagascar est un pays insulaire situé au large de l'Afrique australe."),
+    _q("lemuriens", "Nature", "Quel groupe d'animaux est particulièrement emblématique de Madagascar ?", ["Les lémuriens", "Les kangourous", "Les ours polaires", "Les pandas géants"], 0, "Les lémuriens sont des primates naturellement présents à Madagascar."),
+    _q("jupiter", "Astronomie", "Quelle est la plus grande planète du système solaire ?", ["Mars", "Vénus", "Jupiter", "Mercure"], 2, "Jupiter est la plus grande planète du système solaire."),
+    _q("glace", "Sciences", "À quelle température l'eau pure gèle-t-elle, à pression normale ?", ["0 °C", "10 °C", "32 °C", "100 °C"], 0, "L'eau pure gèle autour de 0 °C à pression atmosphérique normale."),
+    _q("oxygene", "Chimie", "Quelle formule représente le dioxygène ?", ["CO₂", "O₂", "H₂O", "N₂"], 1, "Le dioxygène est composé de deux atomes d'oxygène : O₂."),
+    _q("hexagone", "Mathématiques", "Combien de côtés possède un hexagone ?", ["5", "6", "7", "8"], 1, "Un hexagone possède six côtés."),
+    _q("multiplication", "Calcul mental", "Combien font 9 × 7 ?", ["56", "62", "63", "72"], 2, "9 multiplié par 7 donne 63."),
+    _q("fraction", "Mathématiques", "Quelle écriture décimale correspond à 3/4 ?", ["0,25", "0,5", "0,75", "1,25"], 2, "3 divisé par 4 vaut 0,75."),
+    _q("rectangle", "Mathématiques", "Comment calcule-t-on l'aire d'un rectangle ?", ["Longueur + largeur", "Longueur × largeur", "2 × longueur + largeur", "Longueur ÷ largeur"], 1, "L'aire d'un rectangle est égale à sa longueur multipliée par sa largeur."),
+    _q("kilometre", "Unités", "Combien de mètres y a-t-il dans un kilomètre ?", ["100", "500", "1 000", "10 000"], 2, "Un kilomètre équivaut à 1 000 mètres."),
+    _q("heure", "Unités", "Combien de minutes compte une heure ?", ["30", "45", "60", "100"], 2, "Une heure compte 60 minutes."),
+    _q("octet", "Informatique", "Combien de bits composent un octet ?", ["2", "4", "8", "16"], 2, "Un octet contient huit bits."),
+    _q("processeur", "Informatique", "Quel composant exécute les instructions principales d'un ordinateur ?", ["Le clavier", "Le processeur", "L'écran", "L'imprimante"], 1, "Le processeur (CPU) exécute les instructions du programme."),
+    _q("html", "Informatique", "Quel langage sert principalement à structurer le contenu d'une page web ?", ["HTML", "MP3", "JPEG", "CSV"], 0, "HTML décrit la structure du contenu d'une page web."),
+    _q("css", "Informatique", "Quel langage sert notamment à définir la présentation d'une page web ?", ["SQL", "CSS", "PNG", "FTP"], 1, "CSS définit la présentation visuelle des pages web."),
+    _q("democratie", "Éducation civique", "Dans une démocratie représentative, comment les citoyens choisissent-ils généralement leurs représentants ?", ["Par tirage au sort obligatoire", "Par des élections", "Par héritage", "Par ordre alphabétique"], 1, "Les citoyens choisissent leurs représentants lors d'élections."),
+    _q("hugolesmiserables", "Littérature", "Qui a écrit le roman « Les Misérables » ?", ["Molière", "Victor Hugo", "Jules Verne", "Albert Camus"], 1, "Victor Hugo a publié « Les Misérables » au XIXe siècle."),
+    _q("chevaux", "Langue", "Quel est le pluriel courant du nom « cheval » ?", ["Chevals", "Chevaux", "Chevaus", "Chevales"], 1, "Le pluriel de « cheval » est « chevaux »."),
+    _q("sujet", "Grammaire", "Dans une phrase, à quelle question le sujet du verbe répond-il souvent ?", ["Qui est-ce qui fait l'action ?", "Combien ça coûte ?", "Où est le complément ?", "Quel est le temps du verbe ?"], 0, "Le sujet désigne notamment la personne ou la chose dont on parle ou qui accomplit l'action."),
+    _q("prendre", "Grammaire", "Quel est le participe passé du verbe « prendre » ?", ["Prenu", "Prenant", "Pris", "Prendu"], 2, "Le participe passé de « prendre » est « pris »."),
+    _q("lune", "Astronomie", "Quel est le satellite naturel de la Terre ?", ["Le Soleil", "La Lune", "Mars", "Vénus"], 1, "La Lune est le satellite naturel de la Terre."),
+    _q("etoile", "Astronomie", "Quelle étoile éclaire principalement la Terre ?", ["Sirius", "Le Soleil", "Véga", "Polaris"], 1, "Le Soleil est l'étoile la plus proche de la Terre et sa principale source de lumière."),
+    _q("coeur", "Biologie", "Quel est le rôle principal du cœur ?", ["Digérer les aliments", "Pomper le sang", "Filtrer l'air", "Produire les os"], 1, "Le cœur propulse le sang dans le système circulatoire."),
+    _q("chlorophylle", "Biologie", "Quel pigment contribue à donner leur couleur verte aux feuilles ?", ["La mélanine", "L'hémoglobine", "La chlorophylle", "La kératine"], 2, "La chlorophylle absorbe la lumière utilisée par les plantes pendant la photosynthèse."),
+    _q("mammifere", "Biologie", "Quel trait caractérise les mammifères ?", ["Ils ont tous des ailes", "Les femelles allaitent leurs petits", "Ils vivent tous dans l'eau", "Ils pondent tous des œufs"], 1, "Les femelles des mammifères nourrissent leurs petits avec du lait."),
+    _q("vertebre", "Biologie", "Quel élément caractérise les vertébrés ?", ["Une coquille", "Une colonne vertébrale", "Six pattes", "Des antennes"], 1, "Les vertébrés possèdent une colonne vertébrale."),
+    _q("ebullition", "Sciences", "À quelle température l'eau bout-elle environ au niveau de la mer ?", ["0 °C", "50 °C", "100 °C", "150 °C"], 2, "À pression atmosphérique normale, l'eau bout autour de 100 °C."),
+    _q("newton", "Physique", "Quelle est l'unité SI de la force ?", ["Le watt", "Le newton", "Le volt", "Le litre"], 1, "Le newton (N) est l'unité SI de force."),
+    _q("ampere", "Physique", "Quelle unité mesure l'intensité du courant électrique ?", ["L'ampère", "Le mètre", "Le kilogramme", "Le degré"], 0, "L'intensité du courant électrique se mesure en ampères."),
+    _q("orbite", "Astronomie", "Autour de quel astre les planètes du système solaire orbitent-elles ?", ["La Lune", "Le Soleil", "La Terre", "Jupiter uniquement"], 1, "Les planètes du système solaire orbitent autour du Soleil."),
+    _q("vitaminec", "Nutrition", "Quel aliment est une source connue de vitamine C ?", ["L'orange", "Le sucre blanc", "Le sel", "L'huile"], 0, "Les agrumes, dont l'orange, apportent de la vitamine C."),
+    _q("octogone", "Mathématiques", "Combien de côtés possède un octogone ?", ["6", "7", "8", "9"], 2, "Un octogone possède huit côtés."),
+    _q("baobab", "Madagascar", "Quel arbre est emblématique de plusieurs paysages de l'ouest malgache ?", ["Le baobab", "Le sapin", "L'érable", "Le bouleau"], 0, "Plusieurs espèces de baobabs sont emblématiques des paysages malgaches."),
+    _q("misaotra", "Malagasy", "Que signifie généralement « misaotra » en malagasy ?", ["Au revoir", "Merci", "Bonne nuit", "Excusez-moi"], 1, "« Misaotra » signifie « merci »."),
+    _q("salama", "Malagasy", "Dans une salutation courante en malagasy, que signifie « salama » ?", ["Bonjour / salut", "À demain", "Je ne sais pas", "Félicitations"], 0, "« Salama » est une salutation courante."),
+    _q("energie", "Environnement", "Laquelle de ces sources d'énergie est renouvelable ?", ["Le charbon", "Le pétrole", "Le soleil", "Le gaz naturel"], 2, "L'énergie solaire provient du rayonnement du Soleil et est renouvelable à l'échelle humaine."),
+    _q("cycle-eau", "Environnement", "Comment appelle-t-on le passage de l'eau liquide en vapeur ?", ["La fusion", "L'évaporation", "La congélation", "La solidification"], 1, "L'évaporation transforme une partie de l'eau liquide en vapeur."),
+    _q("ph-neutre", "Chimie", "Quelle valeur indique un pH neutre dans les conditions habituelles ?", ["0", "3", "7", "14"], 2, "Un pH de 7 est neutre dans les conditions habituelles."),
+    _q("adn", "Biologie", "Quel est le rôle principal de l'ADN ?", ["Stocker l'information génétique", "Transporter l'oxygène dans le sang", "Digérer les graisses", "Produire le son"], 0, "L'ADN porte l'information génétique des organismes."),
+    _q("chromosomes", "Biologie", "Combien de chromosomes possède généralement une cellule humaine adulte non reproductrice ?", ["23", "32", "46", "64"], 2, "Une cellule humaine somatique possède généralement 46 chromosomes, organisés en 23 paires."),
+    _q("mercure", "Astronomie", "Quelle planète est la plus proche du Soleil ?", ["Mercure", "Vénus", "Terre", "Mars"], 0, "Mercure est la planète la plus proche du Soleil."),
+    _q("rotation", "Astronomie", "Environ combien de temps la Terre met-elle pour tourner sur elle-même ?", ["Une heure", "24 heures", "30 jours", "365 jours"], 1, "La rotation terrestre dure environ un jour."),
+    _q("kilogramme", "Unités", "Combien de grammes équivalent à un kilogramme ?", ["100", "500", "1 000", "10 000"], 2, "Un kilogramme vaut 1 000 grammes."),
+    _q("angle-droit", "Mathématiques", "Combien de degrés mesure un angle droit ?", ["45°", "60°", "90°", "180°"], 2, "Un angle droit mesure 90 degrés."),
+    _q("triangle", "Mathématiques", "Quelle est la somme des angles intérieurs d'un triangle plan ?", ["90°", "180°", "270°", "360°"], 1, "La somme des angles intérieurs d'un triangle vaut 180 degrés."),
+    _q("puissance", "Calcul mental", "Combien vaut 2 puissance 5 ?", ["10", "16", "25", "32"], 3, "2 puissance 5 vaut 2 × 2 × 2 × 2 × 2, soit 32."),
+    _q("python", "Informatique", "Lequel de ces noms désigne un langage de programmation ?", ["Python", "Bluetooth", "Photoshop", "Ethernet"], 0, "Python est un langage de programmation généraliste."),
+    _q("motdepasse", "Sécurité numérique", "Quel choix améliore généralement la sécurité d'un mot de passe ?", ["Réutiliser le même partout", "Choisir un mot de passe long et unique", "Utiliser uniquement son prénom", "Le partager publiquement"], 1, "Un mot de passe long et unique réduit le risque lié à la réutilisation des identifiants."),
+    _q("cloud", "Informatique", "À quoi sert principalement un espace de stockage en ligne ?", ["À stocker et retrouver des fichiers via un service réseau", "À augmenter la taille de l'écran", "À remplacer le clavier", "À recharger la batterie"], 0, "Un service de stockage en ligne permet d'enregistrer et de retrouver des fichiers via un réseau."),
+    _q("oxygene-plantes", "Biologie", "Quel gaz est libéré par les plantes pendant la photosynthèse ?", ["Le dioxygène", "Le méthane uniquement", "L'hélium", "L'argon uniquement"], 0, "La photosynthèse libère du dioxygène."),
+    _q("racines", "Biologie", "Quel est un rôle important des racines d'une plante ?", ["Absorber l'eau et les sels minéraux", "Produire des sons", "Fabriquer des os", "Transformer la lumière en bruit"], 0, "Les racines absorbent notamment l'eau et les sels minéraux du sol."),
+    _q("boussole", "Orientation", "Quel point cardinal une boussole classique indique-t-elle approximativement ?", ["Le nord magnétique", "Le sud géographique exact en toute circonstance", "L'équateur", "Le centre de la Terre"], 0, "Une boussole s'aligne sur le champ magnétique terrestre et indique approximativement le nord magnétique."),
+    _q("carre", "Mathématiques", "Combien de côtés égaux possède un carré ?", ["2", "3", "4", "6"], 2, "Un carré possède quatre côtés de même longueur et quatre angles droits."),
+    _q("binaire", "Informatique", "Quelle base utilise le système binaire ?", ["La base 2", "La base 8", "La base 10", "La base 16"], 0, "Le système binaire utilise deux chiffres : 0 et 1."),
+    _q("pluie", "Météorologie", "Comment appelle-t-on les gouttes d'eau qui tombent des nuages ?", ["La rosée", "La pluie", "Le brouillard", "La vapeur"], 1, "La pluie est une précipitation liquide constituée de gouttes d'eau."),
+    _q("recyclage", "Environnement", "Quel geste aide à réduire les déchets ?", ["Jeter tous les objets dans la nature", "Réutiliser ou recycler quand c'est approprié", "Brûler tous les plastiques", "Gaspiller l'eau"], 1, "La réutilisation et le recyclage adaptés contribuent à réduire les déchets."),
 ]
-MOTS = {"ARBRE","TABLE","LIVRE","ROUTE","FLEUR","PLAGE","ECOLE","AMOUR","SAVOIR","ORANGE","SCIENCE","HISTOIRE","CALCUL","NATURE","SOLEIL","ETOILE","RIVIERE","MALAGASY","CLASSE","ETUDIANT"}
+
+# Dictionnaire embarqué pour rester utilisable sans service externe.
+# Il contient des mots courants et quelques mots utiles dans le contexte malgache.
+MOTS = set("""
+ARBRE TABLE LIVRE ROUTE FLEUR PLAGE ECOLE AMOUR SAVOIR ORANGE SCIENCE HISTOIRE
+CALCUL NATURE SOLEIL ETOILE RIVIERE MALAGASY CLASSE ETUDIANT MAISON JARDIN SOURIRE
+ENFANT VOYAGE FAMILLE AMITIE BONHEUR CHANCE MUSIQUE DANSE CHANT IMAGE COULEUR
+NUAGE PLUIE VENT TERRE MER OCEAN MONTAGNE FORET ANIMAL OISEAU POISSON CHEVAL
+CHAT CHIEN SOURIS LAPIN TIGRE LION GIRAFE ZEBRE SINGE LEMUR BAOBAB BANANE MANGUE
+PAPAYE CITRON POMME POIRE RAISIN FRUIT LEGUME TOMATE CAROTTE POMME DE TERRE
+PAIN RIZ LAIT FROMAGE BEURRE REPAS CUISINE CUILLERE ASSIETTE VERRE BOUTEILLE
+CRAYON STYLO CAHIER PAPIER CARTABLE REGLE GOMME TABLEAU LECTURE ECRITURE
+PAROLE PHRASE LETTRE MOT VERBE NOM SUJET ACCENT GRAMMAIRE VOCABULAIRE LANGUE
+FRANCAIS MALAGASY GEOGRAPHIE MATHEMATIQUE PHYSIQUE CHIMIE BIOLOGIE GEOLOGIE
+PLANETE GALAXIE ESPACE FUSEE SATELLITE COMETE METEORITE LUMIERE OMBRE ENERGIE
+ELECTRICITE CIRCUIT AIMANT FORCE VITESSE MASSE VOLUME LONGUEUR DISTANCE TEMPS
+HEURE MINUTE SECONDE JOUR SEMAINE MOIS ANNEE SIECLE NOMBRE CHIFFRE ADDITION
+SOMME PRODUIT DIVISION FRACTION DECIMAL ANGLE TRIANGLE CARRE CERCLE LOSANGE
+VOLUME PERIMETRE SURFACE EQUATION LOGIQUE RAISON IDEE MEMOIRE ATTENTION QUESTION
+REPONSE EXEMPLE EXERCICE DEVOIR LECON REVISION PROGRES EFFORT OBJECTIF DEFI
+POINT SCORE VICTOIRE EQUIPE JOUEUR PARTIE NIVEAU INDICE ASTUCE METHODE
+ORDINATEUR CLAVIER ECRAN SOURIS INTERNET RESEAU DONNEE FICHIER DOSSIER
+PROGRAMME PYTHON HTML CSS SECURITE MOTDEPASSE COMPTE SESSION NAVIGATEUR
+APPLICATION MOBILE TABLETTE SERVEUR CLOUD ROBOT ALGORITHME CODE VARIABLE FONCTION
+ECRAN PIXEL VIDEO PHOTO CAMERA MICROPHONE SON IMAGE TEXTE
+SANTE CORPS COEUR SANG POUMON CERVEAU OS MUSCLE NERF CELLULE ADN GENETIQUE
+ESPECE RACINE FEUILLE TIGE GRAINE FLEUR TERREAU EAU MINERAL OXYGENE CARBONE
+CLIMAT NATUREL DURABLE RECYCLE DECHET PROPRETE PROTEGER RESSOURCE SOLAIRE EOLIEN
+SOLEIL MERIDIEN EQUATEUR CONTINENT AFRIQUE ASIE EUROPE AMERIQUE MADAGASCAR TOAMASINA
+ANTANANARIVO MAHAJANGA FIANARANTSOA TOLIARA ANTSIRABE NOSY VOYAGE PAYS VILLE VILLAGE
+TANANA TRANO RANO VARY AINA FIHAVANANA SALAMA MISAOTRA TONGASOA VAZAHA
+KILOMETRE METRE GRAMME KILOGRAMME LITRE DEGRE CELSIUS WATT VOLT AMPERE NEWTON
+ARITHMETIQUE ALGEBRE GEOMETRIE STATISTIQUE PROBABILITE GRAPHIQUE TABLE DONNEES
+ACCUEIL DEBUT RETOUR CHOIX REGLE ESSAI TENTATIVE RAPIDE FACILE DIFFICILE
+""".split())
 
 def normaliser(texte):
     texte = unicodedata.normalize("NFKD", texte or "")
     return "".join(c for c in texte if not unicodedata.combining(c)).upper().strip()
+
 
 def effacer_partie_classique(donnees_session):
     """Efface uniquement la partie classique courante, sans toucher au reste de la session."""
     donnees_session.pop("jeux_classiques", None)
 
 
+def melanger_choix(question, rng=None):
+    """Mélange les propositions tout en conservant l'index de la bonne réponse."""
+    generateur = rng or random
+    paires = list(enumerate(question["choix"]))
+    generateur.shuffle(paires)
+    choix = [texte for _, texte in paires]
+    bonne = next(index for index, (index_initial, _) in enumerate(paires) if index_initial == question["bonne"])
+    return choix, bonne
+
+
+def preparer_question_active(etat, rng=None):
+    """Prépare une seule question dans la session pour ne pas mélanger les réponses au rafraîchissement."""
+    ids = etat.get("ids", [])
+    tour = int(etat.get("tour", 0))
+    if tour >= len(ids):
+        etat.pop("choix_actifs", None)
+        etat.pop("bonne_active", None)
+        etat.pop("question_active_id", None)
+        return
+    question_id = ids[tour]
+    if (
+        etat.get("question_active_id") == question_id
+        and "choix_actifs" in etat
+        and "bonne_active" in etat
+    ):
+        return
+    question = next((item for item in QUESTIONS if item["id"] == question_id), None)
+    if question is None:
+        etat.pop("choix_actifs", None)
+        etat.pop("bonne_active", None)
+        return
+    choix, bonne = melanger_choix(question, rng)
+    etat["choix_actifs"] = choix
+    etat["bonne_active"] = bonne
+    etat["question_active_id"] = question_id
+
+
+def creer_partie_champion(rng=None):
+    """Crée une série sans répétition de questions à l'intérieur d'une même partie."""
+    generateur = rng or random
+    nombre = min(QUESTIONS_PAR_PARTIE, len(QUESTIONS))
+    etat = {
+        "mode": "champion",
+        "score": 0,
+        "points": 0,
+        "tour": 0,
+        "serie": 0,
+        "meilleure_serie": 0,
+        "ids": [question["id"] for question in generateur.sample(QUESTIONS, nombre)],
+    }
+    preparer_question_active(etat, generateur)
+    return etat
+
+
 def mot_valide(mot, lettres):
-    mot = normaliser(mot).replace(" ","").replace("-","")
+    mot = normaliser(mot).replace(" ", "").replace("-", "").replace("'", "")
     if len(mot) < 2 or mot not in MOTS:
         return False
     disponibles = list(lettres)
@@ -45,100 +215,177 @@ def mot_valide(mot, lettres):
         disponibles.remove(lettre)
     return True
 
-def tirer_lettres():
-    """Tire neuf lettres en garantissant qu'un mot du dictionnaire est réalisable."""
-    mot_solution = random.choice(sorted(MOTS))
+
+def tirer_tirage_lettres(rng=None):
+    """Tire neuf lettres et conserve un mot solution garanti parmi les lettres."""
+    generateur = rng or random
+    solutions = sorted(mot for mot in MOTS if 2 <= len(mot) <= 9)
+    mot_solution = generateur.choice(solutions)
     lettres = list(mot_solution)
     voyelles = list("AAAAEEEEIIIOU")
     consonnes = list("BBCCDDFFGGHLLLMMNNNPRRRSSSTTV")
     while len(lettres) < 9:
-        pool = voyelles if random.random() < 0.48 else consonnes
-        lettres.append(random.choice(pool))
-    random.shuffle(lettres)
-    return lettres
+        pool = voyelles if generateur.random() < 0.48 else consonnes
+        lettres.append(generateur.choice(pool))
+    generateur.shuffle(lettres)
+    return lettres, mot_solution
+
+
+def tirer_lettres(rng=None):
+    """Compatibilité avec les tests et les appels existants."""
+    return tirer_tirage_lettres(rng)[0]
+
+
+def tirer_chiffres(rng=None):
+    """Construit un tirage à six nombres avec une solution exacte entre 101 et 999."""
+    generateur = rng or random
+    pool = list(range(1, 11)) + [25, 50, 75, 100]
+    for _ in range(200):
+        nombres = generateur.sample(pool, 6)
+        candidats = []
+        for a, b, c in itertools.permutations(nombres, 3):
+            cible = (a + b) * c
+            if 101 <= cible <= 999:
+                candidats.append((cible, f"({a} + {b}) × {c}", f"Additionne {a} et {b}, puis multiplie le résultat par {c}."))
+        if candidats:
+            cible, solution, indice = generateur.choice(candidats)
+            return nombres, cible, solution, indice
+    nombres = [2, 3, 4, 5, 25, 50]
+    return nombres, 150, "(25 + 50) × 2", "Additionne 25 et 50, puis multiplie le résultat par 2."
+
 
 def calculer(expression, nombres, cible):
-    """Vérifie les calculs avec une grammaire arithmétique restreinte, sans eval."""
+    """Vérifie une expression arithmétique restreinte sans utiliser eval()."""
     expression = (expression or "").strip().replace("×", "*").replace("÷", "/").replace("−", "-")
     if len(expression) > 100 or not re.fullmatch(r"[0-9+*/().\-\s]+", expression):
         return False, "Expression invalide : utilise les nombres tirés et +, -, × ou ÷."
-    compact = expression.replace(" ","")
+    compact = expression.replace(" ", "")
     tokens = re.findall(r"\d+|[()+*/-]", compact)
     if "".join(tokens) != compact or not tokens:
         return False, "Expression mathématique invalide."
-    pos = 0
+    position = 0
     utilises = []
+
     def facteur():
-        nonlocal pos
-        if pos >= len(tokens): raise ValueError()
-        tok = tokens[pos]
-        if tok == "-":
-            pos += 1
+        nonlocal position
+        if position >= len(tokens):
+            raise ValueError()
+        token = tokens[position]
+        if token == "-":
+            position += 1
             return -facteur()
-        if tok == "(":
-            pos += 1
-            val = somme()
-            if pos >= len(tokens) or tokens[pos] != ")": raise ValueError()
-            pos += 1
-            return val
-        if tok.isdigit():
-            pos += 1
-            n = int(tok)
-            utilises.append(n)
-            return n
+        if token == "(":
+            position += 1
+            valeur = somme()
+            if position >= len(tokens) or tokens[position] != ")":
+                raise ValueError()
+            position += 1
+            return valeur
+        if token.isdigit():
+            position += 1
+            nombre = int(token)
+            utilises.append(nombre)
+            return nombre
         raise ValueError()
+
     def produit():
-        nonlocal pos
-        val = facteur()
-        while pos < len(tokens) and tokens[pos] in ("*","/"):
-            op = tokens[pos]; pos += 1
+        nonlocal position
+        valeur = facteur()
+        while position < len(tokens) and tokens[position] in ("*", "/"):
+            operation = tokens[position]
+            position += 1
             droite = facteur()
-            if op == "*": val *= droite
+            if operation == "*":
+                valeur *= droite
             else:
-                if droite == 0 or val % droite != 0: raise ValueError()
-                val //= droite
-        return val
+                if droite == 0 or valeur % droite != 0:
+                    raise ValueError()
+                valeur //= droite
+        return valeur
+
     def somme():
-        nonlocal pos
-        val = produit()
-        while pos < len(tokens) and tokens[pos] in ("+","-"):
-            op = tokens[pos]; pos += 1
+        nonlocal position
+        valeur = produit()
+        while position < len(tokens) and tokens[position] in ("+", "-"):
+            operation = tokens[position]
+            position += 1
             droite = produit()
-            val = val + droite if op == "+" else val - droite
-        return val
+            valeur = valeur + droite if operation == "+" else valeur - droite
+        return valeur
+
     try:
         resultat = somme()
-        if pos != len(tokens) or len(utilises) < 2: raise ValueError()
-        for n in set(utilises):
-            if utilises.count(n) > list(nombres).count(n): return False, "Un nombre a été utilisé plus de fois que dans le tirage."
-        if any(n not in nombres for n in utilises): return False, "Utilise uniquement les nombres tirés."
-        if abs(resultat) > 1000000: raise ValueError()
-        if resultat == cible: return True, "Bravo, tu as atteint le nombre cible !"
+        if position != len(tokens) or len(utilises) < 2:
+            raise ValueError()
+        for nombre in set(utilises):
+            if utilises.count(nombre) > list(nombres).count(nombre):
+                return False, "Un nombre a été utilisé plus de fois que dans le tirage."
+        if any(nombre not in nombres for nombre in utilises):
+            return False, "Utilise uniquement les nombres tirés."
+        if abs(resultat) > 1_000_000:
+            raise ValueError()
+        if resultat == cible:
+            return True, "Bravo, tu as atteint le nombre cible !"
         return False, f"Ton résultat est {resultat}. La cible était {cible}."
     except (ValueError, ZeroDivisionError, RecursionError):
         return False, "Expression invalide. Vérifie les nombres, les parenthèses et les opérations."
 
+
 @router.get("")
 def accueil(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur: return RedirectResponse("/connexion", status_code=303)
-    return templates.TemplateResponse(request, "jeux_classiques.html", {"utilisateur": utilisateur, "partie": request.session.get("jeux_classiques", {}), "questions": QUESTIONS})
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "jeux_classiques.html",
+        {
+            "utilisateur": utilisateur,
+            "partie": request.session.get("jeux_classiques", {}),
+            "questions": QUESTIONS,
+            "tentatives_max": TENTATIVES_MAX,
+        },
+    )
+
 
 @router.post("/demarrer", dependencies=[Depends(verifier_csrf)])
 def demarrer(request: Request, mode: str = Form(...), session: Session = Depends(get_session)):
-    if not utilisateur_courant(request, session): return RedirectResponse("/connexion", status_code=303)
-    if mode not in {"champion","chiffres","lettres"}: return RedirectResponse("/jeux-classiques", status_code=303)
-    etat = {"mode":mode,"score":0,"tour":0}
+    if not utilisateur_courant(request, session):
+        return RedirectResponse("/connexion", status_code=303)
     if mode == "champion":
-        etat["ids"] = [q["id"] for q in random.sample(QUESTIONS, 5)]
+        etat = creer_partie_champion()
     elif mode == "chiffres":
-        etat["nombres"] = random.sample([1,2,3,4,5,6,7,8,9,10,25,50,75,100], 6)
-        # Construire la cible depuis le tirage garantit au moins une solution exacte.
-        etat["cible"] = (etat["nombres"][0] + etat["nombres"][1]) * etat["nombres"][2]
+        nombres, cible, solution, indice = tirer_chiffres()
+        etat = {
+            "mode": mode,
+            "score": 0,
+            "points": 0,
+            "nombres": nombres,
+            "cible": cible,
+            "solution": solution,
+            "indice": indice,
+            "indice_affiche": False,
+            "tentatives": 0,
+            "termine": False,
+        }
+    elif mode == "lettres":
+        lettres, solution = tirer_tirage_lettres()
+        etat = {
+            "mode": mode,
+            "score": 0,
+            "points": 0,
+            "lettres": lettres,
+            "solution": solution,
+            "tentatives": 0,
+            "meilleur_mot": "",
+            "meilleur_points": 0,
+            "termine": False,
+        }
     else:
-        etat["lettres"] = tirer_lettres()
+        return RedirectResponse("/jeux-classiques", status_code=303)
     request.session["jeux_classiques"] = etat
     return RedirectResponse("/jeux-classiques", status_code=303)
+
 
 @router.post("/changer", dependencies=[Depends(verifier_csrf)])
 def changer_jeu(request: Request, session: Session = Depends(get_session)):
@@ -149,27 +396,118 @@ def changer_jeu(request: Request, session: Session = Depends(get_session)):
     return RedirectResponse("/jeux-classiques", status_code=303)
 
 
+@router.post("/indice", dependencies=[Depends(verifier_csrf)])
+def afficher_indice(request: Request, session: Session = Depends(get_session)):
+    if not utilisateur_courant(request, session):
+        return RedirectResponse("/connexion", status_code=303)
+    etat = request.session.get("jeux_classiques") or {}
+    if etat.get("mode") == "chiffres" and not etat.get("termine") and int(etat.get("tentatives", 0)) > 0:
+        etat["indice_affiche"] = True
+        request.session["jeux_classiques"] = etat
+    return RedirectResponse("/jeux-classiques", status_code=303)
+
+
 @router.post("/repondre", dependencies=[Depends(verifier_csrf)])
-def repondre(request: Request, reponse: str = Form(""), choix: int = Form(-1), session: Session = Depends(get_session)):
-    if not utilisateur_courant(request, session): return RedirectResponse("/connexion", status_code=303)
+def repondre(
+    request: Request,
+    reponse: str = Form(""),
+    choix: int = Form(-1),
+    session: Session = Depends(get_session),
+):
+    if not utilisateur_courant(request, session):
+        return RedirectResponse("/connexion", status_code=303)
     etat = request.session.get("jeux_classiques") or {}
     mode = etat.get("mode")
+    if mode not in {"champion", "chiffres", "lettres"}:
+        effacer_partie_classique(request.session)
+        return RedirectResponse("/jeux-classiques", status_code=303)
+
     if mode == "champion":
-        ids = etat.get("ids", []); tour = int(etat.get("tour", 0))
-        if tour >= len(ids): return RedirectResponse("/jeux-classiques", status_code=303)
-        q = next((x for x in QUESTIONS if x["id"] == ids[tour]), None)
-        if q is None: return RedirectResponse("/jeux-classiques", status_code=303)
-        correcte = choix == q["bonne"]
-        etat["score"] = int(etat.get("score",0)) + int(correcte)
-        etat["feedback"] = {"correcte":correcte,"explication":q["explication"]}
+        ids = etat.get("ids", [])
+        tour = int(etat.get("tour", 0))
+        if tour >= len(ids) or "bonne_active" not in etat:
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        if choix < 0 or choix >= len(etat.get("choix_actifs", [])):
+            etat["feedback"] = {"correcte": False, "explication": "Choisis une réponse avant de valider."}
+            request.session["jeux_classiques"] = etat
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        question = next((item for item in QUESTIONS if item["id"] == ids[tour]), None)
+        if question is None:
+            effacer_partie_classique(request.session)
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        correcte = choix == int(etat["bonne_active"])
+        points_ajoutes = 0
+        if correcte:
+            etat["score"] = int(etat.get("score", 0)) + 1
+            etat["serie"] = int(etat.get("serie", 0)) + 1
+            etat["meilleure_serie"] = max(int(etat.get("meilleure_serie", 0)), int(etat["serie"]))
+            points_ajoutes = POINTS_QUESTION + (BONUS_SERIE if int(etat["serie"]) % 3 == 0 else 0)
+            etat["points"] = int(etat.get("points", 0)) + points_ajoutes
+        else:
+            etat["serie"] = 0
+        etat["feedback"] = {
+            "correcte": correcte,
+            "explication": question["explication"],
+            "points_ajoutes": points_ajoutes,
+        }
         etat["tour"] = tour + 1
+        preparer_question_active(etat)
     elif mode == "chiffres":
-        correcte, msg = calculer(reponse, etat.get("nombres",[]), int(etat.get("cible",0)))
-        etat["score"] = int(etat.get("score",0)) + int(correcte)
-        etat["feedback"] = {"correcte":correcte,"explication":msg}; etat["termine"] = True
-    elif mode == "lettres":
-        correcte = mot_valide(reponse, etat.get("lettres",[]))
-        etat["score"] = int(etat.get("score",0)) + int(correcte)
-        etat["feedback"] = {"correcte":correcte,"explication":"Mot accepté !" if correcte else "Mot non reconnu ou lettres indisponibles."}; etat["termine"] = True
+        if etat.get("termine"):
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        tentatives = int(etat.get("tentatives", 0))
+        if tentatives >= TENTATIVES_MAX:
+            etat["termine"] = True
+            request.session["jeux_classiques"] = etat
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        correcte, message = calculer(reponse, etat.get("nombres", []), int(etat.get("cible", 0)))
+        tentatives += 1
+        etat["tentatives"] = tentatives
+        if correcte:
+            etat["score"] = 1
+            etat["points"] = 10 if etat.get("indice_affiche") else 20
+            etat["termine"] = True
+        elif tentatives >= TENTATIVES_MAX:
+            etat["termine"] = True
+            message = f"{message} Une solution possible : {etat.get('solution', '')}."
+        etat["feedback"] = {
+            "correcte": correcte,
+            "explication": message,
+            "tentatives": tentatives,
+        }
+    else:  # lettres
+        if etat.get("termine"):
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        tentatives = int(etat.get("tentatives", 0))
+        if tentatives >= TENTATIVES_MAX:
+            etat["termine"] = True
+            request.session["jeux_classiques"] = etat
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        tentatives += 1
+        etat["tentatives"] = tentatives
+        mot = normaliser(reponse).replace(" ", "").replace("-", "").replace("'", "")
+        correcte = mot_valide(mot, etat.get("lettres", []))
+        if correcte:
+            points_mot = len(mot) * 5
+            if points_mot > int(etat.get("meilleur_points", 0)):
+                etat["meilleur_mot"] = mot
+                etat["meilleur_points"] = points_mot
+            etat["points"] = int(etat.get("meilleur_points", 0))
+            etat["score"] = int(etat.get("meilleur_points", 0))
+            message = f"Mot accepté : {mot}. Il rapporte {points_mot} points."
+            if mot == etat.get("solution"):
+                message += " Tu as trouvé le mot choisi pour ce tirage !"
+        else:
+            message = "Mot non reconnu dans le dictionnaire intégré ou lettres indisponibles."
+        termine = tentatives >= TENTATIVES_MAX or (correcte and len(mot) >= 9)
+        etat["termine"] = termine
+        if termine and etat.get("meilleur_mot"):
+            message += f" Meilleur mot : {etat['meilleur_mot']} ({etat['meilleur_points']} points)."
+        etat["feedback"] = {
+            "correcte": correcte,
+            "explication": message,
+            "tentatives": tentatives,
+        }
+
     request.session["jeux_classiques"] = etat
     return RedirectResponse("/jeux-classiques", status_code=303)
