@@ -16,7 +16,7 @@ assert.match(css, /prefers-reduced-motion/, "Les animations doivent respecter le
 assert.match(js, /originePrecedente\.origin === pageActuelle\.origin/, "Le retour historique doit rester sur la même origine.");
 
 const navigateur = await chromium.launch({ headless: true });
-const page = await navigateur.newPage({ viewport: { width: 320, height: 800 } });
+const contexte = await navigateur.newContext({ viewport: { width: 320, height: 800 } });
 const html = (fallback) => `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">` +
   `<style>${css}</style></head><body>
@@ -28,12 +28,13 @@ const html = (fallback) => `<!doctype html>
     </nav><h1>Page de test</h1>
   </main><script>${js}</script></body></html>`;
 
-await page.route("https://mitaridala.test/**", async (route) => {
+await contexte.route("https://mitaridala.test/**", async (route) => {
   const url = new URL(route.request().url());
   const pieces = url.pathname.replace(/\/$/, "").split("/").filter(Boolean);
   const fallback = pieces.length > 1 ? "/" + pieces.slice(0, -1).join("/") : "/dashboard";
   await route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: html(fallback) });
 });
+const page = await contexte.newPage();
 
 try {
   // Historique interne : le bouton revient à la page précédente du même site.
@@ -51,7 +52,7 @@ try {
   assert.equal(new URL(page.url()).pathname, "/previous");
 
   // Ouverture directe : sans referrer interne, le lien utilise un fallback parent sûr.
-  const direct = await navigateur.newPage({ viewport: { width: 320, height: 800 } });
+  const direct = await contexte.newPage();
   await direct.goto("https://mitaridala.test/documents/123/quiz");
   assert.equal(await direct.locator("[data-navigation-retour]").getAttribute("href"), "/documents/123");
   await direct.locator("[data-navigation-retour]").click();
@@ -60,5 +61,6 @@ try {
 
   console.log("Smoke retour global OK : historique interne, URL directe, fallback parent et bouton mobile accessible.");
 } finally {
+  await contexte.close();
   await navigateur.close();
 }
