@@ -67,6 +67,29 @@
 @media(prefers-reduced-motion:reduce){.jeu-touche-nombre,.jeu-touche-operation,.jeu-touche-action{transition:none}}
 .jeu-tile{display:grid;place-items:center;min-width:3rem;min-height:3.3rem;font-size:1.25rem;font-weight:900;background:var(--content-bg);font-variant-numeric:tabular-nums}
 .jeu-feedback{border-left:4px solid var(--content-link);padding:.8rem 1rem;margin:1rem 0;background:var(--content-bg);border-radius:0 12px 12px 0;overflow-wrap:anywhere}
+.jeu-mot-long{display:grid;gap:1rem;margin:1rem 0;padding:clamp(.85rem,2.3vw,1.25rem);border:1px solid var(--content-border);border-radius:18px;background:linear-gradient(155deg,var(--content-bg),color-mix(in srgb,var(--content-link) 5%,var(--content-bg)))}
+.jeu-mot-long-entete{display:flex;align-items:center;justify-content:space-between;gap:.65rem;flex-wrap:wrap}
+.jeu-mot-long-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .75rem;border:1px solid var(--content-border);border-radius:999px;background:var(--content-surface);font-size:.86rem;font-weight:850}
+.jeu-tirage-lettres{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:clamp(.3rem,1.2vw,.65rem)}
+.jeu-touche-lettre{display:grid;place-items:center;aspect-ratio:1/1;min-width:0;padding:.15rem;border:1px solid color-mix(in srgb,var(--content-link) 30%,var(--content-border));border-radius:13px;background:var(--content-surface);color:var(--content-text);font-size:clamp(1rem,2.7vw,1.55rem);font-weight:950;box-shadow:0 3px 0 color-mix(in srgb,var(--content-border) 80%,transparent);cursor:pointer;transition:transform .12s ease,border-color .12s ease,background .12s ease,opacity .12s ease}
+.jeu-touche-lettre:hover:not(:disabled){transform:translateY(-2px);border-color:var(--content-link);background:color-mix(in srgb,var(--content-link) 12%,var(--content-surface))}
+.jeu-touche-lettre:focus-visible,.jeu-mot-action:focus-visible{outline:3px solid var(--content-link);outline-offset:3px}
+.jeu-touche-lettre:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+.jeu-touche-lettre.is-used{background:color-mix(in srgb,var(--content-link) 14%,var(--content-surface));border-style:dashed}
+.jeu-mot-actions{display:flex;flex-wrap:wrap;gap:.6rem}
+.jeu-mot-action{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:.6rem .85rem;border:1px solid var(--content-border);border-radius:11px;background:var(--content-surface);color:var(--content-text);font:inherit;font-size:.9rem;font-weight:800;cursor:pointer}
+.jeu-mot-action:hover{border-color:var(--content-link)}
+.jeu-mot-statut{min-height:1.5em;margin:0;color:var(--content-text-muted);font-size:.92rem;line-height:1.55}
+.jeu-mot-statut[data-invalid="true"]{color:#c35b35;font-weight:800}
+.jeu-form-mot{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:.7rem}
+.jeu-form-mot label{min-width:0;font-weight:850}
+.jeu-form-mot input[type=text]{display:block;width:100%;min-height:54px;margin-top:.4rem;padding:.8rem 1rem;border:1px solid var(--content-link);border-radius:13px;background:var(--content-surface);color:var(--content-text);font-size:1.08rem;font-weight:850;letter-spacing:.04em;text-transform:uppercase}
+.jeu-form-mot .jeu-bouton{min-height:54px}
+.jeu-meilleur-mot{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;border:1px solid color-mix(in srgb,var(--content-link) 32%,var(--content-border));border-radius:14px;background:color-mix(in srgb,var(--content-link) 7%,var(--content-bg));padding:.85rem 1rem}
+.jeu-meilleur-mot strong{font-size:1.15rem;letter-spacing:.06em}
+@media(max-width:700px){.jeu-tirage-lettres{grid-template-columns:repeat(5,minmax(0,1fr))}.jeu-form-mot{grid-template-columns:1fr}.jeu-form-mot .jeu-bouton{width:100%}}
+@media(max-width:380px){.jeu-touche-lettre{border-radius:10px}.jeu-mot-actions>*{flex:1 1 100%}}
+@media(prefers-reduced-motion:reduce){.jeu-touche-lettre{transition:none}}
 .jeu-feedback strong{display:block;margin-bottom:.2rem}
 .jeu-feedback p{margin:.25rem 0 0}
 .jeu-feedback[data-correct="false"]{border-left-color:#d97706}
@@ -341,19 +364,98 @@
   {% elif partie.get('mode') == 'lettres' %}
     <section class="jeu-zone">
       <div class="jeu-statistiques"><span class="jeu-chip">🔤 Le mot le plus long</span><span class="jeu-chip">⭐ {{ partie.get('points',0) }} points</span><span class="jeu-chip">Tentative {{ [partie.get('tentatives',0), tentatives_max]|min }} / {{ tentatives_max }}</span></div>
-      <h2>Compose un mot avec les neuf lettres</h2>
-      <p class="jeu-muted">Chaque lettre ne peut être utilisée qu'une fois par mot. Un mot accepté vaut cinq points par lettre ; conserve ton meilleur mot ou trouve-en un plus long.</p>
-      <div class="jeu-chiffres" aria-label="Lettres disponibles">
-        {% for lettre in partie.get('lettres',[]) %}<span class="jeu-tile">{{ lettre }}</span>{% endfor %}
+      <h2>Trouve le mot le plus long</h2>
+      <p class="jeu-muted">Compose un mot valide avec les lettres tirées. Chaque lettre ne peut servir qu'autant de fois qu'elle apparaît. Un mot accepté rapporte 5 points par lettre : vise les 9 lettres pour maximiser ton score.</p>
+      <div class="jeu-mot-long" data-mot-long>
+        <div class="jeu-mot-long-entete">
+          <span class="jeu-mot-long-badge">🎲 Ton tirage</span>
+          <span class="jeu-mot-long-badge">🏅 5 points par lettre valide</span>
+        </div>
+        <div class="jeu-tirage-lettres" role="group" aria-label="Clique pour choisir une lettre">
+          {% for lettre in partie.get('lettres',[]) %}<button type="button" class="jeu-touche-lettre" data-lettre="{{ lettre|upper }}" aria-label="Ajouter la lettre {{ lettre|upper }}">{{ lettre|upper }}</button>{% endfor %}
+        </div>
+        {% if not partie.get('termine') %}
+        <div class="jeu-mot-actions">
+          <button type="button" class="jeu-mot-action" data-mot-action="annuler">↶ Retirer la dernière lettre</button>
+          <button type="button" class="jeu-mot-action" data-mot-action="effacer">Effacer le mot</button>
+        </div>
+        <p class="jeu-mot-statut" data-mot-statut role="status" aria-live="polite">Clique sur les lettres pour former ton mot, ou saisis-le dans le champ ci-dessous.</p>
+        {% endif %}
       </div>
       {% if partie.get('feedback') %}<div class="jeu-feedback" data-correct="{{ 'true' if partie.feedback.correcte else 'false' }}" role="status" aria-live="polite"><strong>{{ "Mot accepté !" if partie.feedback.correcte else "Nouvelle tentative" }}</strong><p>{{ partie.feedback.explication }}</p></div>{% endif %}
-      {% if partie.get('meilleur_mot') %}<p class="jeu-indice"><strong>Ton meilleur mot :</strong> {{ partie.get('meilleur_mot') }} · {{ partie.get('meilleur_points',0) }} points</p>{% endif %}
+      {% if partie.get('meilleur_mot') %}<div class="jeu-meilleur-mot"><span><small class="jeu-muted">Ton meilleur mot</small><br><strong>{{ partie.get('meilleur_mot') }}</strong></span><span><strong>{{ partie.get('meilleur_points',0) }} pts</strong></span></div>{% endif %}
       {% if not partie.get('termine') %}
-      <form class="jeu-form" method="post" action="/jeux-classiques/repondre">
+      <form class="jeu-form-mot" method="post" action="/jeux-classiques/repondre" data-mot-form>
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-        <label>Ton mot<input type="text" name="reponse" maxlength="20" required autocomplete="off" autocapitalize="characters" placeholder="Écris ton mot"></label>
-        <button class="jeu-bouton" type="submit">Vérifier le mot</button>
+        <label for="jeu-mot-reponse">Ton mot
+          <input id="jeu-mot-reponse" type="text" name="reponse" maxlength="9" required autocomplete="off" autocapitalize="characters" spellcheck="false" data-mot-input placeholder="Ex. M A I S O N" aria-describedby="jeu-mot-info">
+        </label>
+        <button class="jeu-bouton" type="submit">✓ Vérifier le mot</button>
       </form>
+      <p id="jeu-mot-info" class="jeu-mot-statut">La vérification contrôle les lettres disponibles et le dictionnaire du jeu.</p>
+      <script nonce="{{ csp_nonce(request) }}">
+      (() => {
+        const root = document.querySelector('[data-mot-long]');
+        if (!root || root.dataset.initialise === 'oui') return;
+        root.dataset.initialise = 'oui';
+        const input = document.querySelector('[data-mot-input]');
+        const status = root.querySelector('[data-mot-statut]');
+        const buttons = Array.from(root.querySelectorAll('[data-lettre]'));
+        const actions = Array.from(root.querySelectorAll('[data-mot-action]'));
+        if (!input || !status) return;
+        const normaliserLettres = valeur => Array.from(valeur.toLocaleUpperCase('fr-FR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z]/g, ''));
+        function actualiser() {
+          const choisies = normaliserLettres(input.value);
+          const tirees = {};
+          const utilisees = {};
+          buttons.forEach(button => {
+            const lettre = button.dataset.lettre;
+            tirees[lettre] = (tirees[lettre] || 0) + 1;
+          });
+          choisies.forEach(lettre => {
+            utilisees[lettre] = (utilisees[lettre] || 0) + 1;
+          });
+          const excedent = Object.keys(utilisees).some(lettre => utilisees[lettre] > (tirees[lettre] || 0));
+          const restantes = Object.assign({}, utilisees);
+          buttons.forEach(button => {
+            const lettre = button.dataset.lettre;
+            if ((restantes[lettre] || 0) > 0) {
+              button.disabled = true;
+              button.classList.add('is-used');
+              restantes[lettre] -= 1;
+            } else {
+              button.disabled = excedent && !(tirees[lettre] > 0);
+              button.classList.remove('is-used');
+            }
+          });
+          status.dataset.invalid = excedent ? 'true' : 'false';
+          if (excedent) {
+            status.textContent = 'Attention : ton mot utilise une lettre absente du tirage ou trop de fois.';
+          } else if (choisies.length === 0) {
+            status.textContent = 'Clique sur les lettres pour former ton mot, ou saisis-le dans le champ ci-dessous.';
+          } else {
+            status.textContent = choisies.length + ' lettre' + (choisies.length > 1 ? 's' : '') + ' · ' + (choisies.length * 5) + ' points si le mot est accepté.';
+          }
+        }
+        buttons.forEach(button => button.addEventListener('click', () => {
+          const choisies = normaliserLettres(input.value);
+          const lettre = button.dataset.lettre;
+          const disponible = buttons.filter(element => element.dataset.lettre === lettre).length;
+          if (choisies.filter(element => element === lettre).length >= disponible) return;
+          input.value += lettre;
+          actualiser();
+          input.focus();
+        }));
+        actions.forEach(button => button.addEventListener('click', () => {
+          if (button.dataset.motAction === 'annuler') input.value = Array.from(input.value).slice(0, -1).join('');
+          else input.value = '';
+          actualiser();
+          input.focus();
+        }));
+        input.addEventListener('input', actualiser);
+        actualiser();
+      })();
+      </script>
       {% else %}
       <div class="jeu-resultat">
         <article><strong>{{ partie.get('meilleur_points',0) }}</strong><span>Points obtenus</span></article>
