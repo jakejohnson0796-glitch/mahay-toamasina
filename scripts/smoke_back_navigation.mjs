@@ -40,7 +40,7 @@ try {
   // Historique interne : le bouton revient à la page précédente du même site.
   await page.goto("https://mitaridala.test/previous");
   await page.goto("https://mitaridala.test/quiz/42");
-  assert.equal(await page.locator("[data-navigation-retour]").innerText(), "← Retour");
+  assert.equal((await page.locator("[data-navigation-retour]").innerText()).replace(/\\s+/g, " ").trim(), "← Retour");
   const bounds = await page.locator("[data-navigation-retour]").evaluate((el) => {
     const r = el.getBoundingClientRect();
     return { left: r.left, right: r.right, height: r.height, width: r.width };
