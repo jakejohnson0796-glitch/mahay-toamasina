@@ -29,6 +29,11 @@ def normaliser(texte):
     texte = unicodedata.normalize("NFKD", texte or "")
     return "".join(c for c in texte if not unicodedata.combining(c)).upper().strip()
 
+def effacer_partie_classique(donnees_session):
+    """Efface uniquement la partie classique courante, sans toucher au reste de la session."""
+    donnees_session.pop("jeux_classiques", None)
+
+
 def mot_valide(mot, lettres):
     mot = normaliser(mot).replace(" ","").replace("-","")
     if len(mot) < 2 or mot not in MOTS:
@@ -134,6 +139,15 @@ def demarrer(request: Request, mode: str = Form(...), session: Session = Depends
         etat["lettres"] = tirer_lettres()
     request.session["jeux_classiques"] = etat
     return RedirectResponse("/jeux-classiques", status_code=303)
+
+@router.post("/changer", dependencies=[Depends(verifier_csrf)])
+def changer_jeu(request: Request, session: Session = Depends(get_session)):
+    """Termine la partie courante et revient au choix des jeux."""
+    if not utilisateur_courant(request, session):
+        return RedirectResponse("/connexion", status_code=303)
+    effacer_partie_classique(request.session)
+    return RedirectResponse("/jeux-classiques", status_code=303)
+
 
 @router.post("/repondre", dependencies=[Depends(verifier_csrf)])
 def repondre(request: Request, reponse: str = Form(""), choix: int = Form(-1), session: Session = Depends(get_session)):
