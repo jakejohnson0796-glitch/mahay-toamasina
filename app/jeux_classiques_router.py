@@ -167,8 +167,16 @@ def preparer_question_active(etat, rng=None):
     if tour >= len(ids):
         etat.pop("choix_actifs", None)
         etat.pop("bonne_active", None)
+        etat.pop("question_active_id", None)
         return
-    question = next((item for item in QUESTIONS if item["id"] == ids[tour]), None)
+    question_id = ids[tour]
+    if (
+        etat.get("question_active_id") == question_id
+        and "choix_actifs" in etat
+        and "bonne_active" in etat
+    ):
+        return
+    question = next((item for item in QUESTIONS if item["id"] == question_id), None)
     if question is None:
         etat.pop("choix_actifs", None)
         etat.pop("bonne_active", None)
@@ -176,6 +184,7 @@ def preparer_question_active(etat, rng=None):
     choix, bonne = melanger_choix(question, rng)
     etat["choix_actifs"] = choix
     etat["bonne_active"] = bonne
+    etat["question_active_id"] = question_id
 
 
 def creer_partie_champion(rng=None):
