@@ -3158,6 +3158,7 @@
     "Meilleur mot": "Teny tsara indrindra",
     "Une solution possible pour ce tirage était « ». Le dictionnaire intégré est hors ligne : un mot absent de celui-ci peut ne pas être accepté.": "Iray amin'ireo vahaolana mety tamin'ity fanandramana ity ny « ». Miasa tsy mila Internet ny rakibolana; mety tsy ekena ny teny tsy ao anatiny.",
     "Rejouer les lettres": "Hilalao litera indray",
+
   });
 
   var TRADUCTIONS_EN = Object.freeze({
@@ -5241,6 +5242,9 @@
     "Explorer les documents": "Explore documents",
     "Soutenir le projet": "Support the project",
     "IA": "AI",
+    "MITARIDALA rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.": "MITARIDALA brings together academic resources, practice, peer support, AI guidance, and virtual classrooms in one environment designed for students in Madagascar.",
+    "Virement bancaire": "Bank transfer",
+    "La page": "The page",
   });
 
   var noeudsOriginaux = new WeakMap();
