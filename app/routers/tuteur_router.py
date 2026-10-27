@@ -405,6 +405,7 @@ def demander_tuteur(
             and (
                 mission_adaptative is not None
                 or candidat_progression.nb_erreurs > 0
+                or not candidat_progression.maitrise_confirmee
                 or quiz_module.revision_due(candidat_progression)
             )
         ):
@@ -522,6 +523,7 @@ def demander_tuteur(
 
     session_tuteur = SessionTuteur(
         utilisateur_id=utilisateur.id,
+        document_id=document_source.id if document_source else None,
         notion=progression.notion if progression else None,
         progression_id=progression.id if progression else None,
         question=question,
