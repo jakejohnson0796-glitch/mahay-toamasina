@@ -39,6 +39,25 @@
       </div>
     </div>
     <p class="document-revision-body ai-rendered-content" data-rendu>{{ profil.get("message", "Cette copie adapte les priorités à ton historique personnel.") }}</p>
+    {% set priorites = profil.get("priorites", []) %}
+    {% set priorite_cible = priorites[0] if priorites else {} %}
+    <div class="document-revision-actions learning-journey-actions" aria-label="Continuer mon parcours d'apprentissage">
+      {% if fiche_validee %}
+      <a class="bouton bouton-primaire" href="/documents/{{ document.id }}/quiz">Vérifier mes acquis avec un quiz</a>
+      <form method="post" action="/tuteur/demander" class="ai-inline-action">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <input type="hidden" name="document_id" value="{{ document.id }}">
+        {% if priorite_cible.get("progression_id") and priorite_cible.get("statut") != "Acquis à entretenir" %}
+        <input type="hidden" name="progression_id" value="{{ priorite_cible.get('progression_id') }}">
+        {% endif %}
+        <input type="hidden" name="question" value="Aide-moi à réviser le cours {{ document.titre }} en {{ document.matiere }}{% if priorite_cible.get('notion') %}, en priorité la notion {{ priorite_cible.get('notion') }}{% endif %}. Explique la méthode, donne un exemple, puis propose un exercice progressif sans révéler immédiatement la correction.">
+        <button class="bouton bouton-secondaire" type="submit">Travailler avec le Tuteur IA</button>
+      </form>
+      {% else %}
+      <p role="note">Le quiz et le Tuteur contextualisé sont disponibles après vérification de la fiche pédagogique du cours.</p>
+      <a class="bouton bouton-secondaire" href="/documents/{{ document.id }}/apprendre#fiche-verification">Vérifier la fiche pédagogique</a>
+      {% endif %}
+    </div>
     {% if profil.get("priorites") %}
     <div class="document-revision-grid">
       {% for priorite in profil.get("priorites", []) %}

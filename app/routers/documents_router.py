@@ -1286,6 +1286,7 @@ def consulter_fiche_revision_document(
             "fiche_revision_document": fiche,
             "fiche_contenu": contenu,
             "fiche_sources": sources,
+            "fiche_validee": str(getattr(document, "fiche_validation_statut", "")) == "validee",
         },
     )
 
@@ -1728,6 +1729,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
 
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
+        document_id=document.id,
         matiere=matiere_quiz,
         niveau=niveau,
         cycle_education=cycle_quiz,

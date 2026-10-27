@@ -13,7 +13,7 @@ from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
 from ..models import (
-    Document, MissionApprentissage, StatutDocument, TentativeQuiz, ProgressionNotion,
+    Document, MembreCercle, MissionApprentissage, StatutDocument, TentativeQuiz, ProgressionNotion,
     NiveauScolaire, OptionScolaire, ReferentielScolaire, MatiereScolaire,
     ProgrammeMatiereScolaire,
 )
@@ -646,6 +646,7 @@ def generer_quiz_cible(
     request: Request,
     progression_id: int = Form(...),
     mission_id: Optional[int] = Form(None),
+    document_id: Optional[int] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -658,6 +659,26 @@ def generer_quiz_cible(
     progression = session.get(ProgressionNotion, progression_id)
     if not progression or progression.utilisateur_id != utilisateur.id:
         return RedirectResponse("/mes-revisions", status_code=303)
+
+    document_source = None
+    if document_id is not None:
+        document_source = session.get(Document, document_id)
+        if (
+            not document_source
+            or document_source.statut != StatutDocument.APPROUVE
+            or str(getattr(document_source, "fiche_validation_statut", "")) != "validee"
+        ):
+            return RedirectResponse("/mes-revisions?erreur=source_indisponible", status_code=303)
+        if document_source.cercle_id is not None:
+            membre = session.exec(
+                select(MembreCercle).where(
+                    MembreCercle.cercle_id == document_source.cercle_id,
+                    MembreCercle.utilisateur_id == utilisateur.id,
+                )
+            ).first()
+            if membre is None:
+                return RedirectResponse("/mes-revisions?erreur=source_indisponible", status_code=303)
+
     mission_adaptative = None
     if mission_id is not None:
         mission_adaptative = session.get(MissionApprentissage, mission_id)
@@ -720,6 +741,11 @@ def generer_quiz_cible(
         )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
+
+    if document_source is not None:
+        tentative.document_id = document_source.id
+        session.add(tentative)
+        session.commit()
 
     if mission_adaptative is not None:
         mission_adaptative.derniere_tentative_id = tentative.id
