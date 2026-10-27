@@ -1,6 +1,6 @@
 # TODO — Feuille de route MITARIDALA
 
-**Mise à jour : 24 octobre 2026**  
+**Mise à jour : 27 octobre 2026**  
 **Référence :** branche principale après les améliorations des fiches de révision, de la file IA et de l’interface globale.
 
 Ce document est le backlog de référence du dépôt. Les cases cochées correspondent à des travaux déjà intégrés et couverts par les contrôles indiqués. Les cases ouvertes décrivent des améliorations à réaliser ou à approfondir ; elles ne signifient pas automatiquement qu’une régression est actuellement observée.
@@ -23,12 +23,12 @@ Ce document est le backlog de référence du dépôt. Les cases cochées corresp
 
 Ces tâches doivent passer avant les nouvelles fonctionnalités ambitieuses.
 
-- [ ] **Ajouter un scénario d’intégration complet pour les fiches de cours.** Dans un environnement PostgreSQL de test, couvrir : dépôt du document → approbation administrative → création/idempotence de la tâche → traitement par le worker → état visible dans l’interface → téléchargement PDF et DOCX.
+- [x] **Ajouter un scénario d’intégration PostgreSQL des fiches de cours.** Le smoke couvre un document en attente → approbation administrative → création d’une tâche durable unique → traitement par le worker → fiche persistée et route de consultation → exports PDF/DOCX privés. Le dépôt de fichier et ses contrôles restent également couverts par les tests de dépôt dédiés.
 - [ ] **Étendre ce scénario aux cas limites de sécurité et de reprise.** Vérifier qu’un document en attente ou rejeté ne produit pas de fiche visible, qu’un autre étudiant ne peut pas télécharger une fiche non autorisée, que des tâches doublonnées ne créent pas de résultats incohérents et que les métadonnées modifiées invalident la bonne fiche.
 - [ ] **Auditer la visibilité opérationnelle de la file IA.** Vérifier que les diagnostics permettent de repérer une tâche trop ancienne, ses tentatives, son dernier état et une erreur exploitable sans exposer de secrets ; compléter l’interface ou les alertes là où il manque une information.
 - [ ] **Standardiser le contrôle après déploiement.** Vérifier les endpoints /health et /ready, les migrations, le démarrage du worker, les erreurs récentes et le téléchargement d’une fiche depuis un vrai navigateur ; consigner le SHA déployé et garder le commit de retour arrière disponible.
 - [ ] **Stabiliser les scénarios de vérification IA qui échouent à juste titre.** Construire des tests déterministes pour séparer une erreur réelle de correction, une sortie JSON invalide, des choix de quiz identiques et un seuil de confiance trop strict. Ne pas masquer une erreur pédagogique pour faire passer le test.
-- [ ] **Valider en CI les fiches documentaires personnalisées par étudiant.** Vérifier que les priorités viennent uniquement des quiz, progressions et échanges du compte connecté, que la fiche source commune ne change pas et que l'affichage ainsi que les exports PDF/DOCX contiennent le même plan personnalisé.
+- [x] **Valider en CI la personnalisation des fiches documentaires par étudiant.** Le smoke PostgreSQL compare deux comptes ayant des progressions distinctes, confirme l’absence de mutation de la fiche source, vérifie les priorités affichées et celles transmises aux exports PDF/DOCX, ainsi que le refus de téléchargement anonyme.
 
 ## 3. Priorité P1 — Qualité pédagogique, mobile et cohérence des données
 
