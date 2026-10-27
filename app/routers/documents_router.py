@@ -17,6 +17,7 @@ from fastapi.responses import RedirectResponse, FileResponse, JSONResponse, Resp
 from sqlmodel import Session, or_, select
 
 from ..database import get_session
+from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
@@ -390,7 +391,7 @@ async def detect_document_automatique(
     if not utilisateur:
         return JSONResponse({"ok": False, "erreur": "Connexion requise."}, status_code=401)
 
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if limite_depassee(f"detect-document:user:{utilisateur.id}", 30, 3600) or limite_depassee(
         f"detect-document:ip:{host}", 60, 3600
     ):
@@ -402,7 +403,9 @@ async def detect_document_automatique(
     if suffixe not in extensions:
         return JSONResponse({"ok": False, "erreur": "Format de fichier non pris en charge."}, status_code=400)
 
-    contenu = await fichier.read()
+    # Ne conserve jamais plus que la limite + 1 octet en mémoire, même si
+    # la requête contourne la limite HTTP côté proxy.
+    contenu = await fichier.read(20 * 1024 * 1024 + 1)
     if not contenu:
         return JSONResponse({"ok": False, "erreur": "Le fichier est vide."}, status_code=400)
     if len(contenu) > 20 * 1024 * 1024:
@@ -480,7 +483,7 @@ def upload_document(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(
         f"upload-document:ip:{host}", 40, 3600
     ):
@@ -832,7 +835,7 @@ def upload_documents_multiples(
     if not classification_auto:
         return afficher_erreur("Activez la détection automatique pour classer chaque fichier séparément.")
     if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(
-        f"upload-document:ip:{request.client.host if request.client else 'inconnu'}", 40, 3600
+        f"upload-document:ip:{adresse_ip_client(request)}", 40, 3600
     ):
         return afficher_erreur("Trop de dépôts. Réessayez plus tard.", status_code=429)
 

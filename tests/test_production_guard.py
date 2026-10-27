@@ -69,3 +69,17 @@ def test_configuration_production_refuse_une_release_non_identifiee() -> None:
     config = replace(_production_complete(), release_commit="unknown")
     erreurs = erreurs_configuration_production(config)
     assert any("release" in erreur.lower() for erreur in erreurs)
+
+
+def test_render_est_par_defaut_en_production_si_variable_absente(monkeypatch) -> None:
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.delenv("ENVIRONNEMENT", raising=False)
+    config = Parametres()
+    assert config.environnement == "production"
+
+
+def test_mode_developpement_local_reste_disponible_sans_render(monkeypatch) -> None:
+    monkeypatch.delenv("RENDER", raising=False)
+    monkeypatch.delenv("ENVIRONNEMENT", raising=False)
+    config = Parametres()
+    assert config.environnement == "developpement"

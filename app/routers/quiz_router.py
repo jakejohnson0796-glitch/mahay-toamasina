@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from sqlmodel import Session, or_, select
 
 from ..database import get_session
+from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
@@ -339,7 +340,7 @@ def generer_quiz(
     if redirection:
         return redirection
 
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/quiz?erreur=trop_de_generations", status_code=303)
 
@@ -699,7 +700,7 @@ def generer_quiz_cible(
     ):
         return RedirectResponse("/mes-revisions", status_code=303)
 
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/mes-revisions?erreur=trop_de_generations", status_code=303)
 
@@ -776,7 +777,7 @@ def generer_examen(
     if redirection:
         return redirection
 
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/quiz?erreur=trop_de_generations", status_code=303)
 

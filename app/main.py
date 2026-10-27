@@ -5,6 +5,7 @@ Lancer avec :  uvicorn app.main:app --reload
 (depuis la racine du projet, apres avoir installe requirements.txt)
 """
 import asyncio
+import os
 import threading
 import time
 from pathlib import Path
@@ -23,6 +24,7 @@ from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCe
 from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, admin_scolaire_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router, scolaire_router, catalogue_scolaire_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .static_cache import VersionedStaticAssetCacheMiddleware
+from .request_limits import RequestSizeLimitMiddleware
 from .admin_security import AdminActionConfirmationMiddleware
 from .production_guard import valider_configuration_production
 from .seed_faq import peupler_faq_initiale
@@ -45,6 +47,11 @@ app = FastAPI(title="MITARIDALA — Madagascar")
 # session valide pour n'importe quel compte, y compris admin, s'il etait
 # oublie tel quel sur un vrai deploiement. On echoue bruyamment plutot
 # que de demarrer silencieusement dans un etat dangereux.
+# Render est toujours un déploiement exposé : refuser explicitement un mode
+# de développement, même si une variable mal configurée tente de le forcer.
+if os.getenv("RENDER", "").strip().lower() == "true" and parametres.environnement.strip().lower() != "production":
+    raise RuntimeError("ENVIRONNEMENT doit être 'production' sur Render. Démarrage refusé pour éviter des cookies non sécurisés.")
+
 if parametres.environnement == "production" and parametres.session_secret_key == "a-changer-en-production":
     raise RuntimeError(
         "SESSION_SECRET_KEY est encore la valeur de demo alors que "
@@ -75,6 +82,9 @@ app.add_middleware(
     max_age=14 * 24 * 60 * 60,
     session_cookie="__Host-session" if parametres.environnement == "production" else "session",
 )
+# La limite doit se situer avant le parsing multipart et avant le middleware
+# de confirmation admin, tout en conservant les en-têtes de sécurité externes.
+app.add_middleware(RequestSizeLimitMiddleware)
 app.add_middleware(EnTetesSecuriteMiddleware, https_actif=parametres.environnement == "production")
 app.add_middleware(VersionedStaticAssetCacheMiddleware)
 
