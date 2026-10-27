@@ -4,16 +4,13 @@ import { JSDOM } from 'jsdom';
 
 const source = fs.readFileSync('app/static/js/langue.js', 'utf8');
 const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion — MITARIDALA</title></head><body>
-  <div class="tb-sidebar-langue">
-    <label for="select-langue">Langue</label>
-    <select id="select-langue" aria-label="Choisir la langue">
-      <option value="fr">Français</option><option value="mg">Malagasy</option><option value="en">English</option>
+  <section class="ops-security-card ops-language-settings" id="language-settings">
+    <h2>Langue de l’interface</h2>
+    <label for="select-langue-parametres">Langue préférée</label>
+    <select id="select-langue-parametres" aria-label="Choisir la langue de l’interface">
+      <option value="fr" data-no-translate>Français</option><option value="mg" data-no-translate>Malagasy</option><option value="en" data-no-translate>English</option>
     </select>
-  </div>
-  <label for="select-langue-mobile">Langue mobile</label>
-  <select id="select-langue-mobile" aria-label="Choisir la langue sur mobile">
-    <option value="fr">Français</option><option value="mg">Malagasy</option><option value="en">English</option>
-  </select>
+  </section>
   <nav><a id="navigation">Tableau de bord</a></nav>
   <input id="phone" placeholder="Numéro de téléphone" value="0341234567">
   <p id="dynamic">Pas encore de compte ?</p>
@@ -33,7 +30,7 @@ vm.runInNewContext(source, { window, document: window.document }, { filename: 'l
 window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
 await new Promise((resolve) => setTimeout(resolve, 0));
 
-const select = window.document.querySelector('#select-langue');
+const select = window.document.querySelector('#select-langue-parametres');
 const lang = window.document.documentElement.getAttribute('lang');
 if (lang !== 'mg' || select.value !== 'mg') throw new Error('Saved language preference was not restored');
 if (window.document.querySelector('#navigation').textContent !== 'Fijerena ankapobeny') {
@@ -252,15 +249,14 @@ if (ariaButton.getAttribute('aria-label') !== 'Hampiasa endrika maizina') {
 }
 
 // L'anglais doit être utilisable depuis le sélecteur mobile et synchroniser les deux contrôles.
-const selectMobile = window.document.querySelector('#select-langue-mobile');
-selectMobile.value = 'en';
-selectMobile.dispatchEvent(new window.Event('change', { bubbles: true }));
+select.value = 'en';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
 await new Promise((resolve) => setTimeout(resolve, 0));
 if (window.document.documentElement.getAttribute('lang') !== 'en') {
   throw new Error('English choice did not update the document language');
 }
-if (select.value !== 'en' || selectMobile.value !== 'en') {
-  throw new Error('Desktop and mobile language selectors did not stay synchronized');
+if (select.value !== 'en') {
+  throw new Error('The settings language selector did not retain English');
 }
 if (window.document.querySelector('#navigation').textContent !== 'Dashboard') {
   throw new Error('English navigation translation did not apply');
@@ -304,4 +300,4 @@ if (mutable.textContent !== 'Déposer un document') {
 if (ariaButton.getAttribute('aria-label') !== 'Passer au thème sombre') {
   throw new Error('Returning to French did not restore the latest dynamic accessible label');
 }
-console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg', 'en'], mobile_selector_sync: true, english_fallback: true, dynamic: true, ai_content_protected: true }));
+console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg', 'en'], settings_selector: true, english_fallback: true, dynamic: true, ai_content_protected: true }));
