@@ -7,9 +7,13 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
   <div class="tb-sidebar-langue">
     <label for="select-langue">Langue</label>
     <select id="select-langue" aria-label="Choisir la langue">
-      <option value="fr">Français</option><option value="mg">Malagasy</option>
+      <option value="fr">Français</option><option value="mg">Malagasy</option><option value="en">English</option>
     </select>
   </div>
+  <label for="select-langue-mobile">Langue mobile</label>
+  <select id="select-langue-mobile" aria-label="Choisir la langue sur mobile">
+    <option value="fr">Français</option><option value="mg">Malagasy</option><option value="en">English</option>
+  </select>
   <nav><a id="navigation">Tableau de bord</a></nav>
   <input id="phone" placeholder="Numéro de téléphone" value="0341234567">
   <p id="dynamic">Pas encore de compte ?</p>
@@ -247,6 +251,37 @@ if (ariaButton.getAttribute('aria-label') !== 'Hampiasa endrika maizina') {
   throw new Error('Dynamically changed accessible labels were not translated');
 }
 
+// L'anglais doit être utilisable depuis le sélecteur mobile et synchroniser les deux contrôles.
+const selectMobile = window.document.querySelector('#select-langue-mobile');
+selectMobile.value = 'en';
+selectMobile.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.documentElement.getAttribute('lang') !== 'en') {
+  throw new Error('English choice did not update the document language');
+}
+if (select.value !== 'en' || selectMobile.value !== 'en') {
+  throw new Error('Desktop and mobile language selectors did not stay synchronized');
+}
+if (window.document.querySelector('#navigation').textContent !== 'Dashboard') {
+  throw new Error('English navigation translation did not apply');
+}
+if (window.document.querySelector('#subscription-title').textContent !== 'Your subscription, your access status, your next step.') {
+  throw new Error('English page heading translation did not apply');
+}
+if (officialOption.textContent !== 'Mention') {
+  throw new Error('Official academic reference values must remain unchanged in English');
+}
+const fallbackEnglish = window.document.createElement('p');
+fallbackEnglish.textContent = 'Rechercher un document dans les documents approuvés';
+window.document.body.appendChild(fallbackEnglish);
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (fallbackEnglish.textContent !== 'Search for a document in approved documents') {
+  throw new Error('English fallback did not translate known fragments in an unlisted sentence: ' + fallbackEnglish.textContent);
+}
+if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord \\frac{1}{2}') {
+  throw new Error('AI scientific content was modified while switching to English');
+}
+
 select.value = 'fr';
 select.dispatchEvent(new window.Event('change', { bubbles: true }));
 if (window.document.documentElement.getAttribute('lang') !== 'fr') throw new Error('HTML lang was not restored');
@@ -269,4 +304,4 @@ if (mutable.textContent !== 'Déposer un document') {
 if (ariaButton.getAttribute('aria-label') !== 'Passer au thème sombre') {
   throw new Error('Returning to French did not restore the latest dynamic accessible label');
 }
-console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg'], dynamic: true, ai_content_protected: true }));
+console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg', 'en'], mobile_selector_sync: true, english_fallback: true, dynamic: true, ai_content_protected: true }));

@@ -8,25 +8,26 @@ SIDEBAR_CSS = ROOT / "app" / "static" / "sidebar.css"
 LANGUAGE_JS = ROOT / "app" / "static" / "js" / "langue.js"
 
 
-def test_language_selector_is_global_singleton_at_sidebar_preferences_end():
+def test_language_selector_is_global_singleton_near_sidebar_top():
     base = BASE.read_text(encoding="utf-8")
-    assert base.count('id="select-langue"') == 1
-    assert base.index("<nav class=\"tb-sidebar-nav\"") < base.index('id="select-langue"') < base.index("</aside>")
+    sidebar = base.split('<aside class="tb-sidebar"', 1)[1].split("</aside>", 1)[0]
+    assert sidebar.count('id="select-langue"') == 1
+    assert sidebar.index('<div class="tb-sidebar-marque">') < sidebar.index('<section class="tb-sidebar-langue"')
+    assert sidebar.index('<section class="tb-sidebar-langue"') < sidebar.index('<nav class="tb-sidebar-nav"')
     assert "tb-sidebar-langue-entete" in base
     assert 'for="select-langue" data-langue-label' in base
     assert '<option value="fr">Français</option>' in base
     assert '<option value="mg">Malagasy</option>' in base
     assert '<option value="en">English</option>' in base
     assert 'FR · MG · EN' in base
-    brand_end = base.index("</div>", base.index('<div class="tb-sidebar-marque">'))
-    assert base.index('id="select-langue"') > brand_end
+    assert 'id="select-langue-mobile"' in base
 
 
 def test_language_selector_keeps_the_existing_translation_script_contract():
     base = BASE.read_text(encoding="utf-8")
     script = LANGUAGE_JS.read_text(encoding="utf-8")
     assert "/static/js/langue.js?v={{ version_asset('js/langue.js') }}" in base
-    assert 'var SELECTEUR = "#select-langue";' in script
+    assert 'var SELECTEUR = "#select-langue, #select-langue-mobile";' in script
     assert 'var TRADUCTIONS_EN = Object.freeze({' in script
     assert 'if (langue === "en") return traduireChaineAnglaise(source);' in script
     assert 'return langue === "mg" || langue === "en" ? langue : "fr";' in script
@@ -90,3 +91,34 @@ def test_learning_check_in_has_complete_english_texts():
     for key in ("comprendre", "pratiquer", "verifier", "terminee"):
         assert key + ":" in english
     assert 'return value == null ? key : value;' in script
+
+
+def test_language_selector_is_visible_in_mobile_header_and_synchronizes():
+    base = BASE.read_text(encoding="utf-8")
+    css = (ROOT / "app" / "static" / "interface-polish.css").read_text(encoding="utf-8")
+    script = LANGUAGE_JS.read_text(encoding="utf-8")
+    smoke = (ROOT / "scripts" / "smoke_language_switcher.mjs").read_text(encoding="utf-8")
+
+    mobile_header = base.split('<header class="mobile-entete-app"', 1)[1].split("</header>", 1)[0]
+    assert 'id="select-langue-mobile"' in mobile_header
+    assert 'class="selecteur-langue-mobile"' in mobile_header
+    assert '<option value="en">English</option>' in mobile_header
+    assert ".mobile-entete-app .selecteur-langue-mobile" in css
+    assert "@media (max-width: 768px)" in css
+    assert 'var SELECTEUR = "#select-langue, #select-langue-mobile";' in script
+    assert 'document.querySelectorAll(SELECTEUR).forEach' in script
+    assert "mobile_selector_sync: true" in smoke
+
+
+def test_english_fragment_fallback_and_pwa_cache_refresh_are_present():
+    script = LANGUAGE_JS.read_text(encoding="utf-8")
+    smoke = (ROOT / "scripts" / "smoke_language_switcher.mjs").read_text(encoding="utf-8")
+    service_worker = (ROOT / "app" / "static" / "sw.js").read_text(encoding="utf-8")
+
+    assert "function traduireFragmentsAnglais(source)" in script
+    assert "RE_TRADUCTIONS_EN_FRAGMENTS" in script
+    assert "texte.length > 900" in script
+    assert 'fallbackEnglish.textContent !== \'Search for a document in approved documents\'' in smoke
+    assert "locales: ['fr', 'mg', 'en']" in smoke
+    assert 'const CACHE_NOM = "mahay-static-v3";' in service_worker
+

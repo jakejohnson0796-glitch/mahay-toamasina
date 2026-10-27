@@ -11,12 +11,12 @@ ACADEMIC_ROUTER = ROOT / "app" / "routers" / "academique_router.py"
 ACADEMIC_REFERENCE = ROOT / "app" / "referentiel_academique.py"
 
 
-def test_language_selector_lives_below_navigation_and_exists_once():
+def test_language_selector_is_near_sidebar_top_and_exists_once():
     base = BASE.read_text(encoding="utf-8")
     sidebar = base.split('<aside class="tb-sidebar"', 1)[1].split("</aside>", 1)[0]
     assert sidebar.count('id="select-langue"') == 1
     selector_pos = sidebar.index('<section class="tb-sidebar-langue"')
-    assert selector_pos > sidebar.rfind("</nav>")
+    assert sidebar.index('<div class="tb-sidebar-marque">') < selector_pos < sidebar.index('<nav class="tb-sidebar-nav"')
     assert "FR · MG · EN" in sidebar
     assert 'data-langue-label>Langue<' in sidebar
     assert 'option value="fr">Français' in sidebar
