@@ -52,7 +52,12 @@ class Parametres:
     # (https_only) — voir SessionMiddleware dans main.py. Mets
     # ENVIRONNEMENT=production dans les variables d'env de l'hebergeur
     # (deja fait dans render.yaml).
-    environnement: str = field(default_factory=lambda: os.getenv("ENVIRONNEMENT", "developpement"))
+    environnement: str = field(
+        default_factory=lambda: (
+            os.getenv("ENVIRONNEMENT", "").strip().lower()
+            or ("production" if os.getenv("RENDER", "").strip().lower() == "true" else "developpement")
+        )
+    )
     # Identité immuable de la release. Render fournit RENDER_GIT_COMMIT ;
     # le CI/local peut fournir GIT_COMMIT.
     release_commit: str = field(
