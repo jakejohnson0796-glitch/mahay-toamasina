@@ -1493,6 +1493,7 @@ def personnaliser_fiche_revision_document(
             else ("Le " + prochaine.strftime("%d/%m/%Y") if prochaine is not None else "À planifier après le diagnostic")
         )
         priorites.append({
+            "progression_id": progression.id,
             "notion": _normaliser_texte(progression.notion, 140),
             "statut": statut,
             "raison": raison,
