@@ -499,7 +499,7 @@
   (() => {
     const timer = document.querySelector('[data-minuteur]');
     if (!timer) return;
-    const deadline = Number(timer.dataset.echance || 0);
+    const deadline = Number(timer.dataset.echeance || 0);
     const duration = Math.max(1, Number(timer.dataset.duree || 1));
     const display = timer.querySelector('[data-minuteur-affichage]');
     const progress = timer.querySelector('[data-minuteur-progress]');
