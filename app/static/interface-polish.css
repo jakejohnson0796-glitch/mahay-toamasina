@@ -174,8 +174,7 @@ main.main-clair-pleine-largeur {
 
 .tb-sidebar-compte,
 .tb-menu-compte,
-.tb-toggle-theme,
-.tb-sidebar-langue {
+.tb-toggle-theme {
   border-radius: 0.9rem;
 }
 
@@ -494,7 +493,7 @@ button[aria-busy="true"],
 }
 
 /* Menus, popovers et contrôles superposés. */
-:is(.tb-menu-compte, .pwa-installation, .panneau-emojis-v2, .liste-suggestions-mentions, .tb-sidebar-langue-menu) {
+:is(.tb-menu-compte, .pwa-installation, .panneau-emojis-v2, .liste-suggestions-mentions) {
   border-color: var(--content-border);
   border-radius: 1rem;
   background-color: var(--content-surface);
