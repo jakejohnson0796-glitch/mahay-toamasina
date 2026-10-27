@@ -48,3 +48,13 @@ def test_malformed_forwarded_headers_fall_back_to_socket_ip(monkeypatch):
         "x-forwarded-for": "unknown, invalid",
     })
     assert adresse_ip_client(request) == "10.0.0.8"
+
+
+def test_ne_trust_not_true_client_ip_transmis_par_le_visiteur(monkeypatch):
+    monkeypatch.setenv("RENDER", "true")
+    request = _request(headers={
+        "cf-ray": "ray-test",
+        "true-client-ip": "203.0.113.99",
+        "x-forwarded-for": "198.51.100.40",
+    })
+    assert adresse_ip_client(request) == "198.51.100.40"
