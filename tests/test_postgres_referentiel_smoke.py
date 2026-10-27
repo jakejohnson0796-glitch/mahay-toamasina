@@ -958,7 +958,7 @@ def test_postgres_fiche_revision_de_approbation_a_export_prive_personnalise(monk
             assert len(contextes_generes[0][0]["source_document"]["contenu_extrait"]) >= 250
             assert session.exec(
                 select(func.count()).select_from(Notification).where(
-                    Notification.destinataire_id == etudiant_a_id,
+                    Notification.destinataire_id == ids_utilisateurs[1],
                     Notification.type_notification == TypeNotification.FICHE_REVISION_DOCUMENT_PRETE,
                 )
             ).one() == 1
