@@ -27,7 +27,7 @@ def test_language_selector_keeps_the_existing_translation_script_contract():
     base = BASE.read_text(encoding="utf-8")
     script = LANGUAGE_JS.read_text(encoding="utf-8")
     assert "/static/js/langue.js?v={{ version_asset('js/langue.js') }}" in base
-    assert 'var SELECTEUR = "#select-langue";' in script
+    assert 'var SELECTEUR = "#select-langue, #select-langue-mobile";' in script
     assert 'var TRADUCTIONS_EN = Object.freeze({' in script
     assert 'if (langue === "en") return traduireChaineAnglaise(source);' in script
     assert 'return langue === "mg" || langue === "en" ? langue : "fr";' in script
