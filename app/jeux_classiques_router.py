@@ -253,7 +253,7 @@ def generer_questions_calcul():
 def generer_questions_geographie():
     """Ajoute des questions de capitales à partir d'une table de faits stable."""
     capitales = [
-        ("Madagascar", "Antananarivo"), ("France", "Paris"), ("Japon", "Tokyo"),
+        ("France", "Paris"), ("Japon", "Tokyo"),
         ("Canada", "Ottawa"), ("Australie", "Canberra"), ("Nouvelle-Zélande", "Wellington"),
         ("Brésil", "Brasília"), ("Argentine", "Buenos Aires"), ("Chili", "Santiago"),
         ("Pérou", "Lima"), ("Mexique", "Mexico"), ("États-Unis", "Washington"),
@@ -351,7 +351,6 @@ def _charger_dictionnaire_francais():
                 caractere for caractere in terme
                 if not unicodedata.combining(caractere)
             ).upper()
-            terme = terme.replace("'", "").replace("’", "").replace("-", "")
             if 2 <= len(terme) <= 9 and all("A" <= c <= "Z" for c in terme):
                 mots.add(terme)
     except (ImportError, OSError, ValueError):
