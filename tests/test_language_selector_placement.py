@@ -90,6 +90,27 @@ def test_english_dictionary_covers_core_ui_and_preserves_scientific_content():
     assert 'if (langue === "en") return traduireChaineAnglaise(source);' in script
 
 
+def test_malagasy_dictionary_covers_settings_circles_and_games():
+    script = LANGUAGE_JS.read_text(encoding="utf-8")
+    malagasy = script.split("var TRADUCTIONS_MG = Object.freeze({", 1)[1].split("\n  });", 1)[0]
+    keys = re.findall(r'^\s*"((?:\\.|[^"\\])*)"\s*:', malagasy, re.MULTILINE)
+    assert len(keys) >= 3_000
+    for source, translated in {
+        "Langue de l’interface": "Fitenin'ny interface",
+        "Langue préférée": "Fiteny tiana hampiasaina",
+        "Les jeux classiques": "Ny lalao mahazatra",
+        "À l’échelle de Madagascar · Cercles d’étude": "Manerana an'i Madagasikara · Faribolana fianarana",
+        "Apprendre en jouant": "Mianatra amin'ny alalan'ny lalao",
+        "Choisir mon université": "Safidio ny oniversiteko",
+        "Revenir à mon tableau de bord": "Hiverina amin'ny tabilao fandraisana",
+    }.items():
+        assert f'"{source}": "{translated}"' in malagasy, f"Missing or incorrect Malagasy translation for: {source}"
+    smoke = SMOKE.read_text(encoding="utf-8")
+    assert "The settings heading was not translated to Malagasy" in smoke
+    assert "The study circles heading was not translated to Malagasy" in smoke
+    assert "The long about-page introduction was not translated to Malagasy" in smoke
+
+
 def test_learning_check_in_has_complete_english_texts():
     script = (ROOT / "app" / "static" / "js" / "bilan-reprise.js").read_text(encoding="utf-8")
     french = script.split("    fr: {", 1)[1].split("    mg: {", 1)[0]
