@@ -1058,9 +1058,15 @@ def test_postgres_fiche_revision_de_approbation_a_export_prive_personnalise(monk
                     )
                 ).all():
                     session.delete(tache)
+                session.flush()
                 session.delete(fiche)
+                # Le modèle ne déclare pas de relation ORM pour cette paire ;
+                # valider chaque niveau explicite évite un DELETE du document
+                # avant celui de sa fiche sur PostgreSQL.
+                session.flush()
             if document is not None:
                 session.delete(document)
+                session.flush()
             if ids_utilisateurs:
                 for progression in session.exec(
                     select(ProgressionNotion).where(
