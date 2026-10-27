@@ -69,6 +69,9 @@ def _tache_verification_tuteur(session: Session, session_id: int, verrouiller: b
 
 
 def _utilisateur_membre_cercle(session: Session, cercle_id: Optional[int], utilisateur_id: int) -> bool:
+    # Les documents de la bibliothèque générale ne sont rattachés à aucun cercle.
+    if cercle_id is None:
+        return True
     if cercle_id is None:
         return True
     return session.exec(
