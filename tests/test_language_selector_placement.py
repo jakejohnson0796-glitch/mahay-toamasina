@@ -8,18 +8,19 @@ SIDEBAR_CSS = ROOT / "app" / "static" / "sidebar.css"
 LANGUAGE_JS = ROOT / "app" / "static" / "js" / "langue.js"
 
 
-def test_language_selector_is_global_singleton_at_sidebar_preferences_end():
+def test_language_selector_is_global_singleton_near_sidebar_top():
     base = BASE.read_text(encoding="utf-8")
-    assert base.count('id="select-langue"') == 1
-    assert base.index("<nav class=\"tb-sidebar-nav\"") < base.index('id="select-langue"') < base.index("</aside>")
+    sidebar = base.split('<aside class="tb-sidebar"', 1)[1].split("</aside>", 1)[0]
+    assert sidebar.count('id="select-langue"') == 1
+    assert sidebar.index('<div class="tb-sidebar-marque">') < sidebar.index('<section class="tb-sidebar-langue"')
+    assert sidebar.index('<section class="tb-sidebar-langue"') < sidebar.index('<nav class="tb-sidebar-nav"')
     assert "tb-sidebar-langue-entete" in base
     assert 'for="select-langue" data-langue-label' in base
     assert '<option value="fr">Français</option>' in base
     assert '<option value="mg">Malagasy</option>' in base
     assert '<option value="en">English</option>' in base
     assert 'FR · MG · EN' in base
-    brand_end = base.index("</div>", base.index('<div class="tb-sidebar-marque">'))
-    assert base.index('id="select-langue"') > brand_end
+    assert 'id="select-langue-mobile"' in base
 
 
 def test_language_selector_keeps_the_existing_translation_script_contract():
