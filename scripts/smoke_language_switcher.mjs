@@ -6,12 +6,19 @@ const source = fs.readFileSync('app/static/js/langue.js', 'utf8');
 const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion — MITARIDALA</title></head><body>
   <section class="ops-security-card ops-language-settings" id="language-settings">
     <h2>Langue de l’interface</h2>
-    <label for="select-langue-parametres">Langue préférée</label>
+    <label id="settings-language-label" for="select-langue-parametres">Langue préférée</label>
+    <p id="settings-language-description">Choisis la langue utilisée dans les menus, les boutons et les pages de MITARIDALA.</p>
     <select id="select-langue-parametres" aria-label="Choisir la langue de l’interface">
       <option value="fr" data-no-translate>Français</option><option value="mg" data-no-translate>Malagasy</option><option value="en" data-no-translate>English</option>
     </select>
   </section>
   <nav><a id="navigation">Tableau de bord</a></nav>
+  <h2 id="settings-language-heading">Langue de l’interface</h2>
+  <h2 id="tuteur-heading">Ne reste pas bloqué sur une notion.</h2>
+  <p id="tuteur-copy">Pose ta question avec ton contexte. Le Tuteur IA transforme ensuite la question en explication, exemple, exercice et correction pour t'aider à progresser.</p>
+  <h2 id="notification-heading">Centre de notifications</h2>
+  <h2 id="games-heading">Les jeux classiques</h2>
+  <p id="about-copy">Une plateforme malgache pour apprendre, pratiquer et avancer ensemble.</p>
   <input id="phone" placeholder="Numéro de téléphone" value="0341234567">
   <p id="dynamic">Pas encore de compte ?</p>
   <button id="dynamic-aria" aria-label="Passer au thème clair">Thème</button>
@@ -263,6 +270,30 @@ if (window.document.querySelector('#navigation').textContent !== 'Dashboard') {
 }
 if (window.document.querySelector('#subscription-title').textContent !== 'Your subscription, your access status, your next step.') {
   throw new Error('English page heading translation did not apply');
+}
+if (window.document.querySelector('#settings-language-heading').textContent !== 'Interface language') {
+  throw new Error('The interface language heading was not translated');
+}
+if (window.document.querySelector('#settings-language-label').textContent !== 'Preferred language') {
+  throw new Error('The language preference label was not translated');
+}
+if (window.document.querySelector('#settings-language-description').textContent !== 'Choose the language used in MITARIDALA menus, buttons, and pages.') {
+  throw new Error('The language description was not translated');
+}
+if (window.document.querySelector('#tuteur-heading').textContent !== "Don't get stuck on a topic.") {
+  throw new Error('The AI Tutor page heading was not translated');
+}
+if (window.document.querySelector('#tuteur-copy').textContent !== "Ask your question and provide context. The AI Tutor turns it into an explanation, example, exercise, and solution to help you progress.") {
+  throw new Error('The AI Tutor page introduction was not translated');
+}
+if (window.document.querySelector('#notification-heading').textContent !== 'Notification center') {
+  throw new Error('The notifications heading was not translated');
+}
+if (window.document.querySelector('#games-heading').textContent !== 'Classic games') {
+  throw new Error('The classic games heading was not translated');
+}
+if (window.document.querySelector('#about-copy').textContent !== 'A Malagasy platform to learn, practice, and move forward together.') {
+  throw new Error('The public about-page introduction was not translated');
 }
 if (officialOption.textContent !== 'Mention') {
   throw new Error('Official academic reference values must remain unchanged in English');
