@@ -48,3 +48,40 @@ def test_language_selector_has_keyboard_focus_and_compact_sidebar_styles():
             depth -= 1
         assert depth >= 0, "CSS contains an unmatched closing brace"
     assert depth == 0, "CSS contains an unmatched opening brace"
+
+
+def test_english_dictionary_covers_core_ui_and_preserves_scientific_content():
+    import re
+
+    script = LANGUAGE_JS.read_text(encoding="utf-8")
+    english = script.split("var TRADUCTIONS_EN = Object.freeze({", 1)[1].split("\n  });", 1)[0]
+    keys = re.findall(r'^\s*"((?:\\.|[^"\\])*)"\s*:', english, re.MULTILINE)
+
+    assert len(keys) >= 300
+    for source, translated in {
+        '"Tableau de bord"': '"Dashboard"',
+        '"Tuteur IA"': '"AI Tutor"',
+        '"Lancer le quiz"': '"Start quiz"',
+        '"Mes cercles"': '"My study circles"',
+        '"Vérification facultative du résumé IA"': '"Optional AI summary review"',
+    }.items():
+        assert source + ": " + translated in english
+
+    assert '"[data-rendu]"' in script
+    assert '".katex"' in script
+    assert '"[data-no-translate]"' in script
+    assert 'if (langue === "en") return traduireChaineAnglaise(source);' in script
+
+
+def test_learning_check_in_has_complete_english_texts():
+    import re
+
+    script = (ROOT / "app" / "static" / "js" / "bilan-reprise.js").read_text(encoding="utf-8")
+    french = script.split("    fr: {", 1)[1].split("    mg: {", 1)[0]
+    english = script.split("    en: {", 1)[1].split("\n  };", 1)[0]
+    french_keys = set(re.findall(r'^      ([A-Za-z][A-Za-z0-9_]*):', french, re.MULTILINE))
+    english_keys = set(re.findall(r'^      ([A-Za-z][A-Za-z0-9_]*):', english, re.MULTILINE))
+
+    assert french_keys - english_keys == set()
+    assert 'savedLanguage === "mg" || savedLanguage === "en"' in script
+    assert 'return value == null ? key : value;' in script
