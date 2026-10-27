@@ -6,8 +6,8 @@
   "use strict";
 
   var CLE_LANGUE = "mahay-langue";
-  // Un sélecteur dans la barre latérale et un second toujours visible sur mobile.
-  var SELECTEUR = "#select-langue, #select-langue-mobile";
+  // La langue se règle dans Compte > Langue de l’interface.
+  var SELECTEUR = "#select-langue-parametres";
   var ATTRIBUTS_TRADUCTIBLES = ["aria-label", "title", "placeholder", "alt"];
   var ELEMENTS_PROTEGES = [
     "script", "style", "noscript", "pre", "code", "textarea",
