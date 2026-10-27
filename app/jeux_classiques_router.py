@@ -1031,6 +1031,15 @@ def accueil(request: Request, session: Session = Depends(get_session)):
     if partie.get("mode") == "champion_bot":
         effacer_partie_classique(request.session)
         partie = {}
+    elif partie.get("mode") in {"champion", "chiffres", "lettres"} and not partie.get("termine") and not partie.get("echeance"):
+        # Migration légère des sessions de jeu créées avant l'arrivée des minuteurs.
+        duree = {
+            "champion": TEMPS_QUESTION_CHAMPION,
+            "chiffres": TEMPS_CHIFFRES,
+            "lettres": TEMPS_LETTRES,
+        }[partie["mode"]]
+        _regler_minuteur(partie, duree)
+        request.session["jeux_classiques"] = partie
     return templates.TemplateResponse(
         request,
         "jeux_classiques.html",
