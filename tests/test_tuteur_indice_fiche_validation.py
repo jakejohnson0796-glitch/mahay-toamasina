@@ -128,7 +128,8 @@ def test_templates_exigent_relecture_humaine_et_affichent_un_indice_progressif()
     assert 'name="matiere_verifiee"' in hub and 'name="type_document_verifie"' in hub
     assert 'name="type_cours_verifie"' in hub
     assert 'class="doc-lien-quiz doc-quiz-cta" href="/documents/{{ doc.id }}/quiz">Lancer le quiz &rarr;</a>' in library
-    assert 'doc.fiche_validation_statut == "validee"' not in library
+    assert "Vérifier puis lancer le quiz" not in library
+    assert "Le Quiz IA reste accessible depuis l'action" in library
     assert "/documents/{{ document.id }}/apprendre#fiche-verification" in moderation
 
 
