@@ -1025,12 +1025,18 @@ def accueil(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    partie = request.session.get("jeux_classiques", {})
+    # Les anciennes sessions peuvent encore contenir le mode bot retiré.
+    # Les effacer évite un écran vide après la mise à jour.
+    if partie.get("mode") == "champion_bot":
+        effacer_partie_classique(request.session)
+        partie = {}
     return templates.TemplateResponse(
         request,
         "jeux_classiques.html",
         {
             "utilisateur": utilisateur,
-            "partie": request.session.get("jeux_classiques", {}),
+            "partie": partie,
             "questions": QUESTIONS,
             "tentatives_max": TENTATIVES_MAX,
         },
