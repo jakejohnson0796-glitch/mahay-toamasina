@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 
 from ..database import get_session
+from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
@@ -376,7 +377,7 @@ def demander_tuteur(
             status_code=303,
         )
 
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if limite_depassee(f"ia-tuteur:user:{utilisateur.id}", 10, 300) or limite_depassee(f"ia-tuteur:ip:{host}", 30, 300):
         return RedirectResponse("/tuteur?erreur=trop_de_questions", status_code=303)
 
@@ -644,7 +645,7 @@ def verifier_comprehension_tuteur_session(
             f"/tuteur/{session_id}?erreur=comprehension_requise#comprehension-tuteur",
             status_code=303,
         )
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if limite_depassee(f"ia-tuteur-comprehension:user:{utilisateur.id}", 10, 300) or limite_depassee(
         f"ia-tuteur-comprehension:ip:{host}", 30, 300
     ):
