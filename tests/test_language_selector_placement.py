@@ -16,6 +16,8 @@ def test_language_selector_is_global_singleton_at_sidebar_preferences_end():
     assert 'for="select-langue" data-langue-label' in base
     assert '<option value="fr">Français</option>' in base
     assert '<option value="mg">Malagasy</option>' in base
+    assert '<option value="en">English</option>' in base
+    assert 'FR · MG · EN' in base
     brand_end = base.index("</div>", base.index('<div class="tb-sidebar-marque">'))
     assert base.index('id="select-langue"') > brand_end
 
@@ -25,6 +27,9 @@ def test_language_selector_keeps_the_existing_translation_script_contract():
     script = LANGUAGE_JS.read_text(encoding="utf-8")
     assert "/static/js/langue.js?v={{ version_asset('js/langue.js') }}" in base
     assert 'var SELECTEUR = "#select-langue";' in script
+    assert 'var TRADUCTIONS_EN = Object.freeze({' in script
+    assert 'if (langue === "en") return traduireChaineAnglaise(source);' in script
+    assert 'return langue === "mg" || langue === "en" ? langue : "fr";' in script
     assert 'selecteur.addEventListener("change"' in script
     assert "localStorage.setItem(CLE_LANGUE, langueActuelle)" in script
 
