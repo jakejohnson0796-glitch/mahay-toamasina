@@ -51,6 +51,18 @@ if (window.document.querySelector('#settings-language-label').textContent !== "F
 if (window.document.querySelector('#settings-language-description').textContent !== "Tehirizina ao amin'ity navigateur ity ny safidinao ary ampiharina amin'ny pejy rehetra.") {
   throw new Error('The settings description was not translated to Malagasy');
 }
+if (window.document.querySelector('#tuteur-heading').textContent !== 'Aza mijanona rehefa misy lesona tsy azonao.') {
+  throw new Error('The AI Tutor heading was not translated to Malagasy');
+}
+if (window.document.querySelector('#notification-heading').textContent !== "Foiben'ny fampandrenesana") {
+  throw new Error('The notifications heading was not translated to Malagasy');
+}
+if (window.document.querySelector('#about-copy').textContent !== 'Sehatra malagasy hianarana, hanaovana fanazaran-tena ary handrosoana miaraka.') {
+  throw new Error('The about-page introduction was not translated to Malagasy');
+}
+if (window.document.querySelector('#long-about-copy').textContent !== "Atambatry ny MITARIDALA ao amin'ny sehatra iray natao ho an'ny mpianatra eto Madagasikara ny loharano akademika, fanazaran-tena, fifanampiana, fanampian'ny IA ary kilasy virtoaly.") {
+  throw new Error('The long about-page introduction was not translated to Malagasy');
+}
 if (window.document.querySelector('#games-heading').textContent !== 'Ny lalao mahazatra') {
   throw new Error('The classical games heading was not translated to Malagasy');
 }
