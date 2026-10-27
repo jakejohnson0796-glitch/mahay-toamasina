@@ -13,6 +13,7 @@ from typing import Optional
 import redis
 from sqlmodel import Session, select
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 
 from .config import parametres
 from .database import engine
@@ -372,6 +373,50 @@ def planifier_fiche_revision_document(
         if tache_id is not None and notifier:
             notifier_tache(tache_id)
         return tache_id
+    except IntegrityError as erreur:
+        # Deux requêtes peuvent valider le même document simultanément :
+        # chacune observe alors l'absence de fiche et tente de créer la même
+        # ligne. L'index unique protège les données, mais la seconde requête
+        # doit récupérer la tâche gagnante plutôt que signaler un faux échec.
+        logger.info(
+            "Conflit concurrent pendant la planification de la fiche du document #%s; "
+            "recherche de la tâche déjà créée.",
+            document_id,
+        )
+        try:
+            with Session(engine) as session:
+                fiche = session.exec(
+                    select(FicheRevisionDocument)
+                    .where(FicheRevisionDocument.document_id == document_id)
+                    .limit(1)
+                ).first()
+                if fiche is None:
+                    return None
+                tache = session.exec(
+                    select(TacheIA)
+                    .where(
+                        TacheIA.type_tache == TYPE_FICHE_REVISION_DOCUMENT,
+                        TacheIA.fiche_revision_document_id == fiche.id,
+                    )
+                    .limit(1)
+                ).first()
+                if tache is None:
+                    return None
+                tache_id = tache.id
+                notifier = tache.statut == StatutTacheIA.EN_ATTENTE
+            # Une notification Redis dupliquée est sans danger : la tâche
+            # durable reste unique et le worker est idempotent sur son ID.
+            if tache_id is not None and notifier:
+                notifier_tache(tache_id)
+            return tache_id
+        except Exception as reprise:
+            logger.warning(
+                "Récupération de la tâche existante pour le document #%s impossible (%s).",
+                document_id,
+                type(reprise).__name__,
+                exc_info=True,
+            )
+            return None
     except Exception as erreur:
         logger.exception(
             "Impossible de planifier la fiche de révision du document de cours #%s (%s).",
