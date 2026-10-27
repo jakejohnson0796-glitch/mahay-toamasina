@@ -24,6 +24,9 @@
         <a class="bouton bouton-primaire" href="/quiz">Nouveau quiz</a>
         <a class="bouton bouton-secondaire" href="/quiz/historique">Voir mon historique</a>
         <a class="bouton bouton-secondaire" href="/tuteur">Demander une explication au Tuteur IA</a>
+        {% if tentative.document_id %}
+        <a class="bouton bouton-secondaire" href="/documents/{{ tentative.document_id }}/apprendre">Retour au cours source</a>
+        {% endif %}
       </div>
     </div>
 
@@ -101,6 +104,9 @@
       <div class="ai-inline-actions">
         <form method="post" action="/tuteur/demander" class="ai-inline-action">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            {% if tentative.document_id %}
+            <input type="hidden" name="document_id" value="{{ tentative.document_id }}">
+            {% endif %}
           <input type="hidden" name="progression_id" value="{{ notions_detectees[0].progression_id }}">
           <input type="hidden" name="question" value="Aide-moi à consolider {{ notions_detectees[0].notion }} après mon examen blanc {{ tentative.matiere }}. Explique mon point faible puis donne-moi un exercice progressif.">
           <button class="bouton bouton-secondaire" type="submit">Avec le Tuteur</button>
@@ -177,6 +183,9 @@
         {% if n.progression_id %}
         <form method="post" action="/tuteur/demander" class="ai-inline-action">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            {% if tentative.document_id %}
+            <input type="hidden" name="document_id" value="{{ tentative.document_id }}">
+            {% endif %}
           <input type="hidden" name="progression_id" value="{{ n.progression_id }}">
           <input type="hidden" name="question" value="Explique-moi {{ n.notion }} et aide-moi à corriger mon erreur sur cette notion avec un exercice progressif.">
           <button class="bouton bouton-secondaire" type="submit">Avec le Tuteur</button>
@@ -250,6 +259,9 @@
         <div class="ai-error-recovery">
           <form method="post" action="/tuteur/demander" class="ai-inline-action">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            {% if tentative.document_id %}
+            <input type="hidden" name="document_id" value="{{ tentative.document_id }}">
+            {% endif %}
             {% if progressions_par_question[q_index] %}
             <input type="hidden" name="progression_id" value="{{ progressions_par_question[q_index] }}">
             {% endif %}
