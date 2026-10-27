@@ -11,6 +11,7 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
     <select id="select-langue-parametres" aria-label="Choisir la langue de l’interface">
       <option value="fr" data-no-translate>Français</option><option value="mg" data-no-translate>Malagasy</option><option value="en" data-no-translate>English</option>
     </select>
+    <p id="settings-language-note">Ce choix est mémorisé dans ce navigateur et appliqué sur toutes les pages.</p>
   </section>
   <nav><a id="navigation">Tableau de bord</a></nav>
   <h2 id="settings-language-heading">Langue de l’interface</h2>
@@ -48,8 +49,11 @@ if (window.document.querySelector('#settings-language-heading').textContent !== 
 if (window.document.querySelector('#settings-language-label').textContent !== "Fiteny tiana hampiasaina") {
   throw new Error('The language setting label was not translated to Malagasy');
 }
-if (window.document.querySelector('#settings-language-description').textContent !== "Tehirizina ao amin'ity navigateur ity ny safidinao ary ampiharina amin'ny pejy rehetra.") {
+if (window.document.querySelector('#settings-language-description').textContent !== "Safidio ny fiteny ampiasaina amin'ny menus, bokotra ary pejy ao amin'ny MITARIDALA.") {
   throw new Error('The settings description was not translated to Malagasy');
+}
+if (window.document.querySelector('#settings-language-note').textContent !== "Tehirizina ao amin'ity navigateur ity ny safidinao ary ampiharina amin'ny pejy rehetra.") {
+  throw new Error('The language preference note was not translated to Malagasy');
 }
 if (window.document.querySelector('#tuteur-heading').textContent !== 'Aza mijanona rehefa misy lesona tsy azonao.') {
   throw new Error('The AI Tutor heading was not translated to Malagasy');
@@ -308,6 +312,9 @@ if (window.document.querySelector('#settings-language-label').textContent !== 'P
 }
 if (window.document.querySelector('#settings-language-description').textContent !== 'Choose the language used in MITARIDALA menus, buttons, and pages.') {
   throw new Error('The language description was not translated');
+}
+if (window.document.querySelector('#settings-language-note').textContent !== 'This choice is saved in this browser and applied across all pages.') {
+  throw new Error('The language preference note was not translated');
 }
 if (window.document.querySelector('#tuteur-heading').textContent !== "Don't get stuck on a topic.") {
   throw new Error('The AI Tutor page heading was not translated');
