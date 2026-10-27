@@ -203,18 +203,6 @@
       </button>
     </div>
 
-    <section class="tb-sidebar-langue" aria-label="Préférences de langue">
-      <div class="tb-sidebar-langue-entete">
-        <span class="tb-sidebar-langue-icone" aria-hidden="true">🌐</span>
-        <label for="select-langue" data-langue-label>Langue</label>
-        <span class="tb-sidebar-langue-code" aria-hidden="true">FR · MG · EN</span>
-      </div>
-      <select id="select-langue" name="langue" data-selecteur-langue class="selecteur-langue" aria-label="Choisir la langue" title="Changer la langue de l’interface">
-        <option value="fr">Français</option>
-        <option value="mg">Malagasy</option>
-        <option value="en">English</option>
-      </select>
-    </section>
 
     {% if request.session.get("user_id") %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
@@ -390,18 +378,6 @@
         <span class="mobile-entete-app-marque">MITARIDALA</span>
         <span class="mobile-entete-app-sous-marque">Madagascar</span>
       </a>
-      <label class="mobile-langue-visuellement-cache" for="select-langue-mobile">Langue</label>
-      <select
-        id="select-langue-mobile"
-        class="selecteur-langue-mobile"
-        data-selecteur-langue
-        aria-label="Choisir la langue"
-        title="Changer la langue de l’interface"
-      >
-        <option value="fr">Français</option>
-        <option value="mg">Malagasy</option>
-        <option value="en">English</option>
-      </select>
       {% if request.session.get("user_id") and utilisateur is defined and utilisateur %}
       <a class="mobile-entete-app-notifications" href="/notifications" aria-label="Notifications">
         {{ icone("aide", 20) }}{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %}<span>{{ nb_notifs if nb_notifs < 10 else "9+" }}</span>{% endif %}
