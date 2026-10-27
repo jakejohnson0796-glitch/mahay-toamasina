@@ -21,7 +21,7 @@ def test_service_worker_ne_met_pas_les_pages_dynamiques_en_cache():
     sw = (ROOT / "app" / "static" / "sw.js").read_text(encoding="utf-8")
     assert 'url.pathname.startsWith("/static/")' in sw
     assert 'requete.method !== "GET"' in sw
-    assert 'CACHE_NOM = "mahay-static-v2"' in sw
+    assert 'CACHE_NOM = "mahay-static-v3"' in sw
     assert 'self.clients.claim()' in sw
 
 
@@ -34,3 +34,10 @@ def test_un_seul_service_worker_est_enregistre_a_la_racine():
     # base.html ne doit pas créer en plus une seconde registration /static/.
     assert 'navigator.serviceWorker.register("/sw.js", { scope: "/" })' in pwa
     assert "navigator.serviceWorker.register('/static/sw.js')" not in base
+
+
+def test_service_worker_rotates_old_static_cache_after_release():
+    sw = (ROOT / "app" / "static" / "sw.js").read_text(encoding="utf-8")
+    assert 'cle.startsWith("mahay-static-") && cle !== CACHE_NOM' in sw
+    assert 'self.clients.claim()' in sw
+    assert 'self.skipWaiting()' in sw
