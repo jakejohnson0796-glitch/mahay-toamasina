@@ -209,6 +209,7 @@
           submitted = true;
           const form = document.querySelector('[data-minuteur-timeout]');
           if (form) form.requestSubmit();
+          else window.setTimeout(() => window.location.reload(), 250);
         }
       }
     };
