@@ -29,11 +29,12 @@ def adresse_ip_client(request: Request) -> str:
     # Hors Render, ou sans preuve que la requête est passée par Cloudflare,
     # ne jamais faire confiance à des en-têtes que le client peut forger.
     derriere_render = os.getenv("RENDER", "").strip().lower() == "true"
-    marqueur_cloudflare = request.headers.get("cf-ray")
+    entetes = getattr(request, "headers", {})
+    marqueur_cloudflare = entetes.get("cf-ray")
     if not derriere_render or not marqueur_cloudflare:
         return _ip_valide(adresse_socket) or adresse_socket
 
-    adresse_cloudflare = _ip_valide(request.headers.get("cf-connecting-ip"))
+    adresse_cloudflare = _ip_valide(entetes.get("cf-connecting-ip"))
     if adresse_cloudflare:
         return adresse_cloudflare
 
