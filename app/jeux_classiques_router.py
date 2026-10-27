@@ -450,6 +450,18 @@ def _timestamp_utc(valeur):
     return valeur.timestamp()
 
 
+def _minuteur_expire(etat, duree):
+    """Initialise un ancien état sans échéance, sinon vérifie la limite serveur."""
+    try:
+        echeance = float(etat.get("echeance") or 0)
+    except (TypeError, ValueError):
+        echeance = 0
+    if echeance <= 0:
+        _regler_minuteur(etat, duree)
+        return False
+    return time.time() >= echeance
+
+
 def creer_partie_champion(rng=None, mode="champion", difficulte="moyen"):
     """Prépare une partie solo avec des questions variées et un minuteur par manche."""
     generateur = rng or random
@@ -978,8 +990,8 @@ def demarrer(
         return RedirectResponse("/connexion", status_code=303)
     if difficulte not in {"facile", "moyen", "difficile"}:
         difficulte = "moyen"
-    if mode in {"champion", "champion_bot"}:
-        etat = creer_partie_champion(mode=mode, difficulte=difficulte)
+    if mode == "champion":
+        etat = creer_partie_champion(mode="champion", difficulte=difficulte)
     elif mode == "chiffres":
         nombres, cible, solution, indice = tirer_chiffres()
         etat = {
@@ -1009,6 +1021,10 @@ def demarrer(
         }
     else:
         return RedirectResponse("/jeux-classiques", status_code=303)
+    if mode == "chiffres":
+        _regler_minuteur(etat, TEMPS_CHIFFRES)
+    elif mode == "lettres":
+        _regler_minuteur(etat, TEMPS_LETTRES)
     request.session["jeux_classiques"] = etat
     return RedirectResponse("/jeux-classiques", status_code=303)
 
@@ -1044,14 +1060,29 @@ def repondre(
         return RedirectResponse("/connexion", status_code=303)
     etat = request.session.get("jeux_classiques") or {}
     mode = etat.get("mode")
-    if mode not in {"champion", "champion_bot", "chiffres", "lettres"}:
+    if mode not in {"champion", "chiffres", "lettres"}:
         effacer_partie_classique(request.session)
         return RedirectResponse("/jeux-classiques", status_code=303)
 
-    if mode in {"champion", "champion_bot"}:
+    if mode == "champion":
         ids = etat.get("ids", [])
         tour = int(etat.get("tour", 0))
         if tour >= len(ids) or "bonne_active" not in etat:
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        if _minuteur_expire(etat, TEMPS_QUESTION_CHAMPION):
+            etat["tour"] = tour + 1
+            etat["serie"] = 0
+            etat["feedback"] = {
+                "correcte": False,
+                "explication": "Temps écoulé : cette question ne rapporte aucun point.",
+                "points_ajoutes": 0,
+            }
+            preparer_question_active(etat)
+            if int(etat["tour"]) < len(ids):
+                _regler_minuteur(etat, TEMPS_QUESTION_CHAMPION)
+            else:
+                etat.pop("echeance", None)
+            request.session["jeux_classiques"] = etat
             return RedirectResponse("/jeux-classiques", status_code=303)
         if choix < 0 or choix >= len(etat.get("choix_actifs", [])):
             etat["feedback"] = {"correcte": False, "explication": "Choisis une réponse avant de valider."}
@@ -1076,30 +1107,24 @@ def repondre(
             "explication": question["explication"],
             "points_ajoutes": points_ajoutes,
         }
-        if mode == "champion_bot":
-            bot_correcte, bot_choix = simuler_reponse_bot(
-                int(etat["bonne_active"]),
-                len(etat.get("choix_actifs", [])),
-                etat.get("difficulte", "moyen"),
-            )
-            if bot_correcte:
-                etat["bot_correctes"] = int(etat.get("bot_correctes", 0)) + 1
-                etat["bot_serie"] = int(etat.get("bot_serie", 0)) + 1
-                bonus_bot = BONUS_SERIE if etat["bot_serie"] % 3 == 0 else 0
-                etat["bot_score"] = int(etat.get("bot_score", 0)) + POINTS_QUESTION + bonus_bot
-            else:
-                etat["bot_serie"] = 0
-                bonus_bot = 0
-            feedback.update({
-                "bot_correcte": bot_correcte,
-                "bot_choix": bot_choix,
-                "bot_points_ajoutes": (POINTS_QUESTION + bonus_bot) if bot_correcte else 0,
-            })
         etat["feedback"] = feedback
         etat["tour"] = tour + 1
         preparer_question_active(etat)
+        if int(etat["tour"]) < len(ids):
+            _regler_minuteur(etat, TEMPS_QUESTION_CHAMPION)
+        else:
+            etat.pop("echeance", None)
     elif mode == "chiffres":
         if etat.get("termine"):
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        if _minuteur_expire(etat, TEMPS_CHIFFRES):
+            etat["termine"] = True
+            etat["feedback"] = {
+                "correcte": False,
+                "explication": f"Temps écoulé. Une solution possible : {etat.get('solution', '')}.",
+                "tentatives": int(etat.get("tentatives", 0)),
+            }
+            request.session["jeux_classiques"] = etat
             return RedirectResponse("/jeux-classiques", status_code=303)
         tentatives = int(etat.get("tentatives", 0))
         if tentatives >= TENTATIVES_MAX:
@@ -1123,6 +1148,15 @@ def repondre(
         }
     else:  # lettres
         if etat.get("termine"):
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        if _minuteur_expire(etat, TEMPS_LETTRES):
+            etat["termine"] = True
+            etat["feedback"] = {
+                "correcte": False,
+                "explication": f"Temps écoulé. Ton meilleur mot : {etat.get('meilleur_mot') or 'aucun'} ({etat.get('meilleur_points', 0)} points).",
+                "tentatives": int(etat.get("tentatives", 0)),
+            }
+            request.session["jeux_classiques"] = etat
             return RedirectResponse("/jeux-classiques", status_code=303)
         tentatives = int(etat.get("tentatives", 0))
         if tentatives >= TENTATIVES_MAX:
