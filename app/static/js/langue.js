@@ -3173,6 +3173,7 @@
     "La demande a bien été reçue. Ton accès Premium reste actif pendant la vérification ( jours). L'accès IA reste ouvert pendant jours.": "Voaray ny fangatahanao. Mbola mandeha mandritra ny fanamarinana ny fidirana Premium-nao (andro). Mbola misokatra mandritra ny andro sisa ny fidirana AI.",
     "Le Quiz IA et le Tuteur IA sont inclus pendant les premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant jours.": "Tafiditra mandritra ny andro voalohan'ny andrana ny Quiz IA sy ny Tuteur IA. Mbola azo ampiasaina mandritra ny andro sisa ny endri-javatra Premium hafa.",
 
+
   });
 
   var TRADUCTIONS_EN = Object.freeze({
