@@ -1,6 +1,6 @@
 # TODO — Feuille de route MITARIDALA
 
-**Mise à jour : 24 octobre 2026**  
+**Mise à jour : 27 octobre 2026**  
 **Référence :** branche principale après les améliorations des fiches de révision, de la file IA et de l’interface globale.
 
 Ce document est le backlog de référence du dépôt. Les cases cochées correspondent à des travaux déjà intégrés et couverts par les contrôles indiqués. Les cases ouvertes décrivent des améliorations à réaliser ou à approfondir ; elles ne signifient pas automatiquement qu’une régression est actuellement observée.
@@ -8,6 +8,7 @@ Ce document est le backlog de référence du dépôt. Les cases cochées corresp
 ## 1. Livré et vérifié
 
 - [x] Génération asynchrone des fiches de révision depuis les documents de cours approuvés, avec accès depuis le hub d’apprentissage.
+- [x] Anti-répétition du Quiz IA renforcée : l'historique couvre jusqu'à huit tentatives de la même matière et échantillonne les énoncés à tour de rôle, sans augmenter le plafond de 24 exemples transmis au modèle ; tests dédiés pour la diversité, les doublons exacts et l'isolation compte/matière.
 - [x] Génération de fiches individuelles après une séance de classe virtuelle, avec téléchargement PDF et DOCX et contrôle d’accès côté serveur.
 - [x] Amélioration du suivi des tâches IA : PostgreSQL reste la source durable, avec voie de récupération lorsque la notification Redis ne suffit pas.
 - [x] Clarification des états et actions liés aux fiches de révision pour éviter de confondre une fiche en attente avec une fiche téléchargeable.
