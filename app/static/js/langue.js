@@ -3339,7 +3339,7 @@
     "Retour à l’accueil": "Back to home",
     "Retour à l'accueil": "Back to home",
     "Commencer ma mission": "Start my mission",
-    "Voir mes révisions": "View my revision plans"
+    "Voir mes révisions": "View my revision plans",
     "Paramètres": "Settings",
     "Préférences": "Preferences",
     "Mes préférences": "My preferences",
