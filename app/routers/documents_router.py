@@ -1728,6 +1728,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
 
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
+        document_id=document.id,
         matiere=matiere_quiz,
         niveau=niveau,
         cycle_education=cycle_quiz,
