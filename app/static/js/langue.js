@@ -800,7 +800,7 @@
     "Composante": "Sampam-pianarana",
     "Actualisation": "Fanavaozana",
     "La mention et le parcours se changent via une demande administrateur lorsque c'est requis.": "Ovaina amin'ny alalan'ny fangatahana amin'ny mpitantana ny sampana sy ny lalam-pianarana rehefa ilaina izany.",
-    "Choisir mon université": "Hisafidy ny oniversitako",
+    "Choisir mon université": "Safidio ny oniversiteko",
     "Modifier mon niveau": "Hanova ny ambaratongam-pianarako",
     "Actualiser mon parcours académique": "Havaozy ny mombamomba ny fianarako",
     "Partenariat · visibilité étudiante": "Fiaraha-miasa · fahitana eo amin'ny mpianatra",
