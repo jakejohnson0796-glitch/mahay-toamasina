@@ -1,12 +1,17 @@
 """Routes des jeux classiques (culture générale, chiffres et lettres)."""
 import itertools
+import json
 import random
 import re
+import secrets
+import time
 import unicodedata
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session, select
 
 from .auth import utilisateur_courant
 from .csrf import verifier_csrf
@@ -25,6 +30,10 @@ QUESTIONS_PAR_PARTIE = 10
 TENTATIVES_MAX = 3
 POINTS_QUESTION = 10
 BONUS_SERIE = 5
+TEMPS_QUESTION_CHAMPION = 20
+TEMPS_CHIFFRES = 120
+TEMPS_LETTRES = 90
+TEMPS_TOURNOI = 20
 
 def _q(
     identifiant,
@@ -145,11 +154,159 @@ ENIGMES = [
     _q("enigme-interrupteurs", "Logique", "Trois interrupteurs sont dehors ; une ampoule est dans une pièce fermée. Tu peux entrer une seule fois. Quelle méthode permet d'identifier le bon interrupteur ?", ["Allumer les trois et entrer", "Allumer A quelques minutes, l'éteindre, allumer B et entrer ; lumière = B, chaleur = A, sinon C", "Allumer A et B puis entrer", "C'est impossible"], 1, "La lumière indique B ; une ampoule éteinte mais chaude indique A ; une ampoule froide et éteinte indique C.", "difficile", "enigme"),
     _q("enigme-jour-semaine", "Logique", "Si avant-hier était jeudi, quel jour serons-nous après-demain ?", ["Dimanche", "Lundi", "Mardi", "Mercredi"], 1, "Avant-hier jeudi signifie aujourd'hui samedi ; après-demain sera lundi.", "difficile", "enigme"),
 ]
-QUESTIONS.extend(ENIGMES)
+def _choix_numeriques(correct, graine):
+    """Produit quatre propositions distinctes et reproductibles pour un calcul."""
+    valeurs = [correct]
+    decalages = (1, -1, 2, -2, 3, -3, 5, -5, 10, -10, 20, -20, 25, -25, 50, -50)
+    for decalage in decalages:
+        candidat = correct + decalage
+        if candidat >= 0 and candidat not in valeurs:
+            valeurs.append(candidat)
+        if len(valeurs) == 4:
+            break
+    candidat = max(0, correct + 7)
+    while len(valeurs) < 4:
+        if candidat not in valeurs:
+            valeurs.append(candidat)
+        candidat += 1
+    generateur = random.Random(graine)
+    generateur.shuffle(valeurs)
+    choix = [str(valeur) for valeur in valeurs]
+    return choix, choix.index(str(correct))
 
-# Dictionnaire embarqué pour rester utilisable sans service externe.
-# Il contient des mots courants et quelques mots utiles dans le contexte malgache.
-MOTS = set("""
+
+def generer_questions_calcul():
+    """Construit un grand réservoir reproductible de questions de calcul vérifiables."""
+    resultat = []
+
+    def ajouter(identifiant, question, reponse, explication, graine):
+        choix, bonne = _choix_numeriques(reponse, graine)
+        difficulte = "facile" if reponse <= 20 else ("moyen" if reponse <= 200 else "difficile")
+        resultat.append(_q(
+            identifiant, "Calcul mental", question, choix, bonne, explication,
+            difficulte, "calcul",
+        ))
+
+    for a in range(1, 61):
+        for b in range(a, 61):
+            somme = a + b
+            ajouter(
+                f"calcul-add-{a}-{b}",
+                f"Combien font {a} + {b} ?", somme,
+                f"{a} + {b} = {somme}.", somme * 101 + a * 7 + b,
+            )
+    for a in range(2, 61):
+        for b in range(1, a):
+            difference = a - b
+            ajouter(
+                f"calcul-sub-{a}-{b}",
+                f"Combien font {a} − {b} ?", difference,
+                f"{a} − {b} = {difference}.", a * 211 + b * 13,
+            )
+    for a in range(2, 17):
+        for b in range(a, 17):
+            produit = a * b
+            ajouter(
+                f"calcul-mul-{a}-{b}",
+                f"Combien font {a} × {b} ?", produit,
+                f"{a} × {b} = {produit}.", a * 307 + b * 19,
+            )
+    for diviseur in range(2, 17):
+        for quotient in range(2, 17):
+            dividende = diviseur * quotient
+            ajouter(
+                f"calcul-div-{dividende}-{diviseur}",
+                f"Combien font {dividende} ÷ {diviseur} ?", quotient,
+                f"{dividende} ÷ {diviseur} = {quotient}. La division est exacte.",
+                dividende * 401 + diviseur * 23,
+            )
+    for n in range(2, 51):
+        carre = n * n
+        ajouter(
+            f"calcul-carre-{n}", f"Combien vaut {n} au carré ?", carre,
+            f"{n}² = {n} × {n} = {carre}.", n * 503,
+        )
+    for n in range(2, 16):
+        cube = n ** 3
+        ajouter(
+            f"calcul-cube-{n}", f"Combien vaut {n} au cube ?", cube,
+            f"{n}³ = {n} × {n} × {n} = {cube}.", n * 601,
+        )
+    conversions = (
+        ("metre-centimetre", "Combien de centimètres représentent {n} m ?", 100, "m", "cm"),
+        ("kilometre-metre", "Combien de mètres représentent {n} km ?", 1000, "km", "m"),
+        ("kilogramme-gramme", "Combien de grammes représentent {n} kg ?", 1000, "kg", "g"),
+        ("litre-millilitre", "Combien de millilitres représentent {n} L ?", 1000, "L", "mL"),
+        ("heure-minute", "Combien de minutes représentent {n} heures ?", 60, "heures", "minutes"),
+    )
+    for code, modele, facteur, unite_source, unite_cible in conversions:
+        for n in range(1, 61):
+            valeur = n * facteur
+            ajouter(
+                f"conversion-{code}-{n}", modele.format(n=n), valeur,
+                f"{n} {unite_source} = {valeur} {unite_cible}.",
+                valeur * 701 + n * 29,
+            )
+    return resultat
+
+
+def generer_questions_geographie():
+    """Ajoute des questions de capitales à partir d'une table de faits stable."""
+    capitales = [
+        ("Madagascar", "Antananarivo"), ("France", "Paris"), ("Japon", "Tokyo"),
+        ("Canada", "Ottawa"), ("Australie", "Canberra"), ("Nouvelle-Zélande", "Wellington"),
+        ("Brésil", "Brasília"), ("Argentine", "Buenos Aires"), ("Chili", "Santiago"),
+        ("Pérou", "Lima"), ("Mexique", "Mexico"), ("États-Unis", "Washington"),
+        ("Royaume-Uni", "Londres"), ("Irlande", "Dublin"), ("Espagne", "Madrid"),
+        ("Portugal", "Lisbonne"), ("Italie", "Rome"), ("Allemagne", "Berlin"),
+        ("Belgique", "Bruxelles"), ("Suisse", "Berne"), ("Autriche", "Vienne"),
+        ("Pologne", "Varsovie"), ("Grèce", "Athènes"), ("Norvège", "Oslo"),
+        ("Suède", "Stockholm"), ("Finlande", "Helsinki"), ("Danemark", "Copenhague"),
+        ("Islande", "Reykjavik"), ("Maroc", "Rabat"), ("Algérie", "Alger"),
+        ("Tunisie", "Tunis"), ("Sénégal", "Dakar"), ("Ghana", "Accra"),
+        ("Nigeria", "Abuja"), ("Kenya", "Nairobi"), ("Éthiopie", "Addis-Abeba"),
+        ("Tanzanie", "Dodoma"), ("Ouganda", "Kampala"), ("Rwanda", "Kigali"),
+        ("Afrique du Sud", "Pretoria"), ("Égypte", "Le Caire"), ("Arabie saoudite", "Riyad"),
+        ("Inde", "New Delhi"), ("Pakistan", "Islamabad"), ("Bangladesh", "Dacca"),
+        ("Chine", "Pékin"), ("Corée du Sud", "Séoul"), ("Thaïlande", "Bangkok"),
+        ("Vietnam", "Hanoï"), ("Indonésie", "Jakarta"), ("Philippines", "Manille"),
+        ("Turquie", "Ankara"), ("Ukraine", "Kyiv"), ("Roumanie", "Bucarest"),
+        ("Hongrie", "Budapest"), ("Tchéquie", "Prague"), ("Pays-Bas", "Amsterdam"),
+        ("Croatie", "Zagreb"), ("Serbie", "Belgrade"), ("Bulgarie", "Sofia"),
+        ("Cameroun", "Yaoundé"), ("Côte d'Ivoire", "Yamoussoukro"),
+        ("Mali", "Bamako"), ("Niger", "Niamey"), ("Burkina Faso", "Ouagadougou"),
+        ("Togo", "Lomé"), ("Bénin", "Porto-Novo"), ("Angola", "Luanda"),
+        ("Zambie", "Lusaka"), ("Zimbabwe", "Harare"), ("Mozambique", "Maputo"),
+        ("Maurice", "Port-Louis"), ("Comores", "Moroni"), ("Seychelles", "Victoria"),
+    ]
+    resultat = []
+    lieux = [capitale for _, capitale in capitales]
+    for index, (pays, capitale) in enumerate(capitales):
+        distracteurs = [lieu for lieu in lieux if lieu != capitale]
+        generateur = random.Random(10_000 + index)
+        choix = [capitale] + generateur.sample(distracteurs, 3)
+        generateur.shuffle(choix)
+        bonne = choix.index(capitale)
+        resultat.append(_q(
+            f"geographie-capitale-{index + 1:03d}",
+            "Géographie",
+            f"Quelle est la capitale de {pays} ?",
+            choix, bonne,
+            f"La capitale de {pays} est {capitale}.",
+            "facile" if index < 24 else "moyen",
+            "culture",
+        ))
+    return resultat
+
+
+QUESTIONS.extend(ENIGMES)
+QUESTIONS.extend(generer_questions_calcul())
+QUESTIONS.extend(generer_questions_geographie())
+
+# Dictionnaire français enrichi à partir de la liste de fréquence française de
+# pyspellchecker, complété par les mots scolaires et malgaches ci-dessous.
+# pyspellchecker est distribué sous licence MIT ; voir les métadonnées du paquet.
+MOTS_BASE = set("""
 ARBRE TABLE LIVRE ROUTE FLEUR PLAGE ECOLE AMOUR SAVOIR ORANGE SCIENCE HISTOIRE
 CALCUL NATURE SOLEIL ETOILE RIVIERE MALAGASY CLASSE ETUDIANT MAISON JARDIN SOURIRE
 ENFANT VOYAGE FAMILLE AMITIE BONHEUR CHANCE MUSIQUE DANSE CHANT IMAGE COULEUR
@@ -181,6 +338,30 @@ KILOMETRE METRE GRAMME KILOGRAMME LITRE DEGRE CELSIUS WATT VOLT AMPERE NEWTON
 ARITHMETIQUE ALGEBRE GEOMETRIE STATISTIQUE PROBABILITE GRAPHIQUE TABLE DONNEES
 ACCUEIL DEBUT RETOUR CHOIX REGLE ESSAI TENTATIVE RAPIDE FACILE DIFFICILE
 """.split())
+
+def _charger_dictionnaire_francais():
+    mots = set(MOTS_BASE)
+    try:
+        from spellchecker import SpellChecker
+
+        lexique = SpellChecker(language="fr", distance=1)
+        for terme in lexique.word_frequency.words():
+            terme = unicodedata.normalize("NFKD", terme)
+            terme = "".join(
+                caractere for caractere in terme
+                if not unicodedata.combining(caractere)
+            ).upper()
+            terme = terme.replace("'", "").replace("’", "").replace("-", "")
+            if 2 <= len(terme) <= 9 and all("A" <= c <= "Z" for c in terme):
+                mots.add(terme)
+    except (ImportError, OSError, ValueError):
+        # La banque minimale reste disponible en mode dégradé.
+        pass
+    return mots
+
+
+MOTS = _charger_dictionnaire_francais()
+
 
 def normaliser(texte):
     texte = unicodedata.normalize("NFKD", texte or "")
