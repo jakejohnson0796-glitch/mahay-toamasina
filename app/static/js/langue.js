@@ -1,4 +1,4 @@
-/* Internationalisation progressive de MITARIDALA : français + malagasy.
+/* Internationalisation progressive de MITARIDALA : français, malagasy et anglais.
    La préférence reste locale au navigateur ; aucun service tiers ne reçoit de données.
    Les textes IA, les blocs de code et les contenus utilisateurs marqués comme tels
    ne sont jamais traduits automatiquement. */
