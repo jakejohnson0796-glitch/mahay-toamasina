@@ -4,11 +4,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_selecteur_malagasy_present_pour_visiteurs_et_membres():
+def test_selecteur_de_langue_est_dans_les_parametres_et_le_script_est_global():
     base = (ROOT / "app" / "templates" / "base.html").read_text(encoding="utf-8")
-    assert '<select id="select-langue" name="langue"' in base
-    assert '<option value="fr">Français</option>' in base
-    assert '<option value="mg">Malagasy</option>' in base
+    settings = (ROOT / "app" / "templates" / "securite.html").read_text(encoding="utf-8")
+    assert "select-langue" not in base
+    assert 'id="select-langue-parametres"' in settings
+    assert '<option value="fr" data-no-translate>Français</option>' in settings
+    assert '<option value="mg" data-no-translate>Malagasy</option>' in settings
+    assert '<option value="en" data-no-translate>English</option>' in settings
     assert 'src="/static/js/langue.js?' in base
     assert 'lang="fr"' in base
 
@@ -24,11 +27,13 @@ def test_traduction_ne_depend_d_aucun_service_tiers_et_protege_le_contenu_ia():
     assert "XMLHttpRequest" not in js
 
 
-def test_styles_du_selecteur_sont_compatibles_avec_la_sidebar_compacte():
-    css = (ROOT / "app" / "static" / "sidebar.css").read_text(encoding="utf-8")
-    assert ".tb-sidebar-langue" in css
-    assert "body.sidebar-compact .tb-sidebar-langue" in css
-    assert "body.sidebar-compact .tb-sidebar-langue label" in css
+def test_styles_du_selecteur_sont_responsifs_et_accessibles_dans_les_parametres():
+    css = (ROOT / "app" / "static" / "interface-polish.css").read_text(encoding="utf-8")
+    sidebar_css = (ROOT / "app" / "static" / "sidebar.css").read_text(encoding="utf-8")
+    assert ".ops-language-settings" in css
+    assert ".ops-language-settings select:focus-visible" in css
+    assert "@media (max-width: 640px)" in css
+    assert ".tb-sidebar-langue" not in sidebar_css
 
 
 def test_ci_lance_le_test_navigateur_du_selecteur_de_langue():

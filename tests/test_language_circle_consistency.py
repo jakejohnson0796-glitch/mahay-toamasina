@@ -11,27 +11,24 @@ ACADEMIC_ROUTER = ROOT / "app" / "routers" / "academique_router.py"
 ACADEMIC_REFERENCE = ROOT / "app" / "referentiel_academique.py"
 
 
-def test_language_selector_is_near_sidebar_top_and_exists_once():
+def test_language_selector_is_only_in_account_settings():
     base = BASE.read_text(encoding="utf-8")
-    sidebar = base.split('<aside class="tb-sidebar"', 1)[1].split("</aside>", 1)[0]
-    assert sidebar.count('id="select-langue"') == 1
-    selector_pos = sidebar.index('<section class="tb-sidebar-langue"')
-    assert sidebar.index('<div class="tb-sidebar-marque">') < selector_pos < sidebar.index('<nav class="tb-sidebar-nav"')
-    assert "FR · MG · EN" in sidebar
-    assert 'data-langue-label>Langue<' in sidebar
-    assert 'option value="fr">Français' in sidebar
-    assert 'option value="mg">Malagasy' in sidebar
-    assert 'option value="en">English' in sidebar
+    settings = (ROOT / "app" / "templates" / "securite.html").read_text(encoding="utf-8")
+    assert "select-langue" not in base
+    assert settings.count('id="select-langue-parametres"') == 1
+    assert 'class="ops-security-card ops-language-settings" id="language-settings"' in settings
+    assert '<option value="fr" data-no-translate>Français</option>' in settings
+    assert '<option value="mg" data-no-translate>Malagasy</option>' in settings
+    assert '<option value="en" data-no-translate>English</option>' in settings
 
 
 def test_language_preference_card_is_visible_responsive_and_keyboard_accessible():
-    css = SIDEBAR_CSS.read_text(encoding="utf-8")
-    assert "Panneau de langue aligné avec les réglages" in css
-    assert "linear-gradient(135deg, rgba(255,255,255,.07)" in css
-    assert ".tb-sidebar-langue select:focus-visible" in css
-    assert "body.sidebar-compact .tb-sidebar-langue" in css
-    assert "@media (max-width: 900px)" in css
-    assert "@media (prefers-reduced-motion: reduce)" in css
+    css = (ROOT / "app" / "static" / "interface-polish.css").read_text(encoding="utf-8")
+    assert ".ops-language-settings" in css
+    assert ".ops-language-settings select:focus-visible" in css
+    assert "@media (max-width: 640px)" in css
+    assert "var(--content-surface)" in css
+    assert "var(--content-text)" in css
 
 
 def test_circle_labels_use_national_scope_and_human_readable_levels():

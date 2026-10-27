@@ -4,17 +4,24 @@ import { JSDOM } from 'jsdom';
 
 const source = fs.readFileSync('app/static/js/langue.js', 'utf8');
 const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion — MITARIDALA</title></head><body>
-  <div class="tb-sidebar-langue">
-    <label for="select-langue">Langue</label>
-    <select id="select-langue" aria-label="Choisir la langue">
-      <option value="fr">Français</option><option value="mg">Malagasy</option><option value="en">English</option>
+  <section class="ops-security-card ops-language-settings" id="language-settings">
+    <h2>Langue de l’interface</h2>
+    <label id="settings-language-label" for="select-langue-parametres">Langue préférée</label>
+    <p id="settings-language-description">Choisis la langue utilisée dans les menus, les boutons et les pages de MITARIDALA.</p>
+    <select id="select-langue-parametres" aria-label="Choisir la langue de l’interface">
+      <option value="fr" data-no-translate>Français</option><option value="mg" data-no-translate>Malagasy</option><option value="en" data-no-translate>English</option>
     </select>
-  </div>
-  <label for="select-langue-mobile">Langue mobile</label>
-  <select id="select-langue-mobile" aria-label="Choisir la langue sur mobile">
-    <option value="fr">Français</option><option value="mg">Malagasy</option><option value="en">English</option>
-  </select>
+    <p id="settings-language-note">Ce choix est mémorisé dans ce navigateur et appliqué sur toutes les pages.</p>
+  </section>
   <nav><a id="navigation">Tableau de bord</a></nav>
+  <h2 id="settings-language-heading">Langue de l’interface</h2>
+  <h2 id="tuteur-heading">Ne reste pas bloqué sur une notion.</h2>
+  <p id="tuteur-copy">Pose ta question avec ton contexte. Le Tuteur IA transforme ensuite la question en explication, exemple, exercice et correction pour t'aider à progresser.</p>
+  <h2 id="notification-heading">Centre de notifications</h2>
+  <h2 id="games-heading">Les jeux classiques</h2>
+  <h2 id="circles-heading">À l’échelle de Madagascar · Cercles d’étude</h2>
+  <p id="about-copy">Une plateforme malgache pour apprendre, pratiquer et avancer ensemble.</p>
+  <p id="long-about-copy">MITARIDALA rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.</p>
   <input id="phone" placeholder="Numéro de téléphone" value="0341234567">
   <p id="dynamic">Pas encore de compte ?</p>
   <button id="dynamic-aria" aria-label="Passer au thème clair">Thème</button>
@@ -33,9 +40,39 @@ vm.runInNewContext(source, { window, document: window.document }, { filename: 'l
 window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
 await new Promise((resolve) => setTimeout(resolve, 0));
 
-const select = window.document.querySelector('#select-langue');
+const select = window.document.querySelector('#select-langue-parametres');
 const lang = window.document.documentElement.getAttribute('lang');
 if (lang !== 'mg' || select.value !== 'mg') throw new Error('Saved language preference was not restored');
+if (window.document.querySelector('#settings-language-heading').textContent !== "Fitenin'ny interface") {
+  throw new Error('The settings heading was not translated to Malagasy');
+}
+if (window.document.querySelector('#settings-language-label').textContent !== "Fiteny tiana hampiasaina") {
+  throw new Error('The language setting label was not translated to Malagasy');
+}
+if (window.document.querySelector('#settings-language-description').textContent !== "Safidio ny fiteny ampiasaina amin'ny menus, bokotra ary pejy ao amin'ny MITARIDALA.") {
+  throw new Error('The settings description was not translated to Malagasy');
+}
+if (window.document.querySelector('#settings-language-note').textContent !== "Tehirizina ao amin'ity navigateur ity ny safidinao ary ampiharina amin'ny pejy rehetra.") {
+  throw new Error('The language preference note was not translated to Malagasy');
+}
+if (window.document.querySelector('#tuteur-heading').textContent !== 'Aza mijanona rehefa misy lesona tsy azonao.') {
+  throw new Error('The AI Tutor heading was not translated to Malagasy');
+}
+if (window.document.querySelector('#notification-heading').textContent !== "Foiben'ny fampandrenesana") {
+  throw new Error('The notifications heading was not translated to Malagasy');
+}
+if (window.document.querySelector('#about-copy').textContent !== 'Sehatra malagasy hianarana, hanaovana fanazaran-tena ary handrosoana miaraka.') {
+  throw new Error('The about-page introduction was not translated to Malagasy');
+}
+if (window.document.querySelector('#long-about-copy').textContent !== "Atambatry ny MITARIDALA ao amin'ny sehatra iray natao ho an'ny mpianatra eto Madagasikara ny loharano akademika, fanazaran-tena, fifanampiana, fanampian'ny IA ary kilasy virtoaly.") {
+  throw new Error('The long about-page introduction was not translated to Malagasy');
+}
+if (window.document.querySelector('#games-heading').textContent !== 'Ny lalao mahazatra') {
+  throw new Error('The classical games heading was not translated to Malagasy');
+}
+if (window.document.querySelector('#circles-heading').textContent !== "Manerana an'i Madagasikara · Faribolana fianarana") {
+  throw new Error('The study circles heading was not translated to Malagasy');
+}
 if (window.document.querySelector('#navigation').textContent !== 'Fijerena ankapobeny') {
   throw new Error('Navigation did not switch to Malagasy');
 }
@@ -179,8 +216,11 @@ if (!window.document.querySelector('#circle-copy').textContent.startsWith('Sehat
 if (!window.document.querySelector('#contact-copy').textContent.startsWith('Manana fanontaniana')) {
   throw new Error('Full contact paragraph did not switch to Malagasy');
 }
-if (!window.document.querySelector('#about-copy').textContent.startsWith('Atambatry ny MITARIDALA')) {
-  throw new Error('Full about page paragraph did not switch to Malagasy');
+if (window.document.querySelector('#about-copy').textContent !== 'Sehatra malagasy hianarana, hanaovana fanazaran-tena ary handrosoana miaraka.') {
+  throw new Error('The short about-page tagline did not switch to Malagasy');
+}
+if (window.document.querySelector('#long-about-copy').textContent !== "Atambatry ny MITARIDALA ao amin'ny sehatra iray natao ho an'ny mpianatra eto Madagasikara ny loharano akademika, fanazaran-tena, fifanampiana, fanampian'ny IA ary kilasy virtoaly.") {
+  throw new Error('The full about-page paragraph did not switch to Malagasy');
 }
 
 // Vérifie les libellés oubliés, les compteurs construits en JavaScript et les attributs dynamiques.
@@ -251,22 +291,51 @@ if (ariaButton.getAttribute('aria-label') !== 'Hampiasa endrika maizina') {
   throw new Error('Dynamically changed accessible labels were not translated');
 }
 
-// L'anglais doit être utilisable depuis le sélecteur mobile et synchroniser les deux contrôles.
-const selectMobile = window.document.querySelector('#select-langue-mobile');
-selectMobile.value = 'en';
-selectMobile.dispatchEvent(new window.Event('change', { bubbles: true }));
+// L'anglais doit être sélectionnable depuis les paramètres du compte.
+select.value = 'en';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
 await new Promise((resolve) => setTimeout(resolve, 0));
 if (window.document.documentElement.getAttribute('lang') !== 'en') {
   throw new Error('English choice did not update the document language');
 }
-if (select.value !== 'en' || selectMobile.value !== 'en') {
-  throw new Error('Desktop and mobile language selectors did not stay synchronized');
+if (select.value !== 'en') {
+  throw new Error('The settings language selector did not retain English');
 }
 if (window.document.querySelector('#navigation').textContent !== 'Dashboard') {
   throw new Error('English navigation translation did not apply');
 }
 if (window.document.querySelector('#subscription-title').textContent !== 'Your subscription, your access status, your next step.') {
   throw new Error('English page heading translation did not apply');
+}
+if (window.document.querySelector('#settings-language-heading').textContent !== 'Interface language') {
+  throw new Error('The interface language heading was not translated');
+}
+if (window.document.querySelector('#settings-language-label').textContent !== 'Preferred language') {
+  throw new Error('The language preference label was not translated');
+}
+if (window.document.querySelector('#settings-language-description').textContent !== 'Choose the language used in MITARIDALA menus, buttons, and pages.') {
+  throw new Error('The language description was not translated');
+}
+if (window.document.querySelector('#settings-language-note').textContent !== 'This choice is saved in this browser and applied across all pages.') {
+  throw new Error('The language preference note was not translated');
+}
+if (window.document.querySelector('#tuteur-heading').textContent !== "Don't get stuck on a topic.") {
+  throw new Error('The AI Tutor page heading was not translated');
+}
+if (window.document.querySelector('#tuteur-copy').textContent !== "Ask your question and provide context. The AI Tutor turns it into an explanation, example, exercise, and solution to help you progress.") {
+  throw new Error('The AI Tutor page introduction was not translated');
+}
+if (window.document.querySelector('#notification-heading').textContent !== 'Notification center') {
+  throw new Error('The notifications heading was not translated');
+}
+if (window.document.querySelector('#games-heading').textContent !== 'Classic games') {
+  throw new Error('The classic games heading was not translated');
+}
+if (window.document.querySelector('#about-copy').textContent !== 'A Malagasy platform to learn, practice, and move forward together.') {
+  throw new Error('The public about-page introduction was not translated');
+}
+if (window.document.querySelector('#long-about-copy').textContent !== 'MITARIDALA brings together academic resources, practice, peer support, AI guidance, and virtual classrooms in one environment designed for students in Madagascar.') {
+  throw new Error('The full about-page introduction was not translated');
 }
 if (officialOption.textContent !== 'Mention') {
   throw new Error('Official academic reference values must remain unchanged in English');
@@ -304,4 +373,4 @@ if (mutable.textContent !== 'Déposer un document') {
 if (ariaButton.getAttribute('aria-label') !== 'Passer au thème sombre') {
   throw new Error('Returning to French did not restore the latest dynamic accessible label');
 }
-console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg', 'en'], mobile_selector_sync: true, english_fallback: true, dynamic: true, ai_content_protected: true }));
+console.log(JSON.stringify({ ok: true, locales: ['fr', 'mg', 'en'], settings_selector: true, english_fallback: true, dynamic: true, ai_content_protected: true }));

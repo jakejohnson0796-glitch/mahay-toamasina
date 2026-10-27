@@ -174,8 +174,7 @@ main.main-clair-pleine-largeur {
 
 .tb-sidebar-compte,
 .tb-menu-compte,
-.tb-toggle-theme,
-.tb-sidebar-langue {
+.tb-toggle-theme {
   border-radius: 0.9rem;
 }
 
@@ -494,7 +493,7 @@ button[aria-busy="true"],
 }
 
 /* Menus, popovers et contrôles superposés. */
-:is(.tb-menu-compte, .pwa-installation, .panneau-emojis-v2, .liste-suggestions-mentions, .tb-sidebar-langue-menu) {
+:is(.tb-menu-compte, .pwa-installation, .panneau-emojis-v2, .liste-suggestions-mentions) {
   border-color: var(--content-border);
   border-radius: 1rem;
   background-color: var(--content-surface);
@@ -647,72 +646,88 @@ button[aria-busy="true"],
   }
 }
 
-
-/* Choix de langue toujours visible dans l'en-tête mobile, même avant l'ouverture du menu latéral. */
-.mobile-langue-visuellement-cache {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+/* Réglage de langue dans Compte > Sécurité et profil. */
+.ops-language-settings {
+  display: grid;
+  gap: .8rem;
+  align-content: start;
 }
 
-.mobile-entete-app .selecteur-langue-mobile {
-  display: none;
+.ops-language-settings-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  min-width: 0;
 }
 
-@media (max-width: 768px) {
-  .mobile-entete-app .selecteur-langue-mobile {
-    display: block;
-    flex: 0 0 auto;
-    width: clamp(4.65rem, 22vw, 5.7rem);
-    min-width: 4.65rem;
-    max-width: 5.7rem;
-    min-height: 2.15rem;
-    margin-left: auto;
-    padding: .32rem .25rem .32rem .4rem;
-    border: 1px solid var(--content-border);
-    border-radius: .65rem;
-    background: var(--content-surface);
-    color: var(--content-text);
-    font: inherit;
-    font-size: .72rem;
-    font-weight: 700;
-    line-height: 1.15;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  }
-
-  .mobile-entete-app .selecteur-langue-mobile:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--primary) 55%, transparent);
-    outline-offset: 2px;
-  }
-
-  .mobile-entete-app > a:first-child {
-    flex: 0 1 auto;
-    max-width: clamp(5rem, 30vw, 8rem);
-  }
+.ops-language-settings-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2.55rem;
+  width: 2.55rem;
+  height: 2.55rem;
+  border: 1px solid var(--content-border);
+  border-radius: .85rem;
+  background: color-mix(in srgb, var(--primary) 9%, var(--content-surface));
+  font-size: 1.25rem;
 }
 
-@media (max-width: 420px) {
-  .mobile-entete-app .selecteur-langue-mobile {
-    width: 4.55rem;
-    min-width: 4.55rem;
-    padding-left: .3rem;
-    font-size: .68rem;
-  }
-
-  .mobile-entete-app-avatar span {
-    display: none;
-  }
+.ops-language-settings-heading > div {
+  min-width: 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .mobile-entete-app .selecteur-langue-mobile {
-    scroll-behavior: auto;
-    transition: none;
+.ops-language-settings-heading h2 {
+  margin: 0 0 .25rem;
+}
+
+.ops-language-settings .ops-language-settings-heading p,
+.ops-language-settings .ops-language-settings-note {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.ops-language-settings label {
+  display: block;
+  margin: .15rem 0 -.35rem;
+  color: var(--content-text);
+  font-weight: 700;
+  font-size: .9rem;
+}
+
+.ops-language-settings select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.85rem;
+  padding: .65rem .8rem;
+  border: 1px solid var(--content-border);
+  border-radius: .8rem;
+  background: var(--content-surface);
+  color: var(--content-text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.ops-language-settings select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .ops-language-settings {
+    gap: .7rem;
+  }
+
+  .ops-language-settings-icon {
+    flex-basis: 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: .75rem;
+  }
+
+  .ops-language-settings label,
+  .ops-language-settings select {
+    font-size: .88rem;
   }
 }
