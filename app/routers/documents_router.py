@@ -1286,6 +1286,7 @@ def consulter_fiche_revision_document(
             "fiche_revision_document": fiche,
             "fiche_contenu": contenu,
             "fiche_sources": sources,
+            "fiche_validee": str(getattr(document, "fiche_validation_statut", "")) == "validee",
         },
     )
 
