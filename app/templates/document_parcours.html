@@ -106,7 +106,7 @@
       </div>
     </div>
     {% if request.query_params.get("erreur") == "fiche_a_verifier" %}
-      <p class="ai-panel" role="status">La fiche doit être vérifiée avant d'utiliser le Quiz IA ou le Tuteur contextualisé.</p>
+      <p class="ai-panel" role="status">La vérification du résumé reste nécessaire pour le Tuteur contextualisé ; le Quiz IA peut être lancé directement depuis le document source approuvé.</p>
     {% elif request.query_params.get("erreur") == "confirmation_requise" %}
       <p class="ai-panel" role="alert">Coche les deux confirmations après avoir comparé la fiche au document original.</p>
     {% elif request.query_params.get("erreur") == "fiche_indisponible" %}
