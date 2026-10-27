@@ -299,6 +299,29 @@ def generer_questions_geographie():
     return resultat
 
 
+def generer_enigmes_sequences():
+    """Crée 1 200 suites logiques à règle simple et correction déterministe."""
+    resultat = []
+    for premier in range(1, 81):
+        for pas in range(2, 17):
+            suite = [premier + pas * index for index in range(4)]
+            reponse = premier + pas * 4
+            choix, bonne = _choix_numeriques(reponse, premier * 809 + pas * 31)
+            difficulte = "facile" if pas <= 6 else ("moyen" if pas <= 11 else "difficile")
+            resultat.append(_q(
+                f"enigme-suite-arithmetique-{premier:02d}-{pas:02d}",
+                "Logique",
+                f"Quelle valeur complète la suite : {', '.join(map(str, suite))}, … ?",
+                choix,
+                bonne,
+                f"On ajoute {pas} à chaque terme. Le nombre suivant est {suite[-1]} + {pas} = {reponse}.",
+                difficulte,
+                "enigme",
+            ))
+    return resultat
+
+
+ENIGMES.extend(generer_enigmes_sequences())
 QUESTIONS.extend(ENIGMES)
 QUESTIONS.extend(generer_questions_calcul())
 QUESTIONS.extend(generer_questions_geographie())
