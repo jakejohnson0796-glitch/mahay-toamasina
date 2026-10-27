@@ -8,33 +8,51 @@ puis vérifie l'idempotence et une recherche HTTP réelle dans /cercles.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from datetime import datetime
 import json
 import os
 from pathlib import Path
 import re
+import secrets
+from types import SimpleNamespace
 import time
 import unicodedata
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import or_
 from sqlmodel import Session, select, func
 
 from app.main import app
 from app.models import (
     CercleEtude,
     Domaine,
+    Document,
     Faculte,
+    FicheRevisionDocument,
     Filiere,
     Mention,
     MatiereScolaire,
     NiveauScolaire,
+    Notification,
     OptionScolaire,
     ProgrammeMatiereScolaire,
+    ProgressionNotion,
     ReferentielScolaire,
     ProgrammeUniversitaire,
+    RoleUtilisateur,
+    StatutDocument,
+    StatutFicheRevisionDocument,
+    StatutTacheIA,
+    TacheIA,
+    TypeDocument,
+    TypeNotification,
     Universite,
     Utilisateur,
 )
+from app import ai_queue, ai_worker, course_revision
+from app.routers import documents_router
 from scripts.import_academic_data import importer
 
 
@@ -728,3 +746,337 @@ def test_postgres_duplicate_unique_code_indexes_are_removed():
         "Les contraintes UNIQUE protégées ne correspondent pas aux attentes : "
         f"attendu={sorted(expected)}, obtenu={sorted(actual)}"
     )
+
+
+@pytest.mark.skipif(
+    not os.environ.get("DATABASE_URL", "").startswith(("postgresql://", "postgresql+psycopg2://")),
+    reason="Parcours complet fiche documentaire réservé à PostgreSQL",
+)
+def test_postgres_fiche_revision_de_approbation_a_export_prive_personnalise(monkeypatch):
+    """Exerce le parcours critique sur PostgreSQL sans appel IA ni fichier réel."""
+    from app.database import engine
+
+    suffixe = str(int.from_bytes(secrets.token_bytes(6), "big"))[-10:]
+    reference = f"TEST-FICHE-E2E-{suffixe}"
+    telephones = [f"034{suffixe}", f"032{suffixe}", f"033{suffixe}"]
+    ids_utilisateurs = []
+    document_id = None
+    source_texte = (
+        "Matrices et déterminants. Une matrice est un tableau rectangulaire de coefficients. "
+        "Le déterminant d'une matrice carrée permet notamment d'étudier son inversibilité. "
+        "Pour une matrice deux par deux, le déterminant se calcule par ad moins bc. "
+        "Le produit AB existe lorsque le nombre de colonnes de A égale le nombre de lignes de B. "
+        "On peut utiliser des exemples corrigés pour vérifier les calculs. "
+    ) * 3
+
+    contenu_fiche = {
+        "resume": "Le cours présente les matrices, les déterminants et les produits matriciels.",
+        "objectifs": ["Reconnaître les dimensions d'une matrice", "Calculer un déterminant", "Vérifier un produit matriciel"],
+        "notions": [
+            {"titre": "Matrice", "explication": "Une matrice est un tableau rectangulaire de coefficients.", "exemple": "Une matrice 2 × 2 a quatre coefficients."},
+            {"titre": "Déterminant", "explication": r"Pour une matrice 2 × 2, \(\det(A)=ad-bc\).", "exemple": "Pour [[2,1],[3,4]], le déterminant vaut 5."},
+            {"titre": "Produit matriciel", "explication": "Les dimensions internes doivent coïncider.", "exemple": "Une matrice 2 × 3 peut multiplier une matrice 3 × 1."},
+        ],
+        "erreurs_frequentes": [
+            {"erreur": "Inverser les termes du déterminant", "pourquoi": "Le signe peut changer.", "comment_eviter": "Appliquer la formule ad - bc dans le même ordre."},
+        ],
+        "outils_a_retenir": [
+            {"titre": "Déterminant 2 × 2", "contenu": r"\(ad-bc\)", "explication": "Multiplier les termes diagonaux puis soustraire les deux produits."},
+        ],
+        "exercices": [
+            {"enonce": "Calcule le déterminant de [[2,1],[3,4]].", "difficulte": "Facile", "indice": "Calcule ad - bc.", "correction": "2×4 - 1×3 = 5.", "notion": "Déterminant"},
+            {"enonce": "Vérifie les dimensions avant le produit AB.", "difficulte": "Moyen", "indice": "Compare les dimensions internes.", "correction": "Les colonnes de A doivent égaler les lignes de B.", "notion": "Produit matriciel"},
+            {"enonce": "Que signifie un déterminant nul ?", "difficulte": "Moyen", "indice": "Pense à l'inversibilité.", "correction": "La matrice carrée n'est pas inversible.", "notion": "Déterminant"},
+        ],
+        "points_a_retravailler": ["Vérifier les dimensions avant un produit matriciel."],
+        "plan_revision": [
+            {"moment": "Aujourd'hui", "action": "Revoir la notion prioritaire puis refaire un exercice sans regarder l'indice."},
+            {"moment": "Dans 3 jours", "action": "Répondre à un quiz avec des questions nouvelles."},
+            {"moment": "Dans 7 jours", "action": "Vérifier la rétention avec une application différente."},
+        ],
+        "auto_evaluation": [
+            {"question": "Quelle formule calcule le déterminant 2 × 2 ?", "reponse": "ad - bc."},
+            {"question": "Quelle condition vérifie-t-on pour le produit AB ?", "reponse": "Le nombre de colonnes de A égale le nombre de lignes de B."},
+        ],
+        "limites_sources": "Fiche générée depuis le texte extrait du cours approuvé.",
+    }
+
+    try:
+        with Session(engine) as session:
+            filiere = session.exec(
+                select(Filiere).where(Filiere.niveau == "M1").limit(1)
+            ).first()
+            assert filiere is not None, "Le smoke PostgreSQL doit avoir synchronisé une filière M1."
+
+            admin = Utilisateur(
+                nom=f"Admin smoke fiche {suffixe}",
+                telephone=telephones[0],
+                mot_de_passe_hash="smoke-only",
+                role=RoleUtilisateur.ADMIN,
+            )
+            etudiant_a = Utilisateur(
+                nom=f"Étudiante A smoke {suffixe}",
+                telephone=telephones[1],
+                mot_de_passe_hash="smoke-only",
+                role=RoleUtilisateur.ETUDIANT,
+                niveau="M1",
+            )
+            etudiant_b = Utilisateur(
+                nom=f"Étudiant B smoke {suffixe}",
+                telephone=telephones[2],
+                mot_de_passe_hash="smoke-only",
+                role=RoleUtilisateur.ETUDIANT,
+                niveau="M1",
+            )
+            session.add_all([admin, etudiant_a, etudiant_b])
+            session.commit()
+            session.refresh(admin)
+            session.refresh(etudiant_a)
+            session.refresh(etudiant_b)
+            ids_utilisateurs.extend([admin.id, etudiant_a.id, etudiant_b.id])
+
+            document = Document(
+                reference=reference,
+                titre="Matrices et déterminants — scénario PostgreSQL",
+                matiere="Mathématiques",
+                type_document=TypeDocument.COURS,
+                annee=2026,
+                filiere_id=filiere.id,
+                portee_academique="universitaire",
+                uploader_id=etudiant_a.id,
+                chemin_fichier=f"/tmp/{reference}.pdf",
+                statut=StatutDocument.EN_ATTENTE,
+            )
+            session.add(document)
+            session.commit()
+            session.refresh(document)
+            document_id = document.id
+
+            session.add_all([
+                ProgressionNotion(
+                    utilisateur_id=etudiant_a.id,
+                    matiere="Mathématiques",
+                    niveau=filiere.niveau or "M1",
+                    notion="Déterminant",
+                    nb_questions=8,
+                    nb_reussites=2,
+                    nb_erreurs=6,
+                    score_maitrise=25,
+                    confiance_maitrise=30,
+                    maitrise_confirmee=False,
+                ),
+                ProgressionNotion(
+                    utilisateur_id=etudiant_b.id,
+                    matiere="Mathématiques",
+                    niveau=filiere.niveau or "M1",
+                    notion="Produit matriciel",
+                    nb_questions=10,
+                    nb_reussites=9,
+                    nb_erreurs=1,
+                    score_maitrise=88,
+                    confiance_maitrise=90,
+                    maitrise_confirmee=True,
+                ),
+            ])
+            session.commit()
+
+        notifications_file = []
+        monkeypatch.setattr(
+            ai_queue,
+            "notifier_tache",
+            lambda task_id: notifications_file.append(task_id) or True,
+        )
+        current = {"user": admin}
+        monkeypatch.setattr(
+            documents_router,
+            "utilisateur_courant",
+            lambda _request, _session: current["user"],
+        )
+
+        # 1. Approbation réelle via la route : la génération est mise en file,
+        # mais l'action d'administration ne fait aucun appel IA synchrone.
+        with Session(engine) as session:
+            response = documents_router.approuver_document(
+                SimpleNamespace(session={}), document_id, session, _csrf=None
+            )
+            assert response.status_code == 303
+            document = session.get(Document, document_id)
+            assert document.statut == StatutDocument.APPROUVE
+
+        with Session(engine) as session:
+            fiche = session.exec(
+                select(FicheRevisionDocument).where(FicheRevisionDocument.document_id == document_id)
+            ).first()
+            assert fiche is not None
+            assert fiche.statut == StatutFicheRevisionDocument.EN_ATTENTE
+            taches = session.exec(
+                select(TacheIA).where(
+                    TacheIA.type_tache == ai_queue.TYPE_FICHE_REVISION_DOCUMENT,
+                    TacheIA.fiche_revision_document_id == fiche.id,
+                )
+            ).all()
+            assert len(taches) == 1
+            task_id = taches[0].id
+            assert task_id in notifications_file
+
+        # 2. Le worker revendique puis traite la tâche durable. Seule la lecture
+        # du fichier et le fournisseur IA sont simulés ; la persistance finale
+        # et les transitions de la file restent réelles dans PostgreSQL.
+        @contextmanager
+        def faux_fichier(_reference):
+            yield Path(f"/tmp/{reference}.pdf")
+
+        contextes_generes = []
+        monkeypatch.setattr(course_revision, "ouvrir_fichier_local", faux_fichier)
+        monkeypatch.setattr(course_revision, "extraire_texte", lambda _path: source_texte)
+
+        def generer_fiche(contexte, mode_document=False):
+            contextes_generes.append((contexte, mode_document))
+            return json.loads(json.dumps(contenu_fiche, ensure_ascii=False))
+
+        monkeypatch.setattr(course_revision, "_generer_contenu_ia", generer_fiche)
+
+        tache = ai_queue.prendre_tache(task_id)
+        assert tache is not None
+        assert tache.statut == StatutTacheIA.EN_COURS
+        ai_worker.traiter_tache(tache)
+        ai_queue.terminer_tache(task_id)
+
+        with Session(engine) as session:
+            fiche = session.exec(
+                select(FicheRevisionDocument).where(FicheRevisionDocument.document_id == document_id)
+            ).one()
+            tache_finale = session.get(TacheIA, task_id)
+            assert tache_finale.statut == StatutTacheIA.TERMINEE
+            assert fiche.statut == StatutFicheRevisionDocument.TERMINEE
+            source_json_initiale = fiche.contenu_json
+            source = json.loads(source_json_initiale)
+            assert source["resume"] == contenu_fiche["resume"]
+            assert json.loads(fiche.sources_json)["reference"] == reference
+            assert contextes_generes and contextes_generes[0][1] is True
+            assert reference in contextes_generes[0][0]["source_document"]["reference"]
+            assert len(contextes_generes[0][0]["source_document"]["contenu_extrait"]) >= 250
+            assert session.exec(
+                select(func.count()).select_from(Notification).where(
+                    Notification.destinataire_id == etudiant_a_id,
+                    Notification.type_notification == TypeNotification.FICHE_REVISION_DOCUMENT_PRETE,
+                )
+            ).one() == 1
+
+        # 3. Le téléchargement anonyme est refusé avant lecture de la fiche.
+        current["user"] = None
+        with Session(engine) as session:
+            reponse_anonyme = documents_router.telecharger_fiche_revision_document(
+                SimpleNamespace(session={}), document_id, "pdf", session
+            )
+        assert reponse_anonyme.status_code == 303
+        assert reponse_anonyme.headers["location"] == "/connexion"
+
+        # 4. L'affichage construit un profil privé pour chaque compte sans muter
+        # le contenu source commun sauvegardé dans PostgreSQL.
+        contextes_page = []
+        monkeypatch.setattr(
+            documents_router,
+            "templates",
+            SimpleNamespace(
+                TemplateResponse=lambda _request, _template, contexte:
+                    (contextes_page.append(contexte) or SimpleNamespace(status_code=200))
+            ),
+        )
+        for utilisateur_id in ids_utilisateurs[1:]:
+            with Session(engine) as session:
+                current["user"] = session.get(Utilisateur, utilisateur_id)
+                response = documents_router.consulter_fiche_revision_document(
+                    SimpleNamespace(session={}), document_id, session
+                )
+                assert response.status_code == 200
+
+        profils_page = [c["fiche_contenu"]["profil_personnalise"] for c in contextes_page]
+        assert profils_page[0]["priorites"][0]["notion"] == "Déterminant"
+        assert profils_page[1]["priorites"][0]["notion"] == "Produit matriciel"
+        assert profils_page[0]["priorites"][0]["notion"] != profils_page[1]["priorites"][0]["notion"]
+
+        # 5. PDF et DOCX doivent recevoir le profil propre au compte connecté
+        # et renvoyer des pièces jointes réellement valides.
+        exports = []
+        generer_pdf_original = course_revision.generer_pdf
+        generer_docx_original = course_revision.generer_docx
+
+        def pdf_personnalise(fiche, cours, seance, nom_etudiant):
+            exports.append(("pdf", nom_etudiant, fiche["profil_personnalise"]["priorites"][0]["notion"]))
+            return generer_pdf_original(fiche, cours, seance, nom_etudiant)
+
+        def docx_personnalise(fiche, cours, seance, nom_etudiant):
+            exports.append(("docx", nom_etudiant, fiche["profil_personnalise"]["priorites"][0]["notion"]))
+            return generer_docx_original(fiche, cours, seance, nom_etudiant)
+
+        monkeypatch.setattr(course_revision, "generer_pdf", pdf_personnalise)
+        monkeypatch.setattr(course_revision, "generer_docx", docx_personnalise)
+
+        for utilisateur_id in ids_utilisateurs[1:]:
+            for format_fichier, prefixe in (("pdf", b"%PDF"), ("docx", b"PK")):
+                with Session(engine) as session:
+                    current["user"] = session.get(Utilisateur, utilisateur_id)
+                    response = documents_router.telecharger_fiche_revision_document(
+                        SimpleNamespace(session={}), document_id, format_fichier, session
+                    )
+                assert response.status_code == 200
+                assert response.body.startswith(prefixe)
+                assert response.headers["cache-control"] == "private, no-store"
+                assert response.headers["x-content-type-options"] == "nosniff"
+
+        assert ("pdf", f"Étudiante A smoke {suffixe}", "Déterminant") in exports
+        assert ("docx", f"Étudiante A smoke {suffixe}", "Déterminant") in exports
+        assert ("pdf", f"Étudiant B smoke {suffixe}", "Produit matriciel") in exports
+        assert ("docx", f"Étudiant B smoke {suffixe}", "Produit matriciel") in exports
+
+        with Session(engine) as session:
+            fiche = session.exec(
+                select(FicheRevisionDocument).where(FicheRevisionDocument.document_id == document_id)
+            ).one()
+            assert fiche.contenu_json == source_json_initiale
+
+    finally:
+        # Le smoke ne laisse aucune donnée de test dans la base utilisée par la CI.
+        with Session(engine) as session:
+            document = session.exec(
+                select(Document).where(Document.reference == reference)
+            ).first()
+            fiche = None
+            if document is not None:
+                fiche = session.exec(
+                    select(FicheRevisionDocument).where(
+                        FicheRevisionDocument.document_id == document.id
+                    )
+                ).first()
+            if fiche is not None:
+                for tache in session.exec(
+                    select(TacheIA).where(
+                        TacheIA.fiche_revision_document_id == fiche.id
+                    )
+                ).all():
+                    session.delete(tache)
+                session.delete(fiche)
+            if document is not None:
+                session.delete(document)
+            if ids_utilisateurs:
+                for progression in session.exec(
+                    select(ProgressionNotion).where(
+                        ProgressionNotion.utilisateur_id.in_(ids_utilisateurs)
+                    )
+                ).all():
+                    session.delete(progression)
+                for notification in session.exec(
+                    select(Notification).where(
+                        or_(
+                            Notification.destinataire_id.in_(ids_utilisateurs),
+                            Notification.acteur_id.in_(ids_utilisateurs),
+                        )
+                    )
+                ).all():
+                    session.delete(notification)
+                for utilisateur in session.exec(
+                    select(Utilisateur).where(Utilisateur.id.in_(ids_utilisateurs))
+                ).all():
+                    session.delete(utilisateur)
+            session.commit()
