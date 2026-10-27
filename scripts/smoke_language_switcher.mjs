@@ -18,7 +18,9 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
   <p id="tuteur-copy">Pose ta question avec ton contexte. Le Tuteur IA transforme ensuite la question en explication, exemple, exercice et correction pour t'aider à progresser.</p>
   <h2 id="notification-heading">Centre de notifications</h2>
   <h2 id="games-heading">Les jeux classiques</h2>
+  <h2 id="circles-heading">À l’échelle de Madagascar · Cercles d’étude</h2>
   <p id="about-copy">Une plateforme malgache pour apprendre, pratiquer et avancer ensemble.</p>
+  <p id="long-about-copy">MITARIDALA rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.</p>
   <input id="phone" placeholder="Numéro de téléphone" value="0341234567">
   <p id="dynamic">Pas encore de compte ?</p>
   <button id="dynamic-aria" aria-label="Passer au thème clair">Thème</button>
@@ -40,6 +42,21 @@ await new Promise((resolve) => setTimeout(resolve, 0));
 const select = window.document.querySelector('#select-langue-parametres');
 const lang = window.document.documentElement.getAttribute('lang');
 if (lang !== 'mg' || select.value !== 'mg') throw new Error('Saved language preference was not restored');
+if (window.document.querySelector('#settings-language-heading').textContent !== "Fitenin'ny interface") {
+  throw new Error('The settings heading was not translated to Malagasy');
+}
+if (window.document.querySelector('#settings-language-label').textContent !== "Fiteny tiana hampiasaina") {
+  throw new Error('The language setting label was not translated to Malagasy');
+}
+if (window.document.querySelector('#settings-language-description').textContent !== "Tehirizina ao amin'ity navigateur ity ny safidinao ary ampiharina amin'ny pejy rehetra.") {
+  throw new Error('The settings description was not translated to Malagasy');
+}
+if (window.document.querySelector('#games-heading').textContent !== 'Ny lalao mahazatra') {
+  throw new Error('The classical games heading was not translated to Malagasy');
+}
+if (window.document.querySelector('#circles-heading').textContent !== "Manerana an'i Madagasikara · Faribolana fianarana") {
+  throw new Error('The study circles heading was not translated to Malagasy');
+}
 if (window.document.querySelector('#navigation').textContent !== 'Fijerena ankapobeny') {
   throw new Error('Navigation did not switch to Malagasy');
 }
@@ -255,7 +272,7 @@ if (ariaButton.getAttribute('aria-label') !== 'Hampiasa endrika maizina') {
   throw new Error('Dynamically changed accessible labels were not translated');
 }
 
-// L'anglais doit être utilisable depuis le sélecteur mobile et synchroniser les deux contrôles.
+// L'anglais doit être sélectionnable depuis les paramètres du compte.
 select.value = 'en';
 select.dispatchEvent(new window.Event('change', { bubbles: true }));
 await new Promise((resolve) => setTimeout(resolve, 0));
@@ -294,6 +311,9 @@ if (window.document.querySelector('#games-heading').textContent !== 'Classic gam
 }
 if (window.document.querySelector('#about-copy').textContent !== 'A Malagasy platform to learn, practice, and move forward together.') {
   throw new Error('The public about-page introduction was not translated');
+}
+if (window.document.querySelector('#long-about-copy').textContent !== 'MITARIDALA brings together academic resources, practice, peer support, AI guidance, and virtual classrooms in one environment designed for students in Madagascar.') {
+  throw new Error('The full about-page introduction was not translated');
 }
 if (officialOption.textContent !== 'Mention') {
   throw new Error('Official academic reference values must remain unchanged in English');
