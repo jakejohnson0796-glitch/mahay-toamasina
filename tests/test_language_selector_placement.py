@@ -57,12 +57,15 @@ def test_english_dictionary_covers_core_ui_and_preserves_scientific_content():
     english = script.split("var TRADUCTIONS_EN = Object.freeze({", 1)[1].split("\n  });", 1)[0]
     keys = re.findall(r'^\s*"((?:\\.|[^"\\])*)"\s*:', english, re.MULTILINE)
 
-    assert len(keys) >= 300
+    assert len(keys) >= 600
+    assert len(keys) == len(set(keys)), "English dictionary contains duplicate keys"
     for source, translated in {
         '"Tableau de bord"': '"Dashboard"',
         '"Tuteur IA"': '"AI Tutor"',
         '"Lancer le quiz"': '"Start quiz"',
         '"Mes cercles"': '"My study circles"',
+        '"Sécurité du compte"': '"Account security"',
+        '"Salle de classe"': '"Classroom"',
         '"Vérification facultative du résumé IA"': '"Optional AI summary review"',
     }.items():
         assert source + ": " + translated in english
@@ -84,4 +87,6 @@ def test_learning_check_in_has_complete_english_texts():
 
     assert french_keys - english_keys == set()
     assert 'savedLanguage === "mg" || savedLanguage === "en"' in script
+    for key in ("comprendre", "pratiquer", "verifier", "terminee"):
+        assert key + ":" in english
     assert 'return value == null ? key : value;' in script
