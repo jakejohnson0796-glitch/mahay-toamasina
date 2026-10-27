@@ -12,6 +12,7 @@ from sqlalchemy import update as sql_update
 from sqlmodel import Session, select
 
 from ..database import get_session
+from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
@@ -29,7 +30,7 @@ from ..conditions_legales import VERSION_CONDITIONS
 
 
 def _ip_client(request: Request) -> str:
-    return request.client.host if request.client else "inconnu"
+    return adresse_ip_client(request)
 
 
 def _redirection_apres_connexion(utilisateur: Utilisateur) -> RedirectResponse:
