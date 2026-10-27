@@ -72,8 +72,6 @@ def _utilisateur_membre_cercle(session: Session, cercle_id: Optional[int], utili
     # Les documents de la bibliothèque générale ne sont rattachés à aucun cercle.
     if cercle_id is None:
         return True
-    if cercle_id is None:
-        return True
     return session.exec(
         select(MembreCercle).where(
             MembreCercle.cercle_id == cercle_id,
