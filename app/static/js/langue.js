@@ -3674,7 +3674,7 @@
   // Fallback par fragments pour les libellés ou phrases nouvelles qui contiennent
   // des termes connus. Le dictionnaire exact est toujours prioritaire.
   function echapperRegex(texte) {
-    return String(texte).replace(/[-/\\^$*+?.()|[\]{}]/g, "\\  function traduireChaineAnglaise(source) {");
+    return String(texte).replace(/[.*+?^$()|[\]\\]/g, "\\$&");
   }
 
   var CLES_EN_FRAGMENTS = Object.keys(TRADUCTIONS_EN)
