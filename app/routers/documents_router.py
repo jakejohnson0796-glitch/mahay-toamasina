@@ -402,7 +402,9 @@ async def detect_document_automatique(
     if suffixe not in extensions:
         return JSONResponse({"ok": False, "erreur": "Format de fichier non pris en charge."}, status_code=400)
 
-    contenu = await fichier.read()
+    # Ne conserve jamais plus que la limite + 1 octet en mémoire, même si
+    # la requête contourne la limite HTTP côté proxy.
+    contenu = await fichier.read(20 * 1024 * 1024 + 1)
     if not contenu:
         return JSONResponse({"ok": False, "erreur": "Le fichier est vide."}, status_code=400)
     if len(contenu) > 20 * 1024 * 1024:
