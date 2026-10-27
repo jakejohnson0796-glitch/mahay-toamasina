@@ -294,6 +294,9 @@
     <form method="post" action="/quiz/cible" class="ai-inline-action">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
       <input type="hidden" name="progression_id" value="{{ session_tuteur.progression_id }}">
+      {% if session_tuteur.document_id %}
+      <input type="hidden" name="document_id" value="{{ session_tuteur.document_id }}">
+      {% endif %}
       {% if mission_adaptative and mission_adaptative.statut == "active" %}
       <input type="hidden" name="mission_id" value="{{ mission_adaptative.id }}">
       {% endif %}
