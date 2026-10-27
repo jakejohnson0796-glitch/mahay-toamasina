@@ -1,91 +1,93 @@
 # TODO — Feuille de route MITARIDALA
 
-**Mise à jour : 27 octobre 2026**  
-**Référence :** branche principale après les améliorations des fiches de révision, de la file IA et de l’interface globale.
+**Dernière revue : 27 octobre 2026**  
+**Référence de sécurité livrée :** commit applicatif 19efd4cf1b06ac35722373784b6325a2b4ebd94e  
+**CI correspondante :** [GitHub Actions — résultats sur main](https://github.com/jakejohnson0796-glitch/mahay-toamasina/actions/runs/40558855645)  
+**Production :** [service MITARIDALA sur Render](https://dashboard.render.com/web/srv-db9d7q5g1s2s7389bspg)
 
-Ce document est le backlog de référence du dépôt. Les cases cochées correspondent à des travaux déjà intégrés et couverts par les contrôles indiqués. Les cases ouvertes décrivent des améliorations à réaliser ou à approfondir ; elles ne signifient pas automatiquement qu’une régression est actuellement observée.
+Ce fichier est le backlog de travail. Les cases cochées indiquent les changements déjà livrés et les vérifications observées. Les cases ouvertes représentent les prochains contrôles ou améliorations ; elles ne signifient pas nécessairement qu'un défaut est actuellement reproduit.
 
 ## 1. Livré et vérifié
 
-- [x] Génération asynchrone des fiches de révision depuis les documents de cours approuvés, avec accès depuis le hub d’apprentissage.
-- [x] Génération de fiches individuelles après une séance de classe virtuelle, avec téléchargement PDF et DOCX et contrôle d’accès côté serveur.
-- [x] Amélioration du suivi des tâches IA : PostgreSQL reste la source durable, avec voie de récupération lorsque la notification Redis ne suffit pas.
-- [x] Clarification des états et actions liés aux fiches de révision pour éviter de confondre une fiche en attente avec une fiche téléchargeable.
-- [x] Ajout d’une couche globale de finition visuelle après les styles métier ; harmonisation des contrôles, du focus clavier, des états, du mode sombre et des préférences de mouvement réduit.
-- [x] Smoke test responsive sur sept familles de pages, onze largeurs d’écran de 265 à 1440 px et thèmes clair/sombre.
-- [x] Couverture navigateur des principaux contrats du rendu IA, du sélecteur de langue, de la hiérarchie des cercles et de la voix du Tuteur.
-- [x] CI avec tests applicatifs isolés par fichier et job PostgreSQL dédié aux migrations et au démarrage.
-- [x] Possibilité pour l’administration de corriger les métadonnées d’un document, avec revalidation des éléments pédagogiques concernés.
+- [x] **Limites des requêtes HTTP.** Middleware exécuté avant le parsing des formulaires : 2 MiB par défaut, 21 MiB pour un document ou devoir unique, 102 MiB pour le dépôt multiple prévu et 6 MiB pour une photo de profil. Les limites incluent une marge multipart et complètent les limites de taille des fichiers.
+- [x] **Lectures de fichiers bornées.** Lecture limitée à la taille maximale autorisée plus un octet afin de détecter un dépassement sans charger un fichier arbitrairement volumineux en mémoire.
+- [x] **Mode de production plus strict.** Sur Render, la configuration doit être explicitement en production ; le démarrage refuse la clé de session de démonstration.
+- [x] **Helper commun d'adresse IP anti-abus.** Les routes sensibles ont été regroupées autour d'une fonction de validation d'adresse IP. La confiance accordée aux en-têtes de proxy doit encore être confirmée dans l'environnement réel (voir P0).
+- [x] **Tests de régression de sécurité.** Tests des limites du corps HTTP, des en-têtes IP et du garde-fou de configuration.
+- [x] **CI complète verte pour le code fusionné.** Les jobs **test** et **postgres-smoke** ont réussi, y compris compilation, vérification du contrat Render, smoke tests navigateur et migrations PostgreSQL rejouées.
+- [x] **Déploiement Render du commit applicatif de sécurité.** Déploiement marqué live ; l'application a démarré, les migrations PostgreSQL étaient appliquées et /health a répondu 200 OK.
+- [x] **Fiches de révision persistées et personnalisées.** Le carnet source lié au cours ne doit pas être muté par la personnalisation d'un étudiant ; les exports et téléchargements doivent rester soumis aux contrôles d'accès.
+- [x] **Documentation actualisée.** Le README décrit les fonctionnalités, l'architecture, le démarrage, la configuration, les contrôles, le déploiement et les limites du catalogue. Ce TODO distingue les travaux livrés des chantiers encore ouverts.
 
-**Références de livraison :** PR [#247](https://github.com/jakejohnson0796-glitch/mahay-toamasina/pull/247), [#248](https://github.com/jakejohnson0796-glitch/mahay-toamasina/pull/248) et [#249](https://github.com/jakejohnson0796-glitch/mahay-toamasina/pull/249). La dernière amélioration globale d’interface correspond au commit 07c8dd117bd26d1528af1c8ffd07c7329f09b3d8.
+**Historique de la livraison de sécurité :**
+- [PR #301](https://github.com/jakejohnson0796-glitch/mahay-toamasina/pull/301)
+- [CI de la PR avant fusion](https://github.com/jakejohnson0796-glitch/mahay-toamasina/actions/runs/40556724055)
+- [CI du commit fusionné](https://github.com/jakejohnson0796-glitch/mahay-toamasina/actions/runs/40558855645)
 
-## 2. Priorité P0 — Fiabilité des parcours critiques
+## 2. Priorité P0 — Sécurité et fiabilité en production
 
-Ces tâches doivent passer avant les nouvelles fonctionnalités ambitieuses.
+Ces points passent avant les nouvelles fonctionnalités visibles.
 
-- [x] **Ajouter un scénario d’intégration PostgreSQL des fiches de cours.** Le smoke couvre un document en attente → approbation administrative → création d’une tâche durable unique → traitement par le worker → fiche persistée et route de consultation → exports PDF/DOCX privés. Le dépôt de fichier et ses contrôles restent également couverts par les tests de dépôt dédiés.
-- [ ] **Étendre ce scénario aux cas limites de sécurité et de reprise.** Vérifier qu’un document en attente ou rejeté ne produit pas de fiche visible, qu’un autre étudiant ne peut pas télécharger une fiche non autorisée, que des tâches doublonnées ne créent pas de résultats incohérents et que les métadonnées modifiées invalident la bonne fiche.
-- [ ] **Auditer la visibilité opérationnelle de la file IA.** Vérifier que les diagnostics permettent de repérer une tâche trop ancienne, ses tentatives, son dernier état et une erreur exploitable sans exposer de secrets ; compléter l’interface ou les alertes là où il manque une information.
-- [ ] **Standardiser le contrôle après déploiement.** Vérifier les endpoints /health et /ready, les migrations, le démarrage du worker, les erreurs récentes et le téléchargement d’une fiche depuis un vrai navigateur ; consigner le SHA déployé et garder le commit de retour arrière disponible.
-- [ ] **Stabiliser les scénarios de vérification IA qui échouent à juste titre.** Construire des tests déterministes pour séparer une erreur réelle de correction, une sortie JSON invalide, des choix de quiz identiques et un seuil de confiance trop strict. Ne pas masquer une erreur pédagogique pour faire passer le test.
-- [x] **Valider en CI la personnalisation des fiches documentaires par étudiant.** Le smoke PostgreSQL compare deux comptes ayant des progressions distinctes, confirme l’absence de mutation de la fiche source, vérifie les priorités affichées et celles transmises aux exports PDF/DOCX, ainsi que le refus de téléchargement anonyme.
+- [ ] **Confirmer la frontière de confiance des IP proxy.** Ne pas considérer un en-tête HTTP tel que CF-Ray ou CF-Connecting-IP comme preuve suffisante à lui seul : un client peut ajouter des en-têtes s'il atteint directement le service. Confirmer quel proxy est réellement devant Render, quels en-têtes il remplace, et quel est le comportement par accès direct au sous-domaine Render. Ajouter un test qui représente cette chaîne réelle ; corriger le helper si l'origine ne peut pas être authentifiée.
+- [ ] **Tester les limites HTTP en conditions réalistes.** Couvrir un fichier de taille autorisée, un fichier trop grand, un corps multipart trop grand, un Content-Length mensonger ou absent et un corps transmis en plusieurs fragments. Vérifier une réponse 413 propre, l'absence de traitement partiel et l'absence d'effet de bord sur les formulaires ordinaires.
+- [ ] **Verrouiller les téléchargements de documents de bout en bout.** Tester l'accès anonyme, le compte connecté sans permission, le membre autorisé d'un cercle, le non-membre, le document en attente/rejeté, les URL signées expirées et les chemins directs de stockage. Confirmer que les fichiers privés ne sont pas accessibles par une URL publique durable.
+- [ ] **Auditer les autorisations sensibles.** Revoir les routes, les API, les WebSockets, les fonctions d'administration, les exports PDF/DOCX et les actions sur les comptes : chaque contrôle doit être fait côté serveur et tester au minimum les rôles non autorisés.
+- [ ] **Rendre les tâches IA bloquées visibles.** Exposer dans le diagnostic administratif l'âge de la tâche, le nombre de tentatives, le dernier statut et une erreur exploitable, sans secret ni contenu privé. Tester reprise après redémarrage, doublons, tâche échouée et nouvelle tentative.
+- [ ] **Standardiser le contrôle post-déploiement.** Conserver le SHA déployé, vérifier /health et /ready, l'état de la base, les migrations, l'initialisation du référentiel, le worker IA, les journaux récents et au moins un parcours touché depuis un vrai navigateur.
+- [ ] **Documenter et tester le retour arrière.** Identifier le dernier déploiement connu comme sain ; vérifier les conséquences d'un retour arrière sur les migrations et les fichiers créés après la release.
 
-## 3. Priorité P1 — Qualité pédagogique, mobile et cohérence des données
+## 3. Priorité P1 — Qualité de l'apprentissage
 
-- [ ] **Créer une matrice de régression du rendu scientifique.** Inclure mathématiques, physique, chimie, informatique et comptabilité : fractions, racines, exposants, matrices, unités, réactions chimiques, tableaux et écritures comptables. Tester le LaTeX brut, les délimiteurs mal formés, les retours à la ligne et les textes mêlant explications et formules.
-- [ ] **Élargir les tests navigateur de parcours complets.** Couvrir connexion, recherche, dépôt/modération, accès à une fiche, quiz/correction, Tuteur IA, cercles/chat et classe virtuelle sur des largeurs mobiles et de bureau. Vérifier aussi les actions tactiles et les libellés des boutons.
-- [ ] **Faire une revue fonctionnelle du jeu cérébral.** Contrôler que les illustrations correspondent au thème de la question, que les animations ne masquent pas la consigne, que la pause et le choix de réduire les mouvements fonctionnent et que le jeu reste utilisable au clavier et sur petit écran.
-- [ ] **Recalculer l’audit du référentiel académique et des cercles sans offre active.** Classer les cas (données de référentiel manquantes, offre ancienne, cercle volontairement communautaire) avant toute désactivation en masse ; privilégier un rapport de revue et une validation humaine.
-- [ ] **Valider le parcours complet OTP par e-mail.** Tester configuration, saisie du code, expiration, usage unique, limite de tentatives, erreur d’adresse ou SMTP indisponible et récupération utilisateur, sans recourir aux SMS payants.
-- [ ] **Vérifier la cohérence de la localisation.** Pour chaque page principale, contrôler la langue choisie, les messages d’erreur, les menus, les états vides et les dialogues. Conserver en français les éléments du référentiel qui doivent rester officiels.
+- [ ] **Réduire la répétition des quiz et jeux.** Instrumenter la répétition par compte, document, notion et période ; augmenter la variété des questions et distracteurs ; garder un contrôle pédagogique au lieu de répéter des questions reformulées superficiellement.
+- [ ] **Connecter les résultats à la prochaine action pédagogique.** Après un quiz, présenter les notions à retravailler et proposer un parcours court vers la fiche adaptée, le Tuteur IA et un exercice ciblé. Vérifier que l'étudiant, la tentative et le document source restent correctement associés.
+- [ ] **Créer une matrice complète LaTeX/KaTeX.** Tester algèbre, fractions, matrices, racines, exposants, limites, intégrales, unités, chimie, tableaux, code et comptabilité ; inclure les formules mêlées à du texte, les retours à la ligne et les délimiteurs invalides. Ne modifier ni le renderer ni les règles scientifiques dans un changement sans rapport.
+- [ ] **Durcir les fiches de révision en échec ou en reprise.** Tester document en attente/rejeté, extraction vide, modèle indisponible, limite de fournisseur, doublons de tâches, changement de matière/type et téléchargement par un autre étudiant. Un contenu absent ou incertain doit être signalé plutôt qu'inventé.
+- [ ] **Tester les fiches de séance de classe virtuelle.** Vérifier propriétaire, participants, source réelle disponible, personnalisation individuelle et exports PDF/DOCX. Lorsqu'il n'y a ni transcription ni note, la fiche ne doit pas prétendre résumer une séance non documentée.
+- [ ] **Achever la matrice des parcours navigateur.** Inscription, connexion, récupération du compte, sélection de langue, recherche, dépôt/modération, téléchargement autorisé, quiz/correction, Tuteur IA, cercles/chat, classe virtuelle, devoirs et fonctions administratives.
+- [ ] **Vérifier l'anglais, le français et le malgache sur toutes les vues.** Inclure menus, erreurs, dialogues, états vides, notifications, champs de formulaire et mobile ; garder les libellés officiels du référentiel dans la langue prescrite.
 
-## 4. Priorité P2 — Accessibilité, performances et exploitation
+## 4. Priorité P1 — Référentiel, établissements et cercles
 
-- [ ] **Faire une passe d’accessibilité.** Contraste des thèmes clair/sombre, focus visible, ordre clavier, noms accessibles, annonces de statut, zoom et mode de contraste renforcé.
-- [ ] **Mesurer les performances sur mobile.** Examiner le poids CSS/JavaScript, les bibliothèques du rendu IA, les images du jeu cérébral, les requêtes répétées et le temps d’affichage des pages les plus fréquentées avant d’optimiser.
-- [ ] **Répéter une restauration de sauvegarde hors production.** Documenter la restauration PostgreSQL, la vérification des fichiers documentaires et les contrôles de cohérence avant de considérer le plan de reprise comme validé.
-- [ ] **Éviter les régressions de documentation.** Faire correspondre le README, le fichier .env.example, la configuration Render et la checklist de release ; toute variable retirée ou renommée doit être documentée.
-- [ ] **Organiser une revue périodique des dépendances.** Mettre à jour avec tests, vérifier les changements incompatibles et conserver un chemin de retour arrière plutôt que de mettre à jour toutes les dépendances sans validation.
+Le catalogue collège/lycée/université/ETFP doit rester sourcé et ne pas présenter des données partielles comme exhaustives.
 
-## Nouveau chantier structurant — collège, lycée et université
+- [ ] **Mettre à jour les sources scolaires officielles.** Contrôler les programmes et répartitions les plus récents disponibles, avec année, URL de preuve et date de vérification. Les documents 2024–2025 ne prouvent pas à eux seuls l'offre scolaire 2026–2027.
+- [ ] **Achever la revue nationale ETFP région par région.** Comparer les entrées importées aux sources METFP, repérer doublons et ambiguïtés, et publier un bilan indiquant source, nombre importé, nombre confirmé et éléments restant à vérifier.
+- [ ] **Vérifier les offres par établissement et année scolaire.** Distinguer strictement établissement répertorié, filière documentée et offre ouverte cette année. Seules les offres validées par une personne autorisée doivent être visibles comme confirmées.
+- [ ] **Tester les profils enseignants multi-cycles.** Collège, lycée et université doivent être sélectionnables sans confondre déclaration et autorisation. Couvrir la demande, les preuves éventuelles, l'approbation administrative et les affectations par classe/série/matière/établissement.
+- [ ] **Tester la séparation des cercles scolaires et universitaires.** Vérifier provisionnement idempotent, création, adhésion, filtres matière, héritage de matière dans les documents et archivage prudent des cibles obsolètes. Ne jamais archiver automatiquement un cercle communautaire qui possède des membres ou du contenu important.
+- [ ] **Vérifier les API et la page publique de catalogue sur mobile.** Tester filtres, états vides, validation des formulaires, lisibilité, source affichée et exclusion des offres non confirmées.
 
-Le cahier des charges technique est consigné dans [docs/extension-college-lycee-universite.md](docs/extension-college-lycee-universite.md). Ce chantier est une extension majeure du référentiel, pas une simple option du formulaire.
+Références : [docs/extension-college-lycee-universite.md](docs/extension-college-lycee-universite.md), [conception responsive](docs/responsive-design.md).
 
-**État au 24 octobre 2026 :** la séparation collège/lycée/université est fusionnée ; le chantier de couverture nationale est en cours dans la branche `feature/catalogue-national-offres-etfp`. L'API publique et l'administration disposent maintenant d'un début de catalogue ETFP et d'offres annualisées par établissement. Le catalogue reste explicitement partiel ; le travail ne sera pas considéré terminé tant que les données importées n'auront pas été contrôlées ligne par ligne et la CI n'aura pas réussi.
+## 5. Priorité P2 — Accessibilité, performances et exploitation
 
-- [ ] **Lot A — Exhaustivité ETFP nationale.** L'instantané METFP amorcé couvre les 24 régions mais reste partiel ; comparer les noms, types et implantations avec chaque région de la cartographie, retirer tout doublon/entrée incertaine et produire un rapport région par région (nombre source, importé, restant à vérifier).
-- [ ] **Lot A — Vérification des formations ETFP.** Les offres importées de la cartographie sont en attente et ne sont pas publiées. Valider les secteurs/filières/métiers et rattacher les référentiels de formation récents du METFP, sans présenter la cartographie comme preuve d'ouverture pour 2026-2027.
-- [ ] **Lot A — Offre par établissement et année.** Compléter par sources fiables les classes, séries, matières et métiers enseignés dans chaque établissement, avec année scolaire, URL/preuve, statut, validateur et historique d'archivage ; tester les filtres publics, l'API et l'interface administrateur.
-- [ ] **Lot A — Catalogue public.** La page /catalogue-scolaire et les API de recherche ont été ajoutées ; vérifier l'accessibilité, la navigation mobile, la validation de formulaires et que seules les offres confirmées sont visibles avant mise en production.
-- [ ] **Lot A — Référentiel scolaire sourcé et versionné.** Schéma et import idempotent créés ; vérifier encore les sources matière par matière, le statut du catalogue partiel et l'absence de données devinées avant clôture.
-- [ ] **Lot A — Parcours d'inscription adapté.** Le parcours étudiant reste séparé du parcours universitaire ; les demandes professeurs peuvent déclarer plusieurs cycles, et le cycle principal est explicite dans le formulaire. Le helper de normalisation est couvert unitairement, mais il faut encore tester le POST réel pour élève collège, élève lycée, étudiant universitaire, professeur mono/multi-cycle, sponsor et anciens formulaires.
-- [ ] **Lot B — Compléter les demandes de profil enseignant.** Le rôle reste ETUDIANT jusqu'à décision administrative, et la table relationnelle `cycleenseigne` permet de déclarer plusieurs cycles sans confondre déclaration et autorisation. Ajouter/valider la granularité par classe, série, matière et établissement, les preuves privées éventuelles et les tests des décisions admin.
-- [ ] **Lot C — Documents multi-référentiels.** Rattachement scolaire ajouté aux formulaires et contrôles serveur ; un cercle scolaire mono-matière impose désormais sa matière aux documents déposés et une incohérence est refusée. Continuer les tests de bout en bout (cibles, modération, fiches/quiz, filtres et téléchargements privés), sans élargir la migration de `Document.filiere_id` avant audit.
-- [ ] **Lot C — Cercles collège/lycée et synchronisation multi-référentiels.** Le service synchronise maintenant les cercles nationaux par classe vérifiée, série/option et matière validée, séparément du provisionneur universitaire ; les cibles sont contraintes en base et le synchroniseur archive prudemment les cercles auto-gérés devenus obsolètes. Terminer les tests CI de migration, l'intégration de la création/adhésion et la revue des cas locaux par établissement avant la release.
-- [ ] **Lot D — Apprentissage par programme.** API des matières scolaires, sélecteur de matières du quiz et contexte de quiz/fiches ajoutés ; compléter les tests Tuteur IA/quiz/fiches de révision pour éviter de mélanger les niveaux et résultats entre comptes.
-- [ ] **Lot E — Validation avant mise en ligne.** Vérifier les sources du catalogue, tests SQLite/PostgreSQL, tests navigateur des cycles, CI verte, puis contrôle de santé et parcours après déploiement.
+- [ ] **Faire une passe d'accessibilité.** Contraste clair/sombre, focus visible, ordre clavier, libellés accessibles, annonces des états, zoom, navigation tactile et mode de mouvement réduit.
+- [ ] **Mesurer les performances mobiles.** Temps de réponse et d'affichage, poids JavaScript/CSS, images des jeux, requêtes répétées, chargement du tableau de bord et des documents ; optimiser à partir de mesures.
+- [ ] **Répéter une restauration de sauvegarde hors production.** Documenter la restauration PostgreSQL, les objets Storage associés et la vérification de cohérence avant de considérer la reprise comme validée.
+- [ ] **Ajouter une revue périodique des dépendances.** Vérifier les annonces de sécurité, mettre à jour avec les tests et conserver un chemin de retour arrière ; ne pas mettre à jour en masse sans validation.
+- [ ] **Vérifier les notifications et rappels.** S'assurer qu'ils sont utiles, non répétitifs, liés au bon utilisateur et que leur état de lecture est persisté.
+- [ ] **Maintenir les documents de référence synchronisés.** README, TODO, .env.example, render.yaml et checklist release doivent utiliser les mêmes noms de variables, endpoints et étapes.
 
-**Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
+## 6. Ordre conseillé pour la prochaine itération
 
-## 5. Ordre recommandé pour la prochaine itération
+1. Confirmer la confiance accordée aux adresses IP et tester la limite de taille HTTP en conditions réelles.
+2. Compléter les tests d'accès privé aux documents, exports et ressources de cercle.
+3. Améliorer la visibilité et la reprise des tâches IA anciennes ou échouées.
+4. Ajouter la matrice de régression du renderer scientifique et traiter la répétition des quiz/jeux.
+5. Terminer l'exhaustivité vérifiée du catalogue scolaire/ETFP et les parcours navigateur complets.
+6. Mesurer l'accessibilité, les performances mobiles et la capacité de restauration.
 
-1. Scénario PostgreSQL de bout en bout pour une fiche de cours, y compris les contrôles d’accès et les formats exportés.
-2. Diagnostic des tâches IA anciennes et validation post-déploiement reproductible.
-3. Matrice de régression du rendu mathématique et de la qualité des quiz.
-4. Terminer la validation du référentiel collège/lycée, du multi-cycle professeur et de la synchronisation des cercles, sans casser l'université existante.
-5. Parcours navigateur mobile sur les fonctions les plus utilisées.
-6. Revue du référentiel académique, du jeu cérébral et de l’accessibilité.
+## 7. Critères de clôture
 
-## 6. Critères de clôture d’une tâche
+Une tâche n'est terminée que lorsque :
 
-Une tâche ne passe à « terminée » que lorsque :
-
-- [ ] les tests liés au changement passent localement et en CI ;
-- [ ] les migrations, si présentes, peuvent être appliquées deux fois sans effet indésirable et le smoke PostgreSQL passe ;
-- [ ] les contrôles d’autorisation sont réalisés côté serveur lorsque des données privées sont impliquées ;
-- [ ] l’interface reste lisible en petit écran et dans les thèmes pris en charge ;
-- [ ] README, TODO et configuration sont mis à jour si leur contenu devient obsolète ;
+- [ ] les tests ciblés passent localement et dans la CI ;
+- [ ] les migrations, lorsqu'il y en a, sont testées sur PostgreSQL et rejouables sans effet indésirable ;
+- [ ] les autorisations privées sont vérifiées côté serveur, y compris par accès direct à l'URL ;
+- [ ] l'interface a été vérifiée au clavier, en petit écran et dans les thèmes concernés ;
+- [ ] les données du référentiel ont une source et une année vérifiables ;
+- [ ] le README et le TODO reflètent le comportement final ;
 - [ ] la CI est verte avant toute fusion ou tout déploiement ;
-- [ ] après un déploiement, les contrôles de santé, les logs et le parcours modifié sont vérifiés.
+- [ ] après le déploiement, /health, /ready, les logs et le parcours modifié sont vérifiés.
 
-> **Règle de livraison :** aucun changement applicatif ne doit être fusionné ou déployé avec une CI rouge. Pour les changements documentaires, exécuter également la CI avant fusion afin de s’assurer que les liens et les consignes restent cohérents avec le dépôt.
+> **Règle de livraison :** ne jamais fusionner ou déployer un changement applicatif avec une CI rouge ou incomplète. Pour un changement documentaire, exécuter aussi la CI afin de détecter des liens cassés et des instructions devenues obsolètes.
