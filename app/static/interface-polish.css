@@ -646,3 +646,73 @@ button[aria-busy="true"],
     break-inside: avoid;
   }
 }
+
+
+/* Choix de langue toujours visible dans l'en-tête mobile, même avant l'ouverture du menu latéral. */
+.mobile-langue-visuellement-cache {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.mobile-entete-app .selecteur-langue-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-entete-app .selecteur-langue-mobile {
+    display: block;
+    flex: 0 0 auto;
+    width: clamp(4.65rem, 22vw, 5.7rem);
+    min-width: 4.65rem;
+    max-width: 5.7rem;
+    min-height: 2.15rem;
+    margin-left: auto;
+    padding: .32rem .25rem .32rem .4rem;
+    border: 1px solid var(--content-border);
+    border-radius: .65rem;
+    background: var(--content-surface);
+    color: var(--content-text);
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.15;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+
+  .mobile-entete-app .selecteur-langue-mobile:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary) 55%, transparent);
+    outline-offset: 2px;
+  }
+
+  .mobile-entete-app > a:first-child {
+    flex: 0 1 auto;
+    max-width: clamp(5rem, 30vw, 8rem);
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-entete-app .selecteur-langue-mobile {
+    width: 4.55rem;
+    min-width: 4.55rem;
+    padding-left: .3rem;
+    font-size: .68rem;
+  }
+
+  .mobile-entete-app-avatar span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-entete-app .selecteur-langue-mobile {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}
