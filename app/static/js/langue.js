@@ -2983,6 +2983,19 @@
     "Accès": "Fidirana",
     "IA responsable": "IA tompon'andraikitra",
     "Confiance et sécurité": "Fitokisana sy fiarovana",
+    "Paramètres du compte": "Fikirana momba ny kaonty",
+    "Paramètres du compte et sécurité.": "Fikirana sy fiarovana ny kaonty.",
+    "Langue de l’interface": "Fitenin'ny interface",
+    "Langue préférée": "Fiteny tiana hampiasaina",
+    "Choisis la langue utilisée dans les menus, les boutons et les pages de MITARIDALA.": "Safidio ny fiteny ampiasaina amin'ny menus, bokotra ary pejy ao amin'ny MITARIDALA.",
+    "Ce choix est mémorisé dans ce navigateur et appliqué sur toutes les pages.": "Tehirizina ao amin'ity navigateur ity ny safidinao ary ampiharina amin'ny pejy rehetra.",
+    "Choisir la langue de l’interface": "Safidio ny fitenin'ny interface",
+    "Changer la langue de l’interface": "Ovay ny fitenin'ny interface",
+    "Protection renforcée": "Fiarovana nohatsaraina",
+    "Protection correcte": "Fiarovana antonony",
+    "1. Application d'authentification — gratuite et hors ligne": "1. Rindranasa fanamarinana — maimaim-poana ary tsy mila Internet",
+    "Activée": "Mandeha",
+    "2. Code OTP envoyé par e-mail": "2. Kaody OTP alefa amin'ny mailaka",
   });
 
   var TRADUCTIONS_EN = Object.freeze({
