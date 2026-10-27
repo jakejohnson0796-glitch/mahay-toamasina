@@ -6,7 +6,8 @@
   "use strict";
 
   var CLE_LANGUE = "mahay-langue";
-  var SELECTEUR = "#select-langue";
+  // Un sélecteur dans la barre latérale et un second toujours visible sur mobile.
+  var SELECTEUR = "#select-langue, #select-langue-mobile";
   var ATTRIBUTS_TRADUCTIBLES = ["aria-label", "title", "placeholder", "alt"];
   var ELEMENTS_PROTEGES = [
     "script", "style", "noscript", "pre", "code", "textarea",
@@ -3670,6 +3671,56 @@
     }
   });
 
+  // Fallback par fragments pour les libellés ou phrases nouvelles qui contiennent
+  // des termes connus. Le dictionnaire exact est toujours prioritaire.
+  function echapperRegex(texte) {
+    return String(texte).replace(/[-/\\^$*+?.()|[\]{}]/g, "\\  function traduireChaineAnglaise(source) {");
+  }
+
+  var CLES_EN_FRAGMENTS = Object.keys(TRADUCTIONS_EN)
+    .map(function (cle) { return normaliser(cle); })
+    .filter(function (cle, index, tableau) {
+      if (!cle || cle.length > 48 || cle.split(/\s+/).length > 5 || /[.!?…]$/.test(cle)) return false;
+      if (tableau.indexOf(cle) !== index) return false;
+      var traduction = TRADUCTIONS_EN_NORMALISEES[cle] ||
+        TRADUCTIONS_EN_NORMALISEES[cle.toLocaleLowerCase("en")];
+      return Boolean(traduction && normaliser(traduction).toLocaleLowerCase("en") !== cle.toLocaleLowerCase("en"));
+    })
+    .sort(function (a, b) { return b.length - a.length; });
+
+  var RE_TRADUCTIONS_EN_FRAGMENTS = CLES_EN_FRAGMENTS.length
+    ? new RegExp(
+        "(^|[^A-Za-z0-9À-ÖØ-öø-ÿ])(" +
+        CLES_EN_FRAGMENTS.map(echapperRegex).join("|") +
+        ")(?=$|[^A-Za-z0-9À-ÖØ-öø-ÿ])",
+        "gi"
+      )
+    : null;
+
+  function traduireFragmentsAnglais(source) {
+    // Ne pas traiter un bloc long : le traducteur est destiné aux libellés UI,
+    // pas aux documents/cours ni au contenu pédagogique libre.
+    var texte = String(source == null ? "" : source);
+    if (!RE_TRADUCTIONS_EN_FRAGMENTS || texte.length > 900) return source;
+
+    return normaliser(texte).replace(RE_TRADUCTIONS_EN_FRAGMENTS, function (_ensemble, separateur, fragment) {
+      var cle = normaliser(fragment);
+      var traduction = TRADUCTIONS_EN_NORMALISEES[cle] ||
+        TRADUCTIONS_EN_NORMALISEES[cle.toLocaleLowerCase("en")];
+      if (!traduction) return separateur + fragment;
+
+      var premiere = fragment.charAt(0);
+      if (
+        premiere &&
+        premiere === premiere.toLocaleUpperCase("en") &&
+        premiere !== premiere.toLocaleLowerCase("en")
+      ) {
+        traduction = traduction.charAt(0).toLocaleUpperCase("en") + traduction.slice(1);
+      }
+      return separateur + traduction;
+    });
+  }
+
   function traduireChaineAnglaise(source) {
     var cle = normaliser(source);
     if (Object.prototype.hasOwnProperty.call(TRADUCTIONS_EN, cle)) return TRADUCTIONS_EN[cle];
@@ -3714,7 +3765,7 @@
     match = cle.match(/^Parcours — (.+) — MITARIDALA$/i);
     if (match) return "Learning path — " + match[1] + " — MITARIDALA";
 
-    return source;
+    return traduireFragmentsAnglais(source);
   }
 
   function traduireChaine(source, langue) {
@@ -3940,8 +3991,9 @@
   function appliquerLangue(langue, memoriser) {
     langueActuelle = langue === "mg" ? "mg" : langue === "en" ? "en" : "fr";
     document.documentElement.setAttribute("lang", langueActuelle);
-    var selecteur = document.querySelector(SELECTEUR);
-    if (selecteur && selecteur.value !== langueActuelle) selecteur.value = langueActuelle;
+    document.querySelectorAll(SELECTEUR).forEach(function (selecteur) {
+      if (selecteur.value !== langueActuelle) selecteur.value = langueActuelle;
+    });
     if (memoriser) {
       try {
         window.localStorage.setItem(CLE_LANGUE, langueActuelle);
@@ -3955,12 +4007,11 @@
   function initialiser() {
     if (initialise) return;
     initialise = true;
-    var selecteur = document.querySelector(SELECTEUR);
-    if (selecteur) {
+    document.querySelectorAll(SELECTEUR).forEach(function (selecteur) {
       selecteur.addEventListener("change", function () {
         appliquerLangue(selecteur.value, true);
       });
-    }
+    });
 
     appliquerLangue(lireLangue(), false);
 
