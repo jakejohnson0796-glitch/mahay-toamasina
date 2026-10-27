@@ -33,10 +33,9 @@ def adresse_ip_client(request: Request) -> str:
     if not derriere_render or not marqueur_cloudflare:
         return _ip_valide(adresse_socket) or adresse_socket
 
-    for nom in ("cf-connecting-ip", "true-client-ip"):
-        adresse = _ip_valide(request.headers.get(nom))
-        if adresse:
-            return adresse
+    adresse_cloudflare = _ip_valide(request.headers.get("cf-connecting-ip"))
+    if adresse_cloudflare:
+        return adresse_cloudflare
 
     # X-Forwarded-For peut contenir des valeurs fournies plus tôt dans la
     # chaîne. Le proxy le plus proche ajoute l'adresse effective à droite ;
