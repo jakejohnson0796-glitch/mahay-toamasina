@@ -17,10 +17,11 @@ def test_language_selector_lives_below_navigation_and_exists_once():
     assert sidebar.count('id="select-langue"') == 1
     selector_pos = sidebar.index('<section class="tb-sidebar-langue"')
     assert selector_pos > sidebar.rfind("</nav>")
-    assert "FR · MG" in sidebar
+    assert "FR · MG · EN" in sidebar
     assert 'data-langue-label>Langue<' in sidebar
     assert 'option value="fr">Français' in sidebar
     assert 'option value="mg">Malagasy' in sidebar
+    assert 'option value="en">English' in sidebar
 
 
 def test_language_preference_card_is_visible_responsive_and_keyboard_accessible():
