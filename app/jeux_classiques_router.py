@@ -683,6 +683,30 @@ def _contexte_tournoi(request, session, tournoi, utilisateur):
                 ReponseTournoiChampion.question_index == index_question,
             )
         ).all()
+        echeance_manche = _timestamp_utc(tournoi.date_demarrage) + TEMPS_TOURNOI
+        if time.time() >= echeance_manche:
+            utilisateurs_ayant_repondu = {rep.utilisateur_id for rep in reponses}
+            for joueur in participants_db:
+                if joueur.utilisateur_id not in utilisateurs_ayant_repondu:
+                    session.add(ReponseTournoiChampion(
+                        tournoi_id=tournoi.id,
+                        utilisateur_id=joueur.utilisateur_id,
+                        question_index=index_question,
+                        choix=-1,
+                        correcte=False,
+                        points=0,
+                    ))
+            if len(utilisateurs_ayant_repondu) < len(participants_db):
+                try:
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+            reponses = session.exec(
+                select(ReponseTournoiChampion).where(
+                    ReponseTournoiChampion.tournoi_id == tournoi.id,
+                    ReponseTournoiChampion.question_index == index_question,
+                )
+            ).all()
         reponse_courante = next(
             (rep for rep in reponses if rep.utilisateur_id == utilisateur.id),
             None,
@@ -723,6 +747,11 @@ def _contexte_tournoi(request, session, tournoi, utilisateur):
         "mon_choix": mon_choix,
         "tout_le_monde_a_repondu": tout_le_monde_a_repondu,
         "correction": correction,
+        "echeance": (
+            _timestamp_utc(tournoi.date_demarrage) + TEMPS_TOURNOI
+            if tournoi.statut == "en_cours" and tournoi.date_demarrage else 0
+        ),
+        "temps_question": TEMPS_TOURNOI,
         "erreur": request.query_params.get("erreur", ""),
         "est_createur": utilisateur.id == tournoi.createur_id,
     }
@@ -889,9 +918,6 @@ def repondre_tournoi(
     if tournoi.statut != "en_cours" or not 0 <= index_question < len(paquet):
         return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
     donnees_question = paquet[index_question]
-    if choix < 0 or choix >= len(donnees_question["choix"]):
-        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}?erreur=choix", status_code=303)
-
     deja_repondu = session.exec(
         select(ReponseTournoiChampion).where(
             ReponseTournoiChampion.tournoi_id == tournoi.id,
@@ -902,7 +928,14 @@ def repondre_tournoi(
     if deja_repondu:
         return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
 
-    correcte = choix == int(donnees_question["bonne"])
+    echeance_manche = _timestamp_utc(tournoi.date_demarrage) + TEMPS_TOURNOI
+    temps_ecoule = time.time() >= echeance_manche
+    if temps_ecoule:
+        choix = -1
+    elif choix < 0 or choix >= len(donnees_question["choix"]):
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}?erreur=choix", status_code=303)
+
+    correcte = (not temps_ecoule) and choix == int(donnees_question["bonne"])
     nouvelle_serie = participant.serie + 1 if correcte else 0
     points = (POINTS_QUESTION + (BONUS_SERIE if nouvelle_serie % 3 == 0 else 0)) if correcte else 0
     reponse = ReponseTournoiChampion(
@@ -958,6 +991,9 @@ def question_suivante_tournoi(code: str, request: Request, session: Session = De
     if tournoi.index_question >= len(paquet):
         tournoi.statut = "termine"
         tournoi.date_fin = datetime.utcnow()
+    else:
+        # Chaque nouvelle manche reçoit une nouvelle échéance partagée par le salon.
+        tournoi.date_demarrage = datetime.utcnow()
     session.add(tournoi)
     session.commit()
     return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
