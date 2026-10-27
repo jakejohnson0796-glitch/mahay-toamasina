@@ -797,6 +797,7 @@ def test_postgres_fiche_revision_de_approbation_a_export_prive_personnalise(monk
         "auto_evaluation": [
             {"question": "Quelle formule calcule le déterminant 2 × 2 ?", "reponse": "ad - bc."},
             {"question": "Quelle condition vérifie-t-on pour le produit AB ?", "reponse": "Le nombre de colonnes de A égale le nombre de lignes de B."},
+            {"question": "Que signifie un déterminant nul pour une matrice carrée ?", "reponse": "La matrice n'est pas inversible."},
         ],
         "limites_sources": "Fiche générée depuis le texte extrait du cours approuvé.",
     }
