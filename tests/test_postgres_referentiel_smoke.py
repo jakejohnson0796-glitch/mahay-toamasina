@@ -888,7 +888,7 @@ def test_postgres_fiche_revision_de_approbation_a_export_prive_personnalise(monk
         )
         # La route reçoit une identité minimale détachée ; on ne réutilise pas
         # un modèle SQL expiré après la fermeture de sa session de création.
-        current = {"user": SimpleNamespace(id=admin.id, role=RoleUtilisateur.ADMIN)}
+        current = {"user": SimpleNamespace(id=ids_utilisateurs[0], role=RoleUtilisateur.ADMIN)}
         monkeypatch.setattr(
             documents_router,
             "utilisateur_courant",
