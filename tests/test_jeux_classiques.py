@@ -161,6 +161,17 @@ def test_tournoi_fige_les_propositions_et_la_bonne_reponse():
         assert item["explication"] == original["explication"]
 
 
+def test_accueil_migre_les_parties_existantes_vers_un_minuteur():
+    routeur = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "jeux_classiques_router.py"
+    ).read_text(encoding="utf-8")
+    assert 'partie.get("mode") in {"champion", "chiffres", "lettres"}' in routeur
+    assert '_regler_minuteur(partie, duree)' in routeur
+    assert 'request.session["jeux_classiques"] = partie' in routeur
+
+
 def test_ancienne_session_bot_est_nettoyee_a_l_accueil():
     routeur = (
         Path(__file__).resolve().parents[1]
