@@ -2984,6 +2984,370 @@
     "Confiance et sécurité": "Fitokisana sy fiarovana",
   });
 
+  var TRADUCTIONS_EN = Object.freeze({
+    "Langue": "Language",
+    "Préférences de langue": "Language preferences",
+    "Choisir la langue": "Choose a language",
+    "Changer la langue de l’interface": "Change the interface language",
+    "Français": "French",
+    "Malagasy": "Malagasy",
+    "Anglais": "English",
+    "English": "English",
+    "Ton chemin vers la réussite": "Your path to success",
+    "Ouvrir le menu": "Open menu",
+    "Réduire la barre latérale": "Collapse sidebar",
+    "Ouvrir le menu du compte": "Open account menu",
+    "Tableau de bord": "Dashboard",
+    "Apprendre": "Learn",
+    "Documents": "Documents",
+    "Quiz IA": "AI Quiz",
+    "Jeu cérébral": "Brain games",
+    "Jeux classiques": "Classic games",
+    "Tuteur IA": "AI Tutor",
+    "Collaborer": "Collaborate",
+    "Mes cercles": "My study circles",
+    "Cercles d’étude": "Study circles",
+    "Catalogue scolaire": "School catalogue",
+    "Classe virtuelle": "Virtual classroom",
+    "Compte": "Account",
+    "Notifications": "Notifications",
+    "Mes révisions": "My revision plans",
+    "Défis & récompenses": "Challenges & rewards",
+    "Sécurité": "Security",
+    "Securite": "Security",
+    "Administration": "Administration",
+    "Services": "Services",
+    "Premium": "Premium",
+    "Abonnement": "Subscription",
+    "Sponsoring": "Sponsorship",
+    "Ressources": "Resources",
+    "Aide & Avis": "Help & feedback",
+    "Mode d'emploi": "User guide",
+    "Conditions & charte éthique": "Terms & ethical charter",
+    "Universités": "Universities",
+    "Universites": "Universities",
+    "À propos": "About",
+    "A propos": "About",
+    "Contact": "Contact",
+    "Mon compte": "My account",
+    "Actions rapides": "Quick actions",
+    "Mon espace": "My space",
+    "Mes documents": "My documents",
+    "Compte & aide": "Account & help",
+    "Se déconnecter": "Sign out",
+    "Administrateur": "Administrator",
+    "Apparence": "Appearance",
+    "Clair": "Light",
+    "Sombre": "Dark",
+    "Accueil": "Home",
+    "Docs": "Docs",
+    "Quiz": "Quiz",
+    "Profil": "Profile",
+    "Retour": "Back",
+    "Revenir à la page précédente": "Return to the previous page",
+    "Un mot à nous dire ?": "Have something to tell us?",
+    "Nous contacter": "Contact us",
+    "Donner mon avis": "Leave feedback",
+    "Éthique, conditions et confidentialité": "Ethics, terms and privacy",
+    "Installer MITARIDALA": "Install MITARIDALA",
+    "Un accès plus rapide depuis l’écran d’accueil de ton téléphone.": "Faster access from your phone's home screen.",
+    "Plus tard": "Later",
+    "Installer": "Install",
+    "Confirmer": "Confirm",
+    "Annuler": "Cancel",
+    "Fermer": "Close",
+    "Enregistrer": "Save",
+    "Modifier": "Edit",
+    "Supprimer": "Delete",
+    "Rechercher": "Search",
+    "Rechercher dans la bibliothèque": "Search the library",
+    "Trier par": "Sort by",
+    "Les plus récents": "Newest first",
+    "Titre": "Title",
+    "Matière": "Subject",
+    "Aucun document ne correspond à cette recherche. Essaie un autre titre, une autre matière ou un mot-clé.": "No documents match this search. Try another title, subject, or keyword.",
+    "Disponible": "Available",
+    "En préparation": "Preparing",
+    "En attente": "Queued",
+    "Échec à relancer": "Failed — retry available",
+    "Fiche incomplète": "Incomplete study sheet",
+    "Fiche de révision IA": "AI revision sheet",
+    "Résumé et fiche pédagogique": "Summary and learning guide",
+    "Consulter la fiche de révision": "View revision sheet",
+    "Télécharger PDF": "Download PDF",
+    "Télécharger Word": "Download Word",
+    "Télécharger le document": "Download document",
+    "Lancer le quiz": "Start quiz",
+    "Lancer le quiz →": "Start quiz →",
+    "Lancer le quiz →": "Start quiz →",
+    "Parcours": "Learning path",
+    "Préparer ma fiche": "Prepare my study sheet",
+    "Préparer / consulter la fiche": "Prepare / view study sheet",
+    "Voir la préparation": "View preparation status",
+    "Voir l’état de la file": "View queue status",
+    "La fiche est inscrite dans la file de traitement IA et attend son tour. Ce statut ne signifie pas que la génération a échoué.": "The study sheet is queued for AI processing and is waiting its turn. This status does not mean generation has failed.",
+    "Le service IA travaille sur ce carnet. Le contenu et les téléchargements apparaîtront dès que la génération sera terminée.": "The AI service is preparing this study sheet. Its content and downloads will appear when generation is complete.",
+    "Vérification facultative du résumé IA": "AI summary review (optional)",
+    "Le résumé automatique peut contenir des erreurs. Tu peux le comparer au fichier original et le corriger ici. Cette vérification reste facultative pour le quiz, qui est généré à partir du document source approuvé.": "The automatic summary may contain errors. Compare it with the original file and correct it here if needed. This review is optional for quizzes, which are generated from the approved source document.",
+    "Le résumé IA n'a pas encore été vérifié. Tu peux le corriger ci-dessous ou lancer le quiz directement depuis le document source approuvé.": "The AI summary has not been reviewed yet. You can correct it below or start a quiz directly from the approved source document.",
+    "Le résumé automatique reste masqué jusqu'à sa vérification par le déposant ou l'administration. Le Quiz IA reste accessible depuis l'action « Lancer le quiz ».": "The automatic summary stays hidden until the uploader or an administrator reviews it. You can still start an AI Quiz using the “Start quiz” action.",
+    "Fiche pédagogique validée": "Learning guide approved",
+    "Cette fiche a déjà été vérifiée. Tu peux lancer le Quiz IA directement depuis le document.": "This guide has already been reviewed. You can start the AI Quiz directly from the document.",
+    "Lancer le Quiz IA maintenant →": "Start the AI Quiz now →",
+    "Vérifier puis lancer le quiz": "Review sheet, then start quiz",
+    "Télécharger": "Download",
+    "Ouvrir": "Open",
+    "Consulter": "View",
+    "Continuer": "Continue",
+    "Continuer plus tard": "Continue later",
+    "Suivant": "Next",
+    "Précédent": "Previous",
+    "Retour au document": "Back to document",
+    "Retour à la bibliothèque": "Back to library",
+    "Retour au tableau de bord": "Back to dashboard",
+    "Voir les détails": "View details",
+    "Chargement…": "Loading…",
+    "Génération…": "Generating…",
+    "Réessayer": "Try again",
+    "Actualiser": "Refresh",
+    "Valider": "Submit",
+    "Valider ma réponse": "Submit my answer",
+    "Choisir": "Choose",
+    "Sélectionner": "Select",
+    "Aucune donnée disponible": "No data available",
+    "Aucun résultat": "No results",
+    "Aucune activité récente": "No recent activity",
+    "Erreur": "Error",
+    "Succès": "Success",
+    "Attention": "Attention",
+    "Bienvenue de retour": "Welcome back",
+    "J'ai compris": "Got it",
+    "Mon profil & sécurité": "My profile & security",
+    "Profil académique": "Academic profile",
+    "Contacter MITARIDALA": "Contact MITARIDALA",
+    "Notifications non lues": "Unread notifications",
+    "nouvelles": "new",
+    "Connexion": "Log in",
+    "Inscription": "Sign up",
+    "Se connecter": "Log in",
+    "Créer un compte": "Create an account",
+    "Nom": "Name",
+    "Prénom": "First name",
+    "Téléphone": "Phone number",
+    "Adresse e-mail": "Email address",
+    "Adresse email": "Email address",
+    "Mot de passe": "Password",
+    "Mot de passe actuel": "Current password",
+    "Confirmer le mot de passe": "Confirm password",
+    "Mot de passe oublié ?": "Forgot password?",
+    "Envoyer": "Send",
+    "Envoyer le code": "Send code",
+    "Vérifier": "Verify",
+    "Vérifier et me connecter": "Verify and log in",
+    "Code de vérification": "Verification code",
+    "Recommencer": "Start again",
+    "Niveau": "Level",
+    "Niveau d’étude": "Education level",
+    "Niveau d'étude": "Education level",
+    "Université": "University",
+    "Filière": "Degree programme",
+    "Matière enseignée": "Subject taught",
+    "Enregistrer les modifications": "Save changes",
+    "Créer": "Create",
+    "Créer un cercle": "Create a study circle",
+    "Rejoindre": "Join",
+    "Rejoindre un cercle": "Join a circle",
+    "Quitter": "Leave",
+    "Membres": "Members",
+    "Membre": "Member",
+    "Étudiant": "Student",
+    "Étudiante": "Student",
+    "Professeur": "Teacher",
+    "Enseignant": "Teacher",
+    "Enseignante": "Teacher",
+    "Établissement": "Institution",
+    "Étudier": "Study",
+    "Cours": "Courses",
+    "Cours approuvé": "Approved course",
+    "Document approuvé": "Approved document",
+    "Déposer un document": "Upload a document",
+    "Déposer": "Upload",
+    "Type de document": "Document type",
+    "Description": "Description",
+    "Objectif pédagogique": "Learning objective",
+    "Notions clés": "Key concepts",
+    "Plan de révision": "Revision plan",
+    "Exercices corrigés": "Solved exercises",
+    "Exemple": "Example",
+    "Exemples": "Examples",
+    "Explication": "Explanation",
+    "Correction": "Solution",
+    "Question": "Question",
+    "Questions": "Questions",
+    "Réponse": "Answer",
+    "Réponses": "Answers",
+    "Choisis une réponse": "Choose an answer",
+    "Choisis la bonne réponse": "Choose the correct answer",
+    "Bonne réponse": "Correct answer",
+    "Mauvaise réponse": "Incorrect answer",
+    "Résultat": "Result",
+    "Résultats": "Results",
+    "Score": "Score",
+    "Progression": "Progress",
+    "Terminé": "Completed",
+    "Terminée": "Completed",
+    "Non terminé": "Not completed",
+    "Temps restant": "Time remaining",
+    "Temps écoulé": "Time elapsed",
+    "Minuterie": "Timer",
+    "Lancer": "Start",
+    "Commencer": "Begin",
+    "Commencer le quiz": "Start the quiz",
+    "Terminer le quiz": "Finish the quiz",
+    "Question suivante": "Next question",
+    "Question précédente": "Previous question",
+    "Voir la correction": "View solution",
+    "Afficher la réponse": "Show answer",
+    "Masquer la réponse": "Hide answer",
+    "Recommencer le quiz": "Retake the quiz",
+    "Nouvelle tentative": "Try again",
+    "Quiz terminé": "Quiz completed",
+    "Félicitations !": "Congratulations!",
+    "Tu peux faire mieux la prochaine fois.": "You can do better next time.",
+    "Réviser cette notion": "Review this concept",
+    "Réviser mes erreurs": "Review my mistakes",
+    "Reprendre le cours": "Return to the lesson",
+    "Parcours d’apprentissage": "Learning path",
+    "Parcours d'apprentissage": "Learning path",
+    "Ma progression": "My progress",
+    "Mes objectifs": "My goals",
+    "Objectif": "Goal",
+    "Objectifs": "Goals",
+    "Mission": "Mission",
+    "Prochaine mission": "Next mission",
+    "À renforcer": "Needs practice",
+    "Points forts": "Strengths",
+    "Points faibles": "Areas to improve",
+    "Révision": "Revision",
+    "Révisions": "Revisions",
+    "Plan de révision": "Revision plan",
+    "Fiche de révision": "Revision sheet",
+    "Fiches de révision": "Revision sheets",
+    "Révision assistée par IA": "AI-assisted revision",
+    "Carte de connaissances": "Knowledge map",
+    "Jeux": "Games",
+    "Défi": "Challenge",
+    "Lancer un défi": "Start a challenge",
+    "Nouveau défi": "New challenge",
+    "Difficulté": "Difficulty",
+    "Facile": "Easy",
+    "Moyen": "Medium",
+    "Difficile": "Hard",
+    "Mode multijoueur": "Multiplayer mode",
+    "Jouer": "Play",
+    "Pause": "Pause",
+    "Reprendre": "Resume",
+    "Quitter le jeu": "Leave game",
+    "Relancer": "Restart",
+    "Annuler la sélection": "Clear selection",
+    "Aucune question disponible": "No questions available",
+    "Préparer un quiz": "Prepare a quiz",
+    "Générer un quiz": "Generate a quiz",
+    "Génération du quiz": "Quiz generation",
+    "Le quiz est prêt": "The quiz is ready",
+    "La génération du quiz a échoué. Réessaie.": "Quiz generation failed. Please try again.",
+    "Pose ta question": "Ask your question",
+    "Poser une question au Tuteur": "Ask the AI Tutor a question",
+    "Demander au Tuteur IA": "Ask the AI Tutor",
+    "Réponse du Tuteur IA": "AI Tutor response",
+    "Dévoiler l'indice progressif": "Reveal the next hint",
+    "Indice": "Hint",
+    "Indice suivant": "Next hint",
+    "Aide-moi à comprendre": "Help me understand",
+    "Explique-moi": "Explain this to me",
+    "Vérifier ma compréhension": "Check my understanding",
+    "J’ai compris": "I understand",
+    "J'ai compris": "I understand",
+    "Pratiquer": "Practise",
+    "Exercice": "Exercise",
+    "Exercices": "Exercises",
+    "Méthode": "Method",
+    "Méthode de résolution": "Solving method",
+    "Étape": "Step",
+    "Étapes": "Steps",
+    "Enregistrer les réponses": "Save answers",
+    "À propos de MITARIDALA": "About MITARIDALA",
+    "Notre mission": "Our mission",
+    "Fonctionnalités": "Features",
+    "Accès": "Access",
+    "IA responsable": "Responsible AI",
+    "Confiance et sécurité": "Trust and safety",
+    "Questions fréquentes": "Frequently asked questions",
+    "FAQ": "FAQ",
+    "Conditions d’utilisation": "Terms of use",
+    "Conditions d'utilisation": "Terms of use",
+    "Politique de confidentialité": "Privacy policy",
+    "Confidentialité": "Privacy",
+    "Mentions légales": "Legal notice",
+    "Charte éthique": "Ethics charter",
+    "Nous respectons ta confidentialité.": "We respect your privacy.",
+    "Aucune notification": "No notifications",
+    "Toutes les notifications": "All notifications",
+    "Marquer comme lu": "Mark as read",
+    "Tout marquer comme lu": "Mark all as read",
+    "Supprimer la notification": "Delete notification",
+    "Date": "Date",
+    "Statut": "Status",
+    "Type": "Type",
+    "Actions": "Actions",
+    "Filtrer": "Filter",
+    "Tous": "All",
+    "Toutes": "All",
+    "Tout": "All",
+    "Aucun": "None",
+    "Aucune": "None",
+    "Aucun document": "No document",
+    "Aucun cercle": "No study circle",
+    "Aucune fiche disponible": "No study sheet available",
+    "Les résultats sont conservés dans ton compte.": "Your results are saved to your account.",
+    "Ta prochaine étape": "Your next step",
+    "Explorer": "Explore",
+    "Découvrir": "Discover",
+    "Découvrir les cercles": "Discover study circles",
+    "Voir plus": "See more",
+    "Voir moins": "See less",
+    "En savoir plus": "Learn more",
+    "Aucun résultat pour cette recherche.": "No results for this search.",
+    "Pas encore de données": "No data yet",
+    "Disponible bientôt": "Coming soon",
+    "Cette fonctionnalité est en préparation.": "This feature is being prepared.",
+    "Merci !": "Thank you!",
+    "Une erreur est survenue. Réessaie.": "Something went wrong. Please try again.",
+    "Une erreur est survenue.": "Something went wrong.",
+    "Réessaie dans un instant.": "Please try again in a moment.",
+    "Tu as bien été déconnecté.": "You have been signed out.",
+    "Aucun accès": "No access",
+    "Accès refusé": "Access denied",
+    "Accès réservé aux membres": "Members only",
+    "Connecte-toi pour continuer": "Log in to continue",
+    "Connectez-vous pour télécharger": "Log in to download",
+    "Le document n’est pas disponible.": "The document is unavailable.",
+    "Le document n'est pas disponible.": "The document is unavailable.",
+    "Le résumé automatique reste masqué jusqu'à sa vérification par le déposant ou l'administration.": "The automatic summary remains hidden until it is reviewed by the uploader or an administrator.",
+    "Lancer le Quiz IA maintenant →": "Start the AI Quiz now →",
+    "Vérification facultative du résumé IA": "Optional AI summary review",
+    "Référentiel scolaire": "School curriculum",
+    "Parcours national": "National learning path",
+    "Tronc commun": "Core curriculum",
+    "Référentiel à vérifier": "Curriculum reference needs review",
+    "Enregistrer et continuer": "Save and continue",
+    "Retour à l’accueil": "Back to home",
+    "Retour à l'accueil": "Back to home",
+    "Accueil": "Home",
+    "Commencer ma mission": "Start my mission",
+    "Voir mes révisions": "View my revision plans"
+  });
+
   var noeudsOriginaux = new WeakMap();
   var derniersRendus = new WeakMap();
   var attributsOriginaux = new WeakMap();
@@ -3015,7 +3379,67 @@
     }
   });
 
+  var TRADUCTIONS_EN_NORMALISEES = Object.create(null);
+  Object.keys(TRADUCTIONS_EN).forEach(function (cle) {
+    var canonique = normaliser(cle);
+    var minuscule = canonique.toLocaleLowerCase("en");
+    if (!Object.prototype.hasOwnProperty.call(TRADUCTIONS_EN_NORMALISEES, canonique)) {
+      TRADUCTIONS_EN_NORMALISEES[canonique] = TRADUCTIONS_EN[cle];
+    }
+    if (!Object.prototype.hasOwnProperty.call(TRADUCTIONS_EN_NORMALISEES, minuscule)) {
+      TRADUCTIONS_EN_NORMALISEES[minuscule] = TRADUCTIONS_EN[cle];
+    }
+  });
+
+  function traduireChaineAnglaise(source) {
+    var cle = normaliser(source);
+    if (Object.prototype.hasOwnProperty.call(TRADUCTIONS_EN, cle)) return TRADUCTIONS_EN[cle];
+    if (Object.prototype.hasOwnProperty.call(TRADUCTIONS_EN_NORMALISEES, cle)) return TRADUCTIONS_EN_NORMALISEES[cle];
+
+    var cleMinuscule = cle.toLocaleLowerCase("en");
+    if (Object.prototype.hasOwnProperty.call(TRADUCTIONS_EN_NORMALISEES, cleMinuscule)) {
+      var traductionCassee = TRADUCTIONS_EN_NORMALISEES[cleMinuscule];
+      var premiereLettre = cle.charAt(0);
+      if (traductionCassee && premiereLettre &&
+          premiereLettre === premiereLettre.toLocaleUpperCase("en") &&
+          premiereLettre !== premiereLettre.toLocaleLowerCase("en")) {
+        traductionCassee = traductionCassee.charAt(0).toLocaleUpperCase("en") + traductionCassee.slice(1);
+      }
+      return traductionCassee;
+    }
+
+    var match = cle.match(/^Bienvenue[, ]+(.+?)\s*👋$/i);
+    if (match) return "Welcome, " + match[1].trim() + " 👋";
+    match = cle.match(/^Bonjour,\s*(.+?)\s*👋$/i);
+    if (match) return "Hello, " + match[1].trim() + " 👋";
+    match = cle.match(/^Ton démarrage est à (\d+)\/3\.$/i);
+    if (match) return "Your setup is " + match[1] + "/3 complete.";
+    match = cle.match(/^(\d+)\/3 aujourd'hui$/i);
+    if (match) return match[1] + "/3 today";
+    match = cle.match(/^(\d+)\s*j\.\s*inactif$/i);
+    if (match) return match[1] + " days inactive";
+    match = cle.match(/^(\d+)\s+jour(s?)\s+d'ancienneté$/i);
+    if (match) return match[1] + " days since joining";
+    match = cle.match(/^Notifications\s*[·-]\s*(\d+)\s*non lues$/i);
+    if (match) return "Notifications · " + match[1] + " unread";
+    match = cle.match(/^Administration\s*[·-]\s*(\d+)\s*nouvelles?$/i);
+    if (match) return "Administration · " + match[1] + " new";
+    match = cle.match(/^(\d+)\s+jours? restant(s?)$/i);
+    if (match) return match[1] + " days remaining";
+    match = cle.match(/^(\d+)\s+jours?$/i);
+    if (match) return match[1] + " days";
+    match = cle.match(/^Quiz — (.+) — MITARIDALA$/i);
+    if (match) return "Quiz — " + match[1] + " — MITARIDALA";
+    match = cle.match(/^Résultat — (.+) — MITARIDALA$/i);
+    if (match) return "Results — " + match[1] + " — MITARIDALA";
+    match = cle.match(/^Parcours — (.+) — MITARIDALA$/i);
+    if (match) return "Learning path — " + match[1] + " — MITARIDALA";
+
+    return source;
+  }
+
   function traduireChaine(source, langue) {
+    if (langue === "en") return traduireChaineAnglaise(source);
     if (langue !== "mg") return source;
     var cle = normaliser(source);
     if (Object.prototype.hasOwnProperty.call(TRADUCTIONS_MG, cle)) {
@@ -3157,7 +3581,7 @@
     var source = noeudsOriginaux.get(noeud);
     var traduction = traduireChaine(source, langue);
 
-    if (langue === "mg" && traduction !== source) {
+    if ((langue === "mg" || langue === "en") && traduction !== source) {
       // La clé est normalisée pour la recherche, mais les espaces aux bords
       // sont gardés pour les phrases coupées par des nombres ou des balises
       // (ex. « Il te reste <strong>5</strong> jours Premium »).
@@ -3227,14 +3651,15 @@
 
   function lireLangue() {
     try {
-      return window.localStorage.getItem(CLE_LANGUE) === "mg" ? "mg" : "fr";
+      var langue = window.localStorage.getItem(CLE_LANGUE);
+      return langue === "mg" || langue === "en" ? langue : "fr";
     } catch (_erreur) {
       return "fr";
     }
   }
 
   function appliquerLangue(langue, memoriser) {
-    langueActuelle = langue === "mg" ? "mg" : "fr";
+    langueActuelle = langue === "mg" ? "mg" : langue === "en" ? "en" : "fr";
     document.documentElement.setAttribute("lang", langueActuelle);
     var selecteur = document.querySelector(SELECTEUR);
     if (selecteur && selecteur.value !== langueActuelle) selecteur.value = langueActuelle;
