@@ -84,7 +84,7 @@ def test_rejects_chunked_body_that_crosses_limit_and_returns_413():
         sent.append(message)
 
     middleware = RequestSizeLimitMiddleware(application, default_max_body_size=4)
-    asyncio.run(middleware(_scope(), receive, send))
+    asyncio.run(middleware(_scope(headers=[(b"content-length", b"3")]), receive, send))
 
     assert bytes(consumed) == b"abc"
     assert sent[0]["type"] == "http.response.start"
