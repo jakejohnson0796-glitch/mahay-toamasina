@@ -36,6 +36,14 @@
 .tournoi-choix input{margin-top:.25rem;accent-color:var(--content-link);flex:0 0 auto}
 .tournoi-progression{display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;font-weight:800;font-size:.9rem}
 .tournoi-progression progress{display:block;width:100%;height:.65rem;margin:.5rem 0 1rem;accent-color:var(--content-link)}
+.tournoi-minuteur{display:grid;grid-template-columns:auto minmax(4rem,auto) minmax(5rem,1fr);align-items:center;gap:.75rem;margin:.6rem 0 1rem;padding:.7rem .85rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg)}
+.tournoi-minuteur span{color:var(--content-text-muted);font-size:.9rem;font-weight:800}
+.tournoi-minuteur strong{font-size:1.2rem;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.tournoi-minuteur progress{width:100%;height:.6rem;accent-color:var(--content-link);border:0;border-radius:999px;overflow:hidden}
+.tournoi-minuteur[data-urgent="true"]{border-color:#d97706}
+.tournoi-minuteur[data-urgent="true"] strong{color:#d97706}
+@media(max-width:520px){.tournoi-minuteur{grid-template-columns:1fr auto}.tournoi-minuteur progress{grid-column:1/-1}}
+
 .tournoi-feedback{padding:.85rem 1rem;background:var(--content-bg);border-left:4px solid var(--content-link);border-radius:0 12px 12px 0;line-height:1.6}
 .tournoi-vainqueur{font-size:1.15rem;font-weight:900}
 @media(max-width:680px){.tournoi-page{padding:.85rem}.tournoi-grid{grid-template-columns:1fr}.tournoi-choix{grid-template-columns:1fr}.tournoi-actions form,.tournoi-actions .tournoi-button{width:100%}.tournoi-joueurs li{align-items:flex-start}}
@@ -118,6 +126,11 @@
         {% if tournoi.statut == "en_cours" and question %}
           <div class="tournoi-progression"><span>Manche {{ numero_question }}/{{ nombre_questions }}</span><span>{{ (question.difficulte)|capitalize }}{% if question.type_question == "enigme" %} · 🧩 Énigme{% endif %}</span></div>
           <progress value="{{ question_index }}" max="{{ nombre_questions }}" aria-label="Progression du tournoi"></progress>
+          {% if not tout_le_monde_a_repondu %}
+          <div class="tournoi-minuteur" data-minuteur data-echeance="{{ echeance }}" data-duree="{{ temps_question }}" aria-label="Temps restant pour la manche">
+            <span>⏱ Temps restant</span><strong data-minuteur-affichage>00:20</strong><progress data-minuteur-progress max="{{ temps_question }}" value="{{ temps_question }}" aria-label="Temps de réponse restant"></progress>
+          </div>
+          {% endif %}
           <h2>{{ question.theme }}</h2>
           <p class="tournoi-question">{{ question.question }}</p>
           {% if not tout_le_monde_a_repondu and not a_repondu %}
@@ -135,7 +148,7 @@
             <button class="tournoi-button" type="submit">Valider ma réponse</button>
           </form>
           {% elif not tout_le_monde_a_repondu %}
-          <div class="tournoi-feedback" role="status"><strong>Réponse enregistrée.</strong><p>Ta réponse est verrouillée. Attends les autres joueurs pour découvrir la correction et le classement de la manche.</p></div>
+          <div class="tournoi-feedback" role="status"><strong>{% if mon_choix == -1 %}Temps écoulé.{% else %}Réponse enregistrée.{% endif %}</strong><p>{% if mon_choix == -1 %}Le temps est écoulé ; les autres joueurs peuvent encore finir leur manche.{% else %}Ta réponse est verrouillée. Attends les autres joueurs pour découvrir la correction et le classement de la manche.{% endif %}</p></div>
           {% else %}
           <div class="tournoi-feedback" role="status"><strong>Bonne réponse : {{ correction.bonne_texte }}</strong><p>{{ correction.explication }}</p></div>
           {% if est_createur %}
@@ -169,5 +182,43 @@
     </div>
   </section>
   {% endif %}
+  {% if tournoi.statut == "en_cours" and question and not tout_le_monde_a_repondu and not a_repondu %}
+  <form method="post" action="/jeux-classiques/tournoi/{{ code }}/repondre" data-minuteur-timeout hidden aria-hidden="true">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <input type="hidden" name="choix" value="-1">
+  </form>
+  {% endif %}
+  <script nonce="{{ csp_nonce(request) }}">
+  (() => {
+    const timer = document.querySelector('[data-minuteur]');
+    if (!timer) return;
+    const deadline = Number(timer.dataset.echance || 0);
+    const duration = Math.max(1, Number(timer.dataset.duree || 20));
+    const display = timer.querySelector('[data-minuteur-affichage]');
+    const progress = timer.querySelector('[data-minuteur-progress]');
+    let submitted = false;
+    if (!deadline || !display) return;
+    const tick = () => {
+      const left = Math.max(0, deadline - Date.now() / 1000);
+      const seconds = Math.ceil(left);
+      display.textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+      if (progress) progress.value = Math.min(duration, left);
+      timer.dataset.urgent = left <= 5 ? 'true' : 'false';
+      if (left <= 0) {
+        if (!submitted) {
+          submitted = true;
+          const form = document.querySelector('[data-minuteur-timeout]');
+          if (form) form.requestSubmit();
+        }
+      }
+    };
+    tick();
+    const clock = window.setInterval(() => {
+      tick();
+      if (submitted) window.clearInterval(clock);
+    }, 250);
+    document.addEventListener('visibilitychange', tick);
+  })();
+  </script>
 </div>
 {% endblock %}
