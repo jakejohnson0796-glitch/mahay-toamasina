@@ -216,8 +216,11 @@ if (!window.document.querySelector('#circle-copy').textContent.startsWith('Sehat
 if (!window.document.querySelector('#contact-copy').textContent.startsWith('Manana fanontaniana')) {
   throw new Error('Full contact paragraph did not switch to Malagasy');
 }
-if (!window.document.querySelector('#about-copy').textContent.startsWith('Atambatry ny MITARIDALA')) {
-  throw new Error('Full about page paragraph did not switch to Malagasy');
+if (window.document.querySelector('#about-copy').textContent !== 'Sehatra malagasy hianarana, hanaovana fanazaran-tena ary handrosoana miaraka.') {
+  throw new Error('The short about-page tagline did not switch to Malagasy');
+}
+if (window.document.querySelector('#long-about-copy').textContent !== "Atambatry ny MITARIDALA ao amin'ny sehatra iray natao ho an'ny mpianatra eto Madagasikara ny loharano akademika, fanazaran-tena, fifanampiana, fanampian'ny IA ary kilasy virtoaly.") {
+  throw new Error('The full about-page paragraph did not switch to Malagasy');
 }
 
 // Vérifie les libellés oubliés, les compteurs construits en JavaScript et les attributs dynamiques.
