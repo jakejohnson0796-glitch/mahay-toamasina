@@ -31,6 +31,8 @@ def test_bibliotheque_documents_met_en_evidence_le_lancement_du_quiz():
     assert "Vérifier puis lancer le quiz" not in html
     assert "Vérification facultative du résumé IA" in parcours
     assert "la génération du quiz reste bloquée" not in parcours
+    assert "La fiche doit être vérifiée avant d'utiliser le Quiz IA" not in parcours
+    assert "Quiz IA peut être lancé directement depuis le document source approuvé" in parcours
     assert "Lancer le Quiz IA maintenant" in parcours
 
 
