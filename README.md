@@ -174,7 +174,7 @@ Les paramètres de référence se trouvent dans [.env.example](.env.example) et 
 | **GROQ_CRITIC_MODEL**, **AI_ENSEMBLE_ENABLED** | Critique et arbitrage IA | Vérification multi-modèles activée |
 | **GEMINI_API_KEY**, **GEMINI_MODEL** | Vérification indépendante optionnelle | Gemini activé et configuré |
 | **LIVEKIT_URL**, **LIVEKIT_API_KEY**, **LIVEKIT_API_SECRET** | Communication en classe virtuelle | Fonctionnalités LiveKit |
-| **EMAIL_TRANSPORT**, **BREVO_API_KEY**, paramètres **SMTP_*** | E-mails, OTP et récupération de compte | Envoi d'e-mails configuré |
+| **EMAIL_TRANSPORT**, **BREVO_API_KEY**, variables SMTP_* | E-mails, OTP et récupération de compte | Envoi d'e-mails configuré |
 
 La configuration de Render force **ENVIRONNEMENT=production** et utilise **autoDeployTrigger: checksPass**. Ne remplacez pas un secret de production par la valeur de démonstration du fichier exemple. Ne mettez jamais les clés API, secrets LiveKit, clé Supabase de service ou mot de passe de base dans le navigateur ou dans Git.
 
@@ -200,7 +200,23 @@ python scripts/verify_migrations.py
 python -m compileall -q app tests
 python scripts/verify_deployment_contract.py
 python scripts/verify_release_identity.py
-pytest -q
+~~~
+
+La CI isole chaque fichier de test Python dans un processus distinct. Pour reproduire cette stratégie sous Bash :
+
+~~~bash
+for test_file in tests/test_*.py; do
+  python -m pytest -q "$test_file" || exit 1
+done
+~~~
+
+Sous PowerShell :
+
+~~~powershell
+Get-ChildItem tests/test_*.py | ForEach-Object {
+    python -m pytest -q $_.FullName
+    if ($LASTEXITCODE -ne 0) { throw "Échec du test : $($_.Name)" }
+}
 ~~~
 
 Pour reproduire l'environnement de production, utiliser une base PostgreSQL de test et la checklist [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md). Ne jamais exécuter de test destructif sur les données de production.
