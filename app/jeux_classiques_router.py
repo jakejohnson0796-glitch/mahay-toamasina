@@ -411,14 +411,21 @@ def preparer_question_active(etat, rng=None):
 
 
 def selectionner_questions_champion(difficulte="moyen", rng=None, nombre=QUESTIONS_PAR_PARTIE):
-    """Mélange connaissances et énigmes d'un niveau donné sans répéter de question."""
+    """Assemble une manche équilibrée sans répéter les questions."""
     generateur = rng or random
     difficulte = difficulte if difficulte in {"facile", "moyen", "difficile"} else "moyen"
     banque_enigmes = [q for q in ENIGMES if q["difficulte"] == difficulte]
-    banque_culture = [q for q in QUESTIONS if q["type_question"] != "enigme"]
+    banque_calculs = [q for q in QUESTIONS if q["type_question"] == "calcul"]
+    banque_culture = [
+        q for q in QUESTIONS
+        if q["type_question"] not in {"enigme", "calcul"}
+    ]
     nombre_enigmes = min(4, len(banque_enigmes), nombre)
     selection = generateur.sample(banque_enigmes, nombre_enigmes)
-    selection += generateur.sample(banque_culture, min(nombre - len(selection), len(banque_culture)))
+    nombre_calculs = min(2, max(0, nombre - len(selection)), len(banque_calculs))
+    selection += generateur.sample(banque_calculs, nombre_calculs)
+    nombre_culture = min(nombre - len(selection), len(banque_culture))
+    selection += generateur.sample(banque_culture, nombre_culture)
     if len(selection) < nombre:
         deja = {q["id"] for q in selection}
         restantes = [q for q in QUESTIONS if q["id"] not in deja]
@@ -427,12 +434,28 @@ def selectionner_questions_champion(difficulte="moyen", rng=None, nombre=QUESTIO
     return selection
 
 
+def _regler_minuteur(etat, duree, maintenant=None):
+    """Enregistre une échéance serveur stable malgré les rafraîchissements."""
+    debut = time.time() if maintenant is None else float(maintenant)
+    etat["temps_max"] = int(duree)
+    etat["echeance"] = debut + int(duree)
+
+
+def _timestamp_utc(valeur):
+    """Convertit une date SQLModel naïve (UTC) en timestamp Unix."""
+    if valeur is None:
+        return 0.0
+    if valeur.tzinfo is None:
+        valeur = valeur.replace(tzinfo=timezone.utc)
+    return valeur.timestamp()
+
+
 def creer_partie_champion(rng=None, mode="champion", difficulte="moyen"):
-    """Prépare une partie solo ou contre le bot, avec au moins quatre énigmes."""
+    """Prépare une partie solo avec des questions variées et un minuteur par manche."""
     generateur = rng or random
     questions = selectionner_questions_champion(difficulte, generateur, QUESTIONS_PAR_PARTIE)
     etat = {
-        "mode": mode,
+        "mode": "champion",
         "difficulte": difficulte if difficulte in {"facile", "moyen", "difficile"} else "moyen",
         "score": 0,
         "points": 0,
@@ -441,25 +464,9 @@ def creer_partie_champion(rng=None, mode="champion", difficulte="moyen"):
         "meilleure_serie": 0,
         "ids": [question["id"] for question in questions],
     }
-    if mode == "champion_bot":
-        etat.update({
-            "bot_nom": {"facile": "Mora (débutant)", "moyen": "Koto (confirmé)", "difficile": "Haja (expert)"}[etat["difficulte"]],
-            "bot_score": 0,
-            "bot_correctes": 0,
-            "bot_serie": 0,
-        })
     preparer_question_active(etat, generateur)
+    _regler_minuteur(etat, TEMPS_QUESTION_CHAMPION)
     return etat
-
-
-def simuler_reponse_bot(bonne, nombre_choix, difficulte="moyen", rng=None):
-    """Simule un adversaire avec une probabilité de réussite calibrée par niveau."""
-    generateur = rng or random
-    probabilite = {"facile": 0.42, "moyen": 0.68, "difficile": 0.90}.get(difficulte, 0.68)
-    if generateur.random() < probabilite:
-        return True, bonne
-    mauvaises = [index for index in range(nombre_choix) if index != bonne]
-    return False, generateur.choice(mauvaises)
 
 
 def preparer_questions_tournoi(difficulte="moyen", rng=None, nombre=QUESTIONS_PAR_PARTIE):
