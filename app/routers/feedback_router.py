@@ -16,6 +16,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
 from ..database import get_session
+from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
@@ -33,7 +34,7 @@ LONGUEUR_MAX_COMMENTAIRE = 1000
 
 
 def _ip_client(request: Request) -> str:
-    return request.client.host if request.client else "inconnu"
+    return adresse_ip_client(request)
 
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
