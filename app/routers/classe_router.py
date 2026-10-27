@@ -23,6 +23,7 @@ from fastapi.responses import RedirectResponse, FileResponse, JSONResponse, Resp
 from sqlmodel import Session, select
 
 from ..database import get_session, engine
+from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours)
@@ -1459,7 +1460,7 @@ def rendre_devoir(
     if not _est_inscrit(session, cours.id, utilisateur.id):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if limite_depassee(f"upload-devoir:user:{utilisateur.id}", 10, 3600) or limite_depassee(f"upload-devoir:ip:{host}", 25, 3600):
         return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=trop_de_depots", status_code=303)
 
