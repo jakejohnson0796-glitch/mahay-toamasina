@@ -113,6 +113,9 @@
         </form>
         <form method="post" action="/quiz/cible" class="ai-inline-action">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          {% if tentative.document_id %}
+          <input type="hidden" name="document_id" value="{{ tentative.document_id }}">
+          {% endif %}
           <input type="hidden" name="progression_id" value="{{ notions_detectees[0].progression_id }}">
           <button class="bouton bouton-primaire" type="submit">Quiz ciblé</button>
         </form>
