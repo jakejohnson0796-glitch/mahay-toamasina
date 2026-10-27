@@ -27,7 +27,8 @@ from app.jeux_classiques_router import (
 def test_banque_questions_variee_et_coherente():
     assert len(QUESTIONS) >= 4_000
     assert sum(q['type_question'] == 'calcul' for q in QUESTIONS) >= 4_000
-    assert len(ENIGMES) >= 18
+    assert len(ENIGMES) >= 1_200
+    assert sum(q['id'].startswith('enigme-suite-arithmetique-') for q in ENIGMES) == 1_200
     assert {q["difficulte"] for q in ENIGMES} == {"facile", "moyen", "difficile"}
     assert len({q["id"] for q in QUESTIONS}) == len(QUESTIONS)
     for question in QUESTIONS:
