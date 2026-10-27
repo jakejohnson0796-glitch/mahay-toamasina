@@ -2996,6 +2996,7 @@
     "1. Application d'authentification — gratuite et hors ligne": "1. Rindranasa fanamarinana — maimaim-poana ary tsy mila Internet",
     "Activée": "Mandeha",
     "2. Code OTP envoyé par e-mail": "2. Kaody OTP alefa amin'ny mailaka",
+
   });
 
   var TRADUCTIONS_EN = Object.freeze({
@@ -4995,6 +4996,7 @@
     "Transparence": "Transparency",
     "Dire clairement ce que l'IA, le site et l'équipe peuvent ou ne peuvent pas garantir.": "Clearly explain what the AI, site, and team can and cannot guarantee.",
     "Protéger comptes, sessions, documents et espaces privés.": "Protect accounts, sessions, documents, and private spaces.",
+    "Choisir la langue de l’interface": "Choose interface language",
   });
 
   var noeudsOriginaux = new WeakMap();
@@ -5208,6 +5210,14 @@
     if (match) return match[1] + " andro";
     match = cle.match(/^(\d+)\s+jours? restant(s?)$/i);
     if (match) return match[1] + " andro sisa";
+    match = cle.match(/^Tu as récemment modifié ton niveau\. Il reste (\d+) jour(s?)\.$/i);
+    if (match) return "You recently changed your level. You can change it again in " + match[1] + (match[1] === "1" ? " day." : " days.");
+    match = cle.match(/^Ton compte est actuellement utilisé\. Une notification est créée lors de la prochaine connexion après (\d+) jours? ou plus d'absence\.$/i);
+    if (match) return "Your account is currently active. A notification will be created at your next sign-in after " + match[1] + " or more days of inactivity.";
+    match = cle.match(/^Dernière activité\s*:\s*(.+?)\s+UTC\.?$/i);
+    if (match) return "Last activity: " + match[1].trim() + " UTC.";
+    match = cle.match(/^Configurée le (.+?) UTC\.?$/i);
+    if (match) return "Configured on " + match[1].trim() + " UTC.";
     match = cle.match(/^Bienvenue[, ]+(.+?)\s*👋$/i);
     if (match) return "Tongasoa, " + match[1].trim() + " 👋";
     match = cle.match(/^Jour\s+(\d+)\/7$/i);
