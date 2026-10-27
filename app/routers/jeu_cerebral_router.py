@@ -13,6 +13,7 @@ from .. import gamification, jeu_cerebral
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
+from ..client_ip import adresse_ip_client
 from ..dependencies import acces_ia_ou_redirection
 from ..models import JeuCerebralSession
 from ..rate_limit import limite_depassee
@@ -113,7 +114,7 @@ def demarrer_jeu_cerebral(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    host = request.client.host if request.client else "inconnu"
+    host = adresse_ip_client(request)
     if (
         limite_depassee(f"jeu-cerebral:user:{utilisateur.id}", 5, 300)
         or limite_depassee(f"jeu-cerebral:ip:{host}", 18, 300)
