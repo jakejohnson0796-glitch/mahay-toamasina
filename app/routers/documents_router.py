@@ -1598,12 +1598,9 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
         not utilisateur or not _est_membre_cercle(session, document.cercle_id, utilisateur.id)
     ):
         return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
-    if not _fiche_pedagogique_est_validee(document):
-        return RedirectResponse(
-            f"/documents/{document.id}/apprendre?erreur=fiche_a_verifier#fiche-verification",
-            status_code=303,
-        )
-
+    # Le quiz est construit depuis le fichier source approuvé et possède ses
+    # propres contrôles de qualité. La vérification humaine du résumé IA reste
+    # disponible dans le parcours, mais ne doit pas bloquer l'accès au quiz.
     try:
         with ouvrir_fichier_local(document.chemin_fichier) as chemin_local:
             texte = extraire_texte(str(chemin_local))

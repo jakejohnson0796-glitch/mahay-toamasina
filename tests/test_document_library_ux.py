@@ -27,8 +27,12 @@ def test_bibliotheque_documents_met_en_evidence_le_lancement_du_quiz():
     html = lire("app/templates/documents_list.html")
     parcours = lire("app/templates/document_parcours.html")
 
-    assert 'class="doc-lien-quiz doc-quiz-cta" href="/documents/{{ doc.id }}/quiz"' in html
-    assert "Vérifier puis lancer le quiz" in html
+    assert 'class="doc-lien-quiz doc-quiz-cta" href="/documents/{{ doc.id }}/quiz">Lancer le quiz &rarr;</a>' in html
+    assert "Vérifier puis lancer le quiz" not in html
+    assert "Vérification facultative du résumé IA" in parcours
+    assert "la génération du quiz reste bloquée" not in parcours
+    assert "La fiche doit être vérifiée avant d'utiliser le Quiz IA" not in parcours
+    assert "Quiz IA peut être lancé directement depuis le document source approuvé" in parcours
     assert "Lancer le Quiz IA maintenant" in parcours
 
 

@@ -97,16 +97,16 @@
     <div class="ai-section-head">
       <div>
         <span class="ai-kicker">Vérification pédagogique</span>
-        <h2 id="fiche-verification-title">{% if fiche_validee %}Fiche pédagogique validée{% else %}Vérifier la fiche avant de générer un quiz{% endif %}</h2>
+        <h2 id="fiche-verification-title">{% if fiche_validee %}Fiche pédagogique validée{% else %}Vérification facultative du résumé IA{% endif %}</h2>
         {% if fiche_validee %}
-        <p>Cette fiche a déjà été vérifiée. Tu peux lancer un quiz sans remplir à nouveau ce formulaire.</p>
+        <p>Cette fiche a déjà été vérifiée. Tu peux lancer le Quiz IA directement depuis le document.</p>
         {% else %}
-        <p>Le résumé automatique peut contenir des erreurs. Compare-le au fichier original ; la génération du quiz reste bloquée tant que la fiche n'a pas été vérifiée.</p>
+        <p>Le résumé automatique peut contenir des erreurs. Tu peux le comparer au fichier original et le corriger ici. Cette vérification reste facultative pour le quiz, qui est généré à partir du document source approuvé.</p>
         {% endif %}
       </div>
     </div>
     {% if request.query_params.get("erreur") == "fiche_a_verifier" %}
-      <p class="ai-panel" role="status">La fiche doit être vérifiée avant d'utiliser le Quiz IA ou le Tuteur contextualisé.</p>
+      <p class="ai-panel" role="status">La vérification du résumé reste nécessaire pour le Tuteur contextualisé ; le Quiz IA peut être lancé directement depuis le document source approuvé.</p>
     {% elif request.query_params.get("erreur") == "confirmation_requise" %}
       <p class="ai-panel" role="alert">Coche les deux confirmations après avoir comparé la fiche au document original.</p>
     {% elif request.query_params.get("erreur") == "fiche_indisponible" %}
@@ -119,11 +119,11 @@
       <p class="ai-panel" role="alert">Renseigne une matière et choisis le type de document avant de valider.</p>
     {% endif %}
     {% if fiche_validee %}
-      <p class="ai-panel" role="status">Fiche vérifiée le {{ document.fiche_validee_le.strftime("%d/%m/%Y à %H:%M") if document.fiche_validee_le else "—" }}. La génération de quiz est autorisée.</p>
-      <a class="bouton bouton-primaire document-quiz-lancement" href="/documents/{{ document.id }}/quiz">Lancer le Quiz IA maintenant &rarr;</a>
+      <p class="ai-panel" role="status">Fiche vérifiée le {{ document.fiche_validee_le.strftime("%d/%m/%Y à %H:%M") if document.fiche_validee_le else "—" }}.</p>
     {% else %}
-      <p class="ai-panel" role="status">État : fiche en attente de vérification. Son résumé ne sera pas proposé aux autres étudiants tant qu'il n'aura pas été confirmé.</p>
+      <p class="ai-panel" role="status">Le résumé IA n'a pas encore été vérifié. Tu peux le corriger ci-dessous ou lancer le quiz directement depuis le document source approuvé.</p>
     {% endif %}
+    <a class="bouton bouton-primaire document-quiz-lancement" href="/documents/{{ document.id }}/quiz">Lancer le Quiz IA maintenant &rarr;</a>
     {% if peut_valider_fiche and not fiche_validee %}
       {% if fiche_validation_possible %}
       <form method="post" action="/documents/{{ document.id }}/fiche/valider" class="ai-form ai-panel ai-form-card">

@@ -207,7 +207,7 @@
         {% else %}<p>Tsy mbola misy famintinana malagasy voamarina. Mbola azonao jerena ny antontan-taratasy tany am-boalohany.</p>{% endif %}
       </div>
       {% else %}
-      <p>Le résumé automatique est masqué jusqu'à sa vérification par le déposant ou l'administration. Le Quiz IA restera indisponible entre-temps.</p>
+      <p>Le résumé automatique reste masqué jusqu'à sa vérification par le déposant ou l'administration. Le Quiz IA reste accessible depuis l'action « Lancer le quiz ».</p>
       {% endif %}
     </details>
   </article>
@@ -381,11 +381,7 @@ session dediee, avec sa propre verification desktop+mobile.
     <div class="doc-actions">
       {% if utilisateur %}
       <a class="bouton bouton-secondaire doc-bouton" href="/documents/{{ doc.id }}/telecharger">Télécharger le document</a>
-      {% if doc.fiche_validation_statut == "validee" %}
       <a class="doc-lien-quiz doc-quiz-cta" href="/documents/{{ doc.id }}/quiz">Lancer le quiz &rarr;</a>
-      {% else %}
-      <a class="doc-lien-fiche-validation doc-quiz-cta" href="/documents/{{ doc.id }}/apprendre#fiche-verification">Vérifier puis lancer le quiz &rarr;</a>
-      {% endif %}
       <a class="doc-lien-quiz" href="/documents/{{ doc.id }}/apprendre">Parcours &rarr;</a>
       {% else %}
       <a class="bouton bouton-secondaire doc-bouton" href="/connexion">Connectez-vous pour télécharger</a>

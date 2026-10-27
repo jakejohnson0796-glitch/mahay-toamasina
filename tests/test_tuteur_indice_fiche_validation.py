@@ -49,18 +49,42 @@ def test_fiche_documentaire_n_est_validable_que_si_une_extraction_exploitable_ex
     assert not _fiche_pedagogique_peut_etre_validee(SimpleNamespace(resume_ia="", resume_statut_ia="generee"))
 
 
-def test_generation_quiz_document_est_bloquee_tant_que_la_fiche_n_est_pas_validee(monkeypatch):
+def test_generation_quiz_document_approuve_ne_requiert_pas_validation_manuelle(monkeypatch):
     user = SimpleNamespace(id=8, role=RoleUtilisateur.ETUDIANT, niveau="L1")
-    document = SimpleNamespace(id=42, statut=StatutDocument.APPROUVE, cercle_id=None, fiche_validation_statut="a_verifier",
-        chemin_fichier="not-opened.pdf", titre="Document test", matiere="Mathématiques", resume_ia="Résumé", resume_statut_ia="generee")
+    document = SimpleNamespace(
+        id=42,
+        statut=StatutDocument.APPROUVE,
+        cercle_id=None,
+        fiche_validation_statut="a_verifier",
+        chemin_fichier="source-indisponible-pour-ce-test.pdf",
+        titre="Document test",
+        matiere="Mathématiques",
+        resume_ia="Résumé",
+        resume_statut_ia="generee",
+    )
     fake_session = SimpleNamespace(get=lambda _model, ident: document if ident == 42 else None)
+    ouvertures = []
+
+    def ouvrir_source(reference):
+        ouvertures.append(reference)
+        raise RuntimeError("Source volontairement indisponible dans ce test de contrat.")
+
     monkeypatch.setattr(documents_router, "utilisateur_courant", lambda _request, _session: user)
     monkeypatch.setattr(documents_router, "acces_premium_ou_redirection", lambda _user, _session: None)
-    monkeypatch.setattr(documents_router, "generer_quiz_depuis_texte", lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("Quiz généré trop tôt")))
+    monkeypatch.setattr(documents_router, "ouvrir_fichier_local", ouvrir_source)
+    monkeypatch.setattr(
+        documents_router,
+        "generer_quiz_depuis_texte",
+        lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("Le fichier source n'a pas été extrait")),
+    )
+
     response = documents_router.quiz_document(None, 42, session=fake_session)
     assert isinstance(response, RedirectResponse)
     assert response.status_code == 303
-    assert response.headers["location"].startswith("/documents/42/apprendre?erreur=fiche_a_verifier")
+    # La route essaie de lire le document approuvé même si le résumé reste à vérifier.
+    # Ici, seule l'indisponibilité volontaire du fichier empêche la suite du quiz.
+    assert ouvertures == ["source-indisponible-pour-ce-test.pdf"]
+    assert response.headers["location"] == "/documents?erreur=generation_quiz"
 
 
 def test_route_validation_fiche_enregistre_corrections_et_audit(monkeypatch):
@@ -103,7 +127,9 @@ def test_templates_exigent_relecture_humaine_et_affichent_un_indice_progressif()
     assert 'name="confirmer_contenu"' in hub and 'name="confirmer_metadonnees"' in hub
     assert 'name="matiere_verifiee"' in hub and 'name="type_document_verifie"' in hub
     assert 'name="type_cours_verifie"' in hub
-    assert 'doc.fiche_validation_statut == "validee"' in library
+    assert 'class="doc-lien-quiz doc-quiz-cta" href="/documents/{{ doc.id }}/quiz">Lancer le quiz &rarr;</a>' in library
+    assert "Vérifier puis lancer le quiz" not in library
+    assert "Le Quiz IA reste accessible depuis l'action" in library
     assert "/documents/{{ document.id }}/apprendre#fiche-verification" in moderation
 
 
