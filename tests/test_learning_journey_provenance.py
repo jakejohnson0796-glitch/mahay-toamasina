@@ -34,7 +34,7 @@ def learning_engine():
         engine.dispose()
 
 
-def creer_source(session: Session, *, cercle_id=None, fiche_validation_statut="a_verifier"):
+def creer_source(session: Session, *, cercle_id=None, fiche_validation_statut="validee"):
     utilisateur = Utilisateur(
         nom="Étudiante parcours",
         telephone="+261340071101",
@@ -71,7 +71,7 @@ def faux_request():
 
 def test_quiz_documentaire_conserve_la_source_sans_validation_manuelle(learning_engine, monkeypatch):
     with Session(learning_engine) as session:
-        utilisateur, document = creer_source(session)
+        utilisateur, document = creer_source(session, fiche_validation_statut="a_verifier")
         assert document.fiche_validation_statut == "a_verifier"
 
         monkeypatch.setattr(
