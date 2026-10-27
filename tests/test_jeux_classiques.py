@@ -161,6 +161,16 @@ def test_tournoi_fige_les_propositions_et_la_bonne_reponse():
         assert item["explication"] == original["explication"]
 
 
+def test_ancienne_session_bot_est_nettoyee_a_l_accueil():
+    routeur = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "jeux_classiques_router.py"
+    ).read_text(encoding="utf-8")
+    assert 'if partie.get("mode") == "champion_bot":' in routeur
+    assert "effacer_partie_classique(request.session)" in routeur
+
+
 def test_interface_conserve_le_tournoi_et_supprime_le_bot():
     racine = Path(__file__).resolve().parents[1]
     page_jeu = (racine / "app" / "templates" / "jeux_classiques.html").read_text(encoding="utf-8")
