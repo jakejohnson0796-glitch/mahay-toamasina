@@ -95,6 +95,7 @@ def test_malagasy_dictionary_covers_settings_circles_and_games():
     malagasy = script.split("var TRADUCTIONS_MG = Object.freeze({", 1)[1].split("\n  });", 1)[0]
     keys = re.findall(r'^\s*"((?:\\.|[^"\\])*)"\s*:', malagasy, re.MULTILINE)
     assert len(keys) >= 3_000
+    assert len(keys) == len(set(keys)), "Malagasy dictionary contains duplicate keys"
     for source, translated in {
         "Langue de l’interface": "Fitenin'ny interface",
         "Langue préférée": "Fiteny tiana hampiasaina",
