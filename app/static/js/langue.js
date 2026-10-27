@@ -3159,6 +3159,19 @@
     "Une solution possible pour ce tirage était « ». Le dictionnaire intégré est hors ligne : un mot absent de celui-ci peut ne pas être accepté.": "Iray amin'ireo vahaolana mety tamin'ity fanandramana ity ny « ». Miasa tsy mila Internet ny rakibolana; mety tsy ekena ny teny tsy ao anatiny.",
     "Rejouer les lettres": "Hilalao litera indray",
 
+    "Cette notion provient d'un autre niveau. Choisis une notion liée à ta classe pour éviter de mélanger les parcours.": "Avy amin'ny ambaratonga hafa ity lohahevitra ity. Safidio ny lohahevitra mifanaraka amin'ny kilasinao mba tsy hampifangaro ny lalam-pianarana.",
+    "Sans établissement précis, le cercle est national pour la classe ou l’option. Avec un établissement vérifié, le ciblage est local. Une matière n’est proposée que si le programme de la classe ou série est vérifié.": "Raha tsy misy sekoly voafaritra dia nasionaly ho an'ny kilasy na safidy ilay faribolana. Raha misy sekoly voamarina dia eo an-toerana ny sehatra. Taranja voamarina ao amin'ny fandaharam-pianarana ihany no atolotra.",
+    "Raison (obligatoire pour toute demande de cercle national universitaire)": "Antony (ilaina amin'ny fangatahana faribolana nasionaly ho an'ny oniversite)",
+    "National": "Nasionaly",
+    "Compose un mot valide avec les lettres tirées. Chaque lettre ne peut servir qu'autant de fois qu'elle apparaît. Un mot accepté rapporte 5 points par lettre : vise les 9 lettres pour maximiser ton score.": "Mamoròna teny manan-kery amin'ireo litera nalaina. Tsy azo ampiasaina mihoatra noho ny fisehony ny litera tsirairay. Mahazo isa 5 isaky ny litera ny teny ekena; ampiasao ireo litera 9 rehetra raha te hahazo isa betsaka.",
+    "🎲 Ton tirage": "🎲 Ireo litera azonao",
+    "🏅 5 points par lettre valide": "🏅 Isa 5 isaky ny litera manan-kery",
+    "↶ Retirer la dernière lettre": "↶ Esory ny litera farany",
+    "🏆 Questions pour un champion": "🏆 Fanontaniana ho an'ny tompondaka",
+    "pts": "isa",
+    "30 jours": "30 andro",
+    "La demande a bien été reçue. Ton accès Premium reste actif pendant la vérification ( jours). L'accès IA reste ouvert pendant jours.": "Voaray ny fangatahanao. Mbola mandeha mandritra ny fanamarinana ny fidirana Premium-nao (andro). Mbola misokatra mandritra ny andro sisa ny fidirana AI.",
+    "Le Quiz IA et le Tuteur IA sont inclus pendant les premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant jours.": "Tafiditra mandritra ny andro voalohan'ny andrana ny Quiz IA sy ny Tuteur IA. Mbola azo ampiasaina mandritra ny andro sisa ny endri-javatra Premium hafa.",
   });
 
   var TRADUCTIONS_EN = Object.freeze({
