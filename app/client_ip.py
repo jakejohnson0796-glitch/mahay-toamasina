@@ -37,13 +37,8 @@ def adresse_ip_client(request: Request) -> str:
     if adresse_cloudflare:
         return adresse_cloudflare
 
-    # X-Forwarded-For peut contenir des valeurs fournies plus tôt dans la
-    # chaîne. Le proxy le plus proche ajoute l'adresse effective à droite ;
-    # on parcourt depuis la droite et on ignore toutes les valeurs invalides.
-    forwarded = request.headers.get("x-forwarded-for", "")
-    for candidat in reversed(forwarded.split(",")):
-        adresse = _ip_valide(candidat)
-        if adresse:
-            return adresse
-
+    # Ne pas retomber sur X-Forwarded-For : ce champ peut contenir une
+    # valeur fournie par le visiteur. Si l'IP canonique manque, préférer
+    # l'adresse socket (éventuellement le proxy) plutôt que faire confiance
+    # à une identité IP contrôlée par le client.
     return _ip_valide(adresse_socket) or adresse_socket
