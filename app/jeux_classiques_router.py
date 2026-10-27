@@ -1,12 +1,17 @@
 """Routes des jeux classiques (culture générale, chiffres et lettres)."""
 import itertools
+import json
 import random
 import re
+import secrets
+import time
 import unicodedata
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session, select
 
 from .auth import utilisateur_courant
 from .csrf import verifier_csrf
@@ -25,6 +30,10 @@ QUESTIONS_PAR_PARTIE = 10
 TENTATIVES_MAX = 3
 POINTS_QUESTION = 10
 BONUS_SERIE = 5
+TEMPS_QUESTION_CHAMPION = 20
+TEMPS_CHIFFRES = 120
+TEMPS_LETTRES = 90
+TEMPS_TOURNOI = 20
 
 def _q(
     identifiant,
@@ -145,11 +154,182 @@ ENIGMES = [
     _q("enigme-interrupteurs", "Logique", "Trois interrupteurs sont dehors ; une ampoule est dans une pièce fermée. Tu peux entrer une seule fois. Quelle méthode permet d'identifier le bon interrupteur ?", ["Allumer les trois et entrer", "Allumer A quelques minutes, l'éteindre, allumer B et entrer ; lumière = B, chaleur = A, sinon C", "Allumer A et B puis entrer", "C'est impossible"], 1, "La lumière indique B ; une ampoule éteinte mais chaude indique A ; une ampoule froide et éteinte indique C.", "difficile", "enigme"),
     _q("enigme-jour-semaine", "Logique", "Si avant-hier était jeudi, quel jour serons-nous après-demain ?", ["Dimanche", "Lundi", "Mardi", "Mercredi"], 1, "Avant-hier jeudi signifie aujourd'hui samedi ; après-demain sera lundi.", "difficile", "enigme"),
 ]
-QUESTIONS.extend(ENIGMES)
+def _choix_numeriques(correct, graine):
+    """Produit quatre propositions distinctes et reproductibles pour un calcul."""
+    valeurs = [correct]
+    decalages = (1, -1, 2, -2, 3, -3, 5, -5, 10, -10, 20, -20, 25, -25, 50, -50)
+    for decalage in decalages:
+        candidat = correct + decalage
+        if candidat >= 0 and candidat not in valeurs:
+            valeurs.append(candidat)
+        if len(valeurs) == 4:
+            break
+    candidat = max(0, correct + 7)
+    while len(valeurs) < 4:
+        if candidat not in valeurs:
+            valeurs.append(candidat)
+        candidat += 1
+    generateur = random.Random(graine)
+    generateur.shuffle(valeurs)
+    choix = [str(valeur) for valeur in valeurs]
+    return choix, choix.index(str(correct))
 
-# Dictionnaire embarqué pour rester utilisable sans service externe.
-# Il contient des mots courants et quelques mots utiles dans le contexte malgache.
-MOTS = set("""
+
+def generer_questions_calcul():
+    """Construit un grand réservoir reproductible de questions de calcul vérifiables."""
+    resultat = []
+
+    def ajouter(identifiant, question, reponse, explication, graine):
+        choix, bonne = _choix_numeriques(reponse, graine)
+        difficulte = "facile" if reponse <= 20 else ("moyen" if reponse <= 200 else "difficile")
+        resultat.append(_q(
+            identifiant, "Calcul mental", question, choix, bonne, explication,
+            difficulte, "calcul",
+        ))
+
+    for a in range(1, 61):
+        for b in range(a, 61):
+            somme = a + b
+            ajouter(
+                f"calcul-add-{a}-{b}",
+                f"Combien font {a} + {b} ?", somme,
+                f"{a} + {b} = {somme}.", somme * 101 + a * 7 + b,
+            )
+    for a in range(2, 61):
+        for b in range(1, a):
+            difference = a - b
+            ajouter(
+                f"calcul-sub-{a}-{b}",
+                f"Combien font {a} − {b} ?", difference,
+                f"{a} − {b} = {difference}.", a * 211 + b * 13,
+            )
+    for a in range(2, 17):
+        for b in range(a, 17):
+            produit = a * b
+            ajouter(
+                f"calcul-mul-{a}-{b}",
+                f"Combien font {a} × {b} ?", produit,
+                f"{a} × {b} = {produit}.", a * 307 + b * 19,
+            )
+    for diviseur in range(2, 17):
+        for quotient in range(2, 17):
+            dividende = diviseur * quotient
+            ajouter(
+                f"calcul-div-{dividende}-{diviseur}",
+                f"Combien font {dividende} ÷ {diviseur} ?", quotient,
+                f"{dividende} ÷ {diviseur} = {quotient}. La division est exacte.",
+                dividende * 401 + diviseur * 23,
+            )
+    for n in range(2, 51):
+        carre = n * n
+        ajouter(
+            f"calcul-carre-{n}", f"Combien vaut {n} au carré ?", carre,
+            f"{n}² = {n} × {n} = {carre}.", n * 503,
+        )
+    for n in range(2, 16):
+        cube = n ** 3
+        ajouter(
+            f"calcul-cube-{n}", f"Combien vaut {n} au cube ?", cube,
+            f"{n}³ = {n} × {n} × {n} = {cube}.", n * 601,
+        )
+    conversions = (
+        ("metre-centimetre", "Combien de centimètres représentent {n} m ?", 100, "m", "cm"),
+        ("kilometre-metre", "Combien de mètres représentent {n} km ?", 1000, "km", "m"),
+        ("kilogramme-gramme", "Combien de grammes représentent {n} kg ?", 1000, "kg", "g"),
+        ("litre-millilitre", "Combien de millilitres représentent {n} L ?", 1000, "L", "mL"),
+        ("heure-minute", "Combien de minutes représentent {n} heures ?", 60, "heures", "minutes"),
+    )
+    for code, modele, facteur, unite_source, unite_cible in conversions:
+        for n in range(1, 61):
+            valeur = n * facteur
+            ajouter(
+                f"conversion-{code}-{n}", modele.format(n=n), valeur,
+                f"{n} {unite_source} = {valeur} {unite_cible}.",
+                valeur * 701 + n * 29,
+            )
+    return resultat
+
+
+def generer_questions_geographie():
+    """Ajoute des questions de capitales à partir d'une table de faits stable."""
+    capitales = [
+        ("France", "Paris"), ("Japon", "Tokyo"),
+        ("Canada", "Ottawa"), ("Australie", "Canberra"), ("Nouvelle-Zélande", "Wellington"),
+        ("Brésil", "Brasília"), ("Argentine", "Buenos Aires"), ("Chili", "Santiago"),
+        ("Pérou", "Lima"), ("Mexique", "Mexico"), ("États-Unis", "Washington"),
+        ("Royaume-Uni", "Londres"), ("Irlande", "Dublin"), ("Espagne", "Madrid"),
+        ("Portugal", "Lisbonne"), ("Italie", "Rome"), ("Allemagne", "Berlin"),
+        ("Belgique", "Bruxelles"), ("Suisse", "Berne"), ("Autriche", "Vienne"),
+        ("Pologne", "Varsovie"), ("Grèce", "Athènes"), ("Norvège", "Oslo"),
+        ("Suède", "Stockholm"), ("Finlande", "Helsinki"), ("Danemark", "Copenhague"),
+        ("Islande", "Reykjavik"), ("Maroc", "Rabat"), ("Algérie", "Alger"),
+        ("Tunisie", "Tunis"), ("Sénégal", "Dakar"), ("Ghana", "Accra"),
+        ("Nigeria", "Abuja"), ("Kenya", "Nairobi"), ("Éthiopie", "Addis-Abeba"),
+        ("Tanzanie", "Dodoma"), ("Ouganda", "Kampala"), ("Rwanda", "Kigali"),
+        ("Afrique du Sud", "Pretoria"), ("Égypte", "Le Caire"), ("Arabie saoudite", "Riyad"),
+        ("Inde", "New Delhi"), ("Pakistan", "Islamabad"), ("Bangladesh", "Dacca"),
+        ("Chine", "Pékin"), ("Corée du Sud", "Séoul"), ("Thaïlande", "Bangkok"),
+        ("Vietnam", "Hanoï"), ("Indonésie", "Jakarta"), ("Philippines", "Manille"),
+        ("Turquie", "Ankara"), ("Ukraine", "Kyiv"), ("Roumanie", "Bucarest"),
+        ("Hongrie", "Budapest"), ("Tchéquie", "Prague"), ("Pays-Bas", "Amsterdam"),
+        ("Croatie", "Zagreb"), ("Serbie", "Belgrade"), ("Bulgarie", "Sofia"),
+        ("Cameroun", "Yaoundé"), ("Côte d'Ivoire", "Yamoussoukro"),
+        ("Mali", "Bamako"), ("Niger", "Niamey"), ("Burkina Faso", "Ouagadougou"),
+        ("Togo", "Lomé"), ("Bénin", "Porto-Novo"), ("Angola", "Luanda"),
+        ("Zambie", "Lusaka"), ("Zimbabwe", "Harare"), ("Mozambique", "Maputo"),
+        ("Maurice", "Port-Louis"), ("Comores", "Moroni"), ("Seychelles", "Victoria"),
+    ]
+    resultat = []
+    lieux = [capitale for _, capitale in capitales]
+    for index, (pays, capitale) in enumerate(capitales):
+        distracteurs = [lieu for lieu in lieux if lieu != capitale]
+        generateur = random.Random(10_000 + index)
+        choix = [capitale] + generateur.sample(distracteurs, 3)
+        generateur.shuffle(choix)
+        bonne = choix.index(capitale)
+        resultat.append(_q(
+            f"geographie-capitale-{index + 1:03d}",
+            "Géographie",
+            f"Quelle est la capitale de {pays} ?",
+            choix, bonne,
+            f"La capitale de {pays} est {capitale}.",
+            "facile" if index < 24 else "moyen",
+            "culture",
+        ))
+    return resultat
+
+
+def generer_enigmes_sequences():
+    """Crée 1 200 suites logiques à règle simple et correction déterministe."""
+    resultat = []
+    for premier in range(1, 81):
+        for pas in range(2, 17):
+            suite = [premier + pas * index for index in range(4)]
+            reponse = premier + pas * 4
+            choix, bonne = _choix_numeriques(reponse, premier * 809 + pas * 31)
+            difficulte = "facile" if pas <= 6 else ("moyen" if pas <= 11 else "difficile")
+            resultat.append(_q(
+                f"enigme-suite-arithmetique-{premier:02d}-{pas:02d}",
+                "Logique",
+                f"Quelle valeur complète la suite : {', '.join(map(str, suite))}, … ?",
+                choix,
+                bonne,
+                f"On ajoute {pas} à chaque terme. Le nombre suivant est {suite[-1]} + {pas} = {reponse}.",
+                difficulte,
+                "enigme",
+            ))
+    return resultat
+
+
+ENIGMES.extend(generer_enigmes_sequences())
+QUESTIONS.extend(ENIGMES)
+QUESTIONS.extend(generer_questions_calcul())
+QUESTIONS.extend(generer_questions_geographie())
+
+# Dictionnaire français enrichi à partir de la liste de fréquence française de
+# pyspellchecker, complété par les mots scolaires et malgaches ci-dessous.
+# pyspellchecker est distribué sous licence MIT ; voir les métadonnées du paquet.
+MOTS_BASE = set("""
 ARBRE TABLE LIVRE ROUTE FLEUR PLAGE ECOLE AMOUR SAVOIR ORANGE SCIENCE HISTOIRE
 CALCUL NATURE SOLEIL ETOILE RIVIERE MALAGASY CLASSE ETUDIANT MAISON JARDIN SOURIRE
 ENFANT VOYAGE FAMILLE AMITIE BONHEUR CHANCE MUSIQUE DANSE CHANT IMAGE COULEUR
@@ -181,6 +361,29 @@ KILOMETRE METRE GRAMME KILOGRAMME LITRE DEGRE CELSIUS WATT VOLT AMPERE NEWTON
 ARITHMETIQUE ALGEBRE GEOMETRIE STATISTIQUE PROBABILITE GRAPHIQUE TABLE DONNEES
 ACCUEIL DEBUT RETOUR CHOIX REGLE ESSAI TENTATIVE RAPIDE FACILE DIFFICILE
 """.split())
+
+def _charger_dictionnaire_francais():
+    mots = set(MOTS_BASE)
+    try:
+        from spellchecker import SpellChecker
+
+        lexique = SpellChecker(language="fr", distance=1)
+        for terme in lexique.word_frequency.words():
+            terme = unicodedata.normalize("NFKD", terme)
+            terme = "".join(
+                caractere for caractere in terme
+                if not unicodedata.combining(caractere)
+            ).upper()
+            if 2 <= len(terme) <= 9 and all("A" <= c <= "Z" for c in terme):
+                mots.add(terme)
+    except (ImportError, OSError, ValueError):
+        # La banque minimale reste disponible en mode dégradé.
+        pass
+    return mots
+
+
+MOTS = _charger_dictionnaire_francais()
+
 
 def normaliser(texte):
     texte = unicodedata.normalize("NFKD", texte or "")
@@ -230,14 +433,21 @@ def preparer_question_active(etat, rng=None):
 
 
 def selectionner_questions_champion(difficulte="moyen", rng=None, nombre=QUESTIONS_PAR_PARTIE):
-    """Mélange connaissances et énigmes d'un niveau donné sans répéter de question."""
+    """Assemble une manche équilibrée sans répéter les questions."""
     generateur = rng or random
     difficulte = difficulte if difficulte in {"facile", "moyen", "difficile"} else "moyen"
     banque_enigmes = [q for q in ENIGMES if q["difficulte"] == difficulte]
-    banque_culture = [q for q in QUESTIONS if q["type_question"] != "enigme"]
+    banque_calculs = [q for q in QUESTIONS if q["type_question"] == "calcul"]
+    banque_culture = [
+        q for q in QUESTIONS
+        if q["type_question"] not in {"enigme", "calcul"}
+    ]
     nombre_enigmes = min(4, len(banque_enigmes), nombre)
     selection = generateur.sample(banque_enigmes, nombre_enigmes)
-    selection += generateur.sample(banque_culture, min(nombre - len(selection), len(banque_culture)))
+    nombre_calculs = min(2, max(0, nombre - len(selection)), len(banque_calculs))
+    selection += generateur.sample(banque_calculs, nombre_calculs)
+    nombre_culture = min(nombre - len(selection), len(banque_culture))
+    selection += generateur.sample(banque_culture, nombre_culture)
     if len(selection) < nombre:
         deja = {q["id"] for q in selection}
         restantes = [q for q in QUESTIONS if q["id"] not in deja]
@@ -246,12 +456,40 @@ def selectionner_questions_champion(difficulte="moyen", rng=None, nombre=QUESTIO
     return selection
 
 
+def _regler_minuteur(etat, duree, maintenant=None):
+    """Enregistre une échéance serveur stable malgré les rafraîchissements."""
+    debut = time.time() if maintenant is None else float(maintenant)
+    etat["temps_max"] = int(duree)
+    etat["echeance"] = debut + int(duree)
+
+
+def _timestamp_utc(valeur):
+    """Convertit une date SQLModel naïve (UTC) en timestamp Unix."""
+    if valeur is None:
+        return 0.0
+    if valeur.tzinfo is None:
+        valeur = valeur.replace(tzinfo=timezone.utc)
+    return valeur.timestamp()
+
+
+def _minuteur_expire(etat, duree):
+    """Initialise un ancien état sans échéance, sinon vérifie la limite serveur."""
+    try:
+        echeance = float(etat.get("echeance") or 0)
+    except (TypeError, ValueError):
+        echeance = 0
+    if echeance <= 0:
+        _regler_minuteur(etat, duree)
+        return False
+    return time.time() >= echeance
+
+
 def creer_partie_champion(rng=None, mode="champion", difficulte="moyen"):
-    """Prépare une partie solo ou contre le bot, avec au moins quatre énigmes."""
+    """Prépare une partie solo avec des questions variées et un minuteur par manche."""
     generateur = rng or random
     questions = selectionner_questions_champion(difficulte, generateur, QUESTIONS_PAR_PARTIE)
     etat = {
-        "mode": mode,
+        "mode": "champion",
         "difficulte": difficulte if difficulte in {"facile", "moyen", "difficile"} else "moyen",
         "score": 0,
         "points": 0,
@@ -260,25 +498,9 @@ def creer_partie_champion(rng=None, mode="champion", difficulte="moyen"):
         "meilleure_serie": 0,
         "ids": [question["id"] for question in questions],
     }
-    if mode == "champion_bot":
-        etat.update({
-            "bot_nom": {"facile": "Mora (débutant)", "moyen": "Koto (confirmé)", "difficile": "Haja (expert)"}[etat["difficulte"]],
-            "bot_score": 0,
-            "bot_correctes": 0,
-            "bot_serie": 0,
-        })
     preparer_question_active(etat, generateur)
+    _regler_minuteur(etat, TEMPS_QUESTION_CHAMPION)
     return etat
-
-
-def simuler_reponse_bot(bonne, nombre_choix, difficulte="moyen", rng=None):
-    """Simule un adversaire avec une probabilité de réussite calibrée par niveau."""
-    generateur = rng or random
-    probabilite = {"facile": 0.42, "moyen": 0.68, "difficile": 0.90}.get(difficulte, 0.68)
-    if generateur.random() < probabilite:
-        return True, bonne
-    mauvaises = [index for index in range(nombre_choix) if index != bonne]
-    return False, generateur.choice(mauvaises)
 
 
 def preparer_questions_tournoi(difficulte="moyen", rng=None, nombre=QUESTIONS_PAR_PARTIE):
@@ -483,6 +705,30 @@ def _contexte_tournoi(request, session, tournoi, utilisateur):
                 ReponseTournoiChampion.question_index == index_question,
             )
         ).all()
+        echeance_manche = _timestamp_utc(tournoi.date_demarrage) + TEMPS_TOURNOI
+        if time.time() >= echeance_manche:
+            utilisateurs_ayant_repondu = {rep.utilisateur_id for rep in reponses}
+            for joueur in participants_db:
+                if joueur.utilisateur_id not in utilisateurs_ayant_repondu:
+                    session.add(ReponseTournoiChampion(
+                        tournoi_id=tournoi.id,
+                        utilisateur_id=joueur.utilisateur_id,
+                        question_index=index_question,
+                        choix=-1,
+                        correcte=False,
+                        points=0,
+                    ))
+            if len(utilisateurs_ayant_repondu) < len(participants_db):
+                try:
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+            reponses = session.exec(
+                select(ReponseTournoiChampion).where(
+                    ReponseTournoiChampion.tournoi_id == tournoi.id,
+                    ReponseTournoiChampion.question_index == index_question,
+                )
+            ).all()
         reponse_courante = next(
             (rep for rep in reponses if rep.utilisateur_id == utilisateur.id),
             None,
@@ -523,6 +769,11 @@ def _contexte_tournoi(request, session, tournoi, utilisateur):
         "mon_choix": mon_choix,
         "tout_le_monde_a_repondu": tout_le_monde_a_repondu,
         "correction": correction,
+        "echeance": (
+            _timestamp_utc(tournoi.date_demarrage) + TEMPS_TOURNOI
+            if tournoi.statut == "en_cours" and tournoi.date_demarrage else 0
+        ),
+        "temps_question": TEMPS_TOURNOI,
         "erreur": request.query_params.get("erreur", ""),
         "est_createur": utilisateur.id == tournoi.createur_id,
     }
@@ -689,9 +940,6 @@ def repondre_tournoi(
     if tournoi.statut != "en_cours" or not 0 <= index_question < len(paquet):
         return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
     donnees_question = paquet[index_question]
-    if choix < 0 or choix >= len(donnees_question["choix"]):
-        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}?erreur=choix", status_code=303)
-
     deja_repondu = session.exec(
         select(ReponseTournoiChampion).where(
             ReponseTournoiChampion.tournoi_id == tournoi.id,
@@ -702,7 +950,14 @@ def repondre_tournoi(
     if deja_repondu:
         return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
 
-    correcte = choix == int(donnees_question["bonne"])
+    echeance_manche = _timestamp_utc(tournoi.date_demarrage) + TEMPS_TOURNOI
+    temps_ecoule = time.time() >= echeance_manche
+    if temps_ecoule:
+        choix = -1
+    elif choix < 0 or choix >= len(donnees_question["choix"]):
+        return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}?erreur=choix", status_code=303)
+
+    correcte = (not temps_ecoule) and choix == int(donnees_question["bonne"])
     nouvelle_serie = participant.serie + 1 if correcte else 0
     points = (POINTS_QUESTION + (BONUS_SERIE if nouvelle_serie % 3 == 0 else 0)) if correcte else 0
     reponse = ReponseTournoiChampion(
@@ -758,6 +1013,9 @@ def question_suivante_tournoi(code: str, request: Request, session: Session = De
     if tournoi.index_question >= len(paquet):
         tournoi.statut = "termine"
         tournoi.date_fin = datetime.utcnow()
+    else:
+        # Chaque nouvelle manche reçoit une nouvelle échéance partagée par le salon.
+        tournoi.date_demarrage = datetime.utcnow()
     session.add(tournoi)
     session.commit()
     return RedirectResponse(f"/jeux-classiques/tournoi/{tournoi.code}", status_code=303)
@@ -767,12 +1025,27 @@ def accueil(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    partie = request.session.get("jeux_classiques", {})
+    # Les anciennes sessions peuvent encore contenir le mode bot retiré.
+    # Les effacer évite un écran vide après la mise à jour.
+    if partie.get("mode") == "champion_bot":
+        effacer_partie_classique(request.session)
+        partie = {}
+    elif partie.get("mode") in {"champion", "chiffres", "lettres"} and not partie.get("termine") and not partie.get("echeance"):
+        # Migration légère des sessions de jeu créées avant l'arrivée des minuteurs.
+        duree = {
+            "champion": TEMPS_QUESTION_CHAMPION,
+            "chiffres": TEMPS_CHIFFRES,
+            "lettres": TEMPS_LETTRES,
+        }[partie["mode"]]
+        _regler_minuteur(partie, duree)
+        request.session["jeux_classiques"] = partie
     return templates.TemplateResponse(
         request,
         "jeux_classiques.html",
         {
             "utilisateur": utilisateur,
-            "partie": request.session.get("jeux_classiques", {}),
+            "partie": partie,
             "questions": QUESTIONS,
             "tentatives_max": TENTATIVES_MAX,
         },
@@ -790,8 +1063,8 @@ def demarrer(
         return RedirectResponse("/connexion", status_code=303)
     if difficulte not in {"facile", "moyen", "difficile"}:
         difficulte = "moyen"
-    if mode in {"champion", "champion_bot"}:
-        etat = creer_partie_champion(mode=mode, difficulte=difficulte)
+    if mode == "champion":
+        etat = creer_partie_champion(mode="champion", difficulte=difficulte)
     elif mode == "chiffres":
         nombres, cible, solution, indice = tirer_chiffres()
         etat = {
@@ -821,6 +1094,10 @@ def demarrer(
         }
     else:
         return RedirectResponse("/jeux-classiques", status_code=303)
+    if mode == "chiffres":
+        _regler_minuteur(etat, TEMPS_CHIFFRES)
+    elif mode == "lettres":
+        _regler_minuteur(etat, TEMPS_LETTRES)
     request.session["jeux_classiques"] = etat
     return RedirectResponse("/jeux-classiques", status_code=303)
 
@@ -856,14 +1133,29 @@ def repondre(
         return RedirectResponse("/connexion", status_code=303)
     etat = request.session.get("jeux_classiques") or {}
     mode = etat.get("mode")
-    if mode not in {"champion", "champion_bot", "chiffres", "lettres"}:
+    if mode not in {"champion", "chiffres", "lettres"}:
         effacer_partie_classique(request.session)
         return RedirectResponse("/jeux-classiques", status_code=303)
 
-    if mode in {"champion", "champion_bot"}:
+    if mode == "champion":
         ids = etat.get("ids", [])
         tour = int(etat.get("tour", 0))
         if tour >= len(ids) or "bonne_active" not in etat:
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        if _minuteur_expire(etat, TEMPS_QUESTION_CHAMPION):
+            etat["tour"] = tour + 1
+            etat["serie"] = 0
+            etat["feedback"] = {
+                "correcte": False,
+                "explication": "Temps écoulé : cette question ne rapporte aucun point.",
+                "points_ajoutes": 0,
+            }
+            preparer_question_active(etat)
+            if int(etat["tour"]) < len(ids):
+                _regler_minuteur(etat, TEMPS_QUESTION_CHAMPION)
+            else:
+                etat.pop("echeance", None)
+            request.session["jeux_classiques"] = etat
             return RedirectResponse("/jeux-classiques", status_code=303)
         if choix < 0 or choix >= len(etat.get("choix_actifs", [])):
             etat["feedback"] = {"correcte": False, "explication": "Choisis une réponse avant de valider."}
@@ -888,30 +1180,24 @@ def repondre(
             "explication": question["explication"],
             "points_ajoutes": points_ajoutes,
         }
-        if mode == "champion_bot":
-            bot_correcte, bot_choix = simuler_reponse_bot(
-                int(etat["bonne_active"]),
-                len(etat.get("choix_actifs", [])),
-                etat.get("difficulte", "moyen"),
-            )
-            if bot_correcte:
-                etat["bot_correctes"] = int(etat.get("bot_correctes", 0)) + 1
-                etat["bot_serie"] = int(etat.get("bot_serie", 0)) + 1
-                bonus_bot = BONUS_SERIE if etat["bot_serie"] % 3 == 0 else 0
-                etat["bot_score"] = int(etat.get("bot_score", 0)) + POINTS_QUESTION + bonus_bot
-            else:
-                etat["bot_serie"] = 0
-                bonus_bot = 0
-            feedback.update({
-                "bot_correcte": bot_correcte,
-                "bot_choix": bot_choix,
-                "bot_points_ajoutes": (POINTS_QUESTION + bonus_bot) if bot_correcte else 0,
-            })
         etat["feedback"] = feedback
         etat["tour"] = tour + 1
         preparer_question_active(etat)
+        if int(etat["tour"]) < len(ids):
+            _regler_minuteur(etat, TEMPS_QUESTION_CHAMPION)
+        else:
+            etat.pop("echeance", None)
     elif mode == "chiffres":
         if etat.get("termine"):
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        if _minuteur_expire(etat, TEMPS_CHIFFRES):
+            etat["termine"] = True
+            etat["feedback"] = {
+                "correcte": False,
+                "explication": f"Temps écoulé. Une solution possible : {etat.get('solution', '')}.",
+                "tentatives": int(etat.get("tentatives", 0)),
+            }
+            request.session["jeux_classiques"] = etat
             return RedirectResponse("/jeux-classiques", status_code=303)
         tentatives = int(etat.get("tentatives", 0))
         if tentatives >= TENTATIVES_MAX:
@@ -935,6 +1221,15 @@ def repondre(
         }
     else:  # lettres
         if etat.get("termine"):
+            return RedirectResponse("/jeux-classiques", status_code=303)
+        if _minuteur_expire(etat, TEMPS_LETTRES):
+            etat["termine"] = True
+            etat["feedback"] = {
+                "correcte": False,
+                "explication": f"Temps écoulé. Ton meilleur mot : {etat.get('meilleur_mot') or 'aucun'} ({etat.get('meilleur_points', 0)} points).",
+                "tentatives": int(etat.get("tentatives", 0)),
+            }
+            request.session["jeux_classiques"] = etat
             return RedirectResponse("/jeux-classiques", status_code=303)
         tentatives = int(etat.get("tentatives", 0))
         if tentatives >= TENTATIVES_MAX:

@@ -30,3 +30,4 @@ pytest==8.3.5
 httpx==0.28.1
 
 snowballstemmer==3.1.1        # racines morphologiques françaises pour le fallback SQLite/dev
+pyspellchecker==0.8.4          # dictionnaire français local pour le jeu Le mot le plus long (licence MIT)

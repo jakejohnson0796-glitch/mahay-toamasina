@@ -1,4 +1,5 @@
 import random
+import time
 from pathlib import Path
 
 from app.jeux_classiques_router import (
@@ -14,7 +15,9 @@ from app.jeux_classiques_router import (
     preparer_question_active,
     preparer_questions_tournoi,
     selectionner_questions_champion,
-    simuler_reponse_bot,
+    TEMPS_CHIFFRES,
+    TEMPS_LETTRES,
+    TEMPS_QUESTION_CHAMPION,
     tirer_chiffres,
     tirer_lettres,
     tirer_tirage_lettres,
@@ -22,8 +25,10 @@ from app.jeux_classiques_router import (
 
 
 def test_banque_questions_variee_et_coherente():
-    assert len(QUESTIONS) >= 80
-    assert len(ENIGMES) >= 18
+    assert len(QUESTIONS) >= 4_000
+    assert sum(q['type_question'] == 'calcul' for q in QUESTIONS) >= 4_000
+    assert len(ENIGMES) >= 1_200
+    assert sum(q['id'].startswith('enigme-suite-arithmetique-') for q in ENIGMES) == 1_200
     assert {q["difficulte"] for q in ENIGMES} == {"facile", "moyen", "difficile"}
     assert len({q["id"] for q in QUESTIONS}) == len(QUESTIONS)
     for question in QUESTIONS:
@@ -67,7 +72,8 @@ def test_mot_lettres_disponibles_et_dictionnaire_enrichi():
     assert mot_valide("ARBRE", list("ARBRE"))
     assert not mot_valide("ARBRE", list("ARBE"))
     assert mot_valide("MALAGASY", list("MALAGASY"))
-    assert len(MOTS) >= 150
+    assert len(MOTS) >= 10_000
+    assert mot_valide('CHAT', list('CHAT'))
 
 
 def test_tirage_lettres_contient_au_moins_un_mot_jouable():
@@ -144,22 +150,6 @@ def test_chaque_partie_competitive_contient_des_enigmes_du_niveau_choisi():
         assert len({q["id"] for q in questions}) == 10
 
 
-def test_bot_a_des_probabilites_distinctes_par_difficulte():
-    class RNGFixe:
-        def random(self):
-            return 0.5
-
-        def choice(self, values):
-            return values[0]
-
-    facile = simuler_reponse_bot(2, 4, "facile", RNGFixe())
-    moyen = simuler_reponse_bot(2, 4, "moyen", RNGFixe())
-    difficile = simuler_reponse_bot(2, 4, "difficile", RNGFixe())
-    assert facile[0] is False and facile[1] != 2
-    assert moyen == (True, 2)
-    assert difficile == (True, 2)
-
-
 def test_tournoi_fige_les_propositions_et_la_bonne_reponse():
     paquet = preparer_questions_tournoi("difficile", random.Random(17))
     assert len(paquet) == 10
@@ -171,13 +161,37 @@ def test_tournoi_fige_les_propositions_et_la_bonne_reponse():
         assert item["explication"] == original["explication"]
 
 
-def test_interface_propose_bot_trois_niveaux_et_tournoi_multijoueur():
+def test_accueil_migre_les_parties_existantes_vers_un_minuteur():
+    routeur = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "jeux_classiques_router.py"
+    ).read_text(encoding="utf-8")
+    assert 'partie.get("mode") in {"champion", "chiffres", "lettres"}' in routeur
+    assert '_regler_minuteur(partie, duree)' in routeur
+    assert 'request.session["jeux_classiques"] = partie' in routeur
+
+
+def test_ancienne_session_bot_est_nettoyee_a_l_accueil():
+    routeur = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "jeux_classiques_router.py"
+    ).read_text(encoding="utf-8")
+    assert 'if partie.get("mode") == "champion_bot":' in routeur
+    assert "effacer_partie_classique(request.session)" in routeur
+
+
+def test_interface_conserve_le_tournoi_et_supprime_le_bot():
     racine = Path(__file__).resolve().parents[1]
     page_jeu = (racine / "app" / "templates" / "jeux_classiques.html").read_text(encoding="utf-8")
     page_tournoi = (racine / "app" / "templates" / "jeux_classiques_tournoi.html").read_text(encoding="utf-8")
     migration = (racine / "alembic" / "versions" / "bca6e2d8f143_tournoi_questions_champion.py").read_text(encoding="utf-8")
 
-    assert 'name="mode" value="champion_bot"' in page_jeu
+    assert 'name="mode" value="champion_bot"' not in page_jeu
+    assert "Défier un bot" not in page_jeu
+    assert "champion_bot" not in page_jeu
+    assert 'name="mode" value="champion"' in page_jeu
     assert 'option value="facile"' in page_jeu
     assert 'option value="moyen"' in page_jeu
     assert 'option value="difficile"' in page_jeu
@@ -187,6 +201,44 @@ def test_interface_propose_bot_trois_niveaux_et_tournoi_multijoueur():
     assert "Actualiser le salon" in page_tournoi
     assert 'down_revision: Union[str, None] = "d5e9c7a1b3f6"' in migration
     assert "uq_reponse_tournoi_joueur_manche" in migration
+
+def test_questions_supplementaires_sont_uniques_et_variees():
+    identifiants = [question["id"] for question in QUESTIONS]
+    assert len(identifiants) == len(set(identifiants))
+    assert sum(question["theme"] == "Géographie" for question in QUESTIONS) >= 50
+    assert sum(question["type_question"] == "calcul" for question in QUESTIONS) >= 4_000
+    for question in random.sample(QUESTIONS, min(100, len(QUESTIONS))):
+        assert len(question["choix"]) == 4
+        assert len(set(question["choix"])) == 4
+        assert 0 <= question["bonne"] < 4
+        assert question["question"].strip()
+        assert question["explication"].strip()
+
+
+def test_chaque_jeu_a_une_echeance_serveur():
+    champion = creer_partie_champion(random.Random(42))
+    assert TEMPS_QUESTION_CHAMPION == 20
+    assert champion["echeance"] > time.time()
+    assert champion["temps_max"] == TEMPS_QUESTION_CHAMPION
+    assert TEMPS_CHIFFRES == 120
+    assert TEMPS_LETTRES == 90
+
+
+def test_template_affiche_les_minuteurs_et_timeout_tournoi():
+    racine = Path(__file__).resolve().parents[1]
+    page_jeu = (racine / "app" / "templates" / "jeux_classiques.html").read_text(encoding="utf-8")
+    page_tournoi = (racine / "app" / "templates" / "jeux_classiques_tournoi.html").read_text(encoding="utf-8")
+    assert page_jeu.count('data-minuteur data-echeance=') >= 3
+    assert "data-minuteur-timeout" in page_jeu
+    assert "data-minuteur data-echeance=" in page_tournoi
+    assert "data-minuteur-timeout" in page_tournoi
+    assert "dataset.echeance" in page_jeu
+    assert "dataset.echeance" in page_tournoi
+    assert "dataset.echance" not in page_jeu
+    assert "dataset.echance" not in page_tournoi
+    assert "Retirer la dernière lettre" in page_jeu
+    assert "data-compte-calculatrice" in page_jeu
+
 
 def test_interface_compte_est_bon_propose_un_clavier_de_calcul_interactif():
     template = (

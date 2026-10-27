@@ -29,6 +29,15 @@
 .jeu-zone h2{font-size:clamp(1.35rem,3vw,1.8rem);margin:.35rem 0 .65rem;line-height:1.25}
 .jeu-zone p{line-height:1.65}
 .jeu-statistiques{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.3rem 0 1rem}
+.jeu-minuteur{display:grid;grid-template-columns:auto minmax(4rem,auto) minmax(5rem,1fr);align-items:center;gap:.75rem;margin:.75rem 0 1rem;padding:.7rem .85rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-bg)}
+.jeu-minuteur span{font-size:.9rem;font-weight:800;color:var(--content-text-muted)}
+.jeu-minuteur strong{font-size:1.2rem;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.jeu-minuteur progress{width:100%;height:.6rem;accent-color:var(--content-link);border:0;border-radius:999px;overflow:hidden}
+.jeu-minuteur[data-urgent="true"]{border-color:#d97706}
+.jeu-minuteur[data-urgent="true"] strong{color:#d97706}
+.jeu-minuteur[data-expire="true"]{border-color:#b45309}
+@media(max-width:520px){.jeu-minuteur{grid-template-columns:1fr auto}.jeu-minuteur progress{grid-column:1/-1}.jeu-minuteur strong{font-size:1.35rem}}
+
 .jeu-statistiques .jeu-chip{font-variant-numeric:tabular-nums}
 .jeu-progression{margin:.8rem 0 1rem}
 .jeu-progression-ligne{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-bottom:.4rem;font-size:.9rem;font-weight:800}
@@ -140,22 +149,19 @@
     <article class="jeu-carte">
       <div class="jeu-emoji" aria-hidden="true">🏆</div>
       <h2>Questions pour un champion</h2>
-      <p class="jeu-muted">10 manches avec des connaissances, des énigmes et des pièges de logique. Joue en solo, défie un bot de niveau facile, moyen ou difficile, ou crée un tournoi jusqu'à 8 joueurs.</p>
+      <p class="jeu-muted">10 manches de culture générale, de calcul mental et d'énigmes. Chaque question est chronométrée. Joue en solo ou retrouve d'autres joueurs dans un tournoi multijoueur jusqu'à 8 participants.</p>
       <form method="post" action="/jeux-classiques/demarrer">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="champion">
-        <button class="jeu-bouton jeu-bouton-secondaire" type="submit">Jouer en solo</button>
-      </form>
-      <form method="post" action="/jeux-classiques/demarrer">
-        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="champion_bot">
-        <label class="jeu-niveau">Défier un bot
+        <label class="jeu-niveau">Niveau des énigmes
           <select name="difficulte">
-            <option value="facile">Facile — débutant</option>
-            <option value="moyen" selected>Moyen — confirmé</option>
+            <option value="facile">Facile — pour apprendre</option>
+            <option value="moyen" selected>Moyen — défi équilibré</option>
             <option value="difficile">Difficile — expert</option>
           </select>
         </label>
-        <button class="jeu-bouton" type="submit">Lancer le duel <span aria-hidden="true">→</span></button>
+        <button class="jeu-bouton jeu-bouton-secondaire" type="submit">Jouer en solo <span aria-hidden="true">→</span></button>
       </form>
+
       <div class="jeu-liens-tournoi"><a class="jeu-lien" href="/jeux-classiques/tournoi">🏁 Tournoi multijoueur</a></div>
     </article>
     <article class="jeu-carte">
@@ -171,14 +177,17 @@
       <form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="lettres"><button class="jeu-bouton" type="submit">Lancer les lettres <span aria-hidden="true">→</span></button></form>
     </article>
   </div>
-  {% elif partie.get('mode') in ['champion', 'champion_bot'] %}
+  {% elif partie.get('mode') == 'champion' %}
     {% set tour = partie.get('tour', 0) %}
     {% set nombre_questions = partie.get('ids', [])|length %}
     {% if tour < nombre_questions %}
       {% set qid = partie.get('ids')[tour] %}
       {% set question = (questions|selectattr('id','equalto',qid)|list|first) %}
       <section class="jeu-zone">
-        <div class="jeu-statistiques"><span class="jeu-chip">🏆 Questions pour un champion</span><span class="jeu-chip">⭐ {{ partie.get('points',0) }} points</span><span class="jeu-chip">✅ {{ partie.get('score',0) }} bonnes réponses</span><span class="jeu-chip">🔥 Série : {{ partie.get('serie',0) }}</span>{% if partie.get('mode') == 'champion_bot' %}<span class="jeu-chip">🤖 {{ partie.get('bot_nom') }} : {{ partie.get('bot_score',0) }} pts</span><span class="jeu-chip">Niveau {{ partie.get('difficulte','moyen') }}</span>{% endif %}</div>
+        <div class="jeu-statistiques"><span class="jeu-chip">🏆 Questions pour un champion</span><span class="jeu-chip">⭐ {{ partie.get('points',0) }} points</span><span class="jeu-chip">✅ {{ partie.get('score',0) }} bonnes réponses</span><span class="jeu-chip">🔥 Série : {{ partie.get('serie',0) }}</span><span class="jeu-chip">Niveau {{ partie.get('difficulte','moyen')|capitalize }}</span></div>
+        <div class="jeu-minuteur" data-minuteur data-echeance="{{ partie.get('echeance', 0) }}" data-duree="{{ partie.get('temps_max', 20) }}" aria-label="Temps restant pour répondre">
+          <span>⏱ Temps restant</span><strong data-minuteur-affichage>00:20</strong><progress data-minuteur-progress max="{{ partie.get('temps_max', 20) }}" value="{{ partie.get('temps_max', 20) }}" aria-label="Temps de réponse restant"></progress>
+        </div>
         <div class="jeu-progression"><div class="jeu-progression-ligne"><span>Question {{ tour + 1 }} sur {{ nombre_questions }}</span><span>{{ ((tour / nombre_questions) * 100)|round|int }} % terminé</span></div><progress value="{{ tour }}" max="{{ nombre_questions }}" aria-label="Progression du quiz"></progress></div>
         <p class="jeu-muted">Thème : {{ question.theme }}{% if question.type_question == 'enigme' %} · 🧩 Énigme{% endif %} · Difficulté : {{ question.difficulte|capitalize }}</p>
         <h2>{{ question.question }}</h2>
@@ -187,7 +196,6 @@
           <strong>{{ "Bonne réponse !" if partie.feedback.correcte else "On apprend aussi en se trompant." }}</strong>
           <p>{{ partie.feedback.explication }}</p>
           {% if partie.feedback.get('points_ajoutes',0) %}<p>+{{ partie.feedback.points_ajoutes }} points ajoutés.</p>{% endif %}
-          {% if partie.get('mode') == 'champion_bot' %}<p>{% if partie.feedback.get('bot_correcte') %}🤖 {{ partie.get('bot_nom') }} a aussi trouvé la réponse (+{{ partie.feedback.get('bot_points_ajoutes',0) }} points).{% else %}🤖 {{ partie.get('bot_nom') }} s'est trompé sur cette manche.{% endif %} Score du duel : toi {{ partie.get('points',0) }} — bot {{ partie.get('bot_score',0) }}.</p>{% endif %}
         </div>
         {% endif %}
         <form method="post" action="/jeux-classiques/repondre">
@@ -205,18 +213,17 @@
       </section>
     {% else %}
       <section class="jeu-zone jeu-finish">
-        <span class="jeux-eyebrow">Partie terminée</span><h2>{% if partie.get('mode') == 'champion_bot' %}{% if partie.get('points',0) > partie.get('bot_score',0) %}Victoire ! Tu as battu le bot.{% elif partie.get('points',0) == partie.get('bot_score',0) %}Égalité !{% else %}Le bot remporte cette manche.{% endif %}{% else %}Bien joué, défi terminé !{% endif %}</h2>
+        <span class="jeux-eyebrow">Partie terminée</span><h2>Bien joué, défi terminé !</h2>
         <p class="jeu-muted">Relis l'explication finale et regarde les progrès de cette partie.</p>
         <div class="jeu-resultat">
           <article><strong>{{ partie.get('score',0) }}/{{ nombre_questions }}</strong><span>Bonnes réponses</span></article>
           <article><strong>{{ partie.get('points',0) }}</strong><span>Points gagnés</span></article>
           <article><strong>{{ partie.get('meilleure_serie',0) }}</strong><span>Meilleure série</span></article>
-          {% if partie.get('mode') == 'champion_bot' %}<article><strong>{{ partie.get('bot_score',0) }}</strong><span>Points de {{ partie.get('bot_nom') }}</span></article>{% endif %}
         </div>
         {% if partie.get('feedback') %}<div class="jeu-feedback" data-correct="{{ 'true' if partie.feedback.correcte else 'false' }}" role="status"><strong>Correction de la dernière question</strong><p>{{ partie.feedback.explication }}</p></div>{% endif %}
         <p>La banque comporte plusieurs thèmes : une nouvelle partie te proposera une autre sélection de questions.</p>
         <div class="jeu-navigation-bas">
-          <form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="{{ partie.get('mode') }}"><input type="hidden" name="difficulte" value="{{ partie.get('difficulte','moyen') }}"><button class="jeu-bouton" type="submit">Rejouer {{ "le duel" if partie.get('mode') == 'champion_bot' else "le quiz" }}</button></form>
+          <form method="post" action="/jeux-classiques/demarrer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="mode" value="champion"><input type="hidden" name="difficulte" value="{{ partie.get('difficulte','moyen') }}"><button class="jeu-bouton" type="submit">Rejouer le quiz</button></form>
           <form method="post" action="/jeux-classiques/changer"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="jeu-bouton jeu-bouton-secondaire" type="submit">Choisir un autre jeu</button></form>
         </div>
       </section>
@@ -225,6 +232,11 @@
   {% elif partie.get('mode') == 'chiffres' %}
     <section class="jeu-zone">
       <div class="jeu-statistiques"><span class="jeu-chip">🔢 Le compte est bon</span><span class="jeu-chip">⭐ {{ partie.get('points',0) }} points</span><span class="jeu-chip">Tentative {{ [partie.get('tentatives',0), tentatives_max]|min }} / {{ tentatives_max }}</span></div>
+      {% if not partie.get('termine') %}
+      <div class="jeu-minuteur" data-minuteur data-echeance="{{ partie.get('echeance', 0) }}" data-duree="{{ partie.get('temps_max', 120) }}" aria-label="Temps restant pour le calcul">
+        <span>⏱ Temps restant</span><strong data-minuteur-affichage>02:00</strong><progress data-minuteur-progress max="{{ partie.get('temps_max', 120) }}" value="{{ partie.get('temps_max', 120) }}" aria-label="Temps de calcul restant"></progress>
+      </div>
+      {% endif %}
       <div class="jeu-cible-entete"><span class="jeu-cible-badge">🎯 Cible à atteindre</span><h2>{{ partie.get('cible') }}</h2></div>
       <p class="jeu-muted">Utilise seulement les nombres tirés. Chaque nombre peut être utilisé au plus autant de fois qu'il apparaît. La division doit donner un résultat entier.</p>
       <div class="jeu-calculatrice" data-compte-calculatrice>
@@ -364,6 +376,11 @@
   {% elif partie.get('mode') == 'lettres' %}
     <section class="jeu-zone">
       <div class="jeu-statistiques"><span class="jeu-chip">🔤 Le mot le plus long</span><span class="jeu-chip">⭐ {{ partie.get('points',0) }} points</span><span class="jeu-chip">Tentative {{ [partie.get('tentatives',0), tentatives_max]|min }} / {{ tentatives_max }}</span></div>
+      {% if not partie.get('termine') %}
+      <div class="jeu-minuteur" data-minuteur data-echeance="{{ partie.get('echeance', 0) }}" data-duree="{{ partie.get('temps_max', 90) }}" aria-label="Temps restant pour trouver un mot">
+        <span>⏱ Temps restant</span><strong data-minuteur-affichage>01:30</strong><progress data-minuteur-progress max="{{ partie.get('temps_max', 90) }}" value="{{ partie.get('temps_max', 90) }}" aria-label="Temps de jeu restant"></progress>
+      </div>
+      {% endif %}
       <h2>Trouve le mot le plus long</h2>
       <p class="jeu-muted">Compose un mot valide avec les lettres tirées. Chaque lettre ne peut servir qu'autant de fois qu'elle apparaît. Un mot accepté rapporte 5 points par lettre : vise les 9 lettres pour maximiser ton score.</p>
       <div class="jeu-mot-long" data-mot-long>
@@ -470,5 +487,46 @@
       {% endif %}
     </section>
   {% endif %}
+
+  {% if partie.get('mode') and not partie.get('termine') %}
+  <form method="post" action="/jeux-classiques/repondre" data-minuteur-timeout hidden aria-hidden="true">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <input type="hidden" name="choix" value="-1">
+    <input type="hidden" name="reponse" value="">
+  </form>
+  {% endif %}
+  <script nonce="{{ csp_nonce(request) }}">
+  (() => {
+    const timer = document.querySelector('[data-minuteur]');
+    if (!timer) return;
+    const deadline = Number(timer.dataset.echeance || 0);
+    const duration = Math.max(1, Number(timer.dataset.duree || 1));
+    const display = timer.querySelector('[data-minuteur-affichage]');
+    const progress = timer.querySelector('[data-minuteur-progress]');
+    let submitted = false;
+    if (!deadline || !display) return;
+    const tick = () => {
+      const left = Math.max(0, deadline - Date.now() / 1000);
+      const seconds = Math.ceil(left);
+      display.textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+      if (progress) progress.value = Math.min(duration, left);
+      timer.dataset.urgent = left <= 10 ? 'true' : 'false';
+      if (left <= 0) {
+        timer.dataset.expire = 'true';
+        if (!submitted) {
+          submitted = true;
+          const form = document.querySelector('[data-minuteur-timeout]');
+          if (form) form.requestSubmit();
+        }
+      }
+    };
+    tick();
+    const clock = window.setInterval(() => {
+      tick();
+      if (submitted) window.clearInterval(clock);
+    }, 250);
+    document.addEventListener('visibilitychange', tick);
+  })();
+  </script>
 </div>
 {% endblock %}
