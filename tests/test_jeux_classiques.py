@@ -210,6 +210,10 @@ def test_template_affiche_les_minuteurs_et_timeout_tournoi():
     assert "data-minuteur-timeout" in page_jeu
     assert "data-minuteur data-echeance=" in page_tournoi
     assert "data-minuteur-timeout" in page_tournoi
+    assert "dataset.echeance" in page_jeu
+    assert "dataset.echeance" in page_tournoi
+    assert "dataset.echance" not in page_jeu
+    assert "dataset.echance" not in page_tournoi
     assert "Retirer la dernière lettre" in page_jeu
     assert "data-compte-calculatrice" in page_jeu
 
