@@ -764,6 +764,8 @@ class TentativeQuiz(SQLModel, table=True):
     tentative, pas besoin de la requeter en dehors de cette tentative."""
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    # Source documentaire facultative : conserve le lien quiz → cours → Tuteur IA.
+    document_id: Optional[int] = Field(default=None, foreign_key="document.id", index=True)
     matiere: str
     niveau: str
     cycle_education: Optional[str] = Field(default=None, max_length=20)
@@ -1537,6 +1539,8 @@ class SessionTuteur(SQLModel, table=True):
     d'historique consultable plus tard."""
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    # Source facultative conservée pour reprendre le même cours après la réponse.
+    document_id: Optional[int] = Field(default=None, foreign_key="document.id", index=True)
     notion: Optional[str] = None
     progression_id: Optional[int] = Field(default=None, index=True)
     question: str
