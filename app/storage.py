@@ -109,7 +109,9 @@ def sauvegarder_fichier(fichier: UploadFile, reference: str) -> str:
     pas les regles (voir EXTENSIONS_AUTORISEES / TAILLE_MAX_DOCUMENT) —
     a capturer par l'appelant pour afficher un message clair."""
     nom_original = fichier.filename or "document"
-    contenu = fichier.file.read()
+    # Une lecture bornee evite de dupliquer en RAM un upload arbitrairement grand.
+    # +1 suffit pour que le validateur constate et rejette un depassement.
+    contenu = fichier.file.read(TAILLE_MAX_DOCUMENT + 1)
     try:
         mime_reel = valider_upload(contenu, nom_original, TAILLE_MAX_DOCUMENT, EXTENSIONS_AUTORISEES)
     except ValueError as exc:
@@ -162,7 +164,8 @@ def sauvegarder_avatar(fichier: UploadFile, utilisateur_id: int, ancien_chemin: 
     regles ci-dessus -- a capturer par l'appelant pour afficher un
     message clair (voir /profil/photo dans auth_router.py)."""
     nom_original = fichier.filename or "photo"
-    contenu = fichier.file.read()
+    # La limite de lecture est appliquee avant la validation du contenu.
+    contenu = fichier.file.read(TAILLE_MAX_AVATAR + 1)
     try:
         mime_reel = valider_upload(contenu, nom_original, TAILLE_MAX_AVATAR, EXTENSIONS_AVATAR_AUTORISEES)
     except ValueError as exc:
