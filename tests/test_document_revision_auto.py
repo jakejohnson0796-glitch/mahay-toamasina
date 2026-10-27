@@ -4,6 +4,7 @@ from pathlib import Path
 import json
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel, Session, create_engine, select, func
 from jinja2 import Environment, FileSystemLoader
@@ -543,3 +544,64 @@ def test_fiche_document_personnalisee_exports_priorites_et_exercices():
     docx = course_revision.generer_docx(fiche, cours, seance, "Étudiant A")
     assert pdf.startswith(b"%PDF")
     assert docx.startswith(b"PK")
+
+
+
+def test_planification_recupere_la_tache_existante_apres_conflit_concurrent(monkeypatch):
+    """Un conflit d'unicité ne doit pas faire échouer une fiche déjà mise en file."""
+    engine = moteur_sqlite()
+    notifications = []
+    monkeypatch.setattr(ai_queue, "engine", engine)
+    monkeypatch.setattr(
+        ai_queue, "notifier_tache",
+        lambda task_id: notifications.append(task_id) or True,
+    )
+
+    with Session(engine) as session:
+        document, _ = creer_document(session)
+        document_id = document.id
+
+    # La première requête a gagné et a créé la fiche et sa tâche durables.
+    task_id = ai_queue.planifier_fiche_revision_document(document_id)
+    assert task_id is not None
+    notifications.clear()
+
+    # Simule le conflit IntegrityError rencontré par une deuxième requête au
+    # moment où elle tente d'insérer la même fiche. La voie de récupération
+    # doit relire la tâche déjà validée avec une nouvelle session.
+    session_reel = ai_queue.Session
+    conflit_simule = False
+
+    def session_avec_conflit_une_fois(*args, **kwargs):
+        nonlocal conflit_simule
+        if not conflit_simule:
+            conflit_simule = True
+            raise IntegrityError(
+                "INSERT concurrent sur la fiche de révision",
+                {},
+                RuntimeError("duplicate key value violates unique constraint"),
+            )
+        return session_reel(*args, **kwargs)
+
+    monkeypatch.setattr(ai_queue, "Session", session_avec_conflit_une_fois)
+
+    assert ai_queue.planifier_fiche_revision_document(document_id) == task_id
+    assert notifications == [task_id]
+
+    with session_reel(engine) as session:
+        fiches = session.exec(
+            select(FicheRevisionDocument).where(
+                FicheRevisionDocument.document_id == document_id
+            )
+        ).all()
+        taches = session.exec(
+            select(TacheIA).where(
+                TacheIA.type_tache == ai_queue.TYPE_FICHE_REVISION_DOCUMENT,
+                TacheIA.fiche_revision_document_id == fiches[0].id,
+            )
+        ).all()
+
+    assert len(fiches) == 1
+    assert len(taches) == 1
+    assert taches[0].id == task_id
+    assert taches[0].statut == StatutTacheIA.EN_ATTENTE
