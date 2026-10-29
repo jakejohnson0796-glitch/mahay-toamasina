@@ -1,0 +1,48 @@
+import pytest
+
+from app.routers.institution_router import (
+    identifiant_etudiant,
+    lire_lignes_tableur,
+    normaliser_code_institution,
+    normaliser_matricule,
+)
+
+
+def test_normaliser_code_etablissement():
+    assert normaliser_code_institution("Université Toamasina") == "UNIVERSITE-TOAMASINA"
+
+
+def test_code_etablissement_invalide():
+    with pytest.raises(ValueError):
+        normaliser_code_institution("!")
+
+
+def test_matricule_conserve_les_zeros_initiaux():
+    assert normaliser_matricule(" 001/2026 ") == "001/2026"
+
+
+def test_identifiant_etudiant_est_deterministe():
+    assert identifiant_etudiant("UNIV-T", "001/2026") == "UNIV-T-001-2026"
+
+
+def test_lire_csv_point_virgule_et_entetes_compatibles():
+    contenu = "nom;prenom;matricule;classe\nRakoto;Miora;001;L1\n"
+    lignes = lire_lignes_tableur("etudiants.csv", contenu.encode("utf-8"))
+    assert lignes == [{
+        "ligne": "2",
+        "nom": "Rakoto Miora",
+        "matricule": "001",
+        "telephone": "",
+        "email": "",
+        "niveau": "L1",
+    }]
+
+
+def test_lire_csv_refuse_entete_matricule_absente():
+    with pytest.raises(ValueError, match="matricule"):
+        lire_lignes_tableur("etudiants.csv", b"nom;classe\nRakoto;L1\n")
+
+
+def test_lire_csv_refuse_format_non_pris_en_charge():
+    with pytest.raises(ValueError, match="CSV"):
+        lire_lignes_tableur("etudiants.pdf", b"nom,matricule\na,1")
