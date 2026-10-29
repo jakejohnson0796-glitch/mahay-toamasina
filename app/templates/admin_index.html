@@ -75,7 +75,7 @@
       <article class="ops-new-user">
         <div class="ops-new-user-main">
           <strong>{{ item.utilisateur.nom }}</strong>
-          <span>{{ item.utilisateur.telephone }} · {{ item.utilisateur.role.value }}</span>
+          <span>{{ item.utilisateur.identifiant_connexion or item.utilisateur.telephone or "Téléphone non renseigné" }} · {{ item.utilisateur.role.value }}</span>
           <span>Compte créé le {{ item.utilisateur.date_creation.strftime("%d/%m/%Y à %H:%M") }} · {{ jours_depuis_creation(item.utilisateur) }} jour{{ "s" if jours_depuis_creation(item.utilisateur) != 1 else "" }} d'ancienneté</span>
         </div>
         <div class="ops-new-user-actions">
