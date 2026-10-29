@@ -527,7 +527,17 @@ def connexion(
     # ici (pas de message distinct) : on le laisse simplement echouer au
     # lookup, pour ne pas donner d'indice supplementaire a un attaquant
     # et garder le meme message d'erreur generique.
-    utilisateur = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)).first()
+    utilisateur = None
+    if telephone_normalise:
+        utilisateur = session.exec(
+            select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)
+        ).first()
+    if not utilisateur:
+        identifiant_saisi = (telephone or "").strip().upper()
+        if identifiant_saisi:
+            utilisateur = session.exec(
+                select(Utilisateur).where(Utilisateur.identifiant_connexion == identifiant_saisi)
+            ).first()
     if not utilisateur or not verifier_mot_de_passe(mot_de_passe, utilisateur.mot_de_passe_hash):
         return templates.TemplateResponse(
             request, "login.html", {"erreur": "Numero ou mot de passe incorrect."}
@@ -1582,7 +1592,7 @@ def page_configurer_2fa(request: Request, session: Session = Depends(get_session
     if not secret:
         return RedirectResponse("/securite", status_code=303)
 
-    qr_data_uri = generer_qrcode_data_uri(secret, utilisateur.telephone)
+    qr_data_uri = generer_qrcode_data_uri(secret, utilisateur.identifiant_connexion or utilisateur.telephone or str(utilisateur.id))
     return templates.TemplateResponse(
         request, "configurer_2fa.html",
         {"utilisateur": utilisateur, "qr_data_uri": qr_data_uri, "secret": secret},
@@ -1604,7 +1614,7 @@ def confirmer_activation_2fa(
         return RedirectResponse("/securite", status_code=303)
 
     if not verifier_code_totp(secret, code):
-        qr_data_uri = generer_qrcode_data_uri(secret, utilisateur.telephone)
+        qr_data_uri = generer_qrcode_data_uri(secret, utilisateur.identifiant_connexion or utilisateur.telephone or str(utilisateur.id))
         return templates.TemplateResponse(
             request, "configurer_2fa.html",
             {"utilisateur": utilisateur, "qr_data_uri": qr_data_uri, "secret": secret, "erreur": "Code invalide, reessayez."},

@@ -388,12 +388,33 @@ class ProgrammeUniversitaire(SQLModel, table=True):
     )
 
 
+
+class EtablissementPartenaire(SQLModel, table=True):
+    """Organisation partenaire autorisée à préinscrire ses étudiants en masse."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nom: str = Field(index=True, max_length=200)
+    code: str = Field(unique=True, max_length=32)
+    type_etablissement: str = Field(default="universite", index=True, max_length=30)
+    region: Optional[str] = Field(default=None, max_length=100)
+    commune: Optional[str] = Field(default=None, max_length=120)
+    est_actif: bool = Field(default=True, index=True)
+    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Utilisateur(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str
     # Le telephone sert d'identifiant de connexion : c'est ce que tout le
     # monde utilise deja pour mobile money, plus fiable qu'un email ici.
-    telephone: str = Field(index=True, unique=True)
+    telephone: Optional[str] = Field(default=None, index=True, unique=True)
+    # Un étudiant préinscrit par son établissement peut se connecter avec
+    # un identifiant institutionnel unique, sans disposer d'un téléphone.
+    # Les comptes classiques continuent d'utiliser le téléphone comme avant.
+    identifiant_connexion: Optional[str] = Field(default=None, index=True, unique=True, max_length=160)
+    institution_id: Optional[int] = Field(default=None, foreign_key="etablissementpartenaire.id", index=True)
+    matricule_institutionnel: Optional[str] = Field(default=None, index=True, max_length=80)
     # Facultatif -- l'identifiant de connexion reste le telephone, cet
     # email ne sert QUE de canal de secours pour "mot de passe oublie"
     # (voir /mot-de-passe-oublie dans auth_router.py, /securite pour le

@@ -55,17 +55,13 @@
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
 
             <div class="auth-field">
-              <label for="telephone_local">Numéro de téléphone <span class="auth-required" aria-hidden="true">*</span></label>
-              <div class="auth-phone-wrap">
-                <span class="auth-phone-prefix" aria-hidden="true">+261</span>
-                <input type="tel" id="telephone_local" data-telephone-local="telephone"
-                       inputmode="numeric" autocomplete="tel-national"
-                       placeholder="034 12 345 67" maxlength="13" required
-                       pattern="[0-9 ]*" title="034 12 345 67 ou 34 12 345 67"
-                       aria-describedby="telephone-aide">
-              </div>
-              <input type="hidden" id="telephone" name="telephone">
-              <p class="auth-help" id="telephone-aide">Saisissez 034 12 345 67, ou 34 12 345 67 si vous utilisez l’ancien format. Le serveur normalise automatiquement.</p>
+              <label for="telephone">Téléphone ou identifiant étudiant <span class="auth-required" aria-hidden="true">*</span></label>
+              <input type="text" id="telephone" name="telephone"
+                     autocomplete="username" autocapitalize="characters"
+                     placeholder="034 12 345 67 ou CODE-MATRICULE"
+                     maxlength="160" required
+                     aria-describedby="telephone-aide">
+              <p class="auth-help" id="telephone-aide">Utilise ton numéro de téléphone habituel ou l’identifiant transmis par ton établissement.</p>
             </div>
 
             <div class="auth-field">

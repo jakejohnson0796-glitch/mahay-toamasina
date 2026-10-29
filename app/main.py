@@ -21,11 +21,12 @@ from sqlmodel import Session, select, func
 from .config import parametres
 from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
-from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, admin_scolaire_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router, scolaire_router, catalogue_scolaire_router
+from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, admin_scolaire_router, tuteur_router, classe_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router, scolaire_router, catalogue_scolaire_router, institution_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .static_cache import VersionedStaticAssetCacheMiddleware
 from .request_limits import RequestSizeLimitMiddleware
 from .admin_security import AdminActionConfirmationMiddleware
+from .force_password_change import ForcePasswordChangeMiddleware
 from .production_guard import valider_configuration_production
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
@@ -65,6 +66,8 @@ if parametres.environnement == "production" and parametres.session_secret_key ==
 # ajoutes en dernier en premier, on enregistre donc AdminActionConfirmation
 # avant SessionMiddleware.
 app.add_middleware(AdminActionConfirmationMiddleware)
+# Le garde-fou est placé sous SessionMiddleware pour pouvoir lire la session.
+app.add_middleware(ForcePasswordChangeMiddleware)
 
 # Cle de session : lue depuis SESSION_SECRET_KEY (.env) si presente, sinon
 # retombe sur la valeur de demo. A REMPLACER avant toute mise en ligne
@@ -102,6 +105,7 @@ app.include_router(jeux_classiques_router.router)
 app.include_router(admin_router.router)
 app.include_router(admin_referentiel_router.router)
 app.include_router(admin_scolaire_router.router)
+app.include_router(institution_router.router)
 app.include_router(tuteur_router.router)
 app.include_router(classe_router.router)
 app.include_router(faq_router.router)

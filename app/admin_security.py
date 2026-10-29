@@ -24,6 +24,14 @@ MAX_ECHECS_CONFIRMATION_ADMIN = 5
 FENETRE_ECHECS_CONFIRMATION_ADMIN = timedelta(minutes=10)
 BLOCAGE_ECHECS_CONFIRMATION_ADMIN = timedelta(minutes=5)
 TAILLE_MAX_FORMULAIRE_ADMIN = 512 * 1024
+TAILLE_MAX_IMPORT_INSTITUTIONNEL = 6 * 1024 * 1024
+
+
+def limite_formulaire_admin(path: str) -> int:
+    """Augmente la limite uniquement pour le formulaire d'import institutionnel."""
+    if path == "/admin/inscriptions-institutionnelles/importer":
+        return TAILLE_MAX_IMPORT_INSTITUTIONNEL
+    return TAILLE_MAX_FORMULAIRE_ADMIN
 
 
 def action_admin_protegee(path: str) -> bool:
@@ -154,14 +162,15 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                 longueur_annoncee = int(longueur_annoncee) if longueur_annoncee is not None else None
             except ValueError:
                 longueur_annoncee = None
-            if longueur_annoncee is not None and longueur_annoncee > TAILLE_MAX_FORMULAIRE_ADMIN:
+            limite_formulaire = limite_formulaire_admin(request.url.path)
+            if longueur_annoncee is not None and longueur_annoncee > limite_formulaire:
                 return JSONResponse(
                     {"detail": "Formulaire administrateur trop volumineux."},
                     status_code=413,
                 )
 
             contenu_body = await request.body()
-            if len(contenu_body) > TAILLE_MAX_FORMULAIRE_ADMIN:
+            if len(contenu_body) > limite_formulaire:
                 return JSONResponse(
                     {"detail": "Formulaire administrateur trop volumineux."},
                     status_code=413,
