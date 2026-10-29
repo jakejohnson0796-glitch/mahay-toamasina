@@ -19,6 +19,7 @@ from ..database import get_session
 from ..models import EtablissementPartenaire, RoleUtilisateur, Utilisateur
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
+from ..subscription import creer_essais_gratuits_en_masse
 
 router = APIRouter()
 TAILLE_MAX_FICHIER = 5 * 1024 * 1024
@@ -265,6 +266,7 @@ async def importer_etudiants_institutionnels(
         return _page(request, session, admin, erreur=str(exc), institution_selectionnee=institution.id)
 
     resultat: list[dict[str, str]] = []
+    comptes_crees: list[Utilisateur] = []
     lignes_erreur: list[str] = []
     matricules_vus: set[str] = set()
     identifiants_vus: set[str] = set()
@@ -330,6 +332,7 @@ async def importer_etudiants_institutionnels(
             doit_changer_mot_de_passe=True,
         )
         session.add(compte)
+        comptes_crees.append(compte)
         resultat.append({
             "nom": nom,
             "matricule": matricule,
@@ -346,6 +349,10 @@ async def importer_etudiants_institutionnels(
         return _page(request, session, admin, erreur="Aucun compte créé. Vérifie les lignes signalées et corrige le fichier.",
                      lignes_erreur=lignes_erreur, institution_selectionnee=institution.id)
     try:
+        # Attribue les identifiants puis crée les essais Premium standards en
+        # une transaction de groupe, sans effectuer un commit par étudiant.
+        session.flush()
+        creer_essais_gratuits_en_masse(session, comptes_crees)
         session.commit()
     except IntegrityError:
         session.rollback()

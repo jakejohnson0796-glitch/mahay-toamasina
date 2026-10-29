@@ -42,6 +42,32 @@ def creer_essai_gratuit(session: Session, utilisateur: Utilisateur) -> Abonnemen
     return abonnement
 
 
+
+def creer_essais_gratuits_en_masse(session: Session, utilisateurs: list[Utilisateur]) -> int:
+    """Crée les essais standards en une seule transaction pour une importation en masse."""
+    identifiants = sorted({utilisateur.id for utilisateur in utilisateurs if utilisateur.id is not None})
+    if not identifiants:
+        return 0
+    existants = set(session.exec(
+        select(AbonnementEtudiant.utilisateur_id).where(
+            AbonnementEtudiant.utilisateur_id.in_(identifiants)
+        )
+    ).all())
+    maintenant = datetime.utcnow()
+    crees = 0
+    for utilisateur_id in identifiants:
+        if utilisateur_id in existants:
+            continue
+        session.add(AbonnementEtudiant(
+            utilisateur_id=utilisateur_id,
+            statut=StatutAbonnementEtudiant.ESSAI,
+            date_debut_essai=maintenant,
+            date_fin_essai=maintenant + timedelta(days=DUREE_ESSAI_JOURS),
+        ))
+        crees += 1
+    session.commit()
+    return crees
+
 def obtenir_abonnement(session: Session, utilisateur_id: int) -> Optional[AbonnementEtudiant]:
     return session.exec(
         select(AbonnementEtudiant).where(AbonnementEtudiant.utilisateur_id == utilisateur_id)
