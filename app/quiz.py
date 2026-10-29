@@ -137,10 +137,18 @@ def _questions_vues_recemment(
     utilisateur_id: int,
     matiere: str,
     *,
-    limite_tentatives: int = 3,
+    limite_tentatives: int = 8,
     limite_questions: int = 24,
 ) -> List[str]:
-    """Récupère les énoncés récents de la même matière pour éviter de les régénérer."""
+    """Échantillonne l'historique récent de la même matière sans privilégier un seul quiz.
+
+    L'échantillon reste borné pour limiter le coût du prompt, mais les questions
+    sont prises à tour de rôle dans les tentatives les plus récentes. Un quiz long
+    ne doit donc pas masquer complètement les exemples des tentatives précédentes.
+    """
+    if limite_tentatives <= 0 or limite_questions <= 0:
+        return []
+
     try:
         lignes = session.exec(
             select(TentativeQuiz)
@@ -157,8 +165,7 @@ def _questions_vues_recemment(
         logger.debug("Historique anti-répétition du quiz indisponible.", exc_info=True)
         return []
 
-    resultat: List[str] = []
-    empreintes = set()
+    groupes_questions: List[List[str]] = []
     for tentative_precedente in lignes if isinstance(lignes, (list, tuple)) else []:
         try:
             contenu = json.loads(tentative_precedente.questions_json or "[]")
@@ -171,21 +178,48 @@ def _questions_vues_recemment(
         )
         if not isinstance(questions_precedentes, list):
             continue
+
+        groupe: List[str] = []
+        empreintes_groupe = set()
         for question_precedente in questions_precedentes:
             if not isinstance(question_precedente, dict):
                 continue
             enonce = question_precedente.get("question")
             if not isinstance(enonce, str) or not enonce.strip():
                 continue
+            enonce = enonce.strip()[:220]
+            empreinte = _empreinte_question({"question": enonce})
+            if not empreinte or empreinte in empreintes_groupe:
+                continue
+            empreintes_groupe.add(empreinte)
+            groupe.append(enonce)
+        if groupe:
+            groupes_questions.append(groupe)
+
+    # Tourniquet : question 1 de chaque tentative, puis question 2, etc.
+    # Cela garde une trace des anciennes tentatives même lorsqu'un quiz récent
+    # contient beaucoup de questions. Les doublons exacts restent supprimés.
+    resultat: List[str] = []
+    empreintes = set()
+    rang = 0
+    while len(resultat) < limite_questions:
+        a_des_questions = False
+        for groupe in groupes_questions:
+            if rang >= len(groupe):
+                continue
+            a_des_questions = True
+            enonce = groupe[rang]
             empreinte = _empreinte_question({"question": enonce})
             if not empreinte or empreinte in empreintes:
                 continue
             empreintes.add(empreinte)
-            resultat.append(enonce.strip()[:220])
+            resultat.append(enonce)
             if len(resultat) >= limite_questions:
                 return resultat
+        if not a_des_questions:
+            break
+        rang += 1
     return resultat
-
 
 
 def _contexte_personnalise_quiz(
