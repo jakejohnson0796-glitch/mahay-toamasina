@@ -16,7 +16,7 @@
       <p class="auth-kicker">Récupérer ton accès</p>
       <h1>Retrouve ton compte en quelques étapes.</h1>
       <p>
-        Saisis ton numéro de téléphone. Si un email de récupération est enregistré
+        Saisis ton numéro de téléphone ou l’identifiant remis par ton établissement. Si un email de récupération est enregistré
         sur ton compte, nous y enverrons un code valable pendant 15 minutes.
       </p>
 
@@ -42,31 +42,19 @@
 
         <div class="auth-card-main">
           <h2 id="titre-recuperation">Mot de passe oublié ?</h2>
-          <p class="auth-card-intro">Entre le numéro associé à ton compte pour commencer la récupération.</p>
+          <p class="auth-card-intro">Entre le numéro ou l’identifiant associé à ton compte pour commencer la récupération.</p>
 
           <form method="post" action="/mot-de-passe-oublie" class="auth-form">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
 
             <div class="auth-field">
-              <label for="telephone_local">Numéro de téléphone <span class="auth-required" aria-hidden="true">*</span></label>
-              <div class="auth-phone-wrap">
-                <span class="auth-phone-prefix" aria-hidden="true">+261</span>
-                <input
-                  type="tel"
-                  id="telephone_local"
-                  data-telephone-local="telephone"
-                  inputmode="numeric"
-                  autocomplete="tel-national"
-                  placeholder="034 12 345 67"
-                  maxlength="13"
-                  required
-                  pattern="[0-9 ]*"
-                  title="034 12 345 67 ou 34 12 345 67"
-                  aria-describedby="telephone-aide"
-                >
-              </div>
-              <input type="hidden" id="telephone" name="telephone">
-              <p class="auth-help" id="telephone-aide">Saisis 034 12 345 67, ou 34 12 345 67 pour un ancien compte.</p>
+              <label for="telephone">Téléphone ou identifiant étudiant <span class="auth-required" aria-hidden="true">*</span></label>
+              <input type="text" id="telephone" name="telephone"
+                     autocomplete="username" autocapitalize="characters"
+                     placeholder="034 12 345 67 ou CODE-MATRICULE"
+                     maxlength="160" required
+                     aria-describedby="telephone-aide">
+              <p class="auth-help" id="telephone-aide">Un code est envoyé par email si une adresse de récupération existe sur le compte.</p>
             </div>
 
             <button class="bouton bouton-primaire auth-submit" type="submit">Envoyer le code</button>

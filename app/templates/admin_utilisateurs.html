@@ -39,7 +39,7 @@
         {% for u in utilisateurs %}
         <tr>
           <td>{{ avatar_utilisateur(u, taille=28) }} <strong>{{ u.nom }}</strong></td>
-          <td>{{ u.telephone }}</td>
+          <td>{{ u.telephone or u.identifiant_connexion or "Non renseigné" }}</td>
           <td><span class="ops-badge">{{ u.role.value }}</span></td>
           <td>
             <strong>

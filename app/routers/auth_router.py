@@ -772,7 +772,17 @@ def demander_reinitialisation(
         except TelephoneInvalide:
             telephone_normalise = telephone
 
-        utilisateur = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)).first()
+        utilisateur = None
+    if telephone_normalise:
+        utilisateur = session.exec(
+            select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)
+        ).first()
+    if not utilisateur:
+        identifiant_saisi = (telephone or "").strip().upper()
+        if identifiant_saisi:
+            utilisateur = session.exec(
+                select(Utilisateur).where(Utilisateur.identifiant_connexion == identifiant_saisi)
+            ).first()
 
         if utilisateur and utilisateur.email and email_configure():
             code = f"{secrets.randbelow(1_000_000):06d}"

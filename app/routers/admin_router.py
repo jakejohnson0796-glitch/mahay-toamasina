@@ -711,7 +711,7 @@ def page_utilisateurs(request: Request, q: Optional[str] = None, session: Sessio
     requete = select(Utilisateur).order_by(Utilisateur.date_creation.desc())
     if q:
         terme = f"%{q.strip()}%"
-        requete = requete.where((Utilisateur.nom.ilike(terme)) | (Utilisateur.telephone.ilike(terme)))
+        requete = requete.where((Utilisateur.nom.ilike(terme)) | (Utilisateur.telephone.ilike(terme)) | (Utilisateur.identifiant_connexion.ilike(terme)))
     utilisateurs = session.exec(requete).all()
     niveaux_scolaires = session.exec(
         select(NiveauScolaire).order_by(NiveauScolaire.ordre, NiveauScolaire.libelle)
