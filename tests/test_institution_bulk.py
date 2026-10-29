@@ -51,7 +51,7 @@ def test_lire_csv_refuse_format_non_pris_en_charge():
 def test_lire_csv_refuse_plus_de_500_etudiants():
     lignes = ["nom;matricule"] + [f"Etudiant {i};{i}" for i in range(501)]
     with pytest.raises(ValueError, match="500 étudiants"):
-        lire_lignes_tableur("etudiants.csv", "\\n".join(lignes).encode("utf-8"))
+        lire_lignes_tableur("etudiants.csv", "\n".join(lignes).encode("utf-8"))
 
 
 def test_lire_xlsx():
