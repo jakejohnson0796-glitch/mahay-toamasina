@@ -138,10 +138,10 @@
   const table = document.getElementById("credentials-table");
   if (!button || !table) return;
   function csvValue(value) {
-    var text = String(value || "").replace(/[\\r\\n]+/g, " ").trim();
-    // Empêche les noms ou valeurs fournis dans le fichier source d'être
-    // interprétés comme une formule lorsqu'un administrateur ouvre le CSV.
-    if (/^[\\u0000-\\u0020]*[=+\\-@]/.test(text)) text = "'" + text;
+    var text = String(value || "").replace(/[\r\n]+/g, " ").trim();
+    // Prevent data supplied in the source file from being evaluated as a
+    // spreadsheet formula when an administrator opens the credentials CSV.
+    if (/^[\u0000-\u0020]*[=+\-@]/.test(text)) text = "'" + text;
     return '"' + text.replace(/"/g, '""') + '"';
   }
   button.addEventListener("click", function () {
