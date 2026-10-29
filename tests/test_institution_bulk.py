@@ -69,3 +69,83 @@ def test_lire_xlsx():
     assert lignes[0]["nom"] == "Rasoanaivo Miora"
     assert lignes[0]["matricule"] == "0007"
     assert lignes[0]["niveau"] == "L1"
+
+
+def test_recuperation_mot_de_passe_accepte_un_identifiant_institutionnel(monkeypatch):
+    from types import SimpleNamespace
+    from app.routers import auth_router
+
+    utilisateur = SimpleNamespace(
+        id=777,
+        telephone=None,
+        identifiant_connexion="UNIV-T-001",
+        email="eleve@example.test",
+    )
+
+    class Resultat:
+        def first(self):
+            return utilisateur
+
+    class FausseSession:
+        def __init__(self):
+            self.requetes = 0
+            self.ajouts = []
+            self.commits = 0
+
+        def exec(self, _requete):
+            self.requetes += 1
+            return Resultat()
+
+        def add(self, objet):
+            self.ajouts.append(objet)
+
+        def commit(self):
+            self.commits += 1
+
+    request = SimpleNamespace(
+        session={},
+        client=SimpleNamespace(host="127.0.0.1"),
+    )
+    session = FausseSession()
+    emails = []
+    monkeypatch.setattr(auth_router, "_ip_client", lambda _request: "127.0.0.1")
+    monkeypatch.setattr(auth_router, "limite_depassee", lambda *args, **kwargs: False)
+    monkeypatch.setattr(auth_router, "email_configure", lambda: True)
+    monkeypatch.setattr(auth_router, "envoyer_email", lambda *args: emails.append(args))
+    monkeypatch.setattr(auth_router, "hacher_mot_de_passe", lambda value: "hash:" + value)
+
+    response = auth_router.demander_reinitialisation(
+        request, "UNIV-T-001", session, None
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/mot-de-passe-oublie/code"
+    assert request.session["en_attente_reinit_user_id"] == utilisateur.id
+    assert session.requetes == 1
+    assert session.commits == 1
+    assert len(emails) == 1
+    assert session.ajouts[0].utilisateur_id == utilisateur.id
+
+
+def test_recuperation_mot_de_passe_limitee_ne_consulte_pas_la_base(monkeypatch):
+    from types import SimpleNamespace
+    from app.routers import auth_router
+
+    class FausseSession:
+        def exec(self, _requete):
+            raise AssertionError("La base ne doit pas être interrogée après la limite anti-abus.")
+
+    request = SimpleNamespace(
+        session={},
+        client=SimpleNamespace(host="127.0.0.1"),
+    )
+    monkeypatch.setattr(auth_router, "_ip_client", lambda _request: "127.0.0.1")
+    monkeypatch.setattr(auth_router, "limite_depassee", lambda *args, **kwargs: True)
+
+    response = auth_router.demander_reinitialisation(
+        request, "UNIV-T-001", FausseSession(), None
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/mot-de-passe-oublie/code"
+    assert "en_attente_reinit_user_id" not in request.session
