@@ -44,5 +44,11 @@ def test_lire_csv_refuse_entete_matricule_absente():
 
 
 def test_lire_csv_refuse_format_non_pris_en_charge():
-    with pytest.raises(ValueError, match="CSV"):
+    with pytest.raises(ValueError, match="Format non pris en charge"):
         lire_lignes_tableur("etudiants.pdf", b"nom,matricule\na,1")
+
+
+def test_lire_csv_refuse_plus_de_500_etudiants():
+    lignes = ["nom;matricule"] + [f"Etudiant {i};{i}" for i in range(501)]
+    with pytest.raises(ValueError, match="500 étudiants"):
+        lire_lignes_tableur("etudiants.csv", "\\n".join(lignes).encode("utf-8"))

@@ -91,7 +91,15 @@ def _lignes_csv(contenu: bytes) -> list[list[object]]:
         separateur = csv.Sniffer().sniff(texte[:8192], delimiters=";,\t|").delimiter
     except csv.Error:
         separateur = ";"
-    return list(csv.reader(io.StringIO(texte), delimiter=separateur))
+    lecteur = csv.reader(io.StringIO(texte), delimiter=separateur)
+    lignes: list[list[object]] = []
+    for ligne in lecteur:
+        if not any(str(cellule or "").strip() for cellule in ligne):
+            continue
+        lignes.append(ligne)
+        if len(lignes) > MAX_ETUDIANTS_PAR_IMPORT + 1:
+            raise ValueError(f"Limite atteinte : maximum {MAX_ETUDIANTS_PAR_IMPORT} étudiants par import.")
+    return lignes
 
 
 def lire_lignes_tableur(nom_fichier: str, contenu: bytes) -> list[dict[str, str]]:
@@ -107,7 +115,15 @@ def lire_lignes_tableur(nom_fichier: str, contenu: bytes) -> list[dict[str, str]
             classeur = load_workbook(io.BytesIO(contenu), read_only=True, data_only=True)
             try:
                 feuille = classeur.active
-                lignes = [list(ligne) for ligne in feuille.iter_rows(values_only=True)]
+                lignes = []
+                for ligne in feuille.iter_rows(values_only=True):
+                    valeurs = list(ligne)
+                    if any(str(cellule or "").strip() for cellule in valeurs):
+                        lignes.append(valeurs)
+                        if len(lignes) > MAX_ETUDIANTS_PAR_IMPORT + 1:
+                            raise ValueError(
+                                f"Limite atteinte : maximum {MAX_ETUDIANTS_PAR_IMPORT} étudiants par import."
+                            )
             finally:
                 classeur.close()
         except Exception as exc:

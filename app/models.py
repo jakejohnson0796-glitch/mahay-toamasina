@@ -539,6 +539,10 @@ class Utilisateur(SQLModel, table=True):
     onboarding_commence_le: Optional[datetime] = Field(default=None, index=True)
     onboarding_termine_le: Optional[datetime] = Field(default=None, index=True)
 
+    __table_args__ = (
+        UniqueConstraint("institution_id", "matricule_institutionnel", name="uq_utilisateur_institution_matricule"),
+    )
+
 
 class CodeSecours2FA(SQLModel, table=True):
     """Codes de secours a usage unique, generes a l'activation de la 2FA,
