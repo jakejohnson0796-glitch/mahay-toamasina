@@ -126,6 +126,8 @@ def lire_lignes_tableur(nom_fichier: str, contenu: bytes) -> list[dict[str, str]
                             )
             finally:
                 classeur.close()
+        except ValueError:
+            raise
         except Exception as exc:
             raise ValueError("Le fichier Excel est illisible ou endommagé.") from exc
     else:

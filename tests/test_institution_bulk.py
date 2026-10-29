@@ -52,3 +52,20 @@ def test_lire_csv_refuse_plus_de_500_etudiants():
     lignes = ["nom;matricule"] + [f"Etudiant {i};{i}" for i in range(501)]
     with pytest.raises(ValueError, match="500 étudiants"):
         lire_lignes_tableur("etudiants.csv", "\\n".join(lignes).encode("utf-8"))
+
+
+def test_lire_xlsx():
+    from io import BytesIO
+    from openpyxl import Workbook
+
+    classeur = Workbook()
+    feuille = classeur.active
+    feuille.append(["Nom", "Matricule", "Niveau"])
+    feuille.append(["Rasoanaivo Miora", "0007", "L1"])
+    contenu = BytesIO()
+    classeur.save(contenu)
+    classeur.close()
+    lignes = lire_lignes_tableur("etudiants.xlsx", contenu.getvalue())
+    assert lignes[0]["nom"] == "Rasoanaivo Miora"
+    assert lignes[0]["matricule"] == "0007"
+    assert lignes[0]["niveau"] == "L1"

@@ -17,7 +17,6 @@
         <a href="/admin/sponsors">Sponsors</a>
         <a href="/admin/utilisateurs">Utilisateurs</a>
     <a href="/admin/inscriptions-institutionnelles">Inscriptions institutionnelles</a>
-        <a href="/admin/inscriptions-institutionnelles">Inscriptions en masse</a>
         <a href="/admin/stats">Statistiques</a>
     <a href="/admin/ia">IA</a>
         <a href="/admin/securite">Sécurité admin</a>
@@ -80,7 +79,7 @@
         </div>
         <div class="ops-new-user-actions">
           <span class="ops-badge is-alert">Nouveau</span>
-          <a class="bouton bouton-secondaire" href="/admin/utilisateurs?q={{ item.utilisateur.telephone|urlencode }}">Voir le compte</a>
+          <a class="bouton bouton-secondaire" href="/admin/utilisateurs?q={{ (item.utilisateur.identifiant_connexion or item.utilisateur.telephone or '')|urlencode }}">Voir le compte</a>
         </div>
       </article>
       {% endfor %}
