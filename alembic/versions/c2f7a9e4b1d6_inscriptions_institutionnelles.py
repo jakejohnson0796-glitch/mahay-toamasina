@@ -42,7 +42,14 @@ def upgrade() -> None:
         if "identifiant_connexion" not in colonnes:
             batch.add_column(sa.Column("identifiant_connexion", sa.String(length=160), nullable=True))
         if "institution_id" not in colonnes:
-            batch.add_column(sa.Column("institution_id", sa.Integer(), sa.ForeignKey("etablissementpartenaire.id"), nullable=True))
+            batch.add_column(
+                sa.Column(
+                    "institution_id",
+                    sa.Integer(),
+                    sa.ForeignKey("etablissementpartenaire.id", name="fk_utilisateur_institution_id"),
+                    nullable=True,
+                )
+            )
         if "matricule_institutionnel" not in colonnes:
             batch.add_column(sa.Column("matricule_institutionnel", sa.String(length=80), nullable=True))
         if "telephone" in colonnes:
