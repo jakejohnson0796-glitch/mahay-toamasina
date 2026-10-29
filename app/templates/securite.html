@@ -11,6 +11,12 @@
 {% if profil_academique.coherent %}{% set score = score + 1 %}{% endif %}
 
 <div class="ops-page">
+  {% if utilisateur.doit_changer_mot_de_passe %}
+  <div class="ops-alert ops-alert-warn" role="alert">
+    <strong>Action obligatoire : définis ton mot de passe personnel.</strong>
+    Ce compte a été créé ou réinitialisé avec un accès provisoire. Le reste de MITARIDALA sera disponible après son remplacement.
+  </div>
+  {% endif %}
   <section class="ops-hero">
     <div>
       <span class="ops-kicker">Compte · sécurité & profil</span>
@@ -67,7 +73,7 @@
         <p class="ops-security-card-intro">Ces éléments servent à identifier ton compte et à personnaliser les espaces collaboratifs.</p>
         <div class="ops-security-status">
           {{ avatar_utilisateur(utilisateur, taille=54) }}
-          <div><strong>{{ utilisateur.nom }}</strong><span>{{ utilisateur.telephone }} · {{ utilisateur.role.value }}</span></div>
+          <div><strong>{{ utilisateur.nom }}</strong><span>{{ utilisateur.identifiant_connexion or utilisateur.telephone or "Téléphone non renseigné" }} · {{ utilisateur.role.value }}</span></div>
         </div>
         <div class="ops-subsection">
           <h3>Email de récupération</h3>

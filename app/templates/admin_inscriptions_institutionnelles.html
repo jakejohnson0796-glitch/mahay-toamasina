@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block titre %}Inscriptions institutionnelles — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="institution-title">
+    <div>
+      <span class="ops-kicker">Partenariats · gestion des effectifs</span>
+      <h1 id="institution-title">Préinscrire une promotion entière.</h1>
+      <p>Crée un établissement partenaire, importe la liste d'étudiants et remets à chacun son identifiant et son mot de passe provisoire. L'étudiant devra choisir son propre mot de passe avant d'utiliser le reste du site.</p>
+      <div class="ops-hero-actions">
+        <a href="/admin">Administration</a>
+        <a href="/admin/utilisateurs">Comptes utilisateurs</a>
+      </div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ institutions|length }}</strong><span>établissements partenaires</span></div>
+      <div class="ops-stat"><strong>{{ max_etudiants }}</strong><span>comptes maximum par import</span></div>
+      <div class="ops-stat"><strong>{{ max_mo }} Mo</strong><span>taille maximale du fichier</span></div>
+    </div>
+  </section>
+
+  {% if erreur %}<div class="ops-alert ops-alert-danger" role="alert">{{ erreur }}</div>{% endif %}
+  {% if request.query_params.get("ok") == "etablissement_cree" %}<div class="ops-alert ops-alert-info" role="status">Établissement partenaire créé.</div>{% endif %}
+
+  <div class="ops-admin-groups">
+    <section class="ops-admin-group">
+      <h2>1. Ajouter un établissement partenaire</h2>
+      <p>Choisis un code court et stable : il sera intégré aux identifiants de connexion générés pour chaque matricule.</p>
+      <form method="post" action="/admin/inscriptions-institutionnelles/etablissements" class="ops-form">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="institution-nom">Nom officiel de l'établissement</label>
+        <input id="institution-nom" type="text" name="nom" required maxlength="200" autocomplete="organization" placeholder="Université / Lycée / Institut">
+        <label for="institution-code">Code établissement</label>
+        <input id="institution-code" type="text" name="code" required minlength="2" maxlength="32" pattern="[A-Za-z0-9_-]+" placeholder="UNIV-TOAMASINA">
+        <label for="institution-type">Type</label>
+        <select id="institution-type" name="type_etablissement">
+          <option value="universite">Université / établissement supérieur</option>
+          <option value="college_lycee">Collège / lycée</option>
+          <option value="etfp">Formation technique et professionnelle</option>
+          <option value="autre">Autre</option>
+        </select>
+        <label for="institution-region">Région (facultatif)</label>
+        <input id="institution-region" type="text" name="region" maxlength="100">
+        <label for="institution-commune">Commune (facultatif)</label>
+        <input id="institution-commune" type="text" name="commune" maxlength="120">
+        <button class="bouton bouton-primaire" type="submit">Créer l'établissement</button>
+      </form>
+    </section>
+
+    <section class="ops-admin-group">
+      <h2>2. Importer les étudiants</h2>
+      <p>Le fichier doit contenir au minimum deux colonnes : <strong>nom</strong> et <strong>matricule</strong>. Colonnes facultatives : <strong>prenom</strong>, <strong>telephone</strong>, <strong>email</strong> et <strong>niveau</strong> ou <strong>classe</strong>.</p>
+      <p>Formats acceptés : CSV (séparateur virgule, point-virgule ou tabulation) et Excel .xlsx. Pas de téléphone ? Ce n'est pas bloquant : chaque étudiant se connectera avec son identifiant institutionnel.</p>
+      {% if institutions %}
+      <form method="post" action="/admin/inscriptions-institutionnelles/importer" enctype="multipart/form-data" class="ops-form">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="institution-id">Établissement à rattacher</label>
+        <select id="institution-id" name="institution_id" required>
+          <option value="">Choisir un établissement</option>
+          {% for item in institutions %}
+          <option value="{{ item.id }}"{% if institution_selectionnee == item.id %} selected{% endif %}>{{ item.nom }} — {{ item.code }}{% if not item.est_actif %} (inactif){% endif %}</option>
+          {% endfor %}
+        </select>
+        <label for="institution-file">Liste des étudiants (.csv ou .xlsx, 5 Mo maximum)</label>
+        <input id="institution-file" type="file" name="fichier" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+        <button class="bouton bouton-primaire" type="submit" {% if not institutions|selectattr("est_actif")|list %}disabled{% endif %}>Vérifier et créer les comptes</button>
+      </form>
+      {% else %}
+      <p>Crée d'abord un établissement partenaire pour activer l'import.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {% if institutions %}
+  <section class="ops-section">
+    <h2>Établissements partenaires</h2>
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Établissement</th><th>Code</th><th>Type</th><th>Localisation</th><th>Comptes</th><th>État</th></tr></thead>
+        <tbody>
+        {% for item in institutions %}
+          <tr>
+            <td><strong>{{ item.nom }}</strong></td>
+            <td><code>{{ item.code }}</code></td>
+            <td>{{ item.type_etablissement }}</td>
+            <td>{{ item.commune or "—" }}{% if item.region %}, {{ item.region }}{% endif %}</td>
+            <td>{{ effectifs.get(item.id, 0) }}</td>
+            <td>{% if item.est_actif %}<span class="ops-badge is-success">Actif</span>{% else %}<span class="ops-badge is-alert">Inactif</span>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if resultat %}
+  <section class="ops-section" aria-labelledby="resultat-title">
+    <div class="ops-new-users-head">
+      <div>
+        <span class="ops-kicker">Remise des accès · affichage unique</span>
+        <h2 id="resultat-title">{{ resultat|length }} compte(s) créé(s)</h2>
+        <p>Les mots de passe ci-dessous ne sont pas conservés en clair par MITARIDALA. Télécharge le CSV maintenant et remets les accès individuellement aux étudiants. Évite de partager la liste complète dans un groupe public. Actualiser la page ne permettra pas de récupérer ces mots de passe.</p>
+      </div>
+      <button class="bouton bouton-primaire" type="button" id="download-credentials">Télécharger les identifiants CSV</button>
+    </div>
+    <div class="ops-table-wrap">
+      <table class="ops-table" id="credentials-table">
+        <thead><tr><th>Nom</th><th>Matricule</th><th>Identifiant de connexion</th><th>Mot de passe provisoire</th></tr></thead>
+        <tbody>
+        {% for item in resultat %}
+          <tr>
+            <td>{{ item.nom }}</td><td>{{ item.matricule }}</td><td><code>{{ item.identifiant }}</code></td>
+            <td><code>{{ item.mot_de_passe_temporaire }}</code></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if lignes_erreur %}
+    <h3>Lignes ignorées — à corriger dans le fichier source</h3>
+    <ul>{% for ligne in lignes_erreur %}<li>{{ ligne }}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+  {% elif lignes_erreur %}
+  <section class="ops-section">
+    <h2>Lignes à corriger</h2>
+    <ul>{% for ligne in lignes_erreur %}<li>{{ ligne }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+</div>
+{% if resultat %}
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  "use strict";
+  const button = document.getElementById("download-credentials");
+  const table = document.getElementById("credentials-table");
+  if (!button || !table) return;
+  function csvValue(value) {
+    var text = String(value || "").replace(/[\r\n]+/g, " ").trim();
+    // Prevent data supplied in the source file from being evaluated as a
+    // spreadsheet formula when an administrator opens the credentials CSV.
+    if (/^[\u0000-\u0020]*[=+\-@]/.test(text)) text = "'" + text;
+    return '"' + text.replace(/"/g, '""') + '"';
+  }
+  button.addEventListener("click", function () {
+    const rows = Array.from(table.querySelectorAll("tr")).map(function (row) {
+      return Array.from(row.querySelectorAll("th, td")).map(function (cell) {
+        return csvValue(cell.innerText.trim());
+      }).join(",");
+    });
+    const blob = new Blob(["\uFEFF" + rows.join("\r\n")], {type: "text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "identifiants-etudiants-mitaridala.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

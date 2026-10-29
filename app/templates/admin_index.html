@@ -16,6 +16,7 @@
         <a href="/admin/abonnements">Abonnements</a>
         <a href="/admin/sponsors">Sponsors</a>
         <a href="/admin/utilisateurs">Utilisateurs</a>
+    <a href="/admin/inscriptions-institutionnelles">Inscriptions institutionnelles</a>
         <a href="/admin/stats">Statistiques</a>
     <a href="/admin/ia">IA</a>
         <a href="/admin/securite">Sécurité admin</a>
@@ -73,12 +74,12 @@
       <article class="ops-new-user">
         <div class="ops-new-user-main">
           <strong>{{ item.utilisateur.nom }}</strong>
-          <span>{{ item.utilisateur.telephone }} · {{ item.utilisateur.role.value }}</span>
+          <span>{{ item.utilisateur.identifiant_connexion or item.utilisateur.telephone or "Téléphone non renseigné" }} · {{ item.utilisateur.role.value }}</span>
           <span>Compte créé le {{ item.utilisateur.date_creation.strftime("%d/%m/%Y à %H:%M") }} · {{ jours_depuis_creation(item.utilisateur) }} jour{{ "s" if jours_depuis_creation(item.utilisateur) != 1 else "" }} d'ancienneté</span>
         </div>
         <div class="ops-new-user-actions">
           <span class="ops-badge is-alert">Nouveau</span>
-          <a class="bouton bouton-secondaire" href="/admin/utilisateurs?q={{ item.utilisateur.telephone|urlencode }}">Voir le compte</a>
+          <a class="bouton bouton-secondaire" href="/admin/utilisateurs?q={{ (item.utilisateur.identifiant_connexion or item.utilisateur.telephone or '')|urlencode }}">Voir le compte</a>
         </div>
       </article>
       {% endfor %}
@@ -104,6 +105,7 @@
           {% if nb_sponsors_en_attente %}<span class="ops-badge is-alert">{{ nb_sponsors_en_attente }}</span>{% else %}<span class="ops-badge is-success">OK</span>{% endif %}
         </a>
         <a class="ops-admin-item" href="/admin/utilisateurs"><span><strong>Utilisateurs</strong><span>Rôles, bannissement et récupération de compte.</span></span><span class="ops-badge">Gérer</span></a>
+        <a class="ops-admin-item" href="/admin/inscriptions-institutionnelles"><span><strong>Inscriptions institutionnelles</strong><span>Créer un établissement partenaire et importer plusieurs centaines de matricules.</span></span><span class="ops-badge">Importer</span></a>
         <a class="ops-admin-item" href="/admin/stats"><span><strong>Statistiques</strong><span>Vue globale sur activité, contenus et accès.</span></span><span class="ops-badge">Voir</span></a>
         <a class="ops-admin-item" href="/admin/ia"><span><strong>IA & worker</strong><span>File, risque, performance des modèles et arbitrages.</span></span><span class="ops-badge">Surveiller</span></a>
       </div>

@@ -19,6 +19,8 @@ def limite_corps_requete(method: str, path: str, default_limit: int = DEFAULT_MA
     """Retourne une limite du corps HTTP fondée sur la route, jamais sur l'en-tête client."""
     if method.upper() not in {"POST", "PUT", "PATCH"}:
         return default_limit
+    if path == "/admin/inscriptions-institutionnelles/importer":
+        return 6 * MIB  # CSV/XLSX de préinscription + marge multipart
     if path == "/documents/upload-multiple":
         return MULTIPLE_DOCUMENT_BODY_LIMIT
     if path in {"/documents/upload", "/documents/detect"}:
