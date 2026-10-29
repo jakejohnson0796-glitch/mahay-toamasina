@@ -76,6 +76,29 @@
       bouton.disabled = true;
     });
 
+    // L'import institutionnel retourne une page avec un secret provisoire
+    // visible une seule fois. Une navigation native préserve cette page HTML
+    // et son bouton CSV ; le détour AJAX standard de l'admin perdrait le corps
+    // de réponse en naviguant ensuite vers l'URL GET.
+    var cheminAction = "";
+    try {
+      cheminAction = new URL(form.action || window.location.href, window.location.origin).pathname;
+    } catch (_) {
+      cheminAction = "";
+    }
+    if (cheminAction === "/admin/inscriptions-institutionnelles/importer") {
+      var champConfirmation = form.querySelector("input[name='admin_confirmation_password']");
+      if (!champConfirmation) {
+        champConfirmation = document.createElement("input");
+        champConfirmation.type = "hidden";
+        champConfirmation.name = "admin_confirmation_password";
+        form.appendChild(champConfirmation);
+      }
+      champConfirmation.value = motDePasse;
+      form.submit();
+      return;
+    }
+
     try {
       var donnees = new FormData(form);
       donnees.set("admin_confirmation_password", motDePasse);
