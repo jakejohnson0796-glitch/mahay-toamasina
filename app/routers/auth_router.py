@@ -759,30 +759,30 @@ def demander_reinitialisation(
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    # Anti-abus : memes deux limites cumulees que la connexion (voir
-    # connexion() plus haut) -- eviter qu'un script fasse partir des
-    # emails en rafale (cout de service + spam pour la victime) en
-    # essayant plein de numeros, ou en boucle sur UN numero precis.
+    # Même message quel que soit l'état du compte, pour éviter de révéler
+    # si un téléphone ou un identifiant institutionnel est enregistré.
     trop_ip = limite_depassee(f"reinit:ip:{_ip_client(request)}", max_tentatives=8, fenetre_secondes=3600)
-    trop_tel = limite_depassee(f"reinit:{_telephone_rate_key(telephone)}", max_tentatives=3, fenetre_secondes=3600)
+    trop_user = limite_depassee(f"reinit:{_telephone_rate_key(telephone)}", max_tentatives=3, fenetre_secondes=3600)
 
-    if not (trop_ip or trop_tel):
+    if not (trop_ip or trop_user):
         try:
             telephone_normalise = normaliser_telephone(telephone)
         except TelephoneInvalide:
-            telephone_normalise = telephone
+            # Une entrée non téléphonique peut être un identifiant institutionnel.
+            telephone_normalise = None
 
         utilisateur = None
-    if telephone_normalise:
-        utilisateur = session.exec(
-            select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)
-        ).first()
-    if not utilisateur:
-        identifiant_saisi = (telephone or "").strip().upper()
-        if identifiant_saisi:
+        if telephone_normalise:
             utilisateur = session.exec(
-                select(Utilisateur).where(Utilisateur.identifiant_connexion == identifiant_saisi)
+                select(Utilisateur).where(Utilisateur.telephone == telephone_normalise)
             ).first()
+
+        if not utilisateur:
+            identifiant_saisi = (telephone or "").strip().upper()
+            if identifiant_saisi:
+                utilisateur = session.exec(
+                    select(Utilisateur).where(Utilisateur.identifiant_connexion == identifiant_saisi)
+                ).first()
 
         if utilisateur and utilisateur.email and email_configure():
             code = f"{secrets.randbelow(1_000_000):06d}"
@@ -797,16 +797,12 @@ def demander_reinitialisation(
                 envoyer_email(
                     utilisateur.email,
                     "MITARIDALA — code de reinitialisation",
-                    f"Votre code de reinitialisation de mot de passe est : {code}\n\n"
+                    f"Votre code de reinitialisation de mot de passe est : {code}\\n\\n"
                     "Il expire dans 15 minutes. Si vous n'etes pas a l'origine de cette "
                     "demande, ignorez cet email : votre mot de passe actuel reste valable.",
                 )
             except Exception as exc:
-                # Echec d'envoi (hote SMTP injoignable, identifiants
-                # invalides...) : jamais repercute dans la reponse (le
-                # message reste generique, voir mot_de_passe_oublie_code.html)
-                # pour ne pas reveler d'info a un attaquant -- mais on le
-                # journalise cote serveur pour pouvoir diagnostiquer.
+                # Ne révèle pas l'état SMTP dans la réponse utilisateur.
                 print(f"[mot-de-passe-oublie] echec envoi email : {exc}")
 
             request.session["en_attente_reinit_user_id"] = utilisateur.id
