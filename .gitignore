@@ -1,8 +1,28 @@
+# Fichiers d'environnement locaux : ne jamais versionner les vraies valeurs.
 .env
+.env.*
+!.env.example
+!.env.*.example
+
+# Bases locales et données importées depuis les dépôts utilisateurs.
 mahay.db
+*.sqlite
+*.sqlite3
 uploads/*
 !uploads/.gitkeep
+
+# Clés privées et répertoires de secrets locaux.
+*.pem
+*.key
+secrets/
+
+# Environnement Python et artefacts de test.
 __pycache__/
-*.pyc
+*.py[cod]
 venv/
 .venv/
+.pytest_cache/
+.coverage
+htmlcov/
+playwright-report/
+test-results/
