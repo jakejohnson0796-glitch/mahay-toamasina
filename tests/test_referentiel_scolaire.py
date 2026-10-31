@@ -1370,5 +1370,20 @@ def test_api_scolaire_conserve_l_acces_aux_anciennes_versions_apres_import():
         session, ancien_niveau
     ).id == ancienne_ref.id
 
+    # Le contexte d'apprentissage d'un élève historique doit lui aussi
+    # rester lié à son référentiel, même après l'import d'une version récente.
+    ancien_eleve = _user(
+        session,
+        niveau_id=ancien_niveau.id,
+        option_id=ancienne_serie.id,
+        telephone="0340000891",
+    )
+    contexte_quiz = quiz_router._contexte_scolaire_quiz(ancien_eleve, session)
+    assert contexte_quiz["referentiel_id"] == ancienne_ref.id
+    assert contexte_quiz["niveau_scolaire_id"] == ancien_niveau.id
+    contexte_tuteur = tuteur_router._contexte_scolaire_tuteur(ancien_eleve, session)
+    assert contexte_tuteur["niveau_scolaire_id"] == ancien_niveau.id
+    assert ancienne_serie.id in contexte_tuteur["options_compatibles"]
+
     session.close()
     engine.dispose()
