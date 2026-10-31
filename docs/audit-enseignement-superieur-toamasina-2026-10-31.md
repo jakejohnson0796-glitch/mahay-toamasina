@@ -1459,3 +1459,48 @@ Sources :
 - [Arrêté n°3916/2018-MESupReS du 20 février 2018 — habilitation SCSD (copie PDF Lexxika avec référence CNLegis en pied de page)](https://textes.lexxika.com/wp-content/uploads/2024/05/Arrete-3916_2018-20-Fevrier-2018-Portant-habilitation-des-offres-de-formation-de-lEcole-Doctorale-intitulee-_Science-Cul-.pdf).
 - [Arrêté n°10851/2016 du 19 mai 2016 — modification de l'arrêté 32905/2013 (copie PDF Lexxika avec référence CNLegis en pied de page)](https://textes.lexxika.com/wp-content/uploads/2024/05/Arrete-10851_2016-19-Mai-2016-Portant-modification-des-dispositions-de-larrete-n%C2%B0-32905_2013-MESupRES-du-07-novembre-2013-.pdf).
 - [Expertise France — Termes de référence Expert'Izy pour l'EDT 3D, créée en 2025](https://expertise-france.gestmax.fr/_expertise_france/public_files/tdr-expert-izy-universite-de-toamasina-vf.pdf).
+
+
+## 36. Faculté de Médecine : actes individuels de 2017 et 2018 retrouvés, Sciences paramédicales 2022 à récupérer
+
+Le tableau de la liste MESUPRES HAE d'août 2022 (page imprimée 68) regroupe quatre intitulés sous « Sciences de la Santé / Licence » : Sciences infirmières, Maïeutique, Médecine humaine et Sciences paramédicales. Il renvoie à trois arrêtés : n°31798/2017, n°594/2018 et n°4000/2022. Deux des trois arrêtés ont été retrouvés en copie PDF portant le filigrane/référence CNLegis, hébergée par Lexxika ; leurs articles de décision permettent de relier plus précisément les mentions à leurs diplômes.
+
+### 36.1 Arrêté n°31798/2017 — Maïeutique et Sciences infirmières
+
+L'arrêté n°31798/2017 du 27 décembre 2017 habilite, à la Faculté de Médecine de l'Université de Toamasina, dans le domaine Sciences de la Santé, les deux mentions :
+- Maïeutique ;
+- Sciences infirmières.
+
+L'article 1 précise le diplôme délivré : **Licence**, d'une durée de **six semestres après le baccalauréat**.
+
+Source : [Arrêté n°31798/2017 — habilitation Maïeutique et Sciences infirmières, copie PDF Lexxika avec référence CNLegis](https://textes.lexxika.com/wp-content/uploads/2024/05/Arrete-31798_2017-27-Decembre-2016-Portant-habilitation-de-loffre-de-formation-dispensee-a-la-Faculte-de-Medecine-de-lUn-.pdf).
+
+### 36.2 Arrêté n°594/2018 — Médecine humaine
+
+L'arrêté n°594/2018 du 15 janvier 2018 habilite une offre de formation de la Faculté de Médecine de l'Université de Toamasina dans le domaine Sciences de la Santé, mention **Médecine humaine**. L'article 1 indique lui aussi un diplôme intitulé **Licence**, d'une durée de **six semestres après le baccalauréat**.
+
+Ce libellé doit être conservé exactement dans le registre historique, sans le transformer en « Doctorat en Médecine » ou en une formation médicale complète de six années : l'arrêté retrouvé ne décrit que le diplôme et la durée qui y figurent. Les étapes d'études, les éventuelles formations cliniques/doctorales postérieures et les règles professionnelles doivent être documentées avec leurs textes distincts.
+
+Source : [Arrêté n°594/2018 — habilitation Médecine humaine, copie PDF Lexxika avec référence CNLegis](https://textes.lexxika.com/wp-content/uploads/2024/05/Arrete-594_2018-15-Janvier-2018-Portant-habilitation-de-loffre-de-formation-dispensee-a-la-Faculte-de-Medecine-de-lUnive-.pdf).
+
+### 36.3 Arrêté n°4000/2022 — Sciences paramédicales : référence trouvée, contenu non encore vérifié
+
+La liste ministérielle HAE d'août 2022 mentionne l'arrêté n°4000/2022-MESupRES du 28 février 2022 en association avec l'intitulé **Sciences paramédicales**. Le PDF intégral de cet arrêté n'a pas encore été retrouvé dans les sources accessibles pendant ce contrôle.
+
+Il ne faut donc pas en déduire la liste des spécialités, le diplôme exact, la durée, les conditions d'accès ou le périmètre de compétences. Le registre MITARIDALA doit garder la référence en statut « acte cité par le répertoire, texte intégral à récupérer ».
+
+Source de la référence : [MESUPRES — Liste des institutions supérieures habilitées, août 2022, page imprimée 68](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
+### 36.4 Effet de la réunion MESUPRES du 8 octobre 2026 sur la lecture de ces actes
+
+Le compte rendu MESUPRES du 8 octobre 2026 évoque une réforme nationale de la formation médicale **après l'obtention du Doctorat en Médecine** et son alignement sur le LMD. Cette concertation est une évolution postérieure aux arrêtés 2017/2018 ci-dessus. Elle n'autorise pas à réinterpréter rétroactivement « Licence — six semestres » comme un doctorat professionnel ou comme une habilitation actuelle d'une spécialité médicale.
+
+**Pièces prioritaires à demander à la Faculté de Médecine / MESUPRES :**
+1. l'arrêté n°4000/2022 intégral et ses éventuelles annexes ;
+2. les actes relatifs au cursus complet de Doctorat en Médecine, aux cycles cliniques et aux spécialités post-doctorales ;
+3. le résultat officiel de la réforme issue de la réunion du 8 octobre, avec architecture LMD, nomenclature des grades, durées, crédits, internat, stages hospitaliers et examens ;
+4. les conventions avec les CHU et terrains de stage, les capacités d'accueil et les décisions HAE par mention ;
+5. les avis d'admission et la maquette 2026-2027 propres à Toamasina.
+
+**Décision MITARIDALA :** tenir trois lignes d'habilitation distinctes (31798/2017, 594/2018, 4000/2022) avec leur intitulé et diplôme exacts, plus une table distincte des cursus de médecine générale et des formations post-doctorales quand leurs textes seront récupérés. Ne pas publier de spécialité médicale ou de doctorat professionnel comme offre ouverte à Toamasina tant que sa décision finale et sa cohorte n'ont pas été authentifiées.
+
