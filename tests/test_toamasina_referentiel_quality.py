@@ -74,12 +74,12 @@ class TestQualiteSourceToamasina(unittest.TestCase):
             {"Arts, Lettres et Sciences Humaines"},
         )
 
-    def test_lignes_publiees_sont_sourcees_et_sans_doublon(self):
+    def test_lignes_sourcees_et_sans_doublon(self):
         clefs = []
         for ligne in self.formations:
             for champ in ("universite", "ville", "composante", "domaine", "mention", "niveau", "type", "parcours", "statut", "source"):
                 self.assertTrue(str(ligne.get(champ) or "").strip(), f"Champ manquant {champ}: {ligne}")
-            self.assertIn(ligne["statut"].strip().casefold(), {"vérifié", "confirmé"})
+            self.assertIn(ligne["statut"].strip().casefold(), {"vérifié", "confirmé", "à vérifier"})
             self.assertTrue(ligne["source"].startswith("https://"))
             clefs.append(tuple(
                 str(ligne.get(champ) or "").strip().casefold()
@@ -87,20 +87,27 @@ class TestQualiteSourceToamasina(unittest.TestCase):
             ))
         self.assertEqual(len(clefs), len(set(clefs)), "La source contient des lignes académiques dupliquées.")
 
-    def test_cca_m2_est_publie_et_m1_reste_en_attente_de_confirmation(self):
-        publiees = [
+    def test_cca_m1_et_m2_restent_non_publies_sans_preuve_officielle(self):
+        cca_source = [
             ligne for ligne in self.formations
             if "cca" in str(ligne.get("parcours") or "").casefold()
         ]
-        self.assertEqual(len(publiees), 1)
-        self.assertEqual(publiees[0]["niveau"], "M2")
-        self.assertEqual(publiees[0]["statut"], "Confirmé")
-        self.assertIn("scribd.com/document/689634398", publiees[0]["source"])
+        self.assertEqual(len(cca_source), 1)
+        self.assertEqual(cca_source[0]["niveau"], "M2")
+        self.assertEqual(cca_source[0]["statut"], "À vérifier")
+        self.assertIn("scribd.com/document/689634398", cca_source[0]["source"])
+
         en_attente = self.data.get("audit_referentiel", {}).get("formations_a_verifier_avant_publication", [])
         cca = [item for item in en_attente if "cca" in str(item).casefold()]
         self.assertEqual(len(cca), 1)
-        self.assertEqual(cca[0]["niveaux"], ["M1"])
+        self.assertEqual(set(cca[0]["niveaux"]), {"M1", "M2"})
         self.assertIn("À vérifier", cca[0]["statut"])
+        self.assertIn("ne prouve ni l'habilitation", cca[0]["motif"])
+
+        # La règle d'import stricte doit empêcher une ligne à vérifier
+        # d'alimenter les sélecteurs et les cercles de parcours.
+        from scripts.import_academic_data import STATUTS_SOURCE_PUBLICS, normaliser
+        self.assertNotIn(normaliser(cca_source[0]["statut"]), STATUTS_SOURCE_PUBLICS)
 
     def test_issedd_est_publie_sur_les_niveaux_licence_et_master(self):
         lignes = [
