@@ -106,7 +106,7 @@ def _url_source_valide(source: str | None) -> bool:
     except ValueError:
         return False
     hostname = (parsed.hostname or "").lower().rstrip(".")
-    domaines_officiels = ("education.gov.mg", "metfp.gov.mg")
+    domaines_officiels = ("education.gov.mg", "plateforme.education.mg", "metfp.gov.mg")
     domaine_officiel = any(
         hostname == domaine or hostname.endswith("." + domaine)
         for domaine in domaines_officiels
