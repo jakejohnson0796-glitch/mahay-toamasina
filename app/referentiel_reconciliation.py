@@ -287,6 +287,24 @@ def _trouver_mention_canonique(
         select(Mention).where(Mention.nom == nom_canonique)
     ).first()
     if exact is not None:
+        # Même si le libellé canonique exact existe déjà, fusionne les
+        # doublons strictement équivalents après normalisation (accents,
+        # apostrophes et espaces). Sans cette étape, deux Mention actives
+        # peuvent rester sélectionnables alors que leurs offres sont
+        # réparties entre l'ancien ID et l'ID canonique.
+        #
+        # Ne fusionne ici que les noms normalisés identiques : les alias
+        # métier déclarés plus bas (ex. anciens intitulés d'anthropologie)
+        # peuvent représenter des intitulés historiques distincts et ne
+        # doivent pas être confondus automatiquement avec une égalité stricte.
+        doublons_normalises = [
+            m for m in session.exec(select(Mention)).all()
+            if m.id != exact.id and normaliser(m.nom) == normaliser(nom_canonique)
+        ]
+        for doublon in doublons_normalises:
+            _reassigner_mention(session, doublon.id, exact.id)
+            session.delete(doublon)
+
         # La source de cette réconciliation est le référentiel validé de
         # Toamasina. Son domaine explicite prime sur un rattachement
         # historique : sinon des mentions FLSH reconnues par le MESUPRES
