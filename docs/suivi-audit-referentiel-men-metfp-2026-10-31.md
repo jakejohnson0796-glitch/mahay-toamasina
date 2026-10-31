@@ -1746,3 +1746,61 @@ Sources officielles :
 - [PE T11 MEN — Philosophie L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 228-230 ; Philosophie S p. 476-480 ; OSE p. 710-714.
 - [PE T12 MEN — Philosophie L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 205-208 ; Philosophie S p. 423-426 ; OSE p. 626-629.
 - [Document autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), tableaux de coefficients et heures.
+
+### 9.49 T10-T11 : transition FOV vers Éducation à la citoyenneté et TICE
+
+Le contrôle direct des PE T10/T11 confirme deux disciplines à distinguer : Éducation à la citoyenneté (EAC) et Technologie de l'information et de la communication en éducation (TICE). Elles ne remplacent pas l'une l'autre et n'ont pas la même présence selon le niveau.
+
+| Niveau / série | Éducation à la citoyenneté | TICE |
+|---|---:|---:|
+| T10 | 2 h/semaine | 1 h/semaine |
+| T11 L | 2 h/semaine | 1 h/semaine |
+| T11 S | 2 h/semaine | 1 h/semaine |
+| T11 OSE | 2 h/semaine | 1 h/semaine |
+| T12 L/S/OSE | Absente du sommaire consulté ; valeur non indiquée dans la grille | Absente du sommaire ; coefficient en conflit entre pièces MEN, heures non indiquées |
+
+#### T10 — Éducation à la citoyenneté (2 h/semaine)
+
+Le PE T10 présente cinq résultats généraux : maîtriser les concepts de base de la citoyenneté, respecter les droits de l'Homme et devoirs du citoyen, promouvoir la paix et la justice sociale, participer à la lutte contre la corruption et promouvoir le développement durable. Le tableau des contenus comprend :
+- notions de citoyen, citoyenneté, nationalité et évolution de l'éducation à la citoyenneté ;
+- droits, devoirs, responsabilités, Déclaration universelle des droits de l'Homme, paix et prévention de la discrimination/violence ;
+- patriotisme, lutte contre la corruption, facteurs/formes/conséquences et stratégies de signalement ;
+- développement durable, ses trois piliers, les interrelations et les enjeux.
+
+Le PE suggère observation de situations réelles, analyse de documents écrits/audiovisuels, exposés, débats, discussions, jeux de rôles et résolution de problèmes. Il s'agit d'une pédagogie participative ; ne pas réduire la discipline à une liste de définitions à mémoriser.
+
+#### T11 — Éducation à la citoyenneté (2 h/semaine pour L/S/OSE)
+
+Les cinq thématiques explicites de T11 sont :
+- citoyenneté et vie politique : République, Constitution, institutions et cas de Madagascar ;
+- liberté d'opinion : concepts, aspects, limites, moyens de protection et respect de l'opinion d'autrui ;
+- enjeux de la corruption : lien avec démocratie, paix, développement durable et stratégies de lutte ;
+- abus sexuels et responsabilité citoyenne : définition, formes, causes et responsabilités de prévention ;
+- éco-citoyenneté : écosystème, changement climatique et articulation savoir-émotion-action.
+
+Les RAG portent sur vie démocratique et valeurs républicaines, expression libre et respect des opinions, relation entre corruption/démocratie/paix/développement, responsabilité citoyenne face aux abus sexuels et gestion durable de l'environnement. Le PE prévoit une approche d'observation de situations réelles, d'analyse documentaire et de discussion/débat. Les contenus relatifs aux abus sexuels doivent rester dans le cadre scolaire et citoyen du PE ; ne pas les convertir en conseils médicaux ou en procédures juridiques inventées.
+
+#### T10 — TICE (1 h/semaine)
+
+Le PE T10 introduit l'informatique à travers l'histoire de l'ordinateur, la terminologie, les capacités et la structure d'un ordinateur, l'utilisation, logiciels, maintenance et sécurité. Il traite aussi l'historique et les services d'Internet, moteurs de recherche, WWW, droits d'auteur et licences, programmes malveillants et mesures de sécurité, puis les systèmes d'exploitation, fichiers/dossiers, traitement de texte et premiers outils bureautiques. Une séquence d'initiation est indiquée à 5 h ; l'enseignement hebdomadaire global reste 1 h.
+
+#### T11 — TICE (1 h/semaine pour L/S/OSE)
+
+Le PE décrit l'informatique comme une discipline visant la compréhension et l'usage des systèmes et outils informatiques pour résoudre des problèmes quotidiens. Dans les sections de programme consultées, les tableaux détaillés portent notamment sur le renforcement du traitement de texte, les fonctions avancées, le publipostage, le tableur (cellules, formules/fonctions, graphiques, tri/filtre), la production de documents, les logiciels de présentation/diaporamas et l'initiation à l'algorithmique (notion, structure de contrôle, pratique). Les contenus doivent rester reliés à la section série correspondante, même si les intitulés généraux se ressemblent.
+
+#### T12 — statut distinct à préserver
+
+Le sommaire PE T12 consulté ne présente ni EAC ni TICE comme discipline. La grille autonome MEN affiche des cellules noires/non renseignées pour ces matières en T12, tandis que le tableau initial du PE T12 affiche des zéros TICE visibles : le coefficient TICE de T12 reste donc conflictuel (voir section 9.44), et les heures hebdomadaires ne sont pas indiquées. Ne pas créer de cours EAC/TICE T12 ni attribuer un coefficient zéro/positif sans clarification écrite du MEN.
+
+#### Décisions de catalogue et de progression
+
+1. La transition collège/lycée doit être modélisée comme FOV T6-T9, puis Éducation à la citoyenneté T10-T11 ; ne pas fusionner automatiquement les deux matières sous un nom unique, car les programmes et résultats d'apprentissage changent.
+2. TICE est une matière autonome, à 1 h/semaine en T10 et dans les trois séries T11. La présence de TICE dans les RAT généraux ne remplace pas la preuve de sa présence dans chaque PE de niveau.
+3. T10 TICE comprend Internet, droits d'auteur/licences, cybersécurité de base, fichiers et bureautique ; T11 TICE renforce les logiciels, tableurs, présentations et algorithmes. C'est une progression documentée, pas une autorisation de substituer TICE à des cours d'informatique hors PE.
+4. Les séquences de 5 h ou 2 h présentes dans les tableaux RAS sont des durées de contenus ; l'horaire général de TICE reste 1 h par semaine.
+5. Les outils utilisés pour des activités pédagogiques (ordinateur, OS, Internet, tableur) doivent être contextualisés aux moyens réellement disponibles dans l'établissement ; le PE indique des contenus, pas une obligation d'équipement ou de connexion individuelle.
+
+Sources officielles :
+- [PE T10 MEN — Histoire (2 h), Géographie (2 h), EAC (2 h), TICE (1 h)](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 166-179, 187-189 et 240-245.
+- [PE T11 MEN — EAC L/S/OSE (2 h) et TICE L/S/OSE (1 h)](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 174-180, 421-427, 653-660 et TICE p. 233-247, 485-495, 717-725.
+- [PE T12 MEN — sommaire T12 et matrice quantitative](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 10-11 ; voir également la comparaison visuelle de TICE en section 9.44.
