@@ -1408,3 +1408,54 @@ Source officielle : [MESUPRES — Atelier et formation sur l'assurance qualité 
 
 Ces documents pourront permettre de distinguer les domaines où l'Université est déjà forte ou active (par exemple médecine, tourisme/patrimoine, environnement, sciences humaines, technologies, ressources marines) des nouvelles priorités réellement approuvées. Ces exemples de domaines ne constituent pas une décision de spécialisation ; ils restent des pistes à confronter aux données de recherche, aux besoins régionaux, aux laboratoires, aux équipes enseignantes, aux partenariats et aux habilitations existantes.
 
+
+
+### 33.5 Annuaire doctoral de décembre 2018 : cinq équipes d'accueil SCSD et trois CADDETHIQUE
+
+Un annuaire national des écoles doctorales, référencé comme édition **décembre 2018**, donne une description beaucoup plus détaillée de l'organisation et des équipes d'accueil de SCSD et CADDETHIQUE. La copie consultable a été retrouvée sur Scribd et ne constitue pas, à elle seule, la preuve d'une publication ministérielle actuelle ; elle reproduit toutefois des références d'arrêtés, des tableaux d'équipes, les noms de responsables et les chiffres HDR/Docteurs qui peuvent être comparés aux actes individuels.
+
+#### SCSD — cinq équipes dans le snapshot 2018
+
+Le répertoire décrit cinq EAD :
+
+| EAD | Libellé de l'annuaire 2018 | Localisation / partenaires mentionnés | Chiffres affichés « HDR / Docteurs » |
+|---|---|---|---:|
+| 1 | Droit et Science politique (DSP) | Montpellier / Nancy et LDEGIM, Toamasina | 2 / 4 |
+| 2 | Économie, Gestion, Finances et Politiques Publiques (EGFPP) | LDEGIM et partenaires de recherche | 3 / 9 |
+| 3 | Mathématiques, Informatique et Applications (MIA) | Toulouse / IRIT et LDEGIM | 2 / 5 |
+| 4 | Patrimoines, Espaces et Sociétés (PES) | FLSH, Université de Toamasina, partenaires Lyon/Rouen | 4 / 4 |
+| 5 | Sciences, Environnement et Développement Social (SESD) | CNRE, Antananarivo et partenaires scientifiques | 4 / 3 |
+
+Le même document donne l'arrêté de base n°32905/2013-MESupRES, modifié par n°10851/2016 et complété par n°3916/2018. Le PDF de l'arrêté 3916/2018 retrouvé séparément habilite les offres de formation de SCSD dans le domaine Sciences de la Société et décrit des EAD/laboratoires correspondants. L'extraction de son tableau comporte une numérotation discontinue (1, 3, 4, 5, 6) ; le répertoire 2018 permet de lire cinq EAD, mais la correspondance ligne à ligne avec les numéros imprimés doit être faite à partir d'une copie visuelle de l'original administratif complet.
+
+**Interprétation des chiffres :** les colonnes sont libellées « Nombre de Pr/HDR » et « Nombre de Docteurs » dans le répertoire. Il s'agit d'un état historique de composition présenté en décembre 2018, pas d'un effectif de doctorants inscrits ni d'une preuve que ces personnels sont toujours rattachés à Toamasina en 2026. Certaines localisations indiquent expressément des partenaires hors région et hors pays ; ces personnes/laboratoires ne doivent pas être géolocalisés à Barikadimy.
+
+#### CADDETHIQUE — trois équipes dans le snapshot 2018
+
+Le répertoire décrit les équipes suivantes :
+1. **Ethnophilosophie et Éthique (ETHNOTHIQUE)**, rattachée à la FLSH de Toamasina ; tableau : 4 HDR / 8 Docteurs ;
+2. **Aire géographique, Affirmation identitaire et Pratiques politiques (AFFIPO)** ; tableau : 2 HDR / 2 Docteurs ;
+3. **Oralité / Écriture et Création artistique (ORACRISTIQUE)**, avec notamment le rattachement à la FLSH et à des partenaires universitaires ; tableau : 2 HDR / 5 Docteurs.
+
+Le document détaille aussi un cursus transversal de méthodologie doctorale, anthropologie culturelle, anthropologie/psychologie sociale, etc. Il ne doit toutefois pas être importé comme maquette actuelle : le volume, les unités, les responsables et le rattachement doivent être confirmés avec une version officiellement validée.
+
+#### Comparaison prudente avec l'EDT 3D de 2025
+
+La documentation institutionnelle actuelle consultée présente :
+- **SCSD** : cinq EAD dans l'annuaire doctoral de 2018, avec un arrêté 32905/2013 modifié en 2016 et complété en 2018 ;
+- **CADDETHIQUE** : trois EAD dans le même annuaire 2018, sur la base d'arrêté 32905/2013 ;
+- **EDT 3D** : quatre domaines/équipes d'accueil de grande portée dans les termes de référence Expert'Izy de 2025-2026.
+
+Ces trois structures documentaires ne peuvent pas être fusionnées sur simple proximité de leurs thèmes. Il manque le texte juridique qui préciserait si l'EDT 3D reprend, remplace, regroupe ou coexiste avec SCSD/CADDETHIQUE. Le chiffre « quatre équipes » pour 3D vient du document Expert'Izy, tandis que les cinq et trois EAD proviennent de l'annuaire 2018 ; les périodes et sources sont différentes.
+
+**Décision de données :**
+- conserver les 5 EAD SCSD et les 3 EAD CADDETHIQUE comme snapshot historique 2018 ;
+- conserver les arrêtés 32905/2013, 10851/2016 et 3916/2018 comme actes distincts, chacun avec son périmètre et son effet ;
+- garder l'EDT 3D comme institution/structure doctorale distincte créée le 13 février 2025, avec ses quatre équipes/domaines décrits par Expertise France ;
+- demander les arrêtés actuels de l'EDT 3D, les actes de maintien ou de cessation de SCSD et CADDETHIQUE, l'organigramme doctoral approuvé et les registres anonymisés doctorants/EAD 2026-2027.
+
+Sources :
+- [Annuaire des Écoles Doctorales à Madagascar — édition décembre 2018, copie consultable (source secondaire)](https://fr.scribd.com/document/486789308/annuaire-ecoles-doctorales-decembre2018).
+- [Arrêté n°3916/2018-MESupReS du 20 février 2018 — habilitation SCSD (copie PDF Lexxika avec référence CNLegis en pied de page)](https://textes.lexxika.com/wp-content/uploads/2024/05/Arrete-3916_2018-20-Fevrier-2018-Portant-habilitation-des-offres-de-formation-de-lEcole-Doctorale-intitulee-_Science-Cul-.pdf).
+- [Arrêté n°10851/2016 du 19 mai 2016 — modification de l'arrêté 32905/2013 (copie PDF Lexxika avec référence CNLegis en pied de page)](https://textes.lexxika.com/wp-content/uploads/2024/05/Arrete-10851_2016-19-Mai-2016-Portant-modification-des-dispositions-de-larrete-n%C2%B0-32905_2013-MESupRES-du-07-novembre-2013-.pdf).
+- [Expertise France — Termes de référence Expert'Izy pour l'EDT 3D, créée en 2025](https://expertise-france.gestmax.fr/_expertise_france/public_files/tdr-expert-izy-universite-de-toamasina-vf.pdf).
