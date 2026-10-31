@@ -329,3 +329,19 @@ Une publication de presse du 8 juin 2026 rapporte que le calendrier scolaire 202
 Cette information améliore le contexte de datation des RAPE de septembre 2026 : elle rend plausible leur utilisation pendant 2026-2027, mais l'article est une source secondaire. Le calendrier primaire MEN (PDF, arrêté, note ou page officielle) n'a pas encore été récupéré dans cette recherche. Il faut donc enregistrer provisoirement le champ annee_scolaire_candidate = 2026-2027, le champ source_calendrier = presse rapportant une publication MEN, et conserver validation_source_primaire = en_attente. Ne pas écraser le champ d'édition documentaire septembre 2026.
 
 Source : [2424.mg, 8 juin 2026 — rentrée 2026-2027 et calendrier rapporté comme publié par le MEN](https://www.2424.mg/education-la-rentree-scolaire-pour-2026-2027-prevue-pour-le-7-septembre).
+
+
+### 8.10 Revue statique de la migration RAPE existante
+
+Lecture de `alembic/versions/e2b7c9d4a1f6_referentiel_rape_2026_09.py` sur la branche principale :
+
+- Le référentiel `MEN-RAPE-2026-09` est créé ou actualisé avec `annee_scolaire='2026-2027'` et `statut='partiel'`. Le statut global partiel est cohérent avec l'absence des PE détaillés.
+- Les niveaux Première et Terminale ont `pdf=None` dans la table `NIVEAUX`, et leur source de niveau est donc l'index général MEN ; les séries, elles, portent des URL PDF RAPE distinctes.
+- Les options de série et les associations de matière sont créées avec `statut_validation='verifie'`, même si le contenu T11-L édition 2026 n'a pas été récupéré dans le contrôle documentaire. Le statut « vérifié » semble donc qualifier la ligne de référentiel ou l'existence de l'URL, pas nécessairement la lecture intégrale du PDF.
+- Les matières Philosophie et TICE ont pour source de catalogue le PDF T11-L, alors que les associations de programme renvoient ensuite au PDF propre à chaque série. La source de la matière et la preuve de présence dans chaque série doivent rester deux notions distinctes.
+- La migration affecte une liste identique de matières à T11-L, T11-S et T11-OSE. Cette égalité est plausible mais ne peut pas être certifiée pour T11-L tant que le PDF 2026 propre à cette série n'a pas été contrôlé.
+- Les volumes horaires, périodes, thèmes et chapitres ne sont pas stockés dans ces associations ; la limite fonctionnelle décrite plus haut est confirmée par la lecture du code.
+
+**Risque de qualité d'affichage :** si l'interface interprète `statut_validation='verifie'` comme « contenu du PDF contrôlé », elle pourrait présenter une assurance excessive pour T11-L et les pièces PE manquantes. Avant de modifier les statuts, vérifier les usages du champ dans les vues publiques, exports et parcours administrateur. Proposition non destructive : ajouter ultérieurement un niveau de preuve documentaire explicite (`index_identifie`, `pdf_accessible`, `pdf_lu`, `contenu_reconcilie`) plutôt que réutiliser un seul booléen/statut pour ces étapes différentes.
+
+**Aucune modification de migration ou de base n'a été faite dans cet audit.**
