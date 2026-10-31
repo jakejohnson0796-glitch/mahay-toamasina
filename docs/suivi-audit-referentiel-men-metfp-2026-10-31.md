@@ -1706,3 +1706,43 @@ Sources officielles :
 - [PE T12 MEN — Histoire OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 567-568, 3 h/semaine.
 - [PE T12 MEN — Géographie OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 579-580, 3 h/semaine.
 - [Document autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), ligne groupée Histoire-Géographie.
+
+### 9.48 Philosophie T11-T12 : volumes hebdomadaires et domaines de contenu par série
+
+Les volumes affichés dans la grille officielle et les sections des PE sont les suivants :
+
+| Niveau / série | Philosophie |
+|---|---:|
+| T11 L | 3 h/semaine |
+| T11 S | 2 h/semaine |
+| T11 OSE | 2 h/semaine |
+| T12 L | 5 h/semaine |
+| T12 S | 3 h/semaine |
+| T12 OSE | 3 h/semaine |
+
+#### T11 — Première
+
+Les PE T11 partagent un socle relatif aux caractéristiques de la philosophie et à l'histoire de la philosophie, mais les sections restent rattachées à la série :
+- **L (3 h/semaine)** : notions et définitions de la philosophie, sens étymologique et extension du terme ; genèse de la philosophie (mythologie, présocratiques, sophistes, Socrate) ; aperçu des différentes époques de l'histoire de la philosophie et grandes figures. Les COP proposent lectures, citations, analyse de situations réelles, projections documentaires et café-philo.
+- **S (2 h/semaine)** : le tableau des contenus présente les caractéristiques de la philosophie, les notions et la genèse de la philosophie, puis un aperçu des époques et grandes figures de l'histoire de la philosophie. Les RAG demandent une culture philosophique, capacité d'analyse, de critique, de synthèse et réflexion sur la valeur humaine, la connaissance et la vie en société.
+- **OSE (2 h/semaine)** : le sommaire présente aussi les caractéristiques, les notions, la genèse et l'histoire de la philosophie, ainsi que les grandes figures. Le parcours OSE conserve son propre rattachement de pages et ses durées RAS ; ne pas réutiliser directement les identifiants de sections de L ou S.
+
+#### T12 — Terminale
+
+Les trois séries développent un socle de philosophie et de réflexion critique, mais avec des contenus propres :
+- **L (5 h/semaine)** : spécificités et essence de la philosophie ; spécificité de l'Homme (inné/acquis, éléments constitutifs) ; condition humaine ; formations et origines de la connaissance, portée pratique des connaissances ; pratiques sociales, vie morale et vie politique. Les activités privilégient l'esprit philosophique, l'analyse de situations et la comparaison des formes de vérité.
+- **S (3 h/semaine)** : le tableau consulté reprend les caractéristiques/essence de la philosophie, la spécificité de l'Homme, les formations de la connaissance et les pratiques sociales (vie morale, vie politique). Cette liste doit rester celle de la section S ; ne pas ajouter de thèmes non présents dans les tableaux contrôlés.
+- **OSE (3 h/semaine)** : les mêmes grands domaines sont repris, avec une entrée supplémentaire explicitement visible dans le tableau des contenus : « Le travail et l'Économie » au sein des pratiques sociales. Cette mention doit rester attachée à la section OSE.
+
+#### Conséquences pour MITARIDALA
+
+1. Philosophie doit être rattachée au niveau et à la série : les horaires diffèrent fortement entre T11 L et T11 S/OSE, ainsi qu'entre T12 L et T12 S/OSE.
+2. Ne pas prendre les durées de séquence affichées dans les tableaux RAS comme une confirmation automatique des volumes hebdomadaires ; les deux valeurs doivent être stockées séparément et rapprochées du tableau général.
+3. Le sommaire T12 OSE contient explicitement « Travail et économie » ; ne pas le diffuser à T12 S/L sans vérification de leurs propres pages de contenu.
+4. Les activités de débat, de lecture et de café-philo sont des orientations pédagogiques ; elles ne doivent pas être transformées en notions évaluables ou en réponses types supplémentaires sans lien avec les RAS.
+5. Pour les banques d'exercices, privilégier les compétences d'argumentation, de conceptualisation, de comparaison des thèses et de justification ; les réponses doivent accepter plusieurs positions argumentées lorsqu'elles respectent le sujet et la cohérence logique.
+
+Sources officielles :
+- [PE T11 MEN — Philosophie L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 228-230 ; Philosophie S p. 476-480 ; OSE p. 710-714.
+- [PE T12 MEN — Philosophie L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 205-208 ; Philosophie S p. 423-426 ; OSE p. 626-629.
+- [Document autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), tableaux de coefficients et heures.
