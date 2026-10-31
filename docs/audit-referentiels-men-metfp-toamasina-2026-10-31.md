@@ -56,7 +56,14 @@ Au contrôle du 31 octobre 2026, l'ouverture et le téléchargement des deux arc
 
 ## 4. METFP — référentiels ETFP publiés en 2026
 
-Le portail du METFP décrit son catalogue comme contenant des référentiels de compétences, de formation, de certification et d'évaluation : [Référentiels et ressources pédagogiques](https://metfp.gov.mg/formation/ressource). L'index officiel consulté signale 12 référentiels et une dernière parution au 14 septembre 2026. La page est dynamique et son rendu consulté séparément n'a pas exposé tous les documents dans une seule réponse ; le nombre indexé ne vaut donc pas preuve que chaque PDF a été téléchargé et audité.
+Le portail du METFP décrit son catalogue comme contenant des référentiels de compétences, de formation, de certification et d'évaluation : [Référentiels et ressources pédagogiques](https://metfp.gov.mg/formation/ressource). Au 31 octobre 2026, l'index officiel affiche 12 référentiels, dernière parution au 14 septembre 2026 ; il montre 9 documents sur la première page et 3 sur la seconde. Cela établit qu'un corpus de 12 éléments est annoncé, mais ne prouve pas que chaque PDF a été téléchargé, lu et rapproché du catalogue MITARIDALA.
+
+Il existe aussi des annonces officielles de remises de référentiels à ne pas confondre avec les 12 entrées déjà visibles dans le catalogue web :
+- Le 10 juillet 2026, le METFP annonce la remise de **12 référentiels métiers et référentiels de formation pour le BTP**, répartis en 6 CAPS et 6 FPQ. Cette annonce indique une intégration prévue au référentiel national ; elle ne fournit pas à elle seule les PDF métier à injecter ni la liste des établissements qui ouvrent ces formations : [annonce officielle METFP — BTP](https://www.metfp.gov.mg/article/68).
+- Le 23 septembre 2026, le METFP annonce la remise de référentiels et de documents d'organisation pédagogique/équipements pour la gestion des déchets solides ; l'article indique un démarrage prévu au Centre de Formation d'Ankadinandriana, DRETFP Analamanga, avec extension progressive : [annonce officielle METFP — gestion des déchets](https://metfp.gov.mg/article/96).
+- Le portail indexe également des référentiels de septembre 2026 en maintenance des systèmes d'impression, solaire photovoltaïque, cuisine, serveur-barman, valet/femme de chambre et pâtisserie-traiteur.
+
+Ces éléments doivent être inventoriés dans une table de suivi distincte avec le type de preuve (PDF publié, remise officielle, offre locale annoncée), la date, le diplôme/certification, le métier canonique et la disponibilité documentaire. Ne pas les ajouter comme lignes actives d'établissement tant que les fichiers et la localisation d'ouverture ne sont pas vérifiés.
 
 Les intitulés visibles parmi les parutions 2026 comprennent notamment :
 
@@ -98,11 +105,13 @@ Points d'audit encore ouverts pour Atsinanana :
 
 ## 6. Université de Toamasina — périmètre et éléments non publiés
 
-Le fichier source versionné dans le dépôt recense actuellement 157 lignes de formation, 24 mentions et six composantes : Faculté DEG, Faculté des Sciences et Technologie, ENS, FLSH, ISSEDD-GRENE et ITPT. Les données restent séparées du référentiel collège/lycée.
+Le fichier source versionné dans le dépôt recense actuellement 157 lignes de formation, 24 mentions et six composantes : Faculté DEG (29 lignes / 3 mentions), FST (25 / 2), ENS (61 / 11), FLSH (28 / 6), ISSEDD-GRENE (5 / 1) et ITPT (9 / 1). Les niveaux présents vont de L1 à M2, sauf ITPT qui est recensé de L1 à L3. Les données restent séparées du référentiel collège/lycée.
+
+**Limite de fraîcheur réglementaire :** le portail MESUPRES affiche actuellement que sa liste d'établissements habilités est « en cours de mise à jour ». Le dernier PDF de liste générale retrouvé dans ce contrôle est daté d'août 2022. Les lignes universitaires qui reposent sur ce document constituent des preuves historiques d'habilitation/intitulé, pas une preuve automatique d'ouverture en 2026-2027. Les sources des composantes DEG et FST incluent aussi des pages universitaires et un formulaire FST 2023-2024 ; vérifier chaque maquette et la disponibilité de la rentrée actuelle avec la composante avant de déclarer une offre annuelle actuelle. Sources : [page MESUPRES des établissements](https://www.mesupres.gov.mg/etablissements), [liste MESUPRES d'août 2022](https://www.mesupres.gov.mg/assets/front/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
 Les éléments identifiés comme incomplets ou nécessitant une preuve plus récente ne doivent pas être publiés comme offres garanties :
 
-- Gestion / CCA : M1 non publié tant qu'une maquette ou un arrêté actuel ne le confirme pas ;
+- Gestion / CCA : M1 et M2 sont désormais tous deux en attente. Le seul support M2 trouvé est une évaluation de cours hébergée sur Scribd ; il ne prouve ni habilitation, ni maquette officielle, ni ouverture de rentrée. La ligne M2 a été rétrogradée de « Confirmé » à « À vérifier » et doit être exclue des sélecteurs et cercles jusqu'à preuve officielle ;
 - ESPT : composante/formations signalées par des sources historiques, mais parcours et niveaux 2026-2027 à confirmer ;
 - Faculté de Médecine : niveaux/parcours courants à confirmer par la faculté.
 
