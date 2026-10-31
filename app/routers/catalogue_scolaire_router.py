@@ -31,7 +31,9 @@ MAX_PAGE = 10000
 
 def _referentiel_courant(session: Session) -> Optional[ReferentielScolaire]:
     return session.exec(
-        select(ReferentielScolaire).order_by(
+        select(ReferentielScolaire)
+        .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
+        .order_by(
             ReferentielScolaire.date_creation.desc(),
             ReferentielScolaire.id.desc(),
         )
