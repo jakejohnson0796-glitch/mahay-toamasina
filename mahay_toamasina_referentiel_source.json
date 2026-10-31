@@ -2271,10 +2271,11 @@
         "mention": "Gestion",
         "parcours": "CCA — Comptabilité, Contrôle, Audit",
         "niveaux": [
-          "M1"
+          "M1",
+          "M2"
         ],
-        "statut": "À vérifier — M1 non publié",
-        "motif": "Un support de cours attribué à l’Université de Toamasina confirme un enseignement de M2, semestre 9, parcours CCA. Le M1 CCA reste absent de la page officielle de la Faculté DEG consultée et n’est pas publié sans maquette ou arrêté actuel.",
+        "statut": "À vérifier — M1 et M2 non publiés",
+        "motif": "La page officielle de la Faculté DEG consultée ne publie pas de maquette CCA actuelle. Le seul élément trouvé pour M2 est un support d'évaluation de cours hébergé sur Scribd ; il peut indiquer un enseignement ponctuel mais ne prouve ni l'habilitation, ni l'existence d'une maquette officielle, ni l'ouverture 2026-2027. M1 et M2 restent donc non publiés tant qu'une maquette ou un arrêté actuel émis par l'Université/MESUPRES n'est pas obtenu.",
         "source_consultee": "https://www.univ-toamasina.mg/facultes/deg/",
         "preuve_partielle": "https://fr.scribd.com/document/689634398/Evaluation-de-Lentreprise-M2-CCA"
       },
@@ -2302,19 +2303,6 @@
         "statut": "À vérifier — hors du périmètre publié",
         "motif": "Des formations sont recensées par le MESUPRES, mais le référentiel actuel par niveaux et parcours doit être validé avec la faculté.",
         "source_consultee": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
-      },
-      {
-        "composante": "Faculté DEG",
-        "mention": "Gestion",
-        "parcours": "CCA — Comptabilité, Contrôle, Audit",
-        "niveaux": [
-          "M1",
-          "M2"
-        ],
-        "statut": "À vérifier — M1 et M2 non publiés",
-        "motif": "La page officielle de la Faculté DEG consultée ne publie pas de maquette CCA actuelle. Le seul élément trouvé pour M2 est un support d'évaluation de cours hébergé sur Scribd ; il peut indiquer un enseignement ponctuel mais ne prouve ni l'habilitation, ni l'existence d'une maquette officielle, ni l'ouverture 2026-2027. M1 et M2 restent donc non publiés tant qu'une maquette ou un arrêté actuel émis par l'Université/MESUPRES n'est pas obtenu.",
-        "source_consultee": "https://www.univ-toamasina.mg/facultes/deg/",
-        "preuve_partielle": "https://fr.scribd.com/document/689634398/Evaluation-de-Lentreprise-M2-CCA"
       }
     ],
     "date_revue_qualite": "2026-10-31",
