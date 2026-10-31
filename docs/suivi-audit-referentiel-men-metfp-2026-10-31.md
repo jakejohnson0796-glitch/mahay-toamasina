@@ -247,7 +247,7 @@ Le PDF comporte 52 pages et sa couverture indique explicitement « ÉDITION 2024
 
 Le sommaire historique 2024-2025 comprend notamment Malagasy, Français, Anglais, Histoire, Géographie, Mathématiques, Sciences physiques, SVT, SES, Éducation à la citoyenneté, Philosophie, EPS et TICE. Cette liste décrit uniquement la version 2024-2025 et ne doit pas être copiée dans la version 2026 sans le PDF correspondant.
 
-**Statut :** RAPE T11-L édition septembre 2026 toujours non récupéré ; archive T11-L 2024-2025 identifiée séparément.
+**Statut mis à jour :** le RAPE T11-L édition septembre 2026 a été récupéré depuis le répertoire MEN et contrôlé, comme décrit en section 9.2. L'archive 2024-2025 reste une version historique séparée.
 
 ### 8.2 Rectification de l'état T12-OSE
 
@@ -600,3 +600,19 @@ Cette logique a une finalité utile : empêcher qu'une association incohérente 
 **Tests à ajouter avant toute évolution :** plusieurs versions non historiques simultanées ; sélection de la version courante selon statut et dates d'effet ; distinction d'une URL existante d'un PDF réellement contrôlé ; aucune valeur numérique créée pour une cellule noire ; heures/coefficient différents par série ; absence de duplication des lignes groupées ; RAS et contenu rattachés au bon document/page ; conservation des profils et historiques qui utilisent une ancienne version.
 
 Sources techniques : les fichiers app/models.py, app/routers/admin_scolaire_router.py, app/routers/catalogue_scolaire_router.py, app/routers/scolaire_router.py et tests/test_referentiel_scolaire.py de la branche principale.
+### 9.11 Sélection du référentiel courant et interprétation du statut « partiel »
+
+Le contrôle croisé de app/routers/scolaire_router.py, app/routers/admin_scolaire_router.py, app/routers/catalogue_scolaire_router.py, app/templates/catalogue_scolaire.html et du test test_api_scolaire_conserve_l_acces_aux_anciennes_versions_apres_import() établit le comportement actuel suivant :
+
+- Les fonctions de sélection courante choisissent la dernière version par date de création dont le statut n'est ni « historique » ni « archive ».
+- Le test de non-régression crée explicitement une nouvelle version au statut « partiel » et vérifie qu'elle est sélectionnée par défaut ; une version historique créée encore plus récemment est ignorée.
+- Le catalogue public affiche explicitement « Catalogue partiel » si le statut n'est pas « complet » ; l'API renvoie aussi un message signalant que l'inventaire reste partiel.
+- Les niveaux et options ne sont exposés que lorsqu'ils sont actifs et au statut de validation « verifie ». L'API des matières par niveau/série filtre les associations ProgrammeMatiereScolaire vérifiées et la matière elle-même.
+
+**Interprétation :** ce n'est pas un défaut de code accidentel : la sélection du dernier référentiel non historique est une règle couverte par les tests. Le système permet volontairement de proposer la dernière version partielle, tout en signalant visiblement que le catalogue n'est pas complet. Ce comportement facilite une mise à jour incrémentale, mais il implique qu'une version documentaire encore partiellement auditée peut devenir la version utilisée par défaut pour les nouveaux choix de classe.
+
+**Risque restant :** le statut « verifie » des niveaux/options/associations peut être lu comme une vérification complète du programme alors que le mécanisme d'approbation vérifie principalement la cohérence des relations et le domaine de l'URL source. Le statut global « partiel » signale l'incomplétude, mais il n'empêche pas le niveau déjà importé d'être proposé par défaut.
+
+**Recommandation non destructive :** conserver le comportement existant jusqu'à validation produit, mais compléter la gouvernance par un indicateur distinct « autorisé comme version courante / publié » ou une date d'effet confirmée. Une version candidate peut alors être consultable par les administrateurs sans devenir automatiquement la version proposée aux nouveaux élèves. Avant tout changement, ajouter un test démontrant le comportement souhaité pour (a) une version candidate plus récente, (b) une version explicitement publiée plus ancienne, (c) une version historique/archivée, (d) un profil déjà lié à une ancienne version.
+
+**Aucune modification du code ni des tests n'a été effectuée.**
