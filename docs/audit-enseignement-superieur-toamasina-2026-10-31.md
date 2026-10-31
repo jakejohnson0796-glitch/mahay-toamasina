@@ -2194,3 +2194,33 @@ Les trois premiers indicateurs n'ont pas les mêmes populations ni les mêmes d�
 Source primaire :
 - [MESUPRES — Booklet 3, « Résultats aux examens et diplômés des établissements d'enseignement supérieur 2018-2023 », novembre 2025 (PDF)](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf), tableau 25 page imprimée 54, tableau 27 page imprimée 58, tableau 11 page imprimée 28.
 
+
+
+## 47. Représentation de l'Université de Toamasina à la Commission Nationale d'Habilitation — arrêté n°2865/2023
+
+L'arrêté MESUPRES **n°2865/2023** du **10 février 2023** nomme les membres de la Commission Nationale d'Habilitation (CNH) des offres de formation dans le système LMD. Le PDF officiel CNLegis a été contrôlé visuellement sur ses deux pages.
+
+Le texte prévoit :
+- le Directeur Général de l'Enseignement Supérieur comme président de la CNH ;
+- des membres titulaires et suppléants nommés par domaine ;
+- un représentant de l'Université de Toamasina comme **membre suppléant du domaine Arts, Lettres et Sciences Humaines** ;
+- un représentant de l'Université de Toamasina comme **membre titulaire du domaine Sciences de la Santé** ;
+- des membres du bureau issus des directions centrales MESUPRES.
+
+Cette représentation est un indice institutionnel fort : l'Université de Toamasina était représentée dans la commission nationale qui instruit les offres LMD, y compris dans le domaine de la Santé, en février 2023.
+
+### Limites et portée juridique
+
+L'arrêté n°2865/2023 est un acte de nomination de membres de commission, pas une décision d'habilitation d'une formation. Il ne prouve pas :
+- qu'une offre de la Faculté de Médecine de Toamasina a été déposée ou évaluée par ce membre ;
+- qu'un avis favorable a été émis sur une mention ou un parcours particulier ;
+- qu'une habilitation ou accréditation a été délivrée ;
+- que les mandats et nominations de 2023 demeurent en vigueur au 31 octobre 2026.
+
+Le texte abroge les dispositions antérieures contraires et cite expressément l'arrêté n°288/2020-MESupReS du 10 janvier 2020. Il faut donc vérifier les actes plus récents de nomination et les règles de fonctionnement actuelles de la CNH/CNA après les réformes de 2026, avant d'attribuer un mandat ou une fonction actuelle à un représentant de Toamasina.
+
+**Décision MITARIDALA :** archiver l'arrêté comme preuve historique de représentation institutionnelle à la CNH par domaine (millésime 2023). Ne pas enregistrer ses coordonnées personnelles ou contacts individuels dans le catalogue public ; conserver uniquement les fonctions institutionnelles, l'établissement représenté, le domaine, la qualité titulaire/suppléant, la référence de l'acte et sa période de validité si elle est établie.
+
+Source primaire :
+- [CNLegis — Arrêté n°2865/2023-MESupReS du 10 février 2023 portant nomination des membres de la Commission Nationale d'Habilitation LMD (PDF, 2 pages)](https://cnlegis.gov.mg/uploads/A2865-2023-VM.pdf).
+
