@@ -2123,3 +2123,74 @@ Pour l'IFIRP public Toamasina, demander le cadre annuel de supervision DIFP et l
 
 **Décision MITARIDALA :** ajouter un sous-objet « Autorisation de stage MSANP » distinct de l'habilitation MESUPRES, avec validité annuelle et établissement sanitaire d'accueil. L'ouverture publique d'une formation privée paramédicale ne doit pas être marquée « conforme » uniquement parce que son ancien arrêté HAE existe ; l'habilitation, la conformité sanitaire et le circuit de stage doivent être confirmés séparément.
 
+
+
+## 46. Résultats aux examens et diplômés 2018-2023 : nouveau bilan statistique MESUPRES de novembre 2025
+
+Le MESUPRES a publié le livret statistique **« Booklet 3 — MESUPRES, novembre 2025 »**, qui présente notamment les résultats aux examens et les diplômés des établissements d'enseignement supérieur de 2018 à 2023. Ce document complète les annuaires d'inscriptions et permet de mieux distinguer les sorties de formation des effectifs inscrits.
+
+### 46.1 Diplômés des six universités publiques : Toamasina, 1 620 en 2023
+
+Le tableau 25 (page imprimée 54) présente le nombre de diplômés des six universités publiques par année. Pour l'Université de Toamasina, les nombres affichés sont :
+| Année | Diplômés de l'Université de Toamasina |
+|---|---:|
+| 2018 | 544 |
+| 2019 | 525 |
+| 2020 | 1 063 |
+| 2022 | 1 300 |
+| 2023 | 1 620 |
+
+Le total 2023 des six universités publiques dans ce tableau est de **17 471 diplômés**. Toamasina représente ainsi 1 620 diplômés dans cet ensemble de six universités.
+
+Le passage de 1 300 en 2022 à 1 620 en 2023 correspond à +320 diplômés, soit environ +24,6 % dans la série affichée. Le tableau ne donne pas une ventilation complète par diplôme, composante ou niveau (Licence/Master/Doctorat) pour Toamasina ; il ne faut donc pas attribuer ce chiffre à la seule FST, à la Médecine ou à une faculté particulière. L'année 2021 n'est pas affichée dans la série.
+
+### 46.2 Diplômés des établissements privés de la province de Toamasina : 639 Licences en 2023
+
+Le tableau 27 (page imprimée 58) présente les diplômés des institutions privées par province et par cycle. Pour la province de Toamasina, les valeurs Licence affichées sont :
+| Année | Diplômés Licence — IES privées, province de Toamasina |
+|---|---:|
+| 2018 | 629 |
+| 2019 | 606 |
+| 2020 | 508 |
+| 2022 | 367 |
+| 2023 | 639 |
+
+Dans la même ligne, le tableau ne renseigne pas d'effectif Master ou Doctorat pour Toamasina. Cela signifie que **le tableau ne fournit pas de chiffre Master/Doctorat pour cette province**, et non qu'il est possible d'affirmer que toute formation privée locale à ces niveaux était inexistante.
+
+Ces 639 diplômés couvrent le périmètre provincial des IES privées, pas les seules institutions IFSP Atsinanana, IFSPT, INSPALM, INSPNMAD, IFT ou BEATY University individuellement. Aucun établissement ne doit recevoir une part de ce total sans ventilation officielle par institution.
+
+### 46.3 Taux de réussite aux examens des IES privées : Toamasina, 95,3 % en 2023
+
+Le tableau 11 (page imprimée 28) présente les taux de réussite des IES privées par province. Pour Toamasina, les taux affichés sont :
+| Année | Taux de réussite aux examens — IES privées, province de Toamasina |
+|---|---:|
+| 2018 | 93,6 % |
+| 2019 | 95,7 % |
+| 2020 | 94,9 % |
+| 2022 | 96,6 % |
+| 2023 | 95,3 % |
+
+Le taux national affiché pour l'ensemble des IES privées en 2023 est de **89,7 %**. Le taux de 95,3 % est donc supérieur de 5,6 points à cet agrégat national. Il demeure un indicateur provincial d'examens, pas un taux propre à chaque école et pas une mesure directe de la qualité, de l'habilitation, de l'insertion ou de la validité des diplômes.
+
+### 46.4 Réconciliation avec les données d'inscription
+
+Les chiffres de cette publication doivent rester séparés des séries d'inscriptions documentées dans les sections 4 et 32 :
+- **1 620 diplômés** : sortants des six universités publiques, Université de Toamasina, année 2023 ;
+- **639 diplômés de Licence** : sortants des IES privées de la province de Toamasina, année 2023 ;
+- **13 342 inscrits** : effectif agrégé de l'Université de Toamasina en 2022 dans « MESUPRES en chiffres » ;
+- **11 318 inscrits** : formation académique et filières longues détaillées dans l'annuaire 2022-2023 ;
+- **14 661** : total élargi imprimé pour 2022-2023, mais contenant des lignes étoilées « données de l'année antérieure ».
+
+Les trois premiers indicateurs n'ont pas les mêmes populations ni les mêmes dénominateurs. Il ne faut pas calculer un taux de diplomation en divisant les diplômés 2023 par les inscrits 2022 ou 2022-2023 : les cohortes, durées d'études, redoublements et périmètres institutionnels ne sont pas alignés dans ces tableaux.
+
+### 46.5 Utilisation autorisée dans MITARIDALA
+
+- Publier 1 620 comme total de diplômés 2023 des six universités publiques pour la ligne Université de Toamasina, en conservant le libellé et le périmètre exacts du tableau 25.
+- Publier 639 Licences comme total 2023 des IES privées de la province de Toamasina, sans le répartir par école.
+- Publier 95,3 % comme taux provincial d'examens des IES privées, en le distinguant des taux d'admission, de diplomation, d'accréditation et d'insertion professionnelle.
+- Conserver les autres années affichées (2018, 2019, 2020, 2022) et signaler l'absence de 2021.
+- Ne pas présenter ces statistiques comme résultats 2024-2026 ni comme performance individuelle d'une composante sans un nouveau tableau ventilé.
+
+Source primaire :
+- [MESUPRES — Booklet 3, « Résultats aux examens et diplômés des établissements d'enseignement supérieur 2018-2023 », novembre 2025 (PDF)](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf), tableau 25 page imprimée 54, tableau 27 page imprimée 58, tableau 11 page imprimée 28.
+
