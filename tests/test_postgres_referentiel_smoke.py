@@ -281,7 +281,7 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             },
             ("TERM", "L", "RAPE-T12-L_2024_2025.pdf"): {
                 "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
-                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE", "EPS",
+                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE",
             },
             ("TERM", "S", "RAPE-T12-S_2024_2025.pdf"): {
                 "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
@@ -289,7 +289,7 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             },
             ("TERM", "OSE", "RAPE-T12-OSE_2024_2025.pdf"): {
                 "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
-                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE", "EPS",
+                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE",
             },
         }
         rape_matieres = {
