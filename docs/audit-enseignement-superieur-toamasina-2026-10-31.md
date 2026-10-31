@@ -2385,3 +2385,84 @@ Le flyer est un document institutionnel d'orientation, non une décision HAE. La
 
 Source primaire :
 - [Université de Toamasina — ENS, flyer officiel présentant les mentions et débouchés](https://www.univ-toamasina.mg/static/pdfs/etablissements/ecoles/nouvelles/ens/ENS_Flyers.pdf).
+
+
+## 51. Actualités pédagogiques de septembre-octobre 2026 : FST, DEG et CELVA
+
+Les communications des pages facultaires et du centre CELVA, republiées sur des agrégateurs tiers, permettent d'actualiser l'inventaire d'activités pédagogiques. Elles sont utiles comme traces de fonctionnement, mais restent des sources secondaires de republication : les pièces d'origine (avis PDF, emplois du temps, conventions, procès-verbaux) doivent être archivées avant toute validation officielle dans le catalogue.
+
+### 51.1 FST — parcours Sciences du Climat et des Matériaux (SCM) et relation avec l'industrie
+
+Une publication FST datée du **30 octobre 2026** rapporte une visite pédagogique des responsables et étudiants du parcours **Sciences du Climat et des Matériaux (SCM)** auprès de VIKA Cement. La publication parle d'un partage d'expériences et d'un rapprochement entre connaissances théoriques et réalités industrielles.
+
+Cette publication constitue une preuve de veille d'une activité pédagogique sur le terrain et confirme que le parcours SCM est utilisé comme libellé dans la communication de la FST en octobre 2026. Le programme apparaît aussi dans le flyer FST 2023-2024 (sciences du climat et des matériaux, mention Physique-Chimie) et la publication de 2026 le réactive sous son intitulé de parcours.
+
+**Ce que cela ne prouve pas :**
+- l'existence d'une convention-cadre ou d'une convention de stage avec VIKA Cement ;
+- l'habilitation actuelle du parcours SCM au-delà de la décision historique mentionnée dans le registre ;
+- le nombre d'étudiants concernés, leur niveau exact, la durée de la visite ou la validation de crédits/UE ;
+- une ouverture de cohorte distincte pour le parcours en 2026-2027.
+
+La page FST mentionne aussi, le 29 septembre 2026, une rencontre avec l'équipe e-Tsiry et des « perspectives de collaboration ». Cette formulation ne constitue pas la signature d'une convention. La même page publie un appel L1 2026-2027 avec droit de sélection de 66 000 Ar et échéance au 20 novembre 2026 ; l'avis original doit être obtenu et archivé avant de publier les détails de paiement et les conditions comme avis ministériel authentifié.
+
+**Actions à demander à la FST :** convention ou lettre d'accueil de VIKA Cement, fiche de visite, liste anonymisée des participants par niveau, objectifs/rapport pédagogique, lien de la visite à l'UE ou au stage, maquette SCM actualisée, décision HAE actuelle, et convention/compte rendu e-Tsiry si un partenariat a été conclu.
+
+Source secondaire de veille, reprenant les communications de la FST : [FST — actualités de la Faculté des Sciences et Technologie](https://www.glunis.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
+
+### 51.2 FST — concours d'éloquence et compétences transversales
+
+Une publication de la FST du **27 octobre 2026** rappelle que les étudiants des deux mentions MIA et Physique-Chimie sont invités à participer au concours d'éloquence « Jeunesse Malagasy contre la corruption ». Les inscriptions sont annoncées jusqu'au 4 novembre 2026, avec une finale prévue le 12 novembre à 8h30 dans le Petit Amphithéâtre du campus de Barikadimy ; trois meilleurs orateurs devaient être primés.
+
+Cette activité peut être indexée dans les activités de vie étudiante, citoyenneté, communication et prévention de la corruption. Elle s'aligne thématiquement sur le décret 2026-1483 (éthique, communication professionnelle, civisme), mais la participation à un concours ne suffit pas à démontrer qu'une UE obligatoire de compétences transversales a été intégrée à la maquette, ni qu'une évaluation académique ou des crédits lui sont associés.
+
+**Pièces à demander :** règlement officiel du concours, organisateur responsable, programme, jury, liste des établissements/mentions représentés, PV de finale et éventuels justificatifs de participation. Ne pas intégrer le concours comme UE sans décision pédagogique.
+
+Source secondaire de veille : [FST — communications d'octobre 2026](https://www.glunis.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
+
+### 51.3 DEG — examen 2025-2026, recrutement 2026-2027 et projet de coopération avec l'Université de La Réunion
+
+La page DEG qui republie les actualités de la faculté présente trois informations récentes :
+
+1. **Fin d'année 2025-2026 :** les examens de Licence ont débuté le 1er octobre 2026 à 7 h. Selon la publication, la session ordinaire devait se terminer dans la semaine du 26 octobre selon le calendrier validé par les instances de la faculté. Au 31 octobre, l'échéance annoncée est donc passée ; aucune publication de résultats ou de procès-verbal de clôture n'a été retrouvée dans les sources consultées.
+2. **Admission 2026-2027 :** un appel à candidature L1 Droit, Économie et Gestion, publié le 12 octobre, fixe une date limite de dépôt au 27 novembre 2026. Il s'agit d'un appel relayé par la page facultaire ; le formulaire, les pièces, les frais éventuels, la sélection et la décision HAE correspondante doivent être récupérés.
+3. **Coopération avec l'Université de La Réunion :** la publication du 29 septembre rapporte une rencontre entre le doyen DEG, Pr Laurens NDRIANASY, et son homologue de la Faculté de Droit et d'Économie de l'Université de La Réunion. Les pistes abordées sont les mobilités Licence/Master/Doctorat, les colloques et séminaires de recherche, la co-supervision et la participation croisée aux jurys de soutenance. La page parle de démarches qui « aboutiront prochainement » à une convention-cadre : cela doit être classé comme **projet de partenariat en discussion**, pas comme convention déjà signée.
+
+La faculté avait également diffusé le 31 mars un appel à candidature pour la spécialisation **Gestion portuaire et logistique (GPL)** aux niveaux L3/M1/M2, date limite 15 avril 2026. Le 9 décembre 2025, un article de presse avait décrit l'inauguration d'un bâtiment dédié à GPL comportant deux salles de cours, deux bureaux de responsables, un secrétariat et une salle de réunion, avec appui de la SPAT et de la SMMC. Ces éléments attestent une activité de formation et un investissement immobilier associé à la spécialisation, mais ne démontrent pas le renouvellement actuel de l'habilitation ou l'ouverture de la cohorte GPL 2026-2027.
+
+**Actions DEG prioritaires :** obtenir l'avis L1 2026-2027 original, le calendrier des examens/results 2025-2026, la maquette GPL et sa décision HAE, les effectifs par niveau, l'état d'utilisation/réception du bâtiment GPL, et une copie signée de la convention La Réunion si elle a été conclue depuis la rencontre.
+
+Sources secondaires de veille :
+- [DEG — actualités et appels 2026](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG).
+- [Newsmada — inauguration des bâtiments rénovés de l'Université de Toamasina, 9 décembre 2025](https://newsmada.com/2025/12/09/universite-de-toamasina-inauguration-de-batiments-renoves/).
+
+### 51.4 CELVA — service universitaire de formation linguistique et formation continue
+
+Les communications du CELVA (Centre d'Enseignement de Langues Vivantes Appliquées) indiquent que le centre a été créé en **1993** et qu'il est installé au campus de Barikadimy depuis septembre 2019. Le document de présentation diffusé en mars 2026 annonce des cours intensifs de français et d'anglais de niveau A1 à C2 selon le CECRL, dans quatre objectifs : communication, objectif universitaire, académique et objectif spécifique. Il annonce aussi des services d'évaluation/certification de compétences, de correction de mémoires et thèses, de traduction et d'interprétariat.
+
+Le document décrit les durées de cours suivantes : niveau A 60 h, niveau B 80 h, niveau C 50 h ; ces volumes sont communiqués comme durées par groupe de niveaux et doivent être confirmés dans les fiches pédagogiques exactes. Les horaires de 2026 comprenaient des plages le matin, le midi et le soir.
+
+Une nouvelle campagne publiée le 10 septembre 2026 a annoncé des inscriptions du 7 septembre au 9 octobre, un test de niveau le 14 octobre et une rentrée prévue le 20 octobre 2026 dans deux lieux (École Les Disciples à Ankirihiry et MEFRA). La source ne permet pas encore de confirmer les effectifs présents, la tenue effective de la rentrée ou le détail des tarifs/certifications délivrées.
+
+**Classement MITARIDALA :**
+- CELVA doit apparaître comme **centre universitaire de formation linguistique et de services**, et non comme faculté délivrant des diplômes LMD.
+- Les cours A1-C2 peuvent être référencés comme formation continue/complémentaire, avec niveau CECRL visé, volume, dates et lieu.
+- La promesse d'« évaluation et certification » ne prouve pas qu'il s'agit d'une certification internationale ou d'un examen officiel DELF/DALF/Cambridge/IELTS : préciser l'organisme certificateur et le droit d'utiliser le label avant de l'afficher.
+- Les services de correction de mémoire, traduction et interprétariat sont des prestations distinctes des diplômes.
+- Les campagnes 2026 doivent être enregistrées comme activité datée, avec état prévu / inscription / session tenue, et non comme offre annuelle permanente.
+
+Source secondaire de veille, reprenant des communications du CELVA : [CELVA — Centre d'Enseignement de Langues Vivantes Appliquées de l'Université de Toamasina](https://www.glunis.com/MG/Toamasina/103165917751411/CELVA-Centre-d%27Enseignement-de-Langues-Vivantes-Appliqu%C3%A9es).
+
+### 51.5 Infrastructures dédiées à l'ENS et à GPL : réceptions et capacités annoncées
+
+Un article Newsmada du **9 décembre 2025** rapporte l'inauguration de bâtiments rénovés à l'Université de Toamasina, sous la présence du ministre MESUPRES et du président de l'Université. Les infrastructures décrites comprennent :
+- bâtiment ENS présentiel R+1, avec deux grandes salles au rez-de-chaussée annoncées pour 200 étudiants chacune, deux salles au premier étage pour 75 étudiants chacune, une autre salle d'environ 50 places, une salle de soutenance et deux bureaux de responsables de mention ;
+- bâtiment Gestion portuaire et logistique (GPL) avec deux salles de cours, deux bureaux de responsables, un secrétariat, une salle de réunion et un bloc sanitaire ;
+- Amphithéâtre Bleu annoncé pour 1 200 places et deux autres amphithéâtres pour 300 places chacun, également rénovés.
+
+L'article associe le soutien à ces réalisations à la SPAT et à la SMMC. Ce compte rendu prouve une inauguration rapportée par la presse à cette date, mais les capacités chiffrées sont des capacités annoncées dans l'article, pas un comptage physique ou une validation de sécurité actuelle. Les dégâts du cyclone Gezani en février 2026 imposent de vérifier la continuité d'utilisation après les rénovations 2025.
+
+**À demander au service patrimoine :** procès-verbaux de réception, capacité autorisée par salle, état de fonctionnement au 31 octobre 2026, dégâts/repairs après Gezani, accessibilité, sécurité incendie, équipements, occupation réelle par cours et composante.
+
+Source secondaire :
+- [Newsmada — Université de Toamasina : inauguration de bâtiments rénovés, 9 décembre 2025](https://newsmada.com/2025/12/09/universite-de-toamasina-inauguration-de-batiments-renoves/).
+
