@@ -1693,3 +1693,39 @@ Le MESUPRES a publié le 22 octobre 2026 un compte rendu d'une rencontre avec la
 Source primaire :
 - [MESUPRES — PHARMA MAR, recherche sur les ressources marines, 22 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/604).
 
+
+
+## 37. Les arrêtés HAE de 2022 peuvent couvrir plusieurs composantes et plusieurs offres
+
+Le tableau officiel MESUPRES d'août 2022 montre que certaines références d'arrêté sont partagées entre plusieurs départements de l'Université de Toamasina. Ce point doit être traité explicitement dans le modèle de données.
+
+### 37.1 Arrêté n°12563/2022 du 5 mai 2022 — ENS, FST et ITPT
+
+Dans le snapshot HAE d'août 2022, la référence n°12563/2022 apparaît pour :
+- **ENS** : domaine Sciences de l'Éducation / Licence, mention « Éducation, Apprentissage, Didactique et Mathématique Informatique » ;
+- **FST** : domaine Sciences et Technologies / Licence, mention « Physique-Chimie » ;
+- **ITPT** : offres liées à « Valorisation du Tourisme, des Patrimoines et des Territoires », avec les libellés « Tourisme et Patrimoine dans les Tropicaux » et « Socio-management et Développement local » dans les tableaux correspondants.
+
+La même référence apparaît également pour des offres d'instituts régionaux dans d'autres lignes du registre. Cette réutilisation ne signifie pas que toutes les formations ont le même domaine, la même durée, le même diplôme ou la même maquette.
+
+### 37.2 Arrêté n°12567/2022 — anciennes FAC/DEGMIA
+
+La ligne FAC/DEGMIA associe à l'arrêté n°12567/2022 du 5 mai 2022 les offres Licence/Master suivantes : Droit, Droit (FOAD), Économie et Gestion, ainsi qu'une offre professionnelle en Sciences de Gestion. Le même ensemble de lignes mentionne aussi MIA en Licence et Master, avec l'arrêté antérieur n°31503/2013, dans l'organisation historique de la faculté avant l'éclatement DEG/FST.
+
+### 37.3 Arrêté n°12561/2022 — FLSH
+
+La ligne FLSH associe l'arrêté n°12561/2022 du 5 mai 2022 à des offres Licence/Master en Études françaises, Géographie, Anthropologie sociale et culturelle et Philosophie, ainsi qu'à une Licence « Humanités, Développement et Durabilité ». Les arrêtés antérieurs n°28884/2012, 31468/2017, 31503/2013 et 8006/2014 demeurent référencés dans la même ligne comme sources d'offres historiques distinctes.
+
+### 37.4 Conséquence de modélisation
+
+Le modèle MITARIDALA doit séparer :
+1. **l'acte administratif** : numéro, date, signataire, type, document PDF, empreinte du fichier, éventuelles modifications/abrogations ;
+2. **la décision d'habilitation** : relation entre un acte et un périmètre précis (établissement, département, domaine, grade, mention, parcours, modalité) ;
+3. **l'offre pédagogique** : maquette, UE/ECUE, durée, crédits, conditions d'accès et année de cohorte ;
+4. **l'état actuel** : validité, renouvellement, accréditation et ouverture effective.
+
+Un même acte peut donc avoir plusieurs lignes de décision ou d'offres ; inversement, une même offre historique peut être rattachée à plusieurs actes successifs (initial, modification, renouvellement). Ne jamais créer une offre unique au seul niveau du numéro d'arrêté, ni dédupliquer les décisions par numéro sans conserver le périmètre de chacune.
+
+Source primaire de l'inventaire :
+- [MESUPRES — Liste des institutions supérieures habilitées, août 2022, pages imprimées 68-71](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
