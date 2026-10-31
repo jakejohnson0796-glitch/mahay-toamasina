@@ -318,7 +318,23 @@ La Faculté de Médecine actuellement présente dans la base est rattachée à *
 
 Aucune composante « Faculté de Médecine » ni « École Supérieure Polytechnique de Toamasina » n'est rattachée à l'Université de Toamasina dans la table `faculte`. Il ne faut donc pas rattacher par erreur la filière Médecine Humaine d'Antananarivo à Toamasina, ni créer des parcours Maïeutique/Infirmerie ou ESPT sans pièces officielles et rattachement institutionnel confirmé.
 
-### 10.5 Sécurité et limites du contrôle
+### 10.5 Vérification des cercles et des profils étudiants
+
+Le contrôle en lecture seule a retrouvé **117 cercles universitaires** pointant vers un parcours Toamasina : **116 actifs et 1 archivé**. Tous les cercles actifs contrôlés ont une offre universitaire active correspondante.
+
+Le seul cercle archivé est :
+- cercle ID 339 — « CCA — Comptabilité, Contrôle, Audit — Master 2 » ;
+- parcours CCA M2 de la mention Gestion, Faculté DEG ;
+- offre `ProgrammeUniversitaire` ID 237 inactive ;
+- **un membre historique**.
+
+Ce cercle est correctement archivé avec l'offre CCA M2 en attente de preuve. Il ne faut ni le réactiver ni supprimer sa ligne ou son membre : l'historique et les droits des étudiants doivent rester récupérables si une preuve officielle permet ultérieurement de réouvrir ce parcours.
+
+La base compte **3 utilisateurs rattachés à l'Université de Toamasina**. Les trois ont une université, une composante, une mention et un niveau renseignés ; deux ont aussi un parcours précis. Cette vérification porte sur la complétude des champs, pas sur la validation académique des pièces justificatives ni sur le niveau réel d'inscription.
+
+Les six domaines du fichier source sont représentés parmi les mentions des offres Toamasina. Les mentions FLSH et ITPT sont regroupées sous « Arts, Lettres et Sciences Humaines », les mentions ENS sous « Sciences de l'éducation », et les composantes DEG/FST/ISSEDD sous leurs domaines propres. Aucun changement de domaine n'a été exécuté.
+
+### 10.6 Sécurité et limites du contrôle
 
 Les tables `faculte`, `filiere`, `mention` et `programmeuniversitaire` ont RLS activé selon l'inventaire de schéma. Ce contrôle n'est pas un audit complet des politiques RLS, des rôles ou des droits Data API. Il ne prouve pas non plus l'ouverture 2026-2027 des formations.
 
