@@ -490,6 +490,33 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
                 for row in imported_rows
             )
 
+        # Couverture exacte attendue : 4 × 11 au collège, 12 en seconde,
+        # 3 × 13 en première et 3 × 11 en terminale = 128 associations.
+        nb_programmes_2026 = session.exec(
+            select(ProgrammeMatiereScolaire.id).where(
+                ProgrammeMatiereScolaire.referentiel_id == rape_courant.id
+            )
+        ).all()
+        assert len(nb_programmes_2026) == 128
+
+        # Le catalogue canonique des matières pointe vers l'index MEN ; les
+        # sources précises par niveau/série restent sur chaque programme.
+        for code_matiere in current_matiere_codes:
+            if code_matiere in {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "ARTS", "EPS", "EDUCATION_CITOYENNETE",
+                "SES", "TIC", "PHILOSOPHIE", "TICE",
+            }:
+                matiere = session.exec(
+                    select(MatiereScolaire).where(
+                        MatiereScolaire.code == code_matiere
+                    )
+                ).one()
+                assert matiere.source_officielle == (
+                    "https://plateforme.education.mg/bibliotheque-numerique/?lang=fr"
+                )
+
         # Les séries A/C/L ne doivent pas rester entièrement inutilisables :
         for code_niveau, code_serie, code_matiere, fichier in [
             ("1ERE", "A", "MATHEMATIQUES", "RAPS-1%C3%A8re-A_2024_2025.pdf"),
