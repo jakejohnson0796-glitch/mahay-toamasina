@@ -519,7 +519,9 @@ La liste MESUPRES d'août 2022 (pages imprimées 69-70, contrôlées visuellemen
 
 **Correction après nouveau recoupement :** le PDF MESUPRES 2022, pages 69-70, ne montre pas une deuxième ligne « ISTRCE » ; il présente une seule ligne « ISTCE ». Le nom **ISTRCE** apparaît aujourd'hui sur le site institutionnel de l'Université d'Analanjirofo, créée par décret en 2019 et implantée à Fénérive-Est. L'université d'Analanjirofo présente actuellement l'ISTRCE comme son Institut Supérieur de Technologie Régionale de la Côte-Est, spécialisé en Agronomie. Il s'agit donc d'une différence de libellé entre le snapshot 2022 et la présentation institutionnelle actuelle, pas de la preuve d'un doublon ministériel de deux établissements distincts dans la liste 2022.
 
-**Décision de géolocalisation :** Ambatondrazaka et Fénérive-Est ne sont pas des campus de la commune urbaine de Toamasina. ISTRALMA et l'ancien libellé ISTCE doivent rester dans l'historique du rattachement Toamasina tel que publié en 2022 ; l'ISTRCE doit être rapproché de l'Université d'Analanjirofo comme affiliation actuelle affichée par son site institutionnel. Ne pas inclure ces établissements dans le nombre de facultés/écoles physiquement situées à Barikadimy.
+**Mise à jour par le document national MESUPRES de décembre 2023 :** sa cartographie régionale place explicitement **ISTRCE** dans la ligne **Analanjirofo**, tandis que la ligne **Atsinanana** énumère FLSH, DEGMIA, Faculté de Médecine, ITPT, ISTRA, Confucius, ENS, ESP Toamasina et CNTEMAD, sans ISTRCE. La même publication distingue donc déjà les deux périmètres régionaux. Le site institutionnel actuel de l'Université d'Analanjirofo reprend l'ISTRCE parmi ses cinq établissements. Le rattachement/renommage exact entre la ligne 2022 « ISTCE » rattachée à Toamasina et la ligne 2023 « ISTRCE » en Analanjirofo reste à documenter par l'acte de transfert ou de création de l'établissement, mais l'affectation géographique et institutionnelle publiée en 2023 est désormais plus récente et plus pertinente pour la cartographie actuelle.
+
+**Décision de géolocalisation :** Ambatondrazaka et Fénérive-Est ne sont pas des campus de la commune urbaine de Toamasina. ISTRALMA et l'ancien libellé ISTCE restent des références historiques dans le snapshot HAE 2022 ; ISTRCE relève du périmètre régional Analanjirofo dans la cartographie MESUPRES 2023 et sur le site institutionnel actuel. Ne pas inclure ces établissements dans le nombre de facultés/écoles physiquement situées à Barikadimy.
 
 Sources :
 - [MESUPRES — Liste officielle des habilitations, août 2022, pages 69-70](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
@@ -1123,4 +1125,62 @@ Pour le catalogue MITARIDALA, adopter trois vues distinctes :
 3. **Analanjirofo / Fénérive-Est** : Université d'Analanjirofo et ses cinq établissements affichés actuellement, séparés de l'Université de Toamasina.
 
 Ne pas recalculer rétroactivement les effectifs 2021-2023 ou les habilitations 2014-2022 sans texte de transfert et annuaire actualisé. La prochaine pièce à demander au MESUPRES/DGES et aux deux présidences est la décision officielle de rattachement/affectation des établissements régionaux et le registre HAE actualisé pour leurs mentions.
+
+
+
+## 31. Cartographie MESUPRES décembre 2023 : périmètre public et privé par région
+
+Le document officiel **« MESUPRES en chiffres — décembre 2023 »** contient une annexe « Liste des institutions supérieures par région » et une cartographie des institutions publiques et privées (pages imprimées 51 à 55). Cette source est plus récente que la liste HAE août 2022 et fournit un découpage régional explicite.
+
+### 31.1 Institutions publiques rattachées à la région Atsinanana dans la cartographie 2023
+
+La ligne Atsinanana liste :
+- FLSH ;
+- DEGMIA ;
+- Faculté de Médecine ;
+- ITPT ;
+- ISTRA ;
+- Confucius ;
+- ENS ;
+- ESP Toamasina ;
+- CNTEMAD.
+
+La cartographie ne liste pas ISTRCE sous Atsinanana. Elle place **ISTRCE sous la région Analanjirofo** et ISTRALMA sous Alaotra Mangoro. Cette répartition conforte la séparation entre l'Université de Toamasina à Barikadimy et l'Université d'Analanjirofo à Fénérive-Est.
+
+Il s'agit d'une cartographie institutionnelle régionale officielle, non d'un relevé exhaustif des mentions HAE ou d'une preuve que toutes les filières de chaque établissement étaient ouvertes en 2023-2024 ou le sont actuellement.
+
+### 31.2 Institutions privées listées en Atsinanana
+
+La même annexe MESUPRES décembre 2023 donne, sous la région Atsinanana, dix noms d'institutions privées :
+1. BEATY UNIVERSITY ;
+2. IFT ;
+3. IFSP ATSINANANA ;
+4. IFSPT ;
+5. INSPALM ;
+6. INSPNMAD ;
+7. ISFSP ;
+8. ISMATEC ;
+9. ISPAVA ;
+10. ISSPM.
+
+Cette liste régionale est plus large que les quatre lignes paramédicales explicitement détaillées dans la liste HAE août 2022, et elle fait apparaître des établissements supplémentaires comme IFT, ISFSP, ISMATEC, ISPAVA et ISSPM. Le document ne donne pas, dans cette annexe, l'adresse, l'identifiant juridique, la liste des programmes, les dates de validité ou l'activité en 2026 de chaque institution.
+
+**Règle de rapprochement :**
+- garder les dix entrées comme institutions recensées dans le snapshot MESUPRES de décembre 2023 ;
+- conserver séparément la liste HAE 2022 qui relie des diplômes précis à des arrêtés ;
+- ne pas affecter automatiquement une habilitation précise à ISFSP, ISMATEC, ISPAVA, ISSPM ou IFT sur la seule base de leur présence dans la cartographie 2023 ;
+- rechercher pour chacune le dernier acte de création/autorisation, les décisions HAE par diplôme, l'adresse et la preuve d'activité/cohorte 2026-2027 ;
+- conserver les sigles exactement comme imprimés, y compris leur normalisation non confirmée (par exemple IFSP ATSINANANA / IFSPT et INSPALM / INSPNMAD).
+
+### 31.3 Correction du périmètre et du décompte
+
+Le rapport ne doit plus additionner les anciens instituts régionaux qui figurent dans les tableaux statistiques de l'Université de Toamasina aux composantes localisées en ville. Utiliser trois périmètres :
+- **Université de Toamasina / ATSINANANA, cartographie régionale 2023** : neuf institutions publiques listées, plus les dix établissements privés listés dans le même document ;
+- **Université d'Analanjirofo / Fénérive-Est, cartographie 2023** : ISTRCE, plus les autres établissements de l'université actuelle indiqués dans ses publications institutionnelles ;
+- **historique des rattachements 2022 et antérieurs** : conserver les associations et effectifs tels que publiés, avec millésime ; ne pas les réécrire rétroactivement.
+
+Les neuf institutions publiques et dix institutions privées sont des décomptes du tableau régional MESUPRES décembre 2023, pas le nombre de facultés de l'Université de Toamasina ni le nombre de programmes habilités.
+
+Source primaire :
+- [MESUPRES — « En chiffres », décembre 2023, annexe institutions supérieures par région, pages imprimées 51-55 (PDF)](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
 
