@@ -327,9 +327,9 @@ def upgrade() -> None:
     }
     matieres = {
         code: _ensure_matiere(
-            conn, code, libelle, malagasy, MEN_PDF_BASE + pdf
+            conn, code, libelle, malagasy, MEN_INDEX
         )
-        for code, (libelle, malagasy, pdf) in MATIERES.items()
+        for code, (libelle, malagasy, _pdf) in MATIERES.items()
     }
 
     for (code_niveau, code_serie), codes_matieres in PROGRAMMES.items():
