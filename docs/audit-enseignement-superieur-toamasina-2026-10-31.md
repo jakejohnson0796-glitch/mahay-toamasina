@@ -2347,3 +2347,41 @@ Sources primaires :
 - [MESUPRES — Booklet 3, tableaux 25-28, pages 48-54 : diplômés par université, secteur, province et grade](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf).
 - [MESUPRES — Catalogue officiel des annuaires](https://www.mesupres.gov.mg/documents/index/1?categorie=annuaires).
 
+
+
+## 50. ENS de Toamasina : normalisation des 11 mentions affichées dans le flyer institutionnel
+
+Le flyer PDF officiel publié sur le domaine de l'Université permet désormais d'extraire les intitulés bruts des onze mentions de l'École Normale Supérieure. La liste présentée dans le document comprend :
+1. Enseignement-Apprentissage et didactique de la Philosophie ;
+2. Enseignement-Apprentissage et didactique d'Histoire-Géographie ;
+3. Enseignement-Apprentissage et didactique en Ingénierie Mathématiques-Informatique ;
+4. Enseignement-Apprentissage et didactique de Physique-Chimie ;
+5. Enseignement-Apprentissage et didactique en Organisation Sociale et Économique (OSE) ;
+6. Enseignement-Apprentissage et didactique en Sciences Économiques et Sociales (SES) ;
+7. Enseignement-Apprentissage et didactique de la langue Malagasy ;
+8. Enseignement-Apprentissage et didactique de la langue Française ;
+9. Enseignement-Apprentissage et didactique de la langue Anglaise ;
+10. Enseignement-Apprentissage et didactique en Sciences naturelles ;
+11. Enseignement-Apprentissage et didactique en Sciences de l'Éducation.
+
+Le flyer indique des parcours de Licence avec tronc commun L1, L2 et L3 pour plusieurs mentions, et des parcours de Master propres à certaines disciplines (par exemple Philosophie, Histoire-Géographie, Physique-Chimie, OSE, SES, langues, Sciences naturelles et Sciences de l'Éducation). Il donne également des débouchés d'enseignement secondaire et, selon les mentions, des possibilités de M2 en sciences de l'éducation ou dans la discipline.
+
+### 50.1 Limite de restitution des parcours
+
+Le document est une composition graphique à colonnes dont l'ordre de lecture textuel intercale plusieurs colonnes : des numéros et des intitulés apparaissent de manière décalée, certains intitulés sont répétés dans l'extraction et les parcours de Master se trouvent parfois à côté d'une autre mention. Le PDF permet de récupérer la liste des intitulés et les grandes lignes L1-L3/Master, mais pas d'associer sans ambiguïté chaque parcours de Master à toutes les mentions.
+
+**Ne pas transformer le flyer en onze fiches de diplôme complètes.** Pour chacune des onze mentions, il faut demander :
+- la maquette Licence et Master datée, approuvée et signée ;
+- le code domaine/mention/parcours dans le registre HAE ;
+- la décision HAE correspondante et sa date de validité ;
+- les crédits, UE/ECUE, volumes CM/TD/TP, stages et modalités d'évaluation ;
+- les niveaux/grades effectivement ouverts en 2026-2027 et les avis de recrutement.
+
+### 50.2 Distinction entre une mention ENS et une matière d'enseignement
+
+Les libellés « Philosophie », « Histoire-Géographie », « OSE », « SES », « Malagasy », « Français », « Anglais » ou « Sciences naturelles » sont des intitulés disciplinaires intégrés dans une mention de formation d'enseignants. Ils ne doivent pas être importés comme des diplômes autonomes ou comme des mentions universitaires généralistes sans conserver le préfixe « Enseignement-Apprentissage et didactique ».
+
+Le flyer est un document institutionnel d'orientation, non une décision HAE. La liste d'août 2022 identifie par ailleurs une offre Sciences de l'Éducation sous une autre formulation et un arrêté spécifique ; il faut relier les deux versions par un acte de réorganisation ou une nouvelle décision d'habilitation, et non les considérer automatiquement comme identiques.
+
+Source primaire :
+- [Université de Toamasina — ENS, flyer officiel présentant les mentions et débouchés](https://www.univ-toamasina.mg/static/pdfs/etablissements/ecoles/nouvelles/ens/ENS_Flyers.pdf).
