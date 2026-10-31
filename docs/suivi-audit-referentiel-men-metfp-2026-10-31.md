@@ -1281,3 +1281,51 @@ La directive mentionne aussi que les enseignants doivent respecter les programme
 
 Source primaire : [MEN — Rentrée scolaire 2022-2023, informations et instructions pour DREN, CISCO et établissements](https://www.education.gov.mg/rentree-scolaire-2022-2023-informations-et-instructions-pour-les-dren-cisco-et-etablissements-scolaires-dans-tout-madagascar/), publié par le MEN.
 
+
+
+### 9.37 Contextualisation locale officielle de la Géographie T8-T9 pour Toamasina/Atsinanana
+
+Le PE T8 prévoit explicitement que les enseignants adaptent les conseils et orientations pédagogiques au contexte des apprenants. Ses résultats d'apprentissage généraux demandent de mettre en relation les activités économiques, sociales et environnementales avec les connaissances sur la région de l'élève, Madagascar et le monde. Il inclut le changement climatique et les sources d'énergie, avec élaboration de mini-projets. Le PE T8 est à 2 h/semaine.
+
+Le PE T9 va plus loin dans l'étude régionale. Dans le RAG 5, il demande de mobiliser les connaissances de la région, du pays et du monde pour expliquer des phénomènes sociaux et économiques. Les activités d'apprentissage requièrent de déterminer les secteurs économiques au niveau local, régional et national ; d'étudier l'agriculture, l'élevage, la pêche, les ressources forestières, l'industrie agroalimentaire/extractive/textile, les PME/PMI, le commerce, le tourisme, les télécommunications et les réseaux de transport. Le programme cite explicitement :
+- les grandes régions naturelles de Madagascar, dont l'Est ;
+- le climat tropical humide associé à l'Est dans sa carte des climats ;
+- la forêt dense et la savane comme composantes de végétation de l'Est ;
+- les fleuves de l'Est, décrits dans le PE comme à régime régulier, débit rapide et non navigables ;
+- les activités économiques régionales et l'utilisation des ressources naturelles ;
+- le réseau ferroviaire TCE (Tananarive–Côte Est), dans la partie consacrée aux réseaux de transport.
+
+Le PE prévoit en outre enquête, descente sur terrain, exploitation de cartes et documents, travail de groupe et cartographie de la répartition des industries. Les élèves doivent analyser les atouts/faiblesses de leur région et proposer des modes d'exploitation rationnelle des ressources dans les secteurs de production. Le volume hebdomadaire de Géographie T9 est de 2 h. Dans les tableaux détaillés, les séquences « Structure économique de Madagascar » et « Potentialités naturelles de Madagascar » ont chacune une durée de 18 h ; ces durées ne doivent pas être confondues avec les heures hebdomadaires.
+
+**Application pédagogique possible à Toamasina — exemples de contextualisation, non nouveaux chapitres :**
+1. Cartographier des activités primaires locales (agriculture, élevage, pêche/aquaculture, forêt) à partir d'informations DREN/INSTAT, services techniques et enquêtes de terrain datées.
+2. Comparer les activités du secteur secondaire recensées pour Atsinanana (transformation agroalimentaire, industrie/textile/artisanat selon données vérifiées) et justifier leur localisation avec des facteurs d'implantation.
+3. Étudier les fonctions de transport à partir de la liaison ferroviaire TCE mentionnée dans le PE, des axes routiers, fluviaux et maritimes, en distinguant réseau existant, service réellement en activité et évolution historique.
+4. Évaluer les effets possibles des aléas climatiques, de l'érosion, des inondations, de la gestion des déchets et de l'usage des sols à partir de séries de données/localisations établies.
+5. Construire un mini-projet d'exploitation durable d'une ressource ou d'amélioration d'un service local, avec enquête, estimation des ressources, étude de faisabilité et débouchés, conformément aux démarches du PE.
+
+Ces exemples ne doivent pas être injectés comme RAS supplémentaires. Le PE national reste le référentiel ; Toamasina/Atsinanana fournit des supports d'étude et des cas pratiques. Les données locales doivent indiquer producteur, date et périmètre géographique ; aucune valeur régionale ancienne ne doit être présentée comme donnée actuelle.
+
+**Point de vigilance scientifique :** le PE T9 décrit de manière générale les fleuves de l'Est comme non navigables. Cette formulation doit être conservée comme texte du programme, mais ne doit pas être transformée en affirmation sur tous les cours d'eau de l'Atsinanana ou toutes les pratiques locales sans vérification géographique spécifique. Il s'agit d'une généralisation nationale figurant dans le document pédagogique.
+
+Sources :
+- [PE T8 MEN — Géographie, RAG 5 et contextualisation des COP](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf), pages PDF 188-190.
+- [PE T9 MEN — Géographie, structure économique, activités régionales, agriculture/pêche/forêt/industrie/transports](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf), pages PDF 191-203.
+- [INSTAT — Tableau de bord socio-économique Atsinanana](https://www.instat.mg/documents/upload/main/TBSE_Atsinanana_Dec2025.pdf), à utiliser uniquement avec l'année statistique explicitement portée dans les tableaux.
+
+### 9.38 Différencier les objets curriculaires du lycée avant l'import
+
+La lecture conjointe du PE T10/T11/T12 et de la grille de coefficients/volumes fait apparaître trois niveaux de données qu'il ne faut pas fusionner :
+1. **Discipline / matière** : objet dans la liste et le sommaire du PE (ex. Histoire et Géographie à part, Anglais, Philosophie, SES, EPS, TICE).
+2. **Bloc de valeur commune** : une ligne groupée dans la grille (ex. Histoire-Géographie, ou une langue vivante choisie parmi Allemand/Espagnol/Russe). La ligne commune d'horaire/coefficient n'est pas une preuve que les deux matières ont chacune cette durée ou que l'élève suit trois langues.
+3. **Parcours de série** : le contenu disciplinaire détaillé est découpé dans le PE T11/T12 selon L, S ou OSE. Les pages d'un même PDF regroupent plusieurs parcours ; chaque table RAS doit être associée à la bonne série.
+
+**Exigences pour le catalogue MITARIDALA :**
+- Une discipline peut être visible dans le PE sans avoir de valeur individuelle distincte dans la grille quantitative si celle-ci regroupe plusieurs matières.
+- Les matières qui composent une ligne commune peuvent rester des objets disciplinaires séparés, avec une relation vers un bloc de coefficient/horaire partagé.
+- Un élève choisit sa langue vivante parmi les choix autorisés ; la donnée doit modéliser le choix de l'élève ou de la classe et non additionner mécaniquement les heures des trois langues.
+- Les blocs Histoire-Géographie et langues vivantes ne doivent pas être dupliqués dans le total hebdomadaire/coefficients.
+- L'identifiant des RAS doit inclure la série pour T11 et T12, même lorsque le texte du RAS ou le nom de matière est identique d'une série à l'autre.
+
+**Aucune donnée quantitative supplémentaire n'est extrapolée par cette règle de modèle.** Les valeurs restent celles transcrites du document officiel et les lignes non séparées demeurent groupées.
+
