@@ -501,7 +501,7 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
 
         # Le catalogue canonique des matières pointe vers l'index MEN ; les
         # sources précises par niveau/série restent sur chaque programme.
-        for code_matiere in current_matiere_codes:
+        for code_matiere in current_matiere_codes.values():
             if code_matiere in {
                 "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
                 "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
