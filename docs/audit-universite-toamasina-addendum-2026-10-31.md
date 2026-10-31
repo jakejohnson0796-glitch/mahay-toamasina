@@ -203,6 +203,20 @@ Source : [MESUPRES — liste d'habilitation d'août 2022, rubrique ITPT](https:/
 
 Le fichier source conserve séparément deux ensembles à vérifier avant publication détaillée :
 
+### Instituts régionaux affiliés à l'Université de Toamasina — hors campus principal
+
+Le registre ministériel d'août 2022 ne se limite pas aux six composantes du catalogue source. Il mentionne aussi plusieurs établissements régionaux associés à l'Université de Toamasina, avec des implantations distinctes du campus principal :
+
+| Établissement ministériel | Localité indiquée | Offres / grades répertoriés en août 2022 | Références affichées |
+|---|---|---|---|
+| ISTRALMA — Institut Supérieur des Technologies Régional d'Alaotra Mangoro | Ambatondrazaka | Droit et Sciences politiques, Sciences de Gestion, Sciences économiques, Économie, Droit et Études politiques, Gestion ; Agronomie (Licence et Master/Ingénieur selon les lignes) | Arrêtés n°8006/2014, n°37560/2014 et n°12564/2022 |
+| ISTCE — Institut Supérieur des Technologies de la Côte-Est | Fénérive-Est | Agronomie et Agro-alimentaire (Licence) ; Agro-Management (Master) | Arrêté n°8006/2014 |
+| ISTRCE — Institut Supérieur des Technologies Régional de la Côte-Est | rattachement Université Toamasina ; localité à confirmer dans les pièces d'établissement | Gestion des Entreprises et des Administrations (Licence), Gestion Polyvalente (Licence), Technologie de Développement Rural (DTS/Licence), Agronomie (DTS/Licence) | Arrêtés n°8006/2014 et n°12563/2022 |
+
+Ces établissements ne doivent pas être ajoutés comme de simples facultés du campus de Toamasina : conserver leur identité institutionnelle propre, la commune d'implantation, le rattachement universitaire, les grades et les arrêtés. Le contrôle Supabase ne retrouve pas ces trois établissements comme composantes distinctes rattachées à l'Université de Toamasina. Il faut donc les traiter comme une extension institutionnelle à vérifier, pas les fusionner dans les six composantes déjà publiées.
+
+Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, pages 69-70, établissements régionaux affiliés à l'Université de Toamasina](https://www.mesupres.gov.mg/assets/front/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
 ### Faculté de Médecine — preuve ministérielle historique explicite à Toamasina
 La liste officielle MESUPRES mise à jour en août 2022 place bien une **FACULTÉ DE MÉDECINE sous l'UNIVERSITÉ TOAMASINA**. Elle cite le domaine « Sciences de la Santé / Licence » et quatre mentions : **Sciences Infirmières, Maïeutique, Médecine humaine et Sciences Paramédicales**. Le tableau donne les références d'arrêtés n°31798/2017-MESupReS du 27 décembre 2017, n°594/2018-MESupRES du 15 janvier 2018 et n°4000/2022-MESupRES du 28 février 2022. Cette pièce confirme une présence institutionnelle et réglementaire historique à Toamasina ; elle ne prouve pas, à elle seule, le renouvellement, l'accréditation ni l'ouverture 2026-2027 de chaque cursus.
 
