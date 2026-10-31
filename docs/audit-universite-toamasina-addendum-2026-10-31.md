@@ -117,13 +117,29 @@ Le flyer officiel ENS répertorie onze mentions :
 10. didactique en Sciences Naturelles ;
 11. didactique en Sciences de l'Éducation.
 
-Le flyer présente un tronc commun Licence L1-L3 et des parcours de Master pour plusieurs mentions. Il indique aussi des débouchés d'enseignement secondaire et, selon les mentions, des possibilités de laboratoire ou de formation pédagogique.
+Le fichier JSON source transcrit le flyer en **61 associations** : chaque mention est présente en L1, L2 et L3 (33 associations de tronc commun) ; il rattache des parcours M1/M2 à huit mentions (28 associations supplémentaires). Le rapprochement structuré actuellement enregistré est le suivant :
+
+| Mention ENS | Parcours M1/M2 présents dans le JSON source |
+|---|---|
+| Didactique de la Philosophie | Histoire de la philosophie, épistémologie et enseignement ; Formation d'enseignant de la Philosophie ; Culture et société |
+| Didactique d'Histoire-Géographie | Enseignement-Apprentissage et didactique d'Histoire-Géographie ; Formation d'enseignant d'éducation à la citoyenneté |
+| Ingénierie Mathématiques-Informatique | Informatique ; Mathématiques fondamentales ; Mathématiques-statistique-informatique |
+| Didactique de Physique-Chimie | Enseignement-Apprentissage et didactique de Physique-Chimie |
+| Organisation Sociale et Économique | Aucun parcours M1/M2 importé ; L1-L3 seulement |
+| Sciences Économiques et Sociales | Aucun parcours M1/M2 importé ; L1-L3 seulement |
+| Langue Malagasy | Littérature, civilisation et linguistique Malagasy |
+| Langue Française | Enseignement-Apprentissage et didactique de langues françaises |
+| Langue Anglaise | Enseignement-Apprentissage et didactique en langues Anglaise |
+| Sciences Naturelles | Aucun parcours M1/M2 importé ; L1-L3 seulement |
+| Sciences de l'Éducation | Éducation, communication et développement personnel ; Éducation, gestion et administration |
+
+Les parcours M1/M2 indiqués sont enregistrés pour les deux niveaux dans le JSON ; ils ne constituent pas pour autant une preuve distincte d'ouverture annuelle. Le flyer comporte aussi des mentions de débouchés vers un M2 en Sciences de l'Éducation, Sciences Naturelles, OSE ou SES ; ces formulations de débouchés ne décrivent pas systématiquement une maquette structurée, un parcours, une admission ou un volume de crédits. **Ne pas ajouter de M1/M2 à OSE, SES ou Sciences Naturelles uniquement sur la base de ces lignes de débouchés.**
 
 **Réserves :**
 - le flyer ne fournit pas une année universitaire de validité lisible ;
-- la présentation mêle parfois mention, parcours de Master, débouché et niveau de diplôme ;
-- les blocs Master sont disposés sur plusieurs colonnes ; il faut rapprocher chaque parcours de sa mention à partir d'une maquette officielle, sans déduire l'affectation uniquement de la proximité visuelle ;
-- le fichier source enregistre L1-L3 pour les onze mentions, mais M1-M2 uniquement pour certaines d'entre elles ; cette distinction doit être maintenue jusqu'à confirmation des maquettes.
+- l'extraction textuelle du PDF intercale des blocs de plusieurs colonnes ; le détail de la table ci-dessus reflète le fichier JSON versionné et doit être confirmé avec les maquettes ENS officielles ;
+- le JSON ne fournit ni crédits ECTS, ni volumes horaires, ni unités d'enseignement, ni modalités d'évaluation, ni conditions de sélection propres à chaque parcours ;
+- les parcours du flyer sont des preuves de description historique, pas de l'ouverture 2026-2027 ni de la validité actuelle de chaque habilitation.
 
 À obtenir : maquette par mention et niveau, arrêtés d'habilitation, conditions de sélection, stages pratiques, établissements d'application, mémoire/projet et preuve d'ouverture 2026-2027.
 
