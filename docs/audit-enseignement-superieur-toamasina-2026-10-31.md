@@ -2536,3 +2536,45 @@ Le livrable recommandé est un export **agrégé par composante, grade, discipli
 - **Décisions HAE individuelles 2026 relatives aux mentions de Toamasina : non extraites**.
 - **Aucune absence de données publiques ne doit être interprétée comme absence réelle d'enseignants, d'HDR, de laboratoires ou de formations**.
 
+
+## 53. Calendrier universitaire MESUPRES / Université de Toamasina : portail identifié, échéancier 2026-2027 non extrait
+
+Le MESUPRES possède une page officielle dédiée au **calendrier universitaire** qui affiche des onglets pour les six universités publiques historiques, dont **Université de Toamasina** :
+- [MESUPRES — Calendrier universitaire par université](https://www.mesupres.gov.mg/calendrier).
+
+Lors du contrôle du 31 octobre 2026, la page publique restitue les titres des six onglets, mais aucune ligne de dates sous la section « UNIVERSITÉ DE TOAMASINA ». La réponse visible est une coquille de navigation, sans dates d'ouverture ou de fermeture, sans semestre, sans périodes d'examens ni vacances. Il n'a donc pas été possible d'extraire un calendrier officiel 2026-2027 pour Toamasina depuis cette page.
+
+Cette observation s'ajoute aux annonces calendaires diffusées par des composantes sur des pages tierces : FST (appel L1 avec date limite du 20 novembre), DEG (date limite du 27 novembre) et ENS-SEAS (semestres FOAD et regroupements). Ces calendriers locaux restent à confronter au document universitaire officiellement validé et aux décisions de chaque établissement après les perturbations du cyclone Gezani.
+
+**Pièces à obtenir :**
+1. calendrier universitaire 2026-2027 signé par l'autorité compétente de l'Université de Toamasina ;
+2. calendrier propre à chaque composante si des dérogations ou reports ont été approuvés ;
+3. calendriers FOAD spécifiques, notamment ENS-SEAS, avec périodes d'inscription, regroupements, évaluations et publication des résultats ;
+4. décisions de report des examens/soutenances 2025-2026 et preuve de clôture de l'année universitaire précédente ;
+5. procès-verbal ou décision d'approbation par le Conseil scientifique / Conseil de l'Université.
+
+**Règle MITARIDALA :** distinguer `calendrier_universitaire_central`, `calendrier_composante`, `calendrier_foad` et `avis_recrutement`. Le calendrier d'une campagne d'admission ne constitue pas le calendrier académique complet, et un horaire de semestre relayé par un compte de faculté ne remplace pas l'acte central signé.
+
+Source primaire :
+- [MESUPRES — Page officielle « Calendrier » présentant les onglets des universités publiques](https://www.mesupres.gov.mg/calendrier).
+
+## 54. Annuaire statistique MESUPRES 2023-2024 : dernier millésime publié, extraction toujours bloquée par le poids du fichier
+
+La rubrique officielle MESUPRES « Annuaires » affiche l'**Annuaire statistique 2023-2024**, publié par MESUPRES/SG/DSPS/SS le **5 janvier 2026**. Il s'agit du millésime le plus récent présenté dans la liste documentaire consultée.
+
+Les essais d'accès réalisés le 31 octobre 2026 :
+- lien PDF direct : le lecteur web rejette le document pour une taille de contenu supérieure à sa limite (fichier d'environ **17,87 Mo**) ;
+- lien « Consulter » via Google Docs Viewer : délai d'attente dépassé ;
+- téléchargement via l'outil de transfert de fichiers de l'environnement : échec avant obtention du fichier.
+
+**Conséquence :** les tableaux 2023-2024 concernant Toamasina (inscrits par composante, filières, enseignants permanents, diplômés, doctorants, établissements privés et taux de réussite) restent non extraits. Les valeurs 2022-2023 et le Booklet 3 de novembre 2025 demeurent les dernières données chiffrées exploitables dans le présent rapport, chacune avec son périmètre propre.
+
+Il faut éviter de présenter les données 2022-2023 comme « les plus récentes publiées » : elles sont les plus récentes **extraites dans ce contrôle**, tandis que le MESUPRES a publié un annuaire 2023-2024 en janvier 2026 dont les tableaux doivent encore être récupérés par une voie technique autorisée.
+
+**Voie de récupération recommandée :** obtenir le PDF original depuis la Direction des Statistiques / MESUPRES par téléchargement institutionnel, puis conserver son empreinte SHA-256 et extraire les tableaux Toamasina avec rendu visuel des pages ; ne pas remplacer le fichier par une copie tierce ou une extraction sans provenance.
+
+Sources :
+- [MESUPRES — Annuaires statistiques, édition 2023-2024 publiée le 5 janvier 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=annuaires).
+- [MESUPRES — Annuaire statistique 2023-2024, PDF direct](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2023-2024.pdf).
+- [MESUPRES — Calendrier universitaire par université](https://www.mesupres.gov.mg/calendrier).
+
