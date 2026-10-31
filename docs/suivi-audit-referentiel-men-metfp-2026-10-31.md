@@ -726,3 +726,32 @@ Le guide distingue les résultats d'apprentissage spécifiques, les contenus à 
 Ce document complète le contrôle déjà fait des guides T7 (102 pages) et T8 (98 pages). Il reste un guide pédagogique enseignant et ne remplace pas le PE/RAS. Les exemples de scénarios et les réponses attendues ne doivent pas être importés comme un programme distinct ni comme une obligation identique pour toutes les cohortes sans rattachement aux RAS.
 
 Source : [Guide enseignant officiel FOV T9 — MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/GUIDE_FOV_T9.pdf).
+### 9.18 Répertoire historique de CEG Toamasina I/II : codes d'établissement publics retrouvés
+
+Une source primaire MEN supplémentaire a été trouvée : « Répartition de la caisse-école 2020 des Collèges d'Enseignement Général », document daté du 22 octobre 2020. Les pages 59 et 60 recensent des collèges bénéficiaires par CISCO et indiquent les codes d'établissement.
+
+**CISCO Toamasina I — sept collèges listés en 2020 :**
+
+| Code établissement | Nom affiché dans le document MEN 2020 |
+|---|---|
+| 501010030 | CEG Augagneur |
+| 501010035 | CEG de Référence |
+| 501010028 | CEG Mangarano |
+| 501010032 | CEG Radama Ier |
+| 501010031 | CEG Ramatahit(h)ra — libellé source « CEG RAMATAHITRA » |
+| 501010029 | CEG Ratsimilaho |
+| 501010034 | CEG Tsarakofafa |
+
+Le document affiche la synthèse « Toamasina I (7 Collèges) ». Pour Toamasina II, la page 60 contient 25 collèges, dont CEG Foulpointe, CEG Mangabe, CEG Volobe, CEG Fanandrana et plusieurs établissements communautaires.
+
+**Limite stricte :** il s'agit d'un relevé de répartition d'une caisse-école 2020, pas d'un répertoire administratif exhaustif ni d'une preuve d'ouverture en 2026-2027. Les codes sont des identifiants historiques à rapprocher avec la CISCO avant réutilisation. Le nombre 7 est le nombre de collèges de la liste de financement 2020 pour cette CISCO, et non le total des collèges fonctionnels du district : l'annuaire INSTAT/DREN 2023-2024 en compte 90. L'écart montre que la liste caisse-école ne doit pas être confondue avec l'annuaire général.
+
+Il est possible de croiser deux éléments indépendants pour plusieurs établissements :
+- CEG Ratsimilaho apparaît dans le relevé MEN caisse-école 2020 et dans l'activité CISCO/DREDD de mai 2026 ;
+- CEG Ramatrahitra apparaît dans le relevé 2020 (libellé « RAMATAHITRA ») et dans l'activité CISCO/DREDD de mai 2026 ;
+- Lycée Jacques Rabemananjara apparaît dans l'activité officielle de mai 2026 ; un code 501010027 apparaît dans un ancien document de personnel contenant des données personnelles, mais ce dernier n'est pas utilisé/cité ici ;
+- Lycée de Référence apparaît dans l'activité officielle de mai 2026, sans code ni niveau précis.
+
+**Règle de traitement des données :** les codes de CEG historiques peuvent être conservés comme candidats à rapprochement dans un fichier de travail non publié. Ne pas les importer automatiquement dans la base de production, ni fusionner des noms similaires, sans confirmation par une liste CISCO 2026-2027. Aucun nom, numéro d'identité ou donnée personnelle d'élève/enseignant n'est extrait de fichiers contenant des informations personnelles.
+
+Source : [MEN — Répartition de la caisse-école 2020 des CEG](https://www.education.gov.mg/wp-content/uploads/2020/10/caisse_ceg.pdf), pages 59-60 du PDF ; les deux pages ont été vérifiées par capture d'écran.
