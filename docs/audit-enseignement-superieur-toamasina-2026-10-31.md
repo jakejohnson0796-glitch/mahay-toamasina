@@ -537,3 +537,144 @@ Les signaux FST, DEG et ENS-SEAS déjà documentés dans les sections 8 et 8.1 p
 
 **Règle MITARIDALA :** afficher « candidature annoncée » et sa date limite comme statut de veille, mais ne pas afficher « admission ouverte confirmée » ou « formation en cours » sans l'avis original et la preuve de cohorte.
 
+
+
+## 15. Décret n°2026-1483 : exigences nationales nouvelles à appliquer à l'audit des offres
+
+Le PDF officiel publié par le MESUPRES sous le titre **Décret n°2026-1483 du 10 juin 2026 portant cadrage stratégique de l'employabilité et du renforcement de la professionnalisation de l'Enseignement Supérieur à Madagascar** a été contrôlé visuellement sur ses huit pages. Il complète le cadre d'habilitation et d'accréditation.
+
+### 15.1 Habilitation, validité et accréditation
+
+Le décret dispose notamment que :
+- toute formation conduisant à un diplôme est soumise à une habilitation préalable ministérielle ; aucune formation ne peut être ouverte ou mise en œuvre sans habilitation délivrée en bonne et due forme (article 17) ;
+- l'habilitation est accordée pour cinq ans et renouvelable après évaluation (article 18) ;
+- le dossier d'habilitation doit justifier l'opportunité socio-économique, les besoins sectoriels et territoriaux, les débouchés, l'intégration des compétences professionnelles et transversales, les stages/alternances/projets appliqués, les partenariats formalisés et le suivi des diplômés (article 19) ;
+- toute formation habilitée doit faire l'objet d'une accréditation dans un délai maximal d'un an à compter de son habilitation ; à défaut, l'habilitation peut être suspendue jusqu'à régularisation (article 21) ;
+- l'accréditation est accordée pour cinq ans et son renouvellement dépend de l'évaluation externe et de la conformité aux procédures qualité (articles 22-24) ;
+- les habilitations et accréditations peuvent être suspendues ou retirées en cas de manquement grave ou persistant selon la procédure prévue (article 26) ;
+- les formations déjà habilitées à la date d'entrée en vigueur du décret demeurent valides jusqu'à leur échéance ; leur renouvellement est soumis au nouveau régime (article 53).
+
+**Réserve de calcul :** l'article 52 accorde douze mois aux établissements concernés pour régulariser leur situation, à compter de la date de publication du décret. Le PDF accessible porte la date du 10 juin 2026 et une mention de conformité du 13 août 2026, mais le jour exact de publication au Journal officiel n'a pas été vérifié ici. Ne pas calculer une date limite de régularisation en ajoutant douze mois au 10 juin sans obtenir la preuve de publication.
+
+### 15.2 Contenu des maquettes de Licence et Master
+
+Le décret impose que les formations de Licence et de Master intègrent des compétences professionnelles transversales structurées. Le socle mentionné comprend :
+- entrepreneuriat et innovation ;
+- gestion de projet ;
+- communication professionnelle ;
+- notions de droit du travail ;
+- compétences numériques ;
+- civisme et citoyenneté ;
+- éthique professionnelle.
+
+Il prévoit :
+- en L3, un dispositif de préparation à l'insertion professionnelle, incluant projet professionnel, recherche d'emploi, valorisation des compétences et initiation à l'entrepreneuriat (article 33) ;
+- en M2, un dispositif renforcé de professionnalisation avec projet intégrateur, activité en milieu professionnel (stage, alternance ou équivalent) et évaluation en situation réelle ou simulée (article 34) ;
+- au minimum 10 % du volume global de formation en Licence et 15 % en Master pour ces compétences transversales (article 36) ;
+- une évaluation spécifique de ces compétences, distincte des évaluations théoriques, contribuant à la validation du diplôme (article 37) ;
+- l'intégration effective de ces éléments dans la maquette comme condition d'habilitation, d'accréditation et de renouvellement (article 38).
+
+Il ne faut pas inventer une UE intitulée identique dans toutes les maquettes : les compétences doivent être identifiées et localisées dans la maquette propre à chaque programme, avec leur volume horaire, leurs modalités et leurs preuves d'évaluation.
+
+### 15.3 Employabilité, suivi des diplômés et statut étudiant-entrepreneur
+
+Le décret prévoit que chaque établissement mette en place un **Centre universitaire d'employabilité** ; cette fonction peut être mutualisée à l'échelle régionale (article 39). Ses missions incluent orientation professionnelle, développement des compétences transversales, préparation à l'emploi, relation employeurs, stages/alternance, projets entrepreneuriaux et suivi des diplômés (article 40).
+
+Les établissements doivent développer des partenariats avec entreprises, administrations et organisations professionnelles (article 41), organiser la validation des acquis de l'expérience (VAE) et la valorisation progressive des compétences par des badges (article 43), et assurer un système de suivi des parcours et de l'insertion des diplômés (article 45). Les données d'insertion doivent être transmises annuellement au ministère sur une période de référence de trois ans après l'obtention du diplôme (article 28).
+
+Le décret crée aussi un statut d'**étudiant-entrepreneur** : les étudiants régulièrement inscrits et les jeunes diplômés peuvent développer un projet entrepreneurial lié à leurs compétences ; le projet peut être reconnu comme activité pédagogique et évalué dans le cursus, notamment en Licence ou Master (articles 46-50). Les modalités précises doivent être fixées par un arrêté ministériel d'application (article 51).
+
+**Conséquence pour l'inventaire de Toamasina :** rechercher auprès de chaque composante la preuve de son centre d'employabilité (ou du dispositif mutualisé), des conventions de stage, des partenaires socio-économiques, du suivi d'insertion et de la présence des compétences transversales dans les maquettes. À défaut, renseigner « non documenté » et non « inexistant ».
+
+Source primaire :
+- [MESUPRES — Décret n°2026-1483 du 10 juin 2026 (PDF officiel, 8 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/decrets/Decret_n_2026-1483_du_10-06-2026_portant_cadrage_strategique_empoyabilite.pdf).
+
+## 16. Arrêté n°21408/2026 : système d'assurance qualité universitaire
+
+L'arrêté n°21408/2026 du 23 juin 2026, publié sur le portail documentaire MESUPRES le 2 juillet 2026, a été consulté dans son PDF officiel de trois pages.
+
+### 16.1 Maturité institutionnelle
+
+L'article 4 prévoit l'évaluation périodique du système interne d'assurance qualité des institutions selon cinq niveaux :
+1. non-conformité ;
+2. initiation ;
+3. développement ;
+4. consolidation ;
+5. excellence.
+
+L'accès aux procédures formelles d'accréditation ou de labellisation est réservé aux institutions ayant atteint le niveau de maturité requis. Cette classification mesure la maturité du système qualité ; elle ne doit pas être confondue avec la décision d'habilitation d'une formation.
+
+### 16.2 Structures obligatoires
+
+- Chaque université met en place une **Structure d'Assurance Qualité Universitaire (SAQU)**, chargée de coordonner la démarche qualité, superviser les structures d'établissement, conduire les audits internes, suivre les indicateurs et accompagner les composantes.
+- Chaque établissement, école ou institut met en place une **Structure d'Assurance Qualité d'Établissement (SAQE)**, chargée de l'auto-évaluation, de l'analyse des données qualité, du plan d'amélioration continue et de la transmission d'information à la SAQU.
+- Ces structures peuvent prendre des formes organisationnelles internes différentes (direction, service, cellule ou comité selon les cas indiqués), mais leur existence et leurs missions doivent être documentées.
+
+L'auto-évaluation est une étape obligatoire et permanente. Le ministère publie périodiquement la classification des institutions selon leur niveau de maturité, avec un objectif de transparence et d'accompagnement.
+
+**Contrôle à effectuer pour l'Université de Toamasina :** demander l'acte de création ou de désignation de la SAQU, la liste des SAQE de chaque composante, les responsables, les rapports d'auto-évaluation, les indicateurs suivis, les audits et les plans d'amélioration. L'absence de ces pièces dans les pages publiques consultées ne permet pas d'affirmer que ces structures n'existent pas.
+
+Source primaire :
+- [MESUPRES — Arrêté n°21408/2026 du 23 juin 2026 relatif à l'assurance qualité et à l'accréditation (PDF officiel)](https://www.mesupres.gov.mg/assets/front/documents/documents/arretes/Arr%C3%AAt%C3%A9_n_21408-2026_portant_mise_oeuvre_assurance_qualit%C3%A9_accr%C3%A9diation_institutions_offres_formation_enseignement_sup%C3%A9rieur.pdf).
+
+## 17. Pièces de candidature HAE : ce qu'il faut obtenir par mention, parcours et grade
+
+Le MESUPRES publie depuis 2025-2026 des canevas distincts pour les nouvelles habilitations de Licence, les renouvellements de Licence/Master et les habilitations d'écoles doctorales. Ces canevas servent de listes de contrôle documentaires ; ils ne sont pas eux-mêmes des décisions d'habilitation.
+
+### 17.1 Nouvelle habilitation Licence — canevas 2025 (28 pages)
+
+Le canevas officiel demande notamment :
+- identité juridique, statuts, gouvernance, responsables et organigramme de l'institution ;
+- inventaire des offres existantes et nouvelle offre demandée, selon domaine, grade, mention, parcours et établissement de rattachement ;
+- responsables de domaines/mentions et coordonnées ;
+- enseignants permanents et vacataires, diplômes, grades, spécialités, mentions de rattachement et UE assurées ;
+- personnel administratif/technique, salles et capacités, laboratoires, bibliothèques, documentation, équipements, connectivité, LMS, hygiène/sécurité et alimentation électrique ;
+- statistiques actuelles par domaine/mention/parcours (étudiants inscrits, personnels enseignants, ratio étudiants/enseignant permanent et tendance sur trois ans) ;
+- étude des besoins régionaux/nationaux, débouchés, profil visé, comparaison des offres similaires, justification d'opportunité et lettres d'appui ;
+- effectifs prévisionnels de cohortes sur les six semestres, en regard des capacités d'accueil ;
+- maquette LMD de six semestres et **180 crédits ECTS**, équilibre CM/TD/TP/TPE, progression, passerelles, vocation académique/professionnelle et modalités d'évaluation ;
+- performances académiques, insertion professionnelle et suivi des diplômés ;
+- gouvernance, assurance qualité et annexes signées (CV, diplômes, lettres d'engagement, conventions de partenariat).
+
+Le canevas distingue six domaines de formation : Sciences et Technologies (ST), Arts, Lettres et Sciences humaines (ALSH), Sciences de l'éducation (SEd), Sciences de l'ingénieur (SI), Sciences de la Santé (SSa) et Sciences de la Société (SSo). Les codes de domaine dans la base MITARIDALA doivent être reliés aux intitulés exacts du ministère, sans remplacer les libellés bruts des sources historiques.
+
+Il demande aussi, dans son exemple d'infrastructure numérique, une connectivité de référence d'au moins 1 Mbps par étudiant ou une justification contextuelle, un LMS opérationnel et une solution de secours énergétique. Il s'agit des critères/documents attendus dans le canevas ; ce ne sont pas des mesures déjà vérifiées sur le campus de Barikadimy.
+
+Source primaire : [MESUPRES — Canevas de demande d'habilitation Licence 2025 (PDF, 28 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/Canevas%20Nouvelle%20demande%20Licence%202025.pdf).
+
+### 17.2 Renouvellement Master — canevas officiel
+
+Le canevas de renouvellement Master demande un bilan comparatif depuis l'habilitation précédente : résultats, taux de réussite/diplomation, changements de maquette, recrutement et qualifications de l'équipe, infrastructures, gouvernance/qualité et partenariats. Les preuves doivent être récentes, signées et rattachées à la période de validité.
+
+Il demande notamment de démontrer que le Master s'inscrit dans la stratégie de recherche de l'institution, qu'il est adossé à des laboratoires ou équipes actifs, qu'il entretient une cohérence verticale avec les Licences amont et écoles doctorales aval, et qu'il a une valeur ajoutée identifiable face aux offres similaires.
+
+Source primaire : [MESUPRES — Canevas de renouvellement d'habilitation Master (PDF, 18 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/Canevas%20demande%20de%20renouvellement%20MASTER.pdf).
+
+### 17.3 Habilitation des écoles doctorales — exigences spécifiques de recherche
+
+Le canevas officiel d'habilitation doctorale demande, au-delà de la simple liste des disciplines :
+- structure et conseil de l'école doctorale ;
+- équipes d'accueil doctorales formellement reconnues et rattachées à des laboratoires actifs ;
+- composition des équipes, diplômes, spécialités, publications et encadrement ;
+- capacité de direction et d'encadrement ; le canevas indique un minimum d'un HDR et deux docteurs par équipe d'accueil ;
+- formation transversale des doctorants en méthodologie, rédaction, éthique, TIC et communication ;
+- au minimum trois unités transversales par an, totalisant au moins 60 heures ;
+- au moins une communication scientifique par doctorant et par an, avec journées doctorales institutionnelles annuelles ;
+- comité de thèse fonctionnel, fiche individuelle de suivi, rapport annuel de progression validé, évaluation de mi-parcours et système d'information/base de données actualisée ;
+- bibliothèques, laboratoires, connectivité, sécurité, partenariats, politique contre les revues/conférences prédatrices, prévention du plagiat, comité d'éthique, suivi des diplômés et insertion.
+
+Ces indications sont des exigences explicites du canevas de demande d'habilitation doctorale. Elles ne permettent pas de conclure que l'Université de Toamasina satisfait ou ne satisfait pas ces critères tant que ses pièces internes ne sont pas consultées.
+
+Source primaire : [MESUPRES — Canevas d'habilitation des formations conduisant au grade de Doctorat / école doctorale (PDF, 28 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/canevas%20habilitation%20ecole%20doctorale.pdf).
+
+## 18. Session CNH/CNA 2026 : calendrier achevé, décisions individuelles non rapprochées
+
+Le communiqué MESUPRES signé le 6 juillet 2026 fixe pour la session CNH/CNA 2026 les étapes suivantes : dépôt des dossiers jusqu'au 10 juillet à 16 h, vérification préliminaire du 15 au 29 juillet, saisie numérique du 3 au 10 août, envoi aux experts du 11 au 15 août, expertise du 18 août au 1er septembre, puis session nationale du 21 au 25 septembre 2026.
+
+Le calendrier prouve qu'une session nationale 2026 a été organisée et donne les jalons procéduraux. À la date de ce contrôle, je n'ai pas identifié dans l'index public MESUPRES un relevé nominatif des décisions finales permettant de déterminer, pour chaque mention/parcours de l'Université de Toamasina, si la demande a été acceptée, ajournée, refusée, accréditée ou renvoyée pour correction.
+
+**Règle de données :** la présence d'une demande dans la session CNH/CNA, d'un dossier administratif ou d'une expertise ne vaut pas habilitation. Il faut obtenir la décision finale et son périmètre exact. Le registre public des établissements habilités demeure affiché au millésime 2022 dans la rubrique officielle consultée ; aucun nouveau fichier consolidé 2026 n'y est répertorié.
+
+Sources primaires :
+- [MESUPRES — Communiqué de la session nationale CNH/CNA 2026 (PDF, 2 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/Communiqu%C3%A9_session_nationale_habilitation_et_accr%C3%A9didation_2026.pdf).
+- [MESUPRES — Documents Habilitations, état des publications et liste 2022 encore indexée](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations).
