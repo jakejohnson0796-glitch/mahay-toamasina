@@ -1447,51 +1447,6 @@ Source : [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/the
 
 ### 9.43 T12 Sciences physiques et SVT : confirmation des différences L/S/OSE
 
-Les sections T12 des PE sont ordonnées par séries et la comparaison avec la grille MEN donne les rattachements suivants :
-- première section (pages imprimées 128-147) : T12 L ;
-- deuxième section (pages imprimées 543-574) : T12 S ;
-- troisième section (pages imprimées 758-777 et suivantes) : T12 OSE.
-
-Ces trois sections ont des contenus et des volumes différents.
-
-#### Sciences physiques T12
-
-| Série | Volume hebdomadaire | Thèmes du tableau des contenus et exemples |
-|---|---:|---|
-| L | 2 h | Deux grands blocs : « Lumière et son » (ondes sonores et électromagnétiques, nature corpusculaire de la lumière, effet photoélectrique) et « Matière » centrée sur l'analyse de la composition d'un médicament : principe actif/excipients, médicament d'origine et générique, fonctions chimiques, groupes caractéristiques, concentration massique/molaire, composition centésimale et lecture de notice médicale. Les séquences visibles incluent 32 h pour Lumière et son et 34 h pour Matière. |
-| S | 6 h | Six thématiques : Matière (titrages acido-basiques et oxydo-réduction, réactions, synthèse d'un médicament), Électricité et magnétisme (alternateur, haut-parleur électrodynamique, force de Laplace, oscillations libres et régime sinusoïdal forcé), Mouvement (cinématique, mouvements curvilignes/paraboliques/circulaires), Force et interaction (centre d'inertie, deuxième loi de Newton, pendule, projectile, satellites/GPS), Énergie (liaison nucléaire, radioactivité, radioprotection, centrale nucléaire), Lumière et son (interférences acoustiques, effet Doppler). |
-| OSE | 3 h | Le tableau des contenus regroupe Lumière et son (ondes, corpusculaire, effet photoélectrique), Matière (composition, types de médicaments, fonctions chimiques, groupes caractéristiques, concentration, composition centésimale, notice/ordonnance) et Énergie (liaison nucléaire, radioactivité, médecine/radioprotection, énergie nucléaire). |
-
-Le PE de L/T12 limite donc le programme de sciences physiques à deux grandes thématiques, tandis que S porte la progression la plus large en mécanique, électricité et radioactivité. OSE conserve une sélection de notions d'ondes, de chimie liée à l'analyse des médicaments et d'énergie. Ne pas transposer l'ensemble des RAS de S à L ou OSE uniquement parce que les trois sections ont le même intitulé disciplinaire.
-
-#### SVT T12
-
-| Série | Volume hebdomadaire | Thèmes distinctifs |
-|---|---:|---|
-| L | 2 h | Biologie moléculaire (information génétique, ADN, mitose, expression génétique/biosynthèse des protéines) ; reproduction humaine (gamétogenèse, fécondation, PMA, gestation/hygiène) ; géologie (lecture de carte topographique, profil, conservation du relief). Un exemple de séquence affiche 23 h sur l'information génétique et la synthèse protéique. |
-| S | 6 h | Biologie moléculaire ; reproduction humaine et contrôle hormonal ; hérédité/génétique (monohybridisme, dihybridisme, linkage/crossing-over, hérédité humaine) ; physiologie humaine (pression artérielle, glycémie, régulation et prévention) ; immunologie (cellules/organes immunitaires, réponses non spécifiques et spécifiques, allergies, maladies auto-immunes, déficit immunitaire) ; géologie (cartes topographiques/géologiques, potentiels miniers et métallogénie). |
-| OSE | 3 h | Reproduction humaine (gamétogenèse, fécondation, symptômes/hygiène gestationnelle) ; biotechnologie (industrielle, verte/rouge/blanche/bleue/jaune/orange, facteurs et réglementation) ; hydrogéologie (infiltration, aquifères, piézométrie, usages domestiques/agricoles/techniques et protection). Une séquence de 31 h porte sur le mécanisme de fécondation. |
-
-La SVT T12 ne doit donc pas être importée comme un cursus unique. S dispose de l'extension la plus large en génétique, physiologie et immunologie ; OSE a un ensemble distinct en biotechnologie et hydrogéologie ; L conserve une articulation moléculaire/reproduction/géologie avec 2 h/semaine.
-
-#### Applications contextuelles possibles pour Atsinanana, sans ajouter de RAS
-
-- **SVT OSE / hydrogéologie :** étudier l'infiltration, la formation des aquifères, la piézométrie, les utilisations domestiques/agricoles et la protection de l'eau à partir d'études, cartes, données de service technique ou observations locales autorisées. Ne pas inventer un niveau de nappe ni une qualité d'eau : exiger une mesure datée et l'organisme producteur.
-- **SVT L/S / géologie :** utiliser les cartes géologiques/topographiques officielles disponibles pour construire des profils, lire les couches, ou contextualiser les ressources géologiques de Madagascar ; distinguer carte nationale, régionale et locale.
-- **Sciences physiques L :** étudier les ondes électromagnétiques, le photoélectrique et les panneaux photovoltaïques ; le PE mentionne explicitement les photopiles et panneaux solaires comme applications.
-- **Sciences physiques S :** construire des problèmes de cinématique, d'électricité et d'énergie avec des situations techniques, mais seulement lorsque les prérequis S sont présents et avec matériel ou simulations appropriés.
-- Les exemples sur les notices de médicaments et la dose font partie du PE de Sciences physiques L ; ils doivent rester une analyse pédagogique de la notice et de la sensibilisation à l'automédication. MITARIDALA ne doit ni prescrire ni calculer une dose individuelle réelle.
-
-**Sécurité pédagogique :** les thèmes de reproduction, gestation, PMA, santé, médicaments, immunologie et radioprotection doivent être traités comme des objets d'enseignement, avec âge et cadre scolaire adaptés, sans les transformer en conseil médical individuel ni diffuser de contenu de santé non prévu par le PE.
-
-Sources officielles :
-- [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), Sciences physiques L p. 128-134 ; Sciences physiques S p. 543-552 ; Sciences physiques OSE p. 758-770.
-- [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), SVT L p. 140-147 ; SVT S p. 573-584 ; SVT OSE p. 775-778.
-- [Grille officielle coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
-
-
-### 9.43 T12 Sciences physiques et SVT : confirmation des différences L/S/OSE
-
 Le sommaire du PE T12 sépare explicitement les programmes des trois séries : L commence à la page 12, S à la page 215, OSE à la page 427. Les sections des disciplines sont donc à rattacher au bloc de série qui les contient, et non à une association de matière générique.
 
 #### Sciences physiques T12
@@ -1529,7 +1484,7 @@ Sources officielles :
 - [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), SVT L p. 140-147 ; S p. 573-584 ; OSE p. 775-778.
 - [Grille officielle coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
 
-### 9.43 Sciences physiques T11 et T12 : les parcours L, S et OSE ont des contenus distincts
+### 9.44 Sciences physiques T11 et T12 : les parcours L, S et OSE ont des contenus distincts
 
 La comparaison des pages introductives et des tableaux des contenus des PE T11 et T12 confirme que « Sciences physiques » ne constitue pas une matière homogène entre les trois séries. Les volumes officiels sont :
 
@@ -1567,7 +1522,7 @@ Sources officielles :
 - [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), matrice horaire p. 10 et sections Sciences physiques des séries L, S et OSE.
 - [Document autonome MEN — Coefficient et volume horaire niveau lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
 
-### 9.44 Rapprochement des tableaux de coefficients TICE T12 : statut « conflit de sources »
+### 9.45 Rapprochement des tableaux de coefficients TICE T12 : statut « conflit de sources »
 
 Le contrôle visuel des trois pièces suivantes a été effectué séparément :
 1. Le tableau du PE T11 (page 10 du PDF) montre les cellules TICE T12 L/S/OSE en noir, sans valeur visible.
@@ -1582,7 +1537,7 @@ Pour Philosophie T10 et Éducation à la citoyenneté T12, les cases apparaissen
 
 Sources visuelles : [PE T11](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), page 10 ; [PE T12](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), page 10 ; [grille autonome MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), page 1.
 
-### 9.45 SVT T11 et T12 : progression et différenciation des programmes par série
+### 9.46 SVT T11 et T12 : progression et différenciation des programmes par série
 
 Les tableaux introductifs du PE et les volumes de la grille lycée montrent que la SVT doit être rattachée à la série, et pas seulement au niveau. Les volumes hebdomadaires sont T11 L = 2 h, T11 S = 5 h, T11 OSE = 3 h ; T12 L = 2 h, T12 S = 6 h et T12 OSE = 3 h.
 
@@ -1615,7 +1570,7 @@ Sources officielles :
 - [PE T12 MEN — SVT série S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 573-579.
 - [PE T12 MEN — SVT série OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 775-778.
 
-### 9.46 Sciences économiques et sociales (SES) T11-T12 : poids horaire et contenus par série
+### 9.47 Sciences économiques et sociales (SES) T11-T12 : poids horaire et contenus par série
 
 Les volumes hebdomadaires relevés dans la grille MEN montrent que les SES changent nettement selon la série :
 
@@ -1662,7 +1617,7 @@ Sources officielles :
 - [PE T12 MEN — SES S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 394-399.
 - [PE T12 MEN — SES OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 590-596.
 
-### 9.47 Histoire et Géographie au lycée : horaires individuels confirmés par les PE T11/T12
+### 9.48 Histoire et Géographie au lycée : horaires individuels confirmés par les PE T11/T12
 
 Les PE T11 et T12 donnent des volumes hebdomadaires distincts pour Histoire et Géographie. La grille quantitative générale du lycée regroupe les deux disciplines dans une même ligne Histoire-Géographie ; le rapprochement des sections disciplinaires des PE permet toutefois de restituer les horaires individuels suivants :
 
@@ -1709,7 +1664,7 @@ Sources officielles :
 - [PE T12 MEN — Géographie OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 579-580, 3 h/semaine.
 - [Document autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), ligne groupée Histoire-Géographie.
 
-### 9.48 Philosophie T11-T12 : volumes hebdomadaires et domaines de contenu par série
+### 9.49 Philosophie T11-T12 : volumes hebdomadaires et domaines de contenu par série
 
 Les volumes affichés dans la grille officielle et les sections des PE sont les suivants :
 
@@ -1749,7 +1704,7 @@ Sources officielles :
 - [PE T12 MEN — Philosophie L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 205-208 ; Philosophie S p. 423-426 ; OSE p. 626-629.
 - [Document autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), tableaux de coefficients et heures.
 
-### 9.49 T10-T11 : transition FOV vers Éducation à la citoyenneté et TICE
+### 9.50 T10-T11 : transition FOV vers Éducation à la citoyenneté et TICE
 
 Le contrôle direct des PE T10/T11 confirme deux disciplines à distinguer : Éducation à la citoyenneté (EAC) et Technologie de l'information et de la communication en éducation (TICE). Elles ne remplacent pas l'une l'autre et n'ont pas la même présence selon le niveau.
 
@@ -1792,7 +1747,7 @@ Le PE décrit l'informatique comme une discipline visant la compréhension et l'
 
 #### T12 — statut distinct à préserver
 
-Le sommaire PE T12 consulté ne présente ni EAC ni TICE comme discipline. La grille autonome MEN affiche des cellules noires/non renseignées pour ces matières en T12, tandis que le tableau initial du PE T12 affiche des zéros TICE visibles : le coefficient TICE de T12 reste donc conflictuel (voir section 9.44), et les heures hebdomadaires ne sont pas indiquées. Ne pas créer de cours EAC/TICE T12 ni attribuer un coefficient zéro/positif sans clarification écrite du MEN.
+Le sommaire PE T12 consulté ne présente ni EAC ni TICE comme discipline. La grille autonome MEN affiche des cellules noires/non renseignées pour ces matières en T12, tandis que le tableau initial du PE T12 affiche des zéros TICE visibles : le coefficient TICE de T12 reste donc conflictuel (voir section 9.45), et les heures hebdomadaires ne sont pas indiquées. Ne pas créer de cours EAC/TICE T12 ni attribuer un coefficient zéro/positif sans clarification écrite du MEN.
 
 #### Décisions de catalogue et de progression
 
@@ -1805,9 +1760,9 @@ Le sommaire PE T12 consulté ne présente ni EAC ni TICE comme discipline. La gr
 Sources officielles :
 - [PE T10 MEN — Histoire (2 h), Géographie (2 h), EAC (2 h), TICE (1 h)](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 166-179, 187-189 et 240-245.
 - [PE T11 MEN — EAC L/S/OSE (2 h) et TICE L/S/OSE (1 h)](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 174-180, 421-427, 653-660 et TICE p. 233-247, 485-495, 717-725.
-- [PE T12 MEN — sommaire T12 et matrice quantitative](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 10-11 ; voir également la comparaison visuelle de TICE en section 9.44.
+- [PE T12 MEN — sommaire T12 et matrice quantitative](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 10-11 ; voir également la comparaison visuelle de TICE en section 9.45.
 
-### 9.50 T10 (Seconde) : Histoire, Géographie, EAC et TICE vérifiés séparément
+### 9.51 T10 (Seconde) : Histoire, Géographie, EAC et TICE vérifiés séparément
 
 Le PE T10 précise les quatre disciplines et volumes qui étaient partiellement regroupés dans la matrice générale : Histoire 2 h/semaine, Géographie 2 h/semaine, Éducation à la citoyenneté 2 h/semaine et TICE 1 h/semaine. Le bloc Histoire-Géographie de la grille est donc 4 h, correspondant à deux matières à 2 h chacune.
 
@@ -1858,7 +1813,7 @@ Sources officielles :
 - [PE T10 MEN — TICE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 240-247.
 - [PE T10 MEN — matrice horaire et coefficients](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 9-10.
 
-### 9.51 Langues principales au lycée : répartition horaire par série et progression de compétences
+### 9.52 Langues principales au lycée : répartition horaire par série et progression de compétences
 
 Les PE T11 et T12 comportent des sections de Malagasy, Français et Anglais séparées par série. Leurs volumes hebdomadaires ne sont pas identiques :
 
@@ -1904,7 +1859,7 @@ Sources officielles :
 - [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), sections L p. 12-? , S p. 216-? et OSE p. 649-? ; sommaire par série p. 10-11.
 - [Grille autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
 
-### 9.52 Inventaire historique complet des CEG bénéficiaires de la caisse-école 2020 — CISCO Toamasina II
+### 9.53 Inventaire historique complet des CEG bénéficiaires de la caisse-école 2020 — CISCO Toamasina II
 
 Le document MEN « Répartition de la caisse-école 2020 des Collèges d'Enseignement Général », daté du 22 octobre 2020, contient sur sa page 60 sur 130 un tableau identifié « DREN : ATSINANANA — CISCO : TOAMASINA II » et une synthèse « TOAMASINA II (25 Collèges) ». La capture visuelle de la page entière confirme les 25 lignes, leurs codes et leurs communes.
 
@@ -1960,7 +1915,7 @@ Décision MITARIDALA : incorporer ces 25 lignes uniquement dans un espace de rap
 Source primaire : [MEN — Répartition de la caisse-école 2020 des CEG](https://www.education.gov.mg/wp-content/uploads/2020/10/caisse_ceg.pdf), page imprimée 60/130 ; texte extrait aux lignes 2983-3022 et capture visuelle contrôlée. La page précédente 59/130 contient séparément les 7 collèges de Toamasina I.
 
 
-### 9.53 Décompte MEN 2023-2024 des collèges publics fonctionnels par CISCO Atsinanana
+### 9.54 Décompte MEN 2023-2024 des collèges publics fonctionnels par CISCO Atsinanana
 
 Le PDF officiel « Annuaire statistique scolaire 2023-2024 » du MEN contient un tableau intitulé « Répartition des salles de classe et établissements des collèges publics par CISCO et par milieu de résidence ». La capture visuelle de la page imprimée 154 (page PDF 153) a été contrôlée ; elle indique explicitement l'année scolaire 2023-2024, le nombre d'établissements fonctionnels et le nombre de salles de classe.
 
@@ -2000,7 +1955,7 @@ Le TBSE Atsinanana cité à la section 9.16 affiche 90 collèges pour Toamasina 
 
 Source primaire : [MEN — Annuaire statistique scolaire 2023-2024](https://www.education.gov.mg/wp-content/uploads/2024/04/MEN-ANNUAIRE-STATISTIQUE-_SCOLAIRE_2023_2024.pdf), tableau de répartition des collèges publics par CISCO, page imprimée 154 (page PDF 153), capture visuelle contrôlée ; données Atsinanana lisibles sur les lignes Toamasina I, Toamasina II, Brickaville, Mahanoro, Marolambo, Antanambao Manampotsy et Vatomandry.
 
-### 9.54 Liste historique MEN des lycées ciblés par le recrutement spécial 2021 — rapprochement par CISCO
+### 9.55 Liste historique MEN des lycées ciblés par le recrutement spécial 2021 — rapprochement par CISCO
 
 L'appel à candidatures MEN n°2021/503/MEN/SG du 1er juillet 2021 (recrutement d'enseignants pour des établissements publics situés dans les zones 2 et 3) contient une annexe « Liste des lycées », structurée par DREN et CISCO. Cette pièce permet un repérage historique de plusieurs lycées de l'Atsinanana, sans utiliser le fichier d'aide spéciale 2021 qui contient les noms et CIN d'enseignants.
 
@@ -2042,7 +1997,7 @@ Sources :
 - [MEN — Page nationale des lycées publics](https://www.education.gov.mg/systeme/lycee/), rubrique régionale Atsinanana.
 - [MEN — Page de répertoire lycée Atsinanana](https://www.education.gov.mg/educatif/atsinanana/), accès expiré au 31 octobre 2026.
 
-### 9.55 Liste historique ciblée de lycées publics de l'Atsinanana — annexe de recrutement MEN 2021
+### 9.56 Liste historique ciblée de lycées publics de l'Atsinanana — annexe de recrutement MEN 2021
 
 L'appel à candidatures MEN n°2021/503/MEN/SG du 1er juillet 2021 contient une annexe « LISTE DES LYCEES » qui identifie des établissements publics dans les zones de recrutement ciblées. Les lignes 149 à 161 de cette annexe correspondent à l'Atsinanana :
 
