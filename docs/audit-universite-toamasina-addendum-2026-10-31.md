@@ -561,7 +561,26 @@ Aucune requête `/ready` n'a été retrouvée dans cette fenêtre. Les appels HT
 
 Les deux services sont configurés pour déployer `main` seulement lorsque les contrôles requis passent. Les PR #309 et #310 sont toujours des brouillons non fusionnés ; leurs contenus ne sont pas dans ces images de production. Le commit `025809e` est le dernier déploiement attesté, pas la dernière tête de `main`.
 
-### 10.7 Sécurité et limites du contrôle
+### 10.8 Campagnes d'admission L1 2026–2027 — éléments récents à enregistrer séparément
+
+Deux avis de candidature récents ont été retrouvés dans les flux publics qui relaient les pages des facultés. Ils constituent des indices concrets d'une campagne d'admission pour 2026–2027, mais les pages consultées sont des archives secondaires de publications de faculté ; il faut obtenir le post original ou le PDF signé avant de faire de ces avis une preuve officielle dans le registre HAE.
+
+| Composante | Publication relayée | Offre ciblée | Date limite relayée | Niveau de preuve |
+|---|---|---|---|---|
+| FST | 23 et 30 septembre 2026 | Sélection de dossiers pour l'entrée en L1 ; baccalauréats C, D, S, OSE, FTG Génie Civil ou FTG Génie Industriel | **20 novembre 2026 à 16 h** | Relais secondaire d'un avis de faculté ; formulaire original / avis signé à obtenir |
+| Faculté DEG | 12 octobre 2026 | Appel à candidature L1 en Droit, Économie et Gestion pour l'A.U. 2026–2027 | **27 novembre 2026** | Relais secondaire de la page présentée comme officielle de la Faculté ; avis et pièces à obtenir |
+
+Pour la FST, le texte relayé liste les pièces suivantes : formulaire de sélection rempli, relevé du baccalauréat ou attestation de réussite, CIN ou acte de naissance, relevés de notes depuis la classe de première et reçu du droit de sélection de 66 000 Ar. Il indique un dépôt par courrier recommandé ou à la porte 03 du bureau de la Faculté, B.P. 591, Barikadimy, Toamasina. Ces modalités doivent être comparées au formulaire PDF original avant publication dans le portail étudiant.
+
+Pour DEG, le relais établit l'appel L1 sur les trois disciplines, mais ne donne pas dans le texte consulté le dossier complet, le tarif, les séries de bac ou la procédure de dépôt. Ne pas les déduire de l'avis FST ni d'une année antérieure.
+
+**Règle de modélisation :** enregistrer ces avis dans un registre d'ouvertures annuelles distinct des arrêtés d'habilitation et des maquettes. Un appel L1 n'autorise pas à marquer les parcours M1/M2 ou chaque spécialisation de la composante comme ouverts. Il ne confirme pas non plus, à lui seul, le statut HAE de la mention. Les dates limites ne doivent pas être copiées comme une ouverture permanente du catalogue.
+
+Sources consultées :
+- [FST Toamasina — relais public des avis datés des 23 et 30 septembre 2026](https://www.schoolandcollegelistings.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina)
+- [Faculté DEG — relais public de l'avis du 12 octobre 2026](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG)
+
+### 10.9 Sécurité et limites du contrôle
 
 Les tables `faculte`, `filiere`, `mention` et `programmeuniversitaire` ont RLS activé selon l'inventaire de schéma. Ce contrôle n'est pas un audit complet des politiques RLS, des rôles ou des droits Data API. Il ne prouve pas non plus l'ouverture 2026-2027 des formations.
 
