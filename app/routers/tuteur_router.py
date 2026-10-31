@@ -98,18 +98,14 @@ def _contexte_scolaire_tuteur(utilisateur, session: Session) -> Optional[dict]:
     niveau_id = getattr(utilisateur, "niveau_scolaire_id", None)
     if not niveau_id:
         return None if _enseignant_sans_classe_scolaire(utilisateur) else {}
-    referentiels = session.exec(
-        select(ReferentielScolaire).order_by(
-            ReferentielScolaire.date_creation.desc(),
-            ReferentielScolaire.id.desc(),
-        )
-    ).all()
-    referentiel = referentiels[0] if referentiels else None
     niveau = session.get(NiveauScolaire, niveau_id)
+    referentiel = (
+        session.get(ReferentielScolaire, niveau.referentiel_id)
+        if niveau is not None else None
+    )
     if (
         not referentiel
         or not niveau
-        or niveau.referentiel_id != referentiel.id
         or not niveau.est_actif
         or niveau.statut_validation != "verifie"
         or niveau.cycle != cycle
