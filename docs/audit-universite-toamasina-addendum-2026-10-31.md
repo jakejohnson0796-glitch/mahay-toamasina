@@ -216,6 +216,16 @@ Source : [MESUPRES — liste d'habilitation d'août 2022, rubrique ITPT](https:/
 
 Le fichier source actuel publie six composantes du campus principal. Les sources MESUPRES montrent un périmètre institutionnel plus large : facultés spécialisées, instituts régionaux affiliés et centres linguistiques. Ces catégories doivent être conservées séparément dans le référentiel, avec une preuve, un lieu, un rattachement et un statut propres.
 
+### Établissements privés habilités à Toamasina — périmètre distinct
+
+La liste MESUPRES d'août 2022 identifie aussi **BEATY UNIVERSITY**, localisée à Toamasina, dans la partie « établissements d'enseignement supérieur privés ». Elle répertorie une offre **Sciences de Gestion / Licence**, sous l'arrêté **n°3992/2022-MESupReS du 28 février 2022**. Cette institution privée ne relève pas de la liste des six facultés de l'Université publique de Toamasina et ne doit pas être ajoutée comme une septième faculté de cette université.
+
+**Contrôle base actuel :** le tableau `universite` ne contient que les six universités publiques nationales ; aucun établissement BEATY/Toamasina n'a été retrouvé dans `etablissementpartenaire`. L'absence dans cette table de partenaires ne prouve pas que l'établissement est fermé ou non habilité ; elle indique seulement qu'il n'est pas encore représenté dans ces deux structures de données.
+
+**Action :** si MITARIDALA doit présenter toutes les offres habilitées dans la région Atsinanana, créer une fiche institutionnelle privée séparée (nom légal, statut privé, commune, identifiant administratif, fiche HAE, arrêté, domaine/grade/mention, validité et année d'ouverture). Vérifier d'abord dans HAE si BEATY UNIVERSITY conserve une habilitation active et si l'offre Sciences de Gestion est renouvelée/ouvert 2026-2027. Ne pas l'associer à l'Université publique de Toamasina ni inclure ses inscrits dans les statistiques publiques de cette université.
+
+Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, partie A, page 2 : BEATY UNIVERSITY à Toamasina](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
 ### Recensement statistique MESUPRES 2022–2023 — périmètre institutionnel élargi
 
 L'annuaire statistique national donne un aperçu du nombre d'étudiants dans les structures déclarées à Toamasina. Il répertorie **14 661 inscriptions** dans son tableau de synthèse, ventilées ainsi :
