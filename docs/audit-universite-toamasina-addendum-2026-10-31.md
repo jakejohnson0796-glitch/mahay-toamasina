@@ -561,7 +561,7 @@ Aucune requête `/ready` n'a été retrouvée dans cette fenêtre. Les appels HT
 
 Les deux services sont configurés pour déployer `main` seulement lorsque les contrôles requis passent. Les PR #309 et #310 sont toujours des brouillons non fusionnés ; leurs contenus ne sont pas dans ces images de production. Le commit `025809e` est le dernier déploiement attesté, pas la dernière tête de `main`.
 
-### 10.8 Campagnes d'admission L1 2026–2027 — éléments récents à enregistrer séparément
+### 10.7 Campagnes d'admission L1 2026–2027 — éléments récents à enregistrer séparément
 
 Deux avis de candidature récents ont été retrouvés dans les flux publics qui relaient les pages des facultés. Ils constituent des indices concrets d'une campagne d'admission pour 2026–2027, mais les pages consultées sont des archives secondaires de publications de faculté ; il faut obtenir le post original ou le PDF signé avant de faire de ces avis une preuve officielle dans le registre HAE.
 
@@ -580,7 +580,7 @@ Sources consultées :
 - [FST Toamasina — relais public des avis datés des 23 et 30 septembre 2026](https://www.schoolandcollegelistings.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina)
 - [Faculté DEG — relais public de l'avis du 12 octobre 2026](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG)
 
-### 10.9 Sécurité et limites du contrôle
+### 10.8 Sécurité et limites du contrôle
 
 Les tables `faculte`, `filiere`, `mention` et `programmeuniversitaire` ont RLS activé selon l'inventaire de schéma. Ce contrôle n'est pas un audit complet des politiques RLS, des rôles ou des droits Data API. Il ne prouve pas non plus l'ouverture 2026-2027 des formations.
 
