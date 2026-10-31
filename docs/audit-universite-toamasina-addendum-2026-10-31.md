@@ -136,9 +136,9 @@ Le fichier source recense :
 - Sciences Économiques ;
 - Gestion.
 
-Les 29 associations sont réparties entre ces trois mentions. Le parcours **CCA — Comptabilité, Contrôle, Audit** est le seul élément du groupe DEG marqué « À vérifier » (M1 et M2 dans le contrôle documentaire antérieur).
+Les 29 associations sont réparties entre ces trois mentions. Le parcours **CCA — Comptabilité, Contrôle, Audit** apparaît uniquement au niveau **M2** dans le fichier source et porte le statut « À vérifier ». Aucun CCA M1 n'est décrit dans ce JSON.
 
-Le site de la Faculté DEG n'a pas fourni de maquette actuelle exploitable pendant ce contrôle. Le support M2 CCA repéré sur Scribd n'est pas une preuve d'habilitation, de maquette officielle ni d'ouverture. La rétrogradation de CCA M1/M2 à « À vérifier » doit être conservée.
+Le site de la Faculté DEG n'a pas fourni de maquette actuelle exploitable pendant ce contrôle. Le support M2 CCA repéré sur Scribd n'est pas une preuve d'habilitation, de maquette officielle ni d'ouverture. Le CCA M2 doit rester « À vérifier » ; ne pas créer un CCA M1 sur la base de cette pièce.
 
 À obtenir : maquettes DEG par mention et niveau, arrêté d'habilitation et accréditation, avis de sélection 2026-2027, spécialités réellement ouvertes, volumes horaires/ECTS et modalités de stage/mémoire. Ne pas supprimer les autres parcours DEG sur la seule base de l'absence de maquette récupérée.
 
@@ -219,7 +219,7 @@ Pour les pièces : conserver l'URL officielle, le titre exact, le numéro de tex
 3. Contrôler les mentions dont les parcours changent entre L1/L2, L3 et M1/M2 ; en particulier MIA et Physique-Chimie.
 4. Contrôler les 11 mentions ENS à partir d'une maquette structurée par mention ; ne pas déduire l'affectation des parcours depuis la disposition des colonnes du flyer.
 5. Vérifier les domaines canoniques : toutes les lignes d'une mention doivent partager le domaine réglementaire de la source correspondante ; conserver les alias et l'historique.
-6. Conserver CCA M1/M2, Médecine et ESPT dans les listes de revue ; ne pas les exposer comme offres confirmées sans nouvelles preuves.
+6. Conserver CCA M2, Médecine et ESPT dans les listes de revue ; ne pas les exposer comme offres confirmées sans nouvelles preuves.
 7. Vérifier que les profils, cercles, documents, quiz, fiches et filtres résolvent les parcours universitaires sans les mélanger aux cycles collège/lycée.
 8. Ajouter les contrôles du décret 2026-1483 aux futurs audits de maquettes : compétences transversales, volumes 10 %/15 %, stages/projets et suivi de l'insertion.
 9. N'appliquer aucune modification de données avant simulation SQLite/PostgreSQL, test d'idempotence, tests API et revue des cercles existants.
@@ -243,7 +243,7 @@ Pour la Faculté de Médecine, ajouter les documents propres aux cycles clinique
 
 - Garder les 157 associations en tant qu'instantané de référence historique, sans les présenter comme 157 offres ouvertes.
 - Ne pas rétrograder automatiquement toutes les mentions : les habilitations anciennes restent valides jusqu'à leur échéance selon les dispositions transitoires.
-- Maintenir CCA M1/M2, Médecine et ESPT en revue séparée.
+- Maintenir CCA M2, Médecine et ESPT en revue séparée.
 - Ajouter une vérification par arrêté et date d'échéance pour chaque offre.
 - Ne marquer aucune maquette « conforme au décret 2026-1483 » sans lecture de la maquette complète et de ses pièces de validation.
 - Ne pas publier l'année universitaire 2026-2027 comme ouverture confirmée sans avis officiel de la composante.
@@ -251,3 +251,75 @@ Pour la Faculté de Médecine, ajouter les documents propres aux cycles clinique
 ## 9. Hors périmètre
 
 Cet addendum est documentaire. Il ne modifie pas les migrations, les modèles, les tables, les données de production, les cercles ou les offres. Le rendu LaTeX/KaTeX, Quiz IA et Tuteur IA ne sont pas touchés.
+
+
+## 10. Contrôle en lecture seule de la base Supabase MAHAY
+
+**Contrôle effectué le 31 octobre 2026**, sur le projet Supabase `MAHAY`, en requêtes SQL strictement en lecture seule. Aucune ligne, table, migration ou politique n'a été modifiée.
+
+### 10.1 État réel des offres Toamasina
+
+La version Alembic déclarée en base est `e2b7c9d4a1f6`. Les six composantes Toamasina présentes dans `faculte` sont bien celles du catalogue publié : ENS, DEG, FLSH, FST, ITPT et ISSEDD-GRENE.
+
+| Composante | Lignes Filiere en base | Offres actives | Offres inactives |
+|---|---:|---:|---:|
+| ENS | 73 | 61 | 12 |
+| DEG | 31 | 28 | 3 |
+| FLSH | 28 | 28 | 0 |
+| FST | 25 | 25 | 0 |
+| ITPT | 9 | 9 | 0 |
+| ISSEDD-GRENE | 5 | 5 | 0 |
+| **Total** | **171** | **156** | **15** |
+
+Le rapprochement est cohérent avec les 157 associations du JSON :
+- 156 associations de statut `Vérifié` ou `Confirmé` ont une offre active en base ;
+- l'unique association non publiable, **CCA M2**, reste inactive, conformément à son statut `À vérifier` ;
+- les 14 autres lignes inactives sont des entrées historiques supplémentaires, hors du catalogue canonique actuel.
+
+Aucune des 171 lignes Toamasina contrôlées n'est dépourvue de liaison `ProgrammeUniversitaire`.
+
+### 10.2 Détail des entrées inactives
+
+**ENS — 12 lignes historiques :**
+- quatre parcours M1/M2 de la mention historique « Enseignement-Apprentissage et didactique d'Histoire-Geographie » (mention ID 50), remplacée dans le catalogue actif par la variante accentuée ID 63 ;
+- deux lignes M1/M2 de « Formation d'enseignant de la Philosophie » en variante d'apostrophe, doublons des parcours actifs ;
+- quatre lignes M1/M2 de la mention « Enseignement-Apprentissage et didactique en Sciences de l'Education » (ID 59), doublon de la variante accentuée ID 64 ;
+- deux parcours SEAS (EFA et ASS), sans niveau renseigné et sans offre active dans le catalogue courant.
+
+**DEG — trois lignes inactives :**
+- deux anciens « Tronc commun » Droit L1/L2 ;
+- un CCA M2, seule entrée CCA présente dans le JSON, conservée inactive car sa preuve est insuffisante.
+
+Les lignes inactives sont conservées. Les deux troncs communs Droit sont des représentations techniques historiques ; le modèle actuel traite le tronc commun comme l'état d'une mention et d'un niveau, et non comme un parcours national.
+
+### 10.3 Doublons de mentions ENS — problème confirmé
+
+La base contient deux paires de mentions actives dont les noms deviennent identiques après normalisation des accents et apostrophes :
+
+| Ancien ID | ID canonique | Libellé |
+|---:|---:|---|
+| 50 | 63 | Enseignement-Apprentissage et didactique d'Histoire-Géographie |
+| 59 | 64 | Enseignement-Apprentissage et didactique en Sciences de l'Éducation |
+
+Les quatre enregistrements portent `est_active=true`. Les anciens IDs 50 et 59 n'ont aucune offre active, aucun utilisateur, aucun cercle ni aucune demande rattachés. Les IDs canoniques 63 et 64 portent chacun sept offres actives ; l'ID 63 porte aussi un utilisateur et sept cercles actifs, l'ID 64 sept cercles actifs.
+
+**Impact applicatif :**
+- `app/routers/academique_router.py` filtre les mentions par offres actives dans la cascade d'inscription par composante ; les deux anciennes variantes ne remontent donc pas dans cette cascade.
+- En revanche, `/api/academique/mentions` renvoie toutes les mentions actives, sans exiger une offre active ; cette route est utilisée par la recherche et les formulaires de cercles. Les variantes historiques peuvent donc être proposées comme choix nationaux alors qu'elles n'ont aucun parcours actif.
+- La page d'administration du référentiel liste également les mentions actives.
+
+**Cause technique identifiée :** dans `app/referentiel_reconciliation.py`, `_trouver_mention_canonique()` retourne immédiatement la mention si le libellé exact existe, avant de rechercher et fusionner les autres mentions équivalentes après normalisation. Le filet `_fusionner_doublons_scope()` ne fusionne que les lignes `Filiere`, pas les `Mention`. La réconciliation automatique au démarrage ne corrige donc pas ces deux paires malgré l'existence de la normalisation.
+
+**Correction recommandée, non exécutée :** adapter la réconciliation pour sélectionner la mention canonique même lorsqu'elle existe déjà, puis réaffecter les références de tous les doublons avant suppression. Ajouter des tests de régression sur les références `Filiere`, `Utilisateur`, `CercleEtude`, `DemandeCreationCercle` et `DemandeChangementFiliere`. Exécuter d'abord un dry-run et vérifier le nombre de références déplacées ; aucun nettoyage direct en production avant tests et revue.
+
+### 10.4 Médecine et ESPT — séparation des universités confirmée
+
+La Faculté de Médecine actuellement présente dans la base est rattachée à **l'Université d'Antananarivo**, et non à Toamasina. La mention « Médecine Humaine » possède une filière dans cette faculté d'Antananarivo. Les mentions « Maïeutique » et « Infirmerie » existent comme mentions actives, mais n'ont actuellement aucune filière, aucun utilisateur, aucun cercle et aucune demande associés.
+
+Aucune composante « Faculté de Médecine » ni « École Supérieure Polytechnique de Toamasina » n'est rattachée à l'Université de Toamasina dans la table `faculte`. Il ne faut donc pas rattacher par erreur la filière Médecine Humaine d'Antananarivo à Toamasina, ni créer des parcours Maïeutique/Infirmerie ou ESPT sans pièces officielles et rattachement institutionnel confirmé.
+
+### 10.5 Sécurité et limites du contrôle
+
+Les tables `faculte`, `filiere`, `mention` et `programmeuniversitaire` ont RLS activé selon l'inventaire de schéma. Ce contrôle n'est pas un audit complet des politiques RLS, des rôles ou des droits Data API. Il ne prouve pas non plus l'ouverture 2026-2027 des formations.
+
+**Aucune écriture SQL n'a été exécutée.** Les nettoyages proposés restent à faire dans une branche de code, avec simulation, tests et CI verte avant toute fusion/déploiement.
