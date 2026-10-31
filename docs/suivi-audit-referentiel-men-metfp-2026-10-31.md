@@ -707,6 +707,8 @@ Ces nombres sont des établissements fonctionnels déclarés par la DREN, pas un
 
 Le même tableau de bord indique pour Atsinanana en 2023/2024 un taux brut de scolarisation de 40,42 % au collège et 17,95 % au lycée ; les taux nets affichés sont 23,98 % et 9,98 %. Le taux de réussite au BEPC 2024 indiqué pour Toamasina I est 58,85 %. Ces taux sont des données régionales/district historiques, ne doivent pas être utilisés comme résultats individuels, prévisions 2026-2027 ou performances attribuées à une école.
 
+**Clarification de périmètre après vérification du tableau national MEN 2023-2024 :** l'annuaire MEN publie un tableau distinct des seuls collèges publics fonctionnels par CISCO. Il donne 7 pour Toamasina I et 27 pour Toamasina II. Le TBSE INSTAT/DREN cité ci-dessus affiche 90 et 49 sous la catégorie de collèges fonctionnels. Ces résultats ne doivent pas être comparés ni additionnés sans retrouver les définitions exactes du TBSE (secteur public/privé et type d'établissement) ; le chiffre MEN est explicitement limité aux CEG publics. Pour ce rapport, retenir 7/27 comme décompte MEN des CEG publics 2023-2024, et conserver 90/49 uniquement comme statistique TBSE d'un autre périmètre, sans les présenter comme contradictoires.
+
 **Enseignement technique et professionnel — tableaux 53/54 :** le tableau régional indique 10 établissements ETFP publics (CFP/LTP) et 49 établissements ETFP privés (CFP/LTP/Instituts) pour 2024. La répartition par district existe au tableau 54, mais le rendu textuel de certaines colonnes fusionnées est ambigu ; les comptes de Toamasina I ne sont donc pas transcrits dans MITARIDALA à partir de cette seule extraction. Cette statistique historique confirme que la cartographie de cinq établissements publics présents sur la page METFP n'est pas un inventaire de l'ensemble du paysage ETFP public et privé.
 
 **Conséquences produit :**
@@ -1956,3 +1958,44 @@ Pour chaque code de cette liste, obtenir une confirmation datée 2026-2027 de :
 Décision MITARIDALA : incorporer ces 25 lignes uniquement dans un espace de rapprochement historique avec date_source=2020-10-22, statut_preuve=liste_beneficiaires_caisse_ecole, annee_scolaire_application=NULL et verification_2026_2027=en_attente. Ne pas publier ces 25 établissements comme offres scolaires actuelles et ne pas leur attribuer des niveaux par déduction.
 
 Source primaire : [MEN — Répartition de la caisse-école 2020 des CEG](https://www.education.gov.mg/wp-content/uploads/2020/10/caisse_ceg.pdf), page imprimée 60/130 ; texte extrait aux lignes 2983-3022 et capture visuelle contrôlée. La page précédente 59/130 contient séparément les 7 collèges de Toamasina I.
+
+
+### 9.53 Décompte MEN 2023-2024 des collèges publics fonctionnels par CISCO Atsinanana
+
+Le PDF officiel « Annuaire statistique scolaire 2023-2024 » du MEN contient un tableau intitulé « Répartition des salles de classe et établissements des collèges publics par CISCO et par milieu de résidence ». La capture visuelle de la page imprimée 154 (page PDF 153) a été contrôlée ; elle indique explicitement l'année scolaire 2023-2024, le nombre d'établissements fonctionnels et le nombre de salles de classe.
+
+| CISCO Atsinanana | Établissements fonctionnels — total | Salles de classe utilisées — total | Salles en bon état | Salles électrifiées |
+|---|---:|---:|---:|---:|
+| Antanambao Manampotsy | 8 | 48 | 24 | 0 |
+| Brickaville | 30 | 167 | 80 | 21 |
+| Mahanoro | 38 | 190 | 67 | 34 |
+| Marolambo | 24 | 123 | 41 | 22 |
+| Toamasina I | 7 | 114 | 105 | 94 |
+| Toamasina II | 27 | 150 | 111 | 32 |
+| Vatomandry | 21 | 119 | 52 | 18 |
+| **Atsinanana** | **155** | **911** | **480** | **221** |
+
+Le nombre d'établissements fonctionnels additionné pour les sept CISCO est de 155 ; il correspond au total DREN affiché dans le tableau MEN des collèges publics. Le taux de salles électrifiées et l'état du bâti varient fortement selon CISCO ; les nombres sont des salles, pas des établissements.
+
+**Point important pour Toamasina :**
+- Toamasina I : 7 CEG publics fonctionnels et 114 salles de classe utilisées ;
+- Toamasina II : 27 CEG publics fonctionnels et 150 salles de classe utilisées.
+Ces chiffres ne donnent pas les noms de tous les CEG, les effectifs, ni les classes réellement offertes par établissement. Ils ne comprennent pas nécessairement les collèges privés.
+
+#### Rapprochement avec la caisse-école 2020
+
+Le relevé MEN de financement 2020 recensait 7 CEG bénéficiaires à Toamasina I et 25 à Toamasina II. L'annuaire national MEN 2023-2024 dénombre toujours 7 établissements publics à Toamasina I, mais 27 à Toamasina II. Cette différence de 25 lignes bénéficiaires à 27 établissements fonctionnels ne prouve pas à elle seule que deux nouveaux collèges ont été créés : les deux documents ont des objets et des critères différents. Il faut obtenir la liste nominative CISCO 2023-2024/2026-2027 pour expliquer précisément l'écart.
+
+#### Différence de périmètre avec le TBSE INSTAT
+
+Le TBSE Atsinanana cité à la section 9.16 affiche 90 collèges pour Toamasina I et 49 pour Toamasina II, sous un périmètre de statistiques fonctionnelles dont la portée public/privé n'est pas équivalente au tableau MEN des seuls collèges publics. **Ne pas interpréter les 90/49 comme un nombre de collèges publics** et ne pas calculer un écart à partir de 7/27 sans harmoniser la définition, le secteur et la date de référence.
+
+#### Utilisation dans MITARIDALA
+
+- Source de statistiques historiques, année scolaire 2023-2024, secteur public, cycle collège.
+- Ne pas convertir ces décomptes en liste d'établissements par nom.
+- Ne pas déduire qu'un CEG propose toutes les classes T6-T9 du seul fait qu'il est fonctionnel.
+- Mettre à jour le référentiel établissement à partir d'une extraction CISCO 2026-2027, avec code officiel, statut, commune/ZAP, niveaux et programme par cohorte.
+- Conserver les tableaux historiques comme séries statistiques, sans remplacer les données de l'année en cours.
+
+Source primaire : [MEN — Annuaire statistique scolaire 2023-2024](https://www.education.gov.mg/wp-content/uploads/2024/04/MEN-ANNUAIRE-STATISTIQUE-_SCOLAIRE_2023_2024.pdf), tableau de répartition des collèges publics par CISCO, page imprimée 154 (page PDF 153), capture visuelle contrôlée ; données Atsinanana lisibles sur les lignes Toamasina I, Toamasina II, Brickaville, Mahanoro, Marolambo, Antanambao Manampotsy et Vatomandry.
