@@ -2263,3 +2263,87 @@ La distribution indique une forte dominante du premier cycle dans les sorties di
 Source primaire :
 - [MESUPRES — Booklet 3, novembre 2025, tableau 26, page imprimée 50 : diplômés des IES publiques par province et grade LMD](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf).
 
+
+
+## 49. Résultats aux examens et diplômés des IES publiques/privées : lecture statistique croisée du Booklet MESUPRES 2025
+
+Le Booklet 3 du MESUPRES, publié en novembre 2025 et mis en ligne dans le catalogue officiel le 5 janvier 2026, comprend des indicateurs complémentaires sur les examens, les taux de réussite et les diplômes. Les pages imprimées 7, 22, 30 et 48-54 ont été consultées visuellement.
+
+### 49.1 Taux de réussite des six universités — Toamasina
+
+Le tableau 03 (page imprimée 7) donne le taux de réussite aux examens agrégé de chaque université :
+
+| Année | Université de Toamasina |
+|---|---:|
+| 2018 | 74,7 % |
+| 2019 | 64,1 % |
+| 2020 | 72,9 % |
+| 2022 | 69,5 % |
+| 2023 | 68,2 % |
+
+Le taux de Toamasina recule de 6,5 points entre 2018 et 2023 ; il baisse de 1,3 point entre 2022 et 2023. Ces valeurs portent sur l'université agrégée et ne permettent pas de calculer le taux de réussite individuel de la FLSH, FST, Médecine, DEG, ESPT ou ITPT.
+
+### 49.2 Taux de réussite dans les IES privées de la province
+
+Le tableau 11 (page imprimée 22) indique pour la province de Toamasina :
+| Année | IES privées — taux de réussite |
+|---|---:|
+| 2018 | 93,6 % |
+| 2019 | 95,7 % |
+| 2020 | 94,9 % |
+| 2022 | 96,6 % |
+| 2023 | 95,3 % |
+
+Le taux de 95,3 % ne doit pas être comparé directement au 68,2 % de l'Université de Toamasina comme s'il s'agissait de la même population ou de la même sélection d'examens : les deux indicateurs couvrent des catégories d'établissements différentes. Le tableau donne des taux de réussite aux examens, pas un taux d'insertion ni une mesure normalisée de qualité par programme.
+
+### 49.3 Taux de réussite dans l'ensemble de l'enseignement supérieur en Toamasina
+
+Le tableau 15 (page imprimée 30) indique pour la province de Toamasina, tous types d'établissements d'enseignement supérieur confondus :
+| Année | Ensemble de l'enseignement supérieur |
+|---|---:|
+| 2018 | 80,3 % |
+| 2019 | 68,2 % |
+| 2020 | 75,4 % |
+| 2022 | 71,8 % |
+| 2023 | 71,5 % |
+
+Le chiffre de 71,5 % en 2023 agrège l'ensemble de l'enseignement supérieur de la province. Il est différent des 68,2 % pour les six universités et des 95,3 % pour les IES privées. Les trois taux ne doivent pas être mélangés.
+
+### 49.4 Sorties diplômantes 2023 : rapprochement public/privé et total provincial
+
+Le tableau 26 (page imprimée 50) indique pour les IES publiques en province de Toamasina, en 2023 :
+- Licence : 1 556 ;
+- Master : 37 ;
+- Doctorat : 27 ;
+- total : 1 620.
+
+Le tableau 27 (page imprimée 52) indique pour les IES privées en province de Toamasina en 2023 :
+- Licence : 639 ;
+- Master : case non renseignée ;
+- Doctorat : case non renseignée.
+
+Le tableau 28 (page imprimée 54) donne le total de l'enseignement supérieur en Toamasina :
+- Licence : 2 195 ;
+- Master : 37 ;
+- Doctorat : 27.
+
+Le rapprochement est arithmétiquement cohérent pour la Licence : 1 556 publics + 639 privés = 2 195. Les valeurs Master et Doctorat du total provincial correspondent à celles des IES publiques ; les cellules privées sont toutefois laissées vides dans le tableau 27. Une cellule vide est une donnée non renseignée et ne doit pas être convertie en zéro. Le total 2 259 diplômés en 2023 (2 195 + 37 + 27) est le total arithmétique du tableau 28, pas un effectif inscrit ni une cohorte annuelle unique de l'Université.
+
+### 49.5 Limites statistiques
+
+- Le taux de réussite aux examens n'est pas le taux de diplomation : il porte sur la participation/admission aux examens selon les définitions du Booklet, pas sur tous les inscrits depuis l'entrée en L1.
+- Les résultats des six universités ne sont pas ventilés par composante, mention, parcours, grade ou campus.
+- Les taux des IES privées sont agrégés à l'échelle provinciale et ne permettent pas de noter chaque établissement.
+- Les diplômes du tableau 26 sont agrégés par province et secteur public ; le tableau ne permet pas d'isoler le nombre délivré par chaque université ou IST.
+- Les cases vides du tableau 27 ne valent pas zéro ; demander au MESUPRES si les Master/Doctorat privés sont absents, non transmis, non disponibles ou regroupés dans une autre catégorie.
+- Le Booklet ne fournit pas ici de taux d'insertion professionnelle des diplômés, de poursuite d'études, de réussite par discipline ou de durée moyenne avant diplomation.
+
+**Décision MITARIDALA :** créer trois séries statistiques distinctes : (1) taux de réussite par université/année ; (2) taux de réussite par secteur (IES publiques, IES privées, ensemble de l'enseignement supérieur) et province ; (3) diplômes délivrés par province/secteur/grade. Aucune de ces séries ne doit être affichée sur la page d'une faculté sans donnée primaire propre à cette faculté et au programme concerné.
+
+Sources primaires :
+- [MESUPRES — Booklet 3, novembre 2025, tableau 03, page 7 : taux de réussite des six universités](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf).
+- [MESUPRES — Booklet 3, tableau 11, page 22 : taux de réussite des IES privées par province](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf).
+- [MESUPRES — Booklet 3, tableau 15, page 30 : taux de réussite par province dans l'enseignement supérieur](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf).
+- [MESUPRES — Booklet 3, tableaux 25-28, pages 48-54 : diplômés par université, secteur, province et grade](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf).
+- [MESUPRES — Catalogue officiel des annuaires](https://www.mesupres.gov.mg/documents/index/1?categorie=annuaires).
+
