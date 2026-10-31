@@ -1,3 +1,4 @@
+- [ ] **Infrastructure CI — GitHub Actions runners privés.** Le 31/10/2026, les jobs `test` et `postgres-smoke` échouent en 2–3 s sur `main`, PR #309 et PR #310 ; les objets GitHub indiquent `runner_id=0`, `runner_name` vide, `steps=[]`, `logs_url=null`. La suite n'a pas commencé. Vérifier côté GitHub la permission Actions du dépôt privé, les limites/quota de minutes et toute restriction de runners/organisation ; relancer uniquement après correction et vérifier que les jobs reçoivent un runner `ubuntu-latest` et des étapes avant d'accepter CI verte.
 # TODO — Feuille de route MITARIDALA
 
 **Mise à jour : 31 octobre 2026**  
