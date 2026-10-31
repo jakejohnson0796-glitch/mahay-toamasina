@@ -230,7 +230,7 @@ def liste_documents(
     # Un élève déjà inscrit dans une version antérieure doit pouvoir retrouver
     # sa propre classe pour déposer un cours ou une annale historique. On
     # n'ouvre pas pour autant l'ensemble des anciennes classes au formulaire.
-    if utilisateur and utilisateur.niveau_scolaire_id:
+    if utilisateur and getattr(utilisateur, "niveau_scolaire_id", None):
         niveau_profil = session.get(NiveauScolaire, utilisateur.niveau_scolaire_id)
         if (
             niveau_profil
