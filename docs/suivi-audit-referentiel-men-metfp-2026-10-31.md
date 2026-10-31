@@ -1329,3 +1329,33 @@ La lecture conjointe du PE T10/T11/T12 et de la grille de coefficients/volumes f
 
 **Aucune donnée quantitative supplémentaire n'est extrapolée par cette règle de modèle.** Les valeurs restent celles transcrites du document officiel et les lignes non séparées demeurent groupées.
 
+
+
+### 9.39 T9 Géographie : transcription des compétences régionales et des supports de terrain
+
+Le contrôle du détail du PE T9 précise les attentes qui n'étaient résumées que partiellement dans la section 9.35.
+
+**Structure économique de Madagascar — durée de séquence 18 h, Géographie 2 h/semaine.** Le RAS demande d'expliquer les caractères généraux de l'économie malgache et de déterminer les secteurs d'activité aux niveaux local, régional et national. Les contenus sont les caractéristiques générales, les secteurs primaire/secondaire/tertiaire, le secteur informel, les politiques économiques référencées dans le document, puis l'agriculture, l'élevage, la pêche, les ressources forestières, l'industrie, le commerce, le tourisme, les télécommunications et les transports. Les activités demandent explicitement d'identifier les secteurs présents dans la région de l'élève et de déduire des formes d'exploitation possibles en fonction de ces ressources. La durée de 18 h correspond à la séquence et non au nombre d'heures hebdomadaires.
+
+**Secteur primaire :** le PE détaille les produits agricoles, les grandes zones de production, les modes de culture, les atouts/faiblesses de l'agriculture, l'élevage traditionnel et moderne, les zones d'élevage, la pêche maritime et en eau douce, l'aquaculture, la pisciculture, la rizipisciculture et l'exploitation forestière. Les supports proposés comprennent les cartes de localisation, photographies, textes et enquêtes/visites sur terrain.
+
+**Secteur secondaire :** le RAS demande d'analyser les possibilités de développement économique par les industries. Le contenu distingue agroalimentaire, extractif, textile, mécanique, chimique et autres industries ; facteurs d'implantation, foyers industriels, grandes entreprises, PMI/PME et artisanat ; les problèmes et possibilités de recours aux énergies renouvelables. Les activités demandent de localiser les industries sur une carte et de déduire les formes d'exploitation possibles dans la région de l'élève.
+
+**Secteur tertiaire :** le PE traite commerce intérieur/extérieur, importations/exportations, balance commerciale, tourisme, ressources touristiques et flux de visiteurs, télécommunications et densité des réseaux, réseaux routiers, ferroviaires, fluviaux/maritimes et aériens. Les lignes ferroviaires explicitement citées sont MLA (Moramanga–Lac Alaotra), FCE (Fianarantsoa–Côte Est), TCE (Tananarive–Côte Est) et TA (Tananarive–Antsirabe). Les élèves doivent citer des ports/aéroports et identifier les routes/flèches de transport ; toute actualisation sur le fonctionnement actuel de ces réseaux doit venir d'une source récente, car le PE peut présenter un historique ou un état pédagogique de référence.
+
+**Potentialités naturelles de Madagascar — durée de séquence 18 h, Géographie 2 h/semaine.** Le RAS demande d'analyser les interrelations entre milieu naturel et économie. Le tableau détaille reliefs, quatre types de climats, végétation, sols (ferralitiques, ferrugineux, volcaniques, alluvions), hydrographie et utilité de ces milieux pour agriculture, pêche, forêt, mines, artisanat, industrie, transport, commerce et tourisme. Pour les fleuves de l'Est, le PE les décrit avec régime régulier, débit rapide et non navigable ; cette caractérisation doit être citée comme contenu du programme, sans la généraliser à chaque rivière locale ou à chaque activité de navigation.
+
+**Lutte contre la pauvreté et environnement.** Le PE inclut le plan politique, diplomatique, social, économique et culturel comme axes de réflexion, la protection des ressources, la gestion des déchets, la fertilité des sols, le reboisement, la lutte contre les feux de brousse et la pollution, ainsi qu'un mini-projet sur la protection durable de l'environnement. Il propose également un mini-projet de création d'une petite ou moyenne entreprise locale : identifier ressources humaines, matérielles et financières, étudier la faisabilité et les débouchés, et répondre à un besoin social, environnemental, économique et culturel.
+
+**Application pédagogique légitime à Toamasina :** ces thèmes permettent de construire une séquence ou une évaluation contextualisée sur les activités agricoles et halieutiques, les chaînes de transformation, les services portuaires/commerciaux et de transport, les télécommunications, le tourisme, l'aménagement et les risques environnementaux d'Atsinanana. L'exemple local doit être établi avec une enquête ou une donnée officielle récente (DREN, DRETFP, INSTAT, service régional compétent, gestionnaire d'infrastructure). La liste de métiers de la cartographie METFP ne constitue pas une statistique d'emploi ni une mesure de la production régionale.
+
+**Garde-fous pour MITARIDALA :**
+1. Créer des supports régionaux et des mini-projets liés aux RAS du PE T9, pas de nouveaux RAS « Toamasina » qui remplaceraient le programme national.
+2. Chaque document local (carte, tableau, photo, enquête, chiffre de production) doit avoir un auteur/source, une année, un périmètre (commune/district/région/national) et une date de contrôle.
+3. Séparer les données nationales historiques du PE, les exemples locaux actuels et les consignes pédagogiques proposées par MITARIDALA.
+4. Ne pas publier d'indicateur quantitatif régional si aucune série officielle datée et méthodologiquement comparable n'a été retrouvée.
+5. Les sorties de Tuteur IA/Quiz IA doivent faire référence au RAS approprié et à l'année/version du PE ; elles ne doivent pas mélanger statistiques régionales d'années différentes.
+
+Sources primaires :
+- [PE T9 MEN — Géographie, secteurs économiques et activités locales/régionales](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf), pages PDF 194-200.
+- [PE T9 MEN — potentialités naturelles et hydrographie](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf), pages PDF 201-203.
