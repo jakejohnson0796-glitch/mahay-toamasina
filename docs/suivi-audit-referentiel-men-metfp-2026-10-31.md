@@ -1068,3 +1068,94 @@ La grille ci-dessus est un tableau d'heures de cours/coefficients de lycée. Ell
 
 Sources : [PE T10](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), [PE T11](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), [PE T12](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), [grille officielle coefficients/volumes lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
 
+
+
+### 9.33 Extraction disciplinaire ciblée T7 et T9 : exemples vérifiables de progression collège
+
+Le contrôle du contenu détaillé de T7 et T9 permet de compléter les seuls tableaux de volume horaire par une première progression notionnelle. Les extraits ci-dessous sont volontairement ciblés : ils ne constituent pas encore une transcription exhaustive de tous les RAS du collège.
+
+#### T7 — Mathématiques (5 h/semaine)
+
+Le PE répartit les contenus autour des composantes Nombre, Opération, Algèbre, Géométrie, Mesures et Traitement des données. Les contenus relevés comprennent notamment :
+- nombres décimaux, fractions équivalentes et fractions irréductibles, nombres entiers/décimaux positifs et négatifs, échelle, pourcentage, taux et rendement ;
+- puissances entières de nombres décimaux, propriétés des puissances, règles de signes et opérations avec nombres relatifs ;
+- distributivité simple, factorisation, expressions littérales, développement/réduction et équations du premier degré ;
+- triangles rectangle, isocèle et équilatéral, repérage sur une droite graduée et dans le plan, angles et propriétés des triangles ;
+- conversions d'unités et traitement de données.
+
+Cette matière est enseignée à 5 h/semaine en T7. Les contenus sont organisés du concret vers l'abstraction et la résolution de problèmes. Source : PE T7, section Mathématiques, pages PDF 85-100 (extrait vérifié aux lignes 4422-4465 et pages adjacentes).
+
+#### T7 — SVT (3 h/semaine)
+
+Les thématiques nationales répertoriées dans le tableau des contenus sont :
+- santé et bien-être : appareil digestif ;
+- reproduction humaine : puberté, capacités reproductrices et grossesse précoce ;
+- maladies infectieuses : bactéries, champignons, virus, parasites et maladies microbiennes ;
+- organisation des êtres vivants : écosystèmes ;
+- géologie : structure interne de la Terre et origines des modifications du paysage terrestre.
+
+Le PE donne une durée de 13 heures pour le contenu « appareil digestif » ; cette durée de séquence ne doit pas être confondue avec les 3 heures hebdomadaires. Les RAG comprennent la formulation de questions/prédictions, la planification d'une investigation, l'analyse des données, la communication scientifique et les conclusions par inférence.
+
+Source : PE T7, section SVT, PDF pages 101-104 (lignes contrôlées 5371-5419 et pages adjacentes).
+
+#### T7 — Sciences physiques (3 h/semaine)
+
+Le contenu passe par cinq thématiques : matière, électricité et magnétisme, mouvement, énergie. Le tableau T7 comprend notamment flottabilité et masse volumique, types de mélanges et séparation, transformations physiques/chimiques, montages électriques et lois de circuit, aimants/bobines, mouvement rectiligne, formes et transformations d'énergie, stockage des sources. La durée affichée pour le chapitre « Matière » est 31 heures ; à conserver comme durée de séquence, distincte du volume hebdomadaire de 3 h.
+
+Source : PE T7, section Sciences physiques, PDF p. 114-115 (lignes 5868-5929).
+
+#### T7 — Histoire et Géographie (2 h/semaine chacune)
+
+Histoire : l'ordre des contenus passe par les étapes de l'histoire orale, les grandes périodes de la préhistoire et de l'histoire, l'Antiquité (Mésopotamie, Égypte, Grèce, Rome), le Moyen-Âge, les origines du peuple malgache et les influences austronésiennes, africaines, arabo-musulmanes et occidentales. Les RAG attendent l'analyse de traces du passé et l'utilisation de repères temporels et spatiaux.
+
+Géographie : initiation à la démarche géographique et aux documents, planète Terre et système solaire, coordonnées géographiques, rotation/révolution, relations entre relief, climat, hydrographie et végétation. Les RAG portent sur les repères spatiaux, l'analyse des interactions entre milieux humains/physiques et le développement durable.
+
+Sources : PE T7, sections Histoire et Géographie, PDF p. 130 et p. 150-153 (lignes contrôlées 6676-6725 et 8048-8122).
+
+#### T9 — Mathématiques (5 h/semaine)
+
+Le PE développe les cinq composantes Nombre et Opération, Algèbre, Géométrie, Mesures et Traitement des données. Les thèmes relevés comprennent :
+- nombres rationnels/irrationnels, racines carrées, sous-ensembles de R, préfixes SI et notation scientifique ;
+- opérations, priorités, rapports/proportions, taux, pourcentages, puissances et puissances de 10 ;
+- variables dépendante/indépendante, représentation graphique, fonction affine, variation directe/partielle, taux de variation, interpolation/extrapolation, fonction inverse et équations de droites ;
+- triangles semblables, propriétés de Thalès, polygones réguliers, volumes de pyramide et de cône ;
+- probabilités d'événements et propriétés de réunions/intersections (le rendu textuel de la formule d'intersection est partiellement corrompu ; conserver la notion sans réécrire la formule avant lecture visuelle de la page).
+
+Le PE prévoit 5 h/semaine ; il insiste sur la résolution de problèmes, le raisonnement et l'évaluation de la validité des résultats. Source : PE T9, section Mathématiques, PDF p. 104-128 (lignes 5035-5091 et 6361-6379).
+
+#### T9 — SVT (4 h/semaine)
+
+Les cinq domaines du programme sont l'alimentation de l'Homme, l'organisation des êtres vivants, la santé et le bien-être, la reproduction humaine et la géologie. Les extraits contrôlés présentent :
+- ration alimentaire, nutriments, valeurs énergétiques, métabolisme et besoins de l'enfant/adolescent, menus équilibrés et malnutrition ;
+- besoins nutritionnels et soins des plantes locales ;
+- les autres thèmes sont listés au niveau du tableau de contenus mais doivent être extraits plus complètement avant transcription détaillée.
+
+Les activités se rattachent aux RAS et aux démarches scientifiques. Les éléments de santé doivent rester strictement alignés au PE, sans extrapolation vers un conseil médical ou un programme externe. Source : PE T9, section SVT, PDF p. 131-134 (lignes 6522-6560).
+
+#### T9 — Sciences physiques (3 h/semaine)
+
+Les cinq thématiques sont matière, électricité/magnétisme, mouvement, force/interaction, lumière/son. Exemples :
+- concentration d'une solution, acides/bases/pH, équation-bilan, neutralisation et combustion des alcanes ;
+- résistors, installation électrique domestique et énergie consommée ;
+- trajectoires, relativité du mouvement, vecteur vitesse et graphes ;
+- modélisation/représentation d'une force, équilibre d'un solide, travail et puissance ;
+- réflexion/réfraction de la lumière, image du miroir plan, fréquence et longueur d'onde.
+
+Le PE affiche 3 h par semaine dans la table de volume horaire de T9 ; le contenu détaillé correspondant doit être transcrit RAS par RAS avant l'importation. Source : PE T9, section Sciences physiques, PDF p. 147-150 (lignes 7241-7278).
+
+#### T9 — Histoire et Géographie (2 h/semaine chacune)
+
+Histoire : histoire orale ; monde depuis 1914, transformations scientifiques/sociales et innovations ; première et deuxième guerres mondiales ; décolonisation ; Madagascar sous les républiques ; commémorations et mémoires collectives. Le PE indique 2 h/semaine.
+
+Géographie : structure économique de Madagascar et secteurs primaire/secondaire/tertiaire ; potentialités naturelles, relief, climats, végétation, sols et hydrographie ; régions naturelles et potentialités économiques régionales ; potentialités démographiques et répartition de la population. Le PE indique 2 h/semaine.
+
+Sources : PE T9, Histoire PDF p. 175-177 (lignes 8645-8697) ; Géographie p. 191-204 (lignes 9772-9862 et 10413-10594).
+
+#### Garde-fous de progression pour MITARIDALA
+
+1. Ces contenus sont des extraits des programmes, pas une progression complète ni un calendrier annuel ; rattacher chaque notion à son RAS, au thème et à la page du PDF après extraction exhaustive.
+2. Ne pas transformer les exemples d'activités, stratégies pédagogiques ou évaluations suggérées en compétences supplémentaires non prévues dans les RAS.
+3. Prévoir un contrôle de prérequis T6 → T7 → T8 → T9 avant d'activer une recommandation de révision ou un quiz ciblé ; le titre d'une matière seul ne suffit pas à identifier la notion.
+4. Les durées de séquence (ex. T7 SVT appareil digestif 13 h ; T7 Sciences physiques Matière 31 h) doivent être persistées dans un champ différent des heures de cours par semaine.
+5. La version française officielle comporte parfois des formulations, symboles ou formules mathématiques dont l'extraction web peut être abîmée. Avant de copier une formule dans la banque de questions, vérifier la page PDF visuelle et conserver l'écriture officielle.
+
