@@ -2166,3 +2166,28 @@ Sources primaires :
 - [MEN — RAPE T11-L, édition 2024 / année 2024-2025](https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T11-L_2024_2025.pdf), page de garde et instructions générales.
 - [MEN — RAPE T12-S, fichier 2024-2025](https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T12-S_2024_2025.pdf).
 - [MEN — RAPE T12-L, fichier 2024-2025](https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T12-L_2024_2025.pdf).
+
+
+### 9.61 Contrôle complémentaire du calendrier scolaire et des textes de rentrée MEN
+
+Nouvelle recherche effectuée le 31 octobre 2026 dans les pages officielles MEN et dans les fichiers publiés sous le domaine education.gov.mg.
+
+Le document officiel de rentrée retrouvé est la note circulaire **n° 2025/.358.-MEN/SG du 18 juillet 2025**, intitulée « Directives relatives à l'organisation de la rentrée scolaire 2025-2026 ». Elle cite explicitement comme base l'**arrêté n°3559/2025-MEN du 14 février 2025**, fixant le calendrier scolaire 2025-2026. Ce document confirme donc le cadre administratif 2025-2026, mais ne permet pas de fixer les dates ni les règles d'organisation de 2026-2027.
+
+La page officielle des annonces MEN consultée au même contrôle continue d'afficher cette note de rentrée 2025-2026. Les recherches ciblées sur le domaine officiel pour « rentrée scolaire 2026-2027 », « calendrier scolaire 2026-2027 » et un éventuel arrêté MEN 2026 n'ont pas fait ressortir de texte officiel correspondant. Cette absence dans les résultats consultés n'est pas une preuve absolue qu'aucun texte n'existe : elle signifie que le document n'a pas été retrouvé dans les sources publiques indexées vérifiées.
+
+Les pages générales MEN sur les programmes scolaires présentent par ailleurs encore des nomenclatures anciennes, notamment A/C/D au lycée, tandis que la Bibliothèque numérique expose les RAPE L/S/OSE de septembre 2026. Cela renforce la nécessité de traiter les pages institutionnelles générales comme des points d'accès documentaires, et non comme une table de correspondance réglementaire entre les anciennes et nouvelles séries.
+
+**Décision de qualité / application :**
+1. Enregistrer la note circulaire 2025/.358 comme preuve officielle des directives de rentrée 2025-2026, pas comme texte 2026-2027.
+2. Enregistrer l'arrêté 3559/2025-MEN comme référence du calendrier 2025-2026, sans extrapoler ses dates à l'année suivante.
+3. Maintenir l'année scolaire d'application des RAPE septembre 2026 à « à confirmer ».
+4. Ne pas publier de calendrier 2026-2027 dans MITARIDALA à partir d'une estimation, d'une date de rentrée annoncée dans la presse ou d'une édition documentaire.
+5. À réception du calendrier 2026-2027, contrôler les dates administratives, rentrée enseignants/élèves, périodes, vacances, examens et éventuelles dispositions transitoires, puis rapprocher explicitement le texte des RAPE concernés.
+
+Sources primaires :
+- [MEN — Note circulaire n° 2025/.358.-MEN/SG du 18 juillet 2025, directives de rentrée 2025-2026](https://www.education.gov.mg/wp-content/uploads/2025/09/NC_Directives-relatives-%C3%A0-lorganisation-de-la-rentr%C3%A9e-scolaire-2025-2026.pdf).
+- [MEN — Page officielle des directives de rentrée 2025-2026](https://www.education.gov.mg/directives-relatives-a-lorganisation-de-la-rentree-scolaire-2025-2026/).
+- [MEN — Annonces officielles](https://www.education.gov.mg/annonces/).
+- [MEN — Page générale du lycée, nomenclature A/C/D encore affichée](https://www.education.gov.mg/systeme-educatif/lycee/).
+- [MEN — Répartition annuelle du programme d'études](https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/).
