@@ -511,18 +511,21 @@ La liste MESUPRES d'août 2022 (pages imprimées 68 à 70) permet de détailler 
 
 Source primaire : [MESUPRES — Liste officielle des institutions supérieures habilitées, août 2022, pages 68-70](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
-### 13.5 Instituts régionaux : ne pas géolocaliser toutes les composantes à Barikadimy
+### 13.5 Instituts régionaux : distinguer rattachement historique et affiliation institutionnelle actuelle
 
-La liste MESUPRES d'août 2022 distingue :
-- **ISTRALMA** (Institut supérieur des technologies régional d'Alaotra Mangoro), situé à Ambatondrazaka, rattaché à l'Université de Toamasina / ancienne Faculté DSEG, avec des offres historiques de droit, gestion, économie et agronomie ;
-- **ISTCE** (Institut supérieur des technologies de la Côte-Est), explicitement situé à Fénérive-Est, avec Licence Agronomie et Agro-alimentaire et Master Agro-Management ;
-- une seconde entrée **ISTRCE** portant un nom très proche (« Institut supérieur des technologies régional de la Côte-Est »), rattachée à l'Université de Toamasina et listant Gestion des entreprises et des administrations, Gestion polyvalente, Technologie de développement rural et Agronomie.
+La liste MESUPRES d'août 2022 (pages imprimées 69-70, contrôlées visuellement) montre, dans la section « Université Toamasina — suite » :
+- **ISTRALMA** (Institut Supérieur des Technologies Régional d'Alaotra Mangoro), à Ambatondrazaka, rattaché dans ce snapshot à l'Université de Toamasina / ancienne FAC/DSEG ; offres historiques en droit, gestion, économie et agronomie ;
+- **ISTCE** (Institut Supérieur des Technologies de la Côte-Est), à Fénérive-Est, rattaché dans ce snapshot à l'Université de Toamasina ; Licence Agronomie et Agro-alimentaire et Master Agro-Management.
 
-Le document comporte donc une anomalie de dénomination potentielle entre les entrées n°21 « ISTCE » et n°22 « ISTRCE » : noms très proches, même bassin géographique, mais listes de programmes différentes. En l'absence des actes complets et d'identifiants administratifs distincts, ne pas les fusionner ni créer deux entités actives distinctes automatiquement.
+**Correction après nouveau recoupement :** le PDF MESUPRES 2022, pages 69-70, ne montre pas une deuxième ligne « ISTRCE » ; il présente une seule ligne « ISTCE ». Le nom **ISTRCE** apparaît aujourd'hui sur le site institutionnel de l'Université d'Analanjirofo, créée par décret en 2019 et implantée à Fénérive-Est. L'université d'Analanjirofo présente actuellement l'ISTRCE comme son Institut Supérieur de Technologie Régionale de la Côte-Est, spécialisé en Agronomie. Il s'agit donc d'une différence de libellé entre le snapshot 2022 et la présentation institutionnelle actuelle, pas de la preuve d'un doublon ministériel de deux établissements distincts dans la liste 2022.
 
-**Décision de géolocalisation :** Ambatondrazaka et Fénérive-Est ne sont pas des campus de la commune urbaine de Toamasina. Les établissements peuvent rester dans le périmètre de l'Université de Toamasina / Atsinanana-Est élargi, mais doivent avoir leur propre adresse, région, code établissement et hiérarchie.
+**Décision de géolocalisation :** Ambatondrazaka et Fénérive-Est ne sont pas des campus de la commune urbaine de Toamasina. ISTRALMA et l'ancien libellé ISTCE doivent rester dans l'historique du rattachement Toamasina tel que publié en 2022 ; l'ISTRCE doit être rapproché de l'Université d'Analanjirofo comme affiliation actuelle affichée par son site institutionnel. Ne pas inclure ces établissements dans le nombre de facultés/écoles physiquement situées à Barikadimy.
 
-Source : [MESUPRES — Liste officielle des habilitations, août 2022, pages 69-70](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+Sources :
+- [MESUPRES — Liste officielle des habilitations, août 2022, pages 69-70](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+- [Décret n°2019-2120 du 20 novembre 2019 portant création de l'Université d'Analanjirofo à Fénérive-Est](https://cnlegis.gov.mg/uploads/D2019-2120%28VF%29.pdf).
+- [Université d'Analanjirofo — site institutionnel et établissements actuels](https://univ-analanjirofo.mg/).
+- [Université d'Analanjirofo — fiche officielle ISTRCE](https://univ-analanjirofo.mg/formations?formation=istrce).
 
 ## 14. Réserve de calendrier universitaire et ouverture des cohortes
 
@@ -1054,4 +1057,70 @@ Pour chaque laboratoire, équipe ou centre de recherche de l'Université :
 Source primaire :
 - [MESUPRES — Décret n°2026-1548 du 17 juin 2026 portant régime de l'HDR (PDF officiel, 6 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/decrets/decret_N_2026-1548_du_17_juin_2026.pdf).
 - [MESUPRES — Registre des décrets officiels, publication du 1er juillet 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=decrets).
+
+
+
+## 30. Périmètre institutionnel régional : Université d'Analanjirofo et anciens établissements rattachés à Toamasina
+
+### 30.1 Création légale d'une université publique distincte à Fénérive-Est
+
+Le **décret n°2019-2120 du 20 novembre 2019** crée explicitement l'Université d'Analanjirofo, implantée à **Fénérive-Est**, à côté des Universités du Menabe, de l'Itasy et du Vakinankaratra (article premier). L'article 2 renvoie l'organisation et le fonctionnement au décret n°2002-565 et prévoit, si nécessaire, des textes réglementaires d'application. Le décret de création ne décrit pas à lui seul le transfert individuel des anciens établissements, de leurs biens ou de leurs habilitations.
+
+Source primaire : [CNLegis — Décret n°2019-2120 du 20 novembre 2019 (PDF)](https://cnlegis.gov.mg/uploads/D2019-2120%28VF%29.pdf).
+
+### 30.2 Cinq établissements présentés actuellement par l'Université d'Analanjirofo
+
+Le site institutionnel de l'Université d'Analanjirofo affiche actuellement cinq établissements :
+1. **IFSP** — Institut de Formation Supérieure de Paramédicale : Licence en sciences paramédicales, parcours infirmier et sage-femme, trois années en présentiel ;
+2. **ISTA** — Institut Supérieur du Tourisme d'Analanjirofo : tourisme, hôtellerie et restauration, avec deux parcours professionnels ;
+3. **ISTRCE** — Institut Supérieur de Technologie Régionale de la Côte-Est : Agronomie, Licence et Master ; le site décrit trois parcours en L3/Master, Productions végétales (PV), Productions animales (PA), Agro-Management (AM) ;
+4. **IUDEGS** — Institut Universitaire de Droit, Économie, Gestion et Développement Social : Droit, Économie, Gestion et Développement social ; le site décrit L1-L2 en tronc commun et parcours à partir de L3/Master ;
+5. **ISSTA** — Institut Supérieur des Sciences et Technologies d'Analanjirofo : Géosciences, exploration et gestion des ressources minérales.
+
+Le site institutionnel indique la localisation à Fénérive-Est. Ces cinq unités doivent avoir des fiches d'établissement distinctes de l'Université de Toamasina et de ses composantes du campus Barikadimy.
+
+**Réserve d'habilitation :** le site de l'Université d'Analanjirofo présente l'offre pédagogique et cite pour ISTRCE et IUDEGS l'arrêté n°8006/2014-MESupReS et un ancien rattachement à l'Université de Toamasina. Cette présentation n'est pas un nouvel extrait du registre HAE 2026 et ne confirme pas à elle seule le renouvellement / la validité actuelle de chaque mention et parcours. Conserver les libellés, programmes et références affichés par l'établissement comme déclarations institutionnelles datées, puis demander les décisions HAE actuelles et leurs dates d'expiration.
+
+Sources institutionnelles :
+- [Université d'Analanjirofo — page d'accueil, cinq établissements et domaines](https://univ-analanjirofo.mg/).
+- [Université d'Analanjirofo — ISTRCE, parcours Agronomie PV/PA/AM](https://univ-analanjirofo.mg/formations?formation=istrce).
+- [Université d'Analanjirofo — IUDEGS, structure L1/L2 et parcours Droit/Gestion](https://univ-analanjirofo.mg/formations?formation=iudegds).
+
+### 30.3 Chronologie de l'IUDEGS : ancien rattachement à Toamasina et université actuelle
+
+La page actuelle IUDEGS indique explicitement :
+- une unité/structure de mars 2016 ;
+- l'arrêté d'ouverture et d'habilitation n°8006/2014-MENSupReS du 14 janvier 2014 ;
+- une appartenance historique à l'Université de Toamasina suivant l'arrêté n°030-2014/U-A ;
+- puis la création de l'Université d'Analanjirofo par le décret n°2019-2120.
+
+La page actuelle de l'Université d'Analanjirofo présente ensuite IUDEGS parmi ses cinq établissements. Cela documente la chronologie institutionnelle publiquement racontée par l'établissement. En revanche, il faut encore retrouver l'acte de transfert / d'affectation et les décisions de renouvellement HAE propres à IUDEGS pour fermer juridiquement la succession de rattachement et la période de validité du diplôme.
+
+**Traitement dans MITARIDALA :** conserver une seule identité historique d'établissement avec des relations d'affiliation successives datées, si les actes le confirment ; ne pas créer deux écoles concurrentes pour les mêmes cohortes, ni les rattacher à Toamasina pour l'année universitaire actuelle sans preuve.
+
+### 30.4 Admissions et calendrier publiés pour 2026-2027 par l'Université d'Analanjirofo
+
+La page d'accueil institutionnelle de l'Université d'Analanjirofo annonce :
+- ouverture des préinscriptions 2026-2027 publiée le 12 septembre 2026 ;
+- journée d'accueil des nouveaux étudiants annoncée le 5 septembre ;
+- mise à disposition d'un calendrier académique annoncée le 28 août 2026.
+
+Les fiches IUDEGS précisent que le dépôt de préinscription devait commencer en septembre 2026 et annoncent une rentrée en deuxième semaine de janvier. Les conditions d'accès publiées par IUDEGS sont différentes selon les mentions : Droit, Gestion, Économie et Développement social. Les fiches ISTRCE annoncent un concours pour les séries C, D, S et technique agricole, et détaillent les stages de terrain et parcours d'agronomie.
+
+**Ce qui reste à récupérer :** le calendrier PDF réellement publié le 28 août, le formulaire original 2026-2027, les échéances exactes par institut, le nombre de places et les décisions HAE applicables. L'annonce de préinscription n'établit pas le nombre d'inscrits, les résultats d'admission ni le démarrage effectif de chaque cohorte.
+
+Sources :
+- [Université d'Analanjirofo — site institutionnel, annonces 2026-2027](https://univ-analanjirofo.mg/).
+- [Université d'Analanjirofo — IUDEGS et informations de candidature](https://univ-analanjirofo.mg/formations?formation=iudegds).
+
+### 30.5 Conséquence pour le décompte des composantes de Toamasina
+
+Le tableau MESUPRES d'août 2022 et les statistiques 2021-2023 peuvent encore compter certains instituts régionaux dans le périmètre de l'Université de Toamasina, alors que le décret de 2019 a créé une université publique à Fénérive-Est et que le site institutionnel actuel d'Analanjirofo présente l'ISTRCE et l'IUDEGS comme établissements de cette université. C'est un décalage de périmètre et de millésime à résoudre, pas une raison de supprimer les données anciennes.
+
+Pour le catalogue MITARIDALA, adopter trois vues distinctes :
+1. **Toamasina-ville / Barikadimy** : composantes actuellement rattachées à l'Université de Toamasina et physiquement situées à Toamasina ;
+2. **Université de Toamasina — périmètre historique** : composantes rattachées dans les annuaires et listes MESUPRES antérieurs, avec millésime statistique ;
+3. **Analanjirofo / Fénérive-Est** : Université d'Analanjirofo et ses cinq établissements affichés actuellement, séparés de l'Université de Toamasina.
+
+Ne pas recalculer rétroactivement les effectifs 2021-2023 ou les habilitations 2014-2022 sans texte de transfert et annuaire actualisé. La prochaine pièce à demander au MESUPRES/DGES et aux deux présidences est la décision officielle de rattachement/affectation des établissements régionaux et le registre HAE actualisé pour leurs mentions.
 
