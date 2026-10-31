@@ -276,6 +276,20 @@ Ces établissements ne doivent pas être ajoutés comme de simples facultés du 
 
 Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, pages 69-70, établissements régionaux affiliés à l'Université de Toamasina](https://www.mesupres.gov.mg/assets/front/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
+### École doctorale « Science, Culture, Société et Développement » (SCSD)
+
+Le registre MESUPRES d'août 2022 répertorie l'école doctorale **« Science, Culture, Société et Développement » (SCSD)** sous l'Université de Toamasina, avec l'arrêté **n°32905/2013-MESupRES du 7 novembre 2013**. Les équipes d'accueil et partenariats mentionnés comprennent notamment LDEGIM, CERRDS, ERUDITE, VORTEX, TCI, LIRPES, GéoSuds et des équipes universitaires partenaires. Les domaines/axes listés sont :
+- Droit et Sciences Politiques ;
+- Santé, Politiques Publiques, Gestion d'Entreprises et Développement ;
+- Mathématiques, Informatique et Applications ;
+- Patrimoines, Espaces et Sociétés.
+
+Cette école doctorale constitue un périmètre distinct du catalogue Licence/Master des 157 associations ; elle ne doit pas être artificiellement modélisée comme une faculté ou une mention de Licence/Master. Dans le schéma Supabase en lecture seule, aucune table dédiée à une école doctorale, à ses équipes de recherche, aux directeurs de thèse ou aux inscriptions doctorales n'a été trouvée.
+
+**À obtenir :** statut actuel de SCSD, renouvellement/maintien de l'habilitation doctorale, liste actualisée des équipes d'accueil et laboratoires, domaines et sujets, enseignants habilités à diriger les recherches, conventions interuniversitaires, modalités d'admission, effectifs et soutenances récentes. Si MITARIDALA souhaite gérer le troisième cycle, créer une structure de données doctorale distincte (école doctorale → domaine/axe → équipe d'accueil → encadrant → sujet/inscription/soutenance), après spécification et preuves HAE, plutôt que d'utiliser `Mention` ou `Filiere` au niveau Licence/Master.
+
+Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, école doctorale SCSD, page 83](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
 ### Faculté de Médecine — habilitations 2017–2022 et confirmation institutionnelle 2024
 La liste officielle MESUPRES mise à jour en août 2022 place explicitement une **FACULTÉ DE MÉDECINE sous l'UNIVERSITÉ TOAMASINA**. Elle cite le domaine « Sciences de la Santé / Licence » et quatre mentions : **Sciences Infirmières, Maïeutique, Médecine humaine et Sciences Paramédicales**. Le tableau donne les références d'arrêtés n°31798/2017-MESupReS du 27 décembre 2017, n°594/2018-MESupRES du 15 janvier 2018 et n°4000/2022-MESupRES du 28 février 2022.
 
