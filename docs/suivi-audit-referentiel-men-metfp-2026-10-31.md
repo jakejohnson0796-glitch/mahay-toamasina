@@ -1855,3 +1855,49 @@ Sources officielles :
 - [PE T10 MEN — Éducation à la citoyenneté](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 187-193.
 - [PE T10 MEN — TICE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 240-247.
 - [PE T10 MEN — matrice horaire et coefficients](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 9-10.
+
+### 9.51 Langues principales au lycée : répartition horaire par série et progression de compétences
+
+Les PE T11 et T12 comportent des sections de Malagasy, Français et Anglais séparées par série. Leurs volumes hebdomadaires ne sont pas identiques :
+
+| Niveau / série | Malagasy | Français | Anglais |
+|---|---:|---:|---:|
+| T10 | 4 h | 4 h | 4 h |
+| T11 L | 5 h | 5 h | 5 h |
+| T11 S | 3 h | 3 h | 2 h |
+| T11 OSE | 3 h | 3 h | 3 h |
+| T12 L | 6 h | 6 h | 6 h |
+| T12 S | 3 h | 3 h | 3 h |
+| T12 OSE | 3 h | 3 h | 2 h |
+
+Les valeurs sont reprises de la matrice d'ouverture des PE et de la grille horaire autonome ; elles représentent des heures hebdomadaires, pas des durées de séquence. Elles montrent que la pondération de l'Anglais est notamment différente entre T11 S et T11 L/OSE et entre T12 OSE et T12 L/S.
+
+#### Structure commune des programmes de langue
+
+Les PE déclinent les apprentissages à travers les résultats d'apprentissage propres aux langues, la compréhension orale, l'expression orale (interaction et prise de parole), la compréhension écrite, la production écrite et le fonctionnement de la langue (grammaire, lexique, syntaxe, prononciation). Les sections peuvent également intégrer des textes et thèmes culturels, historiques, sociaux ou scientifiques spécifiques à chaque parcours.
+
+Exemples de supports/thèmes relevés dans les sections consultées :
+- le PE de Français propose des résumés structurés, lectures expressives, textes littéraires/culturels et argumentations ; les sections de S et OSE font travailler des supports ancrés dans les faits de société et l'environnement ;
+- le PE d'Anglais en T11 fait travailler la lecture, l'écoute, la prise de parole et l'écriture à partir de textes portant, selon les unités, sur des thèmes culturels/socials (ex. coutumes et traditions malgaches, tourisme, arts/culture ou protection de l'environnement) ;
+- le PE de Malagasy associe la langue à la société malgache, aux représentations culturelles, aux valeurs, à la littérature, au fonctionnement de la langue et à la production écrite/orale. Les sections T11/T12 conservent des contenus propres à leur niveau.
+
+Ces observations ne constituent pas une transcription exhaustive des RAS de langue. Les séquences, textes supports, compétences linguistiques et évaluations doivent être extraits série par série avant d'importer un programme complet.
+
+#### Langues vivantes facultatives
+
+Pour T11, le PE précise expressément que l'Allemand, l'Espagnol et le Russe sont des disciplines facultatives au choix de l'élève, chacune à 2 h par semaine. La grille quantitative présente une seule ligne groupée « Allemand/Espagnol/Russe » avec 2 h et coefficient 1. Il ne faut donc pas compter trois langues simultanées ni ajouter 6 h à l'emploi du temps. Le décret du baccalauréat confirme séparément une épreuve de LV2 au choix.
+
+Pour T12, les trois langues apparaissent dans la grille quantitative à 2 h et coefficient 1, mais la recherche textuelle du terme « facultative » dans le PE T12 ne retourne pas de correspondance. Le statut de choix en T12 doit être enregistré comme « à confirmer » au niveau du PE, même si le décret organise une LV2 au choix à l'examen du baccalauréat. Ne pas transposer automatiquement le libellé exact T11 vers T12 sans citation explicite.
+
+#### Conséquences pour MITARIDALA
+
+1. Les tableaux d'horaires, les parcours et les exercices doivent utiliser une clé `niveau + série + langue + PE/version`.
+2. Ne pas mutualiser un quiz de français ou d'anglais entre les trois séries en se fondant sur la seule langue ; tenir compte de la classe, du RAS et des supports de la section correspondante.
+3. En T11, gérer le choix d'Allemand/Espagnol/Russe comme une option unique par apprenant lorsque le parcours est confirmé ; le bloc horaire ne doit pas tripler.
+4. En T12, conserver le caractère de choix des langues comme point réglementaire à confirmer par le MEN ; distinguer les langues enseignées de l'épreuve LV2 du baccalauréat.
+5. Éviter de traduire ou de normaliser arbitrairement les textes littéraires, les noms culturels ou les contenus malagasy ; conserver le libellé et la langue de la source.
+
+Sources officielles :
+- [PE T11 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), sections L p. 12-85, S p. 242-313, OSE p. 494-526 ; les langues facultatives allemand/espagnol/russe figurent respectivement p. 87-111 et p. 314-334, puis dans les sections OSE correspondantes.
+- [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), sections L p. 12-? , S p. 216-? et OSE p. 649-? ; sommaire par série p. 10-11.
+- [Grille autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
