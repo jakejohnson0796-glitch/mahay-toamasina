@@ -1644,3 +1644,52 @@ Le décret est donc l'acte de création de la composante et de son département 
 
 Source :
 - [Décret n°2014-1257 du 13 août 2014 — création de Facultés de Médecine dans quatre universités publiques (copie PDF Lexxika avec référence CNLegis)](https://textes.lexxika.com/wp-content/uploads/2024/05/Decret-2014-1257-13-Aout-2014-Portant-creation-dune-Faculte-de-Medecine-au-sein-des-Universites-dAntsiranana-de-Fianara-.pdf).
+
+
+## 38. Source directe AUF sur la cohorte TAFA de l'Université de Toamasina
+
+La plateforme officielle d'appels à candidatures de l'AUF conserve une page TAFA intitulée « Appel à candidatures — Parcours TAFA ». Elle précise :
+- période de candidature du **18 mars au 10 avril 2025** ;
+- projet déployé dans les régions Analamanga, Atsinanana et Haute Matsiatra ;
+- public visé : étudiants en fin de parcours universitaire ;
+- finalité : améliorer la capacité à intégrer le monde professionnel, avec sensibilisation, compétences transversales et certifications professionnelles ;
+- activités annoncées pour l'Université de Toamasina durant la **semaine du 22 avril 2025** ;
+- campagne clôturée sur la plateforme.
+
+Cette page est plus spécifique au campus que la fiche globale TAFA : elle confirme qu'un parcours TAFA avait un calendrier d'activité propre à Toamasina en avril 2025. Elle ne donne toutefois pas, dans l'extrait public, le nombre d'étudiants admis ou achevant le parcours à Toamasina, les attestations individuelles, ni le taux d'insertion local.
+
+**À demander pour documenter le résultat local :** appel Toamasina en pièce jointe, liste anonymisée des candidats sélectionnés, présence aux ateliers, certifications obtenues, activités réalisées jusqu'à novembre 2025 et bilan d'insertion. Le rapport ne transforme pas les chiffres globaux du projet en chiffres de la seule université.
+
+Source primaire :
+- [AUF — Appel à candidatures TAFA, section Université de Toamasina (campagne clôturée)](https://appels-propositions.auf.org/appel-a-candidatures---parcours-tafa?view=programme).
+
+## 39. Répertoire des enseignants-chercheurs permanents : point d'entrée MESUPRES identifié, extraction non disponible
+
+Le portail MESUPRES renvoie officiellement vers **FOSIKA /enseignants** pour consulter la liste des enseignants-chercheurs permanents exerçant dans les universités et instituts d'enseignement supérieur. Ce répertoire constitue une source prioritaire pour vérifier les effectifs permanents et les affectations par établissement.
+
+Lors du contrôle, la page fosika.mesupres.mg/enseignants répond uniquement « You need to enable JavaScript to run this app » dans la vue documentaire. Les moteurs de recherche consultés n'ont pas exposé les lignes individuelles de Toamasina. Il n'est donc pas possible, à partir de cette interface statique, de compter de manière fiable les enseignants permanents par composante, grade ou spécialité, ni d'en déduire les HDR.
+
+**Important :** une liste d'enseignants permanents ne prouve pas à elle seule l'activité d'une équipe de recherche ou l'habilitation d'une école doctorale. Pour appliquer les décrets 2026-1547 et 2026-1548, il faut rapprocher le répertoire FOSIKA avec les arrêtés de nomination, les attestations HDR, les équipes d'accueil habilitées, les publications, les doctorants régulièrement inscrits et les projets financés.
+
+**Pièces à demander à la DGES / à l'Université de Toamasina :**
+1. export daté du répertoire FOSIKA filtré sur Université de Toamasina ;
+2. rattachement de chaque enseignant à la composante, au domaine et à la mention ;
+3. grade/statut, spécialité, établissement d'affectation et statut de service ;
+4. preuve HDR et discipline de l'HDR, sans présumer qu'un titre de Professeur suffit à établir une HDR ;
+5. affectation formelle à une équipe d'accueil et charge d'encadrement doctorale.
+
+Sources officielles :
+- [MESUPRES — page officielle indiquant le répertoire des enseignants-chercheurs permanents](https://www.mesupres.gov.mg/).
+- [FOSIKA — répertoire des enseignants-chercheurs permanents (application JavaScript)](https://fosika.mesupres.mg/enseignants).
+
+## 40. Contrôle de périmètre d'une actualité PHARMA MAR sur les ressources marines
+
+Le MESUPRES a publié le 22 octobre 2026 un compte rendu d'une rencontre avec la délégation **PHARMA MAR**. Ce compte rendu cite explicitement une convention quadripartite entre le MESUPRES, le Centre National de Recherche Océanographique (CNRO), l'École Doctorale Sciences Marines et Halieutiques (EDSMH) de l'Université de Toliara, le ministère chargé de la Pêche et le ministère chargé de l'Environnement. Il rapporte des recherches chimiques sur des invertébrés marins collectés à Madagascar en 2024, après des collections 2022 et 2023.
+
+**Cette actualité ne concerne pas directement l'Université de Toamasina ni l'EDT 3D.** Elle relève du CNRO et de l'Université de Toliara (EDSMH). Elle peut figurer dans une veille nationale de recherche marine, mais elle ne doit pas servir à présenter PHARMA MAR, la convention ou les résultats comme un partenariat de Toamasina.
+
+**Décision de données :** dans MITARIDALA, rattacher cette information à la veille nationale « recherche marine / CNRO / Université de Toliara » ; ne créer aucun partenariat Toamasina sans convention ou preuve distincte liant explicitement l'Université de Toamasina, ses chercheurs ou laboratoires.
+
+Source primaire :
+- [MESUPRES — PHARMA MAR, recherche sur les ressources marines, 22 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/604).
+
