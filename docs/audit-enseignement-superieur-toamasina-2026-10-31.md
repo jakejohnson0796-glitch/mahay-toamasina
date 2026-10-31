@@ -1881,12 +1881,14 @@ Le décret place donc l'IFIRP dans l'organisation administrative du **Ministère
 
 ### 43.2 Implantation physique confirmée à Toamasina
 
-Le Plan de Gestion Environnementale et Sociale (PGES) du projet PPSB, préparé en **septembre 2024**, concerne explicitement la réhabilitation des locaux de l'IFIRP Toamasina. Il indique la localisation suivante :
+Le Plan de Gestion Environnementale et Sociale (PGES) du projet PPSB, préparé en **septembre 2024**, concerne explicitement la réhabilitation des locaux de l'IFIRP Toamasina. Dans son corps principal (section « Localisation administrative », page imprimée 42), il indique :
 - région : Atsinanana ;
 - district : Toamasina I ;
-- commune : Commune Urbaine de Toamasina ;
+- commune : Commune Urbaine Toamasina ;
 - fokontany : Analakininina ;
-- coordonnées approximatives de l'enceinte : **-18.142951, 49.415077** (une seconde coordonnée est également indiquée dans la fiche d'annexe).
+- coordonnées : **-18.142951, 49.415077**.
+
+**Incohérence interne repérée :** la fiche de filtration de l'annexe (page imprimée 89) libelle la « Commune Urbaine » comme « ANKIRIHIRY » et le fokontany comme « ANALANKINININA », avec deux coordonnées proches (-18.142951, 49.415077 et -18.14315, 49.415133). Le corps et l'annexe ne donnent donc pas exactement les mêmes libellés administratifs. Le site est bien dans la ville de Toamasina et le PGES le rattache au terrain de la DRSP, mais les champs Commune/Fokontany doivent être confirmés par la DRSP/CU Toamasina avant géolocalisation administrative normalisée.
 
 Le PGES indique que le terrain de l'enceinte appartient à la Direction Régionale de la Santé Publique. Cela corrobore le rattachement MSANP décrit par le décret de 2020 et permet de le localiser dans le périmètre Toamasina-ville, mais pas sur le campus universitaire de Barikadimy.
 
@@ -1948,4 +1950,85 @@ Sources primaires / officielles :
 
 Source secondaire étudiante de veille :
 - [Étudiants IFIRP Toamasina — publications de mai et juillet 2026 sur la promotion et les activités pratiques](https://www.schoolandcollegelistings.com/MG/Toamasina/102413465593488/%C3%89tudiants---IFIRP-Toamasina).
+
+
+
+## 44. Mise à jour IFIRP / DIFP en 2026 : inauguration, pilotage de la formation et nouveau module de nutrition
+
+### 44.1 Rôle actuel de la Direction des Instituts de Formation des Paramédicaux
+
+La page officielle actuelle du MSANP relative à la Direction Générale de Fourniture des Soins (DGFS) liste la **Direction des Instituts de Formation des Paramédicaux (DIFP)** parmi ses directions rattachées. Le ministère lui attribue explicitement une fonction d'interface entre les ministères, partenaires et structures responsables de formation paramédicale, et une mission de coordination, gestion, harmonisation et dynamisation des ressources et activités de ces structures afin de garantir la qualité de la formation.
+
+Cette page confirme, à la date de consultation, la tutelle technique et le rôle national de coordination de la DIFP. Elle complète le décret 2020-1286 qui rattache administrativement chaque IFIRP à la DRSP de sa zone d'implantation.
+
+Sources officielles :
+- [MSANP — DGFS, directions rattachées et mission de la DIFP](https://www.msanp.gov.mg/index.php/Staff?staff=DGFS).
+- [MSANP — Décret n°2020-1286, organisation du ministère, articles 38 et 48](https://cnlegis.gov.mg/uploads/D2020-1286%28ORG-Sante_Publique%29.pdf).
+
+### 44.2 Inauguration officielle de l'IFIRP Toamasina le 24 janvier 2026
+
+Midi Madagasikara rapporte le **3 février 2026** que l'IFIRP de Toamasina a été officiellement inauguré le **samedi 24 janvier 2026**. La cérémonie aurait été présidée par la ministre de la Santé publique, Dr Monira Managna, en présence du président de l'Université de Toamasina et des autorités civiles et militaires locales. L'article présente une infrastructure neuve dédiée à la formation des infirmiers et sages-femmes.
+
+Il s'agit d'une source de presse secondaire décrivant une cérémonie officielle. Cette donnée est importante pour l'état actuel de l'établissement : elle montre une réalisation/inauguration en janvier 2026, alors que le PGES PPSB de septembre 2024 décrivait un projet de réhabilitation de six bâtiments. Les deux pièces doivent être conservées ensemble, sans supposer qu'elles décrivent exactement le même bâtiment ou le même lot de travaux.
+
+**À obtenir pour résoudre le rapport entre les deux projets :**
+1. procès-verbal d'inauguration et maître d'ouvrage de l'infrastructure ouverte en janvier 2026 ;
+2. plans et adresse de l'équipement inauguré ;
+3. état d'avancement et réception des six bâtiments du PGES 2024 ;
+4. clarification du périmètre des travaux (construction neuve, réhabilitation PPSB, locaux anciens/annexes) ;
+5. état post-Gezani et capacité d'accueil opérationnelle au 31 octobre 2026.
+
+Source secondaire :
+- [Midi Madagasikara — Inauguration de l'IFIRP à Toamasina, cérémonie du 24 janvier 2026, article du 3 février](https://midi-madagasikara.mg/un-nouvel-elan-pour-la-formation-des-para-medicaux/).
+
+### 44.3 Formation renforcée en nutrition : cycle achevé à Toamasina du 27 juin au 4 juillet 2026
+
+Santé Sud rapporte qu'une session de formation des formateurs et encadrants a été organisée à **Toamasina du 27 juin au 4 juillet 2026**, avec la Direction des Instituts de Formation des Paramédicaux (DIFP) et le Service de la Nutrition (SNUT). Cette session était la dernière d'un cycle déployé dans les six IFIRP du pays.
+
+L'objectif est d'intégrer un **module renforcé en nutrition** dans les cursus de formation initiale des futurs infirmiers et sages-femmes, avec des compétences ciblant notamment :
+- le dépistage précoce de la malnutrition ;
+- la prévention et la prise en charge ;
+- les enfants de moins de cinq ans ;
+- les femmes enceintes et allaitantes.
+
+Santé Sud indique que les six IFIRP disposent désormais des compétences nécessaires pour déployer le module dans leurs établissements et que **149 formateurs et encadrants** ont été formés au total au niveau national. Ce total n'est pas l'effectif des participants de Toamasina : le nombre de formateurs formés dans la seule session locale n'est pas précisé.
+
+Le projet Bien Naître est mis en œuvre par Santé Sud, avec le soutien financier de la Direction de la Coopération du Gouvernement de Monaco et la collaboration du MSANP par la DIFP et le SNUT.
+
+**Ce qui est établi :** une session nationale de renforcement des capacités a effectivement été tenue à Toamasina sur cette période et le programme vise l'intégration d'un nouveau module de nutrition dans la formation initiale des IFIRP.
+
+**Ce qui reste à vérifier :** le module complet (objectifs pédagogiques, heures, unités, évaluations), la version actualisée des maquettes infirmier/sage-femme, la décision de validation de la DIFP, le calendrier du premier déploiement aux promotions, le nombre local de formateurs formés et les preuves de transmission aux étudiants.
+
+Source partenaire de mise en œuvre :
+- [Santé Sud — Fin du cycle de formation des formateurs en nutrition, session de Toamasina du 27 juin au 4 juillet 2026](https://www.santesud.org/actualites/madagascar-fin-de-la-serie-de-formations-des-formateur%C2%B7rices-en-nutrition/).
+
+### 44.4 Arrêté n°7823/2021 : neuf établissements privés paramédicaux autorisés et habilités dans un acte distinct
+
+L'arrêté MESUPRES **n°7823/2021 du 16 mars 2021** autorise l'ouverture de neuf Institutions d'Enseignement Supérieur Privées paramédicales et habilite les offres figurant dans son tableau. L'acte prévoit, selon les établissements, des cursus de trois ans après le baccalauréat conduisant au diplôme de Licence d'Infirmier généraliste et/ou de Sage-femme, ou à la Licence d'Infirmier de Bloc opératoire.
+
+Les neuf entrées de ce texte sont :
+1. Université Saint Vincent de Paul AKAMASOA, Antananarivo ;
+2. PARMA-IF Antsirabe ;
+3. IFSPN Nosy Be ;
+4. IFSPR-Boeny, Mahajanga (parcours Infirmier de Bloc opératoire) ;
+5. ISPAM Mahajanga ;
+6. ISPE, Tsiroanomandidy ;
+7. ISS/FP Fianarantsoa ;
+8. MILLENIUM University, Ambohidratrimo ;
+9. URM, Ambilobe.
+
+**Aucune de ces neuf entrées ne se situe à Toamasina.** Cet arrêté est une pièce distincte et ne remplace pas les actes antérieurs retrouvés dans le registre HAE d'août 2022 pour les écoles privées de Toamasina (IFSP Atsinanana, IFSPT, INSPALM, INSPNMAD Atsinanana). L'absence d'un établissement dans la liste des neuf de 2021 ne prouve pas qu'il n'a pas une habilitation antérieure ; il faut consulter l'acte propre à chaque école.
+
+L'arrêté 7823/2021 démontre également que le MESUPRES peut autoriser un établissement privé paramédical et ses parcours/diplômes de grade Licence. Il ne doit pas être appliqué automatiquement à l'IFIRP public, qui relève de l'organisation MSANP/DIFP/DRSP et dispose d'un régime administratif distinct à documenter.
+
+Source primaire :
+- [CNLegis — Arrêté n°7823/2021-MESupRES du 16 mars 2021 autorisant neuf IES privées paramédicales et habilitant leurs offres (PDF, 3 pages)](https://cnlegis.gov.mg/uploads/A7823-2021-VF.pdf).
+
+### 44.5 Modèle MITARIDALA : deux circuits de formation paramédicale à séparer
+
+Le catalogue doit distinguer au minimum :
+- **IFIRP publics** : structures du MSANP, gestion technique DIFP, rattachement territorial aux DRSP, cursus infirmier/sage-femme, référentiels nationaux de santé, stages cliniques et validation selon le régime de formation sanitaire applicable ;
+- **IES privées paramédicales** : autorisation d'ouverture et habilitation MESUPRES par établissement, domaine, mention, parcours, grade et période ; décisions et renouvellements propres à chaque entité.
+
+Les deux circuits peuvent délivrer des diplômes ou titres dans les métiers infirmier/sage-femme, mais l'homonymie de profession ne constitue pas une équivalence réglementaire. Le référentiel public ne doit donc pas les fusionner sans texte de correspondance, autorisation et définition du diplôme.
 
