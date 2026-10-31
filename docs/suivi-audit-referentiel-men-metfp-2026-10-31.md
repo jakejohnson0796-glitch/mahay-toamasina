@@ -30,6 +30,21 @@ L'index des RAPE de septembre 2026 présente, lui, des documents T11 et T12 en s
 
 ## 2. Contrôle de l'édition annuelle 2026
 
+### Réserve documentaire ajoutée au 31 octobre 2026
+
+Une vérification croisée empêche de considérer la date d'effet 2026-2027 comme pleinement certifiée à ce stade :
+
+- L'index officiel MEN expose les collections PE et RAPE T6-T12, mais son rendu public consultable ne donne pas, pour chaque tuile RAPE, une année scolaire explicite ni une notice de version détaillée.
+- Le catalogue HAY EDUCATION décrit une notice RAPE T6 comme « année scolaire 2025-2026 » ; cette notice constitue un indice de catalogue distinct, et non une preuve que le fichier MEN de septembre 2026 a la même édition ou la même date d'effet.
+- La page MEN des directives de rentrée retrouvée pendant ce contrôle concerne explicitement 2025-2026. Aucun arrêté ou note circulaire officiel établissant le calendrier scolaire 2026-2027 n'a été retrouvé dans cette recherche.
+- Les pages MEN générales affichent encore des ressources et séries A/C/D, tandis que les index de bibliothèque présentent L/S/OSE. Cette coexistence confirme qu'il faut garder les nomenclatures séparées jusqu'à publication d'une table officielle de correspondance.
+
+**Décision de qualité des données :** `MEN-RAPE-2026-09` peut être conservé comme édition datée affichée dans les fichiers sources du dépôt, avec statut global `partiel`. En revanche, ne pas présenter son rattachement à l'année scolaire 2026-2027 comme une date d'effet ministérielle certifiée tant que le calendrier ou l'instruction officielle correspondante n'a pas été obtenu. Le code doit distinguer « date/édition du document » et « année scolaire d'application » ; ces champs ne sont pas interchangeables.
+
+Sources croisées : [index Bibliothèque numérique MEN](https://plateforme.education.mg/bibliotheque-numerique/), [notice HAY EDUCATION RAPE T6 2025-2026](https://hay.education.mg/opac_css/index.php?id=26&lvl=notice_display), [directives MEN de rentrée 2025-2026](https://www.education.gov.mg/directives-relatives-a-lorganisation-de-la-rentree-scolaire-2025-2026/).
+
+
+
 Le dépôt contient la migration `alembic/versions/e2b7c9d4a1f6_referentiel_rape_2026_09.py`, qui crée la version `MEN-RAPE-2026-09`, la garde au statut `partiel`, et associe les programmes par niveau/série aux PDF RAPE individuels.
 
 Le rapport initial inventorie les onze PDF et leurs matières. Les liens directs restent ceux indiqués dans le rapport initial. La RAPE est une répartition annuelle et ne remplace pas le PE complet.
