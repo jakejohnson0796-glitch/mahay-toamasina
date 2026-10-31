@@ -1359,3 +1359,37 @@ Le contrôle du détail du PE T9 précise les attentes qui n'étaient résumées
 Sources primaires :
 - [PE T9 MEN — Géographie, secteurs économiques et activités locales/régionales](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf), pages PDF 194-200.
 - [PE T9 MEN — potentialités naturelles et hydrographie](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf), pages PDF 201-203.
+
+
+### 9.40 T11 : langues vivantes facultatives et différenciation réelle des mathématiques par série
+
+#### Langues vivantes allemand, espagnol et russe
+
+Le PE T11 présente trois programmes de langue distincts dans chaque parcours L, S et OSE. Pour les trois langues, les pages d'introduction précisent explicitement que la discipline est facultative et au choix de l'élève, avec un volume de 2 heures par semaine. Les trois langues ne doivent donc pas être considérées comme trois enseignements obligatoires suivis simultanément par le même élève.
+
+La grille de lycée regroupe les trois libellés dans une seule ligne « Allemand/Espagnol/Russe » (2 h et coefficient 1). Cette ligne commune représente un choix de langue et ne doit pas être multipliée par trois lors du calcul de l'emploi du temps ou du total de coefficient de l'apprenant.
+
+Le décret 2026-2100 rend obligatoire une épreuve au choix de LV2 au baccalauréat. Il faut distinguer le statut de matière optionnelle dans le programme de lycée, le choix effectif de LV2 effectué par l'élève et le caractère obligatoire de l'épreuve à l'examen final.
+
+**Donnée de catalogue recommandée :** trois matières facultatives indépendantes avec choix d'une seule langue par apprenant ; volume 2 h/semaine pour la langue retenue ; coefficient de grille lycée 1 pour la ligne choisie. La liste des choix (allemand, espagnol, russe) doit porter la source PE et la version. Ne pas créer trois inscriptions simultanées au seul motif que les trois PDF de langue sont disponibles.
+
+Sources : PE T11 allemand (PDF p. 87-89), espagnol (PDF p. 96-98), russe (PDF p. 104-106) ; décret 2026-2100 du 31 août 2026 (LV2 obligatoire au choix).
+
+#### Mathématiques : les séries L, S et OSE ne partagent pas le même programme détaillé
+
+Même si le domaine est intitulé « Mathématiques » pour les trois séries, le PE T11 établit un véritable différentiel de volume et de contenus :
+
+| Série T11 | Volume horaire | Contenus représentatifs contrôlés dans le PE |
+|---|---:|---|
+| L | 2 h/semaine | Fonctions polynomiales et homographiques ; limites, asymptotes, dérivation et tableaux de variation ; logique (tautologie/propositions équivalentes) ; suites arithmétiques et géométriques ; équations du second degré ; systèmes à deux inconnues ; statistiques à deux variables, dénombrement et probabilités. |
+| S | 5 h/semaine | Étude complète des fonctions d'une variable réelle ; limites, continuité, dérivabilité, tangentes et variations ; systèmes linéaires jusqu'à quatre inconnues ; bases de numération, nombres premiers et factorisation ; algorithmique (boucles « tant que » et « pour ») ; logique ; suites ; calcul vectoriel, barycentre, transformations, géométrie dans l'espace ; trigonométrie ; statistique et probabilités. |
+| OSE | 5 h/semaine | Équations du second et troisième degré, inéquations et systèmes de deux/trois inconnues ; suites arithmétiques/géométriques, terme général et sommes ; trigonométrie et équations trigonométriques ; pourcentages, proportions, taux d'évolution, statistiques descriptives, dénombrement et probabilités ; mathématiques financières (capital, placement, emprunt, intérêts, valeur acquise, escompte commercial). |
+
+Ces contenus sont des exemples structurants issus du tableau des contenus et de quelques RAS, pas une extraction exhaustive de tous les thèmes. La série L n'est donc pas un simple sous-ensemble mécanique de S ; OSE possède une composante d'algèbre, de statistiques et de mathématiques financières qui doit être préservée.
+
+**Conséquence pour MITARIDALA :** chaque notion/quiz T11 doit avoir une clé comprenant le PE/version, T11, la série L/S/OSE, la matière et le RAS. Les questions de systèmes à quatre inconnues, calcul vectoriel ou géométrie dans l'espace doivent être rattachées au parcours S lorsqu'elles proviennent de la section S ; les mathématiques financières doivent être rattachées à OSE lorsque leur source PE est OSE. Ne pas utiliser le coefficient ou l'intitulé de matière comme seul critère d'affectation.
+
+Sources :
+- [PE T11 MEN — Mathématiques série L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), PDF p. 112-120.
+- [PE T11 MEN — Mathématiques série S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), PDF p. 342-353.
+- [PE T11 MEN — Mathématiques série OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), PDF p. 592-596.
