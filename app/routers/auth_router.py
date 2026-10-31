@@ -326,7 +326,9 @@ def inscription(
                 )
 
             referentiels_scolaires = session.exec(
-                select(ReferentielScolaire).order_by(
+                select(ReferentielScolaire)
+                .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
+                .order_by(
                     ReferentielScolaire.date_creation.desc(),
                     ReferentielScolaire.id.desc(),
                 )
