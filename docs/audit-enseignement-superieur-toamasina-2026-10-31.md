@@ -1627,3 +1627,20 @@ La ligne médecine humaine ne contient pas les 344 inscrits infirmier / maïeuti
 Source primaire :
 - [MESUPRES — Annuaire statistique 2022-2023, pages imprimées 29-31 (tableaux par filière et année d'étude)](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
 
+
+
+### 36.5 Décret n°2014-1257 : création de la Faculté de Médecine et articulation avec les arrêtés d'habilitation
+
+Le décret n°2014-1257 du **13 août 2014** crée une Faculté de Médecine au sein de chacune des Universités d'Antsiranana, de Fianarantsoa, de Toamasina et de Toliara (article premier).
+
+Il précise :
+- à sa création, chaque Faculté de Médecine comporte le département « Médecine humaine » ;
+- elle peut comprendre plusieurs départements, mais leur ouverture doit faire l'objet d'un arrêté du ministre chargé de l'Enseignement supérieur, sur proposition du Conseil d'Administration de l'Université et après avis du Conseil scientifique de l'établissement (article 2) ;
+- les programmes, volumes horaires, durée d'études et modalités d'accès doivent être fixés par voie réglementaire (article 3).
+
+Le décret est donc l'acte de création de la composante et de son département initial ; il ne fixe pas à lui seul le programme complet ni l'offre de chaque mention. Les arrêtés ultérieurs 31798/2017 et 594/2018 sont des actes d'habilitation d'offres distinctes, chacun avec son intitulé de diplôme et sa durée. L'arrêté 4000/2022 est encore une référence de la liste HAE pour Sciences paramédicales, mais son contenu détaillé demeure à obtenir.
+
+**Décision de modélisation :** enregistrer le décret 2014-1257 comme acte de création de l'établissement/composante, et les arrêtés 31798/2017, 594/2018 et 4000/2022 comme décisions d'habilitation de programmes distincts. Une décision de création de faculté ne doit jamais être interprétée comme l'habilitation automatique de toutes les formations qui y seront proposées.
+
+Source :
+- [Décret n°2014-1257 du 13 août 2014 — création de Facultés de Médecine dans quatre universités publiques (copie PDF Lexxika avec référence CNLegis)](https://textes.lexxika.com/wp-content/uploads/2024/05/Decret-2014-1257-13-Aout-2014-Portant-creation-dune-Faculte-de-Medecine-au-sein-des-Universites-dAntsiranana-de-Fianara-.pdf).
