@@ -1286,3 +1286,89 @@ def test_catalogue_public_pagine_offres_et_etablissements_sans_perdre_les_filtre
 
     session.close()
     engine.dispose()
+
+
+def test_api_scolaire_conserve_l_acces_aux_anciennes_versions_apres_import():
+    engine, session = _session()
+    ancienne_ref, ancien_niveau, ancienne_serie = _school_catalogue(session)
+
+    matiere = MatiereScolaire(
+        code="MATIERE_VERSION_HISTORIQUE",
+        libelle="Mathématiques historiques",
+        source_officielle=ancienne_ref.source_officielle,
+        statut_validation="verifie",
+        est_active=True,
+    )
+    session.add(matiere)
+    session.commit()
+    session.refresh(matiere)
+    session.add(ProgrammeMatiereScolaire(
+        referentiel_id=ancienne_ref.id,
+        niveau_id=ancien_niveau.id,
+        option_id=ancienne_serie.id,
+        matiere_id=matiere.id,
+        obligatoire=True,
+        source_officielle=ancienne_ref.source_officielle,
+        statut_validation="verifie",
+    ))
+
+    nouvelle_ref = ReferentielScolaire(
+        code="MEN-test-2027",
+        libelle="Nouvelle version de test",
+        annee_scolaire="2026-2027",
+        source_officielle="https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/",
+        statut="partiel",
+    )
+    session.add(nouvelle_ref)
+    session.commit()
+    session.refresh(nouvelle_ref)
+    nouveau_niveau = NiveauScolaire(
+        referentiel_id=nouvelle_ref.id,
+        code="TERM",
+        libelle="Terminale nouvelle version",
+        cycle="lycee",
+        ordre=7,
+        est_actif=True,
+        source_officielle=nouvelle_ref.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(nouveau_niveau)
+    session.commit()
+    session.refresh(nouveau_niveau)
+
+    # Le sélecteur par défaut utilise la dernière version, mais une ancienne
+    # version reste explicitement consultable par son identifiant.
+    niveaux_recents = scolaire_router.lister_niveaux_scolaires(
+        cycle="lycee", session=session
+    )
+    niveaux_anciens = scolaire_router.lister_niveaux_scolaires(
+        cycle="lycee", referentiel_id=ancienne_ref.id, session=session
+    )
+    assert [item["id"] for item in niveaux_recents] == [nouveau_niveau.id]
+    assert [item["id"] for item in niveaux_anciens] == [ancien_niveau.id]
+
+    # Les matières/options d'un ancien profil ne disparaissent pas lorsque
+    # la dernière version du catalogue change.
+    options_anciennes = scolaire_router.lister_options_scolaires(
+        ancien_niveau.id, session=session
+    )
+    assert [item["id"] for item in options_anciennes] == [ancienne_serie.id]
+    matieres_anciennes = scolaire_router.lister_matieres_scolaires(
+        ancien_niveau.id, option_id=ancienne_serie.id, session=session
+    )
+    assert [item["id"] for item in matieres_anciennes] == [matiere.id]
+
+    ancienne_vue = scolaire_router.obtenir_referentiel_scolaire(
+        referentiel_id=ancienne_ref.id, session=session
+    )
+    assert ancienne_vue["version"]["id"] == ancienne_ref.id
+    assert ancienne_vue["niveaux"][0]["id"] == ancien_niveau.id
+
+    # L'administration doit résoudre la version du niveau, pas la dernière
+    # version importée au niveau national.
+    assert admin_scolaire_router._referentiel_du_niveau(
+        session, ancien_niveau
+    ).id == ancienne_ref.id
+
+    session.close()
+    engine.dispose()
