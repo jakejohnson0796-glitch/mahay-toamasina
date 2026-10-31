@@ -112,3 +112,166 @@
     animation: none !important;
   }
 }
+
+
+/* Routine quotidienne : états issus des activités réellement enregistrées. */
+.main-tb .tb-routine {
+  min-width: 0;
+  margin: 1.25rem 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border: 1px solid var(--content-border);
+  border-radius: 20px;
+  background: var(--content-bg);
+  color: var(--content-text);
+}
+
+.main-tb .tb-routine-entete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.main-tb .tb-routine-entete h2 {
+  margin: 0;
+  color: var(--content-text);
+  font-size: 1.15rem;
+}
+
+.main-tb .tb-routine-entete p {
+  margin: .3rem 0 0;
+  color: var(--content-text-muted);
+  font-size: .9rem;
+}
+
+.main-tb .tb-routine-compteur {
+  flex: 0 0 auto;
+  color: var(--content-text);
+  font-size: .85rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.main-tb .tb-routine-piste {
+  height: 7px;
+  margin: 1rem 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--content-border);
+}
+
+.main-tb .tb-routine-remplissage {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent, #168b79);
+  transition: width .2s ease;
+}
+
+.main-tb .tb-routine-etapes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.main-tb .tb-routine-etape {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: start;
+  gap: .65rem;
+  min-width: 0;
+  padding: .85rem;
+  border: 1px solid var(--content-border);
+  border-radius: 14px;
+  background: var(--content-bg);
+}
+
+.main-tb .tb-routine-etape.is-complete {
+  border-color: var(--accent, #168b79);
+}
+
+.main-tb .tb-routine-numero {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--content-border);
+  color: var(--content-text);
+  font-weight: 750;
+}
+
+.main-tb .tb-routine-etape.is-complete .tb-routine-numero {
+  background: var(--accent, #168b79);
+  color: white;
+}
+
+.main-tb .tb-routine-contenu {
+  display: grid;
+  min-width: 0;
+  gap: .25rem;
+}
+
+.main-tb .tb-routine-contenu strong {
+  color: var(--content-text);
+  font-size: .9rem;
+  line-height: 1.35;
+}
+
+.main-tb .tb-routine-contenu > span {
+  color: var(--content-text-muted);
+  font-size: .8rem;
+  line-height: 1.45;
+}
+
+.main-tb .tb-routine-contenu a {
+  width: fit-content;
+  margin-top: .25rem;
+  color: var(--accent, #168b79);
+  font-size: .82rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.main-tb .tb-routine-fait {
+  display: grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border: 1px solid var(--content-border);
+  border-radius: 50%;
+  color: var(--content-text-muted);
+  font-size: .9rem;
+  font-weight: 800;
+}
+
+.main-tb .tb-routine-etape.is-complete .tb-routine-fait {
+  border-color: var(--accent, #168b79);
+  background: var(--accent, #168b79);
+  color: white;
+}
+
+.main-tb .tb-routine-finale {
+  margin: 1rem 0 0;
+  color: var(--content-text);
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .main-tb .tb-routine-etapes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .main-tb .tb-routine-entete {
+    flex-direction: column;
+    gap: .4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main-tb .tb-routine-remplissage {
+    transition: none;
+  }
+}

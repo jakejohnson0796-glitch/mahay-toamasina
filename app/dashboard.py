@@ -3,12 +3,13 @@ Agregation des donnees du tableau de bord etudiant. Separe du router pour
 garder celui-ci fin (responsabilite unique : le router orchestre la
 requete HTTP, ce module sait comment lire les donnees).
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from sqlmodel import Session, select
 
 from .models import (
+    ActionGamification,
     CercleEtude,
     MembreCercle,
     ConsultationDocument,
@@ -17,6 +18,7 @@ from .models import (
     Document,
     InscriptionCours,
     RenduDevoir,
+    SessionTuteur,
     StatutDocument,
     TentativeQuiz,
     Utilisateur,
@@ -134,6 +136,93 @@ def jours_actifs_consecutifs(
         total += 1
         jour -= timedelta(days=1)
     return total
+
+
+
+def routine_du_jour(
+    session: Session,
+    utilisateur_id: int,
+    maintenant: Optional[datetime] = None,
+) -> dict:
+    """Construit la routine depuis des preuves réelles, propres au compte et au jour UTC.
+
+    Les visites de pages, les adhésions à un cercle et les documents en attente
+    ne sont pas considérés comme des activités pédagogiques terminées.
+    """
+    maintenant = maintenant or datetime.utcnow()
+    if maintenant.tzinfo is not None:
+        maintenant = maintenant.astimezone(timezone.utc).replace(tzinfo=None)
+    debut_jour = maintenant.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    quiz_termine = session.exec(
+        select(TentativeQuiz.id).where(
+            TentativeQuiz.utilisateur_id == utilisateur_id,
+            TentativeQuiz.date_soumission != None,  # noqa: E711
+            TentativeQuiz.date_soumission >= debut_jour,
+        ).limit(1)
+    ).first() is not None
+
+    document_consulte = session.exec(
+        select(ConsultationDocument.id)
+        .join(Document, Document.id == ConsultationDocument.document_id)
+        .where(
+            ConsultationDocument.utilisateur_id == utilisateur_id,
+            ConsultationDocument.date_consultation >= debut_jour,
+            Document.statut == StatutDocument.APPROUVE,
+        )
+        .limit(1)
+    ).first() is not None
+
+    echange_tuteur = session.exec(
+        select(SessionTuteur.id).where(
+            SessionTuteur.utilisateur_id == utilisateur_id,
+            SessionTuteur.date_creation >= debut_jour,
+        ).limit(1)
+    ).first() is not None
+
+    message_cercle = session.exec(
+        select(ActionGamification.id).where(
+            ActionGamification.utilisateur_id == utilisateur_id,
+            ActionGamification.action == "cercle",
+            ActionGamification.date_creation >= debut_jour,
+        ).limit(1)
+    ).first() is not None
+
+    etapes = [
+        {
+            "id": "quiz",
+            "titre": "Un mini-quiz",
+            "description": "Termine un quiz pour vérifier ce que tu sais déjà.",
+            "lien": "/quiz",
+            "lien_label": "Faire un quiz",
+            "terminee": quiz_termine,
+        },
+        {
+            "id": "document",
+            "titre": "Une ressource de cours",
+            "description": "Télécharge un cours, une fiche ou une annale approuvée.",
+            "lien": "/documents",
+            "lien_label": "Explorer les ressources",
+            "terminee": document_consulte,
+        },
+        {
+            "id": "interaction",
+            "titre": "Un échange utile",
+            "description": "Pose une question au Tuteur IA ou envoie un message dans un cercle.",
+            "lien": "/tuteur",
+            "lien_label": "Ouvrir le Tuteur IA",
+            "terminee": echange_tuteur or message_cercle,
+        },
+    ]
+    terminees = sum(1 for etape in etapes if etape["terminee"])
+    total = len(etapes)
+    return {
+        "etapes": etapes,
+        "terminees": terminees,
+        "total": total,
+        "pourcentage": round(terminees * 100 / total) if total else 0,
+        "complete": total > 0 and terminees == total,
+    }
 
 
 def _delai_relatif(moment: datetime) -> str:
@@ -344,6 +433,7 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
 
     return {
         "parcours_demarrage": parcours_demarrage,
+        "routine_du_jour": routine_du_jour(session, utilisateur.id),
         "gamification": gam,
         "abonnement": abonnement,
         "acces_premium": subscription.acces_premium_valide(abonnement),
