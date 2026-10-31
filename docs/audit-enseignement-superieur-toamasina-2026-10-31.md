@@ -2665,3 +2665,50 @@ Cette source établit une cérémonie nationale officielle d'ouverture de l'ann�
 Source officielle :
 - [MESUPRES — Ouverture officielle de l'année universitaire 2025-2026 pour les universités et IST, 13 mars 2026](https://www.mesupres.gov.mg/actualites/detail/412).
 
+
+
+## 57. Aides d'urgence, hygiène du campus et suivi des infrastructures après Gezani
+
+### 57.1 IRD : don alimentaire de 900 kg pour les étudiants sinistrés — 13 février 2026
+
+Une actualité publiée dans les archives MESUPRES le **13 février 2026** indique que l'Institut de Recherche pour le Développement (IRD) a remis **900 kg de riz** pour soutenir les étudiants de l'Université de Toamasina touchés par le cyclone Gezani. La page ministérielle indique explicitement que le don est destiné aux étudiants sinistrés de l'Université.
+
+**Limite :** le résumé public ne précise pas le nombre de bénéficiaires, les critères de répartition, les quantités par personne, la date de distribution effective, ni le nom des organisations étudiantes qui ont réceptionné l'aide. La remise de 900 kg est un fait documenté, mais elle ne permet pas de conclure que tous les étudiants sinistrés ont été couverts.
+
+**Pièces à demander :** procès-verbal de remise, liste ou décompte agrégé des bénéficiaires, critères de distribution, preuve de distribution par résidence/composante et éventuels rapports de suivi.
+
+Source officielle :
+- [MESUPRES — Archives, actualité du 13 février 2026 : aide de l'IRD aux étudiants de l'Université de Toamasina](https://www.mesupres.gov.mg/index.php).
+
+### 57.2 Orange Solidarité : aide post-cyclone mentionnée, détail non extractible
+
+Une deuxième actualité ministérielle datée du **13 février 2026** porte le titre « Fanampiana ny Oniversiten'i Toamasina avy amin'ny Orange Solidarité » (aide d'Orange Solidarité à l'Université de Toamasina). Son résumé précise que des représentants d'Orange Solidarité, conduits par leur responsable, ont apporté une aide à l'Université après le passage du cyclone Gezani.
+
+Le résumé consultable ne précise toutefois ni la nature exacte de l'aide, ni les quantités, ni les destinataires précis, ni l'état de réception. Il ne faut donc pas assimiler cette contribution à un don d'ordinateurs, à une connexion Internet, à du matériel solaire ou à un financement sans la page détaillée ou le procès-verbal de remise.
+
+**Pièces à obtenir :** article détaillé du MESUPRES, convention ou lettre de remise, inventaire des matériels/services, destinataires, quantités, date de mise en service et responsable de maintenance.
+
+Source officielle :
+- [MESUPRES / Portail LMD — actualité du 13 février 2026 : aide d'Orange Solidarité à l'Université de Toamasina](https://lmd.mesupres.gov.mg/?l=15740058).
+
+### 57.3 Nouveaux blocs sanitaires de Barikadimy — remise annoncée le 17 octobre 2026
+
+Une publication de la Faculté DEG, qui se présente comme la page officielle de la Faculté de Droit, des Sciences Économiques et de Gestion, a annoncé le **16 octobre 2026** une cérémonie de réception de nouveaux blocs sanitaires complets construits au profit des étudiants du campus de Barikadimy. La remise était annoncée pour le samedi **17 octobre 2026 à 14 h**, avec la participation de la SPAT et de l'Université.
+
+Cette publication constitue un signal de réception/inauguration d'une infrastructure nouvelle destinée à améliorer les conditions de vie des étudiants. Toutefois, il reste à obtenir le procès-verbal de réception ou un compte rendu postérieur pour confirmer le nombre de blocs, leur localisation, leur capacité, leur accessibilité, leur raccordement en eau et leur fonctionnement continu.
+
+**À vérifier auprès du patrimoine universitaire :** nombre de blocs, nombre de cabines, capacité filles/garçons et accessibilité, raccordement et disponibilité en eau, nettoyage et maintenance, procès-verbal de réception, responsable d'entretien et état d'utilisation après la réception.
+
+Source secondaire de veille, reprenant la publication de la Faculté DEG :
+- [Faculté DEG — annonce du 16 octobre 2026 de réception de nouveaux blocs sanitaires le 17 octobre à Barikadimy](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG).
+
+### 57.4 Conséquence pour l'indicateur de disponibilité du campus
+
+Les preuves disponibles permettent de distinguer quatre types de données :
+1. **Aide humanitaire documentée :** riz remis par l'IRD, 900 kg.
+2. **Aide partenaire mentionnée :** contribution d'Orange Solidarité, contenu à préciser.
+3. **Infrastructure annoncée comme réceptionnée :** blocs sanitaires, cérémonie prévue le 17 octobre 2026, procès-verbal à obtenir.
+4. **Reconstruction lourde toujours en cours :** bâtiment et infrastructures de Barikadimy couverts par les études TALIM/MYSET, avec l'état agrégé 44/123 bâtiments à divers stades et 79 encore à rénover selon la visite de la Banque mondiale du 2 octobre.
+
+Ces événements ne doivent pas être agrégés en un score global « campus opérationnel ». Pour chaque équipement ou bâtiment, MITARIDALA doit conserver un état séparé : projet annoncé, financement accordé, travaux en cours, réception provisoire, réception définitive, service ouvert, service interrompu, ou indisponible.
+
