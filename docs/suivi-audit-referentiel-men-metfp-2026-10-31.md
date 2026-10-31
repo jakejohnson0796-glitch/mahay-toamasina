@@ -109,6 +109,39 @@ Le METFP a aussi annoncé le 3 août 2026 la remise de référentiels concernant
 - [ ] Exécuter tests SQLite, smoke PostgreSQL, CI complète et revue du PR avant toute fusion.
 - [ ] Après fusion seulement, contrôler migrations, /health, /ready, logs et parcours catalogue en production.
 
-## 6. Hors périmètre
+## 6. Contrôle de la cartographie METFP — Atsinanana / Toamasina
+
+Page officielle consultée : https://www.metfp.gov.mg/cartographie
+
+La cartographie officielle affiche **ATSINANANA — 5 établissements** et fournit les associations métier suivantes :
+
+| Établissement | Métiers explicitement affichés |
+|---|---|
+| CFP ANTANAMBAO MANAMPOTSY | Chef d'Équipe de chantier ; Menusier en bois |
+| LTP BRICKAVILLE | Agriculteur maraîchère ; Installateur en photovoltaïque ; Technicien en ouvrage métallique ; Chef d'Équipe de chantier ; Restaurateur villageois ; Aviculteur (élevage de poules) |
+| CFP Toamasina | Couturier(e) ; Cuisinier |
+| LTP TOAMASINA | Technicien en ouvrage métallique ; Menusier en bois ; Soudeur-monteur |
+| CFP MANARATSANDRY | Agent d'agriculture ; Technicien d'élevage ; Agent comptable |
+
+### Écarts constatés avec la migration du dépôt
+
+La migration `alembic/versions/b7d4e9c2a610_offres_etfp_etablissements.py` recense les quatre premiers établissements, mais l'association LTP TOAMASINA contient actuellement « mécanique générale », « agent d'agriculture », « gestion comptable » et « dessin/projet BTP », qui ne figurent pas dans la cartographie publique actuelle. Elle omet au contraire « menuisier en bois » et « soudeur-monteur ». Elle ne contient pas CFP MANARATSANDRY.
+
+La mention antérieure de CFP Foulpointe n'est pas corroborée par la cartographie officielle actuelle. Elle ne doit pas figurer dans le relevé courant sans source indépendante plus récente.
+
+**Correction technique à préparer :** ajouter CFP MANARATSANDRY avec ses trois métiers ; corriger LTP TOAMASINA pour refléter les trois métiers actuellement affichés ; historiser les associations discordantes plutôt que les supprimer. Avant toute migration, vérifier le modèle de statut et les dépendances (profils, parcours, statistiques) afin de préserver l'historique. Les offres restent `a_verifier` et `annee_scolaire = NULL` tant qu'une preuve datée ne confirme pas l'ouverture en 2026-2027.
+
+### Établissements scolaires généraux de Toamasina
+
+Des sources de répertoire recensent notamment CEG Ratsimilaho, CEG Augagneur, CEG Tsarakofafa, CEG de Référence Bazary, Lycée Jacques Rabemananjara et Lycée Price. Ces résultats ne constituent pas une liste administrative exhaustive du MEN et ne prouvent pas les niveaux réellement ouverts en 2026-2027. Ne pas importer ces établissements comme homologués sans rapprochement avec les listes DREN/CISCO, les codes officiels et leur situation administrative.
+
+Points à vérifier :
+- code officiel, statut et commune des cinq établissements ETFP auprès de la DRETFP Atsinanana ;
+- référentiels RF/RFC associés aux métiers publiés ;
+- session d'ouverture 2026-2027 de chaque offre ;
+- niveaux et diplômes exacts, à partir des documents officiels ;
+- conservation des anciennes associations et de leur historique.
+
+## 7. Hors périmètre
 
 Aucun changement n'est autorisé ici sur le moteur de rendu LaTeX/KaTeX, les quiz, le Tuteur IA ou les documents utilisateurs. Aucune migration de données de production, fusion ou mise en production ne doit être déclenchée par ce rapport.
