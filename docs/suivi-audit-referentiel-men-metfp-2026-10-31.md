@@ -2075,3 +2075,50 @@ Ne pas présenter les 90/49 comme des nombres de CEG publics et ne pas calculer 
 Sources primaires :
 - [TBSE INSTAT Atsinanana, juillet 2024](https://www.instat.mg/documents/upload/main/TBSE_Atsinanana_Dec2025.pdf), chapitre V « Enseignement général : privé et public », tableau 44 p. 32, tableau 47 p. 33, tableau 48 p. 34. Les tableaux 44 et 48 ont été contrôlés par captures visuelles.
 - [Annuaire MEN 2023-2024](https://www.education.gov.mg/wp-content/uploads/2024/04/MEN-ANNUAIRE-STATISTIQUE-_SCOLAIRE_2023_2024.pdf), tableau des établissements fonctionnels des collèges publics par CISCO, p. 154 (page PDF 153), contrôlé par capture visuelle.
+
+### 9.58 Contrôle croisé de la cartographie ETFP Atsinanana et de la migration d'import
+
+Contrôle effectué le 31 octobre 2026 en comparant la cartographie officielle METFP rendue actuellement sur https://www.metfp.gov.mg/cartographie et la migration `alembic/versions/b7d4e9c2a610_offres_etfp_etablissements.py` de la branche audit.
+
+La cartographie officielle affiche **5 établissements dans la région Atsinanana** : CFP Antanambao Manampotsy, LTP Brickaville, CFP Toamasina, LTP Toamasina et CFP Foulpointe. Elle décrit les métiers suivants par établissement :
+
+| Établissement officiel | Métiers affichés dans la cartographie |
+|---|---|
+| CFP Antanambao Manampotsy | Chef d'équipe de chantier ; menuisier en bois |
+| LTP Brickaville | Agriculteur maraîcher ; installateur en photovoltaïque ; technicien en ouvrage métallique ; chef d'équipe de chantier ; restaurateur villageois ; aviculteur |
+| CFP Toamasina | Couturier(e) ; cuisinier |
+| LTP Toamasina | Technicien en ouvrage métallique ; mécanicien auto moto ; agent comptable ; technicien supérieur en management et gestion d'entreprise ; maintenancier industriel ; chef d'équipe de chantier ; menuisier en bois ; électricien bâtiment ; soudeur-monteur ; plombier |
+| CFP Foulpointe | Menuisier en bois ; pâtissier ; restaurateur villageois ; femme/valet de chambre ; barman ; boulanger-pâtissier ; cuisinier ; traiteur ; restaurateur de meubles ; lamineur de fibre de verre ; charpentier-menuisier |
+
+La cartographie répète « menuisier en bois » pour CFP Foulpointe ; ce doublon de présentation ne doit pas créer deux offres distinctes.
+
+#### Écarts trouvés dans la migration
+
+- **CFP Antanambao Manampotsy :** les deux associations de la migration correspondent à la cartographie.
+- **LTP Brickaville :** les six associations correspondent aux six métiers affichés.
+- **CFP Toamasina :** les deux associations correspondent aux métiers affichés.
+- **LTP Toamasina :** la migration ne contient que cinq associations : ouvrage métallique, mécanique auto/moto, agent d'agriculture, agent comptable et dessinateur-projeteur-métreur. Seules les trois premières catégories métiers pertinentes (ouvrage métallique, mécanique auto/moto, agent comptable) concordent ; « agent d'agriculture » et « dessinateur-projeteur-métreur » ne figurent pas pour ce lycée dans la cartographie actuelle. Sept métiers affichés par le METFP sont absents de la migration : management et gestion d'entreprise, maintenance industrielle, chef d'équipe de chantier, menuisier en bois, électricien bâtiment, soudeur-monteur et plombier.
+- **CFP Foulpointe :** l'établissement et ses onze métiers distincts ne sont pas présents dans la liste `ETABLISSEMENTS` de la migration.
+
+#### Anomalie de taxonomie
+
+Le métier « Plombier » du LTP Toamasina est rangé par la cartographie sous le secteur « Développement rural », filière « Agriculture ». Le code existant `AGRICULTURE_PLOMBIER` reprend ce classement de source. Il faut conserver le libellé et la classification source, mais ne pas en déduire que la plomberie est une spécialité agricole au sens pédagogique. Prévoir une taxonomie normalisée distincte des libellés officiels, avec provenance et relation de correspondance explicites.
+
+La migration attribue par ailleurs `statut_validation='verifie'` aux lignes de `parcourstechniqueprofessionnel` créées depuis le dictionnaire `PARCOURS`, alors que la cartographie prouve l'affichage d'un métier dans un établissement, pas nécessairement l'existence d'un référentiel de formation final, d'un diplôme, d'une certification ou d'une session ouverte. Il faut distinguer au minimum :
+- présence du métier dans la cartographie ;
+- référentiel métier/formation officiel obtenu et audité ;
+- validation administrative de l'offre ;
+- ouverture effective pour une année/session déterminée.
+
+Le statut « vérifié » ne doit pas être interprété comme une validation du référentiel complet. Une évolution de modèle pourrait séparer `statut_presence_cartographie`, `statut_referentiel`, `statut_offre` et `annee_session`, sans réécrire les historiques.
+
+#### Décision de qualité des données
+
+1. Ne pas appliquer une mise à jour automatique qui remplacerait ou supprimerait les anciennes associations.
+2. Ajouter CFP Foulpointe et les métiers manquants de LTP Toamasina dans une proposition de correction versionnée, après vérification des identifiants existants et des fiches officielles.
+3. Placer les deux associations discordantes de LTP Toamasina (`AGRICULTURE_AGENT`, `BTPDESSIN`) en rapprochement manuel/historique ; ne pas les présenter comme des offres actuellement confirmées.
+4. Maintenir `annee_scolaire=NULL` ou un statut « année non renseignée » tant que la cartographie ne fournit aucune session d'ouverture ; ne pas annoncer les formations comme ouvertes en 2026-2027.
+5. Auditer les fiches de référentiel avant de publier durée, niveau d'accès, certification, compétences ou débouchés.
+6. Effectuer une simulation de migration sur copie de base avant toute modification de schéma ou de données.
+
+Source primaire : [METFP — Cartographie des établissements ETFP](https://www.metfp.gov.mg/cartographie), région Atsinanana, cinq établissements et listes métiers affichées au contrôle du 31 octobre 2026.
