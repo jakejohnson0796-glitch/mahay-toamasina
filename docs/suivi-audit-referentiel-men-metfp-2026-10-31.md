@@ -1612,3 +1612,50 @@ Sources officielles :
 - [PE T12 MEN — SVT série L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 140-144.
 - [PE T12 MEN — SVT série S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 573-579.
 - [PE T12 MEN — SVT série OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 775-778.
+
+### 9.46 Sciences économiques et sociales (SES) T11-T12 : poids horaire et contenus par série
+
+Les volumes hebdomadaires relevés dans la grille MEN montrent que les SES changent nettement selon la série :
+
+| Classe / série | Volume hebdomadaire |
+|---|---:|
+| T11 L | 2 h |
+| T11 S | 2 h |
+| T11 OSE | 5 h |
+| T12 L | 2 h |
+| T12 S | 2 h |
+| T12 OSE | 6 h |
+
+#### T11 — Première
+
+Le PE organise les SES autour de cinq domaines : socialisation de l'individu ; sciences politiques et droit ; production dans les organisations ; monnaie et financement ; coordination par le marché et par l'État. Le document souligne les démarches inductive, empirico-inductive, déductive, hypothético-déductive, comparative, documentaire et argumentative, pour analyser des phénomènes économiques, sociaux, politiques et juridiques et résoudre des problèmes d'inégalités.
+
+Exemples de contenus explicitement relevés :
+- **L (2 h/semaine)** : socialisation primaire/secondaire, identité sociale, contrôle social, normes et déviance ; rôle de l'État, régime politique, démocratie, Constitution, institutions et sources du droit malgache ; les autres thèmes de production, de monnaie/financement et de marché figurent au programme global mais doivent être reliés aux RAS de la section L avant la transcription détaillée.
+- **S (2 h/semaine)** : le plan général reprend les cinq domaines. Le PE décrit la production dans les organisations, les formes de monnaie et le financement, le marché, la concurrence et l'intervention de l'État ; le catalogue doit conserver les sections S séparées de celles de L même lorsqu'un intitulé de thème est partagé.
+- **OSE (5 h/semaine)** : le programme détaille notamment le profit, coûts/recettes et maximisation du profit ; la valeur ajoutée, mesure et répartition ; le bilan et le compte de résultat ; responsabilité sociale/environnementale des entreprises et parties prenantes ; formes/fonctions de la monnaie, création monétaire, masse et marché monétaires, banque centrale ; financement interne/externe, taux d'intérêt simple, capital, échéance, valeurs acquises, taux nominal/réel et risque de crédit ; équilibre du marché, concurrence, imperfections, défaillances et politiques de l'État. Une séquence sur la production dans les organisations est donnée à 25 h dans le tableau détaillé.
+
+#### T12 — Terminale
+
+Le PE présente six domaines généraux : croissance et développement ; mondialisation ; travail et emploi ; organisations ; cohésion et changement social ; sciences politiques et droit. Les volumes sont 2 h/semaine pour L et S, contre 6 h pour OSE.
+
+Exemples issus des tableaux de contenus :
+- **L (2 h/semaine)** : cohésion et changement social (groupes et liens sociaux, solidarité mécanique/organique, intégration et rupture du lien social, inégalités, égalité des droits et des chances, justice sociale, redistribution, protection sociale et fiscalité) ; sciences politiques et droit (régimes parlementaire, présidentiel et semi-présidentiel, modes de scrutin, démocratie, responsabilité civile/pénale et rôle du droit dans l'économie) ; croissance et développement (PIB, facteurs travail/capital, productivité, sous-développement, RNB/IDH, limites écologiques et politiques environnementales).
+- **S (2 h/semaine)** : structure générale en six thèmes ; le programme comprend croissance et développement, mondialisation, travail/emploi, organisations, cohésion sociale et droit. Les exemples T12-S doivent demeurer rattachés à la section du PDF S et ne pas être attribués automatiquement à L ou OSE.
+- **OSE (6 h/semaine)** : programme étendu autour des mêmes six domaines. Le PE développe notamment le PIB et ses limites, croissance extensive/intensive, sous-développement, causes du retard de développement, politiques de modernisation agricole et d'industrialisation, soutenabilité faible/forte, politiques environnementales, commerce mondial, avantages comparatifs, spécialisation et flux internationaux de capitaux ; il approfondit aussi les organisations et les mécanismes sociaux/juridiques. Le volume de 6 h/semaine ne doit pas être utilisé pour créer un programme OSE différent du texte source, mais montre le niveau de développement attendu.
+
+#### Implications MITARIDALA
+
+1. Les banques de questions SES doivent être séparées par niveau et série, avec le PE/version et le RAS, en particulier OSE (T11 5 h et T12 6 h) par rapport à L/S (2 h).
+2. Ne pas supposer qu'une notion d'économie d'entreprise, de monnaie ou de sociologie a la même profondeur ni la même priorité dans les trois séries ; le RAS et le bloc source doivent déterminer l'affectation.
+3. Le contenu OSE T11 peut alimenter des exercices académiques sur coûts, recettes, bilan, compte de résultat, création monétaire et intérêts. Les données d'entreprise utilisées comme support local doivent être réelles et sourcées, ou explicitement fictives/simulées.
+4. T12 aborde des indicateurs de développement (PIB, RNB, IDH), les inégalités et la mondialisation. Tout exemple sur Madagascar ou Atsinanana doit être daté et provenir d'une série statistique officielle ; ne pas recycler des chiffres historiques comme données actuelles.
+5. Distinguer le volume hebdomadaire du temps de séquence : les heures du PE doivent rester un champ attaché à la classe/série, tandis que les durées des RAS sont attachées à leur séquence précise.
+
+Sources officielles :
+- [PE T11 MEN — SES L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), pages PDF 188-195.
+- [PE T11 MEN — SES S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), pages PDF 437-443.
+- [PE T11 MEN — SES OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), pages PDF 668-674.
+- [PE T12 MEN — SES L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 173-177.
+- [PE T12 MEN — SES S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 394-399.
+- [PE T12 MEN — SES OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 590-596.
