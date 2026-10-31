@@ -335,7 +335,7 @@ Les lignes inactives sont conservées. Les deux troncs communs Droit sont des re
 
 ### 10.3 Doublons de mentions ENS — problème confirmé
 
-La base contient deux paires de mentions actives dont les noms deviennent identiques après normalisation des accents et apostrophes :
+Un balayage de l'ensemble de la table `mention` dans la base nationale, en normalisant accents, apostrophes, esperluettes et espaces, ne trouve que **deux paires de mentions** dont les noms deviennent identiques :
 
 | Ancien ID | ID canonique | Libellé |
 |---:|---:|---|
