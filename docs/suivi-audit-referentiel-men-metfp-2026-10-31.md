@@ -34,13 +34,13 @@ L'index des RAPE de septembre 2026 présente, lui, des documents T11 et T12 en s
 
 Le lien direct **T12 OSE** a finalement été ouvert : PDF de 43 pages, couverture « Édition septembre 2026 ». Son sommaire inclut Malagasy, Français, Anglais, Mathématiques, Sciences physiques, SVT, Histoire, Géographie, SES, EPS et Philosophie. L'EPS est donc également confirmée dans la variante T12 OSE.
 
-Le lien **T11 L** reste inaccessible après une nouvelle tentative. À cette étape, 10 des 11 PDF RAPE ont donc été ouverts ; T11 L demeure la seule pièce non inspectée par le lecteur web. Il ne faut pas marquer l'audit des 11 variantes comme terminé.
+Mise à jour du 31 octobre 2026 : le PDF officiel T11-L édition septembre 2026 a depuis été récupéré depuis le répertoire public du MEN (48 pages). Les onze variantes RAPE 2026 sont maintenant accessibles et contrôlées au niveau de la couverture, du sommaire et des instructions générales. Voir la section 9.2.
 
 ### Extension du contrôle direct aux PDF RAPE
 
 Les liens PDF directs ont été ouverts. Les couvertures accessibles confirment « Édition septembre 2026 » pour T6, T7, T8, T9, T10, T11-S, T11-OSE, T12-L et T12-S. Le nombre de pages affiché par le lecteur est respectivement 44, 42, 54, 54, 50, 47, 49, 41 et 41 pages.
 
-Les deux accès restés en échec sont T11-L (erreur d'accès) et T12-OSE (timeout). Le contenu de ces deux PDF n'est donc pas déclaré contrôlé.
+État mis à jour : T11-L et T12-OSE ont ensuite été ouverts depuis le répertoire officiel MEN. Les onze PDF RAPE 2026 ont désormais été inspectés au niveau de leur couverture et de leur sommaire. Voir les sections 9.2 et 8.6 corrigée.
 
 Contrôles de sommaire effectués sur les fichiers ouverts :
 - T6 : Malagasy, Français, Anglais, Mathématiques, Sciences physiques, SVT, Histoire, Géographie, FOV, Arts et EPS.
@@ -253,7 +253,7 @@ Le sommaire historique 2024-2025 comprend notamment Malagasy, Français, Anglais
 
 Le PDF direct T12-OSE de la bibliothèque numérique a été ouvert dans le contrôle complémentaire : 43 pages, édition septembre 2026. Il est donc contrôlé, contrairement à la formulation antérieure qui le signalait en timeout.
 
-L'état correct est désormais : **10 PDF RAPE sur 11 ouverts pour l'édition septembre 2026 ; T11-L reste la seule variante de cette édition non inspectée.** La liste de liens et les contrôles de sommaire doivent inclure T12-OSE parmi les pièces ouvertes.
+État final actualisé après nouvelle récupération : **11 PDF RAPE sur 11 ouverts pour l'édition septembre 2026**, y compris T11-L (48 pages) et T12-OSE (43 pages). L'ancien blocage T11-L est résolu ; voir section 9.2.
 
 ### 8.3 PE : preuve de structure générale, pas encore les pièces collège/lycée
 
