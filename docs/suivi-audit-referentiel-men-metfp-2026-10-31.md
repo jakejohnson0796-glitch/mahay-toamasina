@@ -1579,3 +1579,36 @@ La couche de texte extraite du PE T11 et du document autonome transforme égalem
 Pour Philosophie T10 et Éducation à la citoyenneté T12, les cases apparaissent noires et vides dans les captures du PE T11, du PE T12 et du document autonome ; ces absences sont cohérentes. Ne pas les convertir en zéro sur la base des couches de texte extraites.
 
 Sources visuelles : [PE T11](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), page 10 ; [PE T12](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), page 10 ; [grille autonome MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), page 1.
+
+### 9.45 SVT T11 et T12 : progression et différenciation des programmes par série
+
+Les tableaux introductifs du PE et les volumes de la grille lycée montrent que la SVT doit être rattachée à la série, et pas seulement au niveau. Les volumes hebdomadaires sont T11 L = 2 h, T11 S = 5 h, T11 OSE = 3 h ; T12 L = 2 h, T12 S = 6 h et T12 OSE = 3 h.
+
+#### T11 — Première
+
+- **L (2 h/semaine)** : quatre domaines de contenus principaux sont visibles. Reproduction humaine et santé reproductive (problèmes liés aux rapports sexuels et aux grossesses précoces, cancer du col de l'utérus, fistules vaginales, IST/VIH-SIDA) ; alimentation de l'homme (nutriments organiques/minéraux, besoins énergétiques/plastiques/fonctionnels, dépenses énergétiques, rations et sécurité alimentaire) ; écologie (écosystèmes de Madagascar, aires protégées, conservation et reboisement) ; géologie (stratigraphie, échelle stratigraphique, paléontologie, fossiles et gîtes fossilifères). Une séquence de reproduction humaine est indiquée à 13 h dans le PE.
+- **S (5 h/semaine)** : le contenu détaillé comprend la reproduction humaine ; digestion et devenir des nutriments (transformations physiques/chimiques, produits de digestion, assimilation et métabolisme cellulaire) ; biotechnologie (biocarburants, plantes à potentiel biocarburant adaptées au climat, transformation/utilisation, recyclage des déchets et biogaz) ; géologie structurale (stratigraphie, déformations cassantes/souples et intérêts économiques, formations et histoire géologique de Madagascar) ; écologie (production primaire/photosynthèse, autotrophie/hétérotrophie, fonctionnement des écosystèmes, biomasse/productivité primaire, restauration des couvertures végétales et aires protégées).
+- **OSE (3 h/semaine)** : reproduction humaine et santé reproductive ; alimentation (nutriments, besoins qualitatifs/quantitatifs, rations) ; biotechnologie (traitement et conservation des aliments, transformation, certification biologique, biocarburants et biogaz) ; géologie (stratigraphie, paléontologie, contexte géologique et potentialités économiques des formations). Le PE détaille aussi la répartition des gîtes fossilifères et les intérêts des formations géologiques. La séquence initiale de reproduction humaine porte une durée de 19 h dans le tableau détaillé.
+
+#### T12 — Terminale
+
+- **L (2 h/semaine)** : biologie moléculaire (information génétique, support de l'information, réplication de l'ADN, mitose, code génétique et biosynthèse des protéines) ; reproduction humaine (gamétogenèse, fécondation, PMA par FIVETE/insémination artificielle, gestation et hygiène pendant/après la gestation) ; géologie (lecture et réalisation d'un profil topographique, dégradation et conservation des reliefs, notamment drainage, reboisement et aménagement).
+- **S (6 h/semaine)** : six grands champs dans l'organisation générale et les tableaux détaillés. Biologie moléculaire (information génétique, réplication, mitose, expression et mutation génique) ; reproduction humaine (gamétogenèse, fécondation, contrôle hormonal des cycles, gestation, parturition et lactation) ; hérédité/génétique (mono- et dihybridisme, lois de Mendel, hérédité liée au sexe, crossing-over, carte factorielle, caractères humains autosomaux/gonosomaux) ; physiologie humaine (mesure et régulation de la pression artérielle et de la glycémie, facteurs de risque, prévention et surveillance) ; immunologie (cellules et organes lymphoïdes, réponses immunitaires non spécifiques/spécifiques, allergies, maladies auto-immunes et déficits immunitaires) ; géologie (cartes topographiques et géologiques, profils/coupes, potentialités minières de Madagascar, métaux, terres rares et pierres précieuses).
+- **OSE (3 h/semaine)** : reproduction humaine (gamétogenèse, fécondation, PMA, symptômes et hygiène de la gestation) ; biotechnologie (biotechnologie industrielle et domaines vert/rouge/blanc/bleu/jaune/orange, facteurs de développement et réglementation) ; hydrogéologie (infiltration de l'eau dans le sous-sol, formation et types d'aquifères, piézométrie, importance socio-économique, exploitation domestique/agricole/technique et protection des aquifères). Une séquence de reproduction humaine est donnée à 31 h dans le tableau détaillé.
+
+#### Différences structurantes à préserver
+
+1. La série S a le programme le plus étendu en T12 et un volume de 6 h/semaine ; le contenu comprend génétique approfondie, physiologie, immunologie et géologie minière. Ne pas injecter ces unités dans L ou OSE par défaut.
+2. OSE dispose d'un domaine autonome d'hydrogéologie et de biotechnologie industrielle ; ces contenus ne sont pas un simple renommage des séquences de S.
+3. L a 2 h/semaine et un programme resserré autour des mécanismes moléculaires, de la reproduction humaine et de la cartographie/conservation des reliefs.
+4. Les durées de séquence (par exemple T11 L 13 h, T11 OSE 19 h, T12 OSE 31 h) sont des durées de RAS/séquence, non des volumes hebdomadaires.
+5. Plusieurs contenus abordent la santé sexuelle et reproductive, la grossesse, les IST et le VIH/SIDA. MITARIDALA doit respecter le libellé officiel, l'âge et le contexte pédagogique, ne pas produire de conseils médicaux individuels et vérifier les directives EVH/ECS plus récentes avant de transformer un guide d'accompagnement en support additionnel.
+6. Les matières et activités sont adossées aux RAG/RAS et aux démarches scientifiques d'investigation ; l'évaluation ne doit pas être réduite à de la mémorisation de définitions.
+
+Sources officielles :
+- [PE T11 MEN — SVT série L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), pages PDF 131-135.
+- [PE T11 MEN — SVT série S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), pages PDF 377-381 et suivantes.
+- [PE T11 MEN — SVT série OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), pages PDF 607-612.
+- [PE T12 MEN — SVT série L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 140-144.
+- [PE T12 MEN — SVT série S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 573-579.
+- [PE T12 MEN — SVT série OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 775-778.
