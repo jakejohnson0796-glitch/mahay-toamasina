@@ -951,3 +951,120 @@ La fonction `_slug(secteur, filiere, metier)` produit une clé identique pour le
 5. conserver les alias et sources de chaque code interne afin de pouvoir retracer les imports historiques.
 
 Sources : [cartographie officielle METFP, ATSINANANA](https://www.metfp.gov.mg/cartographie) ; migration `alembic/versions/b7d4e9c2a610_offres_etfp_etablissements.py`, branche principale, définitions PARCOURS et association LTP Toamasina.
+
+
+### 9.30 Erratum d'accès : les sept PE T6-T12 sont tous désormais ouverts dans le portail MEN
+
+Une nouvelle tentative, après modification de la voie d'accès aux mêmes URL officielles, a permis d'ouvrir les fichiers qui expiraient auparavant. **Les sept PE du collège et du lycée sont maintenant ouverts comme PDF MEN**. La formulation antérieure qui disait que T7/T9/T10/T11/T12 n'étaient que repérés ou non extraits est dépassée et doit être remplacée par ce nouvel état.
+
+| PE MEN | Pages du PDF | État au 31 octobre 2026 |
+|---|---:|---|
+| PE T6 | 235 | Ouvert ; contenu et heures partiellement analysés |
+| PE T7 | 210 | Ouvert ; sommaire et volume horaire hebdomadaire relevés |
+| PE T8 | 257 | Ouvert ; contenu et heures partiellement analysés |
+| PE T9 | 266 | Ouvert ; sommaire et volume horaire hebdomadaire relevés |
+| PE T10 | 251 | Ouvert ; matrice de volumes/coefs et sommaire relevés |
+| PE T11 | 725 | Ouvert ; matrice et sommaires des séries L/S/OSE relevés |
+| PE T12 | 637 | Ouvert ; matrice et sommaires des séries L/S/OSE relevés |
+
+Les fichiers restent des documents MEN dont les pages liminaires affichent « PROJET D'ARRÊTÉ ». Leur accessibilité et leur publication dans la bibliothèque officielle sont établies ; l'acte final signé d'approbation et sa date d'effet restent à obtenir. **Ouvert** ne signifie pas que chacun des RAS de toutes les disciplines a déjà fait l'objet d'un contrôle ligne par ligne. L'audit du contenu disciplinaire demeure progressif.
+
+Liens directs officiels :
+- [PE T6](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T6.pdf)
+- [PE T7](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T7.pdf)
+- [PE T8](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf)
+- [PE T9](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf)
+- [PE T10](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf)
+- [PE T11](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf)
+- [PE T12](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf)
+
+### 9.31 Comparaison des disciplines et heures du collège T6-T9 à partir des PE MEN
+
+Les tables introductives « Volume horaire » des quatre PE donnent la matrice suivante. Les valeurs sont des heures par semaine, et non des durées annuelles :
+
+| Discipline | T6 | T7 | T8 | T9 |
+|---|---:|---:|---:|---:|
+| Malagasy | 4 | 4 | 4 | 4 |
+| Français | 5 | 5 | 5 | 5 |
+| Anglais | 3 | 3 | 3 | 3 |
+| Mathématiques | 5 | 5 | 5 | 5 |
+| SVT | 3 | 3 | 4 | 4 |
+| Sciences physiques | 3 | 3 | 4 | 3 |
+| Histoire | 2 | 2 | 2 | 2 |
+| Géographie | 2 | 2 | 2 | 2 |
+| FOV / Fanabeazana ho Olompirenena Vanona | 2 | 2 | 2 | 2 |
+| Arts / Zavakanto | 2 | 2 | 2 | 2 |
+| EPS | 2 | 2 | 2 | 2 |
+| **Total hebdomadaire calculé** | **33** | **33** | **35** | **34** |
+
+Le total de la dernière ligne est un calcul des lignes du tableau de disciplines et doit être traité comme contrôle de cohérence, pas comme un total imprimé par le MEN si le PDF ne l'affiche pas.
+
+Observations de nomenclature et de structure :
+- T6 : le libellé culturel est Zavakanto ; les tableaux T7-T9 affichent Arts. Ne pas réétiqueter T6 comme Arts dans les données source, même si l'interface choisit un libellé de regroupement commun.
+- T7-T9 gardent FOV (Fanabeazana ho Olompirenena Vanona). Il ne faut pas la remplacer par Éducation à la citoyenneté/EAC avant T10.
+- Mathématiques, Français, Malagasy et Anglais gardent le même volume hebdomadaire de T6 à T9.
+- SVT passe de 3 h en T6/T7 à 4 h en T8/T9 ; Sciences physiques passe de 3 h en T6/T7 à 4 h en T8 et revient à 3 h en T9. Les volumes ne sont donc pas une progression monotone.
+- Histoire et Géographie sont deux disciplines séparées dans les programmes du collège, chacune à 2 h/semaine. La fusion du tableau des horaires lycée ne doit pas être reportée sur le collège.
+
+Les objectifs disciplinaires et les contenus détaillés sont structurés en résultats d'apprentissage et thèmes. Les programmes T6-T9 incluent aussi les valeurs à véhiculer, les orientations pédagogiques et les évaluations attendues. Le RAPE annuel ne doit donc pas être utilisé comme substitut aux RAS/activités du PE.
+
+Sources : [PE T6](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T6.pdf), [PE T7](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T7.pdf), [PE T8](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf), [PE T9](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf).
+
+### 9.32 Enseignement secondaire T10-T12 : structure disciplinaire et progression par série
+
+Les PE T10, T11 et T12 sont accessibles dans leur intégralité. Leur structure permet désormais d'établir les différences d'offre de matières sans les confondre avec les seules valeurs de la grille de coefficients :
+
+- **T10 (Seconde)** : Malagasy, Français, Anglais, langue vivante optionnelle (Allemand, Espagnol ou Russe), Mathématiques, Sciences physiques, SVT, Histoire, Géographie, Éducation à la citoyenneté, SES, EPS et TICE. Le PE T10 ne présente pas un chapitre disciplinaire de Philosophie dans sa table des matières ; la case correspondante dans le tableau de coefficients est noire/non renseignée. TICE est présent.
+- **T11 (Première L/S/OSE)** : le PDF unique regroupe trois parcours de série, chacun avec ses chapitres. Les trois parcours contiennent Malagasy, Français, Anglais, options de langue vivante (Allemand, Espagnol ou Russe), Mathématiques, Sciences physiques, SVT, Histoire, Géographie, Éducation à la citoyenneté, SES, EPS, Philosophie et TICE.
+- **T12 (Terminale L/S/OSE)** : le PDF unique regroupe également les trois séries. Les contenus de L, S et OSE sont organisés séparément. Les tables et sommaires ouverts comprennent les langues, Mathématiques, Sciences physiques, SVT, Histoire, Géographie, SES, EPS et Philosophie. Éducation à la citoyenneté et TICE ne sont pas présentes dans les sommaires de la version T12 consultée et leurs cases sont noires/non renseignées dans la grille lycée.
+
+Il faut préserver la différence entre un PDF unique regroupant trois séries et trois fichiers de cours distincts. Pour T11/T12, les pages d'un PDF contiennent plusieurs sections de programmes qui ne doivent pas être attribuées à la mauvaise série lors de l'extraction. Le découpage logique doit être fondé sur version PE, niveau, série, discipline, section et RAS.
+
+#### Volumes horaires du lycée (heures par semaine)
+
+Ordre des colonnes : T10, T11 L, T11 S, T11 OSE, T12 L, T12 S, T12 OSE.
+
+| Discipline | T10 | T11 L | T11 S | T11 OSE | T12 L | T12 S | T12 OSE |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Malagasy | 4 | 5 | 3 | 3 | 6 | 3 | 3 |
+| Français | 4 | 5 | 3 | 3 | 6 | 3 | 3 |
+| Anglais | 4 | 5 | 2 | 3 | 6 | 3 | 2 |
+| Langue vivante (Allemand/Espagnol/Russe) | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
+| Mathématiques | 4 | 2 | 5 | 5 | 2 | 6 | 6 |
+| Sciences physiques | 4 | 2 | 5 | 2 | 2 | 6 | 3 |
+| SVT | 4 | 2 | 5 | 3 | 2 | 6 | 3 |
+| Histoire-Géographie (bloc horaire commun) | 4 | 5 | 4 | 5 | 4 | 3 | 6 |
+| Éducation à la citoyenneté | 2 | 2 | 2 | 2 | — | — | — |
+| SES | 4 | 2 | 2 | 5 | 2 | 2 | 6 |
+| EPS | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
+| Philosophie | — | 3 | 2 | 2 | 5 | 3 | 3 |
+| TICE | 1 | 1 | 1 | 1 | — | — | — |
+| **Total hebdomadaire imprimé** | **39** | **38** | **38** | **38** | **39** | **39** | **39** |
+
+Les langues allemand/espagnol/russe forment une catégorie de choix de langue et ne doivent pas être additionnées comme trois enseignements de 2 h pour un élève unique sans preuve que les trois sont suivis simultanément. Histoire et Géographie sont deux matières au sommaire mais partagent un volume global dans la grille ; ne pas affecter par défaut 4 h à chacune.
+
+#### Coefficients de la grille lycée (distincts des coefficients d'épreuves du Bac)
+
+| Discipline | T10 | T11 L | T11 S | T11 OSE | T12 L | T12 S | T12 OSE |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Malagasy | 3 | 5 | 2 | 2 | 5 | 2 | 2 |
+| Français | 3 | 5 | 2 | 2 | 5 | 2 | 2 |
+| Anglais | 3 | 5 | 2 | 2 | 5 | 2 | 2 |
+| Allemand/Espagnol/Russe | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| Mathématiques | 3 | 1 | 5 | 5 | 1 | 5 | 5 |
+| Sciences physiques | 3 | 1 | 5 | 2 | 1 | 5 | 2 |
+| SVT | 3 | 1 | 5 | 2 | 1 | 5 | 2 |
+| Histoire-Géographie (bloc commun) | 3 | 3 | 2 | 5 | 3 | 2 | 5 |
+| Éducation à la citoyenneté | 2 | 2 | 2 | 2 | — | — | — |
+| SES | 3 | 2 | 2 | 5 | 2 | 2 | 5 |
+| EPS | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
+| Philosophie | — | 3 | 1 | 1 | 4 | 2 | 2 |
+| TICE | 1 | 1 | 1 | 1 | — | — | — |
+| **Total des coefficients imprimé** | **30** | **32** | **32** | **32** | **30** | **30** | **30** |
+
+**Réserve de lecture visuelle :** les cases noires de la grille officielle sont vides, pas le chiffre zéro. L'extraction textuelle automatique de certaines pages PE/T12 a transformé ces cases noires en « 0 0 0 ». La capture visuelle de la grille officielle (une page) confirme les cellules noires pour Philosophie T10, Éducation à la citoyenneté T12 et TICE T12. Ces cellules doivent être encodées comme non renseignées/non applicables, jamais 0 sur la foi de cette extraction OCR. Les zéros réellement imprimés dans d'autres documents doivent être distingués des zones noires.
+
+La grille ci-dessus est un tableau d'heures de cours/coefficients de lycée. Elle ne doit toujours pas être présentée comme la table réglementaire des épreuves du Bac 2027 tant que l'arrêté conjoint prévu par le décret n°2026-2100 n'est pas obtenu.
+
+Sources : [PE T10](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), [PE T11](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), [PE T12](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), [grille officielle coefficients/volumes lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
+
