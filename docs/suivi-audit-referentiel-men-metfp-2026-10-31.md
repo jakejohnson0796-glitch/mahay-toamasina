@@ -1393,3 +1393,33 @@ Sources :
 - [PE T11 MEN — Mathématiques série L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), PDF p. 112-120.
 - [PE T11 MEN — Mathématiques série S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), PDF p. 342-353.
 - [PE T11 MEN — Mathématiques série OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), PDF p. 592-596.
+
+
+### 9.41 Mathématiques T12 : programmes distincts L, S et OSE, avec preuves de durée et contenus
+
+Le PE T12 réunit trois programmes de Mathématiques dans un seul PDF, à trois endroits différents du document. La comparaison de leurs volumes et des tables de contenus confirme que les séries ne doivent pas partager une seule banque de quiz.
+
+| Série T12 | Volume hebdomadaire | Structure / contenus représentatifs directement relevés |
+|---|---:|---|
+| L | 2 h | Analyse : fonctions numériques d'une variable réelle, fonctions logarithmiques et exponentielles, primitives et intégration. Algèbre : équations/inéquations du second degré, systèmes de deux et trois équations linéaires à deux/trois inconnues. Données : séries statistiques à deux variables et probabilités. Quatre composantes dans le PE. |
+| S | 6 h | Analyse : limites, continuité, dérivabilité, courbes, primitives/intégration, logarithmes, exponentielles et équations différentielles. Algèbre : divisibilité dans Z, PGCD/PPCM, équations diophantiennes, Z/nZ, systèmes de numération, calcul matriciel et suites. Géométrie : nombres complexes, barycentre de points pondérés, transformations/isométries/similitudes du plan, vecteurs et points de l'espace, équations cartésiennes/paramétriques et positions relatives dans l'espace. Données/probabilités. Quatre composantes. |
+| OSE | 6 h | Cinq composantes : Analyse, Algèbre, Géométrie, Traitement des données/probabilités et Mathématiques financières. Analyse : limites, continuité, dérivabilité, primitives, intégration, logarithmes et exponentielles. Algèbre : suites numériques, systèmes de trois équations à trois inconnues, calcul matriciel, nombres complexes et équations dans C. Données : organisation, vocabulaire statistique, probabilités, variables aléatoires et loi de probabilité. Mathématiques financières : intérêts composés et annuités. |
+
+**Durées de séquence à conserver indépendamment des heures hebdomadaires :**
+- T12 L : le premier RAS détaillé d'étude de fonctions numériques est affiché avec une durée de 10 heures (PE p. 121). Les thèmes suivants doivent être relevés séparément pour établir le total annuel complet.
+- T12 S : le RAS détaillé d'étude/représentation des fonctions numériques est affiché avec une durée de 60 heures (PE p. 320-321).
+- T12 OSE : le RAS détaillé d'analyse des fonctions numériques est affiché avec une durée de 80 heures (PE p. 533) ; le bloc de mathématiques financières est de 20 heures (PE p. 541).
+Ces durées sont celles des séquences/RAS imprimés dans le PE ; elles ne se substituent pas aux 2/6/6 heures hebdomadaires du tableau général.
+
+#### Implications spécifiques pour MITARIDALA
+
+1. T12 L, S et OSE doivent avoir des programmes Mathématiques séparés, même si un intitulé de discipline identique apparaît dans les trois sections du PDF.
+2. Les contenus S (congruences, diophantiennes, matrices, espace) ne doivent pas apparaître dans le parcours L, sauf si une source officielle distincte confirme un enseignement commun.
+3. Les contenus de Mathématiques financières doivent être liés à T12 OSE : intérêts composés, capitalisation/actualisation, valeurs acquises/actuelles, annuités constantes ; les activités du PE utilisent des situations financières concrètes et des offres de crédit, mais ne constituent pas une recommandation financière personnelle.
+4. Les séquences de 10, 60, 80 et 20 heures doivent être stockées comme durées de RAS ou de séquence, et non ajoutées à l'emploi du temps hebdomadaire.
+5. Toute importation de formules de logarithmes, d'exponentielles, d'intégration ou de calcul matriciel doit être vérifiée sur la page PDF visuelle afin de ne pas introduire les caractères corrompus visibles dans certaines extractions textuelles.
+
+Sources primaires :
+- [PE T12 MEN — Mathématiques L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 119-128 (2 h/semaine ; sommaire à quatre composantes).
+- [PE T12 MEN — Mathématiques S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 317-322 (6 h/semaine ; nombre complexes, congruences, géométrie de l'espace).
+- [PE T12 MEN — Mathématiques OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 530-542 (6 h/semaine ; cinq composantes, mathématiques financières et annuités).
