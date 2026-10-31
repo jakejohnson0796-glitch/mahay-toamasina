@@ -723,3 +723,58 @@ Sources statistiques :
 - [MESUPRES — Annuaire statistique 2021-2022](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2021-2022.pdf).
 - [MESUPRES — Annuaire statistique 2022-2023](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
 - [MESUPRES — Catalogue officiel des annuaires ; édition 2023-2024 publiée le 5 janvier 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=annuaires).
+
+
+## 21. Employabilité réelle à Toamasina : partenariat TAFA, conseillers d'orientation et alternance
+
+L'Agence Universitaire de la Francophonie (AUF) identifie officiellement l'Université de Toamasina comme membre du projet **TAFA — De l'apprentissage à l'emploi, dans une dynamique inclusive**. La page du projet décrit un programme destiné aux étudiants en fin de cursus (Licence 3 et Master 2), financé par l'Ambassade de France et mis en œuvre par l'AUF et Humanité & Inclusion.
+
+La fiche TAFA indique une mise en œuvre dans trois régions, dont **l'Atsinanana**, et présente trois axes :
+- parcours de formation en alternance ;
+- parcours d'aide à la réussite ;
+- promotion de la responsabilité sociale des universités.
+
+La fiche mentionne 278 étudiants ayant bénéficié d'un parcours de réussite, quatre universités bénéficiaires, quatre entreprises partenaires et trois parcours universitaires en alternance travail-études prévus. L'Université de Toamasina apparaît nommément dans la liste des membres du projet. Ces chiffres sont ceux publiés par l'AUF dans la fiche consultée ; ils ne doivent pas être attribués exclusivement à Toamasina sans un tableau de ventilation par université.
+
+Un article AUF du 2 juin 2026 confirme qu'un atelier organisé les 28 et 29 mai 2026 a rassemblé une vingtaine de conseillers d'orientation professionnelle et acteurs de l'accompagnement issus des universités publiques d'Antananarivo, Fianarantsoa et **Toamasina**. Les participants ont travaillé à harmoniser les pratiques d'orientation et d'insertion, à partager des outils et à créer une communauté de pratiques. La formation a aussi intégré les enjeux de handicap et de vulnérabilité.
+
+Un autre article AUF du 13 octobre 2025 indique qu'une centaine d'étudiants de niveau Master devaient suivre une alternance durant l'année universitaire 2025-2026 avec des entreprises partenaires (métiers du numérique et des énergies renouvelables), et que 35 ateliers d'employabilité étaient prévus via les Centres d'employabilité francophones (CEF). Cette centaine est annoncée pour le projet dans son ensemble et non pour le seul campus de Toamasina.
+
+**Ce qui est démontré :**
+- appartenance officielle de l'Université de Toamasina au projet TAFA ;
+- déploiement du projet dans l'Atsinanana ;
+- participation de conseillers d'orientation de Toamasina à l'atelier du 28-29 mai 2026 ;
+- existence d'une initiative de professionnalisation/alternance, de certification et de compétences transversales au cours de 2025-2026.
+
+**Ce qui reste à demander à l'Université :**
+1. la liste des facultés/parcours et étudiants de Toamasina retenus par TAFA ;
+2. les conventions de stage/alternance et les entreprises partenaires effectivement actives avec Toamasina ;
+3. les attestations de certifications PIX/DELF ou autres par cohorte, sans publier les données personnelles des étudiants ;
+4. les ateliers tenus à Barikadimy et leurs taux de participation ;
+5. la structure interne qui assure le suivi après TAFA ;
+6. la preuve de création et le mandat du Centre universitaire d'employabilité exigé par le décret 2026-1483, ou la preuve d'un service régional mutualisé.
+
+**Décision MITARIDALA :** TAFA est à enregistrer comme projet/partenariat de professionnalisation daté (2025-2026), avec son périmètre multi-universités et ses preuves AUF. Ne pas l'utiliser comme preuve que chaque composante a un centre d'employabilité permanent ou que chaque parcours diplômant a reçu une accréditation spécifique.
+
+Sources AUF :
+- [AUF — Fiche officielle du projet TAFA, objectifs, régions, chiffres clés et membres](https://www.auf.org/projet/tafa/).
+- [AUF — Atelier d'orientation et d'insertion professionnelle, 2 juin 2026](https://www.auf.org/madagascar-une-dynamique-collective-pour-guider-lorientation-et-linsertion-professionnelle/).
+- [AUF — Projet TAFA et alternance au service de l'emploi, 13 octobre 2025](https://www.auf.org/projet-tafa-lalternance-au-service-de-lemploi-des-jeunes/).
+
+## 22. Vérification indépendante de l'organisation universitaire : WHED et AUF, avec écarts d'ancienneté
+
+La base internationale de l'Association internationale des universités (IAU/WHED), fiche **IAU-019655**, décrit l'Université de Toamasina comme université publique située à Barikadimy, BP 591, Toamasina 501. Elle indique les langues française et malagasy, un calendrier universitaire d'octobre à juin, et un accès général sur baccalauréat ou équivalent et examen d'entrée. La fiche répertorie des divisions : Arts and Humanities/FLSH, Law Economics and Management/DSEG, Medicine, Science and Technology, Confucius, ISSEDD, instituts technologiques régionaux, ITPT, National Customs et Teacher Training/ENS.
+
+La base WHED précise qu'elle a été mise à jour le **23 février 2024**. Ses champs d'études et ses grades Licence/Master/Doctorat constituent une cartographie internationale de l'institution, mais pas une décision ministérielle d'habilitation par programme ni une preuve d'ouverture de cohorte en 2026-2027. Elle conserve notamment le libellé DSEG et ne reflète donc pas nécessairement l'organisation postérieure à la séparation FAC/DEGMIA → FST décrite dans la brochure FST 2023-2024.
+
+L'AUF présente de son côté l'histoire du CUR de Toamasina créé en 1977, puis devenu autonome. Sa page indique l'érection des CUR au rang d'universités autonomes le 7 octobre 1988 et décrit l'Université de Toamasina comme issue de cette décentralisation ; la base WHED indique pour sa part l'acquisition du statut actuel en 1992. Ces dates ne sont pas équivalentes (date d'érection de CUR, date d'autonomie ou date de statut institutionnel) et ne doivent pas être fusionnées.
+
+**Décision de données :**
+- adresse institutionnelle et coordonnées BP 591 / Barikadimy : corroboration indépendante, à confirmer sur les documents administratifs récents ;
+- calendrier octobre-juin et admission par baccalauréat/examen : information générale WHED millésimée 2024, pas à utiliser comme calendrier ou règle spécifique de recrutement 2026-2027 ;
+- divisions WHED : nomenclature historique/externe de rapprochement, pas nomenclature officielle à jour ;
+- dates 1988/1989/1992 : historique à documenter avec le texte fondateur, la loi/ordonnance et l'acte exact d'autonomie avant de renseigner un seul champ « date de création ».
+
+Sources :
+- [IAU / WHED — University of Toamasina, fiche IAU-019655, actualisée le 23 février 2024](https://whed.net/institutions/IAU-019655).
+- [AUF — Fiche membre de l'Université de Toamasina et historique du CUR](https://www.auf.org/membre/universite-de-toamasina-2/).
