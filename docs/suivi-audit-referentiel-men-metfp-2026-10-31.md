@@ -1423,3 +1423,17 @@ Sources primaires :
 - [PE T12 MEN — Mathématiques L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 119-128 (2 h/semaine ; sommaire à quatre composantes).
 - [PE T12 MEN — Mathématiques S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 317-322 (6 h/semaine ; nombre complexes, congruences, géométrie de l'espace).
 - [PE T12 MEN — Mathématiques OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 530-542 (6 h/semaine ; cinq composantes, mathématiques financières et annuités).
+
+
+### 9.42 Vérification croisée de l'ordre des sections T12 L/S/OSE et du programme Mathématiques
+
+La structure du document PE T12 comporte trois grands blocs disciplinaires, avec trois entrées « Mathématiques » au sommaire : pages imprimées 119, 533 et 746. Leur comparaison avec la grille officielle des heures de T12 permet de rattacher les sections :
+- première section (p. 119-128) : série L — 2 h/semaine ;
+- deuxième section (p. 317-322) : série S — 6 h/semaine ;
+- troisième section (p. 530-542) : série OSE — 6 h/semaine.
+
+Le rattachement est cohérent avec l'ordre des trois parcours dans le PE, les volumes horaires par série de la grille MEN et le contenu propre à OSE (mathématiques financières explicitement présentes dans le troisième bloc). Ne pas utiliser uniquement le numéro de page en extraction automatique : conserver également le libellé de série et vérifier les débuts de section de chaque discipline.
+
+**Correction de qualité :** la formule de la matrice officielle T12 confirme 2 h pour L et 6 h pour S/OSE. Le programme S comporte un bloc de géométrie dans l'espace et d'algèbre modulaire ; le programme OSE comporte les mathématiques financières en sus des quatre autres composantes. Le numéro de série doit être conservé comme clé du contenu, même si plusieurs RAG généraux se ressemblent.
+
+Source : [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), sommaire et sections p. 119, 317 et 530 ; [grille officielle coefficients/volumes lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
