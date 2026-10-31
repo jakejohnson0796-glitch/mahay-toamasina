@@ -180,6 +180,28 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         filiere_ids = {fil.id for fil in filieres}
         assert all(programme.filiere_id in filiere_ids for programme in programmes)
 
+        # Un support d'évaluation de cours ne vaut pas preuve d'habilitation :
+        # CCA M2 est conservé pour audit, mais jamais créé comme offre active.
+        cca_source = [
+            ligne for ligne in payload["formations"]
+            if "cca" in _normaliser(ligne.get("parcours"))
+        ]
+        assert len(cca_source) == 1
+        assert cca_source[0]["niveau"] == "M2"
+        assert _normaliser(cca_source[0]["statut"]) == "a verifier"
+        assert not any(
+            "cca" in _normaliser(ligne.get("parcours"))
+            for ligne in attendues
+        )
+        filieres_cca = {
+            filiere.id for filiere in filieres
+            if "cca" in _normaliser(filiere.nom)
+        }
+        assert not any(
+            programme.filiere_id in filieres_cca
+            for programme in programmes
+        )
+
         # Contrôle aussi le catalogue scolaire seedé par la migration :
         # Sciences naturelles reste le libellé du collège, lié à la source
         # officielle 6e 2024-2025, sans être confondu avec SVT au lycée.
