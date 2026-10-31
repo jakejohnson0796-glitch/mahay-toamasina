@@ -128,7 +128,7 @@ Sources statistiques primaires :
 
 Le MESUPRES référence un **Annuaire statistique 2023-2024** publié le 5 janvier 2026. C’est le dernier millésime d’annuaire statistique identifié dans la liste officielle consultée. Le PDF fait environ 17,9 Mo et n’a pas pu être ouvert par le lecteur web lors de ce contrôle. Ses tableaux Toamasina doivent être récupérés par une voie technique adaptée et contrôlés page par page avant toute actualisation des effectifs.
 
-Source : [MESUPRES — Annuaires statistiques officiels](https://www.mesupres.gov.mg/documents/index/1?categorie=annuaires).
+Sources : [MESUPRES — Annuaires statistiques officiels](https://www.mesupres.gov.mg/documents/index/1?categorie=annuaires) ; [PDF direct de l’annuaire 2023-2024](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2023-2024.pdf).
 
 **Décision :** les chiffres 2022-2023 restent des repères historiques. Ne pas les présenter comme effectifs de 2026-2027 ni extrapoler une croissance à partir de l’annuaire 2023-2024 tant que les tableaux régionaux n’ont pas été extraits.
 
@@ -290,3 +290,24 @@ Ne jamais remplacer ces états par un seul champ « vérifié ».
 - [MESUPRES — Liste des habilitations, août 2022 (PDF)](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf)
 - [Université de Toamasina — site institutionnel](https://www.univ-toamasina.mg/)
 - [Université de Toamasina — FST, brochure/formulaire 2023-2024 (PDF)](https://www.univ-toamasina.mg/static/pdfs/etablissements/facultes/fst/FORMULAIRE%20DE%20CANDIDATURE%202023-2024.pdf)
+
+
+## 2.5 Registre officiel HAE des offres habilitées : existence identifiée, lignes non extraites
+
+La page d’accueil officielle de la plateforme HAE annonce un registre national des **offres de formation habilitées des universités**, couvrant les Licences, Masters et Doctorats des universités publiques et privées de toutes les régions. La plateforme présente aussi l’habilitation comme autorisation préalable obligatoire à l’ouverture d’une offre de formation, examinée par la Commission Nationale d’Habilitation (CNH).
+
+La page MESUPRES « Établissements » qui affiche « Contenu en cours de mise à jour » et le registre HAE des offres habilitées sont deux points d’accès distincts. Il ne faut pas conclure que le registre HAE est vide à partir du seul message de la page « Établissements ».
+
+Lors de ce contrôle, l’interface HAE renvoie une application JavaScript et le lecteur documentaire ne donne pas accès aux lignes de son registre. Les titres et fonctions du registre sont donc confirmés par la page officielle, mais **aucune ligne individuelle d’offre habilitée à Toamasina n’est transcrite comme vérifiée dans ce rapport**.
+
+Sources :
+- [Plateforme HAE — registre des offres habilitées des universités](https://qualite.mesupres.mg/).
+- [MESUPRES — Établissements, état de mise à jour de la page](https://www.mesupres.gov.mg/etablissements).
+
+## 2.6 Session CNH 2026 : dossiers reçus et habilitations accordées ne sont pas la même donnée
+
+Un article de presse daté du 12 octobre 2026 rapporte que la CNH a enregistré plus de 600 demandes en 2026, dont 549 dossiers ont franchi le premier examen administratif et ont été retenus pour évaluation par 65 experts. L’article indique que les observations devaient être rendues disponibles sur la plateforme HAE en octobre et que les établissements pourraient transmettre des corrections avant une nouvelle étape en décembre.
+
+**Niveau de preuve : source secondaire de veille.** Ces nombres ne constituent pas un registre de décisions finales et ne permettent pas d’affirmer que 549 formations sont habilitées. Pour Toamasina, seules les décisions finales publiées par le MESUPRES/HAE, avec l’identifiant de l’offre, l’établissement, le diplôme et les dates de validité, pourront modifier le statut de validation.
+
+Source secondaire : [Moov — Plus de 600 demandes d’habilitation examinées en 2026, 12 octobre 2026](https://moov.mg/actualite/nationale/122500-enseignement-superieur-plus-de-600-demandes-dhabilitation-examinees-cette-annee).
