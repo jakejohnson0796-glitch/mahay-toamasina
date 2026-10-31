@@ -320,3 +320,12 @@ La page officielle MEN des annuaires statistiques affiche une édition 2023-2024
 Pour construire le répertoire des écoles de Toamasina, il faut obtenir de la DREN Atsinanana / CISCO Toamasina I et II une liste datée 2026-2027 comprenant code établissement, statut, commune, niveaux réellement ouverts et séries autorisées. Les fichiers publics anciens contenant des listes d'élèves et identifiants personnels ne doivent pas être utilisés comme annuaire d'établissements ni importés dans MITARIDALA.
 
 Source : [Annuaires statistiques MEN](https://www.education.gov.mg/ressources/annuaires-statistiques/).
+
+
+### 8.9 Calendrier MEN 2026-2027 : signal secondaire à confirmer par la pièce primaire
+
+Une publication de presse du 8 juin 2026 rapporte que le calendrier scolaire 2026-2027 a été officiellement publié par le MEN. Elle indique notamment une rentrée des élèves le 7 septembre 2026, cinq périodes d'enseignement (7 septembre-30 octobre ; 9 novembre-23 décembre ; 4 janvier-26 février ; 1er mars-30 avril ; 10 mai-30 juin) et une fin d'année scolaire le 30 juin 2027.
+
+Cette information améliore le contexte de datation des RAPE de septembre 2026 : elle rend plausible leur utilisation pendant 2026-2027, mais l'article est une source secondaire. Le calendrier primaire MEN (PDF, arrêté, note ou page officielle) n'a pas encore été récupéré dans cette recherche. Il faut donc enregistrer provisoirement le champ annee_scolaire_candidate = 2026-2027, le champ source_calendrier = presse rapportant une publication MEN, et conserver validation_source_primaire = en_attente. Ne pas écraser le champ d'édition documentaire septembre 2026.
+
+Source : [2424.mg, 8 juin 2026 — rentrée 2026-2027 et calendrier rapporté comme publié par le MEN](https://www.2424.mg/education-la-rentree-scolaire-pour-2026-2027-prevue-pour-le-7-septembre).
