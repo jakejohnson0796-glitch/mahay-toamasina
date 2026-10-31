@@ -180,10 +180,14 @@ Source : [MESUPRES — liste d'habilitation d'août 2022, rubrique ITPT](https:/
 
 Le fichier source conserve séparément deux ensembles à vérifier avant publication détaillée :
 
-### Faculté de Médecine
-Les documents MESUPRES d'août 2022 mentionnent Sciences Infirmières, Maïeutique, Médecine humaine et Sciences Paramédicales, avec plusieurs arrêtés. Le modèle actuel L1-L2-L3-M1-M2 n'est pas nécessairement adapté aux cursus de santé longs et à leurs cycles cliniques.
+### Faculté de Médecine — preuve ministérielle historique explicite à Toamasina
+La liste officielle MESUPRES mise à jour en août 2022 place bien une **FACULTÉ DE MÉDECINE sous l'UNIVERSITÉ TOAMASINA**. Elle cite le domaine « Sciences de la Santé / Licence » et quatre mentions : **Sciences Infirmières, Maïeutique, Médecine humaine et Sciences Paramédicales**. Le tableau donne les références d'arrêtés n°31798/2017-MESupReS du 27 décembre 2017, n°594/2018-MESupRES du 15 janvier 2018 et n°4000/2022-MESupRES du 28 février 2022. Cette pièce confirme une présence institutionnelle et réglementaire historique à Toamasina ; elle ne prouve pas, à elle seule, le renouvellement, l'accréditation ni l'ouverture 2026-2027 de chaque cursus.
 
-Ne pas créer automatiquement un parcours générique Licence/Master pour ces formations. Demander à la Faculté la structure officielle de chaque cursus : années d'études, grades, stages cliniques, internat/résidanat le cas échéant, conditions de progression, habilitation et ouverture annuelle.
+**Écart constaté dans la base actuelle :** la requête Supabase retrouve une Faculté de Médecine rattachée à l'Université d'Antananarivo, mais aucune Faculté de Médecine rattachée à l'Université de Toamasina. La mention « Médecine Humaine » présente dans la base est liée à la composante d'Antananarivo. Les mentions isolées « Maïeutique » et « Infirmerie » n'ont aucune filière active ; le libellé ministériel 2022 est **« Sciences Infirmières »**, pas « Infirmerie ». Il existe donc un écart entre l'inventaire ministériel historique et le référentiel de production.
+
+**Action correcte :** obtenir auprès de l'Université de Toamasina et de sa Faculté de Médecine la confirmation administrative actuelle, les arrêtés applicables et les maquettes détaillées ; reconstituer ensuite une composante Toamasina distincte, en conservant la faculté et les filières d'Antananarivo sans les déplacer. Ne pas importer ces cursus dans une échelle L1-L2-L3-M1-M2 générique : recueillir les années d'études, cycles cliniques, stages, internat/résidanat éventuels, conditions de progression et décisions d'habilitation propres à la santé.
+
+Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, tableau Université de Toamasina / Faculté de Médecine](https://www.mesupres.gov.mg/assets/front/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
 ### École Supérieure Polytechnique de Toamasina (ESPT)
 L'annuaire statistique MESUPRES 2022-2023 signale Génie Civil, Génie des Mines et Génie des Procédés et Environnement. Ce constat ne donne pas à lui seul les niveaux, parcours et admissions actuels. L'ESPT doit rester dans l'inventaire « à confirmer » tant qu'une maquette, un arrêté et un avis de sélection actuels ne sont pas obtenus.
@@ -312,11 +316,15 @@ Les quatre enregistrements portent `est_active=true`. Les anciens IDs 50 et 59 n
 
 **Correction recommandée, non exécutée :** adapter la réconciliation pour sélectionner la mention canonique même lorsqu'elle existe déjà, puis réaffecter les références de tous les doublons avant suppression. Ajouter des tests de régression sur les références `Filiere`, `Utilisateur`, `CercleEtude`, `DemandeCreationCercle` et `DemandeChangementFiliere`. Exécuter d'abord un dry-run et vérifier le nombre de références déplacées ; aucun nettoyage direct en production avant tests et revue.
 
-### 10.4 Médecine et ESPT — séparation des universités confirmée
+### 10.4 Écart base / source ministérielle — Faculté de Médecine et ESPT
 
-La Faculté de Médecine actuellement présente dans la base est rattachée à **l'Université d'Antananarivo**, et non à Toamasina. La mention « Médecine Humaine » possède une filière dans cette faculté d'Antananarivo. Les mentions « Maïeutique » et « Infirmerie » existent comme mentions actives, mais n'ont actuellement aucune filière, aucun utilisateur, aucun cercle et aucune demande associés.
+La requête Supabase confirme qu'une Faculté de Médecine existe dans la base mais est rattachée à **l'Université d'Antananarivo**. La filière « Médecine Humaine » enregistrée en base appartient à cette composante d'Antananarivo. Les mentions « Maïeutique » et « Infirmerie » sont des enregistrements actifs isolés sans filière, utilisateur, cercle ni demande associée.
 
-Aucune composante « Faculté de Médecine » ni « École Supérieure Polytechnique de Toamasina » n'est rattachée à l'Université de Toamasina dans la table `faculte`. Il ne faut donc pas rattacher par erreur la filière Médecine Humaine d'Antananarivo à Toamasina, ni créer des parcours Maïeutique/Infirmerie ou ESPT sans pièces officielles et rattachement institutionnel confirmé.
+Il serait toutefois inexact de conclure que Toamasina n'a jamais eu de Faculté de Médecine : la liste MESUPRES d'août 2022 énumère explicitement une Faculté de Médecine sous **Université Toamasina**, avec Sciences Infirmières, Maïeutique, Médecine humaine et Sciences Paramédicales et des références d'arrêtés. L'état de la base actuelle ne reflète donc pas complètement cette preuve ministérielle historique. Il faut demander la situation institutionnelle et réglementaire actuelle, puis représenter séparément la Faculté de Médecine de Toamasina si elle est confirmée. **Ne pas transférer la filière d'Antananarivo** et ne pas fusionner « Infirmerie » avec « Sciences Infirmières » sans validation du libellé officiel actuel.
+
+Aucune composante « École Supérieure Polytechnique de Toamasina » n'est enregistrée sous l'Université de Toamasina. L'annuaire statistique MESUPRES 2022-2023 mentionne pourtant cette école et des spécialités de Génie Civil, Génie des Mines et Génie des Procédés et Environnement. Cette divergence appelle une vérification institutionnelle et réglementaire ; elle ne justifie pas encore la création d'offres publiques.
+
+À obtenir pour les deux structures : statut administratif actuel, rattachement universitaire, arrêtés d'habilitation et d'accréditation en vigueur, maquettes, cycles et niveaux, parcours, conditions d'accès et avis d'ouverture 2026-2027.
 
 ### 10.5 Vérification des cercles et des profils étudiants
 
