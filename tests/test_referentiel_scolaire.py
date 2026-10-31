@@ -543,6 +543,12 @@ def test_source_admin_accepte_uniquement_le_domaine_officiel_men():
     assert admin_scolaire_router._url_source_valide(
         "https://docs.education.gov.mg/programmes/"
     )
+    assert admin_scolaire_router._url_source_valide(
+        "https://plateforme.education.mg/bibliotheque-numerique/?lang=fr"
+    )
+    assert admin_scolaire_router._url_source_valide(
+        "https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T6.pdf"
+    )
     assert not admin_scolaire_router._url_source_valide(
         "https://example.com/faux-programme"
     )
