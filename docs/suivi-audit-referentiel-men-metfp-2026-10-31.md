@@ -1258,3 +1258,26 @@ Géographie est à 2 h par semaine pour T6-T9. La liste des « 24 régions » fi
 3. Les « durées » de séquence d'un thème dans le tableau RAS doivent être stockées séparément des heures hebdomadaires de la matière.
 4. Le RAPE annuel doit répartir les contenus du PE sans altérer leur formulation, ni supprimer les prérequis ou compétences du PE.
 5. Garder un identifiant distinct de notion par PE/version/niveau/matière/RAS. Un intitulé partagé (ex. fractions, reproduction, énergie) n'est pas la preuve d'un même niveau de difficulté ou d'une même progression.
+
+
+### 9.36 Déploiement progressif des nouveaux programmes : précédent réglementaire MEN à prendre en compte
+
+Une directive MEN publiée pour la rentrée 2022-2023 documente expressément la coexistence temporaire de parcours selon les établissements :
+- les établissements pilotes ayant appliqué les nouveaux PE en T1/T4/T7 durant 2021-2022 poursuivaient en T2/T5/T8 en 2022-2023 ;
+- les lycées pilotes poursuivaient les nouvelles séries L, S et OSE ;
+- les autres lycées publics et privés ayant commencé l'application des nouveaux programmes poursuivaient leur déploiement progressivement, avec ouverture des séries L/S/OSE en Première ;
+- certaines Terminales A/C/D étaient encore maintenues pendant cette transition.
+
+Cette pièce est historique (année 2022-2023) et ne prouve pas la situation des établissements en 2026-2027. Elle établit cependant que la mise en œuvre a déjà été progressive et que le MEN a reconnu une coexistence temporaire de cohortes et de séries selon le statut/pilotage des établissements.
+
+**Conséquence pour le référentiel MITARIDALA :**
+1. Ne jamais associer un établissement uniquement à un référentiel national sans enregistrer la période et la classe/cohorte réellement suivie.
+2. Prévoir qu'un même établissement puisse avoir des élèves de niveaux équivalents inscrits dans deux versions de PE différentes en année de transition.
+3. Distinguer le parcours PE/PS effectivement suivi pour l'apprentissage, le programme annuel (RAPE) appliqué et le régime de l'examen (Bac) de la cohorte.
+4. Garder un dossier de preuve par établissement (instruction DREN/CISCO, liste de cohortes, procès-verbal pédagogique, autorisation de série ou calendrier de bascule) avant de sélectionner un PE par défaut.
+5. Ne pas transformer la transition 2022-2023 en règle toujours applicable ; demander la directive 2026-2027 la plus récente et son champ public/privé.
+
+La directive mentionne aussi que les enseignants doivent respecter les programmes en vigueur et la progression de la RAPS annuelle, avec évaluation bimestrielle et remédiation. Cette règle historique renforce l'intérêt de stocker la progression et les séances de remédiation séparément du contenu PE.
+
+Source primaire : [MEN — Rentrée scolaire 2022-2023, informations et instructions pour DREN, CISCO et établissements](https://www.education.gov.mg/rentree-scolaire-2022-2023-informations-et-instructions-pour-les-dren-cisco-et-etablissements-scolaires-dans-tout-madagascar/), publié par le MEN.
+
