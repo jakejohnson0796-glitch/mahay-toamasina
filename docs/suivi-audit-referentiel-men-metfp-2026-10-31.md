@@ -1159,3 +1159,30 @@ Sources : PE T9, Histoire PDF p. 175-177 (lignes 8645-8697) ; Géographie p. 191
 4. Les durées de séquence (ex. T7 SVT appareil digestif 13 h ; T7 Sciences physiques Matière 31 h) doivent être persistées dans un champ différent des heures de cours par semaine.
 5. La version française officielle comporte parfois des formulations, symboles ou formules mathématiques dont l'extraction web peut être abîmée. Avant de copier une formule dans la banque de questions, vérifier la page PDF visuelle et conserver l'écriture officielle.
 
+
+
+### 9.34 Établissements secondaires de Toamasina corroborés par un avis FID de septembre 2026
+
+Une source institutionnelle récente du Fonds d'Intervention pour le Développement (FID) fournit un nouveau point de corroboration indépendant pour Toamasina II. L'avis de consultation ouverte n° 91/DC/FID-DG/FSR/26, daté du 17 septembre 2026, relatif à des travaux de réhabilitation d'infrastructures endommagées par des catastrophes naturelles, identifie notamment :
+
+| Établissement | CISCO | Code établissement | Portée de la preuve |
+|---|---|---:|---|
+| Lycée Toamasina II | Toamasina II | 502160021 | Site identifié dans un marché public de réhabilitation 2026 |
+| CEG Volobe | Toamasina II | 502020001 | Site identifié dans le même marché public |
+
+La notice précise que des visites de lieux obligatoires ont été planifiées les 11 et 12 septembre 2026. Le code 502160021 concorde avec le code du Lycée Toamasina II présent dans l'ancien relevé MEN de 2021, ce qui fournit une corroboration temporelle plus récente pour le lycée. Le code CEG Volobe est une nouvelle information utile pour le rapprochement CISCO Toamasina II.
+
+Un rapport institutionnel FID publié en avril 2026, relatif aux opérations d'urgence après le cyclone Gezani, évoque également une élève du Lycée Jacques Rabemananjara de Toamasina et des travaux d'urgence sur le toit et le nettoyage des salles afin de rétablir les cours. Cela renforce la preuve de présence fonctionnelle/activité du Lycée Jacques Rabemananjara en 2026, mais ne donne pas son code dans cette source.
+
+**Limites :** le marché FID ne prétend pas dresser un annuaire éducatif ; il sélectionne des sites bénéficiaires de travaux. Il ne prouve ni la liste complète des établissements de Toamasina I/II, ni leur statut d'homologation, ni les niveaux, séries/options, parcours PE/PS, capacités d'accueil ou inscriptions. Les codes issus de sources historiques ou de marchés publics doivent être conservés comme éléments de rapprochement documentaire et validés par la CISCO avant import.
+
+**Ajout au dossier local candidat (non publiable comme annuaire exhaustif) :**
+- Lycée Toamasina II — code 502160021 — preuve FID septembre 2026 ;
+- CEG Volobe — code 502020001 — preuve FID septembre 2026 ;
+- Lycée Jacques Rabemananjara — preuve d'activité scolaire rapportée par FID en avril 2026, code non transcrit de cette pièce ;
+- CEG Ratsimilaho, CEG Ramatrahitra, Lycée de Référence et Collège Privé Rose et Bleu — preuves d'activité CISCO/DREDD de mai 2026, mais niveaux et codes à confirmer.
+
+Sources :
+- [FID — Avis n° 91/DC/FID-DG/FSR/26, 17 septembre 2026](https://www.fid.mg/travaux-de-rehabilitation-des-infrastructures-communautaires-de-base-endommagees-par-les-catastrophes-naturelles-n-91-dc-fid-dg-fsr-26-17-09-2026/).
+- [FID — Rapport d'intervention après les cyclones Gezani/Fytia, avril 2026](https://www.fid.mg/wp-content/uploads/2026/04/RAC_VM.pdf).
+
