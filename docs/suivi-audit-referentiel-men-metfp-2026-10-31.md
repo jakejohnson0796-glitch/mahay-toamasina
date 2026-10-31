@@ -1804,3 +1804,54 @@ Sources officielles :
 - [PE T10 MEN — Histoire (2 h), Géographie (2 h), EAC (2 h), TICE (1 h)](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 166-179, 187-189 et 240-245.
 - [PE T11 MEN — EAC L/S/OSE (2 h) et TICE L/S/OSE (1 h)](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 174-180, 421-427, 653-660 et TICE p. 233-247, 485-495, 717-725.
 - [PE T12 MEN — sommaire T12 et matrice quantitative](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 10-11 ; voir également la comparaison visuelle de TICE en section 9.44.
+
+### 9.50 T10 (Seconde) : Histoire, Géographie, EAC et TICE vérifiés séparément
+
+Le PE T10 précise les quatre disciplines et volumes qui étaient partiellement regroupés dans la matrice générale : Histoire 2 h/semaine, Géographie 2 h/semaine, Éducation à la citoyenneté 2 h/semaine et TICE 1 h/semaine. Le bloc Histoire-Géographie de la grille est donc 4 h, correspondant à deux matières à 2 h chacune.
+
+#### Histoire T10 — 2 h/semaine
+
+Le PE organise la matière autour de cinq thématiques :
+- Histoire de Madagascar des origines à la fin du XIXe siècle : peuplement/protohistoire, période clanique, royaumes malgaches et royaume de Madagascar ;
+- apports des civilisations étrangères à Madagascar ;
+- histoire et identités culturelles à Madagascar, composantes de la culture et préservation du patrimoine ;
+- iconographie et peintures rupestres à Madagascar ;
+- Europe et monde au XIXe et au début du XXe siècle, faits marquants et conséquences de la modernité.
+
+Le PE demande d'appliquer la démarche ODAS et la pensée historique, de privilégier les sources primaires, de construire des repères temporels et spatiaux, et d'analyser les continuités, changements, causes et conséquences. Les activités incluent cartes de peuplement, royaumes et frises chronologiques.
+
+#### Géographie T10 — 2 h/semaine
+
+Le PE comprend trois ensembles principaux :
+- introduction à la géographie, son utilité, ses outils et ses démarches ;
+- la Terre, planète des hommes : caractéristiques, lignes imaginaires, coordonnées géographiques, rotation/révolution, lecture et élaboration de cartes ;
+- la Terre, ses richesses et ses contraintes : relief/tectonique des plaques, climats et végétation, changement climatique, eau ressource vitale, énergie et ressources minières, enjeux et perspectives à Madagascar.
+
+Les RAG demandent d'analyser les phénomènes géographiques, les relations société/milieu, les potentialités de Madagascar et leur valorisation durable. La discipline est donc distincte de l'Histoire même si les deux sont réunies en un bloc horaire de 4 h dans la grille lycée.
+
+#### Éducation à la citoyenneté T10 — 2 h/semaine
+
+Le PE indique cinq résultats généraux : concepts de base de citoyenneté, droits de l'Homme et devoirs du citoyen, paix et justice sociale, lutte contre la corruption et développement durable. Les thèmes détaillés couvrent les notions de citoyen/citoyenneté/nationalité, droits et responsabilités, DUDH, paix, discrimination/violence, patriotisme, formes/facteurs/conséquences de la corruption, mécanismes de signalement et les trois piliers du développement durable.
+
+Les stratégies pédagogiques sont participatives (observation, analyse de documents, exposés, débats, discussions, jeux de rôle, résolution de problèmes). Le PE permet d'utiliser des situations locales (vie communale, protection de l'environnement, responsabilité citoyenne) comme supports, mais le programme national et les RAS doivent rester la référence.
+
+#### TICE T10 — 1 h/semaine
+
+Le PE T10 vise une initiation à l'informatique et aux TIC : historique/terminologie, capacité et structure de l'ordinateur, systèmes et logiciels, maintenance/sécurité, Internet/WWW, moteurs de recherche, licences/droits d'auteur, sécurité face aux programmes malveillants, fichiers/dossiers et traitement de texte. Les activités incluent manipulation d'ordinateurs, conversions entre bases numériques et opérations binaires simples.
+
+Dans le tableau de contenu, l'initiation à l'informatique comprend une séquence de 5 h ; cette durée est une durée de RAS/séquence et ne remplace pas l'horaire global de 1 h par semaine.
+
+#### Conséquences pour la progression T6-T12
+
+1. La FOV T6-T9 et l'EAC T10-T11 sont des disciplines liées par les finalités citoyennes, mais le PE donne des RAS, contenus et volumes distincts. Garder deux codes de matières versionnés ou une relation d'évolution explicite, pas une fusion de contenu.
+2. En T10, Histoire et Géographie sont séparées à 2 h chacune malgré la ligne agrégée Histoire-Géographie de la grille générale.
+3. TICE commence en T10 avec initiation au matériel, systèmes, Internet, sécurité, licences et traitement de texte ; T11 renforce bureautique, tableur, présentation et algorithmique. Le TICE ne doit pas être confondu avec l'usage transversal de l'ordinateur dans les autres matières.
+4. La présence de TICE dans les finalités transdisciplinaires (RAT) n'implique pas un cours autonome en T12 ; le sommaire T12 ne l'identifie pas et ses coefficients sont en conflit entre documents MEN.
+5. Ne pas confondre durée de séquence de 5 h avec volume hebdomadaire de 1 h pour TICE.
+
+Sources officielles :
+- [PE T10 MEN — Histoire](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 166-170.
+- [PE T10 MEN — Géographie](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 177-182.
+- [PE T10 MEN — Éducation à la citoyenneté](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 187-193.
+- [PE T10 MEN — TICE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 240-247.
+- [PE T10 MEN — matrice horaire et coefficients](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf), p. 9-10.
