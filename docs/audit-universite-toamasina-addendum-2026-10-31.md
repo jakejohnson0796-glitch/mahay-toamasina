@@ -96,9 +96,11 @@ Le formulaire officiel de candidature FST pour l'année universitaire **2023-202
 - M1 et M2, branche Chimie : Chimie Biologie, ou Chimie des Procédés et Chimie Marine ;
 - accès au M1 après réussite en L3 et sélection de dossiers.
 
-Le fichier JSON reprend correctement ces transitions et conserve les spécialisations par niveau. Cependant, la pièce consultée est explicitement millésimée 2023-2024. Elle prouve une organisation publiée pour cette année, pas une ouverture ni une maquette inchangée en 2026-2027.
+Le fichier JSON reprend ces transitions et conserve les spécialisations par niveau. Cependant, la pièce consultée est explicitement millésimée 2023-2024. Elle prouve une organisation publiée pour cette année, pas une ouverture ni une maquette inchangée en 2026-2027.
 
-À obtenir : avis de sélection 2026-2027, maquettes Licence/Master en vigueur, arrêtés d'habilitation et d'accréditation par mention, critères d'accès, volumes horaires/ECTS, unités d'enseignement, stages et modalités de mémoire.
+**Écart avec le registre MESUPRES d'août 2022 :** celui-ci place Mathématiques, Informatique et Applications (MIA) dans la FAC/DEGMIA au titre des Sciences de la Société (Licence et Master) et mentionne aussi MIA en Sciences et Technologies (Licence et Master) dans la partie DEG ; pour la Faculté des Sciences et Technologies, le tableau indique uniquement Physique-Chimie en Licence, sous l'arrêté n°12563/2022. Le formulaire FST 2023-2024 indique ensuite que la FST regroupe deux mentions, MIA et Physique-Chimie. Il existe donc un changement de rattachement ou une évolution d'offre entre les deux pièces, mais l'arrêté ou la décision de transfert/reconfiguration n'a pas été retrouvé dans ce contrôle. **Ne pas conclure que MIA est juridiquement rattachée à la FST pour tous les grades 2026-2027 sur la seule base du formulaire de sélection 2023-2024.**
+
+À obtenir : décision officielle de réorganisation ou de rattachement de MIA, arrêtés d'habilitation/accréditation par composante et grade, avis de sélection 2026-2027, maquettes Licence/Master en vigueur, critères d'accès, volumes horaires/ECTS, unités d'enseignement, stages et modalités de mémoire.
 
 Source : [Université de Toamasina — formulaire officiel de candidature FST 2023-2024](https://www.univ-toamasina.mg/static/pdfs/etablissements/facultes/fst/FORMULAIRE%20DE%20CANDIDATURE%202023-2024.pdf).
 
@@ -135,9 +137,12 @@ Le fichier JSON source transcrit le flyer en **61 associations** : chaque mentio
 
 Les parcours M1/M2 indiqués sont enregistrés pour les deux niveaux dans le JSON ; ils ne constituent pas pour autant une preuve distincte d'ouverture annuelle. Le flyer comporte aussi des mentions de débouchés vers un M2 en Sciences de l'Éducation, Sciences Naturelles, OSE ou SES ; ces formulations de débouchés ne décrivent pas systématiquement une maquette structurée, un parcours, une admission ou un volume de crédits. **Ne pas ajouter de M1/M2 à OSE, SES ou Sciences Naturelles uniquement sur la base de ces lignes de débouchés.**
 
+**Écart avec le registre MESUPRES d'août 2022 :** le ministère répertorie l'ENS sous le domaine « Sciences de l'éducation / Licence » avec l'intitulé global « Éducation, Apprentissage, Didactique et Mathématique Informatique » et l'arrêté n°12563/2022 du 05 mai 2022. Ce tableau ne détaille pas les onze mentions du flyer ni les huit groupes de parcours M1/M2 transcrits dans le JSON. Il ne permet donc pas de considérer chaque mention du flyer comme une habilitation indépendante, ni de confirmer séparément un grade Master pour chaque parcours. Il faut obtenir l'arrêté complet et ses annexes pédagogiques.
+
 **Réserves :**
 - le flyer ne fournit pas une année universitaire de validité lisible ;
 - l'extraction textuelle du PDF intercale des blocs de plusieurs colonnes ; le détail de la table ci-dessus reflète le fichier JSON versionné et doit être confirmé avec les maquettes ENS officielles ;
+- le registre MESUPRES 2022 donne un libellé général d'offre Licence, pas le détail des onze mentions ni des niveaux Master du flyer ;
 - le JSON ne fournit ni crédits ECTS, ni volumes horaires, ni unités d'enseignement, ni modalités d'évaluation, ni conditions de sélection propres à chaque parcours ;
 - les parcours du flyer sont des preuves de description historique, pas de l'ouverture 2026-2027 ni de la validité actuelle de chaque habilitation.
 
@@ -154,9 +159,11 @@ Le fichier source recense :
 
 Les 29 associations sont réparties entre ces trois mentions. Le parcours **CCA — Comptabilité, Contrôle, Audit** apparaît uniquement au niveau **M2** dans le tableau `formations` du fichier source et porte le statut « À vérifier ». Aucun CCA M1 n'est importé comme association. En revanche, la liste `audit_referentiel.formations_a_verifier_avant_publication` demande de recueillir les preuves pour les niveaux M1 et M2 : cela reste une demande de vérification documentaire, pas la preuve d'une offre CCA M1.
 
-Le site de la Faculté DEG n'a pas fourni de maquette actuelle exploitable pendant ce contrôle. Le support M2 CCA repéré sur Scribd n'est pas une preuve d'habilitation, de maquette officielle ni d'ouverture. Le CCA M2 doit rester « À vérifier » ; ne pas créer un CCA M1 sur la base de cette pièce.
+Le registre MESUPRES d'août 2022 rattache à la FAC/DEGMIA, sous « Sciences de la Société / Licence et Master », Droit et Sciences politiques, MIA, Sciences économiques et Sciences de gestion (arrêté n°31503/2013). Il répertorie également sous l'arrêté n°12567/2022 Droit, Droit (FOAD), Économie et Gestion en Licence et Master, ainsi qu'une offre professionnelle de Sciences de Gestion dont la référence d'arrêté n'est pas précisée dans le tableau. MIA est aussi mentionnée en Sciences et Technologies/Licence et Master dans la partie FAC/DEGMIA, sans référence distincte affichée sur cette ligne. Cette organisation ministérielle historique doit être comparée à la division ultérieure entre DEG et FST.
 
-À obtenir : maquettes DEG par mention et niveau, arrêté d'habilitation et accréditation, avis de sélection 2026-2027, spécialités réellement ouvertes, volumes horaires/ECTS et modalités de stage/mémoire. Ne pas supprimer les autres parcours DEG sur la seule base de l'absence de maquette récupérée.
+Le site de la Faculté DEG n'a pas fourni de maquette actuelle exploitable pendant ce contrôle. Le support M2 CCA repéré sur Scribd n'est pas une preuve d'habilitation, de maquette officielle ni d'ouverture. Le CCA M2 doit rester « À vérifier » : il n'apparaît pas parmi les mentions listées dans la partie FAC/DEGMIA du registre MESUPRES 2022 ; ne pas créer un CCA M1 sur la base de cette pièce.
+
+À obtenir : décision de réorganisation DEG/FST et rattachement de MIA, maquettes DEG par mention et niveau, arrêtés d'habilitation et d'accréditation, avis de sélection 2026-2027, spécialités réellement ouvertes, volumes horaires/ECTS et modalités de stage/mémoire. Ne pas supprimer les autres parcours DEG sur la seule base de l'absence de maquette récupérée.
 
 Sources :
 - [Université de Toamasina — Faculté DEG](https://www.univ-toamasina.mg/facultes/deg/)
