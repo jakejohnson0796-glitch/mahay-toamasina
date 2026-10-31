@@ -169,7 +169,7 @@ Les établissements rattachés, les campus périphériques, les instituts régio
 
 ## 6. Établissements supérieurs privés et paramédicaux : registre historique à réactualiser
 
-La liste HAE MESUPRES d’août 2022 comprend, pour Toamasina-ville, **BEATY UNIVERSITY**, **IFT**, et au moins six établissements paramédicaux distincts : **IFSP ATSINANANA**, **IFSPT**, **INSPALM**, **INSPNMAD Atsinanana**, **ISFSP** et **ISMATEC**. Elle recense aussi **ISPAVA à Vatomandry**, dans la région Atsinanana mais hors Toamasina-ville. Les établissements et leurs actes doivent rester distincts ; les acronymes similaires ne justifient pas une fusion. Les détails sont repris en section 6.1 et 31.4.
+La liste HAE MESUPRES d’août 2022 comprend, pour Toamasina-ville, **BEATY UNIVERSITY**, **IFT**, et sept établissements paramédicaux distincts : **IFSP ATSINANANA**, **IFSPT**, **INSPALM**, **INSPNMAD Atsinanana**, **ISFSP**, **ISMATEC** et **ISSPM**. Elle recense aussi **ISPAVA à Vatomandry**, dans la région Atsinanana mais hors Toamasina-ville. Les établissements et leurs actes doivent rester distincts ; les acronymes similaires ne justifient pas une fusion. Les détails sont repris en section 6.1 et 31.4.
 
 **Ces mentions constituent uniquement des traces historiques d’habilitation dans le document de 2022.** Elles ne prouvent ni l’activité actuelle des établissements, ni le maintien de l’habilitation, ni les filières ouvertes en 2026-2027, ni l’existence actuelle des campus/adresses.
 
@@ -207,8 +207,9 @@ Le contrôle des pages imprimées 2, 11, 35 à 41 de la liste officielle MESUPRE
 | **INSPNMAD ATSINANANA** | Sciences de la Santé / Licence | Sage-femme ; Infirmier | Arrêté n°11565/2013-MESupReS du 23 mai 2013 |
 | **ISFSP** | Sciences de la Santé / Licence | Sage-femme ; Infirmier généraliste | Arrêté n°32794/2015-MESupReS du 3 novembre 2015 ; renouvellement : arrêté n°12258/2022-MESupReS du 29 avril 2022 |
 | **ISMATEC** | Sciences de la Santé / Licence | Sage-femme ; Infirmier généraliste | Arrêté n°31486/2017-MESupReS du 21 décembre 2017 |
+| **ISSPM** | Sciences de la Santé / Licence | Infirmier ; Sage-femme | Arrêté n°26307/2016-MESupReS du 9 décembre 2016 |
 
-Ces six lignes paramédicales sont explicitement distinctes dans le registre. L'existence d'acronymes proches (IFSP ATSINANANA / IFSPT, INSPALM / INSPNMAD) n'autorise pas à fusionner leurs identifiants, leurs actes ou leurs données d'activité.
+Ces sept lignes paramédicales sont explicitement distinctes dans le registre. L'existence d'acronymes proches (IFSP ATSINANANA / IFSPT, INSPALM / INSPNMAD) n'autorise pas à fusionner leurs identifiants, leurs actes ou leurs données d'activité.
 
 #### Région Atsinanana hors Toamasina-ville — Vatomandry
 
@@ -222,7 +223,7 @@ ISPAVA doit être rattaché à la région Atsinanana dans la cartographie géogr
 
 La cartographie régionale MESUPRES décembre 2023 répertorie dix établissements privés en Atsinanana : BEATY UNIVERSITY, IFT, IFSP ATSINANANA, IFSPT, INSPALM, INSPNMAD, ISFSP, ISMATEC, ISPAVA et ISSPM.
 
-La liste HAE d'août 2022 permet de détailler les offres et arrêtés pour les neuf premières entités nommées ci-dessus, à l'exception d'**ISSPM**, pour laquelle aucune ligne Toamasina/Atsinanana portant ce libellé exact n'a été retrouvée dans le snapshot HAE consulté. Cette différence de liste ne prouve pas que l'ISSPM n'a jamais été habilité : il faut rechercher son éventuel acte individuel, son année d'apparition, sa dénomination juridique et son rattachement.
+La liste HAE d'août 2022 permet de détailler les offres et arrêtés pour les dix entités de la cartographie régionale : BEATY University et IFT dans le registre privé général, sept établissements paramédicaux à Toamasina, et ISPAVA à Vatomandry. La ligne **ISSPM Toamasina** apparaît sous le numéro 104, avec Sciences de la Santé/Licence, parcours Infirmier et Sage-femme, arrêté n°26307/2016-MESupReS du 9 décembre 2016. La cartographie régionale et le registre HAE 2022 sont donc cohérents sur ces dix noms, tout en restant des snapshots historiques et non une preuve d'activité ou de renouvellement en 2026-2027.
 
 **Décision de qualité :** considérer les lignes ci-dessus comme des traces d'offres répertoriées dans le snapshot ministériel d'août 2022, et non comme des établissements dont l'activité, l'habilitation actuelle ou les inscriptions 2026-2027 sont confirmées. Aucune adresse précise, capacité, tarif, calendrier ni maquette contemporaine ne doit être déduite de ces lignes.
 
@@ -233,6 +234,7 @@ Sources primaires :
 - [MESUPRES — Liste HAE août 2022, INSPALM et INSPNMAD ATSINANANA, page imprimée 37-38](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 - [MESUPRES — Liste HAE août 2022, ISFSP et ISMATEC Toamasina, page imprimée 40](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 - [MESUPRES — Liste HAE août 2022, ISPAVA Vatomandry, page imprimée 41](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+- [MESUPRES — Liste HAE août 2022, ISSPM Toamasina, page imprimée 42](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 - [MESUPRES — « En chiffres », décembre 2023, établissements privés par région](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
 
 ## 7. Faits institutionnels plus récents, sans portée de catalogue exhaustif
