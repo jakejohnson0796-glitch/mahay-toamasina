@@ -1184,3 +1184,55 @@ Les neuf institutions publiques et dix institutions privées sont des décomptes
 Source primaire :
 - [MESUPRES — « En chiffres », décembre 2023, annexe institutions supérieures par région, pages imprimées 51-55 (PDF)](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
 
+
+
+## 32. Série MESUPRES « En chiffres » décembre 2023 : effectifs et doctorants de l'Université de Toamasina
+
+Le document MESUPRES **« En chiffres — décembre 2023 »** publie une série nationale 2017-2022 des étudiants inscrits, puis une série spécifique des doctorants par université. Ces données apportent un repère statistique indépendant des tableaux détaillés de l'annuaire 2022-2023.
+
+### 32.1 Effectifs totaux de l'Université de Toamasina, série annuelle 2017-2022
+
+Le tableau 07 donne :
+| Année statistique | Étudiants inscrits à l'Université de Toamasina |
+|---|---:|
+| 2017 | 8 415 |
+| 2018 | 7 872 |
+| 2019 | 8 405 |
+| 2020 | 10 561 |
+| 2022 | 13 342 |
+
+Entre 2017 et 2022, le niveau passe de 8 415 à 13 342, soit une hausse arithmétique d'environ **58,6 %** sur la série. Le tableau n'affiche pas 2021 et ne donne pas, dans son intitulé, une ventilation par filière ou composante. Il s'agit d'une série nationale annuelle agrégée par université.
+
+### 32.2 Effectif doctoral
+
+Le tableau 08 indique le nombre de doctorants inscrits par université :
+| Année | Doctorants à Toamasina |
+|---|---:|
+| 2017 | 67 |
+| 2018 | 101 |
+| 2019 | 72 |
+| 2020 | 68 |
+| 2022 | 93 |
+
+Le chiffre de 93 représente environ 4,1 % des 2 275 doctorants comptabilisés dans les six universités en 2022, selon le même tableau. Il s'agit d'un effectif global de l'université, pas d'une ventilation par école doctorale, équipe d'accueil, discipline ou statut d'inscription.
+
+### 32.3 Réconciliation avec les autres annuaires : conserver les millésimes séparés
+
+Le chiffre de 13 342 en 2022 ne doit pas être fusionné ou substitué aux totaux de l'annuaire 2022-2023 déjà rapportés plus haut :
+- 11 318 pour le tableau « formation académique et filières longues » ;
+- 14 661 pour le périmètre élargi incluant les formations courtes/professionnalisantes.
+
+Les documents ont des millésimes, périmètres et méthodes de comptage différents. Le tableau « En chiffres » présente une série annuelle agrégée jusqu'en 2022 ; l'annuaire 2022-2023 ventile par établissements et types de formations. La différence de valeur ne doit pas être transformée en anomalie ni corrigée par moyenne ou extrapolation sans le dictionnaire des données MESUPRES et les tableaux sources complets.
+
+### 32.4 Application au contrôle de l'EDT 3D et des équipes d'accueil
+
+Le total historique de 93 doctorants en 2022 donne un ordre de grandeur de la population doctorale de l'université avant la création documentée de l'EDT 3D (13 février 2025). Il ne prouve pas :
+- que 93 doctorants étaient inscrits à l'EDT 3D ;
+- que l'école comptait 150 doctorants en 2026 ;
+- que chacune des quatre équipes d'accueil comptait le minimum de doctorants requis par le décret HDR 2026-1548 ;
+- que les doctorants étaient encore régulièrement inscrits en octobre 2026.
+
+La cible de formation de 150 doctorants mentionnée dans les termes de référence Expert'Izy est un objectif de l'intervention, pas un résultat statistique observé. Pour vérifier la conformité de chaque équipe d'accueil, obtenir le registre anonymisé des inscriptions doctorales par école et équipe, et contrôler les inscriptions actives par année.
+
+Source primaire :
+- [MESUPRES — « En chiffres », décembre 2023, tableaux 07 (effectifs inscrits), 08 (doctorants) et graphe 10 (répartition des doctorants), pages imprimées 8-11](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
