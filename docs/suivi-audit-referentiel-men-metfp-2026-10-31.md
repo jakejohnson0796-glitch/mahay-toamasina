@@ -663,3 +663,24 @@ Les vérifications de couverture et de texte ont révélé :
 Ces copies tierces ne sont donc ni une preuve d'adoption réglementaire ni une base sûre pour remplir les lacunes des fichiers ministériels. Elles peuvent seulement aider à repérer des pages, des formulations et des écarts à confirmer sur le document primaire. Les PDF du MEN eux-mêmes T6 et T8 affichent la mention « PROJET D'ARRÊTÉ » dans les pages liminaires (les couvertures sont donc des preuves de publication du projet, pas de sa signature).
 
 **Règle à conserver :** un PE présent dans la bibliothèque officielle MEN peut être la version de travail publiée par le ministère sans que l'acte final d'approbation soit démontré par ce fichier. Chaque niveau doit avoir un statut de preuve propre : fichier publié, projet d'arrêté visible, arrêté signé retrouvé, date d'effet confirmée, application par type d'établissement confirmée.
+### 9.15 Établissements secondaires de Toamasina : premier inventaire local corroboré, non exhaustif
+
+Une publication du Ministère de l'Environnement et du Développement Durable du 6 mai 2026 rapporte une action menée du 20 avril au 4 mai à Toamasina par la DREDD Atsinanana et la CISCO Toamasina I. Elle identifie dix établissements participants et 5 725 élèves sensibilisés. Parmi les dix, cinq sont des établissements secondaires ou collèges/lycées utiles pour le périmètre T6-T12 :
+
+| Établissement tel que publié | Type apparent dans le nom | Niveau de vérification |
+|---|---|---|
+| Lycée de Référence | Lycée | Activité officielle locale rapportée en mai 2026 ; niveaux/séries 2026-2027 non documentés |
+| CEG Ratsimilaho | Collège général | Activité officielle locale rapportée en mai 2026 ; niveaux 6e-3e à confirmer auprès de CISCO |
+| CEG Ramatrahitra | Collège général | Activité officielle locale rapportée en mai 2026 ; niveaux 6e-3e à confirmer auprès de CISCO |
+| Lycée Jacques Rabemananjara | Lycée | Activité officielle locale rapportée en mai 2026 ; séries et classes ouvertes à confirmer |
+| Collège Privé Rose et Bleu | Collège privé | Activité officielle locale rapportée en mai 2026 ; programme PE/PS choisi par l'établissement à confirmer |
+
+Les cinq autres établissements cités dans la même action sont des EPP (La Foire, Dépôt Analakinina, Manangareza, Analamboanio, Ambohijafy), relevant du primaire et hors du périmètre prioritaire de cette partie de l'audit.
+
+**Portée exacte de la preuve :** cette publication est un signal officiel local daté sur des établissements présents et actifs dans une activité de la CISCO Toamasina I ; elle ne fournit pas leurs codes d'établissement, leur statut administratif complet, les niveaux réellement ouverts, les séries, la filière suivie, ni leur choix PE/PS en 2026-2027. Elle ne constitue pas un annuaire scolaire ni une autorisation d'import automatique.
+
+Le tableau de bord socio-économique Atsinanana de l'INSTAT (édition publiée en 2025 mais données d'éducation de 2023/2024) présente des statistiques de collèges/lycées et d'établissements fonctionnels par district. Il peut servir à vérifier des ordres de grandeur historiques, mais pas à établir le nombre exact d'écoles en activité à la rentrée 2026-2027. Le MEN indiquait par ailleurs qu'un annuaire national recensant établissements, DREN, CISCO et ZAP était en cours d'élaboration ; la page repérée ne constitue pas elle-même un annuaire actualisé.
+
+**Action de clôture locale :** demander à la CISCO Toamasina I et à la CISCO Toamasina II une extraction datée 2026-2027 des établissements publics et privés du secondaire, avec code officiel, ZAP, commune, statut, niveaux ouverts, séries/options, décision PE/PS et année scolaire. Pour chaque école privée, obtenir une confirmation écrite de la voie curriculaire réellement choisie après l'annonce MEN-DNEP d'octobre 2026. Ne pas transformer les noms des répertoires ou des actions ponctuelles en établissements homologués sans cette validation.
+
+Sources : [Ministère de l'Environnement et du Développement Durable — activité DREDD/CISCO Toamasina I, publication du 6 mai 2026](https://www.environnement.mg/actualites/%F0%9D%90%80%F0%9D%90%9C%F0%9D%90%AD%F0%9D%90%A2%F0%9D%90%AF%F0%9D%90%A2%F0%9D%90%AD%F0%9D%90%9E-%F0%9D%90%92%F0%9D%90%9E%F0%9D%90%A7%F0%9D%90%AC%F0%9D%90%A2%F0%9D%90%9B%F0%9D%90%A2/), [INSTAT — Tableau de bord socio-économique Atsinanana](https://www.instat.mg/documents/upload/main/TBSE_Atsinanana_Dec2025.pdf), [MEN — Élaboration d'un annuaire pour l'Éducation](https://www.education.gov.mg/systeme-dinformation-du-men-elaboration-dun-annuaire-pour-leducation/).
