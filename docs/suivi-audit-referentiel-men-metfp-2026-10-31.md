@@ -232,3 +232,64 @@ Points à vérifier :
 ## 7. Hors périmètre
 
 Aucun changement n'est autorisé ici sur le moteur de rendu LaTeX/KaTeX, les quiz, le Tuteur IA ou les documents utilisateurs. Aucune migration de données de production, fusion ou mise en production ne doit être déclenchée par ce rapport.
+
+
+## 8. Addendum de vérification — 31 octobre 2026 (recherche complémentaire)
+
+Cet addendum prévaut sur toute formulation contradictoire des sections antérieures du présent rapport.
+
+### 8.1 RAPE T11-L : document historique retrouvé, mais pas l'édition recherchée
+
+Le lien T11-L depuis l'ancienne page institutionnelle MEN a finalement été ouvert :
+https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T11-L_2024_2025.pdf
+
+Le PDF comporte 52 pages et sa couverture indique explicitement « ÉDITION 2024 ». Son introduction précise l'année scolaire 2024-2025. Il s'agit donc d'une pièce officielle historique, mais **pas** du PDF T11-L de l'édition septembre 2026 attendu dans la collection actuelle de la Bibliothèque numérique. Il ne doit pas être utilisé pour compléter artificiellement la collection 2026.
+
+Le sommaire historique 2024-2025 comprend notamment Malagasy, Français, Anglais, Histoire, Géographie, Mathématiques, Sciences physiques, SVT, SES, Éducation à la citoyenneté, Philosophie, EPS et TICE. Cette liste décrit uniquement la version 2024-2025 et ne doit pas être copiée dans la version 2026 sans le PDF correspondant.
+
+**Statut :** RAPE T11-L édition septembre 2026 toujours non récupéré ; archive T11-L 2024-2025 identifiée séparément.
+
+### 8.2 Rectification de l'état T12-OSE
+
+Le PDF direct T12-OSE de la bibliothèque numérique a été ouvert dans le contrôle complémentaire : 43 pages, édition septembre 2026. Il est donc contrôlé, contrairement à la formulation antérieure qui le signalait en timeout.
+
+L'état correct est désormais : **10 PDF RAPE sur 11 ouverts pour l'édition septembre 2026 ; T11-L reste la seule variante de cette édition non inspectée.** La liste de liens et les contrôles de sommaire doivent inclure T12-OSE parmi les pièces ouvertes.
+
+### 8.3 PE : preuve de structure générale, pas encore les pièces collège/lycée
+
+Un PE officiel T5 a été découvert et ouvert dans la bibliothèque numérique. Il confirme la structure générale de la réforme : Résultats d'Apprentissage Transdisciplinaires (RAT), Résultats d'Apprentissage Généraux (RAG), Résultats d'Apprentissage Spécifiques (RAS), orientations pédagogiques et volumes horaires. Son avant-propos indique que les programmes couvrent les niveaux du préscolaire à T12.
+
+Ce document T5 n'est toutefois **pas** une preuve du contenu détaillé des PE T6 à T12. Il sert uniquement à comprendre la structure éditoriale générale ; aucune matière, compétence ou heure du T5 ne doit être transposée au collège ou au lycée.
+
+Les pages Moodle PE Collège et PE Lycée restent identifiées (cours 981 et 982), mais leur ouverture directe a de nouveau expiré en timeout. L'index officiel affiche les documents PE T6-T9, PE T10-T12 et le document distinct « Coefficient et volume horaire niveau lycée ». Les fichiers détaillés n'ont pas encore été extraits.
+
+### 8.4 Coefficients du baccalauréat 2026-2027 : information de presse à confirmer par le PDF MEN
+
+Un article de presse daté d'octobre 2026 rapporte que les nouveaux coefficients du baccalauréat L, S et OSE s'appliqueraient à partir de l'année scolaire 2026-2027 et que le total serait ramené de 32 à 30. Il donne des exemples de coefficients par matière, notamment l'anglais en série L et les matières scientifiques en série S.
+
+Cependant, le document officiel « Coefficient et volume horaire niveau lycée » n'a pas encore été téléchargé ni examiné. Les chiffres détaillés rapportés par la presse ne doivent donc pas être insérés comme valeurs certifiées dans la base de données. Ils restent une piste de vérification, avec source secondaire, jusqu'à contrôle de la grille MEN originale.
+
+### 8.5 Limite du parcours de téléchargement METFP
+
+Le portail officiel demande explicitement des informations personnelles (nom, prénoms, adresse, numéro de téléphone) et un motif avant de télécharger chaque PDF. Aucune donnée fictive n'a été saisie et aucun formulaire n'a été soumis. Il faudra utiliser un parcours autorisé avec des coordonnées réelles fournies par l'utilisateur, ou obtenir les fichiers directement auprès du METFP, avant de prétendre avoir audité les contenus des douze référentiels.
+
+### 8.6 État exact de clôture après cette recherche
+
+| Pièce / contrôle | État |
+|---|---|
+| RAPE édition septembre 2026 T6-T10 | Ouverts |
+| RAPE édition septembre 2026 T11-S et T11-OSE | Ouverts |
+| RAPE édition septembre 2026 T12-L, T12-S et T12-OSE | Ouverts |
+| RAPE édition septembre 2026 T11-L | Non récupéré ; ne pas substituer le PDF 2024-2025 |
+| PE collège T6-T9 | Index officiel confirmé ; PDF détaillés non audités |
+| PE lycée T10-T12 | Index officiel confirmé ; PDF détaillés non audités |
+| Coefficients / volumes horaires lycée | Document indexé ; grille officielle détaillée non auditée |
+| Coefficients bac L/S/OSE 2026-2027 dans la presse | Indice secondaire ; ne pas encoder comme vérifié |
+| METFP 12 notices | Notices et dates de publication vérifiées ; PDF non audités |
+| Offres scolaires et ETFP Toamasina 2026-2027 | Cartographie et écarts documentés ; ouvertures locales non certifiées |
+
+Sources complémentaires :
+- [PE T5 officiel MEN — PDF](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T5.pdf)
+- [RAPE T11-L historique 2024-2025 — MEN](https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T11-L_2024_2025.pdf)
+- [Index officiel de la Bibliothèque numérique MEN](https://plateforme.education.mg/bibliotheque-numerique/)
+- [Article de presse sur les coefficients 2026-2027](https://www.2424.mg/education-les-coefficients-du-baccalaureat-des-series-l-s-et-ose-revises-dans-le-nouveau-programme-detudes)
