@@ -259,9 +259,12 @@ La ligne régionale place donc aussi **CNTEMAD** dans l'offre publique disponibl
 - l'ISTRALMA est explicitement localisé à Ambatondrazaka (Alaotra-Mangoro), l'ISTCE à Fénérive-Est (Analanjirofo) ; ce ne sont pas des écoles à localiser automatiquement dans la ville de Toamasina ;
 - la liste régionale privée Atsinanana apporte cinq acronymes supplémentaires (IFT, ISFSP, ISMATEC, ISPAVA, ISSPM) au-delà de BEATY et des quatre écoles paramédicales déjà détaillées dans le registre 2022. Leur nom légal, leur type de diplôme, leur commune et leurs arrêtés restent à identifier dans HAE ; ne pas développer ces sigles par supposition.
 
+**Mise à jour CNTEMAD — contrôle du site officiel au 31 octobre 2026 :** le site national du CNTEMAD indique un réseau de **53 centres régionaux et antennes** couvrant les régions de Madagascar et présente les formations Informatique, Droit, Communication, Gestion, Économie, Commerce, Génie Industriel et Télécommunication. Son avis officiel du 17 septembre 2026 annonce les examens de la session normale de l'année universitaire 2025–2026 du 2 au 6 novembre 2026 ; les apprenants doivent confirmer leur centre d'examen. Cela confirme l'activité nationale récente du CNTEMAD, mais le site consulté ne donne pas l'adresse ni l'identifiant du centre local de Toamasina. La présence régionale doit donc être confirmée auprès de la direction nationale et du centre local avant de publier une adresse ou des offres locales.
+
 **Contrôle base :** aucune entrée correspondante pour CNTEMAD, IFT, ISFSP, ISMATEC, ISPAVA ou ISSPM n'a été retrouvée dans les tables `universite`, `faculte` ou `etablissementpartenaire`. Cette absence démontre une lacune dans les tables interrogées, pas la fermeture de ces institutions. La cartographie régionale est une photographie ministérielle de décembre 2023 et ne confirme pas l'ouverture 2026–2027.
 
 Source : [MESUPRES — « MESUPRES en chiffres », décembre 2023, annexe « Liste des institutions supérieures par région », lignes ATSINANANA (public/privé) et cartographie pages 52–55](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
+Sources complémentaires : [CNTEMAD — site officiel, réseau de 53 centres régionaux et filières](https://cntemad.mg/) ; [CNTEMAD — avis au public du 17 septembre 2026 sur les examens 2025–2026](https://cntemad.mg/actualites/-1789641504).
 
 ### Recensement statistique MESUPRES 2022–2023 — périmètre institutionnel élargi
 
