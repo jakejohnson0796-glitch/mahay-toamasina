@@ -678,3 +678,48 @@ Le calendrier prouve qu'une session nationale 2026 a été organisée et donne l
 Sources primaires :
 - [MESUPRES — Communiqué de la session nationale CNH/CNA 2026 (PDF, 2 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/Communiqu%C3%A9_session_nationale_habilitation_et_accr%C3%A9didation_2026.pdf).
 - [MESUPRES — Documents Habilitations, état des publications et liste 2022 encore indexée](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations).
+
+
+## 19. Continuité pédagogique après le cyclone Gezani : suspension temporaire attestée par une source secondaire
+
+Une publication de L'Express de Madagascar du **18 février 2026**, reprise par AllAfrica, rapporte qu'un communiqué du Conseil scientifique élargi de l'Université de Toamasina avait décidé la suspension des activités pédagogiques pendant quatre semaines à compter du **16 février 2026**, pour protéger la communauté universitaire et assurer la continuité des activités administratives.
+
+Le même article indique que les premières évaluations faisaient état de dégâts affectant la majorité des infrastructures (bâtiments administratifs, salles de cours et résidences universitaires). Il mentionne aussi une demande de remise en service de l'eau et de l'électricité sur l'ensemble du campus adressée à la JIRAMA. Il précise que certaines évaluations/examens et soutenances pourraient être organisés selon les possibilités de chaque établissement, notamment pour des formations achevant l'année universitaire 2024-2025.
+
+**Niveau de preuve : source secondaire qui rapporte un communiqué de l'Université.** Le communiqué original du Conseil scientifique élargi, les dates effectives de réouverture, les reports d'examens et le rétablissement général de l'eau/électricité n'ont pas encore été obtenus dans le présent audit.
+
+Cette information complète les articles officiels MESUPRES de janvier et mars 2026 : elle montre que la capacité d'accueil et la continuité pédagogique ont été affectées au-delà des seuls bâtiments, et que le calendrier de certaines cohortes 2024-2025 a pu être perturbé. Elle ne permet pas de déduire que le campus reste fermé en octobre 2026 ; l'état actuel doit être vérifié par établissement et par service.
+
+**Vérifications prioritaires auprès de l'Université / composantes :**
+1. communiqué officiel de suspension du 16 février et décision de réouverture ;
+2. calendrier rectifié 2024-2025 et 2025-2026, reports d'examens et soutenances ;
+3. état de disponibilité par bâtiment : salles, résidences, laboratoires, eau, électricité, réseau et LMS ;
+4. travaux de remise en état effectivement réceptionnés, avec date et preuve ;
+5. disponibilité des cours pratiques et stages nécessitant des laboratoires/équipements.
+
+Sources :
+- [L'Express de Madagascar — Université de Toamasina : activités pédagogiques suspendues durant quatre semaines, 18 février 2026](https://www.lexpress.mg/2026/02/universite-de-toamasina-les-activites.html).
+- [AllAfrica — reprise de l'article du 18 février 2026](https://fr.allafrica.com/stories/202602180448.html).
+- [MESUPRES — visite à l'Université de Toamasina après le cyclone Gezani, 7 mars 2026](https://www.mesupres.gov.mg/actualites/detail/407).
+
+## 20. Série statistique historique des inscriptions : changement de périmètre et de structure
+
+Les annuaires MESUPRES accessibles permettent maintenant de relever les repères suivants :
+
+| Année universitaire | Périmètre du tableau | Effectif |
+|---|---|---:|
+| 2019-2020 | Formation académique et filière longue, trois composantes alors détaillées | 8 119 |
+| 2021-2022 | Formation académique et filière longue, tableau alors regroupé sous DEGMIA, FLSH et Médecine | 10 376 |
+| 2022-2023 | Formation académique et filière longue, tableau ventilé en DEG, FLSH, ESPT, FST et Médecine | 11 318 |
+| 2022-2023 | Périmètre élargi avec filières courtes et professionnalisantes, instituts et composantes associés | 14 661 |
+| 2023-2024 | Annuaire MESUPRES publié le 5 janvier 2026 ; tableaux Toamasina non extraits | Non vérifié |
+
+Ces chiffres sont des inscriptions, non des diplômés, des capacités d'accueil ou des admissions annuelles. Le tableau 2021-2022 regroupe encore DEGMIA, alors que celui de 2022-2023 sépare notamment DEG, ESPT et FST ; un changement d'organisation est donc visible entre les millésimes. Il serait trompeur de calculer et publier un taux de croissance simple sans réconcilier les composantes, formations courtes/longues et règles de comptage entre les deux annuaires.
+
+**Décision de qualité :** conserver chaque chiffre avec son millésime, son libellé de périmètre et la structure institutionnelle telle que publiée. L'annuaire 2023-2024 reste le prochain document prioritaire à extraire, car c'est le millésime MESUPRES le plus récent identifié dans le catalogue, mais son PDF de 17,9 Mo n'a pas pu être téléchargé/consulté intégralement dans ce contrôle.
+
+Sources statistiques :
+- [MESUPRES — Annuaire statistique 2019-2020](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2019-2020.pdf).
+- [MESUPRES — Annuaire statistique 2021-2022](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2021-2022.pdf).
+- [MESUPRES — Annuaire statistique 2022-2023](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
+- [MESUPRES — Catalogue officiel des annuaires ; édition 2023-2024 publiée le 5 janvier 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=annuaires).
