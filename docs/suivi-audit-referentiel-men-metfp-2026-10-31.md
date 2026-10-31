@@ -712,3 +712,17 @@ Le même tableau de bord indique pour Atsinanana en 2023/2024 un taux brut de sc
 - distinguer les statistiques d'établissements publics et privés pour l'ETFP ; la cartographie METFP accessible ne doit pas être utilisée comme estimation du total régional.
 
 Source : [INSTAT — Tableau de bord socio-économique Région Atsinanana](https://www.instat.mg/documents/upload/main/TBSE_Atsinanana_Dec2025.pdf), tableaux 47, 48, 49, 52, 53 et 54 ; données scolaires 2023/2024, sources mentionnées dans le document : DREN Atsinanana et DRETFP Atsinanana. Les tableaux 47 et 48 ont été inspectés visuellement sur les pages 33 et 34.
+### 9.17 Guide enseignant FOV T9 : contrôle direct du quatrième niveau du collège
+
+Le fichier officiel GUIDE_FOV_T9.pdf a été ouvert directement depuis le répertoire MEN. Il comporte 90 pages et porte la dénomination malagasy Fanabeazana ho Olom-pirenena Vanona, niveau T9. Le préambule précise que le guide décrit une démarche commune aux enseignants de T6, T7, T8 et T9 ; il recense les quatre domaines du programme FOV :
+
+1. respect de la personne et relations avec autrui ;
+2. respect des droits et accomplissement des devoirs/responsabilités ;
+3. patriotisme ;
+4. éducation sociale et financière.
+
+Le guide distingue les résultats d'apprentissage spécifiques, les contenus à étudier, les connaissances, attitudes/points de vue, compétences de vie, comportements attendus, activités des élèves, rôles de l'enseignant, stratégies, supports et réponses attendues. Le sommaire T9 comprend les loisirs, la dignité, la protection de l'environnement, la prévention des accidents, les droits humains, la paix, les élections, la lutte contre la corruption, l'entraide, la valorisation de réalisations malgaches et la gestion de l'argent.
+
+Ce document complète le contrôle déjà fait des guides T7 (102 pages) et T8 (98 pages). Il reste un guide pédagogique enseignant et ne remplace pas le PE/RAS. Les exemples de scénarios et les réponses attendues ne doivent pas être importés comme un programme distinct ni comme une obligation identique pour toutes les cohortes sans rattachement aux RAS.
+
+Source : [Guide enseignant officiel FOV T9 — MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/GUIDE_FOV_T9.pdf).
