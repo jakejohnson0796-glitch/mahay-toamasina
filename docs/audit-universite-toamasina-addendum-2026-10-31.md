@@ -216,6 +216,25 @@ Source : [MESUPRES — liste d'habilitation d'août 2022, rubrique ITPT](https:/
 
 Le fichier source actuel publie six composantes du campus principal. Les sources MESUPRES montrent un périmètre institutionnel plus large : facultés spécialisées, instituts régionaux affiliés et centres linguistiques. Ces catégories doivent être conservées séparément dans le référentiel, avec une preuve, un lieu, un rattachement et un statut propres.
 
+### Établissements paramédicaux privés habilités à Toamasina — à distinguer de la Faculté de Médecine
+
+La section B « Paramédicaux » de la liste MESUPRES mise à jour en août 2022 recense quatre établissements paramédicaux localisés à Toamasina :
+
+| Établissement | Localité | Offres Licence répertoriées | Arrêté indiqué |
+|---|---|---|---|
+| IFSP Atsinanana | Toamasina | Sage-femme ; Infirmier | n°15482/2011 du 18 avril 2011 |
+| IFSPT | Toamasina | Sage-femme ; Infirmier généraliste | n°21911/2014 du 11 juin 2014 |
+| INSPALM | Toamasina | Sage-femme ; Infirmier | n°31486/2017 du 21 décembre 2017 |
+| INSPNMAD Atsinanana | Toamasina | Sage-femme ; Infirmier | n°11565/2013 du 23 mai 2013 |
+
+Ces établissements sont des institutions paramédicales distinctes de la Faculté de Médecine de l'Université de Toamasina et distinctes entre elles. Ils ne doivent ni être ajoutés comme départements de la faculté publique, ni être fusionnés en un seul institut en raison de parcours proches. Les arrêtés cités sont les références historiques de la liste 2022 ; ils ne prouvent pas une ouverture ni un renouvellement 2026–2027.
+
+**Contrôle de la base actuelle :** aucune entrée portant IFSP Atsinanana, IFSPT, INSPALM ou INSPNMAD n'a été retrouvée dans `universite`, `faculte` ou `etablissementpartenaire`. Les universités nationales enregistrées sont six établissements publics ; la Faculté de Médecine est rattachée à Antananarivo et Mahajanga, pas à Toamasina. Cela révèle une lacune de représentation des institutions paramédicales privées dans le modèle actuellement interrogé, sans prouver leur fermeture.
+
+**Action :** vérifier dans HAE la situation actuelle de chacun des quatre établissements, l'existence des arrêtés de renouvellement, les éventuels changements de nom, d'adresse ou de statut, les parcours réellement ouverts et les maquettes/UE. Si le catalogue MITARIDALA couvre aussi le privé et les paramédicaux, les ajouter comme institutions distinctes avec leur propre identifiant, statut juridique, localisation, fiches d'offre HAE et validité ; ne jamais les rattacher automatiquement à la Faculté de Médecine publique.
+
+Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, section B « Paramédicaux », pages 35 à 37](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
 ### Établissements privés habilités à Toamasina — périmètre distinct
 
 La liste MESUPRES d'août 2022 identifie aussi **BEATY UNIVERSITY**, localisée à Toamasina, dans la partie « établissements d'enseignement supérieur privés ». Elle répertorie une offre **Sciences de Gestion / Licence**, sous l'arrêté **n°3992/2022-MESupReS du 28 février 2022**. Cette institution privée ne relève pas de la liste des six facultés de l'Université publique de Toamasina et ne doit pas être ajoutée comme une septième faculté de cette université.
