@@ -317,6 +317,13 @@ Le rapprochement est cohérent avec les 157 associations du JSON :
 - l'unique association non publiable, **CCA M2**, reste inactive, conformément à son statut `À vérifier` ;
 - les 14 autres lignes inactives sont des entrées historiques supplémentaires, hors du catalogue canonique actuel.
 
+Un second contrôle indépendant a comparé les 156 associations publiables du JSON avec toutes les offres actives Toamasina, sur la clé normalisée (composante, mention, niveau, parcours) :
+- **0** association source sans offre active correspondante ;
+- **0** offre active en base sans association source ;
+- **0** association source associée à plusieurs filières actives.
+
+Cette comparaison confirme la cohérence du catalogue public actuel et de la table `ProgrammeUniversitaire` pour les six composantes publiées. Elle n'atteste pas l'habilitation réglementaire 2026-2027 de chaque ligne et n'efface pas les lacunes institutionnelles relevées pour Médecine, les instituts régionaux et les rattachements administratifs à clarifier.
+
 Aucune des 171 lignes Toamasina contrôlées n'est dépourvue de liaison `ProgrammeUniversitaire`.
 
 ### 10.2 Détail des entrées inactives
