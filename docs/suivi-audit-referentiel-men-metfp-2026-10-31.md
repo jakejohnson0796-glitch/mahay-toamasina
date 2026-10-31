@@ -73,6 +73,16 @@ Autre corpus, à ne pas confondre avec les douze notices ci-dessus : le METFP a 
 
 Le METFP a aussi annoncé le 3 août 2026 la remise de référentiels concernant notamment les formations CFF dans les énergies renouvelables, les services d'hébergement et le conseil en orientation scolaire et professionnelle : https://www.metfp.gov.mg/article/77. Les notices du catalogue datées des 10 et 14 septembre sont des preuves plus directes de publication individuelle.
 
+## 3 bis. Orientations du PAS METFP 2026-2027 — à distinguer des référentiels publiés
+
+Page officielle consultée : https://www.metfp.gov.mg/pas/axes
+
+L'Axe II (« Qualité et pertinence ») présente une action de révision de dix filières prioritaires selon l'Approche Par Compétences (APC) : confection textile, électricité bâtiment, maçonnerie, cuisine/hôtellerie, maintenance informatique, soudure/ferraillage, transformation agroalimentaire, énergie solaire, développement web et mécanique automobile. La page indique un calendrier d'ateliers, de validation paritaire et de mise en œuvre à la rentrée 2026-2027.
+
+**Interprétation prudente :** cette page décrit une orientation et un calendrier de réforme. Elle ne constitue pas, à elle seule, la preuve que les dix référentiels ont été révisés, validés par les jurys, publiés ou déployés dans chaque établissement. Ne pas remplacer les référentiels actuellement archivés dans MITARIDALA sur cette seule base. Pour chaque filière, demander le PDF final, sa date/version, l'acte ou procès-verbal de validation, et la preuve d'application locale.
+
+Référence : https://www.metfp.gov.mg/pas/axes
+
 **Décision MITARIDALA :** mettre à jour le statut de l'inventaire national METFP à « 12 notices publiées — contenu PDF à auditer ». Ne pas marquer ces métiers comme offres ouvertes à Toamasina. Les offres ETFP locales restent à vérifier établissement par établissement pour 2026-2027.
 
 À faire :
