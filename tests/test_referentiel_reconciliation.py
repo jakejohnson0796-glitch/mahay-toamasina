@@ -9,6 +9,8 @@ from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import (
     CercleEtude,
+    DemandeChangementFiliere,
+    DemandeCreationCercle,
     Domaine,
     Faculte,
     Filiere,
@@ -284,6 +286,144 @@ class TestReferentielReconciliation(unittest.TestCase):
         finally:
             path.unlink(missing_ok=True)
 
+
+    def test_fusionne_mentions_normalisees_meme_si_le_nom_canonique_existe(self):
+        engine = nouvel_engine()
+        nom_canonique = "Enseignement-Apprentissage et didactique d’Histoire-Géographie"
+        nom_ancien = "Enseignement-Apprentissage et didactique d'Histoire-Geographie"
+        parcours_canonique = "Enseignement - Apprentissage et didactique d’Histoire-Géographie"
+        parcours_ancien = "Enseignement - Apprentissage et didactique d'Histoire-Geographie"
+        path = source_temporaire([
+            {
+                "universite": "Université de Toamasina",
+                "ville": "Toamasina",
+                "composante": "École Normale Supérieure",
+                "domaine": "Sciences de l’éducation",
+                "mention": nom_canonique,
+                "niveau": "M1",
+                "type": "Spécialisation",
+                "parcours": parcours_canonique,
+                "statut": "Vérifié",
+            }
+        ])
+        try:
+            with Session(engine) as s:
+                universite = Universite(nom="Université de Toamasina", ville="Toamasina")
+                s.add(universite); s.commit(); s.refresh(universite)
+                faculte = Faculte(nom="École Normale Supérieure", universite_id=universite.id)
+                domaine = Domaine(nom="Sciences de l’éducation")
+                s.add(faculte); s.add(domaine); s.commit()
+                s.refresh(faculte); s.refresh(domaine)
+
+                canonique = Mention(nom=nom_canonique, domaine_id=domaine.id)
+                ancien = Mention(nom=nom_ancien, domaine_id=domaine.id)
+                s.add(canonique); s.add(ancien); s.commit()
+                s.refresh(canonique); s.refresh(ancien)
+
+                filiere_canonique = Filiere(
+                    nom=parcours_canonique, faculte_id=faculte.id,
+                    mention_id=canonique.id, niveau="M1",
+                )
+                filiere_ancienne = Filiere(
+                    nom=parcours_ancien, faculte_id=faculte.id,
+                    mention_id=ancien.id, niveau="M1",
+                )
+                s.add(filiere_canonique); s.add(filiere_ancienne); s.commit()
+                s.refresh(filiere_canonique); s.refresh(filiere_ancienne)
+                s.add(ProgrammeUniversitaire(
+                    universite_id=universite.id, filiere_id=filiere_canonique.id,
+                    est_active=True,
+                ))
+                s.add(ProgrammeUniversitaire(
+                    universite_id=universite.id, filiere_id=filiere_ancienne.id,
+                    est_active=False,
+                ))
+
+                utilisateur = Utilisateur(
+                    nom="Etudiant test",
+                    mot_de_passe_hash="hash-test",
+                    role=RoleUtilisateur.ETUDIANT,
+                    universite_id=universite.id,
+                    faculte_id=faculte.id,
+                    mention_id=ancien.id,
+                    filiere_id=filiere_ancienne.id,
+                    niveau="M1",
+                )
+                s.add(utilisateur); s.commit(); s.refresh(utilisateur)
+
+                cercle = CercleEtude(
+                    nom="Cercle test",
+                    mention_id=ancien.id,
+                    filiere_id=filiere_ancienne.id,
+                    niveau="M1",
+                    createur_id=utilisateur.id,
+                    statut=StatutCercle.ACTIF,
+                )
+                demande_cercle = DemandeCreationCercle(
+                    utilisateur_id=utilisateur.id,
+                    mention_id=ancien.id,
+                    filiere_id=filiere_ancienne.id,
+                    niveau="M1",
+                    nom="Demande cercle test",
+                    raison="Test de fusion de mention",
+                )
+                demande_changement = DemandeChangementFiliere(
+                    utilisateur_id=utilisateur.id,
+                    nouvelle_mention_id=ancien.id,
+                    nouvelle_filiere_id=filiere_ancienne.id,
+                    motif="Test de fusion de mention",
+                )
+                s.add(cercle); s.add(demande_cercle); s.add(demande_changement); s.commit()
+                s.refresh(cercle); s.refresh(demande_cercle); s.refresh(demande_changement)
+
+                # La simulation doit détecter la fusion sans conserver aucune écriture.
+                rapport_dry = reconcilier(s, str(path), dry_run=True)
+                self.assertGreaterEqual(rapport_dry.filieres_fusionnees, 1)
+                s.expire_all()
+                self.assertIsNotNone(s.get(Mention, ancien.id))
+                self.assertEqual(s.get(Utilisateur, utilisateur.id).mention_id, ancien.id)
+
+                reconcilier(s, str(path))
+                s.expire_all()
+
+                self.assertIsNone(s.get(Mention, ancien.id))
+                mentions = s.exec(
+                    select(Mention).where(Mention.nom == nom_canonique)
+                ).all()
+                self.assertEqual(len(mentions), 1)
+                filieres = s.exec(
+                    select(Filiere).where(
+                        Filiere.faculte_id == faculte.id,
+                        Filiere.mention_id == canonique.id,
+                        Filiere.niveau == "M1",
+                    )
+                ).all()
+                self.assertEqual(len(filieres), 1)
+                filiere_id = filieres[0].id
+
+                offres = s.exec(
+                    select(ProgrammeUniversitaire).where(
+                        ProgrammeUniversitaire.universite_id == universite.id,
+                        ProgrammeUniversitaire.filiere_id == filiere_id,
+                    )
+                ).all()
+                self.assertEqual(len(offres), 1)
+                self.assertTrue(offres[0].est_active)
+
+                utilisateur_final = s.get(Utilisateur, utilisateur.id)
+                cercle_final = s.get(CercleEtude, cercle.id)
+                demande_cercle_finale = s.get(DemandeCreationCercle, demande_cercle.id)
+                demande_changement_finale = s.get(DemandeChangementFiliere, demande_changement.id)
+                self.assertEqual(utilisateur_final.mention_id, canonique.id)
+                self.assertEqual(utilisateur_final.filiere_id, filiere_id)
+                self.assertEqual(cercle_final.mention_id, canonique.id)
+                self.assertEqual(cercle_final.filiere_id, filiere_id)
+                self.assertEqual(demande_cercle_finale.mention_id, canonique.id)
+                self.assertEqual(demande_cercle_finale.filiere_id, filiere_id)
+                self.assertEqual(demande_changement_finale.nouvelle_mention_id, canonique.id)
+                self.assertEqual(demande_changement_finale.nouvelle_filiere_id, filiere_id)
+        finally:
+            path.unlink(missing_ok=True)
 
     def test_dry_run_annule_aussi_les_ecritures_intermediaires(self):
         engine = nouvel_engine()
