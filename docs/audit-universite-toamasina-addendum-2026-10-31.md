@@ -353,9 +353,19 @@ Le registre MESUPRES d'août 2022 répertorie l'école doctorale **« Science, C
 
 Cette école doctorale constitue un périmètre distinct du catalogue Licence/Master des 157 associations ; elle ne doit pas être artificiellement modélisée comme une faculté ou une mention de Licence/Master. Dans le schéma Supabase en lecture seule, aucune table dédiée à une école doctorale, à ses équipes de recherche, aux directeurs de thèse ou aux inscriptions doctorales n'a été trouvée.
 
-**À obtenir :** statut actuel de SCSD, renouvellement/maintien de l'habilitation doctorale, liste actualisée des équipes d'accueil et laboratoires, domaines et sujets, enseignants habilités à diriger les recherches, conventions interuniversitaires, modalités d'admission, effectifs et soutenances récentes. Si MITARIDALA souhaite gérer le troisième cycle, créer une structure de données doctorale distincte (école doctorale → domaine/axe → équipe d'accueil → encadrant → sujet/inscription/soutenance), après spécification et preuves HAE, plutôt que d'utiliser `Mention` ou `Filiere` au niveau Licence/Master.
+**Nouveau cadre réglementaire à intégrer dans la revue :**
+- Le portail documentaire MESUPRES référence le **décret n° 2026-1547 du 17 juin 2026**, relatif au régime de la formation doctorale et du diplôme de Doctorat (publié le 1er juillet 2026).
+- Il référence également le **décret n° 2026-1548 du 17 juin 2026**, portant régime de l'Habilitation à Diriger des Recherches (publié le 1er juillet 2026).
+- La plateforme officielle HAE annonce un registre public des offres habilitées des universités en Licence, Master et Doctorat, ainsi qu'un canevas spécifique « Habilitation École doctorale ».
 
-Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, école doctorale SCSD, page 83](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+Les pages officielles confirment l'existence de ces textes et outils, mais l'accès au PDF du décret n° 2026-1547 a échoué lors de cette vérification (erreur de cache du portail). Je ne tire donc aucune conclusion sur les dispositions précises du texte avant lecture de la version intégrale. Le référencement de l'arrêté de 2013 ne doit pas être traité comme preuve suffisante du maintien de l'habilitation doctorale en 2026.
+
+**À obtenir :** statut actuel de SCSD dans le registre HAE (identifiant, décision, date d'effet et échéance), éventuel renouvellement sous le décret 2026-1547, structure et écoles doctorales accréditées, équipes d'accueil/laboratoires, axes, enseignants HDR, conventions interuniversitaires, modalités d'admission, effectifs et soutenances récentes. Télécharger et examiner le décret 2026-1547 ainsi que le décret 2026-1548 avant de formaliser les règles métier. Si MITARIDALA souhaite gérer le troisième cycle, créer une structure de données doctorale distincte (école doctorale → domaine/axe → équipe d'accueil → encadrant HDR → sujet/inscription/suivi/soutenance), après spécification et preuves HAE, plutôt que d'utiliser `Mention` ou `Filiere` au niveau Licence/Master.
+
+Sources :
+- [MESUPRES — liste officielle des documents, décret 2026-1547 et décret 2026-1548 publiés le 1er juillet 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=decrets)
+- [Plateforme HAE — registre officiel des offres habilitées (Licence, Master, Doctorat) et canevas de l'habilitation des écoles doctorales](https://qualite.mesupres.gov.mg/)
+- [MESUPRES — liste des institutions supérieures habilitées, août 2022, école doctorale SCSD, page 83](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
 ### Faculté de Médecine — habilitations 2017–2022 et confirmation institutionnelle 2024
 La liste officielle MESUPRES mise à jour en août 2022 place explicitement une **FACULTÉ DE MÉDECINE sous l'UNIVERSITÉ TOAMASINA**. Elle cite le domaine « Sciences de la Santé / Licence » et quatre mentions : **Sciences Infirmières, Maïeutique, Médecine humaine et Sciences Paramédicales**. Le tableau donne les références d'arrêtés n°31798/2017-MESupReS du 27 décembre 2017, n°594/2018-MESupRES du 15 janvier 2018 et n°4000/2022-MESupRES du 28 février 2022.
@@ -373,6 +383,15 @@ Sources :
 - [MESUPRES — Université de Toamasina : sortie de promotions et titularisation d'un professeur de la Faculté de Médecine, 22 mars 2024](https://www.mesupres.gov.mg/actualites/detail/11)
 - [MESUPRES — i.Tatitra n°005, janvier–mars 2025 : 608 diplômés issus de cinq établissements de l'Université de Toamasina, dont la Faculté de Médecine](https://www.mesupres.gov.mg/assets/front/documents/itatitra/i.tatitra_005_Janvier_Mars_2025_MESUPRES.pdf)
 
+
+
+
+### Statut institutionnel courant et source HAE officielle
+La page DGES du MESUPRES continue de lister l'Université de Toamasina comme université publique sous tutelle et nomme le Professeur RAZANAKOLONA Diny comme Président. Cela confirme le rattachement institutionnel général de l'Université, mais ne remplace pas les fiches HAE individualisées des facultés, mentions ou écoles doctorales.
+
+La plateforme HAE indique explicitement qu'elle tient des registres nationaux publics des offres habilitées en Licence, Master et Doctorat. Dans ce cadre, l'étape de validation la plus utile est désormais d'obtenir les fiches du registre HAE pour chaque composante et chaque offre, plutôt que de prolonger uniquement la liste d'habilitations historiques d'août 2022. Aucun résultat détaillé individualisé pour les offres de Toamasina n'a pu être extrait des pages indexées pendant cette vérification.
+
+Sources : [MESUPRES/DGES — Universités et établissements sous tutelle](https://www.mesupres.gov.mg/front/rattache_dgsup) ; [Plateforme HAE — registres publics des offres habilitées](https://qualite.mesupres.gov.mg/).
 
 ### École Supérieure Polytechnique de Toamasina (ESPT)
 L'annuaire statistique MESUPRES 2022-2023 signale Génie Civil, Génie des Mines et Génie des Procédés et Environnement. Ce constat ne donne pas à lui seul les niveaux, parcours et admissions actuels. L'ESPT doit rester dans l'inventaire « à confirmer » tant qu'une maquette, un arrêté et un avis de sélection actuels ne sont pas obtenus.
