@@ -1999,3 +1999,45 @@ Le TBSE Atsinanana cité à la section 9.16 affiche 90 collèges pour Toamasina 
 - Conserver les tableaux historiques comme séries statistiques, sans remplacer les données de l'année en cours.
 
 Source primaire : [MEN — Annuaire statistique scolaire 2023-2024](https://www.education.gov.mg/wp-content/uploads/2024/04/MEN-ANNUAIRE-STATISTIQUE-_SCOLAIRE_2023_2024.pdf), tableau de répartition des collèges publics par CISCO, page imprimée 154 (page PDF 153), capture visuelle contrôlée ; données Atsinanana lisibles sur les lignes Toamasina I, Toamasina II, Brickaville, Mahanoro, Marolambo, Antanambao Manampotsy et Vatomandry.
+
+### 9.54 Liste historique MEN des lycées ciblés par le recrutement spécial 2021 — rapprochement par CISCO
+
+L'appel à candidatures MEN n°2021/503/MEN/SG du 1er juillet 2021 (recrutement d'enseignants pour des établissements publics situés dans les zones 2 et 3) contient une annexe « Liste des lycées », structurée par DREN et CISCO. Cette pièce permet un repérage historique de plusieurs lycées de l'Atsinanana, sans utiliser le fichier d'aide spéciale 2021 qui contient les noms et CIN d'enseignants.
+
+| CISCO | Lycée tel que nommé dans la liste MEN de 2021 |
+|---|---|
+| Antanambao-Manampotsy | Lycée Antanambao-Manampontsy |
+| Brickaville | Lycée communautaire Ambinaninony |
+| Brickaville | Lycée Anivorano Est |
+| Brickaville | Lycée communautaire Lohariandava |
+| Brickaville | Lycée communautaire Ranomafana-Est |
+| Mahanoro | Lycée d'Enseignement Général Ambinanindrano |
+| Mahanoro | Lycée communautaire Masomeloka |
+| Marolambo | Lycée Ambohimilanja |
+| Marolambo | Lycée Androrangavola |
+| Marolambo | Lycée Marolambo |
+| Toamasina II | Lycée Fanandrana |
+| Toamasina II | Lycée Foulpointe |
+| Vatomandry | Lycée Zokinja Rambeloson |
+
+**Limites de cette source :**
+- L'appel concerne le recrutement ciblé d'enseignants dans les établissements des zones 2 et 3 ; l'annexe ne prétend pas recenser tous les lycées publics ni tous les lycées privés de l'Atsinanana.
+- L'absence de Toamasina I dans cette annexe ne signifie pas qu'aucun lycée n'y existe ; le périmètre du recrutement est sélectif.
+- La liste ne donne pas de codes établissement, d'effectifs, de niveaux réellement ouverts, de séries, ni de preuves d'activité en 2026-2027.
+- Les libellés peuvent avoir des variantes orthographiques ; ne pas fusionner un nom ancien avec un établissement actuel sur la seule similarité textuelle.
+- Le Lycée Toamasina II (code 502160021) et le CEG Volobe (502020001) ont une preuve d'identification plus récente dans l'avis FID de septembre 2026 ; cette pièce 2021 reste un élément historique complémentaire.
+
+**Décision MITARIDALA :** intégrer ces treize références dans un registre historique de rapprochement, avec la source « annexe recrutement MEN 2021 », date de source 2021-07-01, type de preuve « établissement ciblé pour recrutement », et statut de vérification actuelle « en attente ». Ne pas les publier comme une liste actuelle d'offres ou comme un annuaire exhaustif.
+
+#### Rapprochement avec l'annuaire officiel MEN 2023-2024 et le répertoire régional des lycées
+
+L'annuaire MEN 2023-2024 fournit des statistiques par CISCO sur les établissements fonctionnels de collèges publics, mais le tableau examiné ici ne donne pas une liste nominative actualisée de lycées. La page nationale MEN « Lycées publics de Madagascar » comporte en revanche une entrée régionale « Atsinanana » menant à une table régionale annoncée avec DREN, CISCO, lycée, code établissement et décret de création.
+
+La page de destination https://www.education.gov.mg/educatif/atsinanana/ a échoué par délai d'attente à plusieurs reprises, y compris après appel du lien régional depuis la page nationale. L'existence du répertoire régional est donc confirmée, mais son contenu Atsinanana n'a pas pu être extrait dans ce contrôle. Les pages régionales d'autres DREN (ex. SAVA, Itasy et Anosy) montrent la structure des champs, mais ne sont pas utilisées pour déduire des établissements de l'Atsinanana.
+
+**Action de clôture locale :** obtenir de la DREN Atsinanana/CISCO Toamasina I et II l'export de cette table régionale ou sa version PDF/Excel datée 2026-2027, et demander le code, le décret, le statut public/privé/communautaire, la commune/ZAP, les classes ouvertes et les séries appliquées. En attendant, les noms de 2021 et les codes historiques restent des candidats de rapprochement et non des enregistrements validés.
+
+Sources :
+- [MEN — Appel à candidatures n°2021/503/MEN/SG du 1er juillet 2021](https://www.education.gov.mg/wp-content/uploads/2021/07/Recrutement-sp%C3%A9cial_compressed.pdf), annexe « Liste des lycées », lignes 287-300.
+- [MEN — Page nationale des lycées publics](https://www.education.gov.mg/systeme/lycee/), rubrique régionale Atsinanana.
+- [MEN — Page de répertoire lycée Atsinanana](https://www.education.gov.mg/educatif/atsinanana/), accès expiré au 31 octobre 2026.
