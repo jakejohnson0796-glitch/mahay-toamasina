@@ -812,7 +812,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "c2f7a9e4b1d6"
+    assert revision == "d1a9f4c7e2b6"
     assert index_count == 41
 
 
