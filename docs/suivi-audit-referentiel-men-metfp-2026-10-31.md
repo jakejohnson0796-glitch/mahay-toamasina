@@ -30,6 +30,26 @@ L'index des RAPE de septembre 2026 présente, lui, des documents T11 et T12 en s
 
 ## 2. Contrôle de l'édition annuelle 2026
 
+### Extension du contrôle direct aux PDF RAPE
+
+Les liens PDF directs ont été ouverts. Les couvertures accessibles confirment « Édition septembre 2026 » pour T6, T7, T8, T9, T10, T11-S, T11-OSE, T12-L et T12-S. Le nombre de pages affiché par le lecteur est respectivement 44, 42, 54, 54, 50, 47, 49, 41 et 41 pages.
+
+Les deux accès restés en échec sont T11-L (erreur d'accès) et T12-OSE (timeout). Le contenu de ces deux PDF n'est donc pas déclaré contrôlé.
+
+Contrôles de sommaire effectués sur les fichiers ouverts :
+- T6 : Malagasy, Français, Anglais, Mathématiques, Sciences physiques, SVT, Histoire, Géographie, FOV, Arts et EPS.
+- T7 : mêmes grands domaines, avec FOV et Arts présents.
+- T8 et T9 : FOV et Arts présents ; Sciences physiques et SVT sont listées séparément.
+- T10 : le sommaire comprend Éducation à la citoyenneté, Sciences économiques et sociales et EPS.
+- T11-S et T11-OSE : le sommaire comprend Éducation à la citoyenneté, SES, EPS, Philosophie et TICE. Conserver TICE comme intitulé distinct de TIC.
+- T12-L et T12-S : le sommaire comprend SES, EPS et Philosophie. L'EPS doit donc rester présente dans ces deux variantes 2026 contrôlées.
+- T6 donne 4 heures hebdomadaires de Malagasy et 5 heures de Français ; ces valeurs ne doivent pas être extrapolées aux autres niveaux.
+
+Les introductions des PDF précisent que la RAPE répartit les contenus en cinq périodes, sans fixer elle-même les dates du calendrier scolaire, et qu'elle doit être utilisée avec le Programme d'Études car elle ne comporte pas tous les détails du programme. La mention « Édition septembre 2026 » est donc confirmée comme édition documentaire, mais ne prouve pas à elle seule l'année scolaire exacte d'application.
+
+Sources : [T6](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T6.pdf), [T7](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T7.pdf), [T8](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T8.pdf), [T9](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T9.pdf), [T10](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T10.pdf), [T11-S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T11_S.pdf), [T11-OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T11_OSE.pdf), [T12-L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T12_L.pdf), [T12-S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T12_S.pdf).
+
+
 ### Réserve documentaire ajoutée au 31 octobre 2026
 
 Une vérification croisée empêche de considérer la date d'effet 2026-2027 comme pleinement certifiée à ce stade :
