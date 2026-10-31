@@ -146,6 +146,34 @@ Référence : https://www.metfp.gov.mg/pas/axes
 | Référentiels METFP 2026 | 12 notices publiées vérifiées ; PDF à auditer, offres locales distinctes |
 | Offres ETFP locales 2026-2027 | Non confirmées sans preuve datée d'ouverture |
 
+## 4 ter. Écarts de volumes horaires par série — conséquence sur le modèle de données
+
+Le contrôle des tableaux « Volume horaire hebdomadaire » dans les PDF ouverts confirme que les heures ne peuvent pas être déduites du seul couple niveau/matière, ni partagées entre séries :
+
+| Document / matière | Volume hebdomadaire affiché |
+|---|---:|
+| T6 — Malagasy | 4 h |
+| T6 — Français | 5 h |
+| T11 S — Sciences physiques | 5 h |
+| T11 OSE — Sciences physiques | 2 h |
+| T12 L — SVT | 2 h |
+| T12 S — SVT | 6 h |
+| T12 OSE — SVT | 3 h |
+
+Ces valeurs sont des exemples directement relevés dans les documents, pas une table complète des volumes horaires. Elles suffisent toutefois à prouver qu'une valeur générique par matière est incorrecte pour les classes à séries.
+
+**Constat technique sur la migration `e2b7c9d4a1f6` :** les associations `programmematierescolaire` enregistrent niveau, série, matière, caractère obligatoire et source, mais pas le volume horaire, la période, ni les contenus/chapitres. Le RAPE complet ne peut donc pas être restitué à partir des seules associations actuelles. Ne pas afficher un horaire estimé à partir d'une autre série ou d'un autre niveau.
+
+**Évolution à préparer séparément, sans migration immédiate :**
+1. stocker les volumes horaires par association programme/niveau/série/version ;
+2. stocker les cinq périodes et leurs semaines de début/fin, sans dates calendaires inventées ;
+3. stocker les thèmes, chapitres et contenus avec l'ordre officiel du PDF ;
+4. rattacher chaque ligne au PDF exact et à une empreinte de fichier ;
+5. garder séparés les libellés et les volumes lorsqu'ils diffèrent entre séries ;
+6. créer des tests de non-régression pour T11 S/OSE et T12 L/S/OSE.
+
+Sources de vérification des heures : [T6](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T6.pdf), [T11-S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T11_S.pdf), [T11-OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T11_OSE.pdf), [T12-L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T12_L.pdf), [T12-S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T12_S.pdf), [T12-OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T12_OSE.pdf).
+
 ## 4 bis. Veille réglementaire MEN — EVH/ECS (octobre 2026)
 
 Une actualité datée du 24 octobre 2026 rapporte la révision par le MEN des consignes d'intervention sur l'Éducation à la Vie en Harmonie / Éducation Complète à la Sexualité en milieu scolaire. Elle mentionne une adaptation des messages par tranches d'âge (5-8, 9-12, 12-15 et 16 ans et plus), et des thèmes de santé, de protection, de lutte contre les violences et de soutien psychosocial. Un second article daté du 26 octobre rapporte que les interventions d'acteurs externes doivent être autorisées ou accompagnées par des agents formés, et que les démonstrations/expositions de produits contraceptifs sont interdites en milieu scolaire.
