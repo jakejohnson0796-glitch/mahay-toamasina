@@ -332,3 +332,55 @@ Le même annuaire emploie parfois des formes abrégées ou variantes dans ses ta
 **Précaution géographique :** ces noms et leur présence dans la ventilation statistique de l’Université de Toamasina ne suffisent pas à prouver que chaque institut est situé dans la commune urbaine de Toamasina ou sur le campus Barikadimy. Il faut documenter séparément l’adresse, la région, le campus et le rattachement administratif. En particulier, l’appartenance d’un institut régional au périmètre de l’université ne permet pas de le géolocaliser automatiquement à Toamasina-ville.
 
 Source primaire : [MESUPRES — Annuaire statistique 2022-2023, PDF, glossaire et tableaux des établissements](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
+
+
+## 8.1 ENS-SEAS : signal d'une cohorte FOAD 2026-2027 et état du calendrier au 31 octobre
+
+Un relais public de la page de l'École Normale Supérieure – Sciences de l'Éducation et Administration Scolaire (ENS-SEAS) de l'Université de Toamasina publie plusieurs informations détaillées pour la cohorte FOAD 2026-2027. Ce signal est plus détaillé qu'une simple brochure ancienne, mais demeure une republication tierce : le formulaire, l'avis original signé et la décision HAE du programme doivent être obtenus auprès de l'ENS-SEAS avant de qualifier officiellement l'offre.
+
+### Programmes présentés dans la publication
+
+La page présente la mention « Sciences de l'Éducation et Administration Scolaire » avec :
+- Licence 1 (L1), accès annoncé aux bacheliers toutes séries ;
+- Licence 3 professionnelle : Éducation et Formation d'Adultes (LEFA) et Administration et Législation Scolaires (LALS) ;
+- Master 1 et Master 2 : Éducation et Formation d'Adultes (EFA) et Administration et Services Scolaires (ASS) ;
+- possibilité de poursuivre en doctorat, ce qui ne constitue pas à lui seul une ouverture de doctorat dans cette mention.
+
+Le message de préinscription du 30 septembre 2026 indique un report de la date limite de préinscription en ligne au **16 octobre 2026 à 16 h**, et de réception des dossiers papier au **20 octobre 2026 à 12 h**. Au 31 octobre 2026, ces deux échéances sont passées.
+
+### Calendrier pédagogique annoncé
+
+La même page relaie un calendrier FOAD 2026-2027 :
+- résultats de l'appel à candidature : au plus tard le 30 octobre 2026 ;
+- inscription définitive et paiement de la première tranche : du 30 octobre au 30 novembre 2026 ;
+- semestre 1 : du 5 novembre 2026 au 15 mars 2027 ;
+- regroupement pédagogique S1 : du 23 novembre au 5 décembre 2026 ;
+- évaluations/examens S1 : du 15 février au 15 mars 2027 ;
+- date limite de paiement de la deuxième tranche : 30 mars 2027 ;
+- semestre 2 : du 30 mars au 30 juillet 2027 ;
+- regroupement pédagogique S2 facultatif : du 30 mars au 4 avril 2027 ;
+- évaluations/examens S2 : du 10 juin au 10 juillet 2027 ;
+- publication des résultats annoncée à partir du 15 août 2027 ;
+- soutenances annoncées en novembre 2027.
+
+La date du 30 octobre est une échéance de publication prévue, non une preuve que les résultats ont effectivement été publiés. Le rapport ne publie donc ni liste nominative d'admis ni effectif de cohorte.
+
+### Initiative en éducation spécialisée : ne pas la confondre avec un diplôme déjà ouvert
+
+Une autre publication de l'ENS-SEAS rapporte le lancement, le 21 septembre 2026 à Barikadimy, d'une formation de 160 heures en présentiel destinée à des éducateurs intervenant dans des classes intégrées à Fénérive-Est. Elle est menée avec des partenaires institutionnels/associatifs et comprend quatre phases de cinq jours ainsi que des mises en pratique. La publication évoque un futur parcours de Licence et de Master en Éducation spécialisée qui serait ouvert « très prochainement ».
+
+**Décision de classement :**
+- la formation de 160 heures est un programme de renforcement professionnel en présentiel, pas un diplôme LMD démontré ;
+- le futur parcours de Licence/Master est une annonce de projet, pas une offre habilitée ou ouverte tant que la décision HAE et l'avis d'admission ne sont pas produits ;
+- les programmes FOAD SEAS listés ci-dessus doivent être reliés à une décision d'habilitation actuelle correspondant exactement à la mention, au grade et aux parcours, conformément au décret FOAD 2026-1484.
+
+### Action de vérification à réaliser
+
+Demander à l'ENS-SEAS :
+1. l'avis original signé pour la cohorte FOAD 2026-2027 ;
+2. la publication effective des résultats de sélection et les dates d'inscription effectivement appliquées ;
+3. la décision HAE de la mention SEAS (Licence/Master, parcours, modalité FOAD, période de validité) ;
+4. la version datée de la maquette et des UE/ECUE, crédits, évaluations, tutorat, regroupements et examens ;
+5. la décision d'habilitation spécifique du futur parcours Éducation spécialisée, s'il a été ouvert.
+
+Source secondaire de veille, présentée comme page de l'ENS-SEAS et non comme décision ministérielle : [École Normale Supérieure — Université de Toamasina / ENS-SEAS](https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/%C3%89cole-Normale-Sup%C3%A9rieure---Universit%C3%A9-de-Toamasina).
