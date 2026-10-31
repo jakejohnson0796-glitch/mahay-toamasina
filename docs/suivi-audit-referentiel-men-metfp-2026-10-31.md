@@ -146,6 +146,14 @@ Référence : https://www.metfp.gov.mg/pas/axes
 | Référentiels METFP 2026 | 12 notices publiées vérifiées ; PDF à auditer, offres locales distinctes |
 | Offres ETFP locales 2026-2027 | Non confirmées sans preuve datée d'ouverture |
 
+## 4 bis. Veille réglementaire MEN — EVH/ECS (octobre 2026)
+
+Une actualité datée du 24 octobre 2026 rapporte la révision par le MEN des consignes d'intervention sur l'Éducation à la Vie en Harmonie / Éducation Complète à la Sexualité en milieu scolaire. Elle mentionne une adaptation des messages par tranches d'âge (5-8, 9-12, 12-15 et 16 ans et plus), et des thèmes de santé, de protection, de lutte contre les violences et de soutien psychosocial. Un second article daté du 26 octobre rapporte que les interventions d'acteurs externes doivent être autorisées ou accompagnées par des agents formés, et que les démonstrations/expositions de produits contraceptifs sont interdites en milieu scolaire.
+
+**Niveau de preuve : veille secondaire uniquement.** Le texte intégral de la nouvelle note circulaire d'octobre 2026 n'a pas été retrouvé sur le portail MEN dans ce contrôle. Ne pas transformer ces articles en règles détaillées de programme, ne pas générer de séquences pédagogiques réglementaires sur leur seule base et ne pas les coder comme contenu curriculaire obligatoire. Demander la note officielle, son numéro, sa date, ses destinataires, son champ d'application et ses éventuelles annexes avant intégration.
+
+Sources de veille : [2424.mg, 24 octobre 2026](https://www.2424.mg/education-le-ministere-revise-les-regles-dintervention-sur-leducation-complete-a-la-sexualite-en-milieu-scolaire-en-tenant-compte-des-tranches-dage), [2424.mg, 26 octobre 2026](https://www.2424.mg/education-les-demonstrations-et-exposition-des-produits-contraceptifs-lors-des-interventions-en-education-a-la-sexualite-interdits-en-milieu-scolaire).
+
 ## 5. Étapes de clôture
 
 - [ ] Obtenir les pièces jointes PDF PE Collège et PE Lycée depuis le portail MEN ou directement auprès du MEN.
