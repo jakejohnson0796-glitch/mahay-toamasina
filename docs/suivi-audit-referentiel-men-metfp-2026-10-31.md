@@ -345,3 +345,140 @@ Lecture de `alembic/versions/e2b7c9d4a1f6_referentiel_rape_2026_09.py` sur la br
 **Risque de qualité d'affichage :** si l'interface interprète `statut_validation='verifie'` comme « contenu du PDF contrôlé », elle pourrait présenter une assurance excessive pour T11-L et les pièces PE manquantes. Avant de modifier les statuts, vérifier les usages du champ dans les vues publiques, exports et parcours administrateur. Proposition non destructive : ajouter ultérieurement un niveau de preuve documentaire explicite (`index_identifie`, `pdf_accessible`, `pdf_lu`, `contenu_reconcilie`) plutôt que réutiliser un seul booléen/statut pour ces étapes différentes.
 
 **Aucune modification de migration ou de base n'a été faite dans cet audit.**
+
+## 9. Résolution des pièces MEN manquantes et audit direct des coefficients — contrôle complémentaire
+
+### 9.1 Répertoire officiel PDF retrouvé
+
+Le répertoire public des fichiers de la Bibliothèque numérique MEN est accessible directement :
+https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/
+
+L'index Apache officiel répertorie les fichiers suivants : PE T6.pdf, PE T7.pdf, PE T8.pdf, PE T9.pdf, PE T10.pdf, PE T11.pdf, PE T12.pdf (ainsi qu'une variante de nom PE_T12.pdf), et le document COEFFICIENT ET VOLUME HORAIRE NIVEAU LYCEE.pdf. L'index porte une date de modification serveur du 30 septembre 2026 pour la majorité de ces ressources. Il répertorie aussi les onze RAPE du collège et du lycée, dont RAPE_T11_L.pdf.
+
+Cette découverte résout le blocage de navigation Moodle : les pièces jointes ne sont pas exposées proprement dans les pages de cours qui expirent, mais les fichiers sont listés dans le répertoire PDF public du portail MEN. La date de modification serveur doit rester une métadonnée de fichier, pas être interprétée comme une date d'arrêté ou d'entrée en vigueur.
+
+### 9.2 RAPE T11-L édition septembre 2026 : contrôle achevé
+
+Le lien direct RAPE_T11_L.pdf a été ouvert depuis l'index officiel. Le PDF comporte 48 pages ; la couverture mentionne explicitement « Édition septembre 2026 » et « Classe de T11L ».
+
+Le sommaire comprend Malagasy, Français, Anglais, Mathématiques, Sciences physiques, SVT, Histoire, Géographie, Éducation à la citoyenneté, SES, EPS, Philosophie et TICE. L'introduction confirme cinq périodes : les trois premières durent sept semaines et les deux dernières six semaines. Les semaines sont réparties par l'équipe pédagogique selon le calendrier scolaire officiel. Le RAPE ne remplace pas le PE complet et doit être utilisé conjointement avec celui-ci.
+
+**État corrigé : les onze PDF RAPE de l'édition septembre 2026 sont désormais ouverts et contrôlés au niveau de la couverture, du sommaire et des instructions générales.** L'ancienne réserve « T11-L introuvable » est levée. Le PDF T11-L 2024-2025 demeure une archive historique distincte et ne remplace pas l'édition 2026.
+
+### 9.3 Programme d'Études : fichiers officiels retrouvés, audit de contenu encore partiel
+
+Le répertoire MEN a permis d'ouvrir ou de repérer les fichiers PE suivants :
+- PE T6 : 235 pages, contenu consultable et partiellement analysé ;
+- PE T7 : 210 pages, fichier listé/résolu mais extraction détaillée instable ;
+- PE T8 : 257 pages, contenu consultable et partiellement analysé ;
+- PE T9 : fichier présent dans l'index, extraction du contenu expirée ;
+- PE T10 : fichier présent dans l'index, extraction du contenu expirée ;
+- PE T11 : 725 pages, couverture consultée, extraction détaillée instable ;
+- PE T12 : fichier présent dans l'index, extraction du contenu expirée.
+
+Le statut PE doit donc être décrit comme suit : **sept fichiers T6-T12 indexés sur le portail MEN ; T6 et T8 ouverts et partiellement analysés ; T7 repéré mais extraction instable ; T11 couverture consultée mais extraction détaillée instable ; T9, T10 et T12 présents dans le répertoire mais leur contenu reste à ouvrir.** La présence dans le répertoire prouve la publication du fichier, pas l'audit du programme complet.
+
+Le PE T6 décrit une structure d'apprentissage en Résultats d'Apprentissage Transdisciplinaires (RAT), Résultats d'Apprentissage Généraux (RAG) et Résultats d'Apprentissage Spécifiques (RAS). Les quatre domaines RAT présentés sont la communication, la pensée critique/créative et la résolution de problèmes, les attitudes sociales et le développement personnel. Les PE organisent les disciplines avec objectifs, résultats attendus, contenus et orientations pédagogiques ; MITARIDALA ne doit donc pas réduire le PE à une simple liste de matières.
+
+Le PE T6 indique plusieurs changements de nomenclature : Zavakanto de T1 à T6 puis Arts de T7 à T9 ; FOV de T1 à T9 puis Éducation à la citoyenneté (EAC) de T10 à T11 ; SES de T10 à T12 ; TICE de T10 à T11 ; anglais de T4 à T12. Le sommaire et les conventions locales doivent être rapprochés avec prudence : le document peut afficher un libellé traduit/normalisé dans le sommaire alors que l'intitulé national du cours dans les explications est différent. Ne pas remplacer automatiquement Zavakanto par Arts en T6, ni FOV par EAC dans les niveaux collège.
+
+**Volumes horaires hebdomadaires directement relevés dans le PE T6 :** Malagasy 4 h ; Français 5 h ; Anglais 3 h ; Mathématiques 5 h ; SVT 3 h ; Sciences physiques 3 h ; Histoire 2 h ; Géographie 2 h ; FOV 2 h ; Zavakanto/Arts 2 h ; EPS 2 h. Ces valeurs sont celles de T6 uniquement.
+
+**Volumes horaires hebdomadaires directement relevés dans le PE T8 :** Malagasy 4 h ; Français 5 h ; Anglais 3 h ; Mathématiques 5 h ; SVT 4 h ; Sciences physiques 4 h ; Histoire 2 h ; Géographie 2 h ; FOV 2 h ; Arts 2 h ; EPS 2 h. Ces valeurs sont celles de T8 uniquement.
+
+Un exemple de contenu détaillé ouvert dans le PE T8 : les thèmes d'histoire comprennent l'histoire orale, les temps modernes et l'époque contemporaine, les royaumes malgaches du XVe au XIXe siècle, le royaume de Madagascar de 1810 à 1896, la colonisation française et le patrimoine historique/culturel. Le volet Arts couvre arts visuels, musique, danse et théâtre. Ce niveau de détail illustre la structure à extraire pour chaque discipline ; il ne faut pas généraliser ces thèmes à T6 ou T9.
+
+Réserve juridique : la publication d'un PE dans le répertoire MEN ne suffit pas à établir à elle seule la date juridique d'entrée en vigueur. Le PE T6 comporte la mention « PROJET D'ARRÊTÉ » dans ses pages liminaires. Garder distincts l'édition/date du fichier, la preuve de publication, l'acte juridique d'approbation et l'année scolaire d'application.
+
+### 9.4 Document officiel MEN des coefficients et volumes horaires du lycée
+
+Le PDF officiel « COEFFICIENT ET VOLUME HORAIRE NIVEAU LYCEE » a été ouvert. Il s'agit d'une page présentant sept colonnes : T10, T11 L, T11 S, T11 OSE, T12 L, T12 S et T12 OSE.
+
+**Totaux des coefficients :**
+
+| Classe | Total coefficients |
+|---|---:|
+| T10 | 30 |
+| T11 L | 32 |
+| T11 S | 32 |
+| T11 OSE | 32 |
+| T12 L | 30 |
+| T12 S | 30 |
+| T12 OSE | 30 |
+
+**Totaux des heures hebdomadaires :**
+
+| Classe | Total heures/semaine |
+|---|---:|
+| T10 | 39 h |
+| T11 L | 38 h |
+| T11 S | 38 h |
+| T11 OSE | 38 h |
+| T12 L | 39 h |
+| T12 S | 39 h |
+| T12 OSE | 39 h |
+
+**Coefficients par discipline** (colonnes dans l'ordre T10 / T11-L / T11-S / T11-OSE / T12-L / T12-S / T12-OSE) :
+
+| Discipline | T10 | T11-L | T11-S | T11-OSE | T12-L | T12-S | T12-OSE |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Malagasy | 3 | 5 | 2 | 2 | 5 | 2 | 2 |
+| Français | 3 | 5 | 2 | 2 | 5 | 2 | 2 |
+| Anglais | 3 | 5 | 2 | 2 | 5 | 2 | 2 |
+| Allemand / Espagnol / Russe (ligne groupée) | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| Mathématiques | 3 | 1 | 5 | 5 | 1 | 5 | 5 |
+| Sciences physiques | 3 | 1 | 5 | 2 | 1 | 5 | 2 |
+| SVT | 3 | 1 | 5 | 2 | 1 | 5 | 2 |
+| Histoire-Géographie (ligne groupée) | 3 | 3 | 2 | 5 | 3 | 2 | 5 |
+| Éducation à la citoyenneté | 2 | 2 | 2 | 2 | 0 | 0 | 0 |
+| SES | 3 | 2 | 2 | 5 | 2 | 2 | 5 |
+| EPS | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
+| Philosophie | 0 | 3 | 1 | 1 | 4 | 2 | 2 |
+| TICE | 1 | 1 | 1 | 1 | 0 | 0 | 0 |
+
+**Heures hebdomadaires par discipline** (même ordre des colonnes) :
+
+| Discipline | T10 | T11-L | T11-S | T11-OSE | T12-L | T12-S | T12-OSE |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Malagasy | 4 | 5 | 3 | 3 | 6 | 3 | 3 |
+| Français | 4 | 5 | 3 | 3 | 6 | 3 | 3 |
+| Anglais | 4 | 5 | 2 | 3 | 6 | 3 | 2 |
+| Allemand / Espagnol / Russe (ligne groupée) | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
+| Mathématiques | 4 | 2 | 5 | 5 | 2 | 6 | 6 |
+| Sciences physiques | 4 | 2 | 5 | 2 | 2 | 6 | 3 |
+| SVT | 4 | 2 | 5 | 3 | 2 | 6 | 3 |
+| Histoire-Géographie (cellule groupée) | 4 | 5 | 4 | 5 | 4 | 3 | 6 |
+| Éducation à la citoyenneté | 2 | 2 | 2 | 2 | 0 | 0 | 0 |
+| SES | 4 | 2 | 2 | 5 | 2 | 2 | 6 |
+| EPS | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
+| Philosophie | 0 | 3 | 2 | 2 | 5 | 3 | 3 |
+| TICE | 1 | 1 | 1 | 1 | 0 | 0 | 0 |
+
+Précision de lecture : les lignes Allemand/Espagnol/Russe et Histoire-Géographie sont des blocs groupés. Dans la table des heures, la valeur Histoire-Géographie est présentée dans une cellule fusionnée ; elle ne doit pas être comptée deux fois pour créer deux totaux distincts. Ne pas créer trois coefficients distincts pour Allemand, Espagnol et Russe à partir de la ligne groupée.
+
+La grille corrige l'affirmation de presse selon laquelle toutes les classes auraient un total de coefficients de 30 : T10 et les T12 ont bien 30 ; les T11 L/S/OSE ont 32. Le total horaire est de 39 h en T10 et T12 et de 38 h en T11.
+
+Le PDF ne porte ni numéro d'arrêté ni date d'édition imprimée. L'index public donne une modification serveur au 30 septembre 2026. Cette date est une métadonnée technique, pas une date officielle d'effet.
+
+### 9.5 Conséquences sur le modèle et les données existantes
+
+- Les coefficients et les heures doivent être stockés comme deux types de valeurs indépendants ; ne jamais déduire l'un de l'autre.
+- Les valeurs doivent être rattachées à une version de référentiel, une classe, une série, une discipline ou un bloc groupé, et un fichier source identifié.
+- Conserver la nature groupée d'Histoire-Géographie et d'Allemand/Espagnol/Russe. Ne pas dupliquer les heures ou coefficients dans plusieurs matières pour une même ligne fusionnée.
+- Conserver l'édition documentaire (par exemple septembre 2026), l'année scolaire d'application, la publication dans le répertoire et l'acte d'approbation dans des champs distincts.
+- La migration actuelle du RAPE ne stocke pas coefficients, heures par discipline, périodes, thèmes ou chapitres. Une extension de modèle devra être conçue et testée séparément.
+- Ne pas modifier les statuts de validation existants tant que leurs effets dans les écrans, exports et parcours d'administration n'ont pas été contrôlés.
+
+**Aucune migration, écriture en base ou modification applicative n'a été effectuée dans cet audit.**
+
+Sources MEN :
+- [Index officiel des fichiers PDF MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/)
+- [PE T6](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T6.pdf)
+- [PE T7](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T7.pdf)
+- [PE T8](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf)
+- [PE T9](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf)
+- [PE T10](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T10.pdf)
+- [PE T11](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf)
+- [PE T12](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf)
+- [Coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf)
+- [RAPE T11-L septembre 2026](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T11_L.pdf)
