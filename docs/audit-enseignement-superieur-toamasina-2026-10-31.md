@@ -2468,3 +2468,71 @@ L'article associe le soutien à ces réalisations à la SPAT et à la SMMC. Ce c
 Source secondaire :
 - [Newsmada — Université de Toamasina : inauguration de bâtiments rénovés, 9 décembre 2025](https://newsmada.com/2025/12/09/universite-de-toamasina-inauguration-de-batiments-renoves/).
 
+
+
+## 52. Répertoire national FOSIKA des enseignants-chercheurs permanents et registre HAE : sources officielles à exploiter
+
+### 52.1 Le MESUPRES publie explicitement un annuaire national des enseignants-chercheurs permanents
+
+La page officielle MESUPRES (portail ministère et portail LMD) affiche un accès rapide intitulé **« Enseignants chercheurs — Consultation de la liste des enseignants-chercheurs permanents »**. Le texte précise que cette liste concerne les enseignants-chercheurs permanents exerçant dans les universités et instituts d'enseignement supérieur, et renvoie vers :
+
+- [FOSIKA — liste des enseignants-chercheurs permanents](https://fosika.mesupres.mg/enseignants).
+
+Le portail MESUPRES indique par ailleurs que FOSIKA sert également au signalement de fraudes académiques, de faux diplômes et de harcèlement. Il ne faut pas confondre cette fonctionnalité de signalement avec le répertoire professionnel des enseignants.
+
+Au contrôle du 31 octobre 2026, l'adresse du répertoire renvoie bien vers l'application FOSIKA, mais l'interface rendue par l'outil documentaire affiche seulement **« You need to enable JavaScript to run this app »**. Aucun tableau, filtre ou enregistrement d'enseignant n'est lisible dans la réponse. Cela ne signifie pas que le répertoire est vide : cela signifie que le catalogue dynamique n'a pas pu être extrait avec le lecteur utilisé.
+
+Sources officielles :
+- [MESUPRES — portail ministériel, accès à la liste FOSIKA et à la plateforme HAE](https://www.mesupres.gov.mg/).
+- [Portail LMD MESUPRES — accès « Enseignants chercheurs » et plateforme HAE](https://lmd.mesupres.gov.mg/).
+- [FOSIKA — répertoire officiel des enseignants-chercheurs permanents](https://fosika.mesupres.mg/enseignants).
+
+### 52.2 La plateforme HAE est le registre et le guichet des décisions sur les offres diplômantes
+
+Le portail officiel MESUPRES renvoie vers la plateforme **HAE** pour les demandes d'habilitation, d'accréditation et d'équivalence des diplômes :
+
+- [HAE — demandes d'habilitation, accréditation et équivalence](https://qualite.mesupres.gov.mg/).
+
+La page d'accueil HAE annonce également le registre officiel des offres de formation habilitées des universités, couvrant les Licences, Masters et Doctorats. Au contrôle direct, la plateforme affiche elle aussi une application JavaScript sans exposer les lignes du registre dans le rendu textuel. Le fait que l'ancienne liste PDF d'août 2022 reste disponible dans le catalogue MESUPRES ne prouve donc pas que le registre HAE dynamique n'a pas été mis à jour ; les deux sources sont à conserver séparément.
+
+**Conséquence :** ne pas conclure que Toamasina n'a aucun dossier ou aucune offre renouvelée parce que le lecteur web ne parvient pas à extraire les données de l'application. Il faut un accès contrôlé au registre ou un export officiel.
+
+### 52.3 Jeu de données à demander au MESUPRES et à l'Université de Toamasina
+
+Pour la cartographie de l'encadrement, la demande officielle devrait porter sur un export daté et limité au périmètre Université de Toamasina, avec les champs suivants :
+
+| Donnée nécessaire | Utilité dans l'audit | Format/contrôle demandé |
+|---|---|---|
+| Identifiant officiel enseignant | Dédupliquer les personnes entre composantes | Identifiant interne, diffusion publique seulement si autorisée |
+| Institution et composante d'affectation | Distinguer Barikadimy, instituts rattachés et établissements régionaux | Codes institution/composante et dates d'affectation |
+| Corps, grade et statut | Distinguer permanent, vacataire, associé, contractuel | Valeurs normalisées, date d'effet |
+| Diplôme terminal et spécialité | Vérifier l'adéquation disciplinaire avec les UE et les équipes | Diplôme, spécialité, année d'obtention ; ne publier que les informations professionnelles nécessaires |
+| HDR et date/autorité de délivrance | Contrôler l'encadrement doctoral selon les textes 2026 | Référence de l'acte, date, discipline, validité/reconnaissance |
+| Équipe de recherche et école doctorale | Contrôler l'affiliation scientifique et l'encadrement | Identifiants et actes de rattachement, pas de rattachement inféré |
+| UE/ECUE et charge d'enseignement | Contrôler la capacité d'encadrement des maquettes | Volume CM/TD/TP, semestre, année universitaire |
+| Encadrement Master/Doctorat | Mesurer la charge et la capacité d'accompagnement | Nombre d'étudiants encadrés par année, données nominatives d'étudiants exclues de l'export public |
+| Publications et projets financés | Contrôler l'activité scientifique au regard du décret HDR | Références bibliographiques, DOI, projet, bailleur, période |
+| Date de mise à jour | Éviter de traiter un ancien effectif comme actuel | Date d'extraction et période de validité |
+
+Le livrable recommandé est un export **agrégé par composante, grade, discipline et année universitaire**, complété par un registre des décisions administratives accessibles aux auditeurs habilités. Les données personnelles d'étudiants et les informations non nécessaires à l'évaluation publique ne doivent pas être publiées.
+
+### 52.4 Contrôles croisés à effectuer dès réception de l'export
+
+1. Vérifier qu'un même enseignant n'est pas compté deux fois comme permanent dans deux établissements sans statut de double affectation documenté.
+2. Vérifier que chaque responsable d'UE/ECUE possède une spécialité cohérente avec la discipline annoncée et que les volumes horaires sont couverts.
+3. Vérifier les ratios étudiants / enseignants permanents par domaine et par mention, selon les années de référence du canevas HAE.
+4. Rapprocher les enseignants titulaires HDR des équipes d'accueil doctorales, de l'EDT 3D, de SCSD et de CADDETHIQUE, sans supposer que ces structures sont juridiquement fusionnées.
+5. Pour chaque équipe de recherche, contrôler les critères distincts du décret HDR 2026-1548 : production scientifique post-doctorat, au moins trois doctorants régulièrement inscrits, projet de recherche financé et animation scientifique régulière.
+6. Pour chaque école doctorale, contrôler les règles distinctes du décret 2026-1547, les HDR à l'ouverture, la composition des équipes et la capacité d'encadrement.
+7. Pour les formations de Licence et Master, contrôler les personnes affectées aux compétences transversales obligatoires du décret 2026-1483, les stages, les projets professionnels et les partenariats.
+
+### 52.5 Statut de vérification au 31 octobre 2026
+
+- **Existence des répertoires nationaux : confirmée** par les liens de navigation officiels MESUPRES.
+- **Accès technique au tableau de données : non obtenu** ; application JavaScript sans lignes visibles.
+- **Effectif des enseignants permanents de Toamasina : non vérifié**.
+- **Nombre de titulaires HDR par composante/équipe : non vérifié**.
+- **Ratios étudiants / enseignants : non vérifiés**.
+- **Décisions HAE individuelles 2026 relatives aux mentions de Toamasina : non extraites**.
+- **Aucune absence de données publiques ne doit être interprétée comme absence réelle d'enseignants, d'HDR, de laboratoires ou de formations**.
+
