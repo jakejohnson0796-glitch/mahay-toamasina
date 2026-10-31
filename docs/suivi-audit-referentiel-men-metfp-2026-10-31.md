@@ -30,6 +30,12 @@ L'index des RAPE de septembre 2026 présente, lui, des documents T11 et T12 en s
 
 ## 2. Contrôle de l'édition annuelle 2026
 
+### Dernière reprise des deux liens précédemment indisponibles
+
+Le lien direct **T12 OSE** a finalement été ouvert : PDF de 43 pages, couverture « Édition septembre 2026 ». Son sommaire inclut Malagasy, Français, Anglais, Mathématiques, Sciences physiques, SVT, Histoire, Géographie, SES, EPS et Philosophie. L'EPS est donc également confirmée dans la variante T12 OSE.
+
+Le lien **T11 L** reste inaccessible après une nouvelle tentative. À cette étape, 10 des 11 PDF RAPE ont donc été ouverts ; T11 L demeure la seule pièce non inspectée par le lecteur web. Il ne faut pas marquer l'audit des 11 variantes comme terminé.
+
 ### Extension du contrôle direct aux PDF RAPE
 
 Les liens PDF directs ont été ouverts. Les couvertures accessibles confirment « Édition septembre 2026 » pour T6, T7, T8, T9, T10, T11-S, T11-OSE, T12-L et T12-S. Le nombre de pages affiché par le lecteur est respectivement 44, 42, 54, 54, 50, 47, 49, 41 et 41 pages.
