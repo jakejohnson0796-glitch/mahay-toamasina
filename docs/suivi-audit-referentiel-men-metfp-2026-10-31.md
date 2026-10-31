@@ -1186,3 +1186,75 @@ Sources :
 - [FID — Avis n° 91/DC/FID-DG/FSR/26, 17 septembre 2026](https://www.fid.mg/travaux-de-rehabilitation-des-infrastructures-communautaires-de-base-endommagees-par-les-catastrophes-naturelles-n-91-dc-fid-dg-fsr-26-17-09-2026/).
 - [FID — Rapport d'intervention après les cyclones Gezani/Fytia, avril 2026](https://www.fid.mg/wp-content/uploads/2026/04/RAC_VM.pdf).
 
+
+
+### 9.35 Progression transversale des contenus T6-T9 : Mathématiques, Sciences physiques, SVT, Histoire et Géographie
+
+Cette section rapproche les quatre PE du collège pour identifier les progressions de notions et empêcher les mélanges interclasses. Les thèmes sont extraits des tableaux de contenus du MEN ; les exemples listés sont représentatifs et non exhaustifs.
+
+#### Mathématiques — progression notionnelle T6 à T9 (5 h/semaine à chaque niveau)
+
+| Domaine | T6 | T7 | T8 | T9 |
+|---|---|---|---|---|
+| Nombres | Fractions, fractions équivalentes, fractions impropres/nombres fractionnaires, décimaux, pourcentages, diviseurs et multiples | Décimaux relatifs, fractions équivalentes/irréductibles, nombres positifs et négatifs, échelle/taux/rendement | Entiers relatifs, notation scientifique, rapports/taux/proportions, développement décimal | Rationnels/irrationnels, racines carrées, sous-ensembles de R, préfixes SI et notation scientifique |
+| Opérations | Priorité des opérations, calcul mental, échelles, pourcentages, taux et rendement | Puissances entières, règles de signes, opérations sur entiers/décimaux relatifs, fractions | Multiplication/division relatifs, puissances, opérations sur fractions et décimaux, estimation et arrondis | Priorité des opérations sur rationnels, rapports/proportions, pourcentages, puissances et puissances de 10 |
+| Algèbre | Proportionnalité de type y=ax, tableaux/graphes, inconnue par lettre, équations contextualisées | Distributivité, factorisation, développement/réduction, expressions littérales, équation du premier degré | Relations y=ax ou y=ax+b, interpolation/extrapolation, inconnues, équations, opérations sur monômes/binômes | Fonction affine/inverse, variables, variation, taux de variation, interpolation/extrapolation, équations de droites et positions relatives |
+| Géométrie | Quadrilatères, triangles, prismes/non-prismes, cercle, polygones, coordonnées dans le premier quadrant, transformations | Triangles rectangle/isocèle/équilatéral, angles, droites remarquables, polygones et repérage | Symétrie centrale/axiale, translation, homothétie, réduction/agrandissement | Triangles semblables, Thalès, polygones réguliers, plan cartésien et équations de droite |
+| Mesure | Périmètre, aire rectangle/parallélogramme/triangle, circonférence, unités, grandeurs | Conversion d'unités, échelles et mesures diverses | Aire latérale et volume de pyramide/cône, unités de volume/capacité, grandeurs produit/quotient | Volumes pyramide/cône, grandeurs et rapports d'agrandissement/réduction |
+| Données | Collecte et traitement de données, représentation, premières comparaisons | Traitement statistique/probabiliste et proportions | Effectifs, fréquences, tableaux/diagrammes, moyenne, probabilité et événement contraire | Probabilité d'événement, propriétés d'événements ; statistiques et représentation/interprétation des données |
+
+**Conclusion pédagogique :** la transition T6→T7 introduit explicitement les nombres relatifs et développe l'algèbre ; T8 stabilise les relations linéaires, les transformations géométriques et la statistique ; T9 augmente le niveau d'abstraction avec les irrationnels, racines carrées, fonctions affines/inverses, droites et propriétés de géométrie. La présence d'une notion dans deux niveaux n'autorise pas à recopier le même niveau de difficulté ou le même RAS.
+
+Sources : [PE T6](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T6.pdf), [PE T7](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T7.pdf), [PE T8](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf), [PE T9](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T9.pdf).
+
+#### Sciences physiques — progression observable
+
+| Niveau | Thèmes et contenus représentatifs du PE |
+|---|---|
+| T6 | États de la matière, masse/volume, pression ; circuit électrique simple, sens conventionnel du courant, montages, intensité/tension et sécurité ; chaleur, température, transferts et dilatation |
+| T7 | Flottabilité, masse volumique, mélanges et séparation, transformations physiques/chimiques ; circuits et lois électriques, aimants/bobines ; mouvement rectiligne ; formes, transformations et stockage de l'énergie |
+| T8 | Atome, 20 premiers éléments du tableau périodique, molécules, mole, ions ; poursuite des thématiques matière/électricité/mouvement/énergie selon le PE T8 |
+| T9 | Concentration des solutions, acides/bases/pH, équations-bilans, neutralisation et combustion des alcanes ; résistors et installation domestique ; trajectoires, vitesse, forces, équilibre et travail ; réflexion/réfraction de la lumière, miroir plan, fréquence/longueur d'onde |
+
+Les volumes affichés sont T6=3 h, T7=3 h, T8=4 h, T9=3 h par semaine. Les thèmes de T8 sont plus approfondis en chimie (atomes, tableau périodique, molécules, mole, ions) ; ne pas confondre la progression de contenu et la variation de volume horaire.
+
+Sources : T6 p. 133-136 ; T7 p. 114-119 ; T8 p. 144-147 ; T9 p. 147-150 des PE officiels.
+
+#### SVT — progression observable
+
+| Niveau | Thèmes et contenus représentatifs du PE |
+|---|---|
+| T6 | Conservation/transformation des aliments ; reproduction animale et sexuée/asexuée des plantes ; appareil reproducteur ; appareil urinaire ; eau/bassins versants/vases communicants ; roches |
+| T7 | Appareil digestif ; puberté et capacités reproductrices ; grossesse précoce ; microorganismes et maladies infectieuses ; écosystèmes ; structure interne de la Terre et évolution du paysage |
+| T8 | Systèmes respiratoire et circulatoire ; sang et groupes sanguins ; IST/SIDA et prévention ; formation/cycle des roches et usages |
+| T9 | Ration alimentaire et nutriments ; valeurs énergétiques, métabolisme et besoins ; alimentation équilibrée et malnutrition ; besoins nutritionnels et soins des plantes locales ; autres thèmes (santé, reproduction, géologie) à transcrire à partir de toutes les sections RAS avant clôture exhaustive |
+
+Les volumes sont T6=3 h, T7=3 h, T8=4 h, T9=4 h par semaine. Ces thèmes scientifiques et de santé restent un contenu scolaire ; MITARIDALA ne doit pas transformer les activités pédagogiques en recommandations médicales individuelles.
+
+Sources : PE T6 p. 122-125 ; PE T7 p. 102-104 ; PE T8 p. 134-137 ; PE T9 p. 131-134.
+
+#### Histoire — progression observable
+
+- T6 : introduction à la discipline, temps et espace historiques, sources ; Madagascar depuis l'indépendance et les républiques ; liens avec les pays africains et les îles de l'océan Indien ; patrimoine et richesses naturelles nationales.
+- T7 : préhistoire, Antiquité, civilisations de Mésopotamie, d'Égypte, de Grèce et de Rome, Moyen-Âge, origines du peuple malgache et influences austronésiennes, africaines, arabo-musulmanes et occidentales.
+- T8 : histoire orale, Temps modernes (1492-1789), grandes découvertes et changements humanistes, époque contemporaine, royaumes malgaches du XVe au XIXe siècle, royaume de Madagascar 1810-1896, colonisation et marche vers l'indépendance.
+- T9 : histoire orale, monde depuis 1914, transformations scientifiques et sociales, deux guerres mondiales, relations internationales, décolonisation, Madagascar sous les républiques et mémoires collectives.
+
+Histoire est à 2 h par semaine dans les quatre niveaux, mais les séquences et thèmes ne sont pas interchangeables. Sources : PE T6 p. 150-152 ; T7 p. 130-134 ; T8 p. 169-177 ; T9 p. 175-177.
+
+#### Géographie — progression observable
+
+- T6 : les 24 régions administratives de Madagascar, la division territoriale, leur délimitation et superficie ; le programme inclut l'utilisation et l'interprétation des documents géographiques.
+- T7 : étude de la Terre, système solaire, composantes de la Terre, lignes et coordonnées géographiques, rotation/révolution, relief, climat, hydrographie et végétation.
+- T8 : développement de l'approche géographique, étude des milieux humains/physiques, aménagement de l'espace et interactions entre activités humaines et environnement ; relever les thèmes exacts des tableaux de contenus pour compléter cette étape avant import.
+- T9 : structure économique de Madagascar, secteurs primaire/secondaire/tertiaire, politiques économiques, potentialités naturelles, relief et quatre types de climats, végétation, sols, hydrographie, régions naturelles et potentialités régionales, démographie et répartition de la population.
+
+Géographie est à 2 h par semaine pour T6-T9. La liste des « 24 régions » figure dans le PE T6 ; si la carte administrative nationale évolue, la version du PE doit rester figée et les référentiels géographiques actuels doivent être gérés séparément. Sources : PE T6 p. 164-168 ; T7 p. 150-153 ; T8 p. 189-195 ; T9 p. 191-204.
+
+#### Contrôle qualité / actions restantes sur le collège
+
+1. Les tables de contenus ne constituent pas encore la transcription exhaustive des RAS, conseils, durées de séquences et critères d'évaluation.
+2. Certains tableaux extraits automatiquement peuvent avoir des caractères perdus (ex. formules de probabilité en T9) : capture visuelle obligatoire avant création d'exercices algébriques/probabilistes.
+3. Les « durées » de séquence d'un thème dans le tableau RAS doivent être stockées séparément des heures hebdomadaires de la matière.
+4. Le RAPE annuel doit répartir les contenus du PE sans altérer leur formulation, ni supprimer les prérequis ou compétences du PE.
+5. Garder un identifiant distinct de notion par PE/version/niveau/matière/RAS. Un intitulé partagé (ex. fractions, reproduction, énergie) n'est pas la preuve d'un même niveau de difficulté ou d'une même progression.
