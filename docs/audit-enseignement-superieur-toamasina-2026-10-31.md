@@ -2032,3 +2032,94 @@ Le catalogue doit distinguer au minimum :
 
 Les deux circuits peuvent délivrer des diplômes ou titres dans les métiers infirmier/sage-femme, mais l'homonymie de profession ne constitue pas une équivalence réglementaire. Le référentiel public ne doit donc pas les fusionner sans texte de correspondance, autorisation et définition du diplôme.
 
+
+
+## 45. Contrôle sanitaire des établissements paramédicaux : deux actes MSANP à appliquer en complément de l'habilitation MESUPRES
+
+### 45.1 Arrêté MSANP n°4570/2020 : inspection avant et après habilitation
+
+L'arrêté **n°4570/2020-MSANP du 19 février 2020** crée une Commission d'Inspection et de Contrôle des Normes des Établissements de Formation en Santé auprès du ministère chargé de la Santé.
+
+Son dispositif distingue deux temps :
+
+**Avant l'avis de la Commission de Référence pour les Formations en Médecine (CRFM), dans le processus d'habilitation :**
+- analyser les demandes d'avis transmises par le ministère chargé de l'Enseignement supérieur concernant l'habilitation d'une offre ou l'ouverture d'un établissement de formation en santé ;
+- effectuer un état des lieux des institutions de formation ;
+- transmettre à la CRFM un rapport avec avis préalables.
+
+**Après obtention de l'habilitation par la CNH :**
+- contrôler régulièrement l'application des normes sanitaires dans les établissements publics et privés ;
+- réaliser des inspections et rapports de suivi ;
+- transmettre les constats et recommandations au ministère de la Santé et au MESUPRES ;
+- proposer des mesures correctrices et, selon les cas, une nouvelle habilitation ou accréditation, une suspension ou une fermeture ;
+- analyser les plaintes concernant la qualité de l'environnement de formation ;
+- contribuer aux évaluations externes en vue de l'accréditation.
+
+Pour les missions portant sur la formation initiale paramédicale, l'article 6 prévoit une équipe comprenant trois représentants de la DIFP, un représentant de la Direction Générale de Fourniture des Soins (DGFS), un représentant de l'Ordre National des Infirmiers et un représentant de l'Ordre National des Sages-femmes. Chaque mission doit être couverte par un mandat écrit du ministre de la Santé ; un rapport est établi après chaque mission et un rapport annuel retrace les activités de la Commission.
+
+**Conséquence pour Toamasina :** une ancienne décision HAE MESUPRES ou une présence dans l'annuaire régional ne suffit pas à établir que l'établissement respecte encore les normes sanitaires. Pour IFSP Atsinanana, IFSPT, INSPALM, INSPNMAD et l'IFIRP public, il faut obtenir les derniers rapports d'inspection, les recommandations, les preuves de correction et les éventuelles décisions de suspension/renouvellement. Il faut toutefois distinguer l'application de cette inspection sanitaire selon la nature et le régime de chaque établissement (public IFIRP / privé paramédical).
+
+Source primaire :
+- [CNLegis — Arrêté n°4570/2020-MSANP du 19 février 2020, Commission d'inspection et de contrôle des normes des établissements de formation en santé (PDF, 4 pages)](https://cnlegis.gov.mg/page_acces_pdf/eoVhrSakZjtQisR).
+
+### 45.2 Arrêté MSANP n°15065/2023 : autorisation annuelle de stages pour les étudiants des écoles privées
+
+L'arrêté **n°15065/2023-MSANP du 20 avril 2023** fixe les conditions dans lesquelles les étudiants des établissements privés de formation paramédicale peuvent effectuer des stages dans les formations sanitaires publiques.
+
+Les règles principales sont les suivantes :
+1. L'institut privé doit déposer une demande d'autorisation de stage auprès du MSANP ; le dossier est visé et contrôlé par la DIFP.
+2. La délivrance de l'autorisation intervient après une supervision réalisée par la DIFP.
+3. La grille de supervision doit atteindre au moins **75 %** ; les effectifs doivent respecter le seuil de **35 étudiants par parcours**. Si les critères ne sont pas atteints, l'autorisation peut être ajournée et l'établissement dispose de trois mois après la supervision pour exécuter les recommandations.
+4. L'autorisation est valable **un an** à compter de sa signature par le Secrétaire général du ministère de la Santé.
+5. Seul le MSANP, représenté par son Secrétaire général, délivre cette autorisation.
+6. L'institut répartit les stagiaires selon les besoins et capacités des formations sanitaires publiques d'accueil.
+7. L'établissement privé doit disposer d'une habilitation et d'une autorisation d'ouverture dûment inscrites dans le dossier ; une annexe ne peut utiliser l'autorisation de stage de l'établissement principal comme si elle lui était automatiquement transférée.
+8. Le texte prescrit une répartition de **60 % de stage et 40 % de cours** pour l'année considérée.
+9. Une convention annuelle doit être conclue entre l'établissement de santé public d'accueil et l'institut. Elle doit préciser l'objet, la durée, le nombre de stagiaires par service, les encadreurs, les obligations des parties, les droits et obligations des stagiaires, les redevances et les modalités de règlement des différends.
+10. Une assurance à jour doit couvrir les dommages causés ou subis par les étudiants pendant leur formation.
+
+L'arrêté prévoit dans son article 10 des frais de stage :
+- 200 000 Ar par établissement et par année académique pour un stage en CHU ;
+- 200 000 Ar par établissement et par année académique en CHRR ;
+- 100 000 Ar par établissement et par année académique en CSB ;
+- 10 000 Ar par étudiant et par période de stage prédéterminée.
+
+**Réserve de mise à jour :** ces montants et ratios sont ceux de l'arrêté du 20 avril 2023. Aucune modification postérieure n'a été vérifiée lors de cette recherche. Ne pas présenter les montants comme tarif en vigueur en octobre 2026 sans demander au MSANP/DRSP la dernière circulaire ou grille applicable.
+
+Source primaire :
+- [CNLegis — Arrêté n°15065/2023-MSANP du 20 avril 2023, conditions de stages des étudiants des établissements paramédicaux privés auprès des formations sanitaires publiques (PDF, 3 pages)](https://cnlegis.gov.mg/uploads/A15065-2023-VF.pdf).
+
+### 45.3 Double validation réglementaire des écoles privées paramédicales
+
+La lecture combinée des textes met en évidence deux circuits de contrôle qui doivent être suivis séparément :
+
+| Validation | Autorité / organe | Objet | Preuve attendue |
+|---|---|---|---|
+| Autorisation d'ouverture et habilitation de l'offre | MESUPRES / CNH | Établissement, domaine, mention, parcours et diplôme | Arrêté MESUPRES avec offre précise et validité |
+| Inspection des normes sanitaires | MSANP / Commission d'Inspection / DIFP / CRFM | Locaux, équipements, encadrement, organisation et respect des normes de santé | Rapport d'état des lieux/inspection et suivi des recommandations |
+| Autorisation de stages en établissement public (privé) | MSANP / DIFP / Secrétaire général | Institut privé précis, parcours, effectif, sites de stage et année | Autorisation annuelle de stage et convention avec chaque établissement sanitaire d'accueil |
+| Ouverture réelle de cohorte | Institut et autorités compétentes | Promotion/année académique | Avis d'admission, effectifs agrégés, calendrier, liste anonymisée et preuves de démarrage |
+
+Une habilitation MESUPRES ne vaut donc pas automatiquement autorisation annuelle d'effectuer des stages dans les CHU, CHRR ou CSB publics. Inversement, une autorisation de stage ne confère pas à elle seule une habilitation académique ni le droit de délivrer un diplôme reconnu.
+
+### 45.4 Application aux établissements paramédicaux recensés à Toamasina
+
+Pour chacune des quatre écoles privées historiques identifiées dans le registre MESUPRES d'août 2022 :
+- IFSP Atsinanana ;
+- IFSPT Toamasina ;
+- INSPALM Toamasina ;
+- INSPNMAD Atsinanana / Toamasina ;
+
+obtenir séparément :
+1. dernier arrêté MESUPRES d'ouverture/habilitation et son renouvellement ;
+2. dernier rapport d'inspection de la Commission MSANP ;
+3. autorisation de stage signée par le Secrétaire général pour l'année académique actuelle ;
+4. grille de supervision (note au moins 75 %), effectif par parcours et rapports de correction ;
+5. conventions annuelles avec le CHU Analakinina, CHU Morafeno, CHRR ou CSB utilisés comme lieux de stage ;
+6. planning de stage, capacité d'accueil par service et liste anonymisée des tuteurs ;
+7. assurance des étudiants et preuve du respect des proportions de cours/stages prescrites.
+
+Pour l'IFIRP public Toamasina, demander le cadre annuel de supervision DIFP et les conventions de stage avec les établissements de santé ; ne pas lui appliquer automatiquement l'arrêté 15065/2023 qui traite les étudiants issus d'établissements privés.
+
+**Décision MITARIDALA :** ajouter un sous-objet « Autorisation de stage MSANP » distinct de l'habilitation MESUPRES, avec validité annuelle et établissement sanitaire d'accueil. L'ouverture publique d'une formation privée paramédicale ne doit pas être marquée « conforme » uniquement parce que son ancien arrêté HAE existe ; l'habilitation, la conformité sanitaire et le circuit de stage doivent être confirmés séparément.
+
