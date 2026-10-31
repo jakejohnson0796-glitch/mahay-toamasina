@@ -211,6 +211,125 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         )
         assert "RAPS-6%C3%A8me_2024_2025.pdf" in association_sciences.source_officielle
 
+        # RAPE 2024-2025 est importé dans une version historique distincte,
+        # sans écraser ni mélanger le catalogue RAPS déjà présent.
+        rape_ref = session.exec(
+            select(ReferentielScolaire).where(
+                ReferentielScolaire.code == "MEN-RAPE-2024-2025-historique"
+            )
+        ).one()
+        assert rape_ref.annee_scolaire == "2024-2025"
+        assert rape_ref.statut == "historique"
+        rape_niveaux = session.exec(
+            select(NiveauScolaire).where(NiveauScolaire.referentiel_id == rape_ref.id)
+        ).all()
+        assert {niveau.code for niveau in rape_niveaux} == {
+            "6E", "5E", "4E", "3E", "2NDE", "1ERE", "TERM"
+        }
+        rape_options = session.exec(
+            select(OptionScolaire).where(OptionScolaire.referentiel_id == rape_ref.id)
+        ).all()
+        assert {(option.niveau_id, option.code) for option in rape_options} == {
+            (next(n.id for n in rape_niveaux if n.code == "1ERE"), "L"),
+            (next(n.id for n in rape_niveaux if n.code == "1ERE"), "S"),
+            (next(n.id for n in rape_niveaux if n.code == "1ERE"), "OSE"),
+            (next(n.id for n in rape_niveaux if n.code == "TERM"), "L"),
+            (next(n.id for n in rape_niveaux if n.code == "TERM"), "S"),
+            (next(n.id for n in rape_niveaux if n.code == "TERM"), "OSE"),
+        }
+
+        expected_rape_programmes = {
+            ("6E", None, "RAPE-T6_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "EDUCATION_CITOYENNETE",
+                "MATHEMATIQUES", "SCIENCES_ET_TECHNOLOGIE", "GEOGRAPHIE",
+                "HISTOIRE", "ARTS", "EPS",
+            },
+            ("5E", None, "RAPE-T7_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "EDUCATION_CITOYENNETE",
+                "MATHEMATIQUES", "SCIENCES_PHYSIQUES", "SVT", "GEOGRAPHIE",
+                "HISTOIRE", "MONDE_DU_TRAVAIL", "ARTS", "EPS",
+            },
+            ("4E", None, "RAPE-T8_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "EDUCATION_CITOYENNETE",
+                "MATHEMATIQUES", "SCIENCES_PHYSIQUES", "SVT", "GEOGRAPHIE",
+                "HISTOIRE", "MONDE_DU_TRAVAIL", "ARTS", "EPS",
+            },
+            ("3E", None, "RAPE-T9_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "EDUCATION_CITOYENNETE",
+                "MATHEMATIQUES", "SCIENCES_PHYSIQUES", "SVT", "GEOGRAPHIE",
+                "HISTOIRE", "MONDE_DU_TRAVAIL", "ARTS", "EPS",
+            },
+            ("2NDE", None, "RAPE-T10_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES",
+                "EDUCATION_CITOYENNETE", "EPS", "TICE",
+            },
+            ("1ERE", "L", "RAPE-T11-L_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+                "MATHEMATIQUES", "SCIENCES_PHYSIQUES", "SVT", "SES",
+                "EDUCATION_CITOYENNETE", "PHILOSOPHIE", "EPS", "TICE",
+            },
+            ("1ERE", "S", "RAPE-T11-S_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES",
+                "EDUCATION_CITOYENNETE", "PHILOSOPHIE", "EPS", "TICE",
+            },
+            ("1ERE", "OSE", "RAPE-T11-OSE_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES",
+                "EDUCATION_CITOYENNETE", "PHILOSOPHIE", "EPS", "TICE",
+            },
+            ("TERM", "L", "RAPE-T12-L_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE",
+            },
+            ("TERM", "S", "RAPE-T12-S_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE", "EPS",
+            },
+            ("TERM", "OSE", "RAPE-T12-OSE_2024_2025.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "HISTOIRE", "GEOGRAPHIE",
+                "MATHEMATIQUES", "PHYSIQUE_CHIMIE", "SVT", "SES", "PHILOSOPHIE",
+            },
+        }
+        rape_matieres = {
+            item.id: item.code
+            for item in session.exec(select(MatiereScolaire)).all()
+        }
+        rape_niveau_par_code = {niveau.code: niveau for niveau in rape_niveaux}
+        rape_option_par_cible = {
+            (next(n.code for n in rape_niveaux if n.id == option.niveau_id), option.code): option
+            for option in rape_options
+        }
+        for (code_niveau, code_serie, fichier), attendues in expected_rape_programmes.items():
+            niveau_cible = rape_niveau_par_code[code_niveau]
+            requete = select(ProgrammeMatiereScolaire).where(
+                ProgrammeMatiereScolaire.referentiel_id == rape_ref.id,
+                ProgrammeMatiereScolaire.niveau_id == niveau_cible.id,
+            )
+            if code_serie is None:
+                requete = requete.where(ProgrammeMatiereScolaire.option_id.is_(None))
+            else:
+                option_cible = rape_option_par_cible[(code_niveau, code_serie)]
+                requete = requete.where(ProgrammeMatiereScolaire.option_id == option_cible.id)
+            lignes_programme = session.exec(requete).all()
+            codes_importes = {rape_matieres[ligne.matiere_id] for ligne in lignes_programme}
+            assert codes_importes == attendues, (
+                f"Programme RAPE incorrect pour {code_niveau} {code_serie or ''}: "
+                f"attendu={sorted(attendues)}, importé={sorted(codes_importes)}"
+            )
+            assert len(lignes_programme) == len(attendues)
+            assert all(
+                ligne.statut_validation == "verifie"
+                and ligne.source_officielle.endswith(fichier)
+                for ligne in lignes_programme
+            )
+
+        # Aucune ligne de l'édition historique ne doit être sélectionnée comme
+        # version nationale courante pour un nouvel utilisateur.
+        from app.routers.scolaire_router import _referentiel_actif
+        assert _referentiel_actif(session).id != rape_ref.id
+
         # Les séries A/C/L ne doivent pas rester entièrement inutilisables :
         # ces quelques matières sont activées seulement si leur PDF précis
         # confirme directement le contenu.
