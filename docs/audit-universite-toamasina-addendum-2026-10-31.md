@@ -334,7 +334,27 @@ La base compte **3 utilisateurs rattachés à l'Université de Toamasina**. Les 
 
 Les six domaines du fichier source sont représentés parmi les mentions des offres Toamasina. Les mentions FLSH et ITPT sont regroupées sous « Arts, Lettres et Sciences Humaines », les mentions ENS sous « Sciences de l'éducation », et les composantes DEG/FST/ISSEDD sous leurs domaines propres. Aucun changement de domaine n'a été exécuté.
 
-### 10.6 Sécurité et limites du contrôle
+### 10.6 Vérification du démarrage Render — déploiement actuellement en production
+
+Contrôle des deux services Render du workspace « My Workspace », après leur dernier déploiement du 31 octobre 2026 :
+
+| Service | Dernier commit déployé | Build / déploiement | Résultat |
+|---|---|---|---|
+| `mitaridala` | `025809e6bf6e3d819deede51d068de0678adf898` | 10:59:09–11:00:11 UTC | Live |
+| `mahay-toamasina` | `025809e6bf6e3d819deede51d068de0678adf898` | 10:59:09–11:00:11 UTC | Live |
+
+Les journaux applicatifs de chaque service confirment :
+- `[DEBUG DATABASE] Migrations Alembic appliquees — connexion OK.`
+- démarrage puis fin réussie de `reconciliation_referentiel` (7,6 s sur Mitaridala ; 7,1 s sur Mahay) ;
+- `[DEBUG ACADEMIQUE] Réconciliation Toamasina — 0 offre(s) activée(s), 0 désactivée(s), 0 doublon(s) supprimé(s), 0 fusion(s) de filières.`
+- plusieurs réponses internes `GET /health` avec statut HTTP **200 OK** après le démarrage ;
+- aucun `ERROR`, `Traceback` ou `CRITICAL` trouvé dans la fenêtre analysée.
+
+Aucune requête `/ready` n'a été retrouvée dans cette fenêtre. Les appels HTTP directs depuis l'environnement de contrôle n'ont pas abouti à cause d'une résolution DNS indisponible ; la vérification `/ready` reste donc non confirmée. Cette observation ne remet pas en cause le statut Render `Live`, mais il faut garder cette distinction.
+
+Les deux services sont configurés pour déployer `main` seulement lorsque les contrôles requis passent. Les PR #309 et #310 sont toujours des brouillons non fusionnés ; leurs contenus ne sont pas dans ces images de production. Le commit `025809e` est le dernier déploiement attesté, pas la dernière tête de `main`.
+
+### 10.7 Sécurité et limites du contrôle
 
 Les tables `faculte`, `filiere`, `mention` et `programmeuniversitaire` ont RLS activé selon l'inventaire de schéma. Ce contrôle n'est pas un audit complet des politiques RLS, des rôles ou des droits Data API. Il ne prouve pas non plus l'ouverture 2026-2027 des formations.
 
