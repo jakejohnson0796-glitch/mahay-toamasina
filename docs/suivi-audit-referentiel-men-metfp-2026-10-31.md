@@ -803,3 +803,38 @@ Il faut demander au MEN/DCI ou à la CISCO/DREN une copie officielle des fichier
 
 Les RAPE de septembre 2026 divisent l'année d'enseignement en cinq périodes : les trois premières ont chacune sept semaines et les deux dernières six semaines. Les PDF disent explicitement que les dates calendaires sont fixées selon le calendrier scolaire officiel et par l'équipe pédagogique de l'établissement. La seule présence d'un calendrier rapporté par la presse ne suffit donc pas à substituer des dates aux intitulés de périodes dans les données RAPE. En base, conserver le numéro et l'ordre de période depuis le PDF ; rattacher les dates calendaires uniquement au calendrier officiel MEN primaire et à l'année scolaire validée.
 
+
+
+### 9.23 Calendrier ETFP : dates désormais confirmées sur la page d'accueil officielle METFP
+
+La page d'accueil officielle du METFP affiche directement le « Calendrier de formation de l'ETFP pour l'année scolaire 2026-2027 », avec les dates suivantes :
+- 1er trimestre : 14 septembre au 19 décembre 2026 ; pause de Toussaint du 31 octobre au 8 novembre 2026 ; vacances de Noël du 19 décembre 2026 au 3 janvier 2027 ;
+- 2e trimestre : 4 janvier au 20 mars 2027 ; vacances de Pâques du 20 mars au 4 avril 2027 ;
+- 3e trimestre : 5 avril au 19 juin 2027 ; grandes vacances à partir du 19 juin 2027.
+
+**Correction de preuve :** ces dates ne sont plus seulement une information rapportée par la presse ou un titre de document en médiathèque ; elles sont visibles sur la page d'accueil du METFP. La communication verbale PDF datée du 2 juin 2026 reste une pièce administrative associée, mais la lecture des dates n'exige plus de l'utiliser comme seule preuve.
+
+**Limite d'application :** ce calendrier est celui des établissements ETFP et ne vaut pas calendrier MEN des collèges/lycées généraux. Il ne démontre pas non plus qu'un métier donné est effectivement ouvert dans un centre local précis.
+
+Source primaire : [Page d'accueil officielle METFP — calendrier ETFP 2026-2027](https://www.metfp.gov.mg/).
+
+### 9.24 RAPE obligatoire pour le public et statut d'approbation des PE : point de gouvernance à résoudre
+
+Le préambule et les instructions générales du RAPE T11-L édition septembre 2026 précisent que l'application des RAPE élaborées par le MEN est obligatoire pour tous les établissements scolaires publics. Le même texte dit que la RAPE ne comprend pas tous les détails du PE et qu'elle doit donc être utilisée parallèlement au Programme d'Études.
+
+En parallèle, les premières pages du PE T6 et du PE T8 visibles dans la bibliothèque du MEN portent la mention « PROJET D'ARRÊTÉ ». Cela ne retire pas le caractère officiel de leur publication dans le portail ministériel, mais ne constitue pas à lui seul la preuve d'un arrêté signé et entré en vigueur. La combinaison de ces deux éléments exige de distinguer :
+1. la RAPE 2026 publiée par le MEN et déclarée obligatoire pour les écoles publiques ;
+2. le PE associé publié par le MEN, dont certains fichiers consultés portent encore la mention « projet d'arrêté » ;
+3. le texte final d'approbation et sa date d'effet, qui restent à obtenir pour établir la chaîne juridique complète.
+
+**Décision de conformité :** ne pas contester l'instruction d'application obligatoire du RAPE ; ne pas non plus attribuer aux PE T6/T8 un numéro d'arrêté qui n'apparaît pas dans le fichier contrôlé. Demander au MEN/DCI la version finale signée du PE et l'acte d'approbation applicable à l'année 2026-2027. Si le MEN confirme que le PE publié est bien la version de référence à appliquer malgré la mention « projet d'arrêté », conserver la réponse officielle comme élément de preuve et lier celle-ci au fichier exact.
+
+Source : [RAPE T11-L, édition septembre 2026 — PDF MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T11_L.pdf), notamment les instructions générales pages 4-5 ; [PE T6](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T6.pdf) et [PE T8](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf).
+
+### 9.25 Pages Moodle PE collège/lycée : sections accessibles mais pièces jointes non exposées dans le rendu public
+
+La page MEN « PE COLLEGE » (cours Moodle 981) est maintenant consultable. Elle expose le titre du cours, la liste de matières du collège dans le panneau de navigation et les catégories de ressources « PDF », « Vidéos » et « Images ». La page « PE LYCEE » (cours 982) expose de la même manière « COEFFICIENT ET VOLUME HORAIRE » et « PE LYCEE », ainsi que la liste de matières affichées par le portail.
+
+Le contenu textuel récupérable de ces pages ne fournit toutefois ni les liens individuels aux fichiers PE T6-T12, ni l'intégralité des textes de programme. La preuve reste donc l'index et les sections de cours du MEN, pas un audit détaillé de chaque PDF.
+
+Sources : [PE COLLEGE — cours officiel MEN](https://plateforme.education.mg/bibliotheque-numerique/course/view.php?id=981), [PE LYCEE — cours officiel MEN](https://plateforme.education.mg/bibliotheque-numerique/course/view.php?id=982), [index de la bibliothèque numérique](https://plateforme.education.mg/bibliotheque-numerique/).
