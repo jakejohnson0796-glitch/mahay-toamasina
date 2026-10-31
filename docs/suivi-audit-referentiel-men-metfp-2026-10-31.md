@@ -2122,3 +2122,28 @@ Le statut « vérifié » ne doit pas être interprété comme une validation du
 6. Effectuer une simulation de migration sur copie de base avant toute modification de schéma ou de données.
 
 Source primaire : [METFP — Cartographie des établissements ETFP](https://www.metfp.gov.mg/cartographie), région Atsinanana, cinq établissements et listes métiers affichées au contrôle du 31 octobre 2026.
+
+### 9.59 Séparation des référentiels publiés au catalogue et des référentiels remis pour intégration
+
+Le contrôle du catalogue METFP au 31 octobre 2026 confirme l'affichage de **12 notices** au total :
+- page 1 (9 notices) : RÉF 62 « Référentiel de formation (RF) » ; RÉF 61 Agent de maintenance en système d'impression ; RÉF 60 Installateur en systèmes solaires PV ; RÉF 59 Installateur en système solaire photovoltaïque ; RÉF 58 Agent de maintenance en système d'impression ; RÉF 57 Agent d'étude spécialisé en système photovoltaïque ; RÉF 56 CFF Valet/Femme de chambre ; RÉF 55 Cuisine ; RÉF 54 Serveur Barman ;
+- page 2 (3 notices) : RÉF 53 Pâtissier-Traiteur ; RÉF 52 Formation de technicien en systèmes solaires photovoltaïques ; RÉF 15 BTS Réceptionniste.
+
+Les notices RÉF 52 à 62 (hors RÉF 15) sont affichées avec des dates de publication des 10 ou 14 septembre 2026 ; RÉF 15 est datée du 16 février 2026. La notice RÉF 62 est intitulée de manière générique « Référentiel de formation (RF) » et ne doit pas être transformée en métier ou filière nommée sans lecture du PDF.
+
+**Ensemble distinct :** l'actualité officielle METFP du 10 juillet 2026 décrit la remise de 12 référentiels pour le secteur BTP, composés de six CAPS et six FPQ, avec une perspective d'intégration dans le référentiel national. Cette annonce de remise ne démontre pas que ces 12 documents sont les 12 notices du catalogue, ni que chacun est déjà publié, validé, rattaché à un établissement ou ouvert en session. Il faut maintenir deux inventaires et une relation de rapprochement uniquement lorsqu'un identifiant ou un document source établit l'identité.
+
+De même, l'article METFP du 3 août 2026 annonce des référentiels remis dans le cadre du partenariat IECD (CFF dans les énergies renouvelables, hébergement, COSP). Cette remise est une preuve de production/transmission, non une preuve autonome d'inscription au catalogue, d'ouverture de session ou de disponibilité dans chaque établissement.
+
+**Règle d'intégrité pour MITARIDALA :**
+1. Conserver séparément les inventaires « catalogue METFP », « référentiels remis par partenaires » et « offres établissements/sessions ».
+2. Ne pas dédupliquer par simple proximité de nom ou de secteur.
+3. Ne pas créer automatiquement 12 parcours BTP ni 12 offres à partir de l'annonce de remise.
+4. Pour chaque référentiel, enregistrer l'identifiant source, le titre exact, le type (RF, référentiel métier, référentiel de certification, etc.), la date de publication/remise, l'URL, le hash du fichier récupéré, le statut d'audit et la preuve de validation.
+5. Conserver « document remis / intégration à confirmer » comme statut distinct de « publié au catalogue » et « offre ouverte ».
+
+Sources primaires :
+- [METFP — Référentiels & ressources pédagogiques, page 1](https://www.metfp.gov.mg/formation/ressource)
+- [METFP — Référentiels & ressources pédagogiques, page 2](https://www.metfp.gov.mg/formation/ressource?page=2)
+- [METFP — Remise officielle des référentiels BTP, 10 juillet 2026](https://www.metfp.gov.mg/article/68)
+- [METFP — Remise officielle des référentiels IECD, 3 août 2026](https://www.metfp.gov.mg/article/77)
