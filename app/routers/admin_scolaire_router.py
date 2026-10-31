@@ -86,6 +86,15 @@ def _referentiel_courant(session: Session) -> Optional[ReferentielScolaire]:
     return lignes[0] if lignes else None
 
 
+def _referentiel_du_niveau(
+    session: Session, niveau: Optional[NiveauScolaire]
+) -> Optional[ReferentielScolaire]:
+    """Retourne la version qui porte réellement ce niveau, même si elle est ancienne."""
+    if niveau is None:
+        return None
+    return session.get(ReferentielScolaire, niveau.referentiel_id)
+
+
 def _url_source_valide(source: str | None) -> bool:
     """N'accepte que des pages HTTPS du ministère malgache de l'Éducation."""
     if not source:
@@ -502,8 +511,8 @@ def creer_offre_etablissement(
     option_pk = _entier_optionnel(option_id)
     matiere_pk = _entier_optionnel(matiere_id)
     parcours_pk = _entier_optionnel(parcours_etfp_id)
-    referentiel = _referentiel_courant(session)
     niveau = session.get(NiveauScolaire, niveau_pk) if niveau_pk else None
+    referentiel = _referentiel_du_niveau(session, niveau)
     option = session.get(OptionScolaire, option_pk) if option_pk else None
     matiere = session.get(MatiereScolaire, matiere_pk) if matiere_pk else None
     parcours = session.get(ParcoursTechniqueProfessionnel, parcours_pk) if parcours_pk else None
@@ -636,11 +645,10 @@ def valider_offre_etablissement(
         if not parcours or not parcours.est_active or parcours.statut_validation != "verifie":
             return _erreur("offre_formation_invalide")
     else:
-        referentiel = _referentiel_courant(session)
         niveau = session.get(NiveauScolaire, entree.niveau_scolaire_id)
+        referentiel = _referentiel_du_niveau(session, niveau)
         if (
             not referentiel or not niveau
-            or niveau.referentiel_id != referentiel.id
             or not niveau.est_actif or niveau.statut_validation != "verifie"
         ):
             return _erreur("offre_niveau_invalide")
@@ -648,6 +656,7 @@ def valider_offre_etablissement(
             option = session.get(OptionScolaire, entree.option_scolaire_id)
             if (
                 not option or option.niveau_id != niveau.id
+                or option.referentiel_id != referentiel.id
                 or not option.est_active or option.statut_validation != "verifie"
             ):
                 return _erreur("offre_serie_invalide")
