@@ -838,3 +838,73 @@ La page MEN « PE COLLEGE » (cours Moodle 981) est maintenant consultable. Elle
 Le contenu textuel récupérable de ces pages ne fournit toutefois ni les liens individuels aux fichiers PE T6-T12, ni l'intégralité des textes de programme. La preuve reste donc l'index et les sections de cours du MEN, pas un audit détaillé de chaque PDF.
 
 Sources : [PE COLLEGE — cours officiel MEN](https://plateforme.education.mg/bibliotheque-numerique/course/view.php?id=981), [PE LYCEE — cours officiel MEN](https://plateforme.education.mg/bibliotheque-numerique/course/view.php?id=982), [index de la bibliothèque numérique](https://plateforme.education.mg/bibliotheque-numerique/).
+
+### 9.26 Correction de la cartographie METFP ATSINANANA : version actuelle de la page, et non ancien extrait
+
+Une nouvelle lecture complète de la cartographie officielle, en date du contrôle du 31 octobre 2026, montre que la section ATSINANANA comporte toujours cinq établissements, mais que le cinquième est CFP Foulpointe, et non CFP Manaratsandry. Cette dernière se trouve dans la section BOENY de la même cartographie. Les mentions antérieures de CFP Manaratsandry comme établissement d'Atsinanana et de CFP Foulpointe comme non corroboré sont donc corrigées par la source actuelle.
+
+#### Inventaire ATSINANANA actuellement publié
+
+| Établissement | Métiers affichés par le METFP (transcription de la page actuelle) |
+|---|---|
+| CFP ANTANAMBAO MANAMPOTSY | Chef d'Équipe de chantier ; Menusier en bois |
+| LTP BRICKAVILLE | Agriculteur maraîchère ; Installateur en photovoltaïque ; Technicien en ouvrage métallique ; Chef d'Équipe de chantier ; Restaurateur villageois ; Aviculteur (élevage de poules) |
+| CFP Toamasina | Couturier(e) ; Cuisinier |
+| LTP TOAMASINA | Technicien en ouvrage métallique ; Mécanicien auto moto ; Agent comptable ; Technicien supérieur en management et gestion d'entreprise ; Maintenancier industriel ; Chef d'Équipe de chantier ; Menusier en bois ; Électricien bâtiment ; Soudeur-monteur ; Plombier |
+| CFP FOULPOINTE | Menusier en bois ; Pâtissier ; Restaurateur villageois ; Femme/Valet de chambre ; Barman ; Boulanger-pâtissier ; Cuisinier ; Traiteur ; Restaurateur de meubles |
+
+Attention à une anomalie de classification source : sur la page METFP actuelle, « Plombier » pour LTP Toamasina figure sous le secteur « Développement Rural » et la filière « AGRICULTURE ». MITARIDALA doit conserver ce libellé et cette catégorie source dans le relevé brut, mais le signaler comme anomalie à clarifier auprès de la DRETFP ; ne pas reclasser en BTP sans validation ministérielle.
+
+#### CFP Manaratsandry : région correcte
+
+La même page place CFP MANARATSANDRY sous la région BOENY, avec les métiers Agent d'agriculture, Technicien d'élevage et Agent comptable. Il ne faut donc pas l'ajouter à l'inventaire de l'Atsinanana. Son absence de la migration régionale Atsinanana n'est pas un défaut. Son inclusion éventuelle dans le référentiel général Boeny doit être vérifiée séparément.
+
+#### Écart avec la migration b7d4e9c2a610_offres_etfp_etablissements.py de la branche principale
+
+La migration contient quatre tuples Atsinanana :
+- CFP Antanambao Manampotsy : deux métiers qui concordent avec la cartographie actuelle ;
+- LTP Brickaville : les six métiers concordent ;
+- CFP Toamasina : couturier(e) et cuisinier, concordants ;
+- LTP Toamasina : cinq associations seulement (Technicien en ouvrage métallique, Mécanicien auto moto, Agent d'agriculture, Agent comptable, Dissanateur Projeteur Métreur).
+
+La cartographie actuelle affiche dix lignes métiers pour LTP Toamasina. Trois associations de la migration correspondent exactement (ouvrage métallique, mécanicien auto-moto, agent comptable). Les sept lignes restantes de la page actuelle (management/gestion, maintenance industrielle, chef d'équipe chantier, menuiserie bois, électricité bâtiment, soudure-montage et plombier) ne sont pas toutes présentes dans la liste d'offres migrées. En sens inverse, Agent d'agriculture et Dissanateur Projeteur Métreur ne figurent pas dans la liste actuelle LTP Toamasina.
+
+Le tuple LTP Toamasina actuel de la migration semble donc incomplet et partiellement divergent, mais il n'autorise pas à supprimer les anciennes associations : elles peuvent avoir été vraies dans une version historique de la cartographie. Il faut historiser les observations et conserver le code source/version et date de capture de chaque relevé.
+
+La migration principale ne contient pas d'entrée CFP FOULPOINTE sous ATSINANANA. C'est la correction à prévoir en priorité dans une future mise à jour contrôlée, sous réserve de vérifier le modèle d'établissement, l'existence d'un éventuel enregistrement antérieur sous une autre région et les dépendances de ses offres. Ne pas créer de doublon si le centre existe déjà sous un autre nom ou code.
+
+Décision de qualité pour MITARIDALA :
+1. ATSINANANA = cinq établissements actuels : Antanambao Manampotsy, LTP Brickaville, CFP Toamasina, LTP Toamasina, CFP Foulpointe.
+2. CFP Manaratsandry = BOENY, pas ATSINANANA.
+3. Mettre CFP Foulpointe dans la liste des écarts à analyser ; ne pas créer immédiatement de lignes en production.
+4. Réconcilier LTP Toamasina avec la page actuelle, en conservant les anciennes offres et en historisant leur période/source.
+5. Faire clarifier par la DRETFP Atsinanana la classification de « Plombier » sous Agriculture.
+6. La cartographie n'indique pas les sessions ouvertes, capacités, niveaux de recrutement, conditions, dates d'inscription ou disponibilité réelle par métier. Toutes les offres restent à vérifier pour les inscriptions 2026-2027.
+
+Source primaire : [Cartographie officielle METFP — section ATSINANANA et BOENY](https://www.metfp.gov.mg/cartographie), relevé ATSINANANA lignes 847-901 ; CFP Manaratsandry apparaît dans BOENY lignes 986-992.
+
+### 9.27 Admission en première année des LTP en 2026-2027 : règle nationale de recrutement publiée
+
+Le METFP a publié le 9 septembre 2026 une communication intitulée « Année de formation 2026-2027 : facilitation de l'accès en première année dans les Lycées Techniques et Professionnels ». La notice indique que, pour 2026-2027, l'accès en première année des LTP est ouvert :
+- aux candidats titulaires du BEPC ;
+- aux candidats ayant achevé la classe de 9e, sous réserve des conditions requises ;
+- aux candidats n'ayant pas pu participer au concours d'entrée, dont les dossiers peuvent être examinés par une commission spéciale.
+
+Cette mesure nationale d'accès est pertinente pour le LTP Toamasina et le LTP Brickaville, mais elle ne précise ni la liste des spécialités ouvertes, ni les places, ni les prérequis spécifiques à chaque spécialité, ni le calendrier local des inscriptions. Elle ne prouve pas non plus qu'un candidat avec une classe de 9e sans BEPC peut entrer dans tous les parcours sans conditions complémentaires.
+
+Modélisation MITARIDALA : enregistrer cette règle comme modalité d'admission nationale datée 2026-2027 et rattachée au type d'établissement LTP ; ne pas la dupliquer comme condition d'admission unique à chaque métier. La fiche d'une offre doit garder ses propres conditions et justificatifs si un établissement en publie.
+
+Source : [METFP — avis officiel relatif à l'accès en première année des LTP, publié le 9 septembre 2026](https://fpq-amb.metfp.gov.mg/article/90).
+
+### 9.28 Réhabilitation du LTP Toamasina — preuve d'investissement, non preuve d'ouverture des filières
+
+Le bilan officiel du METFP sur les réalisations de juillet 2026 rapporte 500 bénéficiaires de la réhabilitation du Lycée Technique et Professionnel de Toamasina. Ce constat confirme une activité d'investissement/amélioration d'infrastructure liée à cet établissement, mais ne donne pas une liste de bâtiments ou d'ateliers réceptionnés, ni une preuve d'ouverture de chaque métier en 2026-2027, ni les capacités actuelles par spécialité.
+
+Le projet DECLIC/OIF, publié le 29 septembre 2026, cite aussi le LTP Toamasina parmi les cinq établissements visés par le programme numérique. Il s'agit d'un programme de renforcement de compétences numériques et d'employabilité, et non d'un diplôme ou d'une spécialité technique permanente attestée dans la cartographie.
+
+Décision : MITARIDALA peut créer une fiche « projets et investissements de l'établissement » séparée du catalogue de filières : réhabilitation (preuve de bilan institutionnel) et DECLIC/OIF (projet de formation numérique, deuxième session annoncée pour Atsinanana). Aucune de ces annonces ne rend automatiquement les formations accessibles à l'inscription ; exiger le calendrier, les modules, le partenaire opérationnel local et les critères de sélection.
+
+Sources :
+- [METFP — bilan des réalisations de juillet 2026](https://fpq-amb.metfp.gov.mg/article/79).
+- [METFP — coopération avec l'OIF / projet DECLIC, 29 septembre 2026](https://www.metfp.gov.mg/article/97).
+
