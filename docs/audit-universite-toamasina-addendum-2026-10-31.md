@@ -77,7 +77,23 @@ Sources :
 - [Décret n° 2026-1483 — PDF officiel MESUPRES](https://www.mesupres.gov.mg/assets/front/documents/documents/decrets/Decret_n_2026-1483_du_10-06-2026_portant_cadrage_strategique_empoyabilite.pdf)
 - [Index officiel des documents MESUPRES](https://www.mesupres.gov.mg/documents/index/2?categorie=tous)
 
-### 2.4 Arrêté n° 21408/2026 du 23 juin 2026 — assurance qualité et accréditation
+### 2.4 Décrets doctoraux 2026 — formation doctorale et Habilitation à Diriger des Recherches
+
+Le catalogue officiel des documents MESUPRES répertorie deux textes distincts, publiés le 1er juillet 2026 :
+- **Décret n°2026-1547 du 17 juin 2026**, portant régime de la formation doctorale et du diplôme de Doctorat ;
+- **Décret n°2026-1548 du 17 juin 2026**, portant régime de l'Habilitation à Diriger des Recherches (HDR).
+
+La plateforme HAE actuelle confirme par ailleurs l'existence de canevas distincts pour l'**habilitation d'une école doctorale**, pour les **demandes d'habilitation Licence/Master/Doctorat** et pour le renouvellement. Ces modèles établissent que le troisième cycle et l'autorisation d'encadrer des recherches sont traités séparément du référentiel de Licence/Master.
+
+**Effet sur SCSD :** l'arrêté historique n°32905/2013 et la présence de l'école doctorale dans la liste HAE 2022 ne suffisent pas à prouver que SCSD est maintenue/renouvelée selon le cadre doctoral 2026. Il faut obtenir le statut HAE à jour de l'école doctorale et de chaque offre Doctorat, les domaines de formation doctorale, les équipes d'accueil, les conventions et les preuves HDR des encadrants.
+
+**Limite de cette vérification :** les titres et dates des deux décrets sont confirmés dans l'index officiel MESUPRES, mais les liens PDF ont renvoyé une erreur de cache/téléchargement pendant ce contrôle. Le présent addendum ne prétend donc pas résumer leurs articles ni leurs règles transitoires. Il inscrit seulement ces deux textes comme pièces réglementaires obligatoires à examiner intégralement avant toute évolution doctorale.
+
+Sources :
+- [MESUPRES — index officiel des décrets, Décrets n°2026-1547 et n°2026-1548 publiés le 1er juillet 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=decrets)
+- [Plateforme officielle HAE — canevas d'habilitation d'une école doctorale et du Doctorat](https://qualite.mesupres.mg/)
+
+### 2.5 Arrêté n° 21408/2026 du 23 juin 2026 — assurance qualité et accréditation
 
 L'arrêté organise le déploiement progressif de l'assurance qualité et de l'accréditation des institutions et offres de formation :
 - évaluation périodique des institutions selon cinq niveaux de maturité ;
@@ -403,6 +419,8 @@ Le code et le schéma confirment que :
 Les tables actuelles `Universite`, `Faculte`, `Mention`, `Filiere` et `ProgrammeUniversitaire` restent l'interface compatible pour les six composantes publiques déjà publiées. Les nouvelles structures doivent être introduites progressivement avec des clés de correspondance et une migration réversible, puis branchées dans les API/menus de sélection uniquement après validation documentaire.
 
 Une preuve d'habilitation n'est pas une preuve d'ouverture annuelle. Une maquette pédagogique n'est pas une décision d'accréditation. Une page web de faculté ne remplace pas un arrêté.
+
+Les formulaires HAE publiés en 2026 distinguent aussi les nouvelles demandes et renouvellements paramédicaux, l'habilitation d'une école doctorale, les demandes nouvelles de Licence/Master/Doctorat et l'annexe FOAD. Chaque dossier doit donc être rattaché à sa catégorie réglementaire propre ; ne pas réutiliser un formulaire Licence pour une école paramédicale ou une offre doctorale.
 
 Pour les pièces : conserver l'URL officielle, le titre exact, le numéro de texte, la date, le grade, la mention, le parcours, l'année d'effet, le hash du fichier et l'état d'audit. L'historique doit être append-only : une nouvelle décision ne détruit pas la preuve antérieure.
 
