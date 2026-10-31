@@ -1336,8 +1336,34 @@ def test_api_scolaire_conserve_l_acces_aux_anciennes_versions_apres_import():
     session.commit()
     session.refresh(nouveau_niveau)
 
-    # Le sélecteur par défaut utilise la dernière version, mais une ancienne
-    # version reste explicitement consultable par son identifiant.
+    # Un référentiel historique plus récent en date d'import ne doit jamais
+    # devenir la version courante proposée par défaut.
+    historique_ref = ReferentielScolaire(
+        code="MEN-RAPE-test-historique",
+        libelle="RAPE historique",
+        annee_scolaire="2024-2025",
+        source_officielle="https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/",
+        statut="historique",
+    )
+    session.add(historique_ref)
+    session.commit()
+    session.refresh(historique_ref)
+    niveau_historique = NiveauScolaire(
+        referentiel_id=historique_ref.id,
+        code="TERM",
+        libelle="Terminale RAPE historique",
+        cycle="lycee",
+        ordre=7,
+        est_actif=True,
+        source_officielle=historique_ref.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(niveau_historique)
+    session.commit()
+    session.refresh(niveau_historique)
+
+    # Le sélecteur par défaut utilise la version courante non historique,
+    # mais l'ancienne version et la version d'archive restent consultables.
     niveaux_recents = scolaire_router.lister_niveaux_scolaires(
         cycle="lycee", session=session
     )
@@ -1346,6 +1372,12 @@ def test_api_scolaire_conserve_l_acces_aux_anciennes_versions_apres_import():
     )
     assert [item["id"] for item in niveaux_recents] == [nouveau_niveau.id]
     assert [item["id"] for item in niveaux_anciens] == [ancien_niveau.id]
+    niveaux_historiques = scolaire_router.lister_niveaux_scolaires(
+        cycle="lycee", referentiel_id=historique_ref.id, session=session
+    )
+    assert [item["id"] for item in niveaux_historiques] == [niveau_historique.id]
+    assert scolaire_router._referentiel_actif(session).id == nouvelle_ref.id
+    assert admin_scolaire_router._referentiel_courant(session).id == nouvelle_ref.id
 
     # Les matières/options d'un ancien profil ne disparaissent pas lorsque
     # la dernière version du catalogue change.
