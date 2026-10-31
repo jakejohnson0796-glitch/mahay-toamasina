@@ -214,7 +214,43 @@ Source : [MESUPRES — liste d'habilitation d'août 2022, rubrique ITPT](https:/
 
 ## 4. Structures universitaires à ne pas confondre avec les six composantes publiées
 
-Le fichier source conserve séparément deux ensembles à vérifier avant publication détaillée :
+Le fichier source actuel publie six composantes du campus principal. Les sources MESUPRES montrent un périmètre institutionnel plus large : facultés spécialisées, instituts régionaux affiliés et centres linguistiques. Ces catégories doivent être conservées séparément dans le référentiel, avec une preuve, un lieu, un rattachement et un statut propres.
+
+### Recensement statistique MESUPRES 2022–2023 — périmètre institutionnel élargi
+
+L'annuaire statistique national donne un aperçu du nombre d'étudiants dans les structures déclarées à Toamasina. Il répertorie **14 661 inscriptions** dans son tableau de synthèse, ventilées ainsi :
+
+| Structure / établissement | Effectif déclaré | Filières ou composantes mentionnées dans l'annuaire | Réserve |
+|---|---:|---|---|
+| Faculté DEG | 5 855 | Droit, Économie, Gestion | **Donnée de l'année antérieure** (`*`) |
+| Faculté des Lettres et Sciences Humaines | 3 394 | Études françaises, Géographie, Histoire, Philosophie, Anthropologie, Humanités/Développement/Durabilité | |
+| ESPT | 194 | Génie civil 118 ; Génie des mines 41 ; Génie des procédés et environnement 35 | Les trois spécialités sont données au niveau L1 dans le tableau détaillé |
+| FST | 1 041 | MIA 837 ; Physique-Chimie 204 | Le tableau détaillé montre MIA sur plusieurs niveaux jusqu'au Master ; PC sur les niveaux Licence et une partie du Master |
+| Institut Confucius | 147 | Langue et culture chinoises | Centre de langue/culture ; ne pas le classer comme faculté diplômante sans preuve distincte |
+| Faculté de Médecine | 1 178 | Médecine humaine 834 ; rubrique « Infirmier, Maïeutique » 344 | Médecine humaine répartie sur huit années ; les 344 places ne sont pas ventilées entre infirmier et maïeutique dans cette synthèse |
+| ISSED | 576 | Sciences de l'environnement | L'annuaire définit ISSEDD comme « Institut Supérieur de Sciences, Environnement et Développement Durable » ; probable variante courte, à confirmer formellement |
+| ISTRA (ex-ISPG) | 236 | Gestion des entreprises et administrations | Vérifier l'intitulé administratif actuel et le rattachement HAE |
+| ISTRALMA | 1 144 | Gestion, Droit, Économie, Agronomie | Institut régional, pas une faculté du campus principal |
+| ISTRCE | 591 | Gestion, Droit, Agronomie | **Donnée de l'année antérieure** (`*`) |
+| ITPT | 305 | Tourisme et socio-management | |
+
+**Précaution statistique :** les 14 661 inscriptions sont le total reproduit dans le tableau ministériel, mais il ne s'agit pas d'une photographie intégralement homogène de l'année 2022–2023 : la note de bas de tableau marque explicitement la Faculté DEG et l'ISTRCE comme données de l'année antérieure. Les effectifs ne constituent ni des capacités d'accueil, ni des inscriptions 2026–2027, ni la preuve d'une offre encore ouverte.
+
+L'annuaire présente aussi un sous-total « formations académiques/longues » de **11 318** pour DEG, FLSH, ESPT, FST et Faculté de Médecine ; il ne représente pas l'ensemble des structures de la synthèse générale et reprend le chiffre DEG signalé comme antérieur. Il ne doit donc pas être confondu avec le total général ni avec le catalogue logiciel de 157 associations.
+
+Quelques contrôles de cohérence utiles pour les maquettes :
+- **FST :** les 837 étudiants MIA et 204 Physique-Chimie confirment que les deux mentions apparaissent dans l'activité recensée par l'annuaire, malgré l'écart de rattachement entre le registre HAE 2022 (MIA associé à DEGMIA) et le formulaire FST 2023–2024. La décision administrative de transfert ou de réorganisation reste à obtenir.
+- **ESPT :** les 194 étudiants sont répartis entre trois spécialités identifiées ; cette structure ne doit pas être réduite à une filière générique « Génie ».
+- **Médecine :** le cursus de Médecine humaine s'étend sur huit années dans le tableau statistique. Il faut conserver les années cliniques et les filières paramédicales séparées ; le modèle L1–M2 généraliste ne convient pas.
+- **FLSH :** l'annuaire décompose les 3 394 étudiants entre Philosophie (402), Histoire (779), Lettres françaises (445), Géographie (727), Humanités/Durabilité/Développement (366) et Anthropologie (675). Ces libellés doivent être rapprochés des mentions du catalogue et des arrêtés, sans assimiler automatiquement « Lettres françaises » à toute maquette « Études françaises ».
+- **DEG :** l'annuaire détaille Économie (1 653) et Économie FOAD (17), Gestion (2 684) et Gestion FOAD (32), Droit (1 437) et Droit FOAD (32). Les parcours FOAD doivent être rapprochés du décret 2026-1484 et de l'annexe HAE dédiée ; la présence d'un effectif historique ne remplace pas la décision actuelle d'habilitation FOAD.
+- **ENS :** les onze mentions apparaissent dans le registre HAE 2022 et le flyer officiel, mais aucune ligne ENS dédiée n'est visible dans le tableau de synthèse statistique ci-dessus. C'est un écart de périmètre de publication statistique, pas une preuve d'inactivité.
+- **ISTCE :** la liste HAE d'août 2022 le répertorie à Fénérive-Est, mais il n'apparaît pas comme ligne dédiée dans cette synthèse statistique. Ne pas conclure à une fermeture sur cette seule absence.
+- **Confucius :** maintenir dans un inventaire des centres linguistiques/partenariats, séparé du référentiel des diplômes universitaires.
+
+**Conséquence pour MITARIDALA :** le catalogue actuel de six composantes et 156 offres actives est cohérent avec son fichier source, mais ne représente pas tout le périmètre institutionnel recensé historiquement par le MESUPRES. L'extension doit être menée par fiches d'établissement distinctes (établissement, statut, localisation, université de rattachement, année d'effet, arrêté/fiche HAE, maquette et ouvertures annuelles) ; aucune nouvelle composante ou filière ne doit être créée à partir des effectifs statistiques seuls.
+
+Source : [MESUPRES — Annuaire statistique 2022–2023, tableau des établissements de l'Université de Toamasina et tableaux détaillés de filières](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
 
 ### Instituts régionaux affiliés à l'Université de Toamasina — hors campus principal
 
