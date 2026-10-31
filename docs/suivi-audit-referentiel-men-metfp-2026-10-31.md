@@ -293,3 +293,30 @@ Sources complémentaires :
 - [RAPE T11-L historique 2024-2025 — MEN](https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T11-L_2024_2025.pdf)
 - [Index officiel de la Bibliothèque numérique MEN](https://plateforme.education.mg/bibliotheque-numerique/)
 - [Article de presse sur les coefficients 2026-2027](https://www.2424.mg/education-les-coefficients-du-baccalaureat-des-series-l-s-et-ose-revises-dans-le-nouveau-programme-detudes)
+
+
+### 8.7 Calendrier ETFP 2026-2027 et action numérique à LTP Toamasina
+
+Le site officiel du METFP affiche désormais un calendrier de formation ETFP 2026-2027 :
+- 1er trimestre : 14 septembre au 19 décembre 2026 ; pause de Toussaint du 31 octobre au 8 novembre 2026 ;
+- 2e trimestre : 4 janvier au 20 mars 2027 ;
+- 3e trimestre : 5 avril au 19 juin 2027.
+
+Cela confirme le calendrier national de formation ETFP, mais pas l'ouverture de chaque métier dans chacun des centres d'Atsinanana. La date de calendrier doit donc être enregistrée séparément de l'état d'ouverture d'une offre locale.
+
+Le METFP confirme également, dans une actualité officielle du 29 septembre 2026, que le projet « Formez-vous au numérique avec l'OIF » (DECLIC) concerne le LTP Toamasina parmi cinq établissements. La première session s'est tenue à Analamanga et Vakinankaratra ; la deuxième session devait débuter prochainement à Atsinanana et Atsimo-Andrefana. Cette annonce constitue une preuve d'un projet/activité numérique ciblant LTP Toamasina, **pas** la preuve d'une filière diplômante permanente ou d'une offre d'inscription publique ouverte à tous les apprenants en 2026-2027.
+
+Décision pour MITARIDALA :
+- conserver l'activité DECLIC comme projet/formation complémentaire avec organisme partenaire, date de source et statut « session annoncée » ;
+- ne pas la transformer en filière diplômante, métier ou diplôme METFP ;
+- demander confirmation de la date réelle de la deuxième session, des modules, des critères d'accès et du nombre de places avant publication comme offre disponible.
+
+Sources : [Calendrier officiel METFP 2026-2027](https://metfp.gov.mg/), [actualité officielle METFP/OIF du 29 septembre 2026](https://www.metfp.gov.mg/article/97).
+
+### 8.8 Annuaire statistique MEN : dernière édition publique repérée
+
+La page officielle MEN des annuaires statistiques affiche une édition 2023-2024, puis des éditions plus anciennes. Aucun annuaire 2024-2025 ou 2025-2026 n'est proposé sur cette page au moment du contrôle. L'annuaire 2023-2024 peut servir de référence statistique historique et de base de rapprochement, mais il ne peut pas prouver l'état administratif ou l'offre de classes des établissements à la rentrée 2026-2027.
+
+Pour construire le répertoire des écoles de Toamasina, il faut obtenir de la DREN Atsinanana / CISCO Toamasina I et II une liste datée 2026-2027 comprenant code établissement, statut, commune, niveaux réellement ouverts et séries autorisées. Les fichiers publics anciens contenant des listes d'élèves et identifiants personnels ne doivent pas être utilisés comme annuaire d'établissements ni importés dans MITARIDALA.
+
+Source : [Annuaires statistiques MEN](https://www.education.gov.mg/ressources/annuaires-statistiques/).
