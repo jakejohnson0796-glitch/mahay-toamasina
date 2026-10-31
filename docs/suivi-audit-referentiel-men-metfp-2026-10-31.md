@@ -567,3 +567,36 @@ Sources : [Index officiel MEN](https://plateforme.education.mg/bibliotheque-nume
 Le contrôle visuel de la page officielle des coefficients montre des cellules noires sans chiffre, notamment Philosophie en T10 et Éducation à la citoyenneté/TICE en T12. Dans les tableaux de cette annexe, ces cellules sont maintenant transcrites par « — » et non par 0. Elles indiquent « valeur non affichée / discipline non présente dans cette grille », et ne doivent pas être importées comme un coefficient ou un volume numérique de zéro sans une définition officielle du MEN.
 
 Les totaux imprimés sur la page officielle sont conservés tels quels. Les sommes calculées doivent ignorer les cellules non renseignées, et l'application doit afficher « non applicable / non renseigné » au lieu d'afficher 0 h ou coefficient 0 lorsqu'aucune valeur n'est imprimée. Cette distinction évite de transformer une absence de donnée en donnée réglementaire.
+
+### 9.10 Revue statique du modèle et du parcours de validation de MITARIDALA
+
+Lecture sur la branche principale des modèles app/models.py, des routes admin_scolaire_router.py, catalogue_scolaire_router.py et scolaire_router.py, ainsi que des tests test_referentiel_scolaire.py.
+
+**Structure réellement persistée aujourd'hui :**
+- ReferentielScolaire : code, libellé, une année scolaire, une URL source, statut, date de création et champs de validation.
+- NiveauScolaire : référence de version, code/libellé, cycle, ordre, source et statut de validation.
+- OptionScolaire : niveau, option/série et relation parent éventuelle.
+- MatiereScolaire : code, libellé FR/MG, source globale, statut et état actif.
+- ProgrammeMatiereScolaire : référentiel, niveau, série/option, matière, obligation, URL source et statut.
+
+Les tables existantes ne stockent pas les documents sources comme objets versionnés, leur empreinte SHA-256, les numéros de page, les dates d'édition séparées des dates d'effet, les références d'arrêté, les coefficients, les volumes horaires ou les résultats d'apprentissage RAG/RAS et leurs contenus.
+
+**Parcours d'approbation observé :** la fonction de validation d'une association programme vérifie que le référentiel, le niveau, la matière et l'option existent et sont actifs/validés, puis vérifie que l'URL utilise HTTPS et appartient à l'un des domaines ministériels autorisés. Elle passe ensuite l'association à statut « verifie ». Elle ne télécharge pas le PDF, ne lit pas les pages, ne contrôle pas les tableaux d'heures/coefficients et ne demande pas le numéro d'arrêté ou l'année d'effet.
+
+Cette logique a une finalité utile : empêcher qu'une association incohérente ou liée à un domaine non ministériel soit publiée. Elle ne doit toutefois pas être interprétée comme une attestation documentaire exhaustive. Le statut existant décrit une validation administrative de l'association dans l'application ; il ne dit pas si le PDF a été consulté ligne par ligne.
+
+**Risque de sélection de version :** le catalogue public et la page d'administration sélectionnent le référentiel courant parmi les versions qui ne sont pas « historique » ou « archive », en prenant la date de création la plus récente. Le filtre n'exige pas de date d'effet confirmée ni de statut d'approbation juridique. Un nouveau référentiel partiel non encore prêt pourrait donc devenir le référentiel affiché par défaut s'il est créé plus récemment sans être archivé.
+
+**Règle de non-régression proposée :** conserver le statut « partiel » pour une version incomplète, mais séparer explicitement « version candidate », « version de référence publiée » et « version historique ». Le choix par défaut devrait être explicite et daté, et non déduit seulement de la date de création. Ce point doit être validé par tests sur plusieurs versions coexistantes avant d'être modifié.
+
+**Modèle d'évolution proposé (conception seulement, aucune migration exécutée) :**
+1. Ajouter un registre DocumentReferentiel : type de document (PE, RAPE, coefficients, guide enseignant, référentiel métier), titre, niveau/série, URL, date d'édition, date de publication constatée, horodatage serveur, empreinte SHA-256, statut d'accès et pages inspectées.
+2. Ajouter les informations d'applicabilité : année scolaire candidate, année scolaire confirmée, acte/numéro/date de validation, champ géographique et statut de preuve juridique. Ces données doivent être nullable tant qu'aucune source primaire ne les établit.
+3. Ajouter des enregistrements de résultats d'apprentissage (RAG/RAS) hiérarchisés par version, niveau, matière, ordre, contenu, activité/orientation et évaluation, avec lien à la page source exacte.
+4. Ajouter des valeurs quantitatives typées : coefficient, heure hebdomadaire, période, durée de séquence. Elles doivent référencer la classe, la série, la discipline ou bloc groupé, l'unité et la cellule/page source. Une valeur absente reste NULL/« non indiqué », jamais zéro par défaut.
+5. Conserver un statut de preuve documentaire séparé du statut de validation administrative : index identifié → PDF accessible → couverture/sommaire contrôlés → contenu extrait → contenu rapproché → applicabilité juridique confirmée.
+6. Prévoir une relation de groupe pour les lignes fusionnées comme Histoire-Géographie et Allemand/Espagnol/Russe afin de ne pas dupliquer les coefficients et heures.
+
+**Tests à ajouter avant toute évolution :** plusieurs versions non historiques simultanées ; sélection de la version courante selon statut et dates d'effet ; distinction d'une URL existante d'un PDF réellement contrôlé ; aucune valeur numérique créée pour une cellule noire ; heures/coefficient différents par série ; absence de duplication des lignes groupées ; RAS et contenu rattachés au bon document/page ; conservation des profils et historiques qui utilisent une ancienne version.
+
+Sources techniques : les fichiers app/models.py, app/routers/admin_scolaire_router.py, app/routers/catalogue_scolaire_router.py, app/routers/scolaire_router.py et tests/test_referentiel_scolaire.py de la branche principale.
