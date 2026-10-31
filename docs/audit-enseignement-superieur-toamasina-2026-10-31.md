@@ -778,3 +778,212 @@ L'AUF présente de son côté l'histoire du CUR de Toamasina créé en 1977, pui
 Sources :
 - [IAU / WHED — University of Toamasina, fiche IAU-019655, actualisée le 23 février 2024](https://whed.net/institutions/IAU-019655).
 - [AUF — Fiche membre de l'Université de Toamasina et historique du CUR](https://www.auf.org/membre/universite-de-toamasina-2/).
+
+
+## 23. Décret n°2026-1547 : nouveau régime doctoral et conséquences pour l'Université de Toamasina
+
+Le décret officiel **n°2026-1547 du 17 juin 2026**, publié dans le registre documentaire MESUPRES le 1er juillet 2026, fixe le régime de la formation doctorale et du diplôme national de Doctorat. Le PDF officiel a été contrôlé visuellement sur ses neuf pages.
+
+### 23.1 Organisation et habilitation des écoles doctorales
+
+Les règles principales sont les suivantes :
+- le décret s'applique à toutes les institutions d'enseignement supérieur habilitées à délivrer le Doctorat, publiques ou privées (article 2) ;
+- la formation doctorale est organisée au sein d'écoles doctorales thématiques rattachées à une institution support, sous la supervision du Conseil de Référence de la Formation Doctorale (CRFD) (article 4) ;
+- l'ouverture d'une école doctorale suppose au moins quatre enseignants-chercheurs et/ou chercheurs-enseignants titulaires de l'HDR ou d'un diplôme reconnu équivalent, ainsi qu'une habilitation délivrée par le MESUPRES (article 6) ;
+- une institution support peut disposer d'une ou plusieurs écoles selon sa capacité d'encadrement et de recherche (article 5) ;
+- les équipes d'accueil doctorales doivent avoir au moins un membre HDR responsable, une production scientifique, une expérience d'encadrement et un programme de recherche ; les autres membres sont titulaires du Doctorat (article 18) ;
+- une équipe d'accueil ne peut appartenir qu'à une seule école doctorale ; l'ajout d'une équipe supplémentaire modifiant substantiellement l'offre implique une nouvelle habilitation (article 17) ;
+- l'offre de formation doctorale fait partie intégrante de l'offre de l'institution et relève des mécanismes d'assurance qualité, d'habilitation et d'accréditation (article 9).
+
+**Point de rapprochement important :** le canevas d'habilitation d'école doctorale antérieurement publié par le MESUPRES évoque un minimum d'un HDR et deux docteurs au niveau de chaque équipe d'accueil, tandis que l'article 6 du décret 2026-1547 impose quatre HDR/équivalents pour l'ouverture de l'école elle-même et l'article 18 fixe les règles propres à la composition d'une équipe. Ces seuils ne se rapportent pas nécessairement au même objet. Il faut donc les conserver par niveau (école / équipe) et demander au MESUPRES le canevas d'application actualisé, plutôt que d'écraser le décret par un ancien seuil.
+
+### 23.2 Admission, durée et suivi du doctorant
+
+- Admission possible après un diplôme national de Master ou équivalent reconnu par le ministère (article 25).
+- L'inscription dépend aussi de l'avis favorable du directeur de thèse choisi, de l'équipe d'accueil et du conseil de l'école doctorale, après examen du sujet et des conditions de recherche (article 26).
+- La préparation s'effectue sur trois ans en équivalent temps plein consacré à la recherche ; des dérogations peuvent porter la durée totale à six ans au maximum, selon la procédure du décret (article 27).
+- Une commission de thèse d'au moins trois membres assure un suivi régulier : dans les trois mois suivant la première inscription, puis avant les réinscriptions en deuxième et troisième années et à chaque année supplémentaire accordée (articles 28-32).
+- Le directeur de thèse doit être titulaire de l'HDR ou équivalent, appartenir à une équipe d'accueil habilitée et démontrer une activité scientifique récente et régulière (article 37).
+- Les doctorants participent à des enseignements, séminaires, missions ou stages d'accompagnement (article 35).
+
+### 23.3 Publication scientifique, soutenance et intégrité
+
+L'article 43 subordonne la soutenance, notamment, à :
+- l'accomplissement d'au moins trois années après la première inscription ;
+- la validation des cours obligatoires de l'école doctorale ;
+- au moins une publication scientifique dans le domaine de spécialité (un article publié ou deux communications orales/écrites avec justificatifs) ;
+- pour l'article publié, une revue à comité de lecture reconnue et indexée dans une base internationale reconnue, le doctorant devant en être l'auteur principal.
+
+Le décret exclut explicitement les revues ou éditions prédatrices, les travaux sans comité de lecture reconnu et les publications redondantes ou sans valeur scientifique nouvelle (article 43). Le jury de soutenance compte au moins six membres et les exigences de qualité/HDR prévues par le texte (article 40). La soutenance est publique sauf dérogation exceptionnelle motivée dans les cas prévus (article 44).
+
+Les articles 46 à 50 fixent les obligations d'intégrité scientifique, la responsabilité personnelle du doctorant, les sanctions possibles en cas de fraude, le contrôle du plagiat, ainsi que la possibilité de retrait de l'habilitation d'une école doctorale en cas de manquements répétés et graves.
+
+Les doctorants déjà régulièrement inscrits avant l'entrée en vigueur disposent d'un délai de six mois pour s'aligner sur les nouvelles dispositions ; les écoles et institutions doivent assurer la continuité académique et administrative des doctorants en cours (article 51).
+
+### 23.4 Conséquences pratiques pour Toamasina
+
+Pour chaque école et équipe doctorale, obtenir et vérifier :
+1. l'arrêté d'habilitation exact, son thème, l'institution support et sa validité ;
+2. la liste officielle des équipes d'accueil, leur composition et le responsable HDR ;
+3. les preuves de statut HDR, les diplômes, la production scientifique récente et les thématiques de recherche ;
+4. les actes de nomination du directeur d'école et des organes de gouvernance ;
+5. la liste des doctorants actifs par année d'inscription, sans publication de données personnelles ;
+6. les commissions de thèse, comptes rendus de suivi et règles de prolongation ;
+7. les cours/UE doctoraux, volumes horaires, attestations et séminaires ;
+8. la politique anti-plagiat, la liste de bases d'indexation reconnues, les procédures de soutenance et les jurys.
+
+Source primaire :
+- [MESUPRES — Décret n°2026-1547 du 17 juin 2026 portant régime de la formation doctorale et du diplôme de Doctorat (PDF, 9 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/decrets/decret_N_2026-1547_du_17_juin_2026.pdf).
+- [MESUPRES — Registre officiel des décrets, décret 2026-1547 publié le 1er juillet 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=decrets).
+
+## 24. École doctorale thématique 3D : structure documentée et coopération de recherche opérationnelle
+
+### 24.1 Existence et création de l'École doctorale « Diversité et Développement Durable »
+
+Les termes de référence officiels du dispositif **Expert'Izy**, publié par Expertise France dans le cadre du projet TADY, indiquent que l'École Doctorale Thématique (EDT) **« Diversité et Développement Durable » (3D)** de l'Université de Toamasina a été créée le **13 février 2025**. La structure a pour mission la formation doctorale et la préparation à la recherche et à l'insertion professionnelle des doctorants et post-doctorants.
+
+Le document décrit quatre équipes d'accueil doctorales et quatre grands domaines :
+- Sciences de l'Ingénierie et de la Technologie ;
+- Sciences de la Santé ;
+- Sciences Humaines et Sociales ;
+- Sciences de l'Éducation.
+
+Les termes de référence indiquent qu'un expert devait intervenir à Toamasina à partir du 17 mars 2026 pendant deux semaines pour co-construire trois guides (méthodologie de recherche, rédaction d'article scientifique, rédaction de thèse) avec les équipes d'accueil. Les résultats attendus étaient la formation de 44 enseignants-chercheurs, de cinq membres du personnel administratif et de 150 doctorants. **Ces chiffres sont des objectifs de l'intervention, pas des effectifs réalisés confirmés.** Le rapport de mission et les trois guides finalisés restent à obtenir.
+
+Source primaire de projet :
+- [Expertise France — Termes de référence Expert'Izy pour l'École doctorale thématique 3D de Toamasina (PDF)](https://expertise-france.gestmax.fr/_expertise_france/public_files/tdr-expert-izy-universite-de-toamasina-vf.pdf).
+
+### 24.2 Coopération avec le CNRIT et accès aux laboratoires
+
+Le MESUPRES rapporte qu'un accord de coopération a été signé le **18 mars 2026** entre le directeur du Centre National de Recherches Industrielle et Technologique (CNRIT), Dr RANDRIANIRAINY Huchard Paul Berthin, et le directeur de l'EDT 3D de Toamasina, Pr DAHY Ioclin.
+
+La publication ministérielle indique :
+- des interventions d'enseignants de l'école doctorale ;
+- des travaux pratiques et activités de recherche de doctorants sous la supervision de chercheurs-enseignants du CNRIT ;
+- l'utilisation de laboratoires du CNRIT par des doctorants de Toamasina ;
+- un séminaire méthodologique de l'EDT 3D annoncé pour le 27 mars 2026.
+
+C'est une preuve primaire d'un partenariat scientifique et d'un accès à des laboratoires extérieurs au campus de Barikadimy. Le texte ministériel utilise la formule « quatre écoles doctorales » au sein de 3D, alors que les termes de référence Expert'Izy décrivent quatre **équipes d'accueil doctorales** constituant la structure. Cette différence de vocabulaire doit être clarifiée par la liste administrative signée : ne pas créer automatiquement quatre écoles autonomes supplémentaires dans le référentiel.
+
+**À obtenir pour clore la vérification :** convention CNRIT–EDT 3D et annexes, liste des équipes reconnues, registre des doctorants et laboratoires utilisateurs, calendrier effectif du séminaire du 27 mars, guides finalisés et rapport de mission Expert'Izy.
+
+Source primaire :
+- [MESUPRES — coopération entre le CNRIT et l'École doctorale thématique 3D, 18 mars 2026](https://www.mesupres.gov.mg/actualites/detail/414).
+
+## 25. Bibliothèque universitaire : infrastructure documentaire et recherche numérique
+
+Le catalogue en ligne de la Bibliothèque Universitaire de Toamasina expose une organisation par sections et des ressources de documentation scientifique :
+- Bibliothèque CADDETHIQUE ;
+- Bibliothèque ISTRA ;
+- Bibliothèque de la Médecine ;
+- Bibliothèque universitaire centrale et médiathèque FLSH ;
+- accès répertoriés à ScholarVox, HAL, BNEUF, Research4Life, l'Université Numérique Thématique et le Centre national de législation ;
+- une rubrique de publications des enseignants-chercheurs de l'Université de Toamasina ;
+- une étagère en ligne annoncée avec plus d'une centaine de thèses de doctorat.
+
+Le catalogue donne des métadonnées de titres, auteurs, sources, DOI et localisations. Plusieurs notices électroniques affichent cependant « aucun exemplaire » : la présence d'une notice bibliographique ne doit donc pas être interprétée comme la disponibilité du texte intégral ou d'un exemplaire physique. L'accès réel doit être testé par ressource et par droit d'accès.
+
+**Décision MITARIDALA :** enregistrer la Bibliothèque comme service documentaire numérique et les sections comme localisations/collections, sans affirmer que toutes les bases externes sont accessibles sans abonnement ou que tous les fichiers sont téléchargeables.
+
+Sources :
+- [Bibliothèque Universitaire de Toamasina — catalogue en ligne](https://www.bibliotheque-univ-toamasina.com/online/).
+- [Bibliothèque CADDETHIQUE — section du catalogue](https://www.bibliotheque-univ-toamasina.com/online/index.php?location=2&lvl=section_see).
+
+## 26. Connectivité numérique et continuité des cours : équipements annoncés et état postérieur
+
+### 26.1 Hubs numériques, terminaux et accès Wi-Fi
+
+Un article de Midi Madagasikara du 13 avril 2026 rapporte l'installation de quatre hubs numériques solaires à Barikadimy. Chaque hub contient 25 ordinateurs, soit 100 postes dans les quatre espaces. Le même article indique que le programme a déployé 250 ordinateurs au total, ainsi que 3 315 smartphones pour les étudiants et enseignants, dont 815 pour les enseignants, et 3 315 kits solaires, dont 815 destinés aux enseignants.
+
+L'article indique également que :
+- une borne Wi-Fi Orange « HoB-Camp » est en service à la bibliothèque depuis le 25 mars 2026 ;
+- elle est annoncée pour jusqu'à 1 000 connexions simultanées dans un rayon de 100 m ;
+- plus de 1 500 utilisateurs avaient été enregistrés et environ 250 connexions quotidiennes étaient rapportées au moment de l'article ;
+- un Orange Digital Center à Barikadimy était **à l'étude**, et non annoncé comme déjà créé.
+
+La communication de l'Université relayée sur LinkedIn confirme la mise en place des quatre hubs solaires et leur rôle de continuité académique après Gezani. Au 5 octobre 2026, une autre publication de l'Université indiquait encore que la mise en place de **hubs numériques supplémentaires** faisait partie des actions discutées par les responsables. Il faut donc séparer les quatre hubs existants au printemps de l'extension envisagée à l'automne.
+
+**Réserve :** ces données sont des communications de partenaires et de presse, pas un audit technique d'uptime. La présence d'un hotspot, d'ordinateurs ou de kits solaires ne suffit pas à démontrer un LMS FOAD validé, une connectivité stable par étudiant ou une offre de diplôme FOAD habilitée.
+
+Sources :
+- [Midi Madagasikara — quatre hubs numériques et connectivité de Barikadimy, 13 avril 2026](https://midi-madagasikara.mg/universite-de-barikadimy-mise-en-place-de-quatre-hubs-numeriques/).
+- [Université de Toamasina Officiel — publication de continuité académique avec DECIM](https://www.linkedin.com/company/universit%C3%A9-de-toamasina-officiel/).
+- [Université de Toamasina Officiel — publication du 5 octobre 2026 sur les hubs additionnels et les travaux du R+1, relayée sur Medioq](https://www.medioq.com/MG/Toamasina/113710243340905/Universit%C3%A9-de-Toamasina-Officiel).
+
+### 26.2 Reconstruction post-Gezani : état d'avancement au 2-5 octobre 2026
+
+Un article de Moov du **2 octobre 2026**, consacré à la visite d'une délégation de haut niveau de la Banque mondiale sur le campus de Barikadimy, rapporte que l'Université comptait 123 bâtiments avant Gezani. À la date de cette visite, **44 bâtiments** étaient réhabilités, en cours de travaux ou déjà pris en charge ; **79 bâtiments**, soit environ 64 % du parc immobilier, restaient encore à rénover.
+
+Il importe de lire le chiffre 44 correctement : il ne signifie pas que 44 bâtiments étaient complètement achevés et rouverts. Il agrège les bâtiments réhabilités, ceux en travaux et ceux déjà pris en charge dans le programme.
+
+Le 5 octobre 2026, un second article rapporte le démarrage d'une étude technique financée par le projet TALIM de la Banque mondiale, confiée à un groupement ARCADE (Mali) / THE BEST (Madagascar), mobilisant 38 experts pour une durée estimative de six mois. Les livrables prévus sont un Avant-Projet Sommaire (APS) et un Avant-Projet Détaillé (APD), qui précéderont l'appel d'offres des futurs travaux. Les infrastructures ciblées comprennent logements étudiants, salles de cours, bâtiments administratifs, clôture, voies et ruelles internes. Le projet MYSET est annoncé comme financeur des travaux de reconstruction, après la phase d'études.
+
+Une communication relayée par l'Université le 5 octobre mentionne aussi des travaux de réparation du bâtiment R+1 et l'organisation de listes de bénéficiaires de logements étudiants. Ce sont des signes d'activité sur le campus, mais pas une liste exhaustive des bâtiments utilisables.
+
+**Conséquence pour le catalogue et le calendrier universitaire :**
+1. ne pas étiqueter l'ensemble du campus comme entièrement opérationnel sur la base des hubs numériques ;
+2. ne pas déclarer les 44 bâtiments entièrement réceptionnés ;
+3. demander à chaque composante une fiche de disponibilité datée : salles, laboratoires, résidences, eau, électricité, internet, sécurité et accessibilité ;
+4. vérifier la tenue effective des cours et examens dans chaque bâtiment avant de publier une capacité d'accueil ;
+5. mettre à jour l'état des infrastructures après les études APS/APD et les marchés de travaux, avec procès-verbaux de réception.
+
+Sources secondaires de suivi :
+- [Moov — état de la reconstruction de l'Université de Toamasina après Gezani, 2 octobre 2026](https://www.moov.mg/article/122020-post-gezani-la-reconstruction-a-luniversite-de-toamasina-a-accelerer).
+- [Moov — lancement des études techniques de reconstruction, 5 octobre 2026](https://moov.mg/actualite/nationale/122115-universite-de-toamasina-lancement-des-etudes-pour-preparer-la-reconstruction-durable-du-campus).
+- [Université de Toamasina Officiel — publication d'octobre sur les réparations du R+1 et les hubs supplémentaires](https://www.medioq.com/MG/Toamasina/113710243340905/Universit%C3%A9-de-Toamasina-Officiel).
+
+## 27. Activité académique 2025-2026 et signaux de recrutement 2026-2027 par composante
+
+Les pages de communication des facultés, relayées sur des agrégateurs tiers, donnent des informations de fonctionnement et d'appels qui aident à distinguer les offres des brochures anciennes. Elles ne remplacent pas les avis originaux signés ni les décisions HAE.
+
+### 27.1 FST
+
+La page relayant les communications de la Faculté des Sciences et Technologie fait apparaître :
+- le 18 mai 2026 : un appel à candidature en M1, avec dépôt annoncé jusqu'au 30 mai ;
+- le 6 mai 2026 : publication de résultats d'examens M1-MIA (Sciences naturelles) et une annonce de recrutement professionnel destinée aux étudiants M2 MIA après un atelier ;
+- le 23/30 septembre 2026 : sélection de dossiers pour l'entrée en L1 au titre de 2026-2027, avec dépôt annoncé du 14 septembre au 20 novembre 2026 à 16 h ; les séries citées dans le post sont C, D, S, OSE et FTG Génie Civil ou Génie Industriel ; le droit de sélection indiqué sur la publication est de **66 000 Ar**.
+
+Le montant de 66 000 Ar et les conditions sont donc un signal de recrutement de la campagne 2026-2027 relayé par la page FST, mais le formulaire original, la signature du doyen, le relevé bancaire et la décision HAE de la mention doivent être conservés avant publication comme information officielle validée dans MITARIDALA. Ne pas le remplacer par les frais du formulaire 2023-2024 (5 000 / 40 000 Ar), qui correspondent à un autre millésime.
+
+### 27.2 Faculté DEG
+
+La page relayant les actualités de la Faculté DEG montre en 2026 :
+- le 31 mars : appel L3/M1/M2 pour la Gestion portuaire et logistique (GPL), dépôt annoncé jusqu'au 15 avril 2026 ;
+- le 6 mai : appel à candidature M1 Droit, Économie et Gestion ;
+- le 7 mai : appel L1 en Formation Ouverte et À Distance (FOAD) en Droit, Économie et Gestion ;
+- le 12 octobre : nouvel appel L1 en Droit, Économie et Gestion pour l'année universitaire 2026-2027, avec date limite annoncée au 27 novembre 2026.
+
+Ces publications attestent l'activité de communication et plusieurs recrutements/annonces 2026. Elles ne prouvent pas que tous les parcours (notamment GPL) ont reçu un renouvellement d'habilitation ni qu'une cohorte a démarré en 2026-2027. La GPL doit être conservée comme spécialisation annoncée par DEG, avec sa maquette, ses crédits et son acte HAE à récupérer.
+
+### 27.3 Formation complémentaire non diplômante — bourses de formation 2026
+
+Une publication relayée par la FST du 24 avril 2026 présente un programme de bourses de formation avec JIREH STUDENTS – Soutien Éducatif : prises en charge annoncées de 30 à 100 % sur des ateliers en bureautique, comptabilité informatisée, gestion de projet, community management et marketing digital, avec dépôt au plus tard le 15 mai 2026 et frais de fiche de 2 000 Ar.
+
+Ce programme doit être classé comme **formation complémentaire / bourse de compétences**, pas comme une mention LMD de la FST. La publication indique un partenariat et des taux de prise en charge, mais la convention signée, la liste des bénéficiaires, le contenu horaire, les évaluations et les attestations délivrées doivent être obtenus avant de présenter ces formations comme une certification reconnue.
+
+### 27.4 Module intégrité et bonne gouvernance pour les Master 2
+
+Un article du 9 juillet 2026 rapporte qu'un atelier des 7 et 8 juillet, réunissant enseignants et représentants d'étudiants, a élaboré un nouveau module destiné aux étudiants en Master II, porté par la Direction de l'Éducation et de la Prévention du BIANCO et l'Université de Toamasina, avec le soutien de l'Organisation internationale de la Francophonie.
+
+Le contenu vise l'intégrité, la transparence, la responsabilité, l'éthique et la prévention de la corruption. Il s'agit d'une initiative cohérente avec le décret 2026-1483 sur les compétences transversales et l'éthique professionnelle ; cependant, l'article dit que le module sera prochainement proposé. Il ne prouve ni son adoption dans toutes les maquettes M2, ni sa délivrance effective, ni son volume horaire.
+
+**Action :** récupérer le module, sa note de validation, la liste des établissements/mentions concernés, son volume horaire et les preuves de sessions dispensées avant de l'indexer comme UE obligatoire.
+
+Sources :
+- [FST — actualités et appels 2026 (republication de la page de la faculté)](https://www.schoolandcollegelistings.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
+- [DEG — actualités et appels 2026 (republication de la page de la faculté)](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG).
+- [2424.mg — atelier BIANCO/Université sur l'intégrité et la bonne gouvernance en Master II, 9 juillet 2026](https://www.2424.mg/news/universite-de-toamasina-les-etudiants-en-master-ii-formes-a-lintegrite-et-a-la-bonne-gouvernance/).
+
+## 28. Activités étudiantes et vie du campus : preuve de reprise partielle, pas mesure de capacité académique
+
+La page relayant les communications de l'Université de Toamasina rapporte :
+- un événement sportif et culturel « Universiade 2026 » auquel l'Université de Toamasina participe à Antsirabe du 30 octobre au 8 novembre 2026 ; les participants doivent être régulièrement inscrits durant 2025-2026 ;
+- une cérémonie de levée des couleurs le 5 octobre au campus FLSH, dirigée par le président, avec réunion des chefs d'établissement et discussion des priorités, logements et hubs numériques ;
+- l'installation d'un nouveau comité de plaidoyer étudiant le 3 octobre à l'ITPT ;
+- une campagne de nettoyage du campus et une campagne de vaccination MPOX par composante en avril 2026.
+
+Ces événements démontrent une activité institutionnelle, administrative et étudiante. Ils ne prouvent pas la réouverture de toutes les salles, la disponibilité de chaque laboratoire ni l'ouverture des formations 2026-2027. Les données de capacité doivent être recueillies au niveau de chaque composante et bâtiment.
+
+Sources secondaires de veille, reprenant des communications de l'Université :
+- [Université de Toamasina Officiel — publications d'octobre 2026](https://www.medioq.com/MG/Toamasina/113710243340905/Universit%C3%A9-de-Toamasina-Officiel).
+- [FST — organisation de la campagne universitaire par composante, avril 2026](https://www.schoolandcollegelistings.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
