@@ -430,11 +430,11 @@ Le PDF officiel « COEFFICIENT ET VOLUME HORAIRE NIVEAU LYCEE » a été ouvert.
 | Sciences physiques | 3 | 1 | 5 | 2 | 1 | 5 | 2 |
 | SVT | 3 | 1 | 5 | 2 | 1 | 5 | 2 |
 | Histoire-Géographie (ligne groupée) | 3 | 3 | 2 | 5 | 3 | 2 | 5 |
-| Éducation à la citoyenneté | 2 | 2 | 2 | 2 | 0 | 0 | 0 |
+| Éducation à la citoyenneté | 2 | 2 | 2 | 2 | — | — | — |
 | SES | 3 | 2 | 2 | 5 | 2 | 2 | 5 |
 | EPS | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
-| Philosophie | 0 | 3 | 1 | 1 | 4 | 2 | 2 |
-| TICE | 1 | 1 | 1 | 1 | 0 | 0 | 0 |
+| Philosophie | — | 3 | 1 | 1 | 4 | 2 | 2 |
+| TICE | 1 | 1 | 1 | 1 | — | — | — |
 
 **Heures hebdomadaires par discipline** (même ordre des colonnes) :
 
@@ -448,11 +448,11 @@ Le PDF officiel « COEFFICIENT ET VOLUME HORAIRE NIVEAU LYCEE » a été ouvert.
 | Sciences physiques | 4 | 2 | 5 | 2 | 2 | 6 | 3 |
 | SVT | 4 | 2 | 5 | 3 | 2 | 6 | 3 |
 | Histoire-Géographie (cellule groupée) | 4 | 5 | 4 | 5 | 4 | 3 | 6 |
-| Éducation à la citoyenneté | 2 | 2 | 2 | 2 | 0 | 0 | 0 |
+| Éducation à la citoyenneté | 2 | 2 | 2 | 2 | — | — | — |
 | SES | 4 | 2 | 2 | 5 | 2 | 2 | 6 |
 | EPS | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
-| Philosophie | 0 | 3 | 2 | 2 | 5 | 3 | 3 |
-| TICE | 1 | 1 | 1 | 1 | 0 | 0 | 0 |
+| Philosophie | — | 3 | 2 | 2 | 5 | 3 | 3 |
+| TICE | 1 | 1 | 1 | 1 | — | — | — |
 
 Précision de lecture : les lignes Allemand/Espagnol/Russe et Histoire-Géographie sont des blocs groupés. Dans la table des heures, la valeur Histoire-Géographie est présentée dans une cellule fusionnée ; elle ne doit pas être comptée deux fois pour créer deux totaux distincts. Ne pas créer trois coefficients distincts pour Allemand, Espagnol et Russe à partir de la ligne groupée.
 
@@ -546,3 +546,24 @@ Le sommaire du PE T8 confirme Arts comme discipline distincte. Le but de la disc
 6. Garder un lien vers le PDF source et une empreinte SHA-256 par fichier, afin de tracer chaque contenu et d'identifier les mises à jour.
 
 Sources complémentaires : [PE T6 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T6.pdf), [PE T8 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf).
+### 9.8 Guides pédagogiques FOV — ressources d'accompagnement à ne pas confondre avec PE/RAPE
+
+Le répertoire PDF MEN liste des fichiers GUIDE_FOV_T6.pdf, GUIDE_FOV_T7.pdf, GUIDE_FOV_T8.pdf, GUIDE_FOV_T9.pdf et des MANUEL_FOV correspondants. Deux guides enseignants ont été ouverts : GUIDE_FOV_T7.pdf (102 pages) et GUIDE_FOV_T8.pdf (98 pages). Le guide T7 porte la mention © MEN 2024 ; le guide T8 porte le titre FOV/T8 et des logos de partenaires sur sa couverture, mais aucune date juridique ou d'édition n'a été extraite avec certitude.
+
+Le guide T7 présente quatre domaines communs pour la FOV des niveaux T6-T9 : respect de la personne et relations avec les autres ; respect des droits et accomplissement des devoirs/responsabilités ; patriotisme ; éducation sociale et financière. Il associe ces thèmes à des compétences de vie : connaissance et valorisation de soi, relations sociales, prise de décision et responsabilité dans la communauté.
+
+Le sommaire détaillé du guide T7 mentionne notamment la prévention de la grossesse précoce, l'environnement, la prévention des accidents, les droits de l'enfant, l'égalité de genre, la lutte contre l'exclusion, l'expression, la sécurité et la paix, les institutions, la lutte contre la corruption, le patrimoine intellectuel/culturel et l'entrepreneuriat.
+
+Le guide T8 développe des leçons sur les loisirs, la vie en société, la protection de l'environnement, la prévention des accidents, les droits humains et de l'enfant, le genre, les formes de gouvernance, la lutte contre la corruption, la paix, l'éducation sociale/financière et les projets/épargne. Le guide contient des objectifs d'apprentissage, des contenus, les rôles des enseignants et des élèves, des activités, des supports et des évaluations.
+
+**Règle de modélisation :** ces guides enseignants sont des ressources pédagogiques complémentaires. Ils donnent des méthodes, des scénarios et des exemples d'activités ; ils ne remplacent pas les résultats d'apprentissage spécifiques (RAS) du PE et ne doivent pas être importés en totalité comme une liste de notions obligatoires dans le catalogue scolaire ou dans les quiz. Les relier à la discipline FOV et au niveau visé, tout en conservant le type de ressource (guide enseignant) et l'année/version.
+
+**Précaution de conformité :** le guide T7 traite explicitement de la prévention de la grossesse précoce. Conserver son contexte et sa version datée, sans extrapoler vers des contenus médicaux détaillés ni déclarer l'ensemble des pages comme curriculum obligatoire. La note EVH/ECS signalée par la presse en octobre 2026 n'a pas encore été récupérée officiellement ; une revue de compatibilité documentaire est nécessaire avant une réutilisation pédagogique nouvelle.
+
+Sources : [Index officiel MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/), [Guide enseignant FOV T7](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/GUIDE_FOV_T7.pdf), [Guide enseignant FOV T8](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/GUIDE_FOV_T8.pdf).
+
+### 9.9 Règle de transcription de la grille des coefficients : cellule noire n'est pas un zéro
+
+Le contrôle visuel de la page officielle des coefficients montre des cellules noires sans chiffre, notamment Philosophie en T10 et Éducation à la citoyenneté/TICE en T12. Dans les tableaux de cette annexe, ces cellules sont maintenant transcrites par « — » et non par 0. Elles indiquent « valeur non affichée / discipline non présente dans cette grille », et ne doivent pas être importées comme un coefficient ou un volume numérique de zéro sans une définition officielle du MEN.
+
+Les totaux imprimés sur la page officielle sont conservés tels quels. Les sommes calculées doivent ignorer les cellules non renseignées, et l'application doit afficher « non applicable / non renseigné » au lieu d'afficher 0 h ou coefficient 0 lorsqu'aucune valeur n'est imprimée. Cette distinction évite de transformer une absence de donnée en donnée réglementaire.
