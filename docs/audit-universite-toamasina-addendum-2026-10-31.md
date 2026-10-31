@@ -136,7 +136,7 @@ Le fichier source recense :
 - Sciences Économiques ;
 - Gestion.
 
-Les 29 associations sont réparties entre ces trois mentions. Le parcours **CCA — Comptabilité, Contrôle, Audit** apparaît uniquement au niveau **M2** dans le fichier source et porte le statut « À vérifier ». Aucun CCA M1 n'est décrit dans ce JSON.
+Les 29 associations sont réparties entre ces trois mentions. Le parcours **CCA — Comptabilité, Contrôle, Audit** apparaît uniquement au niveau **M2** dans le tableau `formations` du fichier source et porte le statut « À vérifier ». Aucun CCA M1 n'est importé comme association. En revanche, la liste `audit_referentiel.formations_a_verifier_avant_publication` demande de recueillir les preuves pour les niveaux M1 et M2 : cela reste une demande de vérification documentaire, pas la preuve d'une offre CCA M1.
 
 Le site de la Faculté DEG n'a pas fourni de maquette actuelle exploitable pendant ce contrôle. Le support M2 CCA repéré sur Scribd n'est pas une preuve d'habilitation, de maquette officielle ni d'ouverture. Le CCA M2 doit rester « À vérifier » ; ne pas créer un CCA M1 sur la base de cette pièce.
 
