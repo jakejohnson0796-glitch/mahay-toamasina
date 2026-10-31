@@ -218,24 +218,31 @@ Source : [MESUPRES — liste d'habilitation d'août 2022, rubrique ITPT](https:/
 
 Le fichier source actuel publie six composantes du campus principal. Les sources MESUPRES montrent un périmètre institutionnel plus large : facultés spécialisées, instituts régionaux affiliés et centres linguistiques. Ces catégories doivent être conservées séparément dans le référentiel, avec une preuve, un lieu, un rattachement et un statut propres.
 
-### Établissements paramédicaux privés habilités à Toamasina — à distinguer de la Faculté de Médecine
+### Établissements paramédicaux privés habilités à Toamasina — sept institutions distinctes
 
-La section B « Paramédicaux » de la liste MESUPRES mise à jour en août 2022 recense quatre établissements paramédicaux localisés à Toamasina :
+La section B « Paramédicaux » de la liste MESUPRES mise à jour en août 2022 répertorie **sept établissements paramédicaux distincts dans la ville de Toamasina** :
 
 | Établissement | Localité | Offres Licence répertoriées | Arrêté indiqué |
 |---|---|---|---|
-| IFSP Atsinanana | Toamasina | Sage-femme ; Infirmier | n°15482/2011 du 18 avril 2011 |
+| IFSP ATSINANANA | Toamasina | Sage-femme ; Infirmier | n°15482/2011 du 18 avril 2011 |
 | IFSPT | Toamasina | Sage-femme ; Infirmier généraliste | n°21911/2014 du 11 juin 2014 |
 | INSPALM | Toamasina | Sage-femme ; Infirmier | n°31486/2017 du 21 décembre 2017 |
-| INSPNMAD Atsinanana | Toamasina | Sage-femme ; Infirmier | n°11565/2013 du 23 mai 2013 |
+| INSPNMAD ATSINANANA | Toamasina | Sage-femme ; Infirmier | n°11565/2013 du 23 mai 2013 |
+| ISFSP | Toamasina | Sage-femme ; Infirmier généraliste | n°32794/2015 du 3 novembre 2015 ; renouvellement n°12258/2022 du 29 avril 2022 |
+| ISMATEC | Toamasina | Sage-femme ; Infirmier généraliste | n°31486/2017 du 21 décembre 2017 |
+| ISSPM | Toamasina | Infirmier ; Sage-femme | n°26307/2016 du 9 décembre 2016 |
 
 Ces établissements sont des institutions paramédicales distinctes de la Faculté de Médecine de l'Université de Toamasina et distinctes entre elles. Ils ne doivent ni être ajoutés comme départements de la faculté publique, ni être fusionnés en un seul institut en raison de parcours proches. Les arrêtés cités sont les références historiques de la liste 2022 ; ils ne prouvent pas une ouverture ni un renouvellement 2026–2027.
 
-**Contrôle de la base actuelle :** aucune entrée portant IFSP Atsinanana, IFSPT, INSPALM ou INSPNMAD n'a été retrouvée dans `universite`, `faculte` ou `etablissementpartenaire`. Les universités nationales enregistrées sont six établissements publics ; la Faculté de Médecine est rattachée à Antananarivo et Mahajanga, pas à Toamasina. Cela révèle une lacune de représentation des institutions paramédicales privées dans le modèle actuellement interrogé, sans prouver leur fermeture.
+**Autres établissements de la région Atsinanana à ne pas confondre avec les sept institutions de Toamasina ville :**
+- **ISPAVA — Vatomandry :** Licence Sciences de la Santé, Sage-femme et Infirmier ; arrêté n°37441/2014 du 26 décembre 2014, renouvellement n°12258/2022 du 29 avril 2022. Il est situé à Vatomandry, pas dans la ville de Toamasina.
+- **IFT — Toamasina :** établissement privé d'enseignement supérieur technique, Licence en Informatique et BTP ; arrêtés n°33033/2015 du 5 novembre 2015 et n°1591/2017 du 25 janvier 2017. Il ne relève pas de la catégorie paramédicale.
 
-**Action :** vérifier dans HAE la situation actuelle de chacun des quatre établissements, l'existence des arrêtés de renouvellement, les éventuels changements de nom, d'adresse ou de statut, les parcours réellement ouverts et les maquettes/UE. Si le catalogue MITARIDALA couvre aussi le privé et les paramédicaux, les ajouter comme institutions distinctes avec leur propre identifiant, statut juridique, localisation, fiches d'offre HAE et validité ; ne jamais les rattacher automatiquement à la Faculté de Médecine publique.
+**Contrôle de la base actuelle :** aucune entrée portant IFSP ATSINANANA, IFSPT, INSPALM, INSPNMAD ATSINANANA, ISFSP, ISMATEC, ISSPM, ISPAVA ou IFT n'a été retrouvée dans `universite`, `faculte` ou `etablissementpartenaire`. Cela révèle une lacune de représentation des institutions privées dans le modèle actuellement interrogé, sans prouver leur fermeture.
 
-Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, section B « Paramédicaux », pages 35 à 37](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+**Action :** vérifier dans HAE la situation actuelle de chacun de ces établissements, les arrêtés de renouvellement, les changements de nom/adresse/statut, les parcours réellement ouverts et les maquettes/UE. Si MITARIDALA couvre le privé et les paramédicaux, les ajouter comme institutions distinctes avec identifiant, statut juridique, localisation, fiche HAE, offre et validité propres ; ne jamais les rattacher automatiquement à la Faculté de Médecine publique.
+
+Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, section B « Paramédicaux », pages 35 à 42](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
 ### Établissements privés habilités à Toamasina — périmètre distinct
 
@@ -261,7 +268,7 @@ La ligne régionale place donc aussi **CNTEMAD** dans l'offre publique disponibl
 - l'ISTRALMA est localisé à Ambatondrazaka (Alaotra-Mangoro) ; l'ISTCE est localisé à Fénérive-Est (Analanjirofo) dans le registre HAE 2022 ; ils ne sont pas à localiser automatiquement dans la ville de Toamasina ;
 - la cartographie 2023 cite **ISTRA** dans la ligne Atsinanana, et le glossaire MESUPRES 2017–2018 développe ISTRA comme « Institut Supérieur de Technologie de la Région Atsinanana » ; l'annuaire 2022–2023 l'écrit « ISTRA (ex : ISPG) » avec 236 étudiants. **ISTRA ne doit pas être confondu avec ISTRCE** ; les annuaires 2018–2019, 2019–2020, 2021–2022 et 2022–2023 présentent ISTRA (ex-ISPG) et ISTRCE sur deux lignes distinctes, avec des effectifs différents, ce qui confirme qu'il ne faut pas les fusionner ;
 - l'**ISTRCE** est une entrée différente du registre HAE 2022, affiliée à l'Université de Toamasina mais sans commune précisée ; la cartographie 2023 la classe sous la région Analanjirofo, pas Atsinanana. Sa commune et son lien administratif exact avec l'ISTCE de Fénérive-Est restent à confirmer ; ne pas fusionner ces sigles sans pièce d'identité officielle ;
-- la liste régionale privée Atsinanana apporte cinq acronymes supplémentaires (IFT, ISFSP, ISMATEC, ISPAVA, ISSPM) au-delà de BEATY et des quatre écoles paramédicales déjà détaillées dans le registre 2022. Leur nom légal, leur type de diplôme, leur commune et leurs arrêtés restent à identifier dans HAE ; ne pas développer ces sigles par supposition.
+- la liste régionale privée Atsinanana comprend, au-delà de BEATY, IFT (établissement technique à Toamasina), les sept écoles paramédicales distinctes de Toamasina (IFSP ATSINANANA, IFSPT, INSPALM, INSPNMAD ATSINANANA, ISFSP, ISMATEC, ISSPM) et ISPAVA à Vatomandry. Ne pas classer IFT comme paramédical ni ISPAVA comme établissement de la ville de Toamasina.
 
 **Mise à jour CNTEMAD — contrôle du site officiel au 31 octobre 2026 :** le site national du CNTEMAD indique un réseau de **53 centres régionaux et antennes** couvrant les régions de Madagascar et présente les formations Informatique, Droit, Communication, Gestion, Économie, Commerce, Génie Industriel et Télécommunication. Son avis officiel du 17 septembre 2026 annonce les examens de la session normale de l'année universitaire 2025–2026 du 2 au 6 novembre 2026 ; les apprenants doivent confirmer leur centre d'examen. Cela confirme l'activité nationale récente du CNTEMAD, mais le site consulté ne donne pas l'adresse ni l'identifiant du centre local de Toamasina. La présence régionale doit donc être confirmée auprès de la direction nationale et du centre local avant de publier une adresse ou des offres locales.
 
