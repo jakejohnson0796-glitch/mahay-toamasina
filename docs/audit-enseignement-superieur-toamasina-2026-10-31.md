@@ -2624,3 +2624,44 @@ Sources primaires :
 - [MESUPRES — Résultats du Baccalauréat 2026, page officielle de redirection par province](https://www.mesupres.gov.mg/resultatsBac).
 - [Portail gouvernemental des résultats du Baccalauréat 2026](https://bacc.digital.gov.mg/).
 
+
+
+## 56. Missions nationales de qualité à Toamasina et ouverture officielle 2025-2026
+
+### 56.1 Inspection MESUPRES des établissements d'enseignement supérieur à Toamasina — 27 mars 2026
+
+L'archive officielle MESUPRES fait état d'une visite à Toamasina le **27 mars 2026**, sous le titre « Amélioration de la qualité de l'enseignement : visite des établissements d'enseignement supérieur à Toamasina ». Le résumé indique que la **Direction chargée de l'Accréditation et de l'Assurance Qualité** poursuivait ses missions d'inspection des établissements d'enseignement supérieur à travers Madagascar.
+
+Cette mention apporte une preuve officielle qu'une mission d'inspection qualité a eu lieu à Toamasina après le cyclone Gezani et avant les ateliers nationaux d'assurance qualité d'octobre 2026.
+
+**Limite documentaire :** la version textuelle de l'archive consultée n'expose pas la liste des institutions visitées, les dates par établissement, le référentiel de contrôle, les observations, les recommandations ou les suites administratives. Elle ne permet donc pas d'affirmer que toutes les composantes de l'Université ont été inspectées, ni que l'une d'elles a été déclarée conforme ou non conforme.
+
+**Pièces à demander au MESUPRES / DAHQ :**
+1. ordre de mission et liste des membres de la mission ;
+2. liste exacte des établissements, facultés et instituts visités ;
+3. grille de contrôle et référentiel qualité utilisés ;
+4. rapports individuels, constats et observations par établissement ;
+5. recommandations, délais de régularisation et éventuelles mesures administratives ;
+6. plans d'action et preuves de clôture des non-conformités ;
+7. lien avec l'auto-évaluation exigée par l'arrêté 21408/2026 et les dossiers HAE/CNH.
+
+**Règle MITARIDALA :** enregistrer l'événement comme « inspection nationale effectuée — rapport et résultat non disponibles », sans convertir la visite en statut conforme, accrédité, habilité ou sanctionné.
+
+Source officielle :
+- [MESUPRES — Archive du 27 mars 2026 : visite d'établissements d'enseignement supérieur à Toamasina](https://www.mesupres.gov.mg/archives/index/22).
+
+### 56.2 Ouverture officielle de l'année universitaire 2025-2026 — cérémonie nationale du 13 mars 2026
+
+Le MESUPRES rapporte que l'ouverture officielle de l'année universitaire **2025-2026** pour les universités et les IST de Madagascar a été célébrée le **13 mars 2026** à l'Université d'Itasy, à Soavinandriana. La cérémonie a réuni le chef de l'État, le Secrétaire général du MESUPRES, des présidents d'université, des responsables d'IST, des doyens et d'autres autorités.
+
+Cette source établit une cérémonie nationale officielle d'ouverture de l'année 2025-2026. Elle ne donne toutefois pas les dates de rentrée réellement appliquées dans chaque université ou composante, et ne constitue pas un calendrier académique local de Toamasina. Elle ne doit donc pas remplacer la recherche du calendrier universitaire signé et des éventuels reports post-Gezani.
+
+**Conséquence :** le rapport distingue désormais :
+- la cérémonie nationale d'ouverture 2025-2026, documentée au 13 mars 2026 ;
+- les calendriers locaux de composantes et de formations FOAD ;
+- les examens et reprises de cours perturbés par Gezani ;
+- le calendrier central 2026-2027, non encore extrait.
+
+Source officielle :
+- [MESUPRES — Ouverture officielle de l'année universitaire 2025-2026 pour les universités et IST, 13 mars 2026](https://www.mesupres.gov.mg/actualites/detail/412).
+
