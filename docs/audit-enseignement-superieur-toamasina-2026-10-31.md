@@ -1831,3 +1831,38 @@ Sources :
 - [MESUPRES — Liste HAE août 2022, page imprimée 11, entrée IFT Toamasina](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 - [MESUPRES — « En chiffres », décembre 2023, institutions supérieures par région](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
 
+
+
+## 42. Actualités étudiantes FST en octobre 2026 : concours d'éloquence et lien avec le monde professionnel
+
+Les communications récentes relayées par la page de la Faculté des Sciences et Technologie apportent des signaux d'activité pour les mentions MIA et Physique-Chimie, au-delà des seuls avis de candidature.
+
+### 42.1 Concours « Jeunesse Malagasy contre la corruption » — novembre 2026
+
+Une publication datée du **27 octobre 2026** encourage explicitement les étudiants des deux mentions de la FST — **MIA** et **Physique-Chimie (PC)** — à participer au concours d'éloquence « Jeunesse Malagasy contre la corruption ». L'appel relayé indique :
+- inscriptions jusqu'au **4 novembre 2026** ;
+- finale prévue le **12 novembre 2026 à 8 h 30** ;
+- lieu annoncé : Petit Amphithéâtre, campus de Barikadimy ;
+- prix pour les trois meilleurs orateurs ;
+- participation encouragée des établissements et mentions de l'Université.
+
+**Lecture pour l'audit :** cette communication montre que la FST est sollicitée dans une activité institutionnelle de sensibilisation à l'intégrité et à la lutte contre la corruption, cohérente avec les nouvelles exigences nationales d'éthique et de compétences transversales. Elle ne prouve toutefois ni l'intégration d'une UE dans les maquettes, ni la tenue effective de la finale, ni sa validation comme évaluation diplômante. Il faudra recueillir le règlement, la liste de mentions représentées, le programme, le bilan et les attestations si cette activité doit être intégrée dans le parcours étudiant.
+
+### 42.2 Échange avec e-Tsiry — 29 septembre 2026
+
+La même page FST relaie un message de remerciement à l'équipe **e-Tsiry** après une rencontre du 29 septembre 2026. La FST indique que les échanges ont été de qualité et que des perspectives de collaboration se dessinent, notamment pour rapprocher les étudiants et le monde professionnel.
+
+**Niveau de preuve :** contact/rencontre institutionnelle relayée ; le message ne constitue pas une convention de partenariat ni un engagement de stage ou de recrutement. Avant d'enregistrer un partenariat actif, obtenir le nom juridique de l'organisation, le compte rendu, la convention ou lettre d'intention, les offres de stage réelles et les résultats pour les étudiants.
+
+### 42.3 Autres signaux de vie étudiante
+
+Les publications d'octobre 2026 mentionnent aussi une liste de bénéficiaires de logements étudiants publiée pour la FST le 16 octobre et une offre de stage relayée le 1er octobre. Le présent rapport n'en reproduit aucun nom, numéro personnel ou contact privé. Les pièces internes pourront servir à établir le nombre de logements/stages réellement attribués, mais uniquement sous forme agrégée et avec contrôle des données personnelles.
+
+**Décision MITARIDALA :**
+- classer le concours d'éloquence parmi les activités étudiantes / compétences transversales, statut « annoncé » jusqu'à réception d'un bilan ;
+- classer e-Tsiry comme contact partenarial / collaboration en discussion, sans statut « partenaire conventionné » ;
+- enregistrer les logements et stages uniquement à partir de données agrégées, sans importer de listes nominatives dans le catalogue public.
+
+Source secondaire de veille, page relayant les communications de la FST :
+- [Faculté des Sciences et Technologie — actualités du 27, 16 et 1er octobre 2026 et rencontre e-Tsiry du 29 septembre](https://www.schoolandcollegelistings.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
+
