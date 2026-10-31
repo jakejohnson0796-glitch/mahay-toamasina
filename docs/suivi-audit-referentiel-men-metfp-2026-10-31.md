@@ -559,11 +559,15 @@ Le guide T8 développe des leçons sur les loisirs, la vie en société, la prot
 
 Sources : [Index officiel MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/), [Guide enseignant FOV T7](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/GUIDE_FOV_T7.pdf), [Guide enseignant FOV T8](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/GUIDE_FOV_T8.pdf).
 
-### 9.9 Règle de transcription de la grille des coefficients : cellule noire n'est pas un zéro
+### 9.9 Règle de transcription de la grille des coefficients : distinguer cellule vide, zéro imprimé et conflit de versions
 
-Le contrôle visuel de la page officielle des coefficients montre des cellules noires sans chiffre, notamment Philosophie en T10 et Éducation à la citoyenneté/TICE en T12. Dans les tableaux de cette annexe, ces cellules sont maintenant transcrites par « — » et non par 0. Elles indiquent « valeur non affichée / discipline non présente dans cette grille », et ne doivent pas être importées comme un coefficient ou un volume numérique de zéro sans une définition officielle du MEN.
+Le contrôle visuel du document autonome MEN « Coefficient et volume horaire niveau lycée » confirme des cellules noires sans valeur visible pour Philosophie en T10, Éducation à la citoyenneté en T12 et TICE en T12. Une extraction textuelle de ce PDF retourne toutefois « 0 » pour ces cases, alors que la capture de la page montre des cases noires sans chiffre. Pour ces cellules, la lecture visuelle doit primer sur une extraction textuelle non fiable ; elles sont enregistrées comme « non renseigné / non applicable » dans la transcription de ce document, jamais comme zéro sans arbitrage ministériel.
 
-Les totaux imprimés sur la page officielle sont conservés tels quels. Les sommes calculées doivent ignorer les cellules non renseignées, et l'application doit afficher « non applicable / non renseigné » au lieu d'afficher 0 h ou coefficient 0 lorsqu'aucune valeur n'est imprimée. Cette distinction évite de transformer une absence de donnée en donnée réglementaire.
+**Exception — divergence entre documents MEN :** la page des coefficients insérée au début du PE T12 affiche visuellement « 0 0 0 » pour la ligne TICE dans les colonnes T12 L/S/OSE, alors que le document autonome « Coefficient et volume horaire niveau lycée » et le PE T11 montrent des cases noires sans chiffre pour ces mêmes cellules. Il existe donc une divergence de présentation entre deux pièces MEN publiées. MITARIDALA doit conserver les deux observations documentaires et marquer le coefficient TICE de T12 comme « conflit de sources à arbitrer », sans forcer zéro ou valeur vide dans la version consolidée.
+
+En revanche, la ligne TICE du tableau des **heures hebdomadaires** ne comporte pas de valeur visible pour T12 dans les documents contrôlés ; elle doit rester non renseignée. Les cases T10 Philosophie et T12 Éducation à la citoyenneté restent également sans coefficient visible dans les captures contrôlées. Les totaux imprimés de la grille (T10=30, T11=32, T12=30) sont conservés, mais ne permettent pas de déduire la valeur d'une cellule vide.
+
+Règle de données : enregistrer séparément la valeur affichée par chaque document, son mode de lecture (visuel/texte), la page, la version et le statut de rapprochement. Ne pas remplacer une case vide par zéro ni arbitrer une divergence entre pièces officielles sans réponse MEN.
 
 ### 9.10 Revue statique du modèle et du parcours de validation de MITARIDALA
 
@@ -1062,7 +1066,7 @@ Les langues allemand/espagnol/russe forment une catégorie de choix de langue et
 | TICE | 1 | 1 | 1 | 1 | — | — | — |
 | **Total des coefficients imprimé** | **30** | **32** | **32** | **32** | **30** | **30** | **30** |
 
-**Réserve de lecture visuelle :** les cases noires de la grille officielle sont vides, pas le chiffre zéro. L'extraction textuelle automatique de certaines pages PE/T12 a transformé ces cases noires en « 0 0 0 ». La capture visuelle de la grille officielle (une page) confirme les cellules noires pour Philosophie T10, Éducation à la citoyenneté T12 et TICE T12. Ces cellules doivent être encodées comme non renseignées/non applicables, jamais 0 sur la foi de cette extraction OCR. Les zéros réellement imprimés dans d'autres documents doivent être distingués des zones noires.
+**Réserve de lecture visuelle et divergence de sources :** la capture du document autonome « Coefficient et volume horaire niveau lycée » montre des cases noires sans valeur pour Philosophie T10, Éducation à la citoyenneté T12 et TICE T12. Son extraction textuelle produit néanmoins des zéros sur ces zones. Le PE T11 montre également des cases noires pour TICE T12, tandis que le tableau inséré dans le PE T12 affiche explicitement trois zéros sur TICE T12. Le coefficient TICE terminale est donc à considérer comme un conflit entre pièces MEN ; la table principale de cette section conserve « — » conformément au document autonome, mais ce n'est pas une valeur consolidée. Les heures hebdomadaires TICE T12 restent non renseignées dans les tableaux visuels contrôlés.
 
 La grille ci-dessus est un tableau d'heures de cours/coefficients de lycée. Elle ne doit toujours pas être présentée comme la table réglementaire des épreuves du Bac 2027 tant que l'arrêté conjoint prévu par le décret n°2026-2100 n'est pas obtenu.
 
@@ -1522,3 +1526,56 @@ Sources officielles :
 - [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), sommaire de séries, pages 10-11 ; Sciences physiques L p. 128-134 ; S p. 543-552 ; OSE p. 758-770.
 - [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), SVT L p. 140-147 ; S p. 573-584 ; OSE p. 775-778.
 - [Grille officielle coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
+
+### 9.43 Sciences physiques T11 et T12 : les parcours L, S et OSE ont des contenus distincts
+
+La comparaison des pages introductives et des tableaux des contenus des PE T11 et T12 confirme que « Sciences physiques » ne constitue pas une matière homogène entre les trois séries. Les volumes officiels sont :
+
+| Niveau et série | Volume hebdomadaire |
+|---|---:|
+| T11 L | 2 h |
+| T11 S | 5 h |
+| T11 OSE | 2 h |
+| T12 L | 2 h |
+| T12 S | 6 h |
+| T12 OSE | 3 h |
+
+#### T11 — Première
+
+- **L (2 h/semaine)** : les tableaux détaillés sont organisés autour de Lumière et son et Matière. Lumière : réfraction, lois de la réfraction, réflexion totale et fibres optiques. Matière : nomenclature de composés organiques (alcanes linéaires/cycliques, alcènes, alcynes, alcools, aldéhydes, cétones, éthers, acides carboxyliques et dérivés, esters, amines, amides, benzène), isomérie de constitution (chaîne, position, fonction). Le PE indique 32 h pour la séquence Lumière et son et 34 h pour Matière.
+- **S (5 h/semaine)** : le programme détaillé est beaucoup plus large et comporte six thèmes : Matière (réactions acide-base et oxydo-réduction, nomenclature et isomérie organiques, synthèses organiques, extraction/synthèse d'huiles essentielles) ; Électricité et magnétisme (condensateur, bobine, bilan énergétique d'un circuit) ; Mouvement (position/vitesse/temps, graphes et trajectoires) ; Force et interaction (énergie cinétique, quantité de mouvement) ; Énergie (éolien et solaire) ; Lumière et son (diffraction et applications).
+- **OSE (2 h/semaine)** : les tableaux des contenus présentent Lumière et son (réfraction, réflexion totale, fibres optiques) et Matière (nomenclature des composés organiques et isomérie de constitution). Le volume est identique à celui de L, mais le parcours doit rester identifié séparément par sa série et son PE source.
+
+#### T12 — Terminale
+
+- **L (2 h/semaine)** : deux blocs principaux. Lumière et son : caractéristiques des ondes, propagation sonore et électromagnétique, applications médicales et télécommunications, nature corpusculaire de la lumière et effet photoélectrique (séquence 32 h). Matière : analyse de la composition d'un médicament, distinction princeps/générique, fonctions chimiques et groupes caractéristiques, concentrations massique/molaire, composition centésimale, lecture d'ordonnance et de notice médicale (séquence 34 h). Les 66 h cumulées sont des durées de séquence, pas le volume hebdomadaire.
+- **S (6 h/semaine)** : six thèmes détaillés. Matière : titrages acido-basiques et d'oxydo-réduction, réactions chimiques et synthèse d'un médicament. Électricité et magnétisme : alternateur, haut-parleur électrodynamique, oscillations électriques libres et circuit sinusoïdal forcé. Mouvement : vecteurs position/vitesse/accélération, équations horaires et graphes, mouvements paraboliques, circulaires et sinusoïdaux. Force et interaction : centre d'inertie, deuxième loi de Newton/TCI, pendule élastique, projectile, satellite et GPS. Énergie : énergie de liaison, radioactivité, décroissance radioactive, médecine/radioprotection et énergie nucléaire. Lumière et son : interférences acoustiques et effet Doppler. Les séquences Matière (52 h) et Force/interaction (32 h) ont été relevées ; les autres durées doivent être relevées RAS par RAS avant de calculer un total annuel.
+- **OSE (3 h/semaine)** : le tableau détaillé des contenus montre Lumière et son (ondes, effet photoélectrique), Matière (composition et notice de médicament, fonctions chimiques, concentrations et composition centésimale) et Énergie (énergie de liaison, radioactivité, décroissance, radioprotection, énergie nucléaire). Les séquences sont de 31 h pour Lumière et son, 31 h pour Matière et 37 h pour Énergie, soit 99 h au total, cohérent avec 3 h/semaine sur 33 semaines. Toutefois, la rubrique « Organisation pédagogique générale » de la même section OSE liste six thèmes génériques, dont Électricité, Mouvement et Force, alors que le tableau détaillé des contenus/RAS visibles présente seulement Matière, Énergie et Lumière et son. Cette incohérence interne du PE T12 OSE doit être clarifiée auprès du MEN ; ne pas ajouter automatiquement les chapitres électriques/mécaniques à OSE par extrapolation depuis S.
+
+#### Conséquences pour MITARIDALA et la banque d'exercices
+
+1. Associer chaque exercice à niveau + série + discipline + PE/version + RAS, et non simplement à « Sciences physiques ».
+2. En T11, ne pas injecter les chapitres électriques/mécaniques de S dans L ou OSE ; en T12, ne pas injecter automatiquement les thèmes de S dans OSE.
+3. Garder les durées de séquences séparées des heures hebdomadaires ; ne pas présenter les 32/34 h de T12 L ou 31/31/37 h de T12 OSE comme le volume de cours hebdomadaire.
+4. Pour T12 OSE, conserver la note de contradiction en métadonnée et demander au MEN si l'organisation générale est un modèle générique ou si des tableaux détaillés manquent dans le document.
+5. Les contenus sur les médicaments servent à interpréter les notions chimiques et les notices dans un contexte scolaire ; MITARIDALA ne doit pas les convertir en recommandations de prescription ou en conseil médical.
+
+Sources officielles :
+- [PE T11 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), sections Sciences physiques des séries L, S et OSE.
+- [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), matrice horaire p. 10 et sections Sciences physiques des séries L, S et OSE.
+- [Document autonome MEN — Coefficient et volume horaire niveau lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
+
+### 9.44 Rapprochement des tableaux de coefficients TICE T12 : statut « conflit de sources »
+
+Le contrôle visuel des trois pièces suivantes a été effectué séparément :
+1. Le tableau du PE T11 (page 10 du PDF) montre les cellules TICE T12 L/S/OSE en noir, sans valeur visible.
+2. Le tableau du document autonome MEN « Coefficient et volume horaire niveau lycée » (page unique) montre également ces trois cellules en noir, sans chiffre visible.
+3. Le tableau inséré au début du PE T12 (page 10 du PDF) affiche visuellement trois zéros pour TICE en T12 L/S/OSE.
+
+La couche de texte extraite du PE T11 et du document autonome transforme également certaines cellules noires en zéros. La capture visuelle de ces tableaux confirme pourtant qu'elles sont vides ; la lecture visuelle du tableau T12, elle, fait apparaître les trois zéros. La présentation TICE terminale est donc différente dans les pièces MEN consultées.
+
+**Décision :** conserver dans le registre de preuves les trois observations exactes et leur pièce/page ; marquer le coefficient TICE T12 comme conflit à confirmer par écrit auprès de la Direction des Curricula. Pour la matrice consolidée de la section 9.32, « — » représente la lecture du document autonome ; ce n'est pas une affirmation que toutes les pièces MEN concordent. Les heures hebdomadaires TICE T12 ne sont pas indiquées dans les tableaux visuels contrôlés, et TICE ne figure pas dans le sommaire disciplinaire PE T12 ; ne pas afficher une valeur d'horaire ou un cours TICE T12 sans clarification.
+
+Pour Philosophie T10 et Éducation à la citoyenneté T12, les cases apparaissent noires et vides dans les captures du PE T11, du PE T12 et du document autonome ; ces absences sont cohérentes. Ne pas les convertir en zéro sur la base des couches de texte extraites.
+
+Sources visuelles : [PE T11](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), page 10 ; [PE T12](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), page 10 ; [grille autonome MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), page 1.
