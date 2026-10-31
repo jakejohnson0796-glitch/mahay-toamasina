@@ -908,3 +908,46 @@ Sources :
 - [METFP — bilan des réalisations de juillet 2026](https://fpq-amb.metfp.gov.mg/article/79).
 - [METFP — coopération avec l'OIF / projet DECLIC, 29 septembre 2026](https://www.metfp.gov.mg/article/97).
 
+
+
+### 9.29 Contrôle du catalogue interne de métiers par rapport à la carte METFP actuelle
+
+La revue statique de la partie PARCOURS de la migration `b7d4e9c2a610_offres_etfp_etablissements.py` apporte une précision importante à l'écart LTP Toamasina.
+
+**LTP TOAMASINA — métiers affichés par la cartographie actuelle mais non liés à l'établissement dans le snapshot de migration :**
+- Technicien supérieur en management et gestion d'entreprise → code métier déjà présent : `GESTION_ENTREPRISE` ;
+- Maintenancier industriel → `INDMAINTENANCE` ;
+- Chef d'équipe de chantier → `BTPCHEF` ;
+- Menuisier en bois → `BTPMENUISIER` ;
+- Électricien bâtiment → `BTPELECTRICIEN` ;
+- Soudeur-monteur → `SOUDURE` ;
+- Plombier → `AGRICULTURE_PLOMBIER` (même classement atypique Agriculture/Agriculture que la carte officielle).
+
+Le référentiel de métiers contient donc déjà ces sept définitions. La correction de l'offre LTP Toamasina ne nécessite pas de créer sept nouvelles définitions de métier ; elle nécessite de vérifier puis d'ajouter les associations à l'établissement, en gardant la date/source de la cartographie et un statut d'offre « à vérifier » tant que l'ouverture 2026-2027 n'est pas prouvée.
+
+**Métiers existants dans le snapshot LTP Toamasina mais absents de la carte actuelle :**
+- Agent d'agriculture (`AGRICULTURE_AGENT`) ;
+- Dissanateur Projeteur Métreur (`BTPDESSIN`).
+
+Ces associations ne doivent pas être supprimées. Leur date de validité historique et leur source d'origine ne sont pas établies par le simple écart avec la carte actuelle. Il faut les conserver comme observations historiques ou les désactiver après revue administrative, sans effacer leurs données.
+
+**CFP FOULPOINTE — rapprochement prudent des neuf métiers :**
+- déjà représentés dans le catalogue interne : Menuisier en bois (`BTPMENUISIER`), Pâtissier (`RESTO_PATISSIER`), Restaurateur villageois (`RESTO_RESTAURATEUR`), Femme/Valet de chambre (`HOTEL_FEMME_CHAMBRE`), Barman (`HOTEL_BARMAN`), Traiteur (`RESTO_TRAITEUR`) ;
+- Cuisinier existe sous deux représentations différentes : `RESTO_CUISINIER` avec secteur/filière Restauration et `METIER_CUISINIER` sans secteur/filière. La cartographie CFP Foulpointe affiche des tirets pour cette ligne ; il ne faut pas choisir arbitrairement l'une des deux représentations avant de fixer une règle de normalisation ;
+- Boulanger-pâtissier et Restaurateur de meubles ne disposent pas de définitions distinctes évidentes dans le dictionnaire PARCOURS examiné. Ne pas les assimiler automatiquement à Pâtissier, Restaurateur villageois ou Menuisier en bois : les intitulés et compétences peuvent désigner des métiers différents.
+
+**Doublons de définitions observés dans le code source :**
+- `INDSTRUCTURE` et `IND_TEC_METALLIQUE` portent tous deux le même triplet secteur/filière/métier « Industriel / STRUCTURE METALLIQUE / Technicien en ouvrage métallique » ;
+- `ENERGIE_PHOTOVOLTAIQUE` et `IND_ENERGIE_SOLAIRE` portent le même triplet « AUTRES / ENERGIE RENOUVELABLE / INSTALLATEUR EN PHOTOVOLTAIQUE » ;
+- `RESTO_CUISINIER` et `METIER_CUISINIER` partagent le libellé « Cuisinier », mais diffèrent par leur secteur et filière ; ce n'est pas un doublon identique et il faut une règle métier avant rapprochement.
+
+La fonction `_slug(secteur, filiere, metier)` produit une clé identique pour les deux premières paires, ce qui peut faire pointer les deux codes de source vers le même enregistrement technique dans `path_ids`. Ce mécanisme évite certains doublons physiques, mais perd la trace du code source d'origine si celui-ci n'est pas stocké séparément. Les alias de code, l'intitulé source exact et la date de capture devraient donc être conservés dans une table de provenance/alias avant toute normalisation future.
+
+**Conséquences pour la prochaine évolution, sans migration immédiate :**
+1. ajouter les associations manquantes LTP Toamasina à partir du dictionnaire existant, avec preuve et statut non confirmé pour l'année scolaire ;
+2. ne pas supprimer les deux anciennes associations qui ne figurent plus dans la cartographie actuelle ;
+3. créer deux définitions nouvelles seulement après obtention de fiches métiers officielles pour Boulanger-pâtissier et Restaurateur de meubles ;
+4. représenter la ligne Cuisinier de CFP Foulpointe avec son libellé source et laisser sa classification sectorielle à confirmer ;
+5. conserver les alias et sources de chaque code interne afin de pouvoir retracer les imports historiques.
+
+Sources : [cartographie officielle METFP, ATSINANANA](https://www.metfp.gov.mg/cartographie) ; migration `alembic/versions/b7d4e9c2a610_offres_etfp_etablissements.py`, branche principale, définitions PARCOURS et association LTP Toamasina.
