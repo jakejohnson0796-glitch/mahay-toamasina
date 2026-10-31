@@ -145,7 +145,7 @@ def obtenir_referentiel_scolaire(
 @router.get("/niveaux")
 def lister_niveaux_scolaires(
     cycle: Optional[str] = Query(default=None, pattern="^(college|lycee)$"),
-    referentiel_id: Optional[int] = None,
+    referentiel_id: Optional[int] = Query(default=None),
     session: Session = Depends(get_session),
 ):
     """Liste les classes d'une version ; sans identifiant, utilise la plus récente."""
