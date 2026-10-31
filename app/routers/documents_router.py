@@ -192,14 +192,18 @@ def liste_documents(
         requete = requete.where(Document.type_document == type_document)
     documents = session.exec(requete.order_by(Document.date_upload.desc())).all()
     filieres = session.exec(select(Filiere)).all()
-    referentiel_scolaire_courant = session.exec(
+    referentiels_scolaires_courants = session.exec(
         select(ReferentielScolaire)
         .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
         .order_by(
             ReferentielScolaire.date_creation.desc(),
             ReferentielScolaire.id.desc(),
         )
-    ).first()
+    ).all()
+    referentiel_scolaire_courant = (
+        referentiels_scolaires_courants[0]
+        if referentiels_scolaires_courants else None
+    )
     if referentiel_scolaire_courant:
         niveaux_scolaires = session.exec(
             select(NiveauScolaire)
