@@ -1789,3 +1789,19 @@ Source primaire :
 - [MESUPRES — Arrêté n°32 374/2026 du 5 octobre 2026, publié le 6 octobre 2026, PDF officiel de 22 pages](https://www.mesupres.gov.mg/assets/front/documents/documents/arretes/Arrete_n_32374-2026_portant_composition_organisation_et_fonctionnement_du_CRFD.pdf).
 - [MESUPRES — index officiel des documents, entrée Arrêté CRFD publiée le 6 octobre 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=tous).
 
+
+
+### 31.4 IFT Toamasina : détail de l'habilitation historique retrouvé dans le registre d'août 2022
+
+Le rapprochement des dix établissements privés de la cartographie MESUPRES 2023 avec la liste HAE d'août 2022 permet de préciser le cas de **IFT — Institut de Formation Technique, Toamasina**. Le registre HAE 2022 (page imprimée 11) indique deux offres :
+- domaine Sciences de l'Ingénieur / Licence : **Informatique**, rattachée à l'arrêté n°33033/2015-MESupReS du 5 novembre 2015 ;
+- domaine Sciences de l'Ingénieur / Licence : **BTP**, rattachée à l'arrêté n°1591/2017-MESupReS du 25 janvier 2017.
+
+L'institution IFT est également nommée dans la cartographie régionale MESUPRES décembre 2023 parmi les établissements privés recensés en Atsinanana.
+
+**Statut de preuve :** deux offres documentées dans le snapshot HAE 2022 et institution présente dans la liste régionale 2023. Il n'est pas démontré ici que l'IFT fonctionne encore sous la même dénomination/adresse, que les deux habilitations sont encore valides, ni qu'une cohorte a ouvert en 2026-2027. Il faut demander les décisions de renouvellement, l'adresse actuelle, les avis de recrutement et les maquettes récentes avant de publier ces parcours comme actifs.
+
+Sources :
+- [MESUPRES — Liste HAE août 2022, page imprimée 11, entrée IFT Toamasina](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+- [MESUPRES — « En chiffres », décembre 2023, institutions supérieures par région](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
+
