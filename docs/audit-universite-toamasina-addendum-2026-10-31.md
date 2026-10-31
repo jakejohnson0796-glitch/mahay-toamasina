@@ -236,6 +236,36 @@ Source : [MESUPRES — liste d'habilitation d'août 2022, rubrique ITPT](https:/
 
 Le fichier source actuel publie six composantes du campus principal. Les sources MESUPRES montrent un périmètre institutionnel plus large : facultés spécialisées, instituts régionaux affiliés et centres linguistiques. Ces catégories doivent être conservées séparément dans le référentiel, avec une preuve, un lieu, un rattachement et un statut propres.
 
+### Autres campus privés signalés à Toamasina en 2026 — habilitation locale à vérifier
+
+Les publications 2026 de trois opérateurs privés indiquent une présence ou une ouverture de campus à Toamasina. Leur présence géographique et leurs offres annoncées doivent être vérifiées séparément des habilitations historiques d'autres campus.
+
+| Institution | Site local annoncé | Offres annoncées pour 2026 | Pièce officielle retrouvée | Réserve |
+|---|---|---|---|---|
+| **UPRIM — Université Privée de Madagascar** | Boulevard de la Victoire, Bazary Kely, Toamasina ; rentrée annoncée en novembre 2026 | Paramédical (Infirmier, Sage-femme), Droit privé/public, Gestion/Management, Finance/Comptabilité, Entrepreneuriat, Commerce/Marketing, Communication/Journalisme | Arrêté n°10275/2021 d'ouverture/habilitation de l'UPRIM ; registre HAE 2022 localise l'institution à Andavamamba ; arrêtés d'équivalence individuels n°21704/2022 et n°12299/2023 | Les équivalences individuelles ne prouvent ni l'extension du campus Toamasina ni l'habilitation des nouvelles offres paramédicales locales |
+| **Vision Institute** | Valpinson, en face de Supermaki, Toamasina ; un second site annoncé à Fénérive-Est | BTP, Communication managériale, Gestion/Management, Commerce/Marketing ; rentrée L1/L2 annoncée le 9 novembre, L3 le 14 novembre 2026 | La page de l'établissement annonce « arrêté d'habilitation n°21 945/2026 » ; le texte signé n'a pas été retrouvé dans les index MESUPRES/CNLegis consultés | Numéro, entité juridique, portée géographique et fiche HAE restent à confirmer directement auprès du ministère |
+| **IMSAA — Institut de Management et des Sciences Appliquées** | Le site officiel affiche un contact à Anjoma, Tamatave ; un relais annonce un nouveau campus Tanambao 5 pour novembre 2026 | Management, Communication/Marketing, Commerce, BTP, ingénierie électrique et mécanique selon les supports IMSAA | Arrêtés n°31312/2023 et n°34519/2023 établissent/habilitent IMSAA d'**Antsiranana** | Ces arrêtés identifient le site d'Antsiranana ; ils ne suffisent pas à établir l'habilitation ni l'étendue des offres d'un campus de Toamasina |
+
+**UPRIM.** L'arrêté n°21704/2022 porte équivalence d'un diplôme individuel « Master II en Droit, option Droit Public » ; l'arrêté n°12299/2023 porte équivalence d'un diplôme individuel « Master en Gestion et Management ». Ce sont des décisions d'équivalence, non des autorisations d'ouverture de site. Le registre HAE 2022 répertorie UPRIM à Andavamamba (Antananarivo), avec des offres en informatique/réseaux/multimédia, communication et sciences managériales/droit. La page UPRIM Toamasina annonce ensuite une rentrée 2026 et de nouvelles filières ; il faut récupérer l'arrêté d'extension et les fiches HAE des offres à Bazary Kely.
+
+**Vision Institute.** La page publique consultée reproduit des annonces de l'établissement datées de septembre 2026, avec adresse, programmes, dates de rentrée et revendication de l'arrêté n°21 945/2026. Aucune copie officielle signée n'a été retrouvée dans les index consultés. Ne pas considérer les mentions ou parcours comme « habilités vérifiés » avant obtention du PDF d'arrêté, de la fiche HAE et de la liste précise des campus couverts.
+
+**IMSAA.** Les arrêtés n°31312/2023 et n°34519/2023 autorisent l'établissement IMSAA d'Antsiranana et habilitent ses offres pour cette implantation. Le site officiel actuel affiche une adresse de contact à Anjoma, Tamatave ; un relais de sa page publique annonce un « nouveau campus » à Tanambao 5 et une rentrée le 16 novembre 2026. Il faut demander la décision d'extension et les fiches HAE qui couvrent explicitement le campus de Toamasina ; les arrêtés d'Antsiranana ne doivent pas être automatiquement appliqués à un autre site.
+
+**Contrôle Supabase en lecture seule :** aucune entrée UPRIM, Vision Institute ou IMSAA n'a été retrouvée dans `universite`, `faculte` ou `etablissementpartenaire`. L'absence dans ces trois tables signifie qu'ils ne sont pas encore représentés dans le schéma institutionnel consulté ; elle ne prouve ni fermeture ni défaut d'habilitation.
+
+**Action :** si le périmètre MITARIDALA inclut les établissements privés et les campus régionaux, créer une fiche par entité légale et par site, avec le parent juridique, statut, adresse, identifiant HAE, numéro/date d'arrêté, offres, grades, mode d'enseignement, campus autorisé, validité et année d'ouverture. Garder les campus et offres en état « à vérifier » tant que la fiche HAE locale n'est pas obtenue.
+
+Sources :
+- [UPRIM Toamasina — relais de ses annonces de rentrée et filières, septembre-octobre 2026](https://www.schoolandcollegelistings.com/MG/Toamasina/102032841264824/UPRIM-Toamasina)
+- [CNLegis — arrêté n°21704/2022 d'équivalence d'un diplôme UPRIM](https://cnlegis.gov.mg/uploads/A21704-2022-Vf.pdf)
+- [CNLegis — arrêté n°12299/2023 d'équivalence d'un diplôme UPRIM](https://cnlegis.gov.mg/uploads/A12299-2023-VF.pdf)
+- [Vision Institute — relais des annonces de rentrée et du numéro d'arrêté revendiqué, septembre 2026](https://www.schoolandcollegelistings.com/MG/Toamasina/149096448293771/UNIVERSIT%C3%89-VISION-INSTITUTE)
+- [CNLegis — arrêté n°31312/2023 habilitant IMSAA à Antsiranana](https://cnlegis.gov.mg/uploads/A31312-2023-VF.pdf)
+- [CNLegis — arrêté n°34519/2023 concernant les offres IMSAA d'Antsiranana](https://cnlegis.gov.mg/uploads/A34519-2023-VF.pdf)
+- [IMSAA — site officiel, offres et coordonnées de contact](https://www.institut-imsaa.com/)
+- [IMSAA — relais annonçant le campus Toamasina, novembre 2026](https://www.schoolandcollegelistings.com/MG/Unknown/106042761283081/Institut-de-Management-et-des-Sciences-Appliqu%C3%A9es).
+
 ### Établissements paramédicaux privés habilités à Toamasina — sept institutions distinctes
 
 La section B « Paramédicaux » de la liste MESUPRES mise à jour en août 2022 répertorie **sept établissements paramédicaux distincts dans la ville de Toamasina** :
