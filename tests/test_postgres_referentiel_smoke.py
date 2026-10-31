@@ -352,9 +352,145 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         from app.routers.scolaire_router import _referentiel_actif
         assert _referentiel_actif(session).id != rape_ref.id
 
+        # Le référentiel courant est l'édition MEN de septembre 2026.
+        # Les listes sont vérifiées indépendamment pour chaque niveau/série.
+        rape_courant = session.exec(
+            select(ReferentielScolaire).where(
+                ReferentielScolaire.code == "MEN-RAPE-2026-09"
+            )
+        ).one()
+        assert rape_courant.annee_scolaire == "2026-2027"
+        assert rape_courant.statut == "partiel"
+        from app.routers.scolaire_router import _referentiel_actif
+        assert _referentiel_actif(session).id == rape_courant.id
+        assert session.exec(
+            select(ReferentielScolaire).where(
+                ReferentielScolaire.code == "MEN-RAPS-2024-2025-initial"
+            )
+        ).one().statut == "historique"
+
+        rape_courant_niveaux = session.exec(
+            select(NiveauScolaire).where(
+                NiveauScolaire.referentiel_id == rape_courant.id
+            )
+        ).all()
+        assert {niveau.code for niveau in rape_courant_niveaux} == {
+            "6E", "5E", "4E", "3E", "2NDE", "1ERE", "TERM"
+        }
+        rape_courant_options = session.exec(
+            select(OptionScolaire).where(
+                OptionScolaire.referentiel_id == rape_courant.id
+            )
+        ).all()
+        assert {
+            (
+                next(niveau.code for niveau in rape_courant_niveaux if niveau.id == option.niveau_id),
+                option.code,
+            )
+            for option in rape_courant_options
+        } == {
+            ("1ERE", "L"), ("1ERE", "S"), ("1ERE", "OSE"),
+            ("TERM", "L"), ("TERM", "S"), ("TERM", "OSE"),
+        }
+
+        current_matiere_codes = {
+            item.id: item.code
+            for item in session.exec(select(MatiereScolaire)).all()
+        }
+        current_niveaux_by_code = {
+            item.code: item for item in rape_courant_niveaux
+        }
+        current_options_by_target = {
+            (
+                next(niveau.code for niveau in rape_courant_niveaux if niveau.id == option.niveau_id),
+                option.code,
+            ): option
+            for option in rape_courant_options
+        }
+        expected_rape_2026 = {
+            ("6E", None, "RAPE_T6.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "ARTS", "EPS",
+            },
+            ("5E", None, "RAPE_T7.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "ARTS", "EPS",
+            },
+            ("4E", None, "RAPE_T8.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "ARTS", "EPS",
+            },
+            ("3E", None, "RAPE_T9.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "ARTS", "EPS",
+            },
+            ("2NDE", None, "RAPE_T10.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "EDUCATION_CITOYENNETE", "SES", "EPS", "TIC",
+            },
+            ("1ERE", "L", "RAPE_T11_L.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "EDUCATION_CITOYENNETE", "SES", "EPS", "PHILOSOPHIE", "TICE",
+            },
+            ("1ERE", "S", "RAPE_T11_S.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "EDUCATION_CITOYENNETE", "SES", "EPS", "PHILOSOPHIE", "TICE",
+            },
+            ("1ERE", "OSE", "RAPE_T11_OSE.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "EDUCATION_CITOYENNETE", "SES", "EPS", "PHILOSOPHIE", "TICE",
+            },
+            ("TERM", "L", "RAPE_T12_L.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "SES", "EPS", "PHILOSOPHIE",
+            },
+            ("TERM", "S", "RAPE_T12_S.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "SES", "EPS", "PHILOSOPHIE",
+            },
+            ("TERM", "OSE", "RAPE_T12_OSE.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
+                "SES", "EPS", "PHILOSOPHIE",
+            },
+        }
+        for (code_niveau, code_serie, fichier), expected_codes in expected_rape_2026.items():
+            niveau_cible = current_niveaux_by_code[code_niveau]
+            requete = select(ProgrammeMatiereScolaire).where(
+                ProgrammeMatiereScolaire.referentiel_id == rape_courant.id,
+                ProgrammeMatiereScolaire.niveau_id == niveau_cible.id,
+            )
+            if code_serie is None:
+                requete = requete.where(ProgrammeMatiereScolaire.option_id.is_(None))
+            else:
+                option_cible = current_options_by_target[(code_niveau, code_serie)]
+                requete = requete.where(ProgrammeMatiereScolaire.option_id == option_cible.id)
+            imported_rows = session.exec(requete).all()
+            imported_codes = {
+                current_matiere_codes[row.matiere_id] for row in imported_rows
+            }
+            assert imported_codes == expected_codes, (
+                f"RAPE septembre 2026 incorrect pour {code_niveau}/{code_serie}: "
+                f"attendu={sorted(expected_codes)} importé={sorted(imported_codes)}"
+            )
+            assert len(imported_rows) == len(expected_codes)
+            assert all(
+                row.statut_validation == "verifie"
+                and row.source_officielle.endswith(fichier)
+                for row in imported_rows
+            )
+
         # Les séries A/C/L ne doivent pas rester entièrement inutilisables :
-        # ces quelques matières sont activées seulement si leur PDF précis
-        # confirme directement le contenu.
         for code_niveau, code_serie, code_matiere, fichier in [
             ("1ERE", "A", "MATHEMATIQUES", "RAPS-1%C3%A8re-A_2024_2025.pdf"),
             ("1ERE", "C", "MATHEMATIQUES", "RAPS-1%C3%A8re-C_2024_2025.pdf"),
@@ -784,7 +920,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "d1a9f4c7e2b6", (
+    assert revision == "e2b7c9d4a1f6", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
