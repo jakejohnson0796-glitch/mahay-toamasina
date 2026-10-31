@@ -27,6 +27,7 @@ def _referentiel_actif(session: Session) -> Optional[ReferentielScolaire]:
     """Dernière version importée ; les anciennes versions restent consultables."""
     rows = session.exec(
         select(ReferentielScolaire)
+        .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
         .order_by(ReferentielScolaire.date_creation.desc(), ReferentielScolaire.id.desc())
     ).all()
     return rows[0] if rows else None
