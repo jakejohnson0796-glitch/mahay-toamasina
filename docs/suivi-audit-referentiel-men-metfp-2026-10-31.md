@@ -2147,3 +2147,22 @@ Sources primaires :
 - [METFP — Référentiels & ressources pédagogiques, page 2](https://www.metfp.gov.mg/formation/ressource?page=2)
 - [METFP — Remise officielle des référentiels BTP, 10 juillet 2026](https://www.metfp.gov.mg/article/68)
 - [METFP — Remise officielle des référentiels IECD, 3 août 2026](https://www.metfp.gov.mg/article/77)
+
+### 9.60 Incohérence de millésime entre la page MEN « Répartition annuelle » et la bibliothèque numérique
+
+Une vérification directe de la page institutionnelle MEN « Répartition annuelle du programme d'études » révèle qu'elle expose encore des liens vers des PDF explicitement millésimés 2024-2025. Le lien T11-L ouvre un fichier dont la page de garde indique « ÉDITION 2024 » et dont les instructions générales disent que la répartition concerne l'année scolaire 2024-2025. Les liens T12-S et T12-L de cette même page aboutissent également à des fichiers dont les URL portent le millésime 2024-2025.
+
+Ce constat ne réfute pas l'existence des RAPE septembre 2026 retrouvés dans la Bibliothèque numérique MEN ; il établit que les deux points d'accès institutionnels ne présentent pas actuellement le même millésime. Il faut donc conserver une provenance distincte par document et éviter d'afficher un RAPE « courant 2026-2027 » uniquement parce qu'il est accessible sur un portail officiel ou porte une édition septembre 2026.
+
+**Conséquence pratique :**
+1. Conserver les fichiers 2024-2025 comme archives, avec leur millésime explicite.
+2. Conserver les fichiers septembre 2026 de la Bibliothèque numérique dans une autre version documentaire, avec empreinte du fichier et URL d'origine.
+3. Marquer l'année scolaire d'application des fichiers septembre 2026 comme « à confirmer » tant qu'une note, un arrêté, une circulaire ou un calendrier MEN 2026-2027 ne les rattache pas explicitement à cette année.
+4. Pour T11-L, ne pas présenter le lien 2024-2025 de la page MEN comme remplacement du PDF septembre 2026 manquant dans la collection de la Bibliothèque numérique.
+5. Ajouter un contrôle automatique de cohérence entre intitulé, page de garde, période scolaire interne, URL et métadonnées de publication avant import.
+
+Sources primaires :
+- [MEN — Répartition annuelle du programme d'études](https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/), liens T11-L, T12-S et T12-L.
+- [MEN — RAPE T11-L, édition 2024 / année 2024-2025](https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T11-L_2024_2025.pdf), page de garde et instructions générales.
+- [MEN — RAPE T12-S, fichier 2024-2025](https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T12-S_2024_2025.pdf).
+- [MEN — RAPE T12-L, fichier 2024-2025](https://www.education.gov.mg/wp-content/uploads/2024/09/RAPE-T12-L_2024_2025.pdf).
