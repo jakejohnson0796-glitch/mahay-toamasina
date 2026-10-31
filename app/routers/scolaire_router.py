@@ -60,7 +60,7 @@ def _donnees_option(option: OptionScolaire, toutes_options: list[OptionScolaire]
 
 @router.get("/referentiel")
 def obtenir_referentiel_scolaire(
-    referentiel_id: Optional[int] = Query(default=None, ge=1),
+    referentiel_id: Optional[int] = None,
     session: Session = Depends(get_session),
 ):
     """Expose la version demandée ; par défaut, la version la plus récente."""
@@ -144,7 +144,7 @@ def obtenir_referentiel_scolaire(
 @router.get("/niveaux")
 def lister_niveaux_scolaires(
     cycle: Optional[str] = Query(default=None, pattern="^(college|lycee)$"),
-    referentiel_id: Optional[int] = Query(default=None, ge=1),
+    referentiel_id: Optional[int] = None,
     session: Session = Depends(get_session),
 ):
     """Liste les classes d'une version ; sans identifiant, utilise la plus récente."""
