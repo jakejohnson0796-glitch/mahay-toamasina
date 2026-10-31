@@ -1901,3 +1901,58 @@ Sources officielles :
 - [PE T11 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), sections L p. 12-85, S p. 242-313, OSE p. 494-526 ; les langues facultatives allemand/espagnol/russe figurent respectivement p. 87-111 et p. 314-334, puis dans les sections OSE correspondantes.
 - [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), sections L p. 12-? , S p. 216-? et OSE p. 649-? ; sommaire par série p. 10-11.
 - [Grille autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
+
+### 9.52 Inventaire historique complet des CEG bénéficiaires de la caisse-école 2020 — CISCO Toamasina II
+
+Le document MEN « Répartition de la caisse-école 2020 des Collèges d'Enseignement Général », daté du 22 octobre 2020, contient sur sa page 60 sur 130 un tableau identifié « DREN : ATSINANANA — CISCO : TOAMASINA II » et une synthèse « TOAMASINA II (25 Collèges) ». La capture visuelle de la page entière confirme les 25 lignes, leurs codes et leurs communes.
+
+| Commune indiquée dans le document de 2020 | Code établissement | Établissement tel qu'imprimé par le MEN |
+|---|---:|---|
+| AMBODILAZANA | 502020001 | CEG VOLOBE |
+| AMBODIRIANA | 502030001 | CEG AMBODIRIANA |
+| AMBODITANDROHO | 502040016 | CEG COMMUNAUTAIRE AMBODITANDROHO |
+| AMPASIMADINIKA | 502050001 | CEG AMPASIMADINIKA |
+| AMPASIMBE-ONIBE | 502060001 | CEG AMPASIMBE ONIBE |
+| AMPASIMBE-ONIBE | 502060029 | CEG COMMUNAUTAIRE VOHITSARA |
+| AMPISOKINA | 502180013 | CEG COMMUNAUTAIRE AMPISOKINA |
+| AMPISOKINA | 502180014 | CEG COMMUNAUTAIRE MAHASOA |
+| AMPOROFORO | 502170011 | CEG COMMUNAUTAIRE AMPOROFORO |
+| ANDONDABE | 502070001 | CEG ANDONDABE |
+| ANDRANOBOLAHA | 502080017 | CEG COMMUNAUTAIRE ANDRANOBOLAHA |
+| ANTENINA | 502090001 | CEG COMMUNAUTAIRE ANTENINA |
+| ANTETEZAMBARO | 502100001 | CEG ANTETEZAMBARO |
+| FANANDRANA | 502110022 | CEG FANANDRANA |
+| FANANDRANA | 502110001 | CEG AMBODIBONARA |
+| FANANDRANA | 502110002 | CEG TANANAMBO |
+| FITO | 502120017 | CEG COMMUNAUTAIRE SAVIAVY |
+| FOULPOINTE | 502130022 | CEG COMMUNAUTAIRE AMBOHIMANARIVO |
+| FOULPOINTE | 502130020 | CEG COMMUNAUTAIRE FANARA |
+| FOULPOINTE | 502130001 | CEG FOULPOINTE |
+| MANGABE | 502140001 | CEG MANGABE |
+| SAHAMBALA | 502150001 | CEG SAHAMBALA |
+| SATRANDROY | 502190001 | COLLEGE COMMUNAUTAIRE SATRANDROY |
+| TOAMASINA AMBANIVOHITRA | 502160022 | CEG AMBODISAINA |
+| TOAMASINA AMBANIVOHITRA | 502160001 | CEG COMMUNAUTAIRE SAHANDAHATRA |
+
+#### Portée de cette liste
+
+- Cette liste décrit les collèges mentionnés comme bénéficiaires dans un document de financement de la caisse-école 2020. Elle n'est pas présentée par le MEN comme un annuaire administratif exhaustif de tous les CEG de la CISCO.
+- Elle ne prouve pas que les 25 établissements sont toujours ouverts en 2026-2027, ni qu'ils disposent des classes T6-T9, d'un nombre d'enseignants donné, ou qu'ils appliquent le PE 2026 plutôt qu'une autre voie autorisée pendant la transition.
+- Les codes sont des références historiques très utiles pour le rapprochement, mais doivent être validés par la CISCO Toamasina II avant import ou mise à jour du répertoire MITARIDALA.
+- Les établissements communautaires doivent garder leur libellé/type tel que documenté ; ne pas les renommer en CEG public sans preuve administrative.
+- Le CEG Volobe (502020001) est aussi cité dans un avis FID de septembre 2026 relatif à des travaux de réhabilitation. Cela apporte une corroboration récente de l'identifiant et du nom, mais ne transforme pas le tableau 2020 en annuaire complet actuel.
+- Toamasina I et Toamasina II doivent rester deux CISCO distinctes ; la liste Toamasina I de la page 59 (7 CEG dans le document de caisse-école 2020) ne doit pas être fusionnée avec celle de Toamasina II.
+
+#### Action de vérification locale à demander à la CISCO
+
+Pour chaque code de cette liste, obtenir une confirmation datée 2026-2027 de :
+1. existence actuelle et statut administratif (public, communautaire, privé ou autre statut officiel) ;
+2. commune et ZAP de rattachement ;
+3. classes réellement ouvertes en 2026-2027, et notamment T6/T7/T8/T9 ;
+4. programme effectivement appliqué à chaque cohorte (PE, PS ou régime transitoire reconnu) ;
+5. capacité, effectifs et éventuelles fermetures/fusions/renommages ;
+6. séries et options pour les établissements de lycée, à partir d'une liste séparée de la CISCO Toamasina I/II.
+
+Décision MITARIDALA : incorporer ces 25 lignes uniquement dans un espace de rapprochement historique avec date_source=2020-10-22, statut_preuve=liste_beneficiaires_caisse_ecole, annee_scolaire_application=NULL et verification_2026_2027=en_attente. Ne pas publier ces 25 établissements comme offres scolaires actuelles et ne pas leur attribuer des niveaux par déduction.
+
+Source primaire : [MEN — Répartition de la caisse-école 2020 des CEG](https://www.education.gov.mg/wp-content/uploads/2020/10/caisse_ceg.pdf), page imprimée 60/130 ; texte extrait aux lignes 2983-3022 et capture visuelle contrôlée. La page précédente 59/130 contient séparément les 7 collèges de Toamasina I.
