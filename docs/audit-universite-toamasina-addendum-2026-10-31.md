@@ -37,15 +37,28 @@ Le communiqué officiel MESUPRES du 6 juillet 2026 organise la session 2026 de l
 
 Le portail MESUPRES répertorie aussi un « Guide pratique de dépôt de nouvelle habilitation ou de renouvellement d'habilitation », publié le 31 août 2026.
 
-**Constat au 31 octobre :** la page officielle des documents d'habilitation continue de présenter la liste générale des établissements habilités mise à jour en 2022. Aucune liste publique de résultats CNH/CNA 2026, ni décision individualisée concernant les 24 mentions de ce catalogue, n'a été retrouvée dans les documents indexés consultés. L'absence de résultat retrouvé ne prouve pas qu'aucune décision n'a été prise.
+**Constat au 31 octobre :** l'index des documents téléchargeables du MESUPRES présente toujours comme dernière liste générale téléchargeable la liste des établissements habilités mise à jour en 2022. En parallèle, le ministère a lancé la plateforme officielle **HAE (Habilitation, Accréditation et Équivalence)**, qui annonce un registre public des offres habilitées des universités (Licences, Masters et Doctorats). La page d'accueil HAE précise que toute offre conduisant à un diplôme doit être habilitée avant son ouverture. Le contenu détaillé de ce registre HAE n'a pas pu être récupéré dans les pages indexées consultées pour cette analyse ; il reste donc la source officielle prioritaire à interroger directement pour chaque offre Toamasina.
 
-Conséquence : ne pas attribuer automatiquement une habilitation 2026 aux mentions du catalogue. Demander à l'Université et à chaque composante les arrêtés en vigueur, dates d'effet, échéances, décisions de renouvellement et preuves d'accréditation.
+Aucune décision individualisée de la session CNH/CNA 2026 concernant les mentions de ce catalogue n'a été retrouvée dans les documents consultés. Cela ne prouve pas qu'aucune décision n'a été prise : les résultats peuvent figurer dans le registre HAE ou dans les dossiers institutionnels non accessibles publiquement. Ne pas conclure qu'une offre est habilitée en 2026 sans la fiche HAE, l'arrêté et la date d'effet correspondants.
+
+Conséquence : demander à l'Université et à chaque composante les fiches d'offre HAE, arrêtés en vigueur, dates d'effet, échéances, décisions de renouvellement et preuves d'accréditation ; utiliser le registre HAE comme premier point de rapprochement, puis conserver les PDF signés comme preuves.
 
 Sources :
-- [MESUPRES — documents habilitations, guide publié le 31 août 2026 et liste générale mise à jour 2022](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations)
+- [MESUPRES — documents officiels, notamment guide CNH/CNA et liste générale 2022](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations)
+- [Plateforme officielle HAE — registre des offres habilitées des universités](https://qualite.mesupres.mg/)
 - [Communiqué CNH/CNA 2026 — PDF officiel](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/Communiqu%C3%A9_session_nationale_habilitation_et_accr%C3%A9didation_2026.pdf)
 
-### 2.2 Décret n° 2026-1483 du 10 juin 2026 — employabilité et professionnalisation
+### 2.2 Décret n° 2026-1484 du 10 juin 2026 — formations ouvertes et à distance (FOAD)
+
+Le MESUPRES a publié le décret n°2026-1484 du 10 juin 2026 relatif à la mise en œuvre des formations ouvertes et à distance dans l'enseignement supérieur, le 19 août 2026. La plateforme HAE répertorie également une annexe obligatoire pour les formations à distance, en ligne ou hybrides (FOAD), publiée le 25 mars 2026.
+
+**Effet sur l'inventaire Toamasina :** la liste MESUPRES d'août 2022 mentionne une « Formation en ligne » dans l'offre de Master de l'Anthropologie Sociale à la FLSH. Ce type d'offre doit être vérifié séparément du même diplôme en présentiel : format exact (à distance, hybride ou en ligne), plateforme et encadrement, modalités d'évaluation, ressources pédagogiques, suivi des étudiants, équipe, accessibilité et annexe FOAD soumise dans le dossier HAE.
+
+Ne pas traiter la simple mention historique « Formation en ligne » comme preuve de conformité au décret 2026-1484 ni d'ouverture actuelle. Demander à la FLSH et au MESUPRES la fiche HAE, l'annexe FOAD approuvée, la maquette applicable et la décision d'habilitation/accréditation de l'offre à distance.
+
+Source : [MESUPRES — index officiel des décrets 2026, décret n°2026-1484 publié le 19 août 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=decrets).
+
+### 2.3 Décret n° 2026-1483 du 10 juin 2026 — employabilité et professionnalisation
 
 Le décret, publié sur le portail MESUPRES le 19 août 2026, établit un cadre stratégique pour l'employabilité et la professionnalisation de l'enseignement supérieur.
 
@@ -64,7 +77,7 @@ Sources :
 - [Décret n° 2026-1483 — PDF officiel MESUPRES](https://www.mesupres.gov.mg/assets/front/documents/documents/decrets/Decret_n_2026-1483_du_10-06-2026_portant_cadrage_strategique_empoyabilite.pdf)
 - [Index officiel des documents MESUPRES](https://www.mesupres.gov.mg/documents/index/2?categorie=tous)
 
-### 2.3 Arrêté n° 21408/2026 du 23 juin 2026 — assurance qualité et accréditation
+### 2.4 Arrêté n° 21408/2026 du 23 juin 2026 — assurance qualité et accréditation
 
 L'arrêté organise le déploiement progressif de l'assurance qualité et de l'accréditation des institutions et offres de formation :
 - évaluation périodique des institutions selon cinq niveaux de maturité ;
