@@ -2224,3 +2224,42 @@ Le texte abroge les dispositions antérieures contraires et cite expressément l
 Source primaire :
 - [CNLegis — Arrêté n°2865/2023-MESupReS du 10 février 2023 portant nomination des membres de la Commission Nationale d'Habilitation LMD (PDF, 2 pages)](https://cnlegis.gov.mg/uploads/A2865-2023-VM.pdf).
 
+
+
+## 48. Diplômés des IES publiques à Toamasina par grade LMD — tableau 26 du bilan 2025
+
+Le tableau 26 du Booklet 3 MESUPRES (page imprimée 50) ventile les diplômés des **IES publiques par province** et par grade Licence/Master/Doctorat. La légende du tableau et son commentaire précisent que le périmètre public englobe les universités, les Instituts Supérieurs de Technologie (IST) et le CNTEMAD.
+
+Pour la province de Toamasina, les nombres sont :
+| Année | Licence | Master | Doctorat | Total |
+|---|---:|---:|---:|---:|
+| 2018 | 523 | 0 | 21 | 544 |
+| 2019 | 494 | 11 | 20 | 525 |
+| 2020 | 988 | 62 | 13 | 1 063 |
+| 2022 | 1 235 | 20 | 45 | 1 300 |
+| 2023 | 1 556 | 37 | 27 | 1 620 |
+
+Le total des trois grades de la ligne Toamasina correspond, pour chacune de ces années, au total Toamasina du tableau 25 consacré aux six universités publiques. Cette concordance interne est utile pour le contrôle de cohérence du livret, mais le tableau 26 ne donne pas de ventilation par université, composante ou établissement : on ne peut pas isoler la part exacte de la Faculté de Médecine, de la FLSH, de la FST, de l'ESPT, de l'ITPT ou de l'ISTRA.
+
+### 48.1 Lecture de la cohorte 2023
+
+Sur les 1 620 diplômes comptabilisés à Toamasina en 2023 dans le tableau public par grade :
+- 1 556 sont au niveau Licence ;
+- 37 au niveau Master ;
+- 27 au niveau Doctorat.
+
+La distribution indique une forte dominante du premier cycle dans les sorties diplômantes de la province pour cette année. Elle ne renseigne pas, en revanche, le nombre de doctorants encore inscrits, les abandons, les années de soutenance, les disciplines, ni les délais entre inscription et diplôme.
+
+### 48.2 Limites statistiques à garder
+
+- Ces valeurs sont des diplômes délivrés dans les IES publiques de la province, pas le nombre d'inscrits ni les capacités d'accueil.
+- Le tableau agrège les différentes structures publiques et ne permet pas une attribution à une faculté.
+- L'année 2021 n'est pas présente dans la série du livret.
+- La ligne Doctorat mesure les diplômés de l'année ; elle ne permet pas de vérifier le nombre d'équipes doctorales actives, le nombre de doctorants régulièrement inscrits ou la conformité HDR/CRFD.
+- Les données de 2023 ne peuvent pas être utilisées comme résultats de l'année universitaire 2025-2026 ou 2026-2027.
+
+**Décision MITARIDALA :** enregistrer les cinq observations dans une table de statistiques publiques par province et grade, avec source « Booklet 3 MESUPRES novembre 2025 / tableau 26 ». Les séparer de la table d'effectifs universitaires et de la table des diplômés IES privées (tableau 27). Ne pas utiliser ces valeurs pour afficher le taux de réussite d'une faculté ou d'une mention.
+
+Source primaire :
+- [MESUPRES — Booklet 3, novembre 2025, tableau 26, page imprimée 50 : diplômés des IES publiques par province et grade LMD](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/VF_BOOKLET_3_MESUPRES_NOVEMBRE_2025.pdf).
+
