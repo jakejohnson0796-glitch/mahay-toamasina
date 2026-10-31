@@ -194,13 +194,18 @@ Source : [MESUPRES — i.Tatitra n°005, janvier-mars 2025](https://www.mesupres
 
 ## 8. Signaux d’admission 2026-2027 : à confirmer par les actes originaux
 
-Une page tierce qui relaie les publications d’une page de la FST fait apparaître un appel à candidature L1 daté du 30 septembre 2026, destiné à des bacheliers C, D, S, OSE et certains baccalauréats techniques, avec dépôt annoncé du 14 septembre au 20 novembre 2026. La même page reproduit une publication FST du 23 septembre sur une sélection L1 et la préinscription.
+Deux pages tierces qui relaient les publications des facultés font apparaître des appels L1 en cours pour 2026-2027 :
 
-Ce signal est utile pour orienter la recherche, mais il s’agit d’un relais tiers et non du PDF signé de l’appel ministériel ou universitaire. Avant d’intégrer les dates, frais, pièces exigées et critères dans une offre active MITARIDALA, récupérer l’annonce originale directement auprès de la FST / Université de Toamasina et vérifier qu’elle concerne bien 2026-2027.
+- **FST — Mathématiques, Informatique et Applications / Physique-Chimie :** publication relayée datée du 30 septembre 2026, ciblant les nouveaux bacheliers C, D, S, OSE et certains baccalauréats techniques (FTG Génie Civil ou Génie Industriel). Dépôt annoncé du 14 septembre au 20 novembre 2026. Le relais mentionne un droit de sélection de 66 000 Ar et des pièces de candidature ; ces modalités n’ont pas été recoupées avec un PDF original signé.
+- **Faculté DEG — Droit, Économie et Gestion :** publication relayée datée du 12 octobre 2026 annonçant l’ouverture de la sélection L1 pour l’année universitaire 2026-2027, avec une date limite de dépôt au 27 novembre 2026. Les conditions détaillées et le formulaire original n’ont pas encore été récupérés.
 
-Source secondaire de veille (non preuve réglementaire) : [relais des actualités FST de Toamasina](https://www.glunis.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
+Ces signaux sont utiles pour orienter la recherche et suggèrent des recrutements actifs, mais ils proviennent de pages de republication et non de copies authentifiées des avis originaux. Avant d’intégrer dates, frais, pièces exigées, séries admises et critères dans une offre active MITARIDALA, récupérer chaque avis original auprès de la faculté et vérifier sa signature, sa date, l’année universitaire, les pièces annexées et la confirmation du calendrier de sélection.
 
-Une page tierce relaie également des appels M2 en Droit, Économie et Gestion et des inscriptions FOAD de 2025-2026. Ces publications ne doivent pas servir à déclarer une offre 2026-2027 sans l’avis de l’année correspondante.
+Sources secondaires de veille (non preuves réglementaires) :
+- [Relais des actualités FST de Toamasina](https://www.glunis.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
+- [Relais des actualités de la Faculté DEG](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG).
+
+Les mêmes pages relaient aussi un appel M2 DEG en juillet 2026 et des inscriptions FOAD au titre de 2025-2026. Ces éléments ne doivent pas être utilisés comme preuve d’une offre FOAD ouverte en 2026-2027.
 
 ## 9. Structure de données recommandée pour MITARIDALA
 
@@ -311,3 +316,19 @@ Un article de presse daté du 12 octobre 2026 rapporte que la CNH a enregistré 
 **Niveau de preuve : source secondaire de veille.** Ces nombres ne constituent pas un registre de décisions finales et ne permettent pas d’affirmer que 549 formations sont habilitées. Pour Toamasina, seules les décisions finales publiées par le MESUPRES/HAE, avec l’identifiant de l’offre, l’établissement, le diplôme et les dates de validité, pourront modifier le statut de validation.
 
 Source secondaire : [Moov — Plus de 600 demandes d’habilitation examinées en 2026, 12 octobre 2026](https://moov.mg/actualite/nationale/122500-enseignement-superieur-plus-de-600-demandes-dhabilitation-examinees-cette-annee).
+
+
+## 5.4 Dénominations des instituts : développement des acronymes et précaution géographique
+
+Le glossaire de l’annuaire statistique MESUPRES 2022-2023 développe plusieurs acronymes rencontrés dans le tableau statistique de l’Université de Toamasina :
+- **ISTRA** : Institut Supérieur de Technologie de la Région Atsinanana ;
+- **ISTRALMA** : Institut Supérieur de Technologie de la Région Alaotra Mangoro ;
+- **ISTRCE** : Institut Supérieur de Technologie de la Région Côte-Est ;
+- **ISSEDD** : Institut Supérieur de Sciences, Environnement et Développement Durable ;
+- **ITPT** : Institut de Tourisme, de Patrimoine et du Territoire.
+
+Le même annuaire emploie parfois des formes abrégées ou variantes dans ses tableaux (par exemple ISSED/ISSEDD). Le glossaire doit être conservé comme source de normalisation, sans effacer le libellé brut présent dans chaque tableau.
+
+**Précaution géographique :** ces noms et leur présence dans la ventilation statistique de l’Université de Toamasina ne suffisent pas à prouver que chaque institut est situé dans la commune urbaine de Toamasina ou sur le campus Barikadimy. Il faut documenter séparément l’adresse, la région, le campus et le rattachement administratif. En particulier, l’appartenance d’un institut régional au périmètre de l’université ne permet pas de le géolocaliser automatiquement à Toamasina-ville.
+
+Source primaire : [MESUPRES — Annuaire statistique 2022-2023, PDF, glossaire et tableaux des établissements](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
