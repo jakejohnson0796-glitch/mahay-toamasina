@@ -192,13 +192,18 @@ def liste_documents(
         requete = requete.where(Document.type_document == type_document)
     documents = session.exec(requete.order_by(Document.date_upload.desc())).all()
     filieres = session.exec(select(Filiere)).all()
-    referentiels_scolaires = session.exec(
-        select(ReferentielScolaire).order_by(
+    referentiels_scolaires_courants = session.exec(
+        select(ReferentielScolaire)
+        .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
+        .order_by(
             ReferentielScolaire.date_creation.desc(),
             ReferentielScolaire.id.desc(),
         )
     ).all()
-    referentiel_scolaire_courant = referentiels_scolaires[0] if referentiels_scolaires else None
+    referentiel_scolaire_courant = (
+        referentiels_scolaires_courants[0]
+        if referentiels_scolaires_courants else None
+    )
     if referentiel_scolaire_courant:
         niveaux_scolaires = session.exec(
             select(NiveauScolaire)
@@ -221,6 +226,33 @@ def liste_documents(
     else:
         niveaux_scolaires = []
         options_scolaires = []
+
+    # Un élève déjà inscrit dans une version antérieure doit pouvoir retrouver
+    # sa propre classe pour déposer un cours ou une annale historique. On
+    # n'ouvre pas pour autant l'ensemble des anciennes classes au formulaire.
+    if utilisateur and getattr(utilisateur, "niveau_scolaire_id", None):
+        niveau_profil = session.get(NiveauScolaire, utilisateur.niveau_scolaire_id)
+        if (
+            niveau_profil
+            and niveau_profil.est_actif
+            and niveau_profil.statut_validation == "verifie"
+            and niveau_profil.cycle in {"college", "lycee"}
+            and all(item.id != niveau_profil.id for item in niveaux_scolaires)
+        ):
+            niveaux_scolaires.append(niveau_profil)
+            options_profil = session.exec(
+                select(OptionScolaire).where(
+                    OptionScolaire.niveau_id == niveau_profil.id,
+                    OptionScolaire.referentiel_id == niveau_profil.referentiel_id,
+                    OptionScolaire.est_active == True,  # noqa: E712
+                    OptionScolaire.statut_validation == "verifie",
+                ).order_by(OptionScolaire.libelle)
+            ).all()
+            ids_options_existantes = {item.id for item in options_scolaires}
+            options_scolaires.extend(
+                item for item in options_profil if item.id not in ids_options_existantes
+            )
+
     etablissements_scolaires = session.exec(
         select(EtablissementScolaire)
         .where(
@@ -520,14 +552,11 @@ def upload_document(
         if cycle_scolaire not in {"college", "lycee"} or niveau_scolaire_id is None:
             return RedirectResponse("/documents?erreur=classe_scolaire_requise", status_code=303)
 
-        referentiels_scolaires = session.exec(
-            select(ReferentielScolaire).order_by(
-                ReferentielScolaire.date_creation.desc(),
-                ReferentielScolaire.id.desc(),
-            )
-        ).all()
-        referentiel_courant = referentiels_scolaires[0] if referentiels_scolaires else None
         niveau_scolaire = session.get(NiveauScolaire, niveau_scolaire_id)
+        referentiel_courant = (
+            session.get(ReferentielScolaire, niveau_scolaire.referentiel_id)
+            if niveau_scolaire is not None else None
+        )
         if (
             not referentiel_courant
             or not niveau_scolaire

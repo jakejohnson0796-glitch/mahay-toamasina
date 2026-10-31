@@ -1,6 +1,6 @@
 # Extension nationale de MITARIDALA : collège, lycée et université
 
-**Statut : conception technique / plan d'implémentation.** Ce document ne signifie pas que les nouvelles fonctions sont déjà activées. Il sert de contrat avant les changements de schéma et d'interface.
+**Statut : extension implémentée, couverture et validation des sources en cours (31 octobre 2026).** Le schéma versionné, les API scolaires, l'administration, le ciblage des cercles et l'utilisation du niveau dans les parcours d'apprentissage existent déjà. La publication complète reste conditionnée à l'audit ligne par ligne des référentiels, à la validation des offres d'établissements et à une CI verte. Voir le [rapport d'audit MEN/METFP/Toamasina](audit-referentiels-men-metfp-toamasina-2026-10-31.md).
 
 ## 1. Objectif produit
 
@@ -47,12 +47,19 @@ Les codes constituent des identifiants de données ; les libellés peuvent chang
 
 ### Premier inventaire à vérifier
 
-Le Ministère de l'Éducation nationale publie une répartition annuelle par classe, notamment de 6e à 3e et des classes du lycée. Sa page de lycée mentionne les parcours de Seconde à Terminale et le site officiel expose des répartitions pour les séries A, C, D, L, OSE et S. Cet inventaire est un **point de départ**, pas une preuve que chaque série est proposée dans chaque établissement ou reste ouverte partout.
+Le MEN met à disposition une Bibliothèque numérique qui sépare les **Programmes d'Études (PE)**, les **Répartitions Annuelles du Programme d'Études (RAPE)** et les fascicules de ressources pédagogiques (FRP). Les RAPE par niveau actuellement accessibles portent « Édition septembre 2026 » et couvrent T6 à T12, avec L/S/OSE en Première et Terminale. Cette édition est importée dans la branche comme référentiel courant `MEN-RAPE-2026-09`, associé techniquement à 2026-2027 et marqué `partiel` jusqu'à validation du calendrier de rentrée et intégration du PE complet. Les RAPE antérieurs restent des versions historiques consultables.
 
-- Programmes officiels par classe : https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/
+- Bibliothèque numérique officielle MEN (PE, RAPE et FRP) : https://plateforme.education.mg/bibliotheque-numerique/?lang=fr
+- Index des cours PE : https://plateforme.education.mg/bibliotheque-numerique/course/index.php?categoryid=497
+- PE Collège : https://plateforme.education.mg/bibliotheque-numerique/course/view.php?id=981
+- PE Lycée et coefficients/volumes horaires : https://plateforme.education.mg/bibliotheque-numerique/course/view.php?id=982
+- RAPE septembre 2026 par niveau/série : liens T6–T12 dans [le rapport d'audit](audit-referentiels-men-metfp-toamasina-2026-10-31.md)
+- Programme annuel (ancienne page MEN) : https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/
 - Système éducatif — lycée : https://www.education.gov.mg/systeme-educatif/lycee/
 - Enseignement supérieur et établissements habilités : https://www.mesupres.gov.mg/etablissements
 - Portail officiel MESUPRES : https://mesupres.gov.mg/
+
+La RAPE indique explicitement qu'elle ne contient pas tous les détails du programme et qu'elle doit être utilisée parallèlement au PE. Les pages d'index PE sont visibles, mais leurs documents joints doivent encore être récupérés et audités avant de déclarer le référentiel complet.
 
 Ne pas confondre le catalogue de l'enseignement général avec les parcours techniques et professionnels. Ceux-ci demandent un inventaire sourcé auprès du ministère compétent et une validation humaine. Une option dont la source ou l'actualité n'est pas vérifiée doit être marquée **à vérifier** et ne doit pas apparaître comme « officielle et actuelle » dans le formulaire public.
 

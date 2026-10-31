@@ -2206,7 +2206,7 @@
       "parcours": "CCA — Comptabilité, Contrôle, Audit",
       "debut_specialisation": "M1",
       "fin_specialisation": "M2",
-      "statut": "Confirmé",
+      "statut": "À vérifier",
       "source": "https://fr.scribd.com/document/689634398/Evaluation-de-Lentreprise-M2-CCA"
     }
   ],
@@ -2271,10 +2271,11 @@
         "mention": "Gestion",
         "parcours": "CCA — Comptabilité, Contrôle, Audit",
         "niveaux": [
-          "M1"
+          "M1",
+          "M2"
         ],
-        "statut": "À vérifier — M1 non publié",
-        "motif": "Un support de cours attribué à l’Université de Toamasina confirme un enseignement de M2, semestre 9, parcours CCA. Le M1 CCA reste absent de la page officielle de la Faculté DEG consultée et n’est pas publié sans maquette ou arrêté actuel.",
+        "statut": "À vérifier — M1 et M2 non publiés",
+        "motif": "La page officielle de la Faculté DEG consultée ne publie pas de maquette CCA actuelle. Le seul élément trouvé pour M2 est un support d'évaluation de cours hébergé sur Scribd ; il peut indiquer un enseignement ponctuel mais ne prouve ni l'habilitation, ni l'existence d'une maquette officielle, ni l'ouverture 2026-2027. M1 et M2 restent donc non publiés tant qu'une maquette ou un arrêté actuel émis par l'Université/MESUPRES n'est pas obtenu.",
         "source_consultee": "https://www.univ-toamasina.mg/facultes/deg/",
         "preuve_partielle": "https://fr.scribd.com/document/689634398/Evaluation-de-Lentreprise-M2-CCA"
       },
@@ -2303,6 +2304,15 @@
         "motif": "Des formations sont recensées par le MESUPRES, mais le référentiel actuel par niveaux et parcours doit être validé avec la faculté.",
         "source_consultee": "https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
       }
-    ]
+    ],
+    "date_revue_qualite": "2026-10-31",
+    "controle_mesupres_2026_10_31": {
+      "statut_portail": "La page officielle des établissements habilités indique que la liste est en cours de mise à jour.",
+      "derniere_liste_habilitation_identifiee": "Août 2022",
+      "consequence": "Les lignes appuyées uniquement par un support de cours ou une habilitation ancienne ne prouvent pas l'ouverture d'une formation pour 2026-2027.",
+      "source_portail": "https://www.mesupres.gov.mg/etablissements",
+      "source_document_historique": "https://www.mesupres.gov.mg/assets/front/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf"
+    },
+    "regle_cca_m2": "Le support Scribd d'évaluation M2 CCA n'est pas une preuve officielle d'habilitation, de maquette ou d'ouverture. La ligne M2 est rétrogradée en À vérifier et ne doit pas alimenter les sélecteurs étudiants avant réception d'une maquette ou d'un arrêté émis par l'Université/MESUPRES."
   }
 }

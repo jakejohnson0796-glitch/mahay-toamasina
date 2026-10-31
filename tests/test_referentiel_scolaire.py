@@ -543,6 +543,12 @@ def test_source_admin_accepte_uniquement_le_domaine_officiel_men():
     assert admin_scolaire_router._url_source_valide(
         "https://docs.education.gov.mg/programmes/"
     )
+    assert admin_scolaire_router._url_source_valide(
+        "https://plateforme.education.mg/bibliotheque-numerique/?lang=fr"
+    )
+    assert admin_scolaire_router._url_source_valide(
+        "https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T6.pdf"
+    )
     assert not admin_scolaire_router._url_source_valide(
         "https://example.com/faux-programme"
     )
@@ -1283,6 +1289,139 @@ def test_catalogue_public_pagine_offres_et_etablissements_sans_perdre_les_filtre
     assert "LTP Pagination 054" in html_seconde_page
     assert 'name="type_offre" value="formation"' in html_seconde_page
     assert 'name="annee_scolaire" value="2026-2027"' in html_seconde_page
+
+    session.close()
+    engine.dispose()
+
+
+def test_api_scolaire_conserve_l_acces_aux_anciennes_versions_apres_import():
+    engine, session = _session()
+    ancienne_ref, ancien_niveau, ancienne_serie = _school_catalogue(session)
+
+    matiere = MatiereScolaire(
+        code="MATIERE_VERSION_HISTORIQUE",
+        libelle="Mathématiques historiques",
+        source_officielle=ancienne_ref.source_officielle,
+        statut_validation="verifie",
+        est_active=True,
+    )
+    session.add(matiere)
+    session.commit()
+    session.refresh(matiere)
+    session.add(ProgrammeMatiereScolaire(
+        referentiel_id=ancienne_ref.id,
+        niveau_id=ancien_niveau.id,
+        option_id=ancienne_serie.id,
+        matiere_id=matiere.id,
+        obligatoire=True,
+        source_officielle=ancienne_ref.source_officielle,
+        statut_validation="verifie",
+    ))
+
+    nouvelle_ref = ReferentielScolaire(
+        code="MEN-test-2027",
+        libelle="Nouvelle version de test",
+        annee_scolaire="2026-2027",
+        source_officielle="https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/",
+        statut="partiel",
+    )
+    session.add(nouvelle_ref)
+    session.commit()
+    session.refresh(nouvelle_ref)
+    nouveau_niveau = NiveauScolaire(
+        referentiel_id=nouvelle_ref.id,
+        code="TERM",
+        libelle="Terminale nouvelle version",
+        cycle="lycee",
+        ordre=7,
+        est_actif=True,
+        source_officielle=nouvelle_ref.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(nouveau_niveau)
+    session.commit()
+    session.refresh(nouveau_niveau)
+
+    # Un référentiel historique plus récent en date d'import ne doit jamais
+    # devenir la version courante proposée par défaut.
+    historique_ref = ReferentielScolaire(
+        code="MEN-RAPE-test-historique",
+        libelle="RAPE historique",
+        annee_scolaire="2024-2025",
+        source_officielle="https://www.education.gov.mg/repartition-annuelle-du-programme-detudes/",
+        statut="historique",
+    )
+    session.add(historique_ref)
+    session.commit()
+    session.refresh(historique_ref)
+    niveau_historique = NiveauScolaire(
+        referentiel_id=historique_ref.id,
+        code="TERM",
+        libelle="Terminale RAPE historique",
+        cycle="lycee",
+        ordre=7,
+        est_actif=True,
+        source_officielle=historique_ref.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(niveau_historique)
+    session.commit()
+    session.refresh(niveau_historique)
+
+    # Le sélecteur par défaut utilise la version courante non historique,
+    # mais l'ancienne version et la version d'archive restent consultables.
+    niveaux_recents = scolaire_router.lister_niveaux_scolaires(
+        cycle="lycee", session=session
+    )
+    niveaux_anciens = scolaire_router.lister_niveaux_scolaires(
+        cycle="lycee", referentiel_id=ancienne_ref.id, session=session
+    )
+    assert [item["id"] for item in niveaux_recents] == [nouveau_niveau.id]
+    assert [item["id"] for item in niveaux_anciens] == [ancien_niveau.id]
+    niveaux_historiques = scolaire_router.lister_niveaux_scolaires(
+        cycle="lycee", referentiel_id=historique_ref.id, session=session
+    )
+    assert [item["id"] for item in niveaux_historiques] == [niveau_historique.id]
+    assert scolaire_router._referentiel_actif(session).id == nouvelle_ref.id
+    assert admin_scolaire_router._referentiel_courant(session).id == nouvelle_ref.id
+
+    # Les matières/options d'un ancien profil ne disparaissent pas lorsque
+    # la dernière version du catalogue change.
+    options_anciennes = scolaire_router.lister_options_scolaires(
+        ancien_niveau.id, session=session
+    )
+    assert [item["id"] for item in options_anciennes] == [ancienne_serie.id]
+    matieres_anciennes = scolaire_router.lister_matieres_scolaires(
+        ancien_niveau.id, option_id=ancienne_serie.id, session=session
+    )
+    assert [item["id"] for item in matieres_anciennes] == [matiere.id]
+
+    ancienne_vue = scolaire_router.obtenir_referentiel_scolaire(
+        referentiel_id=ancienne_ref.id, session=session
+    )
+    assert ancienne_vue["version"]["id"] == ancienne_ref.id
+    assert ancienne_vue["niveaux"][0]["id"] == ancien_niveau.id
+
+    # L'administration doit résoudre la version du niveau, pas la dernière
+    # version importée au niveau national.
+    assert admin_scolaire_router._referentiel_du_niveau(
+        session, ancien_niveau
+    ).id == ancienne_ref.id
+
+    # Le contexte d'apprentissage d'un élève historique doit lui aussi
+    # rester lié à son référentiel, même après l'import d'une version récente.
+    ancien_eleve = _user(
+        session,
+        niveau_id=ancien_niveau.id,
+        option_id=ancienne_serie.id,
+        telephone="0340000891",
+    )
+    contexte_quiz = quiz_router._contexte_scolaire_quiz(ancien_eleve, session)
+    assert contexte_quiz["referentiel_id"] == ancienne_ref.id
+    assert contexte_quiz["niveau_scolaire_id"] == ancien_niveau.id
+    contexte_tuteur = tuteur_router._contexte_scolaire_tuteur(ancien_eleve, session)
+    assert contexte_tuteur["niveau_scolaire_id"] == ancien_niveau.id
+    assert ancienne_serie.id in contexte_tuteur["options_compatibles"]
 
     session.close()
     engine.dispose()

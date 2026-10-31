@@ -42,19 +42,19 @@ def source_temporaire(formations):
 
 
 class TestSourceCanonique(unittest.TestCase):
-    def test_source_confirme_cca_m2_et_garde_m1_en_attente(self):
+    def test_source_garde_cca_m1_et_m2_en_attente_sans_preuve_officielle(self):
         path = Path(__file__).resolve().parents[1] / "mahay_toamasina_referentiel_source.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         cca = [x for x in data["formations"] if "cca" in (x.get("parcours") or "").casefold()]
         self.assertEqual(len(cca), 1)
         self.assertEqual(cca[0]["niveau"], "M2")
-        self.assertEqual(cca[0]["statut"], "Confirmé")
+        self.assertEqual(cca[0]["statut"], "À vérifier")
         audit_cca = [
             x for x in data["audit_referentiel"]["formations_a_verifier_avant_publication"]
             if "cca" in json.dumps(x, ensure_ascii=False).casefold()
         ]
         self.assertEqual(len(audit_cca), 1)
-        self.assertEqual(audit_cca[0]["niveaux"], ["M1"])
+        self.assertEqual(audit_cca[0]["niveaux"], ["M1", "M2"])
         cles = [
             (
                 (x.get("composante") or "").strip().casefold(),

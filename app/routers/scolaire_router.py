@@ -27,6 +27,7 @@ def _referentiel_actif(session: Session) -> Optional[ReferentielScolaire]:
     """Dernière version importée ; les anciennes versions restent consultables."""
     rows = session.exec(
         select(ReferentielScolaire)
+        .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
         .order_by(ReferentielScolaire.date_creation.desc(), ReferentielScolaire.id.desc())
     ).all()
     return rows[0] if rows else None
@@ -59,8 +60,16 @@ def _donnees_option(option: OptionScolaire, toutes_options: list[OptionScolaire]
 
 
 @router.get("/referentiel")
-def obtenir_referentiel_scolaire(session: Session = Depends(get_session)):
-    referentiel = _referentiel_actif(session)
+def obtenir_referentiel_scolaire(
+    referentiel_id: Optional[int] = None,
+    session: Session = Depends(get_session),
+):
+    """Expose la version demandée ; par défaut, la version la plus récente."""
+    referentiel = (
+        session.get(ReferentielScolaire, referentiel_id)
+        if referentiel_id is not None
+        else _referentiel_actif(session)
+    )
     if not referentiel:
         return {
             "version": None,
@@ -136,9 +145,15 @@ def obtenir_referentiel_scolaire(session: Session = Depends(get_session)):
 @router.get("/niveaux")
 def lister_niveaux_scolaires(
     cycle: Optional[str] = Query(default=None, pattern="^(college|lycee)$"),
+    referentiel_id: Optional[int] = None,
     session: Session = Depends(get_session),
 ):
-    referentiel = _referentiel_actif(session)
+    """Liste les classes d'une version ; sans identifiant, utilise la plus récente."""
+    referentiel = (
+        session.get(ReferentielScolaire, referentiel_id)
+        if referentiel_id is not None
+        else _referentiel_actif(session)
+    )
     if not referentiel:
         return []
 
@@ -160,12 +175,15 @@ def lister_options_scolaires(
     niveau_id: int,
     session: Session = Depends(get_session),
 ):
-    referentiel = _referentiel_actif(session)
     niveau = session.get(NiveauScolaire, niveau_id)
+    referentiel = (
+        session.get(ReferentielScolaire, niveau.referentiel_id)
+        if niveau is not None
+        else None
+    )
     if (
         not referentiel
         or not niveau
-        or niveau.referentiel_id != referentiel.id
         or not niveau.est_actif
         or niveau.statut_validation != "verifie"
     ):
@@ -191,12 +209,15 @@ def lister_matieres_scolaires(
     session: Session = Depends(get_session),
 ):
     """Liste les matières vérifiées pour une classe et une série/option."""
-    referentiel = _referentiel_actif(session)
     niveau = session.get(NiveauScolaire, niveau_id)
+    referentiel = (
+        session.get(ReferentielScolaire, niveau.referentiel_id)
+        if niveau is not None
+        else None
+    )
     if (
         not referentiel
         or not niveau
-        or niveau.referentiel_id != referentiel.id
         or not niveau.est_actif
         or niveau.statut_validation != "verifie"
     ):
