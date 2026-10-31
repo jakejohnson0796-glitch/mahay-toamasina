@@ -1,6 +1,6 @@
 # Extension nationale de MITARIDALA : collège, lycée et université
 
-**Statut : conception technique / plan d'implémentation.** Ce document ne signifie pas que les nouvelles fonctions sont déjà activées. Il sert de contrat avant les changements de schéma et d'interface.
+**Statut : extension implémentée, couverture et validation des sources en cours (31 octobre 2026).** Le schéma versionné, les API scolaires, l'administration, le ciblage des cercles et l'utilisation du niveau dans les parcours d'apprentissage existent déjà. La publication complète reste conditionnée à l'audit ligne par ligne des référentiels, à la validation des offres d'établissements et à une CI verte. Voir le [rapport d'audit MEN/METFP/Toamasina](audit-referentiels-men-metfp-toamasina-2026-10-31.md).
 
 ## 1. Objectif produit
 
@@ -49,7 +49,9 @@ Les codes constituent des identifiants de données ; les libellés peuvent chang
 
 Le Ministère de l'Éducation nationale publie une répartition annuelle par classe, notamment de 6e à 3e et des classes du lycée. Sa page de lycée mentionne les parcours de Seconde à Terminale et le site officiel expose des répartitions pour les séries A, C, D, L, OSE et S. Cet inventaire est un **point de départ**, pas une preuve que chaque série est proposée dans chaque établissement ou reste ouverte partout.
 
-- Programmes officiels par classe : https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/
+- Programmes annuels RAPS/RAPE publiés par classe : https://www.education.gov.mg/repartition-annuelle-du-programme-scolaire/
+- Page MEN des actualités et archives RAPE (publication de septembre 2025) : https://www.education.gov.mg/actus/
+- Répartition annuelle RAPE 2024-2025 (PDF par T6-T12 et séries L/S/OSE) : voir les liens dans [le rapport d'audit](audit-referentiels-men-metfp-toamasina-2026-10-31.md). Cette édition est historique, pas le programme 2026-2027.
 - Système éducatif — lycée : https://www.education.gov.mg/systeme-educatif/lycee/
 - Enseignement supérieur et établissements habilités : https://www.mesupres.gov.mg/etablissements
 - Portail officiel MESUPRES : https://mesupres.gov.mg/
