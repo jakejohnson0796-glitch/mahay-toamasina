@@ -245,6 +245,24 @@ La liste MESUPRES d'août 2022 identifie aussi **BEATY UNIVERSITY**, localisée 
 
 Source : [MESUPRES — liste des institutions supérieures habilitées, août 2022, partie A, page 2 : BEATY UNIVERSITY à Toamasina](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
+### Cartographie régionale MESUPRES de décembre 2023 — recoupement Atsinanana
+
+La cartographie ministérielle publiée dans **« MESUPRES en chiffres — décembre 2023 »**, annexe « Liste des institutions supérieures par région », donne une liste administrative explicite pour la région **ATSINANANA** :
+- **institutions supérieures publiques :** FLSH, DEGMIA, Faculté de Médecine, ITPT, ISTRA, Institut Confucius, ENS, ESP Toamasina et CNTEMAD ;
+- **institutions supérieures privées :** BEATY UNIVERSITY, IFT, IFSP ATSINANANA, IFSPT, INSPALM, INSPNMAD, ISFSP, ISMATEC, ISPAVA et ISSPM.
+
+La ligne régionale place donc aussi **CNTEMAD** dans l'offre publique disponible en Atsinanana. Comme cet organisme est un centre national d'enseignement à distance, cette inscription ne suffit pas à prouver qu'il constitue une faculté de l'Université de Toamasina ni à déterminer l'adresse exacte du centre local ; il doit être représenté comme établissement/centre public régional distinct, si sa présence et son statut actuels sont confirmés.
+
+**Rapprochement avec le registre HAE d'août 2022 et les statistiques 2022–2023 :**
+- la cartographie 2023 conserve des noms plus larges ou historiques (ex. **DEGMIA** plutôt que la séparation ultérieure DEG/FST) ;
+- elle n'énumère pas dans sa ligne Atsinanana l'ISSEDD, l'ISTCE, l'ISTRALMA ou l'ISTRCE, alors que les autres pièces les mentionnent à d'autres titres ou sous d'autres régions ;
+- l'ISTRALMA est explicitement localisé à Ambatondrazaka (Alaotra-Mangoro), l'ISTCE à Fénérive-Est (Analanjirofo) ; ce ne sont pas des écoles à localiser automatiquement dans la ville de Toamasina ;
+- la liste régionale privée Atsinanana apporte cinq acronymes supplémentaires (IFT, ISFSP, ISMATEC, ISPAVA, ISSPM) au-delà de BEATY et des quatre écoles paramédicales déjà détaillées dans le registre 2022. Leur nom légal, leur type de diplôme, leur commune et leurs arrêtés restent à identifier dans HAE ; ne pas développer ces sigles par supposition.
+
+**Contrôle base :** aucune entrée correspondante pour CNTEMAD, IFT, ISFSP, ISMATEC, ISPAVA ou ISSPM n'a été retrouvée dans les tables `universite`, `faculte` ou `etablissementpartenaire`. Cette absence démontre une lacune dans les tables interrogées, pas la fermeture de ces institutions. La cartographie régionale est une photographie ministérielle de décembre 2023 et ne confirme pas l'ouverture 2026–2027.
+
+Source : [MESUPRES — « MESUPRES en chiffres », décembre 2023, annexe « Liste des institutions supérieures par région », lignes ATSINANANA (public/privé) et cartographie pages 52–55](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
+
 ### Recensement statistique MESUPRES 2022–2023 — périmètre institutionnel élargi
 
 L'annuaire statistique national donne un aperçu du nombre d'étudiants dans les structures déclarées à Toamasina. Il répertorie **14 661 inscriptions** dans son tableau de synthèse, ventilées ainsi :
