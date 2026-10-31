@@ -1437,3 +1437,48 @@ Le rattachement est cohérent avec l'ordre des trois parcours dans le PE, les vo
 **Correction de qualité :** la formule de la matrice officielle T12 confirme 2 h pour L et 6 h pour S/OSE. Le programme S comporte un bloc de géométrie dans l'espace et d'algèbre modulaire ; le programme OSE comporte les mathématiques financières en sus des quatre autres composantes. Le numéro de série doit être conservé comme clé du contenu, même si plusieurs RAG généraux se ressemblent.
 
 Source : [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), sommaire et sections p. 119, 317 et 530 ; [grille officielle coefficients/volumes lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
+
+
+### 9.43 T12 Sciences physiques et SVT : confirmation des différences L/S/OSE
+
+Les sections T12 des PE sont ordonnées par séries et la comparaison avec la grille MEN donne les rattachements suivants :
+- première section (pages imprimées 128-147) : T12 L ;
+- deuxième section (pages imprimées 543-574) : T12 S ;
+- troisième section (pages imprimées 758-777 et suivantes) : T12 OSE.
+
+Ces trois sections ont des contenus et des volumes différents.
+
+#### Sciences physiques T12
+
+| Série | Volume hebdomadaire | Thèmes du tableau des contenus et exemples |
+|---|---:|---|
+| L | 2 h | Deux grands blocs : « Lumière et son » (ondes sonores et électromagnétiques, nature corpusculaire de la lumière, effet photoélectrique) et « Matière » centrée sur l'analyse de la composition d'un médicament : principe actif/excipients, médicament d'origine et générique, fonctions chimiques, groupes caractéristiques, concentration massique/molaire, composition centésimale et lecture de notice médicale. Les séquences visibles incluent 32 h pour Lumière et son et 34 h pour Matière. |
+| S | 6 h | Six thématiques : Matière (titrages acido-basiques et oxydo-réduction, réactions, synthèse d'un médicament), Électricité et magnétisme (alternateur, haut-parleur électrodynamique, force de Laplace, oscillations libres et régime sinusoïdal forcé), Mouvement (cinématique, mouvements curvilignes/paraboliques/circulaires), Force et interaction (centre d'inertie, deuxième loi de Newton, pendule, projectile, satellites/GPS), Énergie (liaison nucléaire, radioactivité, radioprotection, centrale nucléaire), Lumière et son (interférences acoustiques, effet Doppler). |
+| OSE | 3 h | Le tableau des contenus regroupe Lumière et son (ondes, corpusculaire, effet photoélectrique), Matière (composition, types de médicaments, fonctions chimiques, groupes caractéristiques, concentration, composition centésimale, notice/ordonnance) et Énergie (liaison nucléaire, radioactivité, médecine/radioprotection, énergie nucléaire). |
+
+Le PE de L/T12 limite donc le programme de sciences physiques à deux grandes thématiques, tandis que S porte la progression la plus large en mécanique, électricité et radioactivité. OSE conserve une sélection de notions d'ondes, de chimie liée à l'analyse des médicaments et d'énergie. Ne pas transposer l'ensemble des RAS de S à L ou OSE uniquement parce que les trois sections ont le même intitulé disciplinaire.
+
+#### SVT T12
+
+| Série | Volume hebdomadaire | Thèmes distinctifs |
+|---|---:|---|
+| L | 2 h | Biologie moléculaire (information génétique, ADN, mitose, expression génétique/biosynthèse des protéines) ; reproduction humaine (gamétogenèse, fécondation, PMA, gestation/hygiène) ; géologie (lecture de carte topographique, profil, conservation du relief). Un exemple de séquence affiche 23 h sur l'information génétique et la synthèse protéique. |
+| S | 6 h | Biologie moléculaire ; reproduction humaine et contrôle hormonal ; hérédité/génétique (monohybridisme, dihybridisme, linkage/crossing-over, hérédité humaine) ; physiologie humaine (pression artérielle, glycémie, régulation et prévention) ; immunologie (cellules/organes immunitaires, réponses non spécifiques et spécifiques, allergies, maladies auto-immunes, déficit immunitaire) ; géologie (cartes topographiques/géologiques, potentiels miniers et métallogénie). |
+| OSE | 3 h | Reproduction humaine (gamétogenèse, fécondation, symptômes/hygiène gestationnelle) ; biotechnologie (industrielle, verte/rouge/blanche/bleue/jaune/orange, facteurs et réglementation) ; hydrogéologie (infiltration, aquifères, piézométrie, usages domestiques/agricoles/techniques et protection). Une séquence de 31 h porte sur le mécanisme de fécondation. |
+
+La SVT T12 ne doit donc pas être importée comme un cursus unique. S dispose de l'extension la plus large en génétique, physiologie et immunologie ; OSE a un ensemble distinct en biotechnologie et hydrogéologie ; L conserve une articulation moléculaire/reproduction/géologie avec 2 h/semaine.
+
+#### Applications contextuelles possibles pour Atsinanana, sans ajouter de RAS
+
+- **SVT OSE / hydrogéologie :** étudier l'infiltration, la formation des aquifères, la piézométrie, les utilisations domestiques/agricoles et la protection de l'eau à partir d'études, cartes, données de service technique ou observations locales autorisées. Ne pas inventer un niveau de nappe ni une qualité d'eau : exiger une mesure datée et l'organisme producteur.
+- **SVT L/S / géologie :** utiliser les cartes géologiques/topographiques officielles disponibles pour construire des profils, lire les couches, ou contextualiser les ressources géologiques de Madagascar ; distinguer carte nationale, régionale et locale.
+- **Sciences physiques L :** étudier les ondes électromagnétiques, le photoélectrique et les panneaux photovoltaïques ; le PE mentionne explicitement les photopiles et panneaux solaires comme applications.
+- **Sciences physiques S :** construire des problèmes de cinématique, d'électricité et d'énergie avec des situations techniques, mais seulement lorsque les prérequis S sont présents et avec matériel ou simulations appropriés.
+- Les exemples sur les notices de médicaments et la dose font partie du PE de Sciences physiques L ; ils doivent rester une analyse pédagogique de la notice et de la sensibilisation à l'automédication. MITARIDALA ne doit ni prescrire ni calculer une dose individuelle réelle.
+
+**Sécurité pédagogique :** les thèmes de reproduction, gestation, PMA, santé, médicaments, immunologie et radioprotection doivent être traités comme des objets d'enseignement, avec âge et cadre scolaire adaptés, sans les transformer en conseil médical individuel ni diffuser de contenu de santé non prévu par le PE.
+
+Sources officielles :
+- [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), Sciences physiques L p. 128-134 ; Sciences physiques S p. 543-552 ; Sciences physiques OSE p. 758-770.
+- [PE T12 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), SVT L p. 140-147 ; SVT S p. 573-584 ; SVT OSE p. 775-778.
+- [Grille officielle coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf).
