@@ -261,13 +261,11 @@ Un PE officiel T5 a été découvert et ouvert dans la bibliothèque numérique.
 
 Ce document T5 n'est toutefois **pas** une preuve du contenu détaillé des PE T6 à T12. Il sert uniquement à comprendre la structure éditoriale générale ; aucune matière, compétence ou heure du T5 ne doit être transposée au collège ou au lycée.
 
-Les pages Moodle PE Collège et PE Lycée restent identifiées (cours 981 et 982), mais leur ouverture directe a de nouveau expiré en timeout. L'index officiel affiche les documents PE T6-T9, PE T10-T12 et le document distinct « Coefficient et volume horaire niveau lycée ». Les fichiers détaillés n'ont pas encore été extraits.
+État mis à jour après découverte du répertoire public PDF du MEN : les sept fichiers PE T6-T12 sont indexés. PE T6 et T8 ont été ouverts et partiellement analysés ; T7 est listé mais l'extraction détaillée reste instable ; T11 a sa couverture consultée mais l'extraction détaillée reste instable ; T9, T10 et T12 sont présents dans l'index mais leur contenu reste à ouvrir/extraire. Voir la section 9.3 pour le détail exact.
 
 ### 8.4 Coefficients du baccalauréat 2026-2027 : information de presse à confirmer par le PDF MEN
 
-Un article de presse daté d'octobre 2026 rapporte que les nouveaux coefficients du baccalauréat L, S et OSE s'appliqueraient à partir de l'année scolaire 2026-2027 et que le total serait ramené de 32 à 30. Il donne des exemples de coefficients par matière, notamment l'anglais en série L et les matières scientifiques en série S.
-
-Cependant, le document officiel « Coefficient et volume horaire niveau lycée » n'a pas encore été téléchargé ni examiné. Les chiffres détaillés rapportés par la presse ne doivent donc pas être insérés comme valeurs certifiées dans la base de données. Ils restent une piste de vérification, avec source secondaire, jusqu'à contrôle de la grille MEN originale.
+La grille officielle « Coefficient et volume horaire niveau lycée » a depuis été ouverte et transcrite en section 9.4. Elle confirme 30 points pour T10 et toutes les séries T12, mais 32 points pour les trois séries T11. La formulation de presse annonçant un total de 30 ne doit donc pas être généralisée à toutes les classes du lycée. Les cellules noires/vides ne sont pas codées comme zéro.
 
 ### 8.5 Limite du parcours de téléchargement METFP
 
@@ -277,14 +275,13 @@ Le portail officiel demande explicitement des informations personnelles (nom, pr
 
 | Pièce / contrôle | État |
 |---|---|
-| RAPE édition septembre 2026 T6-T10 | Ouverts |
-| RAPE édition septembre 2026 T11-S et T11-OSE | Ouverts |
-| RAPE édition septembre 2026 T12-L, T12-S et T12-OSE | Ouverts |
-| RAPE édition septembre 2026 T11-L | Non récupéré ; ne pas substituer le PDF 2024-2025 |
-| PE collège T6-T9 | Index officiel confirmé ; PDF détaillés non audités |
-| PE lycée T10-T12 | Index officiel confirmé ; PDF détaillés non audités |
-| Coefficients / volumes horaires lycée | Document indexé ; grille officielle détaillée non auditée |
-| Coefficients bac L/S/OSE 2026-2027 dans la presse | Indice secondaire ; ne pas encoder comme vérifié |
+| RAPE édition septembre 2026 T6-T10 | Ouverts ; couvertures, sommaires et instructions vérifiés |
+| RAPE édition septembre 2026 T11-L/S/OSE | Ouverts ; couvertures, sommaires et instructions vérifiés |
+| RAPE édition septembre 2026 T12-L/S/OSE | Ouverts ; couvertures, sommaires et instructions vérifiés |
+| PE collège T6-T9 | Fichiers indexés ; T6/T8 partiellement analysés, T7/T9 extraction à poursuivre |
+| PE lycée T10-T12 | Fichiers indexés ; T11 couverture consultée, T10/T12 et détail T11 à extraire |
+| Coefficients / volumes horaires lycée | Grille officielle ouverte et transcrite en section 9.4 |
+| Statut juridique des PE | Projet d'arrêté visible sur T6/T8 ; acte final et date d'effet à confirmer |
 | METFP 12 notices | Notices et dates de publication vérifiées ; PDF non audités |
 | Offres scolaires et ETFP Toamasina 2026-2027 | Cartographie et écarts documentés ; ouvertures locales non certifiées |
 
