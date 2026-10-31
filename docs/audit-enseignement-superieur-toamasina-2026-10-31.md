@@ -1866,3 +1866,86 @@ Les publications d'octobre 2026 mentionnent aussi une liste de bénéficiaires d
 Source secondaire de veille, page relayant les communications de la FST :
 - [Faculté des Sciences et Technologie — actualités du 27, 16 et 1er octobre 2026 et rencontre e-Tsiry du 29 septembre](https://www.schoolandcollegelistings.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
 
+
+
+## 43. IFIRP Toamasina : établissement public de formation paramédicale relevant du ministère de la Santé, distinct des écoles HAE privées
+
+### 43.1 Rattachement administratif : le régime IFIRP relève du MSANP
+
+Le décret **n°2020-1286** fixant les attributions et l'organisation générale du ministère de la Santé publique fournit une base institutionnelle explicite :
+- l'article 38 prévoit un **Institut de Formation Inter-Régional des Paramédicaux (IFIRP)** dans chacun des six chefs-lieux de province ;
+- l'article 48 dispose que tout IFIRP est rattaché à la **Direction Régionale de la Santé Publique (DRSP)** du lieu où il est implanté ;
+- son directeur est un chef d'établissement ayant rang de chef de service de ministère, nommé par arrêté du ministre de la Santé publique.
+
+Le décret place donc l'IFIRP dans l'organisation administrative du **Ministère de la Santé Publique (MSANP)** et de sa DRSP territoriale. Il ne le définit pas comme une faculté de l'Université de Toamasina ou comme l'un des établissements privés répertoriés dans la liste HAE MESUPRES d'août 2022.
+
+### 43.2 Implantation physique confirmée à Toamasina
+
+Le Plan de Gestion Environnementale et Sociale (PGES) du projet PPSB, préparé en **septembre 2024**, concerne explicitement la réhabilitation des locaux de l'IFIRP Toamasina. Il indique la localisation suivante :
+- région : Atsinanana ;
+- district : Toamasina I ;
+- commune : Commune Urbaine de Toamasina ;
+- fokontany : Analakininina ;
+- coordonnées approximatives de l'enceinte : **-18.142951, 49.415077** (une seconde coordonnée est également indiquée dans la fiche d'annexe).
+
+Le PGES indique que le terrain de l'enceinte appartient à la Direction Régionale de la Santé Publique. Cela corrobore le rattachement MSANP décrit par le décret de 2020 et permet de le localiser dans le périmètre Toamasina-ville, mais pas sur le campus universitaire de Barikadimy.
+
+### 43.3 Infrastructures de formation documentées en 2024
+
+Le PGES PPSB recense six bâtiments concernés par le sous-projet :
+1. salle de laboratoire de compétence ;
+2. bloc de classe de trois salles ;
+3. grande salle ;
+4. bureau avec bibliothèque ;
+5. garage administratif ;
+6. salle informatique.
+
+Le document indique qu'un des bâtiments nécessite une réhabilitation importante. Les travaux prévus portent notamment sur les toitures, les carrelages, la peinture, les fissures des murs et la démolition contrôlée d'un hangar existant suivie de la construction d'un nouveau bâtiment. Le projet est placé dans le cadre du Projet de Préparation aux Pandémies et de Renforcement des Services de Base (PPSB).
+
+**Important :** le PGES est un document de préparation et de gestion environnementale/sociale du sous-projet. Il décrit les travaux prévus en 2024 ; il ne prouve pas leur achèvement, la réception des bâtiments ni l'état des salles après le cyclone Gezani. Les capacités actuelles (nombre de salles utilisables, laboratoire, salle informatique, résidences éventuelles) doivent être vérifiées par procès-verbal de réception ou visite datée.
+
+### 43.4 Existence dans les documents budgétaires de l'État
+
+Les documents budgétaires du ministère de l'Économie et des Finances inscrivent explicitement une ligne **« Institut de Formation Inter-Régional des Paramédicaux (IFIRP) Toamasina »** dans les annexes budgétaires de la Loi de Finances 2025, avec un identifiant de service 00-71-1-B4B-50101. Un document budgétaire antérieur mentionne également IFIRP Toamasina dans la nomenclature des services du ministère de la Santé.
+
+Cette corroboration budgétaire est un élément d'identification administrative de l'IFIRP Toamasina comme unité publique distincte ; elle ne constitue pas un arrêté d'habilitation MESUPRES, une maquette LMD, ni la preuve d'ouverture d'une promotion à la rentrée 2026-2027.
+
+### 43.5 Signal récent d'activité pédagogique : cohorte 2026 rapportée par une page étudiante
+
+Une page se présentant comme celle des étudiants de l'IFIRP Toamasina publie, le **9 mai 2026**, une information selon laquelle la « Promotion MAZAVA » aurait terminé sa formation et compté **60 étudiants**, soit 27 sages-femmes et 33 infirmiers. Le message annonce une cérémonie le 6 mai 2026 et décrit la promotion comme la neuvième. Une autre publication du 18 juillet 2026 relate une activité pratique d'inspection des viandes effectuée par des étudiants L3 (infirmier et sage-femme).
+
+**Niveau de preuve : source secondaire étudiante, non registre administratif.** Cela constitue un signal d'activité pédagogique en 2026 et peut orienter la demande de données, mais le nombre de 60 diplômés/finissants, le niveau exact de diplôme, le nombre de présents à la cérémonie, l'autorisation de la promotion et la nature de l'activité pratique doivent être vérifiés auprès de l'IFIRP et de la DRSP Atsinanana. Ne pas importer la liste nominative ou les coordonnées des étudiants.
+
+### 43.6 Distinction obligatoire avec les quatre écoles privées du registre MESUPRES
+
+Le snapshot HAE/MESUPRES d'août 2022 comporte quatre lignes distinctes pour des institutions privées paramédicales à Toamasina/Atsinanana : IFSP Atsinanana, IFSPT, INSPALM et INSPNMAD Atsinanana. La cartographie MESUPRES régionale de décembre 2023 présente également ces noms dans les dix établissements privés de l'Atsinanana.
+
+L'**IFIRP** est un autre objet administratif : le décret MSANP n°2020-1286 le place sous la DRSP ; le PGES PPSB identifie un terrain appartenant à la DRSP ; et la nomenclature budgétaire de l'État porte une ligne de service propre à l'IFIRP Toamasina. Aucune source consultée ne permet de fusionner IFIRP avec IFSP Atsinanana ou IFSPT, malgré la proximité des sigles et les formations paramédicales communes.
+
+**Décision de modélisation MITARIDALA :**
+- créer une fiche établissement distincte « IFIRP Toamasina — Institut de Formation Inter-Régional des Paramédicaux » ;
+- autorité de rattachement : Ministère de la Santé Publique / DRSP Atsinanana, sous réserve de vérifier l'acte d'organisation le plus récent en vigueur ;
+- localisation : Analakininina, Toamasina I, coordonnées issues du PGES 2024 ;
+- enregistrer le PGES PPSB comme preuve d'infrastructure et de programme de réhabilitation datée 2024, sans marquer les travaux achevés ;
+- enregistrer les signaux de cohortes 2026 comme données étudiantes à authentifier ;
+- laisser le champ habilitation MESUPRES/LMD distinct tant que les décisions et la nature réglementaire exacte du diplôme délivré par IFIRP n'ont pas été fournies ;
+- maintenir IFSP Atsinanana, IFSPT, INSPALM et INSPNMAD comme entités distinctes du snapshot HAE privé 2022/2023.
+
+**Pièces à obtenir auprès du MSANP et de la DRSP Atsinanana :**
+1. dernier arrêté d'organisation des IFIRP et acte de nomination du chef d'établissement de Toamasina ;
+2. autorisation de formation et référentiel national des cursus infirmier/sage-femme délivrés par l'IFIRP ;
+3. maquette, durée, stages cliniques, volume de formation pratique et conditions de certification ;
+4. effectifs anonymisés par année d'étude et promotions 2023-2026 ;
+5. procès-verbal de réception des travaux PPSB et état actuel de chacun des six bâtiments ;
+6. décision de rattachement pédagogique, partenariats hospitaliers et modalités de reconnaissance du diplôme.
+
+Sources primaires / officielles :
+- [MSANP — Décret n°2020-1286 portant organisation générale du Ministère de la Santé (PDF)](https://www.msanp.gov.mg/style/img/Organigramme_MSANP_2021.pdf), articles 38 et 48.
+- [MSANP — PGES du sous-projet de réhabilitation IFIRP Toamasina, septembre 2024 (PDF)](https://www.msanp.gov.mg/style/documents/PGES_IFIRP_Toamasina_vf.pdf), notamment localisation et description des six bâtiments.
+- [MEF — Loi de Finances 2025, annexe budgétaire, ligne IFIRP Toamasina](https://www.mef.gov.mg/assets/vendor/ckeditor/plugins/kcfinder/upload/files/lfi_2025/TOME%202%20L1--.pdf).
+- [MEF — Loi de Finances 2021, annexe budgétaire, IFIRP dans les six chefs-lieux](https://www.dgbf.mg/wp-content/uploads/2022/04/71-MINSAN-Credits-2017-RV.pdf).
+- [MSANP — annonce officielle d'ouverture de l'IFIRP Toliara en avril 2026 (à ne pas confondre avec le site de Toamasina)](https://www.msanp.gov.mg/index.php/article?id=224).
+
+Source secondaire étudiante de veille :
+- [Étudiants IFIRP Toamasina — publications de mai et juillet 2026 sur la promotion et les activités pratiques](https://www.schoolandcollegelistings.com/MG/Toamasina/102413465593488/%C3%89tudiants---IFIRP-Toamasina).
+
