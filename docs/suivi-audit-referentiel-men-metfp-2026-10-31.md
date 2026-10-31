@@ -2041,3 +2041,36 @@ Sources :
 - [MEN — Appel à candidatures n°2021/503/MEN/SG du 1er juillet 2021](https://www.education.gov.mg/wp-content/uploads/2021/07/Recrutement-sp%C3%A9cial_compressed.pdf), annexe « Liste des lycées », lignes 287-300.
 - [MEN — Page nationale des lycées publics](https://www.education.gov.mg/systeme/lycee/), rubrique régionale Atsinanana.
 - [MEN — Page de répertoire lycée Atsinanana](https://www.education.gov.mg/educatif/atsinanana/), accès expiré au 31 octobre 2026.
+
+### 9.55 Liste historique ciblée de lycées publics de l'Atsinanana — annexe de recrutement MEN 2021
+
+L'appel à candidatures MEN n°2021/503/MEN/SG du 1er juillet 2021 contient une annexe « LISTE DES LYCEES » qui identifie des établissements publics dans les zones de recrutement ciblées. Les lignes 149 à 161 de cette annexe correspondent à l'Atsinanana :
+
+| N° dans l'annexe | CISCO | Lycée tel qu'imprimé dans l'appel 2021 |
+|---:|---|---|
+| 149 | Antanambao-Manampotsy | Lycée Antanambao-Manampontsy |
+| 150 | Brickaville | Lycée communautaire Ambinaninony |
+| 151 | Brickaville | Lycée Anivorano Est |
+| 152 | Brickaville | Lycée communautaire Lohariandava |
+| 153 | Brickaville | Lycée communautaire Ranomafana-Est |
+| 154 | Mahanoro | Lycée d'Enseignement Général Ambinanindrano |
+| 155 | Mahanoro | Lycée communautaire Masomeloka |
+| 156 | Marolambo | Lycée Ambohimilanja |
+| 157 | Marolambo | Lycée Androrangavola |
+| 158 | Marolambo | Lycée Marolambo |
+| 159 | Toamasina II | Lycée Fanandrana |
+| 160 | Toamasina II | Lycée Foulpointe |
+| 161 | Vatomandry | Lycée Zokinja Rambeloson |
+
+**Lecture exacte :** l'appel est un recrutement ciblé d'enseignants pour les établissements publics des zones 2 et 3 ; les lycées énumérés sont les lieux proposés dans cette procédure. Cette liste n'est ni le répertoire national complet ni une liste certifiée des lycées fonctionnels en 2026-2027. L'absence de Toamasina I dans ces lignes n'est pas une preuve de l'absence de lycées à Toamasina I, car les établissements hors périmètre de recrutement ciblé ne figurent pas forcément dans l'annexe.
+
+#### Rapprochements et réserves
+
+- Le Lycée Foulpointe apparaît également dans la cartographie METFP sous le nom CFP FOULPOINTE pour la formation professionnelle ; ce ne sont pas le même établissement ni le même niveau d'enseignement. Ne pas fusionner un lycée général et un centre ETFP en raison du seul toponyme.
+- Le Lycée Fanandrana est un élément historique de Toamasina II, mais sa présence en 2021 ne prouve pas son activité actuelle ni les niveaux/séries ouverts en 2026-2027.
+- Le Lycée Toamasina II (code 502160021) est identifié séparément dans un avis FID de septembre 2026 ; le Lycée Jacques Rabemananjara est corroboré par des activités institutionnelles locales de 2026. Ces sources plus récentes ne remplacent pas la liste exhaustive de la DREN.
+- La page nationale MEN « Lycées publics de Madagascar » pointe vers un répertoire régional Atsinanana qui devrait donner DREN, CISCO, nom du lycée, code et décret de création ; la page régionale n'a pas pu être ouverte en raison de délais d'attente répétés. Son contenu n'est donc pas transcrit ici.
+
+**Décision MITARIDALA :** conserver ces treize noms comme un jeu de références historiques de recrutement MEN 2021, sans les déclarer ouverts ou actifs aujourd'hui. Chaque lycée doit être rapproché par code établissement, statut actuel et preuve CISCO/DREN 2026-2027 avant publication de ses classes et séries.
+
+Source primaire : [MEN — Appel à candidatures n°2021/503/MEN/SG du 1er juillet 2021](https://www.education.gov.mg/wp-content/uploads/2021/07/Recrutement-sp%C3%A9cial_compressed.pdf), annexe « Liste des lycées », lignes 287-300 de l'extraction du PDF. La source contient aussi d'autres annexes, mais seule la liste administrative des établissements est utilisée ici.
