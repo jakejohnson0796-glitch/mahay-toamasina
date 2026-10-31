@@ -616,3 +616,50 @@ Le contrôle croisé de app/routers/scolaire_router.py, app/routers/admin_scolai
 **Recommandation non destructive :** conserver le comportement existant jusqu'à validation produit, mais compléter la gouvernance par un indicateur distinct « autorisé comme version courante / publié » ou une date d'effet confirmée. Une version candidate peut alors être consultable par les administrateurs sans devenir automatiquement la version proposée aux nouveaux élèves. Avant tout changement, ajouter un test démontrant le comportement souhaité pour (a) une version candidate plus récente, (b) une version explicitement publiée plus ancienne, (c) une version historique/archivée, (d) un profil déjà lié à une ancienne version.
 
 **Aucune modification du code ni des tests n'a été effectuée.**
+### 9.12 Application du PE en 2026-2027 : distinction public/privé et transition des examens
+
+De nouvelles informations de presse d'octobre 2026 modifient la lecture de l'année scolaire candidate. Elles doivent être suivies séparément du contenu documentaire des PE/RAPE.
+
+**Établissements publics.** L'Express de Madagascar rapporte, à la rentrée de septembre 2026, que le nouveau PE remplace l'ancien programme dans les établissements publics. Les RAPE MEN de septembre 2026 affirment aussi que leur application est obligatoire pour tous les établissements publics (ex. RAPE T8, instructions générales, p. 4). Ces deux sources convergent sur l'application du PE/RAPE dans le public pour 2026-2027.
+
+**Établissements privés.** Midi Madagasikara rapporte le 13 octobre 2026 une déclaration conjointe du MEN et de la plateforme des Directions nationales de l'enseignement privé (DNEP), datée de la veille. Selon l'article, les établissements privés peuvent, pendant la période transitoire, soit suivre le nouveau PE, soit rester sur le programme scolaire (PS) qu'ils appliquaient jusque-là, dans l'attente d'une concertation et d'un référentiel commun. L'article indique également que deux sujets BEPC seraient proposés : l'un fondé sur le PE, l'autre sur le PS avec les options A/B. Le document conjoint original, signé ou publié sur le site MEN/DNEP, n'a pas encore été récupéré ; le point demeure une règle rapportée par une source secondaire.
+
+**Examens officiels 2027 — mesures transitoires rapportées.** 2424.mg rapporte le 7 octobre 2026 que les nouvelles disciplines (notamment anglais, arts et EPS au CEPE) peuvent être enseignées en 2026-2027 sans être toutes évaluées à la session 2027 ; les épreuves artistiques seraient mises entre parenthèses au BEPC ; l'anglais deviendrait obligatoire en T9 et le choix de l'option B serait supprimé dans le cadre du PE. L'article rapporte aussi le maintien des séries L/S/OSE au baccalauréat 2027 avec options transitoires L/A1/A2 et S/C/D. L'article du 13 octobre sur l'accord MEN-DNEP précise pour sa part un sujet BEPC correspondant au PS avec options A/B. Il faut donc traiter séparément le parcours PE et le parcours PS du privé : les deux dispositifs d'examen rapportés ne décrivent pas une seule règle universelle.
+
+**Conséquence MITARIDALA :**
+- ne pas imposer par défaut le PE 2026-2027 à toutes les écoles privées de Toamasina ;
+- attacher à chaque établissement, année scolaire et cohorte la voie réellement appliquée (PE ou ancien PS), avec date et source de confirmation ;
+- autoriser l'existence simultanée de deux jeux de matières, contenus, séries/options et règles d'évaluation pour des élèves de la même classe mais de parcours curriculaires différents ;
+- distinguer les contenus effectivement enseignés, le programme de référence de l'élève et les disciplines retenues aux examens officiels de transition ;
+- demander une confirmation écrite à chaque école privée, car l'article de presse rapporte un choix de l'établissement et non un choix individuel des familles ;
+- ne pas convertir les règles transitoires de l'examen en suppression automatique de la matière du PE : une discipline peut être enseignée même si elle n'est temporairement pas évaluée au CEPE/BEPC 2027.
+
+### 9.13 Divergence sur les heures d'Histoire et Géographie au collège — valeur non arbitrée
+
+Le PDF PE T8 publié par le MEN affiche dans sa table « VOLUME HORAIRE » : Histoire 2 h et Géographie 2 h par semaine (page 10 imprimée/affichage du lecteur p. 9). La capture de la table a été contrôlée visuellement. Le même document affiche SVT 4 h, Sciences physiques 4 h, Malagasy 4 h, Français 5 h, Anglais 3 h, Mathématiques 5 h, FOV 2 h, Arts 2 h et EPS 2 h.
+
+Une dépêche de L'Express de Madagascar relative à la rentrée 2026-2027 affirme, au contraire, que l'Histoire et la Géographie « passent chacune à 4 heures par semaine » dans le premier cycle du secondaire, contre 2 heures dans l'ancien programme. Cette information secondaire entre en contradiction avec le tableau PE T8 publié sur le site du MEN. La copie PE T8 hébergée par H.R. Daniel contient en plus plusieurs versions/pages de tableaux horaires, dont certains chiffres ne concordent pas avec le PDF MEN ; elle porte des mentions de projet/expérimentation et ne peut servir à arbitrer.
+
+**Décision de qualité des données :** conserver provisoirement les valeurs 2 h + 2 h comme valeurs lues dans le PDF PE T8 du MEN, mais les marquer « contradictoire avec information de presse 2026-2027 — confirmation MEN requise ». Ne pas remplacer par 4 h, ne pas additionner deux fois, et ne pas présenter la valeur comme juridiquement confirmée tant que la Direction des Curricula / MEN n'a pas fourni une instruction ou un tableau horaire corrigé. Vérifier les tableaux propres à T6, T7 et T9 avant toute conclusion au niveau de tout le premier cycle.
+
+Sources de transition et de divergence :
+- [RAPE T8 MEN, édition septembre 2026](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T8.pdf) — instructions générales, caractère obligatoire pour le public.
+- [PE T8 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf) — table officielle des volumes horaires ; voir aussi la capture contrôlée dans les sources de l'audit.
+- [L'Express de Madagascar, rentrée 2026-2027](https://www.lexpress.mg/2026/09/annee-scolaire-2026-2027-un-nouveau.html) — 4 h annoncées pour Histoire et Géographie au premier cycle.
+- [Midi Madagasikara, 13 octobre 2026](https://midi-madagasikara.mg/le-changement-cest-maintenant-2/) — déclaration MEN/DNEP rapportée, choix PE/PS des établissements privés et double parcours BEPC.
+- [2424.mg, 7 octobre 2026](https://www.2424.mg/enseignement-des-mesures-transitoires-pour-accompagner-lapplication-du-nouveau-programme-detudes-dans-les-classes-dexamen) — mesures transitoires CEPE/BEPC/BAC 2027.
+- [2424.mg, 14 septembre 2026](https://www.2424.mg/education-loption-b-supprimee-de-lexamen-du-bepc-a-partir-de-cette-annee-scolaire-langlais-devient-une-matiere-obligatoire) — anglais obligatoire en T9 et nouvelles disciplines.
+
+### 9.14 Audit des copies PE hébergées hors MEN : statut documentaire inférieur
+
+Le site d'un établissement privé H.R. Daniel met à disposition des copies nommées T8, T9, T10, T11 et T12. Ces documents sont utiles comme copies de comparaison pour l'extraction, mais ils ne sont pas hébergés par le MEN et aucun numéro de version ou empreinte commune avec les fichiers du portail MEN n'a été établi.
+
+Les vérifications de couverture et de texte ont révélé :
+- la copie T8 comporte 302 pages, contre 257 pages pour le PE T8 publié sur le portail MEN ;
+- la copie T9 porte explicitement « PROJET D'ARRÊTÉ » dans ses pages liminaires ;
+- les copies T10 et T11 portent explicitement « VERSION EXPÉRIMENTALE » et « PROJET D'ARRÊTÉ » ;
+- la copie T8 contient un tableau de volume général puis une table expressément intitulée « VOLUME HORAIRE HEBDOMADAIRE en T8 », dont certaines valeurs divergent entre elles et du tableau du fichier MEN.
+
+Ces copies tierces ne sont donc ni une preuve d'adoption réglementaire ni une base sûre pour remplir les lacunes des fichiers ministériels. Elles peuvent seulement aider à repérer des pages, des formulations et des écarts à confirmer sur le document primaire. Les PDF du MEN eux-mêmes T6 et T8 affichent la mention « PROJET D'ARRÊTÉ » dans les pages liminaires (les couvertures sont donc des preuves de publication du projet, pas de sa signature).
+
+**Règle à conserver :** un PE présent dans la bibliothèque officielle MEN peut être la version de travail publiée par le ministère sans que l'acte final d'approbation soit démontré par ce fichier. Chaque niveau doit avoir un statut de preuve propre : fichier publié, projet d'arrêté visible, arrêté signé retrouvé, date d'effet confirmée, application par type d'établissement confirmée.
