@@ -1729,3 +1729,63 @@ Un même acte peut donc avoir plusieurs lignes de décision ou d'offres ; invers
 Source primaire de l'inventaire :
 - [MESUPRES — Liste des institutions supérieures habilitées, août 2022, pages imprimées 68-71](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
+
+
+## 41. Arrêté n°32 374/2026 du 5 octobre : gouvernance nationale de la formation doctorale et contrôle de l'intégrité
+
+Le portail documentaire officiel du MESUPRES publie le **6 octobre 2026** l'arrêté **n°32 374/2026**, intitulé « Portant composition, organisation et fonctionnement du Conseil de Référence de la Formation Doctorale (CRFD) ». Le PDF direct officiel compte 22 pages. La page de garde présente l'objet et la nouvelle architecture de gouvernance ; la page de signature porte la date du **5 octobre 2026**. Le PDF est numérisé et la consultation statique a été instable : seuls la page de garde, la page de signature et une annexe située vers la page imprimée 15 ont pu être lus visuellement au cours de ce contrôle. Les articles et annexes non lisibles ne sont donc pas résumés ici.
+
+### 41.1 Nouvelle architecture institutionnelle explicite
+
+L'article premier précise que l'arrêté fixe :
+- la composition, l'organisation et les modalités de fonctionnement du CRFD ;
+- celles des Conseils Universitaires de la Formation Doctorale (CUFD) ;
+- le tout en application du décret n°2026-1547 du 17 juin 2026 relatif à la formation doctorale et au diplôme de Doctorat.
+
+L'article 2 présente une gouvernance articulée en trois niveaux :
+1. **CRFD** : instance nationale de référence, d'orientation et d'harmonisation de la formation doctorale ;
+2. **CUFD** : instances universitaires de coordination, de contrôle scientifique et d'assurance qualité de la formation doctorale ;
+3. **Écoles doctorales** : chargées de mettre en œuvre la formation doctorale conformément aux dispositions réglementaires.
+
+Le texte indique que ces trois niveaux exercent leurs missions dans le respect de leurs attributions respectives et concourent à l'amélioration continue de la qualité de la formation doctorale.
+
+### 41.2 Abrogation du cadre antérieur du CEDM
+
+L'article 17 abroge toutes les dispositions antérieures contraires, et cite expressément l'arrêté **n°29403/2010-MESupReS du 13 juillet 2010**, modifié par l'arrêté **n°31547/2017-MESupReS du 21 décembre 2017**, qui portait création, organisation et fonctionnement du Consortium des Écoles Doctorales de Madagascar (CEDM).
+
+Cette abrogation ne doit pas être étendue sans preuve à toutes les habilitations ou à tous les arrêtés propres à des écoles doctorales. En particulier, elle ne démontre pas à elle seule que les arrêtés n°32905/2013, n°10851/2016 ou n°3916/2018 associés historiquement à SCSD et CADDETHIQUE sont annulés. Leur validité, leur articulation avec le décret 2026-1547 et les décisions actuelles doivent être contrôlées individuellement.
+
+### 41.3 Annexe relative au contrôle de l'intégrité scientifique des travaux doctoraux
+
+Une page d'annexe du document est intitulée **« Annexe VII : Référentiel national de contrôle de l'intégrité scientifique (référentiel applicable aux travaux de recherche doctorale) »**. La page lisible indique que ce référentiel sert aux Écoles Doctorales, aux CUFD et au CRFD.
+
+Le tableau de principes présenté dans cette annexe mentionne :
+- honnêteté scientifique : production de résultats authentiques et vérifiables ;
+- rigueur scientifique : respect de la démarche scientifique ;
+- transparence : déclaration des méthodes et outils utilisés ;
+- traçabilité : conservation des données et références ;
+- propriété intellectuelle : respect des droits d'auteur et des citations ;
+- responsabilité : le doctorant demeure responsable de l'ensemble de ses travaux.
+
+Le tableau de contrôle visible prévoit notamment la vérification de l'originalité de la thèse, des références bibliographiques, de l'authenticité/traçabilité des données de recherche, de l'authenticité/qualité/conformité des publications scientifiques et de l'utilisation de l'IA générative au regard des dispositions de la Charte.
+
+La page consultée comporte également une fiche de contrôle de l'autorisation de soutenance par le CUFD, prévoyant les avis favorable, favorable sous réserve de corrections ou défavorable, puis une décision d'autoriser, différer ou retourner le dossier pour complément. Les éléments visibles de cette fiche sont cohérents avec la nécessité d'une décision formelle et traçable du CUFD avant soutenance.
+
+**Limite :** le texte intégral des articles 3 à 16 et les autres annexes du PDF n'ont pas pu être extraits de manière fiable en raison des délais de chargement de la version numérisée. Il faudra relire un exemplaire téléchargeable/autorisé avant de coder la composition nominative, les mandats, quorum, périodicité de réunions, procédures de nomination, délais et autres détails opérationnels du CRFD/CUFD.
+
+### 41.4 Actions immédiates pour l'Université de Toamasina
+
+Demander au président de l'Université et au responsable de l'EDT 3D :
+1. l'acte de mise en place du **CUFD de l'Université de Toamasina**, sa composition, son président, son secrétariat et les mandats en cours ;
+2. le règlement intérieur du CUFD et les procès-verbaux de ses réunions depuis l'entrée en vigueur de l'arrêté 32 374/2026 ;
+3. la correspondance de l'EDT 3D avec le CUFD et les décisions de validation des dossiers de doctorat/soutenance ;
+4. les décisions de maintien, renouvellement ou réorganisation de SCSD et CADDETHIQUE ;
+5. la Charte d'intégrité scientifique applicable à l'Université, y compris les règles locales d'usage de l'IA générative, les logiciels de similitude, le traitement des données, les déclarations de méthodes/outils et les procédures contradictoires ;
+6. le modèle officiel de fiche de contrôle de soutenance et les critères de validation signés par le CUFD.
+
+**Décision MITARIDALA :** ajouter un objet « conseil universitaire de formation doctorale (CUFD) » distinct de l'école doctorale. Les décisions de l'école, du CUFD et du CRFD doivent être enregistrées avec leur rôle et leurs dates ; ne pas attribuer à l'EDT 3D seule le pouvoir de validation finale d'une soutenance si le nouvel arrêté confie le contrôle correspondant au CUFD.
+
+Source primaire :
+- [MESUPRES — Arrêté n°32 374/2026 du 5 octobre 2026, publié le 6 octobre 2026, PDF officiel de 22 pages](https://www.mesupres.gov.mg/assets/front/documents/documents/arretes/Arrete_n_32374-2026_portant_composition_organisation_et_fonctionnement_du_CRFD.pdf).
+- [MESUPRES — index officiel des documents, entrée Arrêté CRFD publiée le 6 octobre 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=tous).
+
