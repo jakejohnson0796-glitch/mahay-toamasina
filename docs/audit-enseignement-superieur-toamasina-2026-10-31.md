@@ -169,7 +169,7 @@ Les établissements rattachés, les campus périphériques, les instituts régio
 
 ## 6. Établissements supérieurs privés et paramédicaux : registre historique à réactualiser
 
-La liste d’habilitations MESUPRES publiée en août 2022 recense plusieurs établissements privés et paramédicaux à Toamasina/Atsinanana. Des acronymes retrouvés dans ce document comprennent notamment IFSPT Toamasina, INSPALM Toamasina, INSPNMAD Atsinanana/Toamasina, ISFSP Toamasina, ISMATEC Toamasina et ISSPM Toamasina. La même liste contient aussi l’entrée **BEATY UNIVERSITY — Toamasina**, domaine Sciences de Gestion, Licence, avec une référence d’arrêté de 2022.
+La liste d’habilitations MESUPRES publiée en août 2022 contient une entrée d’établissement privé général à Toamasina (**BEATY UNIVERSITY**) et quatre entrées paramédicales situées à Toamasina/Atsinanana : **IFSP Atsinanana**, **IFSPT Toamasina**, **INSPALM Toamasina** et **INSPNMAD Atsinanana — Toamasina**. Les quatre institutions paramédicales sont des lignes distinctes dans le registre ; ne pas les fusionner à partir de la proximité des acronymes. Les détails des parcours et arrêtés sont repris en section 6.1.
 
 **Ces mentions constituent uniquement des traces historiques d’habilitation dans le document de 2022.** Elles ne prouvent ni l’activité actuelle des établissements, ni le maintien de l’habilitation, ni les filières ouvertes en 2026-2027, ni l’existence actuelle des campus/adresses.
 
@@ -183,6 +183,31 @@ Pour chaque établissement privé ou paramédical, demander :
 7. maquette officielle du diplôme et modalités d’examen/stage.
 
 Source historique : [MESUPRES — Liste des institutions supérieures habilitées, mise à jour août 2022](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
+
+
+### 6.1 Détail des entrées paramédicales de Toamasina dans le registre MESUPRES d'août 2022
+
+Le contrôle visuel des pages imprimées 35, 36 et 37 de la liste MESUPRES d'août 2022 confirme les quatre entrées suivantes :
+
+| Libellé exact du registre | Localisation imprimée | Grade/domaine et parcours présentés | Référence affichée |
+|---|---|---|---|
+| **IFSP ATSINANANA** | Toamasina | Sciences de la Santé / Licence : Sage-femme ; Infirmier | Arrêté n°15482/2011-MESupRES du 18 avril 2011 |
+| **IFSPT** | Toamasina | Sciences de la Santé / Licence : Sage-femme ; Infirmier généraliste | Arrêté n°21911/2014-MESupReS du 11 juin 2014 |
+| **INSPALM** | Toamasina | Sciences de la Santé / Licence : Sage-femme ; Infirmier | Arrêté n°31486/2017-MESupReS du 21 décembre 2017 |
+| **INSPNMAD ATSINANANA** | Toamasina | Sciences de la Santé / Licence : Sage-femme ; Infirmier | Arrêté n°11565/2013-MESupReS du 23 mai 2013 |
+
+Ces quatre lignes sont des mentions distinctes dans la liste ministérielle. Le libellé « IFSP Atsinanana » ne doit pas être automatiquement fusionné avec « IFSPT » ; de même, « INSPALM » et « INSPNMAD Atsinanana » sont deux établissements distincts. La liste ne fournit pas de numéro d'identification juridique ni d'adresse détaillée permettant un rapprochement automatique avec une entreprise ou une école qui porterait aujourd'hui un nom voisin.
+
+La même liste comporte également **BEATY UNIVERSITY — Toamasina**, dans la section des établissements supérieurs privés : Sciences de la Société / Licence, mention Sciences de Gestion, arrêté n°3992/2022-MESupReS du 28 février 2022.
+
+**Décision de qualité :** considérer ces cinq entrées comme des établissements/offres répertoriés dans le snapshot ministériel d'août 2022, et non comme des établissements dont l'activité, l'habilitation actuelle ou les inscriptions 2026-2027 sont confirmées. Aucune adresse précise, capacité, tarif, calendrier ni maquette contemporaine ne doit être déduite de ces lignes.
+
+Sources primaires :
+- [MESUPRES — Liste des habilitations, août 2022, page 35 : IFSP Atsinanana](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+- [MESUPRES — Liste des habilitations, août 2022, page 36 : IFSPT et INSPALM](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+- [MESUPRES — Liste des habilitations, août 2022, page 37 : INSPNMAD Atsinanana](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+- [MESUPRES — Liste des habilitations, août 2022, page 2 : BEATY UNIVERSITY](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
 
 ## 7. Faits institutionnels plus récents, sans portée de catalogue exhaustif
 
