@@ -40,6 +40,7 @@ def _document(session, utilisateur_id, statut=StatutDocument.APPROUVE):
         matiere="Mathématiques",
         type_document=TypeDocument.COURS,
         annee=2026,
+        filiere_id=1,
         uploader_id=utilisateur_id,
         chemin_fichier="documents/cours-routine.pdf",
         statut=statut,
