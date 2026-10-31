@@ -2578,3 +2578,49 @@ Sources :
 - [MESUPRES — Annuaire statistique 2023-2024, PDF direct](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2023-2024.pdf).
 - [MESUPRES — Calendrier universitaire par université](https://www.mesupres.gov.mg/calendrier).
 
+
+
+## 55. Bassin potentiel de recrutement : résultats du Baccalauréat 2024 et portail des résultats 2026
+
+### 55.1 Baccalauréat 2024 — province de Toamasina
+
+Le bulletin officiel MESUPRES i.Tatitra n°003 (juillet-septembre 2024) donne les résultats par province de l'examen du Baccalauréat 2024. Pour la province de Toamasina :
+- inscrits : **33 323** ;
+- admis : **22 015** ;
+- taux de réussite : **66,07 %**.
+
+Au niveau national, le même tableau donne 218 395 inscrits, 128 551 admis et un taux de réussite de 58,86 %. Le taux de réussite de Toamasina est donc supérieur de 7,21 points au taux national. Le texte de présentation du bulletin mentionne 218 359 inscrits dans le paragraphe d'introduction, alors que le tableau provincial totalise 218 395 ; le total tabulaire est conservé pour les comparaisons et l'écart de transcription est signalé.
+
+Le bulletin donne aussi les taux nationaux par série (A1, A2, C, D, L, OSE, S et technique), mais pas la ventilation des 22 015 admis de Toamasina par série dans le tableau provincial. Il ne faut donc pas attribuer la distribution nationale des séries à la province.
+
+**Interprétation :** 22 015 admis constituent un repère de bassin potentiel dans la province, et non l'effectif des candidats qui ont demandé une place à l'Université de Toamasina, ont été admis par une faculté ou se sont inscrits. Le chiffre provincial peut inclure des candidats qui se dirigent vers d'autres universités, les IST, les formations privées, les formations professionnelles ou l'emploi.
+
+### 55.2 Résultats du Baccalauréat 2026 — service officiel, statistiques agrégées non extraites
+
+La page officielle MESUPRES « Résultats du Baccalauréat » indique que les résultats du Baccalauréat **2026** sont accessibles en redirigeant vers la plateforme gouvernementale dédiée, puis en sélectionnant la province. Le portail cible bacc.digital.gov.mg est une application dynamique ; le lecteur web consulté affiche le titre de la page mais ne restitue pas de tableau agrégé par province, série ou centre.
+
+Cette limite technique ne signifie pas que les résultats 2026 sont indisponibles pour les candidats ; elle signifie qu'aucune statistique agrégée Toamasina n'a pu être vérifiée dans le présent audit. Il ne faut pas extraire ni republier les listes nominatives des candidats pour établir une statistique générale.
+
+**À demander au MESUPRES / Office du Baccalauréat :**
+1. nombre de candidats inscrits, présents et admis en 2026 par province ;
+2. ventilation par série (L, S, OSE, technique/professionnelle, selon les séries effectivement ouvertes) ;
+3. ventilation par CISCO/centre d'examen si autorisée et suffisamment agrégée ;
+4. nombre de bacheliers ayant candidaté à l'Université de Toamasina, admis par composante et inscrits en L1 ;
+5. taux de conversion entre bacheliers admis, candidatures universitaires, admissions sélectives et inscriptions effectives.
+
+### 55.3 Indicateur de conversion lycée-université recommandé
+
+Pour planifier les capacités d'accueil et l'offre L1 de l'Université de Toamasina, MITARIDALA devrait distinguer :
+- bacheliers admis province : volume total des candidats ayant obtenu le Baccalauréat à Toamasina ;
+- candidatures université : candidatures réellement déposées à l'Université et dans chaque composante ;
+- admissions sélection : décisions d'admission par mention/parcours après concours ou sélection ;
+- inscriptions effectives L1 : personnes ayant finalisé leur inscription administrative et pédagogique ;
+- inscriptions / réinscriptions : cohortes déjà présentes en L2/L3/M1/M2.
+
+Ces étapes doivent avoir des dénominateurs séparés et une période de référence explicite. Le taux de réussite au Baccalauréat provincial ne doit jamais être utilisé comme estimation du nombre d'étudiants entrants à l'Université.
+
+Sources primaires :
+- [MESUPRES — i.Tatitra n°003, juillet-septembre 2024, Baccalauréat 2024, taux de réussite par province et par série](https://www.mesupres.gov.mg/assets/front/documents/itatitra/i.tatitra_003_Juillet_Septembre_2024_MESupRes.pdf).
+- [MESUPRES — Résultats du Baccalauréat 2026, page officielle de redirection par province](https://www.mesupres.gov.mg/resultatsBac).
+- [Portail gouvernemental des résultats du Baccalauréat 2026](https://bacc.digital.gov.mg/).
+
