@@ -84,7 +84,7 @@ Source : [MESUPRES — documents officiels, rubrique Décrets](https://www.mesup
 
 ### 4.1 Annuaire 2022-2023 : périmètre élargi de 14 661 inscrits
 
-Dans l’annexe « Répartition des étudiants inscrits par université, établissement au titre de l’année universitaire 2022-2023 », le total de l’Université de Toamasina est de **14 661 étudiants** pour les formations académiques, longues et courtes / professionnalisantes.
+Dans le tableau récapitulatif « Répartition des étudiants inscrits par université, établissement au titre de l’année universitaire 2022-2023 », le MESUPRES imprime un total de **14 661 étudiants** pour Toamasina en additionnant les filières académiques, longues et courtes/professionnalisantes. **Attention : ce total n'est pas un effectif 2022-2023 homogène garanti.** Deux lignes, DEG* (5 855) et ISTRCE* (591), portent un astérisque auquel la note de bas de tableau donne le sens « données de l'année antérieure ». La ligne ISTRCE est en outre affectée à Analanjirofo dans la cartographie régionale MESUPRES de décembre 2023. Le total de 14 661 doit donc être conservé comme total imprimé dans le tableau, avec réserve explicite sur les données reportées ; ne pas le présenter comme un décompte exhaustif et homogène des inscriptions 2022-2023 de Toamasina.
 
 Ventilation imprimée dans le tableau :
 
@@ -103,7 +103,7 @@ Ventilation imprimée dans le tableau :
 | ITPT | 305 |
 | **Total** | **14 661** |
 
-La ligne « Faculté de Médecine » combine 834 inscrits en médecine humaine (filière longue) et 344 en filières courtes infirmier / maïeutique. Les instituts et filières courtes sont inclus dans le total élargi.
+La ligne « Faculté de Médecine » combine 834 inscrits en médecine humaine (filière longue) et 344 en filières courtes infirmier / maïeutique. Les instituts et filières courtes sont inclus dans le total élargi. La présence de DEG* et ISTRCE* dans le tableau signifie que la ventilation de 14 661 n'est pas entièrement contemporaine ; le tableau détaillé de la page imprimée 29 fournit, lui, une ventilation séparée des cinq composantes académiques et longues totalisant 11 318.
 
 ### 4.2 Annuaire 2022-2023 : périmètre académique et filières longues de 11 318 inscrits
 
@@ -118,7 +118,7 @@ Un autre tableau, limité à la formation académique et aux filières longues, 
 | Faculté de Médecine | 408 | 426 | 834 |
 | **Total** | **6 024** | **5 294** | **11 318** |
 
-L’écart entre 14 661 et 11 318 vient du périmètre : le total élargi comprend aussi les formations courtes/professionnalisantes. **Ne pas choisir l’un des chiffres comme « le vrai total » sans afficher son périmètre.**
+L’écart entre 14 661 et 11 318 tient au périmètre (filières courtes/professionnalisantes comprises dans le premier), mais aussi à la réserve de millésime : 14 661 agrège des lignes marquées « données de l'année antérieure ». Le tableau détaillé 11 318 porte une ventilation explicite 2022-2023 des cinq composantes listées. **Ne pas présenter les 14 661 comme un total courant entièrement vérifié sans expliciter les deux lignes étoilées.**
 
 Sources statistiques primaires :
 - [MESUPRES — Annuaire statistique 2022-2023, PDF](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf), annexe « Étudiants inscrits — Universités », pages imprimées 3, 5 et 29-30.
@@ -1503,4 +1503,127 @@ Le compte rendu MESUPRES du 8 octobre 2026 évoque une réforme nationale de la 
 5. les avis d'admission et la maquette 2026-2027 propres à Toamasina.
 
 **Décision MITARIDALA :** tenir trois lignes d'habilitation distinctes (31798/2017, 594/2018, 4000/2022) avec leur intitulé et diplôme exacts, plus une table distincte des cursus de médecine générale et des formations post-doctorales quand leurs textes seront récupérés. Ne pas publier de spécialité médicale ou de doctorat professionnel comme offre ouverte à Toamasina tant que sa décision finale et sa cohorte n'ont pas été authentifiées.
+
+
+
+## 36. Contrôle de cohérence du tableau MESUPRES 2022-2023 : données reportées et contradiction de millésime
+
+Le contrôle visuel du PDF officiel de l'annuaire statistique MESUPRES 2022-2023 (page imprimée 3, capture de la page PDF correspondante) apporte une réserve qui doit être attachée au total de 14 661.
+
+### 36.1 Astérisque explicite sur deux lignes du tableau global
+
+Le tableau « Répartition des étudiants inscrits par université, établissement au titre de l'année universitaire 2022-2023 » affiche :
+- **DEG*** : 5 855 ;
+- **ISTRCE*** : 591 ;
+- total de l'Université de Toamasina : 14 661.
+
+La note sous le tableau dit explicitement : **« * données de l'année antérieure »**. Les deux lignes étoilées totalisent 6 446 inscriptions, soit environ 44,0 % du total imprimé de 14 661. Il ne faut donc pas qualifier les 14 661 comme un décompte strictement homogène de l'année 2022-2023.
+
+### 36.2 Contradiction documentaire à propos de la DEG
+
+Le tableau détaillé distinct « Formation académique et filière longue — Université de Toamasina » (page imprimée 29) donne pour la DEG 5 855 étudiants, avec une répartition par genre de 3 034 hommes et 2 821 femmes. Le même annuaire affiche le même nombre sur la ligne DEG* du tableau récapitulatif, mais la marque de note de bas de tableau indique que la donnée étoilée relève de l'année antérieure.
+
+Cette contradiction interne doit être conservée telle quelle. Elle ne permet pas de conclure que l'effectif DEG 2022-2023 est faux, car le tableau détaillé fournit une ventilation complète et la notice narrative de la page 29 compare 11 318 étudiants en 2022-2023 à 10 376 en 2021-2022. En revanche, la ligne DEG* de la synthèse est incohérente avec ce détail : le chiffre 5 855 est identique, mais son astérisque signale un millésime précédent.
+
+### 36.3 ISTRCE : donnée reportée et changement de périmètre régional
+
+La ligne **ISTRCE*** est également marquée « données de l'année antérieure » et attribue 591 étudiants aux filières Gestion, Droit et Agronomie dans le périmètre Toamasina. Le document MESUPRES « En chiffres » de décembre 2023 place en revanche ISTRCE dans la région **Analanjirofo**, alors que la ligne Atsinanana ne l'énumère pas. Le site de l'Université d'Analanjirofo le présente maintenant parmi ses établissements.
+
+Le chiffre de 591 est donc un repère historique/reporté dans le tableau d'Université de Toamasina ; il ne doit pas être réattribué comme un effectif actuel de l'Université de Toamasina ou de l'Université d'Analanjirofo sans l'annuaire de l'année concernée et l'acte administratif de rattachement.
+
+### 36.4 Règle de restitution statistique à adopter
+
+Pour MITARIDALA, conserver trois niveaux distincts :
+1. **Total imprimé** : 14 661, millésime affiché 2022-2023, périmètre élargi, avec réserve des lignes étoilées.
+2. **Sous-total détaillé académique/long** : 11 318, ventilation par cinq composantes (DEG, FLSH, ESPT, FST, Médecine) dans le tableau détaillé de la page imprimée 29.
+3. **Valeurs reportées de l'année précédente** : DEG* et ISTRCE* telles que signalées dans le tableau récapitulatif de la page imprimée 3 ; ne pas compter une deuxième fois ces valeurs dans un total calculé localement.
+
+Le tableau par domaine de la page imprimée 5 donne aussi 14 661 pour Toamasina, mais il reprend le même total et ne répare pas la réserve de millésime du tableau source. Les valeurs reprises dans les graphes sont donc sujettes à la même réserve.
+
+**Décision :** la fiche statistique Toamasina doit afficher 11 318 comme sous-total académique/filières longues détaillé par établissement et garder 14 661 comme total élargi publié, annoté « contient au moins deux lignes reportées de l'année précédente et une ancienne affectation ISTRCE ». Tout calcul de croissance, de capacité, de taux de féminisation ou de répartition par établissement à partir du 14 661 global doit être suspendu tant qu'un annuaire rectificatif ou une extraction 2023-2024 fiable n'a pas levé l'écart.
+
+Source primaire et preuve visuelle :
+- [MESUPRES — Annuaire statistique 2022-2023, PDF, page imprimée 3 (total 14 661, astérisques DEG*/ISTRCE* et note « données de l'année antérieure »)](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
+- [MESUPRES — Annuaire statistique 2022-2023, PDF, page imprimée 29 (ventilation détaillée 11 318 et DEG à 5 855)](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
+- [MESUPRES — « En chiffres » décembre 2023, cartographie régionale plaçant ISTRCE sous Analanjirofo](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
+
+## 37. Répartition par filière et niveau — état historique détaillé de 2022-2023
+
+Le tableau détaillé des pages imprimées 29-31 de l'annuaire permet d'observer les cohortes effectivement inscrites en 2022-2023 dans les composantes de Toamasina. Il s'agit de la formation académique et des filières longues, pas de la totalité des établissements courts/professionnalisants.
+
+### 37.1 Faculté de Droit, Économie et Gestion (DEG)
+
+| Filière | L1 | L2 | L3 | M1 | M2 | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| Économie | 788 | 377 | 249 | 239 | 0 | 1 653 |
+| Économie FOAD | 17 | 0 | 0 | 0 | 0 | 17 |
+| Gestion | 1 370 | 572 | 376 | 366 | 0 | 2 684 |
+| Gestion FOAD | 32 | 0 | 0 | 0 | 0 | 32 |
+| Droit | 682 | 302 | 258 | 195 | 0 | 1 437 |
+| Droit FOAD | 32 | 0 | 0 | 0 | 0 | 32 |
+| **Total DEG** | **2 921** | **1 251** | **883** | **800** | **0** | **5 855** |
+
+Les inscriptions FOAD sont visibles séparément dans les trois domaines : 17 en Économie, 32 en Gestion et 32 en Droit, toutes en L1 dans le tableau. Cela prouve une présence statistique de cohortes FOAD en 2022-2023, mais ne confirme pas que ces parcours ont été reconduits ou habilités pour 2026-2027.
+
+### 37.2 Faculté des Lettres et Sciences Humaines (FLSH)
+
+| Filière | L1 | L2 | L3 | M1 | M2 | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| Philosophie | 124 | 117 | 63 | 46 | 52 | 402 |
+| Histoire | 213 | 282 | 152 | 95 | 37 | 779 |
+| Lettres françaises | 194 | 125 | 101 | 0 | 25 | 445 |
+| Géographie | 277 | 167 | 147 | 91 | 45 | 727 |
+| Humanité, Durabilité et Développement | 200 | 151 | 15 | 0 | 0 | 366 |
+| Anthropologie | 229 | 155 | 112 | 94 | 85 | 675 |
+| **Total FLSH** | **1 237** | **997** | **590** | **326** | **244** | **3 394** |
+
+Les lignes Humanité, Durabilité et Développement affichent des inscrits en L1-L3 mais aucun inscrit en M1/M2 dans le tableau. Lettres françaises affiche 0 en M1 et 25 en M2, ce qui peut correspondre à une cohorte résiduelle ou à un parcours en extinction ; le tableau ne donne pas l'explication. Ne pas transformer ces cellules à zéro en preuve de fermeture réglementaire sans décision de la faculté.
+
+### 37.3 École Supérieure Polytechnique de Toamasina (ESPT)
+
+| Filière | L1 | L2 | L3 | M1 | M2 | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| Génie civil | 118 | 0 | 0 | 0 | 0 | 118 |
+| Génie des mines | 41 | 0 | 0 | 0 | 0 | 41 |
+| Génie des procédés et environnement | 35 | 0 | 0 | 0 | 0 | 35 |
+| **Total ESPT** | **194** | **0** | **0** | **0** | **0** | **194** |
+
+L'annuaire 2022-2023 indique donc uniquement des inscrits en L1 sur les trois filières affichées dans cette ventilation. Il ne permet pas de conclure à une absence permanente des années supérieures : il peut s'agir d'une première cohorte, d'un nouveau programme, d'un report de données ou d'une structure de formation en progression. Il faut demander à l'ESPT les autorisations, les cohortes des années précédentes et suivantes et le calendrier d'ouverture.
+
+### 37.4 Faculté des Sciences et Technologie (FST)
+
+| Mention / filière | L1 | L2 | L3 | M1 | M2 | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| Mathématiques, Informatique et Applications | 452 | 133 | 117 | 59 | 76 | 837 |
+| Physique-Chimie | 98 | 48 | 37 | 21 | 0 | 204 |
+| **Total FST** | **550** | **181** | **154** | **80** | **76** | **1 041** |
+
+La mention Physique-Chimie n'affiche aucun inscrit en M2 en 2022-2023, tandis que MIA a 76 inscrits en M2. Ce n'est pas suffisant pour conclure à la fermeture du Master Physique-Chimie : contrôler l'offre d'habilitation, la cohorte, les éventuels parcours rattachés à un autre établissement et les années suivantes.
+
+### 37.5 Faculté de Médecine — médecine humaine
+
+Le tableau détaillé distingue huit années d'étude (1ère à 8e année) et 834 inscrits en Médecine humaine :
+| Année d'étude | Inscrits |
+|---|---:|
+| 1ère | 321 |
+| 2e | 78 |
+| 3e | 77 |
+| 4e | 73 |
+| 5e | 78 |
+| 6e | 76 |
+| 7e | 71 |
+| 8e | 60 |
+| **Total** | **834** |
+
+La ligne médecine humaine ne contient pas les 344 inscrits infirmier / maïeutique mentionnés dans le tableau élargi : ces filières courtes sont séparées. La réforme nationale post-Doctorat en Médecine de 2026 doit être suivie indépendamment de ces effectifs historiques, qui décrivent le cursus alors en place.
+
+### 37.6 Règles de lecture
+
+- Les nombres par niveau sont des inscrits observés, pas des places ouvertes ou des capacités théoriques.
+- Une valeur zéro peut correspondre à une cohorte non ouverte cette année-là, un programme récent/arrêté, ou un défaut de remontée ; elle ne suffit pas à déterminer la validité d'une habilitation.
+- Les intitulés de 2022-2023 doivent rester liés à la nomenclature de l'annuaire et être rapprochés des décisions HAE et maquettes actuelles.
+- Les formations courtes et les instituts régionaux ne sont pas détaillés dans ces tableaux de formation académique/filière longue.
+
+Source primaire :
+- [MESUPRES — Annuaire statistique 2022-2023, pages imprimées 29-31 (tableaux par filière et année d'étude)](https://www.mesupres.gov.mg/assets/front/documents/documents/annuaires/ANNUAIRE_STATISTIQUE_MESUPRES_2022-2023.pdf).
 
