@@ -681,3 +681,34 @@ Le tableau de bord socio-économique Atsinanana de l'INSTAT (édition publiée e
 **Action de clôture locale :** demander à la CISCO Toamasina I et à la CISCO Toamasina II une extraction datée 2026-2027 des établissements publics et privés du secondaire, avec code officiel, ZAP, commune, statut, niveaux ouverts, séries/options, décision PE/PS et année scolaire. Pour chaque école privée, obtenir une confirmation écrite de la voie curriculaire réellement choisie après l'annonce MEN-DNEP d'octobre 2026. Ne pas transformer les noms des répertoires ou des actions ponctuelles en établissements homologués sans cette validation.
 
 Sources : [Ministère de l'Environnement et du Développement Durable — activité DREDD/CISCO Toamasina I, publication du 6 mai 2026](https://www.environnement.mg/actualites/%F0%9D%90%80%F0%9D%90%9C%F0%9D%90%AD%F0%9D%90%A2%F0%9D%90%AF%F0%9D%90%A2%F0%9D%90%AD%F0%9D%90%9E-%F0%9D%90%92%F0%9D%90%9E%F0%9D%90%A7%F0%9D%90%AC%F0%9D%90%A2%F0%9D%90%9B%F0%9D%90%A2/), [INSTAT — Tableau de bord socio-économique Atsinanana](https://www.instat.mg/documents/upload/main/TBSE_Atsinanana_Dec2025.pdf), [MEN — Élaboration d'un annuaire pour l'Éducation](https://www.education.gov.mg/systeme-dinformation-du-men-elaboration-dun-annuaire-pour-leducation/).
+### 9.16 Dimensionnement historique du secondaire à Toamasina I/II — statistiques DREN reprises par l'INSTAT
+
+Le Tableau de bord socio-économique de la région Atsinanana, source DREN Atsinanana, contient des statistiques détaillées par district pour l'année scolaire 2023/2024. Les tableaux sont reproduits dans les pages 33-34 du document (tableaux 47 et 48). La pagination interne visible du document porte « JUILLET 2024 » ; le nom du fichier hébergé sur le site INSTAT inclut « Dec2025 », ce qui ne doit pas être interprété comme une actualisation des données scolaires 2025 ou 2026.
+
+**Collèges — tableau 47, année 2023/2024 :**
+
+| District | Élèves | Salles de classe | Enseignants | Établissements fonctionnels |
+|---|---:|---:|---:|---:|
+| Toamasina I | 25 339 | 521 | 1 371 | 90 |
+| Toamasina II | 10 226 | 243 | 450 | 49 |
+
+**Lycées — tableau 48, année 2023/2024 :**
+
+| District | Élèves | Salles de classe | Enseignants | Établissements fonctionnels |
+|---|---:|---:|---:|---:|
+| Toamasina I | 11 493 | 248 | 688 | 34 |
+| Toamasina II | 3 002 | 77 | 181 | 10 |
+
+Ces nombres sont des établissements fonctionnels déclarés par la DREN, pas une liste d'établissements par nom. Ils donnent toutefois une mesure vérifiable de l'échelle du secondaire : Toamasina I avait 90 collèges et 34 lycées fonctionnels en 2023/2024, bien au-delà du petit échantillon de cinq établissements secondaires cités dans l'activité locale de mai 2026. Cela confirme qu'il faut obtenir la liste nominative CISCO complète avant de prétendre que l'inventaire MITARIDALA est exhaustif.
+
+Le même tableau de bord indique pour Atsinanana en 2023/2024 un taux brut de scolarisation de 40,42 % au collège et 17,95 % au lycée ; les taux nets affichés sont 23,98 % et 9,98 %. Le taux de réussite au BEPC 2024 indiqué pour Toamasina I est 58,85 %. Ces taux sont des données régionales/district historiques, ne doivent pas être utilisés comme résultats individuels, prévisions 2026-2027 ou performances attribuées à une école.
+
+**Enseignement technique et professionnel — tableaux 53/54 :** le tableau régional indique 10 établissements ETFP publics (CFP/LTP) et 49 établissements ETFP privés (CFP/LTP/Instituts) pour 2024. La répartition par district existe au tableau 54, mais le rendu textuel de certaines colonnes fusionnées est ambigu ; les comptes de Toamasina I ne sont donc pas transcrits dans MITARIDALA à partir de cette seule extraction. Cette statistique historique confirme que la cartographie de cinq établissements publics présents sur la page METFP n'est pas un inventaire de l'ensemble du paysage ETFP public et privé.
+
+**Conséquences produit :**
+- séparer l'annuaire officiel des établissements homologués, la liste des établissements fonctionnels déclarés par la DREN et les établissements effectivement ouverts/inscrits dans l'année choisie ;
+- ne pas interpréter les 90 collèges / 34 lycées comme une liste nominative ou un nombre exact pour 2026-2027 ;
+- prévoir la collecte CISCO Toamasina I et II par code établissement, nom, commune/ZAP, statut public/privé, niveau effectivement ouvert et programme appliqué (PE ou PS) ;
+- distinguer les statistiques d'établissements publics et privés pour l'ETFP ; la cartographie METFP accessible ne doit pas être utilisée comme estimation du total régional.
+
+Source : [INSTAT — Tableau de bord socio-économique Région Atsinanana](https://www.instat.mg/documents/upload/main/TBSE_Atsinanana_Dec2025.pdf), tableaux 47, 48, 49, 52, 53 et 54 ; données scolaires 2023/2024, sources mentionnées dans le document : DREN Atsinanana et DRETFP Atsinanana. Les tableaux 47 et 48 ont été inspectés visuellement sur les pages 33 et 34.
