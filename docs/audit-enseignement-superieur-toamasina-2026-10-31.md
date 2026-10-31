@@ -1236,3 +1236,56 @@ La cible de formation de 150 doctorants mentionnée dans les termes de référen
 
 Source primaire :
 - [MESUPRES — « En chiffres », décembre 2023, tableaux 07 (effectifs inscrits), 08 (doctorants) et graphe 10 (répartition des doctorants), pages imprimées 8-11](https://www.mesupres.gov.mg/assets/front/documents/documents/statistiques/MESUPRES_EN_CHIFFRES_Decembre_2023.pdf).
+
+
+## 33. Écoles doctorales historiques de Toamasina et articulation à clarifier avec l'EDT 3D
+
+### 33.1 Deux écoles doctorales recensées dans la liste MESUPRES d'août 2022
+
+Le chapitre D « Les écoles doctorales » de la liste officielle MESUPRES d'août 2022 (page imprimée 83, contrôlée visuellement) contient deux entrées concernant Toamasina, toutes deux associées à l'arrêté **n°32905/2013-MESupRES du 7 novembre 2013** :
+
+| N° dans le registre 2022 | École doctorale | Institution d'appartenance indiquée | Équipes / domaines décrits |
+|---|---|---|---|
+| 25 | **Science, Culture, Société et Développement (SCSD)** | Université Toamasina, avec des laboratoires et partenaires universitaires mentionnés dans la colonne d'appartenance | Droit et Sciences politiques ; Santé, politiques publiques, gestion d'entreprises et développement ; Mathématiques, Informatique et Applications ; Patrimoines, espaces et sociétés |
+| 26 | **Cadre de vie, Ancrage Identitaire et Développement Durable et Éthique (CADDETHIQUE)** | Faculté des Lettres et Sciences Humaines (FLSH) | Ethnophilosophie et Éthique (ETHNOTHIQUE) ; Aire géographique, Affirmation identitaire et Pratiques politiques ; Oralité/Écriture et Création artistique (ORACRISTIQUE) |
+
+La liste ministérielle de 2019 détaillait SCSD dans le domaine « Sciences de la Société / Doctorat » et indiquait les mêmes quatre grands champs de recherche. La liste 2022 conserve les intitulés et l'arrêté de référence dans son chapitre des écoles doctorales, mais ne présente pas chaque parcours de ces écoles comme une offre Licence/Master de premier cycle.
+
+Sources primaires :
+- [MESUPRES — Liste des établissements et écoles doctorales habilités, août 2022, page imprimée 83 (PDF)](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+- [MESUPRES — Liste officielle de février 2019, écoles doctorales SCSD et CADDETHIQUE (PDF)](https://www.mesupres.gov.mg/assets/front/documents/documents/etablissements_habilites/liste_des_institutions_superieures_mise_a_jour_fevrier_2019.pdf).
+
+### 33.2 Éléments d'activité documentaire pour CADDETHIQUE, sans preuve autonome de renouvellement
+
+La Bibliothèque Universitaire de Toamasina possède une section de catalogue distincte intitulée « Bibliothèque CADDETHIQUE », avec des collections documentaires et des ressources en ligne. Un projet de thèse 2025-2026 diffusé par un portail académique externe se présente également comme relevant de l'école CADDETHIQUE à l'Université de Toamasina et cite un directeur de thèse de l'université.
+
+Ces éléments constituent des signaux d'activité scientifique et documentaire. Ils ne prouvent pas que la décision d'habilitation de 2013 a été renouvelée, que l'école est formellement maintenue dans son organisation actuelle, ni que le projet de thèse externe a été accepté et que son auteur est régulièrement inscrit.
+
+Sources de signal d'activité :
+- [Bibliothèque Universitaire de Toamasina — section CADDETHIQUE](https://www.bibliotheque-univ-toamasina.com/online/index.php?location=2&lvl=section_see).
+- [Projet de thèse de doctorat 2025-2026 mentionnant CADDETHIQUE (document de travail externe)](https://www.anthropomada.com/bibliotheque/THESE-RAZAFIMAHATRATRA-Myrah-Valisoa.pdf).
+
+### 33.3 Relation entre SCSD, CADDETHIQUE et l'EDT 3D créée en 2025 : non établie
+
+L'EDT 3D « Diversité et Développement Durable » est documentée par Expertise France comme créée le 13 février 2025 et dotée de quatre équipes d'accueil doctorales. L'article MESUPRES du 18 mars 2026 confirme son directeur, son partenariat avec le CNRIT et des doctorants utilisant les laboratoires du CNRIT.
+
+Les quatre grands domaines décrits pour les équipes de l'EDT 3D — ingénierie/technologie, santé, sciences humaines et sociales, sciences de l'éducation — sont plus larges que les thèmes affichés pour CADDETHIQUE et se recoupent partiellement avec les quatre domaines de SCSD. Les sources publiques consultées ne précisent pas si l'EDT 3D :
+- remplace juridiquement SCSD et/ou CADDETHIQUE ;
+- constitue une école doctorale nouvelle qui coexiste avec ces structures ;
+- rassemble les anciennes écoles et leurs équipes d'accueil sous une organisation commune ;
+- ou a reçu une nouvelle habilitation distincte en complément de l'arrêté 32905/2013.
+
+**Décision MITARIDALA :** modéliser SCSD, CADDETHIQUE et EDT 3D comme trois fiches de structures doctorales documentées par des sources/millésimes distincts, reliées par une relation « succession/réorganisation à confirmer ». Ne pas fusionner les identifiants, les doctorants, les équipes d'accueil ni les habilitations avant l'obtention des actes officiels.
+
+### 33.4 Pièces à obtenir pour clore le registre doctoral de Toamasina
+
+1. copie intégrale de l'arrêté n°32905/2013 et éventuels actes modificatifs, renouvellements ou retraits ;
+2. décision d'habilitation ou d'accréditation actuelle de l'EDT 3D, son code HAE et sa durée ;
+3. texte de réorganisation indiquant le sort de SCSD et CADDETHIQUE ;
+4. organigramme doctoral approuvé : école(s), institution support, équipes d'accueil et responsables ;
+5. actes de rattachement des laboratoires/équipes, composition HDR et doctorats ;
+6. listes anonymisées des doctorants régulièrement inscrits par école/équipe et année universitaire ;
+7. maquettes des formations doctorales, volumes horaires, séminaires, publications exigées et procédures de soutenance ;
+8. rapport de mission Expert'Izy 2026, guides méthodologiques finalisés et procès-verbal de validation ;
+9. convention CNRIT–EDT 3D du 18 mars 2026, annexes et relevé des activités réellement réalisées.
+
