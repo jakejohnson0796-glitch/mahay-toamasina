@@ -1659,3 +1659,50 @@ Sources officielles :
 - [PE T12 MEN — SES L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 173-177.
 - [PE T12 MEN — SES S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 394-399.
 - [PE T12 MEN — SES OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), pages PDF 590-596.
+
+### 9.47 Histoire et Géographie au lycée : horaires individuels confirmés par les PE T11/T12
+
+Les PE T11 et T12 donnent des volumes hebdomadaires distincts pour Histoire et Géographie. La grille quantitative générale du lycée regroupe les deux disciplines dans une même ligne Histoire-Géographie ; le rapprochement des sections disciplinaires des PE permet toutefois de restituer les horaires individuels suivants :
+
+| Niveau / série | Histoire | Géographie | Total Histoire-Géographie dans la grille |
+|---|---:|---:|---:|
+| T11 L | 2 h 30 | 2 h 30 | 5 h |
+| T11 S | 2 h | 2 h | 4 h |
+| T11 OSE | 2 h 30 | 2 h 30 | 5 h |
+| T12 L | 2 h | 2 h | 4 h |
+| T12 S | 1 h 30 | 1 h 30 | 3 h |
+| T12 OSE | 3 h | 3 h | 6 h |
+
+Les sommes de chaque ligne correspondent exactement au bloc Histoire-Géographie de la grille horaire autonome : T11 L/S/OSE = 5/4/5 h et T12 L/S/OSE = 4/3/6 h. Il n'y a donc pas de contradiction entre la grille groupée et les PE ; la grille présente un agrégat commun, tandis que les PE permettent de répartir cet agrégat en deux disciplines.
+
+#### T11 — Première : contenus et approches
+
+- **Histoire L (2 h 30), S (2 h) et OSE (2 h 30)** : le sommaire et les tableaux de contenus traitent notamment du monde au seuil du XXe siècle et de l'hégémonie européenne, de la peinture à Madagascar aux XIXe-XXe siècles, de la Première Guerre mondiale, de Madagascar colonie française, de la Révolution russe et de la naissance de l'URSS, de la crise de 1929, des régimes dictatoriaux, de la Seconde Guerre mondiale et des mouvements d'émancipation à Madagascar jusqu'à l'indépendance. La section consultée L et S montre ce corpus ; les horaires demeurent spécifiques à chaque série.
+- **Géographie L (2 h 30) et OSE (2 h 30)** : deux grands ensembles structurent le tableau des contenus : « La population du globe » et « Espace et valorisation des ressources naturelles : enjeux et perspectives ». Les RAG portent sur l'analyse des phénomènes géographiques, des dynamiques socio-économiques et des potentialités à valoriser durablement.
+- **Géographie S (2 h)** : la section détaillée porte sur les mouvements naturels de population, les indicateurs démographiques (natalité, fécondité, mortalité, mortalité infantile, accroissement naturel, espérance de vie, temps de doublement), les transitions et politiques démographiques, la structure par âge/sexe/secteur d'activité, les migrations et la répartition inégale de la population. Les contenus abordent également l'exploitation des ressources naturelles et les interactions entre activités humaines et milieux.
+
+#### T12 — Terminale : contenus et approches
+
+- **Histoire L (2 h), S (1 h 30) et OSE (3 h)** : les sections présentent l'histoire de la photographie à Madagascar aux XIXe-XXe siècles ; le monde après la Seconde Guerre mondiale (nouvel ordre mondial, ONU, Guerre froide, décolonisation) ; le monde de l'après-Guerre froide (équilibre géopolitique, paix, gouvernance économique mondiale) ; Madagascar dans la seconde moitié du XXe siècle et au XXIe siècle (républiques/régimes politiques depuis 1960 et évolution économique). Les RAG demandent de maîtriser les repères historiques, critiquer une réalité sociale et interpréter les particularités de la société.
+- **Géographie L (2 h), S (1 h 30) et OSE (3 h)** : le PE conserve les deux grands blocs « Le monde d'aujourd'hui : contrastes et inégalités » et « Madagascar, un pays à forte potentialité économique ». Le contenu S développe la démographie (indicateurs, transition, politiques, migrations et répartition de la population) ainsi que les impacts de l'exploitation des ressources naturelles. Les sections L et OSE mettent en relation le nouvel ordre mondial, la mondialisation, les contrastes Nord-Sud, les indicateurs de développement, les atouts humains/naturels et les activités économiques de Madagascar.
+
+#### Conséquences pour le modèle MITARIDALA
+
+1. Le catalogue doit garder Histoire et Géographie comme deux disciplines séparées, chacune rattachée à sa série et à son PE.
+2. Pour calculer l'emploi du temps, la somme des deux matières doit correspondre au bloc agrégé de la grille ; ne pas affecter toute la valeur groupée aux deux matières, ce qui doublerait artificiellement les heures.
+3. Le coefficient Histoire-Géographie reste un bloc commun dans la grille autonome ; le PE donne la matière et le programme mais ne justifie pas automatiquement de répartir ce coefficient entre les deux disciplines.
+4. Les minutes doivent être conservées : 2 h 30 = 2,5 h ; 1 h 30 = 1,5 h. Ne pas arrondir à 2 h ou 3 h.
+5. Dans les statistiques de charge pédagogique, séparer heures hebdomadaires par discipline, total du bloc, et coefficients du bloc. Une même valeur groupée ne doit jamais être additionnée deux fois.
+6. Les RAS et thèmes d'Histoire/Géographie doivent rester liés à la série, même lorsque des intitulés se ressemblent. Les activités de contextualisation d'Atsinanana peuvent s'appuyer sur l'enquête et les cartes locales prévues dans le PE, sans créer de compétence régionale supplémentaire.
+
+Sources officielles :
+- [PE T11 MEN — Histoire L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 141-142, 2 h 30/semaine.
+- [PE T11 MEN — Histoire S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 391-392, 2 h/semaine.
+- [PE T11 MEN — Géographie L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 159-160, 2 h 30/semaine.
+- [PE T11 MEN — Géographie S](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 412-413, 2 h/semaine.
+- [PE T11 MEN — Géographie OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T11.pdf), p. 637-638, 2 h 30/semaine.
+- [PE T12 MEN — Histoire L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 148-149, 2 h/semaine.
+- [PE T12 MEN — Géographie L](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 160-161, 2 h/semaine.
+- [PE T12 MEN — Histoire OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 567-568, 3 h/semaine.
+- [PE T12 MEN — Géographie OSE](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf), p. 579-580, 3 h/semaine.
+- [Document autonome MEN — coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf), ligne groupée Histoire-Géographie.
