@@ -987,3 +987,71 @@ Ces événements démontrent une activité institutionnelle, administrative et �
 Sources secondaires de veille, reprenant des communications de l'Université :
 - [Université de Toamasina Officiel — publications d'octobre 2026](https://www.medioq.com/MG/Toamasina/113710243340905/Universit%C3%A9-de-Toamasina-Officiel).
 - [FST — organisation de la campagne universitaire par composante, avril 2026](https://www.schoolandcollegelistings.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina).
+
+
+## 29. Décret n°2026-1548 : nouveau régime de l'Habilitation à Diriger des Recherches (HDR)
+
+Le décret officiel **n°2026-1548 du 17 juin 2026**, publié au registre MESUPRES le 1er juillet 2026, fixe le nouveau régime national de l'HDR. Le PDF officiel a été contrôlé visuellement sur ses six pages.
+
+### 29.1 Ce que reconnaît l'HDR et qui peut la délivrer
+
+L'HDR est un diplôme national qui reconnaît le haut niveau scientifique, l'originalité de la démarche, la maîtrise d'une stratégie de recherche dans un domaine assez large et la capacité à encadrer des chercheurs et doctorants (article 3). Elle peut notamment permettre de postuler au grade de Professeur de l'Enseignement Supérieur ou de Directeur de recherche associé (article 4).
+
+Elle est délivrée par une institution publique habilitée par le MESUPRES, disposant d'une structure de recherche active, d'une école doctorale dans la discipline concernée et d'une commission de spécialistes compétente pour évaluer le dossier (article 5). L'habilitation HDR ne doit donc pas être assimilée à un simple grade interne ou à une nomination sur poste.
+
+### 29.2 Conditions cumulatives de candidature
+
+Le décret fixe notamment les conditions suivantes (article 6) :
+- être titulaire du Doctorat ou d'un diplôme étranger reconnu équivalent depuis au moins cinq ans ; la période d'exercice au titre de l'exception pour certaines thèses d'exercice n'est pas comptée ;
+- appartenir au corps des Maîtres de conférences de l'enseignement supérieur ou au corps des Maîtres de recherches d'un organisme public de recherche ;
+- justifier d'au moins trois années d'expérience dans ce grade ;
+- ne pas avoir fait l'objet d'une sanction académique ou disciplinaire incompatible avec la direction de travaux de recherche ;
+- justifier d'activités régulières d'enseignement et d'encadrement scientifique de niveau Master ou Doctorat, d'une implication effective dans des activités de recherche reconnues et d'une participation à des manifestations scientifiques nationales ou internationales.
+
+### 29.3 Définition réglementaire d'une structure de recherche active
+
+L'article 2 décrit une « structure de recherche active » comme une structure/unité/laboratoire/centre rattaché à une institution publique d'enseignement supérieur ou de recherche qui satisfait cumulativement à ces conditions :
+1. production scientifique régulière : publications après la soutenance du Doctorat dans des revues à comité de lecture ou actes scientifiques reconnus ;
+2. encadrement doctoral effectif : au moins trois doctorants régulièrement inscrits dans l'école doctorale de rattachement ;
+3. implication dans au moins un projet de recherche financé, national ou international, après soutenance ;
+4. animation scientifique régulière : séminaires, conférences ou colloques organisés ou coorganisés dans la discipline.
+
+Ces critères sont particulièrement utiles pour vérifier les laboratoires qui soutiennent les parcours M2, le Doctorat et les dossiers HDR de Toamasina. Un laboratoire inscrit dans un organigramme ou disposant d'un nom ne suffit pas à démontrer son activité au sens du décret.
+
+### 29.4 Niveau de production requis pour un dossier HDR
+
+L'article 8 demande au candidat d'être auteur ou co-auteur d'au moins **dix publications scientifiques** dans sa spécialité, dont au moins **trois comme auteur principal**. Parmi celles-ci, au moins **deux articles** doivent être publiés dans des revues indexées dans des bases internationales reconnues. D'autres travaux peuvent comprendre des articles dans des revues nationales/régionales à comité de lecture, actes de colloques scientifiques ou chapitres d'ouvrages collectifs, à condition de présenter des garanties de qualité.
+
+Ne sont notamment pas comptés :
+- les travaux publiés dans des revues ou éditions prédatrices ;
+- les travaux dépourvus de comité de lecture reconnu ;
+- les publications redondantes ou sans valeur ajoutée scientifique ;
+- les travaux hors domaine de compétence du candidat.
+
+Un mémoire de synthèse doit présenter la cohérence et l'apport des travaux à l'avancement des connaissances, l'expérience d'encadrement, et la capacité à définir/conduire un projet original, animer une équipe de recherche et encadrer des étudiants de Master.
+
+### 29.5 Évaluation, soutenance et garanties d'intégrité
+
+- La commission de spécialistes HDR comprend au moins cinq membres, dont deux externes à l'établissement ; elle est composée d'enseignants-chercheurs ou chercheurs HDR, avec au moins deux membres de la discipline du candidat (article 10).
+- Le jury de soutenance HDR comprend au moins cinq membres HDR, dont quatre au moins dans la spécialité des travaux (article 10).
+- La date et le lieu de soutenance sont rendus publics au moins dix jours avant ; la soutenance est publique, avec des exceptions encadrées ; une partie des informations et le résumé du mémoire sont publiés pour assurer la transparence académique (articles 11-15).
+- Le candidat doit attester l'authenticité des travaux, le respect de l'éthique et l'absence de fraude, plagiat ou manipulation des données (article 16).
+- Des sanctions, pouvant aller jusqu'au retrait du diplôme HDR, sont prévues en cas de fraude ; les manquements répétés des écoles doctorales ou structures d'accueil peuvent aussi entraîner le retrait de leur habilitation (articles 17-20).
+
+### 29.6 Conséquences sur la cartographie de la recherche à Toamasina
+
+Pour chaque laboratoire, équipe ou centre de recherche de l'Université :
+1. demander la décision officielle de rattachement et sa discipline ;
+2. vérifier la liste des enseignants-chercheurs et chercheurs, leurs grades et HDR ;
+3. compter les doctorants actifs par équipe d'accueil et par année universitaire ;
+4. relever les publications postérieures aux Doctorats, en distinguant auteur principal/co-auteur, revue indexée, actes et ouvrage ;
+5. obtenir les contrats/projets financés, les organismes partenaires et les dates ;
+6. inventorier les séminaires, colloques et journées scientifiques réellement organisés ;
+7. distinguer structure de recherche formellement reconnue, structure active au sens du décret et équipe d'accueil habilitée pour une école doctorale.
+
+**Attention à la différence des règles :** les critères de structure active de ce décret concernent l'évaluation des unités/laboratoires pour le dispositif HDR. Ils ne doivent pas être confondus avec les critères de composition de l'école doctorale et des équipes d'accueil du décret 2026-1547 ; les liens entre ces niveaux doivent être enregistrés, sans fusionner leurs statuts.
+
+Source primaire :
+- [MESUPRES — Décret n°2026-1548 du 17 juin 2026 portant régime de l'HDR (PDF officiel, 6 pages)](https://www.mesupres.gov.mg/assets/front/documents/documents/decrets/decret_N_2026-1548_du_17_juin_2026.pdf).
+- [MESUPRES — Registre des décrets officiels, publication du 1er juillet 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=decrets).
+
