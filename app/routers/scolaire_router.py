@@ -61,7 +61,7 @@ def _donnees_option(option: OptionScolaire, toutes_options: list[OptionScolaire]
 
 @router.get("/referentiel")
 def obtenir_referentiel_scolaire(
-    referentiel_id: Optional[int] = None,
+    referentiel_id: Optional[int] = Query(default=None),
     session: Session = Depends(get_session),
 ):
     """Expose la version demandée ; par défaut, la version la plus récente."""
