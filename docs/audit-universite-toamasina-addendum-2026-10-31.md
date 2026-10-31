@@ -346,6 +346,27 @@ Ne pas réduire toutes les preuves à un seul champ `statut`. Conserver au minim
 | Professionnalisation | UE transversales, pourcentage, stage/alternance, projet intégrateur, partenaire |
 | Insertion | indicateurs, cohorte, suivi à 1/2/3 ans, date de mise à jour |
 
+### 5.1 Limite du modèle actuel : il couvre les universités publiques, pas tout l'écosystème habilité
+
+Le code et le schéma confirment que :
+- `Universite` représente les universités publiques nationales ; elle ne porte pas de type juridique privé/public, de parent institutionnel ou d'identité HAE.
+- `Faculte` est obligatoirement rattachée à une `Universite` ; elle ne peut donc pas représenter proprement une école paramédicale privée indépendante, BEATY University ou une école doctorale multi-établissements sans rattachement artificiel.
+- `Filiere` décrit un parcours à un niveau (ou un ancien parcours sans niveau) sous une faculté ; `ProgrammeUniversitaire` active l'offre dans une université. Le modèle ne permet pas de représenter directement une offre privée indépendante, un DTS, un titre d'ingénieur, un cycle médical en huit années ou un doctorat sans détourner les niveaux.
+- `EtablissementPartenaire` est explicitement conçu pour autoriser un organisme partenaire à préinscrire ses étudiants en masse. Ce n'est pas un référentiel des institutions supérieures et il ne faut pas le réutiliser comme tel.
+- aucune table dédiée à l'école doctorale, à la structure de recherche, à l'équipe d'accueil ou à la formation doctorale n'existe dans le schéma actuel.
+
+**Conséquence :** les six universités publiques et leurs facultés peuvent continuer à utiliser le modèle actuel ; le périmètre plus large découvert dans les registres HAE nécessite une couche institutionnelle distincte. Ne pas créer une « faculté privée » sous l'Université Toamasina pour y loger BEATY, les écoles paramédicales, l'ESPT ou SCSD.
+
+### 5.2 Architecture cible recommandée — sans migration exécutée
+
+1. **Institution supérieure** : nom légal, sigle, type (université publique, université privée, institut régional affilié, établissement paramédical, école doctorale, centre de langues/recherche), statut juridique, région, commune, code MESUPRES/HAE, date d'effet et d'éventuelle fermeture.
+2. **Affiliation institutionnelle** : relation explicite entre une institution et son établissement de rattachement, avec dates de validité et preuve (par exemple ISTRALMA → Université de Toamasina ; Beaty University reste indépendante ; Confucius est un centre de langues/partenariat, pas une université diplômante).
+3. **Offre de formation habilitée** : institution propriétaire, domaine, grade/type de diplôme (DTS, Licence, Master, Ingénieur, Doctorat, diplôme paramédical), mention, parcours, niveaux/années, mode (présentiel/FOAD/hybride), identifiant fiche HAE, arrêté, début/fin de validité, état de renouvellement et année d'ouverture réelle.
+4. **Structure doctorale et recherche** : écoles doctorales, axes, équipes d'accueil, laboratoires, conventions, directeurs de thèse et programmes de doctorat. SCSD doit être liée à l'Université de Toamasina et à ses équipes partenaires sans être convertie en faculté LMD.
+5. **Références et preuves historisées** : registre de décisions append-only, métadonnées, URL source, PDF original, hash, date de collecte, validateur, historique des statuts et du nom légal.
+
+Les tables actuelles `Universite`, `Faculte`, `Mention`, `Filiere` et `ProgrammeUniversitaire` restent l'interface compatible pour les six composantes publiques déjà publiées. Les nouvelles structures doivent être introduites progressivement avec des clés de correspondance et une migration réversible, puis branchées dans les API/menus de sélection uniquement après validation documentaire.
+
 Une preuve d'habilitation n'est pas une preuve d'ouverture annuelle. Une maquette pédagogique n'est pas une décision d'accréditation. Une page web de faculté ne remplace pas un arrêté.
 
 Pour les pièces : conserver l'URL officielle, le titre exact, le numéro de texte, la date, le grade, la mention, le parcours, l'année d'effet, le hash du fichier et l'état d'audit. L'historique doit être append-only : une nouvelle décision ne détruit pas la preuve antérieure.
