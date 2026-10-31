@@ -89,8 +89,6 @@ Liens de navigation officiels : [Index PE et RAPE](https://plateforme.education.
 
 ## 5. METFP — référentiels ETFP publiés en 2026
 
-## 5. METFP — référentiels ETFP publiés en 2026
-
 Le portail du METFP décrit son catalogue comme contenant des référentiels de compétences, de formation, de certification et d'évaluation : [Référentiels et ressources pédagogiques](https://metfp.gov.mg/formation/ressource). Au 31 octobre 2026, l'index officiel affiche 12 référentiels, dernière parution au 14 septembre 2026 ; il montre 9 documents sur la première page et 3 sur la seconde. Cela établit qu'un corpus de 12 éléments est annoncé, mais ne prouve pas que chaque PDF a été téléchargé, lu et rapproché du catalogue MITARIDALA.
 
 Il existe aussi des annonces officielles de remises de référentiels à ne pas confondre avec les 12 entrées déjà visibles dans le catalogue web :
