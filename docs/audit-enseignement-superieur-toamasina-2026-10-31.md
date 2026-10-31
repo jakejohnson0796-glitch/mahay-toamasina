@@ -1337,3 +1337,74 @@ Sources officielles :
 - [MESUPRES — Documents Habilitations / Accréditations : liste 2022 encore indexée et guides 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations).
 - [MESUPRES — Bilan de la CNH 2026 publié le 11 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/593).
 
+
+
+## 35. Actualités nationales d'octobre 2026 : professionnalisation, réforme médicale, spécialisation des universités et assurance qualité
+
+### 35.1 Mise en œuvre du décret employabilité et projet TAFA — atelier national du 2 octobre
+
+Le MESUPRES rapporte qu'un atelier national a été organisé le **2 octobre 2026** à l'Hôtel Panorama avec l'Ambassade de France et l'Agence Universitaire de la Francophonie, dans le cadre de TAFA. L'atelier a expliqué le contenu du décret n°2026-1483, les conditions d'application dans les établissements et les responsabilités des différents acteurs.
+
+Cette séance complète le projet TAFA documenté en section 21 : le partenariat n'est pas seulement un dispositif d'ateliers pour étudiants, il accompagne aussi l'appropriation de la réforme nationale sur l'employabilité et la professionnalisation par les établissements d'enseignement supérieur.
+
+**À obtenir pour l'Université de Toamasina :** la feuille de présence ou la liste des établissements représentés, les outils remis, les actions d'application retenues pour les composantes de Toamasina, les responsables nommés et le calendrier d'intégration dans les maquettes.
+
+Source officielle : [MESUPRES — Atelier sur l'employabilité et la qualité de l'enseignement supérieur dans le cadre de TAFA, 2 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/584).
+
+### 35.2 Réforme de la formation médicale après le Doctorat en Médecine — réunion nationale du 8 octobre
+
+Le MESUPRES rapporte une réunion organisée le **8 octobre 2026** à l'UNIPOD Tsimbazaza avec les doyens et vice-doyens des six Facultés de Médecine du pays, en présence du ministre, de la représentante permanente de l'OMS à Madagascar, du ministère de la Santé publique et des responsables du MESUPRES.
+
+Les échanges portaient sur la **réorganisation de la formation médicale après l'obtention du Doctorat en Médecine** et son alignement sur le système LMD. L'objectif était de construire un accord commun entre les facultés et de définir les étapes et l'organisation nécessaires à la mise en œuvre.
+
+**Portée pour Toamasina :** l'Université possède historiquement une Faculté de Médecine et l'article mentionne les six facultés du pays ; cependant, le compte rendu ne donne pas la liste nominative des facultés représentées ni le projet de réforme final. Il prouve une concertation nationale, pas l'adoption d'une maquette de spécialisation médicale à Toamasina.
+
+**À obtenir :**
+1. procès-verbal de la réunion des doyens des six facultés ;
+2. projet de référentiel de formation post-Doctorat en Médecine et architecture LMD ;
+3. textes nationaux d'application (grades, spécialités, durée, crédits, stages hospitaliers, internat et évaluation) ;
+4. liste des composantes et CHU partenaires de Toamasina, avec conventions et terrains de stage ;
+5. maquette et habilitation de chaque spécialité médicale, distinctes du diplôme initial de Doctorat en Médecine.
+
+Source officielle : [MESUPRES — Réunion sur l'amélioration de la qualité de la formation médicale, 8 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/588).
+
+### 35.3 Définition des domaines de spécialisation propres à chaque université — atelier SAVICA des 21, 22 et 26 octobre
+
+Le MESUPRES a lancé le **21 octobre 2026** à l'UNIPOD un atelier de concertation qui s'est poursuivi les 22 et 26 octobre, dans le cadre de SAVICA soutenu par l'AFD. Le programme vise à :
+- renforcer la collaboration entre les universités et le MESUPRES ;
+- partager expériences et ressources ;
+- identifier les domaines spécifiques dans lesquels chaque université peut développer ses compétences et ses forces ;
+- mieux aligner les capacités universitaires sur les besoins nationaux ;
+- améliorer la qualité de l'enseignement et de la recherche.
+
+Il s'agit d'un chantier directement pertinent pour le futur plan de développement de l'Université de Toamasina. Toutefois, l'article ne publie pas les conclusions, les domaines retenus par université ni les décisions budgétaires. Il serait donc prématuré d'affirmer que des spécialisations prioritaires ont déjà été arrêtées pour Toamasina.
+
+**Pièces à demander :** compte rendu des séances, matrice de spécialisation de chaque université, critères d'analyse des avantages comparatifs, partenariats nationaux/régionaux, décisions de la CPU ou du MESUPRES, et plan d'action propre à l'Université de Toamasina. Ce résultat devra être croisé avec le PDI SAVICA décrit à la section 34.2 et les offres habilitées HAE.
+
+Source officielle : [MESUPRES — Atelier sur la coopération et la spécialisation des universités, 21 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/603).
+
+### 35.4 Assurance qualité : formation nationale du 23 octobre
+
+Le MESUPRES rapporte qu'un atelier et une formation sur l'assurance qualité de l'enseignement supérieur ont été organisés les **23 octobre 2026**, en présentiel et à distance, au ministère à Fiadanana. Le programme visait à harmoniser :
+- la compréhension des normes nationales ;
+- l'assurance qualité ;
+- les procédures d'autorisation et d'accréditation ;
+- l'auto-évaluation ;
+- les étapes concrètes d'amélioration de la qualité selon le niveau de développement de chaque établissement.
+
+Ont participé des experts, des représentants de l'Union européenne à Madagascar et aux Comores, des établissements privés et publics et des responsables du MESUPRES.
+
+Cette séance complète l'arrêté 21408/2026 de la section 16 : elle montre un effort de diffusion des normes et des procédures, mais ne fournit pas la preuve que la SAQU de Toamasina, ses SAQE ou ses composantes ont toutes suivi la formation. Demander les supports, la liste de présence, l'outil d'auto-évaluation et le plan de mise en conformité de l'Université de Toamasina.
+
+Source officielle : [MESUPRES — Atelier et formation sur l'assurance qualité de l'enseignement supérieur, 23 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/605).
+
+### 35.5 Synthèse : ce qui change dans les prochaines vérifications de Toamasina
+
+À la suite de ces actualités nationales, les quatre pièces stratégiques à rechercher sont désormais :
+1. **PDI de l'Université de Toamasina** : vision, axes, investissements, indicateurs, budget et calendrier ;
+2. **Matrice de spécialisation universitaire** issue de SAVICA : avantages comparatifs, domaines retenus et coopération avec les autres universités ;
+3. **Plan de mise en conformité qualité/HAE** : SAQU/SAQE, auto-évaluations, accréditations, décisions et échéances ;
+4. **Plan de réforme de la Faculté de Médecine** : cursus post-Doctorat, intégration LMD, spécialités et stages hospitaliers.
+
+Ces documents pourront permettre de distinguer les domaines où l'Université est déjà forte ou active (par exemple médecine, tourisme/patrimoine, environnement, sciences humaines, technologies, ressources marines) des nouvelles priorités réellement approuvées. Ces exemples de domaines ne constituent pas une décision de spécialisation ; ils restent des pistes à confronter aux données de recherche, aux besoins régionaux, aux laboratoires, aux équipes enseignantes, aux partenariats et aux habilitations existantes.
+
