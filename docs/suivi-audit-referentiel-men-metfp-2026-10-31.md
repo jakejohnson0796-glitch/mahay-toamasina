@@ -482,3 +482,67 @@ Sources MEN :
 - [PE T12](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T12.pdf)
 - [Coefficients et volumes horaires lycée](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/COEFFICIENT%20ET%20VOLUME%20HORAIRE%20NIVEAU%20LYCEE.pdf)
 - [RAPE T11-L septembre 2026](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T11_L.pdf)
+### 9.6 Exemples de progression disciplinaire vérifiés dans les PE T6 et T8
+
+Les premiers contrôles de contenu montrent pourquoi il ne faut pas reproduire un référentiel commun identique pour toutes les classes. Les matières peuvent garder le même intitulé alors que les thématiques et attendus évoluent.
+
+**T6 — Mathématiques : six composantes nationales**
+
+- Nombre : nombres naturels, relatifs, fractionnaires, décimaux, rationnels et irrationnels, avec leurs propriétés.
+- Opérations : addition, soustraction, multiplication, division, propriétés et résolution de problèmes concrets.
+- Algèbre : motifs, régularités, expressions, équations et relations entre variables.
+- Géométrie : figures planes et solides, repérage spatial et transformations.
+- Mesure : longueur, masse, temps, surface et volume, unités conventionnelles et non conventionnelles.
+- Traitement des données : collecte, organisation, interprétation, hasard et comparaison d'événements selon leur probabilité.
+
+Le programme prévoit une progression partant de manipulations concrètes vers la construction de concepts puis leur mobilisation en résolution de problèmes. Ce sont des composantes nationales du PE T6, pas un découpage de chapitres à reconstituer par intuition.
+
+**T6 — Sciences de la vie et de la Terre : six thématiques relevées**
+
+- Alimentation de l'homme : conservation et transformation des aliments.
+- Organisation des êtres vivants : reproduction animale, reproduction sexuée et asexuée chez les plantes.
+- Reproduction humaine : appareil reproducteur et organes génitaux internes.
+- Santé et bien-être : appareil urinaire.
+- Environnement : eau, bassins versants et vases communicants.
+- Géologie : roches.
+
+Le document donne un volume horaire de 3 h par semaine. Pour la thématique « alimentation de l'homme », il prévoit une durée de 14 heures et demande notamment de distinguer les techniques de conservation/transformation et d'expliquer leurs avantages. Les durées de séquence doivent rester des champs distincts des heures hebdomadaires.
+
+**T6 — Sciences physiques**
+
+Les trois thématiques sont la matière, l'électricité et le magnétisme, puis la chaleur et la température. Le PE prévoit une démarche d'investigation, la formulation d'hypothèses, l'expérimentation et l'analyse des résultats ; il demande également de garantir la sécurité des activités. Volume affiché : 3 h/semaine.
+
+**T6 — Histoire**
+
+Quatre axes sont relevés : introduction à l'étude de l'histoire ; Madagascar depuis l'indépendance ; relations de Madagascar avec les pays africains et les îles de l'océan Indien ; patrimoine et richesses naturelles nationales à Madagascar. Le PE met l'accent sur la pensée historique, l'utilisation prioritaire de sources primaires et l'analyse des continuités, changements, causes et conséquences.
+
+**T8 — Sciences de la vie et de la Terre**
+
+Le tableau des contenus met en avant santé et bien-être (systèmes respiratoire et circulatoire, sang et groupes sanguins), reproduction humaine (IST/SIDA et mesures individuelles/collectives de prévention) et géologie (formation des roches magmatiques, sédimentaires et métamorphiques, cycle des roches et utilisations selon leurs propriétés). Volume affiché : 4 h/semaine.
+
+Cette progression ne doit pas être interprétée comme une invitation à insérer des détails de santé non présents dans le PE : les activités et évaluations doivent rester alignées sur les résultats spécifiques du document et sur les règles ministérielles applicables.
+
+**T8 — Sciences physiques**
+
+Les cinq thématiques sont : matière ; électricité et magnétisme ; force et interaction ; énergie ; lumière et son. Volume affiché : 4 h/semaine. C'est une progression de contenu observable par rapport aux trois thèmes annoncés en T6, mais il faut vérifier T7 et T9 avant de présenter une trajectoire complète du collège.
+
+**T8 — Histoire**
+
+Le sommaire du PE organise sept thématiques : histoire orale ; Temps modernes ; époque contemporaine ; royaumes malgaches ; royaume malgache 1810-1896 ; Madagascar colonie française ; patrimoines culturels et historiques de Madagascar. L'extraction textuelle d'une borne chronologique associée aux royaumes (XVe au « Xie » siècle) paraît ambiguë ; elle n'est pas normalisée dans le référentiel en attendant vérification visuelle ou une copie lisible de la page.
+
+**T8 — Géographie et Arts**
+
+Les thématiques de géographie repérées sont les pays développés, les pays en développement, l'Afrique, le changement climatique et les différentes sources d'énergie, avec une rubrique de méthodologie du devoir. Les orientations s'appuient sur observation, description, analyse et synthèse (ODAS), la lecture de l'espace et l'analyse des interactions entre milieux humains et physiques.
+
+Le sommaire du PE T8 confirme Arts comme discipline distincte. Le but de la discipline inclut expression, création, appréciation des œuvres, réflexion, identité culturelle et valorisation des cultures régionales et nationales. La structure exacte des sous-disciplines doit être relevée par extraction complète avant création de sous-matières dans le catalogue.
+
+### 9.7 Implications fonctionnelles pour MITARIDALA
+
+1. Modéliser les PE comme un arbre : référentiel/version → niveau → discipline → RAG → RAS → contenu → orientations/activités/évaluation. Le RAPE annuel reste un artefact séparé qui répartit les contenus dans le temps.
+2. Garder des heures hebdomadaires au niveau classe/version/discipline, et des durées de séquence au niveau du RAS ou du thème ; les deux ne sont pas interchangeables.
+3. Indexer les notions de Quiz IA et de fiches de révision sur les identifiants de RAS et les contenus officiels, plutôt que sur des intitulés libres, une fois les PE complets importés et vérifiés.
+4. Distinguer les thèmes obligatoires des exemples d'activités suggérées par les orientations pédagogiques ; l'enseignant doit pouvoir contextualiser sans que MITARIDALA marque une suggestion comme un savoir exigible.
+5. Ne pas publier un parcours collège complet basé uniquement sur T6 et T8. T7 et T9 doivent être extraits pour démontrer la progression sans trous ; leur présence dans le dossier officiel ne suffit pas.
+6. Garder un lien vers le PDF source et une empreinte SHA-256 par fichier, afin de tracer chaque contenu et d'identifier les mises à jour.
+
+Sources complémentaires : [PE T6 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T6.pdf), [PE T8 MEN](https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/PE%20T8.pdf).
