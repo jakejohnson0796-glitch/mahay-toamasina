@@ -1289,3 +1289,51 @@ Les quatre grands domaines décrits pour les équipes de l'EDT 3D — ingénieri
 8. rapport de mission Expert'Izy 2026, guides méthodologiques finalisés et procès-verbal de validation ;
 9. convention CNRIT–EDT 3D du 18 mars 2026, annexes et relevé des activités réellement réalisées.
 
+
+
+## 34. Actualités nationales MESUPRES d'octobre 2026 : plans de développement, coordination des présidents et habilitations privées
+
+### 34.1 Conférence des Présidents des Universités — 16 octobre 2026
+
+Le MESUPRES publie un compte rendu officiel d'une **Conférence des Présidents des Universités (CPU)** tenue le 16 octobre 2026 sous la présidence du ministre Pr RAVONIMANANTSOA Ndaohialy Manda-Vy. Le compte rendu précise que les présidents d'universités et d'universités proches des populations ainsi que les directeurs généraux des IST ont participé en présentiel ou à distance.
+
+Les priorités annoncées portent notamment sur l'amélioration des infrastructures, la préparation d'une consultation sur la gestion des logements étudiants et la responsabilité des universités dans la mise en œuvre des mesures d'amélioration.
+
+**Portée pour Toamasina :** l'article ne donne pas de liste nominative des présidents présents et ne cite pas l'Université de Toamasina individuellement. Il confirme un cadre national de coordination auquel les universités étaient invitées/représentées, mais il ne prouve pas la présence personnelle du président de Toamasina ni l'adoption d'une décision spécifique pour Barikadimy.
+
+Source officielle : [MESUPRES — Conférence des Présidents des Universités, 16 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/597).
+
+### 34.2 Plans de Développement Institutionnel (PDI) — projet SAVICA/AFD
+
+Le 27 octobre 2026, le MESUPRES a lancé un atelier de formation sur l'élaboration des **Plans de Développement Institutionnel (PDI)** des universités, organisé du 27 au 30 octobre à l'UNIPOD dans le cadre du projet **SAVICA — Soutien à l'amélioration de la Vie étudiante et Compétences d'Avenir**, mené avec l'Agence Française de Développement (AFD).
+
+Les responsables en charge des PDI au niveau des universités étaient concernés, avec l'appui de spécialistes Cap Compétences. L'objectif affiché est d'harmoniser la méthodologie, les outils, la vision à long terme, la gouvernance et la planification stratégique des établissements.
+
+**Point de contrôle pour l'Université de Toamasina :** demander le PDI institutionnel validé, l'acte d'approbation, le diagnostic initial, les objectifs chiffrés, les budgets, les indicateurs, le calendrier, les responsabilités par composante et les rapports de suivi. Le compte rendu national ne prouve pas que le PDI Toamasina est terminé ou approuvé ; il confirme seulement le dispositif de renforcement méthodologique et la participation attendue des responsables PDI universitaires.
+
+Source officielle : [MESUPRES — Atelier de formation sur l'élaboration des PDI universitaires dans SAVICA/AFD, publié le 27 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/607).
+
+### 34.3 Appui aux établissements privés pour les demandes et renouvellements d'habilitation — 23 octobre 2026
+
+Le MESUPRES rapporte qu'une séance d'accompagnement a été organisée le 23 octobre 2026 à destination des établissements privés d'enseignement supérieur qui ont sollicité une assistance pour remplir les canevas de nouvelle demande ou de renouvellement d'habilitation.
+
+La rencontre a expliqué les critères et les exigences. Le ministère a également annoncé un projet de centralisation de la délivrance des diplômes à partir de l'année suivante, afin de renforcer la sécurisation et le contrôle des diplômes. Il s'agit d'une **intention de projet** présentée lors de la séance, pas encore d'un texte d'application ni d'un dispositif déjà en service.
+
+**Conséquence pour le registre privé d'Atsinanana :** les dix établissements privés de la cartographie MESUPRES 2023 doivent être recherchés dans le processus HAE actuel, mais l'article ne donne pas la liste des établissements présents à cette séance, ni leurs décisions. Ne pas présumer qu'IFSP Atsinanana, IFSPT, INSPALM, INSPNMAD, ISFSP, ISMATEC, ISPAVA, ISSPM, IFT ou BEATY University ont déposé une demande ou obtenu un renouvellement en 2026.
+
+Source officielle : [MESUPRES — Appui aux établissements privés pour les nouvelles demandes et renouvellements d'habilitation, publié le 24 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/606).
+
+### 34.4 État du registre public des habilitations à la fin octobre 2026
+
+Au contrôle de la rubrique MESUPRES « Habilitations / Accréditations », l'inventaire public propose toujours la liste consolidée des établissements habilités publiée le **1er août 2022**, ainsi que les versions 2021 et 2019. Les documents plus récents disponibles dans cette rubrique sont principalement le guide pratique HAE du 31 août 2026, le communiqué CNH/CNA 2026 et les canevas de demandes.
+
+Le ministère précise, dans son bilan CNH 2026 publié le 11 octobre, que plus de 600 demandes avaient été reçues, que **549 dossiers avaient été admis à l'examen**, et que 65 experts avaient participé à l'évaluation. Les retours aux responsables des offres étaient annoncés sur la plateforme HAE durant octobre 2026, avec possibilité d'apporter des corrections devant la CNH en décembre.
+
+Cela confirme l'existence d'une campagne d'instruction et de retours de la CNH en cours, mais ne constitue pas un registre public de 549 habilitations accordées. La liste consolidée accessible n'a pas encore été remplacée par une liste 2026 présentant les décisions finales, les périodes de validité et les offres renouvelées.
+
+**Décision :** conserver le snapshot 2022 comme archive, et le cycle de dossiers CNH/CNA 2026 comme processus de demande/expertise en cours ou de régularisation. Ne pas étiqueter une offre 2026 comme habilitée tant que la décision finale individuelle et sa période de validité ne sont pas obtenues.
+
+Sources officielles :
+- [MESUPRES — Documents Habilitations / Accréditations : liste 2022 encore indexée et guides 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations).
+- [MESUPRES — Bilan de la CNH 2026 publié le 11 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/593).
+
