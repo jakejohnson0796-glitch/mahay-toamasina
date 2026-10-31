@@ -707,7 +707,7 @@ Ces nombres sont des établissements fonctionnels déclarés par la DREN, pas un
 
 Le même tableau de bord indique pour Atsinanana en 2023/2024 un taux brut de scolarisation de 40,42 % au collège et 17,95 % au lycée ; les taux nets affichés sont 23,98 % et 9,98 %. Le taux de réussite au BEPC 2024 indiqué pour Toamasina I est 58,85 %. Ces taux sont des données régionales/district historiques, ne doivent pas être utilisés comme résultats individuels, prévisions 2026-2027 ou performances attribuées à une école.
 
-**Clarification de périmètre après vérification du tableau national MEN 2023-2024 :** l'annuaire MEN publie un tableau distinct des seuls collèges publics fonctionnels par CISCO. Il donne 7 pour Toamasina I et 27 pour Toamasina II. Le TBSE INSTAT/DREN cité ci-dessus affiche 90 et 49 sous la catégorie de collèges fonctionnels. Ces résultats ne doivent pas être comparés ni additionnés sans retrouver les définitions exactes du TBSE (secteur public/privé et type d'établissement) ; le chiffre MEN est explicitement limité aux CEG publics. Pour ce rapport, retenir 7/27 comme décompte MEN des CEG publics 2023-2024, et conserver 90/49 uniquement comme statistique TBSE d'un autre périmètre, sans les présenter comme contradictoires.
+**Clarification de périmètre après vérification du sommaire et de la page d'origine du TBSE :** le TBSE présente son chapitre éducation sous « Enseignement général : privé et public ». Les 90 collèges à Toamasina I et 49 à Toamasina II du tableau 47 relèvent donc du périmètre combiné du TBSE, tandis que l'annuaire MEN des seuls collèges publics donne 7 et 27. Les valeurs ne se contredisent pas : elles couvrent des secteurs différents. Retenir 7/27 comme décompte MEN des CEG publics 2023-2024 et 90/49 comme total public+privé selon le TBSE ; ne pas soustraire les uns des autres pour établir le nombre privé sans harmoniser les définitions exactes.
 
 **Enseignement technique et professionnel — tableaux 53/54 :** le tableau régional indique 10 établissements ETFP publics (CFP/LTP) et 49 établissements ETFP privés (CFP/LTP/Instituts) pour 2024. La répartition par district existe au tableau 54, mais le rendu textuel de certaines colonnes fusionnées est ambigu ; les comptes de Toamasina I ne sont donc pas transcrits dans MITARIDALA à partir de cette seule extraction. Cette statistique historique confirme que la cartographie de cinq établissements publics présents sur la page METFP n'est pas un inventaire de l'ensemble du paysage ETFP public et privé.
 
@@ -2029,3 +2029,49 @@ L'appel à candidatures MEN n°2021/503/MEN/SG du 1er juillet 2021 contient une 
 **Décision MITARIDALA :** conserver ces treize noms comme un jeu de références historiques de recrutement MEN 2021, sans les déclarer ouverts ou actifs aujourd'hui. Chaque lycée doit être rapproché par code établissement, statut actuel et preuve CISCO/DREN 2026-2027 avant publication de ses classes et séries.
 
 Source primaire : [MEN — Appel à candidatures n°2021/503/MEN/SG du 1er juillet 2021](https://www.education.gov.mg/wp-content/uploads/2021/07/Recrutement-sp%C3%A9cial_compressed.pdf), annexe « Liste des lycées », lignes 287-300 de l'extraction du PDF. La source contient aussi d'autres annexes, mais seule la liste administrative des établissements est utilisée ici.
+
+
+### 9.57 Anomalie de cohérence interne du tableau INSTAT/DREN 2023-2024 sur les lycées fonctionnels
+
+La capture visuelle de la page imprimée 32 du TBSE Atsinanana (tableau 44) donne le total régional du nombre d'établissements fonctionnels par niveau pour 2023-2024 :
+- préscolaire : 1 295 ;
+- primaire : 2 059 ;
+- collège : 301 ;
+- lycée : **75**.
+
+La capture visuelle de la page imprimée 34 (tableau 48) donne la ventilation par district pour les lycées :
+- Toamasina I : 34 ;
+- Toamasina II : 10 ;
+- Brickaville : 12 ;
+- Mahanoro : **68** ;
+- Vatomandry : 8 ;
+- Antanambao Manampotsy : 1 ;
+- Marolambo : 4.
+
+Les sept valeurs du tableau 48 totalisent 137, ce qui ne concorde pas avec le total régional du tableau 44 (75). Si la ligne Mahanoro était 6 au lieu de 68, la somme deviendrait exactement 75 ; cela suggère une erreur typographique ou de transcription probable, mais cette correction ne peut pas être considérée comme confirmée tant qu'une version rectifiée ou une réponse de la DREN/INSTAT n'est pas obtenue.
+
+**Décision sur les données :**
+1. Conserver 75 comme total régional affiché au tableau 44.
+2. Conserver 34 pour Toamasina I et 10 pour Toamasina II tels qu'affichés au tableau 48, sans les présenter comme une liste nominative ni un total administratif exhaustif de 2026-2027.
+3. Marquer la valeur Mahanoro « 68 » comme anomalie source et ne pas la corriger automatiquement en 6, même si 6 est la valeur qui réconcilierait arithmétiquement les tableaux.
+4. Ne pas utiliser la somme 137 des lignes par district comme total régional.
+5. Demander à l'INSTAT Toamasina ou à la DREN Atsinanana une confirmation écrite de la valeur Mahanoro et, si possible, un erratum du tableau 48.
+
+#### Périmètre sectoriel des statistiques collège
+
+Le sommaire du TBSE classe les tableaux d'éducation sous « Enseignement général : privé et public ». Les valeurs du tableau 47 (90 collèges Toamasina I ; 49 Toamasina II) représentent donc le périmètre du tableau de bord public+privé. L'annuaire MEN 2023-2024 est explicite dans son intitulé « collèges publics » et donne 7 et 27. Ces valeurs ne sont pas contradictoires :
+- MEN 7/27 = CEG publics uniquement ;
+- INSTAT/DREN 90/49 = établissements du périmètre combiné public et privé du TBSE.
+
+Ne pas présenter les 90/49 comme des nombres de CEG publics et ne pas calculer le nombre privé par simple soustraction sans vérifier l'alignement des dates, catégories d'établissement et critères de fonctionnement.
+
+**Utilisation dans MITARIDALA :**
+- établissements publics CEG : comptes du tableau MEN (7/27), année 2023-2024 ;
+- établissements généraux public+privé : chiffres TBSE (90/49), avec mention du périmètre combiné ;
+- lycées fonctionnels, total régional : 75, valeur affichée au tableau 44 ;
+- lycées fonctionnels par district : anomalie Mahanoro marquée ; ne pas importer 68 comme valeur validée ;
+- aucun de ces nombres ne vaut annuaire d'établissements ouverts en 2026-2027.
+
+Sources primaires :
+- [TBSE INSTAT Atsinanana, juillet 2024](https://www.instat.mg/documents/upload/main/TBSE_Atsinanana_Dec2025.pdf), chapitre V « Enseignement général : privé et public », tableau 44 p. 32, tableau 47 p. 33, tableau 48 p. 34. Les tableaux 44 et 48 ont été contrôlés par captures visuelles.
+- [Annuaire MEN 2023-2024](https://www.education.gov.mg/wp-content/uploads/2024/04/MEN-ANNUAIRE-STATISTIQUE-_SCOLAIRE_2023_2024.pdf), tableau des établissements fonctionnels des collèges publics par CISCO, p. 154 (page PDF 153), contrôlé par capture visuelle.
