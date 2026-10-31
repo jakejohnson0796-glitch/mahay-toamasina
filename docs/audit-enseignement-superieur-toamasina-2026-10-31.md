@@ -384,3 +384,131 @@ Demander à l'ENS-SEAS :
 5. la décision d'habilitation spécifique du futur parcours Éducation spécialisée, s'il a été ouvert.
 
 Source secondaire de veille, présentée comme page de l'ENS-SEAS et non comme décision ministérielle : [École Normale Supérieure — Université de Toamasina / ENS-SEAS](https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/%C3%89cole-Normale-Sup%C3%A9rieure---Universit%C3%A9-de-Toamasina).
+
+
+## 12. Mise à jour institutionnelle MESUPRES et situation du campus Barikadimy en 2026
+
+### 12.1 Responsable institutionnel identifié dans le répertoire MESUPRES
+
+La page actuelle « Organismes sous tutelle et rattachés à la DGES » du MESUPRES identifie toujours l'Université de Toamasina et indique comme président **Professeur RAZANAKOLONA Diny**. Cette information est confirmée par les comptes rendus du ministère de janvier et mars 2026 qui citent le président sous la même forme.
+
+**Usage autorisé dans le référentiel :** nom du responsable tel que publié par le MESUPRES et date de consultation. Ne pas en déduire la date exacte de début de mandat ni la durée du mandat : le texte de nomination / procès-verbal d'installation doit être archivé pour ces champs.
+
+Sources :
+- [MESUPRES — Universités et établissements rattachés à la DGES](https://www.mesupres.gov.mg/front/rattache_dgsup).
+- [MESUPRES — Installation officielle du président de l’Université de Toamasina, archive de janvier 2026](https://lmd.mesupres.gov.mg/?l=124071658).
+- [MESUPRES — Visite présidentielle et échanges avec les étudiants de Barikadimy, 24 janvier 2026](https://www.mesupres.gov.mg/actualites/detail/362).
+
+### 12.2 Infrastructures et équipements : faits publiés, projets à ne pas confondre avec services disponibles
+
+Le compte rendu officiel MESUPRES du 24 janvier 2026 relate une visite du campus de Barikadimy et distingue des travaux en cours de certains équipements présentés comme déjà fonctionnels :
+- travaux alors en cours : terrain de basket, dojo, amphithéâtre et grand amphithéâtre, blocs sanitaires et bâtiments de logement R+1/R+2 ;
+- équipements annoncés comme déjà réalisés/fonctionnels : forage, panneaux solaires d’une puissance annoncée de 1 MW et groupe électrogène de 200 KVA avec 5 000 litres de carburant ;
+- appuis matériels annoncés : camion benne de 6 tonnes, 250 bidons de peinture et ordinateurs ;
+- un projet d’accès Internet des étudiants était annoncé comme étant en cours de mise en œuvre, et non comme un service déjà opérationnel dans tous les locaux.
+
+Un deuxième compte rendu officiel, publié le 7 mars 2026 après le passage du cyclone Gezani, indique que l’Université de Toamasina figurait parmi les infrastructures endommagées. Il rapporte une convention entre le MNDPT et l’Université, avec la remise de **100 ordinateurs** destinés à l’enseignement à distance et en ligne. Il annonce également que 90 % des demandes d’infrastructures présentées par les étudiants seraient prises en charge par un financement de la Banque mondiale, sous réserve de réception des fonds et de lancement des travaux. Il décrit les travaux de reconstruction comme à venir, avec un comité de suivi projeté.
+
+**Règles de données :**
+1. enregistrer séparément « équipement déclaré fonctionnel », « chantier en cours », « financement annoncé », « matériel remis » et « service numérique opérationnel » ;
+2. ne pas présenter l’Internet, le dojo ou les amphithéâtres rénovés comme disponibles aujourd’hui sans visite/attestation plus récente ;
+3. conserver la date et la source de chaque état matériel ;
+4. associer la mise à disposition de matériels numériques à la capacité potentielle FOAD/hybride, mais ne pas en déduire l’habilitation d’un programme à distance ;
+5. vérifier les conséquences des dégâts de Gezani sur l'ouverture effective des composantes et les calendriers d'examens avant de renseigner une disponibilité du campus.
+
+Sources primaires :
+- [MESUPRES — visite du 23 janvier 2026, publication du 24 janvier 2026](https://www.mesupres.gov.mg/actualites/detail/362).
+- [MESUPRES — visite après le cyclone Gezani, publication du 7 mars 2026](https://www.mesupres.gov.mg/actualites/detail/407).
+
+### 12.3 Activité diplômante récente : cinq établissements cités en mars 2025
+
+Le bulletin institutionnel MESUPRES i.Tatitra rapporte une cérémonie de remise de diplômes le 21 mars 2025 et 608 diplômés issus de cinq établissements : ITPT, ISSEDD, FLSH, Faculté de Médecine et Institut Confucius. Le chiffre décrit les diplômés de cette cérémonie, pas les inscrits de l’Université, ni l'effectif total de chaque composante, ni les offres de formation de l'année 2026-2027.
+
+Il constitue néanmoins une preuve primaire d'activité diplômante en 2025 pour ces cinq composantes. Le rapport initial cite cette donnée mais il faut maintenant l'utiliser comme une trace d'activité datée distincte du tableau des inscrits 2022-2023.
+
+Source : [MESUPRES — i.Tatitra n°005, janvier-mars 2025, article « Université de Toamasina : 608 étudiants diplômés »](https://www.mesupres.gov.mg/assets/front/documents/itatitra/i.tatitra_005_Janvier_Mars_2025_MESUPRES.pdf).
+
+## 13. Rapprochement détaillé entre la liste MESUPRES d’habilitations (août 2022) et les brochures de l’Université
+
+### 13.1 Faculté de Droit, Sciences Économiques, Gestion et MIA : ancienne composante commune
+
+Dans la liste ministérielle d'août 2022, la composante apparaît sous l'intitulé long **Faculté de Droit, de Sciences Économiques, de Gestion et de Mathématiques, Informatique et Applications (FAC/DEGMIA)**. La liste mentionne les arrêtés n°31503/2013 et n°12567/2022 et les offres Licence/Master suivantes :
+- Droit et Sciences politiques ; Droit ; Droit (FOAD) ;
+- Mathématiques, Informatique et Applications ;
+- Sciences économiques / Économie ;
+- Sciences de Gestion / Gestion ;
+- Sciences de Gestion professionnelles.
+
+La liste d'août 2022 regroupe donc les domaines sous une ancienne entité commune. La brochure FST de 2023-2024 explique que la Faculté des Sciences et Technologie a été créée à la suite de l'éclatement de cette ancienne faculté en deux facultés. Elle présente la FST comme l'une des quatre grandes facultés de l'Université.
+
+**Conséquence de modélisation :** conserver l'ancienne FAC/DEGMIA comme entité organisationnelle historique et créer une relation de succession / réorganisation vers les composantes postérieures. Ne pas réécrire rétroactivement les arrêtés de 2013/2022 comme s'ils avaient été délivrés à la FST actuelle. Il faut obtenir l'acte de création ou de réorganisation de la FST, avec date d'effet et transfert exact des offres, avant de fermer l'ancienne entité dans le modèle.
+
+Source de la description organisationnelle : [Université de Toamasina — FST, formulaire officiel L1 2023-2024](https://www.univ-toamasina.mg/static/pdfs/etablissements/facultes/fst/FORMULAIRE%20DE%20CANDIDATURE%202023-2024.pdf).
+
+### 13.2 FST : deux mentions et parcours structurés dans le document 2023-2024
+
+Le formulaire officiel de candidature FST porte explicitement l'année universitaire **2023-2024**. Il présente deux mentions :
+- **Mathématiques, Informatique et Applications (MIA)** : tronc commun L1-L2 ; parcours Informatique académique ou Mathématiques et Informatique en L3 ; parcours Génie informatique, Image et Interaction ou Ingénierie mathématique en M1 et M2.
+- **Physique-Chimie** : tronc commun L1 ; spécialisation Physique ou Chimie en L2-L3 ; parcours de M1/M2 en Physique (Énergétique, Physique nucléaire appliquée et environnement, Sciences du climat et des matériaux) ou en Chimie (Chimie-Biologie, Chimie des procédés, Chimie marine).
+
+Le même formulaire indique que les L1 sont sélectionnées sur dossier parmi les titulaires des séries C, D, S, FTG Génie Civil ou FTG Génie Industriel. Ces conditions valent pour le document 2023-2024 uniquement ; ne pas les copier dans le millésime 2026-2027 sans nouvel avis.
+
+#### Réserve sur les frais figurant dans le formulaire 2023-2024
+
+Le document distingue, dans ses formulations, un montant de 5 000 Ar pour déposer le dossier et un droit de sélection de 40 000 Ar à verser sur le compte BOA indiqué. Il peut s'agir de deux frais différents, mais le document ne clarifie pas leur articulation. MITARIDALA doit donc conserver ces deux libellés séparés et signaler l'ambiguïté, plutôt que les additionner, les fusionner ou réutiliser ces montants pour 2026-2027.
+
+Source : [Université de Toamasina — FST, formulaire officiel de candidature L1 2023-2024](https://www.univ-toamasina.mg/static/pdfs/etablissements/facultes/fst/FORMULAIRE%20DE%20CANDIDATURE%202023-2024.pdf).
+
+### 13.3 ENS : brochure de mentions non équivalente à une décision HAE
+
+Le flyer ENS du site officiel de l'Université présente des intitulés liés à l'enseignement-apprentissage et à la didactique en Philosophie, Histoire-Géographie, Mathématiques-Informatique, Physique-Chimie, OSE, SES, Malagasy, Français, Anglais, Sciences naturelles et Sciences de l'éducation. Le document comporte une mise en page en colonnes intercalées, des numéros répétés (dont le numéro 11) et une répétition du libellé Histoire-Géographie. La lecture du texte extrait ne permet pas de reconstituer sûrement toutes les associations « mention → parcours de Master ».
+
+La liste MESUPRES d'août 2022 indique, pour l'ENS de Toamasina, une offre Licence en Sciences de l'éducation intitulée « Éducation, Apprentissage, Didactique et Mathématique Informatique », sous l'arrêté n°12563/2022 du 5 mai 2022. Le flyer institutionnel paraît plus large, mais il n'est ni daté ni accompagné, dans le fichier consulté, d'une décision HAE par mention.
+
+**Décision :** les noms de matières/disciplines du flyer restent des intitulés pédagogiques à vérifier et ne deviennent pas automatiquement onze mentions habilitées. Demander à l'ENS la maquette officielle signée, la liste normalisée des mentions, leurs codes HAE, grades, parcours et décisions de validation.
+
+Sources :
+- [Université de Toamasina — flyer officiel ENS](https://www.univ-toamasina.mg/static/pdfs/etablissements/ecoles/nouvelles/ens/ENS_Flyers.pdf).
+- [MESUPRES — liste des offres habilitées, août 2022, pages 68-69](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
+### 13.4 FLSH, Médecine, ISSEDD et ITPT : détail des traces réglementaires anciennes
+
+La liste MESUPRES d'août 2022 (pages imprimées 68 à 70) permet de détailler les traces historiques suivantes :
+
+| Composante | Offres figurant dans la liste d'août 2022 | Références affichées dans la liste |
+|---|---|---|
+| FLSH | Master en ligne et Anthropologie sociale ; Licence en Anthropologie appliquée au développement, Études françaises, Géographie, Histoire, Philosophie ; Master Études françaises, Géographie, Histoire, Philosophie ; Licence/Master Études françaises, Géographie, Anthropologie sociale et culturelle, Philosophie ; Licence Humanités, Développement et Durabilité | Arrêtés 28884/2012, 31468/2017, 31503/2013, 8006/2014, 12561/2022 |
+| Faculté de Médecine | Sciences infirmières, Maïeutique, Médecine humaine, Sciences paramédicales (domaine Sciences de la Santé / Licence tel que libellé dans cette liste) | Arrêtés 31798/2017, 594/2018, 4000/2022 |
+| ISSEDD-GRENE | Sciences de l'Environnement et du Développement, Licence et Master | Arrêté 31502/2014 |
+| ITPT | Valorisation du Tourisme, des Patrimoines et des Territoires ; Tourisme et Patrimoine dans les Tropicaux ; Socio-management et Développement local | Arrêtés 33993/2015 et 12563/2022 |
+
+**Précaution spécifique Faculté de Médecine :** la liste d'habilitation d'août 2022 agrège des intitulés dans un domaine/grade tel que présenté par le ministère ; le grade, la durée et la nature professionnelle de chaque cursus médical ou paramédical doivent être lus dans les arrêtés eux-mêmes. Ne pas déduire d'une seule cellule du tableau que Médecine humaine, Maïeutique et Sciences infirmières auraient la même durée, les mêmes crédits ou le même régime de diplôme.
+
+Source primaire : [MESUPRES — Liste officielle des institutions supérieures habilitées, août 2022, pages 68-70](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
+### 13.5 Instituts régionaux : ne pas géolocaliser toutes les composantes à Barikadimy
+
+La liste MESUPRES d'août 2022 distingue :
+- **ISTRALMA** (Institut supérieur des technologies régional d'Alaotra Mangoro), situé à Ambatondrazaka, rattaché à l'Université de Toamasina / ancienne Faculté DSEG, avec des offres historiques de droit, gestion, économie et agronomie ;
+- **ISTCE** (Institut supérieur des technologies de la Côte-Est), explicitement situé à Fénérive-Est, avec Licence Agronomie et Agro-alimentaire et Master Agro-Management ;
+- une seconde entrée **ISTRCE** portant un nom très proche (« Institut supérieur des technologies régional de la Côte-Est »), rattachée à l'Université de Toamasina et listant Gestion des entreprises et des administrations, Gestion polyvalente, Technologie de développement rural et Agronomie.
+
+Le document comporte donc une anomalie de dénomination potentielle entre les entrées n°21 « ISTCE » et n°22 « ISTRCE » : noms très proches, même bassin géographique, mais listes de programmes différentes. En l'absence des actes complets et d'identifiants administratifs distincts, ne pas les fusionner ni créer deux entités actives distinctes automatiquement.
+
+**Décision de géolocalisation :** Ambatondrazaka et Fénérive-Est ne sont pas des campus de la commune urbaine de Toamasina. Les établissements peuvent rester dans le périmètre de l'Université de Toamasina / Atsinanana-Est élargi, mais doivent avoir leur propre adresse, région, code établissement et hiérarchie.
+
+Source : [MESUPRES — Liste officielle des habilitations, août 2022, pages 69-70](https://www.mesupres.gov.mg/assets/front/documents/documents/habilitations/liste_des_institutions_superieures_mise_a_jour_aout_2022.pdf).
+
+## 14. Réserve de calendrier universitaire et ouverture des cohortes
+
+L'article officiel MESUPRES du 24 janvier 2026 sur Barikadimy mentionne encore l'inscription à l'année universitaire **2025-2026**, avec une échéance annoncée au 16 février 2026 dans son contexte de bourses. Cela ne renseigne pas le calendrier 2026-2027.
+
+Les signaux FST, DEG et ENS-SEAS déjà documentés dans les sections 8 et 8.1 proviennent de pages de republication tierces. Les échéances FST (20 novembre 2026) et DEG (27 novembre 2026) sont encore futures à la date de contrôle du 31 octobre 2026 ; les préinscriptions ENS-SEAS relayées (16 et 20 octobre) sont échues. Aucun de ces signaux ne remplace :
+- le calendrier universitaire officiel 2026-2027 ;
+- l'avis original signé de chaque composante ;
+- la preuve de publication réelle des résultats et d'inscription définitive ;
+- la décision HAE à jour du programme concerné ;
+- la confirmation que la cohorte a effectivement démarré.
+
+**Règle MITARIDALA :** afficher « candidature annoncée » et sa date limite comme statut de veille, mais ne pas afficher « admission ouverte confirmée » ou « formation en cours » sans l'avis original et la preuve de cohorte.
+
