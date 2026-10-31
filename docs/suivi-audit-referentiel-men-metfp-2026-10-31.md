@@ -755,3 +755,51 @@ Il est possible de croiser deux éléments indépendants pour plusieurs établis
 **Règle de traitement des données :** les codes de CEG historiques peuvent être conservés comme candidats à rapprochement dans un fichier de travail non publié. Ne pas les importer automatiquement dans la base de production, ni fusionner des noms similaires, sans confirmation par une liste CISCO 2026-2027. Aucun nom, numéro d'identité ou donnée personnelle d'élève/enseignant n'est extrait de fichiers contenant des informations personnelles.
 
 Source : [MEN — Répartition de la caisse-école 2020 des CEG](https://www.education.gov.mg/wp-content/uploads/2020/10/caisse_ceg.pdf), pages 59-60 du PDF ; les deux pages ont été vérifiées par capture d'écran.
+
+### 9.19 Correspondance institutionnelle des séries : ancienne nomenclature et nouveau baccalauréat
+
+Le portail officiel du MEN publie un article de référence sur le Cadre d'Orientation et d'Organisation du Curriculum Malagasy (COOCM), élaboré en 2018 sous la conduite de la Direction des Curricula et des Intrants. Pour l'enseignement secondaire général, il y est explicitement indiqué que les séries A1 et A2 sont fusionnées en une série littéraire L, que les séries C et D sont regroupées dans une série scientifique S, et qu'une nouvelle série ES/OSE (« Organisation-Société-Économie ») est créée.
+
+Le décret n° 2026-2100 du 31 août 2026, publié au MESUPRES le 9 septembre 2026, confirme juridiquement pour le baccalauréat général les trois séries L, S et OSE. L'article 5 impose le choix d'une seule série par session. L'article 9 rend obligatoires les épreuves écrites, une épreuve de deuxième langue vivante (LV2) au choix et une épreuve d'EPS. Le décret renvoie toutefois les matières détaillées, les durées et les coefficients à un arrêté conjoint MEN–MESUPRES.
+
+Le MESUPRES a également publié le 1er octobre 2026 une note d'information sur la transition du baccalauréat 2027 : les options A1/A2 peuvent figurer dans la série L, les options C/D dans la série S, tandis que la série OSE conserve son intitulé. Cette organisation transitoire des options d'examen ne signifie pas que les anciennes séries A1/A2/C/D sont rétablies comme séries finales du diplôme : le diplôme reste libellé L, S ou OSE.
+
+**Correction de la réserve précédente :** une correspondance institutionnelle de haut niveau A1/A2 → L et C/D → S est bien documentée par le MEN. Il n'est donc plus exact de dire que toute correspondance est inconnue. En revanche, cette correspondance ne constitue pas une équivalence automatique des contenus, volumes, compétences, options, conditions d'accès ou parcours pédagogiques de chaque ancien programme. MITARIDALA doit conserver les anciennes versions et attacher tout parcours d'élève à la version de programme réellement suivie. OSE reste une nouvelle série distincte.
+
+Sources :
+- [MEN — Cadre d'orientation et d'organisation du curriculum malagasy](https://www.education.gov.mg/mise-oeuvre-plan-sectoriel-de-leducation-elaboration-cadre-dorientation-dorganisation-curriculaire-malagasy/) — fusion A1/A2 vers L, C/D vers S et création ES/OSE.
+- [MESUPRES — Décret n° 2026-2100 du 31 août 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=decrets) — organisation réglementaire du baccalauréat.
+- [MESUPRES — Actualité du 1er octobre 2026 sur les options du baccalauréat 2027](https://www.mesupres.gov.mg/actualites/detail/581).
+
+### 9.20 Distinction impérative entre coefficients de lycée et coefficients des épreuves du baccalauréat
+
+Le document MEN « COEFFICIENT ET VOLUME HORAIRE NIVEAU LYCEE » a été contrôlé et sa matrice de coefficients/horaires par classe T10, T11 L/S/OSE et T12 L/S/OSE a été transcrite à la section 9.4. Cette pièce est bien une source MEN officielle pour sa propre grille de coefficients et de volumes horaires au lycée.
+
+Toutefois, le décret n° 2026-2100 distingue expressément l'organisation générale du baccalauréat et renvoie les matières des épreuves, leurs durées et leurs coefficients à un arrêté conjoint MEN–MESUPRES. Le document MEN de coefficients et volumes horaires consulté ne porte pas de numéro d'arrêté, ne donne pas de référence à cet arrêté conjoint et n'est pas présenté dans l'index comme le texte réglementaire fixant les coefficients des épreuves du baccalauréat.
+
+**Conséquence :** conserver les chiffres de la section 9.4 comme « coefficients de la grille MEN de lycée » et « volumes horaires hebdomadaires de la grille MEN », pas comme « coefficients d'examen du baccalauréat » tant que l'arrêté conjoint n'a pas été obtenu et comparé. Les totaux 30/32/30 (T10/T11/T12) sont les totaux imprimés dans la grille de lycée ; ils ne doivent pas être présentés comme la somme légale des coefficients des épreuves du baccalauréat 2027.
+
+Recherche juridique complémentaire : la rubrique publique des arrêtés du MESUPRES consultée ne liste actuellement que l'arrêté n° 32 374/2026 du 6 octobre 2026 (CRFD), l'arrêté n° 21408/2026 du 23 juin 2026 (assurance qualité/accréditation), l'arrêté n° 21391/2026 du 22 juin 2026 (Collège des Chercheurs-Enseignants) et une référence de 2023. Aucun arrêté conjoint relatif aux épreuves et coefficients du baccalauréat 2027 n'y a été retrouvé. Cela ne prouve pas qu'il n'existe pas : il peut ne pas encore être indexé, être publié ailleurs ou être en cours de signature.
+
+**Statut de clôture :** décret d'organisation du Bac retrouvé et contrôlé ; grille de lycée retrouvée et transcrite ; arrêté conjoint détaillant les épreuves/durées/coefficients d'examen toujours manquant. Ne pas construire le calculateur officiel des points du Bac 2027 à partir de la seule grille de lycée.
+
+Sources :
+- [Décret n° 2026-2100 — MESUPRES, rubrique Décrets](https://www.mesupres.gov.mg/documents/index/1?categorie=decrets).
+- [Rubrique Arrêtés du MESUPRES consultée le 31 octobre 2026](https://www.mesupres.gov.mg/documents/index/1?categorie=arretes).
+- [Article MEN COOCM](https://www.education.gov.mg/mise-oeuvre-plan-sectoriel-de-leducation-elaboration-cadre-dorientation-dorganisation-curriculaire-malagasy/).
+
+### 9.21 PE collège et lycée : résultat de la nouvelle tentative d'accès
+
+La bibliothèque officielle du MEN continue d'indexer séparément les quatre PE collège T6-T9 et les trois PE lycée T10-T12, ainsi que le document de coefficients/volumes horaires. La page Moodle « PE LYCEE » (cours 982) est maintenant consultable et montre les sections « COEFFICIENT ET VOLUME HORAIRE » et « PE LYCEE », ainsi que les grandes matières de la liste de navigation. Elle n'expose cependant pas, dans le rendu textuel public récupérable, les liens PDF directs ni les contenus disciplinaires.
+
+Nouvelle série de tentatives sur les liens directs PE T7, T9, T10, T11 et T12 : échecs/temps d'attente lors de l'ouverture et échec de téléchargement direct pour PE T7. Aucune copie tierce n'a été utilisée pour combler ces pièces. La preuve actuelle est donc :
+- T6 et T8 : PDF MEN accessibles et analysés partiellement ;
+- T7, T9, T10, T11 et T12 : notices présentes dans l'index officiel, fichiers primaires non analysés dans ce contrôle en raison des erreurs d'accès ;
+- coefficients/volumes horaires lycée : fichier MEN distinct accessible et transcrit, sans l'assimiler à l'arrêté des coefficients du baccalauréat.
+
+Il faut demander au MEN/DCI ou à la CISCO/DREN une copie officielle des fichiers manquants, idéalement avec leur numéro de version, la date de publication et le texte d'approbation. Jusqu'à leur obtention, ne pas annoncer que tous les PE T6-T12 ont été lus intégralement.
+
+### 9.22 Clarification de la périodisation du RAPE
+
+Les RAPE de septembre 2026 divisent l'année d'enseignement en cinq périodes : les trois premières ont chacune sept semaines et les deux dernières six semaines. Les PDF disent explicitement que les dates calendaires sont fixées selon le calendrier scolaire officiel et par l'équipe pédagogique de l'établissement. La seule présence d'un calendrier rapporté par la presse ne suffit donc pas à substituer des dates aux intitulés de périodes dans les données RAPE. En base, conserver le numéro et l'ordre de période depuis le PDF ; rattacher les dates calendaires uniquement au calendrier officiel MEN primaire et à l'année scolaire validée.
+
