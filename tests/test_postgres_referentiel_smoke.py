@@ -947,7 +947,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "f1c7a9d3e2b6", (
+    assert revision == "f3d8a9c2e5b1", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
@@ -1004,7 +1004,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "f1c7a9d3e2b6"
+    assert revision == "f3d8a9c2e5b1"
     assert index_count == 41
     assert institution_index_count == 1
 
