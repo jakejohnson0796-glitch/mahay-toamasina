@@ -3158,20 +3158,16 @@
     "Le Quiz IA et le Tuteur IA sont inclus pendant les premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant jours.": "Tafiditra mandritra ny andro voalohan'ny andrana ny Quiz IA sy ny Tuteur IA. Mbola azo ampiasaina mandritra ny andro sisa ny endri-javatra Premium hafa.",
 
 
-    "Ta routine du jour": "Ny fandaharam-pianaranao anio",
-    "Une petite session régulière vaut mieux qu'une longue session rare.": "Tsara kokoa ny mianatra kely sy tsy tapaka toy izay mianatra ela nefa mahalana.",
     "Progression de la routine du jour": "Fandrosoan'ny fanaontsika androany",
     "Étape terminée aujourd'hui": "Dingana vita androany",
     "Étape à faire": "Dingana mbola hatao",
     "Un mini-quiz": "Fanadinana kely",
     "Termine un quiz pour vérifier ce que tu sais déjà.": "Fenoy ny quiz iray hijerena izay efa hainao.",
-    "Faire un quiz": "Hanao quiz",
     "Une ressource de cours": "Loharanom-pianarana",
     "Télécharge un cours, une fiche ou une annale approuvée.": "Sintomy ny lesona, kahie na fanadinana efa nekena.",
     "Explorer les ressources": "Hijery ireo loharano",
     "Un échange utile": "Fifanakalozana mahasoa",
     "Pose une question au Tuteur IA ou envoie un message dans un cercle.": "Mametraha fanontaniana amin'ny Tuteur IA na mandefasa hafatra ao amin'ny vondrona.",
-    "Ouvrir le Tuteur IA": "Hanokatra ny Tuteur IA",
     "Routine terminée aujourd’hui. Bravo pour ta régularité !": "Vita ny fanaontsika androany. Arahabaina noho ny faharetanao!"
 
   });
