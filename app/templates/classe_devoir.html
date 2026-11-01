@@ -15,7 +15,7 @@
   {% elif request.query_params.get("erreur") == "note_invalide" %}
   <div class="erreur" role="alert">Saisis une note numérique valide.</div>
   {% elif request.query_params.get("erreur") == "note_hors_bareme" %}
-  <div class="erreur" role="alert">La note doit être comprise entre 0 et {{ devoir.bareme:g }}.</div>
+  <div class="erreur" role="alert">La note doit être comprise entre 0 et {{ "%.2f"|format(devoir.bareme) }}.</div>
   {% elif request.query_params.get("erreur") == "devoir_invalide" %}
   <div class="erreur" role="alert">Vérifie le titre, le barème et la somme des critères.</div>
   {% elif request.query_params.get("erreur") == "date_invalide" %}
@@ -45,7 +45,7 @@
     <div>
       <span class="classe-kicker">{% if peut_gerer %}Gestion et correction{% else %}Travail à remettre{% endif %}</span>
       <h1>{{ devoir.titre }}</h1>
-      <p class="classe-detail-meta">{{ cours.nom }} · Barème : <strong>{{ devoir.bareme:g }} points</strong> · Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }}</p>
+      <p class="classe-detail-meta">{{ cours.nom }} · Barème : <strong>{{ "%.2f"|format(devoir.bareme) }} points</strong> · Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }}</p>
     </div>
     <div class="classe-devoir-status">
       {% if devoir.archive %}<span class="classe-course-badge">Archivé</span>
@@ -67,7 +67,7 @@
     <h2>Critères d'évaluation</h2>
     <div class="classe-rubric-list">
       {% for critere in criteres_devoir %}
-      <div class="classe-rubric-item"><span>{{ critere.nom }}</span><strong>{{ critere.points:g }} pts</strong></div>
+      <div class="classe-rubric-item"><span>{{ critere.nom }}</span><strong>{{ "%.2f"|format(critere.points) }} pts</strong></div>
       {% endfor %}
     </div>
   </section>
@@ -119,10 +119,11 @@
           {% if mon_rendu.note is not none %}
           <div class="classe-student-grade">
             <span>Note finale communiquée par le professeur</span>
-            <strong>{{ mon_rendu.note:g }} / {{ devoir.bareme:g }}</strong>
+            <strong>{{ "%.2f"|format(mon_rendu.note) }} / {{ "%.2f"|format(devoir.bareme) }}</strong>
             {% if mon_rendu.date_correction %}<small>Corrigé le {{ mon_rendu.date_correction.strftime("%d/%m/%Y à %H:%M") }}</small>{% endif %}
           </div>
           {% if mon_rendu.appreciation_prof %}<div class="classe-teacher-feedback"><strong>Appréciation du professeur</strong><p>{{ mon_rendu.appreciation_prof }}</p></div>{% endif %}
+          {% if mon_rendu_details %}<div class="classe-teacher-feedback"><strong>Détails de la correction</strong><p>{{ mon_rendu_details }}</p></div>{% endif %}
           {% else %}
           <div class="classe-notice"><strong>Correction en attente</strong><span>Ton devoir a bien été reçu. La note apparaîtra ici après validation par le professeur.</span></div>
           {% endif %}
@@ -158,7 +159,7 @@
       <article class="classe-submission-card">
         <div class="classe-submission-head">
           <div><strong>{{ info.utilisateur.nom }}</strong><span>Déposé le {{ info.rendu.date_rendu.strftime("%d/%m/%Y à %H:%M") }}</span></div>
-          {% if info.rendu.note is not none %}<span class="classe-course-badge">Noté · {{ info.rendu.note:g }}/{{ devoir.bareme:g }}</span>{% else %}<span class="classe-course-badge">À corriger</span>{% endif %}
+          {% if info.rendu.note is not none %}<span class="classe-course-badge">Noté · {{ "%.2f"|format(info.rendu.note) }}/{{ "%.2f"|format(devoir.bareme) }}</span>{% else %}<span class="classe-course-badge">À corriger</span>{% endif %}
         </div>
         <p><a href="/classe/devoirs/rendus/{{ info.rendu.id }}/telecharger" class="bouton bouton-secondaire">Ouvrir la copie</a></p>
         {% if info.rendu.commentaire %}<p class="classe-section-card-intro">Commentaire étudiant : {{ info.rendu.commentaire }}</p>{% endif %}
@@ -166,12 +167,12 @@
         {% if info.suggestion_ia %}
         <section class="classe-ai-correction" aria-label="Suggestion de correction IA">
           <div class="classe-ai-correction-head"><strong>Suggestion IA — non publiée</strong><span>Confiance indicative : {{ (info.suggestion_ia.confiance * 100)|round|int if info.suggestion_ia.confiance is defined else 0 }} %</span></div>
-          <div class="classe-ai-suggested-grade">{{ info.suggestion_ia.note_suggeree:g }} / {{ devoir.bareme:g }} <small>proposé</small></div>
+          <div class="classe-ai-suggested-grade">{{ "%.2f"|format(info.suggestion_ia.note_suggeree) }} / {{ "%.2f"|format(devoir.bareme) }} <small>proposé</small></div>
           {% if info.suggestion_ia.appreciation %}<p>{{ info.suggestion_ia.appreciation }}</p>{% endif %}
           {% if info.suggestion_ia.criteres %}
           <div class="classe-rubric-list">
             {% for critere in info.suggestion_ia.criteres %}
-            <div class="classe-rubric-item"><span>{{ critere.nom }}{% if critere.commentaire %}<small>{{ critere.commentaire }}</small>{% endif %}</span><strong>{{ critere.points_obtenus:g }}/{{ critere.points_max:g }}</strong></div>
+            <div class="classe-rubric-item"><span>{{ critere.nom }}{% if critere.commentaire %}<small>{{ critere.commentaire }}</small>{% endif %}</span><strong>{{ "%.2f"|format(critere.points_obtenus) }}/{{ "%.2f"|format(critere.points_max) }}</strong></div>
             {% endfor %}
           </div>
           {% endif %}
@@ -190,16 +191,16 @@
         <form method="post" action="/classe/devoirs/rendus/{{ info.rendu.id }}/noter" class="classe-grade-form">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <div class="classe-field">
-            <label for="note-{{ info.rendu.id }}">Note définitive sur {{ devoir.bareme:g }}</label>
-            <input type="number" id="note-{{ info.rendu.id }}" name="note" min="0" max="{{ devoir.bareme }}" step="0.25" required value="{{ info.suggestion_ia.note_suggeree if info.suggestion_ia else (info.rendu.note if info.rendu.note is not none else '') }}">
+            <label for="note-{{ info.rendu.id }}">Note définitive sur {{ "%.2f"|format(devoir.bareme) }}</label>
+            <input type="number" id="note-{{ info.rendu.id }}" name="note" min="0" max="{{ devoir.bareme }}" step="0.25" required value="{{ info.rendu.note if info.rendu.note is not none else (info.suggestion_ia.note_suggeree if info.suggestion_ia else '') }}">
           </div>
           <div class="classe-field">
             <label for="feedback-{{ info.rendu.id }}">Appréciation du professeur</label>
-            <textarea id="feedback-{{ info.rendu.id }}" name="appreciation_prof" rows="3" maxlength="1800" placeholder="Explique la note, valorise les réussites et indique la prochaine étape…">{% if info.suggestion_ia %}{{ info.suggestion_ia.appreciation }}{% else %}{{ info.rendu.appreciation_prof or "" }}{% endif %}</textarea>
+            <textarea id="feedback-{{ info.rendu.id }}" name="appreciation_prof" rows="3" maxlength="1800" placeholder="Explique la note, valorise les réussites et indique la prochaine étape…">{% if info.rendu.appreciation_prof %}{{ info.rendu.appreciation_prof }}{% elif info.suggestion_ia %}{{ info.suggestion_ia.appreciation }}{% endif %}</textarea>
           </div>
           <div class="classe-field">
             <label for="details-{{ info.rendu.id }}">Détail de la correction par critère (facultatif)</label>
-            <textarea id="details-{{ info.rendu.id }}" name="details_correction" rows="2" maxlength="4000" placeholder="Ex. Méthode : 6/8 — étapes justifiées ; Résultat : 4/4…"></textarea>
+            <textarea id="details-{{ info.rendu.id }}" name="details_correction" rows="2" maxlength="4000" placeholder="Ex. Méthode : 6/8 — étapes justifiées ; Résultat : 4/4…">{{ info.details_correction or "" }}</textarea>
           </div>
           <button class="bouton bouton-primaire" type="submit">Valider et publier la note</button>
         </form>
