@@ -795,3 +795,34 @@ Sources de repérage (secondaires) :
 - [Faculté DEG — fil d'actualités relayé](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG) — annonce L1 relayée le 12 octobre 2026.
 - [École Normale Supérieure — Université de Toamasina, fil d'actualités relayé](https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/%C3%89cole-Normale-Sup%C3%A9rieure---Universit%C3%A9-de-Toamasina) — annonce FAD ENS-SEAS relayée les 29-30 septembre 2026.
 - [Site officiel de l'Université de Toamasina](https://www.univ-toamasina.mg/) — à privilégier pour rechercher et obtenir les documents institutionnels originaux.
+
+### 10.13 Limite du modèle des offres annuelles — ne pas confondre catalogue et campagne
+
+Un dernier contrôle SQL en lecture seule, effectué après le déploiement de `165c278`, confirme l'état des offres dans `public.programmeuniversitaire` :
+
+| Indicateur | Valeur |
+|---|---:|
+| Lignes d'offres | 237 |
+| Offres actives dans le catalogue | 222 |
+| Offres inactives conservées | 15 |
+| Lignes sans année académique | 237 |
+| Universités représentées | 2 |
+| Filières distinctes | 227 |
+| Couples université/filière ayant plusieurs lignes historiques | 10 |
+| Couples ayant plusieurs offres actives | 0 |
+
+La contrainte actuelle `uq_programme_actif_universite_filiere` est un index unique partiel sur `(universite_id, filiere_id) WHERE est_active = true`. Elle garantit au plus une ligne active pour chaque couple université/filière, mais **ne porte pas l'année académique**. Les dix couples qui ont plusieurs lignes conservent des lignes historiques inactives ; aucun couple n'a plusieurs lignes actives.
+
+**Conséquence :** le modèle actuel sait dire qu'une filière est présente/active dans le catalogue, mais il ne peut pas dire quelles cohortes sont ouvertes en 2026-2027, ni représenter proprement plusieurs campagnes annuelles simultanées. Le champ `est_active` n'est ni un état d'habilitation HAE ni un statut d'admission annuelle. Les 237 valeurs NULL ne doivent pas être remplacées à partir d'annonces tierces ou d'une simple supposition de continuité.
+
+#### Modélisation recommandée pour la prochaine évolution
+
+Garder les responsabilités séparées et historisables :
+
+1. **Offre de catalogue (`ProgrammeUniversitaire`)** : relation stable entre université et filière, avec activation dans l'application. Ne pas lui faire porter seule la validité réglementaire ou la campagne d'admission.
+2. **Habilitation (`HabilitationOffre`)** : institution juridique, site/campus, offre exacte, grade, mention, décision/numéro HAE, date d'effet, échéance, statut, document primaire et horodatage de vérification. Une habilitation expirée ou absente ne doit pas être réputée active.
+3. **Ouverture annuelle (`OuvertureCohorte`)** : une ligne par offre et année académique, dates d'ouverture et de clôture, modalités, source primaire, personne/date de vérification, statut explicite (annoncée, confirmée, ouverte, clôturée, suspendue). Une annonce secondaire reste un signal à confirmer, pas une ouverture confirmée.
+
+Avant migration, définir les cardinalités et la compatibilité avec les profils, cercles, documents et demandes existants. Le nouveau modèle doit permettre des historiques annuels sans désactiver globalement une offre qui reste proposée, empêcher deux enregistrements contradictoires pour une même offre et une même campagne, conserver la provenance de chaque décision et migrer les anciens NULL sans leur inventer une année.
+
+**Aucun schéma ni aucune donnée de production n'a été modifié pour ce contrôle.** Cette section est une recommandation de conception, pas une déclaration d'habilitation ni d'ouverture de cohorte.
