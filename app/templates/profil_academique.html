@@ -22,6 +22,7 @@
 {% endif %}
 
 <div class="carte-formulaire">
+  <p class="stat-label">Le catalogue présente les formations répertoriées. Il ne confirme pas à lui seul l’habilitation en vigueur ni l’ouverture des admissions pour l’année universitaire en cours ; vérifiez les dates et conditions auprès de votre composante.</p>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   <form method="post" action="/profil/academique" id="formulaire-actualisation-academique"
         data-cascade-academique
