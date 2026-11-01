@@ -839,7 +839,7 @@ Le contrôle en lecture seule des tables `universite`, `faculte`, `filiere` et `
 | Université de Mahajanga | 2 | 0 | 0 | 0 |
 | Université de Toamasina | 6 | 6 | 161 | 156 |
 | Université de Toliara | 4 | 0 | 0 | 0 |
-| **Total** | **26** | **16** | **227** | **222** |
+| **Total** | **26** | **15** | **227** | **222** |
 
 Les 237 lignes `ProgrammeUniversitaire` se répartissent ainsi : Antananarivo 66 lignes actives sur 66 filières ; Toamasina 171 lignes (156 actives, 15 inactives) sur 161 filières distinctes. Toutes les 227 filières actuellement enregistrées ont au moins une ligne d'offre historique pour leur université de rattachement, mais seules 222 ont une ligne active. Quatre universités publiques ont des composantes enregistrées mais aucune filière détaillée ; l'Université d'Antsiranana ne possède encore aucune composante dans ce catalogue.
 
@@ -847,11 +847,11 @@ Les 237 lignes `ProgrammeUniversitaire` se répartissent ainsi : Antananarivo 66
 
 | Composante | Filière | Niveau | Mention | Ligne d'offre | Observation |
 |---|---|---|---|---|---|
-| École Normale Supérieure | Administration et Services Scolaires (ASS) | Non renseigné | Mention 15 dans le référentiel | 1 inactive | Confirmer auprès de la scolarité si l'offre est suspendue, historique ou toujours proposée |
-| École Normale Supérieure | Éducation et Formation d'Adultes (EFA) | Non renseigné | Mention 15 dans le référentiel | 1 inactive | Même vérification ; ne pas réactiver sur la seule base de l'ancien catalogue |
-| Faculté DEG | CCA — Comptabilité, Contrôle, Audit | M2 | Mention 11 dans le référentiel | 1 inactive | La source de référence marque cette entrée « À vérifier » ; demander maquette et décision HAE en vigueur |
-| Faculté DEG | Tronc commun | L1 | Mention 2 dans le référentiel | 1 inactive | Vérifier que le flux « tronc commun » sans filière sélectionnable correspond bien à la règle pédagogique actuelle |
-| Faculté DEG | Tronc commun | L2 | Mention 2 dans le référentiel | 1 inactive | Même contrôle L2 ; ne pas transformer en spécialisation ou offre de cohorte |
+| École Normale Supérieure | Administration et Services Scolaires (ASS) | Non renseigné | Sciences de l'Éducation et Administration Scolaire (SEAS) | 1 inactive | Confirmer auprès de la scolarité si l'offre est suspendue, historique ou toujours proposée |
+| École Normale Supérieure | Éducation et Formation d'Adultes (EFA) | Non renseigné | Sciences de l'Éducation et Administration Scolaire (SEAS) | 1 inactive | Même vérification ; ne pas réactiver sur la seule base de l'ancien catalogue |
+| Faculté DEG | CCA — Comptabilité, Contrôle, Audit | M2 | Gestion | 1 inactive | La source de référence marque cette entrée « À vérifier » ; demander maquette et décision HAE en vigueur |
+| Faculté DEG | Tronc commun | L1 | Droit et Sciences politiques | 1 inactive | Vérifier que le flux « tronc commun » sans filière sélectionnable correspond bien à la règle pédagogique actuelle |
+| Faculté DEG | Tronc commun | L2 | Droit et Sciences politiques | 1 inactive | Même contrôle L2 ; ne pas transformer en spécialisation ou offre de cohorte |
 
 **Important :** l'état inactif dans `ProgrammeUniversitaire` signifie que la filière n'est pas actuellement activée comme offre du catalogue MITARIDALA. Il ne prouve pas à lui seul qu'une formation a été fermée juridiquement, que son habilitation est retirée ou qu'aucune cohorte n'est ouverte. La liste ci-dessus est un relevé de contrôle à confirmer, pas une décision de fermeture.
 
