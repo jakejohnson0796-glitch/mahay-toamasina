@@ -289,15 +289,26 @@ def test_recupere_une_fiche_si_notion_manquante_ou_sortie_tronquee(
     class FauxCompletion:
         def create(self, **kwargs):
             schema = kwargs["response_format"]["json_schema"]["schema"]
+            champs_requis = set(schema["required"])
+            assert {
+                "resume", "objectifs", "notions", "erreurs_frequentes",
+                "outils_a_retenir", "exercices", "points_a_retravailler",
+                "plan_revision", "auto_evaluation", "limites_sources",
+            } <= champs_requis
             exercices = schema["properties"]["exercices"]
-            assert exercices["minItems"] == exercices["maxItems"] == 3
-            assert schema["properties"]["notions"]["maxItems"] == 3
-            assert schema["properties"]["erreurs_frequentes"]["maxItems"] == 3
-            assert schema["properties"]["auto_evaluation"]["minItems"] == 3
+            champs_exercice = set(exercices["items"]["required"])
+            assert {"enonce", "difficulte", "indice", "correction"} <= champs_exercice
             if sans_notion:
-                assert "notion" not in exercices["items"]["required"]
+                assert "notion" not in champs_exercice
             else:
-                assert "notion" in exercices["items"]["required"]
+                assert "notion" in champs_exercice
+            # Groq Strict Outputs simplifie les contraintes de cardinalité ;
+            # les bornes sont testées sur le schéma applicatif brut ci-dessous.
+            assert "minItems" not in exercices and "maxItems" not in exercices
+            assert "REPRISE COMPACTE OBLIGATOIRE" in kwargs["messages"][0]["content"]
+            assert "exactement 3 notions" in kwargs["messages"][0]["content"]
+            assert "3 questions d'auto-évaluation" in kwargs["messages"][0]["content"]
+            assert 0 < kwargs["max_completion_tokens"] <= course_revision.MAX_COMPLETION_TOKENS
             reponse = fiche_valide()
             if sans_notion:
                 for exercice in reponse["exercices"]:
