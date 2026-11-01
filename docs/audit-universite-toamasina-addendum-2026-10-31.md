@@ -649,25 +649,25 @@ La base compte **3 utilisateurs rattachés à l'Université de Toamasina**. Les 
 
 Les six domaines du fichier source sont représentés parmi les mentions des offres Toamasina. Les mentions FLSH et ITPT sont regroupées sous « Arts, Lettres et Sciences Humaines », les mentions ENS sous « Sciences de l'éducation », et les composantes DEG/FST/ISSEDD sous leurs domaines propres. Aucun changement de domaine n'a été exécuté.
 
-### 10.6 Vérification du démarrage Render — déploiement actuellement en production
+### 10.6 Vérification du démarrage Render — déploiement universitaire corrigé du 1er novembre 2026
 
-Contrôle des deux services Render du workspace « My Workspace », après leur dernier déploiement du 31 octobre 2026 :
+Après fusion de la PR #310, les deux services Render ont déployé le commit c4bb4bd76ce23bcb73ae55d49aca7f85434b00f1 :
 
-| Service | Dernier commit déployé | Build / déploiement | Résultat |
-|---|---|---|---|
-| `mitaridala` | `025809e6bf6e3d819deede51d068de0678adf898` | 10:59:09–11:00:11 UTC | Live |
-| `mahay-toamasina` | `025809e6bf6e3d819deede51d068de0678adf898` | 10:59:09–11:00:11 UTC | Live |
+| Service | Déploiement | Début UTC | Fin UTC | État |
+|---|---|---:|---:|---|
+| mitaridala | dep-dbjbc53m8hqs73fkm76g | 03:46:28 | 03:47:29 | Live |
+| mahay-toamasina | dep-dbjbc53m8hqs73fkm6lg | 03:46:28 | 03:47:30 | Live |
 
-Les journaux applicatifs de chaque service confirment :
-- `[DEBUG DATABASE] Migrations Alembic appliquees — connexion OK.`
-- démarrage puis fin réussie de `reconciliation_referentiel` (7,6 s sur Mitaridala ; 7,1 s sur Mahay) ;
-- `[DEBUG ACADEMIQUE] Réconciliation Toamasina — 0 offre(s) activée(s), 0 désactivée(s), 0 doublon(s) supprimé(s), 0 fusion(s) de filières.`
-- plusieurs réponses internes `GET /health` avec statut HTTP **200 OK** après le démarrage ;
-- aucun `ERROR`, `Traceback` ou `CRITICAL` trouvé dans la fenêtre analysée.
+Les journaux des deux services confirment :
+- connexion PostgreSQL/Supabase réussie et migrations Alembic appliquées ;
+- démarrage du worker IA intégré avec redis_queue=True et la clé mahay:ai:queue ;
+- initialisation terminée en environ 13 secondes ;
+- réponses internes GET /health avec statut HTTP **200 OK** pendant le démarrage ;
+- aucun log de niveau error et aucune réponse 500/502/503 dans la fenêtre post-déploiement analysée.
 
-Aucune requête `/ready` n'a été retrouvée dans cette fenêtre. Les appels HTTP directs depuis l'environnement de contrôle n'ont pas abouti à cause d'une résolution DNS indisponible ; la vérification `/ready` reste donc non confirmée. Cette observation ne remet pas en cause le statut Render `Live`, mais il faut garder cette distinction.
+Aucune requête /ready n'a été retrouvée dans cette fenêtre ; cette route n'est donc pas déclarée vérifiée ici.
 
-Les deux services sont configurés pour déployer `main` seulement lorsque les contrôles requis passent. Les PR #309 et #310 sont toujours des brouillons non fusionnés ; leurs contenus ne sont pas dans ces images de production. Le commit `025809e` est le dernier déploiement attesté, pas la dernière tête de `main`.
+Le commit suivant 1d88074 contient uniquement la limite de durée des jobs CI ; son run 41272543571 était encore en cours au moment de la mise à jour. Les services sont configurés avec autoDeployTrigger=checksPass et ne doivent recevoir ce commit qu'après réussite de sa CI.
 
 ### 10.7 Campagnes d'admission L1 2026–2027 — éléments récents à enregistrer séparément
 
@@ -693,3 +693,34 @@ Sources consultées :
 Les tables `faculte`, `filiere`, `mention` et `programmeuniversitaire` ont RLS activé selon l'inventaire de schéma. Ce contrôle n'est pas un audit complet des politiques RLS, des rôles ou des droits Data API. Il ne prouve pas non plus l'ouverture 2026-2027 des formations.
 
 **Aucune écriture SQL n'a été exécutée.** Les nettoyages proposés restent à faire dans une branche de code, avec simulation, tests et CI verte avant toute fusion/déploiement.
+
+
+### 10.9 Contrôle Supabase après réconciliation des mentions ENS — 1er novembre 2026
+
+Un contrôle SQL en lecture seule a été effectué après le déploiement de c4bb4bd.
+
+| Indicateur | Avant réconciliation | Après réconciliation |
+|---|---:|---:|
+| Mentions en base | 66 | 64 |
+| Anciennes mentions ENS en doublon | IDs 50 et 59 présents | IDs 50 et 59 absents |
+| Mention canonique Histoire-Géographie | ID 63 | ID 63 conservé |
+| Mention canonique Sciences de l'Éducation | ID 64 | ID 64 conservé |
+
+Les mentions canoniques 63 et 64 portent chacune 7 filières et 7 cercles ; le profil étudiant précédemment attaché à la mention 63 est toujours rattaché. Le nombre total de filières est passé de 237 à 227 après consolidation. Les 237 lignes ProgrammeUniversitaire sont conservées ; 222 sont actives et 15 inactives. Aucune paire université/filière ne porte plus d'une offre active.
+
+**Limite importante :** les 237 offres ont toutes annee_academique = NULL. Certaines offres de l'ENS ont donc conservé une ligne inactive en plus de la ligne active correspondante, car l'année inconnue ne permet pas de prouver qu'il s'agit d'un doublon de la même campagne. Cette conservation évite une suppression non justifiée, mais le modèle ne permet pas encore de déterminer l'ouverture réelle par année. L'état est_active décrit l'activation dans le catalogue, pas une preuve d'habilitation HAE ni d'ouverture de cohorte 2026-2027.
+
+Les contrôles de référence n'ont trouvé aucune filière, aucun cercle, aucun profil ni aucune demande pointant vers une mention inexistante. Le scan par normalisation des intitulés n'a trouvé aucun doublon supplémentaire de mention, de filière ou de faculté dans le périmètre de l'Université de Toamasina.
+
+### 10.10 Réserve d'accès Supabase et calendrier ENS-SEAS 2026-2027
+
+L'advisor Supabase a signalé 62 tables avec RLS activé mais sans politiques. La lecture de information_schema.role_table_grants n'a trouvé aucun privilège de table pour anon ni authenticated ; les privilèges étaient attribués uniquement à service_role, rôle qui contourne RLS. Aucun changement RLS n'a été appliqué : une politique générique pourrait exposer des données étudiantes. Le modèle actuel reste à auditer en distinguant les requêtes API publiques de la connexion privilégiée du serveur.
+
+L'advisor performance signale une seule clé étrangère sans index couvrant : etablissementpartenaire.cree_par_id. Il signale également 154 index inutilisés selon les statistiques observées ; aucun n'a été supprimé, car ces statistiques ne suffisent pas à justifier une suppression.
+
+Le site institutionnel ENS-SEAS (seas.mg) présente les parcours L1, L3, M1 et M2 et publie encore, sur sa page d'accueil consultée, des listes de résultats de l'année 2025-2026. Une page miroir secondaire de l'ENS à Toamasina relaie un calendrier 2026-2027 (résultats attendus au 30 octobre, inscriptions jusqu'au 30 novembre, semestre 1 à partir du 5 novembre). La page primaire consultée ne permet pas de confirmer ce calendrier. Ce calendrier reste donc un indice à confirmer directement auprès de la scolarité ENS-SEAS ; ne pas le traiter comme preuve réglementaire ou ouverture vérifiée.
+
+Sources :
+- https://seas.mg/ — site ENS-SEAS, présentation des parcours L1/L3/M1/M2 et actualités/résultats 2025-2026.
+- https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations — page documentaire ministérielle, qui répertorie notamment la liste HAE d'août 2022 et les canevas HAE 2026.
+- https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/Ecole-Normale-Superieure-Universite-de-Toamasina — source secondaire, calendrier 2026-2027 à confirmer.
