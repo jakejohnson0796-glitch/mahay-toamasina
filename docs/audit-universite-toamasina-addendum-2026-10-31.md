@@ -762,7 +762,19 @@ La CI PR de #314 et le run push de `main` `41274678777` ont tous deux réussi : 
 
 #### État Render après la migration
 
-Les deux services `mitaridala` et `mahay-toamasina` sont `live` sur le commit `40e528291a33f4acfe902c74cd54a8f68a7730d1` (PR #315). Ce déploiement comprend le correctif de l'index FK de #313 ainsi que l'avertissement trilingue de #314. Les contrôles Render relevés après ce déploiement ont observé des réponses `GET /health` en HTTP 200 et aucun log d'erreur dans la fenêtre consultée. La PR #316 (commit `165c2786f0ee230aaccf08379279ccfc3591bc9d`) déplace l'extension `unaccent` vers `extensions` ; sa CI `main` (run `41276650330`) a réussi le smoke PostgreSQL, mais le job applicatif était encore en cours à la mise à jour du présent rapport. La production conserve donc provisoirement `unaccent` dans `public` jusqu'à la réussite CI et au prochain déploiement (`autoDeployTrigger=checksPass`).
+Les deux services `mitaridala` et `mahay-toamasina` sont `live` sur le commit `165c2786f0ee230aaccf08379279ccfc3591bc9d` (PR #316), déployé après CI verte le 1er novembre 2026. Le déploiement comprend la migration `f3d8a9c2e5b1` qui déplace `unaccent` dans le schéma `extensions`.
+
+Contrôles après le déploiement :
+
+| Vérification | `mitaridala` | `mahay-toamasina` |
+|---|---:|---:|
+| Déploiement Render | `dep-dbjcsaavcj2c73es5f3g` — `live` | `dep-dbjcsaavcj2c73es5fkg` — `live` |
+| Fin de déploiement (UTC) | 05:30:14 | 05:30:14 |
+| Réponses `/health` analysées | HTTP 200 | HTTP 200 |
+| Logs de niveau `error` | 0 | 0 |
+| Initialisation terminée | 20,4 s | 15,1 s |
+
+La base confirme `alembic_version=f3d8a9c2e5b1`, `unaccent` dans `extensions` et le dictionnaire `public.mahay_french` toujours lié à `extensions.unaccent`. Le test SQL `extensions.unaccent('Économie, Université de Toamasina')` produit `Economie, Universite de Toamasina`, et la recherche `to_tsvector('public.mahay_french', ...) @@ plainto_tsquery(...)` renvoie `true`. L'advisor Supabase ne signale plus `extension_in_public` ; il reste 62 avertissements informatifs RLS sans politique et 155 index inutilisés (niveau INFO). Aucun droit de table `anon` ou `authenticated` n'a été trouvé ; seuls les privilèges `service_role` sont présents. Les contrôles de santé et les logs n'ont montré aucune erreur dans la fenêtre post-déploiement.
 
 
 
