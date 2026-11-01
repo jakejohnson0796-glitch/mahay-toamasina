@@ -22,6 +22,7 @@ const dom = new JSDOM(`<!doctype html><html lang="fr"><head><title>Connexion —
   <h2 id="circles-heading">À l’échelle de Madagascar · Cercles d’étude</h2>
   <p id="about-copy">Une plateforme malgache pour apprendre, pratiquer et avancer ensemble.</p>
   <p id="long-about-copy">MITARIDALA rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.</p>
+  <p id="university-catalogue-warning">Le catalogue présente les formations répertoriées. Il ne confirme pas à lui seul l’habilitation en vigueur ni l’ouverture des admissions pour l’année universitaire en cours ; vérifiez les dates et conditions auprès de votre composante.</p>
   <input id="phone" placeholder="Numéro de téléphone" value="0341234567">
   <p id="dynamic">Pas encore de compte ?</p>
   <button id="dynamic-aria" aria-label="Passer au thème clair">Thème</button>
@@ -66,6 +67,9 @@ if (window.document.querySelector('#about-copy').textContent !== 'Sehatra malaga
 }
 if (window.document.querySelector('#long-about-copy').textContent !== "Atambatry ny MITARIDALA ao amin'ny sehatra iray natao ho an'ny mpianatra eto Madagasikara ny loharano akademika, fanazaran-tena, fifanampiana, fanampian'ny IA ary kilasy virtoaly.") {
   throw new Error('The long about-page introduction was not translated to Malagasy');
+}
+if (window.document.querySelector('#university-catalogue-warning').textContent !== "Ny katalaogy dia mampiseho ireo fiofanana voatanisa. Tsy manamarina samirery ny fahazoan-dalana mbola manan-kery na ny fisokafan’ny fisoratana anarana amin’ity taom-pianarana ity izy; hamarino any amin’ny sampam-pianarana misy anao ny daty sy ny fepetra.") {
+  throw new Error('The university catalogue opening caveat was not translated to Malagasy');
 }
 if (window.document.querySelector('#games-heading').textContent !== 'Ny lalao mahazatra') {
   throw new Error('The classical games heading was not translated to Malagasy');
@@ -337,6 +341,9 @@ if (window.document.querySelector('#about-copy').textContent !== 'A Malagasy pla
 if (window.document.querySelector('#long-about-copy').textContent !== 'MITARIDALA brings together academic resources, practice, peer support, AI guidance, and virtual classrooms in one environment designed for students in Madagascar.') {
   throw new Error('The full about-page introduction was not translated');
 }
+if (window.document.querySelector('#university-catalogue-warning').textContent !== "The catalogue lists recorded programmes. It does not by itself confirm current accreditation or open admissions for the academic year; check dates and requirements with your faculty.") {
+  throw new Error('The university catalogue opening caveat was not translated to English');
+}
 if (officialOption.textContent !== 'Mention') {
   throw new Error('Official academic reference values must remain unchanged in English');
 }
@@ -354,6 +361,9 @@ if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord
 select.value = 'fr';
 select.dispatchEvent(new window.Event('change', { bubbles: true }));
 if (window.document.documentElement.getAttribute('lang') !== 'fr') throw new Error('HTML lang was not restored');
+if (window.document.querySelector('#university-catalogue-warning').textContent !== "Le catalogue présente les formations répertoriées. Il ne confirme pas à lui seul l’habilitation en vigueur ni l’ouverture des admissions pour l’année universitaire en cours ; vérifiez les dates et conditions auprès de votre composante.") {
+  throw new Error('Switching back to French did not restore the university catalogue warning');
+}
 if (window.document.querySelector('#navigation').textContent !== 'Tableau de bord') {
   throw new Error('Switching back to French did not restore the original source');
 }
