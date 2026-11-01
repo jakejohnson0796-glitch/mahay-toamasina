@@ -1039,7 +1039,15 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         # sans ce champ dans le schéma évite de perdre tout le carnet ; la
         # normalisation locale tentera une association prudente aux notions.
         erreur_texte = str(erreur).casefold()
-        erreur_notion = "notion" in erreur_texte and "missing properties" in erreur_texte
+        correspondance_champs = re.search(
+            r"missing properties:\s*((?:'[^']+'\s*,?\s*)+)",
+            erreur_texte,
+        )
+        champs_manquants = (
+            set(re.findall(r"'([^']+)'", correspondance_champs.group(1)))
+            if correspondance_champs else set()
+        )
+        erreur_notion = "notion" in champs_manquants
         erreur_champs_obligatoires = (
             "missing properties" in erreur_texte
             or "missing required properties" in erreur_texte
@@ -1069,7 +1077,7 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         kwargs["messages"] = [{
             "role": "user",
             "content": messages[0]["content"] + (
-                "\\n\\nREPRISE COMPACTE OBLIGATOIRE : respecte strictement les maxima du schéma. "
+                "\n\nREPRISE COMPACTE OBLIGATOIRE : respecte strictement les maxima du schéma. "
                 "Produis exactement 3 notions, 3 erreurs fréquentes distinctes, 3 exercices "
                 "(Facile, Moyen, Difficile), 3 étapes de révision et 3 questions d'auto-évaluation. "
                 "Au plus 3 outils et 3 points à retravailler. Résumé <= 500 caractères ; "
@@ -1086,8 +1094,9 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         )
         logger.warning(
             "Réponse de fiche IA non conforme ou tronquée ; nouvelle tentative compacte "
-            "(notion absente=%s, troncature=%s).",
+            "(notion absente=%s, champs obligatoires absents=%s, troncature=%s).",
             erreur_notion,
+            erreur_champs_obligatoires,
             erreur_troncature,
         )
         completion = ai_ensemble.cost_controller.call(
