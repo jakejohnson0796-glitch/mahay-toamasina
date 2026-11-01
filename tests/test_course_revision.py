@@ -286,8 +286,6 @@ def test_normalise_fiche_revision_personnalisee():
 def test_recupere_une_fiche_si_notion_manquante_ou_sortie_tronquee(
     monkeypatch, erreur_initiale, sans_notion
 ):
-    donnees = fiche_valide()
-
     class FauxCompletion:
         def create(self, **kwargs):
             schema = kwargs["response_format"]["json_schema"]["schema"]
@@ -296,9 +294,10 @@ def test_recupere_une_fiche_si_notion_manquante_ou_sortie_tronquee(
             assert schema["properties"]["notions"]["maxItems"] == 3
             assert schema["properties"]["erreurs_frequentes"]["maxItems"] == 3
             assert schema["properties"]["auto_evaluation"]["minItems"] == 3
-            assert "notion" not in exercices["items"]["required"] if sans_notion else (
-                "notion" in exercices["items"]["required"]
-            )
+            if sans_notion:
+                assert "notion" not in exercices["items"]["required"]
+            else:
+                assert "notion" in exercices["items"]["required"]
             reponse = fiche_valide()
             if sans_notion:
                 for exercice in reponse["exercices"]:
