@@ -202,3 +202,68 @@ def test_message_dans_un_cercle_compte_comme_interaction_reelle():
 
     assert routine["etapes"][2]["terminee"] is True
     assert routine["terminees"] == 1
+
+
+def test_routine_utilise_le_jour_civil_de_madagascar_autour_de_minuit():
+    _engine, session = _db()
+    user = _user(session, "0341999010")
+
+    # 22:00 UTC = 01:00 le lendemain à Toamasina (UTC+3).
+    dedans_jour_local = datetime(2026, 10, 30, 22, 0)
+    # 20:59 UTC = 23:59 le jour précédent à Toamasina.
+    dehors_jour_local = datetime(2026, 10, 30, 20, 59)
+    session.add_all([
+        _quiz(user.id, dedans_jour_local),
+        _quiz(user.id, dehors_jour_local),
+    ])
+    session.commit()
+
+    routine = routine_du_jour(
+        session,
+        user.id,
+        maintenant=datetime(2026, 10, 31, 0, 30),  # 03:30 heure locale
+    )
+
+    assert routine["etapes"][0]["terminee"] is True
+    assert routine["terminees"] == 1
+
+
+def test_routine_exclut_les_activites_futures_du_jour_local():
+    _engine, session = _db()
+    user = _user(session, "0341999011")
+    document = _document(session, user.id)
+    maintenant = datetime(2026, 10, 31, 0, 30)
+    activite_future = maintenant + timedelta(minutes=1)
+
+    session.add_all([
+        _quiz(user.id, activite_future),
+        ConsultationDocument(
+            utilisateur_id=user.id,
+            document_id=document.id,
+            date_consultation=activite_future,
+        ),
+        SessionTuteur(
+            utilisateur_id=user.id,
+            notion="Fractions",
+            question="Explique les fractions.",
+            explication="Une fraction représente une partie d'un tout.",
+            exemple="1/2",
+            exercice="Calcule 1/2 + 1/2.",
+            correction="1",
+            date_creation=activite_future,
+        ),
+        ActionGamification(
+            utilisateur_id=user.id,
+            action="cercle",
+            source_type="message_cercle",
+            source_key="902",
+            points=20,
+            date_creation=activite_future,
+        ),
+    ])
+    session.commit()
+
+    routine = routine_du_jour(session, user.id, maintenant=maintenant)
+
+    assert routine["terminees"] == 0
+    assert all(not etape["terminee"] for etape in routine["etapes"])
