@@ -272,6 +272,14 @@ Matière et programme
 Établissement scolaire (facultatif)
 ~~~
 
+### Périmètre et preuve du catalogue universitaire
+
+Le modèle universitaire actuellement livré représente les six universités publiques établies et leurs composantes. Il ne constitue pas encore un registre exhaustif de tous les établissements supérieurs, campus privés, instituts régionaux affiliés, écoles paramédicales et structures doctorales de Madagascar. Le répertoire institutionnel du MESUPRES comporte aussi des entrées supplémentaires dites « universités de proximité » ; elles doivent être vérifiées individuellement avant d'être importées dans les sélecteurs de l'application.
+
+`ProgrammeUniversitaire.est_active` indique qu'une offre est visible/active dans le catalogue MITARIDALA. Ce champ ne remplace pas une décision HAE et ne prouve pas, à lui seul, que l'habilitation est encore valide ou qu'une cohorte ouvre pendant l'année universitaire courante. De même, les statuts « Vérifié », « Confirmé » ou « À vérifier » du fichier source universitaire décrivent le niveau de preuve documentaire de l'entrée ; ils ne sont pas des états réglementaires HAE.
+
+Avant d'ajouter une institution ou de publier une formation, vérifier séparément son statut juridique, son site/campus, l'offre exacte, le grade, l'identifiant et la décision HAE, les dates de validité, l'accréditation et l'ouverture annuelle. Une institution inscrite dans un annuaire n'est pas automatiquement une offre habilitée ; une habilitation n'est pas automatiquement une ouverture annuelle.
+
 La version courante du catalogue scolaire est le **RAPE MEN, édition septembre 2026** (`MEN-RAPE-2026-09`). Elle couvre T6 à T12, avec L/S/OSE en Première et Terminale, et associe chaque matière à son niveau/série et au PDF officiel exact. Elle est rattachée techniquement à 2026-2027 sur la base de la date d'édition ; cette association doit encore être recoupée avec l'avis officiel de rentrée/calendrier scolaire. Le référentiel reste **partiel**, car le RAPE indique qu'il ne contient pas tous les détails du Programme d'Études et doit être utilisé avec le PE complet. Les éditions RAPS/RAPE 2024-2025 sont conservées séparément comme historiques. Les offres réelles des établissements ne sont jamais déduites d'un programme national.
 
 La [Bibliothèque numérique officielle du MEN](https://plateforme.education.mg/bibliotheque-numerique/?lang=fr) distingue les collections **Programme d'Études (PE)**, **Répartition Annuelle du Programme d'Études (RAPE)** et **Fascicules de Ressources Pédagogiques (FRP)**. Elle liste PE Collège (T6-T9), PE Lycée (T10-T12) et un document de coefficients/volumes horaires du lycée ; les pièces jointes PE et coefficients doivent encore être récupérées et auditées avant de déclarer le référentiel complet. Les liens et le détail des matières par niveau/série figurent dans [le rapport d'audit des référentiels](docs/audit-referentiels-men-metfp-toamasina-2026-10-31.md).
