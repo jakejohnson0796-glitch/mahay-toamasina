@@ -813,7 +813,7 @@ Un dernier contrôle SQL en lecture seule, effectué après le déploiement de `
 
 La contrainte actuelle `uq_programme_actif_universite_filiere` est un index unique partiel sur `(universite_id, filiere_id) WHERE est_active = true`. Elle garantit au plus une ligne active pour chaque couple université/filière, mais **ne porte pas l'année académique**. Les dix couples qui ont plusieurs lignes conservent des lignes historiques inactives ; aucun couple n'a plusieurs lignes actives.
 
-**Conséquence :** le modèle actuel sait dire qu'une filière est présente/active dans le catalogue, mais il ne peut pas dire quelles cohortes sont ouvertes en 2026-2027, ni représenter proprement plusieurs campagnes annuelles simultanées. Le champ `est_active` n'est ni un état d'habilitation HAE ni un statut d'admission annuelle. Les 237 valeurs NULL ne doivent pas être remplacées à partir d'annonces tierces ou d'une simple supposition de continuité.
+**Conséquence :** le modèle actuel sait dire qu'une offre est activée dans l'application. Ce statut est aussi consommé par la cascade académique et les contrôles qui déterminent si un étudiant peut choisir la filière ; il ne s'agit donc pas d'un simple indicateur d'affichage. Mais il ne permet pas de dire quelles cohortes sont ouvertes en 2026-2027, ni de représenter proprement plusieurs campagnes annuelles simultanées. Le champ `est_active` n'est ni une décision d'habilitation HAE valide ni un statut d'admission annuelle. Les 237 valeurs NULL ne doivent pas être remplacées à partir d'annonces tierces ou d'une simple supposition de continuité.
 
 #### Modélisation recommandée pour la prochaine évolution
 
