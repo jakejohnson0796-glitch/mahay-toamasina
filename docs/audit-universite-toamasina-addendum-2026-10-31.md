@@ -764,3 +764,20 @@ La CI PR de #314 a réussi : 146 modules, 988 tests passés, 0 échec, 0 ignoré
 
 Les deux services `mitaridala` et `mahay-toamasina` sont `live` sur le commit `e238be4`. Les contrôles Render relevés après ce déploiement ont observé des réponses `GET /health` en HTTP 200 et aucun log d'erreur dans la fenêtre consultée. Le commit `1c8a853` de #314 attend encore la réussite terminale de sa CI avant son déploiement automatique (`autoDeployTrigger=checksPass`).
 
+
+
+### 10.12 Signaux d'admission 2026-2027 à Toamasina — vérification primaire encore requise
+
+Une recherche complémentaire du 1er novembre 2026 a identifié deux annonces relayées par des répertoires tiers. Elles sont utiles pour orienter les vérifications avec les scolarités, mais ne constituent pas à elles seules une preuve institutionnelle primaire de l'ouverture d'une cohorte :
+
+| Composante / parcours | Information relayée | État de preuve |
+|---|---|---|
+| Faculté DEG — L1 Droit, Économie et Gestion | Une page tierce se présentant comme la page officielle de la Faculté DEG relaie, au 12 octobre 2026, un appel à candidature L1 2026-2027 avec une date limite annoncée au 27 novembre 2026. | Source secondaire ; obtenir le communiqué original, les conditions et le statut effectif du dépôt auprès de la scolarité DEG. |
+| ENS-SEAS — Formation ouverte et à distance (FAD) en Sciences de l'Éducation et Administration Scolaire | Une page tierce relayant les publications de l'ENS indique une pré-inscription en ligne prolongée au 16 octobre 2026, un dépôt physique jusqu'au 20 octobre 2026 à 12 h, des résultats attendus au plus tard le 30 octobre, des inscriptions définitives et paiement de la première tranche du 30 octobre au 30 novembre, et un semestre 1 annoncé du 5 novembre 2026 au 15 mars 2027. | Source secondaire ; au 1er novembre, les échéances de pré-inscription et de dépôt physique sont passées, mais la période d'inscription définitive annoncée se poursuit jusqu'au 30 novembre. Confirmer le résultat et le calendrier directement auprès de l'ENS-SEAS avant toute mise à jour du catalogue. |
+
+Aucun de ces deux signaux n'a été utilisé pour renseigner `ProgrammeUniversitaire.annee_academique`, activer une offre ou afficher « admissions ouvertes ». Les 237 lignes `ProgrammeUniversitaire` de production gardent leur année académique NULL tant que les sources primaires correspondantes ne sont pas obtenues.
+
+Sources de repérage (secondaires) :
+- [Faculté DEG — fil d'actualités relayé](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG) — annonce L1 relayée le 12 octobre 2026.
+- [École Normale Supérieure — Université de Toamasina, fil d'actualités relayé](https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/%C3%89cole-Normale-Sup%C3%A9rieure---Universit%C3%A9-de-Toamasina) — annonce FAD ENS-SEAS relayée les 29-30 septembre 2026.
+- [Site officiel de l'Université de Toamasina](https://www.univ-toamasina.mg/) — à privilégier pour rechercher et obtenir les documents institutionnels originaux.
