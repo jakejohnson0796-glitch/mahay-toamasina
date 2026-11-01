@@ -135,7 +135,7 @@ def downgrade() -> None:
             else:
                 if _a_fk_fiche_document(bind):
                     op.drop_constraint(FK_TACHE_FICHE_DOCUMENT, "tacheia", type_="foreignkey")
-                op.drop_column("fiche_revision_document_id")
+                op.drop_column("tacheia", "fiche_revision_document_id")
 
     if inspector.has_table("ficherevisiondocument"):
         indexes = {item["name"] for item in sa.inspect(bind).get_indexes("ficherevisiondocument")}
