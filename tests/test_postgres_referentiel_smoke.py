@@ -1007,7 +1007,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "b7c4e2a9d613"
+    assert revision == "g2a7f5d9c1e3"
     assert index_count == 41
     assert institution_index_count == 1
 
