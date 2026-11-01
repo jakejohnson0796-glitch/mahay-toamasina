@@ -1401,3 +1401,73 @@ def test_postgres_fiche_revision_de_approbation_a_export_prive_personnalise(monk
                 ).all():
                     session.delete(utilisateur)
             session.commit()
+
+
+@pytest.mark.skipif(
+    not os.environ.get("DATABASE_URL", "").startswith(
+        ("postgresql://", "postgresql+psycopg2://")
+    ),
+    reason="Contrôle de l'extension PostgreSQL unaccent réservé à PostgreSQL",
+)
+def test_postgres_unaccent_relocate_preserves_french_full_text_search():
+    """L'extension sort de public sans casser le dictionnaire de recherche français."""
+    from sqlalchemy import text
+
+    from app.database import engine
+
+    with engine.connect() as connection:
+        extension_schema = connection.execute(
+            text(
+                "SELECT n.nspname FROM pg_extension e "
+                "JOIN pg_namespace n ON n.oid=e.extnamespace "
+                "WHERE e.extname='unaccent'"
+            )
+        ).scalar_one()
+        assert extension_schema == "extensions"
+
+        dictionary_schemas = connection.execute(
+            text(
+                "SELECT DISTINCT dn.nspname "
+                "FROM pg_ts_config c "
+                "JOIN pg_ts_config_map m ON m.mapcfg=c.oid "
+                "JOIN pg_ts_dict d ON d.oid=m.mapdict "
+                "JOIN pg_namespace dn ON dn.oid=d.dictnamespace "
+                "WHERE c.cfgname='mahay_french' AND d.dictname='unaccent'"
+            )
+        ).scalars().all()
+        assert dictionary_schemas == ["extensions"]
+
+        normalized = connection.execute(
+            text("SELECT extensions.unaccent(CAST(:value AS text))"),
+            {"value": "École"},
+        ).scalar_one()
+        assert normalized == "Ecole"
+
+        full_text_match = connection.execute(
+            text(
+                "SELECT to_tsvector('public.mahay_french', CAST(:document AS text)) "
+                "@@ plainto_tsquery('public.mahay_french', CAST(:query AS text))"
+            ),
+            {"document": "École supérieure de Toamasina", "query": "ecole"},
+        ).scalar_one()
+        assert full_text_match is True
+
+    # Les rôles Data API doivent garder le droit d'utiliser l'extension après
+    # le déplacement, via le search_path habituel de Supabase.
+    for role in ("anon", "authenticated"):
+        with engine.connect() as role_connection:
+            role_connection.execute(text(f'SET LOCAL ROLE "{role}"'))
+            role_connection.execute(text("SET LOCAL search_path TO public, extensions"))
+            normalized = role_connection.execute(
+                text("SELECT unaccent(CAST(:value AS text))"),
+                {"value": "École"},
+            ).scalar_one()
+            assert normalized == "Ecole"
+            role_full_text_match = role_connection.execute(
+                text(
+                    "SELECT to_tsvector('public.mahay_french', CAST(:document AS text)) "
+                    "@@ plainto_tsquery('public.mahay_french', CAST(:query AS text))"
+                ),
+                {"document": "École supérieure de Toamasina", "query": "ecole"},
+            ).scalar_one()
+            assert role_full_text_match is True
