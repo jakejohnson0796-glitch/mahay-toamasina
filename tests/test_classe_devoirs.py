@@ -372,6 +372,52 @@ class TestClasseDevoirs(unittest.TestCase):
             ).all()
         self.assertEqual(rendus, [])
 
+    def test_barreme_ne_peut_pas_devenir_inferieur_aux_notes_deja_publiees(self):
+        with Session(engine) as session:
+            session.add(RenduDevoir(
+                devoir_id=self.devoir_id,
+                utilisateur_id=self.etudiant_id,
+                chemin_fichier="uploads/note-existante.pdf",
+                nom_fichier_original="note-existante.pdf",
+                note=25.0,
+            ))
+            session.commit()
+
+        client = TestClient(app)
+        jeton = _connecter(client, "0341101001")
+        reponse = client.post(
+            f"/classe/devoirs/{self.devoir_id}/modifier",
+            data={
+                "_csrf": jeton,
+                "titre": "Bilan comptable",
+                "description": "Consigne mise à jour.",
+                "date_limite": "",
+                "bareme": "20",
+                "criteres": "Exactitude | 10\nMéthode | 10",
+                "etat": "ouvert",
+                "archivage": "actif",
+            },
+            follow_redirects=False,
+        )
+        self.assertIn("bareme_note_existante", reponse.headers["location"])
+        with Session(engine) as session:
+            devoir = session.get(Devoir, self.devoir_id)
+        self.assertEqual(devoir.bareme, 30.0)
+
+    def test_export_csv_ne_laisse_pas_un_nom_devenir_une_formule(self):
+        with Session(engine) as session:
+            etudiant = session.get(Utilisateur, self.etudiant_id)
+            etudiant.nom = "=HYPERLINK(\"https://example.invalid\")"
+            session.add(etudiant)
+            session.commit()
+
+        client = TestClient(app)
+        _connecter(client, "0341101001")
+        reponse = client.get(f"/classe/{self.cours_id}/notes.csv")
+        self.assertEqual(reponse.status_code, 200)
+        self.assertIn("'=HYPERLINK", reponse.text)
+
+
     def test_templates_classe_compilent(self):
         env = Environment(loader=FileSystemLoader(ROOT / "app" / "templates"))
         for nom in ("classe_liste.html", "classe_detail.html", "classe_devoir.html"):
