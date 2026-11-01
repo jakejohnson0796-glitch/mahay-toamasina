@@ -2712,3 +2712,62 @@ Les preuves disponibles permettent de distinguer quatre types de données :
 
 Ces événements ne doivent pas être agrégés en un score global « campus opérationnel ». Pour chaque équipement ou bâtiment, MITARIDALA doit conserver un état séparé : projet annoncé, financement accordé, travaux en cours, réception provisoire, réception définitive, service ouvert, service interrompu, ou indisponible.
 
+
+## 58. Répertoire MESUPRES : 13 universités dites de proximité — contrôle du 1er novembre 2026
+
+Le répertoire institutionnel actuel de la Direction Générale de l'Enseignement Supérieur (DGES/MESUPRES) présente deux ensembles qu'il faut désormais distinguer dans la cartographie nationale :
+
+1. **Six universités publiques établies**, présentées dans le premier bloc du répertoire : Antananarivo, Antsiranana, Fianarantsoa, Mahajanga, Toamasina et Toliara.
+2. **Treize entrées supplémentaires intitulées « Université »**, dans le bloc des organismes sous tutelle et rattachés à la DGES :
+   - Université d'Androna ;
+   - Université d'Alaotra Mangoro ;
+   - Université d'Agnambà ;
+   - Université d'Analanjirofo ;
+   - Université de Bongolava ;
+   - Université de la Sava ;
+   - Université de l'Itasy ;
+   - Université de Vakinankaratra ;
+   - Université d'Amoron'i Mania ;
+   - Université Anjombakilala d'Androy ;
+   - Université d'Anosy ;
+   - Université d'Ampanihy ;
+   - Université de Fitovinany.
+
+Le même répertoire présente séparément l'Institut Supérieur de Technologie d'Antananarivo, l'Institut Supérieur de Technologie d'Antsiranana, le CNTEMAD et le Centre National d'Enseignement de la Langue Anglaise. Ces organismes ne doivent pas être fusionnés avec les six universités établies ni ajoutés aux treize entrées sans conserver leur type propre.
+
+### 58.1 Ce que la source prouve — et ce qu'elle ne prouve pas
+
+Le répertoire MESUPRES constitue une preuve officielle que ces treize dénominations figurent dans l'annuaire institutionnel DGES au moment du contrôle. Le compte rendu MESUPRES de la Conférence des Présidents des Universités du 16 octobre 2026 emploie aussi la catégorie « universités proches des populations » aux côtés des universités et des IST.
+
+En revanche, ces pages ne suffisent pas à établir, pour chacune des treize entrées :
+- son acte de création et son statut juridique exact (université autonome, établissement rattaché, antenne ou autre forme) ;
+- sa personnalité juridique, son établissement de tutelle et son organisation de gouvernance ;
+- l'adresse administrative, les communes et les campus réellement ouverts ;
+- les composantes et diplômes proposés localement ;
+- l'habilitation HAE en cours de validité de chaque offre, son grade, son échéance et son accréditation ;
+- l'ouverture effective d'une cohorte pendant l'année universitaire 2026-2027.
+
+Il faut donc éviter deux erreurs : les ignorer parce qu'elles ne figurent pas dans l'ancien catalogue des six universités, ou les présenter automatiquement comme sixième à dix-neuvième universités publiques autonomes avec des formations déjà ouvertes. Le libellé du répertoire doit être conservé, mais le statut juridique et l'offre doivent faire l'objet d'une vérification individuelle.
+
+### 58.2 Conséquences pour le référentiel MITARIDALA
+
+Aucune nouvelle université, composante, filière ou offre n'est créée par le présent audit. Les treize entrées doivent d'abord être enregistrées dans un inventaire de travail à statut « répertorié par le MESUPRES — statut juridique et offres à vérifier », sans les rendre sélectionnables pour l'inscription, les cercles ou les documents.
+
+Pour chaque entrée, constituer une fiche de preuve comprenant au minimum :
+1. dénomination officielle, variantes et code institutionnel éventuel ;
+2. acte de création, date, statut juridique et tutelle ;
+3. ville, commune, adresse et distinction entre siège, campus et antenne ;
+4. composantes, responsables institutionnels et contacts officiels ;
+5. fiche HAE par offre diplômante : identifiant, intitulé, grade, arrêté/décision, date d'effet, échéance, état d'accréditation et PDF signé ;
+6. année d'ouverture, campagne d'admission et calendrier local 2026-2027 ;
+7. date de consultation, URL, pièce archivée, niveau de preuve et personne ayant validé la fiche.
+
+Le modèle cible doit distinguer l'institution juridique, ses sites/campus, ses composantes, ses offres annuelles et les décisions d'habilitation. Une université de proximité ne doit pas être représentée artificiellement comme une faculté de Toamasina ou comme un simple établissement partenaire d'onboarding. La compatibilité avec les six universités historiques doit être conservée pendant l'évolution du schéma.
+
+### 58.3 Sources officielles
+
+- [MESUPRES — Répertoire des organismes sous tutelle et rattachés à la DGES](https://www.mesupres.gov.mg/front/rattache_dgsup) — liste des six universités établies, des treize entrées supplémentaires et des IST/centres.
+- [MESUPRES — Conférence des Présidents des Universités, 16 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/597) — mention des « universités proches des populations » ; l'article ne constitue pas une liste nominative de participants.
+- [Plateforme HAE — Habilitation, Accréditation et Équivalence](https://qualite.mesupres.mg/) — registre des offres habilitées et canevas de demande/renouvellement. Les fiches individuelles ne sont pas extractibles depuis la page web indexée dans ce contrôle ; il faut les demander directement au MESUPRES et aux institutions.
+
+**Décision :** intégrer ces treize entrées au périmètre de recherche et au backlog national, mais ne publier aucune formation, aucun grade ni aucune ouverture locale avant rapprochement de l'acte institutionnel et de la fiche HAE correspondante.
