@@ -132,6 +132,15 @@ def _details_correction_rendu(rendu: RenduDevoir) -> str:
     return str(details.get("commentaire_criteres") or "") if isinstance(details, dict) else ""
 
 
+def _valeur_csv_securisee(valeur) -> str:
+    """Neutralise les cellules susceptibles d'être interprétées comme formule Excel."""
+    texte = str(valeur or "")
+    debut = texte.lstrip()
+    if debut.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + texte
+    return texte
+
+
 def _peut_ecrire_tableau(session: Session, seance_id: int, cours: Cours, utilisateur: Utilisateur) -> bool:
     """Le prof proprietaire du cours (ou un admin) peut toujours ecrire.
     Un etudiant ne peut ecrire QUE s'il a ete explicitement autorise pour
@@ -1674,6 +1683,18 @@ def modifier_devoir(
     except ValueError:
         return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=devoir_invalide#modifier-devoir", status_code=303)
 
+    rendus_deja_notes = session.exec(
+        select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id)
+    ).all()
+    if any(
+        rendu.note is not None and rendu.note > bareme_valide
+        for rendu in rendus_deja_notes
+    ):
+        return RedirectResponse(
+            f"/classe/devoirs/{devoir_id}?erreur=bareme_note_existante#modifier-devoir",
+            status_code=303,
+        )
+
     date_limite_parsee = None
     if date_limite:
         try:
@@ -1759,14 +1780,14 @@ def exporter_notes_cours(
         for devoir in devoirs:
             rendu = par_etudiant_devoir.get((etudiant.id, devoir.id))
             writer.writerow([
-                etudiant.nom,
-                cours.nom,
-                devoir.titre,
+                _valeur_csv_securisee(etudiant.nom),
+                _valeur_csv_securisee(cours.nom),
+                _valeur_csv_securisee(devoir.titre),
                 rendu.note if rendu and rendu.note is not None else "",
                 devoir.bareme,
                 rendu.date_rendu.strftime("%Y-%m-%d %H:%M") if rendu else "",
                 rendu.date_correction.strftime("%Y-%m-%d %H:%M") if rendu and rendu.date_correction else "",
-                rendu.appreciation_prof if rendu else "",
+                _valeur_csv_securisee(rendu.appreciation_prof) if rendu else "",
             ])
     return Response(
         content=sortie.getvalue(),
