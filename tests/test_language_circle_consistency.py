@@ -80,3 +80,18 @@ def test_circle_filter_css_braces_are_balanced():
             depth -= 1
         assert depth >= 0, "Circle page styles contain an unmatched closing brace"
     assert depth == 0, "Circle page styles contain an unmatched opening brace"
+
+
+def test_university_catalogue_caveat_is_visible_on_student_screens():
+    warning = (
+        "Le catalogue présente les formations répertoriées. Il ne confirme pas "
+        "à lui seul l’habilitation en vigueur ni l’ouverture des admissions pour "
+        "l’année universitaire en cours ; vérifiez les dates et conditions auprès "
+        "de votre composante."
+    )
+    for path in (
+        ROOT / "app" / "templates" / "register.html",
+        ROOT / "app" / "templates" / "profil_academique.html",
+        ROOT / "app" / "templates" / "universites.html",
+    ):
+        assert warning in path.read_text(encoding="utf-8")
