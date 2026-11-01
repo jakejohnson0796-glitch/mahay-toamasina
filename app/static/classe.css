@@ -1026,3 +1026,18 @@ body.page-classe {
   .classe-hero-art { min-height: 90px; }
   .classe-hero-art img { height: 90px; }
 }
+
+/* Une commande n'est disponible qu'une fois LiveKit connecté. */
+.classe-salle-control:disabled,
+.classe-chat form input:disabled,
+.classe-chat form button:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+  filter: saturate(.55);
+}
+
+.classe-salle-control:disabled:hover {
+  transform: none;
+  background: rgba(255,255,255,.065);
+  border-color: rgba(255,255,255,.12);
+}
