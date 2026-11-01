@@ -1034,13 +1034,12 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
             lambda: client.chat.completions.create(**kwargs),
         )
     except Exception as erreur:
-        # Certains retours Groq stricts omettent parfois uniquement le champ
-        # facultatif de classement pédagogique "notion". Une seconde tentative
-        # sans ce champ dans le schéma évite de perdre tout le carnet ; la
-        # normalisation locale tentera une association prudente aux notions.
+        # Groq peut refuser une sortie structurée tronquée ou incomplète. La reprise
+        # compacte conserve les champs pédagogiques minimums ; seul le champ
+        # de classement "notion" peut devenir facultatif si son omission est explicite.
         erreur_texte = str(erreur).casefold()
         correspondance_champs = re.search(
-            r"missing properties:\s*((?:'[^']+'\s*,?\s*)+)",
+            r"missing (?:required )?properties:\s*((?:'[^']+'\s*,?\s*)+)",
             erreur_texte,
         )
         champs_manquants = (
