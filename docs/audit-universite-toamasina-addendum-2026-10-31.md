@@ -723,4 +723,4 @@ Le site institutionnel ENS-SEAS (seas.mg) présente les parcours L1, L3, M1 et M
 Sources :
 - https://seas.mg/ — site ENS-SEAS, présentation des parcours L1/L3/M1/M2 et actualités/résultats 2025-2026.
 - https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations — page documentaire ministérielle, qui répertorie notamment la liste HAE d'août 2022 et les canevas HAE 2026.
-- https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/Ecole-Normale-Superieure-Universite-de-Toamasina — source secondaire, calendrier 2026-2027 à confirmer.
+- https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/%C3%89cole-Normale-Sup%C3%A9rieure---Universit%C3%A9-de-Toamasina — source secondaire, calendrier 2026-2027 à confirmer.
