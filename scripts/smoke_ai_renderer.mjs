@@ -1003,7 +1003,7 @@ if (!(securityHost.textContent || '').includes('Texte sûr') || !(securityHost.t
 
 
 // Stress déterministe : 3 000 rendus réels avec KaTeX, mhchem et le pipeline complet.
-// On réutilise les 12 familles scientifiques pour couvrir les commandes, les structures,
+// On réutilise les 13 familles scientifiques pour couvrir les commandes, les structures,
 // les contextes inline/display, le rendu mathml/html et le nettoyage DOM à répétition.
 const stressFamilies = [
   function (n) { return "x_{" + n + "}^2+2x_{" + n + "}+1=(x_{" + n + "}+1)^2"; },
