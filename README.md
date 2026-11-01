@@ -425,6 +425,7 @@ La CI du projet comporte deux jobs principaux (**test** et **postgres-smoke**) e
 5. smoke test PostgreSQL avec migrations rejouées pour vérifier leur idempotence, puis démarrage réel et vérification du référentiel ;
 6. smoke tests navigateur pour le rendu IA, le sélecteur de langue, les cercles, la voix du Tuteur et le responsive ;
 7. contrôle responsive couvrant sept familles de pages, onze largeurs d’écran (265 à 1440 px) et les thèmes clair/sombre.
+8. limites de durée des jobs : 30 minutes pour les tests applicatifs, 15 minutes pour PostgreSQL, avec 300 secondes par module de test.
 
 Pour reproduire les contrôles localement :
 
