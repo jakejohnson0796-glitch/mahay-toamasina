@@ -119,7 +119,7 @@
       <td><span data-no-translate>{{ universite_offre.nom }}</span></td>
       <td><span data-no-translate>{{ filiere_offre.nom }}</span></td>
       <td><span data-no-translate>{{ mentions_par_id[filiere_offre.mention_id].nom if filiere_offre.mention_id in mentions_par_id else "—" }}</span></td>
-      <td>{{ p.annee_academique or "En cours" }}</td>
+      <td>{% if p.annee_academique %}{{ p.annee_academique }}{% else %}<span class="stat-label">Année non renseignée</span>{% endif %}</td>
       <td><span class="tampon {{ 'tampon-attente' if p.est_active else '' }}">{{ "Active" if p.est_active else "Inactive" }}</span></td>
       <td>
         {% if p.est_active %}
