@@ -1,15 +1,9 @@
 """
-Classe virtuelle : cours animes par un professeur, avec des seances que
-les etudiants inscrits rejoignent. Modelise sur le meme schema que les
-cercles d'etude (createur/proprietaire + inscription + gestion des
-membres) — voir cercles_router.py pour le pattern d'origine.
-
-Cette premiere passe couvre la structure (cours, inscriptions, seances,
-presence) SANS la salle audio/video LiveKit elle-meme : la route
-rejoindre_seance() enregistre deja la presence et redirige vers une page
-de salle, mais cette page est un ecran d'attente tant que l'integration
-LiveKit (jeton, connexion WebRTC, tableau blanc) n'est pas branchee —
-prochaine etape explicitement separee de celle-ci.
+Classe virtuelle : cours, inscriptions, séances, présence et salle LiveKit.
+Le professeur organise les cours et les séances ; les étudiants inscrits
+rejoignent une salle audio/vidéo sécurisée par un jeton limité à la séance.
+Le tableau blanc collaboratif reste un canal distinct, avec ses propres
+contrôles d'accès et une synchronisation persistée.
 """
 import secrets
 import json
@@ -857,11 +851,19 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     if seance.statut != StatutSeance.EN_COURS:
         return RedirectResponse(f"/classe/{cours.id}?erreur=seance_non_demarree", status_code=303)
 
-    # Nouvelle ligne de presence a chaque "rejoindre" (permet de mesurer
-    # plusieurs allers-retours dans la meme seance) — voir terminer_seance
-    # et quitter_seance pour la fermeture/le cumul de duree.
-    session.add(PresenceSeance(seance_id=seance_id, utilisateur_id=utilisateur.id))
-    session.commit()
+    # Une seule présence ouverte par étudiant et séance. Les doubles clics
+    # et renvois du formulaire ne doivent pas créer plusieurs entrées
+    # simultanées ni gonfler la durée de présence.
+    presence_ouverte = session.exec(
+        select(PresenceSeance)
+        .where(PresenceSeance.seance_id == seance_id)
+        .where(PresenceSeance.utilisateur_id == utilisateur.id)
+        .where(PresenceSeance.heure_sortie == None)  # noqa: E711
+        .order_by(PresenceSeance.heure_entree.desc())
+    ).first()
+    if not presence_ouverte:
+        session.add(PresenceSeance(seance_id=seance_id, utilisateur_id=utilisateur.id))
+        session.commit()
 
     return RedirectResponse(f"/classe/seances/{seance_id}/salle", status_code=303)
 
@@ -935,18 +937,25 @@ def quitter_seance(request: Request, seance_id: int, session: Session = Depends(
     if not seance:
         return RedirectResponse("/classe", status_code=303)
 
-    presence = session.exec(
+    # Ferme toutes les éventuelles présences ouvertes : cela répare aussi
+    # les doublons historiques créés avant l'idempotence de "Rejoindre".
+    presences_ouvertes = session.exec(
         select(PresenceSeance)
         .where(PresenceSeance.seance_id == seance_id)
         .where(PresenceSeance.utilisateur_id == utilisateur.id)
         .where(PresenceSeance.heure_sortie == None)  # noqa: E711
         .order_by(PresenceSeance.heure_entree.desc())
-    ).first()
-    if presence:
+    ).all()
+    if presences_ouvertes:
         maintenant = datetime.utcnow()
-        presence.duree_estimee_secondes += int((maintenant - presence.heure_entree).total_seconds())
-        presence.heure_sortie = maintenant
-        session.add(presence)
+        for index, presence in enumerate(presences_ouvertes):
+            # Si d'anciens doublons existent, ne compter la durée que sur
+            # l'entrée la plus récente pour éviter de doubler le temps.
+            if index == 0:
+                duree = (maintenant - presence.heure_entree).total_seconds()
+                presence.duree_estimee_secondes += max(0, int(duree))
+            presence.heure_sortie = maintenant
+            session.add(presence)
         session.commit()
 
     return RedirectResponse(f"/classe/{seance.cours_id}", status_code=303)
