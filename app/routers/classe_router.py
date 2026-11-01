@@ -23,7 +23,7 @@ from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours)
+from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
@@ -1552,6 +1552,8 @@ def creer_devoir(
     description: Optional[str] = Form(None),
     date_limite: Optional[str] = Form(None),
     bareme: str = Form("20"),
+    coefficient: str = Form("1"),
+    periode: Optional[str] = Form(None),
     criteres: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
@@ -1564,8 +1566,11 @@ def creer_devoir(
     titre = " ".join((titre or "").split())
     try:
         bareme_valide = float((bareme or "20").replace(",", "."))
-        if not titre or len(titre) > 180 or not 1 <= bareme_valide <= 1000:
+        coefficient_valide = float((coefficient or "1").replace(",", "."))
+        if (not titre or len(titre) > 180 or not 1 <= bareme_valide <= 1000
+                or not math.isfinite(coefficient_valide) or not 0.1 <= coefficient_valide <= 10):
             raise ValueError
+        periode_validee = " ".join((periode or "").split())[:40] or None
         criteres_valides = _normaliser_criteres_devoir(criteres, bareme_valide)
     except ValueError:
         return RedirectResponse(f"/classe/{cours_id}?erreur=devoir_invalide#devoir-create-title", status_code=303)
@@ -1583,9 +1588,21 @@ def creer_devoir(
         description=(description or "").strip()[:6000] or None,
         date_limite=date_limite_parsee,
         bareme=round(bareme_valide, 2),
+        coefficient=round(coefficient_valide, 2),
+        periode=periode_validee,
         criteres_json=json.dumps(criteres_valides, ensure_ascii=False) if criteres_valides else None,
     )
     session.add(devoir)
+    session.commit()
+    session.refresh(devoir)
+    for inscription in session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all():
+        session.add(Notification(
+            destinataire_id=inscription.utilisateur_id,
+            type_notification=TypeNotification.NOUVEAU_DEVOIR,
+            contenu=f"Nouveau devoir « {devoir.titre} » dans le cours « {cours.nom} ».",
+            acteur_id=utilisateur.id,
+            url_destination=f"/classe/devoirs/{devoir.id}",
+        ))
     session.commit()
     return RedirectResponse(f"/classe/{cours_id}?devoir=cree", status_code=303)
 
@@ -1662,6 +1679,8 @@ def modifier_devoir(
     description: Optional[str] = Form(None),
     date_limite: Optional[str] = Form(None),
     bareme: str = Form("20"),
+    coefficient: str = Form("1"),
+    periode: Optional[str] = Form(None),
     criteres: Optional[str] = Form(None),
     etat: str = Form("ouvert"),
     archivage: str = Form("actif"),
@@ -1677,8 +1696,11 @@ def modifier_devoir(
     titre = " ".join((titre or "").split())
     try:
         bareme_valide = float((bareme or "").replace(",", "."))
-        if not titre or len(titre) > 180 or not 1 <= bareme_valide <= 1000:
+        coefficient_valide = float((coefficient or "1").replace(",", "."))
+        if (not titre or len(titre) > 180 or not 1 <= bareme_valide <= 1000
+                or not math.isfinite(coefficient_valide) or not 0.1 <= coefficient_valide <= 10):
             raise ValueError
+        periode_validee = " ".join((periode or "").split())[:40] or None
         criteres_valides = _normaliser_criteres_devoir(criteres, bareme_valide)
     except ValueError:
         return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=devoir_invalide#modifier-devoir", status_code=303)
@@ -1706,6 +1728,8 @@ def modifier_devoir(
     devoir.description = (description or "").strip()[:6000] or None
     devoir.date_limite = date_limite_parsee
     devoir.bareme = round(bareme_valide, 2)
+    devoir.coefficient = round(coefficient_valide, 2)
+    devoir.periode = periode_validee
     devoir.criteres_json = json.dumps(criteres_valides, ensure_ascii=False) if criteres_valides else None
     devoir.est_clos = etat == "ferme"
     devoir.archive = archivage == "archive"
@@ -1775,7 +1799,7 @@ def exporter_notes_cours(
     sortie = io.StringIO()
     sortie.write("\ufeff")
     writer = csv.writer(sortie)
-    writer.writerow(["Étudiant", "Cours", "Devoir", "Note", "Barème", "Date de rendu", "Date de correction", "Appréciation"])
+    writer.writerow(["Étudiant", "Cours", "Devoir", "Période", "Coefficient", "Note", "Barème", "Date de rendu", "Date de correction", "Appréciation"])
     for _inscription, etudiant in inscriptions:
         for devoir in devoirs:
             rendu = par_etudiant_devoir.get((etudiant.id, devoir.id))
@@ -1783,6 +1807,8 @@ def exporter_notes_cours(
                 _valeur_csv_securisee(etudiant.nom),
                 _valeur_csv_securisee(cours.nom),
                 _valeur_csv_securisee(devoir.titre),
+                _valeur_csv_securisee(devoir.periode or "Sans période"),
+                devoir.coefficient,
                 rendu.note if rendu and rendu.note is not None else "",
                 devoir.bareme,
                 rendu.date_rendu.strftime("%Y-%m-%d %H:%M") if rendu else "",
@@ -1966,6 +1992,7 @@ def noter_rendu(
     if not math.isfinite(note_validee) or note_validee < 0 or note_validee > devoir.bareme:
         return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=note_hors_bareme#rendus", status_code=303)
 
+    ancienne_note = rendu.note
     details = (details_correction or "").strip()[:4000]
     rendu.note = round(note_validee, 2)
     rendu.appreciation_prof = (appreciation_prof or "").strip()[:1800] or None
@@ -1974,5 +2001,13 @@ def noter_rendu(
     ) if details else None
     rendu.date_correction = datetime.utcnow()
     session.add(rendu)
+    if ancienne_note is None or ancienne_note != rendu.note:
+        session.add(Notification(
+            destinataire_id=rendu.utilisateur_id,
+            type_notification=TypeNotification.NOTE_PUBLIEE,
+            contenu=f"Ta note pour « {devoir.titre} » dans « {cours.nom} » est disponible.",
+            acteur_id=utilisateur.id,
+            url_destination=f"/classe/devoirs/{devoir.id}",
+        ))
     session.commit()
     return RedirectResponse(f"/classe/devoirs/{devoir.id}?correction=validee#rendus", status_code=303)
