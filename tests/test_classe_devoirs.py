@@ -6,6 +6,7 @@ import re
 import tempfile
 import unittest
 from contextlib import contextmanager
+from unittest.mock import patch
 from pathlib import Path
 
 _DB_FICHIER = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
@@ -143,6 +144,16 @@ class TestClasseDevoirs(unittest.TestCase):
         self.assertRegex(cours.code_invitation or "", r"^[A-Z2-9]{8}$")
 
     def test_code_invitation_inscrit_un_etudiant_et_est_scoped(self):
+        with Session(engine) as session:
+            inscription = session.exec(
+                select(InscriptionCours).where(
+                    InscriptionCours.cours_id == self.cours_id,
+                    InscriptionCours.utilisateur_id == self.etudiant_id,
+                )
+            ).first()
+            if inscription:
+                session.delete(inscription)
+                session.commit()
         client = TestClient(app)
         jeton = _connecter(client, "0341101003")
         reponse = client.post(
@@ -283,7 +294,7 @@ class TestClasseDevoirs(unittest.TestCase):
         self.assertIn("Bonne méthode", page.text)
         self.assertNotIn("Suggestion IA", page.text)
 
-    def test_suggestion_ia_ne_devient_pas_une_note_officielle(self, monkeypatch):
+    def test_suggestion_ia_ne_devient_pas_une_note_officielle(self):
         from app.routers import classe_router
 
         with Session(engine) as session:
@@ -314,21 +325,16 @@ class TestClasseDevoirs(unittest.TestCase):
             "statut": "brouillon_a_valider",
             "avertissement": "À valider par le professeur.",
         }
-        monkeypatch.setattr(classe_router, "ouvrir_fichier_local", faux_fichier)
-        monkeypatch.setattr(classe_router, "extraire_texte", lambda _path: "Texte de copie " * 100)
-        monkeypatch.setattr(
-            classe_router.classe_correction,
-            "generer_suggestion_correction",
-            lambda **_kwargs: suggestion,
-        )
-
-        client = TestClient(app)
-        jeton = _connecter(client, "0341101001")
-        reponse = client.post(
-            f"/classe/devoirs/rendus/{self.rendu_id}/aide-correction",
-            data={"_csrf": jeton},
-            follow_redirects=False,
-        )
+        with patch.object(classe_router, "ouvrir_fichier_local", faux_fichier), \
+             patch.object(classe_router, "extraire_texte", lambda _path: "Texte de copie " * 100), \
+             patch.object(classe_router.classe_correction, "generer_suggestion_correction", lambda **_kwargs: suggestion):
+            client = TestClient(app)
+            jeton = _connecter(client, "0341101001")
+            reponse = client.post(
+                f"/classe/devoirs/rendus/{self.rendu_id}/aide-correction",
+                data={"_csrf": jeton},
+                follow_redirects=False,
+            )
         self.assertIn("ia=proposee", reponse.headers["location"])
         with Session(engine) as session:
             rendu = session.get(RenduDevoir, self.rendu_id)
