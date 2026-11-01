@@ -346,6 +346,15 @@ class TestReferentielReconciliation(unittest.TestCase):
                     universite_id=universite.id, filiere_id=filiere_ancienne.id,
                     annee_academique="2024-2025", est_active=True,
                 ))
+                # Une année absente ne prouve pas que deux offres sont identiques.
+                s.add(ProgrammeUniversitaire(
+                    universite_id=universite.id, filiere_id=filiere_canonique.id,
+                    annee_academique=None, est_active=False,
+                ))
+                s.add(ProgrammeUniversitaire(
+                    universite_id=universite.id, filiere_id=filiere_ancienne.id,
+                    annee_academique=None, est_active=False,
+                ))
 
                 utilisateur = Utilisateur(
                     nom="Etudiant test",
@@ -428,10 +437,17 @@ class TestReferentielReconciliation(unittest.TestCase):
                         ProgrammeUniversitaire.filiere_id == filiere_id,
                     )
                 ).all()
-                self.assertEqual(len(offres), 2)
-                offres_par_annee = {offre.annee_academique: offre for offre in offres}
-                self.assertTrue(offres_par_annee["2025-2026"].est_active)
-                self.assertFalse(offres_par_annee["2024-2025"].est_active)
+                self.assertEqual(len(offres), 4)
+                offres_par_annee = {
+                    annee: [offre for offre in offres if offre.annee_academique == annee]
+                    for annee in ("2025-2026", "2024-2025", None)
+                }
+                self.assertEqual(len(offres_par_annee["2025-2026"]), 1)
+                self.assertTrue(offres_par_annee["2025-2026"][0].est_active)
+                self.assertEqual(len(offres_par_annee["2024-2025"]), 1)
+                self.assertFalse(offres_par_annee["2024-2025"][0].est_active)
+                self.assertEqual(len(offres_par_annee[None]), 2)
+                self.assertTrue(all(not offre.est_active for offre in offres_par_annee[None]))
 
                 utilisateur_final = s.get(Utilisateur, utilisateur.id)
                 cercle_final = s.get(CercleEtude, cercle.id)
