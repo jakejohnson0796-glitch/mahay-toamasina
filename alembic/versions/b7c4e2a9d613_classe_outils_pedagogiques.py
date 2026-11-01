@@ -8,7 +8,7 @@ import sqlmodel
 
 
 revision: str = "b7c4e2a9d613"
-down_revision: Union[str, None] = "fae1c2d3b4a5"
+down_revision: Union[str, Sequence[str], None] = ("fae1c2d3b4a5", "f3d8a9c2e5b1")
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
