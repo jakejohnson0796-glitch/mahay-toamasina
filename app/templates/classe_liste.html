@@ -63,7 +63,10 @@
   <div class="erreur" role="alert">Ce code de cours n'est pas reconnu. Vérifie-le auprès du professeur.</div>
   {% elif request.query_params.get("erreur") == "trop_de_tentatives" %}
   <div class="erreur" role="alert">Trop de tentatives. Réessaie plus tard.</div>
+  {% elif request.query_params.get("erreur") == "inscription_reservee" %}
+  <div class="erreur" role="alert">Seuls les comptes étudiants peuvent rejoindre un cours avec un code.</div>
   {% endif %}
+  {% if request.query_params.get("inscription") == "confirmee" %}<div class="info" role="status">Inscription confirmée. Le cours est maintenant visible dans ton espace.</div>{% endif %}
 
   {% if not est_professeur %}
   <section class="classe-form-panel classe-code-join" id="rejoindre-cours" aria-labelledby="rejoindre-cours-title">
