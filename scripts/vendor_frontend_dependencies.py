@@ -27,7 +27,7 @@ TIMEOUT_SECONDS = 60
 
 PACKAGES: dict[str, dict[str, Any]] = {
     "katex": {
-        "version": "0.19.0",
+        "version": "0.19.1",
         "target": "katex",
         "license_label": "MIT",
         "files": [
