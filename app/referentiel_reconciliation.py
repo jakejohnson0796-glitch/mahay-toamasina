@@ -27,6 +27,7 @@ from sqlmodel import Session, select
 
 from .models import (
     CercleEtude,
+    Document,
     DemandeChangementFiliere,
     Domaine,
     DemandeCreationCercle,
@@ -161,10 +162,11 @@ def _reassigner_faculte(session: Session, ancien_id: int, nouveau_id: int) -> No
 def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> None:
     """Réattribue les références d'une filière supprimée vers sa survivante.
 
-    ProgrammeUniversitaire possède une contrainte UNIQUE sur
-    (universite_id, filiere_id). Lorsqu'une offre existe déjà sur la
-    filière survivante, on la conserve et on supprime la ligne redondante
-    de l'ancienne filière au lieu de provoquer une collision SQL.
+    Les offres actives sont uniques par (universite_id, filiere_id) grâce
+    à un index partiel. Lorsqu'une offre existe déjà sur la filière
+    survivante, on la conserve et on supprime la ligne redondante de
+    l'ancienne filière ; les offres historiques inactives sont également
+    consolidées sans perdre l'état actif éventuel.
     """
     programmes_source = session.exec(
         select(ProgrammeUniversitaire).where(
@@ -201,7 +203,6 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
         session.add(utilisateur)
 
     # Les documents sont également liés directement à la Filiere.
-    from .models import Document
     for document in session.exec(
         select(Document).where(Document.filiere_id == ancien_id)
     ).all():
@@ -367,6 +368,9 @@ def _trouver_mention_canonique(
 def _filiere_sans_reference(session: Session, filiere_id: int) -> bool:
     refs = [
         session.exec(select(ProgrammeUniversitaire.id).where(ProgrammeUniversitaire.filiere_id == filiere_id).limit(1)).first(),
+        # Un document universitaire conserve également une FK vers la filière ;
+        # ne jamais qualifier cette filière d'orpheline s'il en reste un.
+        session.exec(select(Document.id).where(Document.filiere_id == filiere_id).limit(1)).first(),
         session.exec(select(Utilisateur.id).where(Utilisateur.filiere_id == filiere_id).limit(1)).first(),
         session.exec(select(CercleEtude.id).where(CercleEtude.filiere_id == filiere_id).limit(1)).first(),
         session.exec(select(DemandeCreationCercle.id).where(DemandeCreationCercle.filiere_id == filiere_id).limit(1)).first(),
