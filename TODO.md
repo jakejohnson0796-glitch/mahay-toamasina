@@ -99,7 +99,7 @@ Pour le METFP, le portail officiel recense des référentiels de formation publi
 
 **Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
 
-## CI GitHub Actions — état après les PR #308 à #314 (1er novembre 2026)
+## CI GitHub Actions — état après les PR #308 à #316 (1er novembre 2026)
 
 Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vides, sans logs). Depuis le 1er novembre, les runners sont attribués correctement et la CI a validé les changements suivants :
 
@@ -112,13 +112,15 @@ Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vid
 | #312 — bilan universitaire post-déploiement | c89fbb7109be54fca53441db2ad2fa35c999e190 | CI PR réussie ; 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
 | #313 — index FK établissements partenaires | e238be4f5469651c227d44ac58afa46b711321d1 | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi (7 tests) |
 | #314 — avertissement catalogue universitaire trilingue | 1c8a853353052a88c42fe6b860a5a3412f79f9ce | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
+| #315 — actualisation du référentiel HAE et vérification du déploiement | 40e528291a33f4acfe902c74cd54a8f68a7730d1 | CI push réussie : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
+| #316 — déplacement de `unaccent` vers `extensions` | 165c2786f0ee230aaccf08379279ccfc3591bc9d | CI PR réussie : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi. La CI du push `main` (run 41276650330) est encore en cours ; migration non déployée en production au moment de ce relevé. |
 
 La CI définit :
 - job applicatif : limite globale de **30 minutes** ;
 - job PostgreSQL : limite globale de **15 minutes** ;
 - chaque fichier tests/test_*.py : limite de **300 secondes**.
 
-Le run push du commit #314 sur main (run 41274678777) est terminé avec succès : 146 modules, **988 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont depuis déployés en live sur 1c8a853353052a88c42fe6b860a5a3412f79f9ce. La PR #315 est la présente mise à jour documentaire et doit elle-même rester soumise à une CI verte avant fusion.
+Le run push #315 sur `main` (run `41275703549`) est terminé avec succès : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont en `live` sur `40e528291a33f4acfe902c74cd54a8f68a7730d1`. La PR #316 est fusionnée, mais la CI du push `main` (run `41276650330`) doit encore terminer : son smoke PostgreSQL est réussi et son job applicatif est en cours. Supabase indique encore `unaccent` dans `public`, ce qui est attendu tant que ce commit n'a pas été déployé. La PR #317 est la présente mise à jour documentaire et reste soumise à sa propre CI avant fusion.
 
 ### Réconciliation ENS vérifiée en production
 
