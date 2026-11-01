@@ -4651,6 +4651,7 @@
     "Pose ta question avec ton contexte. Le Tuteur IA transforme ensuite la question en explication, exemple, exercice et correction pour t'aider à progresser.": "Ask your question and provide context. The AI Tutor turns it into an explanation, example, exercise, and solution to help you progress.",
     "Poser une question": "Ask a question",
     "Voir mes questions": "View my questions",
+    "Faire un quiz": "Take a quiz",
     "comprendre l'explication": "understand the explanation",
     "voir un exemple concret": "see a practical example",
     "faire un exercice": "complete an exercise",
