@@ -248,6 +248,7 @@ html[data-theme="sombre"] .auth-step.is-active,html[data-theme="sombre"] .auth-s
 .auth-academic { display:grid;gap:.9rem; }
 .auth-academic[hidden] { display:none !important; }
 .auth-academic-grid { display:grid;grid-template-columns:1fr 1fr;gap:.8rem; }
+.auth-academic-grid .auth-catalogue-note { grid-column:1 / -1; margin:0; }
 .auth-academic-grid .auth-field:first-child,.auth-academic-grid .auth-field:nth-child(3) { grid-column:1/-1; }
 
 .auth-role-note {
