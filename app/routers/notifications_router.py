@@ -35,7 +35,7 @@ def _notification_vue(notification: Notification) -> dict:
         "statut_presence": "Mise à jour de présence",
     }
     lien = None
-    destination = (notification.url_destination or "").strip()
+    destination = (getattr(notification, "url_destination", None) or "").strip()
     if destination.startswith("/") and not destination.startswith("//") and "\\" not in destination:
         lien = destination
     if lien:
