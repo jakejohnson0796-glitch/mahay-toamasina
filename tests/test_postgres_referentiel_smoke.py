@@ -951,8 +951,11 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
+    # Retourne d'un seul cran sur les deux parents du merge courant.
+    # Cela teste la synchronisation de l'application de la nouvelle migration
+    # sans devoir dérouler les downgrade historiques de branches anciennes.
     downgrade = subprocess.run(
-        [*alembic, "downgrade", "f8a2c6e4b1d9"],
+        [*alembic, "downgrade", "-1"],
         env=env,
         capture_output=True,
         text=True,
