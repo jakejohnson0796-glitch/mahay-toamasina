@@ -1001,4 +1001,72 @@ if (!(securityHost.textContent || '').includes('Texte sûr') || !(securityHost.t
   throw new Error('Safe text around sanitized HTML was lost');
 }
 
-console.log(JSON.stringify({ ok: true, legacy_dollar_math: true, katex_nodes: host.querySelectorAll('.katex').length, code_unchanged: true, idempotent: true }));
+
+// Stress déterministe : 3 000 rendus réels avec KaTeX, mhchem et le pipeline complet.
+// On réutilise les 12 familles scientifiques pour couvrir les commandes, les structures,
+// les contextes inline/display, le rendu mathml/html et le nettoyage DOM à répétition.
+const stressFamilies = [
+  function (n) { return "x_{" + n + "}^2+2x_{" + n + "}+1=(x_{" + n + "}+1)^2"; },
+  function (n) { return "\\frac{" + n + "}{" + (n + 1) + "}+\\frac{1}{" + (n + 1) + "}=1"; },
+  function (n) { return "\\sqrt{" + (n * n + 1) + "}\\approx" + Math.sqrt(n * n + 1).toFixed(2); },
+  function (n) { return "\\sin\\left(\\frac{" + n + "\\pi}{180}\\right)+\\cos\\left(\\frac{" + n + "\\pi}{180}\\right)"; },
+  function (n) { return "\\frac{d}{dx}x^{" + n + "}=" + n + "x^{" + (n - 1) + "}"; },
+  function (n) { return "\\log_{" + (n + 1) + "}(x^{" + (n + 1) + "})=(" + (n + 1) + ")\\log_{" + (n + 1) + "}(x)"; },
+  function (n) { return "\\begin{pmatrix}" + n + "&1\\\\2&" + (n + 1) + "\\end{pmatrix}"; },
+  function (n) { return "f_{" + n + "}(x)=\\begin{cases}x+" + n + ",&x\\geq0\\\\-x+" + n + ",&x<0\\end{cases}"; },
+  function (n) { return "\\forall x\\in\\mathbb{R},\\quad x^2+" + n + "\\geq" + n; },
+  function (n) { return "v=" + n + "\\,\\mathrm{m\\,s^{-1}},\\quad\\rho=" + n + "\\,\\mathrm{kg\\,m^{-3}}"; },
+  function (n) { return "\\ce{" + n + "H2 + O2 -> " + n + "H2O}"; },
+  function (n) { return "P(X=" + n + ")=\\frac{1}{" + (n + 1) + "},\\quad\\sum_{k=1}^{" + n + "}\\frac{1}{k}"; },
+  function (n) { return "\\binom{" + (n + 4) + "}{2}\\,p^2(1-p)^{" + n + "}"; }
+];
+const simulationsParFamille = 250;
+const simulationsAttendues = stressFamilies.length * simulationsParFamille;
+const compteAvantStress = formulesRendues.length;
+const debutStress = Date.now();
+for (let index = 0; index < simulationsAttendues; index += 1) {
+  const famille = stressFamilies[index % stressFamilies.length];
+  const numero = (Math.floor(index / stressFamilies.length) % 97) + 2;
+  const formule = famille(numero);
+  const display = index % 2 === 0;
+  const delimitee = display ? "\\[" + formule + "\\]" : "\\(" + formule + "\\)";
+  const sourceStress = "Avant formule " + index + " : " + delimitee + " après formule.";
+  const cibleStress = window.document.createElement("div");
+  window.document.body.appendChild(cibleStress);
+  window.rendreReponseIA(sourceStress, cibleStress, { enLigne: !display });
+  if (cibleStress.querySelectorAll(".katex").length !== 1) {
+    throw new Error("Stress KaTeX : formule absente ou dupliquée à l'itération " + index + " (" + formule + ")");
+  }
+  if (cibleStress.querySelector(".katex-error")) {
+    throw new Error("Stress KaTeX : erreur de parsing à l'itération " + index + " (" + formule + ")");
+  }
+  if (!(cibleStress.textContent || "").includes("Avant formule " + index) ||
+      !(cibleStress.textContent || "").includes("après formule")) {
+    throw new Error("Stress KaTeX : texte environnant perdu à l'itération " + index);
+  }
+  // Un second passage sans changement doit être idempotent et ne pas appeler KaTeX.
+  if (index % 97 === 0) {
+    const nombreRendus = formulesRendues.length;
+    window.rendreReponseIA(sourceStress, cibleStress, { enLigne: !display });
+    if (formulesRendues.length !== nombreRendus) {
+      throw new Error("Stress KaTeX : le rendu idempotent a recalculé la formule " + index);
+    }
+  }
+  cibleStress.remove();
+}
+const nombreSimulationsFormules = formulesRendues.length - compteAvantStress;
+const dureeStressMs = Date.now() - debutStress;
+if (nombreSimulationsFormules !== simulationsAttendues) {
+  throw new Error("Stress KaTeX : " + nombreSimulationsFormules + " rendus au lieu de " + simulationsAttendues);
+}
+console.log(JSON.stringify({
+  ok: true,
+  legacy_dollar_math: true,
+  katex_nodes: host.querySelectorAll('.katex').length,
+  code_unchanged: true,
+  idempotent: true,
+  simulation_count: nombreSimulationsFormules,
+  simulation_families: stressFamilies.length,
+  inline_and_display: true,
+  simulation_duration_ms: dureeStressMs
+}));
