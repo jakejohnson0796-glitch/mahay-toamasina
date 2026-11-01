@@ -4,6 +4,7 @@ garder celui-ci fin (responsabilite unique : le router orchestre la
 requete HTTP, ce module sait comment lire les donnees).
 """
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import List, Optional
 
 from sqlmodel import Session, select
