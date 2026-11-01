@@ -175,8 +175,8 @@ def test_renderer_ia_prevoit_un_cdn_de_secours_sans_affaiblir_la_csp():
     assert 'var principal = "https://cdn.jsdelivr.net/"' in loader
     assert 'var secours = "https://unpkg.com/"' in loader
     assert 'DELAI_MAX_MS = 2500' in loader
-    assert 'principal + "npm/katex@0.19.0/dist/katex.min.js"' in loader
-    assert 'secours + "katex@0.19.0/dist/katex.min.js"' in loader
+    assert 'principal + "npm/katex@0.19.1/dist/katex.min.js"' in loader
+    assert 'secours + "katex@0.19.1/dist/katex.min.js"' in loader
     assert 'principal + "npm/marked@18.1.1/lib/marked.umd.js"' in loader
     assert 'secours + "dompurify@3.4.17/dist/purify.min.js"' in loader
     assert "window.rendreTous(document)" in loader
@@ -193,7 +193,7 @@ def test_dependances_frontend_ia_sont_empaquetees_et_verifiees():
 
     # Versions précises, archive vérifiée par l'intégrité SHA-512 officielle de npm.
     for package_name, version in (
-        ('"katex": {', '"version": "0.19.0"'),
+        ('"katex": {', '"version": "0.19.1"'),
         ('"marked": {', '"version": "18.1.1"'),
         ('"dompurify": {', '"version": "3.4.17"'),
         ('"@highlightjs/cdn-assets": {', '"version": "11.12.0"'),
