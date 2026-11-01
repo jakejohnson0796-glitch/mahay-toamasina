@@ -10,7 +10,7 @@ import createDOMPurify from 'dompurify';
 const vendorRoot = 'app/static/vendor';
 const vendorManifest = JSON.parse(fs.readFileSync(vendorRoot + '/manifest.json', 'utf8'));
 const vendorVersions = {
-  katex: '0.19.0',
+  katex: '0.19.1',
   marked: '18.1.1',
   dompurify: '3.4.17',
   '@highlightjs/cdn-assets': '11.12.0'
