@@ -716,7 +716,7 @@ Les contrôles de référence n'ont trouvé aucune filière, aucun cercle, aucun
 
 L'advisor Supabase a signalé 62 tables avec RLS activé mais sans politiques. La lecture de information_schema.role_table_grants n'a trouvé aucun privilège de table pour anon ni authenticated ; les privilèges étaient attribués uniquement à service_role, rôle qui contourne RLS. Aucun changement RLS n'a été appliqué : une politique générique pourrait exposer des données étudiantes. Le modèle actuel reste à auditer en distinguant les requêtes API publiques de la connexion privilégiée du serveur.
 
-L'advisor performance signale une seule clé étrangère sans index couvrant : etablissementpartenaire.cree_par_id. Il signale également 154 index inutilisés selon les statistiques observées ; aucun n'a été supprimé, car ces statistiques ne suffisent pas à justifier une suppression.
+Le signalement initial de clé étrangère sans index sur etablissementpartenaire.cree_par_id a été corrigé par la PR #313, fusionnée puis déployée le 1er novembre. La base confirme alembic_version=f1c7a9d3e2b6 et un index B-tree ix_etablissementpartenaire_cree_par_id. L'advisor ne signale plus de FK non indexée ; il signale 155 index inutilisés (niveau INFO), dont cet index et les index d'autres tables peu ou pas alimentées. La table etablissementpartenaire compte 0 ligne. Aucun index n'a été supprimé.
 
 Le site institutionnel ENS-SEAS (seas.mg) présente les parcours L1, L3, M1 et M2 et publie encore, sur sa page d'accueil consultée, des listes de résultats de l'année 2025-2026. Une page miroir secondaire de l'ENS à Toamasina relaie un calendrier 2026-2027 (résultats attendus au 30 octobre, inscriptions jusqu'au 30 novembre, semestre 1 à partir du 5 novembre). La page primaire consultée ne permet pas de confirmer ce calendrier. Ce calendrier reste donc un indice à confirmer directement auprès de la scolarité ENS-SEAS ; ne pas le traiter comme preuve réglementaire ou ouverture vérifiée.
 
@@ -724,3 +724,43 @@ Sources :
 - https://seas.mg/ — site ENS-SEAS, présentation des parcours L1/L3/M1/M2 et actualités/résultats 2025-2026.
 - https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations — page documentaire ministérielle, qui répertorie notamment la liste HAE d'août 2022 et les canevas HAE 2026.
 - https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/%C3%89cole-Normale-Sup%C3%A9rieure---Universit%C3%A9-de-Toamasina — source secondaire, calendrier 2026-2027 à confirmer.
+
+
+### 10.11 Portail HAE, index institutionnel et déploiement du 1er novembre 2026
+
+#### Source réglementaire HAE à jour
+
+Une nouvelle vérification des pages officielles du MESUPRES a été réalisée le 1er novembre 2026 :
+
+- Le [portail HAE](https://qualite.mesupres.gov.mg/) décrit séparément l'habilitation, l'accréditation et l'équivalence. Il annonce deux registres institutionnels : les offres de formation habilitées des universités (Licences, Masters et Doctorats) et les enseignants-chercheurs permanents des institutions agréées. Le portail rappelle que l'habilitation est une autorisation préalable à l'ouverture d'une offre ; elle ne doit pas être confondue avec une simple entrée de catalogue.
+- La [page documentaire HAE du MESUPRES](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations) référence un « Guide pratique de dépôt de nouvelle habilitation ou de renouvellement d'habilitation », publié le 31 août 2026, ainsi que les canevas de demande Licence, Doctorat, renouvellement Licence/Master et l'annexe FOAD publiés le 25 mars 2026.
+- La [page des établissements habilités](https://www.mesupres.gov.mg/etablissements) affiche encore « Contenu en cours de mise à jour ». Le PDF « Liste des établissements d'enseignement supérieur habilités (Mise à jour 2022) » demeure la liste historique visible dans la page documentaire ; il ne doit pas être interprété comme un registre complet et courant au 1er novembre 2026.
+- Le [répertoire DGES des organismes sous tutelle et rattachés](https://www.mesupres.gov.mg/front/rattache_dgsup) identifie notamment les six universités publiques, dont l'Université de Toamasina, et distingue aussi les IST et autres organismes. Il sert à identifier les institutions et rattachements, non à prouver l'habilitation de chaque offre.
+
+**Conséquence pour MITARIDALA :** l'étape suivante du référentiel ne doit pas être un import aveugle d'une liste ancienne. Elle doit rapprocher individuellement les enregistrements HAE (institution, site, intitulé d'offre, grade, décision, date d'effet/expiration) des entités du catalogue, puis enregistrer séparément la preuve d'ouverture annuelle de cohorte. Les pages de présentation du registre ont été vérifiées, mais l'extraction nominative et la vérification de chaque fiche HAE pour Toamasina ne sont pas encore achevées.
+
+#### Migration de l'index FK — vérification en production
+
+La PR #313 (tête testée `5baa0aa13ed5764b1a78c7279ee974f31694cee8`, fusion `e238be4f5469651c227d44ac58afa46b711321d1`) a ajouté l'index B-tree `ix_etablissementpartenaire_cree_par_id` sur `public.etablissementpartenaire(cree_par_id)`.
+
+Après le déploiement Render du commit `e238be4`, contrôle SQL en lecture seule :
+
+| Contrôle | Résultat |
+|---|---|
+| `public.alembic_version` | `f1c7a9d3e2b6` |
+| Index `ix_etablissementpartenaire_cree_par_id` | présent exactement une fois |
+| Définition de l'index | `CREATE INDEX ... USING btree (cree_par_id)` |
+| Lignes dans `etablissementpartenaire` | 0 |
+
+L'advisor Supabase ne signale plus de clé étrangère sans index. Il signale 155 index inutilisés, au niveau informatif. Le nouvel index est dans cette catégorie parce que la table institutionnelle est encore vide ; cela ne justifie pas de le retirer. Aucun index inutilisé n'a été supprimé.
+
+#### PR #314 — avertissement du catalogue
+
+La PR #314 a été fusionnée dans `main` au commit `1c8a853353052a88c42fe6b860a5a3412f79f9ce`. Elle ajoute un avertissement non bloquant à trois écrans : inscription universitaire, profil académique et page Universités. Il précise qu'une formation répertoriée dans le catalogue ne prouve ni l'habilitation réglementaire en vigueur ni l'ouverture des admissions pour l'année courante. Le message est testé en français, malagasy et anglais. Les sélecteurs et les règles d'inscription ne sont pas modifiés.
+
+La CI PR de #314 a réussi : 146 modules, 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi. Le run push de `main` `41274678777` a aussi terminé les 146 modules avec 988 réussites et un smoke PostgreSQL réussi ; le statut global GitHub était encore `in_progress` au moment du contrôle. Le déploiement des deux services reste donc à confirmer après la réussite terminale de ce run.
+
+#### État Render après la migration
+
+Les deux services `mitaridala` et `mahay-toamasina` sont `live` sur le commit `e238be4`. Les contrôles Render relevés après ce déploiement ont observé des réponses `GET /health` en HTTP 200 et aucun log d'erreur dans la fenêtre consultée. Le commit `1c8a853` de #314 attend encore la réussite terminale de sa CI avant son déploiement automatique (`autoDeployTrigger=checksPass`).
+
