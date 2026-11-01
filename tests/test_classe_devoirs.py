@@ -18,6 +18,7 @@ from starlette.testclient import TestClient  # noqa: E402
 from sqlmodel import SQLModel, Session, select  # noqa: E402
 
 from app.main import app  # noqa: E402
+from app import rate_limit  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
@@ -52,6 +53,7 @@ class TestClasseDevoirs(unittest.TestCase):
         SQLModel.metadata.create_all(engine)
 
     def setUp(self):
+        rate_limit._tentatives.clear()
         with Session(engine) as session:
             for table in (RenduDevoir, Devoir, InscriptionCours, Cours, Utilisateur):
                 for ligne in session.exec(select(table)).all():
