@@ -1,177 +1,60 @@
-# TODO — Feuille de route MITARIDALA
+# MITARIDALA — Priorités d’amélioration
 
-**Mise à jour : 1er novembre 2026**  
-**Référence :** branche principale après les améliorations des fiches de révision, de la file IA et de l’interface globale.
+*Mise à jour : 1er novembre 2026*
 
-Ce document est le backlog de référence du dépôt. Les cases cochées correspondent à des travaux déjà intégrés et couverts par les contrôles indiqués. Les cases ouvertes décrivent des améliorations à réaliser ou à approfondir ; elles ne signifient pas automatiquement qu’une régression est actuellement observée.
+Cette feuille de route présente les améliorations attendues du point de vue des apprenants, des enseignants et des établissements. Une tâche ne doit être déclarée terminée qu’après vérification de son fonctionnement réel.
 
-## 1. Livré et vérifié
+## Priorité 1 — Fiabilité et confiance
 
-- [x] Génération asynchrone des fiches de révision depuis les documents de cours approuvés, avec accès depuis le hub d’apprentissage.
-- [x] Anti-répétition du Quiz IA renforcée : l'historique couvre jusqu'à huit tentatives de la même matière et échantillonne les énoncés à tour de rôle, sans augmenter le plafond de 24 exemples transmis au modèle ; tests dédiés pour la diversité, les doublons exacts et l'isolation compte/matière.
-- [x] Génération de fiches individuelles après une séance de classe virtuelle, avec téléchargement PDF et DOCX et contrôle d’accès côté serveur.
-- [x] Amélioration du suivi des tâches IA : PostgreSQL reste la source durable, avec voie de récupération lorsque la notification Redis ne suffit pas.
-- [x] Clarification des états et actions liés aux fiches de révision pour éviter de confondre une fiche en attente avec une fiche téléchargeable.
-- [x] Ajout d’une couche globale de finition visuelle après les styles métier ; harmonisation des contrôles, du focus clavier, des états, du mode sombre et des préférences de mouvement réduit.
-- [x] Smoke test responsive sur sept familles de pages, onze largeurs d’écran de 265 à 1440 px et thèmes clair/sombre.
-- [x] Couverture navigateur des principaux contrats du rendu IA, du sélecteur de langue, de la hiérarchie des cercles et de la voix du Tuteur.
-- [x] CI avec tests applicatifs isolés par fichier et job PostgreSQL dédié aux migrations et au démarrage.
-- [x] Possibilité pour l’administration de corriger les métadonnées d’un document, avec revalidation des éléments pédagogiques concernés.
+- [ ] Vérifier les parcours essentiels : inscription, connexion, récupération de compte, profil, navigation et déconnexion.
+- [ ] Clarifier les règles d’accès aux ressources selon le statut du document, le compte de l’utilisateur et les règles des espaces collaboratifs.
+- [ ] Vérifier qu’un document en attente ou rejeté n’est pas présenté comme une ressource publiée.
+- [ ] Contrôler les droits des apprenants, enseignants et responsables d’établissement sur les actions qui leur sont destinées.
+- [ ] Rendre les états des traitements assistés par IA compréhensibles : en attente, disponible, à reprendre ou en échec.
+- [ ] Améliorer les messages d’aide afin qu’un utilisateur sache quoi faire lorsqu’une action échoue.
 
-**Références de livraison :** PR [#247](https://github.com/jakejohnson0796-glitch/mahay-toamasina/pull/247), [#248](https://github.com/jakejohnson0796-glitch/mahay-toamasina/pull/248) et [#249](https://github.com/jakejohnson0796-glitch/mahay-toamasina/pull/249). La dernière amélioration globale d’interface correspond au commit 07c8dd117bd26d1528af1c8ffd07c7329f09b3d8.
+## Priorité 2 — Référentiel scolaire et universitaire
 
-## 2. Priorité P0 — Fiabilité des parcours critiques
+- [ ] **Université de Toamasina :** confirmer les composantes, mentions, parcours et niveaux à partir des documents officiels les plus récents.
+- [ ] Vérifier individuellement les habilitations et accréditations auprès des autorités compétentes ; conserver la référence et la période de validité du document officiel.
+- [ ] Distinguer clairement un établissement répertorié, un programme documenté, une formation autorisée et une admission effectivement ouverte pour l’année concernée.
+- [ ] Vérifier les informations d’admission 2026–2027 auprès des composantes concernées avant toute présentation comme offre ouverte.
+- [ ] **Collège :** vérifier les classes de 6e à 3e, les matières et les programmes applicables.
+- [ ] **Lycée :** vérifier les classes, séries ou options, matières et programmes applicables.
+- [ ] **ETFP :** poursuivre la comparaison des établissements et formations avec les sources officielles du ministère compétent, région par région.
+- [ ] Signaler les informations non confirmées au lieu de compléter les données par supposition.
 
-Ces tâches doivent passer avant les nouvelles fonctionnalités ambitieuses.
+## Priorité 3 — Qualité pédagogique
 
-- [x] **Ajouter un scénario d’intégration PostgreSQL des fiches de cours.** Le smoke couvre un document en attente → approbation administrative → création d’une tâche durable unique → traitement par le worker → fiche persistée et route de consultation → exports PDF/DOCX privés. Le dépôt de fichier et ses contrôles restent également couverts par les tests de dépôt dédiés.
-- [ ] **Étendre ce scénario aux cas limites de sécurité et de reprise.** Vérifier qu’un document en attente ou rejeté ne produit pas de fiche visible, qu’un autre étudiant ne peut pas télécharger une fiche non autorisée, que des tâches doublonnées ne créent pas de résultats incohérents et que les métadonnées modifiées invalident la bonne fiche.
-- [ ] **Auditer la visibilité opérationnelle de la file IA.** Vérifier que les diagnostics permettent de repérer une tâche trop ancienne, ses tentatives, son dernier état et une erreur exploitable sans exposer de secrets ; compléter l’interface ou les alertes là où il manque une information.
-- [ ] **Standardiser le contrôle après déploiement.** Vérifier les endpoints /health et /ready, les migrations, le démarrage du worker, les erreurs récentes et le téléchargement d’une fiche depuis un vrai navigateur ; consigner le SHA déployé et garder le commit de retour arrière disponible.
-- [ ] **Stabiliser les scénarios de vérification IA qui échouent à juste titre.** Construire des tests déterministes pour séparer une erreur réelle de correction, une sortie JSON invalide, des choix de quiz identiques et un seuil de confiance trop strict. Ne pas masquer une erreur pédagogique pour faire passer le test.
-- [x] **Valider en CI la personnalisation des fiches documentaires par étudiant.** Le smoke PostgreSQL compare deux comptes ayant des progressions distinctes, confirme l’absence de mutation de la fiche source, vérifie les priorités affichées et celles transmises aux exports PDF/DOCX, ainsi que le refus de téléchargement anonyme.
+- [ ] Réduire la répétition des questions dans les quiz et les jeux, tout en conservant leur cohérence avec les notions étudiées.
+- [ ] Relier les erreurs observées aux ressources, explications et exercices qui aident réellement à progresser.
+- [ ] Vérifier que les fiches de révision sont fondées sur des documents approuvés et sur des informations réellement disponibles.
+- [ ] Mieux expliquer les états des fiches en préparation ou en échec, et faciliter leur reprise.
+- [ ] Vérifier que les résumés de séances virtuelles s’appuient sur des notes ou contenus réellement disponibles.
+- [ ] Améliorer la continuité entre les quiz, les révisions, le Tuteur IA et les activités de l’apprenant.
 
-## 3. Priorité P1 — Qualité pédagogique, mobile et cohérence des données
+## Priorité 4 — Expérience utilisateur
 
-- [ ] **Créer une matrice de régression du rendu scientifique.** Inclure mathématiques, physique, chimie, informatique et comptabilité : fractions, racines, exposants, matrices, unités, réactions chimiques, tableaux et écritures comptables. Tester le LaTeX brut, les délimiteurs mal formés, les retours à la ligne et les textes mêlant explications et formules.
-- [ ] **Élargir les tests navigateur de parcours complets.** Couvrir connexion, recherche, dépôt/modération, accès à une fiche, quiz/correction, Tuteur IA, cercles/chat et classe virtuelle sur des largeurs mobiles et de bureau. Vérifier aussi les actions tactiles et les libellés des boutons.
-- [ ] **Faire une revue fonctionnelle du jeu cérébral.** Contrôler que les illustrations correspondent au thème de la question, que les animations ne masquent pas la consigne, que la pause et le choix de réduire les mouvements fonctionnent et que le jeu reste utilisable au clavier et sur petit écran.
-- [ ] **Recalculer l’audit du référentiel académique et des cercles sans offre active.** Classer les cas (données de référentiel manquantes, offre ancienne, cercle volontairement communautaire) avant toute désactivation en masse ; privilégier un rapport de revue et une validation humaine.
-- [ ] **Valider le parcours complet OTP par e-mail.** Tester configuration, saisie du code, expiration, usage unique, limite de tentatives, erreur d’adresse ou SMTP indisponible et récupération utilisateur, sans recourir aux SMS payants.
-- [ ] **Vérifier la cohérence de la localisation.** Pour chaque page principale, contrôler la langue choisie, les messages d’erreur, les menus, les états vides et les dialogues. Conserver en français les éléments du référentiel qui doivent rester officiels.
+- [ ] Compléter les traductions françaises, malgaches et anglaises sur toutes les pages, les formulaires et les messages.
+- [ ] Vérifier l’affichage sur téléphone, tablette et ordinateur, y compris les écrans étroits.
+- [ ] Améliorer la lisibilité des thèmes clair et sombre, la navigation au clavier et les libellés accessibles.
+- [ ] Respecter les préférences de réduction des animations et faciliter les actions courantes.
+- [ ] Simplifier les parcours des enseignants et des établissements qui accompagnent plusieurs centaines d’apprenants.
 
-## 4. Priorité P2 — Accessibilité, performances et exploitation
+## Priorité 5 — Exploitation et continuité
 
-- [ ] **Faire une passe d’accessibilité.** Contraste des thèmes clair/sombre, focus visible, ordre clavier, noms accessibles, annonces de statut, zoom et mode de contraste renforcé.
-- [ ] **Mesurer les performances sur mobile.** Examiner le poids CSS/JavaScript, les bibliothèques du rendu IA, les images du jeu cérébral, les requêtes répétées et le temps d’affichage des pages les plus fréquentées avant d’optimiser.
-- [ ] **Répéter une restauration de sauvegarde hors production.** Documenter la restauration PostgreSQL, la vérification des fichiers documentaires et les contrôles de cohérence avant de considérer le plan de reprise comme validé.
-- [ ] **Éviter les régressions de documentation.** Faire correspondre le README, le fichier .env.example, la configuration Render et la checklist de release ; toute variable retirée ou renommée doit être documentée.
-- [ ] **Organiser une revue périodique des dépendances.** Mettre à jour avec tests, vérifier les changements incompatibles et conserver un chemin de retour arrière plutôt que de mettre à jour toutes les dépendances sans validation.
+- [ ] Mesurer les temps de chargement et la stabilité des pages les plus utilisées avant d’optimiser.
+- [ ] Vérifier périodiquement la sauvegarde et la restauration des données et des ressources.
+- [ ] Améliorer les informations destinées aux responsables lorsqu’un service ou une fonctionnalité est temporairement indisponible.
+- [ ] Vérifier le bon déroulement des parcours importants après chaque mise à jour publiée.
 
-## Nouveau chantier structurant — collège, lycée et université
+## Conditions de clôture
 
-Le cahier des charges technique est consigné dans [docs/extension-college-lycee-universite.md](docs/extension-college-lycee-universite.md). Ce chantier est une extension majeure du référentiel, pas une simple option du formulaire.
+Une amélioration est considérée comme terminée lorsque :
 
-**État au 31 octobre 2026 :** le schéma scolaire versionné, les API, l'administration, les cercles et les cibles d'apprentissage sont déjà implémentés. La branche `fix/scolaire-version-compat-2026-10-31` (PR #305, encore en revue) corrige la compatibilité multi-version et importe le RAPE MEN édition septembre 2026 comme référence courante. Les éditions 2024-2025 sont conservées séparément comme historique. Aucune fusion ni aucun déploiement n'a été effectué dans ce chantier.
-
-**Dernier audit des sources :** les 11 PDF officiels MEN RAPE T6 à T12 (L/S/OSE) portent « Édition septembre 2026 » ; leurs sommaires ont été contrôlés. Une migration séparée crée la version `MEN-RAPE-2026-09`, associée techniquement à 2026-2027 et laissée au statut `partiel`. Le RAPE ne contient pas tous les détails du Programme d'Études et doit être utilisé avec le PE complet ; la bibliothèque MEN répertorie PE Collège, PE Lycée et un document de coefficients/volumes horaires du lycée, mais leurs pièces jointes PDF doivent encore être récupérées et vérifiées. Le programme complet et l'année d'effet réglementaire devront donc être confirmés avant de marquer le référentiel « complet ».
-
-Pour le METFP, le portail officiel recense des référentiels de formation publiés jusqu'au 14 septembre 2026 ; leur appariement détaillé avec les métiers déjà présents dans MITARIDALA et leur disponibilité locale à Atsinanana restent à contrôler. Les offres ETFP de CFP Antanambao Manampotsy, LTP Brickaville, CFP Toamasina, LTP Toamasina et CFP Foulpointe sont issues de la cartographie, mais restent `a_verifier` sans année d'ouverture. Rapport détaillé : [docs/audit-referentiels-men-metfp-toamasina-2026-10-31.md](docs/audit-referentiels-men-metfp-toamasina-2026-10-31.md).
-
-- [ ] **Lot A — Vérifier le registre HAE Doctorat et l'école doctorale SCSD.** Le MESUPRES référence les décrets n°2026-1547 (formation doctorale et diplôme de Doctorat) et n°2026-1548 (HDR), publiés le 1er juillet 2026. Obtenir les fiches HAE de SCSD et des offres Doctorat, lire les textes intégraux et vérifier les équipes d'accueil, les encadrants HDR, le renouvellement et l'habilitation actuelle avant de publier un parcours doctoral.
-- [ ] **Lot A — Rapprocher les décisions CNH/CNA 2026 de Toamasina.** La session nationale annoncée du 21 au 25 septembre 2026 est terminée. Obtenir les décisions et fiches HAE individualisées pour la Faculté de Médecine, FST, DEG, FOAD et les autres offres de Toamasina ; enregistrer l'identifiant d'offre, le grade, l'arrêté, la date d'effet, l'échéance, l'accréditation et le PDF source.
-- [ ] **Lot A — Inventorier les 13 universités de proximité recensées par la DGES/MESUPRES.** Le répertoire institutionnel actuel distingue six universités publiques établies et treize entrées supplémentaires (Androna, Alaotra Mangoro, Agnambà, Analanjirofo, Bongolava, Sava, Itasy, Vakinankaratra, Amoron'i Mania, Anjombakilala d'Androy, Anosy, Ampanihy et Fitovinany). Vérifier pour chacune l'acte de création, le statut juridique, la tutelle, le siège/campus, les composantes et chaque offre HAE. Ne pas les importer comme universités autonomes ni publier des formations sur la seule base de leur présence dans l'annuaire. Voir la section 58 du rapport national.
-
-- [ ] **Lot A — Exhaustivité ETFP nationale.** L'instantané METFP amorcé couvre les 24 régions mais reste partiel ; comparer les noms, types et implantations avec chaque région de la cartographie, retirer tout doublon/entrée incertaine et produire un rapport région par région (nombre source, importé, restant à vérifier).
-- [ ] **Lot A — Vérification des formations ETFP.** Les offres importées de la cartographie sont en attente et ne sont pas publiées. Valider les secteurs/filières/métiers et rattacher les référentiels de formation récents du METFP, sans présenter la cartographie comme preuve d'ouverture pour 2026-2027.
-- [ ] **Lot A — Offre par établissement et année.** Compléter par sources fiables les classes, séries, matières et métiers enseignés dans chaque établissement, avec année scolaire, URL/preuve, statut, validateur et historique d'archivage ; tester les filtres publics, l'API et l'interface administrateur.
-- [ ] **Lot A — Catalogue public.** La page /catalogue-scolaire et les API de recherche ont été ajoutées ; vérifier l'accessibilité, la navigation mobile, la validation de formulaires et que seules les offres confirmées sont visibles avant mise en production.
-- [ ] **Lot A — RAPE MEN septembre 2026 courant.** Migration `MEN-RAPE-2026-09` ajoutée en branche avec 7 niveaux, 6 séries/options et 11 programmes par niveau/série. CI PostgreSQL et les contrôles de 11 listes exactes doivent réussir avant fusion ; vérifier l'idempotence et la compatibilité des profils historiques.
-- [ ] **Lot A — Programmes d'Études (PE) complets.** La Bibliothèque numérique MEN liste PE Collège T6-T9, PE Lycée T10-T12 et les coefficients/volumes horaires lycée. Récupérer les PDF attachés, les dates/versions, les contenus/compétences et les coefficients, puis les relier aux associations RAPE ; garder le statut partiel tant que ce travail n'est pas terminé.
-- [ ] **Lot A — Version réglementaire / rentrée 2026-2027.** RAPE indique « édition septembre 2026 » ; l'association logicielle à 2026-2027 doit être recoupée avec la circulaire/calendrier officiel de rentrée. Les offres par établissement, séries réellement enseignées et régimes applicables doivent être validés localement.
-- [ ] **Lot A — Compatibilité multi-version.** Vérifier que les profils existants, inscription, Quiz, Tuteur, dépôts de documents, cercles et offres administratives utilisent la version réellement attachée au niveau ; les versions historiques ne doivent jamais devenir courantes par simple date d'import.
-- [ ] **Lot A — Référentiels METFP hors catalogue web.** Vérifier les 12 référentiels BTP remis le 10/07/2026 (6 CAPS + 6 FPQ) et les références gestion des déchets remises le 23/09/2026 ; obtenir les fichiers et leurs métadonnées avant liaison métier/établissement.
-- [ ] **Lot A — Référentiel universitaire de Toamasina.** Le fichier conserve 157 associations/24 mentions/6 composantes publiées ; elles ne sont pas 157 formations indépendantes ni des offres ouvertes 2026-2027. Comparaison JSON ↔ Supabase en lecture seule : les 156 associations publiables correspondent exactement aux 156 offres applicatives actives (0 manquante, 0 supplémentaire, 0 doublon actif). Attention : `ProgrammeUniversitaire` ne porte pas les références d'arrêté, identifiant HAE, échéance, accréditation ou preuve d'ouverture ; `est_active=true` n'est pas une preuve réglementaire actuelle. Addendum : `docs/audit-universite-toamasina-addendum-2026-10-31.md`. Le MESUPRES a publié le communiqué CNH/CNA 2026, le guide (31/08/2026), le décret 2026-1483 (professionnalisation), le décret 2026-1484 (FOAD) et l'arrêté 21408/2026 (assurance qualité). La plateforme HAE publique `https://qualite.mesupres.mg/` annonce un registre des offres habilitées Licence/Master/Doctorat ; il faut obtenir ses fiches Toamasina et les arrêter par offre, grade, échéance, accréditation et année d'ouverture. CCA M2 reste À vérifier ; la checklist demande les pièces M1/M2 sans prouver un CCA M1. Pour la FLSH, la simple ligne historique « Formation en ligne » impose de demander l'annexe FOAD approuvée, pas d'ouvrir l'offre par défaut. Vérifier les obligations du décret 1483 (10 % Licence / 15 % Master, insertion L3, projet professionnalisant M2).
-- [ ] **Lot A — Contrôle des cercles universitaires Toamasina.** Le contrôle SQL du 31/10/2026 retrouve 117 cercles liés à un parcours Toamasina : 116 actifs avec offre active et un cercle archivé CCA M2 (ID 339) avec un membre historique. Préserver ce cercle archivé et ses membres ; ne réactiver que sur preuve officielle et décision administrative. Les trois comptes universitaires Toamasina ont tous université/composante/mention/niveau renseignés.
-- [ ] **Lot A — Vérifier l'ouverture FST 2026–2027 et le parcours SCM.** Les archives secondaires des publications FST relaient un appel de sélection L1 publié les 23 et 30/09/2026 pour les bacheliers C, D, S, OSE, FTG Génie Civil et FTG Génie Industriel, avec dépôt du 14/09 au **20/11/2026 à 16 h** ; elles rapportent aussi une activité pédagogique SCM chez VIKA Cement. Obtenir l'avis original signé, le formulaire officiel et les fiches HAE/arrêtés avant de marquer les mentions/parcours ouverts. Vérifier aussi le rattachement juridique de MIA entre DEGMIA et FST.
-- [ ] **Lot A — Vérifier l'appel L1 DEG 2026–2027.** Une archive secondaire de la page de la Faculté DEG relaye le 12/10/2026 un appel pour l'entrée en L1 Droit, Économie et Gestion, avec date limite du **27/11/2026**. Obtenir le post original, l'avis PDF signé, les séries de baccalauréat, pièces, frais et modalités ; ne pas étendre cet avis L1 aux offres Master ou à toutes les spécialisations.
-- [ ] **Lot A — Valider les maquettes des 11 mentions ENS.** Le rapprochement du JSON compte 61 associations : 33 troncs communs L1-L3 pour les 11 mentions et 28 associations M1/M2 pour huit mentions. Le JSON ne publie pas M1/M2 pour OSE, SES et Sciences Naturelles ; des mentions de débouchés M2 dans le flyer ne suffisent pas à créer des offres. Obtenir les maquettes officielles par mention, les arrêtés et les conditions de sélection, puis confirmer les parcours M1/M2, stages et unités d'enseignement.
-- [ ] **Lot A — Réconciliation des mentions ENS en base.** Un balayage de toutes les mentions Supabase avec normalisation accents/apostrophes/espaces ne trouve que deux paires de doublons (IDs 50/63 et 59/64). Les anciens IDs 50/59 ont chacun quatre filières historiques inactives, aucune offre active et aucune référence utilisateur/cercle/demande ; les IDs 63/64 portent les offres et cercles actifs. Correction préparée dans la PR #310 (`fix/referentiel-mentions-ens-duplicates`) : rechercher les doublons normalisés même si le nom canonique exact existe, réaffecter les FK, puis fusionner les filières. Le test dédié couvre le dry-run, l'offre active, profils, cercles et demandes. Aucun changement de production ; exécuter CI réelle avant fusion et déploiement.
-- [ ] **Lot A — Réconcilier la Faculté de Médecine de Toamasina.** La liste MESUPRES d'août 2022 répertorie explicitement une Faculté de Médecine sous Université Toamasina, avec Sciences Infirmières, Maïeutique, Médecine humaine et Sciences Paramédicales. Une actualité MESUPRES du 22/03/2024 confirme la titularisation d'un professeur ; le bulletin officiel i.Tatitra n°005 (janvier-mars 2025) mentionne encore la Faculté de Médecine parmi les cinq établissements dont proviennent 608 diplômés. Pourtant, Supabase n'a des composantes « Faculté de Médecine » que sous Antananarivo et Mahajanga, aucune sous Toamasina ; Médecine Humaine et Sciences Paramédicales sont rattachées à Antananarivo. Maïeutique et « Infirmerie » sont orphelines de filières ; vérifier le libellé officiel « Sciences Infirmières ». Obtenir les statuts institutionnels 2026, fiches HAE, arrêtés et maquettes, puis reconstituer une composante Toamasina distincte ; ne jamais déplacer les formations d'Antananarivo ou Mahajanga.
-- [ ] **Lot A — Vérifier le nouveau cadre doctoral et HDR MESUPRES 2026.** Les décrets n°2026-1547 (17/06/2026, régime de la formation doctorale et du Doctorat) et n°2026-1548 (17/06/2026, HDR) sont publiés le 01/07/2026 ; HAE propose un canevas dédié à l'habilitation des écoles doctorales et au Doctorat. Obtenir les PDF officiels, lire les articles et dispositions transitoires, vérifier statut/renouvellement HAE de SCSD, axes/équipes, HDR des encadrants et offres Doctorat autorisées. Ne pas utiliser le modèle Licence/Master actuel pour les inscriptions doctorales.
-- [ ] **Lot A — Réconcilier l'école doctorale SCSD de Toamasina.** Le registre MESUPRES d'août 2022 répertorie « Science, Culture, Société et Développement » (SCSD), Université de Toamasina, arrêté n°32905/2013 du 07/11/2013, axes Droit/Sciences politiques, Santé/Politiques publiques/Gestion, MIA et Patrimoines/Espaces/Sociétés. Le MESUPRES référence désormais le décret n°2026-1547 (17/06/2026) sur la formation doctorale et le diplôme de Doctorat, ainsi que le décret n°2026-1548 sur l'HDR (publiés le 01/07/2026) ; HAE publie un canevas d'habilitation des écoles doctorales et un registre des offres habilitées jusqu'au Doctorat. Récupérer les fiches HAE individualisées et lire intégralement ces décrets avant de conclure au statut actuel de SCSD ; le PDF 1547 n'a pas été récupéré lors du dernier contrôle. Le schéma Supabase ne comporte aucune table dédiée aux écoles doctorales, équipes d'accueil, encadrants ou inscriptions doctorales. Concevoir un modèle troisième cycle distinct du catalogue Licence/Master sans réutiliser `Mention`/`Filiere`.
-- [ ] **Lot A — Vérifier les sept établissements paramédicaux privés de Toamasina ville.** Le portail HAE actuel propose des canevas propres aux nouvelles demandes paramédicales et à leur renouvellement. Demander/rapprocher ces dossiers HAE séparément de la Faculté de Médecine ; le PDF des instructions HAE et les sept dossiers individuels restent à collecter. Le registre MESUPRES d'août 2022 répertorie IFSP ATSINANANA (arrêté 15482/2011), IFSPT (21911/2014), INSPALM (31486/2017), INSPNMAD ATSINANANA (11565/2013), ISFSP (32794/2015, renouvellement 12258/2022), ISMATEC (31486/2017) et ISSPM (26307/2016), tous en Licence Sage-femme/Infirmier. Aucun n'apparaît dans `universite`, `faculte` ni `etablissementpartenaire` en base. ISPAVA est séparé à Vatomandry (région Atsinanana) et ne doit pas être compté à Toamasina ville. Vérifier fiches HAE, statuts, noms/adresses et renouvellements 2026 ; ne pas les fusionner avec la Faculté de Médecine publique ni entre eux.
-- [ ] **Lot A — Vérifier les campus privés signalés à Toamasina en 2026.** UPRIM annonce un site Bazary Kely et une rentrée novembre 2026 ; le registre HAE 2022 situait UPRIM à Andavamamba, et les arrêtés 21704/2022 et 12299/2023 retrouvés sont des équivalences individuelles, pas la preuve de l'extension locale. Vision Institute annonce Valpinson, rentrée 09/11 (L1/L2), 14/11 (L3) et cite l'arrêté 21 945/2026 que je n'ai pas retrouvé dans l'index officiel MESUPRES/CNLegis. IMSAA est autorisé par les arrêtés 31312/2023 et 34519/2023 à Antsiranana ; un relais annonce un campus Toamasina Tanambao 5 (16/11/2026) et le site IMSAA affiche un contact à Anjoma/Tamatave. Pour les trois, obtenir fiche HAE et arrêté/extension correspondant précisément au campus de Toamasina, personne morale, offres, grades et validité avant ajout aux sélecteurs. Aucune entrée trouvée dans les tables Supabase `universite`, `faculte`, `etablissementpartenaire`.
-- [ ] **Lot A — Vérifier les établissements privés habilités à Toamasina.** La liste MESUPRES d'août 2022 répertorie BEATY UNIVERSITY à Toamasina pour Sciences de Gestion/Licence (arrêté n°3992/2022 du 28/02/2022). Aucun enregistrement BEATY n'est présent dans `universite` ni `etablissementpartenaire` en base. Ne pas l'ajouter comme faculté de l'Université publique ; vérifier sur HAE l'habilitation actuelle et l'ouverture 2026-2027, puis l'intégrer comme institution privée distincte si le périmètre produit comprend le privé.
-- [ ] **Lot A — Concevoir un catalogue institutionnel multi-type distinct des facultés publiques.** Le modèle actuel `Universite → Faculte → Filiere → ProgrammeUniversitaire` ne couvre pas proprement BEATY, les écoles paramédicales privées IFSP/IFSPT/INSPALM/INSPNMAD, les instituts régionaux affiliés, l'ESPT ou l'école doctorale SCSD. `EtablissementPartenaire` sert à l'onboarding en masse et ne doit pas être détourné pour le catalogue. Spécifier institution légale, type, rattachement/affiliation, commune, fiche HAE, offres/grades, arrêtés/validités, FOAD, années d'ouverture et structures doctorales ; garder la compatibilité des six universités publiques existantes. Aucun schéma ni données de production à modifier avant revue et migration réversible.
-- [ ] **Lot A — Rapprocher l'annuaire statistique MESUPRES 2022–2023 du catalogue.** Le tableau général Toamasina recense 14 661 inscriptions, mais DEG (5 855) et ISTRCE (591) sont marqués comme données de l'année antérieure. Il décrit notamment l'ESPT (194 : Génie civil 118, Mines 41, Procédés/Environnement 35), FST (MIA 837, Physique-Chimie 204), Médecine humaine (834 sur 8 années) et 344 inscrits regroupés « Infirmier, Maïeutique », FLSH (3 394) et plusieurs instituts régionaux. Ne pas prendre ces volumes comme effectifs 2026-2027, habilitations ou offres ouvertes. Rapprocher officiellement les entités ISSED/ISSEDD, ISTRA ex-ISPG, ISTRALMA, ISTCE, ISTRCE et Confucius ; préserver les centres linguistiques hors des offres diplômantes.
-- [ ] **Lot A — Vérifier toute la cartographie MESUPRES Atsinanana 2023.** La cartographie régionale classe sous public : FLSH, DEGMIA, Faculté de Médecine, ITPT, ISTRA, Confucius, ENS, ESP Toamasina et CNTEMAD ; sous privé : BEATY, IFT, IFSP ATSINANANA, IFSPT, INSPALM, INSPNMAD ATSINANANA, ISFSP, ISMATEC, ISPAVA (Vatomandry) et ISSPM. Le registre HAE 2022 identifie IFT comme établissement privé technique (Informatique/BTP, Toamasina), ISFSP, ISMATEC et ISSPM comme écoles paramédicales à Toamasina, et ISPAVA comme école paramédicale à Vatomandry ; conserver les arrêtés et localités distincts, sans fusionner les acronymes ; CNTEMAD doit être inventorié comme centre public régional distinct, sans le traiter comme faculté de l'Université. Son site officiel indique 53 centres/antennes, 8 filières et publie un avis d'examens 2025-2026 daté du 17/09/2026 ; une page locale CNTEMAD-UVP Toamasina publie des emplois du temps et regroupements Droit/Communication en octobre 2026, une clôture d'inscription 2025-2026 et des activités du CRTE Toamasina ; le lieu est décrit comme un lieu de regroupement (LJR), pas comme une adresse administrative complète. Obtenir le code centre, l'adresse et le rattachement administratif auprès de la direction nationale avant publication. Aucun enregistrement correspondant n'a été retrouvé dans `universite`, `faculte`, `etablissementpartenaire`. Vérifier fiches HAE, nom légal, commune, rattachement, offres et ouverture 2026-2027.
-- [ ] **Lot A — Inventorier les instituts régionaux affiliés à l'Université de Toamasina.** Le registre MESUPRES d'août 2022 recense ISTRALMA (Ambatondrazaka/Alaotra-Mangoro), ISTCE (Fénérive-Est/Analanjirofo) et ISTRCE (affilié à Toamasina dans HAE 2022, cartographié en Analanjirofo en 2023 ; commune à confirmer). Distinguer ISTRA (ex-ISPG, Région Atsinanana) de ISTRCE, avec des offres Droit/Gestion/Économie/Agronomie/Tourisme ou technologie selon l'établissement. Le catalogue initial ne doit pas les confondre avec les composantes du campus principal. Vérifier le statut et les maquettes actuelles, la localisation, les arrêtés et la présence éventuelle dans la base nationale ; créer des fiches institutionnelles distinctes uniquement après validation.
-- [ ] **Lot A — Confirmer l'ESPT de Toamasina.** L'annuaire MESUPRES 2022-2023 mentionne l'École Supérieure Polytechnique et des spécialités Génie Civil, Mines et Procédés/Environnement, mais aucune composante ESPT n'existe en base sous Toamasina. Obtenir statut, rattachement, habilitations, maquettes et admissions actuelles avant création de l'offre. Ne pas modifier les données ni publier des ouvertures 2026-2027 sur la seule base des habilitations 2022.
-- [ ] **Lot A — Référentiels METFP 2026.** Le portail annonce 12 référentiels publiés jusqu'au 14/09/2026 ; télécharger les PDF, extraire les niveaux/certifications et relier chaque document au métier canonique sans confondre référentiel de métier et ouverture locale.
-- [ ] **Lot A — Référentiel scolaire sourcé et versionné.** Schéma et import idempotent créés ; vérifier encore les sources matière par matière, le statut du catalogue partiel et l'absence de données devinées avant clôture.
-- [ ] **Lot A — Parcours d'inscription adapté.** Le parcours étudiant reste séparé du parcours universitaire ; les demandes professeurs peuvent déclarer plusieurs cycles, et le cycle principal est explicite dans le formulaire. Le helper de normalisation est couvert unitairement, mais il faut encore tester le POST réel pour élève collège, élève lycée, étudiant universitaire, professeur mono/multi-cycle, sponsor et anciens formulaires.
-- [ ] **Lot B — Compléter les demandes de profil enseignant.** Le rôle reste ETUDIANT jusqu'à décision administrative, et la table relationnelle `cycleenseigne` permet de déclarer plusieurs cycles sans confondre déclaration et autorisation. Ajouter/valider la granularité par classe, série, matière et établissement, les preuves privées éventuelles et les tests des décisions admin.
-- [ ] **Lot C — Documents multi-référentiels.** Rattachement scolaire ajouté aux formulaires et contrôles serveur ; un cercle scolaire mono-matière impose désormais sa matière aux documents déposés et une incohérence est refusée. Continuer les tests de bout en bout (cibles, modération, fiches/quiz, filtres et téléchargements privés), sans élargir la migration de `Document.filiere_id` avant audit.
-- [ ] **Lot C — Cercles collège/lycée et synchronisation multi-référentiels.** Le service synchronise maintenant les cercles nationaux par classe vérifiée, série/option et matière validée, séparément du provisionneur universitaire ; les cibles sont contraintes en base et le synchroniseur archive prudemment les cercles auto-gérés devenus obsolètes. Terminer les tests CI de migration, l'intégration de la création/adhésion et la revue des cas locaux par établissement avant la release.
-- [ ] **Lot D — Apprentissage par programme.** API des matières scolaires, sélecteur de matières du quiz et contexte de quiz/fiches ajoutés ; compléter les tests Tuteur IA/quiz/fiches de révision pour éviter de mélanger les niveaux et résultats entre comptes.
-- [ ] **Lot E — Validation avant mise en ligne.** Vérifier les sources du catalogue, tests SQLite/PostgreSQL, tests navigateur des cycles, CI verte, puis contrôle de santé et parcours après déploiement.
-
-**Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
-
-## CI GitHub Actions — état après les PR #308 à #316 (1er novembre 2026)
-
-Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vides, sans logs). Depuis le 1er novembre, les runners sont attribués correctement et la CI a validé les changements suivants :
-
-| PR | Commit de fusion | Résultat |
-|---|---|---|
-| #308 — cartographie MESUPRES | d64c87ced96aa4ce3cdd40e5253cc0235fef2089 | CI et smoke PostgreSQL réussis ; 986 tests passés sur le run détaillé |
-| #309 — audit universitaire, README et TODO | a074e933db99366bb73b3065fe0d91c846190735 | CI PR et smoke PostgreSQL réussis |
-| #310 — réconciliation ENS | c4bb4bd76ce23bcb73ae55d49aca7f85434b00f1 | 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
-| #311 — limites de durée CI | 1d880746c5ed2238e89b5ac2ca398f3406c33113 | CI push et PR réussies ; 987 tests passés, 0 échec, 0 ignoré |
-| #312 — bilan universitaire post-déploiement | c89fbb7109be54fca53441db2ad2fa35c999e190 | CI PR réussie ; 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
-| #313 — index FK établissements partenaires | e238be4f5469651c227d44ac58afa46b711321d1 | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi (7 tests) |
-| #314 — avertissement catalogue universitaire trilingue | 1c8a853353052a88c42fe6b860a5a3412f79f9ce | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
-| #315 — actualisation du référentiel HAE et vérification du déploiement | 40e528291a33f4acfe902c74cd54a8f68a7730d1 | CI push réussie : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
-| #316 — déplacement de `unaccent` vers `extensions` | 165c2786f0ee230aaccf08379279ccfc3591bc9d | CI PR et push `main` réussies : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi ; migration déployée sur les deux services. |
-
-La CI définit :
-- job applicatif : limite globale de **30 minutes** ;
-- job PostgreSQL : limite globale de **15 minutes** ;
-- chaque fichier tests/test_*.py : limite de **300 secondes**.
-
-Le run push #315 sur `main` (run `41275703549`) a réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Le run push #316 sur `main` (run `41276650330`) a également réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont désormais `live` sur `165c2786f0ee230aaccf08379279ccfc3591bc9d`. La migration `f3d8a9c2e5b1` est appliquée ; Supabase confirme `unaccent` dans `extensions` et le bon fonctionnement de `mahay_french`. La PR #317 est la présente mise à jour documentaire et reste soumise à sa propre CI avant fusion.
-
-### Réconciliation ENS vérifiée en production
-
-- [x] Les anciennes mentions ENS ID 50 et 59 ont été supprimées après réattribution de leurs références.
-- [x] Les mentions canoniques ID 63 (Histoire-Géographie) et ID 64 (Sciences de l'Éducation) sont conservées.
-- [x] Chaque mention canonique porte 7 filières et 7 cercles ; le profil étudiant ENS concerné reste rattaché à la mention 63.
-- [x] Aucun doublon normalisé de mention, de filière ou de faculté n'a été détecté dans le périmètre Toamasina après réconciliation.
-- [x] Aucune référence orpheline n'a été détectée sur les filières, cercles, profils ou demandes contrôlés.
-- [x] Aucune filière n'a plus d'une offre universitaire active pour la même université.
-- [ ] **Années académiques des offres :** les 237 lignes ProgrammeUniversitaire de production ont toutes annee_academique IS NULL. Ne pas interpréter est_active comme preuve d'ouverture 2026-2027. Obtenir les années et preuves institutionnelles avant tout remplissage.
-- [ ] **Modèle annuel à concevoir :** l'index unique actuel ne porte que sur (universite_id, filiere_id) pour est_active=true ; séparer l'offre catalogue, l'habilitation HAE et l'ouverture annuelle de cohorte avant d'enregistrer les campagnes 2026-2027.
-- [ ] Concevoir séparément les habilitations réglementaires (HAE), l'offre académique habilitée et l'ouverture annuelle effective ; ne pas déduire l'une de l'autre.
-- [ ] Confirmer par une source primaire les échéances 2026-2027 relayées pour FST L1 (20 novembre), Faculté DEG L1 (27 novembre) et ENS-SEAS FAD (inscriptions définitives annoncées jusqu'au 30 novembre) avant de modifier les états d'ouverture du catalogue.
-- [x] Le statut du catalogue est désormais expliqué sur l'inscription universitaire, le profil académique et la page Universités en français, malagasy et anglais (PR #314). Cette information ne bloque pas les inscriptions.
-
-### Contrôle Supabase associé
-
-- [x] Le contrôle initial avait trouvé une FK non indexée : etablissementpartenaire.cree_par_id.
-- [x] La PR #313 ajoute l'index B-tree ix_etablissementpartenaire_cree_par_id et aligne le modèle SQLModel.
-- [x] Après déploiement Render, Supabase confirme alembic_version=f1c7a9d3e2b6 et la présence d'un seul index ix_etablissementpartenaire_cree_par_id sur cree_par_id.
-- [x] L'advisor ne signale plus de FK sans index. Il signale 155 index inutilisés (niveau INFO) ; la table etablissementpartenaire compte actuellement 0 ligne. Ne supprimer aucun index sur la seule base de ces statistiques.
-- [ ] Le signalement RLS antérieur (62 tables RLS sans politique) reste à traiter par une revue dédiée. Le contrôle des privilèges n'a trouvé aucun privilège de table pour anon ni authenticated ; ne pas créer de politiques génériques et ne pas exposer service_role au navigateur.
-
-### Sources HAE à utiliser pour la suite
-
-- [Portail HAE MESUPRES](https://qualite.mesupres.gov.mg/) : décrit les procédures d'habilitation, d'accréditation et d'équivalence, ainsi que les registres d'offres habilitées Licence/Master/Doctorat et d'enseignants-chercheurs permanents.
-- [Guide pratique de dépôt d'une nouvelle habilitation ou de renouvellement](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations) : publié par le MESUPRES le 31 août 2026.
-- [Liste ministérielle des établissements habilités](https://www.mesupres.gov.mg/etablissements) : indique actuellement que son contenu est en cours de mise à jour.
-- [Répertoire des organismes sous tutelle DGES](https://www.mesupres.gov.mg/front/rattache_dgsup) : à utiliser pour identifier les universités et organismes rattachés, pas pour déduire l'habilitation d'une offre précise.
-
-Ne pas importer en masse le PDF HAE de 2022 comme registre réglementaire courant. Chaque ligne universitaire doit être liée à une décision HAE vérifiable, à son grade exact, à son institution et site d'implantation, puis à une preuve distincte d'ouverture de cohorte annuelle.
-
-## 5. Ordre recommandé pour la prochaine itération
-
-1. Scénario PostgreSQL de bout en bout pour une fiche de cours, y compris les contrôles d’accès et les formats exportés.
-2. Diagnostic des tâches IA anciennes et validation post-déploiement reproductible.
-3. Matrice de régression du rendu mathématique et de la qualité des quiz.
-4. Terminer la validation du référentiel collège/lycée, du multi-cycle professeur et de la synchronisation des cercles, sans casser l'université existante.
-5. Parcours navigateur mobile sur les fonctions les plus utilisées.
-6. Revue du référentiel académique, du jeu cérébral et de l’accessibilité.
-
-## 6. Critères de clôture d’une tâche
-
-Une tâche ne passe à « terminée » que lorsque :
-
-- [ ] les tests liés au changement passent localement et en CI ;
-- [ ] les migrations, si présentes, peuvent être appliquées deux fois sans effet indésirable et le smoke PostgreSQL passe ;
-- [ ] les contrôles d’autorisation sont réalisés côté serveur lorsque des données privées sont impliquées ;
-- [ ] l’interface reste lisible en petit écran et dans les thèmes pris en charge ;
-- [ ] README, TODO et configuration sont mis à jour si leur contenu devient obsolète ;
-- [ ] la CI est verte avant toute fusion ou tout déploiement ;
-- [ ] après un déploiement, les contrôles de santé, les logs et le parcours modifié sont vérifiés.
-
-> **Règle de livraison :** aucun changement applicatif ne doit être fusionné ou déployé avec une CI rouge. Pour les changements documentaires, exécuter également la CI avant fusion afin de s’assurer que les liens et les consignes restent cohérents avec le dépôt.
+- [ ] le comportement attendu est vérifié dans le parcours concerné ;
+- [ ] les tests associés réussissent ;
+- [ ] les informations académiques disposent de sources officielles et d’une date de vérification ;
+- [ ] les règles d’accès et la confidentialité sont respectées ;
+- [ ] l’interface reste utilisable sur mobile et ordinateur ;
+- [ ] aucune régression n’est introduite dans les parcours existants.
