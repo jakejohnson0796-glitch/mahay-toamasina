@@ -160,7 +160,7 @@
         <div class="classe-row">
           <div class="classe-row-main">
             <strong>{{ devoir.titre }}</strong>
-            <span>Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }} · Barème : {{ devoir.bareme:g }} points{% if devoir.est_clos %} · Dépôts fermés{% endif %}{% if devoir.archive %} · Archivé{% endif %}</span>
+            <span>Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }} · Barème : {{ "%.2f"|format(devoir.bareme) }} points{% if devoir.est_clos %} · Dépôts fermés{% endif %}{% if devoir.archive %} · Archivé{% endif %}</span>
           </div>
           <div class="classe-row-actions">
             <a href="/classe/devoirs/{{ devoir.id }}" class="bouton bouton-secondaire">{{ "Voir les rendus" if peut_gerer else ("Rendu envoyé" if devoir.id in mes_rendus_ids else "Rendre le devoir") }}</a>
