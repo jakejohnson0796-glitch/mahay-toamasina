@@ -113,14 +113,14 @@ Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vid
 | #313 — index FK établissements partenaires | e238be4f5469651c227d44ac58afa46b711321d1 | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi (7 tests) |
 | #314 — avertissement catalogue universitaire trilingue | 1c8a853353052a88c42fe6b860a5a3412f79f9ce | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
 | #315 — actualisation du référentiel HAE et vérification du déploiement | 40e528291a33f4acfe902c74cd54a8f68a7730d1 | CI push réussie : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
-| #316 — déplacement de `unaccent` vers `extensions` | 165c2786f0ee230aaccf08379279ccfc3591bc9d | CI PR réussie : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi. La CI du push `main` (run 41276650330) est encore en cours ; migration non déployée en production au moment de ce relevé. |
+| #316 — déplacement de `unaccent` vers `extensions` | 165c2786f0ee230aaccf08379279ccfc3591bc9d | CI PR et push `main` réussies : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi ; migration déployée sur les deux services. |
 
 La CI définit :
 - job applicatif : limite globale de **30 minutes** ;
 - job PostgreSQL : limite globale de **15 minutes** ;
 - chaque fichier tests/test_*.py : limite de **300 secondes**.
 
-Le run push #315 sur `main` (run `41275703549`) est terminé avec succès : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont en `live` sur `40e528291a33f4acfe902c74cd54a8f68a7730d1`. La PR #316 est fusionnée, mais la CI du push `main` (run `41276650330`) doit encore terminer : son smoke PostgreSQL est réussi et son job applicatif est en cours. Supabase indique encore `unaccent` dans `public`, ce qui est attendu tant que ce commit n'a pas été déployé. La PR #317 est la présente mise à jour documentaire et reste soumise à sa propre CI avant fusion.
+Le run push #315 sur `main` (run `41275703549`) a réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Le run push #316 sur `main` (run `41276650330`) a également réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont désormais `live` sur `165c2786f0ee230aaccf08379279ccfc3591bc9d`. La migration `f3d8a9c2e5b1` est appliquée ; Supabase confirme `unaccent` dans `extensions` et le bon fonctionnement de `mahay_french`. La PR #317 est la présente mise à jour documentaire et reste soumise à sa propre CI avant fusion.
 
 ### Réconciliation ENS vérifiée en production
 
