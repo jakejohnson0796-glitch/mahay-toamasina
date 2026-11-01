@@ -18,7 +18,6 @@ ne sont pas publiés dans les sélecteurs ni transformés en cercles.
 from __future__ import annotations
 
 import json
-import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -110,13 +109,13 @@ class Rapport:
 
 
 def normaliser(texte: str | None) -> str:
-    if not texte:
-        return ""
-    return _normaliser(
-        unicodedata.normalize("NFKD", texte)
-        .encode("ascii", "ignore")
-        .decode("ascii")
-    )
+    """Utilise la normalisation partagée sans perdre les apostrophes typographiques.
+
+    Le pré-nettoyage ASCII supprimait l'apostrophe courbe U+2019 alors que
+    l'apostrophe droite était conservée. Deux libellés identiques à l'usage
+    devenaient donc différents avant même d'atteindre le normaliseur commun.
+    """
+    return _normaliser(texte)
 
 
 def lire_source(chemin: str) -> dict:
