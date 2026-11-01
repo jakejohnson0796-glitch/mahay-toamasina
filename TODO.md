@@ -99,7 +99,7 @@ Pour le METFP, le portail officiel recense des référentiels de formation publi
 
 **Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
 
-## CI GitHub Actions — état après les PR #308 à #314 (1er novembre 2026)
+## CI GitHub Actions — état après les PR #308 à #316 (1er novembre 2026)
 
 Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vides, sans logs). Depuis le 1er novembre, les runners sont attribués correctement et la CI a validé les changements suivants :
 
@@ -112,13 +112,15 @@ Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vid
 | #312 — bilan universitaire post-déploiement | c89fbb7109be54fca53441db2ad2fa35c999e190 | CI PR réussie ; 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
 | #313 — index FK établissements partenaires | e238be4f5469651c227d44ac58afa46b711321d1 | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi (7 tests) |
 | #314 — avertissement catalogue universitaire trilingue | 1c8a853353052a88c42fe6b860a5a3412f79f9ce | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
+| #315 — actualisation du référentiel HAE et vérification du déploiement | 40e528291a33f4acfe902c74cd54a8f68a7730d1 | CI push réussie : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
+| #316 — déplacement de `unaccent` vers `extensions` | 165c2786f0ee230aaccf08379279ccfc3591bc9d | CI PR et push `main` réussies : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi ; migration déployée sur les deux services. |
 
 La CI définit :
 - job applicatif : limite globale de **30 minutes** ;
 - job PostgreSQL : limite globale de **15 minutes** ;
 - chaque fichier tests/test_*.py : limite de **300 secondes**.
 
-Le run push du commit #314 sur main (run 41274678777) est terminé avec succès : 146 modules, **988 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont depuis déployés en live sur 1c8a853353052a88c42fe6b860a5a3412f79f9ce. La PR #315 est la présente mise à jour documentaire et doit elle-même rester soumise à une CI verte avant fusion.
+Le run push #315 sur `main` (run `41275703549`) a réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Le run push #316 sur `main` (run `41276650330`) a également réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont désormais `live` sur `165c2786f0ee230aaccf08379279ccfc3591bc9d`. La migration `f3d8a9c2e5b1` est appliquée ; Supabase confirme `unaccent` dans `extensions` et le bon fonctionnement de `mahay_french`. La PR #317 est la présente mise à jour documentaire et reste soumise à sa propre CI avant fusion.
 
 ### Réconciliation ENS vérifiée en production
 
@@ -129,8 +131,9 @@ Le run push du commit #314 sur main (run 41274678777) est terminé avec succès 
 - [x] Aucune référence orpheline n'a été détectée sur les filières, cercles, profils ou demandes contrôlés.
 - [x] Aucune filière n'a plus d'une offre universitaire active pour la même université.
 - [ ] **Années académiques des offres :** les 237 lignes ProgrammeUniversitaire de production ont toutes annee_academique IS NULL. Ne pas interpréter est_active comme preuve d'ouverture 2026-2027. Obtenir les années et preuves institutionnelles avant tout remplissage.
+- [ ] **Modèle annuel à concevoir :** l'index unique actuel ne porte que sur (universite_id, filiere_id) pour est_active=true ; séparer l'offre catalogue, l'habilitation HAE et l'ouverture annuelle de cohorte avant d'enregistrer les campagnes 2026-2027.
 - [ ] Concevoir séparément les habilitations réglementaires (HAE), l'offre académique habilitée et l'ouverture annuelle effective ; ne pas déduire l'une de l'autre.
-- [ ] Confirmer par une source primaire le calendrier 2026-2027 de la formation à distance ENS-SEAS et l'appel L1 2026-2027 de la Faculté DEG avant de modifier les états d'ouverture du catalogue.
+- [ ] Confirmer par une source primaire les échéances 2026-2027 relayées pour FST L1 (20 novembre), Faculté DEG L1 (27 novembre) et ENS-SEAS FAD (inscriptions définitives annoncées jusqu'au 30 novembre) avant de modifier les états d'ouverture du catalogue.
 - [x] Le statut du catalogue est désormais expliqué sur l'inscription universitaire, le profil académique et la page Universités en français, malagasy et anglais (PR #314). Cette information ne bloque pas les inscriptions.
 
 ### Contrôle Supabase associé
