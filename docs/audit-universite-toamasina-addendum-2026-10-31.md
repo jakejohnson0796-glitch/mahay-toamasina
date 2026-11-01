@@ -758,7 +758,7 @@ L'advisor Supabase ne signale plus de clé étrangère sans index. Il signale 15
 
 La PR #314 a été fusionnée dans `main` au commit `1c8a853353052a88c42fe6b860a5a3412f79f9ce`. Elle ajoute un avertissement non bloquant à trois écrans : inscription universitaire, profil académique et page Universités. Il précise qu'une formation répertoriée dans le catalogue ne prouve ni l'habilitation réglementaire en vigueur ni l'ouverture des admissions pour l'année courante. Le message est testé en français, malagasy et anglais. Les sélecteurs et les règles d'inscription ne sont pas modifiés.
 
-La CI PR de #314 a réussi : 146 modules, 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi. Le run push de `main` `41274678777` a aussi terminé les 146 modules avec 988 réussites et un smoke PostgreSQL réussi ; le statut global GitHub était encore `in_progress` au moment du contrôle. Le déploiement des deux services reste donc à confirmer après la réussite terminale de ce run.
+La CI PR de #314 et le run push de `main` `41274678777` ont tous deux réussi : 146 modules, 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi. Le commit `1c8a853` est déployé en `live` sur les deux services Render : `mitaridala` (déploiement `dep-dbjccstg1s2s73fr8kkg`) et `mahay-toamasina` (`dep-dbjccstg1s2s73fr8l5g`). Après déploiement, les journaux ont enregistré 10 et 11 sondes `GET /health` en HTTP 200, aucun log de niveau `error`, et les initialisations ont abouti en 15,2 et 15,8 secondes. Le message de réserve du catalogue trilingue est donc dans la version de production.
 
 #### État Render après la migration
 
