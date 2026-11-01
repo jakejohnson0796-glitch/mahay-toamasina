@@ -130,7 +130,7 @@ Le run push du commit #314 sur main (run 41274678777) a terminé les 146 modules
 - [x] Aucune filière n'a plus d'une offre universitaire active pour la même université.
 - [ ] **Années académiques des offres :** les 237 lignes ProgrammeUniversitaire de production ont toutes annee_academique IS NULL. Ne pas interpréter est_active comme preuve d'ouverture 2026-2027. Obtenir les années et preuves institutionnelles avant tout remplissage.
 - [ ] Concevoir séparément les habilitations réglementaires (HAE), l'offre académique habilitée et l'ouverture annuelle effective ; ne pas déduire l'une de l'autre.
-- [ ] Confirmer par une source primaire le calendrier 2026-2027 de la formation à distance ENS-SEAS avant de l'intégrer au catalogue.
+- [ ] Confirmer par une source primaire le calendrier 2026-2027 de la formation à distance ENS-SEAS et l'appel L1 2026-2027 de la Faculté DEG avant de modifier les états d'ouverture du catalogue.
 - [x] Le statut du catalogue est désormais expliqué sur l'inscription universitaire, le profil académique et la page Universités en français, malagasy et anglais (PR #314). Cette information ne bloque pas les inscriptions.
 
 ### Contrôle Supabase associé
