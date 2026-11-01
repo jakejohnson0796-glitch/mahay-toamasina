@@ -1,79 +1,215 @@
 {% extends "base.html" %}
-{% from "components/signal.html" import signal %}
 {% block titre %}{{ devoir.titre }} — {{ cours.nom }} — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
-<div class="classe-page">
+<div class="classe-page classe-devoir-page">
   <p class="classe-breadcrumb"><a href="/classe/{{ cours.id }}">{{ cours.nom }}</a> / Devoir</p>
 
   {% if request.query_params.get("erreur") == "delai_depasse" %}
-  <div class="erreur" role="alert">La date limite de ce devoir est dépassée, votre rendu n'a pas été enregistré.</div>
-  {% endif %}
-  {% if request.query_params.get("erreur") == "fichier_invalide" %}
+  <div class="erreur" role="alert">La date limite de ce devoir est dépassée. Ton dépôt n'a pas été enregistré.</div>
+  {% elif request.query_params.get("erreur") == "devoir_ferme" %}
+  <div class="erreur" role="alert">Les dépôts sont fermés pour ce devoir.</div>
+  {% elif request.query_params.get("erreur") == "fichier_invalide" %}
   <div class="erreur" role="alert">Fichier non accepté (type ou taille invalide).</div>
+  {% elif request.query_params.get("erreur") == "note_invalide" %}
+  <div class="erreur" role="alert">Saisis une note numérique valide.</div>
+  {% elif request.query_params.get("erreur") == "note_hors_bareme" %}
+  <div class="erreur" role="alert">La note doit être comprise entre 0 et {{ "%.2f"|format(devoir.bareme) }}.</div>
+  {% elif request.query_params.get("erreur") == "devoir_invalide" %}
+  <div class="erreur" role="alert">Vérifie le titre, le barème et la somme des critères.</div>
+  {% elif request.query_params.get("erreur") == "bareme_note_existante" %}
+  <div class="erreur" role="alert">Le nouveau barème est inférieur à une note déjà publiée. Corrige d'abord les notes concernées ou conserve un barème supérieur.</div>
+  {% elif request.query_params.get("erreur") == "date_invalide" %}
+  <div class="erreur" role="alert">La date limite n'est pas valide.</div>
+  {% elif request.query_params.get("erreur") == "texte_illisible" %}
+  <div class="erreur" role="alert">Le texte de ce fichier n'a pas pu être extrait suffisamment. Télécharge et relis la copie manuellement.</div>
+  {% elif request.query_params.get("erreur") == "ia_indisponible" %}
+  <div class="erreur" role="alert">L'aide IA n'est pas disponible actuellement. Tu peux toujours corriger manuellement.</div>
+  {% elif request.query_params.get("erreur") == "correction_impossible" %}
+  <div class="erreur" role="alert">La proposition de correction n'a pas pu être produite. La copie n'a pas été notée.</div>
+  {% elif request.query_params.get("erreur") == "limite_ia" %}
+  <div class="erreur" role="alert">La limite d'utilisation de l'aide IA est atteinte. Réessaie plus tard.</div>
+  {% elif request.query_params.get("erreur") == "confirmation_requise" %}
+  <div class="erreur" role="alert">Confirme la suppression en saisissant SUPPRIMER.</div>
   {% endif %}
   {% if request.query_params.get("rendu") %}
-  <div class="info" role="status">Votre rendu a bien été enregistré.</div>
+  <div class="info" role="status">Ton rendu a bien été enregistré.</div>
+  {% elif request.query_params.get("correction") == "validee" %}
+  <div class="info" role="status">La correction définitive a été enregistrée. L'étudiant peut consulter sa note et ton appréciation.</div>
+  {% elif request.query_params.get("ia") == "proposee" %}
+  <div class="info" role="status">La proposition IA est prête. Relis-la et valide toi-même la note finale.</div>
+  {% elif request.query_params.get("modifie") %}
+  <div class="info" role="status">Les paramètres du devoir ont été enregistrés.</div>
+  {% endif %}
+
+  <header class="classe-devoir-header">
+    <div>
+      <span class="classe-kicker">{% if peut_gerer %}Gestion et correction{% else %}Travail à remettre{% endif %}</span>
+      <h1>{{ devoir.titre }}</h1>
+      <p class="classe-detail-meta">{{ cours.nom }} · Barème : <strong>{{ "%.2f"|format(devoir.bareme) }} points</strong> · Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }}</p>
+    </div>
+    <div class="classe-devoir-status">
+      {% if devoir.archive %}<span class="classe-course-badge">Archivé</span>
+      {% elif devoir.est_clos %}<span class="classe-course-badge">Dépôts fermés</span>
+      {% elif delai_depasse %}<span class="classe-course-badge">Date dépassée</span>
+      {% else %}<span class="classe-live-pill">Dépôts ouverts</span>{% endif %}
+    </div>
+  </header>
+
+  {% if devoir.description %}
+  <section class="classe-section-card classe-devoir-consigne">
+    <h2>Consigne</h2>
+    <div class="classe-devoir-description" data-rendu>{{ devoir.description }}</div>
+  </section>
+  {% endif %}
+
+  {% if criteres_devoir %}
+  <section class="classe-section-card classe-devoir-rubric">
+    <h2>Critères d'évaluation</h2>
+    <div class="classe-rubric-list">
+      {% for critere in criteres_devoir %}
+      <div class="classe-rubric-item"><span>{{ critere.nom }}</span><strong>{{ "%.2f"|format(critere.points) }} pts</strong></div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if peut_gerer %}
+  <div class="classe-detail-columns classe-devoir-management">
+    <details class="classe-section-card" id="modifier-devoir">
+      <summary class="classe-course-edit-summary">Modifier les paramètres du devoir</summary>
+      <form method="post" action="/classe/devoirs/{{ devoir.id }}/modifier" class="classe-course-edit-form">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <div class="classe-form-grid">
+          <div class="classe-field classe-field-full"><label for="modifier_titre_devoir">Titre</label><input id="modifier_titre_devoir" name="titre" value="{{ devoir.titre }}" maxlength="180" required></div>
+          <div class="classe-field classe-field-full"><label for="modifier_description_devoir">Consigne</label><textarea id="modifier_description_devoir" name="description" rows="4" maxlength="6000">{{ devoir.description or "" }}</textarea></div>
+          <div class="classe-field"><label for="modifier_date_limite">Date limite</label><input type="datetime-local" id="modifier_date_limite" name="date_limite" value="{{ devoir.date_limite.strftime('%Y-%m-%dT%H:%M') if devoir.date_limite else '' }}"></div>
+          <div class="classe-field"><label for="modifier_bareme">Barème total</label><input type="number" id="modifier_bareme" name="bareme" min="1" max="1000" step="0.25" value="{{ devoir.bareme }}" required></div>
+          <div class="classe-field classe-field-full"><label for="modifier_criteres">Critères (un par ligne : Nom | points max)</label><textarea id="modifier_criteres" name="criteres" rows="4">{% for critere in criteres_devoir %}{{ critere.nom }} | {{ critere.points }}&#10;{% endfor %}</textarea></div>
+          <div class="classe-field"><label for="etat_devoir">État des dépôts</label><select id="etat_devoir" name="etat"><option value="ouvert" {% if not devoir.est_clos %}selected{% endif %}>Ouverts</option><option value="ferme" {% if devoir.est_clos %}selected{% endif %}>Fermés</option></select></div>
+          <div class="classe-field"><label for="archivage_devoir">Visibilité</label><select id="archivage_devoir" name="archivage"><option value="actif" {% if not devoir.archive %}selected{% endif %}>Visible aux étudiants</option><option value="archive" {% if devoir.archive %}selected{% endif %}>Archivé</option></select></div>
+        </div>
+        <div class="classe-form-actions"><button class="bouton bouton-primaire" type="submit">Enregistrer les paramètres</button></div>
+      </form>
+    </details>
+    <section class="classe-section-card classe-danger-zone">
+      <h2>Supprimer ce devoir</h2>
+      <p class="classe-section-card-intro">Cette action supprime aussi les copies déposées et leurs fichiers stockés. Elle est définitive.</p>
+      <form method="post" action="/classe/devoirs/{{ devoir.id }}/supprimer" data-confirm-message="Supprimer définitivement ce devoir et tous les rendus étudiants ?" data-confirm-danger="true">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="confirmation_suppression">Saisis SUPPRIMER pour confirmer</label>
+        <input id="confirmation_suppression" name="confirmation" required autocomplete="off" placeholder="SUPPRIMER">
+        <button class="bouton bouton-secondaire bouton-danger" type="submit">Supprimer le devoir et les copies</button>
+      </form>
+    </section>
+  </div>
   {% endif %}
 
   <div class="classe-devoir-grid">
     <article class="classe-devoir-main">
-      <span class="classe-kicker">Travail à remettre</span>
-      <h1>{{ devoir.titre }}</h1>
-      <p class="classe-detail-meta">{{ cours.nom }} · Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }}</p>
-      {% if delai_depasse %}
-      <div class="classe-notice"><strong>Délai dépassé</strong><span>La date limite est dépassée. Vérifie les consignes de ton professeur avant toute nouvelle tentative.</span></div>
-      {% endif %}
-      {% if devoir.description %}
-      <div class="classe-section-card-intro" data-rendu>{{ devoir.description }}</div>
-      {% endif %}
-
-      {% if not peut_gerer and not delai_depasse %}
-      <section class="classe-section-card" aria-labelledby="rendre-title">
-        <h2 id="rendre-title">{{ "Remplacer mon rendu" if mon_rendu else "Rendre le devoir" }}</h2>
-        {% if mon_rendu %}
-        <p class="classe-section-card-intro">
-          Dernier rendu : {{ mon_rendu.date_rendu.strftime("%d/%m/%Y %H:%M") }} · {{ mon_rendu.nom_fichier_original }}
-          {% if mon_rendu.note is not none %} · Note : <strong>{{ mon_rendu.note }}/20</strong>{% endif %}
-        </p>
-        {% if mon_rendu.appreciation_prof %}<p class="classe-section-card-intro">Appréciation : {{ mon_rendu.appreciation_prof }}</p>{% endif %}
-        <p><a href="/classe/devoirs/rendus/{{ mon_rendu.id }}/telecharger" class="bouton bouton-secondaire">Télécharger mon rendu</a></p>
+      {% if not peut_gerer %}
+        {% if delai_depasse or devoir.est_clos or devoir.archive %}
+        <div class="classe-notice"><strong>Dépôts fermés</strong><span>{% if devoir.est_clos %}Le professeur a fermé les dépôts.{% elif devoir.archive %}Ce devoir est archivé.{% else %}La date limite est dépassée.{% endif %} Tu peux toujours consulter ton rendu et ta correction.</span></div>
         {% endif %}
-        <form method="post" action="/classe/devoirs/{{ devoir.id }}/rendre" enctype="multipart/form-data">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <div class="classe-field">
-            <label for="fichier">Fichier (PDF, Word, PowerPoint ou image)</label>
-            <input type="file" id="fichier" name="fichier" required accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
+        {% if mon_rendu %}
+        <section class="classe-section-card classe-student-submission">
+          <h2>Mon rendu</h2>
+          <p class="classe-section-card-intro">Déposé le {{ mon_rendu.date_rendu.strftime("%d/%m/%Y à %H:%M") }} · {{ mon_rendu.nom_fichier_original }}</p>
+          <p><a href="/classe/devoirs/rendus/{{ mon_rendu.id }}/telecharger" class="bouton bouton-secondaire">Télécharger ma copie</a></p>
+          {% if mon_rendu.commentaire %}<p class="classe-section-card-intro">Mon commentaire : {{ mon_rendu.commentaire }}</p>{% endif %}
+          {% if mon_rendu.note is not none %}
+          <div class="classe-student-grade">
+            <span>Note finale communiquée par le professeur</span>
+            <strong>{{ "%.2f"|format(mon_rendu.note) }} / {{ "%.2f"|format(devoir.bareme) }}</strong>
+            {% if mon_rendu.date_correction %}<small>Corrigé le {{ mon_rendu.date_correction.strftime("%d/%m/%Y à %H:%M") }}</small>{% endif %}
           </div>
-          <div class="classe-field classe-field-spaced">
-            <label for="commentaire">Commentaire</label>
-            <textarea id="commentaire" name="commentaire" rows="3" placeholder="Ajoute une précision pour ton professeur…"></textarea>
-          </div>
-          <div class="classe-form-actions"><button class="bouton bouton-primaire" type="submit">{{ "Remplacer" if mon_rendu else "Envoyer le rendu" }}</button></div>
-        </form>
-      </section>
+          {% if mon_rendu.appreciation_prof %}<div class="classe-teacher-feedback"><strong>Appréciation du professeur</strong><p>{{ mon_rendu.appreciation_prof }}</p></div>{% endif %}
+          {% if mon_rendu_details %}<div class="classe-teacher-feedback"><strong>Détails de la correction</strong><p>{{ mon_rendu_details }}</p></div>{% endif %}
+          {% else %}
+          <div class="classe-notice"><strong>Correction en attente</strong><span>Ton devoir a bien été reçu. La note apparaîtra ici après validation par le professeur.</span></div>
+          {% endif %}
+        </section>
+        {% endif %}
+
+        {% if peut_rendre %}
+        <section class="classe-section-card" aria-labelledby="rendre-title">
+          <h2 id="rendre-title">{{ "Remplacer mon rendu" if mon_rendu else "Rendre le devoir" }}</h2>
+          <p class="classe-section-card-intro">Tu peux déposer un nouveau fichier avant la fermeture. Un nouveau dépôt remplace la version précédente et annule sa correction pour permettre une nouvelle évaluation.</p>
+          <form method="post" action="/classe/devoirs/{{ devoir.id }}/rendre" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <div class="classe-field">
+              <label for="fichier">Fichier (PDF, Word, PowerPoint ou image)</label>
+              <input type="file" id="fichier" name="fichier" required accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
+            </div>
+            <div class="classe-field classe-field-spaced">
+              <label for="commentaire">Commentaire pour le professeur</label>
+              <textarea id="commentaire" name="commentaire" rows="3" maxlength="1500" placeholder="Explique une démarche ou signale une difficulté…"></textarea>
+            </div>
+            <div class="classe-form-actions"><button class="bouton bouton-primaire" type="submit">{{ "Remplacer le rendu" if mon_rendu else "Envoyer le rendu" }}</button></div>
+          </form>
+        </section>
+        {% endif %}
       {% endif %}
     </article>
 
     {% if peut_gerer %}
-    <aside class="classe-devoir-side">
-      <h2>Rendus · {{ rendus|length }}</h2>
-      <p class="classe-section-card-intro">Télécharge et note les copies reçues.</p>
-      <table class="classe-table">
-        <thead><tr><th>Étudiant</th><th>Date</th><th>Note</th><th></th></tr></thead>
-        <tbody>
-          {% for info in rendus %}
-          <tr>
-            <td>{{ info.utilisateur.nom }}</td>
-            <td>{{ info.rendu.date_rendu.strftime("%d/%m/%Y") }}</td>
-            <td>{{ info.rendu.note if info.rendu.note is not none else "—" }}/20</td>
-            <td><a href="/classe/devoirs/rendus/{{ info.rendu.id }}/telecharger" class="lien-action">Télécharger</a></td>
-          </tr>
-          {% else %}
-          <tr><td colspan="4">Aucun rendu pour l'instant.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <aside class="classe-devoir-side" id="rendus">
+      <h2>Copies reçues · {{ rendus|length }}</h2>
+      <p class="classe-section-card-intro" data-rendu>L'IA peut proposer une première lecture. Le professeur garde la décision finale et doit confirmer chaque note.</p>
+      {% for info in rendus %}
+      <article class="classe-submission-card">
+        <div class="classe-submission-head">
+          <div><strong>{{ info.utilisateur.nom }}</strong><span>Déposé le {{ info.rendu.date_rendu.strftime("%d/%m/%Y à %H:%M") }}</span></div>
+          {% if info.rendu.note is not none %}<span class="classe-course-badge">Noté · {{ "%.2f"|format(info.rendu.note) }}/{{ "%.2f"|format(devoir.bareme) }}</span>{% else %}<span class="classe-course-badge">À corriger</span>{% endif %}
+        </div>
+        <p><a href="/classe/devoirs/rendus/{{ info.rendu.id }}/telecharger" class="bouton bouton-secondaire">Ouvrir la copie</a></p>
+        {% if info.rendu.commentaire %}<p class="classe-section-card-intro">Commentaire étudiant : {{ info.rendu.commentaire }}</p>{% endif %}
+
+        {% if info.suggestion_ia %}
+        <section class="classe-ai-correction" aria-label="Suggestion de correction IA">
+          <div class="classe-ai-correction-head"><strong>Suggestion IA — non publiée</strong><span>Confiance indicative : {{ (info.suggestion_ia.confiance * 100)|round|int if info.suggestion_ia.confiance is defined else 0 }} %</span></div>
+          <div class="classe-ai-suggested-grade">{{ "%.2f"|format(info.suggestion_ia.note_suggeree) }} / {{ "%.2f"|format(devoir.bareme) }} <small>proposé</small></div>
+          {% if info.suggestion_ia.appreciation %}<p>{{ info.suggestion_ia.appreciation }}</p>{% endif %}
+          {% if info.suggestion_ia.criteres %}
+          <div class="classe-rubric-list">
+            {% for critere in info.suggestion_ia.criteres %}
+            <div class="classe-rubric-item"><span>{{ critere.nom }}{% if critere.commentaire %}<small>{{ critere.commentaire }}</small>{% endif %}</span><strong>{{ "%.2f"|format(critere.points_obtenus) }}/{{ "%.2f"|format(critere.points_max) }}</strong></div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if info.suggestion_ia.forces %}<p><strong>Points réussis :</strong> {{ info.suggestion_ia.forces|join(" · ") }}</p>{% endif %}
+          {% if info.suggestion_ia.ameliorations %}<p><strong>À améliorer :</strong> {{ info.suggestion_ia.ameliorations|join(" · ") }}</p>{% endif %}
+          {% if info.suggestion_ia.limites %}<p class="classe-ai-limits">{{ info.suggestion_ia.limites }}</p>{% endif %}
+          <p class="classe-ai-warning">{{ info.suggestion_ia.avertissement }}</p>
+        </section>
+        {% endif %}
+
+        <form method="post" action="/classe/devoirs/rendus/{{ info.rendu.id }}/aide-correction" class="classe-ai-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <button class="bouton bouton-secondaire" type="submit">Proposer une correction IA</button>
+          <small class="classe-field-help">Pour créer le brouillon, le texte extrait de cette copie, la consigne et les critères sont transmis au fournisseur IA configuré. La note ne sera publiée qu'après validation humaine.</small>
+        </form>
+
+        <form method="post" action="/classe/devoirs/rendus/{{ info.rendu.id }}/noter" class="classe-grade-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <div class="classe-field">
+            <label for="note-{{ info.rendu.id }}">Note définitive sur {{ "%.2f"|format(devoir.bareme) }}</label>
+            <input type="number" id="note-{{ info.rendu.id }}" name="note" min="0" max="{{ devoir.bareme }}" step="0.25" required value="{{ info.rendu.note if info.rendu.note is not none else (info.suggestion_ia.note_suggeree if info.suggestion_ia else '') }}">
+          </div>
+          <div class="classe-field">
+            <label for="feedback-{{ info.rendu.id }}">Appréciation du professeur</label>
+            <textarea id="feedback-{{ info.rendu.id }}" name="appreciation_prof" rows="3" maxlength="1800" placeholder="Explique la note, valorise les réussites et indique la prochaine étape…">{% if info.rendu.appreciation_prof %}{{ info.rendu.appreciation_prof }}{% elif info.suggestion_ia %}{{ info.suggestion_ia.appreciation }}{% endif %}</textarea>
+          </div>
+          <div class="classe-field">
+            <label for="details-{{ info.rendu.id }}">Détail de la correction par critère (facultatif)</label>
+            <textarea id="details-{{ info.rendu.id }}" name="details_correction" rows="2" maxlength="4000" placeholder="Ex. Méthode : 6/8 — étapes justifiées ; Résultat : 4/4…">{{ info.details_correction or "" }}</textarea>
+          </div>
+          <button class="bouton bouton-primaire" type="submit">Valider et publier la note</button>
+        </form>
+      </article>
+      {% else %}
+      <div class="classe-empty"><div><strong>Aucun rendu pour l'instant</strong><p>Les copies déposées par les étudiants apparaîtront ici.</p></div></div>
+      {% endfor %}
     </aside>
     {% endif %}
   </div>

@@ -33,15 +33,15 @@
   </section>
 
   <div class="classe-salle-controls">
-    <button type="button" id="btn-micro" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer ou couper le micro" title="Micro">🎤</button>
-    <button type="button" id="btn-camera" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer ou couper la caméra" title="Caméra">📷</button>
+    <button type="button" id="btn-micro" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer ou couper le micro" title="Micro" disabled>🎤</button>
+    <button type="button" id="btn-camera" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer ou couper la caméra" title="Caméra" disabled>📷</button>
     {% if peut_gerer %}
-    <button type="button" id="btn-partage-ecran" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Partager l'écran" title="Partager l'écran">🖥️</button>
+    <button type="button" id="btn-partage-ecran" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Partager l'écran" title="Partager l'écran" disabled>🖥️</button>
     {% endif %}
-    <button type="button" id="btn-lever-main" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Lever la main" title="Lever la main">✋</button>
-    <button type="button" id="btn-tableau" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Ouvrir le tableau blanc" title="Tableau blanc">🖍️</button>
-    <button type="button" id="btn-participants" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Afficher les participants" title="Participants">👥</button>
-    <button type="button" id="btn-economie-donnees" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer le mode économie de données" title="Économie de données">📶</button>
+    <button type="button" id="btn-lever-main" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Lever la main" title="Lever la main" disabled>✋</button>
+    <button type="button" id="btn-tableau" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Ouvrir le tableau blanc" title="Tableau blanc" disabled>🖍️</button>
+    <button type="button" id="btn-participants" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Afficher les participants" title="Participants" disabled>👥</button>
+    <button type="button" id="btn-economie-donnees" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer le mode économie de données" title="Économie de données" disabled>📶</button>
     <span id="compteur-participants" class="classe-salle-participants">1 participant</span>
     <form method="post" action="/classe/seances/{{ seance.id }}/quitter" id="form-quitter">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -62,8 +62,8 @@
   <div class="classe-chat">
     <div id="messages-chat-salle" class="classe-chat-history"></div>
     <form id="form-chat-salle">
-      <input type="text" id="champ-chat-salle" placeholder="Message à tous…" autocomplete="off" maxlength="500">
-      <button type="submit" class="bouton bouton-secondaire">Envoyer</button>
+      <input type="text" id="champ-chat-salle" placeholder="Message à tous…" autocomplete="off" maxlength="500" disabled>
+      <button type="submit" class="bouton bouton-secondaire" disabled>Envoyer</button>
     </form>
   </div>
 
@@ -122,6 +122,18 @@
   const compteurEl = document.getElementById("compteur-participants");
   const notifsEl = document.getElementById("notifications-salle");
   const messagesEl = document.getElementById("messages-chat-salle");
+  const commandesSalle = Array.from(document.querySelectorAll(
+    ".classe-salle-controls button:not(#btn-quitter), #champ-chat-salle, #form-chat-salle button[type='submit']"
+  ));
+  let salleConnectee = false;
+
+  function definirEtatConnexion(connectee) {
+    salleConnectee = Boolean(connectee);
+    commandesSalle.forEach(function (commande) {
+      commande.disabled = !salleConnectee;
+    });
+  }
+  definirEtatConnexion(false);
 
   const { Room, RoomEvent, Track, VideoPresets } = LivekitClient;
 const room = new Room({
@@ -256,12 +268,15 @@ const room = new Room({
   });
 
   room.on(RoomEvent.Disconnected, function () {
+    definirEtatConnexion(false);
     statutEl.textContent = "Deconnecte de la salle.";
   });
   room.on(RoomEvent.Reconnecting, function () {
+    definirEtatConnexion(false);
     statutEl.textContent = "Reconnexion en cours...";
   });
   room.on(RoomEvent.Reconnected, function () {
+    definirEtatConnexion(true);
     statutEl.textContent = "Connecte.";
   });
 
@@ -270,11 +285,16 @@ const room = new Room({
   room.on(RoomEvent.DataReceived, function (payload, participant) {
     try {
       const donnees = JSON.parse(new TextDecoder().decode(payload));
+      if (!participant || !participant.identity) return;
       if (donnees.type === "chat") {
-        ajouterMessageChat(participant.identity, donnees.nom, donnees.texte, false);
+        if (typeof donnees.texte !== "string") return;
+        const texte = donnees.texte.trim();
+        if (!texte || texte.length > 500) return;
+        ajouterMessageChat(participant.identity, participant.name || "Participant", texte, false);
       } else if (donnees.type === "main_levee") {
-        ajouterMainLevee(donnees.nom);
-        notifier(donnees.nom + " leve la main.");
+        const nomParticipant = participant.name || "Participant";
+        ajouterMainLevee(nomParticipant);
+        notifier(nomParticipant + " leve la main.");
       } else if (donnees.type === "main_baissee") {
         retirerMainLevee(donnees.nom);
       }
@@ -402,6 +422,7 @@ const room = new Room({
 
   // --- Connexion ---
   room.connect(url, jeton).then(function () {
+    definirEtatConnexion(true);
     statutEl.textContent = "Connecte.";
     // Cree tout de suite une tuile (avatar) pour soi-meme et pour tout
     // participant DEJA present dans la salle -- ParticipantConnected ne
@@ -415,7 +436,9 @@ const room = new Room({
     });
     majCompteur();
   }).catch(function (erreur) {
+    definirEtatConnexion(false);
     statutEl.textContent = "Impossible de se connecter a la salle (" + erreur.message + ").";
+    notifier("La connexion vidéo n'est pas disponible. Réessaie ou retourne au cours.");
   });
 
   // --- Controles ---
@@ -424,15 +447,26 @@ const room = new Room({
   let partageActif = false;
 
   document.getElementById("btn-micro").addEventListener("click", function () {
-    microActif = !microActif;
-    room.localParticipant.setMicrophoneEnabled(microActif);
-    this.setAttribute("aria-pressed", String(microActif));
-    this.classList.toggle("bouton-controle-actif", microActif);
+    const bouton = this;
+    const prochainEtat = !microActif;
+    bouton.disabled = true;
+    room.localParticipant.setMicrophoneEnabled(prochainEtat).then(function () {
+      microActif = prochainEtat;
+      bouton.setAttribute("aria-pressed", String(microActif));
+      bouton.classList.toggle("bouton-controle-actif", microActif);
+    }).catch(function () {
+      notifier("Impossible d'activer le micro. Vérifie les autorisations du navigateur.");
+    }).finally(function () {
+      bouton.disabled = !salleConnectee;
+    });
   });
 
   document.getElementById("btn-camera").addEventListener("click", function () {
-    cameraActive = !cameraActive;
-    room.localParticipant.setCameraEnabled(cameraActive).then(function () {
+    const bouton = this;
+    const prochainEtat = !cameraActive;
+    bouton.disabled = true;
+    room.localParticipant.setCameraEnabled(prochainEtat).then(function () {
+      cameraActive = prochainEtat;
       if (cameraActive) {
         const pub = room.localParticipant.videoTrackPublications;
         pub.forEach(function (p) {
@@ -450,22 +484,29 @@ const room = new Room({
         if (tuile) tuile.querySelectorAll(".tuile-video-flux").forEach(function (el) { el.remove(); });
         actualiserAffichageTuile(room.localParticipant.identity);
       }
+      bouton.setAttribute("aria-pressed", String(cameraActive));
+      bouton.classList.toggle("bouton-controle-actif", cameraActive);
+    }).catch(function () {
+      notifier("Impossible d'activer la caméra. Vérifie les autorisations du navigateur.");
+    }).finally(function () {
+      bouton.disabled = !salleConnectee;
     });
-    this.setAttribute("aria-pressed", String(cameraActive));
-    this.classList.toggle("bouton-controle-actif", cameraActive);
   });
 
   {% if peut_gerer %}
   document.getElementById("btn-partage-ecran").addEventListener("click", function () {
-    partageActif = !partageActif;
-    room.localParticipant.setScreenShareEnabled(partageActif).catch(function (erreur) {
-      // L'utilisateur peut annuler la demande de partage (boite de dialogue
-      // du navigateur) — on remet juste le bouton dans son etat precedent.
-      partageActif = !partageActif;
-      notifier("Partage d'ecran annule.");
+    const bouton = this;
+    const prochainEtat = !partageActif;
+    bouton.disabled = true;
+    room.localParticipant.setScreenShareEnabled(prochainEtat).then(function () {
+      partageActif = prochainEtat;
+      bouton.setAttribute("aria-pressed", String(partageActif));
+      bouton.classList.toggle("bouton-controle-actif", partageActif);
+    }).catch(function () {
+      notifier("Partage d'écran annulé ou indisponible.");
+    }).finally(function () {
+      bouton.disabled = !salleConnectee;
     });
-    this.setAttribute("aria-pressed", String(partageActif));
-    this.classList.toggle("bouton-controle-actif", partageActif);
   });
   {% endif %}
 

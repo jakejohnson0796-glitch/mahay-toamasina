@@ -947,12 +947,15 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "f3d8a9c2e5b1", (
+    assert revision == "b7c4e2a9d613", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
+    # Retourne d'un seul cran sur les deux parents du merge courant.
+    # Cela teste la synchronisation de l'application de la nouvelle migration
+    # sans devoir dérouler les downgrade historiques de branches anciennes.
     downgrade = subprocess.run(
-        [*alembic, "downgrade", "f6b1a2c9d4e7"],
+        [*alembic, "downgrade", "fae1c2d3b4a5"],
         env=env,
         capture_output=True,
         text=True,
@@ -1004,7 +1007,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "f3d8a9c2e5b1"
+    assert revision == "b7c4e2a9d613"
     assert index_count == 41
     assert institution_index_count == 1
 

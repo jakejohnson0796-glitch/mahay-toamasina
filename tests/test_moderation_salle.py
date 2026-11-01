@@ -27,7 +27,7 @@ from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app import rate_limit  # noqa: E402
-from app.models import Utilisateur, RoleUtilisateur, Cours, Seance, StatutSeance  # noqa: E402
+from app.models import Utilisateur, RoleUtilisateur, Cours, Seance, StatutSeance, PresenceSeance  # noqa: E402
 
 
 def _connecter(client, telephone, mot_de_passe):
@@ -55,7 +55,7 @@ class TestModerationSalle(unittest.TestCase):
     def setUp(self):
         rate_limit._tentatives.clear()
         with Session(engine) as session:
-            for table in (Seance, Cours, Utilisateur):
+            for table in (PresenceSeance, Seance, Cours, Utilisateur):
                 for ligne in session.exec(select(table)).all():
                     session.delete(ligne)
             session.commit()
@@ -87,6 +87,52 @@ class TestModerationSalle(unittest.TestCase):
             session.commit()
             session.refresh(seance)
             self.seance_id = seance.id
+
+    def test_rejoindre_ne_cree_pas_de_presence_ouverte_en_double(self):
+        client = TestClient(app)
+        jeton = _connecter(client, "0341100001", "MotDePasse123!")
+        url = f"/classe/seances/{self.seance_id}/rejoindre"
+
+        for _ in range(2):
+            reponse = client.post(url, data={"_csrf": jeton}, follow_redirects=False)
+            self.assertEqual(reponse.status_code, 303)
+
+        with Session(engine) as session:
+            lignes = session.exec(
+                select(PresenceSeance).where(
+                    PresenceSeance.seance_id == self.seance_id,
+                    PresenceSeance.utilisateur_id == self.prof_id,
+                    PresenceSeance.heure_sortie == None,  # noqa: E711
+                )
+            ).all()
+        self.assertEqual(len(lignes), 1)
+
+    def test_quitter_ferme_toutes_les_presences_ouvertes(self):
+        with Session(engine) as session:
+            session.add_all([
+                PresenceSeance(seance_id=self.seance_id, utilisateur_id=self.etudiant_id),
+                PresenceSeance(seance_id=self.seance_id, utilisateur_id=self.etudiant_id),
+            ])
+            session.commit()
+
+        client = TestClient(app)
+        jeton = _connecter(client, "0341100003", "MotDePasse123!")
+        reponse = client.post(
+            f"/classe/seances/{self.seance_id}/quitter",
+            data={"_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse.status_code, 303)
+
+        with Session(engine) as session:
+            lignes = session.exec(
+                select(PresenceSeance).where(
+                    PresenceSeance.seance_id == self.seance_id,
+                    PresenceSeance.utilisateur_id == self.etudiant_id,
+                )
+            ).all()
+        self.assertEqual(len(lignes), 2)
+        self.assertTrue(all(ligne.heure_sortie is not None for ligne in lignes))
 
     def test_non_connecte_refuse(self):
         client = TestClient(app)

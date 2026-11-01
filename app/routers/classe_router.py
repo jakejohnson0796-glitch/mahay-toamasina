@@ -1,19 +1,16 @@
 """
-Classe virtuelle : cours animes par un professeur, avec des seances que
-les etudiants inscrits rejoignent. Modelise sur le meme schema que les
-cercles d'etude (createur/proprietaire + inscription + gestion des
-membres) — voir cercles_router.py pour le pattern d'origine.
-
-Cette premiere passe couvre la structure (cours, inscriptions, seances,
-presence) SANS la salle audio/video LiveKit elle-meme : la route
-rejoindre_seance() enregistre deja la presence et redirige vers une page
-de salle, mais cette page est un ecran d'attente tant que l'integration
-LiveKit (jeton, connexion WebRTC, tableau blanc) n'est pas branchee —
-prochaine etape explicitement separee de celle-ci.
+Classe virtuelle : cours, inscriptions, séances, présence et salle LiveKit.
+Le professeur organise les cours et les séances ; les étudiants inscrits
+rejoignent une salle audio/vidéo sécurisée par un jeton limité à la séance.
+Le tableau blanc collaboratif reste un canal distinct, avec ses propres
+contrôles d'accès et une synchronisation persistée.
 """
 import secrets
 import json
 import unicodedata
+import csv
+import io
+import math
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -31,7 +28,9 @@ from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
 from ..ws_manager import gestionnaire
-from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide
+from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide, ouvrir_fichier_local, supprimer_fichier
+from ..text_extraction import extraire_texte
+from .. import classe_correction
 from ..rate_limit import limite_depassee
 from .. import gamification
 from .. import quiz as quiz_module
@@ -70,6 +69,76 @@ def _generer_nom_salle(cours_id: int) -> str:
     # cote serveur, un nom de salle non predictible evite les tentatives
     # de connexion directe au hasard).
     return f"mahay-cours{cours_id}-{secrets.token_hex(6)}"
+
+
+
+
+
+def _generer_code_invitation(session: Session) -> str:
+    """Code partageable, facile à dicter, unique et non séquentiel."""
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    for _ in range(12):
+        code = "".join(secrets.choice(alphabet) for _ in range(8))
+        existe = session.exec(
+            select(Cours).where(Cours.code_invitation == code)
+        ).first()
+        if not existe:
+            return code
+    raise RuntimeError("Impossible de générer un code de cours unique.")
+
+
+def _normaliser_criteres_devoir(texte: Optional[str], bareme: float) -> list[dict]:
+    """Format lisible : une ligne « critère | points maximum »."""
+    criteres = []
+    total = 0.0
+    for ligne in (texte or "").splitlines():
+        ligne = ligne.strip()
+        if not ligne:
+            continue
+        if "|" not in ligne:
+            raise ValueError("Chaque critère doit respecter le format « Nom | points ».")
+        nom, points_bruts = ligne.rsplit("|", 1)
+        nom = " ".join(nom.split())[:100]
+        try:
+            points = float(points_bruts.strip().replace(",", "."))
+        except ValueError as erreur:
+            raise ValueError(f"Points invalides pour le critère « {nom} ».") from erreur
+        if not nom or not math.isfinite(points) or points <= 0 or points > bareme:
+            raise ValueError(f"Le critère « {nom or 'sans nom'} » doit avoir un maximum positif inférieur au barème.")
+        if any(item["nom"].casefold() == nom.casefold() for item in criteres):
+            raise ValueError(f"Le critère « {nom} » est indiqué plusieurs fois.")
+        criteres.append({"nom": nom, "points": round(points, 2)})
+        total += points
+        if len(criteres) > 12:
+            raise ValueError("Un devoir ne peut pas contenir plus de 12 critères.")
+    if total > bareme + 0.001:
+        raise ValueError("La somme des critères dépasse le barème du devoir.")
+    return criteres
+
+
+def _lire_criteres_devoir(devoir: Devoir) -> list[dict]:
+    try:
+        donnees = json.loads(devoir.criteres_json or "[]")
+        return donnees if isinstance(donnees, list) else []
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+
+
+def _details_correction_rendu(rendu: RenduDevoir) -> str:
+    try:
+        details = json.loads(rendu.details_correction_json or "{}")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return ""
+    return str(details.get("commentaire_criteres") or "") if isinstance(details, dict) else ""
+
+
+def _valeur_csv_securisee(valeur) -> str:
+    """Neutralise les cellules susceptibles d'être interprétées comme formule Excel."""
+    texte = str(valeur or "")
+    debut = texte.lstrip()
+    if debut.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + texte
+    return texte
 
 
 def _peut_ecrire_tableau(session: Session, seance_id: int, cours: Cours, utilisateur: Utilisateur) -> bool:
@@ -161,6 +230,7 @@ def creer_cours(
     matiere: str = Form(...),
     niveau: str = Form(...),
     description: Optional[str] = Form(None),
+    objectifs: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -168,12 +238,104 @@ def creer_cours(
     if not _est_professeur(utilisateur):
         return RedirectResponse("/classe", status_code=303)
 
-    cours = Cours(nom=nom, matiere=matiere, niveau=niveau, description=description or None, professeur_id=utilisateur.id)
+    nom = " ".join((nom or "").split())
+    matiere = " ".join((matiere or "").split())
+    niveau = " ".join((niveau or "").split())
+    if not nom or len(nom) > 120 or not matiere or len(matiere) > 100 or not niveau or len(niveau) > 80:
+        return RedirectResponse("/classe?erreur=champs_cours_invalides#nouveau-cours", status_code=303)
+
+    cours = Cours(
+        nom=nom,
+        matiere=matiere,
+        niveau=niveau,
+        description=(description or "").strip()[:3000] or None,
+        objectifs=(objectifs or "").strip()[:3000] or None,
+        professeur_id=utilisateur.id,
+        code_invitation=_generer_code_invitation(session),
+    )
     session.add(cours)
     session.commit()
     session.refresh(cours)
-
     return RedirectResponse(f"/classe/{cours.id}", status_code=303)
+
+
+@router.post("/classe/{cours_id}/modifier")
+def modifier_cours(
+    request: Request,
+    cours_id: int,
+    nom: str = Form(...),
+    matiere: str = Form(...),
+    niveau: str = Form(...),
+    description: Optional[str] = Form(None),
+    objectifs: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    cours = session.get(Cours, cours_id)
+    if not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse("/classe", status_code=303)
+
+    nom = " ".join((nom or "").split())
+    matiere = " ".join((matiere or "").split())
+    niveau = " ".join((niveau or "").split())
+    if not nom or len(nom) > 120 or not matiere or len(matiere) > 100 or not niveau or len(niveau) > 80:
+        return RedirectResponse(f"/classe/{cours_id}?erreur=champs_cours_invalides#parametres-cours", status_code=303)
+
+    cours.nom = nom
+    cours.matiere = matiere
+    cours.niveau = niveau
+    cours.description = (description or "").strip()[:3000] or None
+    cours.objectifs = (objectifs or "").strip()[:3000] or None
+    session.add(cours)
+    session.commit()
+    return RedirectResponse(f"/classe/{cours_id}?cours=modifie#parametres-cours", status_code=303)
+
+
+@router.post("/classe/{cours_id}/code-invitation/renouveler")
+def renouveler_code_invitation(
+    request: Request,
+    cours_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    cours = session.get(Cours, cours_id)
+    if not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse("/classe", status_code=303)
+    cours.code_invitation = _generer_code_invitation(session)
+    session.add(cours)
+    session.commit()
+    return RedirectResponse(f"/classe/{cours_id}?code=renouvele#invitation-cours", status_code=303)
+
+
+@router.post("/classe/rejoindre")
+def rejoindre_cours_par_code(
+    request: Request,
+    code: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role != RoleUtilisateur.ETUDIANT:
+        return RedirectResponse("/classe?erreur=inscription_reservee", status_code=303)
+    host = adresse_ip_client(request)
+    if limite_depassee(f"join-course:user:{utilisateur.id}", 10, 3600) or limite_depassee(f"join-course:ip:{host}", 30, 3600):
+        return RedirectResponse("/classe?erreur=trop_de_tentatives", status_code=303)
+
+    code_normalise = "".join((code or "").upper().split())
+    if not code_normalise or len(code_normalise) > 12:
+        return RedirectResponse("/classe?erreur=code_invalide#rejoindre-cours", status_code=303)
+    cours = session.exec(select(Cours).where(Cours.code_invitation == code_normalise)).first()
+    if not cours:
+        return RedirectResponse("/classe?erreur=code_invalide#rejoindre-cours", status_code=303)
+    if not _est_inscrit(session, cours.id, utilisateur.id):
+        session.add(InscriptionCours(cours_id=cours.id, utilisateur_id=utilisateur.id))
+        session.commit()
+        ai_queue.planifier_fiches_revision_cours(cours.id, utilisateur_id=utilisateur.id)
+    return RedirectResponse(f"/classe/{cours.id}?inscription=confirmee", status_code=303)
 
 
 @router.get("/classe/{cours_id}")
@@ -218,6 +380,12 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
                 )
         session.expire_all()
 
+    if peut_gerer and not cours.code_invitation:
+        cours.code_invitation = _generer_code_invitation(session)
+        session.add(cours)
+        session.commit()
+        session.refresh(cours)
+
     professeur = session.get(Utilisateur, cours.professeur_id)
     seances = session.exec(
         select(Seance).where(Seance.cours_id == cours_id).order_by(Seance.date_creation)
@@ -235,8 +403,11 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
             fiche.seance_id: fiche for fiche in fiches_revision
         }
     nb_etudiants = len(session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all())
+    requete_devoirs = select(Devoir).where(Devoir.cours_id == cours_id)
+    if not peut_gerer:
+        requete_devoirs = requete_devoirs.where(Devoir.archive == False)  # noqa: E712
     devoirs = session.exec(
-        select(Devoir).where(Devoir.cours_id == cours_id).order_by(Devoir.date_creation.desc())
+        requete_devoirs.order_by(Devoir.date_creation.desc())
     ).all()
 
     mes_rendus_ids = set()
@@ -857,11 +1028,19 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     if seance.statut != StatutSeance.EN_COURS:
         return RedirectResponse(f"/classe/{cours.id}?erreur=seance_non_demarree", status_code=303)
 
-    # Nouvelle ligne de presence a chaque "rejoindre" (permet de mesurer
-    # plusieurs allers-retours dans la meme seance) — voir terminer_seance
-    # et quitter_seance pour la fermeture/le cumul de duree.
-    session.add(PresenceSeance(seance_id=seance_id, utilisateur_id=utilisateur.id))
-    session.commit()
+    # Une seule présence ouverte par étudiant et séance. Les doubles clics
+    # et renvois du formulaire ne doivent pas créer plusieurs entrées
+    # simultanées ni gonfler la durée de présence.
+    presence_ouverte = session.exec(
+        select(PresenceSeance)
+        .where(PresenceSeance.seance_id == seance_id)
+        .where(PresenceSeance.utilisateur_id == utilisateur.id)
+        .where(PresenceSeance.heure_sortie == None)  # noqa: E711
+        .order_by(PresenceSeance.heure_entree.desc())
+    ).first()
+    if not presence_ouverte:
+        session.add(PresenceSeance(seance_id=seance_id, utilisateur_id=utilisateur.id))
+        session.commit()
 
     return RedirectResponse(f"/classe/seances/{seance_id}/salle", status_code=303)
 
@@ -935,18 +1114,25 @@ def quitter_seance(request: Request, seance_id: int, session: Session = Depends(
     if not seance:
         return RedirectResponse("/classe", status_code=303)
 
-    presence = session.exec(
+    # Ferme toutes les éventuelles présences ouvertes : cela répare aussi
+    # les doublons historiques créés avant l'idempotence de "Rejoindre".
+    presences_ouvertes = session.exec(
         select(PresenceSeance)
         .where(PresenceSeance.seance_id == seance_id)
         .where(PresenceSeance.utilisateur_id == utilisateur.id)
         .where(PresenceSeance.heure_sortie == None)  # noqa: E711
         .order_by(PresenceSeance.heure_entree.desc())
-    ).first()
-    if presence:
+    ).all()
+    if presences_ouvertes:
         maintenant = datetime.utcnow()
-        presence.duree_estimee_secondes += int((maintenant - presence.heure_entree).total_seconds())
-        presence.heure_sortie = maintenant
-        session.add(presence)
+        for index, presence in enumerate(presences_ouvertes):
+            # Si d'anciens doublons existent, ne compter la durée que sur
+            # l'entrée la plus récente pour éviter de doubler le temps.
+            if index == 0:
+                duree = (maintenant - presence.heure_entree).total_seconds()
+                presence.duree_estimee_secondes += max(0, int(duree))
+            presence.heure_sortie = maintenant
+            session.add(presence)
         session.commit()
 
     return RedirectResponse(f"/classe/{seance.cours_id}", status_code=303)
@@ -1365,29 +1551,43 @@ def creer_devoir(
     titre: str = Form(...),
     description: Optional[str] = Form(None),
     date_limite: Optional[str] = Form(None),
+    bareme: str = Form("20"),
+    criteres: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
-
     cours = session.get(Cours, cours_id)
     if not cours or not _peut_gerer_cours(cours, utilisateur):
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
+
+    titre = " ".join((titre or "").split())
+    try:
+        bareme_valide = float((bareme or "20").replace(",", "."))
+        if not titre or len(titre) > 180 or not 1 <= bareme_valide <= 1000:
+            raise ValueError
+        criteres_valides = _normaliser_criteres_devoir(criteres, bareme_valide)
+    except ValueError:
+        return RedirectResponse(f"/classe/{cours_id}?erreur=devoir_invalide#devoir-create-title", status_code=303)
 
     date_limite_parsee = None
     if date_limite:
         try:
             date_limite_parsee = datetime.fromisoformat(date_limite)
         except ValueError:
-            date_limite_parsee = None
+            return RedirectResponse(f"/classe/{cours_id}?erreur=date_invalide#devoir-create-title", status_code=303)
 
-    devoir = Devoir(cours_id=cours_id, titre=titre, description=description or None, date_limite=date_limite_parsee)
+    devoir = Devoir(
+        cours_id=cours_id,
+        titre=titre,
+        description=(description or "").strip()[:6000] or None,
+        date_limite=date_limite_parsee,
+        bareme=round(bareme_valide, 2),
+        criteres_json=json.dumps(criteres_valides, ensure_ascii=False) if criteres_valides else None,
+    )
     session.add(devoir)
     session.commit()
-
-    return RedirectResponse(f"/classe/{cours_id}", status_code=303)
+    return RedirectResponse(f"/classe/{cours_id}?devoir=cree", status_code=303)
 
 
 @router.get("/classe/devoirs/{devoir_id}")
@@ -1407,13 +1607,19 @@ def detail_devoir(request: Request, devoir_id: int, session: Session = Depends(g
     if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
+    if not peut_gerer and devoir.archive:
+        return RedirectResponse(f"/classe/{cours.id}", status_code=303)
     delai_depasse = bool(devoir.date_limite and datetime.utcnow() > devoir.date_limite)
+    peut_rendre = not peut_gerer and not delai_depasse and not devoir.est_clos and not devoir.archive
 
     mon_rendu = None
+    mon_rendu_details = ""
     if not peut_gerer:
         mon_rendu = session.exec(
             select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id, RenduDevoir.utilisateur_id == utilisateur.id)
         ).first()
+        if mon_rendu:
+            mon_rendu_details = _details_correction_rendu(mon_rendu)
 
     rendus = []
     if peut_gerer:
@@ -1423,16 +1629,216 @@ def detail_devoir(request: Request, devoir_id: int, session: Session = Depends(g
             .where(RenduDevoir.utilisateur_id == Utilisateur.id)
             .order_by(RenduDevoir.date_rendu.desc())
         ).all()
-        rendus = [{"rendu": r, "utilisateur": u} for r, u in lignes]
+        rendus = []
+        for rendu, etudiant in lignes:
+            try:
+                suggestion_ia = json.loads(rendu.correction_ia_json or "null")
+            except (TypeError, ValueError, json.JSONDecodeError):
+                suggestion_ia = None
+            rendus.append({
+                "rendu": rendu,
+                "utilisateur": etudiant,
+                "suggestion_ia": suggestion_ia,
+                "details_correction": _details_correction_rendu(rendu),
+            })
 
     return templates.TemplateResponse(
         request,
         "classe_devoir.html",
         {
             "utilisateur": utilisateur, "cours": cours, "devoir": devoir, "peut_gerer": peut_gerer,
-            "delai_depasse": delai_depasse, "mon_rendu": mon_rendu, "rendus": rendus,
+            "delai_depasse": delai_depasse, "peut_rendre": peut_rendre,
+            "mon_rendu": mon_rendu, "mon_rendu_details": mon_rendu_details, "rendus": rendus,
+            "criteres_devoir": _lire_criteres_devoir(devoir),
         },
     )
+
+
+@router.post("/classe/devoirs/{devoir_id}/modifier")
+def modifier_devoir(
+    request: Request,
+    devoir_id: int,
+    titre: str = Form(...),
+    description: Optional[str] = Form(None),
+    date_limite: Optional[str] = Form(None),
+    bareme: str = Form("20"),
+    criteres: Optional[str] = Form(None),
+    etat: str = Form("ouvert"),
+    archivage: str = Form("actif"),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    devoir = session.get(Devoir, devoir_id)
+    cours = session.get(Cours, devoir.cours_id) if devoir else None
+    if not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse("/classe", status_code=303)
+
+    titre = " ".join((titre or "").split())
+    try:
+        bareme_valide = float((bareme or "").replace(",", "."))
+        if not titre or len(titre) > 180 or not 1 <= bareme_valide <= 1000:
+            raise ValueError
+        criteres_valides = _normaliser_criteres_devoir(criteres, bareme_valide)
+    except ValueError:
+        return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=devoir_invalide#modifier-devoir", status_code=303)
+
+    rendus_deja_notes = session.exec(
+        select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id)
+    ).all()
+    if any(
+        rendu.note is not None and rendu.note > bareme_valide
+        for rendu in rendus_deja_notes
+    ):
+        return RedirectResponse(
+            f"/classe/devoirs/{devoir_id}?erreur=bareme_note_existante#modifier-devoir",
+            status_code=303,
+        )
+
+    date_limite_parsee = None
+    if date_limite:
+        try:
+            date_limite_parsee = datetime.fromisoformat(date_limite)
+        except ValueError:
+            return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=date_invalide#modifier-devoir", status_code=303)
+
+    devoir.titre = titre
+    devoir.description = (description or "").strip()[:6000] or None
+    devoir.date_limite = date_limite_parsee
+    devoir.bareme = round(bareme_valide, 2)
+    devoir.criteres_json = json.dumps(criteres_valides, ensure_ascii=False) if criteres_valides else None
+    devoir.est_clos = etat == "ferme"
+    devoir.archive = archivage == "archive"
+    session.add(devoir)
+    session.commit()
+    return RedirectResponse(f"/classe/devoirs/{devoir_id}?modifie=1", status_code=303)
+
+
+@router.post("/classe/devoirs/{devoir_id}/supprimer")
+def supprimer_devoir(
+    request: Request,
+    devoir_id: int,
+    confirmation: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    devoir = session.get(Devoir, devoir_id)
+    cours = session.get(Cours, devoir.cours_id) if devoir else None
+    if not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse("/classe", status_code=303)
+    if confirmation != "SUPPRIMER":
+        return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=confirmation_requise", status_code=303)
+
+    rendus = session.exec(select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id)).all()
+    fichiers_a_supprimer = [rendu.chemin_fichier for rendu in rendus if rendu.chemin_fichier]
+    for rendu in rendus:
+        session.delete(rendu)
+    session.delete(devoir)
+    session.commit()
+    for chemin in fichiers_a_supprimer:
+        try:
+            supprimer_fichier(chemin)
+        except Exception:
+            # Le devoir et ses rendus sont déjà supprimés en base ; le
+            # nettoyage du stockage reste best-effort et ne bloque pas.
+            pass
+    return RedirectResponse(f"/classe/{cours.id}?devoir=supprime", status_code=303)
+
+
+@router.get("/classe/{cours_id}/notes.csv")
+def exporter_notes_cours(
+    request: Request,
+    cours_id: int,
+    session: Session = Depends(get_session),
+):
+    utilisateur = utilisateur_courant(request, session)
+    cours = session.get(Cours, cours_id)
+    if not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse("/classe", status_code=303)
+
+    devoirs = session.exec(
+        select(Devoir).where(Devoir.cours_id == cours_id).order_by(Devoir.date_creation)
+    ).all()
+    inscriptions = session.exec(
+        select(InscriptionCours, Utilisateur)
+        .where(InscriptionCours.cours_id == cours_id)
+        .where(InscriptionCours.utilisateur_id == Utilisateur.id)
+        .order_by(Utilisateur.nom)
+    ).all()
+    ids_devoirs = [devoir.id for devoir in devoirs]
+    rendus = session.exec(
+        select(RenduDevoir).where(RenduDevoir.devoir_id.in_(ids_devoirs))
+    ).all() if ids_devoirs else []
+    par_etudiant_devoir = {(rendu.utilisateur_id, rendu.devoir_id): rendu for rendu in rendus}
+
+    sortie = io.StringIO()
+    sortie.write("\ufeff")
+    writer = csv.writer(sortie)
+    writer.writerow(["Étudiant", "Cours", "Devoir", "Note", "Barème", "Date de rendu", "Date de correction", "Appréciation"])
+    for _inscription, etudiant in inscriptions:
+        for devoir in devoirs:
+            rendu = par_etudiant_devoir.get((etudiant.id, devoir.id))
+            writer.writerow([
+                _valeur_csv_securisee(etudiant.nom),
+                _valeur_csv_securisee(cours.nom),
+                _valeur_csv_securisee(devoir.titre),
+                rendu.note if rendu and rendu.note is not None else "",
+                devoir.bareme,
+                rendu.date_rendu.strftime("%Y-%m-%d %H:%M") if rendu else "",
+                rendu.date_correction.strftime("%Y-%m-%d %H:%M") if rendu and rendu.date_correction else "",
+                _valeur_csv_securisee(rendu.appreciation_prof) if rendu else "",
+            ])
+    return Response(
+        content=sortie.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="notes-cours-{cours_id}.csv"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.post("/classe/devoirs/rendus/{rendu_id}/aide-correction")
+def aide_correction_ia(
+    request: Request,
+    rendu_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    rendu = session.get(RenduDevoir, rendu_id)
+    devoir = session.get(Devoir, rendu.devoir_id) if rendu else None
+    cours = session.get(Cours, devoir.cours_id) if devoir else None
+    if not rendu or not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse("/classe", status_code=303)
+    if limite_depassee(f"correction-ia:user:{utilisateur.id}", 5, 3600):
+        return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=limite_ia#rendus", status_code=303)
+
+    try:
+        with ouvrir_fichier_local(rendu.chemin_fichier) as chemin_local:
+            texte_copie = extraire_texte(str(chemin_local))
+        if len((texte_copie or "").strip()) < 80:
+            return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=texte_illisible#rendus", status_code=303)
+        criteres = _lire_criteres_devoir(devoir)
+        suggestion = classe_correction.generer_suggestion_correction(
+            titre=devoir.titre,
+            consigne=devoir.description or "",
+            bareme=devoir.bareme,
+            criteres=criteres,
+            texte_copie=texte_copie,
+            commentaire_etudiant=rendu.commentaire or "",
+        )
+        suggestion["generee_le"] = datetime.utcnow().isoformat()
+        rendu.correction_ia_json = json.dumps(suggestion, ensure_ascii=False)
+        session.add(rendu)
+        session.commit()
+    except RuntimeError:
+        return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=ia_indisponible#rendus", status_code=303)
+    except Exception:
+        return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=correction_impossible#rendus", status_code=303)
+    return RedirectResponse(f"/classe/devoirs/{devoir.id}?ia=proposee#rendus", status_code=303)
 
 
 @router.post("/classe/devoirs/{devoir_id}/rendre")
@@ -1464,6 +1870,8 @@ def rendre_devoir(
     if limite_depassee(f"upload-devoir:user:{utilisateur.id}", 10, 3600) or limite_depassee(f"upload-devoir:ip:{host}", 25, 3600):
         return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=trop_de_depots", status_code=303)
 
+    if devoir.archive or devoir.est_clos:
+        return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=devoir_ferme", status_code=303)
     if devoir.date_limite and datetime.utcnow() > devoir.date_limite:
         return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=delai_depasse", status_code=303)
 
@@ -1481,13 +1889,16 @@ def rendre_devoir(
     rendu_existant = session.exec(
         select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id, RenduDevoir.utilisateur_id == utilisateur.id)
     ).first()
+    ancien_chemin = rendu_existant.chemin_fichier if rendu_existant else None
     if rendu_existant:
         rendu_existant.chemin_fichier = chemin_stocke
         rendu_existant.nom_fichier_original = fichier.filename or "rendu"
-        rendu_existant.commentaire = commentaire or None
+        rendu_existant.commentaire = (commentaire or "").strip()[:1500] or None
         rendu_existant.date_rendu = datetime.utcnow()
         rendu_existant.note = None
         rendu_existant.appreciation_prof = None
+        rendu_existant.details_correction_json = None
+        rendu_existant.correction_ia_json = None
         rendu_existant.date_correction = None
         session.add(rendu_existant)
     else:
@@ -1496,6 +1907,11 @@ def rendre_devoir(
             nom_fichier_original=fichier.filename or "rendu", commentaire=commentaire or None,
         ))
     session.commit()
+    if ancien_chemin and ancien_chemin != chemin_stocke:
+        try:
+            supprimer_fichier(ancien_chemin)
+        except Exception:
+            pass
 
     return RedirectResponse(f"/classe/devoirs/{devoir_id}?rendu=1", status_code=303)
 
@@ -1530,34 +1946,33 @@ def telecharger_rendu(request: Request, rendu_id: int, session: Session = Depend
 def noter_rendu(
     request: Request,
     rendu_id: int,
-    note: Optional[str] = Form(None),
+    note: str = Form(...),
     appreciation_prof: Optional[str] = Form(None),
+    details_correction: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur:
-        return RedirectResponse("/connexion", status_code=303)
-
     rendu = session.get(RenduDevoir, rendu_id)
-    if not rendu:
-        return RedirectResponse("/classe", status_code=303)
-    devoir = session.get(Devoir, rendu.devoir_id)
+    devoir = session.get(Devoir, rendu.devoir_id) if rendu else None
     cours = session.get(Cours, devoir.cours_id) if devoir else None
-    if not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
-        return RedirectResponse(f"/classe/{cours.id if cours else ''}", status_code=303)
+    if not rendu or not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+        return RedirectResponse("/classe", status_code=303)
 
-    note_validee = None
-    if note:
-        try:
-            note_validee = max(0.0, min(20.0, float(note)))
-        except ValueError:
-            note_validee = None
+    try:
+        note_validee = float((note or "").replace(",", "."))
+    except ValueError:
+        return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=note_invalide#rendus", status_code=303)
+    if not math.isfinite(note_validee) or note_validee < 0 or note_validee > devoir.bareme:
+        return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=note_hors_bareme#rendus", status_code=303)
 
-    rendu.note = note_validee
-    rendu.appreciation_prof = appreciation_prof or None
+    details = (details_correction or "").strip()[:4000]
+    rendu.note = round(note_validee, 2)
+    rendu.appreciation_prof = (appreciation_prof or "").strip()[:1800] or None
+    rendu.details_correction_json = json.dumps(
+        {"commentaire_criteres": details}, ensure_ascii=False
+    ) if details else None
     rendu.date_correction = datetime.utcnow()
     session.add(rendu)
     session.commit()
-
-    return RedirectResponse(f"/classe/devoirs/{devoir.id}", status_code=303)
+    return RedirectResponse(f"/classe/devoirs/{devoir.id}?correction=validee#rendus", status_code=303)

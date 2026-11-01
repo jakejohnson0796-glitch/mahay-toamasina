@@ -11,6 +11,7 @@
       <h1>{{ cours.nom }}</h1>
       <p class="classe-detail-meta">{{ cours.matiere }} · {{ cours.niveau }} · Professeur : {{ professeur.nom }} · {{ nb_etudiants }} étudiant{{ "s" if nb_etudiants != 1 else "" }}</p>
       {% if cours.description %}<div class="classe-detail-meta" data-rendu>{{ cours.description }}</div>{% endif %}
+      {% if cours.objectifs %}<div class="classe-course-objectives"><strong>Objectifs pédagogiques</strong><p>{{ cours.objectifs }}</p></div>{% endif %}
     </div>
     <div>
       {% if seances and seances|selectattr("statut.value","equalto","en_cours")|list %}
@@ -23,7 +24,17 @@
 
   {% if request.query_params.get("erreur") == "seance_non_demarree" %}
   <div class="erreur" role="alert">Cette séance n'est pas encore en cours.</div>
+  {% elif request.query_params.get("erreur") == "champs_cours_invalides" %}
+  <div class="erreur" role="alert">Vérifie le nom, la matière et le niveau du cours.</div>
+  {% elif request.query_params.get("erreur") == "devoir_invalide" %}
+  <div class="erreur" role="alert">Vérifie le titre, le barème et les critères de notation.</div>
+  {% elif request.query_params.get("erreur") == "date_invalide" %}
+  <div class="erreur" role="alert">La date limite n'est pas valide.</div>
   {% endif %}
+  {% if request.query_params.get("cours") == "modifie" %}<div class="info" role="status">Les informations du cours ont été mises à jour.</div>{% endif %}
+  {% if request.query_params.get("code") == "renouvele" %}<div class="info" role="status">Le code d'invitation a été renouvelé.</div>{% endif %}
+  {% if request.query_params.get("devoir") == "cree" %}<div class="info" role="status">Le devoir a été créé.</div>{% elif request.query_params.get("devoir") == "supprime" %}<div class="info" role="status">Le devoir et ses copies ont été supprimés.</div>{% endif %}
+  {% if request.query_params.get("inscription") == "confirmee" %}<div class="info" role="status">Tu as rejoint ce cours.</div>{% endif %}
 
   {% if request.query_params.get("fiche") == "en_cours" %}
   <div class="info" role="status">Ta fiche de révision n'est pas encore prête. Reviens dans quelques instants : la génération se fait en arrière-plan.</div>
@@ -46,8 +57,36 @@
       <a class="bouton bouton-primaire" href="/classe/{{ cours.id }}/radar">{{ icone("quiz", 15) }} Radar pédagogique</a>
     </div>
     <div class="classe-toolbar-right">
+      <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}/notes.csv">Exporter les notes CSV</a>
       <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Vue du cours</a>
     </div>
+  </div>
+
+  <div class="classe-detail-columns classe-course-management">
+    <section class="classe-section-card" id="invitation-cours" aria-labelledby="invitation-cours-title">
+      <div class="classe-form-head"><div><h2 id="invitation-cours-title">Inviter les étudiants</h2><p>Partage ce code pour permettre une inscription sans saisir chaque numéro individuellement.</p></div></div>
+      <div class="classe-invite-code" aria-label="Code d'invitation">{{ cours.code_invitation or "Code en préparation" }}</div>
+      <p class="classe-section-card-intro">Les étudiants saisissent ce code dans leur espace Classe virtuelle. Le code donne uniquement accès à ce cours.</p>
+      <form method="post" action="/classe/{{ cours.id }}/code-invitation/renouveler" data-confirm-message="Renouveler le code ? L'ancien code ne permettra plus de rejoindre ce cours.">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <button class="bouton bouton-secondaire" type="submit">Renouveler le code</button>
+      </form>
+    </section>
+
+    <details class="classe-section-card" id="parametres-cours">
+      <summary class="classe-course-edit-summary">Modifier les informations du cours</summary>
+      <form method="post" action="/classe/{{ cours.id }}/modifier" class="classe-course-edit-form">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <div class="classe-form-grid">
+          <div class="classe-field"><label for="cours_nom">Nom</label><input id="cours_nom" name="nom" maxlength="120" required value="{{ cours.nom }}"></div>
+          <div class="classe-field"><label for="cours_matiere">Matière</label><input id="cours_matiere" name="matiere" maxlength="100" required value="{{ cours.matiere }}"></div>
+          <div class="classe-field"><label for="cours_niveau">Niveau</label><input id="cours_niveau" name="niveau" maxlength="80" required value="{{ cours.niveau }}"></div>
+          <div class="classe-field classe-field-full"><label for="cours_description">Description</label><textarea id="cours_description" name="description" rows="2" maxlength="3000">{{ cours.description or "" }}</textarea></div>
+          <div class="classe-field classe-field-full"><label for="cours_objectifs">Objectifs pédagogiques</label><textarea id="cours_objectifs" name="objectifs" rows="3" maxlength="3000">{{ cours.objectifs or "" }}</textarea></div>
+        </div>
+        <div class="classe-form-actions"><button class="bouton bouton-primaire" type="submit">Enregistrer le cours</button></div>
+      </form>
+    </details>
   </div>
 
   <div class="classe-detail-columns">
@@ -92,9 +131,18 @@
             <label for="description_devoir">Description</label>
             <textarea id="description_devoir" name="description" rows="3" placeholder="Ce que l'étudiant doit produire…"></textarea>
           </div>
-          <div class="classe-field classe-field-full">
+          <div class="classe-field">
             <label for="date_limite">Date limite</label>
             <input type="datetime-local" id="date_limite" name="date_limite">
+          </div>
+          <div class="classe-field">
+            <label for="bareme_devoir">Barème total</label>
+            <input type="number" id="bareme_devoir" name="bareme" min="1" max="1000" step="0.25" value="20" required>
+          </div>
+          <div class="classe-field classe-field-full">
+            <label for="criteres_devoir">Critères de notation (facultatif)</label>
+            <textarea id="criteres_devoir" name="criteres" rows="3" placeholder="Compréhension | 8&#10;Méthode | 8&#10;Présentation | 4"></textarea>
+            <span class="classe-field-help">Une ligne par critère, au format « Nom | points maximum ». La somme ne peut pas dépasser le barème.</span>
           </div>
         </div>
         <div class="classe-form-actions"><button class="bouton bouton-primaire" type="submit">Créer le devoir</button></div>
@@ -112,7 +160,7 @@
         <div class="classe-row">
           <div class="classe-row-main">
             <strong>{{ devoir.titre }}</strong>
-            <span>Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }}</span>
+            <span>Date limite : {{ devoir.date_limite.strftime("%d/%m/%Y %H:%M") if devoir.date_limite else "aucune" }} · Barème : {{ "%.2f"|format(devoir.bareme) }} points{% if devoir.est_clos %} · Dépôts fermés{% endif %}{% if devoir.archive %} · Archivé{% endif %}</span>
           </div>
           <div class="classe-row-actions">
             <a href="/classe/devoirs/{{ devoir.id }}" class="bouton bouton-secondaire">{{ "Voir les rendus" if peut_gerer else ("Rendu envoyé" if devoir.id in mes_rendus_ids else "Rendre le devoir") }}</a>
