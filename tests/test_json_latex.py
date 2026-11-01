@@ -140,3 +140,32 @@ def test_transport_preserve_les_commandes_mathematiques_physiques_et_chimiques_c
     assert resultat["physique"] == r"\(\Delta E=\hbar\omega\)"
     assert resultat["chimie"] == r"\(\ce{2H2 + O2 -> 2H2O}\)"
     assert resultat["comparaison"] == r"\(a\simeq b\)"
+
+
+def test_2000_sorties_ia_conservent_les_commandes_latex_et_le_json():
+    # Chaque chaîne contient volontairement un seul antislash, comme une sortie
+    # IA qui oublie l'échappement JSON. Cela couvre les escapes valides qui
+    # entrent en collision avec LaTeX (\f, \t, \n, \r, \b) et les escapes invalides.
+    constructeurs = (
+        lambda n: "\\frac{" + str(n) + "}{" + str(n + 1) + "}",
+        lambda n: "\\sqrt{" + str(n * n) + "+1}",
+        lambda n: "\\text{valeur " + str(n) + "}",
+        lambda n: "\\nabla f_{" + str(n) + "}",
+        lambda n: "\\rho_{" + str(n) + "}",
+        lambda n: "\\beta_{" + str(n) + "}",
+        lambda n: "\\Delta x_{" + str(n) + "}",
+        lambda n: "\\mathbb{R}_{" + str(n) + "}",
+        lambda n: "\\ce{H2O}",
+        lambda n: "\\times " + str(n),
+    )
+
+    for index in range(2000):
+        numero = index + 1
+        formule = constructeurs[index % len(constructeurs)](numero)
+        texte_brut = '{"formule":"' + formule + '","numero":' + str(numero) + '}'
+
+        resultat = charger_json_ia(texte_brut)
+
+        assert resultat == {"formule": formule, "numero": numero}, (
+            "LaTeX/JSON altéré à l'itération " + str(index) + " : " + repr(formule)
+        )
