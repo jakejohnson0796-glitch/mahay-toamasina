@@ -955,7 +955,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
     # Cela teste la synchronisation de l'application de la nouvelle migration
     # sans devoir dérouler les downgrade historiques de branches anciennes.
     downgrade = subprocess.run(
-        [*alembic, "downgrade", "-1"],
+        [*alembic, "downgrade", "fae1c2d3b4a5"],
         env=env,
         capture_output=True,
         text=True,
