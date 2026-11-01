@@ -37,6 +37,12 @@ Le communiqué officiel MESUPRES du 6 juillet 2026 organise la session 2026 de l
 
 Le portail MESUPRES répertorie aussi un « Guide pratique de dépôt de nouvelle habilitation ou de renouvellement d'habilitation », publié le 31 août 2026.
 
+Le MESUPRES a également publié le 24 octobre 2026 un compte rendu d'une séance d'accompagnement tenue le 23 octobre pour les établissements privés d'enseignement supérieur, consacrée au remplissage des formulaires de nouvelle habilitation et de renouvellement. Cette actualité confirme que la procédure de dépôt et d'accompagnement est active à cette date ; elle ne constitue pas une décision d'habilitation et ne prouve pas qu'un établissement précis, un campus ou une offre de Toamasina a été autorisé.
+
+Pour les établissements privés et paramédicaux recensés dans le présent audit, demander séparément le dossier remis, la fiche HAE, la décision signée et l'éventuelle extension géographique couvrant Toamasina. Ne pas interpréter la participation à une séance d'accompagnement comme une autorisation d'enseigner.
+
+Source officielle : [MESUPRES — accompagnement des établissements privés pour les demandes et renouvellements d'habilitation, actualité du 24 octobre 2026](https://www.mesupres.gov.mg/actualites/detail/606).
+
 **Constat au 31 octobre :** l'index des documents téléchargeables du MESUPRES présente toujours comme dernière liste générale téléchargeable la liste des établissements habilités mise à jour en 2022. En parallèle, le ministère a lancé la plateforme officielle **HAE (Habilitation, Accréditation et Équivalence)**, qui annonce un registre public des offres habilitées des universités (Licences, Masters et Doctorats). La page d'accueil HAE précise que toute offre conduisant à un diplôme doit être habilitée avant son ouverture. Le contenu détaillé de ce registre HAE n'a pas pu être récupéré dans les pages indexées consultées pour cette analyse ; il reste donc la source officielle prioritaire à interroger directement pour chaque offre Toamasina.
 
 Aucune décision individualisée de la session CNH/CNA 2026 concernant les mentions de ce catalogue n'a été retrouvée dans les documents consultés. Cela ne prouve pas qu'aucune décision n'a été prise : les résultats peuvent figurer dans le registre HAE ou dans les dossiers institutionnels non accessibles publiquement. Ne pas conclure qu'une offre est habilitée en 2026 sans la fiche HAE, l'arrêté et la date d'effet correspondants.
