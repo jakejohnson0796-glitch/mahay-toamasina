@@ -164,7 +164,9 @@ def routine_du_jour(
     )
     fin_local = debut_local + timedelta(days=1)
     debut_jour = debut_local.astimezone(timezone.utc).replace(tzinfo=None)
-    fin_jour = fin_local.astimezone(timezone.utc).replace(tzinfo=None)
+    fin_jour_calendaire = fin_local.astimezone(timezone.utc).replace(tzinfo=None)
+    # Une activité horodatée dans le futur ne doit pas valider la routine.
+    fin_jour = min(fin_jour_calendaire, instant_utc.replace(tzinfo=None))
 
     quiz_termine = session.exec(
         select(TentativeQuiz.id).where(
