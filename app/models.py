@@ -399,7 +399,7 @@ class EtablissementPartenaire(SQLModel, table=True):
     region: Optional[str] = Field(default=None, max_length=100)
     commune: Optional[str] = Field(default=None, max_length=120)
     est_actif: bool = Field(default=True, index=True)
-    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 

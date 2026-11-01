@@ -149,3 +149,10 @@ def test_recuperation_mot_de_passe_limitee_ne_consulte_pas_la_base(monkeypatch):
     assert response.status_code == 303
     assert response.headers["location"] == "/mot-de-passe-oublie/code"
     assert "en_attente_reinit_user_id" not in request.session
+
+
+def test_etablissementpartenaire_indexe_le_createur():
+    from app.models import EtablissementPartenaire
+
+    indexes = {index.name for index in EtablissementPartenaire.__table__.indexes}
+    assert "ix_etablissementpartenaire_cree_par_id" in indexes

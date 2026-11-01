@@ -947,7 +947,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "e2b7c9d4a1f6", (
+    assert revision == "f1c7a9d3e2b6", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
@@ -996,9 +996,17 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
                 "WHERE schemaname = 'public' AND indexname LIKE 'ix_fk_%'"
             )
         ).scalar_one()
+        institution_index_count = connection.execute(
+            text(
+                "SELECT COUNT(*) FROM pg_indexes "
+                "WHERE schemaname = 'public' "
+                "AND indexname = 'ix_etablissementpartenaire_cree_par_id'"
+            )
+        ).scalar_one()
 
-    assert revision == "e2b7c9d4a1f6"
+    assert revision == "f1c7a9d3e2b6"
     assert index_count == 41
+    assert institution_index_count == 1
 
 
 @pytest.mark.skipif(
