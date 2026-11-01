@@ -95,3 +95,13 @@ def test_university_catalogue_caveat_is_visible_on_student_screens():
         ROOT / "app" / "templates" / "universites.html",
     ):
         assert warning in path.read_text(encoding="utf-8")
+
+
+def test_admin_university_offers_do_not_label_missing_year_as_current():
+    template = (ROOT / "app" / "templates" / "admin_referentiel.html").read_text(encoding="utf-8")
+    language = (ROOT / "app" / "static" / "js" / "langue.js").read_text(encoding="utf-8")
+
+    assert 'p.annee_academique or "En cours"' not in template
+    assert "Année non renseignée" in template
+    assert '"Année non renseignée": "Taom-pianarana tsy voarakitra"' in language
+    assert '"Année non renseignée": "Academic year not recorded"' in language
