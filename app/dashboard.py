@@ -35,6 +35,9 @@ NB_RECOMMANDATIONS = 4
 NB_ECHEANCES = 4
 NB_PROGRESSIONS = 8
 
+# Les routines quotidiennes suivent le jour civil de Madagascar.
+_FUSEAU_ROUTINE = ZoneInfo("Indian/Antananarivo")
+
 
 def cercles_rejoints(session: Session, utilisateur_id: int) -> List[dict]:
     """Cercles dont l'etudiant est membre, les plus recemment rejoints
@@ -144,21 +147,31 @@ def routine_du_jour(
     utilisateur_id: int,
     maintenant: Optional[datetime] = None,
 ) -> dict:
-    """Construit la routine depuis des preuves réelles, propres au compte et au jour UTC.
+    """Construit la routine à partir d'activités réelles du jour local.
 
-    Les visites de pages, les adhésions à un cercle et les documents en attente
-    ne sont pas considérés comme des activités pédagogiques terminées.
+    Les dates naïves du modèle sont interprétées comme UTC (convention de
+    stockage historique). Le jour est calculé dans le fuseau de Madagascar,
+    puis converti en bornes UTC naïves pour les requêtes SQL.
     """
-    maintenant = maintenant or datetime.utcnow()
-    if maintenant.tzinfo is not None:
-        maintenant = maintenant.astimezone(timezone.utc).replace(tzinfo=None)
-    debut_jour = maintenant.replace(hour=0, minute=0, second=0, microsecond=0)
+    maintenant = maintenant or datetime.now(timezone.utc)
+    if maintenant.tzinfo is None:
+        instant_utc = maintenant.replace(tzinfo=timezone.utc)
+    else:
+        instant_utc = maintenant.astimezone(timezone.utc)
+
+    debut_local = instant_utc.astimezone(_FUSEAU_ROUTINE).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    fin_local = debut_local + timedelta(days=1)
+    debut_jour = debut_local.astimezone(timezone.utc).replace(tzinfo=None)
+    fin_jour = fin_local.astimezone(timezone.utc).replace(tzinfo=None)
 
     quiz_termine = session.exec(
         select(TentativeQuiz.id).where(
             TentativeQuiz.utilisateur_id == utilisateur_id,
             TentativeQuiz.date_soumission != None,  # noqa: E711
             TentativeQuiz.date_soumission >= debut_jour,
+            TentativeQuiz.date_soumission < fin_jour,
         ).limit(1)
     ).first() is not None
 
@@ -168,6 +181,7 @@ def routine_du_jour(
         .where(
             ConsultationDocument.utilisateur_id == utilisateur_id,
             ConsultationDocument.date_consultation >= debut_jour,
+            ConsultationDocument.date_consultation < fin_jour,
             Document.statut == StatutDocument.APPROUVE,
         )
         .limit(1)
@@ -177,6 +191,7 @@ def routine_du_jour(
         select(SessionTuteur.id).where(
             SessionTuteur.utilisateur_id == utilisateur_id,
             SessionTuteur.date_creation >= debut_jour,
+            SessionTuteur.date_creation < fin_jour,
         ).limit(1)
     ).first() is not None
 
@@ -185,6 +200,7 @@ def routine_du_jour(
             ActionGamification.utilisateur_id == utilisateur_id,
             ActionGamification.action == "cercle",
             ActionGamification.date_creation >= debut_jour,
+            ActionGamification.date_creation < fin_jour,
         ).limit(1)
     ).first() is not None
 
