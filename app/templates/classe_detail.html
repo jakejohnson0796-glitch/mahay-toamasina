@@ -24,7 +24,17 @@
 
   {% if request.query_params.get("erreur") == "seance_non_demarree" %}
   <div class="erreur" role="alert">Cette séance n'est pas encore en cours.</div>
+  {% elif request.query_params.get("erreur") == "champs_cours_invalides" %}
+  <div class="erreur" role="alert">Vérifie le nom, la matière et le niveau du cours.</div>
+  {% elif request.query_params.get("erreur") == "devoir_invalide" %}
+  <div class="erreur" role="alert">Vérifie le titre, le barème et les critères de notation.</div>
+  {% elif request.query_params.get("erreur") == "date_invalide" %}
+  <div class="erreur" role="alert">La date limite n'est pas valide.</div>
   {% endif %}
+  {% if request.query_params.get("cours") == "modifie" %}<div class="info" role="status">Les informations du cours ont été mises à jour.</div>{% endif %}
+  {% if request.query_params.get("code") == "renouvele" %}<div class="info" role="status">Le code d'invitation a été renouvelé.</div>{% endif %}
+  {% if request.query_params.get("devoir") == "cree" %}<div class="info" role="status">Le devoir a été créé.</div>{% elif request.query_params.get("devoir") == "supprime" %}<div class="info" role="status">Le devoir et ses copies ont été supprimés.</div>{% endif %}
+  {% if request.query_params.get("inscription") == "confirmee" %}<div class="info" role="status">Tu as rejoint ce cours.</div>{% endif %}
 
   {% if request.query_params.get("fiche") == "en_cours" %}
   <div class="info" role="status">Ta fiche de révision n'est pas encore prête. Reviens dans quelques instants : la génération se fait en arrière-plan.</div>
