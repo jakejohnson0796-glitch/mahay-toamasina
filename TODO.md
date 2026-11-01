@@ -99,7 +99,7 @@ Pour le METFP, le portail officiel recense des référentiels de formation publi
 
 **Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
 
-## CI GitHub Actions — état après les PR #308 à #316 (1er novembre 2026)
+## CI GitHub Actions — état après les PR #308 à #317 (1er novembre 2026)
 
 Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vides, sans logs). Depuis le 1er novembre, les runners sont attribués correctement et la CI a validé les changements suivants :
 
@@ -114,13 +114,14 @@ Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vid
 | #314 — avertissement catalogue universitaire trilingue | 1c8a853353052a88c42fe6b860a5a3412f79f9ce | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
 | #315 — actualisation du référentiel HAE et vérification du déploiement | 40e528291a33f4acfe902c74cd54a8f68a7730d1 | CI push réussie : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
 | #316 — déplacement de `unaccent` vers `extensions` | 165c2786f0ee230aaccf08379279ccfc3591bc9d | CI PR et push `main` réussies : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi ; migration déployée sur les deux services. |
+| #317 — couverture universitaire et signaux d'admission 2026-2027 | bd12afeb23116b1390aca8724ea0e90a9d7a1568 | CI PR et push réussies : 146 modules, 989 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi (8 tests). PR documentaire fusionnée sans changement de données. |
 
 La CI définit :
 - job applicatif : limite globale de **30 minutes** ;
 - job PostgreSQL : limite globale de **15 minutes** ;
 - chaque fichier tests/test_*.py : limite de **300 secondes**.
 
-Le run push #315 sur `main` (run `41275703549`) a réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Le run push #316 sur `main` (run `41276650330`) a également réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont désormais `live` sur `165c2786f0ee230aaccf08379279ccfc3591bc9d`. La migration `f3d8a9c2e5b1` est appliquée ; Supabase confirme `unaccent` dans `extensions` et le bon fonctionnement de `mahay_french`. La PR #317 est la présente mise à jour documentaire et reste soumise à sa propre CI avant fusion.
+Le run push #315 sur `main` (run `41275703549`) a réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Le run push #316 sur `main` (run `41276650330`) a également réussi : 146 modules, **989 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont `live` sur `165c2786f0ee230aaccf08379279ccfc3591bc9d`. La migration `f3d8a9c2e5b1` est appliquée ; Supabase confirme `unaccent` dans `extensions` et le bon fonctionnement de `mahay_french`. La PR #317 a été fusionnée dans `main` (`bd12afeb23116b1390aca8724ea0e90a9d7a1568`) après réussite de la CI PR/push : 146 modules, **989 passés, 0 échec, 0 ignoré**, et 8 tests PostgreSQL réussis. Les deux fichiers modifiés sont documentaires ; aucune donnée universitaire de production n'a été écrite ou réactivée. La PR #318 porte le libellé admin « Année non renseignée » ; elle reste soumise à ses validations CI avant fusion.
 
 ### Réconciliation ENS vérifiée en production
 
