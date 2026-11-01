@@ -18,7 +18,6 @@ ne sont pas publiés dans les sélecteurs ni transformés en cercles.
 from __future__ import annotations
 
 import json
-import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -27,6 +26,7 @@ from sqlmodel import Session, select
 
 from .models import (
     CercleEtude,
+    Document,
     DemandeChangementFiliere,
     Domaine,
     DemandeCreationCercle,
@@ -109,13 +109,13 @@ class Rapport:
 
 
 def normaliser(texte: str | None) -> str:
-    if not texte:
-        return ""
-    return _normaliser(
-        unicodedata.normalize("NFKD", texte)
-        .encode("ascii", "ignore")
-        .decode("ascii")
-    )
+    """Utilise la normalisation partagée sans perdre les apostrophes typographiques.
+
+    Le pré-nettoyage ASCII supprimait l'apostrophe courbe U+2019 alors que
+    l'apostrophe droite était conservée. Deux libellés identiques à l'usage
+    devenaient donc différents avant même d'atteindre le normaliseur commun.
+    """
+    return _normaliser(texte)
 
 
 def lire_source(chemin: str) -> dict:
@@ -161,10 +161,14 @@ def _reassigner_faculte(session: Session, ancien_id: int, nouveau_id: int) -> No
 def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> None:
     """Réattribue les références d'une filière supprimée vers sa survivante.
 
-    ProgrammeUniversitaire possède une contrainte UNIQUE sur
-    (universite_id, filiere_id). Lorsqu'une offre existe déjà sur la
-    filière survivante, on la conserve et on supprime la ligne redondante
-    de l'ancienne filière au lieu de provoquer une collision SQL.
+    Les offres actives sont uniques par (universite_id, filiere_id) grâce
+    à un index partiel. Les enregistrements d'années académiques différentes
+    sont des éléments d'historique distincts : ils doivent être conservés.
+    Seuls deux enregistrements de la même université et de la même année
+    explicitement renseignée sont consolidés ; une année inconnue reste
+    distincte. Si deux années différentes sont toutes deux marquées
+    actives, l'offre déjà portée par la filière canonique garde le statut
+    actif afin de respecter l'index partiel.
     """
     programmes_source = session.exec(
         select(ProgrammeUniversitaire).where(
@@ -173,24 +177,55 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
     ).all()
 
     for programme in programmes_source:
-        cible = session.exec(
-            select(ProgrammeUniversitaire).where(
-                ProgrammeUniversitaire.universite_id == programme.universite_id,
-                ProgrammeUniversitaire.filiere_id == nouveau_id,
+        # Une ligne de la même année sur la filière canonique est un doublon
+        # de cette offre annuelle ; les autres années restent des archives.
+        annee_source = (programme.annee_academique or "").strip()
+        cible_meme_annee = None
+        if annee_source:
+            cibles = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.universite_id == programme.universite_id,
+                    ProgrammeUniversitaire.filiere_id == nouveau_id,
+                )
+            ).all()
+            cible_meme_annee = next(
+                (
+                    cible for cible in cibles
+                    if (cible.annee_academique or "").strip() == annee_source
+                ),
+                None,
             )
-        ).first()
 
-        if cible is not None:
-            # Si l'offre historique supprimée était active alors que
-            # l'offre survivante ne l'était pas, conserve l'information
-            # « active » sur la ligne survivante.
-            if programme.est_active and not cible.est_active:
-                cible.est_active = True
-                session.add(cible)
+        if cible_meme_annee is not None:
+            if programme.est_active and not cible_meme_annee.est_active:
+                offre_active_canonique = session.exec(
+                    select(ProgrammeUniversitaire).where(
+                        ProgrammeUniversitaire.universite_id == programme.universite_id,
+                        ProgrammeUniversitaire.filiere_id == nouveau_id,
+                        ProgrammeUniversitaire.est_active == True,  # noqa: E712
+                    )
+                ).first()
+                if offre_active_canonique is None:
+                    cible_meme_annee.est_active = True
+                    session.add(cible_meme_annee)
             session.delete(programme)
-        else:
-            programme.filiere_id = nouveau_id
-            session.add(programme)
+            continue
+
+        if programme.est_active:
+            # Une autre année peut déjà porter l'offre active canonique.
+            # Dans ce cas, préserver cette ligne comme historique inactive.
+            offre_active_canonique = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.universite_id == programme.universite_id,
+                    ProgrammeUniversitaire.filiere_id == nouveau_id,
+                    ProgrammeUniversitaire.est_active == True,  # noqa: E712
+                )
+            ).first()
+            if offre_active_canonique is not None:
+                programme.est_active = False
+
+        programme.filiere_id = nouveau_id
+        session.add(programme)
 
     session.flush()
 
@@ -201,7 +236,6 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
         session.add(utilisateur)
 
     # Les documents sont également liés directement à la Filiere.
-    from .models import Document
     for document in session.exec(
         select(Document).where(Document.filiere_id == ancien_id)
     ).all():
@@ -287,6 +321,24 @@ def _trouver_mention_canonique(
         select(Mention).where(Mention.nom == nom_canonique)
     ).first()
     if exact is not None:
+        # Même si le libellé canonique exact existe déjà, fusionne les
+        # doublons strictement équivalents après normalisation (accents,
+        # apostrophes et espaces). Sans cette étape, deux Mention actives
+        # peuvent rester sélectionnables alors que leurs offres sont
+        # réparties entre l'ancien ID et l'ID canonique.
+        #
+        # Ne fusionne ici que les noms normalisés identiques : les alias
+        # métier déclarés plus bas (ex. anciens intitulés d'anthropologie)
+        # peuvent représenter des intitulés historiques distincts et ne
+        # doivent pas être confondus automatiquement avec une égalité stricte.
+        doublons_normalises = [
+            m for m in session.exec(select(Mention)).all()
+            if m.id != exact.id and normaliser(m.nom) == normaliser(nom_canonique)
+        ]
+        for doublon in doublons_normalises:
+            _reassigner_mention(session, doublon.id, exact.id)
+            session.delete(doublon)
+
         # La source de cette réconciliation est le référentiel validé de
         # Toamasina. Son domaine explicite prime sur un rattachement
         # historique : sinon des mentions FLSH reconnues par le MESUPRES
@@ -349,6 +401,9 @@ def _trouver_mention_canonique(
 def _filiere_sans_reference(session: Session, filiere_id: int) -> bool:
     refs = [
         session.exec(select(ProgrammeUniversitaire.id).where(ProgrammeUniversitaire.filiere_id == filiere_id).limit(1)).first(),
+        # Un document universitaire conserve également une FK vers la filière ;
+        # ne jamais qualifier cette filière d'orpheline s'il en reste un.
+        session.exec(select(Document.id).where(Document.filiere_id == filiere_id).limit(1)).first(),
         session.exec(select(Utilisateur.id).where(Utilisateur.filiere_id == filiere_id).limit(1)).first(),
         session.exec(select(CercleEtude.id).where(CercleEtude.filiere_id == filiere_id).limit(1)).first(),
         session.exec(select(DemandeCreationCercle.id).where(DemandeCreationCercle.filiere_id == filiere_id).limit(1)).first(),
