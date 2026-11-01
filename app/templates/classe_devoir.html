@@ -18,6 +18,8 @@
   <div class="erreur" role="alert">La note doit être comprise entre 0 et {{ "%.2f"|format(devoir.bareme) }}.</div>
   {% elif request.query_params.get("erreur") == "devoir_invalide" %}
   <div class="erreur" role="alert">Vérifie le titre, le barème et la somme des critères.</div>
+  {% elif request.query_params.get("erreur") == "bareme_note_existante" %}
+  <div class="erreur" role="alert">Le nouveau barème est inférieur à une note déjà publiée. Corrige d'abord les notes concernées ou conserve un barème supérieur.</div>
   {% elif request.query_params.get("erreur") == "date_invalide" %}
   <div class="erreur" role="alert">La date limite n'est pas valide.</div>
   {% elif request.query_params.get("erreur") == "texte_illisible" %}
@@ -186,6 +188,7 @@
         <form method="post" action="/classe/devoirs/rendus/{{ info.rendu.id }}/aide-correction" class="classe-ai-action">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <button class="bouton bouton-secondaire" type="submit">Proposer une correction IA</button>
+          <small class="classe-field-help">Pour créer le brouillon, le texte extrait de cette copie, la consigne et les critères sont transmis au fournisseur IA configuré. La note ne sera publiée qu'après validation humaine.</small>
         </form>
 
         <form method="post" action="/classe/devoirs/rendus/{{ info.rendu.id }}/noter" class="classe-grade-form">
