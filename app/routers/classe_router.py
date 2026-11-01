@@ -10,6 +10,7 @@ import json
 import unicodedata
 import csv
 import io
+import math
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -102,7 +103,7 @@ def _normaliser_criteres_devoir(texte: Optional[str], bareme: float) -> list[dic
             points = float(points_bruts.strip().replace(",", "."))
         except ValueError as erreur:
             raise ValueError(f"Points invalides pour le critère « {nom} ».") from erreur
-        if not nom or points <= 0 or points > bareme:
+        if not nom or not math.isfinite(points) or points <= 0 or points > bareme:
             raise ValueError(f"Le critère « {nom or 'sans nom'} » doit avoir un maximum positif inférieur au barème.")
         if any(item["nom"].casefold() == nom.casefold() for item in criteres):
             raise ValueError(f"Le critère « {nom} » est indiqué plusieurs fois.")
@@ -1941,7 +1942,7 @@ def noter_rendu(
         note_validee = float((note or "").replace(",", "."))
     except ValueError:
         return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=note_invalide#rendus", status_code=303)
-    if note_validee < 0 or note_validee > devoir.bareme:
+    if not math.isfinite(note_validee) or note_validee < 0 or note_validee > devoir.bareme:
         return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=note_hors_bareme#rendus", status_code=303)
 
     details = (details_correction or "").strip()[:4000]
