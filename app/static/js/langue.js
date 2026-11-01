@@ -3158,6 +3158,22 @@
     "Le Quiz IA et le Tuteur IA sont inclus pendant les premiers jours de l'essai. Le reste des fonctionnalités Premium reste accessible pendant jours.": "Tafiditra mandritra ny andro voalohan'ny andrana ny Quiz IA sy ny Tuteur IA. Mbola azo ampiasaina mandritra ny andro sisa ny endri-javatra Premium hafa.",
 
 
+    "Ta routine du jour": "Ny fanaontsika androany",
+    "Une petite session régulière vaut mieux qu'une longue session rare.": "Tsara kokoa ny mianatra kely sy tsy tapaka toy izay mianatra ela nefa mahalana.",
+    "Progression de la routine du jour": "Fandrosoan'ny fanaontsika androany",
+    "Étape terminée aujourd'hui": "Dingana vita androany",
+    "Étape à faire": "Dingana mbola hatao",
+    "Un mini-quiz": "Fanadinana kely",
+    "Termine un quiz pour vérifier ce que tu sais déjà.": "Fenoy ny quiz iray hijerena izay efa hainao.",
+    "Faire un quiz": "Hanao quiz",
+    "Une ressource de cours": "Loharanom-pianarana",
+    "Télécharge un cours, une fiche ou une annale approuvée.": "Sintomy ny lesona, kahie na fanadinana efa nekena.",
+    "Explorer les ressources": "Hijery ireo loharano",
+    "Un échange utile": "Fifanakalozana mahasoa",
+    "Pose une question au Tuteur IA ou envoie un message dans un cercle.": "Mametraha fanontaniana amin'ny Tuteur IA na mandefasa hafatra ao amin'ny vondrona.",
+    "Ouvrir le Tuteur IA": "Hanokatra ny Tuteur IA",
+    "Routine terminée aujourd’hui. Bravo pour ta régularité !": "Vita ny fanaontsika androany. Arahabaina noho ny faharetanao!"
+
   });
 
   var TRADUCTIONS_EN = Object.freeze({
@@ -5244,6 +5260,22 @@
     "MITARIDALA rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.": "MITARIDALA brings together academic resources, practice, peer support, AI guidance, and virtual classrooms in one environment designed for students in Madagascar.",
     "Virement bancaire": "Bank transfer",
     "La page": "The page",
+    "Ta routine du jour": "Your daily routine",
+    "Une petite session régulière vaut mieux qu'une longue session rare.": "A short, regular study session is better than a long session once in a while.",
+    "Progression de la routine du jour": "Daily routine progress",
+    "Étape terminée aujourd'hui": "Step completed today",
+    "Étape à faire": "Step to complete",
+    "Un mini-quiz": "A short quiz",
+    "Termine un quiz pour vérifier ce que tu sais déjà.": "Complete a quiz to check what you already know.",
+    "Faire un quiz": "Take a quiz",
+    "Une ressource de cours": "A learning resource",
+    "Télécharge un cours, une fiche ou une annale approuvée.": "Download an approved lesson, revision sheet, or past exam.",
+    "Explorer les ressources": "Explore resources",
+    "Un échange utile": "A meaningful interaction",
+    "Pose une question au Tuteur IA ou envoie un message dans un cercle.": "Ask the AI Tutor a question or send a message in a study circle.",
+    "Ouvrir le Tuteur IA": "Open the AI Tutor",
+    "Routine terminée aujourd’hui. Bravo pour ta régularité !": "Daily routine complete. Great work staying consistent!"
+
   });
 
   var noeudsOriginaux = new WeakMap();
