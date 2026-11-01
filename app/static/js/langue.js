@@ -5259,6 +5259,8 @@
     "MITARIDALA rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.": "MITARIDALA brings together academic resources, practice, peer support, AI guidance, and virtual classrooms in one environment designed for students in Madagascar.",
     "Virement bancaire": "Bank transfer",
     "La page": "The page",
+    "Ta routine du jour": "Your daily routine",
+    "Une petite session régulière vaut mieux qu'une longue session rare.": "A short, regular study session is better than a long, occasional one.",
     "Progression de la routine du jour": "Daily routine progress",
     "Étape terminée aujourd'hui": "Step completed today",
     "Étape à faire": "Step to complete",
