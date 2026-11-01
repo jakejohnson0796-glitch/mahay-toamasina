@@ -99,11 +99,17 @@ Pour le METFP, le portail officiel recense des référentiels de formation publi
 
 **Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
 
-## Incident GitHub Actions — 1er novembre 2026
+## CI GitHub Actions — runners réattribués le 1er novembre 2026
 
-Les dernières exécutions consultées sur `main` (run `41228458450`) et sur la branche de l'audit universitaire (run `41238054385`) échouent avec les deux jobs `test` et `postgres-smoke`, mais les jobs retournent `steps=[]` et aucun journal exploitable (`logs_url=null`). Les jobs du run #309 sont `124645892489` et `124645892695` ; ceux du run #310 et de `main` présentent la même signature d'échec avant exécution. Il ne s'agit donc pas d'un échec applicatif démontré : les tests n'ont pas été exécutés dans ces jobs.
+Les exécutions précédentes du 31 octobre sur `main` et les branches d'audit avaient échoué avant l'attribution d'un runner : `steps=[]` et `logs_url=null`. Le 1er novembre, GitHub a de nouveau démarré les jobs sur les trois branches universitaires :
 
-**Action requise :** vérifier dans GitHub Settings > Actions que les Actions sont autorisées pour le dépôt, puis dans Billing and plans > Plans and usage la disponibilité des minutes et les limites de dépenses du compte. Si le runner ne peut toujours pas être attribué, transmettre les run IDs et job IDs à GitHub Support. Ne fusionner aucune PR et ne déployer aucun correctif tant qu'une exécution réelle des étapes n'a pas abouti et que la CI n'est pas verte.
+| PR | Run observé | Job PostgreSQL | Job applicatif |
+|---|---:|---|---|
+| #308 | `41268650570` | Réussi | Tests `pytest` en cours |
+| #309 | `41268654943` | Réussi | Tests `pytest` en cours |
+| #310 | `41268729503` | Réussi | Smoke navigateur responsive en cours au dernier contrôle |
+
+**Conclusion provisoire :** l'attribution de runners fonctionne de nouveau. Les anciens échecs de lancement ne démontrent pas une régression du code. Il reste à attendre le résultat final du job `test` pour chaque tête de branche, puis à examiner tout échec réel éventuel. Ne fusionner ni ne déployer tant que les contrôles de la tête exacte de chaque PR ne sont pas verts.
 
 ## 5. Ordre recommandé pour la prochaine itération
 
