@@ -9,6 +9,7 @@ from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import (
     CercleEtude,
+    Document,
     DemandeChangementFiliere,
     DemandeCreationCercle,
     Domaine,
@@ -20,6 +21,7 @@ from app.models import (
     Universite,
     Utilisateur,
     StatutCercle,
+    TypeDocument,
 )
 from app.referentiel_reconciliation import reconcilier
 
@@ -367,14 +369,27 @@ class TestReferentielReconciliation(unittest.TestCase):
                     nom="Demande cercle test",
                     raison="Test de fusion de mention",
                 )
+                # Les deux colonnes de parcours peuvent référencer l'ancienne filière.
+                # Le test vérifie que la réconciliation ne laisse aucune FK orpheline.
                 demande_changement = DemandeChangementFiliere(
                     utilisateur_id=utilisateur.id,
+                    ancienne_filiere_id=filiere_ancienne.id,
                     nouvelle_mention_id=ancien.id,
                     nouvelle_filiere_id=filiere_ancienne.id,
                     motif="Test de fusion de mention",
                 )
-                s.add(cercle); s.add(demande_cercle); s.add(demande_changement); s.commit()
-                s.refresh(cercle); s.refresh(demande_cercle); s.refresh(demande_changement)
+                document = Document(
+                    reference="TEST-ENS-DOC-001",
+                    titre="Cours de didactique — test de réconciliation",
+                    matiere="Didactique",
+                    type_document=TypeDocument.COURS,
+                    annee=2026,
+                    filiere_id=filiere_ancienne.id,
+                    uploader_id=utilisateur.id,
+                    chemin_fichier="tests/fixtures/cours-ens-test.pdf",
+                )
+                s.add(cercle); s.add(demande_cercle); s.add(demande_changement); s.add(document); s.commit()
+                s.refresh(cercle); s.refresh(demande_cercle); s.refresh(demande_changement); s.refresh(document)
 
                 # La simulation doit détecter la fusion sans conserver aucune écriture.
                 rapport_dry = reconcilier(s, str(path), dry_run=True)
@@ -421,7 +436,10 @@ class TestReferentielReconciliation(unittest.TestCase):
                 self.assertEqual(demande_cercle_finale.mention_id, canonique.id)
                 self.assertEqual(demande_cercle_finale.filiere_id, filiere_id)
                 self.assertEqual(demande_changement_finale.nouvelle_mention_id, canonique.id)
+                self.assertEqual(demande_changement_finale.ancienne_filiere_id, filiere_id)
                 self.assertEqual(demande_changement_finale.nouvelle_filiere_id, filiere_id)
+                document_final = s.get(Document, document.id)
+                self.assertEqual(document_final.filiere_id, filiere_id)
         finally:
             path.unlink(missing_ok=True)
 
