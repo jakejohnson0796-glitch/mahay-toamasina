@@ -155,7 +155,7 @@
     {% if peut_gerer %}
     <aside class="classe-devoir-side" id="rendus">
       <h2>Copies reçues · {{ rendus|length }}</h2>
-      <p class="classe-section-card-intro">L'IA peut proposer une première lecture. Le professeur garde la décision finale et doit confirmer chaque note.</p>
+      <p class="classe-section-card-intro" data-rendu>L'IA peut proposer une première lecture. Le professeur garde la décision finale et doit confirmer chaque note.</p>
       {% for info in rendus %}
       <article class="classe-submission-card">
         <div class="classe-submission-head">
