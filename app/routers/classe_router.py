@@ -123,6 +123,14 @@ def _lire_criteres_devoir(devoir: Devoir) -> list[dict]:
         return []
 
 
+def _details_correction_rendu(rendu: RenduDevoir) -> str:
+    try:
+        details = json.loads(rendu.details_correction_json or "{}")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return ""
+    return str(details.get("commentaire_criteres") or "") if isinstance(details, dict) else ""
+
+
 def _peut_ecrire_tableau(session: Session, seance_id: int, cours: Cours, utilisateur: Utilisateur) -> bool:
     """Le prof proprietaire du cours (ou un admin) peut toujours ecrire.
     Un etudiant ne peut ecrire QUE s'il a ete explicitement autorise pour
@@ -1595,10 +1603,13 @@ def detail_devoir(request: Request, devoir_id: int, session: Session = Depends(g
     peut_rendre = not peut_gerer and not delai_depasse and not devoir.est_clos and not devoir.archive
 
     mon_rendu = None
+    mon_rendu_details = ""
     if not peut_gerer:
         mon_rendu = session.exec(
             select(RenduDevoir).where(RenduDevoir.devoir_id == devoir_id, RenduDevoir.utilisateur_id == utilisateur.id)
         ).first()
+        if mon_rendu:
+            mon_rendu_details = _details_correction_rendu(mon_rendu)
 
     rendus = []
     if peut_gerer:
@@ -1614,7 +1625,12 @@ def detail_devoir(request: Request, devoir_id: int, session: Session = Depends(g
                 suggestion_ia = json.loads(rendu.correction_ia_json or "null")
             except (TypeError, ValueError, json.JSONDecodeError):
                 suggestion_ia = None
-            rendus.append({"rendu": rendu, "utilisateur": etudiant, "suggestion_ia": suggestion_ia})
+            rendus.append({
+                "rendu": rendu,
+                "utilisateur": etudiant,
+                "suggestion_ia": suggestion_ia,
+                "details_correction": _details_correction_rendu(rendu),
+            })
 
     return templates.TemplateResponse(
         request,
@@ -1622,7 +1638,7 @@ def detail_devoir(request: Request, devoir_id: int, session: Session = Depends(g
         {
             "utilisateur": utilisateur, "cours": cours, "devoir": devoir, "peut_gerer": peut_gerer,
             "delai_depasse": delai_depasse, "peut_rendre": peut_rendre,
-            "mon_rendu": mon_rendu, "rendus": rendus,
+            "mon_rendu": mon_rendu, "mon_rendu_details": mon_rendu_details, "rendus": rendus,
             "criteres_devoir": _lire_criteres_devoir(devoir),
         },
     )
