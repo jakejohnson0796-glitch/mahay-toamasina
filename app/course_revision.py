@@ -217,6 +217,41 @@ def _schema_fiche_revision_sans_notion() -> dict:
     return schema
 
 
+def _schema_fiche_revision_compacte(*, sans_notion: bool = False) -> dict:
+    """Construit un schéma de reprise borné pour éviter les réponses JSON tronquées.
+
+    Le contenu minimal validé par normaliser_fiche_revision reste obligatoire :
+    trois notions, trois erreurs distinctes, trois exercices, trois étapes et
+    trois questions d'auto-évaluation. Seuls les maxima superflus sont réduits.
+    """
+    schema = json.loads(json.dumps(_SCHEMA_FICHE))
+    bornes = {
+        "objectifs": (2, 3),
+        "notions": (3, 3),
+        "erreurs_frequentes": (3, 3),
+        "outils_a_retenir": (0, 3),
+        "exercices": (3, 3),
+        "points_a_retravailler": (0, 3),
+        "plan_revision": (3, 3),
+        "auto_evaluation": (3, 3),
+    }
+    for champ, (minimum, maximum) in bornes.items():
+        definition = schema["properties"][champ]
+        definition["maxItems"] = maximum
+        if minimum:
+            definition["minItems"] = minimum
+        else:
+            definition.pop("minItems", None)
+
+    if sans_notion:
+        exercices = schema["properties"]["exercices"]["items"]
+        exercices["properties"].pop("notion", None)
+        exercices["required"] = [
+            champ for champ in exercices.get("required", []) if champ != "notion"
+        ]
+    return schema
+
+
 def _normaliser_notation_math(valeur: str) -> str:
     """Convertit les commandes LaTeX usuelles en notation texte lisible PDF/Word."""
     texte = str(valeur or "")
@@ -1005,21 +1040,27 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         # normalisation locale tentera une association prudente aux notions.
         erreur_texte = str(erreur).casefold()
         erreur_notion = "notion" in erreur_texte and "missing properties" in erreur_texte
+        erreur_champs_obligatoires = (
+            "missing properties" in erreur_texte
+            or "missing required properties" in erreur_texte
+        )
         erreur_troncature = any(
             marqueur in erreur_texte
             for marqueur in (
                 "max completion tokens reached",
                 "output was truncated",
                 "missing required content",
+                "finish_reason: length",
             )
         )
-        if not (erreur_notion or erreur_troncature):
+        if not (erreur_notion or erreur_champs_obligatoires or erreur_troncature):
             raise
 
-        # Reprise unique en mode compact : enlève le champ de classement le plus
-        # souvent omis, puis le normaliseur l'associe aux notions de la source.
-        # Le prompt réduit aussi le volume pour laisser la place aux sections finales.
-        schema_secours = _schema_fiche_revision_sans_notion()
+        # Une reprise compacte borne réellement les sections de sortie. Les champs
+        # minimums restent obligatoires pour ne jamais publier une fiche appauvrie.
+        # Le champ notion n'est facultatif que si le fournisseur signale précisément
+        # son omission ; les autres champs requis ne sont jamais supprimés du schéma.
+        schema_secours = _schema_fiche_revision_compacte(sans_notion=erreur_notion)
         kwargs["response_format"] = ai_ensemble.structured_response_format(
             parametres.groq_model,
             schema_secours,
@@ -1028,16 +1069,20 @@ def _generer_contenu_ia(contexte: dict, mode_document: bool = False) -> dict:
         kwargs["messages"] = [{
             "role": "user",
             "content": messages[0]["content"] + (
-                "\n\nREPRISE CONCISE OBLIGATOIRE : retourne une fiche complète mais compacte. "
-                "Maximum 5 notions, 4 outils, 3 exercices, 3 points à retravailler, "
-                "3 étapes de révision et 3 questions d'auto-évaluation. "
-                "N'omets aucun champ obligatoire. Le champ notion d'un exercice peut être omis."
+                "\\n\\nREPRISE COMPACTE OBLIGATOIRE : respecte strictement les maxima du schéma. "
+                "Produis exactement 3 notions, 3 erreurs fréquentes distinctes, 3 exercices "
+                "(Facile, Moyen, Difficile), 3 étapes de révision et 3 questions d'auto-évaluation. "
+                "Au plus 3 outils et 3 points à retravailler. Résumé <= 500 caractères ; "
+                "chaque explication/exemple de notion <= 350 caractères ; chaque champ d'erreur "
+                "<= 180 caractères ; chaque correction d'exercice <= 450 caractères. "
+                "Écris des phrases utiles mais courtes. N'omets aucun champ requis. "
+                "Conserve les formules LaTeX valides et leurs délimiteurs sans les simplifier."
             ),
         }]
         kwargs["max_completion_tokens"] = _budget_completion_tokens(
             kwargs["messages"][0]["content"],
             kwargs["response_format"],
-            maximum=MAX_COMPLETION_TOKENS - 400,
+            maximum=MAX_COMPLETION_TOKENS,
         )
         logger.warning(
             "Réponse de fiche IA non conforme ou tronquée ; nouvelle tentative compacte "
