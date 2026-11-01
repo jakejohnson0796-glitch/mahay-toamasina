@@ -1617,6 +1617,8 @@ class Cours(SQLModel, table=True):
     etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
     matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     description: Optional[str] = None
+    objectifs: Optional[str] = None
+    code_invitation: Optional[str] = Field(default=None, unique=True, index=True, max_length=12)
     professeur_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
@@ -1719,6 +1721,10 @@ class Devoir(SQLModel, table=True):
     titre: str
     description: Optional[str] = None
     date_limite: Optional[datetime] = None
+    bareme: float = Field(default=20.0, ge=1.0, le=1000.0)
+    criteres_json: Optional[str] = None
+    est_clos: bool = Field(default=False, index=True)
+    archive: bool = Field(default=False, index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -1736,6 +1742,8 @@ class RenduDevoir(SQLModel, table=True):
     date_rendu: datetime = Field(default_factory=datetime.utcnow)
     note: Optional[float] = None
     appreciation_prof: Optional[str] = None
+    details_correction_json: Optional[str] = None
+    correction_ia_json: Optional[str] = None
     date_correction: Optional[datetime] = None
 
 
