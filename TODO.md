@@ -118,7 +118,7 @@ La CI définit :
 - job PostgreSQL : limite globale de **15 minutes** ;
 - chaque fichier tests/test_*.py : limite de **300 secondes**.
 
-Le run push du commit #314 sur main (run 41274678777) a terminé les 146 modules : **988 passés, 0 échec, 0 ignoré** ; le smoke PostgreSQL est réussi. Au moment de cette mise à jour, le job applicatif apparaissait encore en finalisation GitHub (état global in_progress). Render applique autoDeployTrigger=checksPass : ne pas lancer manuellement un déploiement avant que le run de main soit entièrement réussi.
+Le run push du commit #314 sur main (run 41274678777) est terminé avec succès : 146 modules, **988 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont depuis déployés en live sur 1c8a853353052a88c42fe6b860a5a3412f79f9ce. La PR #315 est la présente mise à jour documentaire et doit elle-même rester soumise à une CI verte avant fusion.
 
 ### Réconciliation ENS vérifiée en production
 
