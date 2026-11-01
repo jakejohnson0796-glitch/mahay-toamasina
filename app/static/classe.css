@@ -1041,3 +1041,273 @@ body.page-classe {
   background: rgba(255,255,255,.065);
   border-color: rgba(255,255,255,.12);
 }
+
+/* Gestion pédagogique enrichie : objectifs, invitation, barèmes et correction. */
+.classe-course-objectives {
+  max-width: 70ch;
+  margin-top: .75rem;
+  padding: .8rem 1rem;
+  border-left: 3px solid var(--classe-accent);
+  border-radius: 0 12px 12px 0;
+  background: var(--classe-accent-soft);
+}
+.classe-course-objectives strong {
+  display: block;
+  margin-bottom: .2rem;
+  font-size: .78rem;
+}
+.classe-course-objectives p {
+  margin: 0;
+  color: var(--content-text-muted);
+  font-size: .78rem;
+  line-height: 1.55;
+}
+.classe-course-management {
+  margin: .8rem 0;
+}
+.classe-invite-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 10rem;
+  min-height: 3.5rem;
+  margin: .25rem 0 .55rem;
+  padding: .65rem 1rem;
+  border: 1px dashed rgba(47,143,137,.48);
+  border-radius: 13px;
+  background: var(--classe-accent-soft);
+  color: var(--content-text);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 850;
+  letter-spacing: .16em;
+}
+.classe-course-edit-summary {
+  cursor: pointer;
+  font-weight: 800;
+  font-size: .88rem;
+}
+.classe-course-edit-form { margin-top: .9rem; }
+.classe-field-help {
+  color: var(--content-text-muted);
+  font-size: .68rem;
+  line-height: 1.45;
+}
+.classe-devoir-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: .75rem 0 1rem;
+}
+.classe-devoir-header h1 {
+  margin: .2rem 0 .45rem;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(1.9rem, 4vw, 3.1rem);
+  line-height: 1.04;
+}
+.classe-devoir-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .4rem;
+}
+.classe-devoir-consigne,
+.classe-devoir-rubric,
+.classe-devoir-management {
+  margin-bottom: .8rem;
+}
+.classe-devoir-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--content-text);
+  font-size: .88rem;
+  line-height: 1.65;
+}
+.classe-rubric-list {
+  display: grid;
+  gap: .35rem;
+  margin-top: .6rem;
+}
+.classe-rubric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .5rem .65rem;
+  border-radius: 9px;
+  background: var(--content-bg);
+  font-size: .76rem;
+}
+.classe-rubric-item span { min-width: 0; }
+.classe-rubric-item small {
+  display: block;
+  margin-top: .18rem;
+  color: var(--content-text-muted);
+  line-height: 1.4;
+}
+.classe-rubric-item strong {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.classe-danger-zone {
+  border-color: rgba(185,73,56,.28);
+}
+.classe-danger-zone form {
+  display: grid;
+  gap: .5rem;
+}
+.classe-danger-zone label {
+  font-size: .72rem;
+  font-weight: 750;
+}
+.classe-danger-zone input {
+  min-height: 2.65rem;
+  padding: .6rem .75rem;
+  border: 1px solid var(--content-border);
+  border-radius: 10px;
+  background: var(--content-bg);
+  color: var(--content-text);
+}
+.classe-danger-zone .bouton-danger {
+  background: #a93f32;
+  border-color: #a93f32;
+  color: #fff;
+}
+.classe-submission-card {
+  display: grid;
+  gap: .6rem;
+  margin-top: .7rem;
+  padding: .8rem;
+  border: 1px solid var(--content-border);
+  border-radius: 13px;
+  background: var(--content-bg);
+}
+.classe-submission-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.classe-submission-head strong,
+.classe-submission-head span:not(.classe-course-badge) {
+  display: block;
+}
+.classe-submission-head strong { font-size: .82rem; }
+.classe-submission-head span:not(.classe-course-badge) {
+  margin-top: .18rem;
+  color: var(--content-text-muted);
+  font-size: .65rem;
+}
+.classe-ai-action { margin: .1rem 0; }
+.classe-ai-correction {
+  padding: .75rem;
+  border: 1px solid rgba(47,143,137,.28);
+  border-radius: 11px;
+  background: var(--classe-accent-soft);
+  font-size: .74rem;
+  line-height: 1.5;
+}
+.classe-ai-correction p { margin: .45rem 0; }
+.classe-ai-correction-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .4rem;
+}
+.classe-ai-correction-head strong { font-size: .76rem; }
+.classe-ai-correction-head span {
+  color: var(--content-text-muted);
+  font-size: .65rem;
+}
+.classe-ai-suggested-grade {
+  margin: .55rem 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+}
+.classe-ai-suggested-grade small {
+  font-family: inherit;
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--content-text-muted);
+}
+.classe-ai-limits,
+.classe-ai-warning {
+  color: var(--content-text-muted);
+  font-size: .68rem;
+}
+.classe-ai-warning {
+  padding-top: .5rem;
+  border-top: 1px solid var(--content-border);
+  font-weight: 700;
+}
+.classe-grade-form {
+  display: grid;
+  gap: .6rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--content-border);
+}
+.classe-grade-form .classe-field { gap: .3rem; }
+.classe-grade-form label { font-size: .72rem; font-weight: 750; }
+.classe-grade-form input,
+.classe-grade-form textarea {
+  width: 100%;
+  min-height: 2.6rem;
+  padding: .6rem .7rem;
+  border: 1px solid var(--content-border);
+  border-radius: 10px;
+  background: var(--content-surface);
+  color: var(--content-text);
+}
+.classe-grade-form textarea { resize: vertical; }
+.classe-grade-form .bouton { width: 100%; }
+.classe-student-grade {
+  display: grid;
+  gap: .2rem;
+  margin: .7rem 0;
+  padding: .9rem;
+  border: 1px solid rgba(47,143,137,.28);
+  border-radius: 12px;
+  background: var(--classe-accent-soft);
+}
+.classe-student-grade span {
+  color: var(--content-text-muted);
+  font-size: .7rem;
+}
+.classe-student-grade strong {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 2rem;
+}
+.classe-student-grade small {
+  color: var(--content-text-muted);
+  font-size: .65rem;
+}
+.classe-teacher-feedback {
+  margin-top: .65rem;
+  padding: .7rem;
+  border-radius: 10px;
+  background: var(--content-bg);
+}
+.classe-teacher-feedback strong { font-size: .75rem; }
+.classe-teacher-feedback p {
+  margin: .25rem 0 0;
+  white-space: pre-wrap;
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 820px) {
+  .classe-devoir-header {
+    flex-direction: column;
+  }
+  .classe-devoir-status {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 560px) {
+  .classe-invite-code { width: 100%; }
+  .classe-submission-head { flex-direction: column; }
+  .classe-danger-zone .bouton { width: 100%; }
+}
