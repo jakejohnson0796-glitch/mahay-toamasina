@@ -826,3 +826,40 @@ Garder les responsabilités séparées et historisables :
 Avant migration, définir les cardinalités et la compatibilité avec les profils, cercles, documents et demandes existants. Le nouveau modèle doit permettre des historiques annuels sans désactiver globalement une offre qui reste proposée, empêcher deux enregistrements contradictoires pour une même offre et une même campagne, conserver la provenance de chaque décision et migrer les anciens NULL sans leur inventer une année.
 
 **Aucun schéma ni aucune donnée de production n'a été modifié pour ce contrôle.** Cette section est une recommandation de conception, pas une déclaration d'habilitation ni d'ouverture de cohorte.
+
+### 10.14 Couverture réelle des universités publiques et filières sans offre active — contrôle du 1er novembre 2026
+
+Le contrôle en lecture seule des tables `universite`, `faculte`, `filiere` et `programmeuniversitaire` révèle une différence entre les établissements affichés et les offres universitaires effectivement détaillées dans le catalogue.
+
+| Université active dans le référentiel | Composantes | Composantes avec filières | Filières | Filières avec offre active |
+|---|---:|---:|---:|---:|
+| Université d'Antananarivo | 10 | 9 | 66 | 66 |
+| Université d'Antsiranana | 0 | 0 | 0 | 0 |
+| Université de Fianarantsoa | 4 | 0 | 0 | 0 |
+| Université de Mahajanga | 2 | 0 | 0 | 0 |
+| Université de Toamasina | 6 | 6 | 161 | 156 |
+| Université de Toliara | 4 | 0 | 0 | 0 |
+| **Total** | **26** | **16** | **227** | **222** |
+
+Les 237 lignes `ProgrammeUniversitaire` se répartissent ainsi : Antananarivo 66 lignes actives sur 66 filières ; Toamasina 171 lignes (156 actives, 15 inactives) sur 161 filières distinctes. Toutes les 227 filières actuellement enregistrées ont au moins une ligne d'offre historique pour leur université de rattachement, mais seules 222 ont une ligne active. Quatre universités publiques ont des composantes enregistrées mais aucune filière détaillée ; l'Université d'Antsiranana ne possède encore aucune composante dans ce catalogue.
+
+#### Filières de Toamasina sans offre active
+
+| Composante | Filière | Niveau | Mention | Ligne d'offre | Observation |
+|---|---|---|---|---|---|
+| École Normale Supérieure | Administration et Services Scolaires (ASS) | Non renseigné | Mention 15 dans le référentiel | 1 inactive | Confirmer auprès de la scolarité si l'offre est suspendue, historique ou toujours proposée |
+| École Normale Supérieure | Éducation et Formation d'Adultes (EFA) | Non renseigné | Mention 15 dans le référentiel | 1 inactive | Même vérification ; ne pas réactiver sur la seule base de l'ancien catalogue |
+| Faculté DEG | CCA — Comptabilité, Contrôle, Audit | M2 | Mention 11 dans le référentiel | 1 inactive | La source de référence marque cette entrée « À vérifier » ; demander maquette et décision HAE en vigueur |
+| Faculté DEG | Tronc commun | L1 | Mention 2 dans le référentiel | 1 inactive | Vérifier que le flux « tronc commun » sans filière sélectionnable correspond bien à la règle pédagogique actuelle |
+| Faculté DEG | Tronc commun | L2 | Mention 2 dans le référentiel | 1 inactive | Même contrôle L2 ; ne pas transformer en spécialisation ou offre de cohorte |
+
+**Important :** l'état inactif dans `ProgrammeUniversitaire` signifie que la filière n'est pas actuellement activée comme offre du catalogue MITARIDALA. Il ne prouve pas à lui seul qu'une formation a été fermée juridiquement, que son habilitation est retirée ou qu'aucune cohorte n'est ouverte. La liste ci-dessus est un relevé de contrôle à confirmer, pas une décision de fermeture.
+
+#### Actions de couverture à effectuer
+
+1. Pour Fianarantsoa, Mahajanga et Toliara : obtenir les listes officielles des composantes, mentions et parcours, avec les années et les décisions HAE par offre avant tout ajout au catalogue.
+2. Pour Antsiranana : confirmer les composantes officiellement rattachées et leur périmètre avant de créer des facultés ou filières.
+3. Pour Antananarivo : confirmer l'offre de l'Institut d'Enseignement Supérieur d'Antsirabe (Vakinankaratra), composante présente mais sans filière détaillée.
+4. Pour Toamasina : obtenir une confirmation écrite sur ASS, EFA, CCA M2 et le statut du tronc commun L1/L2 avant toute réactivation ou suppression.
+
+**Aucune filière, offre, composante ou université n'a été créée, activée, désactivée ou supprimée pour ce contrôle.** Les totaux sont un instantané SQL en lecture seule de la base de production au 1er novembre 2026.
