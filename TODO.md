@@ -99,17 +99,39 @@ Pour le METFP, le portail officiel recense des référentiels de formation publi
 
 **Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
 
-## CI GitHub Actions — runners réattribués le 1er novembre 2026
+## CI GitHub Actions — état après les PR universitaires (1er novembre 2026)
 
-Les exécutions précédentes du 31 octobre sur `main` et les branches d'audit avaient échoué avant l'attribution d'un runner : `steps=[]` et `logs_url=null`. Le 1er novembre, GitHub a de nouveau démarré les jobs sur les trois branches universitaires :
+Les erreurs du 31 octobre provenaient de jobs arrêtés avant attribution d'un runner (steps=[] et logs_url=null). Les runners ont été attribués normalement le 1er novembre et les quatre PR suivantes sont désormais fusionnées :
 
-| PR | Run observé | Job PostgreSQL | Job applicatif |
-|---|---:|---|---|
-| #308 | `41268650570` | Réussi | Tests `pytest` en cours |
-| #309 | `41268654943` | Réussi | Tests `pytest` en cours |
-| #310 | `41268729503` | Réussi | Smoke navigateur responsive en cours au dernier contrôle |
+| PR | Commit fusionné | Résultat vérifié |
+|---|---|---|
+| #308 — cartographie MESUPRES | d64c87ced96aa4ce3cdd40e5253cc0235fef2089 | CI et PostgreSQL réussis ; 986 tests passés sur le run détaillé |
+| #309 — audit universitaire / README / TODO | a074e933db99366bb73b3065fe0d91c846190735 | CI et PostgreSQL réussis sur la tête fusionnée |
+| #310 — réconciliation ENS | c4bb4bd76ce23bcb73ae55d49aca7f85434b00f1 | 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
+| #311 — limites de durée CI | 1d880746c5ed2238e89b5ac2ca398f3406c33113 | CI PR et push réussies : 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
 
-**Conclusion provisoire :** l'attribution de runners fonctionne de nouveau. Les anciens échecs de lancement ne démontrent pas une régression du code. Il reste à attendre le résultat final du job `test` pour chaque tête de branche, puis à examiner tout échec réel éventuel. Ne fusionner ni ne déployer tant que les contrôles de la tête exacte de chaque PR ne sont pas verts.
+La CI définit maintenant :
+- job applicatif : limite globale de **30 minutes** ;
+- job PostgreSQL : limite globale de **15 minutes** ;
+- chaque fichier tests/test_*.py : limite de **300 secondes**.
+
+Le run 41272543571 sur le main final 1d88074 était encore en cours au moment de cette mise à jour ; son smoke PostgreSQL était réussi et son lot applicatif était actif, sans échec signalé. Render conserve la règle checksPass : les services ne prennent un nouveau commit de main qu'après réussite de la CI.
+
+### Réconciliation ENS vérifiée en production
+
+- [x] Les anciennes mentions ENS ID 50 et 59 ont été supprimées après réattribution de leurs références.
+- [x] Les mentions canoniques ID 63 (Histoire-Géographie) et ID 64 (Sciences de l'Éducation) sont conservées.
+- [x] Chaque mention canonique porte 7 filières et 7 cercles ; le profil étudiant ENS concerné reste rattaché à la mention 63.
+- [x] Aucun doublon normalisé de mention, de filière ou de faculté n'a été détecté dans le périmètre Toamasina après réconciliation.
+- [x] Aucune référence orpheline n'a été détectée sur les filières, cercles, profils ou demandes contrôlés.
+- [x] Aucune filière n'a plus d'une offre universitaire active pour la même université.
+- [ ] **Années académiques des offres :** les 237 lignes ProgrammeUniversitaire de production ont toutes annee_academique IS NULL. Ne pas interpréter est_active comme preuve d'ouverture 2026-2027. Obtenir les années et preuves institutionnelles avant tout remplissage.
+- [ ] Concevoir séparément les habilitations réglementaires (HAE), l'offre académique habilitée et l'ouverture annuelle effective ; ne pas déduire l'une de l'autre.
+- [ ] Confirmer par une source primaire le calendrier 2026-2027 de la formation à distance ENS-SEAS avant de l'intégrer au catalogue.
+
+### Contrôle Supabase associé
+
+L'advisor signale 62 tables avec RLS activé sans politique. La requête de privilèges n'a trouvé aucun privilège de table pour anon ou authenticated ; seul service_role avait des privilèges sur les 62 tables. Ne pas ajouter de politiques génériques : vérifier d'abord le modèle d'accès API et garder les droits privilégiés côté serveur. L'advisor performance signale aussi une FK non indexée etablissementpartenaire.cree_par_id ; la traiter dans une migration ciblée, sans supprimer les index déclarés inutilisés sur la seule base des statistiques actuelles.
 
 ## 5. Ordre recommandé pour la prochaine itération
 
