@@ -762,22 +762,67 @@ La CI PR de #314 et le run push de `main` `41274678777` ont tous deux réussi : 
 
 #### État Render après la migration
 
-Les deux services `mitaridala` et `mahay-toamasina` sont `live` sur le commit `e238be4`. Les contrôles Render relevés après ce déploiement ont observé des réponses `GET /health` en HTTP 200 et aucun log d'erreur dans la fenêtre consultée. Le commit `1c8a853` de #314 attend encore la réussite terminale de sa CI avant son déploiement automatique (`autoDeployTrigger=checksPass`).
+Les deux services `mitaridala` et `mahay-toamasina` sont `live` sur le commit `165c2786f0ee230aaccf08379279ccfc3591bc9d` (PR #316), déployé après CI verte le 1er novembre 2026. Le déploiement comprend la migration `f3d8a9c2e5b1` qui déplace `unaccent` dans le schéma `extensions`.
+
+Contrôles après le déploiement :
+
+| Vérification | `mitaridala` | `mahay-toamasina` |
+|---|---:|---:|
+| Déploiement Render | `dep-dbjcsaavcj2c73es5f3g` — `live` | `dep-dbjcsaavcj2c73es5fkg` — `live` |
+| Fin de déploiement (UTC) | 05:30:14 | 05:30:14 |
+| Réponses `/health` analysées | HTTP 200 | HTTP 200 |
+| Logs de niveau `error` | 0 | 0 |
+| Initialisation terminée | 20,4 s | 15,1 s |
+
+La base confirme `alembic_version=f3d8a9c2e5b1`, `unaccent` dans `extensions` et le dictionnaire `public.mahay_french` toujours lié à `extensions.unaccent`. Le test SQL `extensions.unaccent('Économie, Université de Toamasina')` produit `Economie, Universite de Toamasina`, et la recherche `to_tsvector('public.mahay_french', ...) @@ plainto_tsquery(...)` renvoie `true`. L'advisor Supabase ne signale plus `extension_in_public` ; il reste 62 avertissements informatifs RLS sans politique et 155 index inutilisés (niveau INFO). Aucun droit de table `anon` ou `authenticated` n'a été trouvé ; seuls les privilèges `service_role` sont présents. Les contrôles de santé et les logs n'ont montré aucune erreur dans la fenêtre post-déploiement.
 
 
 
 ### 10.12 Signaux d'admission 2026-2027 à Toamasina — vérification primaire encore requise
 
-Une recherche complémentaire du 1er novembre 2026 a identifié deux annonces relayées par des répertoires tiers. Elles sont utiles pour orienter les vérifications avec les scolarités, mais ne constituent pas à elles seules une preuve institutionnelle primaire de l'ouverture d'une cohorte :
+Une recherche complémentaire du 1er novembre 2026 a identifié trois annonces relayées par des répertoires tiers. Elles sont utiles pour orienter les vérifications avec les scolarités, mais ne constituent pas à elles seules une preuve institutionnelle primaire de l'ouverture d'une cohorte :
 
 | Composante / parcours | Information relayée | État de preuve |
 |---|---|---|
 | Faculté DEG — L1 Droit, Économie et Gestion | Une page tierce se présentant comme la page officielle de la Faculté DEG relaie, au 12 octobre 2026, un appel à candidature L1 2026-2027 avec une date limite annoncée au 27 novembre 2026. | Source secondaire ; obtenir le communiqué original, les conditions et le statut effectif du dépôt auprès de la scolarité DEG. |
+| Faculté des Sciences et Technologie (FST) — candidature L1 | Une page tierce relayant les publications de la faculté indique un appel à candidature L1 2026-2027, avec dépôt annoncé du 14 septembre au 20 novembre 2026 à 16 h. | Source secondaire ; l'échéance du 20 novembre est future au 1er novembre, mais l'appel original et les conditions (séries de bac, pièces, frais et capacité) doivent être confirmés auprès du secrétariat FST. |
 | ENS-SEAS — Formation ouverte et à distance (FAD) en Sciences de l'Éducation et Administration Scolaire | Une page tierce relayant les publications de l'ENS indique une pré-inscription en ligne prolongée au 16 octobre 2026, un dépôt physique jusqu'au 20 octobre 2026 à 12 h, des résultats attendus au plus tard le 30 octobre, des inscriptions définitives et paiement de la première tranche du 30 octobre au 30 novembre, et un semestre 1 annoncé du 5 novembre 2026 au 15 mars 2027. | Source secondaire ; au 1er novembre, les échéances de pré-inscription et de dépôt physique sont passées, mais la période d'inscription définitive annoncée se poursuit jusqu'au 30 novembre. Confirmer le résultat et le calendrier directement auprès de l'ENS-SEAS avant toute mise à jour du catalogue. |
 
-Aucun de ces deux signaux n'a été utilisé pour renseigner `ProgrammeUniversitaire.annee_academique`, activer une offre ou afficher « admissions ouvertes ». Les 237 lignes `ProgrammeUniversitaire` de production gardent leur année académique NULL tant que les sources primaires correspondantes ne sont pas obtenues.
+Aucun de ces trois signaux n'a été utilisé pour renseigner `ProgrammeUniversitaire.annee_academique`, activer une offre ou afficher « admissions ouvertes ». Les 237 lignes `ProgrammeUniversitaire` de production gardent leur année académique NULL tant que les sources primaires correspondantes ne sont pas obtenues.
 
 Sources de repérage (secondaires) :
+- [Faculté des Sciences et Technologie — fil d'actualités relayé](https://www.schoolandcollegelistings.com/MG/Toamasina/106353395620721/Facult%C3%A9-des-Sciences-et-Technologie---Universit%C3%A9-de-Toamasina) — appel L1 relayé le 23 septembre 2026, dépôt annoncé jusqu'au 20 novembre à 16 h.
 - [Faculté DEG — fil d'actualités relayé](https://www.glunis.com/MG/Toamasina/667199329815268/Facult%C3%A9-DEG) — annonce L1 relayée le 12 octobre 2026.
 - [École Normale Supérieure — Université de Toamasina, fil d'actualités relayé](https://www.schoolandcollegelistings.com/MG/Toamasina/102883029258027/%C3%89cole-Normale-Sup%C3%A9rieure---Universit%C3%A9-de-Toamasina) — annonce FAD ENS-SEAS relayée les 29-30 septembre 2026.
 - [Site officiel de l'Université de Toamasina](https://www.univ-toamasina.mg/) — à privilégier pour rechercher et obtenir les documents institutionnels originaux.
+
+### 10.13 Limite du modèle des offres annuelles — ne pas confondre catalogue et campagne
+
+Un dernier contrôle SQL en lecture seule, effectué après le déploiement de `165c278`, confirme l'état des offres dans `public.programmeuniversitaire` :
+
+| Indicateur | Valeur |
+|---|---:|
+| Lignes d'offres | 237 |
+| Offres actives dans le catalogue | 222 |
+| Offres inactives conservées | 15 |
+| Lignes sans année académique | 237 |
+| Universités représentées | 2 |
+| Filières distinctes | 227 |
+| Couples université/filière ayant plusieurs lignes historiques | 10 |
+| Couples ayant plusieurs offres actives | 0 |
+
+La contrainte actuelle `uq_programme_actif_universite_filiere` est un index unique partiel sur `(universite_id, filiere_id) WHERE est_active = true`. Elle garantit au plus une ligne active pour chaque couple université/filière, mais **ne porte pas l'année académique**. Les dix couples qui ont plusieurs lignes conservent des lignes historiques inactives ; aucun couple n'a plusieurs lignes actives.
+
+**Conséquence :** le modèle actuel sait dire qu'une offre est activée dans l'application. Ce statut est aussi consommé par la cascade académique et les contrôles qui déterminent si un étudiant peut choisir la filière ; il ne s'agit donc pas d'un simple indicateur d'affichage. Mais il ne permet pas de dire quelles cohortes sont ouvertes en 2026-2027, ni de représenter proprement plusieurs campagnes annuelles simultanées. Le champ `est_active` n'est ni une décision d'habilitation HAE valide ni un statut d'admission annuelle. Les 237 valeurs NULL ne doivent pas être remplacées à partir d'annonces tierces ou d'une simple supposition de continuité.
+
+#### Modélisation recommandée pour la prochaine évolution
+
+Garder les responsabilités séparées et historisables :
+
+1. **Offre de catalogue (`ProgrammeUniversitaire`)** : relation stable entre université et filière, avec activation dans l'application. Ne pas lui faire porter seule la validité réglementaire ou la campagne d'admission.
+2. **Habilitation (`HabilitationOffre`)** : institution juridique, site/campus, offre exacte, grade, mention, décision/numéro HAE, date d'effet, échéance, statut, document primaire et horodatage de vérification. Une habilitation expirée ou absente ne doit pas être réputée active.
+3. **Ouverture annuelle (`OuvertureCohorte`)** : une ligne par offre et année académique, dates d'ouverture et de clôture, modalités, source primaire, personne/date de vérification, statut explicite (annoncée, confirmée, ouverte, clôturée, suspendue). Une annonce secondaire reste un signal à confirmer, pas une ouverture confirmée.
+
+Avant migration, définir les cardinalités et la compatibilité avec les profils, cercles, documents et demandes existants. Le nouveau modèle doit permettre des historiques annuels sans désactiver globalement une offre qui reste proposée, empêcher deux enregistrements contradictoires pour une même offre et une même campagne, conserver la provenance de chaque décision et migrer les anciens NULL sans leur inventer une année.
+
+**Aucun schéma ni aucune donnée de production n'a été modifié pour ce contrôle.** Cette section est une recommandation de conception, pas une déclaration d'habilitation ni d'ouverture de cohorte.
