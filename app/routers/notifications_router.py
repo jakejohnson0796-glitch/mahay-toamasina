@@ -30,9 +30,17 @@ def _notification_vue(notification: Notification) -> dict:
         "document_supprime": "Document supprimé",
         "fiche_revision_prete": "Fiche de révision prête",
         "fiche_revision_document_prete": "Fiche de cours disponible",
+        "nouveau_devoir": "Nouveau devoir",
+        "note_publiee": "Nouvelle note publiée",
+        "statut_presence": "Mise à jour de présence",
     }
     lien = None
-    if notification.cercle_id:
+    destination = (getattr(notification, "url_destination", None) or "").strip()
+    if destination.startswith("/") and not destination.startswith("//") and "\\" not in destination:
+        lien = destination
+    if lien:
+        pass
+    elif notification.cercle_id:
         lien = f"/cercles/{notification.cercle_id}"
     elif type_value == "nouvelle_inscription":
         lien = "/admin/utilisateurs"
