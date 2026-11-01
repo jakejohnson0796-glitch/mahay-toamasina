@@ -996,16 +996,16 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
                 "WHERE schemaname = 'public' AND indexname LIKE 'ix_fk_%'"
             )
         ).scalar_one()
+        institution_index_count = connection.execute(
+            text(
+                "SELECT COUNT(*) FROM pg_indexes "
+                "WHERE schemaname = 'public' "
+                "AND indexname = 'ix_etablissementpartenaire_cree_par_id'"
+            )
+        ).scalar_one()
 
     assert revision == "f1c7a9d3e2b6"
     assert index_count == 41
-    institution_index_count = connection.execute(
-        text(
-            "SELECT COUNT(*) FROM pg_indexes "
-            "WHERE schemaname = 'public' "
-            "AND indexname = 'ix_etablissementpartenaire_cree_par_id'"
-        )
-    ).scalar_one()
     assert institution_index_count == 1
 
 
