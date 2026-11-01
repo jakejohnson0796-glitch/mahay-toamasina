@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titre %}Carnet de notes — {{ cours.nom }} — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}<div class="classe-page">
+<p class="classe-breadcrumb"><a href="/classe/{{ cours.id }}">{{ cours.nom }}</a> / Carnet de notes</p>
+<header class="classe-detail-head"><div><h1>Carnet de notes</h1><p class="classe-detail-meta">{{ cours.nom }} · Notes officielles sur 20, pondérées par coefficient.</p></div>{% if peut_gerer %}<a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}/notes.csv">Exporter CSV</a>{% endif %}</header>
+<section class="classe-overview-grid">
+<div class="classe-overview-card"><strong>{{ nb_etudiants }}</strong><span>Étudiants</span></div><div class="classe-overview-card"><strong>{{ devoirs|length }}</strong><span>Évaluations</span></div><div class="classe-overview-card"><strong>{{ nb_corriges }}</strong><span>Copies corrigées</span></div><div class="classe-overview-card"><strong>{{ "%.2f"|format(moyenne_classe) if moyenne_classe is not none else "—" }}</strong><span>Moyenne classe / 20</span></div>
+</section>
+<section class="classe-section-card"><h2>Notes par étudiant</h2><p class="classe-section-card-intro">Les copies non corrigées et les suggestions IA non validées sont exclues des moyennes.</p>
+{% if devoirs %}<div class="classe-table-scroll"><table class="classe-table"><thead><tr><th>Étudiant</th>{% for d in devoirs %}<th>{{ d.titre }}<small>{{ d.periode or "Sans période" }} · coef. {{ "%.2f"|format(d.coefficient or 1) }}</small></th>{% endfor %}<th>Moyenne / 20</th></tr></thead><tbody>
+{% for l in lignes %}<tr><th>{{ l.utilisateur.nom }}</th>{% for item in l.notes %}<td>{% if item.rendu and item.rendu.note is not none %}{{ "%.2f"|format(item.rendu.note) }} / {{ "%.2f"|format(item.devoir.bareme) }}{% elif item.rendu %}À corriger{% else %}—{% endif %}</td>{% endfor %}<td><strong>{{ "%.2f"|format(l.moyenne) if l.moyenne is not none else "—" }}</strong></td></tr>{% else %}<tr><td colspan="{{ devoirs|length + 2 }}">Aucun étudiant inscrit.</td></tr>{% endfor %}
+</tbody></table></div>
+<h2>Moyennes par période</h2><div class="classe-table-scroll"><table class="classe-table"><thead><tr><th>Étudiant</th>{% for p in periodes %}<th>{{ p }}</th>{% endfor %}</tr></thead><tbody>{% for l in lignes %}<tr><th>{{ l.utilisateur.nom }}</th>{% for p in l.moyennes_periode %}<td>{{ "%.2f"|format(p.moyenne) if p.moyenne is not none else "—" }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+{% else %}<p>Aucun devoir n'a encore été créé.</p>{% endif %}</section></div>{% endblock %}
