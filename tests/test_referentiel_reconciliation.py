@@ -334,11 +334,17 @@ class TestReferentielReconciliation(unittest.TestCase):
                 s.refresh(filiere_canonique); s.refresh(filiere_ancienne)
                 s.add(ProgrammeUniversitaire(
                     universite_id=universite.id, filiere_id=filiere_canonique.id,
-                    est_active=True,
+                    annee_academique="2025-2026", est_active=True,
                 ))
+                # Même année : doublon à consolider.
                 s.add(ProgrammeUniversitaire(
                     universite_id=universite.id, filiere_id=filiere_ancienne.id,
-                    est_active=False,
+                    annee_academique="2025-2026", est_active=False,
+                ))
+                # Année distincte : conserver l'archive, sans laisser deux offres actives.
+                s.add(ProgrammeUniversitaire(
+                    universite_id=universite.id, filiere_id=filiere_ancienne.id,
+                    annee_academique="2024-2025", est_active=True,
                 ))
 
                 utilisateur = Utilisateur(
@@ -422,8 +428,10 @@ class TestReferentielReconciliation(unittest.TestCase):
                         ProgrammeUniversitaire.filiere_id == filiere_id,
                     )
                 ).all()
-                self.assertEqual(len(offres), 1)
-                self.assertTrue(offres[0].est_active)
+                self.assertEqual(len(offres), 2)
+                offres_par_annee = {offre.annee_academique: offre for offre in offres}
+                self.assertTrue(offres_par_annee["2025-2026"].est_active)
+                self.assertFalse(offres_par_annee["2024-2025"].est_active)
 
                 utilisateur_final = s.get(Utilisateur, utilisateur.id)
                 cercle_final = s.get(CercleEtude, cercle.id)
