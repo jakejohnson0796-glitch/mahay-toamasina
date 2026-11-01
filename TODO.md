@@ -4,6 +4,14 @@
 
 Cette feuille de route présente les améliorations attendues du point de vue des apprenants, des enseignants et des établissements. Une tâche ne doit être déclarée terminée qu’après vérification de son fonctionnement réel.
 
+## Chantier de suivi académique
+
+Le dépôt disposait déjà des devoirs, notes unitaires, corrections assistées, connexions aux séances, progression par notion et radar collectif. Les compléments développés doivent être validés sur des classes de test avant clôture :
+- [ ] Vérifier les moyennes pondérées et les moyennes par période avec notes partielles et coefficients différents.
+- [ ] Vérifier le pointage présent / absent / retard / excusé et les droits du professeur propriétaire.
+- [ ] Vérifier les notifications pédagogiques et leurs destinations internes.
+- [ ] Vérifier les rapports académiques sur une classe vide, une classe active et des évaluations non corrigées.
+
 ## Priorité 1 — Fiabilité et confiance
 
 - [ ] Vérifier les parcours essentiels : inscription, connexion, récupération de compte, profil, navigation et déconnexion.
