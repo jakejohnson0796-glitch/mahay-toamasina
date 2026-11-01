@@ -131,6 +131,7 @@ Le run push #315 sur `main` (run `41275703549`) a réussi : 146 modules, **989 p
 - [x] Aucune référence orpheline n'a été détectée sur les filières, cercles, profils ou demandes contrôlés.
 - [x] Aucune filière n'a plus d'une offre universitaire active pour la même université.
 - [ ] **Années académiques des offres :** les 237 lignes ProgrammeUniversitaire de production ont toutes annee_academique IS NULL. Ne pas interpréter est_active comme preuve d'ouverture 2026-2027. Obtenir les années et preuves institutionnelles avant tout remplissage.
+- [ ] **Modèle annuel à concevoir :** l'index unique actuel ne porte que sur (universite_id, filiere_id) pour est_active=true ; séparer l'offre catalogue, l'habilitation HAE et l'ouverture annuelle de cohorte avant d'enregistrer les campagnes 2026-2027.
 - [ ] Concevoir séparément les habilitations réglementaires (HAE), l'offre académique habilitée et l'ouverture annuelle effective ; ne pas déduire l'une de l'autre.
 - [ ] Confirmer par une source primaire les échéances 2026-2027 relayées pour FST L1 (20 novembre), Faculté DEG L1 (27 novembre) et ENS-SEAS FAD (inscriptions définitives annoncées jusqu'au 30 novembre) avant de modifier les états d'ouverture du catalogue.
 - [x] Le statut du catalogue est désormais expliqué sur l'inscription universitaire, le profil académique et la page Universités en français, malagasy et anglais (PR #314). Cette information ne bloque pas les inscriptions.
