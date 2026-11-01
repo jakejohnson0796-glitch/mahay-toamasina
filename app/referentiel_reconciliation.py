@@ -166,7 +166,8 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
     à un index partiel. Les enregistrements d'années académiques différentes
     sont des éléments d'historique distincts : ils doivent être conservés.
     Seuls deux enregistrements de la même université et de la même année
-    sont consolidés ; si deux années différentes sont toutes deux marquées
+    explicitement renseignée sont consolidés ; une année inconnue reste
+    distincte. Si deux années différentes sont toutes deux marquées
     actives, l'offre déjà portée par la filière canonique garde le statut
     actif afin de respecter l'index partiel.
     """
@@ -179,13 +180,22 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
     for programme in programmes_source:
         # Une ligne de la même année sur la filière canonique est un doublon
         # de cette offre annuelle ; les autres années restent des archives.
-        cible_meme_annee = session.exec(
-            select(ProgrammeUniversitaire).where(
-                ProgrammeUniversitaire.universite_id == programme.universite_id,
-                ProgrammeUniversitaire.filiere_id == nouveau_id,
-                ProgrammeUniversitaire.annee_academique == programme.annee_academique,
+        annee_source = (programme.annee_academique or "").strip()
+        cible_meme_annee = None
+        if annee_source:
+            cibles = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.universite_id == programme.universite_id,
+                    ProgrammeUniversitaire.filiere_id == nouveau_id,
+                )
+            ).all()
+            cible_meme_annee = next(
+                (
+                    cible for cible in cibles
+                    if (cible.annee_academique or "").strip() == annee_source
+                ),
+                None,
             )
-        ).first()
 
         if cible_meme_annee is not None:
             if programme.est_active and not cible_meme_annee.est_active:
