@@ -4,7 +4,6 @@ garder celui-ci fin (responsabilite unique : le router orchestre la
 requete HTTP, ce module sait comment lire les donnees).
 """
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 from typing import List, Optional
 
 from sqlmodel import Session, select
@@ -37,7 +36,7 @@ NB_ECHEANCES = 4
 NB_PROGRESSIONS = 8
 
 # Les routines quotidiennes suivent le jour civil de Madagascar.
-_FUSEAU_ROUTINE = ZoneInfo("Indian/Antananarivo")
+_FUSEAU_ROUTINE = timezone(timedelta(hours=3))
 
 
 def cercles_rejoints(session: Session, utilisateur_id: int) -> List[dict]:
