@@ -4655,7 +4655,6 @@
     "Pose ta question avec ton contexte. Le Tuteur IA transforme ensuite la question en explication, exemple, exercice et correction pour t'aider à progresser.": "Ask your question and provide context. The AI Tutor turns it into an explanation, example, exercise, and solution to help you progress.",
     "Poser une question": "Ask a question",
     "Voir mes questions": "View my questions",
-    "Faire un quiz": "Take a quiz",
     "comprendre l'explication": "understand the explanation",
     "voir un exemple concret": "see a practical example",
     "faire un exercice": "complete an exercise",
@@ -5260,20 +5259,16 @@
     "MITARIDALA rassemble ressources académiques, entraînement, entraide, accompagnement par IA et classe virtuelle dans un même environnement pensé pour les étudiants de Madagascar.": "MITARIDALA brings together academic resources, practice, peer support, AI guidance, and virtual classrooms in one environment designed for students in Madagascar.",
     "Virement bancaire": "Bank transfer",
     "La page": "The page",
-    "Ta routine du jour": "Your daily routine",
-    "Une petite session régulière vaut mieux qu'une longue session rare.": "A short, regular study session is better than a long session once in a while.",
     "Progression de la routine du jour": "Daily routine progress",
     "Étape terminée aujourd'hui": "Step completed today",
     "Étape à faire": "Step to complete",
     "Un mini-quiz": "A short quiz",
     "Termine un quiz pour vérifier ce que tu sais déjà.": "Complete a quiz to check what you already know.",
-    "Faire un quiz": "Take a quiz",
     "Une ressource de cours": "A learning resource",
     "Télécharge un cours, une fiche ou une annale approuvée.": "Download an approved lesson, revision sheet, or past exam.",
     "Explorer les ressources": "Explore resources",
     "Un échange utile": "A meaningful interaction",
     "Pose une question au Tuteur IA ou envoie un message dans un cercle.": "Ask the AI Tutor a question or send a message in a study circle.",
-    "Ouvrir le Tuteur IA": "Open the AI Tutor",
     "Routine terminée aujourd’hui. Bravo pour ta régularité !": "Daily routine complete. Great work staying consistent!"
 
   });
