@@ -163,10 +163,12 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
     """Réattribue les références d'une filière supprimée vers sa survivante.
 
     Les offres actives sont uniques par (universite_id, filiere_id) grâce
-    à un index partiel. Lorsqu'une offre existe déjà sur la filière
-    survivante, on la conserve et on supprime la ligne redondante de
-    l'ancienne filière ; les offres historiques inactives sont également
-    consolidées sans perdre l'état actif éventuel.
+    à un index partiel. Les enregistrements d'années académiques différentes
+    sont des éléments d'historique distincts : ils doivent être conservés.
+    Seuls deux enregistrements de la même université et de la même année
+    sont consolidés ; si deux années différentes sont toutes deux marquées
+    actives, l'offre déjà portée par la filière canonique garde le statut
+    actif afin de respecter l'index partiel.
     """
     programmes_source = session.exec(
         select(ProgrammeUniversitaire).where(
@@ -175,24 +177,46 @@ def _reassigner_filiere(session: Session, ancien_id: int, nouveau_id: int) -> No
     ).all()
 
     for programme in programmes_source:
-        cible = session.exec(
+        # Une ligne de la même année sur la filière canonique est un doublon
+        # de cette offre annuelle ; les autres années restent des archives.
+        cible_meme_annee = session.exec(
             select(ProgrammeUniversitaire).where(
                 ProgrammeUniversitaire.universite_id == programme.universite_id,
                 ProgrammeUniversitaire.filiere_id == nouveau_id,
+                ProgrammeUniversitaire.annee_academique == programme.annee_academique,
             )
         ).first()
 
-        if cible is not None:
-            # Si l'offre historique supprimée était active alors que
-            # l'offre survivante ne l'était pas, conserve l'information
-            # « active » sur la ligne survivante.
-            if programme.est_active and not cible.est_active:
-                cible.est_active = True
-                session.add(cible)
+        if cible_meme_annee is not None:
+            if programme.est_active and not cible_meme_annee.est_active:
+                offre_active_canonique = session.exec(
+                    select(ProgrammeUniversitaire).where(
+                        ProgrammeUniversitaire.universite_id == programme.universite_id,
+                        ProgrammeUniversitaire.filiere_id == nouveau_id,
+                        ProgrammeUniversitaire.est_active == True,  # noqa: E712
+                    )
+                ).first()
+                if offre_active_canonique is None:
+                    cible_meme_annee.est_active = True
+                    session.add(cible_meme_annee)
             session.delete(programme)
-        else:
-            programme.filiere_id = nouveau_id
-            session.add(programme)
+            continue
+
+        if programme.est_active:
+            # Une autre année peut déjà porter l'offre active canonique.
+            # Dans ce cas, préserver cette ligne comme historique inactive.
+            offre_active_canonique = session.exec(
+                select(ProgrammeUniversitaire).where(
+                    ProgrammeUniversitaire.universite_id == programme.universite_id,
+                    ProgrammeUniversitaire.filiere_id == nouveau_id,
+                    ProgrammeUniversitaire.est_active == True,  # noqa: E712
+                )
+            ).first()
+            if offre_active_canonique is not None:
+                programme.est_active = False
+
+        programme.filiere_id = nouveau_id
+        session.add(programme)
 
     session.flush()
 
