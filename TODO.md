@@ -99,23 +99,26 @@ Pour le METFP, le portail officiel recense des référentiels de formation publi
 
 **Règle de données :** ne pas prétendre que le catalogue technique/professionnel est exhaustif tant qu'il n'a pas été comparé aux sources officielles du ministère compétent. Une donnée ambiguë reste « à vérifier » au lieu d'être devinée.
 
-## CI GitHub Actions — état après les PR universitaires (1er novembre 2026)
+## CI GitHub Actions — état après les PR #308 à #314 (1er novembre 2026)
 
-Les erreurs du 31 octobre provenaient de jobs arrêtés avant attribution d'un runner (steps=[] et logs_url=null). Les runners ont été attribués normalement le 1er novembre et les quatre PR suivantes sont désormais fusionnées :
+Les jobs du 31 octobre avaient échoué avant attribution d'un runner (steps vides, sans logs). Depuis le 1er novembre, les runners sont attribués correctement et la CI a validé les changements suivants :
 
-| PR | Commit fusionné | Résultat vérifié |
+| PR | Commit de fusion | Résultat |
 |---|---|---|
-| #308 — cartographie MESUPRES | d64c87ced96aa4ce3cdd40e5253cc0235fef2089 | CI et PostgreSQL réussis ; 986 tests passés sur le run détaillé |
-| #309 — audit universitaire / README / TODO | a074e933db99366bb73b3065fe0d91c846190735 | CI et PostgreSQL réussis sur la tête fusionnée |
+| #308 — cartographie MESUPRES | d64c87ced96aa4ce3cdd40e5253cc0235fef2089 | CI et smoke PostgreSQL réussis ; 986 tests passés sur le run détaillé |
+| #309 — audit universitaire, README et TODO | a074e933db99366bb73b3065fe0d91c846190735 | CI PR et smoke PostgreSQL réussis |
 | #310 — réconciliation ENS | c4bb4bd76ce23bcb73ae55d49aca7f85434b00f1 | 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
-| #311 — limites de durée CI | 1d880746c5ed2238e89b5ac2ca398f3406c33113 | CI PR et push réussies : 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
+| #311 — limites de durée CI | 1d880746c5ed2238e89b5ac2ca398f3406c33113 | CI push et PR réussies ; 987 tests passés, 0 échec, 0 ignoré |
+| #312 — bilan universitaire post-déploiement | c89fbb7109be54fca53441db2ad2fa35c999e190 | CI PR réussie ; 987 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
+| #313 — index FK établissements partenaires | e238be4f5469651c227d44ac58afa46b711321d1 | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi (7 tests) |
+| #314 — avertissement catalogue universitaire trilingue | 1c8a853353052a88c42fe6b860a5a3412f79f9ce | CI PR et push réussies ; 988 tests passés, 0 échec, 0 ignoré ; smoke PostgreSQL réussi |
 
-La CI définit maintenant :
+La CI définit :
 - job applicatif : limite globale de **30 minutes** ;
 - job PostgreSQL : limite globale de **15 minutes** ;
 - chaque fichier tests/test_*.py : limite de **300 secondes**.
 
-Le run 41272543571 sur le main final 1d88074 était encore en cours au moment de cette mise à jour ; son smoke PostgreSQL était réussi et son lot applicatif était actif, sans échec signalé. Render conserve la règle checksPass : les services ne prennent un nouveau commit de main qu'après réussite de la CI.
+Le run push du commit #314 sur main (run 41274678777) est terminé avec succès : 146 modules, **988 passés, 0 échec, 0 ignoré** ; smoke PostgreSQL réussi. Les deux services Render sont depuis déployés en live sur 1c8a853353052a88c42fe6b860a5a3412f79f9ce. La PR #315 est la présente mise à jour documentaire et doit elle-même rester soumise à une CI verte avant fusion.
 
 ### Réconciliation ENS vérifiée en production
 
@@ -127,11 +130,25 @@ Le run 41272543571 sur le main final 1d88074 était encore en cours au moment de
 - [x] Aucune filière n'a plus d'une offre universitaire active pour la même université.
 - [ ] **Années académiques des offres :** les 237 lignes ProgrammeUniversitaire de production ont toutes annee_academique IS NULL. Ne pas interpréter est_active comme preuve d'ouverture 2026-2027. Obtenir les années et preuves institutionnelles avant tout remplissage.
 - [ ] Concevoir séparément les habilitations réglementaires (HAE), l'offre académique habilitée et l'ouverture annuelle effective ; ne pas déduire l'une de l'autre.
-- [ ] Confirmer par une source primaire le calendrier 2026-2027 de la formation à distance ENS-SEAS avant de l'intégrer au catalogue.
+- [ ] Confirmer par une source primaire le calendrier 2026-2027 de la formation à distance ENS-SEAS et l'appel L1 2026-2027 de la Faculté DEG avant de modifier les états d'ouverture du catalogue.
+- [x] Le statut du catalogue est désormais expliqué sur l'inscription universitaire, le profil académique et la page Universités en français, malagasy et anglais (PR #314). Cette information ne bloque pas les inscriptions.
 
 ### Contrôle Supabase associé
 
-L'advisor signale 62 tables avec RLS activé sans politique. La requête de privilèges n'a trouvé aucun privilège de table pour anon ou authenticated ; seul service_role avait des privilèges sur les 62 tables. Ne pas ajouter de politiques génériques : vérifier d'abord le modèle d'accès API et garder les droits privilégiés côté serveur. L'advisor performance signale aussi une FK non indexée etablissementpartenaire.cree_par_id ; la traiter dans une migration ciblée, sans supprimer les index déclarés inutilisés sur la seule base des statistiques actuelles.
+- [x] Le contrôle initial avait trouvé une FK non indexée : etablissementpartenaire.cree_par_id.
+- [x] La PR #313 ajoute l'index B-tree ix_etablissementpartenaire_cree_par_id et aligne le modèle SQLModel.
+- [x] Après déploiement Render, Supabase confirme alembic_version=f1c7a9d3e2b6 et la présence d'un seul index ix_etablissementpartenaire_cree_par_id sur cree_par_id.
+- [x] L'advisor ne signale plus de FK sans index. Il signale 155 index inutilisés (niveau INFO) ; la table etablissementpartenaire compte actuellement 0 ligne. Ne supprimer aucun index sur la seule base de ces statistiques.
+- [ ] Le signalement RLS antérieur (62 tables RLS sans politique) reste à traiter par une revue dédiée. Le contrôle des privilèges n'a trouvé aucun privilège de table pour anon ni authenticated ; ne pas créer de politiques génériques et ne pas exposer service_role au navigateur.
+
+### Sources HAE à utiliser pour la suite
+
+- [Portail HAE MESUPRES](https://qualite.mesupres.gov.mg/) : décrit les procédures d'habilitation, d'accréditation et d'équivalence, ainsi que les registres d'offres habilitées Licence/Master/Doctorat et d'enseignants-chercheurs permanents.
+- [Guide pratique de dépôt d'une nouvelle habilitation ou de renouvellement](https://www.mesupres.gov.mg/documents/index/1?categorie=habilitations) : publié par le MESUPRES le 31 août 2026.
+- [Liste ministérielle des établissements habilités](https://www.mesupres.gov.mg/etablissements) : indique actuellement que son contenu est en cours de mise à jour.
+- [Répertoire des organismes sous tutelle DGES](https://www.mesupres.gov.mg/front/rattache_dgsup) : à utiliser pour identifier les universités et organismes rattachés, pas pour déduire l'habilitation d'une offre précise.
+
+Ne pas importer en masse le PDF HAE de 2022 comme registre réglementaire courant. Chaque ligne universitaire doit être liée à une décision HAE vérifiable, à son grade exact, à son institution et site d'implantation, puis à une preuve distincte d'ouverture de cohorte annuelle.
 
 ## 5. Ordre recommandé pour la prochaine itération
 
