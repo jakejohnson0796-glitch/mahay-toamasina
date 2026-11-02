@@ -168,3 +168,26 @@ def test_un_etablissement_inactif_suspend_toutes_les_appartenances(db):
 
     assert membre_actif(db, institution.id, responsable.id, (ROLE_RESPONSABLE,)) is None
     assert institution_pour_cours(db, responsable, None) is None
+
+
+
+def test_un_professeur_global_peut_etre_etudiant_dans_un_autre_tenant(db):
+    inst_prof = creer_etablissement(db, "Institut professeur", "INST-P")
+    inst_etudiant = creer_etablissement(db, "Institut étudiant", "INST-E")
+    compte = creer_compte(db, "Compte double rôle", RoleUtilisateur.PROFESSEUR)
+    professeur_cours = creer_compte(db, "Professeur du cours")
+    assurer_membre(db, inst_prof.id, compte.id, ROLE_PROFESSEUR)
+    assurer_membre(db, inst_etudiant.id, compte.id, ROLE_ETUDIANT)
+    assurer_membre(db, inst_etudiant.id, professeur_cours.id, ROLE_PROFESSEUR)
+
+    cours = Cours(
+        nom="Cours du soir", matiere="Mathématiques", niveau="L1",
+        professeur_id=professeur_cours.id, institution_id=inst_etudiant.id,
+    )
+    db.add(cours)
+    db.flush()
+
+    assert peut_rejoindre_cours(db, cours, compte)
+    db.add(InscriptionCours(cours_id=cours.id, utilisateur_id=compte.id))
+    db.flush()
+    assert est_inscrit_cours(db, cours.id, compte.id)

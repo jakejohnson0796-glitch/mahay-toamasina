@@ -195,31 +195,38 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
 
     if utilisateur.role == RoleUtilisateur.ADMIN:
         cours_visibles = session.exec(select(Cours).order_by(Cours.date_creation.desc())).all()
-    elif _est_professeur(utilisateur, session):
+    else:
+        # Un compte peut être professeur dans un établissement et étudiant
+        # dans un autre : on réunit les deux périmètres sans élargir les droits.
         ids_responsable = institutions_avec_role(
             session, utilisateur.id, (ROLE_RESPONSABLE,)
         )
-        conditions = [Cours.professeur_id == utilisateur.id]
+        conditions_gestion = [Cours.professeur_id == utilisateur.id]
         if ids_responsable:
-            conditions.append(Cours.institution_id.in_(ids_responsable))
-        candidats = session.exec(
-            select(Cours).where(or_(*conditions)).order_by(Cours.date_creation.desc())
+            conditions_gestion.append(Cours.institution_id.in_(ids_responsable))
+        candidats_gestion = session.exec(
+            select(Cours).where(or_(*conditions_gestion))
         ).all()
-        cours_visibles = [
-            cours for cours in candidats
+        cours_geres = [
+            cours for cours in candidats_gestion
             if _peut_gerer_cours(cours, utilisateur, session)
         ]
-    else:
-        candidats = session.exec(
+        candidats_inscription = session.exec(
             select(Cours)
             .where(InscriptionCours.cours_id == Cours.id)
             .where(InscriptionCours.utilisateur_id == utilisateur.id)
-            .order_by(Cours.date_creation.desc())
         ).all()
-        cours_visibles = [
-            cours for cours in candidats
+        cours_etudies = [
+            cours for cours in candidats_inscription
             if _est_inscrit(session, cours.id, utilisateur.id)
         ]
+        cours_par_id = {cours.id: cours for cours in cours_geres}
+        cours_par_id.update({cours.id: cours for cours in cours_etudies})
+        cours_visibles = sorted(
+            cours_par_id.values(),
+            key=lambda cours: cours.date_creation,
+            reverse=True,
+        )
 
     gamification.enregistrer_action(
         session,
@@ -237,6 +244,10 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
             "utilisateur": utilisateur,
             "cours_visibles": cours_visibles,
             "est_professeur": _est_professeur(utilisateur, session),
+            "peut_rejoindre_cours": (
+                utilisateur.role == RoleUtilisateur.ETUDIANT
+                or bool(institutions_avec_role(session, utilisateur.id, ("etudiant",)))
+            ),
             "institutions_creation": (
                 session.exec(
                     select(EtablissementPartenaire)
@@ -358,8 +369,6 @@ def rejoindre_cours_par_code(
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
-    if utilisateur.role != RoleUtilisateur.ETUDIANT:
-        return RedirectResponse("/classe?erreur=inscription_reservee", status_code=303)
     host = adresse_ip_client(request)
     if limite_depassee(f"join-course:user:{utilisateur.id}", 10, 3600) or limite_depassee(f"join-course:ip:{host}", 30, 3600):
         return RedirectResponse("/classe?erreur=trop_de_tentatives", status_code=303)
@@ -371,6 +380,8 @@ def rejoindre_cours_par_code(
     if not cours:
         return RedirectResponse("/classe?erreur=code_invalide#rejoindre-cours", status_code=303)
     if not peut_rejoindre_cours(session, cours, utilisateur):
+        if cours.institution_id is None and utilisateur.role != RoleUtilisateur.ETUDIANT:
+            return RedirectResponse("/classe?erreur=inscription_reservee", status_code=303)
         return RedirectResponse("/classe?erreur=etablissement_incompatible#rejoindre-cours", status_code=303)
     if not _est_inscrit(session, cours.id, utilisateur.id):
         session.add(InscriptionCours(cours_id=cours.id, utilisateur_id=utilisateur.id))

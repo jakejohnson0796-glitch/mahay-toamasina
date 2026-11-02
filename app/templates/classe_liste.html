@@ -75,7 +75,7 @@
   {% endif %}
   {% if request.query_params.get("inscription") == "confirmee" %}<div class="info" role="status">Inscription confirmée. Le cours est maintenant visible dans ton espace.</div>{% endif %}
 
-  {% if not est_professeur %}
+  {% if peut_rejoindre_cours %}
   <section class="classe-form-panel classe-code-join" id="rejoindre-cours" aria-labelledby="rejoindre-cours-title">
     <div class="classe-form-head">
       <div><h2 id="rejoindre-cours-title">Rejoindre un cours avec un code</h2><p>Entre le code communiqué par ton professeur pour rejoindre sa classe.</p></div>

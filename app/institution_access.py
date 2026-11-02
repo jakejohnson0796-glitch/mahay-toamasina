@@ -78,10 +78,10 @@ def peut_rejoindre_cours(session: Session, cours: Cours, utilisateur: Optional[U
     if not utilisateur:
         return False
     if cours.institution_id is None:
-        return True
-    role_global = getattr(utilisateur.role, "value", utilisateur.role)
-    if role_global != "etudiant":
-        return False
+        role_global = getattr(utilisateur.role, "value", utilisateur.role)
+        return role_global == "etudiant"
+    # Pour un cours institutionnel, le rôle du membre dans ce tenant prévaut
+    # sur son rôle global : un professeur peut aussi être étudiant ailleurs.
     return membre_actif(session, cours.institution_id, utilisateur.id, (ROLE_ETUDIANT,)) is not None
 
 def est_inscrit_cours(session: Session, cours_id: int, utilisateur_id: int) -> bool:
