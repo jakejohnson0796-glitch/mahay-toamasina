@@ -8,10 +8,12 @@ global du compte : responsable, professeur ou étudiant. Une appartenance
 inactive ne donne aucun accès. Une affectation est créée ou réactivée par un
 administrateur de la plateforme.
 
-Un cours institutionnel porte un champ institution_id. Les cours historiques
-dont ce champ est nul conservent leur ancien périmètre global. La migration
-reconstitue les appartenances correspondant aux comptes qui portaient déjà
-Utilisateur.institution_id.
+Un cours institutionnel porte un champ institution_id. La migration reconstitue
+les appartenances correspondant aux comptes qui portaient déjà
+Utilisateur.institution_id. Elle rattache aussi les cours existants au tenant
+de leur professeur lorsque celui-ci possède un seul établissement actif et un
+rôle pédagogique explicite. Un cours dont le périmètre reste ambigu conserve
+son institution_id nul ; il n'est pas déplacé par supposition.
 
 ## Règles d'accès aux cours
 

@@ -81,6 +81,32 @@ def upgrade() -> None:
         )
     )
 
+    # Affecte les cours existants uniquement si le professeur a une appartenance
+    # pédagogique active et un seul établissement connu : aucun rattachement
+    # n'est deviné lorsque le périmètre est ambigu.
+    op.execute(sa.text("""
+        UPDATE cours AS c
+        SET institution_id = u.institution_id
+        FROM utilisateur AS u
+        WHERE c.professeur_id = u.id
+          AND c.institution_id IS NULL
+          AND u.institution_id IS NOT NULL
+          AND EXISTS (
+              SELECT 1
+              FROM membre_etablissement AS m
+              WHERE m.utilisateur_id = u.id
+                AND m.institution_id = u.institution_id
+                AND m.est_actif = TRUE
+                AND m.role IN ('professeur', 'responsable')
+          )
+          AND (
+              SELECT COUNT(DISTINCT m2.institution_id)
+              FROM membre_etablissement AS m2
+              WHERE m2.utilisateur_id = u.id
+                AND m2.est_actif = TRUE
+          ) = 1
+    """))
+
 
 def downgrade() -> None:
     bind = op.get_bind()
