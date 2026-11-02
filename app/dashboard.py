@@ -17,7 +17,9 @@ from .models import (
     Devoir,
     Document,
     InscriptionCours,
+    Notification,
     RenduDevoir,
+    TypeNotification,
     SessionTuteur,
     StatutDocument,
     TentativeQuiz,
@@ -479,3 +481,74 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
         "notions_a_revoir": quiz_module.plan_revision_du_jour(session, utilisateur.id, limit=6),
         "prochaine_revision": prochaine_revision,
     }
+
+def notifier_echeances_proches(
+    session: Session,
+    utilisateur_id: int,
+    maintenant: Optional[datetime] = None,
+    delai_heures: int = 24,
+) -> int:
+    """Crée au plus un rappel par devoir et par date limite, à l'ouverture du dashboard."""
+    maintenant = maintenant or datetime.utcnow()
+    borne = maintenant + timedelta(hours=max(1, min(int(delai_heures), 72)))
+    cours_ids = session.exec(
+        select(InscriptionCours.cours_id).where(InscriptionCours.utilisateur_id == utilisateur_id)
+    ).all()
+    if not cours_ids:
+        return 0
+
+    devoirs = session.exec(
+        select(Devoir)
+        .where(Devoir.cours_id.in_(cours_ids))
+        .where(Devoir.date_limite.is_not(None))
+        .where(Devoir.date_limite > maintenant)
+        .where(Devoir.date_limite <= borne)
+        .where(Devoir.est_clos == False)  # noqa: E712
+        .where(Devoir.archive == False)  # noqa: E712
+        .order_by(Devoir.date_limite)
+    ).all()
+    if not devoirs:
+        return 0
+
+    ids_devoirs = [devoir.id for devoir in devoirs]
+    rendus = session.exec(
+        select(RenduDevoir.devoir_id)
+        .where(RenduDevoir.utilisateur_id == utilisateur_id)
+        .where(RenduDevoir.devoir_id.in_(ids_devoirs))
+    ).all()
+    devoirs_deja_rendus = set(rendus)
+
+    existantes = session.exec(
+        select(Notification.url_destination)
+        .where(Notification.destinataire_id == utilisateur_id)
+        .where(Notification.type_notification == TypeNotification.RAPPEL_ECHEANCE)
+    ).all()
+    destinations_existantes = {value for value in existantes if value}
+
+    cours = session.exec(select(Cours).where(Cours.id.in_(cours_ids))).all()
+    cours_par_id = {item.id: item for item in cours}
+    creees = 0
+    for devoir in devoirs:
+        if devoir.id in devoirs_deja_rendus:
+            continue
+        date_cible = devoir.date_limite.replace(microsecond=0).isoformat()
+        destination = f"/classe/devoirs/{devoir.id}?rappel={date_cible}"
+        if destination in destinations_existantes:
+            continue
+        cours_item = cours_par_id.get(devoir.cours_id)
+        nom_cours = cours_item.nom if cours_item else "ton cours"
+        session.add(Notification(
+            destinataire_id=utilisateur_id,
+            type_notification=TypeNotification.RAPPEL_ECHEANCE,
+            contenu=(
+                f"Le devoir « {devoir.titre} » dans « {nom_cours} » "
+                f"arrive à échéance le {devoir.date_limite.strftime('%d/%m/%Y à %H:%M')}."
+            ),
+            url_destination=destination,
+        ))
+        destinations_existantes.add(destination)
+        creees += 1
+    if creees:
+        session.commit()
+    return creees
+

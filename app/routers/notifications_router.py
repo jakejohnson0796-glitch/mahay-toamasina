@@ -33,6 +33,7 @@ def _notification_vue(notification: Notification) -> dict:
         "nouveau_devoir": "Nouveau devoir",
         "note_publiee": "Nouvelle note publiée",
         "statut_presence": "Mise à jour de présence",
+        "rappel_echeance": "Rappel d’échéance",
     }
     lien = None
     destination = (getattr(notification, "url_destination", None) or "").strip()

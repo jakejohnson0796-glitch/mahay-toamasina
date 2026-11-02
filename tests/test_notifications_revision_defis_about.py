@@ -104,3 +104,8 @@ def test_feature_page_css_has_balanced_braces_and_accessibility_rules():
     assert ":focus-visible" in css
     assert "@media(max-width:700px)" in css
     assert "@media(prefers-reduced-motion:reduce)" in css
+
+
+def test_rappel_echeance_est_present_dans_le_centre_de_notifications():
+    router = read("app/routers/notifications_router.py")
+    assert '"rappel_echeance": "Rappel d’échéance"' in router
