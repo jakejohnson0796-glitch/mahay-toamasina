@@ -132,3 +132,9 @@ def test_templates_academiques_compilent_et_relient_les_notes_au_tuteur():
 @pytest.mark.parametrize("valeur", ["=2+2", " +1+1", "@SUM(A1:A2)", "-cmd"])
 def test_export_csv_academique_neutralise_les_formules(valeur):
     assert _csv_academique_sans_formule(valeur).startswith("'")
+
+
+def test_pages_personnelles_notes_et_presences_chargent_les_styles_de_classe():
+    base = (ROOT / "app" / "templates" / "base.html").read_text(encoding="utf-8")
+    assert 'request.url.path in ["/mes-notes", "/mes-presences"]' in base
+    assert 'href="/static/classe.css' in base
