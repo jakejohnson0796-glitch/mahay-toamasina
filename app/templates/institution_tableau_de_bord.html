@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block titre %}Espace établissement — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="etablissement-title">
+    <div>
+      <span class="ops-kicker">Espace institutionnel · accès responsable</span>
+      <h1 id="etablissement-title">{{ institution.nom }}</h1>
+      <p>Vue agrégée des membres, cours, devoirs et corrections de ton établissement. Les informations nominatives des étudiants et les cours d'autres établissements ne sont pas affichés ici.</p>
+      <div class="ops-hero-actions">
+        <a href="/classe">Mes cours</a>
+        <a href="/documents">Ressources pédagogiques</a>
+      </div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ statistiques.etudiants }}</strong><span>étudiants actifs</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.professeurs }}</strong><span>professeurs actifs</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.cours }}</strong><span>cours institutionnels</span></div>
+    </div>
+  </section>
+  <section class="ops-section">
+    <h2>Vue d'ensemble pédagogique</h2>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ statistiques.membres }}</strong><span>membres actifs</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.responsables }}</strong><span>responsables actifs</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.inscriptions }}</strong><span>inscriptions aux cours</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.devoirs }}</strong><span>devoirs publiés</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.rendus }}</strong><span>copies déposées</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.copies_corrigees }}</strong><span>copies corrigées</span></div>
+    </div>
+  </section>
+  <section class="ops-section">
+    <h2>Cours de l'établissement</h2>
+    {% if cours %}
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Cours</th><th>Matière</th><th>Niveau</th><th>Ouvrir</th></tr></thead>
+        <tbody>
+        {% for item in cours %}
+          <tr><td><strong>{{ item.nom }}</strong></td><td>{{ item.matiere }}</td><td>{{ item.niveau }}</td><td><a href="/classe/{{ item.id }}">Consulter</a></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>Aucun cours institutionnel n'a encore été créé.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

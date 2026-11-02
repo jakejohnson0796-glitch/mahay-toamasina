@@ -17,13 +17,13 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse, Response
-from sqlmodel import Session, select
+from sqlmodel import Session, select, or_
 
 from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification)
+from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EtablissementPartenaire, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
@@ -33,33 +33,35 @@ from ..text_extraction import extraire_texte
 from .. import classe_correction
 from ..rate_limit import limite_depassee
 from .. import gamification
+from ..institution_access import (
+    ROLE_RESPONSABLE, ROLES_PEDAGOGIQUES,
+    est_inscrit_cours, institution_pour_cours, institutions_avec_role,
+    peut_gerer_cours, peut_rejoindre_cours,
+)
 from .. import quiz as quiz_module
 from .. import ai_queue, course_revision
 
 router = APIRouter()
 
 
-def _est_professeur(utilisateur: Optional[Utilisateur]) -> bool:
-    return bool(utilisateur and utilisateur.role in (RoleUtilisateur.PROFESSEUR, RoleUtilisateur.ADMIN))
-
-
-def _peut_gerer_cours(cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
-    """Professeur proprietaire de CE cours (uniquement le sien) ou admin.
-    Reverifie a chaque appel de route, jamais fait confiance a
-    l'interface — meme principe que _peut_gerer_cercle dans
-    cercles_router.py."""
+def _est_professeur(utilisateur: Optional[Utilisateur], session: Session) -> bool:
     if not utilisateur:
         return False
-    return utilisateur.id == cours.professeur_id or utilisateur.role == RoleUtilisateur.ADMIN
+    if utilisateur.role in (RoleUtilisateur.PROFESSEUR, RoleUtilisateur.ADMIN):
+        return True
+    return bool(institutions_avec_role(session, utilisateur.id, ROLES_PEDAGOGIQUES))
+
+
+def _peut_gerer_cours(
+    cours: Cours, utilisateur: Optional[Utilisateur], session: Session
+) -> bool:
+    """Vérifie l'appartenance active au tenant du cours à chaque requête."""
+    return peut_gerer_cours(session, cours, utilisateur)
 
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
-    return session.exec(
-        select(InscriptionCours).where(
-            InscriptionCours.cours_id == cours_id,
-            InscriptionCours.utilisateur_id == utilisateur_id,
-        )
-    ).first() is not None
+    """Une inscription seule ne suffit pas pour les cours institutionnels."""
+    return est_inscrit_cours(session, cours_id, utilisateur_id)
 
 
 def _generer_nom_salle(cours_id: int) -> str:
@@ -147,7 +149,7 @@ def _peut_ecrire_tableau(session: Session, seance_id: int, cours: Cours, utilisa
     CETTE seance precise (voir AutorisationEcritureTableau) — verifie a
     chaque evenement recu sur le WebSocket, jamais fait confiance a
     l'etat affiche cote client (qui pourrait etre bidouille)."""
-    if _peut_gerer_cours(cours, utilisateur):
+    if _peut_gerer_cours(cours, utilisateur, session):
         return True
     return session.exec(
         select(AutorisationEcritureTableau).where(
@@ -191,21 +193,33 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    if utilisateur.role in (RoleUtilisateur.PROFESSEUR, RoleUtilisateur.ADMIN):
-        if utilisateur.role == RoleUtilisateur.ADMIN:
-            cours_visibles = session.exec(select(Cours).order_by(Cours.date_creation.desc())).all()
-        else:
-            cours_visibles = session.exec(
-                select(Cours).where(Cours.professeur_id == utilisateur.id).order_by(Cours.date_creation.desc())
-            ).all()
+    if utilisateur.role == RoleUtilisateur.ADMIN:
+        cours_visibles = session.exec(select(Cours).order_by(Cours.date_creation.desc())).all()
+    elif _est_professeur(utilisateur, session):
+        ids_responsable = institutions_avec_role(
+            session, utilisateur.id, (ROLE_RESPONSABLE,)
+        )
+        conditions = [Cours.professeur_id == utilisateur.id]
+        if ids_responsable:
+            conditions.append(Cours.institution_id.in_(ids_responsable))
+        candidats = session.exec(
+            select(Cours).where(or_(*conditions)).order_by(Cours.date_creation.desc())
+        ).all()
+        cours_visibles = [
+            cours for cours in candidats
+            if _peut_gerer_cours(cours, utilisateur, session)
+        ]
     else:
-        lignes = session.exec(
+        candidats = session.exec(
             select(Cours)
             .where(InscriptionCours.cours_id == Cours.id)
             .where(InscriptionCours.utilisateur_id == utilisateur.id)
             .order_by(Cours.date_creation.desc())
         ).all()
-        cours_visibles = lignes
+        cours_visibles = [
+            cours for cours in candidats
+            if _est_inscrit(session, cours.id, utilisateur.id)
+        ]
 
     gamification.enregistrer_action(
         session,
@@ -219,7 +233,26 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
     return templates.TemplateResponse(
         request,
         "classe_liste.html",
-        {"utilisateur": utilisateur, "cours_visibles": cours_visibles, "est_professeur": _est_professeur(utilisateur)},
+        {
+            "utilisateur": utilisateur,
+            "cours_visibles": cours_visibles,
+            "est_professeur": _est_professeur(utilisateur, session),
+            "institutions_creation": (
+                session.exec(
+                    select(EtablissementPartenaire)
+                    .where(EtablissementPartenaire.id.in_(
+                        institutions_avec_role(session, utilisateur.id, ROLES_PEDAGOGIQUES)
+                    ))
+                    .where(EtablissementPartenaire.est_actif == True)  # noqa: E712
+                    .order_by(EtablissementPartenaire.nom)
+                ).all()
+                if institutions_avec_role(session, utilisateur.id, ROLES_PEDAGOGIQUES)
+                else []
+            ),
+            "est_responsable_institution": bool(
+                institutions_avec_role(session, utilisateur.id, (ROLE_RESPONSABLE,))
+            ),
+        },
     )
 
 
@@ -229,14 +262,19 @@ def creer_cours(
     nom: str = Form(...),
     matiere: str = Form(...),
     niveau: str = Form(...),
+    institution_id: Optional[int] = Form(None),
     description: Optional[str] = Form(None),
     objectifs: Optional[str] = Form(None),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not _est_professeur(utilisateur):
+    if not _est_professeur(utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
+    try:
+        institution_cible = institution_pour_cours(session, utilisateur, institution_id)
+    except ValueError:
+        return RedirectResponse("/classe?erreur=institution_invalide#nouveau-cours", status_code=303)
 
     nom = " ".join((nom or "").split())
     matiere = " ".join((matiere or "").split())
@@ -251,6 +289,7 @@ def creer_cours(
         description=(description or "").strip()[:3000] or None,
         objectifs=(objectifs or "").strip()[:3000] or None,
         professeur_id=utilisateur.id,
+        institution_id=institution_cible,
         code_invitation=_generer_code_invitation(session),
     )
     session.add(cours)
@@ -273,7 +312,7 @@ def modifier_cours(
 ):
     utilisateur = utilisateur_courant(request, session)
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
 
     nom = " ".join((nom or "").split())
@@ -301,7 +340,7 @@ def renouveler_code_invitation(
 ):
     utilisateur = utilisateur_courant(request, session)
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
     cours.code_invitation = _generer_code_invitation(session)
     session.add(cours)
@@ -331,6 +370,8 @@ def rejoindre_cours_par_code(
     cours = session.exec(select(Cours).where(Cours.code_invitation == code_normalise)).first()
     if not cours:
         return RedirectResponse("/classe?erreur=code_invalide#rejoindre-cours", status_code=303)
+    if not peut_rejoindre_cours(session, cours, utilisateur):
+        return RedirectResponse("/classe?erreur=etablissement_incompatible#rejoindre-cours", status_code=303)
     if not _est_inscrit(session, cours.id, utilisateur.id):
         session.add(InscriptionCours(cours_id=cours.id, utilisateur_id=utilisateur.id))
         session.commit()
@@ -348,7 +389,7 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
     if not cours:
         return RedirectResponse("/classe", status_code=303)
 
-    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    peut_gerer = _peut_gerer_cours(cours, utilisateur, session)
     inscrit = _est_inscrit(session, cours_id, utilisateur.id)
 
     if not peut_gerer and not inscrit:
@@ -622,7 +663,7 @@ def radar_pedagogique_cours(
     cours = session.get(Cours, cours_id)
     if not cours:
         return RedirectResponse("/classe", status_code=303)
-    if not _peut_gerer_cours(cours, utilisateur):
+    if not _peut_gerer_cours(cours, utilisateur, session):
         # Le radar est une vue réservée au professeur propriétaire et aux admins.
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
 
@@ -671,7 +712,7 @@ def liste_etudiants_cours(request: Request, cours_id: int, session: Session = De
         return RedirectResponse("/connexion", status_code=303)
 
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
 
     lignes = session.exec(
@@ -702,13 +743,15 @@ def ajouter_etudiant(
         return RedirectResponse("/connexion", status_code=303)
 
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
 
     cible = session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone.strip())).first()
     if not cible:
         return RedirectResponse(f"/classe/{cours_id}/etudiants?erreur=utilisateur_introuvable", status_code=303)
 
+    if not peut_rejoindre_cours(session, cours, cible):
+        return RedirectResponse(f"/classe/{cours_id}/etudiants?erreur=etablissement_incompatible", status_code=303)
     if not _est_inscrit(session, cours_id, cible.id):
         session.add(InscriptionCours(cours_id=cours_id, utilisateur_id=cible.id))
         session.commit()
@@ -727,7 +770,7 @@ def retirer_etudiant(request: Request, cours_id: int, utilisateur_id: int, sessi
         return RedirectResponse("/connexion", status_code=303)
 
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
 
     inscription = session.exec(
@@ -757,7 +800,7 @@ def creer_seance(
         return RedirectResponse("/connexion", status_code=303)
 
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
 
     seance = Seance(cours_id=cours_id, titre=titre, description=description or None, nom_salle_livekit=_generer_nom_salle(cours_id))
@@ -777,7 +820,7 @@ def demarrer_seance(request: Request, seance_id: int, session: Session = Depends
     if not seance:
         return RedirectResponse("/classe", status_code=303)
     cours = session.get(Cours, seance.cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{seance.cours_id}", status_code=303)
 
     if seance.statut == StatutSeance.PLANIFIEE:
@@ -799,7 +842,7 @@ def terminer_seance(request: Request, seance_id: int, session: Session = Depends
     if not seance:
         return RedirectResponse("/classe", status_code=303)
     cours = session.get(Cours, seance.cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{seance.cours_id}", status_code=303)
 
     if seance.statut == StatutSeance.EN_COURS:
@@ -1021,7 +1064,7 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     if not cours:
         return RedirectResponse("/classe", status_code=303)
 
-    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    peut_gerer = _peut_gerer_cours(cours, utilisateur, session)
     if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
@@ -1058,7 +1101,7 @@ def salle_virtuelle(request: Request, seance_id: int, session: Session = Depends
     if not cours:
         return RedirectResponse("/classe", status_code=303)
 
-    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    peut_gerer = _peut_gerer_cours(cours, utilisateur, session)
     if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
@@ -1150,7 +1193,7 @@ def _seance_et_cours_geres(session: Session, seance_id: int, utilisateur: Option
     if not seance:
         return None, ("Seance introuvable.", 404)
     cours = session.get(Cours, seance.cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return None, ("Action reservee au professeur de ce cours.", 403)
     return (seance, cours), None
 
@@ -1214,7 +1257,7 @@ def voir_presences(request: Request, seance_id: int, session: Session = Depends(
     if not seance:
         return RedirectResponse("/classe", status_code=303)
     cours = session.get(Cours, seance.cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{seance.cours_id if cours else ''}", status_code=303)
 
     lignes = session.exec(
@@ -1251,7 +1294,7 @@ def _donnees_tableau(session: Session, seance_id: int, request: Request):
     if not cours:
         return RedirectResponse("/classe", status_code=303), None, None
 
-    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    peut_gerer = _peut_gerer_cours(cours, utilisateur, session)
     if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303), None, None
 
@@ -1344,7 +1387,7 @@ async def autoriser_ecriture_tableau(request: Request, seance_id: int, utilisate
     if not seance:
         return RedirectResponse("/classe", status_code=303)
     cours = session.get(Cours, seance.cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{seance.cours_id if cours else ''}", status_code=303)
 
     if not _est_inscrit(session, cours.id, utilisateur_id):
@@ -1378,7 +1421,7 @@ async def revoquer_ecriture_tableau(request: Request, seance_id: int, utilisateu
     if not seance:
         return RedirectResponse("/classe", status_code=303)
     cours = session.get(Cours, seance.cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{seance.cours_id if cours else ''}", status_code=303)
 
     autorisation = session.exec(
@@ -1430,7 +1473,7 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
             await websocket.close(code=4404)
             return
 
-        peut_gerer = _peut_gerer_cours(cours, utilisateur)
+        peut_gerer = _peut_gerer_cours(cours, utilisateur, session)
         if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
             await websocket.close(code=4403)
             return
@@ -1473,7 +1516,7 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
                     # L'inscription et le role sont relus a chaque evenement :
                     # une revocation en cours de session doit prendre effet
                     # sans attendre une nouvelle connexion WebSocket.
-                    peut_gerer_frais = _peut_gerer_cours(cours_frais, utilisateur_frais)
+                    peut_gerer_frais = _peut_gerer_cours(cours_frais, utilisateur_frais, session_fraiche)
                     if not peut_gerer_frais and not _est_inscrit(
                         session_fraiche, cours_frais.id, utilisateur_frais.id
                     ):
@@ -1560,7 +1603,7 @@ def creer_devoir(
 ):
     utilisateur = utilisateur_courant(request, session)
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
 
     titre = " ".join((titre or "").split())
@@ -1620,7 +1663,7 @@ def detail_devoir(request: Request, devoir_id: int, session: Session = Depends(g
     if not cours:
         return RedirectResponse("/classe", status_code=303)
 
-    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    peut_gerer = _peut_gerer_cours(cours, utilisateur, session)
     if not peut_gerer and not _est_inscrit(session, cours.id, utilisateur.id):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
@@ -1690,7 +1733,7 @@ def modifier_devoir(
     utilisateur = utilisateur_courant(request, session)
     devoir = session.get(Devoir, devoir_id)
     cours = session.get(Cours, devoir.cours_id) if devoir else None
-    if not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not devoir or not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
 
     titre = " ".join((titre or "").split())
@@ -1749,7 +1792,7 @@ def supprimer_devoir(
     utilisateur = utilisateur_courant(request, session)
     devoir = session.get(Devoir, devoir_id)
     cours = session.get(Cours, devoir.cours_id) if devoir else None
-    if not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not devoir or not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
     if confirmation != "SUPPRIMER":
         return RedirectResponse(f"/classe/devoirs/{devoir_id}?erreur=confirmation_requise", status_code=303)
@@ -1778,7 +1821,7 @@ def exporter_notes_cours(
 ):
     utilisateur = utilisateur_courant(request, session)
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
 
     devoirs = session.exec(
@@ -1837,7 +1880,7 @@ def aide_correction_ia(
     rendu = session.get(RenduDevoir, rendu_id)
     devoir = session.get(Devoir, rendu.devoir_id) if rendu else None
     cours = session.get(Cours, devoir.cours_id) if devoir else None
-    if not rendu or not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not rendu or not devoir or not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
     if limite_depassee(f"correction-ia:user:{utilisateur.id}", 5, 3600):
         return RedirectResponse(f"/classe/devoirs/{devoir.id}?erreur=limite_ia#rendus", status_code=303)
@@ -1959,7 +2002,7 @@ def telecharger_rendu(request: Request, rendu_id: int, session: Session = Depend
     # Le prof/admin du cours peut telecharger n'importe quel rendu ;
     # l'etudiant peut seulement telecharger LE SIEN (jamais celui d'un
     # camarade, meme en devinant l'id).
-    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    peut_gerer = _peut_gerer_cours(cours, utilisateur, session)
     if not peut_gerer and rendu.utilisateur_id != utilisateur.id:
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
@@ -1982,7 +2025,7 @@ def noter_rendu(
     rendu = session.get(RenduDevoir, rendu_id)
     devoir = session.get(Devoir, rendu.devoir_id) if rendu else None
     cours = session.get(Cours, devoir.cours_id) if devoir else None
-    if not rendu or not devoir or not cours or not _peut_gerer_cours(cours, utilisateur):
+    if not rendu or not devoir or not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
 
     try:

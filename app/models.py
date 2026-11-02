@@ -544,6 +544,23 @@ class Utilisateur(SQLModel, table=True):
     )
 
 
+class MembreEtablissement(SQLModel, table=True):
+    """Appartenance et rôle d'un compte dans un établissement partenaire."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    institution_id: int = Field(foreign_key="etablissementpartenaire.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    role: str = Field(default="etudiant", max_length=24, index=True)
+    est_actif: bool = Field(default=True, index=True)
+    ajoute_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_maj: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("institution_id", "utilisateur_id", name="uq_membre_etablissement_utilisateur"),
+        Index("ix_membre_etablissement_role_actif", "institution_id", "role", "est_actif"),
+    )
+
+
 class CodeSecours2FA(SQLModel, table=True):
     """Codes de secours a usage unique, generes a l'activation de la 2FA,
     pour se reconnecter si l'utilisateur perd l'acces a son application
@@ -1615,6 +1632,9 @@ class Cours(SQLModel, table=True):
     nom: str
     matiere: str
     niveau: str
+    # NULL préserve les cours historiques ; les nouveaux cours institutionnels
+    # sont limités au tenant choisi à leur création.
+    institution_id: Optional[int] = Field(default=None, foreign_key="etablissementpartenaire.id", index=True)
     # Champs scolaires distincts de la chaîne universitaire déjà utilisée.
     portee_academique: str = Field(default="universitaire", index=True, max_length=20)
     niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)

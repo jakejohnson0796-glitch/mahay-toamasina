@@ -22,6 +22,8 @@
 
   {% if erreur %}<div class="ops-alert ops-alert-danger" role="alert">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("ok") == "etablissement_cree" %}<div class="ops-alert ops-alert-info" role="status">Établissement partenaire créé.</div>{% endif %}
+  {% if request.query_params.get("ok") == "membre_attribue" %}<div class="ops-alert ops-alert-info" role="status">Rôle institutionnel attribué.</div>{% endif %}
+  {% if request.query_params.get("ok") == "membre_desactive" %}<div class="ops-alert ops-alert-info" role="status">Appartenance institutionnelle désactivée.</div>{% endif %}
 
   <div class="ops-admin-groups">
     <section class="ops-admin-group">
@@ -72,6 +74,29 @@
     </section>
   </div>
 
+  <section class="ops-section">
+    <h2>3. Affecter les responsables et les enseignants</h2>
+    <p>Le compte doit déjà exister dans MITARIDALA. Utilise son identifiant de connexion ou son numéro de téléphone. Le rôle attribué est limité à l'établissement choisi.</p>
+    <form method="post" action="/admin/inscriptions-institutionnelles/membres/attribuer" class="ops-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="membre-institution">Établissement</label>
+      <select id="membre-institution" name="institution_id" required>
+        <option value="">Choisir un établissement</option>
+        {% for item in institutions if item.est_actif %}
+        <option value="{{ item.id }}">{{ item.nom }} — {{ item.code }}</option>
+        {% endfor %}
+      </select>
+      <label for="membre-identifiant">Identifiant de connexion ou téléphone</label>
+      <input id="membre-identifiant" name="identifiant" type="text" maxlength="160" required autocomplete="off">
+      <label for="membre-role">Rôle dans cet établissement</label>
+      <select id="membre-role" name="role" required>
+        <option value="responsable">Responsable d'établissement</option>
+        <option value="professeur">Professeur</option>
+        <option value="etudiant">Étudiant</option>
+      </select>
+      <button class="bouton bouton-primaire" type="submit">Attribuer le rôle</button>
+    </form>
+  </section>
   {% if institutions %}
   <section class="ops-section">
     <h2>Établissements partenaires</h2>
@@ -95,6 +120,35 @@
   </section>
   {% endif %}
 
+  {% if membres %}
+  <section class="ops-section">
+    <h2>Appartenances institutionnelles</h2>
+    <p>La désactivation retire les droits liés au rôle. Le dernier responsable actif d'un établissement ne peut pas être désactivé.</p>
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Établissement</th><th>Compte</th><th>Rôle</th><th>État</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for membre, compte in membres %}
+          <tr>
+            <td>{{ institutions|selectattr("id", "equalto", membre.institution_id)|map(attribute="nom")|first or "—" }}</td>
+            <td>{{ compte.nom }} <small>{{ compte.identifiant_connexion or compte.telephone or "—" }}</small></td>
+            <td>{{ membre.role }}</td>
+            <td>{% if membre.est_actif %}<span class="ops-badge is-success">Actif</span>{% else %}<span class="ops-badge is-alert">Désactivé</span>{% endif %}</td>
+            <td>
+              {% if membre.est_actif %}
+              <form method="post" action="/admin/inscriptions-institutionnelles/membres/{{ membre.id }}/desactiver">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Désactiver</button>
+              </form>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
   {% if resultat %}
   <section class="ops-section" aria-labelledby="resultat-title">
     <div class="ops-new-users-head">

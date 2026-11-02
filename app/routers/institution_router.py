@@ -16,7 +16,11 @@ from sqlmodel import Session, func, select
 from ..auth import hacher_mot_de_passe, utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
-from ..models import EtablissementPartenaire, RoleUtilisateur, Utilisateur
+from ..models import (
+    EtablissementPartenaire, MembreEtablissement, RoleUtilisateur, Utilisateur,
+    Cours, InscriptionCours, Devoir, RenduDevoir,
+)
+from ..institution_access import assurer_membre, ROLE_ETUDIANT
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
 from ..subscription import creer_essais_gratuits_en_masse
@@ -179,14 +183,20 @@ def _page(request: Request, session: Session, admin: Utilisateur, *, erreur: str
         select(EtablissementPartenaire).order_by(EtablissementPartenaire.nom)
     ).all()
     effectifs = dict(session.exec(
-        select(Utilisateur.institution_id, func.count(Utilisateur.id))
-        .where(Utilisateur.institution_id.is_not(None))
-        .group_by(Utilisateur.institution_id)
+        select(MembreEtablissement.institution_id, func.count(MembreEtablissement.id))
+        .where(MembreEtablissement.est_actif == True)  # noqa: E712
+        .group_by(MembreEtablissement.institution_id)
     ).all())
+    membres = session.exec(
+        select(MembreEtablissement, Utilisateur)
+        .join(Utilisateur, MembreEtablissement.utilisateur_id == Utilisateur.id)
+        .order_by(MembreEtablissement.institution_id, MembreEtablissement.role, Utilisateur.nom)
+    ).all()
     return templates.TemplateResponse(request, "admin_inscriptions_institutionnelles.html", {
         "utilisateur": admin,
         "institutions": institutions,
         "effectifs": effectifs,
+        "membres": membres,
         "erreur": erreur,
         "resultat": resultat or [],
         "lignes_erreur": lignes_erreur or [],
@@ -241,6 +251,134 @@ def creer_etablissement_partenaire(
         session.rollback()
         return _page(request, session, admin, erreur="Création impossible : le code existe déjà.")
     return RedirectResponse("/admin/inscriptions-institutionnelles?ok=etablissement_cree", status_code=303)
+
+
+@router.post("/admin/inscriptions-institutionnelles/membres/attribuer")
+def attribuer_membre_institutionnel(
+    request: Request,
+    institution_id: int = Form(...),
+    identifiant: str = Form(...),
+    role: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/connexion", status_code=303)
+    institution = session.get(EtablissementPartenaire, institution_id)
+    if not institution or not institution.est_actif:
+        return _page(request, session, admin, erreur="Choisis un établissement actif.")
+    valeur = (identifiant or "").strip()
+    if not valeur or len(valeur) > 160:
+        return _page(request, session, admin, erreur="Identifiant ou téléphone invalide.")
+    if role not in {"responsable", "professeur", "etudiant"}:
+        return _page(request, session, admin, erreur="Rôle institutionnel invalide.")
+    utilisateur = session.exec(
+        select(Utilisateur).where(Utilisateur.identifiant_connexion == valeur)
+    ).first()
+    if not utilisateur:
+        utilisateur = session.exec(
+            select(Utilisateur).where(Utilisateur.telephone == valeur)
+        ).first()
+    if not utilisateur:
+        return _page(request, session, admin, erreur="Aucun compte ne correspond à cet identifiant.")
+    assurer_membre(session, institution.id, utilisateur.id, role, admin.id)
+    if utilisateur.institution_id is None:
+        utilisateur.institution_id = institution.id
+        session.add(utilisateur)
+    session.commit()
+    return RedirectResponse("/admin/inscriptions-institutionnelles?ok=membre_attribue", status_code=303)
+
+
+@router.post("/admin/inscriptions-institutionnelles/membres/{membre_id}/desactiver")
+def desactiver_membre_institutionnel(
+    request: Request,
+    membre_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/connexion", status_code=303)
+    membre = session.get(MembreEtablissement, membre_id)
+    if not membre:
+        return _page(request, session, admin, erreur="Appartenance introuvable.")
+    if membre.role == "responsable" and membre.est_actif:
+        autres = session.exec(
+            select(MembreEtablissement).where(
+                MembreEtablissement.institution_id == membre.institution_id,
+                MembreEtablissement.role == "responsable",
+                MembreEtablissement.est_actif == True,  # noqa: E712
+                MembreEtablissement.id != membre.id,
+            )
+        ).first()
+        if not autres:
+            return _page(request, session, admin, erreur="Le dernier responsable actif doit être remplacé avant désactivation.")
+    from datetime import datetime
+    membre.est_actif = False
+    membre.date_maj = datetime.utcnow()
+    session.add(membre)
+    session.commit()
+    return RedirectResponse("/admin/inscriptions-institutionnelles?ok=membre_desactive", status_code=303)
+
+
+@router.get("/etablissement/tableau-de-bord")
+def tableau_de_bord_institutionnel(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    responsables = session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.utilisateur_id == utilisateur.id,
+            MembreEtablissement.role == "responsable",
+            MembreEtablissement.est_actif == True,  # noqa: E712
+        )
+    ).all()
+    if not responsables:
+        return RedirectResponse("/classe", status_code=303)
+    institution = session.get(EtablissementPartenaire, min(m.institution_id for m in responsables))
+    if not institution or not institution.est_actif:
+        return RedirectResponse("/classe", status_code=303)
+    membres = session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.institution_id == institution.id,
+            MembreEtablissement.est_actif == True,  # noqa: E712
+        )
+    ).all()
+    cours = session.exec(
+        select(Cours).where(Cours.institution_id == institution.id).order_by(Cours.nom)
+    ).all()
+    ids_cours = [item.id for item in cours]
+    inscriptions = session.exec(
+        select(InscriptionCours).where(InscriptionCours.cours_id.in_(ids_cours))
+    ).all() if ids_cours else []
+    devoirs = session.exec(
+        select(Devoir).where(Devoir.cours_id.in_(ids_cours))
+    ).all() if ids_cours else []
+    ids_devoirs = [item.id for item in devoirs]
+    rendus = session.exec(
+        select(RenduDevoir).where(RenduDevoir.devoir_id.in_(ids_devoirs))
+    ).all() if ids_devoirs else []
+    statistiques = {
+        "membres": len(membres),
+        "responsables": sum(1 for item in membres if item.role == "responsable"),
+        "professeurs": sum(1 for item in membres if item.role == "professeur"),
+        "etudiants": sum(1 for item in membres if item.role == "etudiant"),
+        "cours": len(cours),
+        "inscriptions": len(inscriptions),
+        "devoirs": len(devoirs),
+        "rendus": len(rendus),
+        "copies_corrigees": sum(1 for item in rendus if item.note is not None),
+    }
+    return templates.TemplateResponse(
+        request,
+        "institution_tableau_de_bord.html",
+        {"utilisateur": utilisateur, "institution": institution, "statistiques": statistiques, "cours": cours},
+        headers={"Cache-Control": "no-store, private", "Pragma": "no-cache", "X-Robots-Tag": "noindex, nofollow"},
+    )
 
 
 @router.post("/admin/inscriptions-institutionnelles/importer")
@@ -352,6 +490,8 @@ async def importer_etudiants_institutionnels(
         # Attribue les identifiants puis crée les essais Premium standards en
         # une transaction de groupe, sans effectuer un commit par étudiant.
         session.flush()
+        for compte in comptes_crees:
+            assurer_membre(session, institution.id, compte.id, ROLE_ETUDIANT, admin.id)
         creer_essais_gratuits_en_masse(session, comptes_crees)
         session.commit()
     except IntegrityError:
