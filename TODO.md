@@ -1,16 +1,16 @@
 # MITARIDALA — Priorités d’amélioration
 
-*Mise à jour : 1er novembre 2026*
+*Mise à jour : 2 novembre 2026*
 
 Cette feuille de route présente les améliorations attendues du point de vue des apprenants, des enseignants et des établissements. Une tâche ne doit être déclarée terminée qu’après vérification de son fonctionnement réel.
 
 ## Chantier de suivi académique
 
-Le dépôt disposait déjà des devoirs, notes unitaires, corrections assistées, connexions aux séances, progression par notion et radar collectif. Les compléments développés doivent être validés sur des classes de test avant clôture :
-- [ ] Vérifier les moyennes pondérées et les moyennes par période avec notes partielles et coefficients différents.
-- [ ] Vérifier le pointage présent / absent / retard / excusé et les droits du professeur propriétaire.
-- [ ] Vérifier les notifications pédagogiques et leurs destinations internes.
-- [ ] Vérifier les rapports académiques sur une classe vide, une classe active et des évaluations non corrigées.
+Le dépôt comprend désormais le carnet de notes pondéré par cours, les moyennes par période, le registre pédagogique des présences, les notifications de devoir/note/pointage, les rapports par cours et un rapport global agrégé réservé à l'administration. Les notes faibles ouvrent aussi un parcours d'aide au Tuteur IA sans modifier artificiellement la progression mesurée par les quiz.
+- [ ] Vérifier en environnement de test les parcours complets professeur → devoir → rendu → correction → carnet → notification étudiant.
+- [ ] Vérifier en environnement de test le pointage présent / absent / retard / excusé, les justificatifs et l'historique étudiant.
+- [ ] Vérifier le rapport global avec des cours scolaires et universitaires, des classes vides et des évaluations non corrigées.
+- [ ] Vérifier l'export CSV du rapport et la neutralisation des cellules pouvant être interprétées comme formules.
 
 ## Priorité 1 — Fiabilité et confiance
 
