@@ -433,7 +433,7 @@ def exporter_statistiques_academiques(request: Request, session: Session = Depen
         return RedirectResponse("/", status_code=303)
     statistiques = _charger_statistiques_globales(session)
     sortie = io.StringIO()
-    sortie.write("\\ufeff")
+    sortie.write(chr(0xFEFF))
     writer = csv.writer(sortie)
     writer.writerow([
         "Cours", "Responsable", "Portée", "Matière", "Niveau", "Étudiants",

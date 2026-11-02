@@ -26,7 +26,8 @@
         <table class="classe-table">
           <thead><tr><th>Évaluation</th><th>Période</th><th>Note</th><th>Coefficient</th><th>Appréciation</th><th>Suite conseillée</th></tr></thead>
           <tbody>
-          {% for item in ligne.notes if ligne %}
+          {% if ligne and ligne.notes %}
+          {% for item in ligne.notes %}
             <tr>
               <th><a href="/classe/devoirs/{{ item.devoir.id }}">{{ item.devoir.titre }}</a></th>
               <td>{{ item.devoir.periode or "Sans période" }}</td>
@@ -49,9 +50,10 @@
                 {% else %}—{% endif %}
               </td>
             </tr>
+          {% endfor %}
           {% else %}
             <tr><td colspan="6">Aucune évaluation pour le moment.</td></tr>
-          {% endfor %}
+          {% endif %}
           </tbody>
         </table>
       </div>

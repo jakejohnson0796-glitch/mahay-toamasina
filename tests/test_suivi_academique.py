@@ -7,6 +7,7 @@ from app.routers.suivi_academique_router import (
     calculer_moyenne_ponderee,
     construire_statistiques_globales,
     normaliser_statut_pointage,
+    _csv_academique_sans_formule,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -126,3 +127,8 @@ def test_templates_academiques_compilent_et_relient_les_notes_au_tuteur():
     source = (ROOT / "app" / "templates" / "mes_notes.html").read_text(encoding="utf-8")
     assert 'action="/tuteur/demander"' in source
     assert "item.rendu.note / item.devoir.bareme * 20 < 10" in source
+
+
+@pytest.mark.parametrize("valeur", ["=2+2", " +1+1", "@SUM(A1:A2)", "-cmd"])
+def test_export_csv_academique_neutralise_les_formules(valeur):
+    assert _csv_academique_sans_formule(valeur).startswith("'")
