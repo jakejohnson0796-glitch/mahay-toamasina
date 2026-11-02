@@ -1502,6 +1502,7 @@ class TypeNotification(str, Enum):
     NOUVEAU_DEVOIR = "nouveau_devoir"
     NOTE_PUBLIEE = "note_publiee"
     STATUT_PRESENCE = "statut_presence"
+    RAPPEL_ECHEANCE = "rappel_echeance"
 
 
 class Notification(SQLModel, table=True):

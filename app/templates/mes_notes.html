@@ -1,8 +1,66 @@
 {% extends "base.html" %}
 {% block titre %}Mes notes — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
-{% block contenu %}<div class="classe-page"><p class="classe-breadcrumb"><a href="/dashboard">Tableau de bord</a> / Mes notes</p>
-<header class="classe-detail-head"><div><h1>Mes notes</h1><p class="classe-detail-meta">Les résultats officiellement publiés par tes professeurs.</p></div></header>
-{% for info in cours_info %}<section class="classe-section-card"><div class="classe-form-head"><div><h2>{{ info.cours.nom }}</h2><p>{{ info.cours.matiere }} · {{ info.cours.niveau }}</p></div><strong>Moyenne : {{ "%.2f"|format(info.lignes[0].moyenne) if info.lignes and info.lignes[0].moyenne is not none else "—" }} / 20</strong></div>
-<div class="classe-table-scroll"><table class="classe-table"><thead><tr><th>Évaluation</th><th>Période</th><th>Note</th><th>Coefficient</th><th>Appréciation</th></tr></thead><tbody>{% for item in info.lignes[0].notes %}<tr><th><a href="/classe/devoirs/{{ item.devoir.id }}">{{ item.devoir.titre }}</a></th><td>{{ item.devoir.periode or "Sans période" }}</td><td>{% if item.rendu and item.rendu.note is not none %}{{ item.rendu.note }} / {{ item.devoir.bareme }}{% elif item.rendu %}En attente de correction{% else %}Non rendu{% endif %}</td><td>{{ item.devoir.coefficient or 1 }}</td><td>{{ item.rendu.appreciation_prof if item.rendu and item.rendu.note is not none else "—" }}</td></tr>{% else %}<tr><td colspan="5">Aucune évaluation.</td></tr>{% endfor %}</tbody></table></div>
-<p><a class="bouton bouton-secondaire" href="/classe/{{ info.cours.id }}/carnet-notes">Voir le carnet du cours</a></p></section>{% else %}<section class="classe-section-card">Tu n'es inscrit à aucun cours pour le moment.</section>{% endfor %}</div>{% endblock %}
+{% block contenu %}
+<div class="classe-page">
+  <p class="classe-breadcrumb"><a href="/dashboard">Tableau de bord</a> / Mes notes</p>
+  <header class="classe-detail-head">
+    <div>
+      <h1>Mes notes</h1>
+      <p class="classe-detail-meta">Les résultats officiellement publiés par tes professeurs. Les propositions IA non validées ne sont jamais comptées.</p>
+    </div>
+    <a class="bouton bouton-secondaire" href="/mes-presences">Consulter mes présences</a>
+  </header>
+
+  {% for info in cours_info %}
+    {% set ligne = info.lignes[0] if info.lignes else none %}
+    <section class="classe-section-card">
+      <div class="classe-form-head">
+        <div>
+          <h2>{{ info.cours.nom }}</h2>
+          <p>{{ info.cours.matiere }} · {{ info.cours.niveau }}</p>
+        </div>
+        <strong>Moyenne : {{ "%.2f"|format(ligne.moyenne) if ligne and ligne.moyenne is not none else "—" }} / 20</strong>
+      </div>
+      <div class="classe-table-scroll">
+        <table class="classe-table">
+          <thead><tr><th>Évaluation</th><th>Période</th><th>Note</th><th>Coefficient</th><th>Appréciation</th><th>Suite conseillée</th></tr></thead>
+          <tbody>
+          {% if ligne and ligne.notes %}
+          {% for item in ligne.notes %}
+            <tr>
+              <th><a href="/classe/devoirs/{{ item.devoir.id }}">{{ item.devoir.titre }}</a></th>
+              <td>{{ item.devoir.periode or "Sans période" }}</td>
+              <td>
+                {% if item.rendu and item.rendu.note is not none %}
+                  {{ "%.2f"|format(item.rendu.note) }} / {{ "%.2f"|format(item.devoir.bareme) }}
+                  <small>({{ "%.2f"|format(item.rendu.note / item.devoir.bareme * 20) }}/20)</small>
+                {% elif item.rendu %}En attente de correction{% else %}Non rendu{% endif %}
+              </td>
+              <td>{{ "%.2f"|format(item.devoir.coefficient or 1) }}</td>
+              <td>{{ item.rendu.appreciation_prof if item.rendu and item.rendu.note is not none else "—" }}</td>
+              <td>
+                {% if item.rendu and item.rendu.note is not none and item.devoir.bareme > 0 and item.rendu.note / item.devoir.bareme * 20 < 10 %}
+                  <span class="classe-course-badge">À consolider</span>
+                  <form method="post" action="/tuteur/demander">
+                    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                    <input type="hidden" name="question" value="Aide-moi à comprendre et corriger mes difficultés dans l’évaluation {{ item.devoir.titre }} en {{ info.cours.matiere }}. Explique les méthodes à reprendre, puis propose-moi un exercice corrigé progressif.">
+                    <button class="bouton bouton-secondaire" type="submit">Travailler avec le Tuteur IA</button>
+                  </form>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          {% else %}
+            <tr><td colspan="6">Aucune évaluation pour le moment.</td></tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+      <p><a class="bouton bouton-secondaire" href="/classe/{{ info.cours.id }}/carnet-notes">Voir le carnet du cours</a></p>
+    </section>
+  {% else %}
+    <section class="classe-section-card">Tu n'es inscrit à aucun cours pour le moment.</section>
+  {% endfor %}
+</div>
+{% endblock %}

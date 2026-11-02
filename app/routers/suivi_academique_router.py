@@ -1,10 +1,13 @@
 """Carnet de notes, suivi des présences et rapports académiques."""
 from __future__ import annotations
+import csv
+import io
 import math
+from collections import defaultdict
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlmodel import Session, select
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
@@ -243,3 +246,221 @@ def enregistrer_pointage(
         ))
     session.commit()
     return RedirectResponse(f"/classe/seances/{seance_id}/registre-presences?enregistre=1", status_code=303)
+
+def construire_statistiques_globales(
+    cours: list,
+    inscriptions: list,
+    devoirs: list,
+    rendus: list,
+    seances: list,
+    pointages: list,
+    professeurs: Optional[dict[int, Utilisateur]] = None,
+) -> dict:
+    """Construit des indicateurs agrégés sans exposer les notes nominatives."""
+    professeurs = professeurs or {}
+    etudiants_par_cours: dict[int, set[int]] = defaultdict(set)
+    for inscription in inscriptions:
+        etudiants_par_cours[inscription.cours_id].add(inscription.utilisateur_id)
+
+    devoirs_par_cours: dict[int, list] = defaultdict(list)
+    devoirs_par_id = {}
+    for devoir in devoirs:
+        devoirs_par_cours[devoir.cours_id].append(devoir)
+        devoirs_par_id[devoir.id] = devoir
+
+    rendus_par_cours: dict[int, list] = defaultdict(list)
+    rendus_par_etudiant: dict[tuple[int, int], list] = defaultdict(list)
+    for rendu in rendus:
+        devoir = devoirs_par_id.get(rendu.devoir_id)
+        if devoir:
+            rendus_par_cours[devoir.cours_id].append(rendu)
+            rendus_par_etudiant[(devoir.cours_id, rendu.utilisateur_id)].append(rendu)
+
+    seances_par_cours: dict[int, list] = defaultdict(list)
+    cours_par_seance = {}
+    for seance in seances:
+        seances_par_cours[seance.cours_id].append(seance)
+        cours_par_seance[seance.id] = seance.cours_id
+
+    pointages_par_cours: dict[int, list] = defaultdict(list)
+    for pointage in pointages:
+        cours_id = cours_par_seance.get(pointage.seance_id)
+        if cours_id is not None:
+            statut = getattr(pointage.statut, "value", str(pointage.statut))
+            if statut != StatutPointage.A_RENSEIGNER.value:
+                pointages_par_cours[cours_id].append(statut)
+
+    lignes = []
+    moyennes_globales = []
+    etudiants_globaux = set()
+    totaux_statuts = {statut.value: 0 for statut in StatutPointage if statut != StatutPointage.A_RENSEIGNER}
+    par_portee = {}
+
+    for cours_item in sorted(cours, key=lambda item: ((item.nom or "").casefold(), item.id or 0)):
+        cours_id = cours_item.id
+        ids_etudiants = etudiants_par_cours.get(cours_id, set())
+        etudiants_globaux.update(ids_etudiants)
+        evaluations = devoirs_par_cours.get(cours_id, [])
+        rendus_cours = rendus_par_cours.get(cours_id, [])
+        devoirs_cours_map = {devoir.id: devoir for devoir in evaluations}
+        moyennes_etudiants = []
+        for utilisateur_id in ids_etudiants:
+            moyenne = calculer_moyenne_ponderee(
+                rendus_par_etudiant.get((cours_id, utilisateur_id), []),
+                devoirs_cours_map,
+            )
+            if moyenne is not None:
+                moyennes_etudiants.append(moyenne)
+                moyennes_globales.append(moyenne)
+
+        statuts = {statut.value: 0 for statut in StatutPointage if statut != StatutPointage.A_RENSEIGNER}
+        for statut in pointages_par_cours.get(cours_id, []):
+            if statut in statuts:
+                statuts[statut] += 1
+                totaux_statuts[statut] += 1
+
+        moyenne_cours = round(sum(moyennes_etudiants) / len(moyennes_etudiants), 2) if moyennes_etudiants else None
+        nb_corriges = sum(1 for rendu in rendus_cours if rendu.note is not None)
+        portee = (getattr(cours_item, "portee_academique", None) or "universitaire").strip().casefold()
+        if portee not in {"scolaire", "universitaire"}:
+            portee = "autre"
+        lignes.append({
+            "cours": cours_item,
+            "professeur": professeurs.get(cours_item.professeur_id),
+            "portee": portee,
+            "nb_etudiants": len(ids_etudiants),
+            "nb_seances": len(seances_par_cours.get(cours_id, [])),
+            "nb_evaluations": len(evaluations),
+            "nb_rendus": len(rendus_cours),
+            "nb_corriges": nb_corriges,
+            "nb_etudiants_notes": len(moyennes_etudiants),
+            "couverture_notes_pct": round(len(moyennes_etudiants) * 100 / len(ids_etudiants)) if ids_etudiants else 0,
+            "moyenne": moyenne_cours,
+            "presences": statuts,
+        })
+
+        groupe = par_portee.setdefault(portee, {
+            "portee": portee, "nb_cours": 0, "nb_inscriptions": 0,
+            "nb_evaluations": 0, "nb_rendus": 0, "nb_corriges": 0,
+            "moyennes": [],
+        })
+        groupe["nb_cours"] += 1
+        groupe["nb_inscriptions"] += len(ids_etudiants)
+        groupe["nb_evaluations"] += len(evaluations)
+        groupe["nb_rendus"] += len(rendus_cours)
+        groupe["nb_corriges"] += nb_corriges
+        if moyenne_cours is not None:
+            groupe["moyennes"].append(moyenne_cours)
+
+    for groupe in par_portee.values():
+        valeurs = groupe.pop("moyennes")
+        groupe["moyenne"] = round(sum(valeurs) / len(valeurs), 2) if valeurs else None
+
+    nb_inscriptions = sum(len(ids) for ids in etudiants_par_cours.values())
+    return {
+        "cours": lignes,
+        "par_portee": sorted(par_portee.values(), key=lambda item: item["portee"]),
+        "totaux": {
+            "nb_cours": len(lignes),
+            "nb_etudiants": len(etudiants_globaux),
+            "nb_inscriptions": nb_inscriptions,
+            "nb_evaluations": len(devoirs),
+            "nb_rendus": sum(len(items) for items in rendus_par_cours.values()),
+            "nb_corriges": sum(1 for items in rendus_par_cours.values() for rendu in items if rendu.note is not None),
+            "nb_seances": len(seances),
+            "moyenne": round(sum(moyennes_globales) / len(moyennes_globales), 2) if moyennes_globales else None,
+            "presences": totaux_statuts,
+        },
+    }
+
+
+def _charger_statistiques_globales(session: Session) -> dict:
+    cours = session.exec(select(Cours).order_by(Cours.nom)).all()
+    ids_cours = [item.id for item in cours]
+    if not ids_cours:
+        return construire_statistiques_globales([], [], [], [], [], [])
+
+    inscriptions = session.exec(
+        select(InscriptionCours).where(InscriptionCours.cours_id.in_(ids_cours))
+    ).all()
+    devoirs = session.exec(
+        select(Devoir).where(Devoir.cours_id.in_(ids_cours))
+    ).all()
+    ids_devoirs = [item.id for item in devoirs]
+    rendus = session.exec(
+        select(RenduDevoir).where(RenduDevoir.devoir_id.in_(ids_devoirs))
+    ).all() if ids_devoirs else []
+    seances = session.exec(
+        select(Seance).where(Seance.cours_id.in_(ids_cours))
+    ).all()
+    ids_seances = [item.id for item in seances]
+    pointages = session.exec(
+        select(PointagePresence).where(PointagePresence.seance_id.in_(ids_seances))
+    ).all() if ids_seances else []
+    ids_professeurs = sorted({item.professeur_id for item in cours if item.professeur_id})
+    professeurs = {
+        item.id: item for item in session.exec(
+            select(Utilisateur).where(Utilisateur.id.in_(ids_professeurs))
+        ).all()
+    } if ids_professeurs else {}
+    return construire_statistiques_globales(
+        cours, inscriptions, devoirs, rendus, seances, pointages, professeurs,
+    )
+
+
+def _csv_academique_sans_formule(valeur) -> str:
+    texte = str(valeur or "")
+    if texte.lstrip().startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + texte
+    return texte
+
+
+@router.get("/admin/statistiques-academiques")
+def page_statistiques_academiques(request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+    statistiques = _charger_statistiques_globales(session)
+    return templates.TemplateResponse(request, "admin_rapport_academique.html", {
+        "utilisateur": utilisateur, "statistiques": statistiques,
+    })
+
+
+@router.get("/admin/statistiques-academiques.csv")
+def exporter_statistiques_academiques(request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return RedirectResponse("/", status_code=303)
+    statistiques = _charger_statistiques_globales(session)
+    sortie = io.StringIO()
+    sortie.write(chr(0xFEFF))
+    writer = csv.writer(sortie)
+    writer.writerow([
+        "Cours", "Responsable", "Portée", "Matière", "Niveau", "Étudiants",
+        "Séances", "Évaluations", "Rendus", "Corrigés", "Étudiants notés",
+        "Couverture des notes (%)", "Moyenne / 20", "Présents", "Absents",
+        "Retards", "Excusés",
+    ])
+    for ligne in statistiques["cours"]:
+        writer.writerow([
+            _csv_academique_sans_formule(ligne["cours"].nom),
+            _csv_academique_sans_formule(ligne["professeur"].nom if ligne["professeur"] else ""),
+            _csv_academique_sans_formule(ligne["portee"]),
+            _csv_academique_sans_formule(ligne["cours"].matiere),
+            _csv_academique_sans_formule(ligne["cours"].niveau),
+            ligne["nb_etudiants"], ligne["nb_seances"], ligne["nb_evaluations"],
+            ligne["nb_rendus"], ligne["nb_corriges"], ligne["nb_etudiants_notes"],
+            ligne["couverture_notes_pct"], ligne["moyenne"] if ligne["moyenne"] is not None else "",
+            ligne["presences"]["present"], ligne["presences"]["absent"],
+            ligne["presences"]["retard"], ligne["presences"]["excuse"],
+        ])
+    return Response(
+        content=sortie.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="rapport-academique-mitaridala.csv"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
