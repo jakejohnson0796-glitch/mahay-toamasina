@@ -19,7 +19,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant, verifier_mot_de_passe
 from ..models import (
-    Utilisateur, RoleUtilisateur, NiveauScolaire, OptionScolaire, CycleEnseigne, CercleEtude, MembreCercle, RoleMembreCercle, MessageCercle, SignalementMessage,
+    Utilisateur, RoleUtilisateur, NiveauScolaire, OptionScolaire, CycleEnseigne, CercleEtude, MembreCercle, MembreEtablissement, RoleMembreCercle, MessageCercle, SignalementMessage,
     DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
@@ -1075,6 +1075,29 @@ async def supprimer_utilisateur(
     if not cible or cible.id == admin.id:
         return RedirectResponse("/admin/utilisateurs", status_code=303)
 
+    # Ne supprime pas le seul responsable actif d'un établissement.
+    responsabilites = session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.utilisateur_id == utilisateur_id,
+            MembreEtablissement.role == "responsable",
+            MembreEtablissement.est_actif == True,  # noqa: E712
+        )
+    ).all()
+    for responsabilite in responsabilites:
+        autres = session.exec(
+            select(MembreEtablissement).where(
+                MembreEtablissement.institution_id == responsabilite.institution_id,
+                MembreEtablissement.role == "responsable",
+                MembreEtablissement.est_actif == True,  # noqa: E712
+                MembreEtablissement.utilisateur_id != utilisateur_id,
+            )
+        ).first()
+        if not autres:
+            return RedirectResponse(
+                "/admin/utilisateurs?erreur=dernier_responsable_institution",
+                status_code=303,
+            )
+
     formulaire = await request.form()
     donnees = formulaire
 
@@ -1107,6 +1130,20 @@ async def supprimer_utilisateur(
                 or nouveau.role not in (RoleUtilisateur.PROFESSEUR, RoleUtilisateur.ADMIN)
             ):
                 return RedirectResponse("/admin/utilisateurs?erreur=reattribution_cours_invalide", status_code=303)
+            if cours.institution_id is not None:
+                affectation = session.exec(
+                    select(MembreEtablissement).where(
+                        MembreEtablissement.institution_id == cours.institution_id,
+                        MembreEtablissement.utilisateur_id == nouveau.id,
+                        MembreEtablissement.est_actif == True,  # noqa: E712
+                        MembreEtablissement.role.in_(("professeur", "responsable")),
+                    )
+                ).first()
+                if not affectation:
+                    return RedirectResponse(
+                        "/admin/utilisateurs?erreur=reattribution_institution_invalide",
+                        status_code=303,
+                    )
 
     # --- 1. Cercles possedes : reattribution ou suppression, au choix ---
     for cercle in session.exec(select(CercleEtude).where(CercleEtude.createur_id == utilisateur_id)).all():
@@ -1392,6 +1429,23 @@ async def supprimer_utilisateur(
     # Verifie explicitement qu'aucune FK directe vers le compte ne reste
     # avant de supprimer la ligne Utilisateur.
     session.flush()
+
+    # --- Appartenances institutionnelles ---
+    # Supprime les rôles du compte et conserve la traçabilité des autres
+    # membres en retirant uniquement la référence du créateur de l'affectation.
+    for membre in session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.ajoute_par_id == utilisateur_id
+        )
+    ).all():
+        membre.ajoute_par_id = None
+        session.add(membre)
+    for membre in session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.utilisateur_id == utilisateur_id
+        )
+    ).all():
+        session.delete(membre)
 
     # --- 4. La ligne Utilisateur elle-meme, en tout dernier ---
     session.delete(cible)
