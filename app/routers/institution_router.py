@@ -360,17 +360,18 @@ def tableau_de_bord_institutionnel(
     ).all()
     if not responsables:
         return RedirectResponse("/classe", status_code=303)
-    ids_autorises = {m.institution_id for m in responsables}
-    cible = institution_id if institution_id in ids_autorises else min(ids_autorises)
+    ids_responsables = {m.institution_id for m in responsables}
     institutions = session.exec(
         select(EtablissementPartenaire)
-        .where(EtablissementPartenaire.id.in_(ids_autorises))
+        .where(EtablissementPartenaire.id.in_(ids_responsables))
         .where(EtablissementPartenaire.est_actif == True)  # noqa: E712
         .order_by(EtablissementPartenaire.nom)
     ).all()
-    institution = session.get(EtablissementPartenaire, cible)
-    if not institution or not institution.est_actif:
+    if not institutions:
         return RedirectResponse("/classe", status_code=303)
+    ids_autorises = {item.id for item in institutions}
+    cible = institution_id if institution_id in ids_autorises else institutions[0].id
+    institution = session.get(EtablissementPartenaire, cible)
     membres = session.exec(
         select(MembreEtablissement).where(
             MembreEtablissement.institution_id == institution.id,
