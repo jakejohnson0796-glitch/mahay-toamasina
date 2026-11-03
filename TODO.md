@@ -16,6 +16,10 @@ obligatoires avant de déclarer ce chantier terminé.
 - [ ] Tester en production-like deux établissements séparés, y compris les WebSockets, fichiers de copies et fiches de révision.
 - [ ] Vérifier l'affectation des professeurs et responsables, le retrait d'un membre et la conservation du dernier responsable.
 - [ ] Vérifier que les notifications de devoir, note, présence, rappel et fiche restent invisibles après retrait de l'inscription.
+- [ ] Vérifier les cours historiques à affectation ambiguë : aucun étudiant ne doit y accéder avant l'arbitrage de l'administrateur.
+- [ ] Vérifier l'écran d'affectation admin avec des professeurs multiétablissements et des établissements suspendus.
+- [ ] Permettre aux responsables d'établissement autorisés de gérer eux-mêmes l'import de leurs listes d'étudiants, sans accès aux autres établissements.
+- [ ] Définir les documents privés d'établissement et leurs règles sur la bibliothèque, le téléchargement, le Tuteur IA, les quiz et les fiches de révision.
 - [ ] Ajouter les périmètres institutionnels aux autres ressources qui doivent être privées ; les documents généraux et cercles conservent leurs règles actuelles.
 - [ ] Tester les listes, imports et rapports avec plusieurs centaines puis plusieurs milliers de comptes.
 

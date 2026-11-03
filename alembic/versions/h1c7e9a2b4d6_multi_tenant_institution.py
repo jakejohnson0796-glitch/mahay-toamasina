@@ -66,6 +66,30 @@ def upgrade() -> None:
     if "ix_cours_institution_id" not in indexes:
         op.create_index("ix_cours_institution_id", "cours", ["institution_id"], unique=False)
 
+    course_columns = {
+        item["name"] for item in sa.inspect(bind).get_columns("cours")
+    }
+    if "affectation_institutionnelle_requise" not in course_columns:
+        op.add_column(
+            "cours",
+            sa.Column(
+                "affectation_institutionnelle_requise",
+                sa.Boolean(),
+                nullable=False,
+                server_default=sa.false(),
+            ),
+        )
+    course_indexes = {
+        item["name"] for item in sa.inspect(bind).get_indexes("cours")
+    }
+    if "ix_cours_affectation_institutionnelle_requise" not in course_indexes:
+        op.create_index(
+            "ix_cours_affectation_institutionnelle_requise",
+            "cours",
+            ["affectation_institutionnelle_requise"],
+            unique=False,
+        )
+
     # Rattache les notifications pédagogiques à leur cours pour contrôler
     # les anciennes alertes lorsqu'une inscription ou une appartenance expire.
     notification_columns = {
@@ -142,30 +166,46 @@ def upgrade() -> None:
         )
     )
 
-    # Affecte les cours existants uniquement si le professeur a une appartenance
-    # pédagogique active et un seul établissement connu : aucun rattachement
-    # n'est deviné lorsque le périmètre est ambigu.
+    # Un cours est automatiquement rattaché uniquement si son professeur
+    # détient exactement une appartenance pédagogique active. Une situation
+    # multiétablissement est mise en quarantaine jusqu'à arbitrage admin.
     op.execute(sa.text("""
-        UPDATE cours AS c
-        SET institution_id = u.institution_id
-        FROM utilisateur AS u
-        WHERE c.professeur_id = u.id
-          AND c.institution_id IS NULL
-          AND u.institution_id IS NOT NULL
+        UPDATE cours
+        SET institution_id = (
+            SELECT MIN(m.institution_id)
+            FROM membre_etablissement AS m
+            JOIN etablissementpartenaire AS ep
+              ON ep.id = m.institution_id
+            WHERE m.utilisateur_id = cours.professeur_id
+              AND m.est_actif = TRUE
+              AND ep.est_actif = TRUE
+              AND m.role IN ('professeur', 'responsable')
+            GROUP BY m.utilisateur_id
+            HAVING COUNT(DISTINCT m.institution_id) = 1
+        )
+        WHERE institution_id IS NULL
+          AND (
+              SELECT COUNT(DISTINCT m.institution_id)
+              FROM membre_etablissement AS m
+              JOIN etablissementpartenaire AS ep
+                ON ep.id = m.institution_id
+              WHERE m.utilisateur_id = cours.professeur_id
+                AND m.est_actif = TRUE
+                AND ep.est_actif = TRUE
+                AND m.role IN ('professeur', 'responsable')
+          ) = 1
+    """))
+    op.execute(sa.text("""
+        UPDATE cours
+        SET affectation_institutionnelle_requise = TRUE,
+            code_invitation = NULL
+        WHERE institution_id IS NULL
           AND EXISTS (
               SELECT 1
               FROM membre_etablissement AS m
-              WHERE m.utilisateur_id = u.id
-                AND m.institution_id = u.institution_id
-                AND m.est_actif = TRUE
+              WHERE m.utilisateur_id = cours.professeur_id
                 AND m.role IN ('professeur', 'responsable')
           )
-          AND (
-              SELECT COUNT(DISTINCT m2.institution_id)
-              FROM membre_etablissement AS m2
-              WHERE m2.utilisateur_id = u.id
-                AND m2.est_actif = TRUE
-          ) = 1
     """))
 
 
@@ -201,16 +241,27 @@ def downgrade() -> None:
         indexes = {item["name"] for item in sa.inspect(bind).get_indexes("cours")}
         if "ix_cours_institution_id" in indexes:
             op.drop_index("ix_cours_institution_id", table_name="cours")
+        if "ix_cours_affectation_institutionnelle_requise" in indexes:
+            op.drop_index(
+                "ix_cours_affectation_institutionnelle_requise",
+                table_name="cours",
+            )
         columns = {item["name"] for item in sa.inspect(bind).get_columns("cours")}
-        if "institution_id" in columns:
-            if bind.dialect.name == "sqlite":
+        if bind.dialect.name == "sqlite":
+            if "institution_id" in columns or "affectation_institutionnelle_requise" in columns:
                 with op.batch_alter_table("cours", recreate="always") as batch:
                     foreign_keys = sa.inspect(bind).get_foreign_keys("cours")
                     for foreign_key in foreign_keys:
-                        if foreign_key.get("constrained_columns") == ["institution_id"]:
+                        if foreign_key.get("constrained_columns") == ["institution_id"] and foreign_key.get("name"):
                             batch.drop_constraint(foreign_key["name"], type_="foreignkey")
-                    batch.drop_column("institution_id")
-            else:
+                    if "affectation_institutionnelle_requise" in columns:
+                        batch.drop_column("affectation_institutionnelle_requise")
+                    if "institution_id" in columns:
+                        batch.drop_column("institution_id")
+        else:
+            if "affectation_institutionnelle_requise" in columns:
+                op.drop_column("cours", "affectation_institutionnelle_requise")
+            if "institution_id" in columns:
                 op.drop_column("cours", "institution_id")
     if sa.inspect(bind).has_table("membre_etablissement"):
         indexes = {item["name"] for item in sa.inspect(bind).get_indexes("membre_etablissement")}

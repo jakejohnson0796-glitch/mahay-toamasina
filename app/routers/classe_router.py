@@ -68,6 +68,8 @@ def _peut_gerer_cours(
     role_global = getattr(utilisateur.role, "value", utilisateur.role)
     if role_global == "admin":
         return True
+    if getattr(cours, "affectation_institutionnelle_requise", False):
+        return False
     if getattr(cours, "institution_id", None) is not None:
         return False
     return utilisateur.id == cours.professeur_id
@@ -365,7 +367,11 @@ def renouveler_code_invitation(
 ):
     utilisateur = utilisateur_courant(request, session)
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer_cours(cours, utilisateur, session):
+    if (
+        not cours
+        or cours.affectation_institutionnelle_requise
+        or not _peut_gerer_cours(cours, utilisateur, session)
+    ):
         return RedirectResponse("/classe", status_code=303)
     cours.code_invitation = _generer_code_invitation(session)
     session.add(cours)
@@ -446,7 +452,11 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
                 )
         session.expire_all()
 
-    if peut_gerer and not cours.code_invitation:
+    if (
+        peut_gerer
+        and not cours.affectation_institutionnelle_requise
+        and not cours.code_invitation
+    ):
         cours.code_invitation = _generer_code_invitation(session)
         session.add(cours)
         session.commit()

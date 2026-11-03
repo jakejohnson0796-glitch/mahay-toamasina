@@ -36,6 +36,16 @@
   {% if request.query_params.get("devoir") == "cree" %}<div class="info" role="status">Le devoir a été créé.</div>{% elif request.query_params.get("devoir") == "supprime" %}<div class="info" role="status">Le devoir et ses copies ont été supprimés.</div>{% endif %}
   {% if request.query_params.get("inscription") == "confirmee" %}<div class="info" role="status">Tu as rejoint ce cours.</div>{% endif %}
 
+  {% if cours.affectation_institutionnelle_requise %}
+  <div class="erreur" role="alert">
+    <strong>Affectation institutionnelle à confirmer.</strong>
+    Ce cours historique est temporairement isolé : les étudiants ne peuvent pas le rejoindre et les anciennes inscriptions ne donnent pas accès à ses données. Un administrateur doit confirmer l'établissement du cours avant de rétablir les accès.
+    {% if utilisateur.role.value == "admin" %}
+    <p><a href="/admin/cours-a-verifier">Ouvrir la liste des cours à affecter</a></p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% if request.query_params.get("fiche") == "en_cours" %}
   <div class="info" role="status">Ta fiche de révision n'est pas encore prête. Reviens dans quelques instants : la génération se fait en arrière-plan.</div>
   {% elif request.query_params.get("fiche") == "indisponible" %}
@@ -65,6 +75,7 @@
   </div>
 
   <div class="classe-detail-columns classe-course-management">
+    {% if not cours.affectation_institutionnelle_requise %}
     <section class="classe-section-card" id="invitation-cours" aria-labelledby="invitation-cours-title">
       <div class="classe-form-head"><div><h2 id="invitation-cours-title">Inviter les étudiants</h2><p>Partage ce code pour permettre une inscription sans saisir chaque numéro individuellement.</p></div></div>
       <div class="classe-invite-code" aria-label="Code d'invitation">{{ cours.code_invitation or "Code en préparation" }}</div>
@@ -74,6 +85,7 @@
         <button class="bouton bouton-secondaire" type="submit">Renouveler le code</button>
       </form>
     </section>
+    {% endif %}
 
     <details class="classe-section-card" id="parametres-cours">
       <summary class="classe-course-edit-summary">Modifier les informations du cours</summary>

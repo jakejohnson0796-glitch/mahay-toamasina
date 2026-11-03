@@ -1646,6 +1646,9 @@ class Cours(SQLModel, table=True):
     # NULL préserve les cours historiques ; les nouveaux cours institutionnels
     # sont limités au tenant choisi à leur création.
     institution_id: Optional[int] = Field(default=None, foreign_key="etablissementpartenaire.id", index=True)
+    # Les cours historiques dont le professeur appartient à plusieurs tenants
+    # restent en quarantaine jusqu'à une affectation explicite par un admin.
+    affectation_institutionnelle_requise: bool = Field(default=False, index=True)
     # Champs scolaires distincts de la chaîne universitaire déjà utilisée.
     portee_academique: str = Field(default="universitaire", index=True, max_length=20)
     niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)

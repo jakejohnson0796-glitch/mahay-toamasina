@@ -73,6 +73,14 @@ def peut_gerer_cours(session: Session, cours: Cours, utilisateur: Optional[Utili
     role_global = getattr(utilisateur.role, "value", utilisateur.role)
     if role_global == "admin":
         return True
+    if getattr(cours, "affectation_institutionnelle_requise", False):
+        # Le propriétaire conserve l'accès de gestion pour aider à résoudre
+        # le rattachement ; aucun périmètre étudiant n'est exposé.
+        return utilisateur.id == cours.professeur_id
+    if getattr(cours, "affectation_institutionnelle_requise", False):
+        # Le cours et ses données étudiant restent réservés à l'admin global
+        # jusqu'à ce qu'un tenant soit confirmé.
+        return False
     if cours.institution_id is None:
         return utilisateur.id == cours.professeur_id
     membre = membre_actif(session, cours.institution_id, utilisateur.id, ROLES_PEDAGOGIQUES)
@@ -85,6 +93,8 @@ def peut_gerer_cours(session: Session, cours: Cours, utilisateur: Optional[Utili
 def peut_rejoindre_cours(session: Session, cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
     if not utilisateur:
         return False
+    if getattr(cours, "affectation_institutionnelle_requise", False):
+        return False
     if cours.institution_id is None:
         role_global = getattr(utilisateur.role, "value", utilisateur.role)
         return role_global == "etudiant"
@@ -96,6 +106,8 @@ def est_inscrit_cours(session: Session, cours_id: int, utilisateur_id: int) -> b
     cours = session.get(Cours, cours_id)
     if not cours:
         return False
+    if getattr(cours, "affectation_institutionnelle_requise", False):
+        return False
     if cours.institution_id is not None and membre_actif(session, cours.institution_id, utilisateur_id, (ROLE_ETUDIANT,)) is None:
         return False
     return session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id, InscriptionCours.utilisateur_id == utilisateur_id)).first() is not None
@@ -105,7 +117,7 @@ def est_inscrit_cours(session: Session, cours_id: int, utilisateur_id: int) -> b
 def lister_inscriptions_actives(session: Session, cours_id: int):
     """Retourne les inscriptions dont le membre appartient encore au tenant."""
     cours = session.get(Cours, cours_id)
-    if not cours:
+    if not cours or getattr(cours, "affectation_institutionnelle_requise", False):
         return []
     requete = (
         select(InscriptionCours, Utilisateur)

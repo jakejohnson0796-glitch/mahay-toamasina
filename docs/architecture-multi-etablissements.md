@@ -33,6 +33,11 @@ son institution_id nul ; il n'est pas déplacé par supposition.
   de cours portent leur cours d'origine ; leur affichage, ouverture et marquage
   comme lu revérifient l'inscription active. Les alertes historiques sans cours
   identifiable sont masquées par prudence ; les notifications générales restent visibles.
+- Les anciens cours dont le professeur a une seule appartenance pédagogique
+  active sont rattachés automatiquement. Les cours avec plusieurs appartenances,
+  ou uniquement des appartenances suspendues, sont placés en quarantaine :
+  pas d'accès étudiant ni de code d'invitation jusqu'à l'affectation explicite
+  par un administrateur dans « Cours à affecter ».
 
 Les entités dépendant d'un cours (séances, devoirs, rendus, présences, notes et
 fiches de révision) héritent de son périmètre par leur clé étrangère vers Cours.

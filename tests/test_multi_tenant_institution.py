@@ -225,3 +225,41 @@ def test_les_listes_de_classe_excluent_les_inscriptions_d_un_autre_tenant(db):
 def test_professeur_independant_sans_affiliation_peut_creer_un_cours_historique(db):
     professeur = creer_compte(db, "Professeur indépendant", RoleUtilisateur.PROFESSEUR)
     assert institution_pour_cours(db, professeur, None) is None
+
+
+
+def test_cours_ambigu_reste_en_quarantaine_jusqua_affectation_explicite(db):
+    inst_a = creer_etablissement(db, "Université A", "QUAR-A")
+    inst_b = creer_etablissement(db, "Université B", "QUAR-B")
+    professeur = creer_compte(db, "Professeur multi-établissement", RoleUtilisateur.PROFESSEUR)
+    etudiant = creer_compte(db, "Étudiant A", RoleUtilisateur.ETUDIANT)
+    assurer_membre(db, inst_a.id, professeur.id, ROLE_PROFESSEUR)
+    assurer_membre(db, inst_b.id, professeur.id, ROLE_PROFESSEUR)
+    assurer_membre(db, inst_a.id, etudiant.id, ROLE_ETUDIANT)
+
+    cours = Cours(
+        nom="Cours historique ambigu",
+        matiere="Mathématiques",
+        niveau="L1",
+        professeur_id=professeur.id,
+        affectation_institutionnelle_requise=True,
+        code_invitation="AMBIGU123",
+    )
+    db.add(cours)
+    db.flush()
+    db.add(InscriptionCours(cours_id=cours.id, utilisateur_id=etudiant.id))
+    db.flush()
+
+    admin = creer_compte(db, "Admin global", RoleUtilisateur.ADMIN)
+    assert not peut_gerer_cours(db, cours, professeur)
+    assert peut_gerer_cours(db, cours, admin)
+    assert not peut_rejoindre_cours(db, cours, etudiant)
+    assert not est_inscrit_cours(db, cours.id, etudiant.id)
+    assert lister_inscriptions_actives(db, cours.id) == []
+
+    cours.institution_id = inst_a.id
+    cours.affectation_institutionnelle_requise = False
+    db.add(cours)
+    db.flush()
+    assert peut_rejoindre_cours(db, cours, etudiant)
+    assert est_inscrit_cours(db, cours.id, etudiant.id)

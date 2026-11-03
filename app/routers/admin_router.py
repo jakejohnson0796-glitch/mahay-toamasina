@@ -15,7 +15,12 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select, func
 
 from ..database import get_session
-from ..institution_access import lister_inscriptions_actives
+from ..institution_access import (
+    lister_inscriptions_actives,
+    membre_actif,
+    institutions_avec_role,
+    ROLES_PEDAGOGIQUES,
+)
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant, verifier_mot_de_passe
@@ -524,6 +529,103 @@ def refuser_demande_adhesion_admin(
         _traiter_refus_demande(session, demande, admin)
 
     return RedirectResponse("/admin/demandes-adhesion", status_code=303)
+
+
+@router.get("/admin/cours-a-verifier")
+def page_cours_a_verifier(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """Liste les cours historiques dont l'établissement doit être confirmé."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cours_a_verifier = session.exec(
+        select(Cours)
+        .where(Cours.affectation_institutionnelle_requise == True)  # noqa: E712
+        .order_by(Cours.date_creation.asc())
+    ).all()
+    elements = []
+    for cours in cours_a_verifier:
+        professeur = session.get(Utilisateur, cours.professeur_id)
+        ids_autorises = institutions_avec_role(
+            session, cours.professeur_id, ROLES_PEDAGOGIQUES
+        )
+        institutions = session.exec(
+            select(EtablissementPartenaire)
+            .where(EtablissementPartenaire.id.in_(ids_autorises or [-1]))
+            .where(EtablissementPartenaire.est_actif == True)  # noqa: E712
+            .order_by(EtablissementPartenaire.nom)
+        ).all()
+        elements.append({
+            "cours": cours,
+            "professeur": professeur,
+            "institutions": institutions,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "admin_cours_a_verifier.html",
+        {
+            "utilisateur": admin,
+            "elements": elements,
+            "nb_cours": len(elements),
+        },
+        headers={
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+            "X-Robots-Tag": "noindex, nofollow",
+        },
+    )
+
+
+@router.post("/admin/cours/{cours_id}/affecter-etablissement")
+def affecter_cours_a_etablissement(
+    request: Request,
+    cours_id: int,
+    institution_id: int = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Réactive le périmètre étudiant après arbitrage du rattachement."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cours = session.get(Cours, cours_id)
+    institution = session.get(EtablissementPartenaire, institution_id)
+    if (
+        not cours
+        or not cours.affectation_institutionnelle_requise
+        or not institution
+        or not institution.est_actif
+    ):
+        return RedirectResponse(
+            "/admin/cours-a-verifier?erreur=affectation_invalide",
+            status_code=303,
+        )
+
+    affectation_professeur = membre_actif(
+        session,
+        institution.id,
+        cours.professeur_id,
+        ROLES_PEDAGOGIQUES,
+    )
+    if not affectation_professeur:
+        return RedirectResponse(
+            "/admin/cours-a-verifier?erreur=professeur_non_affilie",
+            status_code=303,
+        )
+
+    cours.institution_id = institution.id
+    cours.affectation_institutionnelle_requise = False
+    session.add(cours)
+    session.commit()
+    return RedirectResponse(
+        "/admin/cours-a-verifier?resultat=affecte",
+        status_code=303,
+    )
 
 
 @router.get("/admin/stats")
