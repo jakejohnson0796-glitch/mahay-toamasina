@@ -49,6 +49,8 @@ jobs:
           node scripts/smoke_bilan_reprise.mjs
           node --check app/static/js/notifications-center.js
           node scripts/smoke_notifications_center.mjs
+          node --check app/static/js/pwa.js
+          node scripts/smoke_quiz_draft.mjs
 
       - name: Smoke navigateur responsive des cercles
         run: |
