@@ -692,6 +692,8 @@ def test_fiche_de_cours_integre_le_tutorat_recent_de_son_etudiant(monkeypatch):
         session.add(seance)
         session.commit()
         session.refresh(seance)
+        session.add(InscriptionCours(cours_id=cours.id, utilisateur_id=etudiant.id))
+        session.commit()
 
         progression = ProgressionNotion(
             utilisateur_id=etudiant.id,
