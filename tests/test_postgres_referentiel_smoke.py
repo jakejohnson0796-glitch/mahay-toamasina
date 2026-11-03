@@ -21,7 +21,7 @@ import unicodedata
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 from sqlmodel import Session, select, func
 
 from app.main import app
@@ -121,6 +121,18 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         assert cercles_page.status_code == 200
 
     from app.database import engine
+
+    with engine.connect() as connection:
+        rls_enabled = connection.execute(
+            text(
+                "SELECT c.relrowsecurity "
+                "FROM pg_class c "
+                "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' "
+                "AND c.relname = 'membre_etablissement'"
+            )
+        ).scalar_one()
+        assert rls_enabled is True, "La table membre_etablissement doit activer RLS."
 
     with Session(engine) as session:
         universites = {u.nom for u in session.exec(select(Universite)).all()}

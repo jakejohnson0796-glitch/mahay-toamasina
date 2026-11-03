@@ -24,6 +24,15 @@ def upgrade() -> None:
             sa.Column("date_maj", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
             sa.UniqueConstraint("institution_id", "utilisateur_id", name="uq_membre_etablissement_utilisateur"),
         )
+
+    # Même posture que les autres tables du schéma Supabase public.
+    # L'application serveur se connecte avec un rôle backend BYPASSRLS ;
+    # l'activation empêche toute exposition accidentelle via la Data API.
+    # SQLite n'implémente pas RLS ; le contrôle est appliqué sur PostgreSQL.
+    if bind.dialect.name == "postgresql":
+        op.execute(sa.text(
+            "ALTER TABLE membre_etablissement ENABLE ROW LEVEL SECURITY"
+        ))
     for name, columns in (
         ("ix_membre_etablissement_institution_id", ["institution_id"]),
         ("ix_membre_etablissement_utilisateur_id", ["utilisateur_id"]),

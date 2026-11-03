@@ -74,10 +74,6 @@ def peut_gerer_cours(session: Session, cours: Cours, utilisateur: Optional[Utili
     if role_global == "admin":
         return True
     if getattr(cours, "affectation_institutionnelle_requise", False):
-        # Le propriétaire conserve l'accès de gestion pour aider à résoudre
-        # le rattachement ; aucun périmètre étudiant n'est exposé.
-        return utilisateur.id == cours.professeur_id
-    if getattr(cours, "affectation_institutionnelle_requise", False):
         # Le cours et ses données étudiant restent réservés à l'admin global
         # jusqu'à ce qu'un tenant soit confirmé.
         return False
