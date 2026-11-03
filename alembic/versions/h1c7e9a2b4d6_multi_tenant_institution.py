@@ -37,7 +37,31 @@ def upgrade() -> None:
 
     columns = {item["name"] for item in sa.inspect(bind).get_columns("cours")}
     if "institution_id" not in columns:
-        op.add_column("cours", sa.Column("institution_id", sa.Integer(), sa.ForeignKey("etablissementpartenaire.id"), nullable=True))
+        if bind.dialect.name == "sqlite":
+            # SQLite ne sait pas ajouter directement une FK par ALTER TABLE.
+            # Alembic batch reconstruit la table en conservant ses contraintes.
+            with op.batch_alter_table("cours", recreate="always") as batch:
+                batch.add_column(
+                    sa.Column("institution_id", sa.Integer(), nullable=True)
+                )
+                batch.create_foreign_key(
+                    "fk_cours_institution_id_etablissementpartenaire",
+                    "etablissementpartenaire",
+                    ["institution_id"],
+                    ["id"],
+                )
+        else:
+            op.add_column(
+                "cours",
+                sa.Column("institution_id", sa.Integer(), nullable=True),
+            )
+            op.create_foreign_key(
+                "fk_cours_institution_id_etablissementpartenaire",
+                "cours",
+                "etablissementpartenaire",
+                ["institution_id"],
+                ["id"],
+            )
     indexes = {item["name"] for item in sa.inspect(bind).get_indexes("cours")}
     if "ix_cours_institution_id" not in indexes:
         op.create_index("ix_cours_institution_id", "cours", ["institution_id"], unique=False)
@@ -116,7 +140,15 @@ def downgrade() -> None:
             op.drop_index("ix_cours_institution_id", table_name="cours")
         columns = {item["name"] for item in sa.inspect(bind).get_columns("cours")}
         if "institution_id" in columns:
-            op.drop_column("cours", "institution_id")
+            if bind.dialect.name == "sqlite":
+                with op.batch_alter_table("cours", recreate="always") as batch:
+                    foreign_keys = sa.inspect(bind).get_foreign_keys("cours")
+                    for foreign_key in foreign_keys:
+                        if foreign_key.get("constrained_columns") == ["institution_id"]:
+                            batch.drop_constraint(foreign_key["name"], type_="foreignkey")
+                    batch.drop_column("institution_id")
+            else:
+                op.drop_column("cours", "institution_id")
     if sa.inspect(bind).has_table("membre_etablissement"):
         indexes = {item["name"] for item in sa.inspect(bind).get_indexes("membre_etablissement")}
         for name in (

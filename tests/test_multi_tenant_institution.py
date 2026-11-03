@@ -6,7 +6,7 @@ from sqlmodel import SQLModel, Session, create_engine
 from app.institution_access import (
     ROLE_ETUDIANT, ROLE_PROFESSEUR, ROLE_RESPONSABLE,
     assurer_membre, est_inscrit_cours, institution_pour_cours,
-    membre_actif, peut_gerer_cours, peut_rejoindre_cours,
+    membre_actif, peut_gerer_cours, peut_rejoindre_cours, lister_inscriptions_actives,
 )
 from app.models import (
     Cours, EtablissementPartenaire, InscriptionCours,
@@ -191,3 +191,30 @@ def test_un_professeur_global_peut_etre_etudiant_dans_un_autre_tenant(db):
     db.add(InscriptionCours(cours_id=cours.id, utilisateur_id=compte.id))
     db.flush()
     assert est_inscrit_cours(db, cours.id, compte.id)
+
+
+
+def test_les_listes_de_classe_excluent_les_inscriptions_d_un_autre_tenant(db):
+    inst_a = creer_etablissement(db, "Université A", "UNIV-A")
+    inst_b = creer_etablissement(db, "Université B", "UNIV-B")
+    professeur = creer_compte(db, "Professeur A")
+    etudiant_a = creer_compte(db, "Etudiant A")
+    etudiant_b = creer_compte(db, "Etudiant B")
+    assurer_membre(db, inst_a.id, professeur.id, ROLE_PROFESSEUR)
+    assurer_membre(db, inst_a.id, etudiant_a.id, ROLE_ETUDIANT)
+    assurer_membre(db, inst_b.id, etudiant_b.id, ROLE_ETUDIANT)
+    cours = Cours(
+        nom="Cours isolé", matiere="Mathématiques", niveau="L1",
+        professeur_id=professeur.id, institution_id=inst_a.id,
+    )
+    db.add(cours)
+    db.flush()
+    db.add_all([
+        InscriptionCours(cours_id=cours.id, utilisateur_id=etudiant_a.id),
+        InscriptionCours(cours_id=cours.id, utilisateur_id=etudiant_b.id),
+    ])
+    db.flush()
+
+    lignes = lister_inscriptions_actives(db, cours.id)
+    ids = {etudiant.id for _, etudiant in lignes}
+    assert ids == {etudiant_a.id}

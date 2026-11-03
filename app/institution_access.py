@@ -91,3 +91,35 @@ def est_inscrit_cours(session: Session, cours_id: int, utilisateur_id: int) -> b
     if cours.institution_id is not None and membre_actif(session, cours.institution_id, utilisateur_id, (ROLE_ETUDIANT,)) is None:
         return False
     return session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id, InscriptionCours.utilisateur_id == utilisateur_id)).first() is not None
+
+
+
+def lister_inscriptions_actives(session: Session, cours_id: int):
+    """Retourne les inscriptions dont le membre appartient encore au tenant."""
+    cours = session.get(Cours, cours_id)
+    if not cours:
+        return []
+    requete = (
+        select(InscriptionCours, Utilisateur)
+        .join(Utilisateur, InscriptionCours.utilisateur_id == Utilisateur.id)
+        .where(InscriptionCours.cours_id == cours_id)
+    )
+    if cours.institution_id is not None:
+        requete = (
+            requete
+            .join(
+                MembreEtablissement,
+                MembreEtablissement.utilisateur_id == Utilisateur.id,
+            )
+            .join(
+                EtablissementPartenaire,
+                EtablissementPartenaire.id == MembreEtablissement.institution_id,
+            )
+            .where(
+                MembreEtablissement.institution_id == cours.institution_id,
+                MembreEtablissement.role == ROLE_ETUDIANT,
+                MembreEtablissement.est_actif == True,
+                EtablissementPartenaire.est_actif == True,
+            )
+        )
+    return session.exec(requete.order_by(InscriptionCours.date_inscription)).all()

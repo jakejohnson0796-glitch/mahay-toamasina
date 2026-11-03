@@ -380,16 +380,27 @@ def _charger_statistiques_globales(session: Session) -> dict:
     if not ids_cours:
         return construire_statistiques_globales([], [], [], [], [], [])
 
-    inscriptions = session.exec(
-        select(InscriptionCours).where(InscriptionCours.cours_id.in_(ids_cours))
-    ).all()
+    inscriptions = [
+        inscription
+        for cours_item in cours
+        for inscription, _etudiant in lister_inscriptions_actives(session, cours_item.id)
+    ]
     devoirs = session.exec(
         select(Devoir).where(Devoir.cours_id.in_(ids_cours))
     ).all()
     ids_devoirs = [item.id for item in devoirs]
-    rendus = session.exec(
+    rendus_bruts = session.exec(
         select(RenduDevoir).where(RenduDevoir.devoir_id.in_(ids_devoirs))
     ).all() if ids_devoirs else []
+    cours_par_devoir = {devoir.id: devoir.cours_id for devoir in devoirs}
+    inscriptions_actives = {
+        (inscription.cours_id, inscription.utilisateur_id)
+        for inscription in inscriptions
+    }
+    rendus = [
+        rendu for rendu in rendus_bruts
+        if (cours_par_devoir.get(rendu.devoir_id), rendu.utilisateur_id) in inscriptions_actives
+    ]
     seances = session.exec(
         select(Seance).where(Seance.cours_id.in_(ids_cours))
     ).all()

@@ -35,7 +35,7 @@ from ..rate_limit import limite_depassee
 from .. import gamification
 from ..institution_access import (
     ROLE_RESPONSABLE, ROLES_PEDAGOGIQUES,
-    est_inscrit_cours, institution_pour_cours, institutions_avec_role,
+    est_inscrit_cours, institution_pour_cours, institutions_avec_role, lister_inscriptions_actives,
     peut_gerer_cours, peut_rejoindre_cours,
 )
 from .. import quiz as quiz_module
@@ -454,7 +454,7 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
         fiches_revision_par_seance = {
             fiche.seance_id: fiche for fiche in fiches_revision
         }
-    nb_etudiants = len(session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all())
+    nb_etudiants = len(lister_inscriptions_actives(session, cours_id))
     requete_devoirs = select(Devoir).where(Devoir.cours_id == cours_id)
     if not peut_gerer:
         requete_devoirs = requete_devoirs.where(Devoir.archive == False)  # noqa: E712
@@ -678,10 +678,8 @@ def radar_pedagogique_cours(
         # Le radar est une vue réservée au professeur propriétaire et aux admins.
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
 
-    inscriptions = session.exec(
-        select(InscriptionCours.utilisateur_id).where(InscriptionCours.cours_id == cours_id)
-    ).all()
-    ids_etudiants = sorted({int(valeur) for valeur in inscriptions if valeur is not None})
+    inscriptions = lister_inscriptions_actives(session, cours_id)
+    ids_etudiants = sorted({int(etudiant.id) for _, etudiant in inscriptions if etudiant.id is not None})
     progressions = []
     cle_matiere = _cle_academique(cours.matiere)
     if ids_etudiants and cle_matiere:
@@ -726,12 +724,7 @@ def liste_etudiants_cours(request: Request, cours_id: int, session: Session = De
     if not cours or not _peut_gerer_cours(cours, utilisateur, session):
         return RedirectResponse(f"/classe/{cours_id}", status_code=303)
 
-    lignes = session.exec(
-        select(InscriptionCours, Utilisateur)
-        .where(InscriptionCours.cours_id == cours_id)
-        .where(InscriptionCours.utilisateur_id == Utilisateur.id)
-        .order_by(InscriptionCours.date_inscription)
-    ).all()
+    lignes = lister_inscriptions_actives(session, cours_id)
     inscriptions = [{"inscription": i, "utilisateur": u} for i, u in lignes]
 
     return templates.TemplateResponse(
@@ -1323,11 +1316,7 @@ def _donnees_tableau(session: Session, seance_id: int, request: Request):
         # Liste des inscrits pour le menu "autoriser quelqu'un" — exclut
         # ceux deja autorises pour ne pas les proposer deux fois.
         deja_autorises_ids = {a["utilisateur_id"] for a in autorises}
-        lignes_inscrits = session.exec(
-            select(InscriptionCours, Utilisateur)
-            .where(InscriptionCours.cours_id == cours.id)
-            .where(InscriptionCours.utilisateur_id == Utilisateur.id)
-        ).all()
+        lignes_inscrits = lister_inscriptions_actives(session, cours.id)
         inscrits_non_autorises = [
             {"utilisateur_id": u.id, "nom": u.nom} for _, u in lignes_inscrits if u.id not in deja_autorises_ids
         ]
@@ -1649,9 +1638,9 @@ def creer_devoir(
     session.add(devoir)
     session.commit()
     session.refresh(devoir)
-    for inscription in session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all():
+    for inscription, etudiant in lister_inscriptions_actives(session, cours_id):
         session.add(Notification(
-            destinataire_id=inscription.utilisateur_id,
+            destinataire_id=etudiant.id,
             type_notification=TypeNotification.NOUVEAU_DEVOIR,
             contenu=f"Nouveau devoir « {devoir.titre} » dans le cours « {cours.nom} ».",
             acteur_id=utilisateur.id,
@@ -1694,12 +1683,16 @@ def detail_devoir(request: Request, devoir_id: int, session: Session = Depends(g
 
     rendus = []
     if peut_gerer:
+        ids_etudiants_actifs = [
+            etudiant.id for _, etudiant in lister_inscriptions_actives(session, cours.id)
+        ]
         lignes = session.exec(
             select(RenduDevoir, Utilisateur)
             .where(RenduDevoir.devoir_id == devoir_id)
             .where(RenduDevoir.utilisateur_id == Utilisateur.id)
+            .where(RenduDevoir.utilisateur_id.in_(ids_etudiants_actifs))
             .order_by(RenduDevoir.date_rendu.desc())
-        ).all()
+        ).all() if ids_etudiants_actifs else []
         rendus = []
         for rendu, etudiant in lignes:
             try:
@@ -1838,12 +1831,10 @@ def exporter_notes_cours(
     devoirs = session.exec(
         select(Devoir).where(Devoir.cours_id == cours_id).order_by(Devoir.date_creation)
     ).all()
-    inscriptions = session.exec(
-        select(InscriptionCours, Utilisateur)
-        .where(InscriptionCours.cours_id == cours_id)
-        .where(InscriptionCours.utilisateur_id == Utilisateur.id)
-        .order_by(Utilisateur.nom)
-    ).all()
+    inscriptions = sorted(
+        lister_inscriptions_actives(session, cours_id),
+        key=lambda ligne: (ligne[1].nom or "").casefold(),
+    )
     ids_devoirs = [devoir.id for devoir in devoirs]
     rendus = session.exec(
         select(RenduDevoir).where(RenduDevoir.devoir_id.in_(ids_devoirs))
