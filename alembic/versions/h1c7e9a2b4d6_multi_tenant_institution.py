@@ -206,8 +206,7 @@ def upgrade() -> None:
     """))
     op.execute(sa.text("""
         UPDATE cours
-        SET affectation_institutionnelle_requise = TRUE,
-            code_invitation = NULL
+        SET affectation_institutionnelle_requise = TRUE
         WHERE institution_id IS NULL
           AND EXISTS (
               SELECT 1

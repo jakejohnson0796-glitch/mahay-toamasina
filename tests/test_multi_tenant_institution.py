@@ -255,6 +255,7 @@ def test_cours_ambigu_reste_en_quarantaine_jusqua_affectation_explicite(db):
     assert peut_gerer_cours(db, cours, admin)
     assert not peut_rejoindre_cours(db, cours, etudiant)
     assert not est_inscrit_cours(db, cours.id, etudiant.id)
+    assert cours.code_invitation == "AMBIGU123"  # conservé, mais inutilisable pendant la quarantaine
     assert lister_inscriptions_actives(db, cours.id) == []
 
     cours.institution_id = inst_a.id
