@@ -1655,6 +1655,7 @@ def creer_devoir(
     for inscription, etudiant in lister_inscriptions_actives(session, cours_id):
         session.add(Notification(
             destinataire_id=etudiant.id,
+            cours_id=cours_id,
             type_notification=TypeNotification.NOUVEAU_DEVOIR,
             contenu=f"Nouveau devoir « {devoir.titre} » dans le cours « {cours.nom} ».",
             acteur_id=utilisateur.id,
@@ -2063,6 +2064,7 @@ def noter_rendu(
     if ancienne_note is None or ancienne_note != rendu.note:
         session.add(Notification(
             destinataire_id=rendu.utilisateur_id,
+            cours_id=cours.id,
             type_notification=TypeNotification.NOTE_PUBLIEE,
             contenu=f"Ta note pour « {devoir.titre} » dans « {cours.nom} » est disponible.",
             acteur_id=utilisateur.id,

@@ -29,6 +29,10 @@ son institution_id nul ; il n'est pas déplacé par supposition.
   le périmètre lors de la création d'un cours.
 - La désactivation d'une appartenance prend effet immédiatement ; le dernier
   responsable actif d'un établissement ne peut pas être désactivé.
+- Les notifications liées à un devoir, une note, une présence, un rappel ou une fiche
+  de cours portent leur cours d'origine ; leur affichage, ouverture et marquage
+  comme lu revérifient l'inscription active. Les alertes historiques sans cours
+  identifiable sont masquées par prudence ; les notifications générales restent visibles.
 
 Les entités dépendant d'un cours (séances, devoirs, rendus, présences, notes et
 fiches de révision) héritent de son périmètre par leur clé étrangère vers Cours.

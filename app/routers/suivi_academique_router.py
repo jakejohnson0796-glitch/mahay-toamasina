@@ -230,7 +230,8 @@ def enregistrer_pointage(
     session.add(pointage)
     if statut_valide in {StatutPointage.ABSENT, StatutPointage.RETARD, StatutPointage.EXCUSE} and ancien != statut_valide:
         session.add(Notification(
-            destinataire_id=utilisateur_id, type_notification=TypeNotification.STATUT_PRESENCE,
+            destinataire_id=utilisateur_id, cours_id=cours.id,
+            type_notification=TypeNotification.STATUT_PRESENCE,
             contenu=f"Ton statut de présence à la séance « {seance.titre} » ({cours.nom}) a été mis à jour : {statut_valide.value}.",
             acteur_id=auteur.id, url_destination="/mes-presences",
         ))

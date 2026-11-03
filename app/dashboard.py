@@ -536,6 +536,7 @@ def notifier_echeances_proches(
         nom_cours = cours_item.nom if cours_item else "ton cours"
         session.add(Notification(
             destinataire_id=utilisateur_id,
+            cours_id=devoir.cours_id,
             type_notification=TypeNotification.RAPPEL_ECHEANCE,
             contenu=(
                 f"Le devoir « {devoir.titre} » dans « {nom_cours} » "

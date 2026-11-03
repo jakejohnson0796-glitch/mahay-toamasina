@@ -1228,6 +1228,7 @@ def generer_et_sauvegarder_fiche_revision_cours(fiche_id: int) -> None:
         session.add(
             Notification(
                 destinataire_id=utilisateur_id,
+                cours_id=fiche.cours_id,
                 type_notification=TypeNotification.FICHE_REVISION_PRETE,
                 contenu=(
                     "Ta fiche de révision personnalisée est prête à télécharger. "

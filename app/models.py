@@ -1541,6 +1541,17 @@ class Notification(SQLModel, table=True):
     cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
     message_id: Optional[int] = Field(default=None, foreign_key="messagecercle.id")
     url_destination: Optional[str] = Field(default=None, max_length=300)
+    # Lien explicite pour révoquer l'accès aux notifications pédagogiques
+    # lorsque l'étudiant quitte le cours ou son établissement.
+    cours_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            Integer,
+            ForeignKey("cours.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
     lu: bool = Field(default=False)
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
 

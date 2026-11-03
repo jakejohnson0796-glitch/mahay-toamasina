@@ -66,6 +66,43 @@ def upgrade() -> None:
     if "ix_cours_institution_id" not in indexes:
         op.create_index("ix_cours_institution_id", "cours", ["institution_id"], unique=False)
 
+    # Rattache les notifications pédagogiques à leur cours pour contrôler
+    # les anciennes alertes lorsqu'une inscription ou une appartenance expire.
+    notification_columns = {
+        item["name"] for item in sa.inspect(bind).get_columns("notification")
+    }
+    if "cours_id" not in notification_columns:
+        if bind.dialect.name == "sqlite":
+            with op.batch_alter_table("notification", recreate="always") as batch:
+                batch.add_column(sa.Column("cours_id", sa.Integer(), nullable=True))
+                batch.create_foreign_key(
+                    "fk_notification_cours_id_cours",
+                    "cours",
+                    ["cours_id"],
+                    ["id"],
+                    ondelete="SET NULL",
+                )
+        else:
+            op.add_column(
+                "notification",
+                sa.Column("cours_id", sa.Integer(), nullable=True),
+            )
+            op.create_foreign_key(
+                "fk_notification_cours_id_cours",
+                "notification",
+                "cours",
+                ["cours_id"],
+                ["id"],
+                ondelete="SET NULL",
+            )
+    notification_indexes = {
+        item["name"] for item in sa.inspect(bind).get_indexes("notification")
+    }
+    if "ix_notification_cours_id" not in notification_indexes:
+        op.create_index(
+            "ix_notification_cours_id", "notification", ["cours_id"], unique=False
+        )
+
     # Reconstitue les appartenances des comptes déjà préinscrits.
     metadata = sa.MetaData()
     users = sa.Table("utilisateur", metadata, autoload_with=bind)
@@ -134,6 +171,32 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     bind = op.get_bind()
+    if sa.inspect(bind).has_table("notification"):
+        notification_indexes = {
+            item["name"] for item in sa.inspect(bind).get_indexes("notification")
+        }
+        if "ix_notification_cours_id" in notification_indexes:
+            op.drop_index("ix_notification_cours_id", table_name="notification")
+        notification_columns = {
+            item["name"] for item in sa.inspect(bind).get_columns("notification")
+        }
+        if "cours_id" in notification_columns:
+            if bind.dialect.name == "sqlite":
+                with op.batch_alter_table("notification", recreate="always") as batch:
+                    for foreign_key in sa.inspect(bind).get_foreign_keys("notification"):
+                        if foreign_key.get("constrained_columns") == ["cours_id"]:
+                            batch.drop_constraint(
+                                foreign_key["name"], type_="foreignkey"
+                            )
+                    batch.drop_column("cours_id")
+            else:
+                op.drop_constraint(
+                    "fk_notification_cours_id_cours",
+                    "notification",
+                    type_="foreignkey",
+                )
+                op.drop_column("notification", "cours_id")
+
     if sa.inspect(bind).has_table("cours"):
         indexes = {item["name"] for item in sa.inspect(bind).get_indexes("cours")}
         if "ix_cours_institution_id" in indexes:
