@@ -41,3 +41,24 @@ def test_service_worker_rotates_old_static_cache_after_release():
     assert 'cle.startsWith("mahay-static-") && cle !== CACHE_NOM' in sw
     assert 'self.clients.claim()' in sw
     assert 'self.skipWaiting()' in sw
+
+
+def test_brouillon_quiz_est_isole_et_ne_stocke_pas_de_jeton():
+    pwa = (ROOT / "app" / "static" / "js" / "pwa.js").read_text(encoding="utf-8")
+    quiz = (ROOT / "app" / "templates" / "quiz_passer.html").read_text(encoding="utf-8")
+
+    assert 'data-quiz-owner="{{ tentative.utilisateur_id }}"' in quiz
+    assert 'data-quiz-mode-examen="{{ \'1\' if tentative.mode_examen else \'0\' }}"' in quiz
+    assert "data-quiz-draft-status" in quiz
+    assert "data-quiz-draft-clear" in quiz
+    assert "mitaridala:quiz-draft:v1:" in pwa
+    assert 'form.dataset.quizAdaptatif === "1"' in pwa
+    assert 'form.dataset.quizModeExamen === "1"' in pwa
+    assert "_csrf" not in pwa
+
+
+def test_ci_verifie_la_syntaxe_et_le_comportement_du_brouillon():
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    assert "node --check app/static/js/pwa.js" in workflow
+    assert "node scripts/smoke_quiz_draft.mjs" in workflow
