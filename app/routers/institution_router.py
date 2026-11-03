@@ -282,6 +282,26 @@ def attribuer_membre_institutionnel(
         ).first()
     if not utilisateur:
         return _page(request, session, admin, erreur="Aucun compte ne correspond à cet identifiant.")
+    membre_existant = session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.institution_id == institution.id,
+            MembreEtablissement.utilisateur_id == utilisateur.id,
+        )
+    ).first()
+    if membre_existant and membre_existant.est_actif and membre_existant.role == "responsable" and role != "responsable":
+        autres = session.exec(
+            select(MembreEtablissement).where(
+                MembreEtablissement.institution_id == institution.id,
+                MembreEtablissement.role == "responsable",
+                MembreEtablissement.est_actif == True,  # noqa: E712
+                MembreEtablissement.utilisateur_id != utilisateur.id,
+            )
+        ).first()
+        if not autres:
+            return _page(
+                request, session, admin,
+                erreur="Attribue d'abord un autre responsable avant de retirer ce rôle.",
+            )
     assurer_membre(session, institution.id, utilisateur.id, role, admin.id)
     if utilisateur.institution_id is None:
         utilisateur.institution_id = institution.id
@@ -325,6 +345,7 @@ def desactiver_membre_institutionnel(
 @router.get("/etablissement/tableau-de-bord")
 def tableau_de_bord_institutionnel(
     request: Request,
+    institution_id: Optional[int] = None,
     session: Session = Depends(get_session),
 ):
     utilisateur = utilisateur_courant(request, session)
@@ -339,7 +360,15 @@ def tableau_de_bord_institutionnel(
     ).all()
     if not responsables:
         return RedirectResponse("/classe", status_code=303)
-    institution = session.get(EtablissementPartenaire, min(m.institution_id for m in responsables))
+    ids_autorises = {m.institution_id for m in responsables}
+    cible = institution_id if institution_id in ids_autorises else min(ids_autorises)
+    institutions = session.exec(
+        select(EtablissementPartenaire)
+        .where(EtablissementPartenaire.id.in_(ids_autorises))
+        .where(EtablissementPartenaire.est_actif == True)  # noqa: E712
+        .order_by(EtablissementPartenaire.nom)
+    ).all()
+    institution = session.get(EtablissementPartenaire, cible)
     if not institution or not institution.est_actif:
         return RedirectResponse("/classe", status_code=303)
     membres = session.exec(
@@ -376,7 +405,7 @@ def tableau_de_bord_institutionnel(
     return templates.TemplateResponse(
         request,
         "institution_tableau_de_bord.html",
-        {"utilisateur": utilisateur, "institution": institution, "statistiques": statistiques, "cours": cours},
+        {"utilisateur": utilisateur, "institution": institution, "institutions": institutions, "statistiques": statistiques, "cours": cours},
         headers={"Cache-Control": "no-store, private", "Pragma": "no-cache", "X-Robots-Tag": "noindex, nofollow"},
     )
 

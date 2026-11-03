@@ -19,6 +19,19 @@
       <div class="ops-stat"><strong>{{ statistiques.cours }}</strong><span>cours institutionnels</span></div>
     </div>
   </section>
+  {% if institutions|length > 1 %}
+  <section class="ops-section">
+    <form method="get" action="/etablissement/tableau-de-bord" class="ops-form">
+      <label for="institution-dashboard-choice">Établissement affiché</label>
+      <select id="institution-dashboard-choice" name="institution_id">
+        {% for item in institutions %}
+        <option value="{{ item.id }}"{% if item.id == institution.id %} selected{% endif %}>{{ item.nom }}</option>
+        {% endfor %}
+      </select>
+      <button class="bouton bouton-primaire" type="submit">Afficher cet établissement</button>
+    </form>
+  </section>
+  {% endif %}
   <section class="ops-section">
     <h2>Vue d'ensemble pédagogique</h2>
     <div class="ops-stat-grid">
