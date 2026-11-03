@@ -18,7 +18,7 @@ obligatoires avant de déclarer ce chantier terminé.
 - [ ] Vérifier que les notifications de devoir, note, présence, rappel et fiche restent invisibles après retrait de l'inscription.
 - [ ] Vérifier les cours historiques à affectation ambiguë : aucun étudiant ne doit y accéder avant l'arbitrage de l'administrateur.
 - [ ] Vérifier l'écran d'affectation admin avec des professeurs multiétablissements et des établissements suspendus.
-- [ ] Permettre aux responsables d'établissement autorisés de gérer eux-mêmes l'import de leurs listes d'étudiants, sans accès aux autres établissements.
+- [ ] Valider en environnement de test le nouveau parcours responsable : import de 500 étudiants, affectation de professeurs/étudiants existants et désactivation strictement limitée à son établissement (implémenté dans la PR #326, en attente de tests de parcours réels).
 - [ ] Définir les documents privés d'établissement et leurs règles sur la bibliothèque, le téléchargement, le Tuteur IA, les quiz et les fiches de révision.
 - [ ] Ajouter les périmètres institutionnels aux autres ressources qui doivent être privées ; les documents généraux et cercles conservent leurs règles actuelles.
 - [ ] Tester les listes, imports et rapports avec plusieurs centaines puis plusieurs milliers de comptes.

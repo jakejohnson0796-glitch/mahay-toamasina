@@ -48,14 +48,21 @@ distinctes : ils ne deviennent pas implicitement des ressources privées d'un
 ## Administration
 
 La console d'administration de la plateforme peut créer un établissement,
-importer les étudiants, affecter un compte existant à un rôle institutionnel
-et désactiver une appartenance. Les mots de passe provisoires des imports ne
-sont pas ajoutés au modèle d'appartenance.
+nommer les responsables, affecter tout rôle institutionnel et désactiver une
+appartenance. Elle conserve les droits d'exploitation globaux.
 
-Un responsable dispose de /etablissement/tableau-de-bord, qui ne présente que
-des agrégats et les cours de ses établissements actifs. Les données nominatives
-des étudiants et les cours d'autres institutions ne sont pas présentés dans
-ce tableau de bord.
+Un responsable dispose de /etablissement/tableau-de-bord, limité aux
+établissements où son appartenance responsable est active. Il peut consulter la
+liste des membres de son périmètre, importer jusqu'à 500 étudiants par fichier
+CSV/XLSX, rattacher un compte existant comme professeur ou étudiant, et
+désactiver les appartenances professeur/étudiant de son établissement. Il ne
+peut pas nommer un autre responsable, modifier les rôles globaux, agir sur un
+autre établissement ni consulter ses effectifs nominatifs.
+
+Les mots de passe provisoires des imports sont affichés une seule fois dans une
+réponse sans cache ; les comptes doivent les remplacer à la première connexion.
+Les affectations et désactivations revérifient le rôle responsable et le tenant
+côté serveur à chaque requête.
 
 ## Vérifications requises avant fusion
 

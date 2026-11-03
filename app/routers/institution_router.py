@@ -20,7 +20,13 @@ from ..models import (
     EtablissementPartenaire, MembreEtablissement, RoleUtilisateur, Utilisateur,
     Cours, InscriptionCours, Devoir, RenduDevoir,
 )
-from ..institution_access import assurer_membre, ROLE_ETUDIANT, lister_inscriptions_actives
+from ..institution_access import (
+    assurer_membre,
+    ROLE_ETUDIANT,
+    ROLE_PROFESSEUR,
+    ROLE_RESPONSABLE,
+    lister_inscriptions_actives,
+)
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
 from ..subscription import creer_essais_gratuits_en_masse
@@ -34,6 +40,38 @@ LONGUEUR_MAX_NOM = 120
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+        return None
+    return utilisateur
+
+
+def responsable_actif(
+    session: Session,
+    utilisateur_id: Optional[int],
+    institution_id: Optional[int],
+) -> bool:
+    """Vérifie un rôle responsable actif dans un établissement précis."""
+    if not utilisateur_id or not institution_id:
+        return False
+    institution = session.get(EtablissementPartenaire, institution_id)
+    if not institution or not institution.est_actif:
+        return False
+    return session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.institution_id == institution_id,
+            MembreEtablissement.utilisateur_id == utilisateur_id,
+            MembreEtablissement.role == ROLE_RESPONSABLE,
+            MembreEtablissement.est_actif == True,  # noqa: E712
+        )
+    ).first() is not None
+
+
+def _responsable_requis(
+    request: Request,
+    session: Session,
+    institution_id: int,
+) -> Optional[Utilisateur]:
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or not responsable_actif(session, utilisateur.id, institution_id):
         return None
     return utilisateur
 
@@ -378,6 +416,15 @@ def tableau_de_bord_institutionnel(
             MembreEtablissement.est_actif == True,  # noqa: E712
         )
     ).all()
+    membres_details = session.exec(
+        select(MembreEtablissement, Utilisateur)
+        .join(Utilisateur, MembreEtablissement.utilisateur_id == Utilisateur.id)
+        .where(
+            MembreEtablissement.institution_id == institution.id,
+            MembreEtablissement.est_actif == True,  # noqa: E712
+        )
+        .order_by(MembreEtablissement.role, Utilisateur.nom)
+    ).all()
     cours = session.exec(
         select(Cours).where(Cours.institution_id == institution.id).order_by(Cours.nom)
     ).all()
@@ -419,11 +466,159 @@ def tableau_de_bord_institutionnel(
     return templates.TemplateResponse(
         request,
         "institution_tableau_de_bord.html",
-        {"utilisateur": utilisateur, "institution": institution, "institutions": institutions, "statistiques": statistiques, "cours": cours},
+        {
+            "utilisateur": utilisateur,
+            "institution": institution,
+            "institutions": institutions,
+            "statistiques": statistiques,
+            "cours": cours,
+            "membres_details": membres_details,
+            "max_etudiants": MAX_ETUDIANTS_PAR_IMPORT,
+            "max_mo": TAILLE_MAX_FICHIER // (1024 * 1024),
+        },
         headers={"Cache-Control": "no-store, private", "Pragma": "no-cache", "X-Robots-Tag": "noindex, nofollow"},
     )
 
 
+@router.post("/etablissement/membres/attribuer")
+def attribuer_membre_par_responsable(
+    request: Request,
+    institution_id: int = Form(...),
+    identifiant: str = Form(...),
+    role: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    responsable = _responsable_requis(request, session, institution_id)
+    if not responsable:
+        return RedirectResponse("/classe", status_code=303)
+
+    if role not in {ROLE_ETUDIANT, ROLE_PROFESSEUR}:
+        return RedirectResponse(
+            f"/etablissement/tableau-de-bord?institution_id={institution_id}&erreur=role_invalide",
+            status_code=303,
+        )
+    valeur = (identifiant or "").strip()
+    if not valeur or len(valeur) > 160:
+        return RedirectResponse(
+            f"/etablissement/tableau-de-bord?institution_id={institution_id}&erreur=identifiant_invalide",
+            status_code=303,
+        )
+
+    compte = session.exec(
+        select(Utilisateur).where(Utilisateur.identifiant_connexion == valeur)
+    ).first()
+    if not compte:
+        compte = session.exec(
+            select(Utilisateur).where(Utilisateur.telephone == valeur)
+        ).first()
+    if not compte:
+        return RedirectResponse(
+            f"/etablissement/tableau-de-bord?institution_id={institution_id}&erreur=compte_introuvable",
+            status_code=303,
+        )
+
+    membre = session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.institution_id == institution_id,
+            MembreEtablissement.utilisateur_id == compte.id,
+        )
+    ).first()
+    if membre and membre.est_actif:
+        return RedirectResponse(
+            f"/etablissement/tableau-de-bord?institution_id={institution_id}&erreur=membre_deja_actif",
+            status_code=303,
+        )
+    if membre and membre.role == ROLE_RESPONSABLE:
+        return RedirectResponse(
+            f"/etablissement/tableau-de-bord?institution_id={institution_id}&erreur=role_responsable_admin",
+            status_code=303,
+        )
+
+    assurer_membre(session, institution_id, compte.id, role, responsable.id)
+    session.commit()
+    return RedirectResponse(
+        f"/etablissement/tableau-de-bord?institution_id={institution_id}&ok=membre_attribue",
+        status_code=303,
+    )
+
+
+@router.post("/etablissement/membres/{membre_id}/desactiver")
+def desactiver_membre_par_responsable(
+    request: Request,
+    membre_id: int,
+    institution_id: int = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    responsable = _responsable_requis(request, session, institution_id)
+    if not responsable:
+        return RedirectResponse("/classe", status_code=303)
+
+    membre = session.get(MembreEtablissement, membre_id)
+    if (
+        not membre
+        or membre.institution_id != institution_id
+        or not membre.est_actif
+        or membre.role == ROLE_RESPONSABLE
+    ):
+        return RedirectResponse(
+            f"/etablissement/tableau-de-bord?institution_id={institution_id}&erreur=desactivation_invalide",
+            status_code=303,
+        )
+
+    from datetime import datetime
+
+    membre.est_actif = False
+    membre.date_maj = datetime.utcnow()
+    session.add(membre)
+    session.commit()
+    return RedirectResponse(
+        f"/etablissement/tableau-de-bord?institution_id={institution_id}&ok=membre_desactive",
+        status_code=303,
+    )
+
+
+def _reponse_import_institution(
+    request: Request,
+    session: Session,
+    admin: Optional[Utilisateur],
+    acteur: Utilisateur,
+    institution: EtablissementPartenaire,
+    *,
+    erreur: Optional[str] = None,
+    resultat: Optional[list[dict[str, str]]] = None,
+    lignes_erreur: Optional[list[str]] = None,
+):
+    if admin:
+        return _page(
+            request,
+            session,
+            admin,
+            erreur=erreur,
+            resultat=resultat,
+            lignes_erreur=lignes_erreur,
+            institution_selectionnee=institution.id,
+        )
+    return templates.TemplateResponse(
+        request,
+        "institution_import_resultat.html",
+        {
+            "utilisateur": acteur,
+            "institution": institution,
+            "erreur": erreur,
+            "resultat": resultat or [],
+            "lignes_erreur": lignes_erreur or [],
+        },
+        headers={
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+            "X-Robots-Tag": "noindex, nofollow",
+        },
+    )
+
+
+@router.post("/etablissement/membres/importer")
 @router.post("/admin/inscriptions-institutionnelles/importer")
 async def importer_etudiants_institutionnels(
     request: Request,
@@ -433,18 +628,29 @@ async def importer_etudiants_institutionnels(
     _csrf: None = Depends(verifier_csrf),
 ):
     admin = _admin_requis(request, session)
-    if not admin:
-        return RedirectResponse("/connexion", status_code=303)
     institution = session.get(EtablissementPartenaire, institution_id)
     if not institution or not institution.est_actif:
-        return _page(request, session, admin, erreur="Choisis un établissement partenaire actif.")
+        if admin:
+            return _page(request, session, admin, erreur="Choisis un établissement partenaire actif.")
+        return RedirectResponse("/classe", status_code=303)
+
+    responsable = None
+    if not admin:
+        responsable = _responsable_requis(request, session, institution_id)
+        if not responsable:
+            return RedirectResponse("/classe", status_code=303)
+    acteur = admin or responsable
+    if not acteur:
+        return RedirectResponse("/connexion", status_code=303)
     nom_fichier = fichier.filename or ""
     contenu = await fichier.read(TAILLE_MAX_FICHIER + 1)
     await fichier.close()
     try:
         lignes = lire_lignes_tableur(nom_fichier, contenu)
     except ValueError as exc:
-        return _page(request, session, admin, erreur=str(exc), institution_selectionnee=institution.id)
+        return _reponse_import_institution(
+            request, session, admin, acteur, institution, erreur=str(exc)
+        )
 
     resultat: list[dict[str, str]] = []
     comptes_crees: list[Utilisateur] = []
@@ -470,10 +676,17 @@ async def importer_etudiants_institutionnels(
         if login in identifiants_vus:
             lignes_erreur.append(f"Ligne {no_ligne} : identifiant généré en double.")
             continue
-        if session.exec(select(Utilisateur).where(
-            Utilisateur.institution_id == institution.id,
-            Utilisateur.matricule_institutionnel == matricule,
-        )).first():
+        if session.exec(
+            select(Utilisateur)
+            .join(
+                MembreEtablissement,
+                MembreEtablissement.utilisateur_id == Utilisateur.id,
+            )
+            .where(
+                MembreEtablissement.institution_id == institution.id,
+                Utilisateur.matricule_institutionnel == matricule,
+            )
+        ).first():
             lignes_erreur.append(f"Ligne {no_ligne} : ce matricule est déjà inscrit dans l’établissement.")
             continue
         if session.exec(select(Utilisateur).where(Utilisateur.identifiant_connexion == login)).first():
@@ -527,21 +740,41 @@ async def importer_etudiants_institutionnels(
 
     if not resultat:
         session.rollback()
-        return _page(request, session, admin, erreur="Aucun compte créé. Vérifie les lignes signalées et corrige le fichier.",
-                     lignes_erreur=lignes_erreur, institution_selectionnee=institution.id)
+        return _reponse_import_institution(
+            request,
+            session,
+            admin,
+            acteur,
+            institution,
+            erreur="Aucun compte créé. Vérifie les lignes signalées et corrige le fichier.",
+            lignes_erreur=lignes_erreur,
+        )
     try:
         # Attribue les identifiants puis crée les essais Premium standards en
         # une transaction de groupe, sans effectuer un commit par étudiant.
         session.flush()
         for compte in comptes_crees:
-            assurer_membre(session, institution.id, compte.id, ROLE_ETUDIANT, admin.id)
+            assurer_membre(session, institution.id, compte.id, ROLE_ETUDIANT, acteur.id)
         creer_essais_gratuits_en_masse(session, comptes_crees)
         session.commit()
     except IntegrityError:
         session.rollback()
-        return _page(request, session, admin,
-                     erreur="La base a détecté un doublon pendant l'import. Aucun mot de passe n'a été conservé. Corrige les doublons puis réessaie.",
-                     lignes_erreur=lignes_erreur, institution_selectionnee=institution.id)
+        return _reponse_import_institution(
+            request,
+            session,
+            admin,
+            acteur,
+            institution,
+            erreur="La base a détecté un doublon pendant l'import. Aucun mot de passe n'a été conservé. Corrige les doublons puis réessaie.",
+            lignes_erreur=lignes_erreur,
+        )
 
-    return _page(request, session, admin, resultat=resultat, lignes_erreur=lignes_erreur,
-                 institution_selectionnee=institution.id)
+    return _reponse_import_institution(
+        request,
+        session,
+        admin,
+        acteur,
+        institution,
+        resultat=resultat,
+        lignes_erreur=lignes_erreur,
+    )
