@@ -167,7 +167,8 @@ def test_un_etablissement_inactif_suspend_toutes_les_appartenances(db):
     db.flush()
 
     assert membre_actif(db, institution.id, responsable.id, (ROLE_RESPONSABLE,)) is None
-    assert institution_pour_cours(db, responsable, None) is None
+    with pytest.raises(ValueError, match="rattachement institutionnel est inactif"):
+        institution_pour_cours(db, responsable, None)
 
 
 
@@ -218,3 +219,9 @@ def test_les_listes_de_classe_excluent_les_inscriptions_d_un_autre_tenant(db):
     lignes = lister_inscriptions_actives(db, cours.id)
     ids = {etudiant.id for _, etudiant in lignes}
     assert ids == {etudiant_a.id}
+
+
+
+def test_professeur_independant_sans_affiliation_peut_creer_un_cours_historique(db):
+    professeur = creer_compte(db, "Professeur indépendant", RoleUtilisateur.PROFESSEUR)
+    assert institution_pour_cours(db, professeur, None) is None

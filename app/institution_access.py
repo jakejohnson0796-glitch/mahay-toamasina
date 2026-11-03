@@ -49,6 +49,12 @@ def assurer_membre(session: Session, institution_id: int, utilisateur_id: int, r
 
 def institution_pour_cours(session: Session, utilisateur: Utilisateur, institution_id: Optional[int]) -> Optional[int]:
     autorisees = institutions_avec_role(session, utilisateur.id, ROLES_PEDAGOGIQUES)
+    affiliations = session.exec(
+        select(MembreEtablissement.institution_id).where(
+            MembreEtablissement.utilisateur_id == utilisateur.id,
+            MembreEtablissement.role.in_(list(ROLES_PEDAGOGIQUES)),
+        )
+    ).all()
     if institution_id is not None:
         if institution_id not in autorisees:
             raise ValueError("Tu n'es pas autorisé à créer un cours dans cet établissement.")
@@ -57,6 +63,8 @@ def institution_pour_cours(session: Session, utilisateur: Utilisateur, instituti
         return autorisees[0]
     if len(autorisees) > 1:
         raise ValueError("Choisis l'établissement auquel rattacher ce cours.")
+    if affiliations:
+        raise ValueError("Ton rattachement institutionnel est inactif. Contacte l'administration.")
     return None
 
 def peut_gerer_cours(session: Session, cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
