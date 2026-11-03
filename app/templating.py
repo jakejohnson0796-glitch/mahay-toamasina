@@ -74,19 +74,42 @@ templates.env.globals["nb_notifications_admin_nouvelles"] = _nb_notifications_ad
 
 
 def _compter_notifications_non_lues(request) -> int:
-    """Compteur des notifications non lues de l'utilisateur courant."""
+    """Compteur qui respecte aussi la révocation des notifications pédagogiques."""
     user_id = request.session.get("user_id")
     if not user_id:
         return 0
     from .database import engine
-    from .models import Notification
+    from .models import Notification, TypeNotification
+    # Import différé pour éviter le cycle templating -> router -> templates.
+    from .routers.notifications_router import (
+        _TYPES_NOTIFICATION_COURS,
+        _notification_autorisee,
+    )
+
     with Session(engine) as session:
-        return int(session.exec(
+        filtres = (
+            Notification.destinataire_id == user_id,
+            Notification.lu == False,  # noqa: E712
+        )
+        types_cours = [
+            TypeNotification(value) for value in _TYPES_NOTIFICATION_COURS
+        ]
+        generales = int(session.exec(
             select(func.count())
             .select_from(Notification)
-            .where(Notification.destinataire_id == user_id)
-            .where(Notification.lu == False)  # noqa: E712
+            .where(*filtres)
+            .where(Notification.type_notification.notin_(types_cours))
         ).one())
+        pedagogiques = session.exec(
+            select(Notification)
+            .where(*filtres)
+            .where(Notification.type_notification.in_(types_cours))
+        ).all()
+        return generales + sum(
+            1
+            for notification in pedagogiques
+            if _notification_autorisee(session, user_id, notification)
+        )
 
 
 templates.env.globals["compter_notifications_non_lues"] = _compter_notifications_non_lues

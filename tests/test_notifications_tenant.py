@@ -1,5 +1,7 @@
 from sqlmodel import SQLModel, Session, create_engine, select
 
+from app import database, templating
+
 from app.models import (
     Cours,
     Devoir,
@@ -174,4 +176,42 @@ def test_notification_generale_reste_visible_sans_appartenance_a_un_cours():
         session.refresh(notification)
 
         assert _notification_autorisee(session, etudiant.id, notification)
+    engine.dispose()
+
+
+
+def test_compteur_entete_ignore_les_notifications_pedagogiques_revoquees(monkeypatch):
+    engine = _db()
+    monkeypatch.setattr(database, "engine", engine)
+    with Session(engine) as session:
+        _, _, cours, etudiant_a, _ = _setup_tenants(session)
+        session.add_all([
+            Notification(
+                destinataire_id=etudiant_a.id,
+                type_notification=TypeNotification.NOTE_PUBLIEE,
+                contenu="Note publiée.",
+                cours_id=cours.id,
+            ),
+            Notification(
+                destinataire_id=etudiant_a.id,
+                type_notification=TypeNotification.DOCUMENT_APPROUVE,
+                contenu="Document approuvé.",
+            ),
+        ])
+        session.commit()
+
+        request = type("Request", (), {"session": {"user_id": etudiant_a.id}})()
+        assert templating._compter_notifications_non_lues(request) == 2
+
+        membre = session.exec(
+            select(MembreEtablissement).where(
+                MembreEtablissement.institution_id == cours.institution_id,
+                MembreEtablissement.utilisateur_id == etudiant_a.id,
+            )
+        ).one()
+        membre.est_actif = False
+        session.add(membre)
+        session.commit()
+
+        assert templating._compter_notifications_non_lues(request) == 1
     engine.dispose()
