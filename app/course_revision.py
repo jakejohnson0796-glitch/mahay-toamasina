@@ -33,6 +33,7 @@ from reportlab.platypus import (
 from sqlmodel import Session, select
 
 from .config import parametres
+from .institution_access import est_inscrit_cours
 from .database import engine
 from .models import (
     Cours,
@@ -490,6 +491,8 @@ def _collecter_sources(session: Session, fiche: FicheRevisionCours) -> tuple[dic
     etudiant = session.get(Utilisateur, fiche.utilisateur_id)
     if not cours or not seance or not etudiant:
         raise RuntimeError("Le cours, la séance ou l'étudiant lié à la fiche est introuvable.")
+    if not est_inscrit_cours(session, cours.id, etudiant.id):
+        raise RuntimeError("L'étudiant n'appartient plus à ce cours ou à cet établissement.")
 
     notes = _notes_tableau(session, seance.id)
     description_seance = _normaliser_texte(seance.description, 1800)
@@ -1207,6 +1210,13 @@ def generer_et_sauvegarder_fiche_revision_cours(fiche_id: int) -> None:
         if not fiche:
             raise RuntimeError(f"Fiche de révision #{fiche_id} supprimée avant l'enregistrement.")
         if fiche.statut == StatutFicheRevisionCours.TERMINEE and fiche.contenu_json != "{}":
+            return
+        if not est_inscrit_cours(session, fiche.cours_id, fiche.utilisateur_id):
+            fiche.statut = StatutFicheRevisionCours.ECHOUEE
+            fiche.erreur_generation = "L'accès à ce cours a été retiré avant la publication de la fiche."
+            fiche.date_modification = maintenant
+            session.add(fiche)
+            session.commit()
             return
         fiche.contenu_json = json.dumps(contenu, ensure_ascii=False)
         fiche.sources_json = json.dumps(resume_sources, ensure_ascii=False)

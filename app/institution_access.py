@@ -123,3 +123,16 @@ def lister_inscriptions_actives(session: Session, cours_id: int):
             )
         )
     return session.exec(requete.order_by(InscriptionCours.date_inscription)).all()
+
+
+def cours_ids_etudiant_actifs(session: Session, utilisateur_id: int) -> list[int]:
+    """Liste les cours auxquels l'étudiant appartient encore dans son tenant."""
+    ids = session.exec(
+        select(InscriptionCours.cours_id)
+        .where(InscriptionCours.utilisateur_id == utilisateur_id)
+        .order_by(InscriptionCours.cours_id)
+    ).all()
+    return [
+        int(cours_id) for cours_id in ids
+        if est_inscrit_cours(session, int(cours_id), utilisateur_id)
+    ]

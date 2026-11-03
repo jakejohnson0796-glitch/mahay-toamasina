@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
+from ..institution_access import peut_gerer_cours, est_inscrit_cours, lister_inscriptions_actives
 from ..models import (
     Cours, Devoir, InscriptionCours, Notification, PointagePresence,
     PresenceSeance, RenduDevoir, RoleUtilisateur, Seance, StatutPointage,
@@ -21,16 +22,11 @@ from ..templating import templates
 
 router = APIRouter()
 
-def _peut_gerer(cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
-    return bool(utilisateur and (
-        utilisateur.role == RoleUtilisateur.ADMIN or utilisateur.id == cours.professeur_id
-    ))
+def _peut_gerer(cours: Cours, utilisateur: Optional[Utilisateur], session: Session) -> bool:
+    return peut_gerer_cours(session, cours, utilisateur)
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
-    return session.exec(select(InscriptionCours).where(
-        InscriptionCours.cours_id == cours_id,
-        InscriptionCours.utilisateur_id == utilisateur_id,
-    )).first() is not None
+    return est_inscrit_cours(session, cours_id, utilisateur_id)
 
 def normaliser_statut_pointage(valeur: str) -> StatutPointage:
     try:
@@ -102,7 +98,7 @@ def page_mes_notes(request: Request, session: Session = Depends(get_session)):
     informations = []
     for cid in ids:
         cours = cours_map.get(cid)
-        if cours:
+        if cours and _est_inscrit(session, cid, utilisateur.id):
             informations.append({"cours": cours, **_construire_carnet(session, cours, [utilisateur], False)})
     return templates.TemplateResponse(request, "mes_notes.html", {"utilisateur": utilisateur, "cours_info": informations})
 
@@ -119,7 +115,6 @@ def page_mes_presences(request: Request, session: Session = Depends(get_session)
     for p in pointages:
         if p.statut == StatutPointage.A_RENSEIGNER:
             continue
-        compteurs[p.statut.value] += 1
         seance = cache_seances.get(p.seance_id)
         if p.seance_id not in cache_seances:
             seance = session.get(Seance, p.seance_id)
@@ -130,7 +125,8 @@ def page_mes_presences(request: Request, session: Session = Depends(get_session)
         if seance.cours_id not in cache_cours:
             cours = session.get(Cours, seance.cours_id)
             cache_cours[seance.cours_id] = cours
-        if cours:
+        if cours and _est_inscrit(session, cours.id, utilisateur.id):
+            compteurs[p.statut.value] += 1
             lignes.append({"pointage": p, "seance": seance, "cours": cours})
     return templates.TemplateResponse(request, "mes_presences.html", {
         "utilisateur": utilisateur, "lignes": lignes, "compteurs": compteurs,
@@ -144,13 +140,11 @@ def page_carnet_notes(cours_id: int, request: Request, session: Session = Depend
     cours = session.get(Cours, cours_id)
     if not cours:
         return RedirectResponse("/classe", status_code=303)
-    professeur = _peut_gerer(cours, utilisateur)
+    professeur = _peut_gerer(cours, utilisateur, session)
     if not professeur and not _est_inscrit(session, cours_id, utilisateur.id):
         return RedirectResponse("/classe", status_code=303)
     if professeur:
-        etudiants = session.exec(select(Utilisateur).join(
-            InscriptionCours, InscriptionCours.utilisateur_id == Utilisateur.id
-        ).where(InscriptionCours.cours_id == cours_id).order_by(Utilisateur.nom)).all()
+        etudiants = [etudiant for _, etudiant in lister_inscriptions_actives(session, cours_id)]
     else:
         etudiants = [utilisateur]
     carnet = _construire_carnet(session, cours, etudiants, professeur)
@@ -164,11 +158,9 @@ def page_rapport_academique(cours_id: int, request: Request, session: Session = 
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
     cours = session.get(Cours, cours_id)
-    if not cours or not _peut_gerer(cours, utilisateur):
+    if not cours or not _peut_gerer(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
-    etudiants = session.exec(select(Utilisateur).join(
-        InscriptionCours, InscriptionCours.utilisateur_id == Utilisateur.id
-    ).where(InscriptionCours.cours_id == cours_id).order_by(Utilisateur.nom)).all()
+    etudiants = [etudiant for _, etudiant in lister_inscriptions_actives(session, cours_id)]
     carnet = _construire_carnet(session, cours, etudiants, True)
     seances = session.exec(select(Seance).where(Seance.cours_id == cours_id)).all()
     ids_seances = [s.id for s in seances]
@@ -193,11 +185,9 @@ def page_registre_presences(seance_id: int, request: Request, session: Session =
         return RedirectResponse("/connexion", status_code=303)
     seance = session.get(Seance, seance_id)
     cours = session.get(Cours, seance.cours_id) if seance else None
-    if not seance or not cours or not _peut_gerer(cours, utilisateur):
+    if not seance or not cours or not _peut_gerer(cours, utilisateur, session):
         return RedirectResponse("/classe", status_code=303)
-    etudiants = session.exec(select(Utilisateur).join(
-        InscriptionCours, InscriptionCours.utilisateur_id == Utilisateur.id
-    ).where(InscriptionCours.cours_id == cours.id).order_by(Utilisateur.nom)).all()
+    etudiants = [etudiant for _, etudiant in lister_inscriptions_actives(session, cours.id)]
     pointages = session.exec(select(PointagePresence).where(PointagePresence.seance_id == seance_id)).all()
     par_etudiant = {p.utilisateur_id: p for p in pointages}
     connexions = session.exec(select(PresenceSeance).where(PresenceSeance.seance_id == seance_id)).all()
@@ -218,7 +208,7 @@ def enregistrer_pointage(
     auteur = utilisateur_courant(request, session)
     seance = session.get(Seance, seance_id)
     cours = session.get(Cours, seance.cours_id) if seance else None
-    if not seance or not cours or not _peut_gerer(cours, auteur):
+    if not seance or not cours or not _peut_gerer(cours, auteur, session):
         return RedirectResponse("/classe", status_code=303)
     if not _est_inscrit(session, cours.id, utilisateur_id):
         return RedirectResponse(f"/classe/seances/{seance_id}/registre-presences?erreur=etudiant", status_code=303)
