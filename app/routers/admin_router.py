@@ -15,6 +15,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select, func
 
 from ..database import get_session
+from ..institution_access import lister_inscriptions_actives
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant, verifier_mot_de_passe
@@ -949,11 +950,10 @@ def page_confirmation_suppression(request: Request, utilisateur_id: int, session
     cercles_info = [{"cercle": c, "nb_membres": membres_par_cercle.get(c.id, 0), "nb_messages": messages_par_cercle.get(c.id, 0)} for c in cercles_possedes]
 
     cours_possedes = session.exec(select(Cours).where(Cours.professeur_id == utilisateur_id)).all()
-    cours_ids = [c.id for c in cours_possedes]
-    inscrits_par_cours = {cid: nb for cid, nb in session.exec(
-        select(InscriptionCours.cours_id, func.count()).where(InscriptionCours.cours_id.in_(cours_ids or [-1]))
-        .group_by(InscriptionCours.cours_id)
-    ).all()}
+    inscrits_par_cours = {
+        cours.id: len(lister_inscriptions_actives(session, cours.id))
+        for cours in cours_possedes
+    }
     seances_par_cours = {cid: nb for cid, nb in session.exec(
         select(Seance.cours_id, func.count()).where(Seance.cours_id.in_(cours_ids or [-1]))
         .group_by(Seance.cours_id)

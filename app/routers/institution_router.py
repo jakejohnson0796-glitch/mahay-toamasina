@@ -20,7 +20,7 @@ from ..models import (
     EtablissementPartenaire, MembreEtablissement, RoleUtilisateur, Utilisateur,
     Cours, InscriptionCours, Devoir, RenduDevoir,
 )
-from ..institution_access import assurer_membre, ROLE_ETUDIANT
+from ..institution_access import assurer_membre, ROLE_ETUDIANT, lister_inscriptions_actives
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
 from ..subscription import creer_essais_gratuits_en_masse
@@ -382,16 +382,29 @@ def tableau_de_bord_institutionnel(
         select(Cours).where(Cours.institution_id == institution.id).order_by(Cours.nom)
     ).all()
     ids_cours = [item.id for item in cours]
-    inscriptions = session.exec(
-        select(InscriptionCours).where(InscriptionCours.cours_id.in_(ids_cours))
-    ).all() if ids_cours else []
+    inscriptions_actives = [
+        (inscription, etudiant)
+        for cours_item in cours
+        for inscription, etudiant in lister_inscriptions_actives(session, cours_item.id)
+    ]
+    inscriptions = [inscription for inscription, _etudiant in inscriptions_actives]
     devoirs = session.exec(
         select(Devoir).where(Devoir.cours_id.in_(ids_cours))
     ).all() if ids_cours else []
     ids_devoirs = [item.id for item in devoirs]
-    rendus = session.exec(
+    rendus_bruts = session.exec(
         select(RenduDevoir).where(RenduDevoir.devoir_id.in_(ids_devoirs))
     ).all() if ids_devoirs else []
+    cours_par_devoir = {devoir.id: devoir.cours_id for devoir in devoirs}
+    inscriptions_actives_ids = {
+        (inscription.cours_id, inscription.utilisateur_id)
+        for inscription in inscriptions
+    }
+    rendus = [
+        rendu for rendu in rendus_bruts
+        if (cours_par_devoir.get(rendu.devoir_id), rendu.utilisateur_id)
+        in inscriptions_actives_ids
+    ]
     statistiques = {
         "membres": len(membres),
         "responsables": sum(1 for item in membres if item.role == "responsable"),
