@@ -53,10 +53,24 @@ def _est_professeur(utilisateur: Optional[Utilisateur], session: Session) -> boo
 
 
 def _peut_gerer_cours(
-    cours: Cours, utilisateur: Optional[Utilisateur], session: Session
+    cours: Cours, utilisateur: Optional[Utilisateur], session: Optional[Session] = None
 ) -> bool:
-    """Vérifie l'appartenance active au tenant du cours à chaque requête."""
-    return peut_gerer_cours(session, cours, utilisateur)
+    """Vérifie le tenant ; sans session, conserve uniquement le cas historique sûr.
+
+    Les routes passent toujours la session. Le mode sans session existe pour la
+    compatibilité des anciens appels internes et échoue fermé pour tout cours
+    institutionnel.
+    """
+    if session is not None:
+        return peut_gerer_cours(session, cours, utilisateur)
+    if not utilisateur:
+        return False
+    role_global = getattr(utilisateur.role, "value", utilisateur.role)
+    if role_global == "admin":
+        return True
+    if getattr(cours, "institution_id", None) is not None:
+        return False
+    return utilisateur.id == cours.professeur_id
 
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
