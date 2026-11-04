@@ -54,9 +54,9 @@
   function sauver() {
     var donnees = lire();
     if (!Object.keys(donnees.reponses).length && !Object.keys(donnees.confiances).length) {
-      try { stockage.removeItem(cle); } catch (_) {}
+      try { stockage.removeItem(cle); } catch (_) { return false; }
       if (boutonEffacer) boutonEffacer.hidden = true;
-      return false;
+      return true;
     }
     try {
       stockage.setItem(cle, JSON.stringify({
@@ -106,10 +106,14 @@
     }
   });
   form.addEventListener("submit", function (event) {
-    sauver();
+    var brouillonEnregistre = sauver();
     if (navigator.onLine === false) {
       event.preventDefault();
-      annoncer("Connexion indisponible : tes réponses sont conservées sur cet appareil. Reconnecte-toi puis valide le quiz.");
+      if (brouillonEnregistre) {
+        annoncer("Connexion indisponible : tes réponses sont conservées sur cet appareil. Reconnecte-toi puis valide le quiz.");
+      } else {
+        annoncer("Connexion indisponible : le navigateur n'a pas pu enregistrer tes réponses. Ne ferme pas la page ; reconnecte-toi avant de continuer.");
+      }
     }
   });
   window.addEventListener("online", function () {
