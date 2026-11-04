@@ -2030,7 +2030,10 @@ def telecharger_rendu(request: Request, rendu_id: int, session: Session = Depend
     # l'etudiant peut seulement telecharger LE SIEN (jamais celui d'un
     # camarade, meme en devinant l'id).
     peut_gerer = _peut_gerer_cours(cours, utilisateur, session)
-    if not peut_gerer and rendu.utilisateur_id != utilisateur.id:
+    if not peut_gerer and (
+        rendu.utilisateur_id != utilisateur.id
+        or not _est_inscrit(session, cours.id, utilisateur.id)
+    ):
         return RedirectResponse(f"/classe/{cours.id}", status_code=303)
 
     if stockage_distant_actif():

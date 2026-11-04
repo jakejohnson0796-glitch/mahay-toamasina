@@ -403,3 +403,35 @@ def test_suppression_refuse_le_dernier_responsable_institutionnel(monkeypatch):
         assert "dernier_responsable_institution" in response.headers["location"]
         assert session.get(Utilisateur, cible.id) is not None
     engine.dispose()
+
+
+def test_confirmation_suppression_sans_cours_ne_leve_pas_nameerror(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        admin = Utilisateur(
+            nom="Admin courant",
+            telephone="0340007031",
+            mot_de_passe_hash="hash-admin",
+            role=RoleUtilisateur.ADMIN,
+        )
+        cible = Utilisateur(
+            nom="Compte à supprimer",
+            telephone="0340007032",
+            mot_de_passe_hash="hash-cible",
+        )
+        session.add_all([admin, cible])
+        session.commit()
+        session.refresh(admin)
+        session.refresh(cible)
+        monkeypatch.setattr(admin_router, "_admin_requis", lambda request, db: admin)
+        monkeypatch.setattr(
+            admin_router,
+            "templates",
+            SimpleNamespace(TemplateResponse=lambda *args, **kwargs: "rendered"),
+        )
+
+        assert admin_router.page_confirmation_suppression(
+            SimpleNamespace(), cible.id, session
+        ) == "rendered"
+    engine.dispose()

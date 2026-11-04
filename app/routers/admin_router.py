@@ -1052,6 +1052,7 @@ def page_confirmation_suppression(request: Request, utilisateur_id: int, session
     cercles_info = [{"cercle": c, "nb_membres": membres_par_cercle.get(c.id, 0), "nb_messages": messages_par_cercle.get(c.id, 0)} for c in cercles_possedes]
 
     cours_possedes = session.exec(select(Cours).where(Cours.professeur_id == utilisateur_id)).all()
+    cours_ids = [cours.id for cours in cours_possedes]
     inscrits_par_cours = {
         cours.id: len(lister_inscriptions_actives(session, cours.id))
         for cours in cours_possedes

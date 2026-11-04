@@ -264,3 +264,44 @@ def test_cours_ambigu_reste_en_quarantaine_jusqua_affectation_explicite(db):
     db.flush()
     assert peut_rejoindre_cours(db, cours, etudiant)
     assert est_inscrit_cours(db, cours.id, etudiant.id)
+
+
+def test_un_etudiant_desactive_ne_peut_pas_telecharger_sa_copie(db, monkeypatch):
+    from app.routers import classe_router
+    from app.models import Devoir, RenduDevoir
+
+    institution = creer_etablissement(db, "Université A", "UNIV-DL")
+    professeur = creer_compte(db, "Professeur A", RoleUtilisateur.PROFESSEUR)
+    etudiant = creer_compte(db, "Etudiant A", RoleUtilisateur.ETUDIANT)
+    assurer_membre(db, institution.id, professeur.id, ROLE_PROFESSEUR)
+    appartenance = assurer_membre(db, institution.id, etudiant.id, ROLE_ETUDIANT)
+    cours = Cours(
+        nom="Cours privé", matiere="Droit", niveau="L1",
+        professeur_id=professeur.id, institution_id=institution.id,
+    )
+    db.add(cours)
+    db.flush()
+    devoir = Devoir(cours_id=cours.id, titre="Devoir")
+    db.add(devoir)
+    db.flush()
+    rendu = RenduDevoir(
+        devoir_id=devoir.id,
+        utilisateur_id=etudiant.id,
+        chemin_fichier="/tmp/rendu-test.pdf",
+        nom_fichier_original="rendu.pdf",
+    )
+    db.add_all([InscriptionCours(cours_id=cours.id, utilisateur_id=etudiant.id), rendu])
+    db.flush()
+    appartenance.est_actif = False
+    db.add(appartenance)
+    db.flush()
+    monkeypatch.setattr(
+        classe_router,
+        "utilisateur_courant",
+        lambda request, session: etudiant,
+    )
+
+    response = classe_router.telecharger_rendu(SimpleNamespace(), rendu.id, db)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/classe/{cours.id}"
