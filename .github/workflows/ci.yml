@@ -4,18 +4,20 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   test:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 30
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, mitaridala-ci]
     env:
       ENVIRONNEMENT: developpement
       SESSION_SECRET_KEY: ci-only-not-for-production
@@ -27,6 +29,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Installer les dependances
         run: python -m pip install -r requirements.txt
       - name: Verifier le graphe des migrations Alembic
@@ -53,7 +58,7 @@ jobs:
       - name: Smoke navigateur responsive des cercles
         run: |
           npm install --no-save playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
           node scripts/smoke_circle_layout.mjs
           node scripts/smoke_global_responsive.mjs
           node scripts/smoke_back_navigation.mjs
@@ -69,8 +74,9 @@ jobs:
           done
 
   postgres-smoke:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, mitaridala-ci]
     env:
       ENVIRONNEMENT: developpement
       SESSION_SECRET_KEY: ci-only-not-for-production
