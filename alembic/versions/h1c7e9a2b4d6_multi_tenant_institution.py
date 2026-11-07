@@ -153,7 +153,10 @@ def upgrade() -> None:
         sa.true(),
         sa.func.current_timestamp(),
         sa.func.current_timestamp(),
-    ).where(users.c.institution_id.is_not(None))
+    ).where(
+        users.c.institution_id.is_not(None),
+        sa.func.lower(role_value).in_(("professeur", "admin", "etudiant")),
+    )
     op.execute(
         sa.insert(members)
         .from_select(
