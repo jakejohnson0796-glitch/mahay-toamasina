@@ -129,8 +129,13 @@ jobs:
               cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (role,))
               if cur.fetchone() is None:
                   cur.execute(f'CREATE ROLE "{role}" NOLOGIN')
-          # Simule les grants de service_role présents sur les tables Supabase.
-          # La migration doit les préserver tout en retirant ceux des rôles publics.
+          # Simule les attributs des rôles Data API Supabase dans ce PostgreSQL jetable.
+          # service_role doit contourner RLS ; anon/authenticated ne le doivent jamais.
+          cur.execute('ALTER ROLE "service_role" BYPASSRLS')
+          cur.execute('ALTER ROLE "anon" NOBYPASSRLS')
+          cur.execute('ALTER ROLE "authenticated" NOBYPASSRLS')
+          # Simule les grants par défaut de service_role présents dans Supabase.
+          # La migration doit les préserver sur les nouvelles tables.
           cur.execute(
               "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public "
               "GRANT ALL PRIVILEGES ON TABLES TO service_role"
