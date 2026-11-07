@@ -55,9 +55,8 @@ def test_role_runtime_est_dml_only_et_bypassrls_sur_postgres_jetable() -> None:
             cur.execute(sql.SQL(
                 "INSERT INTO public.{} (id, valeur) VALUES (1, 'visible')"
             ).format(sql.Identifier(table)))
-            cur.execute(sql.SQL(
-                "GRANT SELECT, INSERT, UPDATE, DELETE ON public.{} TO {}"
-            ).format(sql.Identifier(table), sql.Identifier(role)))
+            # La table de test est créée après ALTER DEFAULT PRIVILEGES :
+            # ses droits DML doivent donc être accordés automatiquement.
             cur.execute(
                 """
                 SELECT count(*) FROM pg_class c
