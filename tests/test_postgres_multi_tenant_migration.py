@@ -100,7 +100,8 @@ def test_backfill_postgres_historique_est_conserve_et_idempotent():
                             (11, 1, 'admin'),
                             (12, 1, 'etudiant'),
                             (13, 2, 'professeur'),
-                            (14, NULL, 'professeur')
+                            (14, NULL, 'professeur'),
+                            (15, 1, 'sponsor')
                     """))
                     connection.execute(text("""
                         INSERT INTO cours
@@ -130,6 +131,12 @@ def test_backfill_postgres_historique_est_conserve_et_idempotent():
                         (1, 12, "etudiant", True),
                         (2, 13, "professeur", True),
                     ]
+                    # Un rôle global sponsor n'est pas assimilé implicitement
+                    # à un étudiant institutionnel.
+                    assert connection.execute(text("""
+                        SELECT COUNT(*) FROM membre_etablissement
+                        WHERE utilisateur_id = 15
+                    """)).scalar_one() == 0
 
                     cours = {
                         r.id: r
