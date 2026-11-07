@@ -189,3 +189,5 @@ jobs:
         run: pytest -q tests/test_postgres_multi_tenant_migration.py
       - name: Vérifier le préflight agrégé en lecture seule
         run: python scripts/preflight_multi_tenant_migration.py
+      - name: Tester les permissions minimales du rôle runtime (PostgreSQL jetable)
+        run: pytest -q tests/test_postgres_runtime_role.py
