@@ -44,7 +44,7 @@ def _database_url_postgres_ci_autorisee() -> str:
     if sa.engine.make_url(url).get_backend_name() != "postgresql":
         pytest.skip("Ce test nécessite PostgreSQL ; aucun schéma n'est créé sur SQLite.")
     if not cible_ci_autorisee(url):
-        pytest.fail(
+        raise ValueError(
             "Cible PostgreSQL refusée : ce test destructif de schéma est limité "
             "au PostgreSQL local éphémère de GitHub Actions. Aucune connexion "
             "n'a été ouverte."
@@ -65,7 +65,7 @@ def test_migration_postgres_refuse_les_cibles_non_jetables(
     monkeypatch.setenv("DATABASE_URL", url)
     monkeypatch.setenv("GITHUB_ACTIONS", github_actions)
 
-    with pytest.raises(pytest.fail.Exception, match="Cible PostgreSQL refusée"):
+    with pytest.raises(ValueError, match="Cible PostgreSQL refusée"):
         _database_url_postgres_ci_autorisee()
 
 
