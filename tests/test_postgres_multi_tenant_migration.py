@@ -166,17 +166,42 @@ def test_backfill_postgres_historique_est_conserve_et_idempotent():
                     """), {"schema": schema}).scalar_one()
                     assert rls is True
 
-                    # Un second passage doit conserver les mêmes appartenances
-                    # et ne pas dupliquer les membres ni modifier les cours.
+                    # Simule une situation réelle ambiguë : un professeur
+                    # possède désormais une seconde appartenance active et un
+                    # nouveau cours sans tenant. La migration ne doit pas
+                    # choisir arbitrairement l'un des deux établissements.
+                    connection.execute(text("""
+                        INSERT INTO etablissementpartenaire (id, nom, code, est_actif)
+                        VALUES (3, 'Deuxième établissement synthétique', 'SYN-B', TRUE)
+                    """))
+                    connection.execute(text("""
+                        INSERT INTO membre_etablissement
+                            (institution_id, utilisateur_id, role, est_actif)
+                        VALUES (3, 10, 'professeur', TRUE)
+                    """))
+                    connection.execute(text("""
+                        INSERT INTO cours
+                            (id, nom, matiere, niveau, professeur_id, code_invitation)
+                        VALUES (103, 'Cours multi-affilié', 'Physique', 'L2', 10, 'SYN103')
+                    """))
+
+                    # Le second passage doit conserver les appartenances,
+                    # détecter l'ambiguïté et mettre le cours en quarantaine.
                     with Operations.context(contexte):
                         migration.upgrade()
 
                     assert connection.execute(
                         text("SELECT COUNT(*) FROM membre_etablissement")
-                    ).scalar_one() == 4
+                    ).scalar_one() == 5
+                    cours_ambigu = connection.execute(text("""
+                        SELECT institution_id, affectation_institutionnelle_requise
+                        FROM cours WHERE id = 103
+                    """)).one()
+                    assert cours_ambigu.institution_id is None
+                    assert cours_ambigu.affectation_institutionnelle_requise is True
                     assert connection.execute(
                         text("SELECT COUNT(*) FROM cours")
-                    ).scalar_one() == 3
+                    ).scalar_one() == 4
                     assert connection.execute(
                         text("SELECT COUNT(*) FROM notification")
                     ).scalar_one() == 1
