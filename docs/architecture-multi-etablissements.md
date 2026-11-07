@@ -64,10 +64,35 @@ réponse sans cache ; les comptes doivent les remplacer à la première connexio
 Les affectations et désactivations revérifient le rôle responsable et le tenant
 côté serveur à chaque requête.
 
+## Limite de sécurité PostgreSQL — RLS non démontré
+
+Les contrôles décrits ci-dessus sont des contrôles d'autorisation applicatifs
+exécutés côté serveur. Ils ne constituent pas, à eux seuls, une isolation RLS
+imposée par PostgreSQL.
+
+La migration active RLS sur `membre_etablissement`, mais ne crée pas de
+politique RLS pour cette table. Le backend utilise actuellement une connexion
+PostgreSQL privilégiée ; si son rôle possède `BYPASSRLS`, PostgreSQL ne lui
+applique pas les politiques RLS ordinaires. Le test du rôle runtime synthétique
+vérifie des privilèges et des opérations sur une table de test, mais ne prouve
+pas l'isolation de deux tenants par RLS.
+
+Le test `tests/test_postgres_tenant_authorization.py` vérifie séparément les
+contrôles applicatifs sur un PostgreSQL jetable : deux établissements, des
+membres distincts, une inscription incohérente volontaire et la révocation
+d'une appartenance. Il ne doit jamais être interprété comme un test RLS.
+
+**Aucune bascule vers un rôle runtime NOBYPASSRLS ne doit être effectuée** tant
+que les politiques nécessaires et les droits associés n'ont pas été définis et
+testés pour les tables réellement exposées. De même, ne pas présenter
+l'activation RLS sans politique comme une protection effective de l'application.
+
 ## Vérifications requises avant fusion
 
 - Exécuter les tests unitaires de séparation des tenants et la suite CI complète.
+- Exécuter le test PostgreSQL jetable de l'autorisation applicative entre deux tenants.
 - Rejouer les migrations PostgreSQL sur une copie représentative de la base.
+- Définir explicitement si l'objectif de sécurité est l'autorisation applicative ou une isolation PostgreSQL RLS ; si RLS est retenu, écrire et tester les politiques tenant par tenant avant toute bascule de rôle.
 - Vérifier les cours historiques et les comptes institutionnels préexistants.
 - Tester deux établissements en parallèle, y compris les WebSockets et les
   téléchargements de copies.
