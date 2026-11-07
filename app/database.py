@@ -17,70 +17,49 @@ from sqlmodel import SQLModel, Session, create_engine
 from .config import parametres
 
 DATABASE_URL = parametres.database_url
+MIGRATION_DATABASE_URL = parametres.migration_database_url or DATABASE_URL
 
-# check_same_thread=False : necessaire uniquement pour SQLite, car FastAPI
-# peut traiter les requetes sur plusieurs threads alors que SQLite est
-# mono-thread par defaut. Postgres n'en a pas besoin.
-#
-# connect_timeout=10 (Postgres uniquement) : sans ca, une connexion qui ne
-# repond pas (reseau capricieux, pooler Supabase qui traine...) fait
-# attendre indefiniment sans jamais afficher d'erreur — exactement le
-# symptome observe en prod (page qui reste bloquee sur "Internal Server
-# Error" generique, rien dans les logs). Avec ce timeout, l'echec est
-# rapide et explicite.
-if DATABASE_URL.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
-else:
-    connect_args = {
-        "connect_timeout": 10,
-        # statement_timeout impose cote SERVEUR Postgres (pas cote client) :
-        # meme si la connexion TCP est etablie sans souci (ce qui semble
-        # etre le cas — connect_timeout ne s'est jamais declenche), une
-        # requete peut rester bloquee en attendant une reponse qui
-        # n'arrive jamais (souci reseau, pooler capricieux...). Sans ca,
-        # rien ne borne cette attente et l'app peut se figer pour
-        # toujours, exactement le symptome observe.
-        "options": "-c statement_timeout=10000",
-    }
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,
-    connect_args=connect_args,
-    # pool_pre_ping : verifie qu'une connexion recyclee depuis le pool est
-    # toujours valide avant de l'utiliser (fait un petit round-trip SELECT 1
-    # au prealable). Evite d'utiliser une connexion morte silencieusement
-    # coupee cote pooler Supabase apres un moment d'inactivite.
-    pool_pre_ping=True,
-    # pool_recycle : force le renouvellement des connexions au bout de 5
-    # minutes, avant que le pooler Supabase ne les ferme lui-meme de son
-    # cote (comportement frequent des poolers PgBouncer-like, qui coupent
-    # les connexions inactives sans le signaler proprement au client).
-    pool_recycle=300,
-    # pool_size/max_overflow volontairement bas : ce projet n'a pas besoin
-    # de beaucoup de connexions simultanees, et un pool trop genereux cote
-    # app peut a lui seul saturer la limite du pooler Supabase (souvent
-    # basse sur les plans gratuits) si plusieurs process app tournent en
-    # parallele (dev + prod, ou plusieurs `uvicorn` lances par erreur).
-    pool_size=3,
-    max_overflow=2,
-    # pool_timeout : si le pool est plein (toutes les connexions deja
-    # utilisees ailleurs), on echoue au bout de 10s avec une erreur claire
-    # plutot que d'attendre indefiniment qu'une connexion se libere.
-    pool_timeout=10,
+def _creer_engine(database_url: str):
+    """Construit un moteur avec les mêmes garde-fous pour chaque compte."""
+    if database_url.startswith("sqlite"):
+        connect_args = {"check_same_thread": False}
+    else:
+        connect_args = {
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=10000",
+        }
+
+    moteur = create_engine(
+        database_url,
+        echo=False,
+        connect_args=connect_args,
+        pool_pre_ping=True,
+        pool_recycle=300,
+        pool_size=3,
+        max_overflow=2,
+        pool_timeout=10,
+    )
+
+    if database_url.startswith("sqlite"):
+        @event.listens_for(moteur, "connect")
+        def _enregistrer_fonction_normalisation_sqlite(dbapi_connection, _record):
+            from .texte_normalise import normaliser
+            dbapi_connection.create_function("mahay_normaliser", 1, normaliser)
+
+    return moteur
+
+
+# Le backend n'utilise que ce moteur pour les requêtes de l'application.
+engine = _creer_engine(DATABASE_URL)
+
+# Alembic dispose d'un moteur distinct et d'un compte distinct en production.
+# Le fallback sur DATABASE_URL est conservé pour les environnements locaux/CI.
+migration_engine = (
+    engine
+    if MIGRATION_DATABASE_URL == DATABASE_URL
+    else _creer_engine(MIGRATION_DATABASE_URL)
 )
-
-
-
-# SQLite ne dispose pas de la recherche linguistique PostgreSQL. On expose
-# donc la meme normalisation accent/casse au moteur local via une petite
-# fonction SQL deterministe ; la logique de recherche elle-meme reste
-# centralisee dans app/recherche.py.
-if DATABASE_URL.startswith("sqlite"):
-    @event.listens_for(engine, "connect")
-    def _enregistrer_fonction_normalisation_sqlite(dbapi_connection, _record):
-        from .texte_normalise import normaliser
-        dbapi_connection.create_function("mahay_normaliser", 1, normaliser)
 
 
 RACINE_PROJET = Path(__file__).resolve().parent.parent
