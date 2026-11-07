@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 # On reutilise le moteur et l'URL deja construits par l'app (meme logique
 # SQLite/Postgres, meme lecture de .env via app.config) plutot que de la
 # dupliquer ici : une seule source de verite pour la connexion.
-from app.database import engine  # noqa: E402
+from app.database import migration_engine as engine  # noqa: E402
 
 # Importer app.models (meme si le nom n'est pas utilise directement) est
 # indispensable : c'est ce qui enregistre toutes les tables sur
