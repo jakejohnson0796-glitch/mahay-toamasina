@@ -1,8 +1,8 @@
 """Contrat de permissions du rôle runtime sur PostgreSQL jetable.
 
 Ce test ne se connecte jamais à Supabase/Render. Il crée un rôle CI éphémère,
-lui donne uniquement les droits DML attendus, puis vérifie RLS et l'absence
-de droits de propriété/DDL.
+lui donne des droits DML et BYPASSRLS, puis vérifie l'accès backend et le refus
+des opérations DDL. Le rôle et la table sont toujours supprimés.
 """
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import os
 import uuid
 
 import psycopg2
+from psycopg2 import sql
 import pytest
 
 
@@ -19,44 +20,30 @@ def test_role_runtime_est_dml_only_et_bypassrls_sur_postgres_jetable() -> None:
     if not database_url.startswith(("postgresql://", "postgres://")):
         pytest.skip("DATABASE_URL PostgreSQL requis (job postgres-smoke uniquement).")
 
-    role = "mahay_runtime"
-    table = f"runtime_rls_probe_{uuid.uuid4().hex[:12]}"
-    conn = psycopg2.connect(database_url)
-    conn.autocommit = True
+    suffix = uuid.uuid4().hex[:12]
+    role = f"mahay_rt_{suffix}"
+    table = f"runtime_rls_probe_{suffix}"
+    admin = psycopg2.connect(database_url)
+    admin.autocommit = True
+    runtime = None
 
     try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (role,))
-            if cur.fetchone():
-                cur.execute(f'DROP OWNED BY "{role}"')
-                cur.execute(f'DROP ROLE "{role}"')
-            cur.execute(
-                f'CREATE ROLE "{role}" LOGIN NOSUPERUSER NOCREATEDB '
-                "NOCREATEROLE INHERIT BYPASSRLS"
-            )
-            cur.execute("GRANT USAGE ON SCHEMA public TO mahay_runtime")
-            cur.execute(
-                "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public "
-                "TO mahay_runtime"
-            )
-            cur.execute(
-                "GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public "
-                "TO mahay_runtime"
-            )
-            cur.execute(
-                "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public "
-                "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO mahay_runtime"
-            )
-            cur.execute(
-                "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public "
-                "GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO mahay_runtime"
-            )
-            cur.execute(
-                f'CREATE TABLE public."{table}" (id integer PRIMARY KEY, valeur text NOT NULL)'
-            )
-            cur.execute(f'ALTER TABLE public."{table}" ENABLE ROW LEVEL SECURITY')
-            cur.execute(f'INSERT INTO public."{table}" (id, valeur) VALUES (1, %s)', ("visible",))
-            cur.execute(f'GRANT SELECT, INSERT, UPDATE, DELETE ON public."{table}" TO mahay_runtime')
+        with admin.cursor() as cur:
+            cur.execute(sql.SQL(
+                "CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE "
+                "INHERIT BYPASSRLS"
+            ).format(sql.Identifier(role)))
+            cur.execute(sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role)))
+            cur.execute(sql.SQL(
+                "CREATE TABLE public.{} (id integer PRIMARY KEY, valeur text NOT NULL)"
+            ).format(sql.Identifier(table)))
+            cur.execute(sql.SQL("ALTER TABLE public.{} ENABLE ROW LEVEL SECURITY").format(sql.Identifier(table)))
+            cur.execute(sql.SQL(
+                "INSERT INTO public.{} (id, valeur) VALUES (1, 'visible')"
+            ).format(sql.Identifier(table)))
+            cur.execute(sql.SQL(
+                "GRANT SELECT, INSERT, UPDATE, DELETE ON public.{} TO {}"
+            ).format(sql.Identifier(table), sql.Identifier(role)))
 
             cur.execute(
                 """
@@ -65,8 +52,7 @@ def test_role_runtime_est_dml_only_et_bypassrls_sur_postgres_jetable() -> None:
                 """,
                 (role,),
             )
-            attributes = cur.fetchone()
-            assert attributes == (True, False, False, False, True)
+            assert cur.fetchone() == (True, False, False, False, True)
 
             cur.execute(
                 """
@@ -79,29 +65,32 @@ def test_role_runtime_est_dml_only_et_bypassrls_sur_postgres_jetable() -> None:
             )
             assert cur.fetchone()[0] == 0, "Le rôle runtime ne doit posséder aucune table."
 
-            cur.execute(f'SET ROLE "{role}"')
-            cur.execute(f'SELECT valeur FROM public."{table}" WHERE id = 1')
-            assert cur.fetchone() == ("visible",), "Le rôle runtime doit passer RLS pour le backend."
+        runtime = psycopg2.connect(database_url)
+        with runtime:
+            with runtime.cursor() as cur:
+                cur.execute(sql.SQL("SET ROLE {}").format(sql.Identifier(role)))
+                cur.execute(sql.SQL("SELECT valeur FROM public.{} WHERE id = 1").format(sql.Identifier(table)))
+                assert cur.fetchone() == ("visible",), "Le rôle backend doit accéder à la table malgré RLS activé."
 
-            cur.execute(f'INSERT INTO public."{table}" (id, valeur) VALUES (2, %s)', ("insert",))
-            cur.execute(f'UPDATE public."{table}" SET valeur = %s WHERE id = 2', ("updated",))
-            cur.execute(f'DELETE FROM public."{table}" WHERE id = 2')
+                cur.execute(sql.SQL("INSERT INTO public.{} (id, valeur) VALUES (2, 'insert')").format(sql.Identifier(table)))
+                cur.execute(sql.SQL("UPDATE public.{} SET valeur = 'updated' WHERE id = 2").format(sql.Identifier(table)))
+                cur.execute(sql.SQL("DELETE FROM public.{} WHERE id = 2").format(sql.Identifier(table)))
 
-            cur.execute("SAVEPOINT deny_create")
-            with pytest.raises(psycopg2.errors.InsufficientPrivilege):
-                cur.execute("CREATE TABLE public.runtime_must_not_create (id integer)")
-            cur.execute("ROLLBACK TO SAVEPOINT deny_create")
+                cur.execute("SAVEPOINT deny_create")
+                with pytest.raises(psycopg2.errors.InsufficientPrivilege):
+                    cur.execute("CREATE TABLE public.runtime_must_not_create (id integer)")
+                cur.execute("ROLLBACK TO SAVEPOINT deny_create")
 
-            cur.execute("SAVEPOINT deny_alter")
-            with pytest.raises(psycopg2.errors.InsufficientPrivilege):
-                cur.execute(f'ALTER TABLE public."{table}" ADD COLUMN interdit integer')
-            cur.execute("ROLLBACK TO SAVEPOINT deny_alter")
-            cur.execute("RESET ROLE")
+                cur.execute("SAVEPOINT deny_alter")
+                with pytest.raises(psycopg2.errors.InsufficientPrivilege):
+                    cur.execute(sql.SQL("ALTER TABLE public.{} ADD COLUMN interdit integer").format(sql.Identifier(table)))
+                cur.execute("ROLLBACK TO SAVEPOINT deny_alter")
     finally:
+        if runtime is not None:
+            runtime.close()
         try:
-            with conn.cursor() as cur:
-                cur.execute(f'DROP TABLE IF EXISTS public."{table}"')
-                cur.execute(f'DROP OWNED BY "{role}"')
-                cur.execute(f'DROP ROLE IF EXISTS "{role}"')
+            with admin.cursor() as cur:
+                cur.execute(sql.SQL("DROP TABLE IF EXISTS public.{}").format(sql.Identifier(table)))
+                cur.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(sql.Identifier(role)))
         finally:
-            conn.close()
+            admin.close()
