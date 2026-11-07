@@ -31,6 +31,11 @@ class Parametres:
     # vit uniquement dans DATABASE_URL (.env local ou variable d'env de
     # l'hebergeur), jamais commitee.
     database_url: str = field(default_factory=lambda: os.getenv("DATABASE_URL") or "sqlite:///./mahay.db")
+    # Compte réservé aux migrations Alembic. En production, il doit être
+    # différent du compte runtime DATABASE_URL. En local, la valeur vide
+    # réutilise DATABASE_URL pour conserver le démarrage simple.
+
+    migration_database_url: str = field(default_factory=lambda: os.getenv("MIGRATION_DATABASE_URL", "").strip())
 
     # --- File IA Redis / Render Key Value ---
     # En production, Render injecte automatiquement l'URL interne de Key Value
