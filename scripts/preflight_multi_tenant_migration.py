@@ -191,7 +191,7 @@ def construire_rapport(connection: Connection) -> dict[str, Any]:
                     "active": bool(rls.active),
                     "forcee": bool(rls.forcee),
                     "nombre_politiques": int(rls.politiques or 0),
-                    "connexion_courante_bypassrls": bool(rls.role_contourne_rls),
+                    "connexion_ci_bypassrls": bool(rls.role_contourne_rls),
                 }
                 if not rls.active:
                     rapport["alertes"].append("RLS est désactivé sur membre_etablissement.")
@@ -202,7 +202,7 @@ def construire_rapport(connection: Connection) -> dict[str, Any]:
 
     if _entier(utilisateurs, "roles_non_reconnus_rattaches"):
         rapport["alertes"].append(
-            "Des comptes rattachés utilisent des rôles non repris automatiquement ; examiner uniquement le compteur agrégé."
+            "Des comptes synthétiques rattachés utilisent des rôles non repris automatiquement ; examiner uniquement le compteur agrégé."
         )
     if rapport["schema"]["membre_etablissement_present"] and not (
         rapport["schema"]["cours_institution_id_present"]
