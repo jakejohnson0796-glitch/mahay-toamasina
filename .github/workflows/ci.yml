@@ -166,8 +166,14 @@ jobs:
           PY
       - name: Verifier le graphe des migrations Alembic
         run: python scripts/verify_migrations.py
+      - name: Préparer le schéma historique juste avant le multiétablissement
+        run: alembic upgrade g2a7f5d9c1e3
+      - name: Préflight agrégé en lecture seule avant migration
+        run: python scripts/preflight_multi_tenant_migration.py
       - name: Appliquer toutes les migrations PostgreSQL
         run: alembic upgrade head
+      - name: Préflight agrégé en lecture seule après migration
+        run: python scripts/preflight_multi_tenant_migration.py
       - name: Rejouer les migrations pour verifier l'idempotence
         run: alembic upgrade head
       - name: Verifier la revision courante
