@@ -119,6 +119,8 @@ def test_role_runtime_est_dml_only_et_bypassrls_sur_postgres_jetable() -> None:
         try:
             with admin.cursor() as cur:
                 cur.execute(sql.SQL("DROP TABLE IF EXISTS public.{}").format(sql.Identifier(table)))
+                # Supprime aussi les grants et ACL par défaut qui référencent le rôle.
+                cur.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(role)))
                 cur.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(sql.Identifier(role)))
         finally:
             admin.close()
