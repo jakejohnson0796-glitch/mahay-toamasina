@@ -20,8 +20,7 @@ données ou des images Render.
 
 ## Conditions obligatoires avant une migration de production
 
-Un opérateur adulte autorisé doit, dans les consoles privées du fournisseur de
-base et du stockage :
+Les vérifications suivantes doivent être effectuées par une personne habilitée à administrer les bases de données et le stockage, dans les consoles privées des fournisseurs :
 
 1. Identifier les bases réellement utilisées par les deux services Render et
    confirmer si elles sont distinctes ou partagées.
@@ -92,8 +91,7 @@ restrictions d'accès introduites par la PR.
 
 ### Retour complet à la version précédente
 
-À décider et exécuter par l'opérateur adulte autorisé, avec les services en
-maintenance et les écritures arrêtées :
+À décider et exécuter par une personne habilitée à administrer la base de données, avec les services en maintenance et les écritures arrêtées :
 
 1. Confirmer le dernier point de sauvegarde PostgreSQL cohérent et la stratégie
    de conservation des écritures intervenues depuis ce point.
