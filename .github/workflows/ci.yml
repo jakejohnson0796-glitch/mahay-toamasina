@@ -91,6 +91,7 @@ jobs:
       SUPABASE_BUCKET: documents
       GIT_COMMIT: ${{ github.sha }}
       MITARIDALA_MIGRATION_CONCURRENCY_SMOKE: "1"
+      MAHAY_POSTGRES_TENANT_AUTHORIZATION_SMOKE: "1"
     services:
       postgres:
         image: postgres:16
@@ -191,3 +192,5 @@ jobs:
         run: python scripts/preflight_multi_tenant_migration.py
       - name: Tester les permissions minimales du rôle runtime (PostgreSQL jetable)
         run: pytest -q tests/test_postgres_runtime_role.py
+      - name: Tester l’isolation applicative de deux établissements sur PostgreSQL jetable
+        run: pytest -q tests/test_postgres_tenant_authorization.py
