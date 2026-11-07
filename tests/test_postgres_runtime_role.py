@@ -35,6 +35,20 @@ def test_role_runtime_est_dml_only_et_bypassrls_sur_postgres_jetable() -> None:
             ).format(sql.Identifier(role)))
             cur.execute(sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role)))
             cur.execute(sql.SQL(
+                "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {}"
+            ).format(sql.Identifier(role)))
+            cur.execute(sql.SQL(
+                "GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO {}"
+            ).format(sql.Identifier(role)))
+            cur.execute(sql.SQL(
+                "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public "
+                "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO {}"
+            ).format(sql.Identifier(role)))
+            cur.execute(sql.SQL(
+                "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public "
+                "GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO {}"
+            ).format(sql.Identifier(role)))
+            cur.execute(sql.SQL(
                 "CREATE TABLE public.{} (id integer PRIMARY KEY, valeur text NOT NULL)"
             ).format(sql.Identifier(table)))
             cur.execute(sql.SQL("ALTER TABLE public.{} ENABLE ROW LEVEL SECURITY").format(sql.Identifier(table)))
@@ -44,6 +58,21 @@ def test_role_runtime_est_dml_only_et_bypassrls_sur_postgres_jetable() -> None:
             cur.execute(sql.SQL(
                 "GRANT SELECT, INSERT, UPDATE, DELETE ON public.{} TO {}"
             ).format(sql.Identifier(table), sql.Identifier(role)))
+            cur.execute(
+                """
+                SELECT count(*) FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')
+                  AND NOT (
+                    has_table_privilege(%s, c.oid, 'SELECT')
+                    AND has_table_privilege(%s, c.oid, 'INSERT')
+                    AND has_table_privilege(%s, c.oid, 'UPDATE')
+                    AND has_table_privilege(%s, c.oid, 'DELETE')
+                  )
+                """,
+                (role, role, role, role),
+            )
+            assert cur.fetchone()[0] == 0, "Le rôle runtime doit avoir le DML sur les tables applicatives existantes."
 
             cur.execute(
                 """
