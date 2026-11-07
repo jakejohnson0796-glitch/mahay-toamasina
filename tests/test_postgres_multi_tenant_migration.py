@@ -84,6 +84,19 @@ def test_backfill_postgres_historique_est_conserve_et_idempotent():
                 connection.exec_driver_sql(f'SET search_path TO "{schema}"')
                 connection.commit()
 
+                # Emule les droits du rôle backend Supabase dans ce schéma jetable.
+                # Ces privilèges par défaut ne concernent que le PostgreSQL CI.
+                connection.exec_driver_sql(
+                    f'GRANT USAGE ON SCHEMA "{schema}" '
+                    'TO service_role, anon, authenticated'
+                )
+                connection.exec_driver_sql(
+                    f'ALTER DEFAULT PRIVILEGES FOR ROLE postgres '
+                    f'IN SCHEMA "{schema}" '
+                    'GRANT ALL PRIVILEGES ON TABLES TO service_role'
+                )
+                connection.commit()
+
                 with connection.begin():
                     connection.execute(text("""
                         CREATE TABLE etablissementpartenaire (
@@ -202,6 +215,74 @@ def test_backfill_postgres_historique_est_conserve_et_idempotent():
                           AND c.relname = 'membre_etablissement'
                     """), {"schema": schema}).scalar_one()
                     assert rls is True
+
+                    # Vérifie les privilèges effectifs du rôle backend simulé.
+                    nom_table = f"{schema}.membre_etablissement"
+                    privileges_service = connection.execute(text("""
+                        SELECT
+                            has_table_privilege('service_role', :table_name, 'SELECT'),
+                            has_table_privilege('service_role', :table_name, 'INSERT'),
+                            has_table_privilege('service_role', :table_name, 'UPDATE'),
+                            has_table_privilege('service_role', :table_name, 'DELETE')
+                    """), {"table_name": nom_table}).one()
+                    assert tuple(privileges_service) == (True, True, True, True)
+
+                    roles_rls = {
+                        ligne.rolname: (ligne.rolsuper, ligne.rolbypassrls)
+                        for ligne in connection.execute(text("""
+                            SELECT rolname, rolsuper, rolbypassrls
+                            FROM pg_roles
+                            WHERE rolname IN ('service_role', 'anon', 'authenticated')
+                        """)).all()
+                    }
+                    assert roles_rls["service_role"] == (False, True)
+                    assert roles_rls["anon"] == (False, False)
+                    assert roles_rls["authenticated"] == (False, False)
+
+                    nb_policies = connection.execute(text("""
+                        SELECT COUNT(*)
+                        FROM pg_policies
+                        WHERE schemaname = :schema
+                          AND tablename = 'membre_etablissement'
+                    """), {"schema": schema}).scalar_one()
+                    assert nb_policies == 0
+
+                    # Accorde des privilèges SQL aux rôles Data API uniquement
+                    # dans le schéma de test afin d'isoler l'effet propre de RLS.
+                    nom_table_sql = f'"{schema}".membre_etablissement'
+                    connection.exec_driver_sql(
+                        f"GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "
+                        f"{nom_table_sql} TO anon, authenticated"
+                    )
+
+                    # Même avec des privilèges SQL, RLS sans policy interdit
+                    # la lecture des lignes aux rôles publics/authenticated.
+                    connection.execute(text("SET LOCAL ROLE authenticated"))
+                    assert connection.execute(
+                        text(f"SELECT COUNT(*) FROM {nom_table_sql}")
+                    ).scalar_one() == 0
+                    connection.execute(text("SET LOCAL ROLE anon"))
+                    assert connection.execute(
+                        text(f"SELECT COUNT(*) FROM {nom_table_sql}")
+                    ).scalar_one() == 0
+
+                    # Le rôle backend BYPASSRLS doit voir les lignes attendues.
+                    connection.execute(text("SET LOCAL ROLE service_role"))
+                    assert connection.execute(
+                        text(f"SELECT COUNT(*) FROM {nom_table_sql}")
+                    ).scalar_one() == 4
+                    connection.execute(text("RESET ROLE"))
+
+                    # Vérifie aussi que l'insertion est rejetée par RLS,
+                    # et non simplement par l'absence de privilège SQL.
+                    with pytest.raises(sa.exc.DBAPIError, match="row-level security"):
+                        with connection.begin_nested():
+                            connection.execute(text("SET LOCAL ROLE authenticated"))
+                            connection.execute(text(f"""
+                                INSERT INTO {nom_table_sql}
+                                    (id, institution_id, utilisateur_id, role, est_actif)
+                                VALUES (999, 1, 15, 'etudiant', TRUE)
+                            """))
 
                     # Simule une situation réelle ambiguë : un professeur
                     # possède désormais une seconde appartenance active et un
